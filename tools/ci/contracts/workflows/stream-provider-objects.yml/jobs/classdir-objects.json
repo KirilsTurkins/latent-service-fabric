@@ -6,7 +6,6 @@
     "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026'",
     "name": "Changed class-directory translation units without image or boot",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 25,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -29,96 +28,97 @@
         "run": "python3 -c 'import time; print(\"STREAM_OBJECT_STARTED=\" + str(time.monotonic()))' >> \"$GITHUB_ENV\"\n"
       },
       {
-        "name": "Check only the new fixed classdir source and object-allowlist controls",
         "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026'",
+        "name": "Check only the new fixed classdir source and object-allowlist controls",
         "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets -v"
       },
       {
-        "name": "Compile only four changed class-directory translation units",
         "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026'",
+        "name": "Compile only four changed class-directory translation units",
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "name": "Check only the two new empty-classdir source and nine-target controls",
         "if": "github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026'",
+        "name": "Check only the two new empty-classdir source and nine-target controls",
         "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels -v"
       },
       {
-        "name": "Compile only nine changed empty-classdir translation units",
         "if": "github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026'",
+        "name": "Compile only nine changed empty-classdir translation units",
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir-kernfs --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "name": "Check only two NETDEV directory source and admission controls",
         "if": "github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'",
+        "name": "Check only two NETDEV directory source and admission controls",
         "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets -v"
       },
       {
-        "name": "Compile only nine changed NETDEV own-directory translation units",
         "if": "github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'",
+        "name": "Compile only nine changed NETDEV own-directory translation units",
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-directory --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "name": "Check only two readonly layout source and ELF controls",
         "if": "github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026'",
+        "name": "Check only two readonly layout source and ELF controls",
         "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_layout_source_freeze_preserves_notify_and_all_prior_modes tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_layout_elf_refuses_malformed_tables_and_reports_only_incomplete_lower_bound -v"
       },
       {
-        "name": "Compile eleven fixed allocating and notify translation units with readonly data",
         "if": "github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026'",
+        "name": "Compile eleven fixed allocating and notify translation units with readonly data",
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-layout --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "name": "Admit the fixed bounded public union before any upload",
         "id": "admission",
         "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' }}",
+        "name": "Admit the fixed bounded public union before any upload",
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "name": "Admit only the nine-target empty-classdir public union",
         "id": "kernfs_admission",
         "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' }}",
+        "name": "Admit only the nine-target empty-classdir public union",
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir-kernfs --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "name": "Admit only the nine-target NETDEV directory public union",
         "id": "directory_admission",
         "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' }}",
+        "name": "Admit only the nine-target NETDEV directory public union",
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-directory --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "name": "Admit only the eleven-target readonly-layout public union",
         "id": "layout_admission",
         "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026' }}",
+        "name": "Admit only the eleven-target readonly-layout public union",
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-layout --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "name": "Retain only admitted object evidence",
         "if": "${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true' || steps.layout_admission.outputs.admitted == 'true') }}",
+        "name": "Retain only admitted object evidence",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "protected-stream-classdir-objects-${{ github.sha }}",
-          "retention-days": 7,
           "if-no-files-found": "error",
-          "path": "${{ runner.temp }}/stream-provider-classdir-objects/receipt.json\n${{ runner.temp }}/stream-provider-classdir-objects/layout.json\n${{ runner.temp }}/stream-provider-classdir-objects/source-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/derived-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/baseline-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/commands.json\n${{ runner.temp }}/stream-provider-classdir-objects/baseline.config\n${{ runner.temp }}/stream-provider-classdir-objects/selected.config\n${{ runner.temp }}/stream-provider-classdir-objects/generated-autoconf.h\n${{ runner.temp }}/stream-provider-classdir-objects/ADMISSION.json\n${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stdout.txt\n${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stderr.txt\n${{ runner.temp }}/stream-provider-classdir-objects/objects/**/*.o\n"
+          "name": "protected-stream-classdir-objects-${{ github.sha }}",
+          "path": "${{ runner.temp }}/stream-provider-classdir-objects/receipt.json\n${{ runner.temp }}/stream-provider-classdir-objects/layout.json\n${{ runner.temp }}/stream-provider-classdir-objects/source-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/derived-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/baseline-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/commands.json\n${{ runner.temp }}/stream-provider-classdir-objects/baseline.config\n${{ runner.temp }}/stream-provider-classdir-objects/selected.config\n${{ runner.temp }}/stream-provider-classdir-objects/generated-autoconf.h\n${{ runner.temp }}/stream-provider-classdir-objects/ADMISSION.json\n${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stdout.txt\n${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stderr.txt\n${{ runner.temp }}/stream-provider-classdir-objects/objects/**/*.o\n",
+          "retention-days": 7
         }
       },
       {
-        "name": "Retain only the bounded admission-failure receipt",
         "if": "${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true' || steps.layout_admission.outputs.fallback == 'true') }}",
+        "name": "Retain only the bounded admission-failure receipt",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "protected-stream-classdir-objects-FAILED-${{ github.sha }}",
-          "retention-days": 7,
           "if-no-files-found": "error",
-          "path": "${{ runner.temp }}/stream-provider-classdir-objects/FAILED.json"
+          "name": "protected-stream-classdir-objects-FAILED-${{ github.sha }}",
+          "path": "${{ runner.temp }}/stream-provider-classdir-objects/FAILED.json",
+          "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 25
   },
   "jobId": "classdir-objects",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Bind reviewed immutable58 notification sources plus readonly allocating-TU probe59/375/11 programme to unchanged process/public bounds; retain all earlier programmes and add only two synthetic/source controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }

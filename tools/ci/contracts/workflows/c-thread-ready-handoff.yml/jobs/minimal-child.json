@@ -3,12 +3,11 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "One normal C build and five diagnostic observations",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "name": "One normal C build and five diagnostic observations",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -31,10 +30,10 @@
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_minimal tools.tests.test_c_thread_prefix tools.tests.test_c_thread_runtime tools.tests.test_c_thread_ready_handoff tools.tests.test_host_codec_funcrefs_native_products_reader tools.tests.test_host_codec_funcrefs_native_products -v\n"
       },
       {
-        "name": "Authenticate all five unchanged native products",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate all five unchanged native products",
         "run": "python3 -B tools/host_codec_funcrefs_native_products.py --output \"$RUNNER_TEMP/c-minimal-native\""
       },
       {
@@ -58,8 +57,8 @@
         "run": "python3 -B tools/diagnose_c_thread_ready_handoff.py --prepared \"$RUNNER_TEMP/c-minimal-native\" --output \"$RUNNER_TEMP/c-thread-minimal\""
       },
       {
-        "name": "Retain bounded public source, build, call and cleanup observations",
         "if": "always()",
+        "name": "Retain bounded public source, build, call and cleanup observations",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "name": "c-thread-ready-minimal-${{ github.sha }}",
@@ -67,11 +66,12 @@
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "minimal-child",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Review one fresh ordinary C build and five diagnostic observations on independently authenticated immutable v4 products, preserving old seventeen-call and historical diagnostics; no qualification claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-ready-handoff.yml"
 }

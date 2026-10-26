@@ -3,13 +3,12 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Fresh normal Flurl Refit application response-boundary programme",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 40,
     "env": {
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
+    "name": "Fresh normal Flurl Refit application response-boundary programme",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -38,15 +37,15 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
-          "cache-targets": true,
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
+          "cache-bin": false,
           "cache-on-failure": false,
-          "save-if": false
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -77,14 +76,14 @@
       },
       {
         "name": "Prepare the pinned compiler and current small closed-runtime adapters",
-        "shell": "bash",
-        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/edges-bindgen\"\nexport PATH=\"$RUNNER_TEMP/edges-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/edges-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/edges-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n"
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/edges-bindgen\"\nexport PATH=\"$RUNNER_TEMP/edges-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/edges-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/edges-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
+        "shell": "bash"
       },
       {
-        "name": "Authenticate five original native products without rebuilding",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate five original native products without rebuilding",
         "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/edges-native\""
       },
       {
@@ -92,21 +91,22 @@
         "run": "python3 -B tools/qualify_dotnet_http_library_edges.py --native \"$RUNNER_TEMP/edges-native\" --tools \"$RUNNER_TEMP/edges-tools\" --output \"$RUNNER_TEMP/http-library-edges\""
       },
       {
-        "name": "Retain bounded public original build and library evidence",
         "if": "always()",
+        "name": "Retain bounded public original build and library evidence",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "dotnet-http-library-edges-${{ github.sha }}",
-          "retention-days": 3,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/edges-native/*.json\n${{ runner.temp }}/edges-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/edges-tools/runtime-inputs.json\n${{ runner.temp }}/edges-tools/wasi-sdk.json\n${{ runner.temp }}/edges-tools/logs/**\n${{ runner.temp }}/http-library-edges/*.json\n${{ runner.temp }}/http-library-edges/generator-approval-required/*.json\n${{ runner.temp }}/http-library-edges/generator-approval-required/compiler.*.txt\n${{ runner.temp }}/http-library-edges/build/*.json\n${{ runner.temp }}/http-library-edges/build/compiler.*.txt\n${{ runner.temp }}/http-library-edges/build/component.wasm\n${{ runner.temp }}/http-library-edges/build/derived-*.dll\n${{ runner.temp }}/http-library-edges/build/executable-input-outputs/**\n${{ runner.temp }}/http-library-edges/build/package/**\n${{ runner.temp }}/http-library-edges/build/logs/**\n${{ runner.temp }}/http-library-edges/outside/compiler-*/logs/**\n${{ runner.temp }}/http-library-edges/node/*.json\n${{ runner.temp }}/http-library-edges/node/controls/*.json\n"
+          "name": "dotnet-http-library-edges-${{ github.sha }}",
+          "path": "${{ runner.temp }}/edges-native/*.json\n${{ runner.temp }}/edges-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/edges-tools/runtime-inputs.json\n${{ runner.temp }}/edges-tools/wasi-sdk.json\n${{ runner.temp }}/edges-tools/logs/**\n${{ runner.temp }}/http-library-edges/*.json\n${{ runner.temp }}/http-library-edges/generator-approval-required/*.json\n${{ runner.temp }}/http-library-edges/generator-approval-required/compiler.*.txt\n${{ runner.temp }}/http-library-edges/build/*.json\n${{ runner.temp }}/http-library-edges/build/compiler.*.txt\n${{ runner.temp }}/http-library-edges/build/component.wasm\n${{ runner.temp }}/http-library-edges/build/derived-*.dll\n${{ runner.temp }}/http-library-edges/build/executable-input-outputs/**\n${{ runner.temp }}/http-library-edges/build/package/**\n${{ runner.temp }}/http-library-edges/build/logs/**\n${{ runner.temp }}/http-library-edges/outside/compiler-*/logs/**\n${{ runner.temp }}/http-library-edges/node/*.json\n${{ runner.temp }}/http-library-edges/node/controls/*.json\n",
+          "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 40
   },
   "jobId": "signed-boundaries",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Explicit review after real Refit truncated-body application failure: retain all original ten signed case oracles, both pre-entry denials, original provenance controls and frozen native source. Replace component-only replay with one normal isolated captured application compilation (original 40-minute compiler job bound), preserving SDK/library versions and execution budgets; add exact two-line application error handling plus two unchanged 404/500 regressions and two preimage controls. Historical baseline/before/coverage preserved; legacy workflows untouched.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-http-library-edges.yml"
 }

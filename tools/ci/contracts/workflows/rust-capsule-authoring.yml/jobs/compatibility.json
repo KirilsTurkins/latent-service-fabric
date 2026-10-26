@@ -7,7 +7,6 @@
     "name": "Signed Rust unsupported operation diagnostics",
     "needs": "authoring",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -60,21 +59,22 @@
         "run": "python3 tools/qualify_rust_compatibility.py --prepared-qualification \"$RUNNER_TEMP/rust-compatibility-prepared\" --output \"$RUNNER_TEMP/rust-compatibility\""
       },
       {
-        "name": "Retain bounded diagnostic evidence including failures",
         "if": "always()",
+        "name": "Retain bounded diagnostic evidence including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "rust-compatibility-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-compatibility/qualification.json\n${{ runner.temp }}/rust-compatibility/FAILED.json\n${{ runner.temp }}/rust-compatibility/capture.json\n${{ runner.temp }}/rust-compatibility/compatibility-execution-report.json\n${{ runner.temp }}/rust-compatibility/logs/**\n${{ runner.temp }}/rust-compatibility/build/*.json\n${{ runner.temp }}/rust-compatibility/build/logs/**\n${{ runner.temp }}/rust-compatibility/build/component.wasm\n${{ runner.temp }}/rust-compatibility/build/component.wit\n${{ runner.temp }}/rust-compatibility/node/workflow.json\n${{ runner.temp }}/rust-compatibility/node/FAILED.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "compatibility",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

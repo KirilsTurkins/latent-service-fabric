@@ -5,7 +5,6 @@
   "definition": {
     "name": "Exact original broker I/O owners and selected stream source",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -26,15 +25,15 @@
         "name": "Restore compiled Rust dependencies",
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
-          "cache-targets": true,
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
+          "cache-bin": false,
           "cache-on-failure": false,
-          "save-if": false
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -42,21 +41,22 @@
         "run": "python3 tools/qualify_stream_kernel_owners.py --output \"$RUNNER_TEMP/stream-kernel-owners\""
       },
       {
-        "name": "Retain bounded owner execution and compile failures",
         "if": "always()",
+        "name": "Retain bounded owner execution and compile failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "stream-kernel-owners-${{ github.sha }}",
           "path": "${{ runner.temp }}/stream-kernel-owners/",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "owners",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "One reviewed owner-only job; preserve all existing commands/cases/limits, execute nine exact broker cases and compile stream integration, no kernel/SDK/engine build.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-owners.yml"
 }

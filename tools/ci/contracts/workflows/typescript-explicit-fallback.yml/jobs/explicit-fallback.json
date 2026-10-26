@@ -4,12 +4,11 @@
   "coverage": {},
   "definition": {
     "name": "One normal TypeScript component and four actual fallback outcomes",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "permissions": {
-      "contents": "read",
-      "actions": "read"
+      "actions": "read",
+      "contents": "read"
     },
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -56,10 +55,10 @@
         "run": "python3 -B tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-fallback-tools\""
       },
       {
-        "name": "Authenticate the existing five native products with original compilation lineage",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate the existing five native products with original compilation lineage",
         "run": "python3 -B tools/c_thread_admission_native_products.py --output \"$RUNNER_TEMP/typescript-fallback-native\""
       },
       {
@@ -67,21 +66,22 @@
         "run": "python3 -B tools/qualify_typescript_explicit_fallback.py \\\n  --native-products \"$RUNNER_TEMP/typescript-fallback-native\" \\\n  --tools \"$RUNNER_TEMP/typescript-fallback-tools\" --output \"$RUNNER_TEMP/typescript-fallback\"\n"
       },
       {
-        "name": "Retain source construction outcomes and actual retirement observations",
         "if": "always()",
+        "name": "Retain source construction outcomes and actual retirement observations",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "typescript-explicit-fallback-${{ github.sha }}",
-          "retention-days": 7,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/typescript-fallback-native/*.json\n${{ runner.temp }}/typescript-fallback/*.json\n${{ runner.temp }}/typescript-fallback/*.log\n${{ runner.temp }}/typescript-fallback/logs/**\n${{ runner.temp }}/typescript-fallback/build/*.json\n${{ runner.temp }}/typescript-fallback/build/*.wit\n${{ runner.temp }}/typescript-fallback/build/wit/**\n${{ runner.temp }}/typescript-fallback/build/component.wasm\n${{ runner.temp }}/typescript-fallback/build/package/**\n${{ runner.temp }}/typescript-fallback/build/logs/**\n${{ runner.temp }}/typescript-fallback/node/*.json\n${{ runner.temp }}/typescript-fallback/node/*.log\n${{ runner.temp }}/typescript-fallback/node/controls/**\n"
+          "name": "typescript-explicit-fallback-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-fallback-native/*.json\n${{ runner.temp }}/typescript-fallback/*.json\n${{ runner.temp }}/typescript-fallback/*.log\n${{ runner.temp }}/typescript-fallback/logs/**\n${{ runner.temp }}/typescript-fallback/build/*.json\n${{ runner.temp }}/typescript-fallback/build/*.wit\n${{ runner.temp }}/typescript-fallback/build/wit/**\n${{ runner.temp }}/typescript-fallback/build/component.wasm\n${{ runner.temp }}/typescript-fallback/build/package/**\n${{ runner.temp }}/typescript-fallback/build/logs/**\n${{ runner.temp }}/typescript-fallback/node/*.json\n${{ runner.temp }}/typescript-fallback/node/*.log\n${{ runner.temp }}/typescript-fallback/node/controls/**\n",
+          "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "explicit-fallback",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "New twenty-minute owning campaign with one normal build and four original-budget explicit fallback uncaught fresh calls; no native or JavaScript engine build.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-explicit-fallback.yml"
 }

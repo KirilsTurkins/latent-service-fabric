@@ -3,12 +3,11 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Three retained C observations without qualification or compilation",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "name": "Three retained C observations without qualification or compilation",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -31,22 +30,22 @@
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_prefix -v\n"
       },
       {
-        "name": "Authenticate unchanged native products",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate unchanged native products",
         "run": "python3 -B tools/host_codec_native_products.py --output \"$RUNNER_TEMP/c-prefix-native\""
       },
       {
-        "name": "Restore original C component and observe at most three calls",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Restore original C component and observe at most three calls",
         "run": "python3 -B tools/diagnose_c_thread_prefix.py --prepared \"$RUNNER_TEMP/c-prefix-native\" --output \"$RUNNER_TEMP/c-prefix\""
       },
       {
-        "name": "Retain bounded original bytes and diagnostic observations",
         "if": "always()",
+        "name": "Retain bounded original bytes and diagnostic observations",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "name": "c-thread-prefix-${{ github.sha }}",
@@ -54,11 +53,12 @@
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "retained-prefix",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Bounded diagnostic-only three-call observation of immutable failed d928 C component using original7b native products; no guest/native compilation, no17-case qualification, retain original source/build/provenance and all physical/provider cleanup.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-prefix-diagnostic.yml"
 }

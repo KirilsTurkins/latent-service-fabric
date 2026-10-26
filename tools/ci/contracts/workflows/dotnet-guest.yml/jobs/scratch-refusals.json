@@ -3,13 +3,12 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Ordinary .NET filesystem refusals and fresh state",
-    "needs": "toolchain",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "name": "Ordinary .NET filesystem refusals and fresh state",
+    "needs": "toolchain",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -32,22 +31,22 @@
       {
         "uses": "dtolnay/rust-toolchain",
         "with": {
-          "targets": "wasm32-unknown-unknown",
-          "components": "rustfmt"
+          "components": "rustfmt",
+          "targets": "wasm32-unknown-unknown"
         }
       },
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
-          "cache-targets": true,
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
+          "cache-bin": false,
           "cache-on-failure": false,
-          "save-if": false
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -74,8 +73,8 @@
       },
       {
         "name": "Install the pinned native compiler and closed runtime",
-        "shell": "bash",
-        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-authoring-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-authoring-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n"
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-authoring-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-authoring-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
+        "shell": "bash"
       },
       {
         "name": "Build fresh NativeAOT component and execute six ordinary filesystem calls",
@@ -90,21 +89,22 @@
         "run": "python3 tools/qualify_dotnet_closed_filesystem.py --native-qualification \"$RUNNER_TEMP/dotnet-scratch-prepared\" --pure-scratch \"$RUNNER_TEMP/dotnet-scratch-refusals\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/dotnet-closed-filesystem\""
       },
       {
-        "name": "Retain bounded filesystem observations including failures",
         "if": "always()",
+        "name": "Retain bounded filesystem observations including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "dotnet-scratch-refusals-${{ github.sha }}",
           "path": "${{ runner.temp }}/dotnet-scratch-refusals/qualification.json\n${{ runner.temp }}/dotnet-scratch-refusals/FAILED.json\n${{ runner.temp }}/dotnet-scratch-refusals/compatibility-execution-report.json\n${{ runner.temp }}/dotnet-scratch-refusals/logs/**\n${{ runner.temp }}/dotnet-scratch-refusals/build/*.json\n${{ runner.temp }}/dotnet-scratch-refusals/build/component.wasm\n${{ runner.temp }}/dotnet-scratch-refusals/build/logs/**\n${{ runner.temp }}/dotnet-scratch-refusals/node/workflow.json\n${{ runner.temp }}/dotnet-scratch-refusals/node/FAILED.json\n${{ runner.temp }}/dotnet-scratch-refusals/node/controls/*.json\n${{ runner.temp }}/dotnet-scratch-refusals/build/derived-closed-filesystem-System.Private.CoreLib.dll\n${{ runner.temp }}/dotnet-closed-filesystem/qualified.json\n${{ runner.temp }}/dotnet-closed-filesystem/FAILED.json\n${{ runner.temp }}/dotnet-closed-filesystem/logs/**\n${{ runner.temp }}/dotnet-closed-filesystem/joined/build/*.json\n${{ runner.temp }}/dotnet-closed-filesystem/joined/build/derived-closed-filesystem-System.Private.CoreLib.dll\n${{ runner.temp }}/dotnet-closed-filesystem/joined/build/derived-task-wait-System.Private.CoreLib.dll\n${{ runner.temp }}/dotnet-closed-filesystem/joined/build/component.wasm\n${{ runner.temp }}/dotnet-closed-filesystem/joined/build/logs/**\n${{ runner.temp }}/dotnet-closed-filesystem/joined/node/workflow.json\n${{ runner.temp }}/dotnet-closed-filesystem/joined/node/FAILED.json\n${{ runner.temp }}/dotnet-closed-filesystem/joined/node/controls/*.json\n${{ runner.temp }}/dotnet-authoring-tools/logs/*.stdout.txt\n${{ runner.temp }}/dotnet-authoring-tools/logs/*.stderr.txt\n${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "scratch-refusals",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Repair authenticated closed-runtime-compile E0463 missing std/wasm32-unknown-unknown in actual installer-only0b97 run39517523039. Add only exact existing Rust1.97.1 wasm32 target and dependency-cache prerequisites from both maintained sibling jobs; all original workflow commands, conditions, budgets, upload paths and guest/native programme restore exactly. New source control fails original job and proves target/cache ordering and equality across all three installers.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

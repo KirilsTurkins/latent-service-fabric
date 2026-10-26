@@ -5,7 +5,6 @@
   "definition": {
     "name": "Compile exact Rust context utility and owned thread sysroot",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -20,8 +19,8 @@
         }
       },
       {
-        "uses": "KirilsTurkins/lsf-setup-node",
         "if": "${{ inputs.application-diagnostic }}",
+        "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
           "node-version": "24.19.0"
         }
@@ -35,15 +34,15 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
-          "cache-targets": true,
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
+          "cache-bin": false,
           "cache-on-failure": false,
-          "save-if": false
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -51,48 +50,49 @@
         "run": "python3 -m pip install -r tools/requirements.lock"
       },
       {
-        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "if": "${{ inputs.application-diagnostic }}",
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
       },
       {
-        "uses": "KirilsTurkins/lsf-setup-zig",
         "if": "${{ inputs.application-diagnostic }}",
+        "uses": "KirilsTurkins/lsf-setup-zig",
         "with": {
           "version": "0.16.0"
         }
       },
       {
-        "name": "Prepare the existing captured compiler isolation and binding tool",
         "if": "${{ inputs.application-diagnostic }}",
+        "name": "Prepare the existing captured compiler isolation and binding tool",
         "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/rust-thread-tools\"\necho \"$RUNNER_TEMP/rust-thread-tools\" >> \"$GITHUB_PATH\"\n"
       },
       {
-        "name": "Build the two exact owned compiler inputs once",
         "env": {
-          "EXPECTED_HEAD": "${{ github.sha }}",
-          "APPLICATION_DIAGNOSTIC": "${{ inputs.application-diagnostic || false }}"
+          "APPLICATION_DIAGNOSTIC": "${{ inputs.application-diagnostic || false }}",
+          "EXPECTED_HEAD": "${{ github.sha }}"
         },
+        "name": "Build the two exact owned compiler inputs once",
         "run": "arguments=()\nif [ \"$APPLICATION_DIAGNOSTIC\" = true ]; then\n  arguments+=(--application-diagnostic)\nfi\npython3 -B tools/compile_rust_owned_thread_inputs.py \\\n  --expected-head \"$EXPECTED_HEAD\" \\\n  --rust-bin \"$(dirname \"$(rustup which rustc)\")\" \\\n  --output \"$RUNNER_TEMP/rust-owned-thread-inputs\" \"${arguments[@]}\"\n"
       },
       {
-        "name": "Retain bounded source, tool, sysroot and actual failure logs",
         "if": "always()",
+        "name": "Retain bounded source, tool, sysroot and actual failure logs",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "error",
           "name": "rust-owned-thread-inputs-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-owned-thread-inputs/**",
-          "if-no-files-found": "error",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "compiler-inputs",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Use the existing pinned Node24.19 solely to execute the actual emitted guard controls in the owning compiler programme; all deadlines and artifact bounds are retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-owned-thread-inputs.yml"
 }

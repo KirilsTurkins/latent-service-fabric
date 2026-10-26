@@ -4,12 +4,11 @@
   "coverage": {},
   "definition": {
     "name": "Catalogue-free normal build and three signed default clients",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "permissions": {
-      "contents": "read",
-      "actions": "read"
+      "actions": "read",
+      "contents": "read"
     },
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -56,17 +55,17 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/catalogue-free-tools\""
       },
       {
-        "name": "Acquire only the authenticated existing source-bound engine and splicer",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Acquire only the authenticated existing source-bound engine and splicer",
         "run": "python3 -B tools/typescript_resource_runtime_inputs.py --output \"$RUNNER_TEMP/catalogue-free-engine\""
       },
       {
-        "name": "Acquire the exact operational HTTP authority native products",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Acquire the exact operational HTTP authority native products",
         "run": "python3 -B tools/http_tenant_native_products.py --output \"$RUNNER_TEMP/catalogue-free-native\""
       },
       {
@@ -74,21 +73,22 @@
         "run": "python3 -B tools/qualify_typescript_catalogue_free.py \\\n  --acquired \"$RUNNER_TEMP/catalogue-free-engine\" --native \"$RUNNER_TEMP/catalogue-free-native\" \\\n  --tools \"$RUNNER_TEMP/catalogue-free-tools\" --output \"$RUNNER_TEMP/catalogue-free-http\"\n"
       },
       {
-        "name": "Retain exact staged source inventory normal construction and real signed outcomes",
         "if": "always()",
+        "name": "Retain exact staged source inventory normal construction and real signed outcomes",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "typescript-catalogue-free-http-${{ github.sha }}",
-          "retention-days": 7,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/catalogue-free-native/*.json\n${{ runner.temp }}/catalogue-free-engine/acquisition.json\n${{ runner.temp }}/catalogue-free-http/*.json\n${{ runner.temp }}/catalogue-free-http/*.log\n${{ runner.temp }}/catalogue-free-http/catalogue-free-build-source/BUILD-SOURCE-INVENTORY.json\n${{ runner.temp }}/catalogue-free-http/build/*.json\n${{ runner.temp }}/catalogue-free-http/build/*.wit\n${{ runner.temp }}/catalogue-free-http/build/component.wasm\n${{ runner.temp }}/catalogue-free-http/build/package/**\n${{ runner.temp }}/catalogue-free-http/build/logs/**\n${{ runner.temp }}/catalogue-free-http/node/*.json\n${{ runner.temp }}/catalogue-free-http/node/*.log\n${{ runner.temp }}/catalogue-free-http/node/controls/**\n"
+          "name": "typescript-catalogue-free-http-${{ github.sha }}",
+          "path": "${{ runner.temp }}/catalogue-free-native/*.json\n${{ runner.temp }}/catalogue-free-engine/acquisition.json\n${{ runner.temp }}/catalogue-free-http/*.json\n${{ runner.temp }}/catalogue-free-http/*.log\n${{ runner.temp }}/catalogue-free-http/catalogue-free-build-source/BUILD-SOURCE-INVENTORY.json\n${{ runner.temp }}/catalogue-free-http/build/*.json\n${{ runner.temp }}/catalogue-free-http/build/*.wit\n${{ runner.temp }}/catalogue-free-http/build/component.wasm\n${{ runner.temp }}/catalogue-free-http/build/package/**\n${{ runner.temp }}/catalogue-free-http/build/logs/**\n${{ runner.temp }}/catalogue-free-http/node/*.json\n${{ runner.temp }}/catalogue-free-http/node/*.log\n${{ runner.temp }}/catalogue-free-http/node/controls/**\n",
+          "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "catalogue-free",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Qualify the exact normal TypeScript builder closure without optional catalogue/reference data; preserve selected source-bound engine/native products and three signed default-client gates.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-catalogue-free-http.yml"
 }

@@ -3,14 +3,13 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Private numeric frames for the authenticated failed Fetch component",
     "if": "${{ github.event_name == 'workflow_dispatch' && inputs.observe-failed-fetch }}",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 15,
+    "name": "Private numeric frames for the authenticated failed Fetch component",
     "permissions": {
-      "contents": "read",
-      "actions": "read"
+      "actions": "read",
+      "contents": "read"
     },
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -39,8 +38,8 @@
       {
         "uses": "KirilsTurkins/lsf-checkout",
         "with": {
-          "ref": "ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
-          "persist-credentials": false
+          "persist-credentials": false,
+          "ref": "ba62bf8f266e589971a03e496b18b8f2cb5e5d85"
         }
       },
       {
@@ -49,13 +48,13 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
-          "cache-targets": true,
+          "cache-all-crates": false,
           "cache-bin": false,
+          "cache-targets": true,
           "cache-workspace-crates": false,
-          "cache-all-crates": false
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -66,20 +65,20 @@
         "name": "Read the original failed component and bounded build documents",
         "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
-          "name": "typescript-signed-fetch-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
-          "run-id": 39247171188,
           "github-token": "${{ github.token }}",
-          "path": "${{ runner.temp }}/typescript-original-fetch"
+          "name": "typescript-signed-fetch-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
+          "path": "${{ runner.temp }}/typescript-original-fetch",
+          "run-id": 39247171188
         }
       },
       {
         "name": "Read the original exact-source native products",
         "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
-          "name": "typescript-fetch-native-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
-          "run-id": 39247171188,
           "github-token": "${{ github.token }}",
-          "path": "${{ runner.temp }}/typescript-original-native"
+          "name": "typescript-fetch-native-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
+          "path": "${{ runner.temp }}/typescript-original-native",
+          "run-id": 39247171188
         }
       },
       {
@@ -87,21 +86,22 @@
         "run": "chmod u+x \"$RUNNER_TEMP/typescript-original-native/native-binaries/\"*\npython3 -B \"$RUNNER_TEMP/diagnose-typescript-fetch.py\" --attempt \"$RUNNER_TEMP/typescript-original-fetch\" --native \"$RUNNER_TEMP/typescript-original-native\" --output \"$RUNNER_TEMP/typescript-fetch-frames\"\n"
       },
       {
-        "name": "Retain only closed observations and original public CLI rows",
         "if": "always()",
+        "name": "Retain only closed observations and original public CLI rows",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "typescript-fetch-private-frames-${{ github.sha }}",
           "path": "${{ runner.temp }}/typescript-fetch-frames/observation.json\n${{ runner.temp }}/typescript-fetch-frames/node/observation.json\n${{ runner.temp }}/typescript-fetch-frames/node/controls/*.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 15
   },
   "jobId": "fetch-failure-frames",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Install existing locked Python dependencies before the unchanged private replay controls on a fresh hosted interpreter.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

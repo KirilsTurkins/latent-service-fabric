@@ -5,7 +5,6 @@
   "definition": {
     "name": "Actual byte-copy retirement, failed lowering and original finite limits",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 35,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -25,15 +24,15 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
-          "cache-targets": true,
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
+          "cache-bin": false,
           "cache-on-failure": false,
-          "save-if": false
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -49,21 +48,22 @@
         "run": "cargo build --locked -p latentd --bin latentd --message-format=json-render-diagnostics > \"$RUNNER_TEMP/random-byte-lowering/native-build.jsonl\"\ntest \"$(stat --format=%s \"$RUNNER_TEMP/random-byte-lowering/native-build.jsonl\")\" -le 16777216\npython3 - <<'PY'\nimport hashlib,json,os,pathlib,shutil,subprocess\nroot=pathlib.Path(os.environ['RUNNER_TEMP'])/'random-byte-lowering'\nrows=[json.loads(line) for line in (root/'native-build.jsonl').read_bytes().splitlines()]\nartifacts=[r for r in rows if r.get('reason')=='compiler-artifact' and r['target']['name']=='latentd' and r.get('executable')]\nassert len(artifacts)==1\nartifact=artifacts[0];binary=pathlib.Path(artifact['executable'])\nassert binary.is_file() and not binary.is_symlink() and 0<binary.stat().st_size<=512*1024**2\nassert artifact['features']==[] and artifact['profile']=={'opt_level':'0','debuginfo':0,'debug_assertions':True,'overflow_checks':True,'test':False}\nsource=os.environ['GITHUB_SHA']\nassert subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()==source\nassert not subprocess.check_output(['git','status','--porcelain']).strip()\nbinary_hash='sha256:'+hashlib.file_digest(binary.open('rb'),'sha256').hexdigest()\nshutil.copyfile(binary,root/'latentd')\ninfo={'schemaVersion':'latent.random-byte-lowering.host.v1','compiledSource':source,'sourceArchive':{'sha256':'sha256:'+hashlib.sha256((root/'source.tar.gz').read_bytes()).hexdigest(),'bytes':(root/'source.tar.gz').stat().st_size},'binary':{'sha256':binary_hash,'bytes':binary.stat().st_size},'features':artifact['features'],'profile':artifact['profile'],'ordinaryDefaults':True,'hermetic':False,'implicitCompilerInputs':'not-attested','tests':json.loads((root/'tests.json').read_bytes())}\n(root/'current-host.json').write_text(json.dumps(info,indent=2)+'\\n')\nPY\n"
       },
       {
-        "name": "Retain bounded actual evidence including compiler failures",
         "if": "always()",
+        "name": "Retain bounded actual evidence including compiler failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "error",
           "name": "random-byte-lowering-${{ github.sha }}",
           "path": "${{ runner.temp }}/random-byte-lowering/",
-          "if-no-files-found": "error",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 35
   },
   "jobId": "bytes",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Exact bounded17-case native random target plus one source-attributed normal host binary, preserving all15 original named cases and concurrent16-call limit; concrete bytes only retire after generated canonical allocation/copy, including failures.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/random-bytes-lowering-reference.yml"
 }

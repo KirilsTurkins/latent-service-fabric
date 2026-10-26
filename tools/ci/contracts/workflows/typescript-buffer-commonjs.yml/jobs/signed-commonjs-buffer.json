@@ -4,12 +4,11 @@
   "coverage": {},
   "definition": {
     "name": "One normally captured compiled and signed six-case CommonJS component",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 25,
     "permissions": {
-      "contents": "read",
-      "actions": "read"
+      "actions": "read",
+      "contents": "read"
     },
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -49,10 +48,10 @@
         "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
       },
       {
-        "name": "Check real captured module layout and read-only typecheck namespace",
         "env": {
           "LSF_REQUIRE_COMPILER_ISOLATION": "1"
         },
+        "name": "Check real captured module layout and read-only typecheck namespace",
         "run": "python3 -B -m unittest tools.tests.test_typescript_module_layout -v"
       },
       {
@@ -64,17 +63,17 @@
         "run": "python3 -B tools/typescript_buffer_commonjs_fixture.py --output \"$RUNNER_TEMP/typescript-buffer-commonjs-capture\""
       },
       {
-        "name": "Authenticate existing five-product host without rebuilding",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate existing five-product host without rebuilding",
         "run": "python3 -B tools/java_phase_native_products.py --output \"$RUNNER_TEMP/typescript-buffer-native\""
       },
       {
-        "name": "Authenticate completed engine stage and original source splicer",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate completed engine stage and original source splicer",
         "run": "python3 -B tools/prepare_typescript_commonjs_inputs.py --output \"$RUNNER_TEMP/typescript-buffer-compiler\""
       },
       {
@@ -82,21 +81,22 @@
         "run": "python3 -B tools/qualify_typescript_buffer_commonjs.py \\\n  --project \"$RUNNER_TEMP/typescript-buffer-commonjs-capture/application\" \\\n  --prepared-native \"$RUNNER_TEMP/typescript-buffer-native\" \\\n  --tools \"$RUNNER_TEMP/typescript-buffer-tools\" \\\n  --engine \"$RUNNER_TEMP/typescript-buffer-compiler/products/engine\" \\\n  --splicer \"$RUNNER_TEMP/typescript-buffer-compiler/products/splicer\" \\\n  --output \"$RUNNER_TEMP/typescript-buffer\"\n"
       },
       {
-        "name": "Retain actual inputs commands signed receipts and physical retirement",
         "if": "always()",
+        "name": "Retain actual inputs commands signed receipts and physical retirement",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "typescript-buffer-commonjs-${{ github.sha }}",
-          "retention-days": 7,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/typescript-buffer-native/*.json\n${{ runner.temp }}/typescript-buffer-compiler/*.json\n${{ runner.temp }}/typescript-buffer-compiler/products/**\n${{ runner.temp }}/typescript-buffer/*.json\n${{ runner.temp }}/typescript-buffer-commonjs-capture/**\n${{ runner.temp }}/typescript-buffer/build/*.json\n${{ runner.temp }}/typescript-buffer/build/*.js\n${{ runner.temp }}/typescript-buffer/build/*.wit\n${{ runner.temp }}/typescript-buffer/build/*.wasm\n${{ runner.temp }}/typescript-buffer/build/package/**\n${{ runner.temp }}/typescript-buffer/build/logs/**\n${{ runner.temp }}/typescript-buffer/node/*.json\n${{ runner.temp }}/typescript-buffer/node/node-stderr.txt\n${{ runner.temp }}/typescript-buffer/node/controls/**\n${{ runner.temp }}/typescript-buffer/node/signed/**\n"
+          "name": "typescript-buffer-commonjs-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-buffer-native/*.json\n${{ runner.temp }}/typescript-buffer-compiler/*.json\n${{ runner.temp }}/typescript-buffer-compiler/products/**\n${{ runner.temp }}/typescript-buffer/*.json\n${{ runner.temp }}/typescript-buffer-commonjs-capture/**\n${{ runner.temp }}/typescript-buffer/build/*.json\n${{ runner.temp }}/typescript-buffer/build/*.js\n${{ runner.temp }}/typescript-buffer/build/*.wit\n${{ runner.temp }}/typescript-buffer/build/*.wasm\n${{ runner.temp }}/typescript-buffer/build/package/**\n${{ runner.temp }}/typescript-buffer/build/logs/**\n${{ runner.temp }}/typescript-buffer/node/*.json\n${{ runner.temp }}/typescript-buffer/node/node-stderr.txt\n${{ runner.temp }}/typescript-buffer/node/controls/**\n${{ runner.temp }}/typescript-buffer/node/signed/**\n",
+          "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 25
   },
   "jobId": "signed-commonjs-buffer",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Use the exact corrected successful OWN be356 producer through the unchanged shared selector; preserve all fourteen mandatory source controls and six signed cases.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-buffer-commonjs.yml"
 }

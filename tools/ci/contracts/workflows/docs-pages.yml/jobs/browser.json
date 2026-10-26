@@ -50,7 +50,7 @@
   },
   "jobId": "browser",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced. Union Root state-renderer/narrow-fixture assertions and every current-main owner/artifact/qualification obligation; retire only the duplicate obsolete source builder in favor of maintained byte-authenticated npm v4. Root reviewed obligation: Generate the authenticated local braces archive before the retained browser install; preserve all publication checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/docs-pages.yml"
 }

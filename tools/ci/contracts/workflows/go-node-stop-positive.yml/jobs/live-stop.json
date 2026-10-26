@@ -5,7 +5,6 @@
   "definition": {
     "name": "Actual accepted timer wait SIGTERM retirement and fresh restart",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 25,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -32,10 +31,10 @@
         "run": "python3 -m unittest tools.tests.test_go_node_stop tools.tests.test_go_node_stop_positive tools.tests.test_go_node_stop_v7 tools.tests.test_go_node_stop_timer_observer tools.tests.test_java_phase_native_products tools.tests.test_node_startup_observation tools.tests.test_go_node_stop_restart -v"
       },
       {
-        "name": "Authenticate and restore the distinct V7 native products",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate and restore the distinct V7 native products",
         "run": "python3 tools/java_phase_native_products.py --output \"$RUNNER_TEMP/go-node-stop-v7-products\""
       },
       {
@@ -57,21 +56,22 @@
         "run": "python3 tools/qualify_go_node_stop_v7.py --source-commit \"${{ github.sha }}\" --native-products \"$RUNNER_TEMP/go-node-stop-v7-products\" --output \"$RUNNER_TEMP/go-node-stop-positive\""
       },
       {
-        "name": "Retain bounded source timer and shutdown evidence including failures",
         "if": "always()",
+        "name": "Retain bounded source timer and shutdown evidence including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "go-node-stop-positive-${{ github.sha }}",
           "path": "${{ runner.temp }}/go-node-stop-v7-products/*.json\n${{ runner.temp }}/go-node-stop-positive/*.json\n${{ runner.temp }}/go-node-stop-positive/logs/**\n${{ runner.temp }}/go-node-stop-positive/build/*.json\n${{ runner.temp }}/go-node-stop-positive/build/logs/**\n${{ runner.temp }}/go-node-stop-positive/build/component.wasm\n${{ runner.temp }}/go-node-stop-positive/pending/*.json\n${{ runner.temp }}/go-node-stop-positive/pending/controls/*.json\n${{ runner.temp }}/go-node-stop-positive/drain/*.json\n${{ runner.temp }}/go-node-stop-positive/drain/controls/*.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 25
   },
   "jobId": "live-stop",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-node-stop-positive.yml"
 }

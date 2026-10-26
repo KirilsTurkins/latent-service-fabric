@@ -5,7 +5,6 @@
   "definition": {
     "name": "TLS transport and owned process controls without a guest or provider build",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 5,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -32,21 +31,22 @@
         "run": "python3 -B tools/qualify_http_tls_peer.py --output \"$RUNNER_TEMP/http-tls-peer\""
       },
       {
-        "name": "Retain public certificate and bounded transport receipts",
         "if": "always()",
+        "name": "Retain public certificate and bounded transport receipts",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "http-tls-peer-${{ github.sha }}",
           "path": "${{ runner.temp }}/http-tls-peer/*.json\n${{ runner.temp }}/http-tls-peer/certificate.der\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 5
   },
   "jobId": "fixture",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Preserve six original TLS controls and existing commands; add bounded TLS subprocess input refusal and actual process TLS12/TLS13/domain/name-refusal/reap controls without native or guest compilation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/http-tls-fixture.yml"
 }

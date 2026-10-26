@@ -4,12 +4,11 @@
   "coverage": {},
   "definition": {
     "name": "Signed root settlement accepted callbacks and opaque work",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "permissions": {
-      "contents": "read",
-      "actions": "read"
+      "actions": "read",
+      "contents": "read"
     },
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -52,10 +51,10 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/root-lifecycle-tools\""
       },
       {
-        "name": "Acquire exact historical import engine and original native tools",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Acquire exact historical import engine and original native tools",
         "run": "python3 -B tools/typescript_fetch_replay_inputs.py --output \"$RUNNER_TEMP/root-lifecycle-original\""
       },
       {
@@ -63,21 +62,22 @@
         "run": "python3 -B tools/qualify_typescript_root_lifecycle.py --acquired \"$RUNNER_TEMP/root-lifecycle-original\" --tools \"$RUNNER_TEMP/root-lifecycle-tools\" --output \"$RUNNER_TEMP/root-lifecycle\""
       },
       {
-        "name": "Retain exact source compiler results real contacts and physical ownership",
         "if": "always()",
+        "name": "Retain exact source compiler results real contacts and physical ownership",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "typescript-root-lifecycle-${{ github.sha }}",
           "path": "${{ runner.temp }}/root-lifecycle-original/acquisition.json\n${{ runner.temp }}/root-lifecycle/*.json\n${{ runner.temp }}/root-lifecycle/build/*.json\n${{ runner.temp }}/root-lifecycle/build/*.wit\n${{ runner.temp }}/root-lifecycle/build/component.wasm\n${{ runner.temp }}/root-lifecycle/build/package/**\n${{ runner.temp }}/root-lifecycle/build/logs/\n${{ runner.temp }}/root-lifecycle/node/*.json\n${{ runner.temp }}/root-lifecycle/node/controls/\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "fetch-conformance",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Separate ordinary TypeScript root/accepted-work signed programme: explicit bounded LOG capability, original owner budgets, known reaped results and physical cleanup/fresh state. Three refusal/source controls; all existing workflows/test cases unchanged. No actual signed or whole-ticket claim yet.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-root-lifecycle.yml"
 }

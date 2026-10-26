@@ -7,7 +7,6 @@
     "name": "Rebuilt Rust standard stdio and signed ordinary libraries",
     "needs": "authoring",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -64,21 +63,22 @@
         "run": "python3 tools/qualify_rust_standard_logging.py --prepared-qualification \"$RUNNER_TEMP/rust-stdio-prepared\" --output \"$RUNNER_TEMP/rust-standard-stdio\""
       },
       {
-        "name": "Retain bounded stdio observations including failed attempts",
         "if": "always()",
+        "name": "Retain bounded stdio observations including failed attempts",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "rust-standard-stdio-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-stdio-reference/qualification.json\n${{ runner.temp }}/rust-standard-stdio/qualification.json\n${{ runner.temp }}/rust-standard-stdio/FAILED.json\n${{ runner.temp }}/rust-standard-stdio/*-capture.json\n${{ runner.temp }}/rust-standard-stdio/logs/**\n${{ runner.temp }}/rust-standard-stdio/*-std/*.json\n${{ runner.temp }}/rust-standard-stdio/*-std/logs/**\n${{ runner.temp }}/rust-standard-stdio/*-build/*.json\n${{ runner.temp }}/rust-standard-stdio/*-build/logs/**\n${{ runner.temp }}/rust-standard-stdio/*-build/component.wasm\n${{ runner.temp }}/rust-standard-stdio/*-node/workflow.json\n${{ runner.temp }}/rust-standard-stdio/*-node/FAILED.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "standard-stdio",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

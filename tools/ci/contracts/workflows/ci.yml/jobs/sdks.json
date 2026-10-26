@@ -20,9 +20,9 @@
     }
   },
   "definition": {
+    "if": "needs.profile.outputs.profile == 'full'",
     "name": "Cross-language SDK surfaces",
     "needs": "profile",
-    "if": "needs.profile.outputs.profile == 'full'",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -40,30 +40,30 @@
       {
         "uses": "dtolnay/rust-toolchain",
         "with": {
-          "toolchain": "1.97.1",
-          "components": "rustfmt"
+          "components": "rustfmt",
+          "toolchain": "1.97.1"
         }
       },
       {
         "uses": "KirilsTurkins/lsf-setup-go",
         "with": {
-          "go-version": "1.27.3",
-          "cache-dependency-path": "sdk/go/go.sum"
+          "cache-dependency-path": "sdk/go/go.sum",
+          "go-version": "1.27.3"
         }
       },
       {
         "uses": "KirilsTurkins/lsf-buf-setup-action",
         "with": {
-          "version": "1.72.0",
-          "github_token": "${{ github.token }}"
+          "github_token": "${{ github.token }}",
+          "version": "1.72.0"
         }
       },
       {
         "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
-          "node-version": "24.19.0",
           "cache": "npm",
-          "cache-dependency-path": "sdk/typescript-client/package-lock.json"
+          "cache-dependency-path": "sdk/typescript-client/package-lock.json",
+          "node-version": "24.19.0"
         }
       },
       {
@@ -87,36 +87,36 @@
       },
       {
         "name": "Install the checksum-pinned Java-compatible Gradle",
-        "timeout-minutes": 5,
+        "run": "set -euo pipefail\nversion=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle\"])')\"\nchecksum=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle_sha256\"])')\"\ndestination=\"${RUNNER_TEMP}/lsf-gradle\"\nmkdir -p \"$destination\"\ncurl --fail --location --proto '=https' --tlsv1.2 --connect-timeout 15 --max-time 180 \\\n  \"https://services.gradle.org/distributions/gradle-${version}-bin.zip\" -o \"$destination/gradle.zip\"\nprintf '%s  %s\\n' \"$checksum\" \"$destination/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$destination/gradle.zip\" -d \"$destination\"\necho \"$destination/gradle-${version}/bin\" >> \"$GITHUB_PATH\"\n",
         "shell": "bash",
-        "run": "set -euo pipefail\nversion=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle\"])')\"\nchecksum=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle_sha256\"])')\"\ndestination=\"${RUNNER_TEMP}/lsf-gradle\"\nmkdir -p \"$destination\"\ncurl --fail --location --proto '=https' --tlsv1.2 --connect-timeout 15 --max-time 180 \\\n  \"https://services.gradle.org/distributions/gradle-${version}-bin.zip\" -o \"$destination/gradle.zip\"\nprintf '%s  %s\\n' \"$checksum\" \"$destination/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$destination/gradle.zip\" -d \"$destination\"\necho \"$destination/gradle-${version}/bin\" >> \"$GITHUB_PATH\"\n"
+        "timeout-minutes": 5
       },
       {
         "name": "Qualify the Java 25 Gradle build",
-        "timeout-minutes": 10,
+        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/java-sdk\"\ngit rev-parse HEAD | tee \"$RUNNER_TEMP/java-sdk/gradle.log\"\nuname -srm | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 sdk/java-client/tools/java_toolchain.py check | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ngradle --version | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ntimeout 540 gradle --no-daemon --console=plain -p sdk/java-client clean check 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\necho 'Gradle qualification passed' | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\n",
         "shell": "bash",
-        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/java-sdk\"\ngit rev-parse HEAD | tee \"$RUNNER_TEMP/java-sdk/gradle.log\"\nuname -srm | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 sdk/java-client/tools/java_toolchain.py check | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ngradle --version | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ntimeout 540 gradle --no-daemon --console=plain -p sdk/java-client clean check 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\necho 'Gradle qualification passed' | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\n"
+        "timeout-minutes": 10
       },
       {
-        "name": "Validate SDK surfaces",
-        "shell": "bash",
         "env": {
           "EXPECTED_TYPESCRIPT_VERSION": "7.0.2"
         },
-        "run": "set -euo pipefail\ntools/validate_sdks.sh 2>&1 | tee \"$RUNNER_TEMP/java-sdk/sdk.log\"\nsha256sum sdk/java-client/build/latent-java-client.jar | tee \"$RUNNER_TEMP/java-sdk/jar.sha256\"\npython3 sdk/java-client/tools/java_toolchain.py classes sdk/java-client/build/latent-java-client.jar > \"$RUNNER_TEMP/java-sdk/jar-classfile.json\"\ntest \"$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)\" = \\\n  \"Version ${EXPECTED_TYPESCRIPT_VERSION}\"\n"
+        "name": "Validate SDK surfaces",
+        "run": "set -euo pipefail\ntools/validate_sdks.sh 2>&1 | tee \"$RUNNER_TEMP/java-sdk/sdk.log\"\nsha256sum sdk/java-client/build/latent-java-client.jar | tee \"$RUNNER_TEMP/java-sdk/jar.sha256\"\npython3 sdk/java-client/tools/java_toolchain.py classes sdk/java-client/build/latent-java-client.jar > \"$RUNNER_TEMP/java-sdk/jar-classfile.json\"\ntest \"$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)\" = \\\n  \"Version ${EXPECTED_TYPESCRIPT_VERSION}\"\n",
+        "shell": "bash"
       },
       {
         "name": "Verify additive transaction client definitions and bounded Rust bridges",
         "run": "python3 tools/transaction_client_models.py --check\npython3 tools/transaction_client_conversions.py --check\npython3 tools/transaction_client_rust_shapes.py --check\npython3 -m unittest tools.tests.test_transaction_client_models\n"
       },
       {
-        "name": "Retain Java SDK qualification diagnostics",
         "if": "always()",
+        "name": "Retain Java SDK qualification diagnostics",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "java-sdk-qualification-${{ github.sha }}",
           "path": "${{ runner.temp }}/java-sdk/",
-          "if-no-files-found": "warn",
           "retention-days": 14
         }
       }
@@ -124,7 +124,7 @@
   },
   "jobId": "sdks",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

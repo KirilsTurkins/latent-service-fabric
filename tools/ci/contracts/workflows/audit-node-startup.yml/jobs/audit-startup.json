@@ -3,14 +3,13 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
     "name": "Original node startup and five finite audit boundaries",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 25,
-    "env": {
-      "PYTHONDONTWRITEBYTECODE": "1",
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0"
-    },
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -30,15 +29,15 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
-          "cache-targets": true,
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
+          "cache-bin": false,
           "cache-on-failure": false,
-          "save-if": false
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -54,21 +53,22 @@
         "run": "python3 -B tools/qualify_audit_node_startup.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/audit-node-startup\""
       },
       {
-        "name": "Retain exact source inputs and bounded actual compiler/control failures",
         "if": "always()",
+        "name": "Retain exact source inputs and bounded actual compiler/control failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "error",
           "name": "audit-node-startup-${{ github.sha }}",
           "path": "${{ runner.temp }}/audit-node-startup/",
-          "if-no-files-found": "error",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 25
   },
   "jobId": "audit-startup",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "One exact original-bank libcontrol list/run plus one currentCLI/node build and five actual startup boundaries; retain bounded startup stderr without guest/std/193 rebuild.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/audit-node-startup.yml"
 }

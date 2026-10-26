@@ -3,14 +3,13 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
     "name": "Compile exact standard WASI backend and bounded resource controls",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
-    "env": {
-      "PYTHONDONTWRITEBYTECODE": "1",
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0"
-    },
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -33,15 +32,15 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
-          "cache-targets": true,
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
+          "cache-bin": false,
           "cache-on-failure": false,
-          "save-if": false
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -56,8 +55,8 @@
       },
       {
         "name": "Execute only the actual bounded options and fields implementation controls",
-        "shell": "bash",
-        "run": "rustc --edition=2021 --test tools/fixtures/wasi-http-request-options/control.rs -o \"$RUNNER_TEMP/rust-http-resource-controls\"\n\"$RUNNER_TEMP/rust-http-resource-controls\" --test-threads=1 | tee \"$RUNNER_TEMP/rust-http-resource-controls.txt\"\n"
+        "run": "rustc --edition=2021 --test tools/fixtures/wasi-http-request-options/control.rs -o \"$RUNNER_TEMP/rust-http-resource-controls\"\n\"$RUNNER_TEMP/rust-http-resource-controls\" --test-threads=1 | tee \"$RUNNER_TEMP/rust-http-resource-controls.txt\"\n",
+        "shell": "bash"
       },
       {
         "name": "Acquire only locked SDK compiler sources before offline compilation",
@@ -68,21 +67,22 @@
         "run": "python3 -B tools/rust_wasi_http_inputs.py --output \"$RUNNER_TEMP/rust-http-runtime\""
       },
       {
-        "name": "Retain bounded compiler observations without build cache or signer credentials",
         "if": "always()",
+        "name": "Retain bounded compiler observations without build cache or signer credentials",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "rust-wasi-http-backend-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-http-resource-controls.txt\n${{ runner.temp }}/rust-http-runtime/INSTALL-COMPLETE.json\n${{ runner.temp }}/rust-http-runtime/INSTALL-FAILED.json\n${{ runner.temp }}/rust-http-runtime/source-inputs.json\n${{ runner.temp }}/rust-http-runtime/reference.wit.json\n${{ runner.temp }}/rust-http-runtime/adapter.wit.json\n${{ runner.temp }}/rust-http-runtime/raw-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/rust-wasi-http-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/component-composer/wac\n${{ runner.temp }}/rust-http-runtime/logs/*.stdout.txt\n${{ runner.temp }}/rust-http-runtime/logs/*.stderr.txt",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "standard-backend",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Retain the pinned public composer for prepared backend consumers",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-runtime.yml"
 }

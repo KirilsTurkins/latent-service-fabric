@@ -4,12 +4,11 @@
   "coverage": {},
   "definition": {
     "name": "One normal component and six signed SmartBuffer cases",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 25,
     "permissions": {
-      "contents": "read",
-      "actions": "read"
+      "actions": "read",
+      "contents": "read"
     },
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "name": "Start the fixed aggregate setup and programme clock",
@@ -49,28 +48,29 @@
         "run": "python3 - <<'PY'\nimport os,sys,time\nfrom pathlib import Path\nfrom tools.build_process import run_bounded_result\nfrom tools.build_observation import build_environment\nroot=Path(os.environ['RUNNER_TEMP'])/'typescript-smart-buffer-bootstrap'\nroot.mkdir(mode=0o700)\nstarted=int(os.environ['LSF_SMART_BUFFER_STARTED_NS'])\ncommands=[\n  [sys.executable,'-m','pip','install','--requirement','tools/requirements.lock'],\n  ['sudo','apt-get','update'],\n  ['sudo','apt-get','install','--yes','bubblewrap'],\n  ['sudo','sysctl','-w','kernel.apparmor_restrict_unprivileged_userns=0'],\n  [sys.executable,'tools/typescript_capsule.py','install-tools',str(Path(os.environ['RUNNER_TEMP'])/'typescript-smart-buffer-tools')],\n]\nfor command in commands:\n  remaining=1200-(time.time_ns()-started)/1e9-10\n  if remaining<=0:raise RuntimeError('smart-buffer-bootstrap-deadline')\n  result=run_bounded_result(command,Path.cwd(),build_environment(root),timeout_seconds=min(300,remaining),max_output_bytes=4*1024**2)\n  sys.stdout.buffer.write(result.stdout);sys.stderr.buffer.write(result.stderr)\n  if result.returncode:raise RuntimeError('smart-buffer-bootstrap-command')\nPY\n"
       },
       {
-        "name": "Validate prerequisites compile once and execute six fresh signed calls",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Validate prerequisites compile once and execute six fresh signed calls",
         "run": "python3 -B tools/qualify_typescript_smart_buffer.py \\\n  --tools \"$RUNNER_TEMP/typescript-smart-buffer-tools\" \\\n  --output \"$RUNNER_TEMP/typescript-smart-buffer-public\"\n"
       },
       {
-        "name": "Retain only fixed public collector files",
         "if": "always()",
+        "name": "Retain only fixed public collector files",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "typescript-smart-buffer-${{ github.sha }}",
-          "retention-days": 7,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/typescript-smart-buffer-public/RESULT.json\n${{ runner.temp }}/typescript-smart-buffer-public/FAILED.json\n${{ runner.temp }}/typescript-smart-buffer-public/COMMANDS.json\n${{ runner.temp }}/typescript-smart-buffer-public/INPUTS.json\n${{ runner.temp }}/typescript-smart-buffer-public/PROJECT-SOURCE.json\n${{ runner.temp }}/typescript-smart-buffer-public/CAPTURE.json\n${{ runner.temp }}/typescript-smart-buffer-public/APPLICATION-LOCK.json\n${{ runner.temp }}/typescript-smart-buffer-public/NPM-GRAPH.json\n${{ runner.temp }}/typescript-smart-buffer-public/DEPENDENCY-MANIFEST.json\n${{ runner.temp }}/typescript-smart-buffer-public/DEPENDENCY-LOCK.json\n${{ runner.temp }}/typescript-smart-buffer-public/BUILD-LOGS.json\n${{ runner.temp }}/typescript-smart-buffer-public/PUBLIC-MANIFEST.json\n${{ runner.temp }}/typescript-smart-buffer-public/INVOCATIONS.json\n${{ runner.temp }}/typescript-smart-buffer-public/RETIREMENTS.json\n${{ runner.temp }}/typescript-smart-buffer-public/STARTUP.json\n${{ runner.temp }}/typescript-smart-buffer-public/SHUTDOWN.json\n${{ runner.temp }}/typescript-smart-buffer-public/source-controls.stdout.txt\n${{ runner.temp }}/typescript-smart-buffer-public/source-controls.stderr.txt\n${{ runner.temp }}/typescript-smart-buffer-public/normal-build.stdout.txt\n${{ runner.temp }}/typescript-smart-buffer-public/normal-build.stderr.txt\n${{ runner.temp }}/typescript-smart-buffer-public/BUILD-COMPLETE.json\n${{ runner.temp }}/typescript-smart-buffer-public/BUILD-FAILED.json\n${{ runner.temp }}/typescript-smart-buffer-public/build-observation.json\n${{ runner.temp }}/typescript-smart-buffer-public/source-inputs.json\n${{ runner.temp }}/typescript-smart-buffer-public/recipe-inputs.json\n${{ runner.temp }}/typescript-smart-buffer-public/package-inputs.json\n${{ runner.temp }}/typescript-smart-buffer-public/package-source.json\n${{ runner.temp }}/typescript-smart-buffer-public/bindings.json\n${{ runner.temp }}/typescript-smart-buffer-public/compiler-containment.json\n${{ runner.temp }}/typescript-smart-buffer-public/typescript-runtime-selection.json\n${{ runner.temp }}/typescript-smart-buffer-public/standard-runtime-selection.json\n${{ runner.temp }}/typescript-smart-buffer-public/typescript-buffer-selection.json\n${{ runner.temp }}/typescript-smart-buffer-public/typescript-standard-global-types.json\n${{ runner.temp }}/typescript-smart-buffer-public/application-dependencies.json\n${{ runner.temp }}/typescript-smart-buffer-public/npm-inputs.json\n${{ runner.temp }}/typescript-smart-buffer-public/bundle-selected-inputs.json\n${{ runner.temp }}/typescript-smart-buffer-public/compatibility-report.json\n${{ runner.temp }}/typescript-smart-buffer-public/compatibility-context.json\n${{ runner.temp }}/typescript-smart-buffer-public/component.wasm\n${{ runner.temp }}/typescript-smart-buffer-public/application.mjs\n${{ runner.temp }}/typescript-smart-buffer-public/generated-bindings.js\n${{ runner.temp }}/typescript-smart-buffer-public/probe-main.ts\n${{ runner.temp }}/typescript-smart-buffer-public/probe-dependency.ts\n${{ runner.temp }}/typescript-smart-buffer-public/probe-world.wit\n"
+          "name": "typescript-smart-buffer-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-smart-buffer-public/RESULT.json\n${{ runner.temp }}/typescript-smart-buffer-public/FAILED.json\n${{ runner.temp }}/typescript-smart-buffer-public/COMMANDS.json\n${{ runner.temp }}/typescript-smart-buffer-public/INPUTS.json\n${{ runner.temp }}/typescript-smart-buffer-public/PROJECT-SOURCE.json\n${{ runner.temp }}/typescript-smart-buffer-public/CAPTURE.json\n${{ runner.temp }}/typescript-smart-buffer-public/APPLICATION-LOCK.json\n${{ runner.temp }}/typescript-smart-buffer-public/NPM-GRAPH.json\n${{ runner.temp }}/typescript-smart-buffer-public/DEPENDENCY-MANIFEST.json\n${{ runner.temp }}/typescript-smart-buffer-public/DEPENDENCY-LOCK.json\n${{ runner.temp }}/typescript-smart-buffer-public/BUILD-LOGS.json\n${{ runner.temp }}/typescript-smart-buffer-public/PUBLIC-MANIFEST.json\n${{ runner.temp }}/typescript-smart-buffer-public/INVOCATIONS.json\n${{ runner.temp }}/typescript-smart-buffer-public/RETIREMENTS.json\n${{ runner.temp }}/typescript-smart-buffer-public/STARTUP.json\n${{ runner.temp }}/typescript-smart-buffer-public/SHUTDOWN.json\n${{ runner.temp }}/typescript-smart-buffer-public/source-controls.stdout.txt\n${{ runner.temp }}/typescript-smart-buffer-public/source-controls.stderr.txt\n${{ runner.temp }}/typescript-smart-buffer-public/normal-build.stdout.txt\n${{ runner.temp }}/typescript-smart-buffer-public/normal-build.stderr.txt\n${{ runner.temp }}/typescript-smart-buffer-public/BUILD-COMPLETE.json\n${{ runner.temp }}/typescript-smart-buffer-public/BUILD-FAILED.json\n${{ runner.temp }}/typescript-smart-buffer-public/build-observation.json\n${{ runner.temp }}/typescript-smart-buffer-public/source-inputs.json\n${{ runner.temp }}/typescript-smart-buffer-public/recipe-inputs.json\n${{ runner.temp }}/typescript-smart-buffer-public/package-inputs.json\n${{ runner.temp }}/typescript-smart-buffer-public/package-source.json\n${{ runner.temp }}/typescript-smart-buffer-public/bindings.json\n${{ runner.temp }}/typescript-smart-buffer-public/compiler-containment.json\n${{ runner.temp }}/typescript-smart-buffer-public/typescript-runtime-selection.json\n${{ runner.temp }}/typescript-smart-buffer-public/standard-runtime-selection.json\n${{ runner.temp }}/typescript-smart-buffer-public/typescript-buffer-selection.json\n${{ runner.temp }}/typescript-smart-buffer-public/typescript-standard-global-types.json\n${{ runner.temp }}/typescript-smart-buffer-public/application-dependencies.json\n${{ runner.temp }}/typescript-smart-buffer-public/npm-inputs.json\n${{ runner.temp }}/typescript-smart-buffer-public/bundle-selected-inputs.json\n${{ runner.temp }}/typescript-smart-buffer-public/compatibility-report.json\n${{ runner.temp }}/typescript-smart-buffer-public/compatibility-context.json\n${{ runner.temp }}/typescript-smart-buffer-public/component.wasm\n${{ runner.temp }}/typescript-smart-buffer-public/application.mjs\n${{ runner.temp }}/typescript-smart-buffer-public/generated-bindings.js\n${{ runner.temp }}/typescript-smart-buffer-public/probe-main.ts\n${{ runner.temp }}/typescript-smart-buffer-public/probe-dependency.ts\n${{ runner.temp }}/typescript-smart-buffer-public/probe-world.wit\n",
+          "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 25
   },
   "jobId": "smart-buffer",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Bind normal3package capture, required3zeroskip sourcecontrols, originalABI inputselectors and fullsixcase/retirement programme; explicitlyfetch570classicbaseline and retainonlyfixedpublicartifacts.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-smart-buffer.yml"
 }

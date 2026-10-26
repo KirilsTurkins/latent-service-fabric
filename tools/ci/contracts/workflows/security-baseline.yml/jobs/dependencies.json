@@ -20,15 +20,10 @@
     }
   },
   "definition": {
+    "if": "needs.scope.outputs.dependencies == 'true'",
     "name": "SDK advisories ${{ matrix.ref }}",
     "needs": "scope",
-    "if": "needs.scope.outputs.dependencies == 'true'",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 7,
-    "strategy": {
-      "fail-fast": false,
-      "matrix": "${{ fromJSON(needs.scope.outputs.matrix) }}"
-    },
     "steps": [
       {
         "name": "Check out scanner controls",
@@ -42,9 +37,9 @@
         "name": "Check out scan input",
         "uses": "KirilsTurkins/lsf-checkout",
         "with": {
-          "ref": "${{ matrix.ref }}",
           "path": "source",
-          "persist-credentials": false
+          "persist-credentials": false,
+          "ref": "${{ matrix.ref }}"
         }
       },
       {
@@ -58,11 +53,16 @@
         "name": "Inventory all manifests and query current OSV data without builds or installs",
         "run": "python3 controls/tools/security_scan.py dependencies --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
       }
-    ]
+    ],
+    "strategy": {
+      "fail-fast": false,
+      "matrix": "${{ fromJSON(needs.scope.outputs.matrix) }}"
+    },
+    "timeout-minutes": 7
   },
   "jobId": "dependencies",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Query dependency advisories without an automatic package-manager cache; retain every scan and manifest check.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/security-baseline.yml"
 }

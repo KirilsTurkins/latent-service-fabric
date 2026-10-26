@@ -6,7 +6,6 @@
     "name": "Bounded provider real-peer ownership controls",
     "needs": "parser",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 60,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -26,12 +25,12 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
-          "cache-targets": true,
           "cache-bin": false,
-          "cache-workspace-crates": false
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -43,21 +42,22 @@
         "run": "python3 tools/qualify_host_stream_tls_provider.py --output \"$RUNNER_TEMP/host-tls-provider-reference\" --source-commit \"${{ github.sha }}\""
       },
       {
-        "name": "Retain bounded source-bound provider evidence",
         "if": "always()",
+        "name": "Retain bounded source-bound provider evidence",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "host-tls-provider-reference-${{ github.sha }}",
           "path": "${{ runner.temp }}/host-tls-provider-reference/receipt.json\n${{ runner.temp }}/host-tls-provider-reference/cargo.stdout.log\n${{ runner.temp }}/host-tls-provider-reference/cargo.stderr.log\n${{ runner.temp }}/host-tls-provider-reference/tests.stdout.log\n${{ runner.temp }}/host-tls-provider-reference/tests.stderr.log\n${{ runner.temp }}/host-tls-provider-reference/list.stdout.log\n${{ runner.temp }}/host-tls-provider-reference/ignored.stdout.log\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 60
   },
   "jobId": "provider",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Retain the existing bounded Cargo JSON diagnostic stdout alongside stderr without changing execution or resource limits",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-stream-tls-parser.yml"
 }

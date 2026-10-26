@@ -5,7 +5,6 @@
   "definition": {
     "name": "Closed CLR metadata and two resource tenant lifecycles",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -24,20 +23,20 @@
         "run": "python3 -m pip install -r tools/requirements.lock\npython3 -B -m unittest tools.tests.test_dotnet_resource_tenants tools.tests.test_resource_tenant_isolation -v\n"
       },
       {
-        "name": "Authenticate fixed historical normal native products before executable restore",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate fixed historical normal native products before executable restore",
         "run": "gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12255531553 > \"$RUNNER_TEMP/dotnet-resource-native-producer.json\"\npython3 -B tools/qualify_resource_tenants.py --verify-native-producer \"$RUNNER_TEMP/dotnet-resource-native-producer.json\"\n"
       },
       {
         "name": "Restore the exact a4 normal native products",
         "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
-          "name": "sdk-native-products-a4f05f3f243889cc7ba7a0404bdc76afec32d3c2",
-          "run-id": 39400186766,
           "github-token": "${{ github.token }}",
-          "path": "${{ runner.temp }}/dotnet-resource-native"
+          "name": "sdk-native-products-a4f05f3f243889cc7ba7a0404bdc76afec32d3c2",
+          "path": "${{ runner.temp }}/dotnet-resource-native",
+          "run-id": 39400186766
         }
       },
       {
@@ -47,28 +46,29 @@
         }
       },
       {
-        "name": "Recompose original cores and require normal signed resource tenant lifecycles",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Recompose original cores and require normal signed resource tenant lifecycles",
         "run": "python3 -B tools/qualify_dotnet_resource_tenants.py \\\n  --native \"$RUNNER_TEMP/dotnet-resource-native\" \\\n  --native-producer \"$RUNNER_TEMP/dotnet-resource-native-producer.json\" \\\n  --output \"$RUNNER_TEMP/dotnet-resource-tenants\"\n"
       },
       {
-        "name": "Retain fixed public ancestry derivation and actual node observations",
         "if": "always()",
+        "name": "Retain fixed public ancestry derivation and actual node observations",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "dotnet-resource-tenants-${{ github.sha }}",
-          "retention-days": 3,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/dotnet-resource-native-producer.json\n${{ runner.temp }}/dotnet-resource-tenants/qualified.json\n${{ runner.temp }}/dotnet-resource-tenants/FAILED.json\n${{ runner.temp }}/dotnet-resource-tenants/originals/acquisition.json\n${{ runner.temp }}/dotnet-resource-tenants/originals/original/*.json\n${{ runner.temp }}/dotnet-resource-tenants/originals/original/component.wasm\n${{ runner.temp }}/dotnet-resource-tenants/public-original/build/*.json\n${{ runner.temp }}/dotnet-resource-tenants/public-original/build/component.wasm\n${{ runner.temp }}/dotnet-resource-tenants/public-original/build/wit/**/*.wit\n${{ runner.temp }}/dotnet-resource-tenants/build-evidence/*.json\n${{ runner.temp }}/dotnet-resource-tenants/commands/*.json\n${{ runner.temp }}/dotnet-resource-tenants/commands/*.wac\n${{ runner.temp }}/dotnet-resource-tenants/commands/logs/**\n${{ runner.temp }}/dotnet-resource-tenants/coupled/qualified.json\n${{ runner.temp }}/dotnet-resource-tenants/coupled/FAILED.json\n${{ runner.temp }}/dotnet-resource-tenants/coupled/logs/**\n${{ runner.temp }}/dotnet-resource-tenants/coupled/examples-controls/*.json\n${{ runner.temp }}/dotnet-resource-tenants/coupled/foreign-controls/*.json\n${{ runner.temp }}/dotnet-resource-tenants/coupled/signed/my-greeting/build-observation.json\n"
+          "name": "dotnet-resource-tenants-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-resource-native-producer.json\n${{ runner.temp }}/dotnet-resource-tenants/qualified.json\n${{ runner.temp }}/dotnet-resource-tenants/FAILED.json\n${{ runner.temp }}/dotnet-resource-tenants/originals/acquisition.json\n${{ runner.temp }}/dotnet-resource-tenants/originals/original/*.json\n${{ runner.temp }}/dotnet-resource-tenants/originals/original/component.wasm\n${{ runner.temp }}/dotnet-resource-tenants/public-original/build/*.json\n${{ runner.temp }}/dotnet-resource-tenants/public-original/build/component.wasm\n${{ runner.temp }}/dotnet-resource-tenants/public-original/build/wit/**/*.wit\n${{ runner.temp }}/dotnet-resource-tenants/build-evidence/*.json\n${{ runner.temp }}/dotnet-resource-tenants/commands/*.json\n${{ runner.temp }}/dotnet-resource-tenants/commands/*.wac\n${{ runner.temp }}/dotnet-resource-tenants/commands/logs/**\n${{ runner.temp }}/dotnet-resource-tenants/coupled/qualified.json\n${{ runner.temp }}/dotnet-resource-tenants/coupled/FAILED.json\n${{ runner.temp }}/dotnet-resource-tenants/coupled/logs/**\n${{ runner.temp }}/dotnet-resource-tenants/coupled/examples-controls/*.json\n${{ runner.temp }}/dotnet-resource-tenants/coupled/foreign-controls/*.json\n${{ runner.temp }}/dotnet-resource-tenants/coupled/signed/my-greeting/build-observation.json\n",
+          "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "tenants",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Fixed public member ranges and compiler-record preimages, existing normal codec/closed composition, actual new metadata-only package/sign/admit seven-call tenant programme under unchanged limits; retain bounded public originals/derivation/node outcomes and exclude credentials/binary tool caches.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-resource-tenant-reference.yml"
 }

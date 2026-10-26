@@ -5,7 +5,6 @@
   "definition": {
     "name": "Actual ordinary SMTP and verified guest TLS over declared TCP",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 45,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -33,12 +32,12 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
           "cache-bin": false,
+          "cache-targets": true,
           "cache-workspace-crates": false,
-          "cache-targets": true
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -56,21 +55,22 @@
         "run": "python3 tools/qualify_go_smtp_tls_runtime.py --reference-go \"$RUNNER_TEMP/go-smtp-tls-tools/go/bin/go\" --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/go-smtp-tls-runtime\""
       },
       {
-        "name": "Retain bounded compiler and owner evidence including failures",
         "if": "always()",
+        "name": "Retain bounded compiler and owner evidence including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "go-smtp-tls-runtime-${{ github.sha }}",
           "path": "${{ runner.temp }}/go-smtp-tls-runtime/*.json\n${{ runner.temp }}/go-smtp-tls-runtime/*.log\n${{ runner.temp }}/go-smtp-tls-runtime/fixture/GO-SMTP-TLS-COMPILE.json\n${{ runner.temp }}/go-smtp-tls-runtime/fixture/go-runtime-transformations.json\n${{ runner.temp }}/go-smtp-tls-runtime/fixture/logs/**\n${{ runner.temp }}/go-smtp-tls-runtime/fixture/build/component.wasm\n${{ runner.temp }}/go-smtp-tls-runtime/fixture/build/component.wit\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 45
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-smtp-tls-runtime.yml"
 }

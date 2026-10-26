@@ -6,7 +6,6 @@
     "if": "${{ github.event_name != 'workflow_dispatch' || (!inputs.qualify-scratch-refusals && !inputs.replay-closed-filesystem) }}",
     "name": "Signed C standard clock and entropy profile",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 25,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -30,15 +29,15 @@
         "name": "Restore compiled Rust dependencies",
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
-          "cache-targets": true,
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
+          "cache-bin": false,
           "cache-on-failure": false,
-          "save-if": false
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -74,21 +73,22 @@
         "run": "python3 -m unittest tools.tests.test_c_compiled_resources\npython3 tools/qualify_c_standard_facilities.py --compiled-resources --native-directory \"$RUNNER_TEMP/c-standard-facilities/native-build/native\" --native-tuple \"$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json\" --zig \"$(command -v zig)\" --wit-bindgen \"$(command -v wit-bindgen)\" --wasm-tools \"$(command -v wasm-tools)\" --output \"$RUNNER_TEMP/c-compiled-resources\"\n"
       },
       {
-        "name": "Retain bounded C standard runtime proof including failures",
         "if": "always()",
+        "name": "Retain bounded C standard runtime proof including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "c-standard-facilities-${{ github.run_id }}",
           "path": "${{ runner.temp }}/c-standard-facilities/qualified.json\n${{ runner.temp }}/c-standard-facilities/FAILED.json\n${{ runner.temp }}/c-standard-facilities/logs/**\n${{ runner.temp }}/c-standard-facilities/builds/*/BUILD-COMPLETE.json\n${{ runner.temp }}/c-standard-facilities/builds/*/BUILD-FAILED.json\n${{ runner.temp }}/c-standard-facilities/builds/*/source-inputs.json\n${{ runner.temp }}/c-standard-facilities/builds/*/recipe-inputs.json\n${{ runner.temp }}/c-standard-facilities/builds/*/standard-runtime-selection.json\n${{ runner.temp }}/c-standard-facilities/builds/*/compatibility*.json\n${{ runner.temp }}/c-standard-facilities/builds/*/compiler-inputs.json\n${{ runner.temp }}/c-standard-facilities/builds/*/component.wasm\n${{ runner.temp }}/c-standard-facilities/builds/*/logs/**\n${{ runner.temp }}/c-standard-facilities/node/public-workflow.json\n${{ runner.temp }}/c-standard-logging/qualified.json\n${{ runner.temp }}/c-standard-logging/FAILED.json\n${{ runner.temp }}/c-standard-logging/logs/**\n${{ runner.temp }}/c-standard-logging/builds/*/BUILD-COMPLETE.json\n${{ runner.temp }}/c-standard-logging/builds/*/BUILD-FAILED.json\n${{ runner.temp }}/c-standard-logging/builds/*/compatibility*.json\n${{ runner.temp }}/c-standard-logging/builds/*/standard-runtime-selection.json\n${{ runner.temp }}/c-standard-logging/builds/*/component.wasm\n${{ runner.temp }}/c-standard-logging/builds/*/core-componentization-failed.wasm\n${{ runner.temp }}/c-standard-logging/builds/*/logs/**\n${{ runner.temp }}/c-standard-logging/node/public-workflow.json\n${{ runner.temp }}/c-standard-combined/qualified.json\n${{ runner.temp }}/c-standard-combined/FAILED.json\n${{ runner.temp }}/c-standard-combined/logs/**\n${{ runner.temp }}/c-standard-combined/builds/*/BUILD-COMPLETE.json\n${{ runner.temp }}/c-standard-combined/builds/*/BUILD-FAILED.json\n${{ runner.temp }}/c-standard-combined/builds/*/source-inputs.json\n${{ runner.temp }}/c-standard-combined/builds/*/recipe-inputs.json\n${{ runner.temp }}/c-standard-combined/builds/*/standard-runtime-selection.json\n${{ runner.temp }}/c-standard-combined/builds/*/compatibility*.json\n${{ runner.temp }}/c-standard-combined/builds/*/compiler-inputs.json\n${{ runner.temp }}/c-standard-combined/builds/*/component.wasm\n${{ runner.temp }}/c-standard-combined/builds/*/core-componentization-failed.wasm\n${{ runner.temp }}/c-standard-combined/builds/*/logs/**\n${{ runner.temp }}/c-standard-combined/node/public-workflow.json\n${{ runner.temp }}/c-compiled-resources/qualified.json\n${{ runner.temp }}/c-compiled-resources/FAILED.json\n${{ runner.temp }}/c-compiled-resources/logs/**\n${{ runner.temp }}/c-compiled-resources/builds/*/BUILD-COMPLETE.json\n${{ runner.temp }}/c-compiled-resources/builds/*/BUILD-FAILED.json\n${{ runner.temp }}/c-compiled-resources/builds/*/source-inputs.json\n${{ runner.temp }}/c-compiled-resources/builds/*/recipe-inputs.json\n${{ runner.temp }}/c-compiled-resources/builds/*/standard-runtime-selection.json\n${{ runner.temp }}/c-compiled-resources/builds/*/c-resources.json\n${{ runner.temp }}/c-compiled-resources/builds/*/resource-index.json\n${{ runner.temp }}/c-compiled-resources/builds/*/resources/objects/**\n${{ runner.temp }}/c-compiled-resources/builds/*/compatibility*.json\n${{ runner.temp }}/c-compiled-resources/builds/*/compiler-inputs.json\n${{ runner.temp }}/c-compiled-resources/builds/*/component.wasm\n${{ runner.temp }}/c-compiled-resources/builds/*/logs/**\n${{ runner.temp }}/c-compiled-resources/node/public-workflow.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 25
   },
   "jobId": "standard-facilities",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Reviewed closed-file C port: exact libc/overlay preimages and three materials, preserved argument and warning checks, default-off20min historical27 plus fresh33 replay without native rebuild; all original job bodies retained after exact manual guard normalization.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }

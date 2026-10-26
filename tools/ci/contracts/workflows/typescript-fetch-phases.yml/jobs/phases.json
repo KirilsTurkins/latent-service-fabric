@@ -4,12 +4,11 @@
   "coverage": {},
   "definition": {
     "name": "Signed default published clients wire reasons and root retirement",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "permissions": {
-      "contents": "read",
-      "actions": "read"
+      "actions": "read",
+      "contents": "read"
     },
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -80,17 +79,17 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/phase-tools\""
       },
       {
-        "name": "Acquire original import engine and compiler",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Acquire original import engine and compiler",
         "run": "python3 -B tools/typescript_fetch_replay_inputs.py --output \"$RUNNER_TEMP/phase-engine\""
       },
       {
-        "name": "Acquire the exact shared V7 native producer",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Acquire the exact shared V7 native producer",
         "run": "python3 -B tools/http_tenant_native_products.py --output \"$RUNNER_TEMP/phase-native\""
       },
       {
@@ -98,21 +97,22 @@
         "run": "python3 -B tools/qualify_typescript_fetch_phases.py --acquired \"$RUNNER_TEMP/phase-engine\" --native \"$RUNNER_TEMP/phase-native\" --tools \"$RUNNER_TEMP/phase-tools\" --output \"$RUNNER_TEMP/phase-fetch\""
       },
       {
-        "name": "Retain source identities original compiler results real contacts and physical owners",
         "if": "always()",
+        "name": "Retain source identities original compiler results real contacts and physical owners",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "typescript-fetch-phases-${{ github.sha }}",
           "path": "${{ runner.temp }}/phase-engine/acquisition.json\n${{ runner.temp }}/phase-native/*.json\n${{ runner.temp }}/phase-fetch/*.json\n${{ runner.temp }}/phase-fetch/build/*.json\n${{ runner.temp }}/phase-fetch/build/*.wit\n${{ runner.temp }}/phase-fetch/build/component.wasm\n${{ runner.temp }}/phase-fetch/build/package/**\n${{ runner.temp }}/phase-fetch/build/logs/\n${{ runner.temp }}/phase-fetch/node/*.json\n${{ runner.temp }}/phase-fetch/node/controls/\n${{ runner.temp }}/phase-fetch/node/missing-provider/\n${{ runner.temp }}/phase-fetch/node/tenant-isolation/\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "phases",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Use independently authenticated8f authority-correct products after actual1522 pre-entry nominal-owner denial. Add only immutable8f fetch before unchanged native-auth commands; removing that one step restores entire old job exactly, including all controls, deadlines, permissions and budgets. Retain77/36/6f5 source fetches and old helper receipts.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-fetch-phases.yml"
 }

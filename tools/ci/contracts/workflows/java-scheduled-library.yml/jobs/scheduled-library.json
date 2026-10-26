@@ -3,19 +3,18 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "One ordinary scheduled component and sixteen signed calls",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 45,
     "env": {
       "CARGO_BUILD_JOBS": "2",
       "CARGO_INCREMENTAL": "0",
       "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
       "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
+    "name": "One ordinary scheduled component and sixteen signed calls",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -46,16 +45,16 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
-          "shared-key": "host-contracts",
-          "key": "ubuntu-24.04",
-          "cache-targets": false,
-          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
           "cache-on-failure": false,
-          "save-if": false
+          "cache-targets": false,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
+          "save-if": false,
+          "shared-key": "host-contracts"
         }
       },
       {
@@ -72,33 +71,34 @@
         "name": "Restore untrusted source-pinned Java prepared inputs",
         "uses": "KirilsTurkins/lsf-cache/restore",
         "with": {
-          "path": "${{ runner.temp }}/compiler-archives/java-prepared",
-          "key": "java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}"
+          "key": "java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}",
+          "path": "${{ runner.temp }}/compiler-archives/java-prepared"
         }
       },
       {
-        "name": "Capture and compile the ordinary semaphore then run only sixteen signed calls",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Capture and compile the ordinary semaphore then run only sixteen signed calls",
         "run": "python3 -B tools/qualify_java_scheduled_library.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/java-scheduled-library\""
       },
       {
-        "name": "Retain only bounded public observations and source identities",
         "if": "always()",
+        "name": "Retain only bounded public observations and source identities",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "java-scheduled-library-${{ github.sha }}",
           "path": "${{ runner.temp }}/java-scheduled-library/receipt.json\n${{ runner.temp }}/java-scheduled-library/FAILED.json\n${{ runner.temp }}/java-scheduled-library/source-inputs.json\n${{ runner.temp }}/java-scheduled-library/commands.json\n${{ runner.temp }}/java-scheduled-library/normal-product.json\n${{ runner.temp }}/java-scheduled-library/component/src/Capsule.java\n${{ runner.temp }}/java-scheduled-library/component/wit/service.wit\n${{ runner.temp }}/java-scheduled-library/component/build/component.wasm\n${{ runner.temp }}/java-scheduled-library/component/FIBERS-COMPILE.json\n${{ runner.temp }}/java-scheduled-library/component/compiler-inputs.json\n${{ runner.temp }}/java-scheduled-library/component/library-inputs/receipts/capture.json\n${{ runner.temp }}/java-scheduled-library/component/library-inputs/receipts/java-classpath.json\n${{ runner.temp }}/java-scheduled-library/component/library-inputs/candidate.json\n${{ runner.temp }}/java-scheduled-library/component/library-inputs/application/java-dependencies.json\n${{ runner.temp }}/java-scheduled-library/component/library-inputs/application/java-resolved.lock.json\n${{ runner.temp }}/java-scheduled-library/component/library-inputs/application/latent.dependencies.json\n${{ runner.temp }}/java-scheduled-library/component/library-inputs/application/latent.dependencies.lock.json\n${{ runner.temp }}/java-scheduled-library/libraries/*.jar\n${{ runner.temp }}/java-scheduled-library/compiler/*.log\n${{ runner.temp }}/java-scheduled-library/compiler/*.command.json\n${{ runner.temp }}/java-scheduled-library/commands/logs/*.txt\n",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 45
   },
   "jobId": "scheduled-library",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Add one finite unchanged TimedSemaphore/default-CF/refusal programme; preserve every old worker fixture, case, command and guest limit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-scheduled-library.yml"
 }

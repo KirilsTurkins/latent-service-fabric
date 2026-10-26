@@ -4,7 +4,6 @@
   "coverage": {},
   "definition": {
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 45,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -39,28 +38,29 @@
         "run": "image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'\ncontainer=$(docker create \"$image\")\ntrap 'docker rm \"$container\"' EXIT\nprefix=\"$RUNNER_TEMP/local-service-cpython\"\nmkdir \"$prefix\"\ndocker cp \"$container:/usr/local/.\" \"$prefix\"\nprintf 'LSF_LOCAL_PYTHON_PREFIX=%s\\n' \"$prefix\" >> \"$GITHUB_ENV\"\n"
       },
       {
-        "name": "Diagnose only the original local-service fixture",
         "env": {
           "LSF_LOCAL_OUTPUT": "${{ runner.temp }}/local-service-refusal"
         },
+        "name": "Diagnose only the original local-service fixture",
         "run": "python tools/run_dev_local_service_refusal_ci.py --python-prefix \"$LSF_LOCAL_PYTHON_PREFIX\" --output \"$LSF_LOCAL_OUTPUT\""
       },
       {
-        "name": "Preserve original failure and bounded command evidence",
         "if": "always()",
+        "name": "Preserve original failure and bounded command evidence",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "error",
           "name": "local-service-refusal-${{ github.sha }}-${{ github.run_attempt }}",
           "path": "${{ runner.temp }}/local-service-refusal/public/NODE-LOCAL-SERVICE-REFUSAL.json\n${{ runner.temp }}/local-service-refusal/public/commands/*.stdout\n${{ runner.temp }}/local-service-refusal/public/commands/*.stderr\n${{ runner.temp }}/local-service-refusal/public/fixture/observation.json\n${{ runner.temp }}/local-service-refusal/public/fixture/node/probe.json\n${{ runner.temp }}/local-service-refusal/public/fixture/node/node-tests.json\n${{ runner.temp }}/local-service-refusal/public/source-node.json\n",
-          "if-no-files-found": "error",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 45
   },
   "jobId": "local-service",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Retire only original closed/quiescent post-Store registry backing; preserve actual header drop order and unknown/quarantined work. One current source-matched native regression, five cheap Python controls, then unchanged normal Rust builder and fourteen signed fixture cases. Old three native/config passes are historical only, not current-source equivalent; fixed ten named public command pairs only, no private scratch upload.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-local-service-refusal.yml"
 }

@@ -3,17 +3,16 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_prepared_tenants }}",
-    "name": "Retained Java component and exact prepared same-node HTTP tenants",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 15,
-    "permissions": {
-      "contents": "read",
-      "actions": "read"
-    },
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "if": "${{ github.event_name == 'workflow_dispatch' && inputs.java_http_prepared_tenants }}",
+    "name": "Retained Java component and exact prepared same-node HTTP tenants",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -44,17 +43,17 @@
         "run": "python3 -B -m unittest tools.tests.test_release_preparation_cli_native_products -v"
       },
       {
-        "name": "Authenticate the exact protocol-inclusive native producer without rebuilding",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate the exact protocol-inclusive native producer without rebuilding",
         "run": "python3 -B tools/release_preparation_cli_native_products.py --output \"$RUNNER_TEMP/java-prepared-native\""
       },
       {
-        "name": "Authenticate only fixed original Java component and signing inputs without compiling",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate only fixed original Java component and signing inputs without compiling",
         "run": "python3 -B tools/java_http_retained_component.py --output \"$RUNNER_TEMP/java-prepared-component\""
       },
       {
@@ -62,21 +61,22 @@
         "run": "python3 -B tools/qualify_java_http_prepared_tenants.py --prepared-native \"$RUNNER_TEMP/java-prepared-native\" --prepared-component \"$RUNNER_TEMP/java-prepared-component\" --output \"$RUNNER_TEMP/java-prepared-tenants\""
       },
       {
-        "name": "Retain bounded public evidence without keys, private credentials or repeated native binaries",
         "if": "always()",
+        "name": "Retain bounded public evidence without keys, private credentials or repeated native binaries",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "java-http-prepared-tenants-${{ github.sha }}",
           "path": "${{ runner.temp }}/java-prepared-native/retrieval.json\n${{ runner.temp }}/java-prepared-native/native-products.json\n${{ runner.temp }}/java-prepared-native/source-inputs.json\n${{ runner.temp }}/java-prepared-component/retrieval.json\n${{ runner.temp }}/java-prepared-tenants/qualification.json\n${{ runner.temp }}/java-prepared-tenants/FAILED.json\n${{ runner.temp }}/java-prepared-tenants/tenants/qualification.json\n${{ runner.temp }}/java-prepared-tenants/tenants/FAILED.json\n${{ runner.temp }}/java-prepared-tenants/tenants/*-preparation.json\n${{ runner.temp }}/java-prepared-tenants/tenants/*-case.json\n${{ runner.temp }}/java-prepared-tenants/tenants/*-retired.json\n${{ runner.temp }}/java-prepared-tenants/tenants/foreign-grants-not-inherited.json\n${{ runner.temp }}/java-prepared-tenants/tenants/final-owner.json\n${{ runner.temp }}/java-prepared-tenants/tenants/node-stopped.json\n${{ runner.temp }}/java-prepared-tenants/tenants/*-peer-stopped.json\n${{ runner.temp }}/java-prepared-tenants/tenants/final-products.json\n${{ runner.temp }}/java-prepared-tenants/tenants/examples-controls/*.json\n${{ runner.temp }}/java-prepared-tenants/tenants/foreign-controls/*.json\n${{ runner.temp }}/java-prepared-tenants/tenants/releases/release-set.json\n${{ runner.temp }}/java-prepared-tenants/tenants/releases/java-standard-http/build-observation.json",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 15
   },
   "jobId": "http-prepared-tenants",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Restore original21b wrapper/publicevidence/three originalcontrol bodies byteexact. Replace consumer acquisition/import with separatelyversioned6fd wrapper byteexact to actual successful4771 helper; same entiretuple/authalgorithm/134fences, no new12replay. Add3versionedcontrols separately, preserve originalunitcommand/defaultalljobs. Correct only stale human21b label to6fd; originalrawreceipt remains unchanged. Ownershipmoves onlyfrom nowundelegated21b CLI to exactversionedCLI.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-http-fiber-lifecycle.yml"
 }

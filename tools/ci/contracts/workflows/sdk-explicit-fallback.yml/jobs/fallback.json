@@ -3,18 +3,17 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Two normal components and eight exact fallback trap fresh outcomes",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "name": "Two normal components and eight exact fallback trap fresh outcomes",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
         "with": {
-          "persist-credentials": false,
-          "fetch-depth": 1
+          "fetch-depth": 1,
+          "persist-credentials": false
         }
       },
       {
@@ -56,10 +55,10 @@
         "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-http-tenant-tools\"\ntest ! -e \"$out\"\nmkdir \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/go.tar.gz\" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz\necho \"65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $out/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\ncurl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output \"$out/componentize-go.tar.gz\" https://github.com/bytecodealliance/componentize-go/releases/download/v0.4.3/componentize-go-linux-amd64.tar.gz\necho \"1061d845f550df5d9477612a7d458a31b1e2b8bdc95823704e42e5064deb0c52  $out/componentize-go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$out/componentize-go.tar.gz\" -C \"$out\" componentize-go\necho \"b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb  $out/componentize-go\" | sha256sum --check --strict\nchmod 755 \"$out/componentize-go\"\ntest \"$(\"$out/componentize-go\" --version)\" = 'componentize-go 0.4.3'\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\npython3 -B tools/go_guest/runtime.py --prepare-compiler \"$out/go\" --output \"$out/go-async\"\necho \"$out\" >> \"$GITHUB_PATH\"\necho \"$out/go-async/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
-        "name": "Authenticate existing three plus two products without a host build",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate existing three plus two products without a host build",
         "run": "python3 -B tools/c_thread_admission_native_products.py --output \"$RUNNER_TEMP/fallback-native\""
       },
       {
@@ -67,21 +66,22 @@
         "run": "python3 -B tools/qualify_sdk_explicit_fallback.py --native-products \"$RUNNER_TEMP/fallback-native\" --output \"$RUNNER_TEMP/sdk-explicit-fallback\""
       },
       {
-        "name": "Retain bounded public compiler signing and actual failure evidence",
         "if": "always()",
+        "name": "Retain bounded public compiler signing and actual failure evidence",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "sdk-explicit-fallback-${{ github.sha }}",
-          "retention-days": 1,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/sdk-explicit-fallback/*.json\n${{ runner.temp }}/sdk-explicit-fallback/*/build/*.json\n${{ runner.temp }}/sdk-explicit-fallback/*/build/*.wasm\n${{ runner.temp }}/sdk-explicit-fallback/*/build/*.wit\n${{ runner.temp }}/sdk-explicit-fallback/*/build/logs/**\n${{ runner.temp }}/sdk-explicit-fallback/*/node/*.json\n${{ runner.temp }}/sdk-explicit-fallback/*/node/controls/*.json\n${{ runner.temp }}/sdk-explicit-fallback/*.stdout\n${{ runner.temp }}/sdk-explicit-fallback/*.stderr\n${{ runner.temp }}/sdk-explicit-fallback/logs/**\n${{ runner.temp }}/sdk-explicit-fallback/*/build/wit/**"
+          "name": "sdk-explicit-fallback-${{ github.sha }}",
+          "path": "${{ runner.temp }}/sdk-explicit-fallback/*.json\n${{ runner.temp }}/sdk-explicit-fallback/*/build/*.json\n${{ runner.temp }}/sdk-explicit-fallback/*/build/*.wasm\n${{ runner.temp }}/sdk-explicit-fallback/*/build/*.wit\n${{ runner.temp }}/sdk-explicit-fallback/*/build/logs/**\n${{ runner.temp }}/sdk-explicit-fallback/*/node/*.json\n${{ runner.temp }}/sdk-explicit-fallback/*/node/controls/*.json\n${{ runner.temp }}/sdk-explicit-fallback/*.stdout\n${{ runner.temp }}/sdk-explicit-fallback/*.stderr\n${{ runner.temp }}/sdk-explicit-fallback/logs/**\n${{ runner.temp }}/sdk-explicit-fallback/*/build/wit/**",
+          "retention-days": 1
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "fallback",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Reviewed finite explicit C/Go fallback after actual native Unsupported; two normal captured builds and eight signed outcomes with original budgets/retirement, no native build and no old27/33 replay.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/sdk-explicit-fallback.yml"
 }

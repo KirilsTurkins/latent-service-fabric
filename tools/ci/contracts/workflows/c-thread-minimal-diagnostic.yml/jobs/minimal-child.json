@@ -3,12 +3,11 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "One normal C build and five diagnostic observations",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "name": "One normal C build and five diagnostic observations",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -31,10 +30,10 @@
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_c_thread_minimal tools.tests.test_c_thread_prefix -v\n"
       },
       {
-        "name": "Authenticate all five unchanged native products",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate all five unchanged native products",
         "run": "python3 -B tools/host_codec_native_products.py --output \"$RUNNER_TEMP/c-minimal-native\""
       },
       {
@@ -58,8 +57,8 @@
         "run": "python3 -B tools/diagnose_c_thread_minimal.py --prepared \"$RUNNER_TEMP/c-minimal-native\" --output \"$RUNNER_TEMP/c-thread-minimal\""
       },
       {
-        "name": "Retain bounded public source, build, call and cleanup observations",
         "if": "always()",
+        "name": "Retain bounded public source, build, call and cleanup observations",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "name": "c-thread-minimal-${{ github.sha }}",
@@ -67,11 +66,12 @@
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "minimal-child",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Diagnostic-only one ordinary C build and five raw prefix/minimal/original observations; original17 programme and runtime unchanged, exact original7b native cohort, no native build or qualification claim.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-thread-minimal-diagnostic.yml"
 }

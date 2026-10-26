@@ -3,14 +3,13 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Fresh signed concrete C filesystem Unsupported results",
     "if": "${{ github.event_name == 'workflow_dispatch' && inputs.replay-closed-filesystem }}",
+    "name": "Fresh signed concrete C filesystem Unsupported results",
     "permissions": {
-      "contents": "read",
-      "actions": "read"
+      "actions": "read",
+      "contents": "read"
     },
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -49,10 +48,10 @@
         "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
           "artifact-ids": "12235113319",
-          "run-id": 39354843145,
           "github-token": "${{ github.token }}",
           "merge-multiple": true,
-          "path": "${{ runner.temp }}/c-closed-original"
+          "path": "${{ runner.temp }}/c-closed-original",
+          "run-id": 39354843145
         }
       },
       {
@@ -60,21 +59,22 @@
         "run": "python3 -B tools/qualify_c_closed_filesystem.py --native \"$RUNNER_TEMP/c-closed-original\" --output \"$RUNNER_TEMP/c-closed-filesystem\""
       },
       {
-        "name": "Retain bounded public provenance and actual API results including failures",
         "if": "always()",
+        "name": "Retain bounded public provenance and actual API results including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "c-closed-filesystem-${{ github.sha }}",
           "path": "${{ runner.temp }}/c-closed-filesystem/*.json\n${{ runner.temp }}/c-closed-filesystem/logs/**\n${{ runner.temp }}/c-closed-filesystem/build/*.json\n${{ runner.temp }}/c-closed-filesystem/build/logs/**\n${{ runner.temp }}/c-closed-filesystem/build/component.wasm\n${{ runner.temp }}/c-closed-filesystem/node/workflow.json\n${{ runner.temp }}/c-closed-filesystem/node/FAILED.json\n${{ runner.temp }}/c-closed-filesystem/node/controls/*.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "closed-filesystem",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Reviewed closed-file C port: exact libc/overlay preimages and three materials, preserved argument and warning checks, default-off20min historical27 plus fresh33 replay without native rebuild; all original job bodies retained after exact manual guard normalization.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }

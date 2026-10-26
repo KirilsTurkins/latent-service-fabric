@@ -29,4 +29,8 @@ Snapshots come from the exact fork Git objects. Their hashes use LF line endings
 official PowerShell installer's Microsoft Authenticode signature without Git
 newline conversion.
 
+Action definitions are stored with a `.snapshot` suffix as inventory data. The
+graph verifier parses them explicitly, while static workflow checks continue to
+scan executable workflows and local action definitions.
+
 The repository security scan covers these exact action graphs in addition to LSF package locks. GitHub alerts on the default `release` branch remain a separate branch state; this maintenance targets `development`.

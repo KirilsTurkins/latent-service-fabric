@@ -6,7 +6,6 @@
     "name": "Signed transitive Java resource bytes streams and clock longs",
     "needs": "compiler-component",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -35,8 +34,8 @@
       },
       {
         "name": "Install only the pinned ordinary Java component compiler",
-        "shell": "bash",
-        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n"
+        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash"
       },
       {
         "name": "Read only this run's verified normal native products",
@@ -59,21 +58,22 @@
         "run": "python3 tools/qualify_java_resources.py --native-qualification \"$RUNNER_TEMP/java-scratch-prepared\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" --output \"$RUNNER_TEMP/java-resource-conformance\""
       },
       {
-        "name": "Retain public source resource provenance actual results and cleanup",
         "if": "always()",
+        "name": "Retain public source resource provenance actual results and cleanup",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "java-resource-conformance-${{ github.sha }}",
           "path": "${{ runner.temp }}/java-resource-conformance/qualified.json\n${{ runner.temp }}/java-resource-conformance/FAILED.json\n${{ runner.temp }}/java-resource-conformance/logs/**\n${{ runner.temp }}/java-resource-conformance/build/*.json\n${{ runner.temp }}/java-resource-conformance/build/component.wasm\n${{ runner.temp }}/java-resource-conformance/build/compiler-logs/**\n${{ runner.temp }}/java-resource-conformance/build/logs/**\n${{ runner.temp }}/java-resource-conformance/compiler/compiler-cache-selection.json\n${{ runner.temp }}/java-resource-conformance/compiler/compiler-acquisition/*-java-to-c.log\n${{ runner.temp }}/java-resource-conformance/compiler/compiler-acquisition/*-java-to-c.command.json\n${{ runner.temp }}/java-resource-conformance/node/workflow.json\n${{ runner.temp }}/java-resource-conformance/node/FAILED.json\n${{ runner.temp }}/java-resource-conformance/node/controls/*.json",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "resource-conformance",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Retain the failed compiler-cache acquisition java-to-c log and command that the actual resource job omitted; preserve every command, bound and qualification outcome.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

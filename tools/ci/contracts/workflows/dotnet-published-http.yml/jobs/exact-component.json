@@ -6,7 +6,6 @@
     "if": "(github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic",
     "name": "Original captured Flurl Refit component with corrected progress records",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -33,35 +32,36 @@
         "run": "python3 -B -m unittest tools.tests.test_dotnet_published_http_replay tools.tests.test_sdk_native_products_reader -v"
       },
       {
-        "name": "Authenticate the same five native products without rebuilding",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate the same five native products without rebuilding",
         "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/published-native\""
       },
       {
-        "name": "Execute all original signed library outcomes without recompiling the component",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Execute all original signed library outcomes without recompiling the component",
         "run": "python3 -B tools/replay_dotnet_published_http.py --native \"$RUNNER_TEMP/published-native\" --output \"$RUNNER_TEMP/published-replay\""
       },
       {
-        "name": "Retain public build ancestry and actual signed replay evidence",
         "if": "always()",
+        "name": "Retain public build ancestry and actual signed replay evidence",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "dotnet-published-http-replay-${{ github.sha }}",
-          "retention-days": 3,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/published-native/*.json\n${{ runner.temp }}/published-replay/*.json\n${{ runner.temp }}/published-replay/node/*.json\n${{ runner.temp }}/published-replay/node/controls/*.json\n${{ runner.temp }}/published-replay/original/published-http/FAILED.json\n${{ runner.temp }}/published-replay/original/published-http/catalogue-free-source.json\n${{ runner.temp }}/published-replay/original/published-http/node/FAILED.json\n${{ runner.temp }}/published-replay/original/published-http/build/*.json\n"
+          "name": "dotnet-published-http-replay-${{ github.sha }}",
+          "path": "${{ runner.temp }}/published-native/*.json\n${{ runner.temp }}/published-replay/*.json\n${{ runner.temp }}/published-replay/node/*.json\n${{ runner.temp }}/published-replay/node/controls/*.json\n${{ runner.temp }}/published-replay/original/published-http/FAILED.json\n${{ runner.temp }}/published-replay/original/published-http/catalogue-free-source.json\n${{ runner.temp }}/published-replay/original/published-http/node/FAILED.json\n${{ runner.temp }}/published-replay/original/published-http/build/*.json\n",
+          "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "exact-component",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-published-http.yml"
 }

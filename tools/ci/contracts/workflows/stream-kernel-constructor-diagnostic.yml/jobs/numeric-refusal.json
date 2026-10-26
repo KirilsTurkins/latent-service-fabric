@@ -3,12 +3,11 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Same linked image with one bounded numeric PID1 probe",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 10,
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "name": "Same linked image with one bounded numeric PID1 probe",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -35,28 +34,29 @@
         "run": "sudo apt-get update\nsudo apt-get install --yes gcc qemu-system-x86\n"
       },
       {
-        "name": "Observe numeric BEGIN refusal on the unchanged linked kernel",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Observe numeric BEGIN refusal on the unchanged linked kernel",
         "run": "python3 -B tools/diagnose_host_stream_kernel_vm.py --output \"$RUNNER_TEMP/stream-kernel-numeric\""
       },
       {
-        "name": "Retain bounded numeric observations and original failure identity",
         "if": "always()",
+        "name": "Retain bounded numeric observations and original failure identity",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "error",
           "name": "stream-kernel-numeric-${{ github.sha }}",
           "path": "${{ runner.temp }}/stream-kernel-numeric/numeric-diagnostic.json\n${{ runner.temp }}/stream-kernel-numeric/retained-image-origin.json\n${{ runner.temp }}/stream-kernel-numeric/constructor-init.c\n${{ runner.temp }}/stream-kernel-numeric/logs/*.txt\n",
-          "if-no-files-found": "error",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 10
   },
   "jobId": "numeric-refusal",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Retain actual Commands logs from logs directory; qualification and resource bounds unchanged",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-kernel-constructor-diagnostic.yml"
 }

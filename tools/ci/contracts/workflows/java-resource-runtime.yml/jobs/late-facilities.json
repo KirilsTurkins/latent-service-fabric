@@ -6,7 +6,6 @@
     "if": "${{ github.event_name == 'workflow_dispatch' && inputs.late_facilities }}",
     "name": "Accepted Java TimerTask facilities after cancellation and fresh two tenants",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 30,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -29,10 +28,10 @@
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_resource_late_facilities tools.tests.test_resource_late_workflows tools.tests.test_java_http_release_preparation tools.tests.test_java_joined_resources tools.tests.test_java_joined_runtime tools.tests.test_java_joined_owners -v\n"
       },
       {
-        "name": "Authenticate the five retained native products without rebuilding them",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate the five retained native products without rebuilding them",
         "run": "python3 -B tools/release_preparation_cli_native_products.py --output \"$RUNNER_TEMP/java-resource-native\""
       },
       {
@@ -50,8 +49,8 @@
       },
       {
         "name": "Install the existing pinned Java guest compiler tools",
-        "shell": "bash",
-        "run": "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 -B tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-resource-bindgen\"\necho \"$RUNNER_TEMP/java-resource-bindgen\" >> \"$GITHUB_PATH\"\n"
+        "run": "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 -B tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-resource-bindgen\"\necho \"$RUNNER_TEMP/java-resource-bindgen\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash"
       },
       {
         "name": "Check the exact ordinary callback source on the reference JDK",
@@ -62,21 +61,22 @@
         "run": "python3 -B tools/qualify_resource_late_facilities.py --language java \\\n  --native \"$RUNNER_TEMP/java-resource-native\" \\\n  --tools \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" \\\n  --output \"$RUNNER_TEMP/java-resource-late\"\n"
       },
       {
-        "name": "Retain public compiler identities and bounded node outcomes",
         "if": "always()",
+        "name": "Retain public compiler identities and bounded node outcomes",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "java-resource-late-${{ github.sha }}",
-          "retention-days": 3,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/java-resource-native/*.json\n${{ runner.temp }}/java-resource-late-reference/*.json\n${{ runner.temp }}/java-resource-late-reference/*.stdout\n${{ runner.temp }}/java-resource-late-reference/*.stderr\n${{ runner.temp }}/java-resource-late/*.json\n${{ runner.temp }}/java-resource-late/commands/logs/**\n${{ runner.temp }}/java-resource-late/compiler/compiler-cache-selection.json\n${{ runner.temp }}/java-resource-late/build/*.json\n${{ runner.temp }}/java-resource-late/build/compiler-logs/**\n${{ runner.temp }}/java-resource-late/build/component.wasm\n${{ runner.temp }}/java-resource-late/build/capsule.json\n${{ runner.temp }}/java-resource-late/build/package/**\n${{ runner.temp }}/java-resource-late/node/*.json\n${{ runner.temp }}/java-resource-late/node/node-stderr.txt\n${{ runner.temp }}/java-resource-late/node/commands/logs/**\n${{ runner.temp }}/java-resource-late/node/examples-controls/*.json\n${{ runner.temp }}/java-resource-late/node/foreign-controls/*.json\n${{ runner.temp }}/java-resource-late/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/java-resource-late/node/signed/release-set.json\n"
+          "name": "java-resource-late-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-resource-native/*.json\n${{ runner.temp }}/java-resource-late-reference/*.json\n${{ runner.temp }}/java-resource-late-reference/*.stdout\n${{ runner.temp }}/java-resource-late-reference/*.stderr\n${{ runner.temp }}/java-resource-late/*.json\n${{ runner.temp }}/java-resource-late/commands/logs/**\n${{ runner.temp }}/java-resource-late/compiler/compiler-cache-selection.json\n${{ runner.temp }}/java-resource-late/build/*.json\n${{ runner.temp }}/java-resource-late/build/compiler-logs/**\n${{ runner.temp }}/java-resource-late/build/component.wasm\n${{ runner.temp }}/java-resource-late/build/capsule.json\n${{ runner.temp }}/java-resource-late/build/package/**\n${{ runner.temp }}/java-resource-late/node/*.json\n${{ runner.temp }}/java-resource-late/node/node-stderr.txt\n${{ runner.temp }}/java-resource-late/node/commands/logs/**\n${{ runner.temp }}/java-resource-late/node/examples-controls/*.json\n${{ runner.temp }}/java-resource-late/node/foreign-controls/*.json\n${{ runner.temp }}/java-resource-late/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/java-resource-late/node/signed/release-set.json\n",
+          "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 30
   },
   "jobId": "late-facilities",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Two explicit default-false accepted late-facility lanes; original jobs restore byte-exact after only selector/job/guard removal; same original limits, immutable 6fd native, two denials plus four ordinary late/fresh calls, no old programme or post-Store credit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-resource-runtime.yml"
 }

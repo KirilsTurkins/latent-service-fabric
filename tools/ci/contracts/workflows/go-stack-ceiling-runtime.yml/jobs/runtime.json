@@ -5,7 +5,6 @@
   "definition": {
     "name": "Seven source-bound signed Go v7 stack attempts",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 45,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -33,12 +32,12 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
           "cache-bin": false,
+          "cache-targets": true,
           "cache-workspace-crates": false,
-          "cache-targets": true
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -56,22 +55,23 @@
         "run": "python3 tools/qualify_go_stack_ceiling_runtime.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/go-stack-ceiling-runtime\""
       },
       {
-        "name": "Retain bounded compiler and owner evidence including failures",
         "if": "always()",
+        "name": "Retain bounded compiler and owner evidence including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "go-stack-ceiling-runtime-${{ github.sha }}",
-          "include-hidden-files": true,
-          "path": "${{ runner.temp }}/go-stack-ceiling-runtime/*.json\n${{ runner.temp }}/go-stack-ceiling-runtime/*.log\n${{ runner.temp }}/go-stack-ceiling-runtime/applications/**\n${{ runner.temp }}/go-stack-ceiling-runtime/go-stack-ordinary/**\n${{ runner.temp }}/go-stack-ceiling-runtime/go-stack-initializer-cap/**\n${{ runner.temp }}/go-stack-ceiling-runtime/reference/project/main.go\n${{ runner.temp }}/go-stack-ceiling-runtime/reference/project/go.mod\n${{ runner.temp }}/go-stack-ceiling-runtime/reference/logs/**\n${{ runner.temp }}/go-stack-ceiling-runtime/reference/not-executed.wasm\n",
           "if-no-files-found": "warn",
+          "include-hidden-files": true,
+          "name": "go-stack-ceiling-runtime-${{ github.sha }}",
+          "path": "${{ runner.temp }}/go-stack-ceiling-runtime/*.json\n${{ runner.temp }}/go-stack-ceiling-runtime/*.log\n${{ runner.temp }}/go-stack-ceiling-runtime/applications/**\n${{ runner.temp }}/go-stack-ceiling-runtime/go-stack-ordinary/**\n${{ runner.temp }}/go-stack-ceiling-runtime/go-stack-initializer-cap/**\n${{ runner.temp }}/go-stack-ceiling-runtime/reference/project/main.go\n${{ runner.temp }}/go-stack-ceiling-runtime/reference/project/go.mod\n${{ runner.temp }}/go-stack-ceiling-runtime/reference/logs/**\n${{ runner.temp }}/go-stack-ceiling-runtime/reference/not-executed.wasm\n",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 45
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Mandatory normal source builds/current native signer and seven signed mapped-cap attempts; no fallback or historical-result substitution",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-stack-ceiling-runtime.yml"
 }

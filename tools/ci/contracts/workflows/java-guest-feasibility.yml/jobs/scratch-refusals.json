@@ -6,7 +6,6 @@
     "name": "Signed ordinary Java filesystem refusal and fresh-state packet",
     "needs": "compiler-component",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -35,8 +34,8 @@
       },
       {
         "name": "Install only the pinned ordinary Java component compiler",
-        "shell": "bash",
-        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n"
+        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash"
       },
       {
         "name": "Read only this run's verified normal native products",
@@ -63,21 +62,22 @@
         "run": "python3 tools/qualify_sdk_scratch.py --language java --native-qualification \"$RUNNER_TEMP/java-scratch-prepared\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" --output \"$RUNNER_TEMP/java-scratch-refusals\""
       },
       {
-        "name": "Retain actual API categories and physical retirement including failures",
         "if": "always()",
+        "name": "Retain actual API categories and physical retirement including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "java-scratch-refusals-${{ github.sha }}",
           "path": "${{ runner.temp }}/java-scratch-refusals/qualification.json\n${{ runner.temp }}/java-scratch-refusals/FAILED.json\n${{ runner.temp }}/java-scratch-refusals/compatibility-execution-report.json\n${{ runner.temp }}/java-scratch-refusals/logs/**\n${{ runner.temp }}/java-scratch-refusals/build/*.json\n${{ runner.temp }}/java-scratch-refusals/build/component.wasm\n${{ runner.temp }}/java-scratch-refusals/build/compiler-logs/**\n${{ runner.temp }}/java-scratch-refusals/build/logs/**\n${{ runner.temp }}/java-scratch-refusals/node/workflow.json\n${{ runner.temp }}/java-scratch-refusals/node/FAILED.json\n${{ runner.temp }}/java-scratch-refusals/node/controls/*.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "scratch-refusals",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Give the separate child the unchanged normal namespace prerequisite on its own fresh VM; preserve all old commands and deadlines.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

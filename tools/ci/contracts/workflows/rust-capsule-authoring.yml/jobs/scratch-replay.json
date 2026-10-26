@@ -3,14 +3,13 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Fresh offline signed Rust scratch with historical normal products",
     "if": "${{ github.event_name == 'workflow_dispatch' && inputs.replay-scratch-refusals }}",
+    "name": "Fresh offline signed Rust scratch with historical normal products",
     "permissions": {
-      "contents": "read",
-      "actions": "read"
+      "actions": "read",
+      "contents": "read"
     },
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -55,10 +54,10 @@
         "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
           "artifact-ids": "12236803645",
-          "run-id": 39358494292,
           "github-token": "${{ github.token }}",
           "merge-multiple": true,
-          "path": "${{ runner.temp }}/rust-scratch-original"
+          "path": "${{ runner.temp }}/rust-scratch-original",
+          "run-id": 39358494292
         }
       },
       {
@@ -66,21 +65,22 @@
         "run": "python3 -B tools/replay_rust_scratch.py --native \"$RUNNER_TEMP/rust-scratch-original\" --output \"$RUNNER_TEMP/rust-scratch-replay\""
       },
       {
-        "name": "Retain bounded public provenance and actual API results including failures",
         "if": "always()",
+        "name": "Retain bounded public provenance and actual API results including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "rust-scratch-replay-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-scratch-replay/*.json\n${{ runner.temp }}/rust-scratch-replay/logs/**\n${{ runner.temp }}/rust-scratch-replay/build/*.json\n${{ runner.temp }}/rust-scratch-replay/build/logs/**\n${{ runner.temp }}/rust-scratch-replay/build/component.wasm\n${{ runner.temp }}/rust-scratch-replay/node/workflow.json\n${{ runner.temp }}/rust-scratch-replay/node/FAILED.json\n${{ runner.temp }}/rust-scratch-replay/node/controls/*.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "scratch-replay",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

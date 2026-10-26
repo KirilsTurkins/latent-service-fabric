@@ -3,13 +3,12 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "One published Polly component and fourteen signed aggregate outcomes",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 30,
     "env": {
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
+    "name": "One published Polly component and fourteen signed aggregate outcomes",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -55,14 +54,14 @@
       },
       {
         "name": "Prepare the normal pinned compiler and unchanged small runtime adapters",
-        "shell": "bash",
-        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-aggregate-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-aggregate-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-aggregate-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-aggregate/tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n"
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-aggregate-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-aggregate-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-aggregate-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-aggregate/tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
+        "shell": "bash"
       },
       {
-        "name": "Authenticate source-exact v10 products without a native host rebuild",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate source-exact v10 products without a native host rebuild",
         "run": "python3 -B tools/wasmtime_48_0_7_v10_native_products.py --output \"$RUNNER_TEMP/dotnet-aggregate/native\""
       },
       {
@@ -70,38 +69,39 @@
         "run": "python3 -B tools/qualify_dotnet_aggregate_waits.py \\\n  --native \"$RUNNER_TEMP/dotnet-aggregate/native\" --tools \"$RUNNER_TEMP/dotnet-aggregate/tools\" \\\n  --output \"$RUNNER_TEMP/dotnet-aggregate/programme\"\n"
       },
       {
-        "name": "Admit the bounded public evidence union",
         "id": "evidence",
         "if": "always()",
+        "name": "Admit the bounded public evidence union",
         "run": "python3 -B tools/qualify_dotnet_aggregate_waits.py --admit-evidence --output \"$RUNNER_TEMP/dotnet-aggregate\""
       },
       {
-        "name": "Retain only admitted public products and raw outcomes",
         "if": "always() && steps.evidence.outcome == 'success'",
+        "name": "Retain only admitted public products and raw outcomes",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "dotnet-aggregate-task-waits-${{ github.sha }}",
-          "retention-days": 3,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/dotnet-aggregate/native/native-products.json\n${{ runner.temp }}/dotnet-aggregate/native/source-inputs.json\n${{ runner.temp }}/dotnet-aggregate/native/retrieval.json\n${{ runner.temp }}/dotnet-aggregate/tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/dotnet-aggregate/tools/runtime-inputs.json\n${{ runner.temp }}/dotnet-aggregate/tools/wasi-sdk.json\n${{ runner.temp }}/dotnet-aggregate/tools/logs/*.stdout.txt\n${{ runner.temp }}/dotnet-aggregate/tools/logs/*.stderr.txt\n${{ runner.temp }}/dotnet-aggregate/programme/qualified.json\n${{ runner.temp }}/dotnet-aggregate/programme/FAILED.json\n${{ runner.temp }}/dotnet-aggregate/programme/capture.json\n${{ runner.temp }}/dotnet-aggregate/programme/build/*.json\n${{ runner.temp }}/dotnet-aggregate/programme/build/component.wasm\n${{ runner.temp }}/dotnet-aggregate/programme/build/native-aot-original.wasm\n${{ runner.temp }}/dotnet-aggregate/programme/build/derived-*.dll\n${{ runner.temp }}/dotnet-aggregate/programme/build/logs/*.stdout.txt\n${{ runner.temp }}/dotnet-aggregate/programme/build/logs/*.stderr.txt\n${{ runner.temp }}/dotnet-aggregate/programme/build/package/*.json\n${{ runner.temp }}/dotnet-aggregate/programme/build/package/*.wasm\n${{ runner.temp }}/dotnet-aggregate/programme/node/*.json\n${{ runner.temp }}/dotnet-aggregate/programme/node/node-stderr.txt\n${{ runner.temp }}/dotnet-aggregate/programme/node/commands/logs/*.stdout.txt\n${{ runner.temp }}/dotnet-aggregate/programme/node/commands/logs/*.stderr.txt\n${{ runner.temp }}/dotnet-aggregate/programme/node/controls/*.json\n${{ runner.temp }}/dotnet-aggregate/programme/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/dotnet-aggregate/programme/node/signed/release-set.json\n${{ runner.temp }}/dotnet-aggregate/evidence-admission.json\n"
+          "name": "dotnet-aggregate-task-waits-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-aggregate/native/native-products.json\n${{ runner.temp }}/dotnet-aggregate/native/source-inputs.json\n${{ runner.temp }}/dotnet-aggregate/native/retrieval.json\n${{ runner.temp }}/dotnet-aggregate/tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/dotnet-aggregate/tools/runtime-inputs.json\n${{ runner.temp }}/dotnet-aggregate/tools/wasi-sdk.json\n${{ runner.temp }}/dotnet-aggregate/tools/logs/*.stdout.txt\n${{ runner.temp }}/dotnet-aggregate/tools/logs/*.stderr.txt\n${{ runner.temp }}/dotnet-aggregate/programme/qualified.json\n${{ runner.temp }}/dotnet-aggregate/programme/FAILED.json\n${{ runner.temp }}/dotnet-aggregate/programme/capture.json\n${{ runner.temp }}/dotnet-aggregate/programme/build/*.json\n${{ runner.temp }}/dotnet-aggregate/programme/build/component.wasm\n${{ runner.temp }}/dotnet-aggregate/programme/build/native-aot-original.wasm\n${{ runner.temp }}/dotnet-aggregate/programme/build/derived-*.dll\n${{ runner.temp }}/dotnet-aggregate/programme/build/logs/*.stdout.txt\n${{ runner.temp }}/dotnet-aggregate/programme/build/logs/*.stderr.txt\n${{ runner.temp }}/dotnet-aggregate/programme/build/package/*.json\n${{ runner.temp }}/dotnet-aggregate/programme/build/package/*.wasm\n${{ runner.temp }}/dotnet-aggregate/programme/node/*.json\n${{ runner.temp }}/dotnet-aggregate/programme/node/node-stderr.txt\n${{ runner.temp }}/dotnet-aggregate/programme/node/commands/logs/*.stdout.txt\n${{ runner.temp }}/dotnet-aggregate/programme/node/commands/logs/*.stderr.txt\n${{ runner.temp }}/dotnet-aggregate/programme/node/controls/*.json\n${{ runner.temp }}/dotnet-aggregate/programme/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/dotnet-aggregate/programme/node/signed/release-set.json\n${{ runner.temp }}/dotnet-aggregate/evidence-admission.json\n",
+          "retention-days": 3
         }
       },
       {
-        "name": "Retain only the closed admission failure projection",
         "if": "always() && steps.evidence.outcome != 'success'",
+        "name": "Retain only the closed admission failure projection",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "dotnet-aggregate-task-waits-${{ github.sha }}",
-          "retention-days": 3,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/dotnet-aggregate/evidence-admission.json"
+          "name": "dotnet-aggregate-task-waits-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-aggregate/evidence-admission.json",
+          "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 30
   },
   "jobId": "aggregate-waits",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Promote only the existing declaration-guarded managed finite selection to the authenticated 95-helper aggregate derivation; retain old modes/evidence and all limits, and add one normal Polly NativeAOT component with fourteen signed outcomes, source-exact v10 product reuse and bounded public evidence.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-aggregate-task-waits.yml"
 }

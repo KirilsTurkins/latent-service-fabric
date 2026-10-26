@@ -5,7 +5,6 @@
   "definition": {
     "name": "Actual accepted Go work SIGTERM retirement and fresh restart",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 25,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -37,20 +36,20 @@
         "run": "python3 -m unittest tools.tests.test_go_node_stop tools.tests.test_sdk_scratch_qualification -v"
       },
       {
-        "name": "Authenticate the completed exact producer before restoring any executable",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate the completed exact producer before restoring any executable",
         "run": "python3 tools/qualify_go_node_stop.py --record-producer --output \"$RUNNER_TEMP/go-node-stop-producer.json\""
       },
       {
         "name": "Restore only the authenticated public normal Go products",
         "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
-          "name": "go-scratch-prepared-94d0f8b0c1508df50e2830e6d678661c1e76bc36",
-          "run-id": 39373374237,
           "github-token": "${{ github.token }}",
-          "path": "${{ runner.temp }}/go-node-stop-normal"
+          "name": "go-scratch-prepared-94d0f8b0c1508df50e2830e6d678661c1e76bc36",
+          "path": "${{ runner.temp }}/go-node-stop-normal",
+          "run-id": 39373374237
         }
       },
       {
@@ -66,21 +65,22 @@
         "run": "python3 tools/qualify_go_node_stop.py --normal-qualification \"$RUNNER_TEMP/go-node-stop-normal\" --producer-receipt \"$RUNNER_TEMP/go-node-stop-producer.json\" --output \"$RUNNER_TEMP/go-node-stop\""
       },
       {
-        "name": "Retain bounded source build audit and real shutdown evidence including failures",
         "if": "always()",
+        "name": "Retain bounded source build audit and real shutdown evidence including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "go-node-stop-reference-${{ github.sha }}",
           "path": "${{ runner.temp }}/go-node-stop-producer.json\n${{ runner.temp }}/go-node-stop/*.json\n${{ runner.temp }}/go-node-stop/logs/**\n${{ runner.temp }}/go-node-stop/build/*.json\n${{ runner.temp }}/go-node-stop/build/logs/**\n${{ runner.temp }}/go-node-stop/build/component.wasm\n${{ runner.temp }}/go-node-stop/pending/*.json\n${{ runner.temp }}/go-node-stop/pending/controls/*.json\n${{ runner.temp }}/go-node-stop/drain/*.json\n${{ runner.temp }}/go-node-stop/drain/controls/*.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 25
   },
   "jobId": "live-stop",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-node-stop-reference.yml"
 }

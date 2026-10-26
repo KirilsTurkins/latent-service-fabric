@@ -3,19 +3,18 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Pinned LLVM21 stack and TLS context control only",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 15,
     "env": {
       "CARGO_BUILD_JOBS": "2",
       "CARGO_INCREMENTAL": "0",
       "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
       "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
+    "name": "Pinned LLVM21 stack and TLS context control only",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -67,21 +66,22 @@
         "run": "python3 tools/qualify_c_canonical_abi.py --zig \"$(command -v zig)\" --wit-bindgen \"$(command -v wit-bindgen)\" --wasm-tools \"$(command -v wasm-tools)\" --node \"$(command -v node)\" --transformer \"$RUNNER_TEMP/c-context-tools/debug/c-context\" --output \"$RUNNER_TEMP/c-canonical-abi\""
       },
       {
-        "name": "Retain source mechanism observations, including failure",
         "if": "always()",
+        "name": "Retain source mechanism observations, including failure",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "c-context-mechanism-${{ github.sha }}",
           "path": "${{ runner.temp }}/c-context-mechanism/report.json\n${{ runner.temp }}/c-context-mechanism/*.txt\n${{ runner.temp }}/c-context-mechanism/*.wasm\n${{ runner.temp }}/c-context-mechanism/*.ll\n${{ runner.temp }}/c-context-mechanism/selected/*.json\n${{ runner.temp }}/c-context-mechanism/selected/*.wasm\n${{ runner.temp }}/c-context-mechanism/tls-keys/*.json\n${{ runner.temp }}/c-context-mechanism/tls-keys/*.wasm\n${{ runner.temp }}/c-context-mechanism/tss/*.json\n${{ runner.temp }}/c-context-mechanism/tss/*.wasm\n${{ runner.temp }}/c-canonical-abi/report.json\n${{ runner.temp }}/c-canonical-abi/*.json\n${{ runner.temp }}/c-canonical-abi/*.wasm\n${{ runner.temp }}/c-canonical-abi/*.txt\n${{ runner.temp }}/c-canonical-abi/selected/*.json\n${{ runner.temp }}/c-canonical-abi/selected/*.wasm\n${{ runner.temp }}/c-canonical-abi/generated/bindings/*\n${{ runner.temp }}/c-canonical-abi/generated/wit/**/*.wit\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 15
   },
   "jobId": "compiler",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Append one bounded selected C canonical ABI source control; preserve every original command, case, guard, timeout and public observation; no engine or threading qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-context-mechanism.yml"
 }

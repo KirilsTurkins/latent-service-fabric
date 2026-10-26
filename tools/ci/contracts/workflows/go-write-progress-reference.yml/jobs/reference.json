@@ -5,13 +5,12 @@
   "definition": {
     "name": "Exact production Write two old counterexamples and nine bounded controls",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 10,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
         "with": {
-          "persist-credentials": false,
-          "fetch-depth": 0
+          "fetch-depth": 0,
+          "persist-credentials": false
         }
       },
       {
@@ -37,21 +36,22 @@
         "run": "python3 tools/qualify_go_write_progress.py --output \"$RUNNER_TEMP/go-write-progress\""
       },
       {
-        "name": "Retain bounded source and actual method reference evidence",
         "if": "always()",
+        "name": "Retain bounded source and actual method reference evidence",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "go-write-progress-${{ github.sha }}",
           "path": "${{ runner.temp }}/go-write-progress/*.json\n${{ runner.temp }}/go-write-progress/*.log\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 10
   },
   "jobId": "reference",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-write-progress-reference.yml"
 }

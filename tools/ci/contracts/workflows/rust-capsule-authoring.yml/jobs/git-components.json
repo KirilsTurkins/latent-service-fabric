@@ -7,7 +7,6 @@
     "name": "Captured Cargo Git offline components and signed execution",
     "needs": "authoring",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -60,21 +59,22 @@
         "run": "python3 tools/qualify_rust_git_components.py run --prepared-qualification \"$RUNNER_TEMP/rust-git-prepared\" --output \"$RUNNER_TEMP/rust-git-components\""
       },
       {
-        "name": "Retain bounded Git component qualification observations including failures",
         "if": "always()",
+        "name": "Retain bounded Git component qualification observations including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "rust-git-components-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-git-components/qualification.json\n${{ runner.temp }}/rust-git-components/FAILED.json\n${{ runner.temp }}/rust-git-components/capture.json\n${{ runner.temp }}/rust-git-components/offline.json\n${{ runner.temp }}/rust-git-components/logs/**\n${{ runner.temp }}/rust-git-components/first/*.json\n${{ runner.temp }}/rust-git-components/first/logs/**\n${{ runner.temp }}/rust-git-components/first/component.wasm\n${{ runner.temp }}/rust-git-components/first/component.wit\n${{ runner.temp }}/rust-git-components/offline-rebuild/*.json\n${{ runner.temp }}/rust-git-components/offline-rebuild/logs/**\n${{ runner.temp }}/rust-git-components/offline-rebuild/component.wasm\n${{ runner.temp }}/rust-git-components/offline-rebuild/component.wit\n${{ runner.temp }}/rust-git-components/node/workflow.json\n${{ runner.temp }}/rust-git-components/node/FAILED.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "git-components",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

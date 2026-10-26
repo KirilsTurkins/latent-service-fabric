@@ -5,13 +5,6 @@
   "definition": {
     "name": "Fresh ${{ matrix.language }} transitive data and trap recovery",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
-    "strategy": {
-      "fail-fast": false,
-      "matrix": {
-        "language": "${{ fromJSON(inputs.language == 'rust' && '[\"rust\"]' || inputs.language == 'typescript' && '[\"typescript\"]' || '[\"rust\",\"typescript\"]') }}"
-      }
-    },
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -26,22 +19,22 @@
         }
       },
       {
-        "uses": "dtolnay/rust-toolchain",
         "if": "matrix.language == 'rust'",
+        "uses": "dtolnay/rust-toolchain",
         "with": {
           "targets": "wasm32-unknown-unknown"
         }
       },
       {
-        "uses": "KirilsTurkins/lsf-setup-zig",
         "if": "matrix.language == 'rust'",
+        "uses": "KirilsTurkins/lsf-setup-zig",
         "with": {
           "version": "0.16.0"
         }
       },
       {
-        "uses": "KirilsTurkins/lsf-setup-node",
         "if": "matrix.language == 'typescript'",
+        "uses": "KirilsTurkins/lsf-setup-node",
         "with": {
           "node-version": "24.19.0"
         }
@@ -61,63 +54,70 @@
         "run": "python3 -B -m unittest tools.tests.test_embedded_resource_conformance tools.tests.test_go_embedded_resource_replay tools.tests.test_embedded_resource_language_replay -v"
       },
       {
-        "name": "Authenticate the successful native producer before restoring executables",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate the successful native producer before restoring executables",
         "run": "python3 -B tools/replay_go_embedded_resources.py --record-producer --output \"$RUNNER_TEMP/embedded-native-producer.json\""
       },
       {
         "name": "Restore only the authenticated native normal bundle",
         "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
-          "name": "go-scratch-prepared-94d0f8b0c1508df50e2830e6d678661c1e76bc36",
-          "run-id": 39373374237,
           "github-token": "${{ github.token }}",
-          "path": "${{ runner.temp }}/embedded-native-normal"
+          "name": "go-scratch-prepared-94d0f8b0c1508df50e2830e6d678661c1e76bc36",
+          "path": "${{ runner.temp }}/embedded-native-normal",
+          "run-id": 39373374237
         }
       },
       {
-        "name": "Acquire only pinned public companion components and normal provenance",
         "env": {
           "GH_TOKEN": "${{ github.token }}",
           "RESOURCE_LANGUAGE": "${{ matrix.language }}"
         },
+        "name": "Acquire only pinned public companion components and normal provenance",
         "run": "python3 -B tools/replay_embedded_resource_languages.py --language \"$RESOURCE_LANGUAGE\" --acquire --output \"$RUNNER_TEMP/embedded-original\""
       },
       {
-        "name": "Install the existing pinned Rust binding compiler",
         "if": "matrix.language == 'rust'",
+        "name": "Install the existing pinned Rust binding compiler",
         "run": "python3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/embedded-tools\"\necho \"$RUNNER_TEMP/embedded-tools\" >> \"$GITHUB_PATH\"\n"
       },
       {
-        "name": "Install the existing pinned public TypeScript compiler",
         "if": "matrix.language == 'typescript'",
+        "name": "Install the existing pinned public TypeScript compiler",
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/embedded-tools\""
       },
       {
-        "name": "Build one fresh greeting sign and require the complete original plus six new calls",
         "env": {
           "RESOURCE_LANGUAGE": "${{ matrix.language }}"
         },
+        "name": "Build one fresh greeting sign and require the complete original plus six new calls",
         "run": "python3 -B tools/replay_embedded_resource_languages.py --language \"$RESOURCE_LANGUAGE\" \\\n  --original \"$RUNNER_TEMP/embedded-original\" --normal-qualification \"$RUNNER_TEMP/embedded-native-normal\" \\\n  --producer-receipt \"$RUNNER_TEMP/embedded-native-producer.json\" --tools \"$RUNNER_TEMP/embedded-tools\" \\\n  --output \"$RUNNER_TEMP/embedded-resources\"\n"
       },
       {
-        "name": "Retain bounded public provenance components actual results and failures",
         "if": "always()",
+        "name": "Retain bounded public provenance components actual results and failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "embedded-resource-${{ matrix.language }}-${{ github.sha }}",
-          "retention-days": 3,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/embedded-native-producer.json\n${{ runner.temp }}/embedded-original/acquisition.json\n${{ runner.temp }}/embedded-resources/*.json\n${{ runner.temp }}/embedded-resources/logs/**\n${{ runner.temp }}/embedded-resources/build/*.json\n${{ runner.temp }}/embedded-resources/build/logs/**\n${{ runner.temp }}/embedded-resources/build/component.wasm\n${{ runner.temp }}/embedded-resources/node/workflow.json\n${{ runner.temp }}/embedded-resources/node/FAILED.json\n${{ runner.temp }}/embedded-resources/node/controls/*.json\n"
+          "name": "embedded-resource-${{ matrix.language }}-${{ github.sha }}",
+          "path": "${{ runner.temp }}/embedded-native-producer.json\n${{ runner.temp }}/embedded-original/acquisition.json\n${{ runner.temp }}/embedded-resources/*.json\n${{ runner.temp }}/embedded-resources/logs/**\n${{ runner.temp }}/embedded-resources/build/*.json\n${{ runner.temp }}/embedded-resources/build/logs/**\n${{ runner.temp }}/embedded-resources/build/component.wasm\n${{ runner.temp }}/embedded-resources/node/workflow.json\n${{ runner.temp }}/embedded-resources/node/FAILED.json\n${{ runner.temp }}/embedded-resources/node/controls/*.json\n",
+          "retention-days": 3
         }
       }
-    ]
+    ],
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "language": "${{ fromJSON(inputs.language == 'rust' && '[\"rust\"]' || inputs.language == 'typescript' && '[\"typescript\"]' || '[\"rust\",\"typescript\"]') }}"
+      }
+    },
+    "timeout-minutes": 20
   },
   "jobId": "resources",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Reviewed security-only replacement of two inline matrix expressions with quoted step environment variables; identical closed language matrix, selected CLI arguments, commands, deadlines and coverage.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/embedded-resource-languages-reference.yml"
 }

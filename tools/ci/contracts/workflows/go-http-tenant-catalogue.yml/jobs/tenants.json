@@ -5,13 +5,12 @@
   "definition": {
     "name": "Fresh captured clients catalogue-free build and two real HTTP installations",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 30,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
         "with": {
-          "persist-credentials": false,
-          "fetch-depth": 0
+          "fetch-depth": 0,
+          "persist-credentials": false
         }
       },
       {
@@ -37,10 +36,10 @@
         "run": "git fetch --no-tags origin 6f5f180136d140ac670561695260f71514781015\ngit fetch --no-tags origin f9192fb5785ca7bed8b33dbb869b3d775b72ab4b\n"
       },
       {
-        "name": "Acquire five exact independently installed HTTP products without rebuilding",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Acquire five exact independently installed HTTP products without rebuilding",
         "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/go-http-tenant-native\""
       },
       {
@@ -58,21 +57,22 @@
         "run": "python3 -B tools/qualify_go_http_tenants.py --prepared \"$RUNNER_TEMP/go-http-tenant-native\" --output \"$RUNNER_TEMP/go-http-tenant-catalogue\""
       },
       {
-        "name": "Retain bounded actual construction authority and retirement evidence including failures",
         "if": "always()",
+        "name": "Retain bounded actual construction authority and retirement evidence including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "go-http-tenant-catalogue-${{ github.sha }}",
           "path": "${{ runner.temp }}/go-http-tenant-native/*.json\n${{ runner.temp }}/go-http-tenant-catalogue/*.json\n${{ runner.temp }}/go-http-tenant-catalogue/*.log\n${{ runner.temp }}/go-http-tenant-catalogue/catalogue-free-compiler/BUILD-SOURCE-INVENTORY.json\n${{ runner.temp }}/go-http-tenant-catalogue/build/*.json\n${{ runner.temp }}/go-http-tenant-catalogue/build/component.wasm\n${{ runner.temp }}/go-http-tenant-catalogue/build/component.wit\n${{ runner.temp }}/go-http-tenant-catalogue/build/logs/**\n${{ runner.temp }}/go-http-tenant-catalogue/node/*.json\n${{ runner.temp }}/go-http-tenant-catalogue/node/*.log\n${{ runner.temp }}/go-http-tenant-catalogue/node/examples-controls/*.json\n${{ runner.temp }}/go-http-tenant-catalogue/node/foreign-controls/*.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 30
   },
   "jobId": "tenants",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-http-tenant-catalogue.yml"
 }

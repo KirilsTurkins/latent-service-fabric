@@ -5,7 +5,6 @@
   "definition": {
     "name": "Signed transitive resources timers cancellation and tenant reuse",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -48,17 +47,17 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/resource-runtime-tools\""
       },
       {
-        "name": "Authenticate and acquire exact V7 native products without rebuilding",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate and acquire exact V7 native products without rebuilding",
         "run": "python3 -B tools/java_phase_native_products.py --output \"$RUNNER_TEMP/resource-runtime-native\""
       },
       {
-        "name": "Acquire only the original source-bound import engine and splicer",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Acquire only the original source-bound import engine and splicer",
         "run": "python3 -B tools/typescript_resource_runtime_inputs.py --output \"$RUNNER_TEMP/resource-runtime-compiler\""
       },
       {
@@ -66,21 +65,22 @@
         "run": "python3 -B tools/qualify_typescript_resource_runtime.py \\\n  --native \"$RUNNER_TEMP/resource-runtime-native\" --compiler \"$RUNNER_TEMP/resource-runtime-compiler\" \\\n  --tools \"$RUNNER_TEMP/resource-runtime-tools\" --output \"$RUNNER_TEMP/resource-runtime\"\n"
       },
       {
-        "name": "Retain public source identities raw outcomes positive waits and physical retirement",
         "if": "always()",
+        "name": "Retain public source identities raw outcomes positive waits and physical retirement",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "typescript-resource-runtime-${{ github.sha }}",
-          "retention-days": 3,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/resource-runtime-native/*.json\n${{ runner.temp }}/resource-runtime-compiler/acquisition.json\n${{ runner.temp }}/resource-runtime/*.json\n${{ runner.temp }}/resource-runtime/build/*.json\n${{ runner.temp }}/resource-runtime/build/component.wasm\n${{ runner.temp }}/resource-runtime/build/*.wit\n${{ runner.temp }}/resource-runtime/build/package/**\n${{ runner.temp }}/resource-runtime/build/logs/**\n${{ runner.temp }}/resource-runtime/node/*.json\n${{ runner.temp }}/resource-runtime/node/node-stderr.txt\n${{ runner.temp }}/resource-runtime/node/commands/logs/**\n${{ runner.temp }}/resource-runtime/node/examples-controls/*.json\n${{ runner.temp }}/resource-runtime/node/foreign-controls/*.json\n${{ runner.temp }}/resource-runtime/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/resource-runtime/node/signed/release-set.json\n"
+          "name": "typescript-resource-runtime-${{ github.sha }}",
+          "path": "${{ runner.temp }}/resource-runtime-native/*.json\n${{ runner.temp }}/resource-runtime-compiler/acquisition.json\n${{ runner.temp }}/resource-runtime/*.json\n${{ runner.temp }}/resource-runtime/build/*.json\n${{ runner.temp }}/resource-runtime/build/component.wasm\n${{ runner.temp }}/resource-runtime/build/*.wit\n${{ runner.temp }}/resource-runtime/build/package/**\n${{ runner.temp }}/resource-runtime/build/logs/**\n${{ runner.temp }}/resource-runtime/node/*.json\n${{ runner.temp }}/resource-runtime/node/node-stderr.txt\n${{ runner.temp }}/resource-runtime/node/commands/logs/**\n${{ runner.temp }}/resource-runtime/node/examples-controls/*.json\n${{ runner.temp }}/resource-runtime/node/foreign-controls/*.json\n${{ runner.temp }}/resource-runtime/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/resource-runtime/node/signed/release-set.json\n",
+          "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "resource-runtime",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Repair actual signed-release comparator: require exact normal derived activation world and unchanged public export/component; preserve original source namespace, native/guest limits and positive timer witnesses. Retain raw signing summary. Apply the existing ten-second pending-observation budget to the actual CLI deadline, restoring it on exit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-resource-runtime.yml"
 }

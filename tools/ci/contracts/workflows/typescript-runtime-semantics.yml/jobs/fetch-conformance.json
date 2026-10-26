@@ -4,12 +4,11 @@
   "coverage": {},
   "definition": {
     "name": "Signed ordinary thenable microtask timer and CPU semantics",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "permissions": {
-      "contents": "read",
-      "actions": "read"
+      "actions": "read",
+      "contents": "read"
     },
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -52,10 +51,10 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/runtime-semantics-tools\""
       },
       {
-        "name": "Acquire exact historical import engine and original native tools",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Acquire exact historical import engine and original native tools",
         "run": "python3 -B tools/typescript_fetch_replay_inputs.py --output \"$RUNNER_TEMP/runtime-semantics-original\""
       },
       {
@@ -63,21 +62,22 @@
         "run": "python3 -B tools/qualify_typescript_runtime_semantics.py --acquired \"$RUNNER_TEMP/runtime-semantics-original\" --tools \"$RUNNER_TEMP/runtime-semantics-tools\" --output \"$RUNNER_TEMP/runtime-semantics\""
       },
       {
-        "name": "Retain exact source compiler results real contacts and physical ownership",
         "if": "always()",
+        "name": "Retain exact source compiler results real contacts and physical ownership",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "typescript-runtime-semantics-${{ github.sha }}",
           "path": "${{ runner.temp }}/runtime-semantics-original/acquisition.json\n${{ runner.temp }}/runtime-semantics/*.json\n${{ runner.temp }}/runtime-semantics/build/*.json\n${{ runner.temp }}/runtime-semantics/build/*.wit\n${{ runner.temp }}/runtime-semantics/build/component.wasm\n${{ runner.temp }}/runtime-semantics/build/package/**\n${{ runner.temp }}/runtime-semantics/build/logs/\n${{ runner.temp }}/runtime-semantics/node/*.json\n${{ runner.temp }}/runtime-semantics/node/controls/\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "fetch-conformance",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Add a separate additive normal-compiler signed programme for ordinary thenable/microtask/rejection/finally/interval/timer ordering, bounded failure attempts and exact caller fuel containment under original16/16/64 owner limits. Three controls reject false success, guard normal profile/source, and forbid compiler failures from reaching execution; seven unchanged-source fresh Node references and strict TypeScript pass, but actual signed results remain pending and generic traps do not prove callback cause. Preserve all existing programmes and no runtime patch or native rebuild.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-runtime-semantics.yml"
 }

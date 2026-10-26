@@ -7,7 +7,6 @@
     "name": "Signed ordinary Rust scratch refusal and fresh-state packet",
     "needs": "authoring",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -60,21 +59,22 @@
         "run": "python3 tools/qualify_sdk_scratch.py --language rust --native-qualification \"$RUNNER_TEMP/rust-scratch-prepared\" --output \"$RUNNER_TEMP/rust-scratch-refusals\""
       },
       {
-        "name": "Retain bounded diagnostic evidence including failures",
         "if": "always()",
+        "name": "Retain bounded diagnostic evidence including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "rust-scratch-refusals-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-scratch-refusals/qualification.json\n${{ runner.temp }}/rust-scratch-refusals/FAILED.json\n${{ runner.temp }}/rust-scratch-refusals/compatibility-execution-report.json\n${{ runner.temp }}/rust-scratch-refusals/logs/**\n${{ runner.temp }}/rust-scratch-refusals/build/*.json\n${{ runner.temp }}/rust-scratch-refusals/build/logs/**\n${{ runner.temp }}/rust-scratch-refusals/build/component.wasm\n${{ runner.temp }}/rust-scratch-refusals/build/component.wit\n${{ runner.temp }}/rust-scratch-refusals/node/workflow.json\n${{ runner.temp }}/rust-scratch-refusals/node/FAILED.json\n${{ runner.temp }}/rust-scratch-refusals/node/controls/*.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "scratch-refusals",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Fix actual scratch offline-cache miss with bounded owned-manifest locked data-only fetch and unchanged source/ offline compile; add exact historical38 normal replay20min, preserve all9 original job bodies/default execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

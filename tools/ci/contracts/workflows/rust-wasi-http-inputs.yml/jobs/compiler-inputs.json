@@ -3,13 +3,12 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Capture two ordinary clients and observe actual compiler imports",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "env": {
       "CARGO_BUILD_JOBS": 2,
       "CARGO_INCREMENTAL": 0
     },
+    "name": "Capture two ordinary clients and observe actual compiler imports",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -54,10 +53,10 @@
         "run": "python3 -B -m unittest tools.tests.test_rust_wasi_http_inputs -q"
       },
       {
-        "name": "Authenticate existing Wasmtime48.0.7 products without building a host",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate existing Wasmtime48.0.7 products without building a host",
         "run": "python3 -B tools/wasmtime_48_0_7_native_products.py --output \"$RUNNER_TEMP/rust-http-native\""
       },
       {
@@ -65,21 +64,22 @@
         "run": "python3 -B tools/qualify_rust_wasi_http_inputs.py --native-products \"$RUNNER_TEMP/rust-http-native\" --output \"$RUNNER_TEMP/rust-http-inputs\""
       },
       {
-        "name": "Retain bounded public input and original build observations including failures",
         "if": "always()",
+        "name": "Retain bounded public input and original build observations including failures",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "rust-wasi-http-inputs-${{ github.sha }}",
           "path": "${{ runner.temp }}/rust-http-inputs/observation.json\n${{ runner.temp }}/rust-http-inputs/FAILED.json\n${{ runner.temp }}/rust-http-inputs/capture.json\n${{ runner.temp }}/rust-http-inputs/component-wit.json\n${{ runner.temp }}/rust-http-inputs/logs/**\n${{ runner.temp }}/rust-http-inputs/source/candidate.json\n${{ runner.temp }}/rust-http-inputs/source/application/Cargo.toml\n${{ runner.temp }}/rust-http-inputs/source/application/Cargo.lock\n${{ runner.temp }}/rust-http-inputs/source/application/latent.dependencies*.json\n${{ runner.temp }}/rust-http-inputs/source/application/cargo-resolved.lock.json\n${{ runner.temp }}/rust-http-inputs/approval-required/*.json\n${{ runner.temp }}/rust-http-inputs/approval-required/logs/**\n${{ runner.temp }}/rust-http-inputs/build/*.json\n${{ runner.temp }}/rust-http-inputs/build/logs/**\n${{ runner.temp }}/rust-http-inputs/build/raw-core.wasm\n${{ runner.temp }}/rust-http-inputs/build/component.wasm\n${{ runner.temp }}/rust-http-native/*.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "compiler-inputs",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "One explicit twenty-minute ordinary Rust compiler-input observation using the exact authenticated Wasmtime48.0.7 products; no host build, HTTP backend/signing/dispatch or lifecycle pass claim. All existing jobs/commands/guards remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-inputs.yml"
 }

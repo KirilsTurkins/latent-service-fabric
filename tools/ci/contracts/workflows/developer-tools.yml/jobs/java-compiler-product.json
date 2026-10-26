@@ -5,12 +5,11 @@
   "definition": {
     "if": "github.event_name == 'workflow_dispatch' && inputs.java_compiler_product",
     "name": "Sealed normal Java compiler product (data only)",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 25,
     "permissions": {
-      "contents": "read",
-      "actions": "read"
+      "actions": "read",
+      "contents": "read"
     },
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -33,44 +32,45 @@
         "run": "printf 'LSF_DEV_COMPILER_CACHE=%s\\n' \"$RUNNER_TEMP/compiler-archives\" >> \"$GITHUB_ENV\""
       },
       {
-        "name": "Restore untrusted source-pinned Java prepared inputs",
         "id": "java-compiler-cache",
+        "name": "Restore untrusted source-pinned Java prepared inputs",
         "uses": "KirilsTurkins/lsf-cache/restore",
         "with": {
-          "path": "${{ runner.temp }}/compiler-archives/java-prepared",
-          "key": "java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}"
+          "key": "java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}",
+          "path": "${{ runner.temp }}/compiler-archives/java-prepared"
         }
       },
       {
-        "name": "Verify fixed compiler inputs, existing pack and installer, and normal admission",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Verify fixed compiler inputs, existing pack and installer, and normal admission",
         "run": "set -euo pipefail\nroot=$(mktemp -d /tmp/latent-java-product.XXXXXXXX)\ntrap 'rm -rf -- \"$root\"' EXIT\nmkdir -p target/java-compiler-product\ntimeout --signal=TERM --kill-after=5 1195 \\\n  python -B tools/java_guest/compiler_profile_distribution.py stage \\\n    --root \"$root\" \\\n    --output target/java-compiler-product/result.json\n"
       },
       {
-        "name": "Save only reverified Java prepared input bytes",
         "if": "steps.java-compiler-cache.outputs.cache-hit != 'true'",
+        "name": "Save only reverified Java prepared input bytes",
         "uses": "KirilsTurkins/lsf-cache/save",
         "with": {
-          "path": "${{ runner.temp }}/compiler-archives/java-prepared",
-          "key": "${{ steps.java-compiler-cache.outputs.cache-primary-key }}"
+          "key": "${{ steps.java-compiler-cache.outputs.cache-primary-key }}",
+          "path": "${{ runner.temp }}/compiler-archives/java-prepared"
         }
       },
       {
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "error",
           "name": "java-compiler-product-${{ github.sha }}",
           "path": "target/java-compiler-product/result.json",
-          "if-no-files-found": "error",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 25
   },
   "jobId": "java-compiler-product",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Select the existing runner cache through GITHUB_ENV before use; runner context is unavailable in job env",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

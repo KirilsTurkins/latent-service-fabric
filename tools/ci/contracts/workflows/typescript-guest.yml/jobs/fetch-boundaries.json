@@ -3,14 +3,13 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Same-SDK signed Promise and Request-copy boundaries",
     "if": "${{ github.event_name == 'workflow_dispatch' && inputs.observe-fetch-boundaries }}",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 25,
+    "name": "Same-SDK signed Promise and Request-copy boundaries",
     "permissions": {
-      "contents": "read",
-      "actions": "read"
+      "actions": "read",
+      "contents": "read"
     },
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -45,8 +44,8 @@
       {
         "uses": "KirilsTurkins/lsf-checkout",
         "with": {
-          "ref": "ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
-          "persist-credentials": false
+          "persist-credentials": false,
+          "ref": "ba62bf8f266e589971a03e496b18b8f2cb5e5d85"
         }
       },
       {
@@ -67,30 +66,30 @@
         "name": "Read the authenticated original native products",
         "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
-          "name": "typescript-fetch-native-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
-          "run-id": 39247171188,
           "github-token": "${{ github.token }}",
-          "path": "${{ runner.temp }}/typescript-boundary-native"
+          "name": "typescript-fetch-native-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
+          "path": "${{ runner.temp }}/typescript-boundary-native",
+          "run-id": 39247171188
         }
       },
       {
         "name": "Read the authenticated original source-owned engine",
         "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
-          "name": "typescript-fetch-engine-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
-          "run-id": 39247171188,
           "github-token": "${{ github.token }}",
-          "path": "${{ runner.temp }}/typescript-boundary-engine"
+          "name": "typescript-fetch-engine-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
+          "path": "${{ runner.temp }}/typescript-boundary-engine",
+          "run-id": 39247171188
         }
       },
       {
         "name": "Read the authenticated original source compiler",
         "uses": "KirilsTurkins/lsf-download-artifact",
         "with": {
-          "name": "typescript-source-splicer-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
-          "run-id": 39247171188,
           "github-token": "${{ github.token }}",
-          "path": "${{ runner.temp }}/typescript-boundary-splicer"
+          "name": "typescript-source-splicer-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85",
+          "path": "${{ runner.temp }}/typescript-boundary-splicer",
+          "run-id": 39247171188
         }
       },
       {
@@ -98,21 +97,22 @@
         "run": "python3 -B \"$RUNNER_TEMP/diagnose-typescript-boundaries.py\" --probes \"$RUNNER_TEMP/typescript-boundary-probes\" --native \"$RUNNER_TEMP/typescript-boundary-native\" --engine \"$RUNNER_TEMP/typescript-boundary-engine\" --splicer \"$RUNNER_TEMP/typescript-boundary-splicer\" --tools \"$RUNNER_TEMP/typescript-boundary-tools\" --output \"$RUNNER_TEMP/typescript-fetch-boundaries\""
       },
       {
-        "name": "Retain closed same-SDK observations and actual application build evidence",
         "if": "always()",
+        "name": "Retain closed same-SDK observations and actual application build evidence",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "typescript-fetch-boundaries-${{ github.sha }}",
           "path": "${{ runner.temp }}/typescript-fetch-boundaries/*.json\n${{ runner.temp }}/typescript-fetch-boundaries/attempt/*.json\n${{ runner.temp }}/typescript-fetch-boundaries/attempt/build/*.json\n${{ runner.temp }}/typescript-fetch-boundaries/attempt/build/logs/**\n${{ runner.temp }}/typescript-fetch-boundaries/attempt/build/component.wasm\n${{ runner.temp }}/typescript-fetch-boundaries/attempt/node/*.json\n${{ runner.temp }}/typescript-fetch-boundaries/attempt/node/controls/*.json\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 25
   },
   "jobId": "fetch-boundaries",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Add failure-preserving no-HTTP Promise and Request-copy probes plus an explicitly older-SDK diagnostic-only application build; preserve every real signed Fetch assertion and budget.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

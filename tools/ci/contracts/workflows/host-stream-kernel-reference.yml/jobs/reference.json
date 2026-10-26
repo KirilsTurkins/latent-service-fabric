@@ -5,7 +5,6 @@
   "definition": {
     "name": "Actual original-owner retention through kernel close tails",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 25,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -25,12 +24,12 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
           "cache-bin": false,
+          "cache-targets": true,
           "cache-workspace-crates": false,
-          "cache-targets": true
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -42,21 +41,22 @@
         "run": "python3 tools/qualify_host_stream_kernel.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/host-stream-kernel-reference\""
       },
       {
-        "name": "Retain bounded numeric observations and exact source identities",
         "if": "always()",
+        "name": "Retain bounded numeric observations and exact source identities",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "host-stream-kernel-reference-${{ github.sha }}",
           "path": "${{ runner.temp }}/host-stream-kernel-reference/receipt.json\n${{ runner.temp }}/host-stream-kernel-reference/cargo.stderr.log\n${{ runner.temp }}/host-stream-kernel-reference/cargo-diagnostics.json\n${{ runner.temp }}/host-stream-kernel-reference/tests.stdout.log\n${{ runner.temp }}/host-stream-kernel-reference/tests.stderr.log\n${{ runner.temp }}/host-stream-kernel-reference/list.stdout.log\n${{ runner.temp }}/host-stream-kernel-reference/ignored.stdout.log\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 25
   },
   "jobId": "reference",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "retain all original required command keys while extending actual kernel owner reference",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/host-stream-kernel-reference.yml"
 }

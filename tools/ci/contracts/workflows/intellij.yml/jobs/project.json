@@ -87,7 +87,7 @@
   },
   "jobId": "project",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Retain three-platform metadata/tests and real Windows terminal help; qualify locked website preparation through the unified Python entry and add actual help execution on every host.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/intellij.yml"
 }

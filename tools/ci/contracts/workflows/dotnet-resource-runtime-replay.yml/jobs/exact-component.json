@@ -5,7 +5,6 @@
   "definition": {
     "name": "Re-sign the exact fresh managed component and qualify original joined cases",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -28,35 +27,36 @@
         "run": "python3 -B -m unittest tools.tests.test_dotnet_resource_runtime tools.tests.test_dotnet_resource_timer_observer tools.tests.test_dotnet_resource_replay tools.tests.test_sdk_native_products_reader -v\n"
       },
       {
-        "name": "Authenticate the exact successful actual-Pending observer native products",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate the exact successful actual-Pending observer native products",
         "run": "python3 -B tools/wait_runtime_native_products.py --output \"$RUNNER_TEMP/dotnet-resource-native\""
       },
       {
-        "name": "Authenticate the exact fresh component and re-run only its joined programme",
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
+        "name": "Authenticate the exact fresh component and re-run only its joined programme",
         "run": "python3 -B tools/replay_dotnet_resource_runtime.py \\\n  --native \"$RUNNER_TEMP/dotnet-resource-native\" --output \"$RUNNER_TEMP/dotnet-resource-replay\"\n"
       },
       {
-        "name": "Retain public original-build identities and fresh node outcomes",
         "if": "always()",
+        "name": "Retain public original-build identities and fresh node outcomes",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "dotnet-resource-runtime-replay-${{ github.sha }}",
-          "retention-days": 3,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/dotnet-resource-native/*.json\n${{ runner.temp }}/dotnet-resource-replay/*.json\n${{ runner.temp }}/dotnet-resource-replay/retained/dotnet-resource-runtime/FAILED.json\n${{ runner.temp }}/dotnet-resource-replay/retained/dotnet-resource-runtime/build/**\n${{ runner.temp }}/dotnet-resource-replay/node/*.json\n${{ runner.temp }}/dotnet-resource-replay/node/node-stderr.txt\n${{ runner.temp }}/dotnet-resource-replay/node/commands/logs/**\n${{ runner.temp }}/dotnet-resource-replay/node/examples-controls/*.json\n${{ runner.temp }}/dotnet-resource-replay/node/foreign-controls/*.json\n${{ runner.temp }}/dotnet-resource-replay/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/dotnet-resource-replay/node/signed/release-set.json\n"
+          "name": "dotnet-resource-runtime-replay-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-resource-native/*.json\n${{ runner.temp }}/dotnet-resource-replay/*.json\n${{ runner.temp }}/dotnet-resource-replay/retained/dotnet-resource-runtime/FAILED.json\n${{ runner.temp }}/dotnet-resource-replay/retained/dotnet-resource-runtime/build/**\n${{ runner.temp }}/dotnet-resource-replay/node/*.json\n${{ runner.temp }}/dotnet-resource-replay/node/node-stderr.txt\n${{ runner.temp }}/dotnet-resource-replay/node/commands/logs/**\n${{ runner.temp }}/dotnet-resource-replay/node/examples-controls/*.json\n${{ runner.temp }}/dotnet-resource-replay/node/foreign-controls/*.json\n${{ runner.temp }}/dotnet-resource-replay/node/signed/my-greeting/build-observation.json\n${{ runner.temp }}/dotnet-resource-replay/node/signed/release-set.json\n",
+          "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 20
   },
   "jobId": "exact-component",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Explicit reviewed replacement: original77 compiler ancestry stays authenticated while exact successfulf919 actual-Pending native producer replaces old observer tuple; same component/cases/20minute limit, add frozen-reader controls only",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-resource-runtime-replay.yml"
 }

@@ -3,12 +3,11 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Original and corrected pinned JVM compiler control",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 10,
     "env": {
       "PYTHONDONTWRITEBYTECODE": "1"
     },
+    "name": "Original and corrected pinned JVM compiler control",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -34,21 +33,22 @@
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B tools/qualify_java_checkpoint_context.py --output \"$RUNNER_TEMP/checkpoint-context\"\n"
       },
       {
-        "name": "Retain bounded original and corrected compiler observations",
         "if": "always()",
+        "name": "Retain bounded original and corrected compiler observations",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "name": "java-checkpoint-context-${{ github.sha }}",
-          "retention-days": 3,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/checkpoint-context/result.json\n${{ runner.temp }}/checkpoint-context/commands.json\n${{ runner.temp }}/checkpoint-context/commands/logs/**\n"
+          "name": "java-checkpoint-context-${{ github.sha }}",
+          "path": "${{ runner.temp }}/checkpoint-context/result.json\n${{ runner.temp }}/checkpoint-context/commands.json\n${{ runner.temp }}/checkpoint-context/commands/logs/**\n",
+          "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 10
   },
   "jobId": "compiler-context",
   "kind": "job",
-  "reviewReason": "Reviewed security fork identities only; commands, permissions, inputs, conditions and historical coverage are preserved.",
+  "reviewReason": "Run only bounded original/corrected JVM compiler controls with immutable actions, pinned JDK and locked model artifacts.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-context.yml"
 }

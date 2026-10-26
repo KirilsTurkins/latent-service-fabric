@@ -3,19 +3,18 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "name": "Six producer implementation and five public ownership controls",
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 45,
     "env": {
       "CARGO_BUILD_JOBS": "2",
       "CARGO_INCREMENTAL": "0",
       "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
       "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
+    "name": "Six producer implementation and five public ownership controls",
+    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -35,16 +34,16 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
-          "shared-key": "host-contracts",
-          "key": "ubuntu-24.04",
-          "cache-targets": false,
-          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
           "cache-on-failure": false,
-          "save-if": false
+          "cache-targets": false,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
+          "save-if": false,
+          "shared-key": "host-contracts"
         }
       },
       {
@@ -58,21 +57,22 @@
         "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --producer-cell --output \"$RUNNER_TEMP/canonical-stream-outers\""
       },
       {
-        "name": "Retain eleven source-bound producer cell outcomes",
         "if": "always()",
+        "name": "Retain eleven source-bound producer cell outcomes",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "canonical-producer-cells-${{ github.sha }}",
           "path": "${{ runner.temp }}/canonical-stream-outers/receipt.json\n${{ runner.temp }}/canonical-stream-outers/FAILED.json\n${{ runner.temp }}/canonical-stream-outers/source-inputs.json\n${{ runner.temp }}/canonical-stream-outers/commands.json\n${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt\n",
-          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 45
   },
   "jobId": "stream-outers",
   "kind": "job",
-  "reviewReason": "Retain incoming producer shared-cell qualification and all historical obligations; migrate only the reviewed action identities.",
+  "reviewReason": "Reviewed #736 producer-cell v19: six finite private implementation counters, three new public creation/conversion cases and two affected existing public HostReady cases;26 commands/52 raw channels, unchanged two locked Cargo targets/features/45m2400/900/60/30/cleanup5/j2. No WAT/old consumer-five/private-six/canonical/cache/language replay. Existing owner modes/functions source exact. General P Boxes remain unpaid; only exact local Future adapter owns body. Mandatory14-file strict workspace cache auth retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }
