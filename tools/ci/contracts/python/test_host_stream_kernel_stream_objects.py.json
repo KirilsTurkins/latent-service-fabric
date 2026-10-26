@@ -1,30 +1,34 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Bind the reviewed NETDEV own-directory55-source nine changed-TU programme to existing process/public bounds; preserve all historical47/50/52 identities, targets, test cases, guards and coverage.",
+  "reviewReason":"Bind reviewed immutable58 notification sources plus readonly allocating-TU probe59/375/11 programme to unchanged process/public bounds; retain all earlier programmes and add only two synthetic/source controls. FULLREAD new helper setup AST; old test ASTs/skip policy exact, module setup hash only.",
   "module":"tools/tests/test_host_stream_kernel_stream_objects.py",
-  "cases":["StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed","StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels","StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets","StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope","StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources","StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets","StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable","StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work","StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes"],
+  "cases":["StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed","StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels","StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets","StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope","StreamObjectOwner.test_layout_elf_refuses_malformed_tables_and_reports_only_incomplete_lower_bound","StreamObjectOwner.test_layout_source_freeze_preserves_notify_and_all_prior_modes","StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources","StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets","StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable","StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work","StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes"],
   "guards":{
     "StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work":
-      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
     "StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes":
-      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
     "StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable":
-      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
     "StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope":
-      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
     "StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets":
-      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
     "StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed":
-      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
     "StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels":
-      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
     "StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources":
-      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822",
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
     "StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets":
-      "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822"
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
+    "StreamObjectOwner.test_layout_source_freeze_preserves_notify_and_all_prior_modes":
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
+    "StreamObjectOwner.test_layout_elf_refuses_malformed_tables_and_reports_only_incomplete_lower_bound":
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5"
   },
   "guardDefinitions":{
-    "0c44ea0f9574a11b56e32443d894d9dc929c13ccfeb9462df60123a0aeae7822":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:9b3ccc238ca4c870b9f7e01281563ae8c9833174794c263bcc1855cec7f365c2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+    "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:34251b70f0c15c2dfd5a0c560533b70ad3b9bbeb8b4d3a289222191ae5dc2650","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
   }
 }

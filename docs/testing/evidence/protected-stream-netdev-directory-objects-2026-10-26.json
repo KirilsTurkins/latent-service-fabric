@@ -1,0 +1,291 @@
+{
+  "schemaVersion": "lsf.protected-stream-netdev-directory-compile-evidence.v1",
+  "date": "2026-10-26",
+  "issue": 738,
+  "pullRequest": 1515,
+  "scope": "nine changed x86-64 C translation-unit objects; no running provider or useful-fit qualification",
+  "executed": {
+    "sourceCommit": "cbab64b24c966966e8983708372be7a319c70894",
+    "sourceTree": "f9f77fbae89c6789ef1ff78370853f7da0e7b660",
+    "run": 40368865475,
+    "job": 121733865918,
+    "event": "push",
+    "branch": "test/sdk-738-netdev-directory-objects-20261026",
+    "status": "success",
+    "artifact": {
+      "id": 12670614099,
+      "bytes": 1873183,
+      "sha256": "02227f07e7b7620c36cf7ff2b31bdbb8620282b29187dd77eb66ba11b4ef9082",
+      "safeCrcShaMembers": 74,
+      "admittedPayloadMembers": 73,
+      "admittedPayloadBytes": 6426567,
+      "expandedUnionBytes": 6435808
+    }
+  },
+  "objects": {
+    "format": "ELF64 little-endian x86-64 ET_REL; ordinary unresolved externals are not a link claim",
+    "count": 9,
+    "targets": [
+      "net/factory.o",
+      "drivers/base/core.o",
+      "lib/kobject.o",
+      "fs/sysfs/dir.o",
+      "fs/kernfs/dir.o",
+      "lib/idr.o",
+      "lib/radix-tree.o",
+      "security/security.o",
+      "security/selinux/hooks.o"
+    ],
+    "identities": {
+      "drivers/base/core.o": {
+        "bytes": 136712,
+        "sha256": "ef129b194a1fc0cc1763e32783a9a84f369e9efc5a2c974de435bef0d357de49"
+      },
+      "fs/kernfs/dir.o": {
+        "bytes": 48384,
+        "sha256": "3b135f2e63f613e9f7b8ac9bdae3e08d92788e1f9a324d875032cb1e4ef9c3cb"
+      },
+      "fs/sysfs/dir.o": {
+        "bytes": 10168,
+        "sha256": "0a79175a55116a1bb37d7bd4f99f6eea7e360066d1f12a12acb0a46c143f3934"
+      },
+      "lib/idr.o": {
+        "bytes": 21880,
+        "sha256": "f3c6fbcce2e9fc5c9bb876adad4dbae3449db4410108143095cfe12bcb6a89c4"
+      },
+      "lib/kobject.o": {
+        "bytes": 31488,
+        "sha256": "580830e6df9b4bba5e5e6b8a5db8dea720842cc9e550eca7c033e5311959c66e"
+      },
+      "lib/radix-tree.o": {
+        "bytes": 39368,
+        "sha256": "01d43d705d549d309135e810d4645a035bd54641b5fce2ad7922150c9e28745f"
+      },
+      "net/factory.o": {
+        "bytes": 318368,
+        "sha256": "1883e98aadd4ee073090f4002be683d84af8a0ce1c5aa4584c370e6094586214"
+      },
+      "security/security.o": {
+        "bytes": 421640,
+        "sha256": "56cde386076aa49ccae3e10e0f0a352fe518037ce7263215e81ab91ade268d44"
+      },
+      "security/selinux/hooks.o": {
+        "bytes": 176584,
+        "sha256": "07e9b52f6c445ffb5cb4e85607ddb259d6fdd77c98128a91a8a00459dde87975"
+      }
+    }
+  },
+  "source": {
+    "rows": 55,
+    "bytes": 464637,
+    "canonicalSha256": "4a84771d1697ca00215256d1ea50f5edd7b442cd258fb862053f0a7cd2297f38",
+    "derivedRows": 371,
+    "derivedCanonicalSha256": "c30c57f07a10aefb5ad736bb6362f002b5110292b2be0305cf685dd76c5a7147",
+    "currentBeforeAfterGitBindings": 2786,
+    "currentBeforeAfterEqual": true,
+    "currentInputCanonicalSha256": "919834a17df1ed96ddb22eb305268a70d6fd8785b549820ae70283dc506d6421",
+    "wholeGitTreeInventory": {
+      "bytes": 1570865,
+      "sha256": "c0b0487f933cbfc91be676ce36c7d97666b7f78d642d94b8bb0cace435196ceb"
+    },
+    "headAndTreeBeforeAfterEqual": true,
+    "baseline": {
+      "commit": "013c3866942f1654b0effeebc93986b1c5268c2c",
+      "tree": "ee776dfd184e4f3128561ba5213f95988962c98e",
+      "beforeAfterGitBindings": 2725,
+      "beforeAfterEqual": true,
+      "inputCanonicalSha256": "2804d4ea947ccb2187096abbd35c93ae14d885aaa5f1745a04e649a034890505",
+      "derivedRows": 327,
+      "derivedCanonicalSha256": "628b033c6b9dc46f5dfb1ea0d235770f1ae4875195af213f3b09754d649a3abe",
+      "compilerInvocations": 0,
+      "runtimeInvocations": 0,
+      "qualificationProjectionApplied": false
+    },
+    "configuration": {
+      "originalDefconfig": {
+        "bytes": 143146,
+        "sha256": "fdc184f17070af8ac583581edeb9ed8042c3ade2937eb230f8aeff79d71c7e5e"
+      },
+      "acceptedSelected": {
+        "bytes": 143135,
+        "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+      },
+      "generatedAutoconf": {
+        "bytes": 57331,
+        "sha256": "815d672d934387b66191941ff52d7fb059c1974257556eb816559a13fec2d9eb"
+      }
+    },
+    "officialMaintainedArchive": {
+      "bytes": 148686048,
+      "sha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428"
+    },
+    "old52ByteExact": true,
+    "old52SourceCanonicalSha256": "6784ec02a37b8c845edaab608f086ac7950ffb9e8afd5de36ce54fc2e90a8fdd",
+    "newProjectorAfterUnchanged369Intermediate": true
+  },
+  "commands": {
+    "count": 28,
+    "rawChannels": 56,
+    "allCompletedReapedZeroExit": true,
+    "ownedProcessCleanupConfirmed": true,
+    "compile": {
+      "completed": true,
+      "descendantsCleaned": true,
+      "elapsedMillis": 14257.146562000002,
+      "exitCode": 0,
+      "stage": "netdev-directory-objects"
+    }
+  },
+  "tools": {
+    "versions": {
+      "as": "GNU assembler (GNU Binutils for Ubuntu) 2.42",
+      "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "ld": "GNU ld (GNU Binutils for Ubuntu) 2.42",
+      "make": "GNU Make 4.3",
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+    },
+    "identities": {
+      "as": {
+        "bytes": 745768,
+        "invocationPath": "/usr/bin/as",
+        "resolvedPath": "/usr/bin/x86_64-linux-gnu-as",
+        "sha256": "21aff249b692b5c31a44007491f922dcb49f41323e362c57d2ada3f52eddb7f0"
+      },
+      "curl": {
+        "bytes": 297288,
+        "invocationPath": "/usr/bin/curl",
+        "resolvedPath": "/usr/bin/curl",
+        "sha256": "1ccbd3dae948374ba8eef1ebda26c64b783ede50b463196e53666e0880bdac60"
+      },
+      "gcc": {
+        "bytes": 1023032,
+        "invocationPath": "/usr/bin/gcc",
+        "resolvedPath": "/usr/bin/x86_64-linux-gnu-gcc-13",
+        "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26"
+      },
+      "ld": {
+        "bytes": 1359128,
+        "invocationPath": "/usr/bin/ld",
+        "resolvedPath": "/usr/bin/x86_64-linux-gnu-ld.bfd",
+        "sha256": "e9ceb054c12207970f2726dfc07e9a66b411602748628baf27399f02a9bbb31b"
+      },
+      "make": {
+        "bytes": 259808,
+        "invocationPath": "/usr/bin/make",
+        "resolvedPath": "/usr/bin/make",
+        "sha256": "d78b8f1d099fbcfb6f2f49ab87223b9b68fb3956642f92d6ec6de812e8afa965"
+      },
+      "rustc": {
+        "bytes": 21113232,
+        "invocationPath": "/home/runner/.cargo/bin/rustc",
+        "resolvedPath": "/home/runner/.cargo/bin/rustup",
+        "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+      },
+      "tar": {
+        "bytes": 440264,
+        "invocationPath": "/usr/bin/tar",
+        "resolvedPath": "/usr/bin/tar",
+        "sha256": "3ee2c3c0b4dd9aacebfd2f0fbae44bad36348203acff78a44888dd58c05f811c"
+      }
+    },
+    "hermetic": false,
+    "compilerImplicitInputsAttested": false
+  },
+  "limits": {
+    "jobMinutes": 25,
+    "originalOwnerSeconds": 1320,
+    "compileCommandSeconds": 1200,
+    "parallelJobs": 2,
+    "exactBaselineFetchSeconds": 90,
+    "oneOriginalCleanupReserveSeconds": 5,
+    "maximumCommands": 32,
+    "perCommandCombinedRawBytes": 4194304,
+    "aggregateRawLogBytes": 16777216,
+    "publicUnionBytes": 134217728,
+    "admissionMaximumBytes": 1048576,
+    "physicalBankBytes": 524288,
+    "infrastructureBytes": 196608,
+    "records": 256,
+    "applicationContexts": 4,
+    "sourceCaptureFiles": 8992,
+    "sourceCaptureBytes": 78643200,
+    "sourceArchiveBytes": 85983232
+  },
+  "programmeSelection": {
+    "newPureSourceAdmissionControlsPassed": 2,
+    "newNineChangedObjectsPassed": true,
+    "oldFourObjectStepsSkipped": true,
+    "oldEmptyClassdirNineObjectStepsSkipped": true,
+    "oldEighteenObjectJobSkipped": true,
+    "oldEighteenObjectJob": 121733868162,
+    "oldResultsRelabelled": false,
+    "manualDispatches": 0
+  },
+  "publication": {
+    "mergedCommit": "bdd50a4506394e9a1f0d85df14d09c1ec18d7ba4",
+    "mergedTree": "f9f77fbae89c6789ef1ff78370853f7da0e7b660",
+    "soleParent": "b7cee82eb2fa23864b0bc2f9f78f4d7e67aa68d2",
+    "treeEqualsExecutedTree": true,
+    "sourceOnlyMergedBeforeIndependentResultAudit": true,
+    "compilerReplayedForComposition": false,
+    "jsonStorage": "one existing ordinary fixture, whitespace-only; recursive ordered values/types and loader unchanged",
+    "priorHistoricalEvidenceUnchanged": true
+  },
+  "rawMetadataIdentities": {
+    "receipt.json": {
+      "bytes": 25926,
+      "sha256": "57733569a3abc35ac7c3e53ccef96d6737dbc0db15b1e430e547c36a8cfc41ef"
+    },
+    "source-inputs.json": {
+      "bytes": 776197,
+      "sha256": "ae987cad8bb8a2376fba9650f46ed4ea8a88d442340e96263be384f688c80f3d"
+    },
+    "derived-inputs.json": {
+      "bytes": 45411,
+      "sha256": "c30c57f07a10aefb5ad736bb6362f002b5110292b2be0305cf685dd76c5a7147"
+    },
+    "baseline-inputs.json": {
+      "bytes": 862389,
+      "sha256": "753e9befa4652cc240562130a529c5863b42f7832db8e36c506c8091da4e6dae"
+    },
+    "commands.json": {
+      "bytes": 3356,
+      "sha256": "6e15706fcd1cec6e6581f2038cccdad453d89e9fcd49ec33311b3e85ed60d333"
+    },
+    "ADMISSION.json": {
+      "bytes": 9241,
+      "sha256": "52d76c38b08e2ed19aa38d19c649cb5746b3e2313c42e8883a1956954a3cf37e"
+    },
+    "baseline.config": {
+      "bytes": 143146,
+      "sha256": "fdc184f17070af8ac583581edeb9ed8042c3ade2937eb230f8aeff79d71c7e5e"
+    },
+    "selected.config": {
+      "bytes": 143135,
+      "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+    },
+    "generated-autoconf.h": {
+      "bytes": 57331,
+      "sha256": "815d672d934387b66191941ff52d7fb059c1974257556eb816559a13fec2d9eb"
+    }
+  },
+  "claims": {
+    "compiledObjectsOnly": true,
+    "kernelLinked": false,
+    "imageBuilt": false,
+    "booted": false,
+    "normalOperationsExecuted": false,
+    "compiledUsefulFit": false,
+    "physicalRootRetirementQualified": false,
+    "consumerSelected": false,
+    "productionInstallation": false,
+    "whole738Complete": false
+  },
+  "remaining": [
+    "platform-notification and ordinary NETDEV files/groups/queues allocation/free closure",
+    "inherited security attributes/labels and shared IDR/radix useful retirement",
+    "compiled useful arena/RX/DMA fit under the original bounds",
+    "actual kernel operations and physical Root retirement",
+    "normal node/provider/TLS/DNS and operator installation qualification"
+  ]
+}
