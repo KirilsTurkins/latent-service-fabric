@@ -30,7 +30,7 @@ def original_compiler_parent(test, parent):
         'Save only reverified Java prepared input bytes'])
     # Covers every command, action SHA, cache key/path, token scope and condition.
     test.assertEqual(signature(selected),
-        '546d215a6b29407956193b415b001e1d24686b7e427f6d92c8dfda06ffefc499')
+        'f145f3a3fbb98a7473f7c35bb07b1b3fd82b3f82a5e54003fc04f72755bad476')
     legacy = next(step['run'] for step in model()['jobs']['scratch-refusals']['steps']
         if step.get('name') == 'Install only the pinned ordinary Java component compiler')
     test.assertEqual(hashlib.sha256(legacy.encode()).hexdigest(),
@@ -106,11 +106,11 @@ class JavaScratchWiring(unittest.TestCase):
             'Export only exact normal public prerequisites for the separate Java scratch packet',
             'Retain verified normal Java products without keys or compiler caches'}]
         self.assertEqual(len(parent['steps']), 43)
-        self.assertEqual(signature(parent), '675efc9337b2541aa3e3ded18bc473fb3109c5653794d80c347a45a539c12fb6')
+        self.assertEqual(signature(parent), 'd7166e281fd131f0e43f0412e680c79f89c14f0a614fc2acfea0ff84b70563ed')
         dependency = dict(jobs['dependency-ingestion'])
         self.assertEqual(dependency.pop('if'),
             "${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}")
-        self.assertEqual(signature(dependency), '610ba34e0cd9c37dacdc2f5c1575272cc609d62f261656ff145e4bdc22f4694e')
+        self.assertEqual(signature(dependency), 'd79386c6ceabb835c556a46db3b480f43e87f3f35bd9189f4e424c4281eca44f')
         selector = model()['on']['workflow_dispatch']['inputs']['qualify-scratch-refusals']
         self.assertEqual(selector['type'], 'boolean')
         self.assertIs(selector['default'], False)
@@ -160,7 +160,7 @@ class JavaScratchWiring(unittest.TestCase):
         selected = next(s['run'] for s in child if s.get('name') == 'Install only the pinned ordinary Java component compiler')
         self.assertEqual(selected.replace('          ', ''),
             original.replace('set -euo pipefail\n', 'set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\n', 1).replace('          ', ''))
-        for action in ('actions/setup-java@', 'bytecodealliance/actions/wasm-tools/setup@'):
+        for action in ('KirilsTurkins/lsf-setup-java@', 'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@'):
             self.assertEqual(next(s for s in child if action in s.get('uses', '')),
                              next(s for s in parent if action in s.get('uses', '')))
 

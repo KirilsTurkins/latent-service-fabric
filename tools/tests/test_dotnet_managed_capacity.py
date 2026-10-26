@@ -34,7 +34,7 @@ class ManagedCapacityTests(unittest.TestCase):
             self.assertEqual(value['jobs'][name]['if'], previous+' && !inputs.owner_capacity')
             value['jobs'][name]['if'] = previous
         self.assertEqual(hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
-            '0b62b9b830d6d01960cbf461b55323f4e2c2871c200f2bb1793f932377f9da0a')
+            'f99e0b898d7c2bb8f2b5bc73574fc10ddf8b194b54b42970189dcac61181abf1')
         commands = [step.get('run', '') for step in job['steps']]
         self.assertEqual(sum('tools/qualify_dotnet_managed_capacity.py' in line for line in commands), 1)
         self.assertFalse(any('tools/qualify_dotnet_http_mixed.py' in line for line in commands))

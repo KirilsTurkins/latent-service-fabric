@@ -114,7 +114,7 @@ class FetchFailureFrames(unittest.TestCase):
         self.assertIn("github.event_name == 'workflow_dispatch'", observer['if'])
         self.assertEqual(observer['timeout-minutes'], 15)
         steps = observer['steps']
-        downloads = [step['with'] for step in steps if step.get('uses', '').startswith('actions/download-artifact@')]
+        downloads = [step['with'] for step in steps if step.get('uses', '').startswith('KirilsTurkins/lsf-download-artifact@')]
         self.assertEqual(len(downloads), 2)
         self.assertTrue(all(row['run-id'] == 39247171188 and fetch.TESTED in row['name'] for row in downloads))
         selected = [step['with']['ref'] for step in steps if step.get('with', {}).get('ref')]

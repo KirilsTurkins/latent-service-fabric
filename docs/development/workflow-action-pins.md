@@ -21,62 +21,62 @@ refer to the archived pre-sharding snapshot, not to an active update procedure.
 
 ## Reviewed identities
 
-The pins introduced for Phase 3 issue #281 were resolved against the named upstream repositories on **2026-09-13**. The action version is intentionally separate from tool versions supplied through `with:`.
+The current security forks were reviewed on **2026-10-26**. They extend the pins introduced for Phase 3 issue #281. The action version is intentionally separate from tool versions supplied through `with:`.
 
 | Action | Reviewed upstream ref | Commit |
 | --- | --- | --- |
-| `actions/checkout` | `v7.0.1` | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
-| `actions/setup-python` | `v7.0.0` | `5fda3b95a4ea91299a34e894583c3862153e4b97` |
-| `actions/setup-go` | `v5` | `40f1582b2485089dde7abd97c1529aa768e1baff` |
-| `actions/setup-node` | `v7.1.0` | `949feb2413d6458794dcd2491c4babbbce0c15c1` |
-| `actions/setup-java` | `v6.0.1` | `de7274f081f381c8f8158605e0321c36c376e2e6` |
-| `actions/setup-dotnet` | `v6.0.0` | `a98b56852c35b8e3190ac28c8c2271da59106c68` |
-| `actions/upload-artifact` | `v7.0.2` | `cf430e030ddbb5b0abf93d22962f4752f3646cd9` |
-| `actions/download-artifact` | `v8.0.2` | `9000827ccba6bdab643e8b6fd33ac0654aef8333` |
-| `actions/cache/restore`, `actions/cache/save` | `v5` | `caa296126883cff596d87d8935842f9db880ef25` |
-| `actions/attest-build-provenance` | `v4.2.2` | `4d101475d8b20a2381f78447822ac1eab6504dd8` |
-| `actions/upload-pages-artifact` | `v5.0.0` | `fc324d3547104276b827a68afc52ff2a11cc49c9` |
+| `KirilsTurkins/lsf-setup-java` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-java/pull/1296)) | `f041d6677134ada73c077d0c012bd78164b251a7` |
+| `KirilsTurkins/lsf-rust-cache` | `v2.9.3` + upstream changes and security fixes ([review](https://github.com/Swatinem/rust-cache/pull/396)) | `476b290465f7c84db317df6e6a6e2d3c12ea3477` |
+| `KirilsTurkins/lsf-attest-build-provenance` | `v4.2.2` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-attest-build-provenance/pull/1)) | `16b356100dfe77222eebe783b5e26a565b76055a` |
+| `KirilsTurkins/lsf-cache` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/cache/pull/1804)) | `2ff27e45011b8bcf31ef566ae84c1c923c8aea69` |
+| `KirilsTurkins/lsf-checkout` | `v7.0.1` + upstream changes and security fixes ([review](https://github.com/actions/checkout/pull/2607)) | `c3024dfac542bb46ebccc7829ddf1f95e0be8da9` |
+| `KirilsTurkins/lsf-deploy-pages` | `v5.0.1` + upstream changes and security fixes ([review](https://github.com/actions/deploy-pages/pull/453)) | `9290f9265d55d382005aa5f300fc4e9d5bb65cb2` |
+| `KirilsTurkins/lsf-download-artifact` | `v8.0.2` + upstream changes and security fixes ([review](https://github.com/actions/download-artifact/pull/496)) | `f073ba9e3801be93f933866d4c9a748e42157e5f` |
+| `KirilsTurkins/lsf-setup-dotnet` | `v6.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-dotnet/pull/795)) | `f5bcdac7f26977ef44527f837688dd86faf648ec` |
+| `KirilsTurkins/lsf-setup-go` | `v7.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-go/pull/805)) | `3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e` |
+| `KirilsTurkins/lsf-setup-node` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-node/pull/1653)) | `c1136b2d97fe79ef645e9508b2048a222f50a170` |
+| `KirilsTurkins/lsf-setup-python` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-python/pull/1381)) | `50257733267ef69f611231aad6b77a62adca7140` |
+| `KirilsTurkins/lsf-upload-artifact` | `v7.0.2` + upstream changes and security fixes ([review](https://github.com/actions/upload-artifact/pull/825)) | `01d82cc6ae713563e8d04f36a17af500cf82a6a9` |
+| `KirilsTurkins/lsf-upload-pages-artifact` | `v5.0.0` + upstream changes and security fixes ([review](https://github.com/actions/upload-pages-artifact/pull/166)) | `f6fd45bb134f6855d391ed2198e9b3d57d305a05` |
+| `KirilsTurkins/lsf-buf-setup-action` | `v1.50.0` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-buf-setup-action/pull/1)) | `7e1d5f1d4a4a7d82b1ff79968166c4f50a66ce57` |
+| `KirilsTurkins/lsf-bytecodealliance-actions` | `v1.1.3` + upstream changes and security fixes ([review](https://github.com/bytecodealliance/actions/pull/24)) | `9244ec9f4725400c84054e3e6ec97514cadddf53` |
+| `KirilsTurkins/lsf-setup-zig` | `v2.2.1` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-setup-zig/pull/1)) | `e064b42fa88ad0859d8b54838b44f672ffd5ea7a` |
+| `KirilsTurkins/lsf-attest` | `v4.2.1` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-attest/pull/1)) | `5c5af1d743b681abf5f53d906d2bcbbcb6da5ba2` |
 | `dtolnay/rust-toolchain` | `1.97.1` | `4716b85f2fac3e324e64fa2810f6b5c3905760a5` |
-| `Swatinem/rust-cache` | `v2.9.2` | `6323deb102c322ba6fcbdcafc7e3dddab59af2b6` |
-| `bytecodealliance/actions` | `v1` | `9152e710e9f7182e4c29ad218e4f335a7b203613` |
-| `bufbuild/buf-setup-action` | `v1` | `a47c93e0b1648d5651a065437926377d060baa99` |
-| `mlugg/setup-zig` | `v2` | `d1434d08867e3ee9daa34448df10607b98908d29` |
 
-The `actions/setup-java` v6.0.1 identity was resolved and its action definition
-reviewed on **2026-09-27**. The action uses Node 24 on the hosted runners and
-retains the `distribution: temurin` and exact `java-version: '25.0.4+101.0.LTS'`
-inputs selected by LSF. The JDK baseline remains Temurin 25.0.4.1+1. The workflow
-hashes in `tools/ci/history/commands-v1.json` reflect the new action pin; required commands
-and job conditions are unchanged.
+The Java fork includes `actions/setup-java` v6.1.0 and the current upstream
+changes, with Undici 6.29.1 rebuilt into setup and cleanup. It retains Node 24,
+the explicit Temurin selector, cache inputs and installation steps. Optional
+Maven repository inputs remain unused. The action repository migrations were
+reviewed in the ownership-local workflow contracts; exact preservation fixtures
+retain their command, selector, deadline and token-scope assertions.
 
-The `actions/attest-build-provenance` v4.2.2 identity was resolved and its action
-definition reviewed on **2026-09-27**. It delegates to the pinned `actions/attest`
-v4.2.1 action and preserves the `subject-path` input and `bundle-path` output used
-by the developer and native runtime workflows. Registry publication remains
-disabled by default. The workflow hashes in `tools/ci/history/commands-v1.json` reflect the
-new action pin; required commands and job conditions are unchanged.
+The provenance wrapper includes `actions/attest-build-provenance` v4.2.2 and
+current upstream changes. It delegates to the patched LSF `attest` fork recorded
+above and preserves the `subject-path` input and `bundle-path` output. Registry
+publication remains disabled by default. The child graph is scanned recursively.
 
-The `actions/upload-pages-artifact` v5.0.0 identity was resolved and its action
-definition reviewed on **2026-09-27**. It delegates artifact upload to the pinned
-`actions/upload-artifact` v7.0.0 action and preserves the existing Pages archive,
+The Pages wrapper includes `actions/upload-pages-artifact` v5.0.0 and current
+upstream changes. It delegates upload to the patched LSF `upload-artifact`
+v7.0.2 fork and preserves the existing Pages archive,
 `name`, `path` and retention inputs. Its new `include-hidden-files` input defaults
-to false, preserving the site's current file selection. The Pages workflow hash
-in `tools/ci/history/commands-v1.json` reflects the new pin; publication guards and required
-commands are unchanged.
+to false, preserving the site's current file selection. Publication guards and
+required commands remain covered by the ownership-local contracts.
 
-The `actions/checkout` v7.0.1 identity, release notes and action-definition diff
+The initial `actions/checkout` v7.0.1 identity, release notes and action-definition diff
 were reviewed on **2026-09-27**. It uses Node 24. All repository checkouts retain
 `persist-credentials: false` and their existing refs. The new fork-PR checkout
 guard remains enabled; these workflows do not use `pull_request_target` or
 `workflow_run`. The reviewed workflow hashes reflect the new pin without
 changing required commands or publication conditions.
 
-The `actions/setup-python` v7.0.0 identity, release notes and action-definition
+The initial `actions/setup-python` v7.0.0 identity, release notes and action-definition
 diff were reviewed on **2026-09-27**. It uses Node 24 and retains the explicitly
 selected Python versions and cache inputs. These workflows do not use the
 removed `pip-install` input; dependency installation still uses the existing
 locked commands. The workflow hashes in `tools/ci/history/commands-v1.json` reflect the new
-pin; required commands and job conditions are unchanged.
+pin; required commands and job conditions are unchanged. The current security
+fork includes v7.1.0 while preserving LSF's explicit Python selector and cache inputs.
 
 The `actions/setup-dotnet` v6.0.0 identity, release notes and action-definition
 diff were reviewed on **2026-09-27**. It uses Node 24 and keeps the explicit
@@ -130,7 +130,7 @@ Action-pin updates are supply-chain changes owned by repository maintainers and 
 4. Run `python3 -m unittest tools.tests.test_validate_workflow_actions tools.tests.test_ci_contracts`, `python3 tools/validate_workflow_actions.py`, and `python3 tools/ci_coverage.py`, then run the repository validation selected for the workflow change. Do not edit command contracts for a pin/comment-only change. Workflow edits remain full-CI changes; historical 100k or measurement campaigns are not required merely to change an immutable action identity.
 5. If the update regresses validation, roll back to the previously reviewed commit SHA rather than changing the version comment or policy check to hide the failure.
 
-The `actions/cache/restore` and `actions/cache/save` v5 identities and their
+The initial `actions/cache/restore` and `actions/cache/save` v5 identities and their
 Node 24 action definitions were reviewed on **2026-09-30**. The developer compiler
 cache is keyed by the committed acquisition recipes and language. Restored
 archives remain untrusted: the builder checks their byte ceilings and exact
@@ -147,3 +147,10 @@ The workflow policy is also called from `tools/validate_contracts.sh`, so execut
 Pinning an entry action prevents a mutable Git ref from silently selecting different action source. It does **not** authenticate every executable or dependency that the action downloads at runtime. LSF therefore keeps explicit versions for Rust, Python, Go, Node.js, Java, .NET, Zig, `wasm-tools`, and Buf where the existing setup actions support them, and reviews changes to those versions separately. Transitive JavaScript dependencies embedded in an action are fixed by the selected action commit, but network-fetched tool distributions and their upstream delivery mechanisms remain part of the CI trust boundary.
 
 The separate `docs/wiki` source branch has two executable workflows: source validation and Wiki publication. Both use checkout and Python setup and require the same reviewed pins. Its dedicated Wiki change carries this checker and its locked parser dependency; Wiki content stays on that branch. The complete pin policy will also run in the scoped/periodic security checks in #282 and the Phase 3 completion gate #240.
+
+
+## Action dependency coverage
+
+The maintained security forks above are pinned by commit. `.github/security/actions.json` binds each executable entry point, including cache subactions and composite children, to byte-pinned metadata and complete npm manifest/lock snapshots. The dependency baseline scans runtime and development packages; the shell-only Rust toolchain action has no npm graph. Workflow or action changes select that scan. Unknown revisions, missing children, changed snapshots, and stale records fail closed.
+
+For an update, rebuild and test the selected fork revision, authenticate its manifest, lock, and action metadata against that exact Git commit, then update the corresponding snapshots, hashes, and workflow pins together. Run the dependency baseline and action-graph tests before merging. [The security fork ledger](action-security-forks.md) records upstream contributions and delivery restrictions.

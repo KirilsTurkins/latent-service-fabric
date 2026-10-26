@@ -268,7 +268,7 @@ class JavaResourceConformance(unittest.TestCase):
             return hashlib.sha256(json.dumps(normalized(value),sort_keys=True,separators=(',',':')).encode()).hexdigest()
         self.assertEqual(fingerprint({key:value for key,value in current.items() if key != 'jobs'}),
             'af0a544a198c8b85f77c03c40b2791512abfc246ecd90800c0b92b0e0e02cf32')
-        expected = {'compiler-component': '218d365d543d4ca4f1b872aba93c6efaa1f73fd3272ef07ec1f0a1bc0b2878d6', 'dependency-ingestion': '321f9faceccf9dbd41a552de077947e9858e665f2ee4cc3322cf5ca4b27c9811', 'scratch-refusals': '5191c7232f3b9f822ebbd43f9abae51b8f058820e3665bfba571b68ba4a49b72'}
+        expected = {'compiler-component': 'b04c9c708e4f5e432f92ff8519fb32fc8e986058a63806e24bfeaaead5a9d05b', 'dependency-ingestion': '08232aca7d57e6665a3acde9419100240434ad1562c09125ba16c9ae632d0633', 'scratch-refusals': 'd0f71ccb34b80325c98274234f8590966bded6ebc555062bb3f63f54747697e9'}
         self.assertEqual({name:fingerprint(current['jobs'][name]) for name in expected},expected)
         job = current['jobs']['resource-conformance']
         self.assertEqual((job['needs'],job['timeout-minutes']),('compiler-component',20))

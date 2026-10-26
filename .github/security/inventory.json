@@ -342,11 +342,86 @@
       "path": "crates/vendor/bytes/Cargo.toml"
     },
     {
+      "isolated": true,
       "kind": "cargo",
       "lock": "crates/vendor/wasmtime-cache/Cargo.lock",
-      "path": "crates/vendor/wasmtime-cache/Cargo.toml",
-      "isolated": true,
-      "manifest_sha256": "e68146456e40062edfde8d47c853ea8155f20b63044fba94bf8ef24f2c8bae5d"
+      "manifest_sha256": "e68146456e40062edfde8d47c853ea8155f20b63044fba94bf8ef24f2c8bae5d",
+      "path": "crates/vendor/wasmtime-cache/Cargo.toml"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/setup-dotnet/package-lock.json",
+      "path": ".github/security/actions/setup-dotnet/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/download-artifact/package-lock.json",
+      "path": ".github/security/actions/download-artifact/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/cache/package-lock.json",
+      "path": ".github/security/actions/cache/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/setup-node/package-lock.json",
+      "path": ".github/security/actions/setup-node/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/setup-python/package-lock.json",
+      "path": ".github/security/actions/setup-python/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/attest/package-lock.json",
+      "path": ".github/security/actions/attest/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/rust-cache/package-lock.json",
+      "path": ".github/security/actions/rust-cache/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/setup-java/package-lock.json",
+      "path": ".github/security/actions/setup-java/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/setup-zig/package-lock.json",
+      "path": ".github/security/actions/setup-zig/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/checkout/package-lock.json",
+      "path": ".github/security/actions/checkout/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/upload-artifact/package-lock.json",
+      "path": ".github/security/actions/upload-artifact/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/deploy-pages/package-lock.json",
+      "path": ".github/security/actions/deploy-pages/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/buf-setup-action/package-lock.json",
+      "path": ".github/security/actions/buf-setup-action/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/bytecodealliance-actions/package-lock.json",
+      "path": ".github/security/actions/bytecodealliance-actions/package.json"
+    },
+    {
+      "kind": "npm",
+      "lock": ".github/security/actions/setup-go/package-lock.json",
+      "path": ".github/security/actions/setup-go/package.json"
     }
   ],
   "non_manifest_modules": [

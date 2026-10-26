@@ -89,15 +89,15 @@ class RustScratchReplay(unittest.TestCase):
         selector = model['on']['workflow_dispatch']['inputs']['replay-scratch-refusals']
         self.assertEqual(selector['type'], 'boolean'); self.assertIs(selector['default'], False)
         expected = {
-            'standard-clocks': '2d4c30f5cc6f4efcce7f1e8c66c3a4d88166765bfb56bb95d52291f36b3f0209',
-            'git-components': '8ccfe97e408e6448bd413c4f8232f85cd4802af23e9a5e915345aaf7b2e753c2',
-            'standard-stdio': '90aa26f4dd0ee4f511226bb7e273233733cbf0a616268941504fd932a25c647a',
-            'standard-entropy': 'f5209489e21bea792ac5875549d78eb6f84fba53d55f900a0c7feb504d5c080d',
-            'compatibility': '635328a9dc2bf890134232858a0327aa2d98f826d91564d708f5fee4ef512536',
-            'scratch-refusals': '61175fefba9c907a2f4d14e42b6aa7f59ad698a0ae4d2151ad3d9281a240b112',
-            'dependency-matrix': 'd1d2a66a2cea7567b015a57ac9f2e34bf462f4f0dd3e6a7890e8a7cc3cd744d2',
-            'git-closure': '1ac4407d432f10fef94735fcf6d45982d04d2027783ff59cee58c052a1bbeb55',
-            'authoring': '31825e93f2c639608acdb4b7e04e5c285c5bfd1864e20da5dc764e154eacde8e'}
+            'standard-clocks': '2f85e02551ffae315f79253363eef9ec668065f66db950421a3d4653a9909131',
+            'git-components': '781e1e3016a53b1a230519f97cc97faa4669753aa736e1801087f2718c465d8b',
+            'standard-stdio': 'e872419c902e741c14a33cbeadc5c8a93a644673f49bda6bc3e6d394b7dca98c',
+            'standard-entropy': '8f6a1fee6b660cf42e9fe48dd79dfb20033a844e3cc33acd051879a0c91edf43',
+            'compatibility': 'f35befe01bdb525024e4c3b122bcf64894bb029eadfaf832e4f75e4c8e3a15b5',
+            'scratch-refusals': 'fdd5d99f8f7c4e9605c346ee6836f439519ba6e0b5e1890e5f134d4e67a84a25',
+            'dependency-matrix': '104d0c7b43056b5359d63d67afffbe3d90cf33af37766cc1741d7800cadcb9a0',
+            'git-closure': 'dec8580d8a4a81287f45e88db187a2719602e20b8554c36d7a68ce360d9f1386',
+            'authoring': '0dad646ab277e9f9b39cfa21c9d09b3a12495793fe3070ebe5e897412552bc57'}
         for name, identity in expected.items():
             job = copy.deepcopy(model['jobs'][name])
             self.assertEqual(job.pop('if'), "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}")
