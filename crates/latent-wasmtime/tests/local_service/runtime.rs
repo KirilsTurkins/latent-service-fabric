@@ -166,6 +166,18 @@ async fn signed_java_host_imports_suspend_only_their_owned_callers() {
 #[tokio::test]
 #[ignore = "requires two normally captured Java libraries and the explicit fiber I/O profile"]
 async fn signed_java_published_libraries_use_unchanged_default_workers() {
+    if std::env::var_os("LSF_JAVA_SCHEDULED_LIBRARIES_FIXTURE").is_some() {
+        assert!(std::env::var_os("LSF_JAVA_WORKER_LIBRARIES_FIXTURE").is_none());
+        signed_java_fiber_fixture(
+            "LSF_JAVA_SCHEDULED_LIBRARIES_FIXTURE",
+            include_bytes!(
+                "../../../../sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java"
+            ),
+            "java-scheduled-libraries",
+        )
+        .await;
+        return;
+    }
     signed_java_fiber_fixture(
         "LSF_JAVA_WORKER_LIBRARIES_FIXTURE",
         include_bytes!(
@@ -195,6 +207,19 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     let prepared = std::path::PathBuf::from(
         std::env::var_os(variable).expect("prepare the pinned Java fiber fixture"),
     );
+    if name == "java-scheduled-libraries" {
+        assert!(prepared.is_absolute());
+        for (path, maximum) in [
+            ("src/Capsule.java", expected_source.len() as u64),
+            ("FIBERS-COMPILE.json", 8 * 1024 * 1024),
+            ("build/component.wasm", 64 * 1024 * 1024),
+            ("wit/service.wit", 1024 * 1024),
+        ] {
+            let metadata = std::fs::symlink_metadata(prepared.join(path)).unwrap();
+            assert!(metadata.file_type().is_file() && !metadata.file_type().is_symlink());
+            assert!(metadata.len() <= maximum);
+        }
+    }
     let source = std::fs::read(prepared.join("src/Capsule.java")).unwrap();
     assert_eq!(source.as_slice(), expected_source);
     let record: serde_json::Value =
@@ -243,6 +268,31 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
             false
         );
     }
+    if name == "java-scheduled-libraries" {
+        assert_eq!(record["fixture"], "scheduled-library");
+        assert_eq!(record["status"], "component-built-unqualified");
+        assert_eq!(
+            record["scheduledSource"]["status"],
+            "SDK-source-controls-passed"
+        );
+        assert_eq!(
+            record["scheduledSource"]["componentExecutionPerformed"],
+            false
+        );
+        assert_eq!(record["scheduledSource"]["actualGuestBindingsUsed"], false);
+        assert_eq!(
+            record["scheduledModel"]["status"],
+            "actual-locked-classlib-model-passed"
+        );
+        assert_eq!(record["scheduledModel"]["models"], 8);
+        assert_eq!(record["scheduledModel"]["constructedIdentities"], 5);
+        assert_eq!(record["scheduledModel"]["actualGeneratedCallbacks"], 3);
+        assert_eq!(
+            record["scheduledModel"]["portOrApplicationClassesInitialized"],
+            false
+        );
+        assert_eq!(record["scheduledModel"]["actualGuestBindingsUsed"], false);
+    }
     let bytes = std::fs::read(prepared.join("build/component.wasm")).unwrap();
     assert_eq!(
         record["componentDigest"],
@@ -252,13 +302,28 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         record["sourceDigest"],
         latent_artifacts::package::artifact_blob_digest(&source).as_str()
     );
-    assert_eq!(record["reference"].as_array().unwrap().len(), 3);
+    let scheduled = name == "java-scheduled-libraries";
+    assert_eq!(
+        record["reference"].as_array().unwrap().len(),
+        if scheduled { 1 } else { 3 }
+    );
     for control in record["reference"].as_array().unwrap() {
-        assert_eq!(control["modes"], serde_json::json!([0, 1, 2, 3]));
-        assert_eq!(control["results"], serde_json::json!([42, 42, 42, 42]));
+        if scheduled {
+            assert_eq!(
+                control["modes"],
+                serde_json::json!([0, 1, 2, 3, 4, 5, 6, 7])
+            );
+            assert_eq!(
+                control["results"],
+                serde_json::json!([42, 42, 42, 42, 42, 42, 42, 42])
+            );
+        } else {
+            assert_eq!(control["modes"], serde_json::json!([0, 1, 2, 3]));
+            assert_eq!(control["results"], serde_json::json!([42, 42, 42, 42]));
+        }
     }
     let mut provenance_source = source.clone();
-    if name == "java-worker-libraries" {
+    if name == "java-worker-libraries" || scheduled {
         assert_eq!(record["libraries"]["sourceModified"], false);
         assert_eq!(record["libraries"]["externalExecutorInjected"], false);
         assert_eq!(
@@ -337,8 +402,8 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         "{profile} signed-preparation-setup-micros={} stores-created=0 guest-activations=0",
         preparation_started.elapsed().as_micros()
     );
-    for iteration in 0..3 {
-        for mode in 0..4 {
+    for iteration in 0..if scheduled { 2 } else { 3 } {
+        for mode in 0..if scheduled { 8 } else { 4 } {
             let requested_id = format!("{name}-{iteration}-{mode}");
             let stores_before = f.backend.resource_snapshot().stores_created;
             let actual = f
@@ -346,7 +411,10 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 .start(f.request(&requested_id, mode))
                 .unwrap()
                 .await;
-            if matches!(name, "java-fibers" | "java-worker-libraries") {
+            if matches!(
+                name,
+                "java-fibers" | "java-worker-libraries" | "java-scheduled-libraries"
+            ) {
                 assert_eq!(actual.activation_id.0, requested_id);
             }
             let receipt = success(actual);
@@ -361,7 +429,10 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 receipt.consumption
             );
             f.idle().await;
-            if matches!(name, "java-fibers" | "java-worker-libraries") {
+            if matches!(
+                name,
+                "java-fibers" | "java-worker-libraries" | "java-scheduled-libraries"
+            ) {
                 let runtime = f.backend.resource_snapshot();
                 let broker = f.broker.snapshot();
                 assert!(runtime.stores_created > stores_before);

@@ -1,166 +1,36 @@
 {
-  "cases": [
-    "ManagedResourceRuntime.test_build_reader_requires_actual_current_runtime_and_final_task_filesystem_rng_bindings",
-    "ManagedResourceRuntime.test_entropy_policy_generation_requires_exact_original_tenant_document_and_live_record",
-    "ManagedResourceRuntime.test_fractional_remaining_setup_time_floors_within_original_deadline_before_signing",
-    "ManagedResourceRuntime.test_managed_runtime_reader_binds_owner_private_io_and_original_timer_admission",
-    "ManagedResourceRuntime.test_missing_optional_duplicate_or_foreign_import_fails_before_configuration",
-    "ManagedResourceRuntime.test_normal_async_greeting_world_and_public_namespace_cannot_be_relabelled",
-    "ManagedResourceRuntime.test_original_managed_bounds_distinct_tenant_aliases_and_no_implicit_grants",
-    "ManagedResourceRuntime.test_positive_native_pair_and_all_physical_provider_owners_remain_mandatory_even_with_audit_loss",
-    "ManagedResourceRuntime.test_refused_audit_is_exact_closed_data_and_never_native_barrier_evidence",
-    "ManagedResourceRuntime.test_secure_operation_upgrade_preserves_noncrypto_operation_budget_and_existing_grant",
-    "ManagedResourceRuntime.test_stale_before_invocation_pair_cannot_be_credited_and_read_deadline_is_restored",
-    "ManagedResourceRuntime.test_zero_task_actual_pending_and_multiple_waits_keep_original_limits_and_positive_point"
-  ],
-  "guards": {
-    "ManagedResourceRuntime.test_build_reader_requires_actual_current_runtime_and_final_task_filesystem_rng_bindings": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
-        "class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"
-      ],
-      "skipSites": []
-    },
-    "ManagedResourceRuntime.test_entropy_policy_generation_requires_exact_original_tenant_document_and_live_record": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
-        "class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"
-      ],
-      "skipSites": []
-    },
-    "ManagedResourceRuntime.test_fractional_remaining_setup_time_floors_within_original_deadline_before_signing": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
-        "class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"
-      ],
-      "skipSites": []
-    },
-    "ManagedResourceRuntime.test_managed_runtime_reader_binds_owner_private_io_and_original_timer_admission": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
-        "class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"
-      ],
-      "skipSites": []
-    },
-    "ManagedResourceRuntime.test_missing_optional_duplicate_or_foreign_import_fails_before_configuration": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
-        "class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"
-      ],
-      "skipSites": []
-    },
-    "ManagedResourceRuntime.test_normal_async_greeting_world_and_public_namespace_cannot_be_relabelled": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
-        "class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"
-      ],
-      "skipSites": []
-    },
-    "ManagedResourceRuntime.test_original_managed_bounds_distinct_tenant_aliases_and_no_implicit_grants": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
-        "class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"
-      ],
-      "skipSites": []
-    },
-    "ManagedResourceRuntime.test_positive_native_pair_and_all_physical_provider_owners_remain_mandatory_even_with_audit_loss": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
-        "class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"
-      ],
-      "skipSites": []
-    },
-    "ManagedResourceRuntime.test_refused_audit_is_exact_closed_data_and_never_native_barrier_evidence": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
-        "class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"
-      ],
-      "skipSites": []
-    },
-    "ManagedResourceRuntime.test_secure_operation_upgrade_preserves_noncrypto_operation_budget_and_existing_grant": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
-        "class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"
-      ],
-      "skipSites": []
-    },
-    "ManagedResourceRuntime.test_stale_before_invocation_pair_cannot_be_credited_and_read_deadline_is_restored": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
-        "class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"
-      ],
-      "skipSites": []
-    },
-    "ManagedResourceRuntime.test_zero_task_actual_pending_and_multiple_waits_keep_original_limits_and_positive_point": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b",
-        "class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"
-      ],
-      "skipSites": []
-    }
+  "cases":["ManagedResourceRuntime.test_build_reader_requires_actual_current_runtime_and_final_task_filesystem_rng_bindings","ManagedResourceRuntime.test_entropy_policy_generation_requires_exact_original_tenant_document_and_live_record","ManagedResourceRuntime.test_fractional_remaining_setup_time_floors_within_original_deadline_before_signing","ManagedResourceRuntime.test_managed_runtime_reader_binds_owner_private_io_and_original_timer_admission","ManagedResourceRuntime.test_missing_optional_duplicate_or_foreign_import_fails_before_configuration","ManagedResourceRuntime.test_normal_async_greeting_world_and_public_namespace_cannot_be_relabelled","ManagedResourceRuntime.test_original_managed_bounds_distinct_tenant_aliases_and_no_implicit_grants","ManagedResourceRuntime.test_positive_native_pair_and_all_physical_provider_owners_remain_mandatory_even_with_audit_loss","ManagedResourceRuntime.test_refused_audit_is_exact_closed_data_and_never_native_barrier_evidence","ManagedResourceRuntime.test_secure_operation_upgrade_preserves_noncrypto_operation_budget_and_existing_grant","ManagedResourceRuntime.test_stale_before_invocation_pair_cannot_be_credited_and_read_deadline_is_restored","ManagedResourceRuntime.test_zero_task_actual_pending_and_multiple_waits_keep_original_limits_and_positive_point"],
+  "guards":{
+    "ManagedResourceRuntime.test_build_reader_requires_actual_current_runtime_and_final_task_filesystem_rng_bindings":
+      "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929",
+    "ManagedResourceRuntime.test_entropy_policy_generation_requires_exact_original_tenant_document_and_live_record":
+      "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929",
+    "ManagedResourceRuntime.test_fractional_remaining_setup_time_floors_within_original_deadline_before_signing":
+      "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929",
+    "ManagedResourceRuntime.test_managed_runtime_reader_binds_owner_private_io_and_original_timer_admission":
+      "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929",
+    "ManagedResourceRuntime.test_missing_optional_duplicate_or_foreign_import_fails_before_configuration":
+      "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929",
+    "ManagedResourceRuntime.test_normal_async_greeting_world_and_public_namespace_cannot_be_relabelled":
+      "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929",
+    "ManagedResourceRuntime.test_original_managed_bounds_distinct_tenant_aliases_and_no_implicit_grants":
+      "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929",
+    "ManagedResourceRuntime.test_positive_native_pair_and_all_physical_provider_owners_remain_mandatory_even_with_audit_loss":
+      "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929",
+    "ManagedResourceRuntime.test_refused_audit_is_exact_closed_data_and_never_native_barrier_evidence":
+      "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929",
+    "ManagedResourceRuntime.test_secure_operation_upgrade_preserves_noncrypto_operation_budget_and_existing_grant":
+      "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929",
+    "ManagedResourceRuntime.test_stale_before_invocation_pair_cannot_be_credited_and_read_deadline_is_restored":
+      "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929",
+    "ManagedResourceRuntime.test_zero_task_actual_pending_and_multiple_waits_keep_original_limits_and_positive_point":
+      "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929"
   },
-  "kind": "python",
-  "module": "tools/tests/test_dotnet_resource_runtime.py",
-  "reviewReason": "Actual 798 replay failed before signing because Commands requires an integer finite setup deadline. Floor the clipped fractional remaining seconds; retain >=120 admission, command120, original deadline and all guest limits. One early real-Commands RED/GREEN control, no compiler/native change.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_dotnet_resource_runtime.py",
+  "reviewReason":"Actual 798 replay failed before signing because Commands requires an integer finite setup deadline. Floor the clipped fractional remaining seconds; retain >=120 admission, command120, original deadline and all guest limits. One early real-Commands RED/GREEN control, no compiler/native change.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "92e74cddb6c5f00a4e26da42e252151fc9aa1c48be9fa9f242b46cf4c900b929":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a151d5de131e50db1c63f378a60a572ced3b378fa3fb91396822627f8b57e54b","class:setup-sha256:77d2047c19983949c0ad3e8410a946e0bedccb768128b0ba4c52d4fa1b26c268"],"skipSites":[]}
+  }
 }
