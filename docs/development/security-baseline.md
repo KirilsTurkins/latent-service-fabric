@@ -151,6 +151,14 @@ dynamically acquired provider artifacts are not covered by a zero-package record
 The Go standard-library query is version-specific advisory matching, not a
 toolchain archive-authenticity or compiler-safety claim.
 
+The maintained Wasmtime source also authenticates its optional
+`wasmtime-internal-cache` 48.0.7 dependency. Both maintained vendor locks select
+zstd 0.14.3, zstd-safe 8.2.0 and zstd-sys 2.1.2+zstd.1.5.7. The source inventory
+queries both original package coordinates, and RustSec audits both complete
+vendor locks in addition to the actual runtime lock. The
+[cache repair record](wasmtime-security-update.md#october-26-2026-cache-dependency-repair)
+distinguishes immutable upstream identities from maintained development locks.
+
 Every RustSec job freshly clones [`RustSec/advisory-db`](https://github.com/RustSec/advisory-db)
 `main`, independently resolves remote `main`, and requires identical full commits.
 This baseline adds a **14-day maximum commit age** and a five-minute future-clock

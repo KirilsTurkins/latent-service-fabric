@@ -17,6 +17,42 @@ identity changed. Preserve failed attempts and original receipts. Exact current
 source, advisory scans and the affected runtime/containment checks determine
 acceptance; neither this page nor a passing historical scan grants it.
 
+## October 26, 2026 cache dependency repair
+
+A fresh RustSec scan at database `a78282a1414d6c28cc228c4eae3570451affb0dc`
+found nine zstd-safe 7.0.0 advisory matches and one zstd-sys
+2.0.9+zstd.1.5.5 match in `crates/vendor/wasmtime/Cargo.lock`.
+The root runtime lock does not select the optional Wasmtime cache, but the
+maintained standalone dependency graph must also pass the complete advisory scan.
+
+The patched selections are zstd **0.14.3**, zstd-safe **8.2.0** and zstd-sys
+**2.1.2+zstd.1.5.7**. The upstream Wasmtime cache requires the older zstd 0.13
+family, so the authenticated `wasmtime-internal-cache` **48.0.7** package is
+maintained under `crates/vendor/wasmtime/cache`. Its Rust source and license remain
+byte-identical with the published archive. Its manifest selects the patched zstd
+release and an isolated workspace, and the parent Wasmtime manifest selects this
+exact cache path. Cargo generated both maintained development lock updates.
+
+`UPSTREAM.latent.json` retains the original Wasmtime inventory and records the
+cache archive checksum and all 14 original cache file identities. The reviewed
+patch and exact source verifier bind the maintained manifests, locks and complete
+cache source. Both package origins remain in the advisory inventory, and RustSec
+continues to scan every tracked Cargo lock. No advisory exception, ignored
+warning, removed lock or disabled feature substitutes for a repaired dependency.
+The ordinary runtime feature selection and Wasmtime native cohort are unchanged.
+
+The relevant upstream advisories are
+[RUSTSEC-2026-0395](https://rustsec.org/advisories/RUSTSEC-2026-0395.html),
+[0397](https://rustsec.org/advisories/RUSTSEC-2026-0397.html),
+[0399](https://rustsec.org/advisories/RUSTSEC-2026-0399.html),
+[0400](https://rustsec.org/advisories/RUSTSEC-2026-0400.html),
+[0401](https://rustsec.org/advisories/RUSTSEC-2026-0401.html),
+[0402](https://rustsec.org/advisories/RUSTSEC-2026-0402.html),
+[0403](https://rustsec.org/advisories/RUSTSEC-2026-0403.html),
+[0404](https://rustsec.org/advisories/RUSTSEC-2026-0404.html),
+[0406](https://rustsec.org/advisories/RUSTSEC-2026-0406.html) and
+[0410](https://rustsec.org/advisories/RUSTSEC-2026-0410.html).
+
 ## October 20, 2026 security update
 
 The selected same-line patch is

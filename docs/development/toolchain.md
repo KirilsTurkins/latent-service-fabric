@@ -66,6 +66,13 @@ not enable host TLS. See [the engine boundary](../runtime/wasmtime.md) and
 the exact source cohort and locks when reproducing a build; an upstream package
 with the same version label is not interchangeable.
 
+The optional Wasmtime cache keeps its authenticated 48.0.7 Rust implementation
+under `crates/vendor/wasmtime/cache`. Its maintained dependency selection is
+zstd **0.14.3**, zstd-safe **8.2.0** and zstd-sys **2.1.2+zstd.1.5.7**. Both
+vendored development locks select these patched versions. The ordinary runtime
+feature selection does not enable this optional cache. See the
+[cache security repair](wasmtime-security-update.md#october-26-2026-cache-dependency-repair).
+
 SHA-256 output arrays are formatted through the shared `HexDigest` byte formatter.
 The `sha2` 0.11 update preserves the existing lowercase, zero-padded digest text
 used by package identities, persisted records, audit receipts and cache keys.

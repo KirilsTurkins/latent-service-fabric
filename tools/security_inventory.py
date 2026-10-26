@@ -90,16 +90,24 @@ def wasmtime_inventory(repo: Path, entry: dict, paths: list[str]) -> tuple[set[s
     expected = {bounded.PROVIDER + "/" + name for name in checked["files"]}
     require({path for path in paths if path.startswith(bounded.PROVIDER + "/")} == expected,
             "partial-or-unreviewed-bounded-wasmtime-source")
-    return {manifest, lock}, {
-        "path": manifest, "coverage": "OSV-authenticated-upstream-origin", "packages": 1,
+    additional = [{**package, "manifest": bounded.PROVIDER + "/" + package["manifest"],
+                   "lock": bounded.PROVIDER + "/" + package["lock"]}
+                  for package in checked["additionalPackages"]]
+    covered = {manifest, lock}
+    for package in additional:
+        covered.update({package["manifest"], package["lock"]})
+    return covered, {
+        "path": manifest, "coverage": "OSV-authenticated-upstream-origin", "packages": 1 + len(additional),
         "name": checked["package"], "version": checked["version"],
         "recordSha256": checked["recordSha256"], "nativeCohort": checked["nativeCohort"],
         "upstreamArchiveSha256": checked["upstreamSha256"], "patchSha256": checked["patchSha256"],
         "buildLock": "Cargo.lock", "upstreamSourceLock": lock,
         "upstreamSourceLockSha256": checked["files"]["Cargo.lock"]["sha256"],
-        "boundary": "The exact maintained source keeps its upstream advisory coordinate. "
-                    "The root Cargo.lock selects actual build dependencies; the vendored lock is "
-                    "unchanged upstream provenance. RustSec still audits every tracked lock intact."
+        "additionalPackages": additional,
+        "boundary": "The exact maintained sources keep their upstream advisory coordinates. "
+                    "The root Cargo.lock selects actual build dependencies; the two vendored locks "
+                    "select maintained development dependencies. Original archive identities remain "
+                    "immutable provenance. RustSec still audits every tracked lock intact."
     }
 
 
@@ -282,6 +290,8 @@ def inventory(repo: Path, policy: Path = POLICY) -> tuple[list[Package], list[di
         if entry["kind"] == "bounded-wasmtime":
             cargo_paths, record = wasmtime_inventory(repo, entry, paths)
             packages.append(Package("crates.io", record["name"], record["version"], path))
+            packages.extend(Package("crates.io", package["name"], package["version"], package["manifest"])
+                            for package in record["additionalPackages"])
             covered.update(cargo_paths)
             records.append(record)
             continue

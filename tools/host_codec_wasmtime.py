@@ -13,21 +13,21 @@ PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
 COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-memory-v16"
-RECORD_SHA256 = "e06ef10d6341631625e0312c509970b4b401704dd40be31d928ce1c03d991c07"
+RECORD_SHA256 = "440f871e5afc497e49901c045e4a25d54a78ea323833345ed13f8964b61bf3d3"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
     "Cargo.lock": {
-        "sha256": "858dfc32837c4f1e2689cf031be92eff0c6ed3ff01f7721dbf23dac055a45a44",
-        "bytes": 60487
+        "sha256": "cd4732cd7667ff9352408a5f59aeb37ead9df5937b7aef61bc2089edaf5cb24b",
+        "bytes": 60344
     },
     "README.latent.md": {
-        "sha256": "84075c7d7ae56394f7e36b2addaa15646c8d3e25074010865dd6b4341fa9abc1",
-        "bytes": 26272
+        "sha256": "d937494b3728a57edc03b830c1605053425f15e798994d78da26e1a90e7997e1",
+        "bytes": 26768
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "ec258af0fac72fe4f0824cb0795fb0de4d318584398615bc2cd2ed34a39098ae",
-        "bytes": 416989
+        "sha256": "7def01fc18736509fe75a3635aa86bfb5b59501d8a42c48f3722a889efa174fe",
+        "bytes": 586114
     },
     "src/runtime.rs": {
         "sha256": "3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970",
@@ -240,6 +240,66 @@ POSTIMAGES = {
     "src/runtime/component/concurrent/sync_result.rs": {
         "sha256": "306ac053b5fb9fdd5b01697ecbd3aaeabbcaf05015b7f447b89c0ccb4ed12f5e",
         "bytes": 15651
+    },
+    "Cargo.toml": {
+        "sha256": "0be166e823536d1890001bb9a972e5d352265188e1f5bf70d56a34d3fe5d9ade",
+        "bytes": 11126
+    },
+    "cache/.cargo_vcs_info.json": {
+        "sha256": "7195aa8798bc6148aba24023183432c8506068279acdb2030701d2dd5cecc871",
+        "bytes": 106
+    },
+    "cache/Cargo.lock": {
+        "sha256": "6f22ad7ad2def709e45bd209f2b12041f692f8e35a6092553a54a18233d66f1e",
+        "bytes": 28260
+    },
+    "cache/Cargo.toml": {
+        "sha256": "bcb7ea28dbb3c1292f23b69ff0876c9d128e01e974b317bccab4c259f48c426e",
+        "bytes": 3116
+    },
+    "cache/Cargo.toml.orig": {
+        "sha256": "efbbe3e7164bdbb260be64bde8da91ccb2ba9b9cc726787caa904e71c4ea61c2",
+        "bytes": 1074
+    },
+    "cache/LICENSE": {
+        "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5",
+        "bytes": 12243
+    },
+    "cache/build.rs": {
+        "sha256": "562d7f7a9de09870e065818847ca1dce0582bcc4d204276cc67f971cd9e63099",
+        "bytes": 537
+    },
+    "cache/src/config/tests.rs": {
+        "sha256": "ec1bc1a07c425aa8a23c4c1fbc284cb545e10b67c143bdbcd02e4826f8d67809",
+        "bytes": 16900
+    },
+    "cache/src/config.rs": {
+        "sha256": "d77c176f7b19d9908b9a0dd0f4391a8299ef5092a8477ab8693f35506bb89352",
+        "bytes": 23394
+    },
+    "cache/src/lib.rs": {
+        "sha256": "bbae5c0dff3392f1442b3c92ebdb87903b0fc28fe39f69962cde039c22bfcc47",
+        "bytes": 12442
+    },
+    "cache/src/tests.rs": {
+        "sha256": "77ed12aa325a29ce61c6636cec21ed6451ffed15c007a8a4d90cad32c6276139",
+        "bytes": 3370
+    },
+    "cache/src/worker/tests/system_time_stub.rs": {
+        "sha256": "17c1651e1a1dbb3cad353449ebe8e64f509a7b21ecea37b7284bb29f9a4284e9",
+        "bytes": 692
+    },
+    "cache/src/worker/tests.rs": {
+        "sha256": "e7d96e3c75cecb49327aa1759eaed0572b2ad18e28c78155393220ef1f066122",
+        "bytes": 26612
+    },
+    "cache/src/worker.rs": {
+        "sha256": "531eac51254c195f153098aa9f822c15d02ed2d44553176edf416b8b313da540",
+        "bytes": 32582
+    },
+    "cache/tests/cache_write_default_config.rs": {
+        "sha256": "bdd4758c9dd7f300a7726b04fda7989a295695fe4c5168faeb16ea2ebc1bde3b",
+        "bytes": 403
     }
 }
 DEPENDENCY = {"path": PROVIDER, "version": "=48.0.7", "default-features": False,
@@ -271,7 +331,7 @@ def verify(root: Path = ROOT) -> dict:
                 for row in record["originalFiles"]}
     require(len(record["originalFiles"]) == len(original) == 250, "original-file-set")
     expected = {**original, **POSTIMAGES, "UPSTREAM.latent.json": identity(raw)}
-    require(len(expected) == 274, "maintained-file-set")
+    require(len(expected) == 288, "maintained-file-set")
     actual, total = {}, 0
     for ordinal, path in enumerate(source.rglob("*")):
         require(ordinal < 1024 and not path.is_symlink(), "source-tree-bound-or-link")
@@ -305,4 +365,8 @@ def verify(root: Path = ROOT) -> dict:
             "licenseFiles": {"LICENSE": original["LICENSE"]["sha256"]},
             "additionalLicenseFiles": {name: POSTIMAGES[name]["sha256"]
                 for name in record["additionalUpstream"]["licenseFiles"]},
+            "additionalPackages": [{"name": record["cacheUpstream"]["name"],
+                "version": record["cacheUpstream"]["version"],
+                "manifest": "cache/Cargo.toml", "lock": "cache/Cargo.lock",
+                "upstreamSha256": record["cacheUpstream"]["registrySha256"]}],
             "files": actual}

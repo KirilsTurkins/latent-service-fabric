@@ -109,7 +109,8 @@ class SdkGraphTests(unittest.TestCase):
         entry = next(row for row in configuration["manifests"] if row["kind"] == "bounded-wasmtime")
         checked = bounded.verify(root)
         covered, record = wasmtime_inventory(root, entry, paths)
-        self.assertEqual(covered, {bounded.PROVIDER + "/Cargo.toml", bounded.PROVIDER + "/Cargo.lock"})
+        self.assertEqual(covered, {bounded.PROVIDER + "/" + path for path in (
+            "Cargo.toml", "Cargo.lock", "cache/Cargo.toml", "cache/Cargo.lock")})
         self.assertEqual(record["name"], "wasmtime")
         self.assertEqual(record["version"], "48.0.7")
         self.assertEqual(record["upstreamArchiveSha256"], "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6")
@@ -117,16 +118,20 @@ class SdkGraphTests(unittest.TestCase):
         self.assertEqual(record["upstreamSourceLockSha256"], digest(read_file(root, entry["lock"])))
         packages, records = inventory(root)
         self.assertIn(Package("crates.io", "wasmtime", "48.0.7", entry["path"]), packages)
+        self.assertIn(Package("crates.io", "wasmtime-internal-cache", "48.0.7",
+                              bounded.PROVIDER + "/cache/Cargo.toml"), packages)
         self.assertIn(record, records)
         for altered in ({**entry, "lock": "Cargo.lock"}, {**entry, "kind": "cargo"}):
             with self.subTest(entry=altered), self.assertRaisesRegex(SecurityError, "unreviewed-bounded-wasmtime-inventory"):
                 wasmtime_inventory(root, altered, paths)
         for altered in ([path for path in paths if path != entry["lock"]],
+                        [path for path in paths if path != bounded.PROVIDER + "/cache/Cargo.lock"],
                         [*paths, bounded.PROVIDER + "/extra/Cargo.toml"]):
             with self.subTest(paths=len(altered)), self.assertRaisesRegex(SecurityError, "partial-or-unreviewed-bounded-wasmtime-source"):
                 wasmtime_inventory(root, entry, altered)
         original_read = bounded.read_file
-        for relative in ("UPSTREAM.latent.json", "Cargo.toml", "src/runtime/component/values/accounted.rs"):
+        for relative in ("UPSTREAM.latent.json", "Cargo.toml", "src/runtime/component/values/accounted.rs",
+                         "cache/Cargo.toml", "cache/Cargo.lock", "cache/src/lib.rs"):
             selected = root / bounded.PROVIDER / relative
             def changed(path, *limits):
                 raw = original_read(path, *limits)
