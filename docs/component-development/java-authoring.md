@@ -634,8 +634,8 @@ memory. Its generated C remains 733,980 bytes with the original digest and
 650-file inventory. The largest core function, `meth_dla_Capsule_pools`, fell
 from 15,264,587 to 6,133,668 bytes, below the unchanged 7,654,321-byte parser
 limit. Normal component construction and validation passed. The raw result
-remains `component-built-unqualified`, with runtime qualification pending;
-this did not execute a Java component.
+remains `component-built-unqualified`; that compiler-only run did not execute
+a Java component. Runtime execution is recorded separately below.
 
 A separate data-only check used the existing packer and installer on the exact
 compiler subproduct: 10,154 SDK files plus 13 provenance files, 771,176,565 bytes
@@ -669,3 +669,29 @@ The source control exercised archived-input seeding, a real filesystem cache
 hit with expired source dates, tamper refusal, a tokenless cold miss and an
 otherwise matching expired origin refusal. No compiler or product check was
 repeated for this cache-only source change.
+
+
+## Retained public fibers through the normal signed node
+
+[The 26 October runtime evidence](../testing/evidence/java-retained-fibers-runtime-2026-10-26.json)
+records twelve fresh activations of that exact retained 10,282,099-byte public
+component: three iterations of all four original modes. A source-matched native
+v11 `local_service` harness was built once; Java, LLVM and the component were
+not rebuilt. The existing package, signing, catalog admission and activation
+manager path returned `[42]` for every call, with twelve distinct requested and
+actual activation IDs. The actual cumulative Store counter advanced from zero
+to twelve. All seven sampled Store/reservation/broker counters were zero after
+each call; the original broader `Fixture::idle` assertions also remained active.
+
+The original ceiling stayed at 10 billion fuel, 64 MiB and 120 seconds per
+activation, one cell and zero outbound requests, with Task5/Executor3/Queue8/
+Wait8/Timer2/Result8/Native2. Actual fuel was 5,708,210 to 10,186,665 and maximum
+reported peak memory was 9,549,999 bytes. Preparation took about 55.6 seconds;
+the 65.5-second selected test process includes that setup. All three pure
+input/origin/observation controls and all five owned commands passed.
+
+The original compiler receipt remains unchanged; this separate runtime receipt
+binds source `9f4d763b5b4eda8f6e9c62f70bf03175487c4dca` and its raw twelve rows.
+It qualifies this finite public fixture, not the full Java concurrency profile,
+GC/accounting matrix, published worker/timer library requirement or separately
+gated standard socket/DNS/stream integration. Issue #741 remains open.
