@@ -141,6 +141,20 @@ ledger observation remained pending through later native initialization. The
 subsequent allocator notification repair is separate work; v5 does not qualify
 it. This remains unsigned native evidence, with prior receipts unchanged.
 
+## Canonical pending continuation backing
+
+[The focused v12 evidence](evidence/canonical-pending-future-native-2026-10-26.json)
+binds [run 40252236378](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40252236378)
+at `5d72ee7886bfd4ed737d02d49e7f85a60c00f0cd`: all four new private controls and
+the actual fourth-admission/refusal/fresh-42 control passed with no ignored cases.
+All 25 archive members, 22 raw command channels and 8,906 Git source bindings were
+checked. The exact continuation-output layout is reserved before the first poll;
+Ready releases unused capacity, while Pending retains the same owner until its
+Box is destroyed. These two host-libtest builds did not replay the v11 five or
+the Java twelve. This is unsigned native qualification of that Box only, not an
+allocator/RSS ceiling or completion of #736; completion WorkerFunction boxes,
+queue/node backing and other opaque/transitive allocations remain separate gaps.
+
 ## Scope retained outside this slice
 
 Initial linear-memory success/failure notifications, direct Core HostFunc construction, shared
