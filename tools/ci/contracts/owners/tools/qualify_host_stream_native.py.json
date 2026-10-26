@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_native.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve all original ten native ownership cases and thirty other stream cases while adding three fixed CLOSE wire/paid-result controls. The exact native selection requires thirteen successes with no ignored cases; no provider enablement or physical refund.",
+  "reviewReason": "Review gated protected transport custody and typed cause preservation using six host controls; normal bank remains unselected and kernel/provider qualification remains false.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "14fe5dd4665fcc78f6a6adb23e805c961225d9e6c71b7e2a0c893aba64d11d82"
+  "sha256": "b4e19ebe636bfad5041da2bc89af9828773eb75c9f299d3c9e0f2a06f6f51d04"
 }

@@ -137,6 +137,7 @@ trait ErasedClient: Any + Send + Sync {
     fn core(&self) -> &Arc<client::ClientCore>;
     fn as_any(self: Arc<Self>) -> Arc<dyn Any + Send + Sync>;
     fn maintain(&self, now: Instant, closed: bool);
+    fn progress_stream_quarantine(&self);
 }
 impl ProviderPools {
     pub fn limits(&self) -> Result<ProviderPoolLimits, PlatformError> {
@@ -315,6 +316,33 @@ impl ProviderPools {
     }
     pub fn snapshot(&self) -> Result<ProviderPoolSnapshot, PlatformError> {
         self.inner.snapshot()
+    }
+    /// Existing paid stream maintenance drives original retained clients, even
+    /// after epoch retirement. No new client/table/admission/deadline is minted.
+    pub fn maintain_stream_quarantine(&self, provider: &InstalledProvider, _now: Instant) {
+        let reference = provider.epoch.registration.reference();
+        if reference.capability() != super::network::STREAM_CAPABILITY
+            || reference.profile() != super::network::STREAM_PROFILE
+        {
+            return;
+        }
+        let count = match self.inner.state.try_lock() {
+            Ok(state) => state.retained_clients.len(),
+            Err(_) => return,
+        };
+        for index in 0..count {
+            let client = {
+                let Ok(state) = self.inner.state.try_lock() else {
+                    return;
+                };
+                state.retained_clients.get(index).and_then(Weak::upgrade)
+            };
+            if let Some(client) =
+                client.filter(|client| Arc::ptr_eq(&client.core().epoch, &provider.epoch))
+            {
+                client.progress_stream_quarantine();
+            }
+        }
     }
     pub fn retire(&self) {
         self.inner.retire();

@@ -1,0 +1,26 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "protected-stream-host-${{ github.ref }}"
+    },
+    "name": "Protected stream host source controls",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/protected-stream-custody-20261026"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "host-controls"
+  ],
+  "reviewReason": "Use the existing maintained version-pinned validator installation command; initial owner requested absent hashes and failed before Rust compilation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/protected-stream-host.yml"
+}

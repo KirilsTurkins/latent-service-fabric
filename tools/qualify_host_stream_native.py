@@ -57,7 +57,7 @@ def outcomes(raw):
     actual = [name.decode() for name in re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$',raw,re.M)]
     totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; '
         rb'(\d+) measured; (\d+) filtered out;', raw, re.M)
-    if len(actual) != 13 or set(actual) != CASES or totals != [(b'13',b'0',b'0',b'0',b'30')]:
+    if len(actual) != 13 or set(actual) != CASES or totals != [(b'13',b'0',b'0',b'0',b'31')]:
         raise ValueError('native-factory-missing-failed-or-extra-case')
     return sorted(actual)
 

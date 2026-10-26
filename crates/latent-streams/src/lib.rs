@@ -3,6 +3,7 @@
 
 mod config;
 mod connection;
+mod connection_registry;
 mod kernel;
 mod lifecycle;
 mod maintenance;

@@ -1,0 +1,50 @@
+name: Protected stream host source controls
+on:
+  push:
+    branches: ['feat/protected-stream-custody-20261026']
+permissions:
+  contents: read
+concurrency:
+  group: protected-stream-host-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  host-controls:
+    name: Current Rust types and six original-owner controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install normal pinned validator dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-targets: true
+      - name: Refuse incomplete or ignored focused outcomes
+        run: python3 -B -m unittest tools.tests.test_host_stream_protected -v
+      - name: Compile current source and execute exactly six host controls
+        run: >-
+          python3 -B tools/qualify_host_stream_protected.py
+          --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/protected-stream-host"
+      - name: Retain only finite public command channels and receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: protected-stream-host-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/protected-stream-host/receipt.json
+            ${{ runner.temp }}/protected-stream-host/*.stdout.log
+            ${{ runner.temp }}/protected-stream-host/*.stderr.log
+          if-no-files-found: warn
+          retention-days: 3

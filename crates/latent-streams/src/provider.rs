@@ -1,7 +1,7 @@
 #[cfg(any(test, feature = "development-outbound"))]
 use crate::StreamResolution;
 use crate::{
-    connection::{self, Connection, Socket},
+    connection::{self, Socket},
     error, StreamError, StreamErrorCode, StreamProviderConfig,
 };
 use latent_capabilities::broker::{
@@ -21,7 +21,7 @@ use latent_network::dns::Resolver;
 #[cfg(any(test, feature = "development-outbound"))]
 use sha2::{Digest, Sha256};
 use std::{
-    sync::{Arc, Mutex, Weak},
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
@@ -36,9 +36,11 @@ pub(crate) struct Inner {
     pub pools: Arc<ProviderPools>,
     pub resolvers: Vec<Option<Resolver>>,
     pub tls: Vec<Option<Arc<crate::tls::InstalledTls>>>,
-    pub connections: Mutex<[Weak<Connection>; 32]>,
+    pub connections: Arc<crate::connection_registry::Registry>,
     #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
     native: Mutex<Option<crate::kernel::native::NativeOwner>>,
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    pub(crate) native_bank: Option<Arc<crate::kernel::native::StreamBank>>,
     _configuration: ProviderMetadata,
 }
 #[cfg(any(test, feature = "development-outbound"))]
@@ -419,6 +421,7 @@ impl StreamProvider {
             },
             expected_epoch,
         )?;
+        let connections = crate::connection_registry::Registry::new(&pools)?;
         Ok(Self {
             inner: Arc::new(Inner {
                 config,
@@ -427,9 +430,11 @@ impl StreamProvider {
                 pools,
                 resolvers,
                 tls,
-                connections: Mutex::new(std::array::from_fn(|_| Weak::new())),
+                connections,
                 #[cfg(target_os = "linux")]
                 native: Mutex::new(None),
+                #[cfg(target_os = "linux")]
+                native_bank: None, // No normal/qualification consumer selects it yet.
                 _configuration: configuration,
             }),
         })
@@ -453,12 +458,7 @@ impl StreamProvider {
             drop(owner);
         }
         for index in 0..32 {
-            let connection = self
-                .inner
-                .connections
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)[index]
-                .upgrade();
+            let connection = self.inner.connections.snapshot(index).ok().flatten();
             if let Some(connection) = connection {
                 connection.abort(StreamErrorCode::Revoked);
             }
@@ -473,12 +473,7 @@ impl StreamProvider {
             ..Default::default()
         };
         for index in 0..32 {
-            let connection = self
-                .inner
-                .connections
-                .try_lock()
-                .map_err(crate::snapshot_lock_error)?[index]
-                .upgrade();
+            let connection = self.inner.connections.snapshot(index)?;
             if let Some(connection) = connection {
                 let usage = connection.usage()?;
                 result.owners += usage.owners;
@@ -500,17 +495,18 @@ impl StreamProvider {
     }
 
     pub(crate) fn maintenance_step(&self, now: Instant) {
+        // Same existing paid maintenance turn, including failed predials that
+        // have not entered the32-slot Connection registry. No new executor.
+        #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+        if self.inner.native_bank.is_some() {
+            self.inner
+                .pools
+                .maintain_stream_quarantine(&self.inner.installed, now);
+        }
         for index in 0..32 {
-            let connection = match self.inner.connections.try_lock() {
-                Ok(slots) => slots[index].upgrade(),
-                Err(std::sync::TryLockError::WouldBlock) => continue,
-                Err(std::sync::TryLockError::Poisoned(slots)) => {
-                    let connection = slots.into_inner()[index].upgrade();
-                    if let Some(connection) = connection {
-                        connection.abort(StreamErrorCode::Exhausted);
-                    }
-                    continue;
-                }
+            let connection = match self.inner.connections.snapshot(index) {
+                Ok(connection) => connection,
+                Err(_) => continue, // Existing bounded next turn; no owner dropped.
             };
             if let Some(connection) = connection {
                 connection.maintenance_step(now);
@@ -585,12 +581,10 @@ impl OutboundStreamInvoker for StreamProvider {
 impl Drop for Inner {
     fn drop(&mut self) {
         self.installed.retire();
-        let slots = self
-            .connections
-            .get_mut()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        for connection in slots.iter().filter_map(Weak::upgrade) {
-            connection.abort(StreamErrorCode::Revoked);
+        for index in 0..crate::connection_registry::CAPACITY {
+            if let Ok(Some(connection)) = self.connections.snapshot(index) {
+                connection.abort(StreamErrorCode::Revoked);
+            }
         }
         for resolver in self.resolvers.iter().flatten() {
             let _ = resolver.close();

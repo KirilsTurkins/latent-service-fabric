@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_tls_provider.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require all forty-three original and additive stream cases, including all three native close observations; preserve every prior TLS/accounting/kernel witness, timeout and no-ignore obligation after actual stale-count failure.",
+  "reviewReason": "Retain the exact complete streams catalogue after the reviewed additional typed-fault control: strict44 cases, all original IDs/guards/oracles/timeouts preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0d3e1062b389e5362ec742ca917eeb8b8afd3d771347d0b45f352674508fc4ba"
+  "sha256": "eb52fad00aa1d6749c6169afbf93c757693ee54d1b51c44d3ee1aee65901c08b"
 }

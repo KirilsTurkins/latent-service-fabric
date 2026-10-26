@@ -31,7 +31,7 @@ pub(super) struct Request {
     owner: Weak<Inner>,
     pub client: Arc<client::ClientCore>,
     tenant: Arc<Tenant>,
-    sequence: u64,
+    pub(super) sequence: u64,
     deadline: Instant,
     phase: AtomicU8,
     waiting: AtomicBool,
@@ -380,6 +380,9 @@ impl PoolReady {
     }
 }
 impl PoolCall {
+    pub(super) fn stream_request(&self) -> &Request {
+        &self.request
+    }
     pub(super) fn retain_stream_request(&self) -> Arc<Request> {
         Arc::clone(&self.request)
     }
