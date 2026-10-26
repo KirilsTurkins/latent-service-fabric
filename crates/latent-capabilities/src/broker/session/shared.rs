@@ -31,7 +31,7 @@ impl Drop for Billing {
     }
 }
 
-// Only SessionCore, Stats and HandleEntry are shipping payloads.
+// Only SessionCore, Stats, HandleEntry and io::Operation are shipping payloads.
 // Field order is essential: each physical Arc/Weak drops before its billing
 // clone. Weak owns header capacity, never a strong reference to the payload.
 #[derive(Debug)]

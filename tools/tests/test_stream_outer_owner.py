@@ -74,6 +74,23 @@ class StreamOuterOwnerReader(unittest.TestCase):
         for case in (*owner.PRIVATE_CASES, *owner.CONSUMER_PRIVATE_CASES, 'unknown::case'):
             with self.assertRaises(ValueError):
                 owner.factory_result(b'', case)
+        self.assertEqual((len(owner.IO_CASES), len(owner.IO_NEW_CASES)), (5, 3))
+        for index, case in enumerate(owner.IO_CASES):
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            with self.subTest(io_case=case):
+                value = owner.io_operation_result(raw, case)
+                self.assertEqual((value['passed'], value['ignored']), (1, 0))
+                self.assertEqual(value['scope'], 'original-Phase3-memory-broker-unit' if index < 3
+                    else 'node-compiled-layout-unit' if index == 3 else 'legacy-Phase1-IO-reference')
+                for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'),
+                    raw.replace(case.encode(), b'wrong::case')):
+                    with self.assertRaises(ValueError):
+                        owner.io_operation_result(changed, case)
+        for case in (*owner.FACTORY_PRIVATE_CASES, *owner.FACTORY_PUBLIC_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.io_operation_result(b'', case)
 
     def test_private_fixture_identity_is_bounded_and_changes_are_observed(self):
         with tempfile.TemporaryDirectory() as temporary:

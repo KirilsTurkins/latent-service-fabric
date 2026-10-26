@@ -2,15 +2,21 @@
 //!
 //! No executor, worker thread, socket, retry or detached task is created here.
 //! Adapters move the call into the actual I/O or bounded blocking-job owner.
+use super::session::{Shared, SharedWeak};
 use super::{
     capacity, denied, error, invalid, waiting::WaitingCall, CapabilitySession, PlatformError,
     ProviderCall,
 };
-use latent_core::PlatformErrorCode;
+use latent_core::{ActivationBudget, HostMemoryReservation, PlatformErrorCode};
+use std::{
+    alloc::Layout,
+    marker::PhantomData,
+    ops::{Deref, DerefMut},
+};
 use std::{
     sync::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
-        Arc, Mutex, Weak,
+        Arc, Mutex,
     },
     time::{Duration, Instant},
 };
@@ -31,6 +37,10 @@ pub use transfer::{IoInputChunk, IoOutputChunk, IoTransfer, IoTransferBuffer, Io
 
 const OPERATION_METADATA: usize = 2048;
 const CANCEL_POLL: Duration = Duration::from_millis(10);
+const ALLOCATION_BOOKKEEPING: usize = 64;
+
+type OperationOwner = Shared<Operation>;
+type OperationWeak = SharedWeak<Operation>;
 
 /// One explicitly configured, bounded shared node owner; never service-owned.
 pub struct IoRuntime {
@@ -95,9 +105,25 @@ impl IoRuntime {
             .checked_add(self.inner.limits.maximum_queue_wait)
             .ok_or_else(invalid)?
             .min(deadline);
-        let operation = Arc::new(Operation {
+        // Node metadata is an independent fixed admission envelope, not an
+        // activation-memory charge. Check the complete enlarged physical shell
+        // without changing that envelope or any node/session counter.
+        let shared_bytes = OperationOwner::allocation_bytes()?;
+        let call_bytes = PreparedRunningCall::<ProviderCall>::allocation_bytes()?;
+        if shared_bytes
+            .checked_add(call_bytes)
+            .is_none_or(|n| n > OPERATION_METADATA as u64)
+        {
+            return Err(capacity());
+        }
+        // Both actual native backings are admitted before either allocation or
+        // provider dispatch. A rejected second request drops the first unused.
+        let shared = OperationOwner::reserve(&session.core.budget)?;
+        let running = PreparedRunningCall::<ProviderCall>::reserve(&session.core.budget)?;
+        let operation = shared.allocate(Operation {
             execution: Mutex::new(Execution {
                 authority: Authority::Waiting(waiting),
+                running_backing: Some(running),
                 slot: None,
                 queue: Some(queue),
                 output_issued: 0,
@@ -141,6 +167,8 @@ impl Drop for IoRuntime {
 struct Execution {
     // Destroy original activation ownership before returning the running slot.
     authority: Authority,
+    // Unallocated running-call body; consumed once only at Waiting -> Running.
+    running_backing: Option<PreparedRunningCall<ProviderCall>>,
     slot: Option<OwnedSemaphorePermit>,
     queue: Option<Charge>,
     output_issued: usize,
@@ -148,7 +176,7 @@ struct Execution {
 }
 enum Authority {
     Waiting(WaitingCall),
-    Running(Box<ProviderCall>),
+    Running(RunningCall<ProviderCall>),
 }
 struct Operation {
     execution: Mutex<Execution>,
@@ -162,14 +190,97 @@ struct Operation {
     _metadata: Charge,
     _slot: Charge,
 }
-// Admission prepays the complete operation shell and its affine running call.
-// Boxing changes placement, not the original metadata charge or physical owner.
+// The existing node metadata envelope is logical admission, separate from
+// original ActivationBudget physical reservations. No global RSS claim.
 const _: () = assert!(
     std::mem::size_of::<Operation>()
         + std::mem::size_of::<ProviderCall>()
         + 2 * std::mem::size_of::<usize>()
         <= OPERATION_METADATA
 );
+
+// Only ProviderCall is a shipping T. Type-connected preparation avoids an
+// erased/representative Box layout and carries unused credit through queueing.
+struct PreparedRunningCall<T> {
+    allocation: Option<HostMemoryReservation>,
+    value: PhantomData<fn() -> T>,
+}
+impl<T> PreparedRunningCall<T> {
+    fn allocation_bytes() -> Result<u64, PlatformError> {
+        let bytes = Layout::new::<T>().size();
+        if bytes == 0 {
+            return Ok(0);
+        }
+        bytes
+            .checked_add(ALLOCATION_BOOKKEEPING)
+            .and_then(|n| u64::try_from(n).ok())
+            .ok_or_else(capacity)
+    }
+    fn reserve(budget: &ActivationBudget) -> Result<Self, PlatformError> {
+        let bytes = Self::allocation_bytes()?;
+        let allocation = if budget.profile().supports_descendants() && bytes != 0 {
+            Some(
+                budget
+                    .reserve_host_memory(bytes)
+                    .map_err(|e| e.to_platform_error())?,
+            )
+        } else {
+            None
+        };
+        Ok(Self {
+            allocation,
+            value: PhantomData,
+        })
+    }
+    fn finish(mut self, value: T) -> RunningCall<T> {
+        let mut owner = RunningCall {
+            value: Some(Box::new(value)),
+            allocation: self.allocation.take(),
+        };
+        // The physical-first Drop is installed BEFORE confirmation may panic.
+        if let Some(allocation) = &mut owner.allocation {
+            allocation.confirm();
+        }
+        owner
+    }
+}
+struct RunningCall<T> {
+    value: Option<Box<T>>,
+    allocation: Option<HostMemoryReservation>,
+}
+impl<T> Deref for RunningCall<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        self.value.as_deref().expect("live running call")
+    }
+}
+impl<T> DerefMut for RunningCall<T> {
+    fn deref_mut(&mut self) -> &mut T {
+        self.value.as_deref_mut().expect("live running call")
+    }
+}
+// Safe conservative cleanup: if a value destructor unwinds, this SAME original
+// guard is retained. No unsafe code, allocator replacement or leaked authority.
+struct RefundAfterRetirement(Option<HostMemoryReservation>);
+impl RefundAfterRetirement {
+    fn refund(mut self) {
+        drop(self.0.take());
+    }
+}
+impl Drop for RefundAfterRetirement {
+    fn drop(&mut self) {
+        if let Some(allocation) = self.0.take() {
+            std::mem::forget(allocation);
+        }
+    }
+}
+impl<T> Drop for RunningCall<T> {
+    fn drop(&mut self) {
+        let allocation = RefundAfterRetirement(self.allocation.take());
+        drop(self.value.take()); // actual T AND its Box backing retire first
+        allocation.refund();
+    }
+}
 impl Operation {
     fn with_session<T>(&self, inspect: impl FnOnce(&CapabilitySession) -> T) -> T {
         let core = {
@@ -300,7 +411,7 @@ impl Operation {
 /// Cancellation is a request; this weak handle cannot refund real work.
 #[derive(Clone)]
 pub struct IoStopHandle {
-    operation: Weak<Operation>,
+    operation: OperationWeak,
 }
 /// Internal ownership state; the public activation remains Running while I/O waits.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -337,7 +448,7 @@ impl IoStopHandle {
 }
 
 pub struct IoAdmission {
-    operation: Option<Arc<Operation>>,
+    operation: Option<OperationOwner>,
     queue_deadline: Instant,
 }
 impl IoAdmission {
@@ -382,7 +493,11 @@ impl IoAdmission {
     #[must_use]
     pub fn stop_handle(&self) -> IoStopHandle {
         IoStopHandle {
-            operation: Arc::downgrade(self.operation.as_ref().expect("affine admission")),
+            operation: self
+                .operation
+                .as_ref()
+                .expect("affine admission")
+                .downgrade(),
         }
     }
     pub async fn wait(mut self) -> Result<IoReady, PlatformError> {
@@ -421,7 +536,7 @@ impl Drop for IoAdmission {
 
 /// Capacity is ready. Re-enter the broker's guarded dispatch now, after waiting.
 pub struct IoReady {
-    operation: Option<Arc<Operation>>,
+    operation: Option<OperationOwner>,
 }
 impl IoReady {
     pub(super) fn with_session<T>(&self, inspect: impl FnOnce(&CapabilitySession) -> T) -> T {
@@ -451,7 +566,12 @@ impl IoReady {
             {
                 return Err(denied());
             }
-            std::mem::replace(&mut state.authority, Authority::Running(Box::new(call)))
+            let backing = state
+                .running_backing
+                .take()
+                .expect("waiting call owns its preparation");
+            let call = backing.finish(call);
+            std::mem::replace(&mut state.authority, Authority::Running(call))
         };
         // No temporary gap in activation ownership at the waiting -> running edge.
         drop(old);
@@ -472,12 +592,12 @@ impl Drop for IoReady {
 /// Move this into the actual provider future or an existing bounded worker job.
 /// Buffers and streams keep the owner charged after a response waiter is dropped.
 pub struct IoCall {
-    operation: Arc<Operation>,
+    operation: OperationOwner,
 }
 /// Cancellable response ownership for a separately charged physical worker.
 /// Dropping a pending waiter requests stop; it never aborts/refunds that worker.
 pub struct IoJobWaiter {
-    operation: Arc<Operation>,
+    operation: OperationOwner,
     completed: bool,
 }
 impl IoJobWaiter {
@@ -505,7 +625,7 @@ impl Drop for IoJobWaiter {
     }
 }
 /// Internal physical-work lease. No constructor can mint another activation.
-pub(super) struct IoLease(Arc<Operation>);
+pub(super) struct IoLease(OperationOwner);
 impl IoLease {
     pub fn checkpoint(&self) -> Result<(), PlatformError> {
         self.0.check()
@@ -527,7 +647,7 @@ impl IoCall {
     #[must_use]
     pub fn job_waiter(&self) -> IoJobWaiter {
         IoJobWaiter {
-            operation: Arc::clone(&self.operation),
+            operation: self.operation.clone(),
             completed: false,
         }
     }
@@ -535,7 +655,7 @@ impl IoCall {
         self.operation.with_session(inspect)
     }
     pub(super) fn lease(&self) -> IoLease {
-        IoLease(Arc::clone(&self.operation))
+        IoLease(self.operation.clone())
     }
     /// Yield on the caller's existing runtime, retaining this call and all its
     /// original activation/cell ownership. Cancellation drops only this waiting
@@ -563,7 +683,7 @@ impl IoCall {
     #[must_use]
     pub fn stop_handle(&self) -> IoStopHandle {
         IoStopHandle {
-            operation: Arc::downgrade(&self.operation),
+            operation: self.operation.downgrade(),
         }
     }
     pub async fn stopped(&self) -> PlatformError {

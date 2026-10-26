@@ -1,33 +1,32 @@
 //! Reservations for already bounded typed host values and protocol state.
 //! The adapter stores data before this guard in its owner, or shares the guard
 //! with the actual byte owner. This avoids allocating a second dummy byte buffer.
-use super::{capacity, Charge, IoAdmission, IoCall, Kind, Operation, PlatformError};
-use std::sync::Arc;
+use super::{capacity, Charge, IoAdmission, IoCall, Kind, OperationOwner, PlatformError};
 
 pub struct IoMemory {
     host: Option<latent_core::budget::HostMemoryReservation>,
     _bytes: Charge,
     _metadata: Charge,
     _slot: Charge,
-    _operation: Arc<Operation>,
+    _operation: OperationOwner,
 }
 impl IoMemory {
     pub(super) fn reserve(
-        operation: &Arc<Operation>,
+        operation: &OperationOwner,
         bytes: usize,
         metadata: usize,
     ) -> Result<Self, PlatformError> {
         Self::reserve_inner(operation, bytes, metadata, false)
     }
     pub(super) fn reserve_host(
-        operation: &Arc<Operation>,
+        operation: &OperationOwner,
         bytes: usize,
         metadata: usize,
     ) -> Result<Self, PlatformError> {
         Self::reserve_inner(operation, bytes, metadata, true)
     }
     fn reserve_inner(
-        operation: &Arc<Operation>,
+        operation: &OperationOwner,
         bytes: usize,
         metadata: usize,
         host: bool,
@@ -56,7 +55,7 @@ impl IoMemory {
             _bytes: charge,
             _metadata: meta,
             _slot: slot,
-            _operation: Arc::clone(operation),
+            _operation: operation.clone(),
         })
     }
     pub(super) fn confirm_host(&mut self) {

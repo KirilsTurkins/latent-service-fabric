@@ -1,4 +1,6 @@
-use super::{capacity, invalid, stream::StreamLifetime, Charge, Kind, Operation, PlatformError};
+use super::{
+    capacity, invalid, stream::StreamLifetime, Charge, Kind, OperationOwner, PlatformError,
+};
 use std::sync::Arc;
 use zeroize::Zeroizing;
 
@@ -13,25 +15,25 @@ pub struct IoBuffer {
     _metadata: Charge,
     _slot: Charge,
     pub(super) stream: Option<Arc<StreamLifetime>>,
-    pub(super) operation: Arc<Operation>,
+    pub(super) operation: OperationOwner,
 }
 impl IoBuffer {
     pub(super) fn allocate(
-        op: &Arc<Operation>,
+        op: &OperationOwner,
         capacity: usize,
         metadata: usize,
     ) -> Result<Self, PlatformError> {
         Self::allocate_inner(op, capacity, metadata, false)
     }
     pub(super) fn allocate_host(
-        op: &Arc<Operation>,
+        op: &OperationOwner,
         capacity: usize,
         metadata: usize,
     ) -> Result<Self, PlatformError> {
         Self::allocate_inner(op, capacity, metadata, true)
     }
     fn allocate_inner(
-        op: &Arc<Operation>,
+        op: &OperationOwner,
         capacity: usize,
         metadata: usize,
         host: bool,
@@ -72,7 +74,7 @@ impl IoBuffer {
             _metadata: meta,
             _slot: slot,
             stream: None,
-            operation: Arc::clone(op),
+            operation: op.clone(),
         })
     }
     #[must_use]
