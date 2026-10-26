@@ -28,10 +28,10 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `actions/checkout` | `v7.0.1` | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
 | `actions/setup-python` | `v7.0.0` | `5fda3b95a4ea91299a34e894583c3862153e4b97` |
 | `actions/setup-go` | `v5` | `40f1582b2485089dde7abd97c1529aa768e1baff` |
-| `actions/setup-node` | `v7.0.0` | `820762786026740c76f36085b0efc47a31fe5020` |
+| `actions/setup-node` | `v7.1.0` | `949feb2413d6458794dcd2491c4babbbce0c15c1` |
 | `actions/setup-java` | `v6.0.1` | `de7274f081f381c8f8158605e0321c36c376e2e6` |
 | `actions/setup-dotnet` | `v6.0.0` | `a98b56852c35b8e3190ac28c8c2271da59106c68` |
-| `actions/upload-artifact` | `v7.0.1` | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` |
+| `actions/upload-artifact` | `v7.0.2` | `cf430e030ddbb5b0abf93d22962f4752f3646cd9` |
 | `actions/download-artifact` | `v8.0.2` | `9000827ccba6bdab643e8b6fd33ac0654aef8333` |
 | `actions/cache/restore`, `actions/cache/save` | `v5` | `caa296126883cff596d87d8935842f9db880ef25` |
 | `actions/attest-build-provenance` | `v4.2.2` | `4d101475d8b20a2381f78447822ac1eab6504dd8` |
@@ -92,20 +92,21 @@ dependency improves download retries on rate-limited requests. The remaining
 v8.0.1 pins now match the v8.0.2 identity already used by the other workflows;
 the ownership-local command contracts and historical snapshot need no refresh.
 
-The `actions/upload-artifact` v7.0.1 identity, release notes and action-definition
-diff were reviewed on **2026-09-28**. It uses Node 24 and retains the existing
-artifact names, paths, retention, compression and hidden-file inputs. The new
-`archive` input defaults to true, preserving zipped artifacts for the existing
-download steps; these workflows do not enable direct single-file uploads.
-The workflow identities in `tools/ci/history/commands-v1.json` reflect all updated pins.
+The `actions/upload-artifact` v7.0.2 identity, [release notes](https://github.com/actions/upload-artifact/releases/tag/v7.0.2)
+and action definition were reviewed on **2026-10-26**. It uses Node 24 and
+retains the existing artifact names, paths, retention, compression and hidden-file
+inputs. The `archive` input still defaults to true. Its artifact dependency
+updates download retry handling for rate-limited requests. This pin/comment-only
+update requires no ownership-local command-contract or historical hash refresh.
 
-The `actions/setup-node` v7.0.0 identity, release notes and action definition
-were reviewed on **2026-09-28**. The action runs on Node 24 and retains the
-workflows' explicit Node 24.19.0 version, npm cache inputs and dependency paths.
-Registry authentication inputs and required install/build commands are unchanged.
-Reconciled with the ownership-local CI contracts on **2026-09-29**: this is an
-action pin/comment-only workflow update, so neither the active command contracts
-nor the archived pre-sharding snapshot requires a hash refresh.
+The `actions/setup-node` v7.1.0 identity, [release notes](https://github.com/actions/setup-node/releases/tag/v7.1.0)
+and action definition were reviewed on **2026-10-26**. The action runs on Node 24
+and retains the workflows' explicit Node 24.19.0 version, npm cache inputs and
+dependency paths. The release adds version-file support and manifest-fetch
+retries; LSF continues to select its explicit version. Registry authentication
+inputs and required install/build commands are unchanged. This is an action
+pin/comment-only workflow update, so the ownership-local command contracts and
+archived pre-sharding snapshot require no refresh.
 
 The shared `dtolnay/rust-toolchain` 1.97.1 identity and upstream action-definition
 diff were reviewed on **2026-09-28**. That revision hardcodes Rust 1.97.1 and has
