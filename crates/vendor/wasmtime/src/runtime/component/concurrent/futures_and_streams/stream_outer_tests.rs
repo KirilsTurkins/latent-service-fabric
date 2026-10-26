@@ -648,3 +648,224 @@ async fn actual_stream_guest_read_ready_pending_error_and_none_order() {
         .await
         .unwrap();
 }
+
+use alloc::string::ToString;
+
+// Private implementation observations only; these are not ActivationBudget or
+// source-derived claims of a newly executed native stream programme.
+#[derive(Default)]
+struct ConsumerCellProbe {
+    requests: Mutex<Vec<usize>>,
+    live: AtomicUsize,
+    confirmations: AtomicUsize,
+    value_drops: AtomicUsize,
+    refunds: Mutex<Vec<usize>>,
+    refuse: AtomicUsize,
+    panic_confirmation: AtomicUsize,
+    check_value_drop: AtomicBool,
+}
+
+struct ConsumerCellAllocation {
+    probe: Arc<ConsumerCellProbe>,
+    bytes: usize,
+    ordinal: usize,
+    confirmed: bool,
+}
+
+impl NativeAllocation for ConsumerCellAllocation {
+    fn allocated(&mut self) {
+        self.confirmed = true;
+        self.probe.confirmations.fetch_add(1, SeqCst);
+        assert_ne!(
+            self.probe.panic_confirmation.load(SeqCst),
+            self.ordinal,
+            "consumer-cell-confirmation-control"
+        );
+    }
+}
+
+impl Drop for ConsumerCellAllocation {
+    fn drop(&mut self) {
+        if self.confirmed && self.probe.check_value_drop.load(SeqCst) {
+            assert_eq!(self.probe.value_drops.load(SeqCst), 1);
+        }
+        assert!(self.probe.live.fetch_sub(self.bytes, SeqCst) >= self.bytes);
+        self.probe.refunds.lock().unwrap().push(self.ordinal);
+    }
+}
+
+struct ConsumerCellMemory(Arc<ConsumerCellProbe>);
+
+impl crate::NativeMemory for ConsumerCellMemory {
+    fn reserve(&self, bytes: usize) -> Result<Box<dyn NativeAllocation>> {
+        let ordinal = {
+            let mut requests = self.0.requests.lock().unwrap();
+            requests.push(bytes);
+            requests.len()
+        };
+        if self.0.refuse.load(SeqCst) == ordinal {
+            crate::bail!("consumer-cell-refusal-control");
+        }
+        self.0.live.fetch_add(bytes, SeqCst);
+        Ok(Box::new(ConsumerCellAllocation {
+            probe: self.0.clone(),
+            bytes,
+            ordinal,
+            confirmed: false,
+        }))
+    }
+}
+
+#[repr(align(256))]
+struct ConsumerCellValue {
+    probe: Arc<ConsumerCellProbe>,
+    panic_drop: bool,
+    _pinned: core::marker::PhantomPinned,
+}
+
+impl Drop for ConsumerCellValue {
+    fn drop(&mut self) {
+        assert_eq!(self.probe.value_drops.fetch_add(1, SeqCst), 0);
+        assert!(!self.panic_drop, "consumer-cell-destructor-control");
+    }
+}
+
+fn consumer_cell_memory(probe: &Arc<ConsumerCellProbe>) -> crate::runtime::native_memory::Memory {
+    Some(Arc::new(ConsumerCellMemory(probe.clone())))
+}
+
+fn consumer_cell_value(probe: &Arc<ConsumerCellProbe>, panic_drop: bool) -> ConsumerCellValue {
+    ConsumerCellValue {
+        probe: probe.clone(),
+        panic_drop,
+        _pinned: core::marker::PhantomPinned,
+    }
+}
+
+#[test]
+fn consumer_cell_two_admissions_refuse_before_either_allocation_and_abandon_unused() {
+    for refused in [1, 2] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        probe.refuse.store(refused, SeqCst);
+        let result =
+            AccountedConsumerCell::<ConsumerCellValue>::prepare(&consumer_cell_memory(&probe));
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "consumer-cell-refusal-control"
+        );
+        assert_eq!(probe.requests.lock().unwrap().len(), refused);
+        assert_eq!(probe.confirmations.load(SeqCst), 0);
+        assert_eq!(probe.value_drops.load(SeqCst), 0);
+        assert_eq!(probe.live.load(SeqCst), 0);
+        assert_eq!(probe.refunds.lock().unwrap().len(), refused - 1);
+    }
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let prepared =
+        AccountedConsumerCell::<ConsumerCellValue>::prepare(&consumer_cell_memory(&probe)).unwrap();
+    assert_eq!(
+        *probe.requests.lock().unwrap(),
+        [
+            core::alloc::Layout::new::<ConsumerCellValue>().size(),
+            AccountedConsumerCell::<ConsumerCellValue>::layout()
+                .unwrap()
+                .size(),
+        ]
+    );
+    assert_eq!(probe.confirmations.load(SeqCst), 0);
+    drop(prepared);
+    assert_eq!(probe.live.load(SeqCst), 0);
+    assert_eq!(probe.value_drops.load(SeqCst), 0);
+}
+
+#[test]
+fn consumer_cell_pinned_value_and_shared_owner_live_through_clones_and_taken_guard() {
+    let probe = Arc::new(ConsumerCellProbe::default());
+    probe.check_value_drop.store(true, SeqCst);
+    let prepared =
+        AccountedConsumerCell::<ConsumerCellValue>::prepare(&consumer_cell_memory(&probe)).unwrap();
+    let cell = AccountedConsumerCell::create(prepared, consumer_cell_value(&probe, false));
+    let live = probe.live.load(SeqCst);
+    assert_eq!(probe.confirmations.load(SeqCst), 2);
+    let second = cell.clone();
+    let mut taken = second.take().unwrap();
+    let address = taken.as_mut().as_ref().get_ref() as *const ConsumerCellValue as usize;
+    assert_eq!(address % core::mem::align_of::<ConsumerCellValue>(), 0);
+    drop(cell);
+    assert_eq!(probe.live.load(SeqCst), live);
+    assert_eq!(probe.value_drops.load(SeqCst), 0);
+    drop(taken); // Original LockedStateGuard restores the SAME pinned consumer.
+    assert_eq!(
+        second.take().unwrap().as_ref().get_ref() as *const _ as usize,
+        address
+    );
+    let last = second.clone();
+    drop(second);
+    assert_eq!(probe.live.load(SeqCst), live);
+    drop(last);
+    assert_eq!(probe.value_drops.load(SeqCst), 1);
+    assert_eq!(probe.live.load(SeqCst), 0);
+    assert_eq!(*probe.refunds.lock().unwrap(), [1, 2]);
+}
+
+#[test]
+fn consumer_cell_zst_and_none_preserve_actual_backing_routes() {
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let prepared = AccountedConsumerCell::<()>::prepare(&consumer_cell_memory(&probe)).unwrap();
+    assert_eq!(
+        *probe.requests.lock().unwrap(),
+        [AccountedConsumerCell::<()>::layout().unwrap().size(),]
+    );
+    let cell = AccountedConsumerCell::create(prepared, ());
+    assert_eq!(probe.confirmations.load(SeqCst), 1);
+    drop(cell);
+    assert_eq!(probe.live.load(SeqCst), 0);
+
+    let probe = Arc::new(ConsumerCellProbe::default());
+    type Legacy = Arc<LockedState<Pin<Box<ConsumerCellValue>>>>;
+    let prepared = <Legacy as ConsumerStorage<ConsumerCellValue>>::prepare(&None).unwrap();
+    let cell: Legacy = <Legacy as ConsumerStorage<ConsumerCellValue>>::create(
+        prepared,
+        consumer_cell_value(&probe, false),
+    );
+    let second = cell.clone();
+    drop(cell);
+    assert_eq!(probe.value_drops.load(SeqCst), 0);
+    drop(second);
+    assert_eq!(probe.value_drops.load(SeqCst), 1);
+    assert!(probe.requests.lock().unwrap().is_empty());
+    assert_eq!(probe.confirmations.load(SeqCst), 0);
+}
+
+#[test]
+fn consumer_cell_each_confirmation_unwind_has_physical_cleanup_installed() {
+    for confirmation in [1, 2] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        probe.check_value_drop.store(true, SeqCst);
+        probe.panic_confirmation.store(confirmation, SeqCst);
+        let prepared =
+            AccountedConsumerCell::<ConsumerCellValue>::prepare(&consumer_cell_memory(&probe))
+                .unwrap();
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                AccountedConsumerCell::create(prepared, consumer_cell_value(&probe, false))
+            }))
+            .is_err()
+        );
+        assert_eq!(probe.value_drops.load(SeqCst), 1);
+        assert_eq!(probe.live.load(SeqCst), 0);
+        assert_eq!(probe.refunds.lock().unwrap().len(), 2);
+    }
+}
+
+#[test]
+fn consumer_cell_destructor_unwind_retains_both_original_uncertain_charges() {
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let prepared =
+        AccountedConsumerCell::<ConsumerCellValue>::prepare(&consumer_cell_memory(&probe)).unwrap();
+    let cell = AccountedConsumerCell::create(prepared, consumer_cell_value(&probe, true));
+    let live = probe.live.load(SeqCst);
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(cell))).is_err());
+    assert_eq!(probe.value_drops.load(SeqCst), 1);
+    assert_eq!(probe.live.load(SeqCst), live);
+    assert!(probe.refunds.lock().unwrap().is_empty());
+}
