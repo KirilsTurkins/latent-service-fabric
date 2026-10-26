@@ -373,6 +373,7 @@ default-features = false
 
 [dependencies.wasmtime-cache]
 version = "=48.0.7"
+path = "../wasmtime-cache"
 optional = true
 package = "wasmtime-internal-cache"
 

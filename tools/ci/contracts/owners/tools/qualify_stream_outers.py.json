@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_stream_outers.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed cache security backport: complete14 source/fixedzstd0.14.3,safe8.2.0,sys2.1.2; distinctcache-repaircohort. ParentCHECKusesSAMEexistingv17FEATURES, cachelibtestBUILD plusprobe/list/exactupstreamroundtrip, fixed5commands/unchanged45m2400/900/60/30/j2/cleanup. No fixture or old6replay; fe9historicalonly.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "8a462e6748cf535d83e687e745bb703c772dea07ec26a8e7eaf0fce2ce4beea5"
+}

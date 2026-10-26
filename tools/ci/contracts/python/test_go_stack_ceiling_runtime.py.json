@@ -1,62 +1,20 @@
 {
-  "cases": [
-    "StackProgramme.test_actual_reader_requires_seven_attempts_and_preserves_bounded_truncation",
-    "StackProgramme.test_generic_trap_wrong_leaf_grant_budget_and_retirement_are_refused",
-    "StackProgramme.test_missing_duplicate_unknown_float_and_unexecuted_case_cannot_qualify",
-    "StackProgramme.test_normal_capture_and_actual_compile_facade_reject_detached_inputs_first"
-  ],
-  "guards": {
-    "StackProgramme.test_actual_reader_requires_seven_attempts_and_preserves_bounded_truncation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4ba5c4012fd375182604301ca27a4e19133cb3703ab69ebb2ca0164a175c024b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "StackProgramme.test_generic_trap_wrong_leaf_grant_budget_and_retirement_are_refused": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4ba5c4012fd375182604301ca27a4e19133cb3703ab69ebb2ca0164a175c024b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "StackProgramme.test_missing_duplicate_unknown_float_and_unexecuted_case_cannot_qualify": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4ba5c4012fd375182604301ca27a4e19133cb3703ab69ebb2ca0164a175c024b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "StackProgramme.test_normal_capture_and_actual_compile_facade_reject_detached_inputs_first": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4ba5c4012fd375182604301ca27a4e19133cb3703ab69ebb2ca0164a175c024b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["StackProgramme.test_actual_reader_requires_seven_attempts_and_preserves_bounded_truncation","StackProgramme.test_generic_trap_wrong_leaf_grant_budget_and_retirement_are_refused","StackProgramme.test_missing_duplicate_unknown_float_and_unexecuted_case_cannot_qualify","StackProgramme.test_normal_capture_and_actual_compile_facade_reject_detached_inputs_first"],
+  "guards":{
+    "StackProgramme.test_actual_reader_requires_seven_attempts_and_preserves_bounded_truncation":
+      "0e240dde266a69c0a346866e43c445405959aa7837c07e7401fd6a9232c2514e",
+    "StackProgramme.test_generic_trap_wrong_leaf_grant_budget_and_retirement_are_refused":
+      "0e240dde266a69c0a346866e43c445405959aa7837c07e7401fd6a9232c2514e",
+    "StackProgramme.test_missing_duplicate_unknown_float_and_unexecuted_case_cannot_qualify":
+      "0e240dde266a69c0a346866e43c445405959aa7837c07e7401fd6a9232c2514e",
+    "StackProgramme.test_normal_capture_and_actual_compile_facade_reject_detached_inputs_first":
+      "0e240dde266a69c0a346866e43c445405959aa7837c07e7401fd6a9232c2514e"
   },
-  "kind": "python",
-  "module": "tools/tests/test_go_stack_ceiling_runtime.py",
-  "reviewReason": "Same four cases and unchanged skips/decorators; controlled mapping binds a nonzero component origin and rejects legacy unadjusted/forged origin comparisons",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_go_stack_ceiling_runtime.py",
+  "reviewReason":"Same four cases and unchanged skips/decorators; controlled mapping binds a nonzero component origin and rejects legacy unadjusted/forged origin comparisons",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "0e240dde266a69c0a346866e43c445405959aa7837c07e7401fd6a9232c2514e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:4ba5c4012fd375182604301ca27a4e19133cb3703ab69ebb2ca0164a175c024b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

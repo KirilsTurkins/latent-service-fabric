@@ -1,49 +1,18 @@
 {
-  "cases": [
-    "CleanupAssociationSource.test_actual_request_offset_and_worker_size",
-    "CleanupAssociationSource.test_birth_and_actor_before_first_foreign_field",
-    "CleanupAssociationSource.test_genuine_constructor_tail_and_unselected_gates"
-  ],
-  "guards": {
-    "CleanupAssociationSource.test_actual_request_offset_and_worker_size": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:57cff6c3691d5dc48b48700d2df46d0aa34ca6ac71ea6c7dcbb5b2bddc78694f",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupAssociationSource.test_birth_and_actor_before_first_foreign_field": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:57cff6c3691d5dc48b48700d2df46d0aa34ca6ac71ea6c7dcbb5b2bddc78694f",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupAssociationSource.test_genuine_constructor_tail_and_unselected_gates": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:57cff6c3691d5dc48b48700d2df46d0aa34ca6ac71ea6c7dcbb5b2bddc78694f",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["CleanupAssociationSource.test_actual_request_offset_and_worker_size","CleanupAssociationSource.test_birth_and_actor_before_first_foreign_field","CleanupAssociationSource.test_genuine_constructor_tail_and_unselected_gates"],
+  "guards":{
+    "CleanupAssociationSource.test_actual_request_offset_and_worker_size":
+      "a4d0fba22fdce277e8c7d1f35156c1e97975451009edd41f39f1cadec64f174d",
+    "CleanupAssociationSource.test_birth_and_actor_before_first_foreign_field":
+      "a4d0fba22fdce277e8c7d1f35156c1e97975451009edd41f39f1cadec64f174d",
+    "CleanupAssociationSource.test_genuine_constructor_tail_and_unselected_gates":
+      "a4d0fba22fdce277e8c7d1f35156c1e97975451009edd41f39f1cadec64f174d"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_cleanup_association.py",
-  "reviewReason": "Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_cleanup_association.py",
+  "reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "a4d0fba22fdce277e8c7d1f35156c1e97975451009edd41f39f1cadec64f174d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:57cff6c3691d5dc48b48700d2df46d0aa34ca6ac71ea6c7dcbb5b2bddc78694f","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

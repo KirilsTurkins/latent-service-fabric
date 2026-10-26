@@ -1,62 +1,20 @@
 {
-  "cases": [
-    "ConstructorFailureSource.test_closed_stage_set_and_short_circuit_stack_guards_keep_real_owners",
-    "ConstructorFailureSource.test_exact_six_preimages_and_closed_normal_candidate_projection",
-    "ConstructorFailureSource.test_one_numeric_terminal_printer_first_failure_and_real_unlock_order",
-    "ConstructorFailureSource.test_original_calls_errno_and_unwind_labels_survive_single_body_wrappers"
-  ],
-  "guards": {
-    "ConstructorFailureSource.test_closed_stage_set_and_short_circuit_stack_guards_keep_real_owners": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:20cb197446dd35b67c19dd805548f0fd035c2e2b67b0043169942377a9033c03",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "ConstructorFailureSource.test_exact_six_preimages_and_closed_normal_candidate_projection": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:20cb197446dd35b67c19dd805548f0fd035c2e2b67b0043169942377a9033c03",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "ConstructorFailureSource.test_one_numeric_terminal_printer_first_failure_and_real_unlock_order": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:20cb197446dd35b67c19dd805548f0fd035c2e2b67b0043169942377a9033c03",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "ConstructorFailureSource.test_original_calls_errno_and_unwind_labels_survive_single_body_wrappers": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:20cb197446dd35b67c19dd805548f0fd035c2e2b67b0043169942377a9033c03",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "cases":["ConstructorFailureSource.test_closed_stage_set_and_short_circuit_stack_guards_keep_real_owners","ConstructorFailureSource.test_exact_six_preimages_and_closed_normal_candidate_projection","ConstructorFailureSource.test_one_numeric_terminal_printer_first_failure_and_real_unlock_order","ConstructorFailureSource.test_original_calls_errno_and_unwind_labels_survive_single_body_wrappers"],
+  "guards":{
+    "ConstructorFailureSource.test_closed_stage_set_and_short_circuit_stack_guards_keep_real_owners":
+      "f7913be7af816fdd5f9e5a33476bd17c380c8316bacfa14f45adde0136077216",
+    "ConstructorFailureSource.test_exact_six_preimages_and_closed_normal_candidate_projection":
+      "f7913be7af816fdd5f9e5a33476bd17c380c8316bacfa14f45adde0136077216",
+    "ConstructorFailureSource.test_one_numeric_terminal_printer_first_failure_and_real_unlock_order":
+      "f7913be7af816fdd5f9e5a33476bd17c380c8316bacfa14f45adde0136077216",
+    "ConstructorFailureSource.test_original_calls_errno_and_unwind_labels_survive_single_body_wrappers":
+      "f7913be7af816fdd5f9e5a33476bd17c380c8316bacfa14f45adde0136077216"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_constructor_failure.py",
-  "reviewReason": "Observe every constructor failure using authenticated source, unchanged helper calls and errno, closed numeric stages, null observers and the existing candidate-only gate. Preserve all eleven existing native/image controls.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_constructor_failure.py",
+  "reviewReason":"Observe every constructor failure using authenticated source, unchanged helper calls and errno, closed numeric stages, null observers and the existing candidate-only gate. Preserve all eleven existing native/image controls.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "f7913be7af816fdd5f9e5a33476bd17c380c8316bacfa14f45adde0136077216":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:20cb197446dd35b67c19dd805548f0fd035c2e2b67b0043169942377a9033c03","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }
