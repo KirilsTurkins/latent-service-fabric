@@ -37,7 +37,7 @@ The current security forks were reviewed on **2026-10-26**. They extend the pins
 | `KirilsTurkins/lsf-setup-node` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-node/pull/1653)) | `c1136b2d97fe79ef645e9508b2048a222f50a170` |
 | `KirilsTurkins/lsf-setup-python` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-python/pull/1381)) | `50257733267ef69f611231aad6b77a62adca7140` |
 | `KirilsTurkins/lsf-upload-artifact` | `v7.0.2` + upstream changes and security fixes ([review](https://github.com/actions/upload-artifact/pull/825)) | `01d82cc6ae713563e8d04f36a17af500cf82a6a9` |
-| `KirilsTurkins/lsf-upload-pages-artifact` | `v5.0.0` + upstream changes and security fixes ([review](https://github.com/actions/upload-pages-artifact/pull/166)) | `e54978b2813471fa30a16e21358d1fc3acd9e009` |
+| `KirilsTurkins/lsf-upload-pages-artifact` | `v5.0.0` + upstream changes and security fixes ([review](https://github.com/actions/upload-pages-artifact/pull/166)) | `f6fd45bb134f6855d391ed2198e9b3d57d305a05` |
 | `KirilsTurkins/lsf-buf-setup-action` | `v1.50.0` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-buf-setup-action/pull/1)) | `7e1d5f1d4a4a7d82b1ff79968166c4f50a66ce57` |
 | `KirilsTurkins/lsf-bytecodealliance-actions` | `v1.1.3` + upstream changes and security fixes ([review](https://github.com/bytecodealliance/actions/pull/24)) | `9244ec9f4725400c84054e3e6ec97514cadddf53` |
 | `KirilsTurkins/lsf-setup-zig` | `v2.2.1` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-setup-zig/pull/1)) | `e064b42fa88ad0859d8b54838b44f672ffd5ea7a` |

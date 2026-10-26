@@ -104,7 +104,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 tools/docs_pages.py guard --receipt candidate/publication.json
-      - uses: KirilsTurkins/lsf-upload-pages-artifact@e54978b2813471fa30a16e21358d1fc3acd9e009 # v5.0.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-upload-pages-artifact@f6fd45bb134f6855d391ed2198e9b3d57d305a05 # v5.0.0 + upstream changes + LSF security fixes
         with:
           name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: candidate/site

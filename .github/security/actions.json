@@ -566,24 +566,24 @@
       "upstream_repository": "actions/upload-artifact",
       "upstream_revision": "cf430e030ddbb5b0abf93d22962f4752f3646cd9"
     },
-    "KirilsTurkins/lsf-upload-pages-artifact@e54978b2813471fa30a16e21358d1fc3acd9e009": {
+    "KirilsTurkins/lsf-upload-pages-artifact@f6fd45bb134f6855d391ed2198e9b3d57d305a05": {
       "files": [
         {
-          "sha256": "bed707211ebc4c125dee40bbbd2a19efcbd817549cb0f173f295e0ff0f87ef4d",
+          "sha256": "c63ef5ab4abf3ed48cc398c0ddc2c27ba3ffb9e66f49da00202cd7748a9f9718",
           "snapshot": ".github/security/actions/upload-pages-artifact/action.yml.snapshot",
           "source": "action.yml",
-          "source_sha256": "bed707211ebc4c125dee40bbbd2a19efcbd817549cb0f173f295e0ff0f87ef4d"
+          "source_sha256": "c63ef5ab4abf3ed48cc398c0ddc2c27ba3ffb9e66f49da00202cd7748a9f9718"
         }
       ],
       "kind": "composite",
       "metadata": {
-        "sha256": "bed707211ebc4c125dee40bbbd2a19efcbd817549cb0f173f295e0ff0f87ef4d",
+        "sha256": "c63ef5ab4abf3ed48cc398c0ddc2c27ba3ffb9e66f49da00202cd7748a9f9718",
         "snapshot": ".github/security/actions/upload-pages-artifact/action.yml.snapshot",
         "source": "action.yml",
-        "source_sha256": "bed707211ebc4c125dee40bbbd2a19efcbd817549cb0f173f295e0ff0f87ef4d"
+        "source_sha256": "c63ef5ab4abf3ed48cc398c0ddc2c27ba3ffb9e66f49da00202cd7748a9f9718"
       },
       "repository": "KirilsTurkins/lsf-upload-pages-artifact",
-      "revision": "e54978b2813471fa30a16e21358d1fc3acd9e009",
+      "revision": "f6fd45bb134f6855d391ed2198e9b3d57d305a05",
       "security_pr": "https://github.com/actions/upload-pages-artifact/pull/166",
       "upstream_repository": "actions/upload-pages-artifact",
       "upstream_revision": "5f327015a708106f6f1b7c9a633901af30fe80cb"
