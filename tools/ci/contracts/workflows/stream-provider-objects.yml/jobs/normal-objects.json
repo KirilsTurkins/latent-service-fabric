@@ -9,7 +9,7 @@
       {
         "uses": "actions/checkout",
         "with": {
-          "fetch-depth": 4,
+          "fetch-depth": 16,
           "persist-credentials": false
         }
       },
@@ -67,7 +67,7 @@
   },
   "jobId": "normal-objects",
   "kind": "job",
-  "reviewReason": "Review one unselected normal C object programme for the exact provider source checkpoint and strict SKB composition: eighteen objects, original config and bounded owner; no image, boot, consumer activation, useful fit or runtime qualification.",
+  "reviewReason": "Review bounded checkout depth16 for the short corrective history while preserving exact013c object/tree hard guards, unchanged18-object command/deadlines/limits and no fallback fetch or full-history authority.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }

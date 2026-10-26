@@ -117,13 +117,17 @@ def _dev(raw):
 
 def transform(outputs, sources):
     require(type(outputs) is dict and type(sources) is dict and set(sources) == set(PREIMAGES)
-        and not set(sources).intersection(outputs) and CPU_HEADER not in outputs
+        and set(sources).intersection(outputs) <= {HEADER} and CPU_HEADER not in outputs
         and all(type(outputs.get(n)) is bytes for n in ('net/factory.c', 'net/device-prepaid.h')),
         'stream-cpu-fixed-input-set')
     for name, raw in sources.items():
         size, digest = PREIMAGES[name]
         require(type(raw) is bytes and len(raw) == size and hashlib.sha256(raw).hexdigest() == digest,
             'stream-cpu-original-whole-preimage')
+        # The normal baseline already carries this exact unmodified header.
+        # Never discard an existing transformed TU or accept an alternate body.
+        require(name not in outputs or outputs[name] == raw,
+            'stream-cpu-identical-original-passthrough')
     result = dict(outputs)
     result[HEADER] = _header(sources[HEADER])
     result[DEV] = _dev(sources[DEV])

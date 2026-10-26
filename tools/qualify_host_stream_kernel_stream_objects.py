@@ -22,8 +22,8 @@ CHECKPOINT = 'a92632a589ceb4db69207f9d6ff5dba286b8eaa5'
 BRANCH = 'test/sdk-738-stream-objects-20261026'
 WORKFLOW = '.github/workflows/stream-provider-objects.yml'
 SOURCE_PATHS = ('research/standard-outbound/linux-6.12-lineage/device-prepaid.h', 'research/standard-outbound/linux-6.12-lineage/factory-stream-find-vqs.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-material-arena.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-material-plan.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-netdev-address.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-netdev-core.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-netdev-cpu.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-netdev-fixed.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-netdev-name.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-operations.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-retirement.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-root-final-free.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-rss.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-rx-preallocate.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-stop.c', 'research/standard-outbound/linux-6.12-lineage/factory-stream-udp-cork.c', 'research/standard-outbound/linux-6.12-lineage/stream-material-geometry-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-net-geometry.c', 'research/standard-outbound/linux-6.12-lineage/stream-net-material-geometry.c', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-core-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-cpu-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-cpu.c', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-fixed-geometry-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-fixed-geometry.c', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-fixed-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-name-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-netdev-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-operation-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-owned-ring.c', 'research/standard-outbound/linux-6.12-lineage/stream-pci-material-geometry.c', 'research/standard-outbound/linux-6.12-lineage/stream-protocol-allocation.c', 'research/standard-outbound/linux-6.12-lineage/stream-ring-geometry.c', 'research/standard-outbound/linux-6.12-lineage/stream-ring-profile-private.h', 'research/standard-outbound/linux-6.12-lineage/stream-skb-dispatch.c', 'research/standard-outbound/linux-6.12-lineage/stream-udp-cork-private.c', 'research/standard-outbound/linux-6.12-lineage/stream-udp-private.c', 'tools/host_stream_kernel_stream_core.py', 'tools/host_stream_kernel_stream_cpu.py', 'tools/host_stream_kernel_stream_fixed_netdev.py', 'tools/host_stream_kernel_stream_name.py', 'tools/host_stream_kernel_stream_netdev.py', 'tools/host_stream_kernel_stream_operations.py', 'tools/host_stream_kernel_stream_protocol.py', 'tools/host_stream_kernel_stream_rss_failure.py', 'tools/host_stream_kernel_stream_rx.py', 'tools/host_stream_kernel_stream_skb.py', 'tools/host_stream_kernel_stream_udp.py')
-SOURCE_SHA = 'cfa94828ab26c903639c39acbf45d4de8b4f2afeb507b2969e46fad5f37863b9'
-SOURCE_BYTES = 336648
+SOURCE_SHA = '9e72d2554a6f692c07e926825c52c34e70652b5a0763b4bb03fdd33c57c88a4e'
+SOURCE_BYTES = 337603
 CHECKPOINT45_SHA = '1ec18c5c933a74a8378cfa0da8893cb6612a84d6e14f02614a769365f6b30f62'
 CONFIG = {'bytes':143135, 'sha256':'0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6'}
 TARGETS = ('net/factory.o','net/socket.o','net/core/sock.o','net/ipv4/af_inet.o',
@@ -169,6 +169,17 @@ def baseline_worker(recipe, tree, config, output):
         'qualificationProjectionApplied':False})
 
 
+def udp_source(values, tree):
+    # This TU is genuinely absent from the original normal derived map. Add
+    # ONLY its exact original primary; never reset an already-transformed TU.
+    from tools.host_stream_kernel_stream_udp import IP
+    require(IP not in values,'fresh-udp-ip-primary')
+    raw=read(tree/IP,MAX_FILE)
+    require(identity(raw)=={'bytes': 43820, 'sha256': 'f5d4f5dee6e0995e5b82dc53519ba1480026085b9ea14e472c956f7db93c20b8'},'whole-original-udp-ip-primary')
+    result=dict(values);result[IP]=raw
+    return result
+
+
 def current_compose(values, tree):
     from tools import host_stream_kernel_stream_operations as operations
     from tools import host_stream_kernel_stream_protocol as protocol
@@ -182,7 +193,7 @@ def current_compose(values, tree):
     from tools import host_stream_kernel_stream_core as core
     values=operations.transform(values)
     values=protocol.transform(values,read(tree/protocol.IPV6,MAX_FILE))
-    values=udp.transform(values)
+    values=udp.transform(udp_source(values,tree))
     values=rx.transform(values,{n:read(tree/n,MAX_FILE) for n in rx.PREIMAGES})
     values=address.transform(values,read(tree/address.SOURCE,MAX_FILE))
     values=cpu.transform(values,{n:read(tree/n,MAX_FILE) for n in cpu.PREIMAGES})
@@ -346,6 +357,7 @@ def run(output, revision, started):
             baseline['sourceBefore']==baseline['sourceAfter'] and baseline['actualConfiguration']==CONFIG and
             baseline['compilerInvocations']==baseline['runtimeInvocations']==0 and
             baseline['qualificationProjectionApplied'] is False,'pure-baseline-identity')
+        public_sources['baseline-inputs.json']=baseline_output/'baseline.json'
         command('baseline-clean-after',git,'diff','--no-ext-diff','--exit-code','HEAD','--',cap=30,root=recipe)
         require(command('baseline-tree-after',git,'rev-parse','HEAD^{tree}',cap=15,root=recipe).decode().strip()==BASELINE_TREE,'baseline-tree-after')
         values=current_compose(derived_read(baseline_output/'derived',baseline['derived']),tree)
@@ -353,7 +365,6 @@ def run(output, revision, started):
         for name,raw in values.items():
             q=tree/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
         write_json(scratch/'derived-inputs.json',rows,4*MAX_DOCUMENT);public_sources['derived-inputs.json']=scratch/'derived-inputs.json'
-        public_sources['baseline-inputs.json']=baseline_output/'baseline.json'
         command('eighteen-objects',*common,'-j2',*TARGETS,root=tree,cap=1200)
         require(read(build/'.config',MAX_DOCUMENT)==selected,'actual-config-mutated')
         autoconf=read(build/'include/generated/autoconf.h',MAX_DOCUMENT)

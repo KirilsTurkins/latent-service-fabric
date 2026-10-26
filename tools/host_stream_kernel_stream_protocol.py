@@ -148,8 +148,19 @@ def transform(outputs, inet6):
     require(type(outputs.get(path)) is bytes, 'stream-protocol-actual-route-source-required')
     editor = Editor(outputs[path].decode())
     old = function(editor.text, 'static int lsf_prepaid_route_source(')
-    require(hashlib.sha256(old.encode()).hexdigest() == '742dc69e54eeefb2af69539cc2762929bd61a0e28dcf5c44ada68ea13fbf5a37',
-        'stream-protocol-whole-tcp-route-source')
+    original = function((OWNED/'route-private.c').read_text(),
+        'static int lsf_prepaid_route_source(')
+    require(hashlib.sha256(original.encode()).hexdigest() ==
+        '742dc69e54eeefb2af69539cc2762929bd61a0e28dcf5c44ada68ea13fbf5a37' and
+        original.count('lsf_factory_poison(source->context);') == 1,
+        'stream-protocol-original-tcp-route-source')
+    # Preserve the exact already-selected original device-security carrier
+    # conversion; never restore the older context-only poison at this join.
+    carrier = original.replace('lsf_factory_poison(source->context);',
+        'lsf_factory_blob_poison(*source);')
+    require(old == carrier and hashlib.sha256(old.encode()).hexdigest() ==
+        'e25eab21264e24420eaddb22114ca50f2dbdc2f5d3b3e0da76fd9b5c354687e4',
+        'stream-protocol-whole-typed-tcp-route-source')
     body = Editor(old)
     body.edit('                      sk->sk_protocol != IPPROTO_TCP || sk->sk_prot != &tcp_prot)',
         '                      !((sk->sk_protocol == IPPROTO_TCP && sk->sk_prot == &tcp_prot) ||\n'
