@@ -36,7 +36,7 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-memory-v10`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-memory-v11`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
 v3/48a passed85, v4/3e417 passed92, v5/94f passed97, v7/f535 passed114,
@@ -191,3 +191,19 @@ source-only implementation until its five private implementation controls and
 separate actual canonical first_poll/original-budget control execute. It does
 not account all concurrent scheduler, opaque host future, engine GC or cache
 allocations, and does not complete a full JavaScript cost-model qualification.
+
+
+The v11 source extension additionally pre-admits the exact concrete abortable
+future Box in Instance::first_poll, after the separately paid JoinState cell but
+before the running handle is published or the future is polled. Its private
+wrapper keeps the original allocation owner outside the pinned Box; normal
+completion retains backing until actual Box destruction. A destructor unwind
+keeps that same original charge conservatively retained. Confirmation unwind
+also destroys the installed Box before refund. No factory or new ledger is held.
+NativeMemory=None preserves the original Box<F> allocation and poll semantics;
+the inline wrapper can enlarge the separate enclosing scheduler future.
+Layout<F> covers this backing, not allocator overhead or an RSS upper bound.
+Other scheduler/opaque future boxes, FuturesUnordered nodes, queue/waitable
+backing and transitive captures remain outside this slice. Four private controls
+and one actual canonical third-admission/refusal/fresh-Store control are prepared
+but have not yet been compiled or executed by this source update.

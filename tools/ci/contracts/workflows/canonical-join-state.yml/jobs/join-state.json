@@ -13,7 +13,7 @@
       "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
       "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     },
-    "name": "Five private owners and one real canonical budget admission",
+    "name": "Four private future owners and one real canonical budget admission",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -53,7 +53,7 @@
         }
       },
       {
-        "name": "Build only two locked host targets and execute the exact six controls",
+        "name": "Build only two locked host targets and execute the exact five controls",
         "run": "python3 -B tools/qualify_canonical_join_state.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/canonical-join-state\""
       },
       {
@@ -62,7 +62,7 @@
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
-          "name": "canonical-join-state-${{ github.sha }}",
+          "name": "canonical-call-future-${{ github.sha }}",
           "path": "${{ runner.temp }}/canonical-join-state/receipt.json\n${{ runner.temp }}/canonical-join-state/FAILED.json\n${{ runner.temp }}/canonical-join-state/source-inputs.json\n${{ runner.temp }}/canonical-join-state/commands.json\n${{ runner.temp }}/canonical-join-state/commands/logs/*.txt\n",
           "retention-days": 3
         }
@@ -72,7 +72,7 @@
   },
   "jobId": "join-state",
   "kind": "job",
-  "reviewReason": "Require the fixed five plus one actual controls with source-matched Cargo artifacts, zero ignored skips and fixed 45 minute job/2400 second owner.",
+  "reviewReason": "Reviewed concrete abortable async-import future Box preadmission and physical-drop ownership. Existing focused owner runs only four new private cases and one new actual canonical third-admission/fresh-Store case under unchanged two-build/45m/2400s/900s/60s/two-job bounds. No old case, skip or authority is removed. Explicit label replacement from six controls to five; the sole original python CLI run text is byte-equal.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-join-state.yml"
 }

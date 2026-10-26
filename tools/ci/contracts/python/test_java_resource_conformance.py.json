@@ -18,7 +18,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0",
         "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
       ],
       "skipSites": []
@@ -30,7 +30,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0",
         "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
       ],
       "skipSites": [
@@ -45,7 +45,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0",
         "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
       ],
       "skipSites": []
@@ -57,7 +57,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0",
         "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
       ],
       "skipSites": []
@@ -69,7 +69,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0",
         "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
       ],
       "skipSites": []
@@ -81,7 +81,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0",
         "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
       ],
       "skipSites": []
@@ -93,7 +93,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0",
         "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
       ],
       "skipSites": []
@@ -105,7 +105,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0",
         "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
       ],
       "skipSites": []
@@ -117,7 +117,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:4cd9eef2afeffaecc3b16c82cb6421e2b16988b432fd3629699aedb4ed0c82d2",
+        "module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0",
         "class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"
       ],
       "skipSites": []
@@ -125,6 +125,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_resource_conformance.py",
-  "reviewReason": "Preserve8 original cases and every fixture guard; append one Linux real denied-exec/recovery/tamper control.",
+  "reviewReason": "Validate exact reviewed sealed compiler/cache setup and SDK argument inverse before all unchanged historical workflow assertions; same cases and skip/decorator predicates.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -96,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_host_stream_tls_provider_reference.py",
-  "reviewReason": "retain original kernel owners across failed DNS/connect and actual close-tail retirement uncertainty",
+  "reviewReason": "Retain the exact complete streams catalogue after the reviewed additional typed-fault control: strict44 cases, all original IDs/guards/oracles/timeouts preserved.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

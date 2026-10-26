@@ -109,6 +109,7 @@ pub use futures_and_streams::{
 pub(crate) use futures_and_streams::{ResourcePair, lower_error_context_to_index};
 
 mod abort;
+mod call_future;
 mod error_contexts;
 mod func;
 mod future_stream_any;
@@ -3281,23 +3282,22 @@ impl Instance {
 
         // Create an abortable future which hooks calls to poll and manages call
         // context state for the future.
-        let (join_handle, future) = JoinHandle::run_with_memory(future, memory)?;
+        let (join_handle, future) = JoinHandle::run_with_memory(future, memory.clone())?;
+        // Admit the concrete pinned future backing before polling it or
+        // publishing its join handle into the host task's running state.
+        let mut future = call_future::CallFuture::new(&memory, future)?;
         {
             let state = &mut state.get_mut(task)?.state;
             assert!(matches!(state, HostTaskState::CalleeStarted));
             *state = HostTaskState::CalleeRunning(join_handle);
         }
 
-        let mut future = Box::pin(future);
-
         // Finally, poll the future.  We can use a dummy `Waker` here because
         // we'll add the future to `ConcurrentState::futures` and poll it
         // automatically from the event loop if it doesn't complete immediately
         // here.
         let poll = tls::set(store.0, || {
-            future
-                .as_mut()
-                .poll(&mut Context::from_waker(&Waker::noop()))
+            Pin::new(&mut future).poll(&mut Context::from_waker(&Waker::noop()))
         });
 
         match poll {

@@ -16,6 +16,7 @@ from tools import application_dependencies as dependencies
 from tools.phase3_resource_profile import ACTIVE_COUNTERS
 from tools.rust_capsule_project import ROOT, digest, read_file
 from tools.tests.test_sdk_scratch_probe import invocation
+from tools.tests.test_java_scratch_wiring import original_compiler_parent
 
 WALL = 1_800_000_000_000
 BEFORE = WALL-1
@@ -240,7 +241,8 @@ class JavaResourceConformance(unittest.TestCase):
         spi = current['jobs'].pop('http-public-spi')
         focused = yaml.safe_load(read_file(ROOT/'.github/workflows/java-http-fiber-lifecycle.yml'))
         self.assertEqual(spi, focused['jobs']['http-public-spi'])
-        parent = current['jobs']['compiler-component']
+        parent = original_compiler_parent(self, current['jobs']['compiler-component'])
+        current['jobs']['compiler-component'] = parent
         self.assertEqual(parent.pop('if'), "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}")
         dependency = current['jobs']['dependency-ingestion']
         self.assertEqual(dependency['if'], "${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}")

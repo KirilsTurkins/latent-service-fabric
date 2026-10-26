@@ -1,4 +1,5 @@
 """Owning Java packet wiring; source controls do not qualify filesystem errors."""
+import copy
 import hashlib
 import json
 import unittest
@@ -13,6 +14,45 @@ def signature(value):
 
 def model():
     return workflow_model((ROOT/'.github/workflows/java-guest-feasibility.yml').read_bytes().decode('utf-8'))
+
+
+def original_compiler_parent(test, parent):
+    """Invert only the reviewed sealed-profile/cache setup before old comparisons."""
+    parent = copy.deepcopy(parent)
+    test.assertEqual(parent.pop('permissions'), {'contents': 'read', 'actions': 'read'})
+    steps = parent['steps']
+    index = next(i for i, step in enumerate(steps) if step.get('name') == 'Install pinned compiler tools')
+    selected = steps[index - 2:index + 2]
+    test.assertEqual([step.get('name') for step in selected], [
+        'Select the runner-owned compiler archive cache',
+        'Restore untrusted source-pinned Java prepared inputs',
+        'Install pinned compiler tools',
+        'Save only reverified Java prepared input bytes'])
+    # Covers every command, action SHA, cache key/path, token scope and condition.
+    test.assertEqual(signature(selected),
+        '546d215a6b29407956193b415b001e1d24686b7e427f6d92c8dfda06ffefc499')
+    legacy = next(step['run'] for step in model()['jobs']['scratch-refusals']['steps']
+        if step.get('name') == 'Install only the pinned ordinary Java component compiler')
+    test.assertEqual(hashlib.sha256(legacy.encode()).hexdigest(),
+        'a4e2763d338b1b6d304092eb90a6051c155dcdbb0f7afb07fb4a5d32204cf0e5')
+    prerequisite = 'python3 -m pip install --requirement tools/requirements.lock\n'
+    test.assertEqual(legacy.count(prerequisite), 1)
+    install = copy.deepcopy(selected[2])
+    test.assertEqual(install.pop('env'), {'GH_TOKEN': '${{ github.token }}'})
+    install['run'] = legacy.replace(prerequisite, '', 1)
+    steps[index - 2:index + 2] = [install]
+    routed = [(i, step) for i, step in enumerate(steps)
+        if '$LSF_JAVA_WASI_SDK' in step.get('run', '')]
+    test.assertEqual([i for i, _ in routed],
+        [13, 15, 16, 18, 22, 24, 26, 28, 30, 33, 35, 36, 37, 38, 39, 41, 43])
+    test.assertEqual(signature(routed),
+        '9a2e5bc2032e49606bf83c8d370a4ce68db128582e1d704fc9ca2fabc9bb3609')
+    for _, step in routed:
+        selected = '--wasi-sdk "$LSF_JAVA_WASI_SDK"'
+        test.assertEqual(step['run'].count(selected), 1)
+        step['run'] = step['run'].replace(selected,
+            '--wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"', 1)
+    return parent
 
 
 class JavaScratchWiring(unittest.TestCase):
@@ -52,7 +92,7 @@ class JavaScratchWiring(unittest.TestCase):
             self.assertEqual(workflow['jobs'][name]['if'].count(clause), 1)
             workflow['jobs'][name]['if'] = workflow['jobs'][name]['if'].replace(clause, '', 1)
         jobs = workflow['jobs']
-        parent = dict(jobs['compiler-component'])
+        parent = original_compiler_parent(self, jobs['compiler-component'])
         self.assertEqual(parent['timeout-minutes'], 55)
         self.assertEqual(parent.pop('if'),
             "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}")
@@ -115,7 +155,7 @@ class JavaScratchWiring(unittest.TestCase):
             self.assertIn('/java-scratch-refusals/'+name, retained['with']['path'])
 
     def test_child_compiler_and_jdk_are_the_same_pinned_tools_as_original_parent(self):
-        jobs = model()['jobs'];parent = jobs['compiler-component']['steps'];child = jobs['scratch-refusals']['steps']
+        jobs = model()['jobs'];parent = original_compiler_parent(self, jobs['compiler-component'])['steps'];child = jobs['scratch-refusals']['steps']
         original = next(s['run'] for s in parent if s.get('name') == 'Install pinned compiler tools')
         selected = next(s['run'] for s in child if s.get('name') == 'Install only the pinned ordinary Java component compiler')
         self.assertEqual(selected.replace('          ', ''),
