@@ -100,6 +100,20 @@ class JavaCompilerContext(unittest.TestCase):
         detached['identity'] = digest(encode({key: row for key, row in detached.items() if key != 'identity'}))
         (self.output / 'compatibility-context.json').write_bytes(encode(detached))
         self.assertEqual(observed(), 'invalid-present')
+        # The bound owner still advertises its patch when ALL four rows vanish.
+        absent = copy.deepcopy(value)
+        absent['materials'] = [row for row in absent['materials']
+            if row['name'] not in builder.JAVA_COMPILER_PATCH_NAMES]
+        absent['identity'] = digest(encode({key: row for key, row in absent.items() if key != 'identity'}))
+        (self.output / 'compatibility-context.json').write_bytes(encode(absent))
+        self.assertEqual(observed(), 'invalid-present')
+        # Removing its context row cannot hide a physically present owner.
+        unbound = copy.deepcopy(absent)
+        unbound['materials'] = [row for row in unbound['materials'] if row['name'] != 'generated-bindings']
+        unbound['identity'] = digest(encode({key: row for key, row in unbound.items() if key != 'identity'}))
+        (self.output / 'compatibility-context.json').write_bytes(encode(unbound))
+        self.assertEqual(observed(), 'invalid-present')
+        # Rehashed base bindings cannot carry a forged compiler-patch group.
         empty_bindings = encode({'ordinary': 'base-build'})
         (self.output / 'bindings.json').write_bytes(empty_bindings)
         detached = copy.deepcopy(value)
@@ -107,3 +121,15 @@ class JavaCompilerContext(unittest.TestCase):
         detached['identity'] = digest(encode({key: row for key, row in detached.items() if key != 'identity'}))
         (self.output / 'compatibility-context.json').write_bytes(encode(detached))
         self.assertEqual(observed(), 'invalid-present')
+        # Ordinary historical/base bindings derive no compiler patch group.
+        ordinary = copy.deepcopy(absent)
+        next(row for row in ordinary['materials'] if row['name'] == 'generated-bindings')['digest'] = digest(empty_bindings)
+        ordinary['identity'] = digest(encode({key: row for key, row in ordinary.items() if key != 'identity'}))
+        (self.output / 'compatibility-context.json').write_bytes(encode(ordinary))
+        self.assertEqual(observed(), 'observed')
+        # A present but unbound base sidecar is invalid too; a genuinely absent
+        # historical/base owner adds no fabricated compiler-patch requirement.
+        (self.output / 'compatibility-context.json').write_bytes(encode(unbound))
+        self.assertEqual(observed(), 'invalid-present')
+        (self.output / 'bindings.json').unlink()
+        self.assertEqual(observed(), 'observed')

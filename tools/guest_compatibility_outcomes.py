@@ -110,20 +110,29 @@ def from_build(source, descriptor, receipt):
             require(digest(recipe) == net['build-recipe']['digest'], 'compatibility-outcomes-stale-net-recipe')
             expected = typescript_net_materials(raw, recipe, original_source)
             require(all(net[row['name']] == row for row in expected), 'compatibility-outcomes-detached-net-module')
-        if any(row['kind'] == 'patch' and row['name'] in JAVA_COMPILER_PATCH_NAMES
-               for row in selected['materials']):
-            bindings = [row for row in selected['materials'] if row['name'] == 'generated-bindings']
+        java_patches = [row for row in selected['materials']
+                        if row['kind'] == 'patch' and row['name'] in JAVA_COMPILER_PATCH_NAMES]
+        bindings = [row for row in selected['materials'] if row['name'] == 'generated-bindings']
+        bindings_path = source / parent / 'bindings.json'
+        if java_patches or (selected['language'] == 'java'
+                            and (bindings or bindings_path.exists() or bindings_path.is_symlink())):
+            require(selected['language'] == 'java', 'compatibility-outcomes-java-compiler-language')
             raw = paths.read(source, str(parent / 'bindings.json').replace('\\', '/'), 4 * 1024 * 1024)
             require(len(bindings) == 1 and digest(raw) == bindings[0]['digest'],
                     'compatibility-outcomes-stale-java-compiler')
-            recipes = [row for row in selected['materials'] if row['name'] == 'build-recipe']
-            recipe = paths.read(source, str(parent / 'recipe-inputs.json').replace('\\', '/'), 8 * 1024 * 1024)
-            require(len(recipes) == 1 and digest(recipe) == recipes[0]['digest'],
-                    'compatibility-outcomes-stale-java-compiler-recipe')
-            expected = java_compiler_materials(decode(raw, 4 * 1024 * 1024),
-                runtime['profile'], recipes[0]['digest'])
-            require(selected['language'] == 'java' and len(expected) == 4
-                    and all(row in selected['materials'] for row in expected),
+            bound_bindings = decode(raw, 4 * 1024 * 1024)
+            require(isinstance(bound_bindings, dict), 'compatibility-outcomes-java-bindings')
+            expected = []
+            if 'coroutineCompiler' in bound_bindings:
+                require(runtime['state'] == 'selected-unqualified',
+                        'compatibility-outcomes-java-compiler-runtime')
+                recipes = [row for row in selected['materials'] if row['name'] == 'build-recipe']
+                recipe = paths.read(source, str(parent / 'recipe-inputs.json').replace('\\', '/'), 8 * 1024 * 1024)
+                require(len(recipes) == 1 and digest(recipe) == recipes[0]['digest'],
+                        'compatibility-outcomes-stale-java-compiler-recipe')
+                expected = java_compiler_materials(bound_bindings, runtime['profile'], recipes[0]['digest'])
+                require(len(expected) == 4, 'compatibility-outcomes-java-compiler-group')
+            require(len(java_patches) == len(expected) and all(row in java_patches for row in expected),
                     'compatibility-outcomes-detached-java-compiler')
         capture.context, capture.context_state = selected, 'observed'
     except (ValueError, OSError, TypeError, KeyError):
