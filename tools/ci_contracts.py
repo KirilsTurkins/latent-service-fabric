@@ -12,6 +12,7 @@ import ast
 import copy
 import hashlib
 import json
+import keyword
 from pathlib import Path
 import re
 import stat
@@ -24,6 +25,7 @@ from tools import ci_lane_inventory as lanes, ci_suite_inventory as registry
 
 SCHEMA = "latent.ci.contracts.v1"
 PYTHON_STORAGE_SCHEMA = "latent.ci.contracts.v2"
+PYTHON_CASE_STORAGE = "guard-keys"
 DIRECTORY = "tools/ci/contracts"
 MAX_FRAGMENTS = 2048
 COMMON = {"schemaVersion", "kind", "reviewReason"}
@@ -193,13 +195,53 @@ def python_guard(guard: Any) -> None:
                 for value in guard.values()), "python-guard-types")
 
 
+def _case_key_semantic_record(record: dict) -> dict:
+    """Expand one explicit case-list encoding before the existing validators."""
+    if "storageCases" not in record:
+        return record
+    schema = record.get("schemaVersion")
+    fields = COMMON | (KINDS["python"] - {"cases"}) | {"storageCases"}
+    if schema == PYTHON_STORAGE_SCHEMA:
+        fields = fields | {"guardDefinitions"}
+    require(isinstance(schema, str) and schema in {SCHEMA, PYTHON_STORAGE_SCHEMA}
+            and record.get("kind") == "python"
+            and set(record) == fields and record["storageCases"] == PYTHON_CASE_STORAGE,
+            "python-case-storage-fields-or-marker")
+    guards = record["guards"]
+    require(isinstance(guards, dict) and guards and all(isinstance(case, str) for case in guards),
+            "python-case-storage-guards")
+    # Account the reconstructed compact record before constructing its cases
+    # list. Shared V2 guards still pass their separate full expansion bound.
+    removed = len(canonical("storageCases")) + 1 + len(canonical(PYTHON_CASE_STORAGE))
+    decoded_bytes = (len(canonical(record).encode("utf-8")) - removed
+                     + len(canonical("cases")) + 1 + 2)
+    require(decoded_bytes <= registry.MAX_BYTES, "decoded-contract-byte-limit")
+    previous = None
+    for case in guards:
+        require(isinstance(case, str), "python-case-storage-name")
+        parts = case.split(".")
+        require(len(parts) == 2 and all(part.isidentifier() and not keyword.iskeyword(part)
+                                      for part in parts) and parts[1].startswith("test_"),
+                "python-case-storage-name")
+        require(previous is None or previous < case, "python-case-storage-order")
+        decoded_bytes += len(canonical(case).encode("utf-8")) + (previous is not None)
+        require(decoded_bytes <= registry.MAX_BYTES, "decoded-contract-byte-limit")
+        previous = case
+    # Replace the field at its original position; no decoder sorting/repair or
+    # guard copies occur before V2 has checked its existing expansion bound.
+    return {("cases" if key == "storageCases" else key):
+            (list(guards) if key == "storageCases" else value)
+            for key, value in record.items()}
+
+
 def semantic_record(record: dict) -> dict:
-    """Resolve only current Python v2 storage into the reviewed, ordered v1 model.
+    """Resolve selected Python storage into the reviewed, ordered v1 model.
 
     Definitions are flat guards, not another reference language. Count the exact
     compact UTF-8 v1 size before making any expanded copies; physical JSON keeps
     the same independent MAX_BYTES bound in read_json.
     """
+    record = _case_key_semantic_record(record)
     if record.get("schemaVersion") != PYTHON_STORAGE_SCHEMA:
         return record
     require(record.get("kind") == "python"
@@ -253,6 +295,21 @@ def shared_python_record(record: dict) -> dict:
     stored = copy.deepcopy(value)
     stored["schemaVersion"], stored["guards"] = PYTHON_STORAGE_SCHEMA, references
     stored["guardDefinitions"] = definitions
+    fragment_path(stored)
+    return case_key_python_record(stored) if "storageCases" in record else stored
+
+
+def case_key_python_record(record: dict) -> dict:
+    """Opt in only when the reviewed list already equals ordered guard keys."""
+    physical = _case_key_semantic_record(record)
+    value = semantic_record(physical)
+    fragment_path(value)
+    require(value["kind"] == "python", "case-storage-requires-python-contract")
+    require(list(physical["guards"]) == physical["cases"], "case-storage-requires-ordered-guards")
+    require(len(canonical(value).encode("utf-8")) <= registry.MAX_BYTES, "decoded-contract-byte-limit")
+    stored = {("storageCases" if key == "cases" else key):
+              (PYTHON_CASE_STORAGE if key == "cases" else copy.deepcopy(item))
+              for key, item in physical.items()}
     fragment_path(stored)
     return stored
 
@@ -415,15 +472,18 @@ def write_records(directory: Path, records: list[dict]) -> None:
     for value in records:
         path = directory / fragment_path(value)
         shared = value["schemaVersion"] == PYTHON_STORAGE_SCHEMA
+        case_keys = "storageCases" in value
         text = shared_python_text(value) if shared else json.dumps(
-            value, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n"
+            value, indent=2, sort_keys=not case_keys, ensure_ascii=False, allow_nan=False) + "\n"
+        if case_keys:
+            require(len(text.encode("utf-8")) <= registry.MAX_BYTES, "contract-byte-limit")
         # Check the complete destination chain, not just the output directory.
         # Otherwise a pre-existing nested proposal symlink could escape it.
         for parent in (path, *path.parents):
             require(not parent.is_symlink(), "symlink-contract-proposal-path")
         require(not path.exists(), "refuse-overwrite-contract-proposal")
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("x", encoding="utf-8", newline="\n" if shared else None) as output:
+        with path.open("x", encoding="utf-8", newline="\n" if shared or case_keys else None) as output:
             output.write(text)
 
 
@@ -518,8 +578,23 @@ def propose(root: Path, kind: str, source: str, job: str | None, output: Path, r
         path = fragment_path(value)
         if path in existing:
             physical = read_json(safe_path(root, DIRECTORY + "/" + path))
+            case_keys = "storageCases" in physical
+            if case_keys:
+                # Observation guards arrive in AST order. The selected writer
+                # uses the already validated cases order, retaining the prior
+                # semantic field/guard orders rather than repairing input.
+                previous = existing[path]
+                value = {key: value[key] for key in previous}
+                known = {}
+                for guard in previous["guards"].values():
+                    known.setdefault(canonical(guard), guard)
+                value["guards"] = {case: copy.deepcopy(previous["guards"].get(
+                    case, known.get(canonical(value["guards"][case]), value["guards"][case])))
+                    for case in value["cases"]}
             if physical["schemaVersion"] == PYTHON_STORAGE_SCHEMA:
                 value = shared_python_record(value)
+            if case_keys:
+                value = case_key_python_record(value)
     write_records(output, [value])
     return output / fragment_path(value)
 

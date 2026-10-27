@@ -715,4 +715,159 @@ class MsiContextOwner(unittest.TestCase):
             with self.assertRaises(ValueError):owner.admit(output,msi_context=True)
 
 
+class Q35MsiSource(unittest.TestCase):
+    _TOKEN_NATIVE = 'void irq_domain_update_bus_token(struct irq_domain *domain,\n\t\t\t\t enum irq_domain_bus_token bus_token)\n{\n\tchar *name;\n\n\tif (domain->bus_token == bus_token)\n\t\treturn;\n\n\tmutex_lock(&irq_domain_mutex);\n\n\tdomain->bus_token = bus_token;\n\n\tname = kasprintf(GFP_KERNEL, "%s-%d", domain->name, bus_token);\n\tif (!name) {\n\t\tmutex_unlock(&irq_domain_mutex);\n\t\treturn;\n\t}\n\n\tdebugfs_remove_domain_dir(domain);\n\n\tif (domain->flags & IRQ_DOMAIN_NAME_ALLOCATED)\n\t\tkfree(domain->name);\n\telse\n\t\tdomain->flags |= IRQ_DOMAIN_NAME_ALLOCATED;\n\n\tdomain->name = name;\n\tdebugfs_add_domain_dir(domain);\n\n\tmutex_unlock(&irq_domain_mutex);\n}\n'
+    _TABLE_EDITS = [['static int msix_capability_init(', 'static int lsf_q35_msix_capability_init('], ['\tint ret, tsize;\n\tu16 control;\n', '\tint ret, tsize;\n\tu16 control;\n\tvoid __iomem *paid;\n\tunsigned int prepaid_tsize;\n\n\tif (entries || affd || (nvec != 2 && nvec != 3) || dev->msix_base ||\n\t    !lsf_q35_x86_parent_known(dev_get_msi_domain(&dev->dev)) ||\n\t    lsf_q35_msi_current(&dev->dev) != 1) return -EOPNOTSUPP;\n\tpci_read_config_word(dev, dev->msix_cap + PCI_MSIX_FLAGS, &control);\n\tprepaid_tsize = msix_table_size(control);\n\tpaid = lsf_q35_msix_map(dev, prepaid_tsize);\n\tif (!paid) return -ENOMEM;\n'], ['\tdev->msix_base = msix_map_region(dev, tsize);', '\tif (tsize != prepaid_tsize) { ret = -EOPNOTSUPP; goto out_disable; }\n\tdev->msix_base = paid;\n\tpaid = NULL;'], ['ret = msix_setup_interrupts(dev, entries, nvec, affd);', 'ret = lsf_q35_msix_interrupts_closed(dev, entries, nvec, affd);'], ['\tpci_msix_clear_and_set_ctrl(dev, PCI_MSIX_FLAGS_MASKALL | PCI_MSIX_FLAGS_ENABLE, 0);\n', '\tpci_msix_clear_and_set_ctrl(dev, PCI_MSIX_FLAGS_MASKALL | PCI_MSIX_FLAGS_ENABLE, 0);\n\tif (paid) iounmap(paid);\n']]
+
+    def test_q35_eight_materials_exact_bounded_and_length_before_hash(self):
+        import hashlib
+        from unittest.mock import patch
+        from tools import qualify_host_stream_kernel_stream_objects as owner
+        stage=owner.q35_stage(owner.ROOT)[0]
+        parts=stage.materials()
+        self.assertEqual(len(parts),8)
+        for name,raw in parts.items():
+            self.assertEqual((len(raw),hashlib.sha256(raw).hexdigest()),stage.MATERIAL_PINS[name])
+        seen=[]
+        def read(path,maximum):
+            name=next(n for n,p in stage.MATERIAL_PATHS.items() if path==stage.ROOT/p)
+            seen.append((name,maximum));return parts[name]
+        with patch.object(stage,'read_file',side_effect=read):self.assertEqual(stage.materials(),parts)
+        self.assertEqual(dict(seen),{n:p[0] for n,p in stage.MATERIAL_PINS.items()})
+        with patch.object(stage,'read_file',return_value=b'x'):
+            with self.assertRaises(ValueError):stage.materials()
+        with patch.object(stage.hashlib,'sha256',side_effect=AssertionError('wrong-length hash')):
+            self.assertFalse(stage._bound(b'x',(2,'0'*64)))
+        with self.assertRaises(ValueError):stage.transform({}, {})
+
+    def test_q35_loader_uses_captured_bytes_and_refuses_alternate_sources(self):
+        import _io
+        import importlib.util
+        from unittest.mock import patch
+        from tools import qualify_host_stream_kernel_stream_objects as owner
+        path=(owner.ROOT/owner.Q35_MODULE).resolve()
+        expected=owner.read(path,owner.Q35_PINS[owner.Q35_MODULE][0])
+        factory=importlib.util.spec_from_file_location;open_code=_io.open_code
+        opened=Path.open;loaders=[]
+        def deny_code(name,*args,**kwargs):
+            self.assertNotIn(str(name),(str(path),str(path)+'.pyc'))
+            return open_code(name,*args,**kwargs)
+        def deny_path(value,*args,**kwargs):
+            self.assertNotEqual(value.resolve(),path)
+            return opened(value,*args,**kwargs)
+        def inspect_spec(name,location,*,loader):
+            self.assertEqual((name,str(location)),('_lsf_q35_projector',str(path)))
+            self.assertEqual(loader.get_data(str(path)),expected)
+            with self.assertRaises(ValueError):loader.get_filename('_foreign_q35')
+            for alternate in (str(path)+'.pyc',str(path.parent/'foreign.py')):
+                with self.subTest(path=alternate),self.assertRaises(ValueError):loader.get_data(alternate)
+            with self.assertRaises(OSError):loader.path_stats(str(path))
+            execute=loader.exec_module
+            def captured_only(module):
+                # No source reopen or bytecode write is allowed AFTER capture.
+                with patch.object(_io,'open_code',side_effect=deny_code), \
+                        patch.object(Path,'open',deny_path), \
+                        patch.object(loader,'set_data',side_effect=AssertionError('bytecode write')):
+                    execute(module)
+            loader.exec_module=captured_only;loaders.append(loader)
+            return factory(name,location,loader=loader)
+        with patch.object(importlib.util,'spec_from_file_location',side_effect=inspect_spec):
+            stage,physical,_=owner.q35_stage(owner.ROOT)
+        self.assertEqual(len(loaders),1)
+        self.assertEqual(physical[owner.Q35_MODULE],owner.identity(expected))
+        self.assertEqual((stage.ROOT,Path(stage.__file__).resolve()),(owner.ROOT.resolve(),path))
+
+    def test_q35_whole_native_wrapper_inverse_and_wrong_input_refusal(self):
+        import hashlib
+        from tools import qualify_host_stream_kernel_stream_objects as owner
+        stage=owner.q35_stage(owner.ROOT)[0]
+        original=self._TOKEN_NATIVE
+        self.assertEqual(hashlib.sha256(original.encode()).hexdigest(),'251e44d392defeb2ec285a0994b6d015ff5ec7424aec09e6e43df03d3eafb7de')
+        branch='\tif (lsf_q35_domain_links_known(domain)) return;\n'
+        wrapped=stage._wrap(original,branch)
+        prefix='\n{\n#ifdef CONFIG_LSF_STREAM_FACTORY\n'+branch+'#endif\n'
+        self.assertEqual(wrapped.count(prefix),1)
+        self.assertEqual(wrapped.replace(prefix,'\n',1)[:-2],original)
+        wrong={n:b'counterfeit' for n in stage.PREIMAGES}
+        before=dict(wrong)
+        with self.assertRaises(ValueError):stage.edit_inputs(wrong,{})
+        self.assertEqual(wrong,before)
+
+    def test_q35_native_msix_clone_inverse_and_admission_before_enable(self):
+        import hashlib
+        from tools import qualify_host_stream_kernel_stream_objects as owner
+        stage=owner.q35_stage(owner.ROOT)[0]
+        from tools.host_stream_kernel_device_security import function
+        parts=stage.materials();text=parts['drivers/pci/msi/lsf-stream-q35-table.c'].decode()
+        body=function(text,'static int lsf_q35_msix_capability_init(')
+        def inverse(value):
+            for old,new in reversed(self._TABLE_EDITS):
+                self.assertEqual(value.count(new),1);value=value.replace(new,old)
+            return value
+        self.assertEqual(hashlib.sha256(inverse(body).encode()).hexdigest(),'9160b44d022e610c29d085904f3a8143ff72dc45b3818d40e169cd57589f9674')
+        mutated=body.replace('\n{\n','\n{\n    /* unreviewed */\n',1)
+        self.assertNotEqual(hashlib.sha256(inverse(mutated).encode()).hexdigest(),'9160b44d022e610c29d085904f3a8143ff72dc45b3818d40e169cd57589f9674')
+        self.assertLess(body.index('lsf_q35_msix_map('),body.index('pci_msix_clear_and_set_ctrl('))
+        cut=function(text,'static int lsf_q35_msix_interrupts_closed(')
+        self.assertLess(cut.index('lsf_q35_msi_empty_locked'),cut.index('pci_free_msi_irqs'))
+        self.assertIn('return -EOPNOTSUPP;',cut)
+        for forbidden in ('request_irq(', 'msi_setup_interrupts(', 'irq_domain_alloc_irqs('):
+            self.assertNotIn(forbidden,cut)
+
+    def test_q35_typed_full_payment_and_physical_cleanup_cuts(self):
+        from tools import qualify_host_stream_kernel_stream_objects as owner
+        stage=owner.q35_stage(owner.ROOT)[0]
+        from tools.host_stream_kernel_device_security import function
+        parts=stage.materials()
+        source=parts['kernel/irq/lsf-stream-q35-msi.c'].decode()
+        birth=function(source,'bool lsf_q35_msi_create(')
+        self.assertLess(birth.index('lsf_q35_msi_prepare('),birth.index('lsf_q35_msi_take('))
+        self.assertLess(birth.index('lsf_q35_msi_take('),birth.index('__msi_create_irq_domain('))
+        self.assertIn('char name[sizeof(template->name)]',birth)
+        self.assertIn('sizeof(template->name) + 12u',birth)
+        domain=parts['kernel/irq/lsf-stream-q35-domain.c'].decode()
+        self.assertIn('sizeof(struct irqchip_fwid)',domain)
+        self.assertIn('struct_size((struct irq_domain *)NULL, revmap, 0)',domain)
+        self.assertIn('token_bytes > sizeof(((struct msi_domain_template *)0)->name) + 12u',domain)
+        factory=parts['net/factory-stream-q35-msi.c'].decode()
+        sibling=function(factory,'void *lsf_q35_msi_sibling(')
+        self.assertLess(sibling.index('if (found != 1'),sibling.index('lsf_device_publish('))
+        retirement=function(factory,'int lsf_q35_msi_retire(')
+        self.assertIn('child->deferred == LSF_PREPAID_PUBLISHED',retirement)
+        self.assertLess(retirement.index('lsf_device_queue('),retirement.index('lsf_device_finish('))
+        self.assertNotIn('factory.pool.cursor =',factory)
+        self.assertFalse(stage.PROFILE['runtimeQualified'])
+        self.assertFalse(stage.PROFILE['sharedControllerFundingQualified'])
+
+
+class Q35MsiOwner(unittest.TestCase):
+    def test_q35_exact_physical_logical_targets_and_closed_public_union(self):
+        from tools import qualify_host_stream_kernel_stream_objects as owner
+        targets=('kernel/irq/msi.o','kernel/irq/irqdomain.o','drivers/pci/msi/msi.o',
+            'drivers/pci/msi/irqdomain.o','arch/x86/kernel/apic/msi.o',
+            'arch/x86/kernel/apic/vector.o','net/factory.o')
+        self.assertEqual(owner.mode_targets(q35=True),targets)
+        with self.assertRaises(ValueError):owner.mode_targets(q35=1)
+        for old in ('msi_context','vp_transport','constructor_mmio','netdev_post_init',
+                'netdev_layout','netdev_directory','classdir_kernfs','classdir'):
+            with self.subTest(mode=old),self.assertRaises(ValueError):owner.mode_targets(q35=True,**{old:True})
+        base=owner.msi_materials(owner.ROOT);current=owner.q35_materials(owner.ROOT)
+        self.assertEqual((len(current['physicalInputs']),len(current['logicalIdentities'])),(78,109))
+        self.assertEqual(current['prior69Physical'],base['physicalInputs'])
+        self.assertEqual(current['prior100Logical'],base['logicalIdentities'])
+        self.assertEqual(current['projectionOutputCount'],451)
+        self.assertFalse(current['runtimeOrFundingQualified'])
+        for t in targets:self.assertEqual(owner.public_allowed('objects/'+t,q35=True),owner.MAX_OBJECT)
+        for name in ('objects/drivers/base/core.o','layout.json','source-tree.tar','logs/00-msi-context-objects.stdout.txt'):
+            self.assertIsNone(owner.public_allowed(name,q35=True))
+        self.assertEqual(owner.public_allowed('logs/00-q35-msi-domain-objects.stderr.txt',q35=True),4*1024**2)
+        self.assertIsNone(owner.public_allowed('logs/00-q35-msi-domain-objects.stderr.txt',msi_context=True))
+        with self.assertRaises(ValueError):owner.q35_compose({},Path('not-a-kernel-tree'))
+        with tempfile.TemporaryDirectory() as directory:
+            out=Path(directory);(out/'receipt.json').write_bytes(b'{"status":"failed"}\n')
+            self.assertEqual(set(owner.admit(out,q35=True)['files']),{'receipt.json'})
+            bad=out/'objects/net/socket.o';bad.parent.mkdir(parents=True);bad.write_bytes(b'not-a-product')
+            with self.assertRaises(ValueError):owner.admit(out,q35=True)
+
+
 if __name__=='__main__':unittest.main()

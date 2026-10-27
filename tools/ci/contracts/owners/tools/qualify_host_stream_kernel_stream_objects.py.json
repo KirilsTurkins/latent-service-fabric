@@ -1,8 +1,8 @@
 {
-"kind":"owner",
-"path":"tools/qualify_host_stream_kernel_stream_objects.py",
-"reviewBoundary":"committed-fingerprint",
-"reviewReason":"Reviewed MSI69/100/439 closed six-TU owner; false-new-mode AST inverse retains all26 old functions and68 assignments, original config, process bounds and failure-only public retention.",
-"schemaVersion":"latent.ci.contracts.v1",
-"sha256":"defc1a02358d4980c2180fedfeebb52f55c2971e8c6b7d42637a69077c58ae1d"
+  "kind": "owner",
+  "path": "tools/qualify_host_stream_kernel_stream_objects.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed closed Q35 78/109/451 seven-object mode with captured-byte research projector loader; old69/100 exact, original 28-command/1320s/j2 bounds and no IRQ/runtime claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "c49bb663f0596ecc09453f93b692835fcdd92495654091bcd9058f1f44edaad9"
 }
