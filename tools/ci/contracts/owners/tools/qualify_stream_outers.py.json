@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_stream_outers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed #736 affine stream-copy owner and exact manual list<u8> lowering: one new broker physical lifetime/refusal case, affected transfer capacity case and existing managed HTTP drain case;3cases11commands22raw. One streams CHECK --tests/all-features, two locked actual libtest targets and probes; same45m/2395+5/895+5/55+5/25+5/j2. SDK language and external fixture selectors removed and required absent. Broker1MiB/100k/30s differs from normal managed16MiB/1e12/5s. Managed case actually assembles/compiles/executes its original component, not a signed real node or full cost/RSS qualification. Every prior owner function, case guard and coverage field retained; no old eight-case/canonical/language programme replay. Source-only pending bounded owning result.",
+  "reviewReason": "Reviewed #736 typed prepaid Blob copying for actual local/S3 readers and installed canonical chunk lowering. Three new original-budget pooled-request/copy ownership controls plus existing managed local_blobs component case,4cases13commands26raw. One locked two-package CHECK --tests/all-features and two actual libtest builds/probes. Original45m/2395+5/895+5/55+5/25+5/j2 bounds retained; SDK language/external fixtures removed and required absent. Native1MiB/100k/30s differs from managed16MiB/1e12/5s; managed case really assembles/compiles/executes original component modes0/9/0. S3 consumers typechecked, no S3 network execution or full memory/RSS qualification. Every prior owner mode/case/guard preserved; no oldcopy3/graph8/nativeprogramme replay. Source-only pending focused owning result.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3a3f9c8894f570192a43b7cf404c710244d22707bc7802cf062ca0fae25e8dc7"
+  "sha256": "c9b448f02f32d1406d7c7aa9adb75a0b40b1e245487fe9963721b2e46accfca7"
 }

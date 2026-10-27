@@ -69,3 +69,5 @@ Representative source tests (not a complete coverage inventory):
 - [ADR-0033: Use scoped durable local blobs with owned chunks](../../adr/0033-use-scoped-durable-local-blobs-with-owned-chunks.md)
 - [Workspace package index](../README.md)
 - [Architecture index](../../ARCHITECTURE.md)
+
+Each local/S3 range read reserves its exact possible lowering-copy capacity before storage or network I/O. The returned chunk binds the original buffer, copy reservation and `PoolCall`; its single affine materialization keeps the original native credit and request alive through guest lowering, even after the source resource closes. Empty ranges remain valid and cannot create a second materialization.

@@ -181,6 +181,43 @@ class StreamOuterOwnerReader(unittest.TestCase):
             self.assertEqual(environment, {'PATH': 'normal-pinned-tools'})
             owner.require_io_copy_environment(environment)
 
+        self.assertEqual((len(owner.BLOB_COPY_CASES), len(owner.BLOB_COPY_NEW_CASES)), (4, 3))
+        self.assertEqual(owner.BLOB_COPY_MANAGED_CASE,
+            'guest_writes_seals_and_reads_exact_bounded_chunks')
+        self.assertEqual(owner.BLOB_COPY_CHECK_ARGS, ('check', '--locked', '--tests',
+            '--all-features', '-p', 'latent-blobs', '-p', 'latent-wasmtime', '--message-format=json'))
+        for index, case in enumerate(owner.BLOB_COPY_CASES):
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            value = owner.blob_copy_result(raw, case)
+            self.assertEqual((value['passed'], value['ignored']), (1, 0))
+            self.assertEqual(value['scope'], 'original-Phase3-affine-blob-copy-and-pooled-request-control'
+                if index < 3 else 'managed-component-local-blob-chunk-lowering')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case')):
+                with self.assertRaises(ValueError):
+                    owner.blob_copy_result(changed, case)
+        for case in (*owner.IO_COPY_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.blob_copy_result(b'', case)
+        records = []
+        for manifest, target, source in owner.BLOB_COPY_CHECK_TARGETS:
+            path = (owner.ROOT / manifest).resolve()
+            records.append({'reason': 'compiler-artifact', 'manifest_path': str(path),
+                'target': {'kind': ['lib'], 'name': target, 'src_path': str(path.parent / source)},
+                'profile': {'test': True}, 'executable': None, 'features': []})
+        self.assertEqual([r['target'] for r in owner.blob_copy_check_result(raw_inventory([*records, finished]))],
+            ['latent_blobs', 'latent_wasmtime'])
+        for rows in (records, [finished], [records[0], finished], [*records, records[0], finished],
+            [*records, {'reason': 'build-finished', 'success': False}], [*records, finished, records[0]]):
+            with self.assertRaises(ValueError):
+                owner.blob_copy_check_result(raw_inventory(rows))
+        for field, value in (('executable', '/tmp/unowned-test'),
+            ('target', {'kind': ['lib'], 'name': 'counterfeit', 'src_path': '/tmp/x'}),
+            ('profile', {'test': False})):
+            with self.assertRaises(ValueError):
+                owner.blob_copy_check_result(raw_inventory([{**records[0], field: value}, records[1], finished]))
+
     def test_private_fixture_identity_is_bounded_and_changes_are_observed(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / 'fixture.wasm'

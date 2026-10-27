@@ -219,7 +219,7 @@ impl BlobReader for Reader {
                 )| async move {
                     let mut call = this.inner.dispatch(admission, "read", cost).await?;
                     let mut buffer = call.io().buffer((length as usize).max(1), 512)?;
-                    let copy = call.io().reserve_scratch((length as usize).max(1), 512)?;
+                    let copy = call.io().reserve_copy((length as usize).max(1), 512)?;
                     let value =
                         remote::read(&this.inner, &call, &record, offset, length, &mut buffer)
                             .await;
