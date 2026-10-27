@@ -295,6 +295,169 @@ class ContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "changed-workflow-job"):
             coverage.validate(self.root)
 
+    def test_case_key_storage_roundtrips_v1_v2_order_and_complete_assembly(self):
+        def ordered(value):
+            if isinstance(value, dict):
+                return (dict, [(key, ordered(item)) for key, item in value.items()])
+            if isinstance(value, list):
+                return (list, [ordered(item) for item in value])
+            return (type(value), value)
+
+        before = contracts.fragments(self.root)
+        value = copy.deepcopy(before["python/test_alpha.py.json"])
+        value = dict(reversed(list(value.items())))
+        guard = dict(reversed(list(next(iter(value["guards"].values())).items())))
+        guard["decorators"] = ["second(é)", "first(β)"]
+        value["cases"] = ["Cases.test_first", "Cases.test_second"]
+        value["guards"] = {case: copy.deepcopy(guard) for case in value["cases"]}
+        for version, physical in (("v1", value), ("v2", contracts.shared_python_record(value))):
+            with self.subTest(version=version):
+                stored = contracts.case_key_python_record(physical)
+                self.assertNotIn("cases", stored)
+                self.assertEqual(stored["storageCases"], "guard-keys")
+                self.assertEqual(ordered(contracts.semantic_record(stored)), ordered(value))
+                self.assertEqual(contracts.case_key_python_record(stored), stored)
+                shared = contracts.shared_python_record(stored)
+                self.assertEqual(shared["storageCases"], "guard-keys")
+                self.assertEqual(ordered(contracts.semantic_record(shared)), ordered(value))
+                destination = self.root / ("case-key-" + version)
+                contracts.write_records(destination, [stored])
+                loaded = contracts.read_json(destination / contracts.fragment_path(stored))
+                self.assertEqual(ordered(loaded), ordered(stored))
+                self.assertEqual(ordered(contracts.semantic_record(loaded)), ordered(value))
+                self.assertNotIn(b"\r", (destination / contracts.fragment_path(stored)).read_bytes())
+
+        expected = contracts.load(self.root)
+        for relative, original in before.items():
+            if original["kind"] == "python":
+                physical = (contracts.shared_python_record(original)
+                            if relative.endswith("test_beta.py.json") else original)
+                stored = contracts.case_key_python_record(physical)
+                path = self.root / contracts.DIRECTORY / relative
+                path.write_text(json.dumps(stored, ensure_ascii=False, separators=(",", ":")) + "\n",
+                                encoding="utf-8")
+        self.assertEqual(ordered(contracts.fragments(self.root)), ordered(before))
+        self.assertEqual(ordered(contracts.load(self.root)), ordered(expected))
+        coverage.validate(self.root)
+
+    def test_case_key_storage_refuses_ambiguous_malformed_and_ordered_inventory_changes(self):
+        value = contracts.fragments(self.root)["python/test_alpha.py.json"]
+        for physical in (value, contracts.shared_python_record(value)):
+            stored = contracts.case_key_python_record(physical)
+            variants = [dict(stored, storageCases="other"), dict(stored, storageCases=True),
+                        dict(stored, schemaVersion="latent.ci.contracts.v3"), dict(stored, kind="owner"),
+                        dict(stored, cases=value["cases"]), dict(stored, extra="field"),
+                        {key: item for key, item in stored.items() if key != "storageCases"},
+                        dict(stored, guards={}), dict(stored, guards=[]),
+                        dict(stored, module="tools/tests/../outside.py")]
+            guard = next(iter(stored["guards"].values()))
+            for name in ("broken", "Cases.helper", "Cases.test_bad.extra", "1Cases.test_ok",
+                         "Cases.test_bad-name", "class.test_ok", 7):
+                variants.append(dict(stored, guards={name: guard}))
+            variants.append(dict(stored, guards={"Cases.test_z": guard, "Cases.test_a": guard}))
+            if physical["schemaVersion"] == contracts.PYTHON_STORAGE_SCHEMA:
+                variants.extend([dict(stored, guards={value["cases"][0]: "f" * 64}),
+                                 {key: item for key, item in stored.items() if key != "guardDefinitions"}])
+            for malformed in variants:
+                with self.subTest(schema=physical["schemaVersion"], fields=malformed), self.assertRaises(ValueError):
+                    contracts.fragment_path(malformed)
+            duplicate = self.root / (physical["schemaVersion"].rsplit(".", 1)[-1] + "-duplicate-case-storage.json")
+            raw = json.dumps(stored)
+            raw = raw.replace('"storageCases": "guard-keys"',
+                              '"storageCases": "guard-keys", "storageCases": "guard-keys"', 1)
+            duplicate.write_text(raw)
+            with self.assertRaisesRegex(ValueError, "duplicate"):
+                contracts.read_json(duplicate)
+        ineligible = copy.deepcopy(value)
+        guard = next(iter(ineligible["guards"].values()))
+        ineligible["cases"] = ["Cases.test_a", "Cases.test_z"]
+        ineligible["guards"] = {case: guard for case in reversed(ineligible["cases"])}
+        with self.assertRaisesRegex(ValueError, "case-storage-requires-ordered-guards"):
+            contracts.case_key_python_record(ineligible)
+
+    def test_case_key_storage_keeps_physical_and_expanded_bounds_before_guard_copies(self):
+        value = contracts.fragments(self.root)["python/test_alpha.py.json"]
+        for physical in (value, contracts.shared_python_record(value)):
+            stored = contracts.case_key_python_record(physical)
+            size = max(len(contracts.canonical(physical).encode("utf-8")),
+                       len(contracts.canonical(value).encode("utf-8")))
+            with patch.object(registry, "MAX_BYTES", size):
+                self.assertEqual(contracts.semantic_record(stored), value)
+            with patch.object(registry, "MAX_BYTES", len(contracts.canonical(physical).encode("utf-8")) - 1), \
+                    patch.object(contracts.copy, "deepcopy", side_effect=AssertionError("copied before bound")):
+                with self.assertRaisesRegex(ValueError, "decoded-contract-byte-limit"):
+                    contracts.semantic_record(stored)
+
+        value["cases"] = ["Cases.test_" + str(index) for index in range(4)]
+        guard = next(iter(value["guards"].values()))
+        value["guards"] = {case: copy.deepcopy(guard) for case in value["cases"]}
+        stored = contracts.case_key_python_record(contracts.shared_python_record(value))
+        identity = next(iter(stored["guardDefinitions"]))
+        large_guard = stored["guardDefinitions"].pop(identity)
+        large_guard["fixtureGuards"] = ["é" * 300000]
+        identity = hashlib.sha256(contracts.canonical(large_guard).encode("utf-8")).hexdigest()
+        stored["guardDefinitions"][identity] = large_guard
+        stored["guards"] = {case: identity for case in value["cases"]}
+        path = self.root / "case-key-expanded-bound.json"
+        path.write_bytes(json.dumps(stored, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+        self.assertLess(path.stat().st_size, registry.MAX_BYTES)
+        with patch.object(contracts.copy, "deepcopy", side_effect=AssertionError("copied before bound")):
+            with self.assertRaisesRegex(ValueError, "decoded-contract-byte-limit"):
+                contracts.fragment_path(contracts.read_json(path))
+        path.write_bytes(b" " * (registry.MAX_BYTES + 1))
+        with self.assertRaisesRegex(ValueError, "contract-byte-limit"):
+            contracts.read_json(path)
+
+    def test_case_key_proposals_preserve_opt_in_defaults_and_source_guard_failures(self):
+        for shared in (False, True):
+            with self.subTest(shared=shared), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                fixture(root)
+                source = root / "tools/tests/test_alpha.py"
+                source.write_text(source.read_text() + "    def test_a_first(self):\n        self.assertTrue(True)\n")
+                baseline_source = source.read_text()
+                observed = contracts.python_expectations(root)["tools/tests/test_alpha.py"]
+                self.assertNotEqual(list(observed["guards"]), observed["cases"])
+                path = root / contracts.DIRECTORY / "python/test_alpha.py.json"
+                reviewed = contracts.read_json(path)
+                fields = list(next(iter(reviewed["guards"].values())))
+                reviewed["cases"] = observed["cases"]
+                reviewed["guards"] = {case: {field: observed["guards"][case][field] for field in fields}
+                                      for case in reviewed["cases"]}
+                stored = contracts.case_key_python_record(
+                    contracts.shared_python_record(reviewed) if shared else reviewed)
+                path.write_text(json.dumps(stored, ensure_ascii=False, separators=(",", ":")) + "\n")
+                coverage.validate(root)
+                source.write_text(baseline_source + "    def test_zz_added(self):\n        self.assertTrue(True)\n")
+                proposal = contracts.propose(root, "python", "tools/tests/test_alpha.py", None,
+                    root / "target/ci/proposals/selected", "Add one reviewed case, preserving explicit storage.")
+                selected = contracts.read_json(proposal)
+                self.assertEqual(selected["storageCases"], "guard-keys")
+                self.assertEqual(selected["schemaVersion"], stored["schemaVersion"])
+                resolved = contracts.semantic_record(selected)
+                self.assertEqual(list(resolved), list(reviewed))
+                self.assertEqual(resolved["cases"], [*reviewed["cases"], "Cases.test_zz_added"])
+                self.assertEqual(resolved["guards"],
+                                 contracts.python_expectations(root)["tools/tests/test_alpha.py"]["guards"])
+                for case in reviewed["cases"]:
+                    self.assertEqual(list(resolved["guards"][case]), list(reviewed["guards"][case]))
+                self.assertEqual(contracts.read_json(path), stored)
+                default = contracts.propose(root, "python", "tools/tests/test_beta.py", None,
+                    root / "target/ci/proposals/default", "Preserve the unselected v1 default.")
+                self.assertEqual(contracts.read_json(default)["schemaVersion"], contracts.SCHEMA)
+                self.assertNotIn("storageCases", contracts.read_json(default))
+                for changed, reason in (
+                    (baseline_source.replace("def test_works", "def helper_works"),
+                     "missing-or-renamed-or-unregistered-python-case"),
+                    (baseline_source.replace("    def test_works", "    @unittest.skip('changed')\n    def test_works"),
+                     "changed-python-test-execution-guard"),
+                    ("CHANGED_SETUP = True\n" + baseline_source, "changed-python-test-execution-guard")):
+                    source.write_text(changed)
+                    with self.assertRaisesRegex(ValueError, reason):
+                        coverage.validate(root)
+                source.write_text(baseline_source)
+                coverage.validate(root)
+
     def test_pin_only_comments_and_yaml_formatting_do_not_change_contracts(self):
         path = self.root / ".github/workflows/ci.yml"
         before = {name: contracts.canonical(value) for name, value in contracts.fragments(self.root).items()}

@@ -827,3 +827,266 @@ def qualify_join_cause(output, tools, source_commit):
         try: join_public_admission(output)
         except BaseException:
             if record['status'] == 'passed': raise
+
+
+JOIN_REPLAY = {'artifact': 12759125468, 'run': 40557689997, 'job': 122378040399,
+    'producer': '86d97b84310819f096e406a722423e27b0e793c6', 'bytes': 15120874,
+    'sha256': 'sha256:f542e7493f4b212edc17c06d94a2f2e0a913670b1480a7e062fbeb535091f714',
+    'members': 377, 'expandedBytes': 50623729}
+JOIN_REPLAY_COMPONENTS = (
+    'sha256:e97e968aad905f6c27a31c0a16da15533a3f6a42b0deba2e290c04c881cbd28c',
+    'sha256:891cd60bf016c21637630aadb4e13796b131f9c7b0a3985edcbb91f23fabdc25')
+JOIN_REPLAY_WIT = {
+    'wit/deps/activation-runtime/package.wit': 'wit/platform/activation-runtime/package.wit',
+    'wit/deps/clock/package.wit': 'wit/platform/clock/package.wit',
+    'wit/deps/random/package.wit': 'wit/platform/random/package.wit',
+    'wit/world.wit': DATA+'world.wit'}
+
+
+def join_replay_extract(archive, output, deadline):
+    """Authenticate the fixed failed attempt before restoring its real packages."""
+    require(file_identity(archive, JOIN_REPLAY['bytes']) ==
+        {'bytes': JOIN_REPLAY['bytes'], 'sha256': JOIN_REPLAY['sha256']}, 'join-replay-official-archive')
+    with archive.open('rb') as stream:
+        stream.seek(-22, 2); end = struct.unpack('<4s4H2LH', stream.read(22))
+        require(end[:5] == (b'PK\x05\x06', 0, 0, 377, 377) and end[7] == 0
+            and end[5] <= 4*1024**2 and end[6]+end[5]+22 == JOIN_REPLAY['bytes'],
+            'join-replay-bounded-central-directory')
+        with zipfile.ZipFile(archive) as source:
+            members = source.infolist()
+            require(len(members) == 377 and source.start_dir == end[6], 'join-replay-fixed-member-count')
+            seen, ranges, total = set(), [], 0
+            for item in members:
+                require(time.monotonic() < deadline-5, 'join-replay-original-deadline')
+                path = PurePosixPath(item.filename); mode = item.external_attr >> 16
+                require(item.filename and not path.is_absolute() and path.as_posix() == item.filename
+                    and not any(v in ('', '.', '..') for v in path.parts)
+                    and '\\' not in item.filename and ':' not in item.filename
+                    and len(item.filename.encode()) <= 512 and not item.is_dir()
+                    and stat.S_IFMT(mode) in (0, stat.S_IFREG) and not item.extra and not item.comment
+                    and item.compress_type == 8 and item.flag_bits == 8,
+                    'join-replay-native-closed-zip-shape')
+                key = item.filename.casefold()
+                require(key not in seen and not any(key.startswith(v+'/') or v.startswith(key+'/')
+                    for v in seen), 'join-replay-unique-path-prefix')
+                seen.add(key); total += item.file_size
+                require(0 <= item.file_size <= 64*1024**2 and total <= PUBLIC_BYTES
+                    and item.compress_size > 0 and item.file_size <= item.compress_size*4096,
+                    'join-replay-member-expansion-bound')
+                stream.seek(item.header_offset); header = stream.read(30)
+                require(len(header) == 30, 'join-replay-local-header-bound')
+                local = struct.unpack('<4s5H3L2H', header)
+                require(local[0] == b'PK\x03\x04' and local[2:4] == (8, 8)
+                    and local[6:9] == (0, 0, 0) and local[10] == 0
+                    and 0 < local[9] <= 512, 'join-replay-local-header-shape')
+                require(stream.read(local[9]) == item.filename.encode('ascii'), 'join-replay-local-central-name')
+                finish = item.header_offset+30+local[9]+item.compress_size
+                require(finish+16 <= end[6], 'join-replay-local-range')
+                stream.seek(finish)
+                require(struct.unpack('<4s3L', stream.read(16)) ==
+                    (b'PK\x07\x08', item.CRC, item.compress_size, item.file_size),
+                    'join-replay-local-central-descriptor')
+                ranges.append((item.header_offset, finish+16))
+            ranges.sort()
+            require(total == JOIN_REPLAY['expandedBytes'] and ranges[0][0] == 0
+                and all(a[1] == b[0] for a, b in zip(ranges, ranges[1:]))
+                and ranges[-1][1] == end[6], 'join-replay-disjoint-complete-local-ranges')
+            require(source.getinfo('ADMISSION.json').file_size <= 128*1024, 'join-replay-admission-byte-bound')
+            admission = json.loads(source.read('ADMISSION.json'))
+            require(set(admission) == {'formatVersion', 'files', 'bytes', 'maximumBytes', 'productExecutionPermission'}
+                and admission['formatVersion'] == 1 and admission['maximumBytes'] == PUBLIC_BYTES
+                and admission['productExecutionPermission'] is False and len(admission['files']) == 376,
+                'join-replay-original-admission')
+            declared = {}
+            for row in admission['files']:
+                require(set(row) == {'path', 'bytes', 'sha256'} and row['path'] not in declared
+                    and type(row['bytes']) is int and 0 <= row['bytes'] <= 64*1024**2
+                    and re.fullmatch(r'sha256:[0-9a-f]{64}', row['sha256']), 'join-replay-admission-row')
+                declared[row['path']] = row
+            require(set(declared) == {i.filename for i in members}-{'ADMISSION.json'}
+                and sum(v['bytes'] for v in declared.values()) == admission['bytes'],
+                'join-replay-no-omitted-original-payload')
+            for item in members:
+                require(time.monotonic() < deadline-5, 'join-replay-extraction-deadline')
+                with source.open(item) as body: raw = body.read(item.file_size+1)
+                require(len(raw) == item.file_size, 'join-replay-crc-size')
+                if item.filename != 'ADMISSION.json':
+                    require(declared[item.filename] == {'path': item.filename,
+                        'bytes': len(raw), 'sha256': digest(raw)}, 'join-replay-original-entry-digest')
+                target = output/item.filename; target.parent.mkdir(parents=True, exist_ok=True)
+                with target.open('xb') as destination: destination.write(raw)
+    return admission
+
+
+def join_replay_packages(original, output, current, deadline):
+    producer = read_json(original/'current-git-inputs.json', 4*1024**2)
+    old = {r['path']: r for r in producer}; now = {r['path']: r for r in current}
+    require(len(old) == len(producer) and len(now) == len(current), 'join-replay-unique-git-inputs')
+    def protected(path):
+        return ((path.startswith(('crates/', 'apps/')) and path.endswith(('.rs', '.toml')))
+            or path in ('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'tools/toolchain.toml')
+            or path.startswith(('.cargo/', 'tools/dotnet_guest/', DATA))
+            or path in ('tools/dotnet_guest_bindings.py', 'tools/dotnet_task_runtime_probe.py'))
+    excluded = 'crates/latent-wasmtime/tests/local_service.rs'
+    protected_paths = {p for p in old.keys() | now.keys() if protected(p) and p != excluded}
+    require(all(p in old and p in now and old[p] == now[p] for p in protected_paths),
+        'join-replay-original-component-and-observer-implementation')
+    restored, components = [], []
+    inputs = [read_json(original/name/'source-inputs.json', 1024**2)
+        for name in ('dotnet-root-return-normal', 'dotnet-root-return-join-cause')]
+    for index, name in enumerate(('dotnet-root-return-normal', 'dotnet-root-return-join-cause')):
+        folder = original/name; files = list(folder.rglob('*'))
+        require(sum(p.is_file() for p in files) == (178, 179)[index], 'join-replay-complete-variant-tree')
+        shutil.copytree(folder, output/name)
+        for relative, git_path in JOIN_REPLAY_WIT.items():
+            require(time.monotonic() < deadline-5, 'join-replay-restore-deadline')
+            raw = read_file(ROOT/git_path, 4096)
+            identity = {'size': len(raw), 'digest': digest(raw)}
+            blob = hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
+            require(all(v[relative] == identity for v in inputs)
+                and old[git_path] == now[git_path] and old[git_path]['gitBlob'] == blob,
+                'join-replay-exact-original-wit-body')
+            target = output/name/relative; target.parent.mkdir(parents=True, exist_ok=True)
+            with target.open('xb') as destination: destination.write(raw)
+            restored.append({'variant': name, 'path': relative, 'gitInput': now[git_path], **identity})
+        package = read_json(output/name/'package-source.json', 65536)
+        require(package['entrypoint'] == 'component.wasm' and len(package['layers']) == 9,
+            'join-replay-original-package-shape')
+        for layer in package['layers']:
+            path = PurePosixPath(layer['source'])
+            require(not path.is_absolute() and path.as_posix() == layer['source']
+                and not any(v in ('', '.', '..') for v in path.parts)
+                and (output/name/path).is_file(), 'join-replay-complete-package-layers')
+        identity = file_identity(output/name/'component.wasm', 64*1024**2)
+        require(identity['sha256'] == JOIN_REPLAY_COMPONENTS[index], 'join-replay-original-component')
+        marker = read_json(output/name/'BUILD-COMPLETE.json', 65536)
+        require(marker['packageAssembled'] is True and marker['componentDigest'] == identity['sha256']
+            and marker['observationDigest'] == digest(read_file(output/name/'build-observation.json', 65536))
+            and marker['sourceDigest'] == digest(read_file(output/name/'source-inputs.json', 1024**2)),
+            'join-replay-original-build-receipt')
+        components.append(identity['sha256'])
+    return {'originalProducer': JOIN_REPLAY['producer'], 'protectedGitPaths': len(protected_paths),
+        'restoredOriginalWitBodies': restored, 'components': components,
+        'datedObserverUnitsPassed': list(JOIN_UNIT_CASES), 'observerUnitsExecutedAgain': False}
+
+
+def join_replay_variant_map(output):
+    rows = []
+    for name, count in (('dotnet-root-return-normal', 182), ('dotnet-root-return-join-cause', 183)):
+        files = [p for p in (output/name).rglob('*') if p.is_file()]
+        require(len(files) == count and all(not p.is_symlink() for p in files), 'join-replay-variant-count-type')
+        rows.extend({'path': p.relative_to(output).as_posix(), **file_identity(p, 64*1024**2)}
+            for p in sorted(files))
+    return rows
+
+
+def qualify_join_cause_replay(output, archive, source_commit):
+    """Reuse actual components; compile only the tenant-correct native harness."""
+    from tools import ci_rust_artifacts as artifacts
+    from tools.build_observation import resolve_tools, file_identity as tool_identity
+    import tomllib
+    require(os.environ.get('GITHUB_EVENT_NAME') == 'push'
+        and os.environ.get('GITHUB_REF') == 'refs/heads/'+JOIN_BRANCH, 'join-replay-closed-push')
+    require(sys.platform == 'linux' and sys.version_info >= (3, 13), 'join-replay-platform')
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
+        'join-replay-output-ownership')
+    output = fresh(output); deadline = float(os.environ['LSF_ROOT_RETURN_DEADLINE'])
+    require(math.isfinite(deadline) and time.monotonic() < deadline <= time.monotonic()+1320,
+        'join-replay-one-original-clock')
+    shared = {'bytes': 0, 'records': []}; environment = build_environment(output)
+    environment.update(CARGO_TARGET_DIR=str(ROOT/'target'), CARGO_INCREMENTAL='0', CARGO_BUILD_JOBS='2',
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0', CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true', CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true',
+        CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true', RUSTUP_TOOLCHAIN='1.97.1', RUSTUP_AUTO_INSTALL='0')
+    commands = JoinCauseCommands(ROOT, fresh(output/'commands'), environment, shared, deadline)
+    record = {'schemaVersion': 'latent.dotnet.join-cause.replay.v1', 'status': 'in-progress',
+        'originalArtifact': JOIN_REPLAY, 'signedCalls': 6, 'observerUnitsExecutedAgain': False,
+        'fullAC7Qualified': False, 'physicalRetirementQualified': False, 'originalTrapQualified': False,
+        'nativeAccountingComplete': False, 'runtimePolicyChanged': False, 'ownerCaps': OWNER_CAPS}
+    original = output/'original-attempt'; original.mkdir()
+    try:
+        require(re.fullmatch(r'[0-9a-f]{40}', source_commit), 'join-replay-source-commit')
+        require(subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, timeout=15).decode().strip() == source_commit
+            and not subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, timeout=15),
+            'join-replay-clean-source')
+        before = source_map(); write_json(output/'current-git-inputs.json', before)
+        admission = join_replay_extract(archive, original, deadline)
+        record['originalAdmission'] = {'files': len(admission['files']), 'bytes': admission['bytes']}
+        record['provenance'] = join_replay_packages(original, output, before, deadline)
+        variants_before = join_replay_variant_map(output)
+        expected_variants = {r['path']: r for r in admission['files'] if r['path'].startswith(
+            ('dotnet-root-return-normal/', 'dotnet-root-return-join-cause/'))}
+        require(len(expected_variants) == 357, 'join-replay-original-variant-set')
+        for row in record['provenance']['restoredOriginalWitBodies']:
+            name = row['variant']+'/'+row['path']
+            require(name not in expected_variants, 'join-replay-only-missing-wit')
+            expected_variants[name] = {'path': name, 'bytes': row['size'], 'sha256': row['digest']}
+        require(len(expected_variants) == len(variants_before) and all(
+            expected_variants.get(r['path']) == r for r in variants_before), 'join-replay-staged-exact-payloads')
+        record['provenance']['retainedVariantIdentities'] = variants_before
+        write_json(output/'replay-provenance.json', record['provenance'])
+        pins = tomllib.loads(read_file(ROOT/'tools/toolchain.toml', 128*1024).decode())
+        native_tools, identities = resolve_tools(pins, ROOT, environment, _deadline=commands.deadline)
+        record['toolIdentities'] = identities; environment['RUSTC'] = str(native_tools['rustc'])
+        commands.run('build-current-local-service', native_tools['cargo'], '--config', '.cargo/managed-guest.toml',
+            'test', '--locked', '-p', 'latent-wasmtime', '--features', 'development-test-host',
+            '--test', 'local_service', '--no-run', '--message-format=json')
+        suite = artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'local_service', 'tests/local_service.rs',
+            JOIN_CASE, frozenset({JOIN_CASE}), True, kind='test')
+        owner = artifacts.read_inventory(commands.output/'logs/00-build-current-local-service.stdout.txt',
+            ROOT, suite, target=ROOT/'target')
+        executable_before = file_identity(owner.executable, 512*1024**2)
+        def library_probe(argv, *, cwd, env, timeout, maximum):
+            require(argv == ['rustc', '--print', 'target-libdir'] and cwd == ROOT and timeout == 30 and maximum == 4096,
+                'join-replay-library-probe')
+            commands.command_seconds = 25; commands.environment = env
+            value = commands.run('rust-library-path', native_tools['rustc'], *argv[1:])
+            require(len(value) <= maximum, 'join-replay-library-bound')
+            return 0, value
+        commands.environment = artifacts.cargo_environment(ROOT, owner, environment,
+            target=ROOT/'target', execute=library_probe)
+        commands.environment.update(LSF_GUEST_SDK_LANGUAGE='dotnet', LSF_GUEST_CAPSULES=str(output))
+        commands.command_seconds = 25
+        selection = (JOIN_CASE, '--exact', '--ignored')
+        listed = commands.run('list-signed', owner.executable, *selection, '--list')
+        require(len(listed) <= 65536, 'join-replay-list-bound'); artifacts.validate_listing(listed, suite)
+        commands.command_seconds = 300
+        raw = commands.run('execute-signed', owner.executable, *selection, '--show-output', '--test-threads=1')
+        require(re.search(r'^test result: ok\. 1 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out; finished in [0-9.]+s$',
+            raw.decode(), re.M), 'join-replay-exact-native-result')
+        record['observations'] = join_cause_observations(raw, JOIN_REPLAY_COMPONENTS)
+        require(source_map() == before and not subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, timeout=15)
+            and executable_before == file_identity(owner.executable, 512*1024**2)
+            and identities == [tool_identity(path, name) for name, path in sorted(native_tools.items())]
+            and file_identity(archive, JOIN_REPLAY['bytes']) ==
+                {'bytes': JOIN_REPLAY['bytes'], 'sha256': JOIN_REPLAY['sha256']}
+            and join_replay_variant_map(output) == variants_before
+            and list(JOIN_REPLAY_COMPONENTS) == [file_identity(output/name/'component.wasm', 64*1024**2)['sha256']
+                for name in ('dotnet-root-return-normal', 'dotnet-root-return-join-cause')],
+            'join-replay-current-code-products-after')
+        record.update(status='passed', sourceCommit=source_commit, sourceBeforeEqualsAfter=True,
+            testExecutable=executable_before, commandCount=len(shared['records']), diagnosticBytes=shared['bytes'])
+        write_json(output/'qualified.json', record)
+        return record
+    except BaseException as error:
+        record.update(status='failed', errorCategory=type(error).__name__)
+        write_json(output/'FAILED.json', record)
+        raise
+    finally:
+        write_json(output/'commands.json', shared['records'])
+        # Retain the complete authenticated prior trees, restored WIT and old
+        # failed attempt as dated input, alongside this attempt's own results.
+        public = output/'public'; public.mkdir()
+        paths = [p for p in output.rglob('*') if p.is_file() and public not in p.parents]
+        require(len(paths) <= 4095, 'join-replay-public-count')
+        total, rows = 0, []
+        for path in sorted(paths):
+            require(time.monotonic() < deadline and not path.is_symlink(), 'join-replay-public-clock-type')
+            identity = file_identity(path, 64*1024**2); total += identity['bytes']
+            require(total <= PUBLIC_BYTES, 'join-replay-public-union')
+            name = path.relative_to(output).as_posix(); target = public/name; target.parent.mkdir(parents=True, exist_ok=True)
+            raw = read_file(path, 64*1024**2); require(digest(raw) == identity['sha256'], 'join-replay-public-source-after')
+            with target.open('xb') as stream: stream.write(raw)
+            rows.append({'path': name, **identity})
+        write_json(public/'ADMISSION.json', {'formatVersion': 1, 'files': rows, 'bytes': total,
+            'maximumBytes': PUBLIC_BYTES, 'productExecutionPermission': False})

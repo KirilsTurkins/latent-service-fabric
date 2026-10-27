@@ -208,6 +208,40 @@ class RootReturnSupplementalControls(unittest.TestCase):
         self.assertEqual(receipt['normalSha256'], a.JOIN_CAUSE_NORMAL_SHA256)
         self.assertFalse(receipt['physicalRetirementQualified'])
         self.assertFalse(receipt['originalTrapQualified'])
+        # All-feature inventory and ordinary Go builds share the same ignored
+        # test registration; unavailable diagnostic prerequisites must refuse.
+        rust = (ROOT/'crates/latent-wasmtime/tests/local_service.rs').read_text()
+        signature = 'async fn dotnet_join_cause_borrows_one_word_before_unchanged_native_finalization() {'
+        prefix, body = rust.split(signature)
+        attributes = prefix.rsplit('\n\n', 1)[1]
+        self.assertNotIn('#[cfg', attributes)
+        self.assertIn('#[tokio::test(', attributes)
+        self.assertIn('#[ignore = "Requires a separately reviewed NORMAL+auxiliary signed .NET fixture owner"]', attributes)
+        condition = (r'feature = "development-test-host",\s*'
+                     r'target_os = "linux",\s*target_arch = "x86_64"')
+        self.assertRegex(body, r'^\s*#\[cfg\(all\(\s*'+condition+r'\s*\)\)\]\s*\{')
+        self.assertRegex(body, r'#\[cfg\(not\(all\(\s*'+condition+
+            r'\s*\)\)\)\]\s*\{\s*panic!\(\s*'
+            r'"requires the reviewed development-test-host Linux x86_64 fixture"\s*\);\s*\}\s*\}\s*$')
+        self.assertEqual(body.count('feature = "development-test-host"'), 2)
+        # The signed fixture must use the capsule's tenant at every native edge.
+        self.assertIn('capsule.metadata.tenant.expect("captured capsule tenant")', body)
+        self.assertIn('Signers::for_tenant(DOTNET_CAPSULE_BUILD_TYPE, &tenant)', body)
+        self.assertIn('.admit_package(&tenant, upload,', body)
+        self.assertIn('Fixture::with_named_activation_runtime(', body)
+        self.assertNotIn('TenantId("tenant-a"', body)
+        from tools import dotnet_root_return as replay
+        from tools.phase2_operator_process import WorkflowError
+        self.assertEqual(replay.JOIN_REPLAY['artifact'], 12759125468)
+        self.assertEqual(replay.JOIN_REPLAY['bytes'], 15120874)
+        self.assertEqual(len(replay.JOIN_REPLAY_COMPONENTS), 2)
+        self.assertEqual(len(replay.JOIN_REPLAY_WIT), 4)
+        # Reject an untrusted carrier before reading its central metadata.
+        with tempfile.TemporaryDirectory() as temporary:
+            bad = Path(temporary)/'untrusted.zip'; bad.write_bytes(b'not the admitted artifact')
+            with self.assertRaisesRegex(WorkflowError, 'join-replay-official-archive'):
+                replay.join_replay_extract(bad, Path(temporary)/'never-staged', 0)
+            self.assertFalse((Path(temporary)/'never-staged').exists())
         for name, text in [("other.cs", ""), (a.JOIN_CAUSE_FILE, ""),
                            (a.JOIN_CAUSE_FILE, a.JOIN_CAUSE_NORMAL)]:
             with self.assertRaisesRegex(ValueError, 'unreviewed-normal-helper'):
