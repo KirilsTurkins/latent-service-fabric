@@ -37,11 +37,11 @@ impl<'a> OwnedPreparationWait<'a> {
     where
         F: Future<Output = ()> + Send + 'a,
     {
-        let bytes = u64::try_from(Layout::new::<F>().size()).map_err(|_| {
-            PlatformError::new(
-                PlatformErrorCode::ResourceExhausted,
-                "owned timer future layout overflow",
-            )
+        let bytes = u64::try_from(Layout::new::<F>().size()).map_err(|_| PlatformError {
+            code: PlatformErrorCode::ResourceExhausted,
+            message: "owned timer future layout overflow".to_owned(),
+            retryable: false,
+            details: Vec::new(),
         })?;
         let allocation = budget
             .reserve_host_memory(bytes)
@@ -86,10 +86,12 @@ pub trait PreparationReadWait: Send + Sync {
         _deadline: Instant,
         _budget: &ActivationBudget,
     ) -> Result<OwnedPreparationWait<'a>, PlatformError> {
-        Err(PlatformError::new(
-            PlatformErrorCode::Unavailable,
-            "activation-owned timer wait unavailable",
-        ))
+        Err(PlatformError {
+            code: PlatformErrorCode::Unavailable,
+            message: "activation-owned timer wait unavailable".to_owned(),
+            retryable: false,
+            details: Vec::new(),
+        })
     }
 }
 
