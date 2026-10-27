@@ -230,8 +230,19 @@ class RootReturnSupplementalControls(unittest.TestCase):
         self.assertIn('.admit_package(&tenant, upload,', body)
         self.assertIn('Fixture::with_named_activation_runtime(', body)
         self.assertNotIn('TenantId("tenant-a"', body)
+        self.assertIn('let service = ServiceId(capsule.metadata.name);', body)
+        self.assertIn('caller: service.clone()', body)
+        self.assertIn('callee: service', body)
+        self.assertNotIn('..Default::default()', body)
         from tools import dotnet_root_return as replay
         from tools.phase2_operator_process import WorkflowError
+        import hashlib
+        translated = replay.JOIN_REPLAY_FIXTURE_TRANSLATION
+        self.assertEqual(translated['path'], 'crates/latent-wasmtime/tests/local_service/fixture.rs')
+        fixture = (ROOT/translated['path']).read_bytes()
+        actual_blob = hashlib.sha1(b'blob '+str(len(fixture)).encode()+b'\0'+fixture).hexdigest()
+        self.assertEqual(actual_blob, translated['currentGitBlob'])
+        self.assertNotEqual(translated['currentGitBlob'], translated['producerGitBlob'])
         self.assertEqual(replay.JOIN_REPLAY['artifact'], 12759125468)
         self.assertEqual(replay.JOIN_REPLAY['bytes'], 15120874)
         self.assertEqual(len(replay.JOIN_REPLAY_COMPONENTS), 2)

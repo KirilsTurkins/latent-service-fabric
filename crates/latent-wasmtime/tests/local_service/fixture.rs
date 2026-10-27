@@ -1060,8 +1060,26 @@ impl Fixture {
             "apiVersion":"latent.dev/v1alpha1","kind":"Binding","metadata":{"name":"local-call","tenant":tenant},
             "spec":{"consumer":{"service":caller_service,"contract":SERVICE_INVOCATION_CAPABILITY},"provider":{"service":callee_service,"contract":callee_contract,"route":"callee"},"mode":"isolated-local"}})).unwrap()).unwrap(),
             provider_binding_id: "installed".into(), allowed_modes: vec![BindingMode::IsolatedLocal], restriction_json: br#"{"operations":[]}"#.to_vec() };
-        let mut definitions = vec![definition];
-        definitions.extend(guest_runtime.definitions(tenant, &[caller_service, callee_service]));
+        let mut definitions = if caller_service == callee_service
+            && [&caller, &callee].iter().all(|package| {
+                package
+                    .surface()
+                    .unwrap()
+                    .imports()
+                    .iter()
+                    .all(|import| import.as_ref() != SERVICE_INVOCATION_CAPABILITY)
+            }) {
+            vec![]
+        } else {
+            vec![definition]
+        };
+        let runtime_services = [caller_service, callee_service];
+        let runtime_services = if caller_service == callee_service {
+            &runtime_services[..1]
+        } else {
+            &runtime_services[..]
+        };
+        definitions.extend(guest_runtime.definitions(tenant, runtime_services));
         if let Some(other) = &additional_runtime_tenant {
             definitions.extend(guest_runtime.definitions(&other.0, &[caller_service]));
         }

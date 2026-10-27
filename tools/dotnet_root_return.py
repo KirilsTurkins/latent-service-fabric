@@ -841,6 +841,10 @@ JOIN_REPLAY_WIT = {
     'wit/deps/clock/package.wit': 'wit/platform/clock/package.wit',
     'wit/deps/random/package.wit': 'wit/platform/random/package.wit',
     'wit/world.wit': DATA+'world.wit'}
+JOIN_REPLAY_FIXTURE_TRANSLATION = {
+    'path': 'crates/latent-wasmtime/tests/local_service/fixture.rs', 'mode': '100644',
+    'producerGitBlob': 'a19dbcdef71bb2147e426753b67bb5b3eebbcb99',
+    'currentGitBlob': '4d4e2ee16abca8713acefaee82a657816c90e795'}
 
 
 def join_replay_extract(archive, output, deadline):
@@ -929,8 +933,17 @@ def join_replay_packages(original, output, current, deadline):
             or path in ('tools/dotnet_guest_bindings.py', 'tools/dotnet_task_runtime_probe.py'))
     excluded = 'crates/latent-wasmtime/tests/local_service.rs'
     protected_paths = {p for p in old.keys() | now.keys() if protected(p) and p != excluded}
-    require(all(p in old and p in now and old[p] == now[p] for p in protected_paths),
-        'join-replay-original-component-and-observer-implementation')
+    translation = JOIN_REPLAY_FIXTURE_TRANSLATION
+    require(translation['path'] in protected_paths, 'join-replay-explicit-fixture-source')
+    for path in protected_paths:
+        require(path in old and path in now, 'join-replay-protected-source-set')
+        if path == translation['path']:
+            require(old[path] == {'path': path, 'mode': translation['mode'],
+                'gitBlob': translation['producerGitBlob']}
+                and now[path] == {'path': path, 'mode': translation['mode'],
+                    'gitBlob': translation['currentGitBlob']}, 'join-replay-reviewed-fixture-translation')
+        else:
+            require(old[path] == now[path], 'join-replay-original-component-and-observer-implementation')
     restored, components = [], []
     inputs = [read_json(original/name/'source-inputs.json', 1024**2)
         for name in ('dotnet-root-return-normal', 'dotnet-root-return-join-cause')]
@@ -966,6 +979,7 @@ def join_replay_packages(original, output, current, deadline):
             'join-replay-original-build-receipt')
         components.append(identity['sha256'])
     return {'originalProducer': JOIN_REPLAY['producer'], 'protectedGitPaths': len(protected_paths),
+        'reviewedNativeHarnessTranslation': translation,
         'restoredOriginalWitBodies': restored, 'components': components,
         'datedObserverUnitsPassed': list(JOIN_UNIT_CASES), 'observerUnitsExecutedAgain': False}
 

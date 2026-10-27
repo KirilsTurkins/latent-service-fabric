@@ -179,7 +179,7 @@ async fn dotnet_join_cause_borrows_one_word_before_unchanged_native_finalization
     {
         use latent_activation::ActivationOutcome;
         use latent_artifacts::ArtifactRepository;
-        use latent_core::{ContractId, FunctionId, TenantId};
+        use latent_core::{ContractId, FunctionId, ServiceId, TenantId};
         use latent_signing::DOTNET_CAPSULE_BUILD_TYPE;
         use latent_wasmtime::DevelopmentJoinCause;
         assert_eq!(
@@ -212,6 +212,7 @@ async fn dotnet_join_cause_borrows_one_word_before_unchanged_native_finalization
                 .decode_capsule(bundle.blob("capsule.json").unwrap())
                 .unwrap();
             let tenant: TenantId = capsule.metadata.tenant.expect("captured capsule tenant");
+            let service = ServiceId(capsule.metadata.name);
             let ceiling = capsule.execution.resource_budget_ceiling;
             let signers =
                 join_cause_package::Signers::for_tenant(DOTNET_CAPSULE_BUILD_TYPE, &tenant);
@@ -227,6 +228,7 @@ async fn dotnet_join_cause_borrows_one_word_before_unchanged_native_finalization
             assert_eq!(ceiling.cpu_fuel, 1_000_000_000);
             assert_eq!(ceiling.memory_bytes, 128 * 1024 * 1024);
             assert_eq!(ceiling.wall_time_limit_millis, Some(120_000));
+            assert_eq!(ceiling.child_calls, 0);
             // PackageBundle intentionally owns its bytes. Decode the second role
             // from the SAME bounded source and require its exact package identity.
             let callee_bundle = join_cause_package::bundle(&join_cause_package::input(name));
@@ -246,7 +248,8 @@ async fn dotnet_join_cause_borrows_one_word_before_unchanged_native_finalization
                 120_000,
                 fixture::RuntimeIdentities {
                     tenant,
-                    ..Default::default()
+                    caller: service.clone(),
+                    callee: service,
                 },
             )
             .await;
