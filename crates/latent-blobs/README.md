@@ -71,3 +71,5 @@ Representative source tests (not a complete coverage inventory):
 - [Architecture index](../../ARCHITECTURE.md)
 
 Each local/S3 range read reserves its exact possible lowering-copy capacity before storage or network I/O. The returned chunk binds the original buffer, copy reservation and `PoolCall`; its single affine materialization keeps the original native credit and request alive through guest lowering, even after the source resource closes. Empty ranges remain valid and cannot create a second materialization.
+
+Installed local/S3 writes use borrowed input: after pure bounds and original pool admission, the exact future backing is prepared before the same admission copies bytes into its paid `IoBuffer`. The local blocking job owns the buffer through physical write or cancellation; S3 owns it only through append, before separately scoped ProtocolPages storage. The existing host `write(Vec)` API remains the explicit preallocated-input route.

@@ -1,36 +1,36 @@
 {
-"cases":[
-"StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows",
-"StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed"
-],
-"guards":{
-"StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows":{
-"bases":[
-"unittest.TestCase"
-],
-"classDecorators":[],
-"decorators":[],
-"fixtureGuards":[
-"module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
-"class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-],
-"skipSites":[]
-},
-"StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed":{
-"bases":[
-"unittest.TestCase"
-],
-"classDecorators":[],
-"decorators":[],
-"fixtureGuards":[
-"module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
-"class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-],
-"skipSites":[]
-}
-},
-"kind":"python",
-"module":"tools/tests/test_stream_outer_owner.py",
-"reviewReason":"Reviewed #736 typed prepaid Blob copying for actual local/S3 readers and installed canonical chunk lowering. Three new original-budget pooled-request/copy ownership controls plus existing managed local_blobs component case,4cases13commands26raw. One locked two-package CHECK --tests/all-features and two actual libtest builds/probes. Original45m/2395+5/895+5/55+5/25+5/j2 bounds retained; SDK language/external fixtures removed and required absent. Native1MiB/100k/30s differs from managed16MiB/1e12/5s; managed case really assembles/compiles/executes original component modes0/9/0. S3 consumers typechecked, no S3 network execution or full memory/RSS qualification. Every prior owner mode/case/guard preserved; no oldcopy3/graph8/nativeprogramme replay. Source-only pending focused owning result.",
-"schemaVersion":"latent.ci.contracts.v1"
+  "cases": [
+    "StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows",
+    "StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed"
+  ],
+  "guards": {
+    "StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_stream_outer_owner.py",
+  "reviewReason": "Reviewed #736 original-admission-owned Blob input materialization: WasmList descriptor, independent synchronous slice lifetime, exact existing IoBuffer native admission before copy, actual local blocking lifetime and S3 append boundary. Three NEW bridge controls plus one existing real local_blobs managed case,4cases13commands26raw. Original budget grants/45m/2395+5/895+5/55+5/25+5/j2/env retained. All4BlobWriter implementations explicit; old preallocated write(Vec), logical reserve_input and prior owner modes remain unchanged. Managed mode really assembles/compiles/executes original component; S3 source CHECK only, no remote network qualification or full cost/RSS claim. No old output-native3/graph8/programme replay; source-only pending actual focused outcome.",
+  "schemaVersion": "latent.ci.contracts.v1"
 }

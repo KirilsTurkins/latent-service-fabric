@@ -97,6 +97,14 @@ pub trait BlobWriter: Send {
     /// Admission precedes future allocation. An accepted failure abandons the
     /// writer; dropping the future does not refund a still-running physical job.
     fn write(&mut self, offset: u64, bytes: Vec<u8>) -> Result<BlobFuture<'_, u64>, BlobError>;
+    /// Borrowed guest ingress. Implementations prepay an actual input copy from
+    /// their original admission before materialization. The independent slice
+    /// lifetime cannot escape into the returned writer-borrowing future.
+    fn write_from<'a>(
+        &'a mut self,
+        offset: u64,
+        source: &[u8],
+    ) -> Result<BlobFuture<'a, u64>, BlobError>;
     fn seal(self: Box<Self>) -> Result<BlobFuture<'static, BlobSeal>, BlobError>;
 }
 pub trait BlobReader: Send {

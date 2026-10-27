@@ -141,6 +141,51 @@ impl BlobWriter for Writer {
         let data = self.data.take().expect("validated writer");
         Ok(prepared.finish((self, admission, data)))
     }
+    fn write_from<'a>(&'a mut self, offset: u64, source: &[u8]) -> Result<BlobFuture<'a, u64>> {
+        let data = self.data.as_ref().ok_or(BlobError::InvalidState)?;
+        if offset != data.written as u64
+            || source.len() > PROTOCOL_PAGE_BYTES
+            || data
+                .written
+                .checked_add(source.len())
+                .is_none_or(|n| n > data.stage.maximum)
+        {
+            return Err(BlobError::InvalidRange);
+        }
+        let admission = self
+            .binding
+            .with_session(|session| self.inner.admit(session))?;
+        let prepared = self.binding.prepare_io_future_with(
+            move |(this, admission, mut data, input, cost): (
+                &'a mut Self,
+                PoolAdmission,
+                Staging,
+                latent_capabilities::broker::io::IoBuffer,
+                CapabilityCallCost,
+            )| async move {
+                let mut call = this.inner.dispatch(admission, "write", cost).await?;
+                call.io().checkpoint()?;
+                let count = data.append(input.bytes())?;
+                drop(input); // ProtocolPages now owns the separately scoped copy.
+                finish(&mut call, AuditProviderOutcome::HostCompleted).await?;
+                this.data = Some(data);
+                Ok(count)
+            },
+        )?;
+        let input = admission.copy_input(source, 512)?;
+        let mut cost = CapabilityCallCost::new(8)
+            .with_typed_input_bytes(input.bytes().len() + 16)
+            .with_typed_request_digest(CapabilityRequestDigest::from_parts(&[
+                b"s3-blob-write-v1",
+                &offset.to_le_bytes(),
+                input.bytes(),
+            ])?);
+        if !input.bytes().is_empty() {
+            cost = cost.with_charge(BudgetDimension::BlobWriteBytes, input.bytes().len() as u64)?;
+        }
+        let data = self.data.take().expect("validated writer");
+        Ok(prepared.finish((self, admission, data, input, cost)))
+    }
     fn seal(mut self: Box<Self>) -> Result<BlobFuture<'static, BlobSeal>> {
         if self.data.is_none() {
             return Err(BlobError::InvalidState);

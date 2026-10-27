@@ -73,6 +73,62 @@ impl BlobWriter for Writer {
         let data = self.data.take().expect("validated writer");
         Ok(prepared.finish((self, admission, data)))
     }
+    fn write_from<'a>(
+        &'a mut self,
+        offset: u64,
+        source: &[u8],
+    ) -> Result<BlobFuture<'a, u64>, BlobError> {
+        let data = self.data.as_ref().ok_or(BlobError::InvalidState)?;
+        if offset != data.written()
+            || source.len() > self.inner.store.limits().maximum_chunk_bytes
+            || offset
+                .checked_add(source.len() as u64)
+                .is_none_or(|n| n > data.maximum_size())
+        {
+            return Err(BlobError::InvalidRange);
+        }
+        let admission = self
+            .binding
+            .with_session(|session| self.inner.admit(session))?;
+        // This exact future and the original input backing are both admitted
+        // before materialization or taking the writer's physical descriptor.
+        let prepared = self.binding.prepare_io_future_with(
+            move |(this, admission, mut data, input, cost): (
+                &'a mut Self,
+                PoolAdmission,
+                crate::local::LocalBlobWriter,
+                latent_capabilities::broker::io::IoBuffer,
+                CapabilityCallCost,
+            )| async move {
+                let call = execute::dispatch(&this.inner, admission, "write", cost).await?;
+                let completion = execute::run(&this.inner, call, "write", move |call| {
+                    let count = data
+                        .write(offset, input.bytes(), &|| checkpoint(call))
+                        .map_err(map);
+                    drop(input); // Actual bytes retire before their original guard.
+                    Ok((data, count?))
+                })
+                .await?;
+                let (data, count) = completion.value?;
+                this.data = Some(data);
+                Ok(count)
+            },
+        )?;
+        let input = admission.copy_input(source, 512)?;
+        let digest = CapabilityRequestDigest::from_parts(&[
+            b"blob-write-v1",
+            &offset.to_le_bytes(),
+            input.bytes(),
+        ])?;
+        let mut cost = CapabilityCallCost::new(8)
+            .with_typed_input_bytes(input.bytes().len() + 16)
+            .with_typed_request_digest(digest);
+        if !input.bytes().is_empty() {
+            cost = cost.with_charge(BudgetDimension::BlobWriteBytes, input.bytes().len() as u64)?;
+        }
+        let data = self.data.take().expect("validated writer");
+        Ok(prepared.finish((self, admission, data, input, cost)))
+    }
     fn seal(mut self: Box<Self>) -> Result<BlobFuture<'static, BlobSeal>, BlobError> {
         if self.data.is_none() {
             return Err(BlobError::InvalidState);

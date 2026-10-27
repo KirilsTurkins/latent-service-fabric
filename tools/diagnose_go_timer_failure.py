@@ -21,7 +21,7 @@ from tools.rust_capsule_project import ROOT, digest, write_json
 
 CASE = 'signed_standard_timers_contexts_and_rearm_keep_original_heap_owners'
 REASONS = 'tools/go_guest/terminal_reasons.json'
-REASONS_DIGEST = 'sha256:ec8b59ada82aab3b1f55bb6b89a510f558d184b2e98a4081531976bff34589fb'
+REASONS_DIGEST = 'sha256:5af1b5f362ae8142e5e462d47220960e5ddd401e012cb39f277568ea0a911dba'
 THROW_BODY_DIGEST = 'sha256:c049e89b86db59031835024047342eaaa3008b47897e6c42c40255f641fe6a3d'
 PATHS = ('crates/latent-wasmtime/src/containment.rs', 'crates/latent-wasmtime/src/config/engine.rs',
          'crates/latent-wasmtime/tests/local_service/runtime/go.rs')

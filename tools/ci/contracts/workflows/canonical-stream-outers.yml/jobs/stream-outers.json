@@ -1,78 +1,78 @@
 {
-"baselineRevision":"50f003dd006e0786494936c49e55dc683cf26fd6",
-"before":{},
-"coverage":{},
-"definition":{
-"env":{
-"CARGO_BUILD_JOBS":"2",
-"CARGO_INCREMENTAL":"0",
-"CARGO_PROFILE_DEV_DEBUG":"0",
-"CARGO_PROFILE_DEV_DEBUG_ASSERTIONS":"true",
-"CARGO_PROFILE_DEV_OVERFLOW_CHECKS":"true",
-"CARGO_PROFILE_TEST_DEBUG":"0",
-"CARGO_PROFILE_TEST_DEBUG_ASSERTIONS":"true",
-"CARGO_PROFILE_TEST_OVERFLOW_CHECKS":"true"
-},
-"name":"Four paid Blob-copy and managed lowering controls",
-"runs-on":"ubuntu-24.04",
-"steps":[
-{
-"uses":"KirilsTurkins/lsf-checkout",
-"with":{
-"persist-credentials":false
-}
-},
-{
-"uses":"KirilsTurkins/lsf-setup-python",
-"with":{
-"python-version":"3.13.5"
-}
-},
-{
-"uses":"dtolnay/rust-toolchain"
-},
-{
-"uses":"KirilsTurkins/lsf-rust-cache",
-"with":{
-"cache-all-crates":false,
-"cache-bin":false,
-"cache-directories":"target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
-"cache-on-failure":false,
-"cache-targets":false,
-"cache-workspace-crates":false,
-"key":"ubuntu-24.04",
-"prefix-key":"lsf-ci-dependencies-v3-contract-profiles",
-"save-if":false,
-"shared-key":"host-contracts"
-}
-},
-{
-"uses":"KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
-"with":{
-"version":"1.254.0"
-}
-},
-{
-"name":"Typecheck local/S3 consumers and execute four Blob-copy lowering controls",
-"run":"python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --blob-copy --output \"$RUNNER_TEMP/canonical-stream-outers\""
-},
-{
-"if":"always()",
-"name":"Retain Blob typecheck and four source-bound copy outcomes",
-"uses":"KirilsTurkins/lsf-upload-artifact",
-"with":{
-"if-no-files-found":"warn",
-"name":"owned-blob-copy-${{ github.sha }}",
-"path":"${{ runner.temp }}/canonical-stream-outers/receipt.json\n${{ runner.temp }}/canonical-stream-outers/FAILED.json\n${{ runner.temp }}/canonical-stream-outers/source-inputs.json\n${{ runner.temp }}/canonical-stream-outers/commands.json\n${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt\n",
-"retention-days":3
-}
-}
-],
-"timeout-minutes":45
-},
-"jobId":"stream-outers",
-"kind":"job",
-"reviewReason":"Reviewed #736 typed prepaid Blob copying for actual local/S3 readers and installed canonical chunk lowering. Three new original-budget pooled-request/copy ownership controls plus existing managed local_blobs component case,4cases13commands26raw. One locked two-package CHECK --tests/all-features and two actual libtest builds/probes. Original45m/2395+5/895+5/55+5/25+5/j2 bounds retained; SDK language/external fixtures removed and required absent. Native1MiB/100k/30s differs from managed16MiB/1e12/5s; managed case really assembles/compiles/executes original component modes0/9/0. S3 consumers typechecked, no S3 network execution or full memory/RSS qualification. Every prior owner mode/case/guard preserved; no oldcopy3/graph8/nativeprogramme replay. Source-only pending focused owning result. Correct execution-step label to the actual four Blob controls; CLI and bounds unchanged.",
-"schemaVersion":"latent.ci.contracts.v1",
-"workflow":".github/workflows/canonical-stream-outers.yml"
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "Four prepaid Blob-input and managed controls",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
+          "cache-on-failure": false,
+          "cache-targets": false,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
+          "save-if": false,
+          "shared-key": "host-contracts"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Typecheck local/S3 consumers and execute four prepaid Blob-input controls",
+        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --blob-input --output \"$RUNNER_TEMP/canonical-stream-outers\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain Blob typecheck and four source-bound input outcomes",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "prepaid-blob-input-${{ github.sha }}",
+          "path": "${{ runner.temp }}/canonical-stream-outers/receipt.json\n${{ runner.temp }}/canonical-stream-outers/FAILED.json\n${{ runner.temp }}/canonical-stream-outers/source-inputs.json\n${{ runner.temp }}/canonical-stream-outers/commands.json\n${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "stream-outers",
+  "kind": "job",
+  "reviewReason": "Reviewed #736 original-admission-owned Blob input materialization: WasmList descriptor, independent synchronous slice lifetime, exact existing IoBuffer native admission before copy, actual local blocking lifetime and S3 append boundary. Three NEW bridge controls plus one existing real local_blobs managed case,4cases13commands26raw. Original budget grants/45m/2395+5/895+5/55+5/25+5/j2/env retained. All4BlobWriter implementations explicit; old preallocated write(Vec), logical reserve_input and prior owner modes remain unchanged. Managed mode really assembles/compiles/executes original component; S3 source CHECK only, no remote network qualification or full cost/RSS claim. No old output-native3/graph8/programme replay; source-only pending actual focused outcome.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

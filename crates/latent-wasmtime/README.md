@@ -102,3 +102,5 @@ Integration targets: [tests/admission.rs](tests/admission.rs), [tests/angular_bu
 - [Architecture index](../../ARCHITECTURE.md)
 
 Blob chunk bytes now use the same private paid `ChunkBytes` canonical list lowering as networking and streaming HTTP. The reply owns its affine Vec and original blob request through both flat and indirect lowering, including realloc failure. WIT and the pinned `[u8]` ABI remain unchanged; the resource cannot materialize its original allowance twice. This does not fund arbitrary subsequent host-created copies or transitive provider heaps.
+
+Blob `write` lifts the existing zero-copy `WasmList<u8>` descriptor, borrows its slice under actual Store access, and calls the provider’s synchronous prepaid `write_from` bridge. Only the original admission-owned input buffer enters the writer future; neither the Store borrow nor a naked lifted Vec escapes. This adds no vendor/WIT change and preserves networking’s existing prepaid ingress path.

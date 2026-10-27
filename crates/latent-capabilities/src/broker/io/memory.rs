@@ -95,6 +95,18 @@ impl IoMemory {
     }
 }
 impl IoAdmission {
+    /// Copy a synchronous borrowed ingress into this admission's actual paid
+    /// buffer. Allocate/reserve first; no borrowed Store slice enters an owner.
+    pub fn copy_input(
+        &self,
+        source: &[u8],
+        metadata: usize,
+    ) -> Result<super::IoBuffer, PlatformError> {
+        let mut input = self.input(source.len().max(1), metadata)?;
+        input.spare_mut()?[..source.len()].copy_from_slice(source);
+        input.advance_written(source.len())?;
+        Ok(input)
+    }
     /// Reserve before retaining/copying a typed request into an asynchronous owner.
     pub fn reserve_input(&self, bytes: usize, metadata: usize) -> Result<IoMemory, PlatformError> {
         IoMemory::reserve(

@@ -87,3 +87,5 @@ Representative source tests (not a complete coverage inventory):
 - [Architecture index](../../ARCHITECTURE.md)
 
 Blob ranges use `IoCall::reserve_copy` before either local or S3 read. A `PreparedIoCopy` binds the exact source buffer, operation and original pool request; ordinary `reserve_scratch` remains logical-only. `BlobChunk::copy_bytes` moves that one reservation and the original `PoolCall` into `IoOutputCopy`, including valid empty ranges. Its Vec retires before the reservation; the source buffer independently retains the same operation/request if it outlives the copy. No extra Arc or erased owner Box is allocated for this handoff.
+
+Blob borrowed ingress uses the required `BlobWriter::write_from` method. `PoolAdmission::copy_input` allocates its original prepaid `IoBuffer` before copying the synchronous slice; the returned future cannot borrow that slice. The existing `write(Vec)` and logical `reserve_input` paths retain their caller-preallocated boundary and semantics. No network ingress allowance is charged twice.
