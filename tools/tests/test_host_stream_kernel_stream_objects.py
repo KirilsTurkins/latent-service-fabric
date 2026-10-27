@@ -550,4 +550,169 @@ print(json.dumps({'physical':len(actual['physicalInputs']),'logical':len(actual[
             self.assertEqual(set(owner.admit(output,vp_transport=True)['files']),{'receipt.json'})
 
 
+class MsiContextSource(unittest.TestCase):
+    """Only source-reader/inverse/cut/lifetime controls; no native execution."""
+    _CLONE_EDITS = {'msi_setup': [['\tint ret, i;\n', '\tint ret, i;\n\tstruct lsf_stream_msi_plan plan = {};\n'], ['\tif (dev->msi.data)\n\t\treturn 0;', '    if (dev->msi.data) {\n        unsigned int role;\n        if (lsf_prepaid_stream_msi_resource_classify(dev, dev->msi.data, &role) != 1 ||\n            role != LSF_STREAM_MSI_CONTEXT) {\n            lsf_factory_stream_constructor_retain_unknown(); return -EOPNOTSUPP;\n        }\n        return 0;\n    }\n    ret = lsf_factory_stream_msi_prepare(dev, &plan);\n    if (ret != 1) return ret;'], ['\tmd = devres_alloc(msi_device_data_release, sizeof(*md), GFP_KERNEL);', '\tmd = lsf_prepaid_stream_msi_devres_allocate(dev, LSF_STREAM_MSI_CONTEXT, &plan, msi_device_data_release);'], ['\tif (!md)\n\t\treturn -ENOMEM;', '\tif (!md) {\n\t\tlsf_factory_stream_msi_discard(dev, &plan);\n\t\treturn -ENOMEM;\n\t}'], ['\tret = msi_sysfs_create_group(dev);', '\tret = lsf_prepaid_stream_msi_add_group(dev, &msi_irqs_group, &plan);'], ['\t\tdevres_free(md);\n\t\treturn ret;', '\t\tdevres_free(md);\n\t\tlsf_factory_stream_msi_discard(dev, &plan);\n\t\treturn ret;'], ['\tdevres_add(dev, md);\n\treturn 0;', '\tdevres_add(dev, md);\n\tlsf_factory_stream_msi_discard(dev, &plan);\n\treturn 0;']], 'devm_group': [['const struct attribute_group *grp)', 'const struct attribute_group *grp,\n    const struct lsf_stream_msi_plan *plan)'], ['\tint error;\n', '\tint error;\n\n\tif (!lsf_prepaid_stream_msi_group_known(grp) || lsf_factory_stream_msi_selected(dev) != 1)\n\t\treturn -EOPNOTSUPP;\n'], ['\tdevres = devres_alloc(devm_attr_group_remove,\n\t\t\t      sizeof(*devres), GFP_KERNEL);', '\tdevres = lsf_prepaid_stream_msi_devres_allocate(dev, LSF_STREAM_MSI_GROUP, plan, devm_attr_group_remove);']]}
+    _RELEASE = 'static void release_nodes(struct device *dev, struct list_head *todo)\n{\n\tstruct devres *dr, *tmp;\n\n\t/* Release.  Note that both devres and devres_group are\n\t * handled as devres in the following loop.  This is safe.\n\t */\n\tlist_for_each_entry_safe_reverse(dr, tmp, todo, node.entry) {\n\t\tdevres_log(dev, &dr->node, "REL");\n\t\tdr->node.release(dev, dr->data);\n\t\tkfree(dr);\n\t}\n}\n'
+    _DOMAINS = 'bool pci_setup_msi_device_domain(struct pci_dev *pdev)\n{\n\tif (WARN_ON_ONCE(pdev->msix_enabled))\n\t\treturn false;\n\n\tif (pci_match_device_domain(pdev, DOMAIN_BUS_PCI_DEVICE_MSI))\n\t\treturn true;\n\tif (pci_match_device_domain(pdev, DOMAIN_BUS_PCI_DEVICE_MSIX))\n\t\tmsi_remove_device_irq_domain(&pdev->dev, MSI_DEFAULT_DOMAIN);\n\n\treturn pci_create_device_domain(pdev, &pci_msi_template, 1);\n}\nbool pci_setup_msix_device_domain(struct pci_dev *pdev, unsigned int hwsize)\n{\n\tif (WARN_ON_ONCE(pdev->msi_enabled))\n\t\treturn false;\n\n\tif (pci_match_device_domain(pdev, DOMAIN_BUS_PCI_DEVICE_MSIX))\n\t\treturn true;\n\tif (pci_match_device_domain(pdev, DOMAIN_BUS_PCI_DEVICE_MSI))\n\t\tmsi_remove_device_irq_domain(&pdev->dev, MSI_DEFAULT_DOMAIN);\n\n\treturn pci_create_device_domain(pdev, &pci_msix_template, hwsize);\n}\n'
+
+
+    def test_msi_complete_materials_and_inner_forgery_rejection(self):
+        import copy
+        import hashlib
+        from unittest.mock import patch
+        from tools import host_stream_kernel_msi_context as stage
+        raw=(stage.ROOT/stage.BUNDLE_PATH).read_bytes()
+        values=stage.decode_materials(raw)
+        self.assertEqual(len(values),5)
+        self.assertEqual(set(values),set(stage.MATERIAL_PINS))
+        for name,value in values.items():
+            self.assertEqual((len(value),hashlib.sha256(value).hexdigest()),stage.MATERIAL_PINS[name])
+        for altered in (raw[:-1],raw+b' ',b'\xff'+raw[1:]):
+            with self.subTest(length=len(altered)),self.assertRaises(ValueError):stage.decode_materials(altered)
+        original=json.loads(raw)
+        def reject(value):
+            altered=(json.dumps(value,separators=(',',':'))+'\n').encode()
+            with patch.object(stage,'BUNDLE_PIN',(len(altered),hashlib.sha256(altered).hexdigest())):
+                with self.assertRaises(ValueError):stage.decode_materials(altered)
+        for field,value in [('path','../outside.c'),('bytes',True),('sha256','0'*64),('text','/* counterfeit */\n')]:
+            candidate=copy.deepcopy(original);candidate['materials'][0][field]=value;reject(candidate)
+        candidate=copy.deepcopy(original);candidate['materials'][1]=candidate['materials'][0];reject(candidate)
+        candidate=copy.deepcopy(original);candidate['schemaVersion']=True;reject(candidate)
+        altered=b'{"schemaVersion":1,"schemaVersion":1,"materials":[]}'
+        with patch.object(stage,'BUNDLE_PIN',(len(altered),hashlib.sha256(altered).hexdigest())):
+            with self.assertRaises(ValueError):stage.decode_materials(altered)
+
+    def test_msi_reader_bounds_file_identity_and_length_before_hash(self):
+        import stat
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import host_stream_kernel_msi_context as stage
+        raw=(stage.ROOT/stage.BUNDLE_PATH).read_bytes()
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);path=root/stage.BUNDLE_PATH;path.parent.mkdir(parents=True)
+            path.write_bytes(raw)
+            self.assertEqual(stage.materials(root),stage.decode_materials(raw))
+            path.write_bytes(raw+b'x'*(1024*1024))
+            decode=stage.decode_materials
+            with patch.object(stage,'decode_materials',wraps=decode) as observed:
+                with self.assertRaises(ValueError):stage.materials(root)
+                self.assertEqual(len(observed.call_args.args[0]),stage.BUNDLE_PIN[0]+1)
+            path.write_bytes(raw)
+            fake=SimpleNamespace(st_mode=stat.S_IFLNK,st_file_attributes=0)
+            with patch.object(Path,'lstat',return_value=fake),patch.object(stage.os,'open') as opening:
+                with self.assertRaises(ValueError):stage.materials(root)
+                opening.assert_not_called()
+            real=path.stat()
+            changed=SimpleNamespace(st_mode=real.st_mode,st_dev=real.st_dev,st_ino=real.st_ino+1,st_file_attributes=0)
+            with patch.object(stage.os,'fstat',return_value=changed):
+                with self.assertRaises(ValueError):stage.materials(root)
+        with patch.object(stage.hashlib,'sha256',side_effect=AssertionError('must not hash wrong length')):
+            self.assertFalse(stage._bound(raw[:-1],stage.BUNDLE_PIN))
+
+    def test_msi_two_native_clone_inverses_and_payment_before_publication(self):
+        import hashlib
+        from tools import host_stream_kernel_msi_context as stage
+        from tools.host_stream_kernel_device_security import function
+        parts=stage.materials()
+        specs=[('msi_setup','kernel/irq/lsf-stream-msi-context.c','int lsf_prepaid_stream_msi_setup_device_data(',
+            'kernel/irq/msi.c::int msi_setup_device_data('),
+            ('devm_group','drivers/base/lsf-stream-msi-group.c','int lsf_prepaid_stream_msi_add_group(',
+            'drivers/base/core.c::int devm_device_add_group(')]
+        def inverse(name,body,new,old):
+            if name=='msi_setup':
+                prefix='\n{\n#ifndef CONFIG_SYSFS\n    return -EOPNOTSUPP;\n#else\n'
+                self.assertEqual(body.count(prefix),1);self.assertTrue(body.endswith('#endif\n}\n'))
+                body=body.replace(prefix,'\n{\n',1)[:-len('#endif\n}\n')]+'}\n'
+            for before,after in reversed(self._CLONE_EDITS[name]):
+                self.assertEqual(body.count(after),1);body=body.replace(after,before)
+            return body.replace(new,old,1).encode()
+        for name,path,new,key in specs:
+            original_name=key.split('::',1)[1]
+            current=function(parts[path].decode(),new)
+            restored=inverse(name,current,new,original_name)
+            self.assertEqual((len(restored),hashlib.sha256(restored).hexdigest()),stage.BODIES[key])
+            mutated=current.replace('\n{\n','\n{\n    /* unreviewed extra effect */\n',1)
+            # The whole-original-function pin, beyond marker presence, rejects
+            # an otherwise well-formed additional statement/body change.
+            if name=='devm_group':
+                changed=inverse(name,mutated,new,original_name)
+                self.assertNotEqual((len(changed),hashlib.sha256(changed).hexdigest()),stage.BODIES[key])
+        factory=function(parts['net/factory-stream-msi-context.c'].decode(),'int lsf_factory_stream_msi_prepare(')
+        self.assertLess(factory.index('for (index = 0; index < 2u; ++index)'),factory.index('spin_lock_irqsave'))
+        self.assertLess(factory.index('lsf_stream_constructor_allocate_locked'),factory.index('security_cache_location = plan->slot[0]'))
+        allocate=function(parts['drivers/base/lsf-stream-msi-devres.c'].decode(),'void *lsf_prepaid_stream_msi_devres_allocate(')
+        self.assertLess(allocate.index('lsf_factory_stream_msi_take'),allocate.index('memset(dr, 0, total)'))
+        self.assertIn('offsetof(struct devres, data)',parts['drivers/base/lsf-stream-msi-devres.c'].decode())
+        self.assertIn('check_dr_size(payload, &total)',parts['drivers/base/lsf-stream-msi-devres.c'].decode())
+
+    def test_msi_actual_callback_then_retirement_and_domain_cut_inverses(self):
+        import hashlib
+        from tools import host_stream_kernel_msi_context as stage
+        from tools.host_stream_kernel_constructor_failure import Editor
+        from tools.host_stream_kernel_device_security import function
+        # Only the NEW pure text-edit statements are exercised on complete
+        # authenticated native FUNCTION fixtures. No earlier projection or
+        # full-TU/native compilation or runtime claim is implied.
+        for key,text in [('drivers/base/devres.c::static void release_nodes(',self._RELEASE),
+                *[(f'drivers/pci/msi/irqdomain.c::{prefix}',function(self._DOMAINS,prefix)) for prefix in
+                    ('bool pci_setup_msi_device_domain(','bool pci_setup_msix_device_domain(')]]:
+            self.assertEqual((len(text.encode()),hashlib.sha256(text.encode()).hexdigest()),stage.BODIES[key])
+        released=stage._release_nodes(self._RELEASE)
+        def ordered(text):
+            return text.index('lsf_prepaid_stream_msi_devres_validate') < text.index('dr->node.release(dev, dr->data)') < \
+                text.index('lsf_prepaid_stream_msi_devres_retire') < text.index('kfree(dr)')
+        self.assertTrue(ordered(released))
+        swapped=released.replace('dr->node.release(dev, dr->data);','SWAP;',1).replace(
+            '(void)lsf_prepaid_stream_msi_devres_retire(dev, dr, LSF_STREAM_MSI_AFTER_RELEASE);',
+            'dr->node.release(dev, dr->data);',1).replace('SWAP;',
+            '(void)lsf_prepaid_stream_msi_devres_retire(dev, dr, LSF_STREAM_MSI_AFTER_RELEASE);',1)
+        self.assertFalse(ordered(swapped))
+        domain=Editor(self._DOMAINS)
+        for prefix in ('bool pci_setup_msi_device_domain(','bool pci_setup_msix_device_domain('):
+            original=function(domain.text,prefix)
+            domain.edit(original,stage._device_domain(original))
+        domain.finish()
+        for prefix in ('bool pci_setup_msi_device_domain(','bool pci_setup_msix_device_domain('):
+            wrapped=function(domain.text,prefix);original=function(self._DOMAINS,prefix)
+            self.assertLess(wrapped.index('lsf_factory_stream_msi_selected'),wrapped.index(original[original.index('{\n')+2:]))
+            self.assertIn('return false;',wrapped[:wrapped.index(original[original.index('{\n')+2:])])
+        with self.assertRaises(ValueError):stage.transform({}, {})
+        fake={str(i):b'counterfeit' for i in range(430)};before=dict(fake)
+        with self.assertRaises(ValueError):stage.transform(fake,{})
+        self.assertEqual(fake,before)
+
+
+class MsiContextOwner(unittest.TestCase):
+    def test_msi_owner_has_exact_sources_targets_and_closed_union(self):
+        from tools import qualify_host_stream_kernel_stream_objects as owner
+        expected=('kernel/irq/msi.o','drivers/base/devres.o','drivers/base/core.o',
+            'drivers/pci/msi/irqdomain.o','fs/sysfs/group.o','net/factory.o')
+        self.assertEqual(owner.mode_targets(msi_context=True),expected)
+        with self.assertRaises(ValueError):owner.mode_targets(msi_context=1)
+        for mode in ('vp_transport','constructor_mmio','netdev_post_init','netdev_layout',
+                'netdev_directory','classdir_kernfs','classdir'):
+            with self.subTest(mode=mode),self.assertRaises(ValueError):
+                owner.mode_targets(msi_context=True,**{mode:True})
+        before=owner.vp_materials(owner.ROOT);current=owner.msi_materials(owner.ROOT)
+        self.assertEqual((len(current['physicalInputs']),len(current['logicalIdentities'])),(69,100))
+        self.assertEqual(current['prior67Physical'],before['physicalInputs'])
+        self.assertEqual(current['prior94Logical'],before['logicalIdentities'])
+        self.assertEqual(current['projectionOutputCount'],439)
+        self.assertFalse(current['runtimeOrFundingQualified'])
+        for target in expected:self.assertEqual(owner.public_allowed('objects/'+target,msi_context=True),owner.MAX_OBJECT)
+        for name in ('objects/drivers/net/virtio_net.o','objects/drivers/virtio/virtio_ring.o',
+                'layout.json','source-tree.tar','logs/00-vp-transport-objects.stdout.txt'):
+            self.assertIsNone(owner.public_allowed(name,msi_context=True))
+        self.assertIsNotNone(owner.public_allowed('logs/00-msi-context-objects.stderr.txt',msi_context=True))
+        self.assertIsNone(owner.public_allowed('logs/00-msi-context-objects.stderr.txt',vp_transport=True))
+        with self.assertRaises(ValueError):owner.msi_compose({},Path('not-a-kernel-tree'))
+        with tempfile.TemporaryDirectory() as directory:
+            output=Path(directory)
+            (output/'receipt.json').write_bytes(b'{"status":"failed"}\n')
+            self.assertEqual(set(owner.admit(output,msi_context=True)['files']),{'receipt.json'})
+            path=output/'objects/net/socket.o';path.parent.mkdir(parents=True);path.write_bytes(b'not-a-product')
+            with self.assertRaises(ValueError):owner.admit(output,msi_context=True)
+
+
 if __name__=='__main__':unittest.main()

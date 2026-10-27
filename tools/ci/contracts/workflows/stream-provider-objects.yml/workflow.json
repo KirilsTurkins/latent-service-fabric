@@ -1,34 +1,35 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "stream-provider-objects-${{ github.ref }}"
-    },
-    "name": "Protected stream normal C object check",
-    "on": {
-      "push": {
-        "branches": [
-          "test/sdk-738-stream-objects-20261026",
-          "test/sdk-738-classdir-objects-20261026",
-          "test/sdk-738-classdir-kernfs-objects-20261026",
-          "test/sdk-738-netdev-directory-objects-20261026",
-          "test/sdk-738-netdev-layout-objects-20261026",
-          "test/sdk-738-netdev-post-init-objects-20261026",
-          "test/sdk-738-constructor-mmio-objects-20261027",
-          "test/sdk-738-vp-transport-objects-20261027"
-        ]
-      }
-    },
-    "permissions": {
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "classdir-objects",
-    "normal-objects"
-  ],
-  "reviewReason": "Reviewed closed VP67-physical/94-logical/430-derived compile-only mode, same22 targets and all historical modes/config/process/public limits.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/stream-provider-objects.yml"
+"kind":"workflow",
+"policy":{
+"name":"Protected stream normal C object check",
+"on":{
+"push":{
+"branches":[
+"test/sdk-738-stream-objects-20261026",
+"test/sdk-738-classdir-objects-20261026",
+"test/sdk-738-classdir-kernfs-objects-20261026",
+"test/sdk-738-netdev-directory-objects-20261026",
+"test/sdk-738-netdev-layout-objects-20261026",
+"test/sdk-738-netdev-post-init-objects-20261026",
+"test/sdk-738-constructor-mmio-objects-20261027",
+"test/sdk-738-vp-transport-objects-20261027",
+"test/sdk-738-msi-context-objects-20261027"
+]
+}
+},
+"permissions":{
+"contents":"read"
+},
+"concurrency":{
+"group":"stream-provider-objects-${{ github.ref }}",
+"cancel-in-progress":false
+}
+},
+"requiredJobs":[
+"classdir-objects",
+"normal-objects"
+],
+"reviewReason":"Add only the closed MSI six-object branch; preserve all old triggers, required jobs, pins, permissions and bounds.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/stream-provider-objects.yml"
 }

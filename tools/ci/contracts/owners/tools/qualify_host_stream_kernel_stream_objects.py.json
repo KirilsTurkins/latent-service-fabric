@@ -1,8 +1,8 @@
 {
-  "kind": "owner",
-  "path": "tools/qualify_host_stream_kernel_stream_objects.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed VP-only installed1.97.1 child override with automatic toolchain installation disabled; unchanged67/94/430 inputs, old modes, targets, deadlines and caps.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5e065271f19d13e486af07e385e34544447a548837a1c925d5ee28af7e8fbd29"
+"kind":"owner",
+"path":"tools/qualify_host_stream_kernel_stream_objects.py",
+"reviewBoundary":"committed-fingerprint",
+"reviewReason":"Reviewed MSI69/100/439 closed six-TU owner; false-new-mode AST inverse retains all26 old functions and68 assignments, original config, process bounds and failure-only public retention.",
+"schemaVersion":"latent.ci.contracts.v1",
+"sha256":"defc1a02358d4980c2180fedfeebb52f55c2971e8c6b7d42637a69077c58ae1d"
 }
