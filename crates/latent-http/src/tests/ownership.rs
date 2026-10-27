@@ -544,3 +544,228 @@ async fn native_http_ingress_nested_header_limit_refuses_without_payload_copy() 
     drop(session);
     f.clean().await;
 }
+#[test]
+fn borrowed_http_target_validation_preserves_descriptor_and_destination_semantics() {
+    use latent_policy::capability::{ResourceRequest, ResourceTarget};
+
+    // The comparison uses the old serialized explanation boundary as its
+    // oracle; the new borrowed predicate does not supply execution authority.
+    let origins = [
+        HttpOrigin {
+            scheme: "http".into(),
+            host: "localhost".into(),
+            port: 18080,
+        },
+        HttpOrigin {
+            scheme: "https".into(),
+            host: "example.test".into(),
+            port: 443,
+        },
+        HttpOrigin {
+            scheme: "ftp".into(),
+            host: "example.test".into(),
+            port: 21,
+        },
+        HttpOrigin {
+            scheme: "http".into(),
+            host: "UPPER.test".into(),
+            port: 80,
+        },
+        HttpOrigin {
+            scheme: "http".into(),
+            host: "".into(),
+            port: 80,
+        },
+        HttpOrigin {
+            scheme: "http".into(),
+            host: "localhost".into(),
+            port: 0,
+        },
+        HttpOrigin {
+            scheme: "http".into(),
+            host: "127.0.0.1".into(),
+            port: 80,
+        },
+        HttpOrigin {
+            scheme: "http".into(),
+            host: "::1".into(),
+            port: 80,
+        },
+        HttpOrigin {
+            scheme: "http".into(),
+            host: "127.00.0.1".into(),
+            port: 80,
+        },
+    ];
+    let longest = format!("/{}", "a".repeat(2047));
+    let oversized = format!("{longest}a");
+    let paths = [
+        "/",
+        "/allowed/item",
+        "/a%2Fb",
+        "/a\\b",
+        "/a?b",
+        "/a#b",
+        "/./a",
+        "/a/..",
+        "/bad path",
+        "/quoted\"path",
+        "/é",
+        &longest,
+        &oversized,
+    ];
+    for origin in &origins {
+        for method in [
+            "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE",
+        ] {
+            for path in paths {
+                let encoded = serde_json::to_vec(&serde_json::json!({
+                    "kind":"http", "origin":origin, "method":method, "path":path
+                }))
+                .unwrap();
+                assert!(encoded.len() <= 4096);
+                assert_eq!(
+                    ResourceTarget::Http {
+                        origin,
+                        method,
+                        path
+                    }
+                    .is_valid(),
+                    ResourceRequest::parse(&encoded).is_ok()
+                );
+            }
+        }
+    }
+
+    // Exercise the production caller, including canonical normalization before
+    // policy validation. The opaque Url parser itself remains a separate cost.
+    let config = config(18080);
+    for raw in [
+        "http://localhost:18080/allowed",
+        "HTTP://LOCALHOST:18080/allowed",
+        "http://localhost:18080/a/../allowed",
+        "http://localhost:18080/allowed?q=%22",
+    ] {
+        let destination = crate::destination::parse(raw, &config).unwrap();
+        let encoded = serde_json::to_vec(&serde_json::json!({"kind":"http",
+            "origin":&destination.origin, "method":"GET", "path":destination.url.path()}))
+        .unwrap();
+        assert!(ResourceRequest::parse(&encoded).is_ok());
+    }
+    for (raw, expected) in [
+        ("http://localhost:18080/a%2Fb", HttpError::InvalidUrl),
+        ("http://localhost:18080/a\"b", HttpError::InvalidUrl),
+        ("http://localhost:18080/a#b", HttpError::InvalidUrl),
+        ("http://user@localhost:18080/a", HttpError::InvalidUrl),
+        ("http://other.test:18080/a", HttpError::PermissionDenied),
+        ("http://localhost:18080/é", HttpError::InvalidUrl),
+    ] {
+        assert_eq!(
+            crate::destination::parse(raw, &config).err(),
+            Some(expected)
+        );
+    }
+    let prefix = "http://localhost:18080/";
+    let raw = format!("{prefix}{}", "a".repeat(2048 - prefix.len()));
+    let destination = crate::destination::parse(&raw, &config).unwrap();
+    let encoded = serde_json::to_vec(&serde_json::json!({"kind":"http",
+        "origin":&destination.origin, "method":"GET", "path":destination.url.path()}))
+    .unwrap();
+    assert!(encoded.len() <= 4096);
+    assert!(ResourceRequest::parse(&encoded).is_ok());
+    assert_eq!(
+        crate::destination::parse(&(raw + "a"), &config).err(),
+        Some(HttpError::InvalidUrl)
+    );
+}
+
+#[test]
+fn typed_http_digest_iterator_preserves_original_framing_and_bounds() {
+    use latent_capabilities::broker::CapabilityRequestDigest;
+    use latent_core::PlatformErrorCode;
+    use std::cell::Cell;
+
+    // Fixed vectors were independently generated from the original wire
+    // framing: domain separator, then u64-LE length followed by each field.
+    fn expected(hex: &str) -> String {
+        let bytes: Vec<u8> = (0..hex.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+            .collect();
+        format!("CapabilityRequestDigest({bytes:?})")
+    }
+    for (parts, hash) in [
+        (
+            &[][..],
+            "6c14e5a0452fef4e03a99f601905c6ee467e5c7c5d3225778ae7673b93b63d0d",
+        ),
+        (
+            &[&b"ab"[..], &b"c"[..]][..],
+            "356e4ef73f78e342317b0b5c454dcfeb0cfba96a6ee7bb27ca55ae006ea011e2",
+        ),
+        (
+            &[&b"a"[..], &b"bc"[..]][..],
+            "8c481c85f1f41a4c4455b2f4fc5528c9938efe6e78a35f9de949db2b514d5ada",
+        ),
+    ] {
+        assert_eq!(
+            format!("{:?}", CapabilityRequestDigest::from_parts(parts).unwrap()),
+            expected(hash)
+        );
+        assert_eq!(
+            format!(
+                "{:?}",
+                CapabilityRequestDigest::from_parts_iter(parts.iter().copied()).unwrap()
+            ),
+            expected(hash)
+        );
+    }
+    let destination =
+        crate::destination::parse("http://localhost:18080/allowed", &config(18080)).unwrap();
+    let mut input = request(18080, HttpMethod::Get);
+    assert_eq!(
+        format!(
+            "{:?}",
+            crate::execute::request::digest(&input, &destination).unwrap()
+        ),
+        expected("5bb5831fda556d967368b1bddbfd9471efa54f5a5b6f0da02f3b4a955ae2c6b9")
+    );
+    input.method = HttpMethod::Post;
+    input.body = Some(vec![0, 1, 255, 42]);
+    input.body_media_type = Some("application/octet-stream".into());
+    input.idempotency_key = Some("key".into());
+    input.headers = (0..64)
+        .map(|i| HttpHeader {
+            name: format!("x-{i}"),
+            value: format!("v-{i}"),
+        })
+        .collect();
+    assert_eq!(
+        format!(
+            "{:?}",
+            crate::execute::request::digest(&input, &destination).unwrap()
+        ),
+        expected("fd152ba1325ba3b845458a7680f02d204cfad88efc23d0ab4081793fcf7ab7a5")
+    );
+
+    let empty = [&[][..]; 256];
+    assert!(CapabilityRequestDigest::from_parts(&empty).is_ok());
+    assert!(CapabilityRequestDigest::from_parts_iter(empty).is_ok());
+    let seen = Cell::new(0);
+    let error = CapabilityRequestDigest::from_parts_iter(
+        std::iter::repeat(&[][..]).inspect(|_| seen.set(seen.get() + 1)),
+    )
+    .unwrap_err();
+    assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+    assert_eq!(seen.get(), 257);
+    let payload = vec![b'x'; 1024 * 1024 + 1];
+    assert!(CapabilityRequestDigest::from_parts_iter([&payload[..1024 * 1024]]).is_ok());
+    let error = CapabilityRequestDigest::from_parts_iter([payload.as_slice()]).unwrap_err();
+    assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+    assert_eq!(
+        CapabilityRequestDigest::from_parts(&[payload.as_slice()])
+            .unwrap_err()
+            .code,
+        error.code
+    );
+}

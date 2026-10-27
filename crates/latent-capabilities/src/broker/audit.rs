@@ -29,10 +29,22 @@ impl CapabilityRequestDigest {
         if parts.len() > 256 {
             return Err(super::capacity());
         }
+        Self::from_parts_iter(parts.iter().copied())
+    }
+    /// Hash borrowed parts without materializing a temporary collection.
+    /// The original length framing, part count, and total-byte bounds apply.
+    pub fn from_parts_iter<'a>(
+        parts: impl IntoIterator<Item = &'a [u8]>,
+    ) -> Result<Self, PlatformError> {
+        let mut count = 0usize;
         let mut total = 0usize;
         let mut digest = Sha256::new();
         digest.update(b"lsf-capability-typed-request-v1\0");
         for part in parts {
+            if count == 256 {
+                return Err(super::capacity());
+            }
+            count += 1;
             total = total.checked_add(part.len()).ok_or_else(super::capacity)?;
             if total > 1024 * 1024 {
                 return Err(super::capacity());

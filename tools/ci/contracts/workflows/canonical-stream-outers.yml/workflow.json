@@ -5,16 +5,17 @@
       "cancel-in-progress": false,
       "group": "canonical-stream-outers-${{ github.ref }}"
     },
-    "name": "Focused original HTTP-input ingress and canonical string view",
+    "name": "Focused borrowed HTTP policy and digest",
     "on": {
       "push": {
         "branches": [
-          "feat/sdk-736-http-input-native-20261027"
+          "feat/sdk-736-http-metadata-native-20261027"
         ],
         "paths": [
           ".github/workflows/canonical-stream-outers.yml",
           "crates/latent-capabilities/**",
           "crates/latent-http/**",
+          "crates/latent-policy/**",
           "crates/latent-blobs/**",
           "crates/latent-streams/**",
           "crates/latent-wasmtime/**",
@@ -36,7 +37,7 @@
   "requiredJobs": [
     "stream-outers"
   ],
-  "reviewReason": "Reviewed #736 buffered HTTP ingress and public same-Store canonical string view. Ten exact ordinary cases: six native original-session ingress controls, one unchanged preallocated API reference, two public canonical API encoding/Store controls and one unchanged installed managed HTTP case. Two locked test targets,24commands48raw; all original job/process/grant/log/source caps and old owner modes remain unchanged. No vendor-private unit, Blob, language or cache programme replay; parser/HeaderMap/redirect/TLS/control/transitive allocations remain explicit unpaid scopes. Source-only pending the bounded owning programme.",
+  "reviewReason": "Reviewed #736 source-owned HTTP policy/digest allocation removal. Borrow existing ResourceTarget grammar without JSON Value/serialized Vec/owned ResourceRequest and stream the original bounded length-framed digest without a temporary parts Vec. Exact original predicates, sealed policy/admission, redirect one-slot ownership, all old modes, 275/cache14 and grants remain. Four exact ordinary controls (two NEW semantic/golden/bounds controls plus existing redirect/managed component); two locked targets,12commands24raw, original job/process/cleanup/log/source caps. Semantic controls have no ActivationBudget claim. Opaque Url/IDNA/IP formatter/origin/redirect/wire/control/TLS/transitive costs remain explicit gaps. Old ten-case CLI retains selectors/oracles with necessary exact registry84-to86 refresh; no old programme replay.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }
