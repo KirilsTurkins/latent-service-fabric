@@ -1,0 +1,127 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Ordinary Console RNG and Task qualification",
+    "needs": "toolchain",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-dotnet",
+        "with": {
+          "dotnet-version": "10.0.100"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "components": "rustfmt",
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Download this run's exact normal public products",
+        "uses": "KirilsTurkins/lsf-download-artifact",
+        "with": {
+          "name": "dotnet-published-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-capsule-authoring"
+        }
+      },
+      {
+        "name": "Install the existing qualification Python requirements",
+        "run": "python3 -m pip install --requirement tools/requirements.lock"
+      },
+      {
+        "name": "Install captured NativeAOT namespace and loader inputs",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Install the pinned native compiler and closed runtime",
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-authoring-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-authoring-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Authenticate normal products before restoring exact executable modes",
+        "run": "python3 - <<'PY'\nimport os\nfrom pathlib import Path\nfrom tools.qualify_dotnet_standard_console import inherited\nroot = Path(os.environ['RUNNER_TEMP']) / 'dotnet-capsule-authoring'\nbinaries, companions, before = inherited(root)\nnames = ('latent', 'latentd', 'package', 'capsule_contracts', 'capsule_authoring')\nif set(binaries) != set(names):\n    raise RuntimeError('dotnet-late-normal-native-products')\nfor name in names:\n    binaries[name].chmod(0o700)\nif inherited(root)[2] != before:\n    raise RuntimeError('dotnet-late-normal-native-changed')\nPY\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Qualify captured ordinary Console and strict bounded logging",
+        "run": "python3 -m unittest tools.tests.test_dotnet_standard_console\npython3 tools/qualify_dotnet_standard_console.py --output \"$RUNNER_TEMP/dotnet-standard-console\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --native-qualification \"$RUNNER_TEMP/dotnet-capsule-authoring\"\n"
+      },
+      {
+        "name": "Check native PAL secure entropy behavior and explicit scalar authority",
+        "run": "python3 -m unittest tools.tests.test_dotnet_secure_entropy -v"
+      },
+      {
+        "name": "Validate exact managed RNG derivation and private NativeAOT references",
+        "run": "python3 -m unittest tools.tests.test_dotnet_managed_entropy -v"
+      },
+      {
+        "name": "Qualify captured ordinary RandomNumberGenerator and typed source denial",
+        "run": "python3 tools/qualify_dotnet_standard_entropy.py --output \"$RUNNER_TEMP/dotnet-standard-entropy\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --native-qualification \"$RUNNER_TEMP/dotnet-capsule-authoring\""
+      },
+      {
+        "name": "Check ordinary managed task authority and retirement gates",
+        "run": "python3 -m unittest tools.tests.test_dotnet_task_runtime tools.tests.test_dotnet_task_wait -v"
+      },
+      {
+        "name": "Qualify captured default Task and ThreadPool progress without HTTP",
+        "run": "python3 tools/qualify_dotnet_task_runtime.py --output \"$RUNNER_TEMP/dotnet-task-runtime\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --native-qualification \"$RUNNER_TEMP/dotnet-capsule-authoring\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain ordinary Console RNG and Task observations including failures",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "dotnet-ordinary-runtime-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-task-runtime/qualified.json\n${{ runner.temp }}/dotnet-task-runtime/FAILED.json\n${{ runner.temp }}/dotnet-task-runtime/logs/**\n${{ runner.temp }}/dotnet-task-runtime/outside/evidence/**\n${{ runner.temp }}/dotnet-task-runtime/build/*.json\n${{ runner.temp }}/dotnet-task-runtime/build/logs/**\n${{ runner.temp }}/dotnet-task-runtime/build/component.wasm\n${{ runner.temp }}/dotnet-task-runtime/node/workflow.json\n${{ runner.temp }}/dotnet-task-runtime/node/public-workflow.json\n${{ runner.temp }}/dotnet-task-runtime/node/FAILED.json\n${{ runner.temp }}/dotnet-standard-entropy/qualified.json\n${{ runner.temp }}/dotnet-standard-entropy/FAILED.json\n${{ runner.temp }}/dotnet-standard-entropy/logs/**\n${{ runner.temp }}/dotnet-standard-entropy/outside/evidence/**\n${{ runner.temp }}/dotnet-standard-entropy/build/BUILD-COMPLETE.json\n${{ runner.temp }}/dotnet-standard-entropy/build/BUILD-FAILED.json\n${{ runner.temp }}/dotnet-standard-entropy/build/build-observation.json\n${{ runner.temp }}/dotnet-standard-entropy/build/source-inputs.json\n${{ runner.temp }}/dotnet-standard-entropy/build/recipe-inputs.json\n${{ runner.temp }}/dotnet-standard-entropy/build/compiler-inputs.json\n${{ runner.temp }}/dotnet-standard-entropy/build/nuget-build-inputs.json\n${{ runner.temp }}/dotnet-standard-entropy/build/noncrypto-entropy*.json\n${{ runner.temp }}/dotnet-standard-entropy/build/managed-entropy*.json\n${{ runner.temp }}/dotnet-standard-entropy/build/noncrypto-entropy.o\n${{ runner.temp }}/dotnet-standard-entropy/build/compatibility*.json\n${{ runner.temp }}/dotnet-standard-entropy/build/component.wasm\n${{ runner.temp }}/dotnet-standard-entropy/build/logs/**\n${{ runner.temp }}/dotnet-standard-entropy/node/public-workflow.json\n${{ runner.temp }}/dotnet-standard-entropy/node/controls/dotnet-entropy-*.json\n${{ runner.temp }}/dotnet-standard-console/qualified.json\n${{ runner.temp }}/dotnet-standard-console/FAILED.json\n${{ runner.temp }}/dotnet-standard-console/logs/**\n${{ runner.temp }}/dotnet-standard-console/outside/evidence/**\n${{ runner.temp }}/dotnet-standard-console/build/BUILD-COMPLETE.json\n${{ runner.temp }}/dotnet-standard-console/build/BUILD-FAILED.json\n${{ runner.temp }}/dotnet-standard-console/build/build-observation.json\n${{ runner.temp }}/dotnet-standard-console/build/source-inputs.json\n${{ runner.temp }}/dotnet-standard-console/build/recipe-inputs.json\n${{ runner.temp }}/dotnet-standard-console/build/compiler-inputs.json\n${{ runner.temp }}/dotnet-standard-console/build/nuget-build-inputs.json\n${{ runner.temp }}/dotnet-standard-console/build/compatibility*.json\n${{ runner.temp }}/dotnet-standard-console/build/component.wasm\n${{ runner.temp }}/dotnet-standard-console/build/logs/**\n${{ runner.temp }}/dotnet-standard-console/node/public-workflow.json\n${{ runner.temp }}/dotnet-standard-console/node/controls/dotnet-console-*.json\n${{ runner.temp }}/dotnet-authoring-tools/logs/*.stdout.txt\n${{ runner.temp }}/dotnet-authoring-tools/logs/*.stderr.txt\n${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/dotnet-authoring-tools/runtime-inputs.json\n${{ runner.temp }}/dotnet-authoring-tools/wasi-sdk.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "ordinary-runtime",
+  "kind": "job",
+  "reviewReason": "Reviewed normal .NET late-programme relocation: preserve original commands and grants, authenticate the same prepared bundle before exact executable-mode restoration, and retain required coverage in a 25-minute sibling without increasing original job limits.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-guest.yml"
+}
