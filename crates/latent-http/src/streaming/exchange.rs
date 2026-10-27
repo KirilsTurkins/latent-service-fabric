@@ -18,6 +18,8 @@ use latent_capabilities::broker::{
 use latent_core::BudgetDimension;
 use latent_policy::capability::ResourceTarget;
 use std::{
+    future::Future,
+    pin::Pin,
     sync::{atomic::Ordering, Arc},
     task::Poll,
 };
@@ -190,7 +192,7 @@ impl Exchange {
                 &mut connection.driver,
                 std::future::poll_fn(|cx| {
                     if let Some(future) = reply {
-                        if let Poll::Ready(value) = future.as_mut().poll(cx) {
+                        if let Poll::Ready(value) = Pin::new(future).poll(cx) {
                             *reply = None;
                             return Poll::Ready(value.map(|value| {
                                 *response = Some(value);
