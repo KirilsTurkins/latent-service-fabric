@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass
+import binascii
 import hashlib
 import io
 import json
@@ -12,6 +13,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import stat
+import struct
 import tarfile
 import tempfile
 import tomllib
@@ -144,8 +146,12 @@ def _selected(path: str) -> bool:
 
 
 def extract_archive(archive: bytes, destination: Path, limits: SnapshotLimits,
-                    cancellation=None) -> bytes:
+                    cancellation=None, *, archive_format="tar", expected_files=None, revision=None) -> bytes:
     """Read a bounded tar without extractall, links, special files or implicit paths."""
+    if archive_format == "stored-zip":
+        return _extract_stored_zip(archive, destination, limits, cancellation, expected_files, revision)
+    if archive_format != "tar":
+        raise SnapshotError("source archive format is unsupported")
     limits.validate()
     if len(archive) > limits.max_archive_bytes:
         raise SnapshotError("source archive byte limit exceeded")
@@ -228,6 +234,190 @@ def extract_archive(archive: bytes, destination: Path, limits: SnapshotLimits,
     return canonical(sorted(inventory, key=lambda row: row["path"]))
 
 
+def _zip_require(value, reason):
+    if not value:
+        raise SnapshotError("stored source ZIP " + reason)
+
+
+def _stored_zip_expectations(expected_files, limits):
+    _zip_require(type(expected_files) is dict and 1 <= len(expected_files) <= limits.max_entries,
+                 "expected file inventory is invalid")
+    expected_dirs = set()
+    spellings = {}
+    folded_files = set()
+    for name, mode in expected_files.items():
+        _zip_require(type(name) is str and portable_path(name) == name and _selected(name),
+                     "expected path is invalid")
+        _zip_require(type(mode) is str and mode in ("100644", "100755"), "expected Git mode is invalid")
+        _zip_require(name.lower() not in folded_files, "expected paths collide")
+        folded_files.add(name.lower())
+        parts = name.split("/")
+        for length in range(1, len(parts) + 1):
+            prefix = "/".join(parts[:length])
+            _zip_require(spellings.setdefault(prefix.lower(), prefix) == prefix,
+                         "expected path prefixes collide")
+            if length < len(parts):
+                expected_dirs.add(prefix)
+                _zip_require(len(expected_dirs) <= limits.max_directories, "directory limit exceeded")
+    _zip_require(not any(name.lower() in folded_files for name in expected_dirs),
+                 "expected file and directory prefixes collide")
+    return expected_dirs
+
+
+def _stored_zip_preflight(archive, limits, expected_files, revision, cancellation):
+    """Closed Git/STORED subset; no filesystem effects or ZipFile allocation."""
+    _zip_require(type(archive) is bytes, "must be bytes")
+    _zip_require(type(revision) is str and REVISION.fullmatch(revision), "revision is invalid")
+    _zip_require(len(archive) <= limits.max_archive_bytes, "archive byte limit exceeded")
+    expected_dirs = _stored_zip_expectations(expected_files, limits)
+
+    # The only EOCD comment is the exact requested Git revision. Its known
+    # length locates EOCD without an attacker-controlled signature search.
+    comment = revision.encode("ascii")
+    eocd = len(archive) - 22 - len(comment)
+    _zip_require(eocd >= 0, "EOCD is truncated")
+    end = struct.unpack_from("<4s4H2IH", archive, eocd)
+    signature, disk, central_disk, disk_count, count, central_size, central, comment_size = end
+    _zip_require(signature == b"PK\x05\x06" and comment_size == len(comment) and
+                 archive[eocd + 22:] == comment, "EOCD or commit comment is invalid")
+    _zip_require(disk == central_disk == 0 and disk_count == count and
+                 0 < count <= limits.max_entries + limits.max_directories and count != 0xffff,
+                 "multipart or excessive central directory")
+    _zip_require(central != 0xffffffff and central_size != 0xffffffff and
+                 central + central_size == eocd and central_size >= 46 * count,
+                 "central directory extent is invalid")
+
+    # Parse exactly the bounded central records before allocating any ZIP
+    # metadata collection. No ZIP64, decryption, decompressor or format fallback.
+    position = central
+    next_local = 0
+    seen = set()
+    actual_files = set()
+    actual_dirs = set()
+    rows = []
+    total = 0
+    commit_timestamp = None
+    for _ in range(count):
+        if cancellation is not None:
+            cancellation.check()
+        _zip_require(position + 46 <= eocd, "central header is truncated")
+        fields = struct.unpack_from("<4s6H3I5H2I", archive, position)
+        (signature, creator, version, flags, method, time, date, crc, stored, size,
+         name_size, extra_size, entry_comment, start_disk, internal, external, local) = fields
+        _zip_require(signature == b"PK\x01\x02" and version == 10 and flags in (0, 8) and
+                     method == 0 and start_disk == 0 and internal in (0, 1),
+                     "unsupported central header")
+        _zip_require(stored == size and size != 0xffffffff and local != 0xffffffff and
+                     0 < name_size <= 512 and entry_comment == 0 and extra_size == 9,
+                     "unsupported sizes, compression or metadata")
+        stop = position + 46 + name_size + extra_size
+        _zip_require(stop <= eocd, "central variable fields are truncated")
+        name_raw = archive[position + 46:position + 46 + name_size]
+        try:
+            encoded_name = name_raw.decode("ascii", "strict")
+        except UnicodeError as error:
+            raise SnapshotError("stored source ZIP path encoding is invalid") from error
+        extra = archive[position + 46 + name_size:stop]
+        _zip_require(extra[:5] == b"UT\x05\x00\x01", "unsupported extra fields")
+        timestamp = extra[5:]
+        if commit_timestamp is None:
+            commit_timestamp = timestamp
+        _zip_require(timestamp == commit_timestamp, "inconsistent commit timestamp metadata")
+        directory = encoded_name.endswith("/")
+        name = encoded_name[:-1] if directory else encoded_name
+        _zip_require(portable_path(name) == name and
+                     encoded_name == name + ("/" if directory else ""), "path is noncanonical")
+        _zip_require(name.lower() not in seen, "duplicate or colliding path")
+        seen.add(name.lower())
+        if directory:
+            _zip_require(name in expected_dirs and flags == 0 and size == stored == crc == 0,
+                         "unexpected directory or directory payload")
+            actual_dirs.add(name)
+            _zip_require(len(actual_dirs) <= limits.max_directories, "directory limit exceeded")
+            mode = None
+        else:
+            _zip_require(name in expected_files, "unexpected source file")
+            actual_files.add(name)
+            _zip_require(len(actual_files) <= limits.max_entries and size <= limits.max_file_bytes,
+                         "file count or byte limit exceeded")
+            total += size
+            _zip_require(total <= limits.max_total_bytes, "source total byte limit exceeded")
+            mode = 0o755 if expected_files[name] == "100755" else 0o644
+
+        creator_system = creator >> 8
+        unix_mode, dos_mode = external >> 16, external & 0xffff
+        if creator_system == 0:
+            _zip_require(unix_mode == 0 and dos_mode == (0x10 if directory else 0),
+                         "unsupported DOS mode")
+        elif creator_system == 3:
+            kind = stat.S_IFDIR if directory else stat.S_IFREG
+            _zip_require(stat.S_IFMT(unix_mode) == kind and not unix_mode & ~(kind | 0o777) and
+                         dos_mode in ((0, 0x10) if directory else (0,)), "special or unsafe Unix mode")
+            if not directory:
+                _zip_require((0o755 if unix_mode & 0o111 else 0o644) == mode,
+                             "Unix mode differs from Git mode")
+        else:
+            raise SnapshotError("stored source ZIP creator mode is unsupported")
+
+        # Git's central and physical entry order agree. Exact contiguous local
+        # coverage rejects aliases, overlaps, hidden records and prefix/gap data.
+        _zip_require(local == next_local and local + 30 <= central, "local ranges alias or overlap")
+        header = struct.unpack_from("<4s5H3I2H", archive, local)
+        (local_sig, local_version, local_flags, local_method, local_time, local_date,
+         local_crc, local_stored, local_size, local_name, local_extra) = header
+        _zip_require(local_sig == b"PK\x03\x04" and
+                     (local_version, local_flags, local_method, local_time, local_date) ==
+                     (version, flags, method, time, date) and
+                     local_name == name_size and local_extra == extra_size and
+                     local_stored == stored and local_size == size and
+                     local_crc == (0 if flags == 8 else crc), "local header differs from central header")
+        payload = local + 30 + local_name + local_extra
+        payload_end = payload + size
+        _zip_require(payload_end <= central and archive[local + 30:local + 30 + local_name] == name_raw and
+                     archive[local + 30 + local_name:payload] == extra, "local name or extent differs")
+        next_local = payload_end
+        if flags == 8:
+            _zip_require(payload_end + 16 <= central, "data descriptor is truncated")
+            descriptor = struct.unpack_from("<4s3I", archive, payload_end)
+            _zip_require(descriptor == (b"PK\x07\x08", crc, stored, size), "data descriptor differs")
+            next_local += 16
+        _zip_require(binascii.crc32(memoryview(archive)[payload:payload_end]) & 0xffffffff == crc,
+                     "payload CRC differs")
+        if not directory:
+            rows.append((name, payload, size, mode, crc))
+        position = stop
+    _zip_require(position == eocd and next_local == central, "unaccounted central or local bytes")
+    _zip_require(actual_files == set(expected_files) and actual_dirs == expected_dirs,
+                 "source inventory differs from Git")
+    return rows
+
+
+def _extract_stored_zip(archive, destination, limits, cancellation, expected_files, revision):
+    limits.validate()
+    rows = _stored_zip_preflight(archive, limits, expected_files, revision, cancellation)
+    # All counts, names, modes, CRCs and extents are valid before the first
+    # destination effect. Never use extractall or execute any source payload.
+    destination.mkdir()
+    inventory = []
+    for name, offset, size, mode, crc in rows:
+        if cancellation is not None:
+            cancellation.check()
+        target = destination.joinpath(*name.split("/"))
+        owned_child(target, destination)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        data = archive[offset:offset + size]
+        with target.open("xb") as output:
+            _zip_require(output.write(data) == size, "source write was incomplete")
+        with target.open("rb") as source:
+            actual = source.read(size + 1)
+        _zip_require(actual == data and len(actual) == size and
+                     binascii.crc32(actual) & 0xffffffff == crc, "written source differs")
+        if os.name != "nt":
+            target.chmod(mode)
+        inventory.append({"path": name, "digest": digest(actual), "size": size, "mode": mode})
+    return canonical(sorted(inventory, key=lambda row: row["path"]))
+
+
 def validate_workspace(snapshot: Path) -> None:
     with (snapshot / "Cargo.toml").open("rb") as source:
         metadata = tomllib.load(source)
@@ -272,6 +462,7 @@ def _capture_source(repository: Path, revision: str, target_root: Path,
         listing = run_bounded(["git", "ls-tree", "-r", "-z", "--full-tree", revision,
                                "--", *SOURCE_ALLOWLIST], max_output_bytes=2 * 1024 * 1024, **common)
         selected_roots: set[str] = set()
+        expected_files: dict[str, str] = {}
         entries = listing.stdout.split(b"\0")
         if len(entries) - 1 > limits.max_entries:
             raise SnapshotError("source tree entry limit exceeded")
@@ -283,13 +474,18 @@ def _capture_source(repository: Path, revision: str, target_root: Path,
             if mode not in (b"100644", b"100755") or kind != b"blob":
                 raise SnapshotError("captured source contains a link or submodule")
             path = portable_path(raw_path.decode("ascii"))
+            if path in expected_files:
+                raise SnapshotError("duplicate Git source path")
+            expected_files[path] = mode.decode("ascii")
             selected_roots.update(root for root in SOURCE_ALLOWLIST if path == root or path.startswith(root + "/"))
         if not selected_roots:
             raise SnapshotError("captured source selection is empty")
-        result = run_bounded(["git", "archive", "--format=tar", revision, "--", *sorted(selected_roots)],
+        _stored_zip_expectations(expected_files, limits)
+        result = run_bounded(["git", "archive", "--format=zip", "-0", revision, "--", *sorted(selected_roots)],
                              max_output_bytes=limits.max_archive_bytes, **common)
         root = temporary / "source"
-        inventory = extract_archive(result.stdout, root, limits, cancellation)
+        inventory = extract_archive(result.stdout, root, limits, cancellation,
+            archive_format="stored-zip", expected_files=expected_files, revision=revision)
         cancellation.check()
         validate_workspace(root)
         yield SourceSnapshot(root, revision, inventory)
