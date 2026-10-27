@@ -10,6 +10,8 @@ use retained::Retained;
 
 #[derive(Default)]
 pub(crate) struct HostCapabilities {
+    #[cfg(feature = "development-test-host")]
+    pub(crate) development_host_admission_scope: Option<std::sync::Arc<crate::values::LiftMemory>>,
     // Destroy typed-result reservations before closing/destroying the session.
     // They remain charged through canonical lowering and component post-return.
     pub(super) blobs: super::blob::table::Table,
@@ -31,7 +33,15 @@ impl HostCapabilities {
                 .begin_host_clock(clock, wait)
                 .await
                 .map(Some)
-                .map_err(host_error),
+                .map_err(|error| {
+                    #[cfg(feature = "development-test-host")]
+                    self.observe_host_admission_refusal(
+                        session,
+                        crate::development_trap_observer::DevelopmentHostAdmissionEdge::ClockAdmission,
+                        clock.capability(), clock.operation(), error.code,
+                    );
+                    host_error(error)
+                }),
             _ => self.scalar(
                 clock.capability(),
                 clock.operation(),
@@ -46,6 +56,8 @@ impl HostCapabilities {
         budget: &latent_core::ActivationBudget,
     ) -> Self {
         Self {
+            #[cfg(feature = "development-test-host")]
+            development_host_admission_scope: None,
             streams: super::streaming_http::table::Table::default(),
             network: super::networking::table::Table::default(),
             blobs: super::blob::table::Table::default(),
@@ -96,13 +108,45 @@ impl HostCapabilities {
         let Some(session) = &self.session else {
             return Ok(None);
         };
-        let handle = session.bind(capability, operation, resource)?;
+        let handle = session
+            .bind(capability, operation, resource)
+            .map_err(|error| {
+                #[cfg(feature = "development-test-host")]
+                self.observe_host_admission_refusal(
+                    session,
+                    crate::development_trap_observer::DevelopmentHostAdmissionEdge::Bind,
+                    capability,
+                    operation,
+                    error.code,
+                );
+                error
+            })?;
         let call = session.dispatch(handle, operation, resource, input, cost, |call| call);
         // Closing the lookup slot never refunds an accepted call's row/buffer.
         let closed = session.close_handle(handle);
         let call = call?;
         closed?;
         Ok(Some(call))
+    }
+    #[cfg(feature = "development-test-host")]
+    fn observe_host_admission_refusal(
+        &self,
+        session: &CapabilitySession,
+        edge: crate::development_trap_observer::DevelopmentHostAdmissionEdge,
+        capability: &str,
+        operation: &str,
+        code: latent_core::PlatformErrorCode,
+    ) {
+        if let Some(scope) = &self.development_host_admission_scope {
+            scope.host_admission_refusal(
+                session,
+                edge,
+                crate::development_trap_observer::DevelopmentHostOperation::from_import(
+                    capability, operation,
+                ),
+                code,
+            );
+        }
     }
     pub(super) fn local_tenant(&self) -> Result<latent_core::TenantId, PlatformError> {
         self.session

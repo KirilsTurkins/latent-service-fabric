@@ -141,6 +141,26 @@ impl SharedRuntime {
     ) {
         self.development_join_cause.reject_task_return(slot, reason);
     }
+    #[cfg(feature = "development-test-host")]
+    pub(crate) fn capture_development_host_admission_refusal(
+        &self,
+        slot: usize,
+        edge: crate::development_trap_observer::DevelopmentHostAdmissionEdge,
+        operation: crate::development_trap_observer::DevelopmentHostOperation,
+        code: PlatformErrorCode,
+        session_closed: bool,
+    ) {
+        if self
+            .development_join_cause
+            .first_host_admission_refusal(slot)
+        {
+            use std::io::Write;
+            // Closed borrowed scalars only; no JSON graph, error or message is retained.
+            let _ = writeln!(&mut std::io::stderr().lock(),
+                "DOTNET_JOIN_HOST_ADMISSION {{\"slot\":{},\"edge\":\"{}\",\"operation\":\"{}\",\"code\":\"{}\",\"sessionClosed\":{}}}",
+                slot, edge.wire_name(), operation.wire_name(), code.wire_code(), session_closed);
+        }
+    }
     pub(crate) fn native_aot_snapshot(
         &self,
     ) -> Result<Option<crate::NativeAotSnapshot>, PlatformError> {
@@ -686,6 +706,13 @@ impl WasmtimeBackend {
             ownership.transaction,
             runtime.surface.hostcall_fuel,
         )?);
+        #[cfg(feature = "development-test-host")]
+        {
+            store
+                .data_mut()
+                .capabilities
+                .development_host_admission_scope = output.development_host_admission_scope();
+        }
         *native_stack_observer = store
             .data()
             .runtime

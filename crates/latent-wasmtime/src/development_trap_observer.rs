@@ -339,6 +339,82 @@ pub enum DevelopmentJoinRejectReason {
     SessionClosed,
     NativeDuplicateReturn,
     NativeInvalidReturn,
+    HostAdmissionRefusal,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum DevelopmentHostAdmissionEdge {
+    Bind,
+    ClockAdmission,
+}
+impl DevelopmentHostAdmissionEdge {
+    pub(crate) fn wire_name(self) -> &'static str {
+        match self {
+            Self::Bind => "bind",
+            Self::ClockAdmission => "clock-admission",
+        }
+    }
+}
+#[derive(Clone, Copy)]
+pub(crate) enum DevelopmentHostOperation {
+    Register,
+    Park,
+    Wake,
+    Settle,
+    Close,
+    Observe,
+    WaitFor,
+    WaitUntil,
+    TimerStart,
+    TimerNext,
+    TimerStop,
+    MonotonicNow,
+    WallNow,
+    RandomU64,
+    Other,
+}
+impl DevelopmentHostOperation {
+    pub(crate) fn from_import(capability: &str, operation: &str) -> Self {
+        match (capability, operation) {
+            ("latent:runtime/activation@0.1.0", operation) => match operation {
+                "register" => Self::Register,
+                "park" => Self::Park,
+                "wake" => Self::Wake,
+                "settle" => Self::Settle,
+                "close" => Self::Close,
+                "observe" => Self::Observe,
+                "wait-for" => Self::WaitFor,
+                "wait-until" => Self::WaitUntil,
+                "timer-start" => Self::TimerStart,
+                "timer-next" => Self::TimerNext,
+                "timer-stop" => Self::TimerStop,
+                _ => Self::Other,
+            },
+            ("latent:clock/monotonic@0.1.0", "now-nanos") => Self::MonotonicNow,
+            ("latent:clock/wall@0.1.0", "now-unix-millis") => Self::WallNow,
+            ("latent:random/random@0.1.0", "u64-value") => Self::RandomU64,
+            _ => Self::Other,
+        }
+    }
+    pub(crate) fn wire_name(self) -> &'static str {
+        match self {
+            Self::Register => "activation-register",
+            Self::Park => "activation-park",
+            Self::Wake => "activation-wake",
+            Self::Settle => "activation-settle",
+            Self::Close => "activation-close",
+            Self::Observe => "activation-observe",
+            Self::WaitFor => "activation-wait-for",
+            Self::WaitUntil => "activation-wait-until",
+            Self::TimerStart => "activation-timer-start",
+            Self::TimerNext => "activation-timer-next",
+            Self::TimerStop => "activation-timer-stop",
+            Self::MonotonicNow => "monotonic-now",
+            Self::WallNow => "wall-now",
+            Self::RandomU64 => "random-u64",
+            Self::Other => "other",
+        }
+    }
 }
 
 #[derive(Clone, Copy, Default)]
@@ -351,6 +427,49 @@ struct JoinCauseSlot {
     task_return_enabled: bool,
     task_return: DevelopmentJoinCauseSnapshot,
 }
+
+// Prove the added unit variant changes neither original slot storage nor alignment.
+const _: () = {
+    use std::mem::{align_of, size_of};
+    #[allow(dead_code)]
+    enum OriginalReject {
+        A,
+        B,
+        C,
+        D,
+        E,
+        F,
+        G,
+        H,
+        I,
+        J,
+        K,
+        L,
+        M,
+    }
+    #[allow(dead_code)]
+    struct OriginalSlot {
+        armed_once: bool,
+        enabled: bool,
+        component: [u8; 32],
+        observation: DevelopmentJoinCauseSnapshot,
+        rejection: Option<OriginalReject>,
+        task_return_enabled: bool,
+        task_return: DevelopmentJoinCauseSnapshot,
+    }
+    assert!(size_of::<DevelopmentJoinRejectReason>() == size_of::<OriginalReject>());
+    assert!(align_of::<DevelopmentJoinRejectReason>() == align_of::<OriginalReject>());
+    assert!(
+        size_of::<Option<DevelopmentJoinRejectReason>>() == size_of::<Option<OriginalReject>>()
+    );
+    assert!(
+        align_of::<Option<DevelopmentJoinRejectReason>>() == align_of::<Option<OriginalReject>>()
+    );
+    assert!(size_of::<JoinCauseSlot>() == size_of::<OriginalSlot>());
+    assert!(align_of::<JoinCauseSlot>() == align_of::<OriginalSlot>());
+    assert!(size_of::<Mutex<[JoinCauseSlot; 3]>>() == size_of::<Mutex<[OriginalSlot; 3]>>());
+    assert!(align_of::<Mutex<[JoinCauseSlot; 3]>>() == align_of::<Mutex<[OriginalSlot; 3]>>());
+};
 
 #[derive(Default)]
 pub(crate) struct DevelopmentJoinCauseObserver {
@@ -579,6 +698,26 @@ impl DevelopmentJoinCauseObserver {
         })
     }
 
+    pub(crate) fn first_host_admission_refusal(&self, slot: usize) -> bool {
+        let Ok(mut slots) = self.slots.lock() else {
+            return false;
+        };
+        let Some(selected) = slots.get_mut(slot) else {
+            return false;
+        };
+        if !selected.enabled
+            || !selected.task_return_enabled
+            || selected.observation.claims != 1
+            || selected.observation.invalid
+            || selected.observation.cause.is_some()
+            || selected.rejection.is_some()
+        {
+            return false;
+        }
+        selected.rejection = Some(DevelopmentJoinRejectReason::HostAdmissionRefusal);
+        true
+    }
+
     pub(crate) fn reject_task_return(&self, slot: usize, reason: DevelopmentJoinRejectReason) {
         let Ok(mut slots) = self.slots.lock() else {
             return;
@@ -751,6 +890,32 @@ mod join_cause_tests {
         );
         drop(guard);
         assert!(!early.task_return_enabled(claim));
+
+        let admission = DevelopmentJoinCauseObserver::default();
+        assert!(!admission.first_host_admission_refusal(0));
+        let guard = admission
+            .arm_task_return(ID, DIGEST, CONTRACT, "probe")
+            .unwrap();
+        assert!(!admission.first_host_admission_refusal(1));
+        let claim = admission.claim(ID, Some(DIGEST), CONTRACT, "probe");
+        assert!(admission.first_host_admission_refusal(claim.unwrap()));
+        assert!(!admission.first_host_admission_refusal(claim.unwrap()));
+        assert_eq!(
+            guard.snapshot().unwrap(),
+            DevelopmentJoinCauseSnapshot::default()
+        );
+        admission.capture(claim, false, true, &[Type::U32], &[]);
+        assert!(guard.post_call_snapshot().unwrap().invalid);
+        assert_eq!(
+            guard.rejection().unwrap(),
+            Some(DevelopmentJoinRejectReason::HostAdmissionRefusal)
+        );
+        assert_eq!(
+            guard.snapshot().unwrap(),
+            DevelopmentJoinCauseSnapshot::default()
+        );
+        drop(guard);
+        assert!(!admission.first_host_admission_refusal(claim.unwrap()));
 
         let repeated = DevelopmentJoinCauseObserver::default();
         let guard = repeated

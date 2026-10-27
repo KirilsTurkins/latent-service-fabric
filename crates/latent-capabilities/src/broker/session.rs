@@ -651,6 +651,12 @@ impl CapabilitySession {
     pub fn captures_audit(&self) -> bool {
         self.core.owner.audit.is_some()
     }
+    /// Identity only: neither matching labels nor a closed observer grants authority.
+    #[must_use]
+    pub fn is_observed_by(&self, observer: &CapabilitySessionObserver) -> bool {
+        Shared::ptr_eq(&self.core.stats, &observer.stats)
+            && Weak::ptr_eq(&Arc::downgrade(&self.core.owner), &observer.owner)
+    }
     #[must_use]
     pub fn observer(&self) -> CapabilitySessionObserver {
         CapabilitySessionObserver {

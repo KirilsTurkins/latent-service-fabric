@@ -859,13 +859,13 @@ JOIN_TASK_RETURN_TRANSLATIONS = {
         "path": "crates/latent-wasmtime/src/backend.rs",
         "mode": "100644",
         "producerGitBlob": "53415e204b998a397f0499cb346750cbd0cff6b0",
-        "currentGitBlob": "9240717cf4dbfe86a4cc80eed0196ed4107dca07"
+        "currentGitBlob": "eada5ec00a63fd2390c0065a8c49133a7c83d111"
     },
     "crates/latent-wasmtime/src/development_trap_observer.rs": {
         "path": "crates/latent-wasmtime/src/development_trap_observer.rs",
         "mode": "100644",
         "producerGitBlob": "48ea7fb574727cd58580fb21270b42e64996721a",
-        "currentGitBlob": "02a14f19b8d55d5e76de3df623293b332d78c109"
+        "currentGitBlob": "5d97809ff4e4102cc6b29c8ca60d27cab3c3280b"
     },
     "crates/latent-wasmtime/src/lib.rs": {
         "path": "crates/latent-wasmtime/src/lib.rs",
@@ -877,7 +877,7 @@ JOIN_TASK_RETURN_TRANSLATIONS = {
         "path": "crates/latent-wasmtime/src/values/memory.rs",
         "mode": "100644",
         "producerGitBlob": "17c1a6186a5d114a8188c460b0e13ccfed15778e",
-        "currentGitBlob": "90752a059d8b077f86e9cf918d08a1061f14e944"
+        "currentGitBlob": "4469f84f7ec4a0fec46bf2122905a6edd1d2c453"
     },
     "crates/latent-wasmtime/tests/local_service.rs": {
         "path": "crates/latent-wasmtime/tests/local_service.rs",
@@ -938,6 +938,24 @@ JOIN_TASK_RETURN_TRANSLATIONS = {
         "mode": "100644",
         "producerGitBlob": "d3be3827a28b5e4f47bdda255c9f011329e62f22",
         "currentGitBlob": "6914fc9169fba13e493340936696c32c6560b60a"
+    },
+    "crates/latent-capabilities/src/broker/session.rs": {
+        "path": "crates/latent-capabilities/src/broker/session.rs",
+        "mode": "100644",
+        "producerGitBlob": "b4377314d6214cacbdb9b3c721631a1e1213f397",
+        "currentGitBlob": "7054a5f4e9e7b2930529fb187d8f1a08498d5699"
+    },
+    "crates/latent-wasmtime/src/host/capabilities.rs": {
+        "path": "crates/latent-wasmtime/src/host/capabilities.rs",
+        "mode": "100644",
+        "producerGitBlob": "c6fef438439c7a42cad2aa680a2f4ce30b2075be",
+        "currentGitBlob": "f3c63102986b5696f818cfdd4197c6a82be9f2fb"
+    },
+    "crates/latent-wasmtime/src/values.rs": {
+        "path": "crates/latent-wasmtime/src/values.rs",
+        "mode": "100644",
+        "producerGitBlob": "3181ff92a4d21fb368e4f054dbaa68ce58d62fff",
+        "currentGitBlob": "a327503cae1e7fb8b4aa249cb2bf42c2a01c6f0a"
     }
 }
 
