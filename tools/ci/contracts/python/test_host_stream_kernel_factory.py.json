@@ -1,38 +1,29 @@
-{
-  "cases":["HostStreamKernelFactory.test_actual_quarantine_selects_original_io_owner_without_double_reservation","HostStreamKernelFactory.test_all_five_whole_historical_preimages_and_eight_functions_are_bound","HostStreamKernelFactory.test_backing_uses_one_exact_order_without_general_allocator_fallback","HostStreamKernelFactory.test_context_exists_before_consumer_and_close_retains_backing","HostStreamKernelFactory.test_failed_owner_command_retains_both_bounded_streams_and_original_failure","HostStreamKernelFactory.test_native_ownership_is_original_accepted_session_io_and_fixed_allowance","HostStreamKernelFactory.test_original_io_quiescence_owner_drops_after_all_original_accounting","HostStreamKernelFactory.test_outer_security_and_vfs_precede_protocol_allocator","HostStreamKernelFactory.test_owner_reader_requires_exact_old_five_and_new_four_successes","HostStreamKernelFactory.test_production_and_whole_accounting_gates_remain_unavailable","HostStreamKernelFactory.test_protected_actor_and_fixed_create_only_wire_have_no_release_command","HostStreamKernelFactory.test_registration_and_open_refuse_before_any_backing_allocation","HostStreamKernelFactory.test_unknown_membership_whole_preimages_and_partial_sources_refuse"],
-  "guards":{
-    "HostStreamKernelFactory.test_actual_quarantine_selects_original_io_owner_without_double_reservation":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
-    "HostStreamKernelFactory.test_all_five_whole_historical_preimages_and_eight_functions_are_bound":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
-    "HostStreamKernelFactory.test_backing_uses_one_exact_order_without_general_allocator_fallback":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
-    "HostStreamKernelFactory.test_context_exists_before_consumer_and_close_retains_backing":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
-    "HostStreamKernelFactory.test_failed_owner_command_retains_both_bounded_streams_and_original_failure":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
-    "HostStreamKernelFactory.test_native_ownership_is_original_accepted_session_io_and_fixed_allowance":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
-    "HostStreamKernelFactory.test_original_io_quiescence_owner_drops_after_all_original_accounting":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
-    "HostStreamKernelFactory.test_outer_security_and_vfs_precede_protocol_allocator":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
-    "HostStreamKernelFactory.test_owner_reader_requires_exact_old_five_and_new_four_successes":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
-    "HostStreamKernelFactory.test_production_and_whole_accounting_gates_remain_unavailable":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
-    "HostStreamKernelFactory.test_protected_actor_and_fixed_create_only_wire_have_no_release_command":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
-    "HostStreamKernelFactory.test_registration_and_open_refuse_before_any_backing_allocation":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
-    "HostStreamKernelFactory.test_unknown_membership_whole_preimages_and_partial_sources_refuse":
-      "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_host_stream_kernel_factory.py",
-  "reviewReason":"Reviewed source-only prepaid backing and exact original IoLease retention. One bounded owner-only Linux job executes all five unchanged plus four new broker protocol cases and compiles latent-streams all-features. No SDK/engine/host/kernel build or provider promotion; mandatory nine-case terminal identity, original deadlines/quotas and preserved failure output. Thirteen source/reader guards, eight authenticated partial outer functions/five whole preimages and twenty supplementary C arithmetic/lifetime cases; no real kernel qualification.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6b688054dcd3d3b6ade0ccf3f21d9df32d10eefa911cd2dadff2ebf47ccd4136","class:setup-sha256:ea4f02310bd99a9f10ce61b028b0ccda043be60736d711534917041d35a3e956"],"skipSites":[]}
-  }
-}
+{"cases":["HostStreamKernelFactory.test_actual_quarantine_selects_original_io_owner_without_double_reservation","HostStreamKernelFactory.test_all_five_whole_historical_preimages_and_eight_functions_are_bound","HostStreamKernelFactory.test_backing_uses_one_exact_order_without_general_allocator_fallback","HostStreamKernelFactory.test_context_exists_before_consumer_and_close_retains_backing","HostStreamKernelFactory.test_failed_owner_command_retains_both_bounded_streams_and_original_failure","HostStreamKernelFactory.test_native_ownership_is_original_accepted_session_io_and_fixed_allowance","HostStreamKernelFactory.test_original_io_quiescence_owner_drops_after_all_original_accounting","HostStreamKernelFactory.test_outer_security_and_vfs_precede_protocol_allocator","HostStreamKernelFactory.test_owner_reader_requires_exact_old_five_and_new_four_successes","HostStreamKernelFactory.test_production_and_whole_accounting_gates_remain_unavailable","HostStreamKernelFactory.test_protected_actor_and_fixed_create_only_wire_have_no_release_command","HostStreamKernelFactory.test_registration_and_open_refuse_before_any_backing_allocation","HostStreamKernelFactory.test_unknown_membership_whole_preimages_and_partial_sources_refuse"],"guards":{"HostStreamKernelFactory.test_actual_quarantine_selects_original_io_owner_without_double_reservation":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+,"HostStreamKernelFactory.test_all_five_whole_historical_preimages_and_eight_functions_are_bound":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+,"HostStreamKernelFactory.test_backing_uses_one_exact_order_without_general_allocator_fallback":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+,"HostStreamKernelFactory.test_context_exists_before_consumer_and_close_retains_backing":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+,"HostStreamKernelFactory.test_failed_owner_command_retains_both_bounded_streams_and_original_failure":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+,"HostStreamKernelFactory.test_native_ownership_is_original_accepted_session_io_and_fixed_allowance":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+,"HostStreamKernelFactory.test_original_io_quiescence_owner_drops_after_all_original_accounting":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+,"HostStreamKernelFactory.test_outer_security_and_vfs_precede_protocol_allocator":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+,"HostStreamKernelFactory.test_owner_reader_requires_exact_old_five_and_new_four_successes":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+,"HostStreamKernelFactory.test_production_and_whole_accounting_gates_remain_unavailable":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+,"HostStreamKernelFactory.test_protected_actor_and_fixed_create_only_wire_have_no_release_command":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+,"HostStreamKernelFactory.test_registration_and_open_refuse_before_any_backing_allocation":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+,"HostStreamKernelFactory.test_unknown_membership_whole_preimages_and_partial_sources_refuse":
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_factory.py","reviewReason":"Reviewed source-only prepaid backing and exact original IoLease retention. One bounded owner-only Linux job executes all five unchanged plus four new broker protocol cases and compiles latent-streams all-features. No SDK/engine/host/kernel build or provider promotion; mandatory nine-case terminal identity, original deadlines/quotas and preserved failure output. Thirteen source/reader guards, eight authenticated partial outer functions/five whole preimages and twenty supplementary C arithmetic/lifetime cases; no real kernel qualification.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6b688054dcd3d3b6ade0ccf3f21d9df32d10eefa911cd2dadff2ebf47ccd4136","class:setup-sha256:ea4f02310bd99a9f10ce61b028b0ccda043be60736d711534917041d35a3e956"],"skipSites":[]}}}

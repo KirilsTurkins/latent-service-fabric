@@ -1,66 +1,65 @@
-{
-  "cases":["DeliveredResolverOwner.test_actual_helper_loads_only_recorded_installed_recipe_and_unpacks_exact_bytes","DeliveredResolverOwner.test_altered_recipe_is_rejected_before_loading_or_creating_resolver_state","DeliveredResolverOwner.test_missing_recipe_is_rejected_before_creating_resolver_state","DeliveredResolverOwner.test_source_inventory_loader_preserves_exact_inputs_and_rejects_changed_recipe_before_mutation","DeliveredResolverOwner.test_unrecorded_recipe_is_rejected_even_when_inventory_omits_recipe_root","DeliveredTemplateCaller.test_actual_template_wrapper_selects_its_project_at_main_resolver_call","DeliveredTemplateCaller.test_flat_project_cannot_substitute_for_the_actual_template_wrapper","FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode","MaintainedScenarioBudget.test_missing_malformed_or_ambiguous_original_budget_refuses_before_replacing_inputs","MaintainedScenarioBudget.test_real_delivered_node_budget_survives_all_replacements_without_changing_portable_budget","PostDeployFailureProjection.test_actual_deadline_producer_preserves_numeric_consumption_through_public_failure","PostDeployFailureProjection.test_actual_scenario_producer_yields_only_closed_ordinal_failure_fields","PostDeployFailureProjection.test_consumption_is_revalidated_as_closed_canonical_unsigned_decimal_strings","PostDeployFailureProjection.test_observer_recursion_and_runtime_errors_preserve_actual_original_exception_identity","PostDeployFailureProjection.test_only_first_eight_original_ordinals_and_exact_flags_are_retained","PostDeployFailureProjection.test_private_regex_shaped_strings_nested_fields_and_non_boolean_flags_never_escape","PostDeployFailureProjection.test_success_never_invokes_diagnostic_or_retains_a_failure","TypescriptDependencyWatchFixture.test_cleanup_and_restore_refuse_unknown_roots_without_mutation","TypescriptDependencyWatchFixture.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed","TypescriptDependencyWatchFixture.test_removal_entry_has_no_library_reference_and_keeps_normal_wit","TypescriptDependencyWatchFixture.test_two_real_packages_preserve_primary_api_and_resource_across_update","TypescriptDependencyWatchFixture.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved","TypescriptDependencyWatchFixture.test_watch_delegation_operations_exist_in_maintained_frontend"],
-  "guards":{
-    "DeliveredResolverOwner.test_actual_helper_loads_only_recorded_installed_recipe_and_unpacks_exact_bytes":
-      "0e5d4dfc81b47b7edc69b4ff94754c79dff6df45acc566f5c23e25b499c035c3",
-    "DeliveredResolverOwner.test_altered_recipe_is_rejected_before_loading_or_creating_resolver_state":
-      "26ed7ee2645c95281f5254f7ac57fe36eb5f6dc56934c76ce4e3bf83af633849",
-    "DeliveredResolverOwner.test_missing_recipe_is_rejected_before_creating_resolver_state":
-      "a83236b336449e5fe3f7b61da9168fc9485bc92776f1649196c8e40cd00c7841",
-    "DeliveredResolverOwner.test_source_inventory_loader_preserves_exact_inputs_and_rejects_changed_recipe_before_mutation":
-      "df50482de337bcd2ebd485fb5f11036e77165cae3cae097a70c8124399a911e4",
-    "DeliveredResolverOwner.test_unrecorded_recipe_is_rejected_even_when_inventory_omits_recipe_root":
-      "19c33ec00bee9a66b54977d9fa0cf88ad967c14ed1a983ac45306ac6440e7a54",
-    "DeliveredTemplateCaller.test_actual_template_wrapper_selects_its_project_at_main_resolver_call":
-      "8faace96487a52eed55c5fe30388ff053c79a660f2ebb40871b71f528b5aee42",
-    "DeliveredTemplateCaller.test_flat_project_cannot_substitute_for_the_actual_template_wrapper":
-      "8faace96487a52eed55c5fe30388ff053c79a660f2ebb40871b71f528b5aee42",
-    "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode":
-      "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9",
-    "MaintainedScenarioBudget.test_missing_malformed_or_ambiguous_original_budget_refuses_before_replacing_inputs":
-      "2c0f20ea4aad9bc266ad91db0c1e8d411853c820806742e850805f3a4689d599",
-    "MaintainedScenarioBudget.test_real_delivered_node_budget_survives_all_replacements_without_changing_portable_budget":
-      "2c0f20ea4aad9bc266ad91db0c1e8d411853c820806742e850805f3a4689d599",
-    "PostDeployFailureProjection.test_actual_deadline_producer_preserves_numeric_consumption_through_public_failure":
-      "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10",
-    "PostDeployFailureProjection.test_actual_scenario_producer_yields_only_closed_ordinal_failure_fields":
-      "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10",
-    "PostDeployFailureProjection.test_consumption_is_revalidated_as_closed_canonical_unsigned_decimal_strings":
-      "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10",
-    "PostDeployFailureProjection.test_observer_recursion_and_runtime_errors_preserve_actual_original_exception_identity":
-      "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10",
-    "PostDeployFailureProjection.test_only_first_eight_original_ordinals_and_exact_flags_are_retained":
-      "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10",
-    "PostDeployFailureProjection.test_private_regex_shaped_strings_nested_fields_and_non_boolean_flags_never_escape":
-      "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10",
-    "PostDeployFailureProjection.test_success_never_invokes_diagnostic_or_retains_a_failure":
-      "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10",
-    "TypescriptDependencyWatchFixture.test_cleanup_and_restore_refuse_unknown_roots_without_mutation":
-      "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9",
-    "TypescriptDependencyWatchFixture.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed":
-      "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9",
-    "TypescriptDependencyWatchFixture.test_removal_entry_has_no_library_reference_and_keeps_normal_wit":
-      "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9",
-    "TypescriptDependencyWatchFixture.test_two_real_packages_preserve_primary_api_and_resource_across_update":
-      "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9",
-    "TypescriptDependencyWatchFixture.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved":
-      "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9",
-    "TypescriptDependencyWatchFixture.test_watch_delegation_operations_exist_in_maintained_frontend":
-      "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_typescript_dependency_watch.py",
-  "reviewReason":"Add real delivered template and actual scenario adapter controls proving separate maintained deadlines and invalid-input refusal",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "0e5d4dfc81b47b7edc69b4ff94754c79dff6df45acc566f5c23e25b499c035c3":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"],"skipSites":["skip-control-sha256:9b24deb0d42388133338b0a92b853b31b1583b20a2e5e1153f5898f17a5e1daa","unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"]},
-    "26ed7ee2645c95281f5254f7ac57fe36eb5f6dc56934c76ce4e3bf83af633849":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"],"skipSites":["skip-control-sha256:884a4a4096765a75941d766e77351edd5352d05466e0239aececf679bd39957d","unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"]},
-    "a83236b336449e5fe3f7b61da9168fc9485bc92776f1649196c8e40cd00c7841":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"],"skipSites":["skip-control-sha256:f8d5b16eea3c16bba7b45bce70f99e8915f1ee5650a73075762b7e2857295292","unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"]},
-    "df50482de337bcd2ebd485fb5f11036e77165cae3cae097a70c8124399a911e4":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"],"skipSites":[]},
-    "19c33ec00bee9a66b54977d9fa0cf88ad967c14ed1a983ac45306ac6440e7a54":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"],"skipSites":["skip-control-sha256:115679353732198570b17143f321b58e83b059bfa22a4a52844d74c5aee82666","unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"]},
-    "8faace96487a52eed55c5fe30388ff053c79a660f2ebb40871b71f528b5aee42":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:ac7e87fee9f25af11526dd2f31c8b3fc0e9692f179c07442f2b31a66d7120630"],"skipSites":[]},
-    "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-    "2c0f20ea4aad9bc266ad91db0c1e8d411853c820806742e850805f3a4689d599":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:ce47aa8e6bb2696f3b83e57add2a21472bbb59e00104ae691add267bfd158fbd"],"skipSites":[]},
-    "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:9c0f3f65b1000765c621dd33ce411d53316c2965923adecdb4a7530da0ca79a1"],"skipSites":[]}
-  }
-}
+{"cases":["DeliveredResolverOwner.test_actual_helper_loads_only_recorded_installed_recipe_and_unpacks_exact_bytes","DeliveredResolverOwner.test_altered_recipe_is_rejected_before_loading_or_creating_resolver_state","DeliveredResolverOwner.test_missing_recipe_is_rejected_before_creating_resolver_state","DeliveredResolverOwner.test_source_inventory_loader_preserves_exact_inputs_and_rejects_changed_recipe_before_mutation","DeliveredResolverOwner.test_unrecorded_recipe_is_rejected_even_when_inventory_omits_recipe_root","DeliveredTemplateCaller.test_actual_template_wrapper_selects_its_project_at_main_resolver_call","DeliveredTemplateCaller.test_flat_project_cannot_substitute_for_the_actual_template_wrapper","FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode","MaintainedScenarioBudget.test_missing_malformed_or_ambiguous_original_budget_refuses_before_replacing_inputs","MaintainedScenarioBudget.test_real_delivered_node_budget_survives_all_replacements_without_changing_portable_budget","PostDeployFailureProjection.test_actual_deadline_producer_preserves_numeric_consumption_through_public_failure","PostDeployFailureProjection.test_actual_scenario_producer_yields_only_closed_ordinal_failure_fields","PostDeployFailureProjection.test_consumption_is_revalidated_as_closed_canonical_unsigned_decimal_strings","PostDeployFailureProjection.test_observer_recursion_and_runtime_errors_preserve_actual_original_exception_identity","PostDeployFailureProjection.test_only_first_eight_original_ordinals_and_exact_flags_are_retained","PostDeployFailureProjection.test_private_regex_shaped_strings_nested_fields_and_non_boolean_flags_never_escape","PostDeployFailureProjection.test_success_never_invokes_diagnostic_or_retains_a_failure","TypescriptDependencyWatchFixture.test_cleanup_and_restore_refuse_unknown_roots_without_mutation","TypescriptDependencyWatchFixture.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed","TypescriptDependencyWatchFixture.test_removal_entry_has_no_library_reference_and_keeps_normal_wit","TypescriptDependencyWatchFixture.test_two_real_packages_preserve_primary_api_and_resource_across_update","TypescriptDependencyWatchFixture.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved","TypescriptDependencyWatchFixture.test_watch_delegation_operations_exist_in_maintained_frontend"],"guards":{"DeliveredResolverOwner.test_actual_helper_loads_only_recorded_installed_recipe_and_unpacks_exact_bytes":
+  "0e5d4dfc81b47b7edc69b4ff94754c79dff6df45acc566f5c23e25b499c035c3"
+,"DeliveredResolverOwner.test_altered_recipe_is_rejected_before_loading_or_creating_resolver_state":
+  "26ed7ee2645c95281f5254f7ac57fe36eb5f6dc56934c76ce4e3bf83af633849"
+,"DeliveredResolverOwner.test_missing_recipe_is_rejected_before_creating_resolver_state":
+  "a83236b336449e5fe3f7b61da9168fc9485bc92776f1649196c8e40cd00c7841"
+,"DeliveredResolverOwner.test_source_inventory_loader_preserves_exact_inputs_and_rejects_changed_recipe_before_mutation":
+  "df50482de337bcd2ebd485fb5f11036e77165cae3cae097a70c8124399a911e4"
+,"DeliveredResolverOwner.test_unrecorded_recipe_is_rejected_even_when_inventory_omits_recipe_root":
+  "19c33ec00bee9a66b54977d9fa0cf88ad967c14ed1a983ac45306ac6440e7a54"
+,"DeliveredTemplateCaller.test_actual_template_wrapper_selects_its_project_at_main_resolver_call":
+  "8faace96487a52eed55c5fe30388ff053c79a660f2ebb40871b71f528b5aee42"
+,"DeliveredTemplateCaller.test_flat_project_cannot_substitute_for_the_actual_template_wrapper":
+  "8faace96487a52eed55c5fe30388ff053c79a660f2ebb40871b71f528b5aee42"
+,"FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode":
+  "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9"
+,"MaintainedScenarioBudget.test_missing_malformed_or_ambiguous_original_budget_refuses_before_replacing_inputs":
+  "2c0f20ea4aad9bc266ad91db0c1e8d411853c820806742e850805f3a4689d599"
+,"MaintainedScenarioBudget.test_real_delivered_node_budget_survives_all_replacements_without_changing_portable_budget":
+  "2c0f20ea4aad9bc266ad91db0c1e8d411853c820806742e850805f3a4689d599"
+,"PostDeployFailureProjection.test_actual_deadline_producer_preserves_numeric_consumption_through_public_failure":
+  "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10"
+,"PostDeployFailureProjection.test_actual_scenario_producer_yields_only_closed_ordinal_failure_fields":
+  "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10"
+,"PostDeployFailureProjection.test_consumption_is_revalidated_as_closed_canonical_unsigned_decimal_strings":
+  "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10"
+,"PostDeployFailureProjection.test_observer_recursion_and_runtime_errors_preserve_actual_original_exception_identity":
+  "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10"
+,"PostDeployFailureProjection.test_only_first_eight_original_ordinals_and_exact_flags_are_retained":
+  "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10"
+,"PostDeployFailureProjection.test_private_regex_shaped_strings_nested_fields_and_non_boolean_flags_never_escape":
+  "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10"
+,"PostDeployFailureProjection.test_success_never_invokes_diagnostic_or_retains_a_failure":
+  "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10"
+,"TypescriptDependencyWatchFixture.test_cleanup_and_restore_refuse_unknown_roots_without_mutation":
+  "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9"
+,"TypescriptDependencyWatchFixture.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed":
+  "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9"
+,"TypescriptDependencyWatchFixture.test_removal_entry_has_no_library_reference_and_keeps_normal_wit":
+  "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9"
+,"TypescriptDependencyWatchFixture.test_two_real_packages_preserve_primary_api_and_resource_across_update":
+  "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9"
+,"TypescriptDependencyWatchFixture.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved":
+  "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9"
+,"TypescriptDependencyWatchFixture.test_watch_delegation_operations_exist_in_maintained_frontend":
+  "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9"
+},"kind":"python","module":"tools/tests/test_typescript_dependency_watch.py","reviewReason":"Add real delivered template and actual scenario adapter controls proving separate maintained deadlines and invalid-input refusal","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "0e5d4dfc81b47b7edc69b4ff94754c79dff6df45acc566f5c23e25b499c035c3"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"],"skipSites":["skip-control-sha256:9b24deb0d42388133338b0a92b853b31b1583b20a2e5e1153f5898f17a5e1daa","unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"]},
+  "26ed7ee2645c95281f5254f7ac57fe36eb5f6dc56934c76ce4e3bf83af633849"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"],"skipSites":["skip-control-sha256:884a4a4096765a75941d766e77351edd5352d05466e0239aececf679bd39957d","unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"]},
+  "a83236b336449e5fe3f7b61da9168fc9485bc92776f1649196c8e40cd00c7841"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"],"skipSites":["skip-control-sha256:f8d5b16eea3c16bba7b45bce70f99e8915f1ee5650a73075762b7e2857295292","unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"]},
+  "df50482de337bcd2ebd485fb5f11036e77165cae3cae097a70c8124399a911e4"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"],"skipSites":[]},
+  "19c33ec00bee9a66b54977d9fa0cf88ad967c14ed1a983ac45306ac6440e7a54"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"],"skipSites":["skip-control-sha256:115679353732198570b17143f321b58e83b059bfa22a4a52844d74c5aee82666","unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"]},
+  "8faace96487a52eed55c5fe30388ff053c79a660f2ebb40871b71f528b5aee42"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:ac7e87fee9f25af11526dd2f31c8b3fc0e9692f179c07442f2b31a66d7120630"],"skipSites":[]},
+  "4e5ad0791f3ecabbd56daefc460b99b04f01543b252fbdf070a0390b8514d6c9"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
+  "2c0f20ea4aad9bc266ad91db0c1e8d411853c820806742e850805f3a4689d599"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:ce47aa8e6bb2696f3b83e57add2a21472bbb59e00104ae691add267bfd158fbd"],"skipSites":[]},
+  "49a97199ac93fa52cd9c396c973065bb29dff67c13b67a06d8cd23c30d92dd10"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a","class:setup-sha256:9c0f3f65b1000765c621dd33ce411d53316c2965923adecdb4a7530da0ca79a1"],"skipSites":[]}}}

@@ -130,5 +130,40 @@ class ManagedTaskProgramme(unittest.TestCase):
                     self.assertFalse(result['dotnetTaskRuntime']['cpuPreemptionQualified'])
 
 
+class RootReturnNormalControls(unittest.TestCase):
+    def test_marker_parser_requires_real_close_pending_and_original_bounds(self):
+        from tools.dotnet_root_return import positive_sequence
+        from tools.phase2_operator_process import WorkflowError
+        prefix = b'LSF-GO-NODE-STOP-TIMER-V1|'
+        lines = [b'pending|root-close|1|2|0|0', b'pending|wait-pending|2|2|1|1',
+                 b'drain|root-close|3|1|1|1', b'drain|wait-pending|4|1|1|1']
+        encode = lambda values: b'\n'.join(prefix+x for x in values)+b'\n'
+        self.assertEqual([r['sequence'] for r in positive_sequence(encode(lines))], [1, 2, 3, 4])
+        for bad in (lines[:1]+[b'pending|wait-pending|1|2|1|1']+lines[2:],
+                    [b'pending|root-close|1|1|0|0']+lines[1:],
+                    lines[:3]+[b'drain|wait-pending|4|1|17|1'],
+                    lines[:3]+[b'drain|wait-pending|2|1|1|1'],
+                    lines[:1]+[b'pending|wait-pending|0|2|1|1']+lines[2:],
+                    lines[:3]+[b'drain|next-entered|4|1|1|1'],
+                    lines+[b'overflow'], lines+[b'foreign|root-close|5|1|0|0']):
+            with self.subTest(bad=bad), self.assertRaises((WorkflowError, ValueError)):
+                positive_sequence(encode(bad))
+        with self.assertRaises((WorkflowError, ValueError)):
+            positive_sequence(b'x'*262145)
+
+    def test_exact_normal_programme_preserves_caps_and_only_two_observer_ids(self):
+        from tools import dotnet_root_return as selected
+        self.assertEqual([(t, m) for t, m, _ in selected.STEPS], [
+            ('examples', 1), ('foreign', 2), ('examples', 3), ('foreign', 4), ('examples', 5),
+            ('foreign', 6), ('examples', 8), ('foreign', 6), ('examples', 9), ('foreign', 6), ('examples', 6)])
+        self.assertEqual(len({a for _, _, a in selected.STEPS}), 11)
+        self.assertEqual([(m, a) for _, m, a in selected.STEPS if a.startswith('node-stop-')],
+            [(1, 'node-stop-pending'), (2, 'node-stop-drain')])
+        self.assertEqual(selected.OWNER_CAPS, {'tasks': 8, 'executors': 2, 'queuedWork': 8,
+            'waits': 16, 'timers': 8, 'results': 8, 'nativeOwners': 8})
+        self.assertNotIn(7, [m for _, m, _ in selected.STEPS])
+        self.assertEqual(len(selected.STEPS)+len(selected.PROFILES), 15)
+
+
 if __name__ == '__main__':
     unittest.main()
