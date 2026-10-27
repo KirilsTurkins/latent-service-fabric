@@ -59,8 +59,8 @@ pub use containment::RuntimeResourceSnapshot;
 pub use development_borrow_admission::DevelopmentBorrowAdmissionSnapshot;
 #[cfg(feature = "development-test-host")]
 pub use development_trap_observer::{
-    DevelopmentTrapFrame, DevelopmentTrapGuard, DevelopmentTrapSnapshot,
     DevelopmentJoinCause, DevelopmentJoinCauseGuard, DevelopmentJoinCauseSnapshot,
+    DevelopmentTrapFrame, DevelopmentTrapGuard, DevelopmentTrapSnapshot,
 };
 pub use factory::WasmtimeComponentEngineFactory;
 pub use host::policy::ContextExposurePolicy;

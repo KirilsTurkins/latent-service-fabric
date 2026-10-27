@@ -343,8 +343,11 @@ pub struct DevelopmentJoinCauseGuard<'a> {
 }
 
 fn join_cause_refused() -> PlatformError {
-    crate::containment::platform_error(PlatformErrorCode::StateConflict,
-        "development Join cause observation unavailable", false)
+    crate::containment::platform_error(
+        PlatformErrorCode::StateConflict,
+        "development Join cause observation unavailable",
+        false,
+    )
 }
 
 fn join_cause_slot(activation: &str) -> Option<usize> {
@@ -358,7 +361,9 @@ fn join_cause_slot(activation: &str) -> Option<usize> {
 
 fn join_cause_digest(value: &str) -> Option<[u8; 32]> {
     let raw = value.strip_prefix("sha256:")?.as_bytes();
-    if raw.len() != 64 { return None; }
+    if raw.len() != 64 {
+        return None;
+    }
     let mut output = [0; 32];
     for (index, pair) in raw.chunks_exact(2).enumerate() {
         let digit = |v| match v {
@@ -372,34 +377,57 @@ fn join_cause_digest(value: &str) -> Option<[u8; 32]> {
 }
 
 impl DevelopmentJoinCauseObserver {
-    pub(crate) fn arm(&self, activation: &str, component: &str, contract: &str,
-                     export: &str) -> Result<DevelopmentJoinCauseGuard<'_>, PlatformError> {
+    pub(crate) fn arm(
+        &self,
+        activation: &str,
+        component: &str,
+        contract: &str,
+        export: &str,
+    ) -> Result<DevelopmentJoinCauseGuard<'_>, PlatformError> {
         let slot = join_cause_slot(activation).ok_or_else(join_cause_refused)?;
         let component = join_cause_digest(component).ok_or_else(join_cause_refused)?;
         if contract != "examples:greeting/api@1.0.0" || export != "probe" {
             return Err(join_cause_refused());
         }
         let mut slots = self.slots.lock().map_err(|_| join_cause_refused())?;
-        if slots[slot].armed_once { return Err(join_cause_refused()); }
+        if slots[slot].armed_once {
+            return Err(join_cause_refused());
+        }
         slots[slot].armed_once = true;
         slots[slot].enabled = true;
         slots[slot].component = component;
         self.enabled.store(true, Ordering::Release);
-        Ok(DevelopmentJoinCauseGuard { observer: self, slot })
+        Ok(DevelopmentJoinCauseGuard {
+            observer: self,
+            slot,
+        })
     }
 
     /// Called only after ordinary admission and before the request moves into Store.
-    pub(crate) fn claim(&self, activation: &str, component: Option<&str>, contract: &str,
-                       export: &str) -> Option<usize> {
-        if !self.enabled.load(Ordering::Acquire) { return None; }
+    pub(crate) fn claim(
+        &self,
+        activation: &str,
+        component: Option<&str>,
+        contract: &str,
+        export: &str,
+    ) -> Option<usize> {
+        if !self.enabled.load(Ordering::Acquire) {
+            return None;
+        }
         let slot = join_cause_slot(activation)?;
-        let Ok(mut slots) = self.slots.lock() else { return None; };
+        let Ok(mut slots) = self.slots.lock() else {
+            return None;
+        };
         let selected = &mut slots[slot];
-        if !selected.enabled { return None; }
+        if !selected.enabled {
+            return None;
+        }
         selected.observation.claims = selected.observation.claims.saturating_add(1);
         if selected.observation.claims != 1
             || component.and_then(join_cause_digest) != Some(selected.component)
-            || contract != "examples:greeting/api@1.0.0" || export != "probe" {
+            || contract != "examples:greeting/api@1.0.0"
+            || export != "probe"
+        {
             selected.observation.invalid = true;
             return None;
         }
@@ -407,14 +435,31 @@ impl DevelopmentJoinCauseObserver {
     }
 
     /// Borrow exactly one already-lifted U32 before the UNCHANGED finalizer.
-    pub(crate) fn capture(&self, claim: Option<usize>, call_ok: bool, lift_ok: bool,
-                         types: &[wasmtime::component::Type], values: &[wasmtime::component::Val]) {
-        let Some(slot) = claim else { return; };
-        let Ok(mut slots) = self.slots.lock() else { return; };
+    pub(crate) fn capture(
+        &self,
+        claim: Option<usize>,
+        call_ok: bool,
+        lift_ok: bool,
+        types: &[wasmtime::component::Type],
+        values: &[wasmtime::component::Val],
+    ) {
+        let Some(slot) = claim else {
+            return;
+        };
+        let Ok(mut slots) = self.slots.lock() else {
+            return;
+        };
         let selected = &mut slots[slot];
-        if !selected.enabled { return; }
+        if !selected.enabled {
+            return;
+        }
         let cause = match (call_ok, lift_ok, types, values) {
-            (true, true, [wasmtime::component::Type::U32], [wasmtime::component::Val::U32(word)]) => match *word {
+            (
+                true,
+                true,
+                [wasmtime::component::Type::U32],
+                [wasmtime::component::Val::U32(word)],
+            ) => match *word {
                 0x4A43_0001 => Some(DevelopmentJoinCause::Quiescence),
                 0x4A43_0002 => Some(DevelopmentJoinCause::OriginalFault),
                 0x4A43_0003 => Some(DevelopmentJoinCause::Unexpected),
@@ -432,14 +477,20 @@ impl DevelopmentJoinCauseObserver {
 
 impl DevelopmentJoinCauseGuard<'_> {
     pub fn snapshot(&self) -> Result<DevelopmentJoinCauseSnapshot, PlatformError> {
-        self.observer.slots.lock().map(|slots| slots[self.slot].observation).map_err(|_| join_cause_refused())
+        self.observer
+            .slots
+            .lock()
+            .map(|slots| slots[self.slot].observation)
+            .map_err(|_| join_cause_refused())
     }
 }
 impl Drop for DevelopmentJoinCauseGuard<'_> {
     fn drop(&mut self) {
         if let Ok(mut slots) = self.observer.slots.lock() {
             slots[self.slot].enabled = false;
-            self.observer.enabled.store(slots.iter().any(|slot| slot.enabled), Ordering::Release);
+            self.observer
+                .enabled
+                .store(slots.iter().any(|slot| slot.enabled), Ordering::Release);
         }
     }
 }
@@ -455,14 +506,21 @@ mod join_cause_tests {
     #[test]
     fn scalar_observer_is_closed_single_claim_and_never_replaces_first() {
         let observer = DevelopmentJoinCauseObserver::default();
-        assert!(observer.claim(ID, Some(DIGEST), CONTRACT, "probe").is_none());
+        assert!(observer
+            .claim(ID, Some(DIGEST), CONTRACT, "probe")
+            .is_none());
         assert!(observer.arm("other", DIGEST, CONTRACT, "probe").is_err());
         assert!(observer.arm(ID, DIGEST, CONTRACT, "other").is_err());
         let guard = observer.arm(ID, DIGEST, CONTRACT, "probe").unwrap();
         let claim = observer.claim(ID, Some(DIGEST), CONTRACT, "probe");
         observer.capture(claim, true, true, &[Type::U32], &[Val::U32(0x4A43_0002)]);
-        assert_eq!(guard.snapshot().unwrap().cause, Some(DevelopmentJoinCause::OriginalFault));
-        assert!(observer.claim(ID, Some(DIGEST), CONTRACT, "probe").is_none());
+        assert_eq!(
+            guard.snapshot().unwrap().cause,
+            Some(DevelopmentJoinCause::OriginalFault)
+        );
+        assert!(observer
+            .claim(ID, Some(DIGEST), CONTRACT, "probe")
+            .is_none());
         let result = guard.snapshot().unwrap();
         assert_eq!(result.claims, 2);
         assert!(result.invalid);
@@ -478,9 +536,13 @@ mod join_cause_tests {
             let guard = observer.arm(ID, DIGEST, CONTRACT, "probe").unwrap();
             let digest = if variant == 2 { None } else { Some(DIGEST) };
             let claim = observer.claim(ID, digest, CONTRACT, "probe");
-            let (types, values) = if variant == 3 { (vec![Type::S32], vec![Val::S32(42)]) }
-                else if variant == 4 { (vec![Type::U32, Type::U32], vec![Val::U32(42), Val::U32(42)]) }
-                else { (vec![Type::U32], vec![Val::U32(42)]) };
+            let (types, values) = if variant == 3 {
+                (vec![Type::S32], vec![Val::S32(42)])
+            } else if variant == 4 {
+                (vec![Type::U32, Type::U32], vec![Val::U32(42), Val::U32(42)])
+            } else {
+                (vec![Type::U32], vec![Val::U32(42)])
+            };
             observer.capture(claim, variant != 0, variant != 1, &types, &values);
             let result = guard.snapshot().unwrap();
             assert!(result.invalid);
@@ -490,16 +552,23 @@ mod join_cause_tests {
 
     #[test]
     fn three_words_have_distinct_causes_without_any_frame_or_result_owner() {
-        for (word, cause) in [(0x4A43_0001, DevelopmentJoinCause::Quiescence),
+        for (word, cause) in [
+            (0x4A43_0001, DevelopmentJoinCause::Quiescence),
             (0x4A43_0002, DevelopmentJoinCause::OriginalFault),
-            (0x4A43_0003, DevelopmentJoinCause::Unexpected)] {
+            (0x4A43_0003, DevelopmentJoinCause::Unexpected),
+        ] {
             let observer = DevelopmentJoinCauseObserver::default();
             let guard = observer.arm(ID, DIGEST, CONTRACT, "probe").unwrap();
             let claim = observer.claim(ID, Some(DIGEST), CONTRACT, "probe");
             observer.capture(claim, true, true, &[Type::U32], &[Val::U32(word)]);
-            assert_eq!(guard.snapshot().unwrap(), DevelopmentJoinCauseSnapshot {
-                claims: 1, invalid: false, cause: Some(cause),
-            });
+            assert_eq!(
+                guard.snapshot().unwrap(),
+                DevelopmentJoinCauseSnapshot {
+                    claims: 1,
+                    invalid: false,
+                    cause: Some(cause),
+                }
+            );
         }
     }
 }

@@ -265,9 +265,15 @@ impl WasmtimeBackend {
     /// The caller supplies the actual signed component digest and exact export.
     #[cfg(feature = "development-test-host")]
     pub fn arm_development_join_cause_observation(
-        &self, activation: &str, component: &str, contract: &str, export: &str,
+        &self,
+        activation: &str,
+        component: &str,
+        contract: &str,
+        export: &str,
     ) -> Result<crate::DevelopmentJoinCauseGuard<'_>, PlatformError> {
-        self.shared.development_join_cause.arm(activation, component, contract, export)
+        self.shared
+            .development_join_cause
+            .arm(activation, component, contract, export)
     }
 
     /// Bounded stage observations that do not retain a runtime owner.
@@ -617,8 +623,13 @@ impl WasmtimeBackend {
         #[cfg(feature = "development-test-host")]
         let development_join_claim = self.shared.development_join_cause.claim(
             &request.activation.activation_id.0,
-            runtime.descriptor.metadata.get("component-digest").map(String::as_str),
-            &request.activation.target.contract.0, &request.activation.target.function.0,
+            runtime
+                .descriptor
+                .metadata
+                .get("component-digest")
+                .map(String::as_str),
+            &request.activation.target.contract.0,
+            &request.activation.target.function.0,
         );
         let mut store = AccountedStore::new(self.invocation_store(
             request,
@@ -674,9 +685,15 @@ impl WasmtimeBackend {
         let codec_capacity_error = output.finish_lift(call_result.is_ok()).err();
         #[cfg(feature = "development-test-host")]
         self.shared.development_join_cause.capture(
-            development_join_claim, call_result.is_ok(), codec_capacity_error.is_none(),
+            development_join_claim,
+            call_result.is_ok(),
+            codec_capacity_error.is_none(),
             &function.results,
-            if call_result.is_ok() && codec_capacity_error.is_none() { output.as_slice() } else { &[] },
+            if call_result.is_ok() && codec_capacity_error.is_none() {
+                output.as_slice()
+            } else {
+                &[]
+            },
         );
         #[cfg(feature = "development-test-host")]
         self.shared
