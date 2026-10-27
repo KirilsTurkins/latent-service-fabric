@@ -149,7 +149,7 @@ impl BlobReader for Reader {
             )| async move {
                 let call = execute::dispatch(&this.inner, admission, "read", cost).await?;
                 let mut buffer = call.io().buffer((length as usize).max(1), 512)?;
-                let copy = call.io().reserve_scratch((length as usize).max(1), 512)?;
+                let copy = call.io().reserve_copy((length as usize).max(1), 512)?;
                 let completion = execute::run(&this.inner, call, "read", move |call| {
                     let count = data
                         .read(

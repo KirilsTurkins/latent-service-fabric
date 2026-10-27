@@ -71,8 +71,81 @@ pub struct IoOutputChunk {
 pub struct IoOutputCopy {
     bytes: Vec<u8>,
     _memory: IoMemory,
-    _slot: Shared<Slot>,
-    _owner: Option<Arc<dyn Send + Sync>>,
+    _retention: CopyRetention,
+}
+// Closed retention choices: a real transfer slot or the SAME affine blob call.
+// No erased wrapper allocation or manufactured owner is accepted.
+enum CopyRetention {
+    Transfer {
+        _slot: Shared<Slot>,
+        _owner: Option<Arc<dyn Send + Sync>>,
+    },
+    Blob {
+        _owner: crate::broker::pools::PoolCall,
+    },
+}
+
+/// Prepaid capacity for one typed blob range copy; scratch/imported values do
+/// not gain a materialization constructor. Dropping unused preparation refunds
+/// only reserved capacity, without confirming unallocated Vec backing.
+pub struct PreparedIoCopy {
+    memory: IoMemory,
+    maximum: usize,
+}
+impl IoCall {
+    /// Reserve the actual possible copy before any source I/O. The normal
+    /// native profile uses its original ledger; Phase1 keeps logical quotas.
+    pub fn reserve_copy(
+        &self,
+        bytes: usize,
+        metadata: usize,
+    ) -> Result<PreparedIoCopy, PlatformError> {
+        let native = self
+            .operation
+            .with_session(|session| session.core.budget.profile().supports_descendants());
+        let memory = if native {
+            IoMemory::reserve_host(&self.operation, bytes, metadata)?
+        } else {
+            IoMemory::reserve(&self.operation, bytes, metadata)?
+        };
+        Ok(PreparedIoCopy {
+            memory,
+            maximum: bytes,
+        })
+    }
+}
+impl PreparedIoCopy {
+    pub(in crate::broker) fn check_blob(
+        &self,
+        data: &IoBuffer,
+        owner: &crate::broker::pools::PoolCall,
+    ) -> Result<(), PlatformError> {
+        if !Shared::ptr_eq(&data.operation, &owner.io().operation)
+            || !self.memory.belongs_to(&data.operation)
+            || !owner.retains_original_request()
+            || self.maximum != data.capacity()
+        {
+            return Err(denied());
+        }
+        owner.io().checkpoint()
+    }
+    pub(in crate::broker) fn finish_blob(
+        mut self,
+        data: &IoBuffer,
+        owner: crate::broker::pools::PoolCall,
+    ) -> Result<IoOutputCopy, PlatformError> {
+        self.check_blob(data, &owner)?;
+        let bytes = data.bytes().to_vec();
+        if bytes.capacity() > self.maximum {
+            return Err(capacity());
+        }
+        self.memory.confirm_host_capacity(bytes.capacity())?;
+        Ok(IoOutputCopy {
+            bytes,
+            _memory: self.memory,
+            _retention: CopyRetention::Blob { _owner: owner },
+        })
+    }
 }
 impl AsRef<[u8]> for IoOutputCopy {
     fn as_ref(&self) -> &[u8] {
@@ -105,8 +178,10 @@ impl IoOutputChunk {
         Ok(IoOutputCopy {
             bytes,
             _memory: self.copy.take().expect("one checked copy allowance"),
-            _slot: self._slot.clone(),
-            _owner: self.owner.clone(),
+            _retention: CopyRetention::Transfer {
+                _slot: self._slot.clone(),
+                _owner: self.owner.clone(),
+            },
         })
     }
     pub fn retain_owner(&mut self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {

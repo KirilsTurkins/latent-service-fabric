@@ -492,6 +492,9 @@ impl PoolReady {
     }
 }
 impl PoolCall {
+    pub(in crate::broker) fn retains_original_request(&self) -> bool {
+        self.io.retains_request(&self.request)
+    }
     /// Admit the exact future backing before its source-owned builder runs.
     pub fn prepare_io_future<Make, F>(
         &self,
@@ -741,5 +744,134 @@ mod native_tests {
             RegistrationTenant::Legacy(_)
         ));
         assert_eq!(legacy_control.budget.host_memory_bytes(), 0);
+    }
+
+    #[tokio::test]
+    async fn native_blob_copy_is_affine_and_retains_source_or_copy_until_last_use() {
+        use crate::broker::blob::{BlobChunk, BlobError};
+        let setup = Setup::new(super::super::ProviderPoolLimits::default());
+        let (session, control) = setup.native_session_for(&setup.provider, "a", "native-blob-copy");
+        let baseline = control.budget.host_memory_bytes();
+        let guards = control.budget.outstanding_reservations();
+        let call = setup.call(&session).await;
+        let mut data = call.io().buffer(8, 512).unwrap();
+        let prepared = call.io().reserve_copy(8, 512).unwrap();
+        data.spare_mut().unwrap().copy_from_slice(b"resident");
+        data.advance_written(8).unwrap();
+        let mut chunk = BlobChunk::new(data, prepared, call).unwrap();
+        let before = control.budget.host_memory_bytes();
+        let copy = chunk.copy_bytes().unwrap();
+        assert_eq!(copy.as_ref(), b"resident");
+        assert_eq!(control.budget.host_memory_bytes(), before);
+        assert!(matches!(chunk.copy_bytes(), Err(BlobError::InvalidState)));
+        assert_eq!(control.budget.host_memory_bytes(), before);
+        drop(chunk);
+        assert_eq!(control.budget.host_memory_bytes(), before - (8 + 64));
+        assert_eq!(setup.pools.snapshot().unwrap().running_requests, 1);
+        assert_eq!(copy.as_ref(), b"resident");
+        drop(copy);
+        assert_eq!(setup.pools.snapshot().unwrap().running_requests, 0);
+        assert_eq!(setup.pools.inner.io.snapshot(), Default::default());
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(control.budget.outstanding_reservations(), guards);
+
+        // The reverse lifetime also keeps Request/Operation: dropping the copy
+        // requests cleaning, but cannot return the still-retained source quota.
+        let call = setup.call(&session).await;
+        let data = call.io().buffer(1, 512).unwrap(); // genuine valid empty range
+        let prepared = call.io().reserve_copy(1, 512).unwrap();
+        let mut empty = BlobChunk::new(data, prepared, call).unwrap();
+        let empty_copy = empty.copy_bytes().unwrap();
+        assert!(empty_copy.as_ref().is_empty());
+        assert!(matches!(empty.copy_bytes(), Err(BlobError::InvalidState)));
+        drop(empty_copy);
+        assert_eq!(setup.pools.snapshot().unwrap().running_requests, 1);
+        assert!(empty.bytes().is_empty());
+        drop(empty);
+        assert_eq!(setup.pools.snapshot().unwrap().running_requests, 0);
+        assert_eq!(setup.pools.inner.io.snapshot(), Default::default());
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(control.budget.outstanding_reservations(), guards);
+        let fresh = setup.call(&session).await;
+        drop(fresh);
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(setup.pools.snapshot().unwrap().running_requests, 0);
+    }
+
+    #[tokio::test]
+    async fn native_blob_copy_refuses_original_budget_and_foreign_operation_before_copy() {
+        use crate::broker::blob::{BlobChunk, BlobError};
+        let setup = Setup::new(super::super::ProviderPoolLimits::default());
+        let (session, control) =
+            setup.native_session_for(&setup.provider, "a", "blob-copy-refusal");
+        let baseline = control.budget.host_memory_bytes();
+        let call = setup.call(&session).await;
+        let mut data = call.io().buffer(8, 512).unwrap();
+        let before = control.budget.host_memory_bytes();
+        let allowance = 8 + 64; // exact private ALLOCATION_BOOKKEEPING envelope
+        let padding_bytes = control.budget.granted().memory_bytes - before - allowance + 1;
+        let padding = control.budget.reserve_host_memory(padding_bytes).unwrap();
+        let snapshot = setup.pools.inner.io.snapshot();
+        let peak = control.budget.snapshot_at(Instant::now()).peak_memory_bytes;
+        assert!(call.io().reserve_copy(8, 512).is_err());
+        assert_eq!(setup.pools.inner.io.snapshot(), snapshot);
+        assert_eq!(control.budget.host_memory_bytes(), before + padding_bytes);
+        assert_eq!(
+            control.budget.snapshot_at(Instant::now()).peak_memory_bytes,
+            peak
+        );
+        assert!(data.bytes().is_empty()); // no range was read before admission
+        drop(padding);
+        let scratch = call.io().reserve_scratch(8, 512).unwrap();
+        assert_eq!(control.budget.host_memory_bytes(), before); // unchanged logical API
+        drop(scratch);
+        data.spare_mut().unwrap().copy_from_slice(b"resident");
+        data.advance_written(8).unwrap();
+        let (foreign, foreign_control) =
+            setup.native_session_for(&setup.provider, "a", "blob-copy-foreign");
+        let foreign_baseline = foreign_control.budget.host_memory_bytes();
+        let other = setup.call(&foreign).await;
+        let prepared = other.io().reserve_copy(8, 512).unwrap();
+        let before_foreign = foreign_control.budget.host_memory_bytes();
+        assert!(matches!(
+            BlobChunk::new(data, prepared, call),
+            Err(BlobError::PermissionDenied)
+        ));
+        assert!(foreign_control.budget.host_memory_bytes() < before_foreign);
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(setup.pools.snapshot().unwrap().running_requests, 1);
+        drop(other);
+        assert_eq!(setup.pools.snapshot().unwrap().running_requests, 0);
+        assert_eq!(foreign_control.budget.host_memory_bytes(), foreign_baseline);
+        assert_eq!(setup.pools.inner.io.snapshot(), Default::default());
+    }
+
+    #[tokio::test]
+    async fn native_blob_copy_rejects_swapped_pool_call_request_and_io_identity() {
+        use crate::broker::blob::{BlobChunk, BlobError};
+        let setup = Setup::new(super::super::ProviderPoolLimits::default());
+        let (first, first_control) =
+            setup.native_session_for(&setup.provider, "a", "blob-copy-swapped-a");
+        let (second, second_control) =
+            setup.native_session_for(&setup.provider, "a", "blob-copy-swapped-b");
+        let first_baseline = first_control.budget.host_memory_bytes();
+        let second_baseline = second_control.budget.host_memory_bytes();
+        let mut a = setup.call(&first).await;
+        let mut b = setup.call(&second).await;
+        // Public io_mut is not authority to substitute Request. All three
+        // operation pointers below match, while a.request deliberately does not.
+        std::mem::swap(a.io_mut(), b.io_mut());
+        let data = a.io().buffer(1, 512).unwrap();
+        let copy = a.io().reserve_copy(1, 512).unwrap();
+        assert!(matches!(
+            BlobChunk::new(data, copy, a),
+            Err(BlobError::PermissionDenied)
+        ));
+        assert_eq!(setup.pools.snapshot().unwrap().running_requests, 2);
+        drop(b);
+        assert_eq!(setup.pools.snapshot().unwrap().running_requests, 0);
+        assert_eq!(first_control.budget.host_memory_bytes(), first_baseline);
+        assert_eq!(second_control.budget.host_memory_bytes(), second_baseline);
+        assert_eq!(setup.pools.inner.io.snapshot(), Default::default());
     }
 }

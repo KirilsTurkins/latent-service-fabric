@@ -200,7 +200,12 @@ pub(super) fn chunk_bytes(
                 access.with(|mut access| {
                     let mut store = access.as_context_mut();
                     checkpoint(&mut store)?;
-                    let result = store.data_mut().capabilities.blobs.bytes(chunk.rep());
+                    let result = store
+                        .data_mut()
+                        .capabilities
+                        .blobs
+                        .bytes(chunk.rep())
+                        .map(crate::host::io_copy::ChunkBytes);
                     synchronize(&mut store)?;
                     Ok((result.map_err(convert),))
                 })

@@ -120,7 +120,10 @@ impl Table {
         entry.rep = 0;
         Ok(true)
     }
-    pub(super) fn bytes(&mut self, rep: u32) -> Result<Vec<u8>, Error> {
+    pub(super) fn bytes(
+        &mut self,
+        rep: u32,
+    ) -> Result<latent_capabilities::broker::io::IoOutputCopy, Error> {
         let Some(Value::Chunk { value, delivered }) =
             &mut self.entry(u64::from(rep), Kind::Chunk)?.value
         else {
@@ -130,7 +133,7 @@ impl Table {
             return Err(Error::InvalidState);
         }
         *delivered = true;
-        Ok(value.bytes().to_vec())
+        value.copy_bytes()
     }
 }
 

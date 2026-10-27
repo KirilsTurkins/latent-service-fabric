@@ -64,6 +64,9 @@ impl IoMemory {
             _operation: operation.clone(),
         })
     }
+    pub(super) fn belongs_to(&self, operation: &OperationOwner) -> bool {
+        super::Shared::ptr_eq(&self._operation, operation)
+    }
     #[cfg(test)]
     pub(super) fn charged_to(&self, budget: &latent_core::ActivationBudget) -> bool {
         self.host

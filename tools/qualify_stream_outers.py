@@ -1508,6 +1508,256 @@ def qualify_io_copy(output, revision):
         write_json(output / 'commands.json', commands.records)
 
 
+BLOB_COPY_BRANCH = 'feat/sdk-736-blob-copy-native-20261027'
+BLOB_COPY_CAP_PREFIX = 'broker::pools::admission::native_tests::'
+BLOB_COPY_CAP_CASES = tuple(BLOB_COPY_CAP_PREFIX + name for name in (
+    'native_blob_copy_is_affine_and_retains_source_or_copy_until_last_use',
+    'native_blob_copy_refuses_original_budget_and_foreign_operation_before_copy',
+    'native_blob_copy_rejects_swapped_pool_call_request_and_io_identity'))
+BLOB_COPY_MANAGED_CASE = 'guest_writes_seals_and_reads_exact_bounded_chunks'
+BLOB_COPY_CASES = (*BLOB_COPY_CAP_CASES, BLOB_COPY_MANAGED_CASE)
+BLOB_COPY_NEW_CASES = BLOB_COPY_CAP_CASES
+BLOB_COPY_CHECK_ARGS = ('check', '--locked', '--tests', '--all-features',
+    '-p', 'latent-blobs', '-p', 'latent-wasmtime', '--message-format=json')
+BLOB_COPY_CHECK_TARGETS = (
+    ('crates/latent-blobs/Cargo.toml', 'latent_blobs', 'src/lib.rs'),
+    ('crates/latent-wasmtime/Cargo.toml', 'latent_wasmtime', 'src/lib.rs'),
+)
+# None may select language budgets, external capsules, or alternate components.
+# The managed fixture assembles its ordinary original source component itself.
+BLOB_COPY_FORBIDDEN_FIXTURE_ENV = ('LSF_GUEST_SDK_LANGUAGE', 'LSF_GUEST_CAPSULES',
+    'LSF_GENERIC_COMPONENT', 'LSF_GENERIC_FIXTURES', FIXTURE_ENV)
+
+
+def blob_copy_result(raw, case):
+    require(case in BLOB_COPY_CASES, 'fixed-case')
+    require(len(raw) <= artifacts.MAX_OUTPUT_BYTES, 'case-output-bound')
+    require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
+        == [case.encode()], 'one-exact-success')
+    summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
+        rb'(\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    require(len(summaries) == 1 and summaries[0][:4] == (b'1', b'0', b'0', b'0')
+        and int(summaries[0][4]) <= 10000, 'one-executed-no-skip')
+    return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0,
+        'ignored': 0, 'filteredOut': int(summaries[0][4]),
+        'scope': ('original-Phase3-affine-blob-copy-and-pooled-request-control'
+            if case in BLOB_COPY_CAP_CASES else 'managed-component-local-blob-chunk-lowering')}
+
+
+def blob_copy_check_result(raw):
+    require(len(raw) <= artifacts.MAX_INVENTORY_BYTES, 'integration-inventory-bound')
+    expected = {str((ROOT / manifest).resolve()): (target, source_path)
+        for manifest, target, source_path in BLOB_COPY_CHECK_TARGETS}
+    seen, finished = {}, False
+    lines = raw.splitlines()
+    require(0 < len(lines) <= artifacts.MAX_RECORDS, 'integration-record-bound')
+    for line in lines:
+        require(len(line) <= artifacts.MAX_LINE_BYTES, 'integration-line-bound')
+        if not line.strip():
+            continue
+        require(not finished, 'integration-after-finished')
+        value = json.loads(line, object_pairs_hook=artifacts.unique_object)
+        require(isinstance(value, dict), 'integration-record')
+        if value.get('reason') == 'build-finished':
+            require(value.get('success') is True, 'integration-check-success')
+            finished = True
+        elif value.get('reason') == 'compiler-artifact':
+            manifest = value.get('manifest_path')
+            require(isinstance(manifest, str) and len(manifest) <= 4096,
+                'integration-manifest')
+            manifest = str(Path(manifest).resolve())
+            if manifest not in expected:
+                continue
+            target, profile = value.get('target'), value.get('profile')
+            require(isinstance(target, dict) and isinstance(profile, dict),
+                'integration-target')
+            name, source_path = expected[manifest]
+            if target.get('kind') != ['lib'] or profile.get('test') is not True:
+                continue
+            source_name, features = target.get('src_path'), value.get('features')
+            require(isinstance(source_name, str) and len(source_name) <= 4096
+                and isinstance(features, list) and len(features) <= 256
+                and all(isinstance(feature, str) and len(feature) <= 256
+                    for feature in features), 'integration-source-features')
+            require(target.get('name') == name and
+                Path(source_name).resolve() ==
+                    (Path(manifest).parent / source_path).resolve(), 'integration-owner')
+            require(value.get('executable') is None, 'check-not-test-executable')
+            require(manifest not in seen, 'duplicate-integration-owner')
+            seen[manifest] = {'manifest': str(Path(manifest).relative_to(ROOT)),
+                'target': name, 'source': source_path, 'libtestTypechecked': True,
+                'features': features}
+    require(finished and set(seen) == set(expected), 'complete-integration-check')
+    return [seen[str((ROOT / manifest).resolve())]
+        for manifest, _, _ in BLOB_COPY_CHECK_TARGETS]
+
+
+def qualify_blob_copy(output, revision):
+    require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
+        and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
+        and os.environ.get('GITHUB_REF_NAME') == BLOB_COPY_BRANCH
+        and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'one-exact-hosted-push')
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
+        'owned-output')
+    output = fresh(output)
+    environment = io_copy_environment(build_environment(output))
+    environment.update(CARGO_TARGET_DIR=str(ROOT / 'target'), CARGO_INCREMENTAL='0',
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+        CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+    logs = output / 'commands'
+    logs.mkdir()
+    # Existing five-second reaping reserve remains inside declared caps.
+    commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895)
+    receipt = {'schemaVersion': 'lsf.owned-blob-copy.v1', 'status': 'in-progress',
+        'sourceRevision': revision, 'selectedCases': list(BLOB_COPY_CASES), 'observations': [],
+        'newCases': list(BLOB_COPY_NEW_CASES), 'oldTransferCasesExecuted': False,
+        'managedComponentCase': BLOB_COPY_MANAGED_CASE,
+        'fullCostModelQualified': False, 'fullRuntimeSuiteExecuted': False,
+        'fullVendorSuiteExecuted': False, 'signedRealNodeGuestExecuted': False,
+        'wasmtimeExecuted': False, 'guestComponentCompiled': False,
+        'fixtureAssembled': False, 'managedFixtureState': 'not-started',
+        'cargoCheckAndBuildMayRunHostBuildScripts': True,
+        'managedCaseReallyAssemblesCompilesAndExecutesComponent': True,
+        'hermetic': False, 'compilerImplicitInputsAttested': False,
+        'scope': 'one actual immutable prepaid Blob copy through canonical lowering, exact operation/request/copy identity and either source/copy last-use retirement; arbitrary later caller copies, imported memory, transitive heaps and kernel owners remain separate',
+        'limits': {'overallSeconds': 2400, 'buildCommandSeconds': 900,
+            'caseProcessSeconds': 60, 'listProcessSeconds': 30, 'cleanupReserveSeconds': 5},
+        'budgetFixtures': {
+            'brokerCases': {'memoryBytes': 1024**2, 'cpuFuelGrant': 100_000,
+                'wallTimeGrantMilliseconds': 30_000, 'engineFuelInstalled': False},
+            'managedComponentCase': {'memoryBytes': 16 * 1024**2,
+                'cpuFuelGrant': 1_000_000_000_000, 'wallTimeGrantMilliseconds': 5_000,
+                'sdkLanguageOverridePermitted': False},
+            'genericHostOrRSSCeilingClaimed': False},
+        'externalFixtureInputsAbsent': list(BLOB_COPY_FORBIDDEN_FIXTURE_ENV),
+        'integrationCheck': {'executed': False,
+            'kind': 'Cargo CHECK --tests/all-features for actual local+S3 providers and installed Wasmtime consumers; no test execution',
+            'argv': list(BLOB_COPY_CHECK_ARGS)},
+        'oldCanonicalCasesExecuted': False, 'oldStreamProgrammeExecuted': False,
+        'oldProducerProgrammeExecuted': False, 'oldEightGraphProgrammeExecuted': False, 'oldThreeCopyProgrammeExecuted': False,
+        'cacheRoundtripExecuted': False, 'sdkGuestCompilerInvoked': False,
+        'commandLedgerBoundary': '13 supervised check/build/library/list/test commands and26 raw channels; normal pinned-tool resolver probes retain their existing owner and are not this ledger'}
+    try:
+        artifacts.require_source(ROOT, revision, environment)
+        before = source_inputs()
+        receipt['sourceBefore'] = before
+        write_json(output / 'source-inputs.json', before)
+        checked = source.verify()
+        receipt['wasmtimeSource'] = checked
+        toolchain = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml', 128 * 1024).decode())
+        require(toolchain['rust']['toolchain'] == '1.97.1'
+            and toolchain['contracts']['wasm-tools'] == '1.254.0', 'normal-tool-pins')
+        tools, pins = resolve_tools(toolchain, ROOT, environment, _deadline=commands.deadline)
+        receipt['observedTools'] = pins
+        environment.update(RUSTC=str(tools['rustc']), RUSTUP_TOOLCHAIN=toolchain['rust']['toolchain'])
+        def runtime_environment(artifact, label):
+            def probe(argv, *, cwd, env, timeout, maximum):
+                require(argv == ['rustc', '--print', 'target-libdir'] and cwd == ROOT
+                    and timeout == 30 and maximum == 4096, 'normal-library-probe')
+                commands.command_seconds = 25
+                require_io_copy_environment(env)
+                commands.environment = env
+                raw = commands.run(label + '-rust-library-path', tools['rustc'], *argv[1:])
+                require(len(raw) <= maximum, 'rust-library-output-bound')
+                return 0, raw
+            return artifacts.cargo_environment(ROOT, artifact, environment,
+                target=ROOT / 'target', execute=probe)
+
+        receipt['stage'] = 'provider-integration-check'
+        require_io_copy_environment(environment)
+        commands.environment = environment
+        commands.command_seconds = 895
+        check_ordinal = len(commands.records)
+        commands.run('provider-integration-check', tools['cargo'], *BLOB_COPY_CHECK_ARGS)
+        check_raw = read_file(logs / f'logs/{check_ordinal:02d}-provider-integration-check.stdout.txt',
+            artifacts.MAX_INVENTORY_BYTES)
+        receipt['integrationCheck'].update(executed=True,
+            inventory=blob_copy_check_result(check_raw), stdout=identity(check_raw))
+
+        targets = (
+            ('copy', BLOB_COPY_CAP_CASES, (),
+             ('test', '-p', 'latent-capabilities', '--locked', '--lib', '--all-features',
+              '--no-run', '--message-format=json'),
+             artifacts.Suite('crates/latent-capabilities/Cargo.toml', 'latent_capabilities',
+                'src/lib.rs', BLOB_COPY_CAP_PREFIX, frozenset(BLOB_COPY_CAP_CASES), True)),
+            ('managed', (BLOB_COPY_MANAGED_CASE,), (),
+             ('test', '-p', 'latent-wasmtime', '--locked', '--test', 'local_blobs',
+              '--all-features', '--no-run', '--message-format=json'),
+             artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'local_blobs',
+                'tests/local_blobs.rs', BLOB_COPY_MANAGED_CASE,
+                frozenset((BLOB_COPY_MANAGED_CASE,)), True, kind='test')),
+        )
+        executables = []
+        for label, cases, ignored, argv, suite in targets:
+            receipt['stage'] = 'build-' + label
+            require_io_copy_environment(environment)
+            commands.environment = environment
+            commands.command_seconds = 895
+            ordinal = len(commands.records)
+            commands.run('build-' + label, tools['cargo'], *argv)
+            artifact = artifacts.read_inventory(logs / f'logs/{ordinal:02d}-build-{label}.stdout.txt',
+                ROOT, suite, target=ROOT / 'target')
+            executable = file_identity(artifact.executable, label + '-native-backing-controls', 512 * 1024**2)
+            receipt[label + 'Executable'] = executable
+            executables.append((artifact.executable, executable, label + '-native-backing-controls'))
+            run_env = runtime_environment(artifact, label)
+            run_env = io_copy_environment(run_env)
+            if label == 'copy':
+                contract, = [row for row in registry.load()['suites']
+                    if row['id'] == 'latent-capabilities.lib.latent-capabilities']
+                require(contract['minimumCases'] == 225
+                    and set(cases) <= set(contract['expectedCases'])
+                    and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
+            else:
+                contract, = [row for row in registry.load()['suites']
+                    if row['id'] == 'latent-wasmtime.test.local-blobs']
+                require(contract['minimumCases'] == 10
+                    and set(cases) <= set(contract['expectedCases'])
+                    and not set(cases) & set(contract['expectedIgnored']), 'normal-managed-suite-contract')
+            require_io_copy_environment(run_env)
+            commands.environment = run_env
+            for index, case in enumerate(cases):
+                receipt['stage'] = case
+                commands.command_seconds = 25
+                listed = commands.run(f'{label}-list-{index}', artifact.executable,
+                    case, '--exact', *ignored, '--list')
+                require(len(listed) <= artifacts.MAX_LIST_BYTES, 'list-bound')
+                artifacts.validate_listing(listed, artifacts.Suite(suite.manifest, suite.target,
+                    suite.source, case, frozenset((case,)), True))
+                commands.command_seconds = 55
+                if label == 'managed':
+                    receipt.update(managedFixtureState='started-outcome-pending',
+                        wasmtimeExecuted=None, guestComponentCompiled=None, fixtureAssembled=None)
+                require_io_copy_environment(commands.environment)
+                raw = commands.run(f'{label}-case-{index}', artifact.executable,
+                    case, '--exact', *ignored, '--show-output', '--test-threads=1')
+                receipt['observations'].append(blob_copy_result(raw, case))
+                if label == 'managed':
+                    receipt.update(managedFixtureState='passed', wasmtimeExecuted=True,
+                        guestComponentCompiled=True, fixtureAssembled=True)
+        require(len(commands.records) == 13 and len(receipt['observations']) == 4,
+            'one-check-two-builds-two-library-probes-four-exact-cases')
+        require(time.monotonic() < commands.deadline, 'overall-deadline')
+        require(source_inputs() == before and source.verify() == checked, 'final-source')
+        for path, bound, label in executables:
+            require(file_identity(path, label, 512 * 1024**2) == bound, 'final-executable')
+        require([file_identity(tools[name], name) for name in sorted(tools)] == pins, 'final-tools')
+        artifacts.require_source(ROOT, revision, environment)
+        require_io_copy_environment(environment)
+        require_io_copy_environment(commands.environment)
+        require(time.monotonic() < commands.deadline, 'final-deadline')
+        receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True,
+            executed=list(BLOB_COPY_CASES), ignored=[])
+        write_json(output / 'receipt.json', receipt)
+    except BaseException:
+        receipt['status'] = 'failed'
+        write_json(output / 'FAILED.json', receipt)
+        raise
+    finally:
+        write_json(output / 'commands.json', commands.records)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -1520,8 +1770,11 @@ if __name__ == '__main__':
     modes.add_argument('--io-operations', action='store_true')
     modes.add_argument('--io-graph', action='store_true')
     modes.add_argument('--io-copy', action='store_true')
+    modes.add_argument('--blob-copy', action='store_true')
     args = parser.parse_args()
-    if args.io_copy:
+    if args.blob_copy:
+        qualify_blob_copy(args.output.resolve(), args.source_commit)
+    elif args.io_copy:
         qualify_io_copy(args.output.resolve(), args.source_commit)
     elif args.io_graph:
         qualify_io_graph(args.output.resolve(), args.source_commit)

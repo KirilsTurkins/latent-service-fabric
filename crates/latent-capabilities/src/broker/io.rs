@@ -37,6 +37,7 @@ pub use limits::{IoLimits, IoSnapshot};
 pub use stream::{IoStreamReader, IoStreamTerminal, IoStreamWriter};
 pub use transfer::{
     IoInputChunk, IoOutputChunk, IoOutputCopy, IoTransfer, IoTransferBuffer, IoTransferOptions,
+    PreparedIoCopy,
 };
 
 const OPERATION_METADATA: usize = 2048;
@@ -698,6 +699,14 @@ impl IoLease {
     }
 }
 impl IoCall {
+    pub(in crate::broker) fn retains_request(&self, request: &super::pools::RequestOwner) -> bool {
+        self.operation
+            .owner
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_ref()
+            .is_some_and(|owner| Shared::ptr_eq(owner, request))
+    }
     /// Admit the exact future backing before its source-owned builder runs.
     pub fn prepare_io_future<Make, F>(
         &self,

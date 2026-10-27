@@ -1,7 +1,7 @@
-name: Focused owned stream-copy lowering
+name: Focused owned Blob-copy lowering
 on:
   push:
-    branches: ['feat/sdk-736-owned-stream-copy-20261027']
+    branches: ['feat/sdk-736-blob-copy-native-20261027']
     paths:
       - '.github/workflows/canonical-stream-outers.yml'
       - 'crates/latent-capabilities/**'
@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   stream-outers:
-    name: Three paid-copy and managed lowering controls
+    name: Four paid Blob-copy and managed lowering controls
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -63,17 +63,17 @@ jobs:
       - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
-      - name: Typecheck stream consumers and execute three paid-copy lowering controls
+      - name: Typecheck local/S3 consumers and execute four Blob-copy lowering controls
         run: >-
           python3 -B tools/qualify_stream_outers.py
           --source-commit "${{ github.sha }}"
-          --io-copy
+          --blob-copy
           --output "$RUNNER_TEMP/canonical-stream-outers"
-      - name: Retain stream typecheck and three source-bound copy outcomes
+      - name: Retain Blob typecheck and four source-bound copy outcomes
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
-          name: owned-stream-copy-${{ github.sha }}
+          name: owned-blob-copy-${{ github.sha }}
           path: |
             ${{ runner.temp }}/canonical-stream-outers/receipt.json
             ${{ runner.temp }}/canonical-stream-outers/FAILED.json
