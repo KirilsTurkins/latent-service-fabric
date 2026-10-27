@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_stream_objects.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed explicit VP67-physical/94-logical/430-derived mode with exact logical namespace, cold-source proof and same22 targets/bounds; all historical modes remain.",
+  "reviewReason": "Reviewed VP-only installed1.97.1 child override with automatic toolchain installation disabled; unchanged67/94/430 inputs, old modes, targets, deadlines and caps.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "12c5ffe6e4bf2a1c45df0aab8354ad106021d190411e517add95b0139469883f"
+  "sha256": "5e065271f19d13e486af07e385e34544447a548837a1c925d5ee28af7e8fbd29"
 }
