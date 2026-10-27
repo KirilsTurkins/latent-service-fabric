@@ -240,6 +240,7 @@ pub use ingress::{
 };
 mod ingress {
     use super::*;
+    use crate::broker::io::IoMemory;
     use crate::broker::session::{PreparedShared, SessionCoreOwner, Shared};
     use latent_core::HostMemoryReservation;
     use std::{alloc::Layout, ops::Deref, sync::Arc};
