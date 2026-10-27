@@ -192,9 +192,11 @@ impl StreamingHttpInvoker for StreamingHttpProvider {
         Ok(prepared.finish((
             Arc::clone(inner),
             crate::execute::RequestOwner {
-                request: request.metadata,
+                request: latent_capabilities::broker::http::HttpOwnedRequest::preallocated(
+                    request.metadata,
+                    memory,
+                ),
                 destination,
-                memory,
                 logical: size.logical,
             },
             request.body_length,
@@ -253,9 +255,11 @@ impl StreamingHttpInvoker for StreamingHttpProvider {
         Ok(HttpPhaseFuture::Direct(prepared.finish(TimedOpening {
             inner: Arc::clone(inner),
             input: crate::execute::RequestOwner {
-                request: request.metadata,
+                request: latent_capabilities::broker::http::HttpOwnedRequest::preallocated(
+                    request.metadata,
+                    memory,
+                ),
                 destination,
-                memory,
                 logical: size.logical,
             },
             length: request.body_length,

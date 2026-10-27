@@ -251,3 +251,135 @@ fn maintained_http_capsule_has_exact_wit_package_and_async_metadata() {
     assert_eq!(artifact.contracts[0].interfaces[0].functions[0].name, "run");
     assert!(artifact.contracts[0].interfaces[0].functions[0].asynchronous);
 }
+
+// Isolated API fixture: these limits are NOT an ActivationBudget or RSS claim.
+fn utf8_view_store(engine: &wasmtime::Engine) -> wasmtime::Store<wasmtime::StoreLimits> {
+    let limits = wasmtime::StoreLimitsBuilder::new()
+        .memory_size(65536)
+        .instances(1)
+        .memories(1)
+        .build();
+    let mut store = wasmtime::Store::new(engine, limits);
+    store.limiter(|limits| limits);
+    store.set_fuel(100_000).unwrap();
+    store.set_hostcall_fuel(65536);
+    store
+}
+fn utf8_view_component() -> (wasmtime::Engine, wasmtime::component::Component) {
+    let mut config = wasmtime::Config::new();
+    config.wasm_component_model(true).consume_fuel(true);
+    let engine = wasmtime::Engine::new(&config).unwrap();
+    let component =
+        wasmtime::component::Component::new(&engine, component::utf8_view_bytes()).unwrap();
+    (engine, component)
+}
+#[test]
+fn canonical_utf8_view_uses_same_store_for_all_encodings_and_exact_destinations() {
+    use wasmtime::component::{Linker, WasmStr};
+    let (engine, component) = utf8_view_component();
+    let mut store = utf8_view_store(&engine);
+    let instance = Linker::new(&engine)
+        .instantiate(&mut store, &component)
+        .unwrap();
+    for (name, expected) in [
+        ("utf8", "a\u{e9}\u{1d11e}"),
+        ("utf16", "\u{e9}\u{1d11e}"),
+        ("latin1", "\u{e9}\u{ff}"),
+        ("tagged-utf16", "\u{e9}\u{1d11e}"),
+    ] {
+        let function = instance
+            .get_typed_func::<(), (WasmStr,)>(&mut store, name)
+            .unwrap();
+        let (value,) = function.call(&mut store, ()).unwrap();
+        let view = value.utf8_view(&store).unwrap();
+        assert_eq!(view.len(), expected.len());
+        let mut output = [0x55u8; 16];
+        assert!(view.write_into(&mut output[..view.len() - 1]).is_err());
+        assert_eq!(output, [0x55; 16]);
+        assert!(view.write_into(&mut output[..view.len() + 1]).is_err());
+        assert_eq!(output, [0x55; 16]);
+        view.write_into(&mut output[..view.len()]).unwrap();
+        assert_eq!(&output[..view.len()], expected.as_bytes());
+    }
+    let empty = instance
+        .get_typed_func::<(), (WasmStr,)>(&mut store, "empty")
+        .unwrap();
+    let (value,) = empty.call(&mut store, ()).unwrap();
+    {
+        let view = value.utf8_view(&store).unwrap();
+        assert!(view.is_empty());
+        view.write_into(&mut []).unwrap();
+    }
+    let malformed = instance
+        .get_typed_func::<(), (WasmStr,)>(&mut store, "malformed")
+        .unwrap();
+    let (value,) = malformed.call(&mut store, ()).unwrap();
+    assert!(value.utf8_view(&store).is_err());
+    let fresh = instance
+        .get_typed_func::<(), (WasmStr,)>(&mut store, "utf8")
+        .unwrap();
+    let (value,) = fresh.call(&mut store, ()).unwrap();
+    let mut output = [0; 7];
+    value
+        .utf8_view(&store)
+        .unwrap()
+        .write_into(&mut output)
+        .unwrap();
+    assert_eq!(output, b"a\xc3\xa9\xf0\x9d\x84\x9e");
+    // A view-only decode error occurs after a successful canonical call.
+    // A result-Lift error instead skips pinned call_raw/post_return exit;
+    // never require recovery or a second call in that terminal instance.
+    for name in ["unaligned", "out-of-bounds"] {
+        let mut terminal_store = utf8_view_store(&engine);
+        let terminal_instance = Linker::new(&engine)
+            .instantiate(&mut terminal_store, &component)
+            .unwrap();
+        let function = terminal_instance
+            .get_typed_func::<(), (WasmStr,)>(&mut terminal_store, name)
+            .unwrap();
+        let error = function
+            .call(&mut terminal_store, ())
+            .err()
+            .expect("terminal canonical lift must fail");
+        let chain = format!("{error:#}");
+        let expected = if name == "unaligned" {
+            "string pointer not aligned to 2"
+        } else {
+            "string pointer/length out of bounds of memory"
+        };
+        assert!(chain.contains(expected), "expected {expected}: {chain}");
+        assert!(!matches!(
+            error.downcast_ref::<wasmtime::Trap>(),
+            Some(&wasmtime::Trap::CannotEnterComponent)
+        ));
+    }
+    println!("http-utf8-view forms=4 empty=1 malformed=1 unaligned=1 oob=1 exact=4 short=4 long=4 fresh=1");
+}
+#[test]
+fn canonical_utf8_view_rejects_foreign_store_without_poisoning_original() {
+    use wasmtime::component::{Linker, WasmStr};
+    let (engine, component) = utf8_view_component();
+    let mut store = utf8_view_store(&engine);
+    let instance = Linker::new(&engine)
+        .instantiate(&mut store, &component)
+        .unwrap();
+    let function = instance
+        .get_typed_func::<(), (WasmStr,)>(&mut store, "utf8")
+        .unwrap();
+    let (value,) = function.call(&mut store, ()).unwrap();
+    let foreign = utf8_view_store(&engine);
+    let rejected = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        value.utf8_view(&foreign).map(|view| view.len())
+    }));
+    assert!(rejected.is_err());
+    let mut output = [0; 7];
+    value
+        .utf8_view(&store)
+        .unwrap()
+        .write_into(&mut output)
+        .unwrap();
+    assert_eq!(output, b"a\xc3\xa9\xf0\x9d\x84\x9e");
+    let (fresh,) = function.call(&mut store, ()).unwrap();
+    assert_eq!(fresh.utf8_view(&store).unwrap().len(), 7);
+    println!("http-utf8-view wrong-store=refused original-store=fresh");
+}

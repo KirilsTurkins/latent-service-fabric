@@ -10,7 +10,26 @@ pub struct IoMemory {
     _slot: Charge,
     _operation: OperationOwner,
 }
+// Identity/provenance only. No upgrade or authority API is exposed.
+pub(in crate::broker) struct HttpInputOrigin {
+    _operation: super::OperationWeak,
+}
 impl IoMemory {
+    pub(in crate::broker) fn http_checkpoint(&self) -> Result<(), PlatformError> {
+        self._operation.check()
+    }
+    pub(in crate::broker) fn http_origin(&self) -> HttpInputOrigin {
+        HttpInputOrigin {
+            _operation: super::Shared::downgrade(&self._operation),
+        }
+    }
+    pub(in crate::broker) fn http_original_session(
+        &self,
+        original: &super::super::session::SessionCoreOwner,
+    ) -> bool {
+        self._operation
+            .with_session(|session| super::Shared::ptr_eq(&session.core, original))
+    }
     pub(super) fn reserve(
         operation: &OperationOwner,
         bytes: usize,

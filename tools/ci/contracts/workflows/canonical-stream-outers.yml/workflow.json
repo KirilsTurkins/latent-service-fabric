@@ -5,11 +5,11 @@
       "cancel-in-progress": false,
       "group": "canonical-stream-outers-${{ github.ref }}"
     },
-    "name": "Focused prepaid Blob-input ingress",
+    "name": "Focused original HTTP-input ingress and canonical string view",
     "on": {
       "push": {
         "branches": [
-          "feat/sdk-736-blob-input-native-20261027"
+          "feat/sdk-736-http-input-native-20261027"
         ],
         "paths": [
           ".github/workflows/canonical-stream-outers.yml",
@@ -36,7 +36,7 @@
   "requiredJobs": [
     "stream-outers"
   ],
-  "reviewReason": "Reviewed #736 original-admission-owned Blob input materialization: WasmList descriptor, independent synchronous slice lifetime, exact existing IoBuffer native admission before copy, actual local blocking lifetime and S3 append boundary. Three NEW bridge controls plus one existing real local_blobs managed case,4cases13commands26raw. Original budget grants/45m/2395+5/895+5/55+5/25+5/j2/env retained. All4BlobWriter implementations explicit; old preallocated write(Vec), logical reserve_input and prior owner modes remain unchanged. Managed mode really assembles/compiles/executes original component; S3 source CHECK only, no remote network qualification or full cost/RSS claim. No old output-native3/graph8/programme replay; source-only pending actual focused outcome.",
+  "reviewReason": "Reviewed #736 buffered HTTP ingress and public same-Store canonical string view. Ten exact ordinary cases: six native original-session ingress controls, one unchanged preallocated API reference, two public canonical API encoding/Store controls and one unchanged installed managed HTTP case. Two locked test targets,24commands48raw; all original job/process/grant/log/source caps and old owner modes remain unchanged. No vendor-private unit, Blob, language or cache programme replay; parser/HeaderMap/redirect/TLS/control/transitive allocations remain explicit unpaid scopes. Source-only pending the bounded owning programme.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

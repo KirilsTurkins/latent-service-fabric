@@ -1,10 +1,11 @@
-use super::{Arc, Destination, HttpError, HttpRequest, Inner, IoMemory};
+use super::{Destination, HttpError, Inner};
 use crate::{credentials, headers};
 use http::{
     header::{HeaderName, HeaderValue},
     Request, Uri,
 };
 use http_body_util::Full;
+use latent_capabilities::broker::http::{HttpOwnedRequest, HttpRequest};
 use latent_capabilities::broker::CapabilityRequestDigest;
 
 pub(crate) fn digest(
@@ -37,16 +38,12 @@ pub(crate) fn digest(
 }
 pub(crate) fn build(
     inner: &Inner,
-    request: &mut HttpRequest,
+    request: &mut HttpOwnedRequest,
     destination: &Destination,
-    memory: Arc<IoMemory>,
     credentials_allowed: bool,
 ) -> Result<Request<crate::streaming::wire::RequestBody>, HttpError> {
     let body = crate::streaming::wire::RequestBody::Buffered(Full::new(bytes::Bytes::from_owner(
-        crate::network::OwnedRequestBody {
-            bytes: request.body.take().unwrap_or_default(),
-            _memory: memory,
-        },
+        request.take_body(),
     )));
     let length = http_body::Body::size_hint(&body).exact();
     build_with_body(

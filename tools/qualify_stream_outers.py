@@ -2008,6 +2008,216 @@ def qualify_blob_input(output, revision):
         write_json(output / 'commands.json', commands.records)
 
 
+HTTP_INPUT_BRANCH = 'feat/sdk-736-http-input-native-20261027'
+HTTP_INPUT_NATIVE_PREFIX = 'tests::ownership::'
+HTTP_INPUT_NATIVE_CASES = tuple(HTTP_INPUT_NATIVE_PREFIX + name for name in (
+    'native_http_ingress_refuses_before_materialization_and_unpolled_cancel_returns_credit',
+    'native_http_ingress_rejects_equal_grant_foreign_session_before_body_copy',
+    'native_http_ingress_bytes_and_driver_token_keep_original_credit_until_actual_last_drop',
+    'native_http_ingress_one_slot_redirect_retires_hop_without_retagging_credit',
+    'native_http_ingress_pending_real_driver_cancellation_retires_original_credit',
+    'native_http_ingress_nested_header_limit_refuses_without_payload_copy'))
+HTTP_INPUT_LEGACY_CASE = HTTP_INPUT_NATIVE_PREFIX + 'shared_idle_connection_owns_no_activation_and_reuses_the_real_socket'
+HTTP_INPUT_API_CASES = (
+    'canonical_utf8_view_uses_same_store_for_all_encodings_and_exact_destinations',
+    'canonical_utf8_view_rejects_foreign_store_without_poisoning_original')
+HTTP_INPUT_MANAGED_CASE = 'real_guest_executes_every_method_and_reclaims_the_same_warm_cell'
+HTTP_INPUT_CASES = (*HTTP_INPUT_NATIVE_CASES, HTTP_INPUT_LEGACY_CASE, *HTTP_INPUT_API_CASES, HTTP_INPUT_MANAGED_CASE)
+HTTP_INPUT_NEW_CASES = (*HTTP_INPUT_NATIVE_CASES, *HTTP_INPUT_API_CASES)
+HTTP_INPUT_FORBIDDEN_FIXTURE_ENV = IO_COPY_FORBIDDEN_FIXTURE_ENV
+HTTP_INPUT_API_MARKERS = {
+    HTTP_INPUT_API_CASES[0]: b'http-utf8-view forms=4 empty=1 malformed=1 unaligned=1 oob=1 exact=4 short=4 long=4 fresh=1',
+    HTTP_INPUT_API_CASES[1]: b'http-utf8-view wrong-store=refused original-store=fresh',
+}
+
+
+def http_input_result(raw, case):
+    require(case in HTTP_INPUT_CASES, 'fixed-case')
+    require(len(raw) <= artifacts.MAX_OUTPUT_BYTES, 'case-output-bound')
+    require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
+        == [case.encode()], 'one-exact-success')
+    summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
+        rb'(\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    require(len(summaries) == 1 and summaries[0][:4] == (b'1', b'0', b'0', b'0')
+        and int(summaries[0][4]) <= 10000, 'one-executed-no-skip')
+    scope = ('original-Phase3-HTTP-ingress-control' if case in HTTP_INPUT_NATIVE_CASES else
+        'unchanged-Phase3-preallocated-HTTP-API-reference' if case == HTTP_INPUT_LEGACY_CASE else
+        'actual-public-canonical-utf8-view-isolated-Store-no-ActivationBudget' if case in HTTP_INPUT_API_CASES else
+        'installed-canonical-HTTP-all-seven-methods-original-Store-cleanup')
+    markers = re.findall(rb'^(http-utf8-view [^\r\n]+)$', raw, re.M)
+    require(markers == ([HTTP_INPUT_API_MARKERS[case]] if case in HTTP_INPUT_API_MARKERS else []),
+        'actual-api-marker')
+    return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0,
+        'ignored': 0, 'filteredOut': int(summaries[0][4]), 'scope': scope,
+        'apiMarker': markers[0].decode() if markers else None}
+
+
+def qualify_http_input(output, revision):
+    require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
+        and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
+        and os.environ.get('GITHUB_REF_NAME') == HTTP_INPUT_BRANCH
+        and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'one-exact-hosted-push')
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
+        'owned-output')
+    output = fresh(output)
+    environment = io_copy_environment(build_environment(output))
+    environment.update(CARGO_TARGET_DIR=str(ROOT / 'target'), CARGO_INCREMENTAL='0',
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+        CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+    logs = output / 'commands'
+    logs.mkdir()
+    # Existing five-second reaping reserve remains inside declared caps.
+    commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895)
+    receipt = {'schemaVersion': 'lsf.owned-http-input.v1', 'status': 'in-progress',
+        'sourceRevision': revision, 'selectedCases': list(HTTP_INPUT_CASES), 'observations': [],
+        'newCases': list(HTTP_INPUT_NEW_CASES), 'oldTransferCasesExecuted': False, 'oldBlobOutputNativeCasesExecuted': False, 'oldBlobInputProgrammeExecuted': False,
+        'privateVendorUnitTestsExecuted': False, 'fullHttpSuiteExecuted': False,
+        'managedComponentCase': HTTP_INPUT_MANAGED_CASE,
+        'directApiCasesStarted': [], 'directApiCasesPassed': [],
+        'legacyReferenceCase': HTTP_INPUT_LEGACY_CASE, 'legacyReferenceProfile': 'Phase3-preallocated-API-not-Phase1',
+        'fullCostModelQualified': False, 'fullRuntimeSuiteExecuted': False,
+        'fullVendorSuiteExecuted': False, 'signedRealNodeGuestExecuted': False,
+        'wasmtimeExecuted': False, 'guestComponentCompiled': False,
+        'managedFixtureAssembled': False, 'managedFixtureState': 'not-started',
+        'cargoBuildMayRunHostBuildScripts': True,
+        'managedCaseReallyAssemblesCompilesAndExecutesComponent': True,
+        'hermetic': False, 'compilerImplicitInputsAttested': False,
+        'scope': 'original-session HTTP ingress exact prepayment, current-hop strong owner and immutable native-credit token through Bytes/driver/redirect; actual canonical utf8_view API and one unchanged preallocated request reference; parser/redirect/wire/Bytes internal/control/TLS/transitive costs stay separate',
+        'limits': {'overallSeconds': 2400, 'buildCommandSeconds': 900,
+            'caseProcessSeconds': 60, 'listProcessSeconds': 30, 'cleanupReserveSeconds': 5},
+        'budgetFixtures': {
+            'httpAndLegacyCases': {'memoryBytes': 1024**2, 'cpuFuelGrant': 100_000,
+                'wallTimeGrantMilliseconds': 5_000, 'engineFuelInstalled': False},
+            'managedComponentCase': {'memoryBytes': 16 * 1024**2,
+                'cpuFuelGrant': 1_000_000_000_000, 'wallTimeGrantMilliseconds': 5_000,
+                'sdkLanguageOverridePermitted': False},
+            'directApiCases': {'activationBudgetInstalled': False, 'linearMemoryLimiterBytes': 65536,
+                'coreInstanceLimit': 1, 'memoryLimit': 1, 'engineFuelInstalled': 100_000,
+                'hostcallFuel': 65536, 'outputStorage': 'fixed-stack-slices', 'RSSOrCompilerCostClaimed': False},
+            'genericHostOrRSSCeilingClaimed': False},
+        'externalFixtureInputsAbsent': list(HTTP_INPUT_FORBIDDEN_FIXTURE_ENV),
+        'oldCanonicalCasesExecuted': False, 'oldStreamProgrammeExecuted': False,
+        'oldProducerProgrammeExecuted': False, 'oldEightGraphProgrammeExecuted': False, 'oldThreeCopyProgrammeExecuted': False,
+        'cacheRoundtripExecuted': False, 'sdkGuestCompilerInvoked': False,
+        'commandLedgerBoundary': '24 supervised build/library/list/test commands and48 raw channels; normal pinned-tool resolver probes retain their existing owner and are not this ledger'}
+    try:
+        artifacts.require_source(ROOT, revision, environment)
+        before = source_inputs()
+        receipt['sourceBefore'] = before
+        write_json(output / 'source-inputs.json', before)
+        checked = source.verify()
+        receipt['wasmtimeSource'] = checked
+        toolchain = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml', 128 * 1024).decode())
+        require(toolchain['rust']['toolchain'] == '1.97.1'
+            and toolchain['contracts']['wasm-tools'] == '1.254.0', 'normal-tool-pins')
+        tools, pins = resolve_tools(toolchain, ROOT, environment, _deadline=commands.deadline)
+        receipt['observedTools'] = pins
+        environment.update(RUSTC=str(tools['rustc']), RUSTUP_TOOLCHAIN=toolchain['rust']['toolchain'])
+        def runtime_environment(artifact, label):
+            def probe(argv, *, cwd, env, timeout, maximum):
+                require(argv == ['rustc', '--print', 'target-libdir'] and cwd == ROOT
+                    and timeout == 30 and maximum == 4096, 'normal-library-probe')
+                commands.command_seconds = 25
+                require_io_copy_environment(env)
+                commands.environment = env
+                raw = commands.run(label + '-rust-library-path', tools['rustc'], *argv[1:])
+                require(len(raw) <= maximum, 'rust-library-output-bound')
+                return 0, raw
+            return artifacts.cargo_environment(ROOT, artifact, environment,
+                target=ROOT / 'target', execute=probe)
+
+        targets = (
+            ('http', (*HTTP_INPUT_NATIVE_CASES, HTTP_INPUT_LEGACY_CASE), (),
+             ('test', '-p', 'latent-http', '--locked', '--lib', '--all-features',
+              '--no-run', '--message-format=json'),
+             artifacts.Suite('crates/latent-http/Cargo.toml', 'latent_http',
+                'src/lib.rs', 'tests::ownership::', frozenset((*HTTP_INPUT_NATIVE_CASES, HTTP_INPUT_LEGACY_CASE)), True)),
+            ('managed', (*HTTP_INPUT_API_CASES, HTTP_INPUT_MANAGED_CASE), (),
+             ('test', '-p', 'latent-wasmtime', '--locked', '--test', 'http',
+              '--all-features', '--no-run', '--message-format=json'),
+             artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'http',
+                'tests/http.rs', '', frozenset((*HTTP_INPUT_API_CASES, HTTP_INPUT_MANAGED_CASE)), True, kind='test')),
+        )
+        executables = []
+        for label, cases, ignored, argv, suite in targets:
+            receipt['stage'] = 'build-' + label
+            require_io_copy_environment(environment)
+            commands.environment = environment
+            commands.command_seconds = 895
+            ordinal = len(commands.records)
+            commands.run('build-' + label, tools['cargo'], *argv)
+            artifact = artifacts.read_inventory(logs / f'logs/{ordinal:02d}-build-{label}.stdout.txt',
+                ROOT, suite, target=ROOT / 'target')
+            executable = file_identity(artifact.executable, label + '-native-backing-controls', 512 * 1024**2)
+            receipt[label + 'Executable'] = executable
+            executables.append((artifact.executable, executable, label + '-native-backing-controls'))
+            run_env = runtime_environment(artifact, label)
+            run_env = io_copy_environment(run_env)
+            if label == 'http':
+                contract, = [row for row in registry.load()['suites']
+                    if row['id'] == 'latent-http.lib.latent-http']
+                require(contract['minimumCases'] == 84
+                    and set(cases) <= set(contract['expectedCases'])
+                    and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
+            else:
+                contract, = [row for row in registry.load()['suites']
+                    if row['id'] == 'latent-wasmtime.test.http']
+                require(contract['minimumCases'] == 7
+                    and set(cases) <= set(contract['expectedCases'])
+                    and not set(cases) & set(contract['expectedIgnored']), 'normal-managed-suite-contract')
+            require_io_copy_environment(run_env)
+            commands.environment = run_env
+            for index, case in enumerate(cases):
+                receipt['stage'] = case
+                commands.command_seconds = 25
+                listed = commands.run(f'{label}-list-{index}', artifact.executable,
+                    case, '--exact', *ignored, '--list')
+                require(len(listed) <= artifacts.MAX_LIST_BYTES, 'list-bound')
+                artifacts.validate_listing(listed, artifacts.Suite(suite.manifest, suite.target,
+                    suite.source, case, frozenset((case,)), True))
+                commands.command_seconds = 55
+                if case == HTTP_INPUT_MANAGED_CASE:
+                    receipt['managedFixtureState'] = 'started-outcome-pending'
+                    receipt['managedFixtureAssembled'] = None
+                if case in HTTP_INPUT_API_CASES:
+                    receipt['directApiCasesStarted'].append(case)
+                if label == 'managed':
+                    for key in ('wasmtimeExecuted', 'guestComponentCompiled'):
+                        if receipt[key] is not True:
+                            receipt[key] = None
+                require_io_copy_environment(commands.environment)
+                raw = commands.run(f'{label}-case-{index}', artifact.executable,
+                    case, '--exact', *ignored, '--show-output', '--test-threads=1')
+                receipt['observations'].append(http_input_result(raw, case))
+                if label == 'managed':
+                    receipt.update(wasmtimeExecuted=True, guestComponentCompiled=True)
+                if case in HTTP_INPUT_API_CASES:
+                    receipt['directApiCasesPassed'].append(case)
+                if case == HTTP_INPUT_MANAGED_CASE:
+                    receipt.update(managedFixtureState='passed', managedFixtureAssembled=True)
+        require(len(commands.records) == 24 and len(receipt['observations']) == 10,
+            'two-builds-two-library-probes-ten-exact-cases')
+        require(time.monotonic() < commands.deadline, 'overall-deadline')
+        require(source_inputs() == before and source.verify() == checked, 'final-source')
+        for path, bound, label in executables:
+            require(file_identity(path, label, 512 * 1024**2) == bound, 'final-executable')
+        require([file_identity(tools[name], name) for name in sorted(tools)] == pins, 'final-tools')
+        artifacts.require_source(ROOT, revision, environment)
+        require_io_copy_environment(environment)
+        require_io_copy_environment(commands.environment)
+        require(time.monotonic() < commands.deadline, 'final-deadline')
+        receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True,
+            executed=list(HTTP_INPUT_CASES), ignored=[])
+        write_json(output / 'receipt.json', receipt)
+    except BaseException:
+        receipt['status'] = 'failed'
+        write_json(output / 'FAILED.json', receipt)
+        raise
+    finally:
+        write_json(output / 'commands.json', commands.records)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -2022,8 +2232,11 @@ if __name__ == '__main__':
     modes.add_argument('--io-copy', action='store_true')
     modes.add_argument('--blob-copy', action='store_true')
     modes.add_argument('--blob-input', action='store_true')
+    modes.add_argument('--http-input', action='store_true')
     args = parser.parse_args()
-    if args.blob_input:
+    if args.http_input:
+        qualify_http_input(args.output.resolve(), args.source_commit)
+    elif args.blob_input:
         qualify_blob_input(args.output.resolve(), args.source_commit)
     elif args.blob_copy:
         qualify_blob_copy(args.output.resolve(), args.source_commit)

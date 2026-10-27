@@ -1573,6 +1573,33 @@ impl WasmStr {
         self.to_str_from_memory(encoding, memory)
     }
 
+    /// Borrow a validated view which can encode this string into prepaid storage.
+    ///
+    /// Measuring and writing allocate no payload storage. The view retains a
+    /// borrow of this store's linear memory, so it cannot survive a mutable
+    /// store access or guest reentry. All accepted canonical string encodings
+    /// are validated before the view is returned.
+    ///
+    /// The caller must reserve its original allocation budget before allocating
+    /// the destination. This method does not create a budget or an owned string.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid encoding or an overflowing decoded length.
+    ///
+    /// # Panics
+    ///
+    /// Panics if this string is not owned by `store`.
+    pub fn utf8_view<'a, T: 'static>(
+        &self,
+        store: impl Into<StoreContext<'a, T>>,
+    ) -> Result<WasmStrUtf8<'a>> {
+        let store = store.into().0;
+        let memory = self.instance.options_memory(store, self.options);
+        let encoding = self.instance.options(store, self.options).string_encoding;
+        WasmStrUtf8::from_memory(self.ptr, self.len, encoding, memory)
+    }
+
     pub(crate) fn to_str_from_memory<'a>(
         &self,
         encoding: StringEncoding,
@@ -1640,6 +1667,122 @@ impl WasmStr {
         Ok(encoding_rs::mem::decode_latin1(
             &memory[self.ptr..][..self.len],
         ))
+    }
+}
+
+/// An opaque, validated canonical string borrowed from a particular store.
+///
+/// Created by [`WasmStr::utf8_view`]. This view owns no payload allocation and
+/// exposes no raw guest pointer. Its exact UTF-8 length allows the caller to
+/// reserve and allocate its own storage before [`Self::write_into`].
+pub struct WasmStrUtf8<'a> {
+    encoded: WasmStrEncoding<'a>,
+    utf8_len: usize,
+}
+
+enum WasmStrEncoding<'a> {
+    Utf8(&'a str),
+    Utf16(&'a [u8]),
+    Latin1(&'a [u8]),
+}
+
+impl<'a> WasmStrUtf8<'a> {
+    fn from_memory(
+        ptr: usize,
+        len: usize,
+        encoding: StringEncoding,
+        memory: &'a [u8],
+    ) -> Result<Self> {
+        let (units, width, align) = match encoding {
+            StringEncoding::Utf8 => (len, 1, 1),
+            StringEncoding::Utf16 => (len, 2, 2),
+            StringEncoding::CompactUtf16 if len & UTF16_TAG == 0 => (len, 1, 2),
+            StringEncoding::CompactUtf16 => (len ^ UTF16_TAG, 2, 2),
+        };
+        ensure!(ptr % align == 0, "string pointer not aligned to {align}");
+        let end = units
+            .checked_mul(width)
+            .and_then(|bytes| ptr.checked_add(bytes))
+            .ok_or_else(|| format_err!("dynamic-value-allocation-overflow"))?;
+        let bytes = memory
+            .get(ptr..end)
+            .ok_or_else(|| format_err!("string pointer/length out of bounds of memory"))?;
+        let encoded = match encoding {
+            StringEncoding::Utf8 => WasmStrEncoding::Utf8(str::from_utf8(bytes)?),
+            StringEncoding::CompactUtf16 if width == 1 => WasmStrEncoding::Latin1(bytes),
+            _ => WasmStrEncoding::Utf16(bytes),
+        };
+        // Match the allocation-free measurement used by dynamic_memory's
+        // decoded_text. UTF-16 is fully validated before any destination exists.
+        let utf8_len = match &encoded {
+            WasmStrEncoding::Utf8(text) => text.len(),
+            WasmStrEncoding::Latin1(bytes) => bytes
+                .iter()
+                .try_fold(0usize, |n, b| n.checked_add(char::from(*b).len_utf8()))
+                .ok_or_else(|| format_err!("dynamic-value-allocation-overflow"))?,
+            WasmStrEncoding::Utf16(bytes) => {
+                let mut count = 0usize;
+                for ch in core::char::decode_utf16(
+                    bytes
+                        .chunks_exact(2)
+                        .map(|b| u16::from_le_bytes([b[0], b[1]])),
+                ) {
+                    count = count
+                        .checked_add(ch?.len_utf8())
+                        .ok_or_else(|| format_err!("dynamic-value-allocation-overflow"))?;
+                }
+                count
+            }
+        };
+        Ok(Self { encoded, utf8_len })
+    }
+
+    /// Exact size of the validated UTF-8 output, in bytes.
+    pub fn len(&self) -> usize {
+        self.utf8_len
+    }
+
+    /// Whether the validated output is empty.
+    pub fn is_empty(&self) -> bool {
+        self.utf8_len == 0
+    }
+
+    /// Write into a caller-owned buffer whose length is exactly [`Self::len`].
+    ///
+    /// A destination-length error leaves every destination byte unchanged.
+    /// Encoding was validated on creation; immutable store-borrowed input cannot
+    /// change between measurement and writing. No `Vec`, `String`, or other
+    /// payload allocation is performed here.
+    pub fn write_into(&self, destination: &mut [u8]) -> Result<()> {
+        ensure!(
+            destination.len() == self.utf8_len,
+            "canonical-string-destination-length"
+        );
+        let mut offset = 0;
+        fn write(destination: &mut [u8], offset: &mut usize, ch: char) {
+            let mut scratch = [0; 4];
+            let bytes = ch.encode_utf8(&mut scratch).as_bytes();
+            destination[*offset..*offset + bytes.len()].copy_from_slice(bytes);
+            *offset += bytes.len();
+        }
+        match &self.encoded {
+            WasmStrEncoding::Utf8(text) => destination.copy_from_slice(text.as_bytes()),
+            WasmStrEncoding::Latin1(bytes) => {
+                for byte in *bytes {
+                    write(destination, &mut offset, char::from(*byte));
+                }
+            }
+            WasmStrEncoding::Utf16(bytes) => {
+                for ch in core::char::decode_utf16(
+                    bytes
+                        .chunks_exact(2)
+                        .map(|b| u16::from_le_bytes([b[0], b[1]])),
+                ) {
+                    write(destination, &mut offset, ch?);
+                }
+            }
+        }
+        Ok(())
     }
 }
 
@@ -3143,4 +3286,82 @@ pub fn bad_type_info<T>() -> T {
     // becomes a performance bottleneck at some point, but that also comes with
     // a tradeoff of propagating a lot of unsafety, so it may not be worth it.
     panic!("bad type information detected");
+}
+
+#[cfg(test)]
+mod wasm_str_utf8_view_tests {
+    use super::{StringEncoding, UTF16_TAG, WasmStrUtf8};
+
+    #[test]
+    fn utf8_view_measures_and_writes_without_owning_the_source() {
+        let bytes = "a\u{e9}\u{1d11e}".as_bytes();
+        let view = WasmStrUtf8::from_memory(0, bytes.len(), StringEncoding::Utf8, bytes).unwrap();
+        assert_eq!(view.len(), bytes.len());
+        assert!(!view.is_empty());
+        let mut output = [0; 7];
+        view.write_into(&mut output).unwrap();
+        assert_eq!(output, bytes);
+        assert!(WasmStrUtf8::from_memory(0, 1, StringEncoding::Utf8, &[0xff]).is_err());
+    }
+
+    #[test]
+    fn utf16_view_validates_surrogates_before_output() {
+        let bytes = [0x61, 0, 0x34, 0xd8, 0x1e, 0xdd];
+        let view = WasmStrUtf8::from_memory(0, 3, StringEncoding::Utf16, &bytes).unwrap();
+        let mut output = [0; 5];
+        view.write_into(&mut output).unwrap();
+        assert_eq!(output, "a\u{1d11e}".as_bytes());
+        for invalid in [[0, 0xd8], [0, 0xdc]] {
+            assert!(WasmStrUtf8::from_memory(0, 1, StringEncoding::Utf16, &invalid).is_err());
+        }
+    }
+
+    #[test]
+    fn compact_view_handles_latin1_and_tagged_utf16() {
+        let latin1 = [0x41, 0x80, 0xff];
+        let view = WasmStrUtf8::from_memory(0, 3, StringEncoding::CompactUtf16, &latin1).unwrap();
+        let mut output = [0; 5];
+        view.write_into(&mut output).unwrap();
+        assert_eq!(output, "A\u{80}\u{ff}".as_bytes());
+        let utf16 = [0x34, 0xd8, 0x1e, 0xdd];
+        let view = WasmStrUtf8::from_memory(0, UTF16_TAG | 2, StringEncoding::CompactUtf16, &utf16)
+            .unwrap();
+        let mut output = [0; 4];
+        view.write_into(&mut output).unwrap();
+        assert_eq!(output, "\u{1d11e}".as_bytes());
+    }
+
+    #[test]
+    fn empty_views_and_bounds_are_checked_for_every_encoding() {
+        for (encoding, len) in [
+            (StringEncoding::Utf8, 0),
+            (StringEncoding::Utf16, 0),
+            (StringEncoding::CompactUtf16, 0),
+            (StringEncoding::CompactUtf16, UTF16_TAG),
+        ] {
+            let view = WasmStrUtf8::from_memory(0, len, encoding, &[]).unwrap();
+            assert!(view.is_empty());
+            view.write_into(&mut []).unwrap();
+        }
+        assert!(WasmStrUtf8::from_memory(0, 2, StringEncoding::Utf8, b"x").is_err());
+        assert!(WasmStrUtf8::from_memory(1, 0, StringEncoding::Utf16, &[0, 0]).is_err());
+        assert!(WasmStrUtf8::from_memory(0, usize::MAX, StringEncoding::Utf16, &[]).is_err());
+        assert!(WasmStrUtf8::from_memory(usize::MAX, 1, StringEncoding::Utf8, &[]).is_err());
+    }
+
+    #[test]
+    fn wrong_destination_length_never_writes_partial_output() {
+        let bytes = [0xff];
+        let view = WasmStrUtf8::from_memory(0, 1, StringEncoding::CompactUtf16, &bytes).unwrap();
+        assert_eq!(view.len(), 2);
+        let mut short = [0x55; 1];
+        assert!(view.write_into(&mut short).is_err());
+        assert_eq!(short, [0x55; 1]);
+        let mut long = [0x55; 3];
+        assert!(view.write_into(&mut long).is_err());
+        assert_eq!(long, [0x55; 3]);
+        let mut exact = [0; 2];
+        view.write_into(&mut exact).unwrap();
+        assert_eq!(exact, "\u{ff}".as_bytes());
+    }
 }

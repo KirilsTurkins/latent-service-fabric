@@ -4,12 +4,15 @@ use super::{
     HostState,
 };
 use latent_capabilities::broker::http::{
-    HttpCompletion, HttpError, HttpHeader, HttpMethod, HttpRequest, OutboundHttpInvoker,
+    HttpCompletion, HttpError, HttpMethod, HttpRequestSource, HttpTextField, OutboundHttpInvoker,
     HTTP_CAPABILITY,
 };
 use latent_component_bindings::host::phase3::latent::http::client as wit;
 use std::{sync::Arc, time::Instant};
-use wasmtime::{component::Linker, AsContextMut};
+use wasmtime::{
+    component::{Linker, WasmList, WasmStr},
+    AsContext, AsContextMut, StoreContext,
+};
 
 pub(crate) fn install(
     linker: &mut Linker<HostState>,
@@ -17,7 +20,7 @@ pub(crate) fn install(
 ) -> wasmtime::Result<()> {
     linker.instance(HTTP_CAPABILITY)?.func_wrap_concurrent(
         "send",
-        move |access, (request,): (wit::Request,)| {
+        move |access, (request,): (RequestInput,)| {
             let invoker = Arc::clone(&invoker);
             Box::pin(async move {
                 let started = Instant::now();
@@ -30,12 +33,34 @@ pub(crate) fn install(
                     let invocation = if store.data().transaction.is_attached() {
                         Err(HttpError::PermissionDenied)
                     } else {
-                        convert_request(request).and_then(|request| {
+                        (|| {
+                            if request.headers.len() > 64 {
+                                return Err(HttpError::RequestTooLarge);
+                            }
+                            // Decode only fixed borrowed descriptors here; no payload storage.
+                            let mut headers: [Option<HeaderInput>; 64] =
+                                std::array::from_fn(|_| None);
+                            for (index, slot) in
+                                headers[..request.headers.len()].iter_mut().enumerate()
+                            {
+                                *slot = Some(
+                                    request
+                                        .headers
+                                        .get(&mut store, index)
+                                        .ok_or(HttpError::InvalidRequest)?
+                                        .map_err(|_| HttpError::InvalidRequest)?,
+                                );
+                            }
+                            let mut source = RequestSource {
+                                store: store.as_context(),
+                                request,
+                                headers,
+                            };
                             store
                                 .data()
                                 .capabilities
-                                .http_start(invoker.as_ref(), request)
-                        })
+                                .http_start(invoker.as_ref(), &mut source)
+                        })()
                     };
                     synchronize(&mut store)?;
                     Ok::<_, wasmtime::Error>(invocation)
@@ -79,14 +104,59 @@ pub(crate) fn install(
     )?;
     Ok(())
 }
-fn convert_request(request: wit::Request) -> Result<HttpRequest, HttpError> {
-    // Wasmtime hostcall fuel bounds canonical lifting before this adapter runs;
-    // the provider then intersects these hard bounds with its configured limits.
-    if request.headers.len() > 64 || request.headers.capacity() > 64 {
-        return Err(HttpError::RequestTooLarge);
+#[derive(wasmtime::component::ComponentType, wasmtime::component::Lift)]
+#[component(record)]
+struct HeaderInput {
+    name: WasmStr,
+    value: WasmStr,
+}
+#[derive(wasmtime::component::ComponentType, wasmtime::component::Lift)]
+#[component(record)]
+struct RequestInput {
+    method: wit::Method,
+    url: WasmStr,
+    headers: WasmList<HeaderInput>,
+    body: Option<WasmList<u8>>,
+    #[component(name = "body-media-type")]
+    body_media_type: Option<WasmStr>,
+    #[component(name = "idempotency-key")]
+    idempotency_key: Option<WasmStr>,
+    #[component(name = "timeout-millis")]
+    timeout_millis: Option<u64>,
+}
+struct RequestSource<'a> {
+    store: StoreContext<'a, HostState>,
+    request: RequestInput,
+    headers: [Option<HeaderInput>; 64],
+}
+impl RequestSource<'_> {
+    fn field(&self, field: HttpTextField) -> Result<Option<&WasmStr>, HttpError> {
+        Ok(match field {
+            HttpTextField::Url => Some(&self.request.url),
+            HttpTextField::HeaderName(index) => Some(
+                &self
+                    .headers
+                    .get(index)
+                    .and_then(Option::as_ref)
+                    .ok_or(HttpError::InvalidRequest)?
+                    .name,
+            ),
+            HttpTextField::HeaderValue(index) => Some(
+                &self
+                    .headers
+                    .get(index)
+                    .and_then(Option::as_ref)
+                    .ok_or(HttpError::InvalidRequest)?
+                    .value,
+            ),
+            HttpTextField::BodyMediaType => self.request.body_media_type.as_ref(),
+            HttpTextField::IdempotencyKey => self.request.idempotency_key.as_ref(),
+        })
     }
-    Ok(HttpRequest {
-        method: match request.method {
+}
+impl HttpRequestSource for RequestSource<'_> {
+    fn method(&self) -> HttpMethod {
+        match self.request.method {
             wit::Method::Get => HttpMethod::Get,
             wit::Method::Head => HttpMethod::Head,
             wit::Method::Post => HttpMethod::Post,
@@ -94,21 +164,47 @@ fn convert_request(request: wit::Request) -> Result<HttpRequest, HttpError> {
             wit::Method::Patch => HttpMethod::Patch,
             wit::Method::Delete => HttpMethod::Delete,
             wit::Method::Options => HttpMethod::Options,
-        },
-        url: request.url,
-        headers: request
-            .headers
-            .into_iter()
-            .map(|header| HttpHeader {
-                name: header.name,
-                value: header.value,
+        }
+    }
+    fn timeout_millis(&self) -> Option<u64> {
+        self.request.timeout_millis
+    }
+    fn header_count(&self) -> usize {
+        self.request.headers.len()
+    }
+    fn text_len(&mut self, field: HttpTextField) -> Result<Option<usize>, HttpError> {
+        self.field(field)?
+            .map(|value| {
+                value
+                    .utf8_view(self.store.as_context())
+                    .map(|v| v.len())
+                    .map_err(|_| HttpError::InvalidRequest)
             })
-            .collect(),
-        body: request.body,
-        body_media_type: request.body_media_type,
-        idempotency_key: request.idempotency_key,
-        timeout_millis: request.timeout_millis,
-    })
+            .transpose()
+    }
+    fn write_text(&mut self, field: HttpTextField, output: &mut [u8]) -> Result<(), HttpError> {
+        self.field(field)?
+            .ok_or(HttpError::InvalidRequest)?
+            .utf8_view(self.store.as_context())
+            .and_then(|view| view.write_into(output))
+            .map_err(|_| HttpError::InvalidRequest)
+    }
+    fn body_len(&self) -> Option<usize> {
+        self.request.body.as_ref().map(WasmList::len)
+    }
+    fn write_body(&mut self, output: &mut [u8]) -> Result<(), HttpError> {
+        let bytes = self
+            .request
+            .body
+            .as_ref()
+            .ok_or(HttpError::InvalidRequest)?
+            .as_le_slice(self.store.as_context());
+        if output.len() != bytes.len() {
+            return Err(HttpError::InvalidRequest);
+        }
+        output.copy_from_slice(bytes);
+        Ok(())
+    }
 }
 fn convert_error(error: HttpError) -> wit::HttpError {
     match error {

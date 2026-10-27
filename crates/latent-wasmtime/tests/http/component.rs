@@ -305,3 +305,111 @@ fn caller_module() -> Module {
     module.section(&code);
     module
 }
+
+/// A finite real canonical string-return component; no WAT or guest allocator.
+pub fn utf8_view_bytes() -> Vec<u8> {
+    let forms = [
+        ("utf8", None, 64u32, 7u32),
+        ("utf16", Some(CanonicalOption::UTF16), 80, 3),
+        ("latin1", Some(CanonicalOption::CompactUTF16), 96, 2),
+        (
+            "tagged-utf16",
+            Some(CanonicalOption::CompactUTF16),
+            80,
+            (1 << 31) | 3,
+        ),
+        ("empty", None, 65536, 0),
+        ("malformed", Some(CanonicalOption::UTF16), 112, 1),
+        ("unaligned", Some(CanonicalOption::UTF16), 81, 1),
+        ("out-of-bounds", None, 65535, 8),
+    ];
+    let mut payload = [0u8; 128];
+    for (index, (_, _, pointer, length)) in forms.iter().enumerate() {
+        payload[index * 8..index * 8 + 4].copy_from_slice(&pointer.to_le_bytes());
+        payload[index * 8 + 4..index * 8 + 8].copy_from_slice(&length.to_le_bytes());
+    }
+    payload[64..71].copy_from_slice(b"a\xc3\xa9\xf0\x9d\x84\x9e");
+    payload[80..86].copy_from_slice(&[0xe9, 0, 0x34, 0xd8, 0x1e, 0xdd]);
+    payload[96..98].copy_from_slice(&[0xe9, 0xff]);
+    payload[112..114].copy_from_slice(&[0, 0xd8]);
+    let mut module = Module::new();
+    let mut types = TypeSection::new();
+    types.ty().function([], [ValType::I32]);
+    module.section(&types);
+    let mut functions = FunctionSection::new();
+    for _ in forms {
+        functions.function(0);
+    }
+    module.section(&functions);
+    let mut memories = MemorySection::new();
+    memories.memory(MemoryType {
+        minimum: 1,
+        maximum: Some(1),
+        memory64: false,
+        shared: false,
+        page_size_log2: None,
+    });
+    module.section(&memories);
+    let mut exports = ExportSection::new();
+    exports.export("memory", ExportKind::Memory, 0);
+    for (index, (name, _, _, _)) in forms.iter().enumerate() {
+        exports.export(name, ExportKind::Func, u32::try_from(index).unwrap());
+    }
+    module.section(&exports);
+    let mut code = CodeSection::new();
+    for index in 0..forms.len() {
+        let mut function = Function::new([]);
+        function.instruction(&Instruction::I32Const(i32::try_from(index * 8).unwrap()));
+        function.instruction(&Instruction::End);
+        code.function(&function);
+    }
+    module.section(&code);
+    let mut data = DataSection::new();
+    data.active(0, &ConstExpr::i32_const(0), payload);
+    module.section(&data);
+    let mut component = Component::new();
+    let mut types = ComponentTypeSection::new();
+    types
+        .function()
+        .params([] as [(&str, PrimitiveValType); 0])
+        .result(Some(PrimitiveValType::String.into()));
+    component.section(&types);
+    component.section(&ModuleSection(&module));
+    let mut instances = InstanceSection::new();
+    instances.instantiate(0, [] as [(&str, ModuleArg); 0]);
+    component.section(&instances);
+    let mut aliases = ComponentAliasSection::new();
+    aliases.alias(Alias::CoreInstanceExport {
+        instance: 0,
+        kind: ExportKind::Memory,
+        name: "memory",
+    });
+    for (name, _, _, _) in forms {
+        aliases.alias(Alias::CoreInstanceExport {
+            instance: 0,
+            kind: ExportKind::Func,
+            name,
+        });
+    }
+    component.section(&aliases);
+    let mut functions = CanonicalFunctionSection::new();
+    for (index, (_, encoding, _, _)) in forms.iter().enumerate() {
+        let mut options = vec![CanonicalOption::Memory(0)];
+        if let Some(encoding) = encoding {
+            options.push(*encoding);
+        }
+        functions.lift(u32::try_from(index).unwrap(), 0, options);
+    }
+    component.section(&functions);
+    let mut exports = ComponentExportSection::new();
+    for (index, (name, _, _, _)) in forms.iter().enumerate() {
+        exports.export(
+            name,
+            ComponentExportKind::Func,
+            u32::try_from(index).unwrap(),
+            None,
+        );
+    }
+    component.section(&exports);
+    component.finish()
+}
