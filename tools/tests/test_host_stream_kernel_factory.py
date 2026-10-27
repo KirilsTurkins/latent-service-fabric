@@ -101,21 +101,34 @@ class HostStreamKernelFactory(unittest.TestCase):
 
     def test_native_ownership_is_original_accepted_session_io_and_fixed_allowance(self):
         raw = (ROOT / "crates/latent-capabilities/src/broker/pools/protocol.rs").read_text()
-        for item in ("io: IoLease", "Arc<super::admission::Request>", "Arc<StreamScope>",
+        for item in ("io: IoLease", "_request: super::admission::RequestOwner", "Arc<StreamScope>",
                      "SessionCoreOwner::ptr_eq(&original.core, &accepted.core)", "65_536 | 98_304",
                      "io: self.io.lease()", "self.retain_stream_request()",
                      "scope.reserve_host_memory(bytes)?"):
             self.assertIn(item, raw)
         self.assertNotIn("Deserialize", raw)
+        admission = (ROOT / "crates/latent-capabilities/src/broker/pools/admission.rs").read_text()
+        self.assertIn("pub(in crate::broker) type RequestOwner = Shared<Request>;", admission)
+        self.assertIn("use crate::broker::session::{PreparedShared, SessionCoreOwner, Shared, SharedWeak};", admission)
+        self.assertIn("pub(super) fn retain_stream_request(&self) -> RequestOwner {\n        self.request.clone()\n    }", admission)
         backing = raw[raw.index("pub fn reserve_stream_kernel_backing("):]
         self.assertIn("self.reserve_protocol_metadata(1024 * 1024)?", backing)
 
     def test_actual_quarantine_selects_original_io_owner_without_double_reservation(self):
         raw = (ROOT / "crates/latent-streams/src/connection.rs").read_text()
-        reserve = raw[raw.index("impl SocketMemory {"):raw.index("struct Connecting {")]
+        start = raw.index("impl SocketMemory {")
+        reserve = raw[start:raw.index("\n}\n", start) + len("\n}\n")]
         self.assertIn("if mode.retains_unproved()", reserve)
         self.assertIn("call.reserve_stream_kernel_ownership(scope, bytes)", reserve)
         self.assertIn("scope.reserve_host_memory(bytes).map(Self::Logical)", reserve)
+        self.assertIn(".map(Self::Kernel)", reserve)
+        self.assertEqual(reserve.count("reserve_stream_kernel_ownership("), 1)
+        self.assertEqual(reserve.count("reserve_host_memory("), 1)
+        self.assertLess(reserve.index("if mode.retains_unproved()"),
+                        reserve.index("call.reserve_stream_kernel_ownership(scope, bytes)"))
+        self.assertLess(reserve.index("call.reserve_stream_kernel_ownership(scope, bytes)"),
+                        reserve.index("} else {"))
+        self.assertLess(reserve.index("} else {"), reserve.index("scope.reserve_host_memory(bytes)"))
         self.assertIn(".quarantine(value)", raw)
         self.assertIn("original.quarantine()", raw)
 
