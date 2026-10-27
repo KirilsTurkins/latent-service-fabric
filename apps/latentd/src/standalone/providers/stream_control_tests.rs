@@ -428,7 +428,7 @@ async fn connect_control_stream(
         .unwrap()
 }
 
-type UnpolledRead = latent_core::BoxFuture<
+type UnpolledRead = latent_capabilities::broker::io::IoFuture<
     'static,
     Result<Option<latent_capabilities::broker::io::IoOutputChunk>, latent_streams::StreamError>,
 >;

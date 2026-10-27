@@ -52,7 +52,7 @@ pub struct StreamKernelOwnership {
     // precede scope/request release and the final original I/O quiescence owner.
     memory: latent_core::budget::HostMemoryReservation,
     _scope: Arc<StreamScope>,
-    _request: Arc<super::admission::Request>,
+    _request: super::admission::RequestOwner,
     io: IoLease,
 }
 

@@ -1,494 +1,494 @@
 {
-  "schemaVersion": "lsf.kernel-device-pci-prefix-preimages.v1",
-  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
-  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
-  "source": {
-    "fs/inode.c": {
-      "bytes": 75338,
-      "sha256": "73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
-      "gitBlob": "7942673f686fdc24d92c2fb8033c2fb3b6df7709",
-      "independentlyGitCorroborated": true
-    },
-    "include/linux/netdevice.h": {
-      "bytes": 170262,
-      "sha256": "35577d1d0decaad06824a0591c5929a1e837c7dc00e95b42cba1bc6743fb3941",
-      "gitBlob": "0aa536df9cb594eb762465b2007390bc90e53815",
-      "independentlyGitCorroborated": false
-    },
-    "include/linux/rcuref.h": {
-      "bytes": 4771,
-      "sha256": "4bad6b9738eeae56cdb0735d8d8b901fd7b3fe4d9432701ffab40100bf9ea7c1",
-      "gitBlob": "6322d8c1c6b4294abb794b4e0af739f1b0caedd9",
-      "independentlyGitCorroborated": false
-    },
-    "include/linux/skbuff.h": {
-      "bytes": 151887,
-      "sha256": "af70ea27cf9a3a2d790b1005a16da7649d3bbb0fd136b2934ed4018077dbb822",
-      "gitBlob": "df548a3d606570d38614fc45403133069ecb9cab",
-      "independentlyGitCorroborated": true
-    },
-    "include/net/dst.h": {
-      "bytes": 16116,
-      "sha256": "78178f0528f8f9ee92ae63c7308f84cfc5d90941d92b674fc42078999a6d3369",
-      "gitBlob": "b3ac23e14adab857ca58013861ac124f68446559",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/dst_ops.h": {
-      "bytes": 2116,
-      "sha256": "388f5247da499afef3ae4f1a7f7ad779192aa31a071355bbb6d50e188e3ae524",
-      "gitBlob": "3a9001a042a5c392a79cfc59af528ef410a28668",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/inet_hashtables.h": {
-      "bytes": 17314,
-      "sha256": "a699f5b96229f9d6fa4bb5bf435285db59b7d2e45918044f2c5fec01e624bf6e",
-      "gitBlob": "b1118125486631e6e02ca2d1f6575dad60e6d705",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/ip.h": {
-      "bytes": 25084,
-      "sha256": "468170661746038b5ecc7bfa114433feeb853708d0af7a65d59541b602473963",
-      "gitBlob": "97c60b3002702ac98ded03e19aaeed539b657373",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/ip_fib.h": {
-      "bytes": 17526,
-      "sha256": "8f006444cb27c3d3dc92eb417ad90a9a9ae818f833982b85de3577a8cc854d65",
-      "gitBlob": "145b90d004ebb45952be61f98bc7c03f0039bd9d",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/lwtunnel.h": {
-      "bytes": 6850,
-      "sha256": "d5df355174e9182e145c1d4a67724d408f663d4eab35eac51f0af2c198b151e9",
-      "gitBlob": "09791f5d9b6ec8f06ff093ec1adcbf75e08bed62",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/netlabel.h": {
-      "bytes": 21017,
-      "sha256": "82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
-      "gitBlob": "529160f76cac209ee7473ea7b5ccd49da0789f18",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/nexthop.h": {
-      "bytes": 12985,
-      "sha256": "80faf19c5303d481542adbf2c23463c9a135bb4633957683161f64ff2cba2792",
-      "gitBlob": "d9fb44e8b3219cf01031385f03021097ef6e7a76",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/route.h": {
-      "bytes": 11707,
-      "sha256": "653aee3691e524225bbb9d1e4f7ace85b2e56f81a8047c7b10562201392b71a5",
-      "gitBlob": "76f526e051aa36e3ae33ee37bd8c8c2e19ef9ba6",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/sock.h": {
-      "bytes": 85865,
-      "sha256": "5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
-      "gitBlob": "efa549885b7f85e50c55f95ad4eae0c1ef75797a",
-      "independentlyGitCorroborated": true
-    },
-    "include/net/tcp.h": {
-      "bytes": 86800,
-      "sha256": "6d4ba5b9aab587292de3cb3836b5907ac265d866f94a52135452f8010af9243a",
-      "gitBlob": "ad9af706085ab368c9b0723e121f66a71939ad59",
-      "independentlyGitCorroborated": true
-    },
-    "include/net/xfrm.h": {
-      "bytes": 61675,
-      "sha256": "aadaea85ee3054727e4b568e82ca6ea3cee5c9f7be461134ed773f402dcfb9ef",
-      "gitBlob": "a20a01dd6f98e3c058dbedd820eeee60c4c24ae0",
-      "independentlyGitCorroborated": false
-    },
-    "kernel/audit.c": {
-      "bytes": 66999,
-      "sha256": "7a33029ecca2b8a71a8a12e9a1699a8180e64a82acfbdc599b0ec658fa07d564",
-      "gitBlob": "df279dd2e45086b791852f2a46ceb52f24f0fd78",
-      "independentlyGitCorroborated": false
-    },
-    "net/core/dst.c": {
-      "bytes": 8852,
-      "sha256": "362a3128a9d91cd676fe607746f3b169224083d86047a84583862c81f5661b86",
-      "gitBlob": "92aa81b2f33157e91c7de8f96254054380cb9b2a",
-      "independentlyGitCorroborated": true
-    },
-    "net/core/skbuff.c": {
-      "bytes": 189334,
-      "sha256": "6a2fec31182c7c4d247d85aaffba036de9c0b6a9911c3cc1249d00b423ea0ae8",
-      "gitBlob": "5608b5507b5bf03504a9093abaa865af2b82043e",
-      "independentlyGitCorroborated": true
-    },
-    "net/core/sock.c": {
-      "bytes": 111636,
-      "sha256": "f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
-      "gitBlob": "75db38fdfd35fe87b87ac2755b0ef1db6fb96415",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/af_inet.c": {
-      "bytes": 51938,
-      "sha256": "9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
-      "gitBlob": "c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/cipso_ipv4.c": {
-      "bytes": 63739,
-      "sha256": "03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
-      "gitBlob": "53fcb2089cde2a246c0b84d31582485b2496da64",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/fib_frontend.c": {
-      "bytes": 40789,
-      "sha256": "054b45ed18db33e7f842e3565aa29fd21e171fff61debfe3b9dd2def46f55682",
-      "gitBlob": "5b7c41333d6fc8f779a99dd11c8def5797ba3997",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/fib_semantics.c": {
-      "bytes": 54966,
-      "sha256": "7cb52cf170fbd73a80ac9a92c4cd668d90f935321deab8230f362b30dd4f04a7",
-      "gitBlob": "1e7961b8a7cee82179ef7c9b6f088146a7de799c",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/fib_trie.c": {
-      "bytes": 74770,
-      "sha256": "e87b942d3f04998cc2ceab4e40223bd24a4f2c89f3137bb4d847368485bd37b7",
-      "gitBlob": "f04a735ba7cac117041529fdf8f2a3174d3e816a",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/inet_connection_sock.c": {
-      "bytes": 45201,
-      "sha256": "cb3567452632b9017a463f8dc860bd046bb9e572bacd56d219a2c0e124f453c7",
-      "gitBlob": "eeee6f75833767f0ae5878bb285fbde63d027654",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/inet_hashtables.c": {
-      "bytes": 35429,
-      "sha256": "20113f4e67d557ef06a68322d0cb03da2de5463409eb2b8b5dd80b305e9aa08d",
-      "gitBlob": "37a6acff537e6511a84b7cdfc61af2412eb2cb0b",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/inet_timewait_sock.c": {
-      "bytes": 10794,
-      "sha256": "c200d5880fbf8dd56c0a058beb9b4e92465991038a81b98469aa98ad1c5f31c5",
-      "gitBlob": "74b84ac418e93c176336fc974b82c3586bae3fc1",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/metrics.c": {
-      "bytes": 2214,
-      "sha256": "b23000aa2906b653caa07638117c8c799f7c2ffd25fca9c4fbe0a234293ef134",
-      "gitBlob": "8ddac1f595ed8cc6077e027f53db7db3c7387843",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/nexthop.c": {
-      "bytes": 101381,
-      "sha256": "2be58e25f245b504674b60182098932468bf3b1f6c4cec89146b00419e341814",
-      "gitBlob": "fbb22a63b8807843d4bd5272739a3f7d8669b22f",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/route.c": {
-      "bytes": 97360,
-      "sha256": "18e47ff7b034786411f98221878df2ba5bb645e21c90d30c3a185cff1007aef3",
-      "gitBlob": "596c84fd5ab42f15b53700ecb3ab8d968ca4330f",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/tcp.c": {
-      "bytes": 143675,
-      "sha256": "b10e52525abec71fed9eb8d5fb201cda5118eef04de52fae4159477da3d77ec7",
-      "gitBlob": "21c64ca9bb9b496013773250a71690249756a653",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/tcp_input.c": {
-      "bytes": 218886,
-      "sha256": "82fc39a54ef30599ff19ce2e400c8d5bbec9cd9be8dcc150767f7ec73a4bd979",
-      "gitBlob": "5c581d4821c1dcce1c89f29c5d4a73865b668c73",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/tcp_output.c": {
-      "bytes": 132663,
-      "sha256": "d0a3f8ae8b7ed2b06900344be3bca1ba7f804e96eaba1195ab617fa75f3fd89b",
-      "gitBlob": "feb94fd45c59459bb3669c0a20c985477cdc01e2",
-      "independentlyGitCorroborated": true
-    },
-    "net/netlabel/netlabel_kapi.c": {
-      "bytes": 38938,
-      "sha256": "d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
-      "gitBlob": "33b77084a4e5f34770f960d7c82e481d9889753a",
-      "independentlyGitCorroborated": false
-    },
-    "net/netlink/af_netlink.c": {
-      "bytes": 71601,
-      "sha256": "2145f190dc87bfa5f79739d960766970652ed9e5c271ec847c1eeca4be86fd2d",
-      "gitBlob": "e250d4a3d03097f92c48c1741db405c8ea54899d",
-      "independentlyGitCorroborated": false
-    },
-    "net/socket.c": {
-      "bytes": 92491,
-      "sha256": "95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
-      "gitBlob": "723bc3a1ba5cdd17f559a65de73d9c87911e6954",
-      "independentlyGitCorroborated": true
-    },
-    "net/xfrm/xfrm_policy.c": {
-      "bytes": 114568,
-      "sha256": "79929076ddb7f855026ce831d48a8c22972724e639f25f66fe4630207f530680",
-      "gitBlob": "e033390e77855cd0c586b2ed6cc511b812193ce1",
-      "independentlyGitCorroborated": false
-    },
-    "security/lsm_audit.c": {
-      "bytes": 11088,
-      "sha256": "bd55731531fa8d095a2f7857afd8cdd83b689f8a675b7b05217910769c4bf257",
-      "gitBlob": "849e832719e2151a060679db4fe993e13f42b997",
-      "independentlyGitCorroborated": false
-    },
-    "security/security.c": {
-      "bytes": 180030,
-      "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
-      "gitBlob": "b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
-      "independentlyGitCorroborated": true
-    },
-    "security/selinux/avc.c": {
-      "bytes": 31717,
-      "sha256": "e5ead166180e1b51dab8f701f16a595e51ff68eb346f7a8b4549617ce4672ce6",
-      "gitBlob": "688ff9e63f514ec18b8096e59e0edd63ac6f5112"
-    },
-    "security/selinux/hooks.c": {
-      "bytes": 204597,
-      "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
-      "gitBlob": "d4abf15f0e6fb98505df81ac3128255b4cd9e1e7",
-      "independentlyGitCorroborated": true
-    },
-    "security/selinux/include/avc.h": {
-      "bytes": 4623,
-      "sha256": "b1bb6fd0b9fda55cce88a5fb2a359fd64cde40ef18162e6640cd33885ebb5966",
-      "gitBlob": "96a614d47df8d1d67b0b033ebb90954653dfeab7"
-    },
-    "security/selinux/netlabel.c": {
-      "bytes": 16481,
-      "sha256": "972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
-      "gitBlob": "d51dfe89231229e78903f3aa552286326524dca2",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/netport.c": {
-      "bytes": 5952,
-      "sha256": "8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
-      "gitBlob": "2e22ad9c2bd0d116668985e0fb579b5934df9394",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/ss/ebitmap.c": {
-      "bytes": 12211,
-      "sha256": "69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
-      "gitBlob": "cd84357db2c47a034bb3601eeaaa8806dbf0f7af",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/ss/mls.c": {
-      "bytes": 16094,
-      "sha256": "349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
-      "gitBlob": "a6e49269f5351df096da8c9fb56103a2f7b0ee9d",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/ss/services.c": {
-      "bytes": 97756,
-      "sha256": "0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
-      "gitBlob": "54d121d64804295c8ae1f40103957f6a3b671640",
-      "independentlyGitCorroborated": true
-    },
-    "security/selinux/ss/sidtab.c": {
-      "bytes": 14675,
-      "sha256": "5bc885230f9b6023ff7a64b0ff80746f607a572cf7d882eab149f6c1261c4f08",
-      "gitBlob": "c8848cbba81f24abbb2e0d07697ece10d2cc6637",
-      "independentlyGitCorroborated": false
-    },
-    "drivers/pci/probe.c": {
-      "bytes": 90707,
-      "sha256": "b1f5ebdfed1913a0d3310365a3bd8f1d17a5754c5e400fc65d8098188c03e858",
-      "gitBlob": "718293b4bdb98a3d3aac1254bc7223cdef5e55ec",
-      "independentlyGitCorroborated": false
-    },
-    "include/linux/pci.h": {
-      "bytes": 101504,
-      "sha256": "1b44480a5464c73a05d2688d223b86da11d6c620a7dfb2cce23e1102fcfec4a1",
-      "gitBlob": "ee27f1ba01b8e99b1b55e821bbdb9100f74c5771",
-      "independentlyGitCorroborated": false
-    },
-    "drivers/pci/iov.c": {
-      "bytes": 29078,
-      "sha256": "2bbeeaef2efcc6e81e42a537b314218405ed3f58ee85b6f20020ef2f136936c5",
-      "gitBlob": "d595a345a7d47374ef3bb26b2b742bbd2e2660da",
-      "independentlyGitCorroborated": false
-    },
-    "drivers/base/core.c": {
-      "bytes": 149978,
-      "sha256": "421c6bb5c72073659d19a02108ded0400b015837737d0e1f98a04af830c784bb",
-      "gitBlob": "a6134a5e5e110d5876dda2868787d7b77572a657",
-      "independentlyGitCorroborated": false
-    },
-    "lib/kobject.c": {
-      "bytes": 28433,
-      "sha256": "0161a3faaa770cf7a724f94773104a5ab33c5dbafe525729276360cd8120d4ab",
-      "gitBlob": "72fa20f405f1520a63dd50d9aa37f6609306eb3e",
-      "independentlyGitCorroborated": false
-    },
-    "mm/util.c": {
-      "bytes": 32530,
-      "sha256": "e3957dcdbdb19a587ae484f7a6317ea014fe6d64847d70675b5a6c18b3a7071f",
-      "gitBlob": "4f1275023eb7317973c061da950ef582f1660c28",
-      "independentlyGitCorroborated": false
-    },
-    "lib/kasprintf.c": {
-      "bytes": 1426,
-      "sha256": "6706bce50db2579ee692b1eb4e332636291febf983952b4251bbf26f2ba70b1d",
-      "gitBlob": "cd2f5974ed987d57d0d2b388b83edb31ea6ec83e",
-      "independentlyGitCorroborated": false
-    },
-    "include/linux/mm.h": {
-      "bytes": 132024,
-      "sha256": "a15410bd33802e92e80b973a33dfeb480ddbb36f0fc0f357f9a73d14524ddadb",
-      "gitBlob": "1728dc3356089a4c0eb2a31c4b6ab54992effb69",
-      "independentlyGitCorroborated": false
-    },
-    "include/asm-generic/sections.h": {
-      "bytes": 7851,
-      "sha256": "5bc555244fdf0fda9e2444be10f84000d9a8b18224406280b658483c2ea41b2a",
-      "gitBlob": "c768de6f19a9a90d04eab66f522bad2f10ef1fd9",
-      "independentlyGitCorroborated": false
-    }
-  },
-  "sections": {
-    "pci_alloc_dev": {
-      "source": "drivers/pci/probe.c",
-      "prefix": "struct pci_dev *pci_alloc_dev(",
-      "text": "struct pci_dev *pci_alloc_dev(struct pci_bus *bus)\n{\n\tstruct pci_dev *dev;\n\n\tdev = kzalloc(sizeof(struct pci_dev), GFP_KERNEL);\n\tif (!dev)\n\t\treturn NULL;\n\n\tINIT_LIST_HEAD(&dev->bus_list);\n\tdev->dev.type = &pci_dev_type;\n\tdev->bus = pci_bus_get(bus);\n\tdev->driver_exclusive_resource = (struct resource) {\n\t\t.name = \"PCI Exclusive\",\n\t\t.start = 0,\n\t\t.end = -1,\n\t};\n\n\tspin_lock_init(&dev->pcie_cap_lock);\n#ifdef CONFIG_PCI_MSI\n\traw_spin_lock_init(&dev->msi_lock);\n#endif\n\treturn dev;\n}\n",
-      "bytes": 482,
-      "sha256": "d2fe58ccf8dfcdf642f65ef3e855558703229c144107deb5a047ee46e9f4bbbe"
-    },
-    "pci_scan_device": {
-      "source": "drivers/pci/probe.c",
-      "prefix": "static struct pci_dev *pci_scan_device(",
-      "text": "static struct pci_dev *pci_scan_device(struct pci_bus *bus, int devfn)\n{\n\tstruct pci_dev *dev;\n\tu32 l;\n\n\tif (!pci_bus_read_dev_vendor_id(bus, devfn, &l, 60*1000))\n\t\treturn NULL;\n\n\tdev = pci_alloc_dev(bus);\n\tif (!dev)\n\t\treturn NULL;\n\n\tdev->devfn = devfn;\n\tdev->vendor = l & 0xffff;\n\tdev->device = (l >> 16) & 0xffff;\n\n\tif (pci_setup_device(dev)) {\n\t\tpci_bus_put(dev->bus);\n\t\tkfree(dev);\n\t\treturn NULL;\n\t}\n\n\treturn dev;\n}\n",
-      "bytes": 420,
-      "sha256": "57bcf6a3b631357d65b5cc1c454044b2f2991398bb1860dc5597fd1a3d460c89"
-    },
-    "pci_scan_single_device": {
-      "source": "drivers/pci/probe.c",
-      "prefix": "struct pci_dev *pci_scan_single_device(",
-      "text": "struct pci_dev *pci_scan_single_device(struct pci_bus *bus, int devfn)\n{\n\tstruct pci_dev *dev;\n\n\tdev = pci_get_slot(bus, devfn);\n\tif (dev) {\n\t\tpci_dev_put(dev);\n\t\treturn dev;\n\t}\n\n\tdev = pci_scan_device(bus, devfn);\n\tif (!dev)\n\t\treturn NULL;\n\n\tpci_device_add(dev, bus);\n\n\treturn dev;\n}\n",
-      "bytes": 285,
-      "sha256": "cea6bde01f78aa0f79bd37a25237806dd8c9d424f945abc32826e8a22836938a"
-    },
-    "pci_release_dev": {
-      "source": "drivers/pci/probe.c",
-      "prefix": "static void pci_release_dev(",
-      "text": "static void pci_release_dev(struct device *dev)\n{\n\tstruct pci_dev *pci_dev;\n\n\tpci_dev = to_pci_dev(dev);\n\tpci_release_capabilities(pci_dev);\n\tpci_release_of_node(pci_dev);\n\tpcibios_release_device(pci_dev);\n\tpci_bus_put(pci_dev->bus);\n\tbitmap_free(pci_dev->dma_alias_mask);\n\tdev_dbg(dev, \"device released\\n\");\n\tkfree(pci_dev);\n}\n",
-      "bytes": 328,
-      "sha256": "78949d0f2f1fa2363360f56e7d1f2685b96d1460a75affcc1bc9dbf7d1303e13"
-    },
-    "pci_setup_device": {
-      "source": "drivers/pci/probe.c",
-      "prefix": "int pci_setup_device(",
-      "text": "int pci_setup_device(struct pci_dev *dev)\n{\n\tu32 class;\n\tu16 cmd;\n\tu8 hdr_type;\n\tint err, pos = 0;\n\tstruct pci_bus_region region;\n\tstruct resource *res;\n\n\thdr_type = pci_hdr_type(dev);\n\n\tdev->sysdata = dev->bus->sysdata;\n\tdev->dev.parent = dev->bus->bridge;\n\tdev->dev.bus = &pci_bus_type;\n\tdev->hdr_type = hdr_type & 0x7f;\n\tdev->multifunction = !!(hdr_type & 0x80);\n\tdev->error_state = pci_channel_io_normal;\n\tset_pcie_port_type(dev);\n\n\terr = pci_set_of_node(dev);\n\tif (err)\n\t\treturn err;\n\tpci_set_acpi_fwnode(dev);\n\n\tpci_dev_assign_slot(dev);\n\n\t/*\n\t * Assume 32-bit PCI; let 64-bit PCI cards (which are far rarer)\n\t * set this higher, assuming the system even supports it.\n\t */\n\tdev->dma_mask = 0xffffffff;\n\n\tdev_set_name(&dev->dev, \"%04x:%02x:%02x.%d\", pci_domain_nr(dev->bus),\n\t\t     dev->bus->number, PCI_SLOT(dev->devfn),\n\t\t     PCI_FUNC(dev->devfn));\n\n\tclass = pci_class(dev);\n\n\tdev->revision = class & 0xff;\n\tdev->class = class >> 8;\t\t    /* upper 3 bytes */\n\n\tif (pci_early_dump)\n\t\tearly_dump_pci_device(dev);\n\n\t/* Need to have dev->class ready */\n\tdev->cfg_size = pci_cfg_space_size(dev);\n\n\t/* Need to have dev->cfg_size ready */\n\tset_pcie_thunderbolt(dev);\n\n\tset_pcie_untrusted(dev);\n\n\tif (pci_is_pcie(dev))\n\t\tdev->supported_speeds = pcie_get_supported_speeds(dev);\n\n\t/* \"Unknown power state\" */\n\tdev->current_state = PCI_UNKNOWN;\n\n\t/* Early fixups, before probing the BARs */\n\tpci_fixup_device(pci_fixup_early, dev);\n\n\tpci_set_removable(dev);\n\n\tpci_info(dev, \"[%04x:%04x] type %02x class %#08x %s\\n\",\n\t\t dev->vendor, dev->device, dev->hdr_type, dev->class,\n\t\t pci_type_str(dev));\n\n\t/* Device class may be changed after fixup */\n\tclass = dev->class >> 8;\n\n\tif (dev->non_compliant_bars && !dev->mmio_always_on) {\n\t\tpci_read_config_word(dev, PCI_COMMAND, &cmd);\n\t\tif (cmd & (PCI_COMMAND_IO | PCI_COMMAND_MEMORY)) {\n\t\t\tpci_info(dev, \"device has non-compliant BARs; disabling IO/MEM decoding\\n\");\n\t\t\tcmd &= ~PCI_COMMAND_IO;\n\t\t\tcmd &= ~PCI_COMMAND_MEMORY;\n\t\t\tpci_write_config_word(dev, PCI_COMMAND, cmd);\n\t\t}\n\t}\n\n\tdev->broken_intx_masking = pci_intx_mask_broken(dev);\n\n\tswitch (dev->hdr_type) {\t\t    /* header type */\n\tcase PCI_HEADER_TYPE_NORMAL:\t\t    /* standard header */\n\t\tif (class == PCI_CLASS_BRIDGE_PCI)\n\t\t\tgoto bad;\n\t\tpci_read_irq(dev);\n\t\tpci_read_bases(dev, 6, PCI_ROM_ADDRESS);\n\n\t\tpci_subsystem_ids(dev, &dev->subsystem_vendor, &dev->subsystem_device);\n\n\t\t/*\n\t\t * Do the ugly legacy mode stuff here rather than broken chip\n\t\t * quirk code. Legacy mode ATA controllers have fixed\n\t\t * addresses. These are not always echoed in BAR0-3, and\n\t\t * BAR0-3 in a few cases contain junk!\n\t\t */\n\t\tif (class == PCI_CLASS_STORAGE_IDE) {\n\t\t\tu8 progif;\n\t\t\tpci_read_config_byte(dev, PCI_CLASS_PROG, &progif);\n\t\t\tif ((progif & 1) == 0) {\n\t\t\t\tregion.start = 0x1F0;\n\t\t\t\tregion.end = 0x1F7;\n\t\t\t\tres = &dev->resource[0];\n\t\t\t\tres->flags = LEGACY_IO_RESOURCE;\n\t\t\t\tpcibios_bus_to_resource(dev->bus, res, &region);\n\t\t\t\tpci_info(dev, \"BAR 0 %pR: legacy IDE quirk\\n\",\n\t\t\t\t\t res);\n\t\t\t\tregion.start = 0x3F6;\n\t\t\t\tregion.end = 0x3F6;\n\t\t\t\tres = &dev->resource[1];\n\t\t\t\tres->flags = LEGACY_IO_RESOURCE;\n\t\t\t\tpcibios_bus_to_resource(dev->bus, res, &region);\n\t\t\t\tpci_info(dev, \"BAR 1 %pR: legacy IDE quirk\\n\",\n\t\t\t\t\t res);\n\t\t\t}\n\t\t\tif ((progif & 4) == 0) {\n\t\t\t\tregion.start = 0x170;\n\t\t\t\tregion.end = 0x177;\n\t\t\t\tres = &dev->resource[2];\n\t\t\t\tres->flags = LEGACY_IO_RESOURCE;\n\t\t\t\tpcibios_bus_to_resource(dev->bus, res, &region);\n\t\t\t\tpci_info(dev, \"BAR 2 %pR: legacy IDE quirk\\n\",\n\t\t\t\t\t res);\n\t\t\t\tregion.start = 0x376;\n\t\t\t\tregion.end = 0x376;\n\t\t\t\tres = &dev->resource[3];\n\t\t\t\tres->flags = LEGACY_IO_RESOURCE;\n\t\t\t\tpcibios_bus_to_resource(dev->bus, res, &region);\n\t\t\t\tpci_info(dev, \"BAR 3 %pR: legacy IDE quirk\\n\",\n\t\t\t\t\t res);\n\t\t\t}\n\t\t}\n\t\tbreak;\n\n\tcase PCI_HEADER_TYPE_BRIDGE:\t\t    /* bridge header */\n\t\t/*\n\t\t * The PCI-to-PCI bridge spec requires that subtractive\n\t\t * decoding (i.e. transparent) bridge must have programming\n\t\t * interface code of 0x01.\n\t\t */\n\t\tpci_read_irq(dev);\n\t\tdev->transparent = ((dev->class & 0xff) == 1);\n\t\tpci_read_bases(dev, 2, PCI_ROM_ADDRESS1);\n\t\tpci_read_bridge_windows(dev);\n\t\tset_pcie_hotplug_bridge(dev);\n\t\tpos = pci_find_capability(dev, PCI_CAP_ID_SSVID);\n\t\tif (pos) {\n\t\t\tpci_read_config_word(dev, pos + PCI_SSVID_VENDOR_ID, &dev->subsystem_vendor);\n\t\t\tpci_read_config_word(dev, pos + PCI_SSVID_DEVICE_ID, &dev->subsystem_device);\n\t\t}\n\t\tbreak;\n\n\tcase PCI_HEADER_TYPE_CARDBUS:\t\t    /* CardBus bridge header */\n\t\tif (class != PCI_CLASS_BRIDGE_CARDBUS)\n\t\t\tgoto bad;\n\t\tpci_read_irq(dev);\n\t\tpci_read_bases(dev, 1, 0);\n\t\tpci_read_config_word(dev, PCI_CB_SUBSYSTEM_VENDOR_ID, &dev->subsystem_vendor);\n\t\tpci_read_config_word(dev, PCI_CB_SUBSYSTEM_ID, &dev->subsystem_device);\n\t\tbreak;\n\n\tdefault:\t\t\t\t    /* unknown header */\n\t\tpci_err(dev, \"unknown header type %02x, ignoring device\\n\",\n\t\t\tdev->hdr_type);\n\t\tpci_release_of_node(dev);\n\t\treturn -EIO;\n\n\tbad:\n\t\tpci_err(dev, \"ignoring class %#08x (doesn't match header type %02x)\\n\",\n\t\t\tdev->class, dev->hdr_type);\n\t\tdev->class = PCI_CLASS_NOT_DEFINED << 8;\n\t}\n\n\t/* We found a fine healthy device, go go go... */\n\treturn 0;\n}\n",
-      "bytes": 5070,
-      "sha256": "f97424235a56f3205dc944643e2258b1557c40a5de5fee55cb24ae883523c451"
-    },
-    "pci_device_add": {
-      "source": "drivers/pci/probe.c",
-      "prefix": "void pci_device_add(",
-      "text": "void pci_device_add(struct pci_dev *dev, struct pci_bus *bus)\n{\n\tint ret;\n\n\tpci_configure_device(dev);\n\n\tdevice_initialize(&dev->dev);\n\tdev->dev.release = pci_release_dev;\n\n\tset_dev_node(&dev->dev, pcibus_to_node(bus));\n\tdev->dev.dma_mask = &dev->dma_mask;\n\tdev->dev.dma_parms = &dev->dma_parms;\n\tdev->dev.coherent_dma_mask = 0xffffffffull;\n\n\tdma_set_max_seg_size(&dev->dev, 65536);\n\tdma_set_seg_boundary(&dev->dev, 0xffffffff);\n\n\tpcie_failed_link_retrain(dev);\n\n\t/* Fix up broken headers */\n\tpci_fixup_device(pci_fixup_header, dev);\n\n\tpci_reassigndev_resource_alignment(dev);\n\n\tdev->state_saved = false;\n\n\tpci_init_capabilities(dev);\n\n\t/*\n\t * Add the device to our list of discovered devices\n\t * and the bus list for fixup functions, etc.\n\t */\n\tdown_write(&pci_bus_sem);\n\tlist_add_tail(&dev->bus_list, &bus->devices);\n\tup_write(&pci_bus_sem);\n\n\tret = pcibios_device_add(dev);\n\tWARN_ON(ret < 0);\n\n\t/* Set up MSI IRQ domain */\n\tpci_set_msi_domain(dev);\n\n\t/* Notifier could use PCI capabilities */\n\tdev->match_driver = false;\n\tret = device_add(&dev->dev);\n\tWARN_ON(ret < 0);\n\n\tpci_npem_create(dev);\n}\n",
-      "bytes": 1099,
-      "sha256": "aac50bcbdf53443c9843f6bea40e2d05be920809b5c716c411c3f423b1eb21d5"
-    },
-    "pci_iov_add_virtfn": {
-      "source": "drivers/pci/iov.c",
-      "prefix": "int pci_iov_add_virtfn(",
-      "text": "int pci_iov_add_virtfn(struct pci_dev *dev, int id)\n{\n\tint i;\n\tint rc = -ENOMEM;\n\tu64 size;\n\tstruct pci_dev *virtfn;\n\tstruct resource *res;\n\tstruct pci_sriov *iov = dev->sriov;\n\tstruct pci_bus *bus;\n\n\tbus = virtfn_add_bus(dev->bus, pci_iov_virtfn_bus(dev, id));\n\tif (!bus)\n\t\tgoto failed;\n\n\tvirtfn = pci_alloc_dev(bus);\n\tif (!virtfn)\n\t\tgoto failed0;\n\n\tvirtfn->devfn = pci_iov_virtfn_devfn(dev, id);\n\tvirtfn->vendor = dev->vendor;\n\tvirtfn->device = iov->vf_device;\n\tvirtfn->is_virtfn = 1;\n\tvirtfn->physfn = pci_dev_get(dev);\n\tvirtfn->no_command_memory = 1;\n\n\tif (id == 0)\n\t\tpci_read_vf_config_common(virtfn);\n\n\trc = pci_setup_device(virtfn);\n\tif (rc)\n\t\tgoto failed1;\n\n\tvirtfn->dev.parent = dev->dev.parent;\n\tvirtfn->multifunction = 0;\n\n\tfor (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {\n\t\tres = &dev->resource[i + PCI_IOV_RESOURCES];\n\t\tif (!res->parent)\n\t\t\tcontinue;\n\t\tvirtfn->resource[i].name = pci_name(virtfn);\n\t\tvirtfn->resource[i].flags = res->flags;\n\t\tsize = pci_iov_resource_size(dev, i + PCI_IOV_RESOURCES);\n\t\tvirtfn->resource[i].start = res->start + size * id;\n\t\tvirtfn->resource[i].end = virtfn->resource[i].start + size - 1;\n\t\trc = request_resource(res, &virtfn->resource[i]);\n\t\tBUG_ON(rc);\n\t}\n\n\tpci_device_add(virtfn, virtfn->bus);\n\trc = pci_iov_sysfs_link(dev, virtfn, id);\n\tif (rc)\n\t\tgoto failed1;\n\n\tpci_bus_add_device(virtfn);\n\n\treturn 0;\n\nfailed1:\n\tpci_stop_and_remove_bus_device(virtfn);\n\tpci_dev_put(dev);\nfailed0:\n\tvirtfn_remove_bus(dev->bus, bus);\nfailed:\n\n\treturn rc;\n}\n",
-      "bytes": 1482,
-      "sha256": "962195aca0732d71b2ebf6df36bf4a4761619ae3c5c9c384a29958129ddc7314"
-    },
-    "pci_iov_virtfn_bus": {
-      "source": "drivers/pci/iov.c",
-      "prefix": "int pci_iov_virtfn_bus(",
-      "text": "int pci_iov_virtfn_bus(struct pci_dev *dev, int vf_id)\n{\n\tif (!dev->is_physfn)\n\t\treturn -EINVAL;\n\treturn dev->bus->number + ((dev->devfn + dev->sriov->offset +\n\t\t\t\t    dev->sriov->stride * vf_id) >> 8);\n}\n",
-      "bytes": 205,
-      "sha256": "3ea92587142f845f8a5c831a475c531c64ad80f1bba1676b972a117e35a86f89"
-    },
-    "pci_iov_virtfn_devfn": {
-      "source": "drivers/pci/iov.c",
-      "prefix": "int pci_iov_virtfn_devfn(",
-      "text": "int pci_iov_virtfn_devfn(struct pci_dev *dev, int vf_id)\n{\n\tif (!dev->is_physfn)\n\t\treturn -EINVAL;\n\treturn (dev->devfn + dev->sriov->offset +\n\t\tdev->sriov->stride * vf_id) & 0xff;\n}\n",
-      "bytes": 182,
-      "sha256": "8e74c7029d695608d4395dc24a6e70a5db322b7051d67044b67a3a9a1b7241e4"
-    },
-    "dev_set_name": {
-      "source": "drivers/base/core.c",
-      "prefix": "int dev_set_name(",
-      "text": "int dev_set_name(struct device *dev, const char *fmt, ...)\n{\n\tva_list vargs;\n\tint err;\n\n\tva_start(vargs, fmt);\n\terr = kobject_set_name_vargs(&dev->kobj, fmt, vargs);\n\tva_end(vargs);\n\treturn err;\n}\n",
-      "bytes": 197,
-      "sha256": "ebff8c5bb442f87cfe4613715baf64641cd83b58931de66f7ec0756502253315"
-    },
-    "device_release": {
-      "source": "drivers/base/core.c",
-      "prefix": "static void device_release(",
-      "text": "static void device_release(struct kobject *kobj)\n{\n\tstruct device *dev = kobj_to_dev(kobj);\n\tstruct device_private *p = dev->p;\n\n\t/*\n\t * Some platform devices are driven without driver attached\n\t * and managed resources may have been acquired.  Make sure\n\t * all resources are released.\n\t *\n\t * Drivers still can add resources into device after device\n\t * is deleted but alive, so release devres here to avoid\n\t * possible memory leak.\n\t */\n\tdevres_release_all(dev);\n\n\tkfree(dev->dma_range_map);\n\tkfree(dev->driver_override.name);\n\n\tif (dev->release)\n\t\tdev->release(dev);\n\telse if (dev->type && dev->type->release)\n\t\tdev->type->release(dev);\n\telse if (dev->class && dev->class->dev_release)\n\t\tdev->class->dev_release(dev);\n\telse\n\t\tWARN(1, KERN_ERR \"Device '%s' does not have a release() function, it is broken and must be fixed. See Documentation/core-api/kobject.rst.\\n\",\n\t\t\tdev_name(dev));\n\tkfree(p);\n}\n",
-      "bytes": 905,
-      "sha256": "1c6bfbb50f37de4ba84fcb154b5fe88d565402e4867ab3a992536c52fa0e0c5a"
-    },
-    "kobject_set_name_vargs": {
-      "source": "lib/kobject.c",
-      "prefix": "int kobject_set_name_vargs(",
-      "text": "int kobject_set_name_vargs(struct kobject *kobj, const char *fmt,\n\t\t\t\t  va_list vargs)\n{\n\tconst char *s;\n\n\tif (kobj->name && !fmt)\n\t\treturn 0;\n\n\ts = kvasprintf_const(GFP_KERNEL, fmt, vargs);\n\tif (!s)\n\t\treturn -ENOMEM;\n\n\t/*\n\t * ewww... some of these buggers have '/' in the name ... If\n\t * that's the case, we need to make sure we have an actual\n\t * allocated copy to modify, since kvasprintf_const may have\n\t * returned something from .rodata.\n\t */\n\tif (strchr(s, '/')) {\n\t\tchar *t;\n\n\t\tt = kstrdup(s, GFP_KERNEL);\n\t\tkfree_const(s);\n\t\tif (!t)\n\t\t\treturn -ENOMEM;\n\t\ts = strreplace(t, '/', '!');\n\t}\n\tkfree_const(kobj->name);\n\tkobj->name = s;\n\n\treturn 0;\n}\n",
-      "bytes": 652,
-      "sha256": "64afeb0bca6377076d6881e3f4412ee44e2b2200bb0254b9aee3116d3db9ee6d"
-    },
-    "kobject_cleanup": {
-      "source": "lib/kobject.c",
-      "prefix": "static void kobject_cleanup(",
-      "text": "static void kobject_cleanup(struct kobject *kobj)\n{\n\tstruct kobject *parent = kobj->parent;\n\tconst struct kobj_type *t = get_ktype(kobj);\n\tconst char *name = kobj->name;\n\n\tpr_debug(\"'%s' (%p): %s, parent %p\\n\",\n\t\t kobject_name(kobj), kobj, __func__, kobj->parent);\n\n\tif (t && !t->release)\n\t\tpr_debug(\"'%s' (%p): does not have a release() function, it is broken and must be fixed. See Documentation/core-api/kobject.rst.\\n\",\n\t\t\t kobject_name(kobj), kobj);\n\n\t/* remove from sysfs if the caller did not do it */\n\tif (kobj->state_in_sysfs) {\n\t\tpr_debug(\"'%s' (%p): auto cleanup kobject_del\\n\",\n\t\t\t kobject_name(kobj), kobj);\n\t\t__kobject_del(kobj);\n\t} else {\n\t\t/* avoid dropping the parent reference unnecessarily */\n\t\tparent = NULL;\n\t}\n\n\tif (t && t->release) {\n\t\tpr_debug(\"'%s' (%p): calling ktype release\\n\",\n\t\t\t kobject_name(kobj), kobj);\n\t\tt->release(kobj);\n\t}\n\n\t/* free name if we allocated it */\n\tif (name) {\n\t\tpr_debug(\"'%s': free name\\n\", name);\n\t\tkfree_const(name);\n\t}\n\n\tkobject_put(parent);\n}\n",
-      "bytes": 998,
-      "sha256": "c73d5bfc20826a2dc785804dd717d297e80f3bbf1084fb3aac3eab4b583f884c"
-    },
-    "kvasprintf_const": {
-      "source": "lib/kasprintf.c",
-      "prefix": "const char *kvasprintf_const(",
-      "text": "const char *kvasprintf_const(gfp_t gfp, const char *fmt, va_list ap)\n{\n\tif (!strchr(fmt, '%'))\n\t\treturn kstrdup_const(fmt, gfp);\n\tif (!strcmp(fmt, \"%s\"))\n\t\treturn kstrdup_const(va_arg(ap, const char*), gfp);\n\treturn kvasprintf(gfp, fmt, ap);\n}\n",
-      "bytes": 244,
-      "sha256": "05e4ebe15c62c49c59977dae6b70a5244b101c4b8a073457dd4c52c6328b7987"
-    },
-    "kvasprintf": {
-      "source": "lib/kasprintf.c",
-      "prefix": "char *kvasprintf(",
-      "text": "char *kvasprintf(gfp_t gfp, const char *fmt, va_list ap)\n{\n\tunsigned int first, second;\n\tchar *p;\n\tva_list aq;\n\n\tva_copy(aq, ap);\n\tfirst = vsnprintf(NULL, 0, fmt, aq);\n\tva_end(aq);\n\n\tp = kmalloc_track_caller(first+1, gfp);\n\tif (!p)\n\t\treturn NULL;\n\n\tsecond = vsnprintf(p, first+1, fmt, ap);\n\tWARN(first != second, \"different return values (%u and %u) from vsnprintf(\\\"%s\\\", ...)\",\n\t     first, second, fmt);\n\n\treturn p;\n}\n",
-      "bytes": 421,
-      "sha256": "a9417383e6a48a16282156403c041b2d8d2d613f04aecf568b263ceff78f7f48"
-    },
-    "kstrdup_const": {
-      "source": "mm/util.c",
-      "prefix": "const char *kstrdup_const(",
-      "text": "const char *kstrdup_const(const char *s, gfp_t gfp)\n{\n\tif (is_kernel_rodata((unsigned long)s))\n\t\treturn s;\n\n\treturn kstrdup(s, gfp);\n}\n",
-      "bytes": 135,
-      "sha256": "30bbdd18e859a89a43af3ecdb5987d1aec365d7e3dfcaa72e20511bc90ca0046"
-    },
-    "kfree_const": {
-      "source": "mm/util.c",
-      "prefix": "void kfree_const(",
-      "text": "void kfree_const(const void *x)\n{\n\tif (!is_kernel_rodata((unsigned long)x))\n\t\tkfree(x);\n}\n",
-      "bytes": 90,
-      "sha256": "ece147446b951212075c357920f62c8631ec1020c9a67cac6f7805abe73cb35a"
-    },
-    "kstrdup": {
-      "source": "mm/util.c",
-      "prefix": "noinline\nchar *kstrdup(",
-      "text": "noinline\nchar *kstrdup(const char *s, gfp_t gfp)\n{\n\tsize_t len;\n\tchar *buf;\n\n\tif (!s)\n\t\treturn NULL;\n\n\tlen = strlen(s) + 1;\n\tbuf = kmalloc_track_caller(len, gfp);\n\tif (buf)\n\t\tmemcpy(buf, s, len);\n\treturn buf;\n}\n",
-      "bytes": 211,
-      "sha256": "4977242534534944793856dec18f2a2ec8f7d971fee0cac94e95b4b8d74451d5"
-    },
-    "is_kernel_rodata": {
-      "source": "include/asm-generic/sections.h",
-      "prefix": "static inline bool is_kernel_rodata(",
-      "text": "static inline bool is_kernel_rodata(unsigned long addr)\n{\n\treturn addr >= (unsigned long)__start_rodata &&\n\t       addr < (unsigned long)__end_rodata;\n}\n",
-      "bytes": 153,
-      "sha256": "258e98db9300b38c389ea0b78224958d5e2c3777d55623163a82b5abc8ac4905"
-    }
-  },
-  "kernelBuilt": false,
-  "actualDeviceInitialized": false,
-  "trustedNativeBootstrapAuthenticated": false,
-  "completeAllocationClosure": false,
-  "finalFreeCertified": false,
-  "productionInstallation": false
+"schemaVersion":"lsf.kernel-device-pci-prefix-preimages.v1",
+"upstreamCommit":"7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+"archiveSha256":"e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+"source":{
+"fs/inode.c":{
+"bytes":75338,
+"sha256":"73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
+"gitBlob":"7942673f686fdc24d92c2fb8033c2fb3b6df7709",
+"independentlyGitCorroborated":true
+},
+"include/linux/netdevice.h":{
+"bytes":170262,
+"sha256":"35577d1d0decaad06824a0591c5929a1e837c7dc00e95b42cba1bc6743fb3941",
+"gitBlob":"0aa536df9cb594eb762465b2007390bc90e53815",
+"independentlyGitCorroborated":false
+},
+"include/linux/rcuref.h":{
+"bytes":4771,
+"sha256":"4bad6b9738eeae56cdb0735d8d8b901fd7b3fe4d9432701ffab40100bf9ea7c1",
+"gitBlob":"6322d8c1c6b4294abb794b4e0af739f1b0caedd9",
+"independentlyGitCorroborated":false
+},
+"include/linux/skbuff.h":{
+"bytes":151887,
+"sha256":"af70ea27cf9a3a2d790b1005a16da7649d3bbb0fd136b2934ed4018077dbb822",
+"gitBlob":"df548a3d606570d38614fc45403133069ecb9cab",
+"independentlyGitCorroborated":true
+},
+"include/net/dst.h":{
+"bytes":16116,
+"sha256":"78178f0528f8f9ee92ae63c7308f84cfc5d90941d92b674fc42078999a6d3369",
+"gitBlob":"b3ac23e14adab857ca58013861ac124f68446559",
+"independentlyGitCorroborated":false
+},
+"include/net/dst_ops.h":{
+"bytes":2116,
+"sha256":"388f5247da499afef3ae4f1a7f7ad779192aa31a071355bbb6d50e188e3ae524",
+"gitBlob":"3a9001a042a5c392a79cfc59af528ef410a28668",
+"independentlyGitCorroborated":false
+},
+"include/net/inet_hashtables.h":{
+"bytes":17314,
+"sha256":"a699f5b96229f9d6fa4bb5bf435285db59b7d2e45918044f2c5fec01e624bf6e",
+"gitBlob":"b1118125486631e6e02ca2d1f6575dad60e6d705",
+"independentlyGitCorroborated":false
+},
+"include/net/ip.h":{
+"bytes":25084,
+"sha256":"468170661746038b5ecc7bfa114433feeb853708d0af7a65d59541b602473963",
+"gitBlob":"97c60b3002702ac98ded03e19aaeed539b657373",
+"independentlyGitCorroborated":false
+},
+"include/net/ip_fib.h":{
+"bytes":17526,
+"sha256":"8f006444cb27c3d3dc92eb417ad90a9a9ae818f833982b85de3577a8cc854d65",
+"gitBlob":"145b90d004ebb45952be61f98bc7c03f0039bd9d",
+"independentlyGitCorroborated":false
+},
+"include/net/lwtunnel.h":{
+"bytes":6850,
+"sha256":"d5df355174e9182e145c1d4a67724d408f663d4eab35eac51f0af2c198b151e9",
+"gitBlob":"09791f5d9b6ec8f06ff093ec1adcbf75e08bed62",
+"independentlyGitCorroborated":false
+},
+"include/net/netlabel.h":{
+"bytes":21017,
+"sha256":"82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
+"gitBlob":"529160f76cac209ee7473ea7b5ccd49da0789f18",
+"independentlyGitCorroborated":false
+},
+"include/net/nexthop.h":{
+"bytes":12985,
+"sha256":"80faf19c5303d481542adbf2c23463c9a135bb4633957683161f64ff2cba2792",
+"gitBlob":"d9fb44e8b3219cf01031385f03021097ef6e7a76",
+"independentlyGitCorroborated":false
+},
+"include/net/route.h":{
+"bytes":11707,
+"sha256":"653aee3691e524225bbb9d1e4f7ace85b2e56f81a8047c7b10562201392b71a5",
+"gitBlob":"76f526e051aa36e3ae33ee37bd8c8c2e19ef9ba6",
+"independentlyGitCorroborated":false
+},
+"include/net/sock.h":{
+"bytes":85865,
+"sha256":"5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
+"gitBlob":"efa549885b7f85e50c55f95ad4eae0c1ef75797a",
+"independentlyGitCorroborated":true
+},
+"include/net/tcp.h":{
+"bytes":86800,
+"sha256":"6d4ba5b9aab587292de3cb3836b5907ac265d866f94a52135452f8010af9243a",
+"gitBlob":"ad9af706085ab368c9b0723e121f66a71939ad59",
+"independentlyGitCorroborated":true
+},
+"include/net/xfrm.h":{
+"bytes":61675,
+"sha256":"aadaea85ee3054727e4b568e82ca6ea3cee5c9f7be461134ed773f402dcfb9ef",
+"gitBlob":"a20a01dd6f98e3c058dbedd820eeee60c4c24ae0",
+"independentlyGitCorroborated":false
+},
+"kernel/audit.c":{
+"bytes":66999,
+"sha256":"7a33029ecca2b8a71a8a12e9a1699a8180e64a82acfbdc599b0ec658fa07d564",
+"gitBlob":"df279dd2e45086b791852f2a46ceb52f24f0fd78",
+"independentlyGitCorroborated":false
+},
+"net/core/dst.c":{
+"bytes":8852,
+"sha256":"362a3128a9d91cd676fe607746f3b169224083d86047a84583862c81f5661b86",
+"gitBlob":"92aa81b2f33157e91c7de8f96254054380cb9b2a",
+"independentlyGitCorroborated":true
+},
+"net/core/skbuff.c":{
+"bytes":189334,
+"sha256":"6a2fec31182c7c4d247d85aaffba036de9c0b6a9911c3cc1249d00b423ea0ae8",
+"gitBlob":"5608b5507b5bf03504a9093abaa865af2b82043e",
+"independentlyGitCorroborated":true
+},
+"net/core/sock.c":{
+"bytes":111636,
+"sha256":"f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
+"gitBlob":"75db38fdfd35fe87b87ac2755b0ef1db6fb96415",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/af_inet.c":{
+"bytes":51938,
+"sha256":"9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
+"gitBlob":"c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/cipso_ipv4.c":{
+"bytes":63739,
+"sha256":"03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
+"gitBlob":"53fcb2089cde2a246c0b84d31582485b2496da64",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/fib_frontend.c":{
+"bytes":40789,
+"sha256":"054b45ed18db33e7f842e3565aa29fd21e171fff61debfe3b9dd2def46f55682",
+"gitBlob":"5b7c41333d6fc8f779a99dd11c8def5797ba3997",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/fib_semantics.c":{
+"bytes":54966,
+"sha256":"7cb52cf170fbd73a80ac9a92c4cd668d90f935321deab8230f362b30dd4f04a7",
+"gitBlob":"1e7961b8a7cee82179ef7c9b6f088146a7de799c",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/fib_trie.c":{
+"bytes":74770,
+"sha256":"e87b942d3f04998cc2ceab4e40223bd24a4f2c89f3137bb4d847368485bd37b7",
+"gitBlob":"f04a735ba7cac117041529fdf8f2a3174d3e816a",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/inet_connection_sock.c":{
+"bytes":45201,
+"sha256":"cb3567452632b9017a463f8dc860bd046bb9e572bacd56d219a2c0e124f453c7",
+"gitBlob":"eeee6f75833767f0ae5878bb285fbde63d027654",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/inet_hashtables.c":{
+"bytes":35429,
+"sha256":"20113f4e67d557ef06a68322d0cb03da2de5463409eb2b8b5dd80b305e9aa08d",
+"gitBlob":"37a6acff537e6511a84b7cdfc61af2412eb2cb0b",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/inet_timewait_sock.c":{
+"bytes":10794,
+"sha256":"c200d5880fbf8dd56c0a058beb9b4e92465991038a81b98469aa98ad1c5f31c5",
+"gitBlob":"74b84ac418e93c176336fc974b82c3586bae3fc1",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/metrics.c":{
+"bytes":2214,
+"sha256":"b23000aa2906b653caa07638117c8c799f7c2ffd25fca9c4fbe0a234293ef134",
+"gitBlob":"8ddac1f595ed8cc6077e027f53db7db3c7387843",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/nexthop.c":{
+"bytes":101381,
+"sha256":"2be58e25f245b504674b60182098932468bf3b1f6c4cec89146b00419e341814",
+"gitBlob":"fbb22a63b8807843d4bd5272739a3f7d8669b22f",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/route.c":{
+"bytes":97360,
+"sha256":"18e47ff7b034786411f98221878df2ba5bb645e21c90d30c3a185cff1007aef3",
+"gitBlob":"596c84fd5ab42f15b53700ecb3ab8d968ca4330f",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/tcp.c":{
+"bytes":143675,
+"sha256":"b10e52525abec71fed9eb8d5fb201cda5118eef04de52fae4159477da3d77ec7",
+"gitBlob":"21c64ca9bb9b496013773250a71690249756a653",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/tcp_input.c":{
+"bytes":218886,
+"sha256":"82fc39a54ef30599ff19ce2e400c8d5bbec9cd9be8dcc150767f7ec73a4bd979",
+"gitBlob":"5c581d4821c1dcce1c89f29c5d4a73865b668c73",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/tcp_output.c":{
+"bytes":132663,
+"sha256":"d0a3f8ae8b7ed2b06900344be3bca1ba7f804e96eaba1195ab617fa75f3fd89b",
+"gitBlob":"feb94fd45c59459bb3669c0a20c985477cdc01e2",
+"independentlyGitCorroborated":true
+},
+"net/netlabel/netlabel_kapi.c":{
+"bytes":38938,
+"sha256":"d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
+"gitBlob":"33b77084a4e5f34770f960d7c82e481d9889753a",
+"independentlyGitCorroborated":false
+},
+"net/netlink/af_netlink.c":{
+"bytes":71601,
+"sha256":"2145f190dc87bfa5f79739d960766970652ed9e5c271ec847c1eeca4be86fd2d",
+"gitBlob":"e250d4a3d03097f92c48c1741db405c8ea54899d",
+"independentlyGitCorroborated":false
+},
+"net/socket.c":{
+"bytes":92491,
+"sha256":"95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
+"gitBlob":"723bc3a1ba5cdd17f559a65de73d9c87911e6954",
+"independentlyGitCorroborated":true
+},
+"net/xfrm/xfrm_policy.c":{
+"bytes":114568,
+"sha256":"79929076ddb7f855026ce831d48a8c22972724e639f25f66fe4630207f530680",
+"gitBlob":"e033390e77855cd0c586b2ed6cc511b812193ce1",
+"independentlyGitCorroborated":false
+},
+"security/lsm_audit.c":{
+"bytes":11088,
+"sha256":"bd55731531fa8d095a2f7857afd8cdd83b689f8a675b7b05217910769c4bf257",
+"gitBlob":"849e832719e2151a060679db4fe993e13f42b997",
+"independentlyGitCorroborated":false
+},
+"security/security.c":{
+"bytes":180030,
+"sha256":"b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
+"gitBlob":"b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
+"independentlyGitCorroborated":true
+},
+"security/selinux/avc.c":{
+"bytes":31717,
+"sha256":"e5ead166180e1b51dab8f701f16a595e51ff68eb346f7a8b4549617ce4672ce6",
+"gitBlob":"688ff9e63f514ec18b8096e59e0edd63ac6f5112"
+},
+"security/selinux/hooks.c":{
+"bytes":204597,
+"sha256":"6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
+"gitBlob":"d4abf15f0e6fb98505df81ac3128255b4cd9e1e7",
+"independentlyGitCorroborated":true
+},
+"security/selinux/include/avc.h":{
+"bytes":4623,
+"sha256":"b1bb6fd0b9fda55cce88a5fb2a359fd64cde40ef18162e6640cd33885ebb5966",
+"gitBlob":"96a614d47df8d1d67b0b033ebb90954653dfeab7"
+},
+"security/selinux/netlabel.c":{
+"bytes":16481,
+"sha256":"972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
+"gitBlob":"d51dfe89231229e78903f3aa552286326524dca2",
+"independentlyGitCorroborated":false
+},
+"security/selinux/netport.c":{
+"bytes":5952,
+"sha256":"8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
+"gitBlob":"2e22ad9c2bd0d116668985e0fb579b5934df9394",
+"independentlyGitCorroborated":false
+},
+"security/selinux/ss/ebitmap.c":{
+"bytes":12211,
+"sha256":"69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
+"gitBlob":"cd84357db2c47a034bb3601eeaaa8806dbf0f7af",
+"independentlyGitCorroborated":false
+},
+"security/selinux/ss/mls.c":{
+"bytes":16094,
+"sha256":"349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
+"gitBlob":"a6e49269f5351df096da8c9fb56103a2f7b0ee9d",
+"independentlyGitCorroborated":false
+},
+"security/selinux/ss/services.c":{
+"bytes":97756,
+"sha256":"0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
+"gitBlob":"54d121d64804295c8ae1f40103957f6a3b671640",
+"independentlyGitCorroborated":true
+},
+"security/selinux/ss/sidtab.c":{
+"bytes":14675,
+"sha256":"5bc885230f9b6023ff7a64b0ff80746f607a572cf7d882eab149f6c1261c4f08",
+"gitBlob":"c8848cbba81f24abbb2e0d07697ece10d2cc6637",
+"independentlyGitCorroborated":false
+},
+"drivers/pci/probe.c":{
+"bytes":90707,
+"sha256":"b1f5ebdfed1913a0d3310365a3bd8f1d17a5754c5e400fc65d8098188c03e858",
+"gitBlob":"718293b4bdb98a3d3aac1254bc7223cdef5e55ec",
+"independentlyGitCorroborated":false
+},
+"include/linux/pci.h":{
+"bytes":101504,
+"sha256":"1b44480a5464c73a05d2688d223b86da11d6c620a7dfb2cce23e1102fcfec4a1",
+"gitBlob":"ee27f1ba01b8e99b1b55e821bbdb9100f74c5771",
+"independentlyGitCorroborated":false
+},
+"drivers/pci/iov.c":{
+"bytes":29078,
+"sha256":"2bbeeaef2efcc6e81e42a537b314218405ed3f58ee85b6f20020ef2f136936c5",
+"gitBlob":"d595a345a7d47374ef3bb26b2b742bbd2e2660da",
+"independentlyGitCorroborated":false
+},
+"drivers/base/core.c":{
+"bytes":149978,
+"sha256":"421c6bb5c72073659d19a02108ded0400b015837737d0e1f98a04af830c784bb",
+"gitBlob":"a6134a5e5e110d5876dda2868787d7b77572a657",
+"independentlyGitCorroborated":false
+},
+"lib/kobject.c":{
+"bytes":28433,
+"sha256":"0161a3faaa770cf7a724f94773104a5ab33c5dbafe525729276360cd8120d4ab",
+"gitBlob":"72fa20f405f1520a63dd50d9aa37f6609306eb3e",
+"independentlyGitCorroborated":false
+},
+"mm/util.c":{
+"bytes":32530,
+"sha256":"e3957dcdbdb19a587ae484f7a6317ea014fe6d64847d70675b5a6c18b3a7071f",
+"gitBlob":"4f1275023eb7317973c061da950ef582f1660c28",
+"independentlyGitCorroborated":false
+},
+"lib/kasprintf.c":{
+"bytes":1426,
+"sha256":"6706bce50db2579ee692b1eb4e332636291febf983952b4251bbf26f2ba70b1d",
+"gitBlob":"cd2f5974ed987d57d0d2b388b83edb31ea6ec83e",
+"independentlyGitCorroborated":false
+},
+"include/linux/mm.h":{
+"bytes":132024,
+"sha256":"a15410bd33802e92e80b973a33dfeb480ddbb36f0fc0f357f9a73d14524ddadb",
+"gitBlob":"1728dc3356089a4c0eb2a31c4b6ab54992effb69",
+"independentlyGitCorroborated":false
+},
+"include/asm-generic/sections.h":{
+"bytes":7851,
+"sha256":"5bc555244fdf0fda9e2444be10f84000d9a8b18224406280b658483c2ea41b2a",
+"gitBlob":"c768de6f19a9a90d04eab66f522bad2f10ef1fd9",
+"independentlyGitCorroborated":false
+}
+},
+"sections":{
+"pci_alloc_dev":{
+"source":"drivers/pci/probe.c",
+"prefix":"struct pci_dev *pci_alloc_dev(",
+"text":"struct pci_dev *pci_alloc_dev(struct pci_bus *bus)\n{\n\tstruct pci_dev *dev;\n\n\tdev = kzalloc(sizeof(struct pci_dev), GFP_KERNEL);\n\tif (!dev)\n\t\treturn NULL;\n\n\tINIT_LIST_HEAD(&dev->bus_list);\n\tdev->dev.type = &pci_dev_type;\n\tdev->bus = pci_bus_get(bus);\n\tdev->driver_exclusive_resource = (struct resource) {\n\t\t.name = \"PCI Exclusive\",\n\t\t.start = 0,\n\t\t.end = -1,\n\t};\n\n\tspin_lock_init(&dev->pcie_cap_lock);\n#ifdef CONFIG_PCI_MSI\n\traw_spin_lock_init(&dev->msi_lock);\n#endif\n\treturn dev;\n}\n",
+"bytes":482,
+"sha256":"d2fe58ccf8dfcdf642f65ef3e855558703229c144107deb5a047ee46e9f4bbbe"
+},
+"pci_scan_device":{
+"source":"drivers/pci/probe.c",
+"prefix":"static struct pci_dev *pci_scan_device(",
+"text":"static struct pci_dev *pci_scan_device(struct pci_bus *bus, int devfn)\n{\n\tstruct pci_dev *dev;\n\tu32 l;\n\n\tif (!pci_bus_read_dev_vendor_id(bus, devfn, &l, 60*1000))\n\t\treturn NULL;\n\n\tdev = pci_alloc_dev(bus);\n\tif (!dev)\n\t\treturn NULL;\n\n\tdev->devfn = devfn;\n\tdev->vendor = l & 0xffff;\n\tdev->device = (l >> 16) & 0xffff;\n\n\tif (pci_setup_device(dev)) {\n\t\tpci_bus_put(dev->bus);\n\t\tkfree(dev);\n\t\treturn NULL;\n\t}\n\n\treturn dev;\n}\n",
+"bytes":420,
+"sha256":"57bcf6a3b631357d65b5cc1c454044b2f2991398bb1860dc5597fd1a3d460c89"
+},
+"pci_scan_single_device":{
+"source":"drivers/pci/probe.c",
+"prefix":"struct pci_dev *pci_scan_single_device(",
+"text":"struct pci_dev *pci_scan_single_device(struct pci_bus *bus, int devfn)\n{\n\tstruct pci_dev *dev;\n\n\tdev = pci_get_slot(bus, devfn);\n\tif (dev) {\n\t\tpci_dev_put(dev);\n\t\treturn dev;\n\t}\n\n\tdev = pci_scan_device(bus, devfn);\n\tif (!dev)\n\t\treturn NULL;\n\n\tpci_device_add(dev, bus);\n\n\treturn dev;\n}\n",
+"bytes":285,
+"sha256":"cea6bde01f78aa0f79bd37a25237806dd8c9d424f945abc32826e8a22836938a"
+},
+"pci_release_dev":{
+"source":"drivers/pci/probe.c",
+"prefix":"static void pci_release_dev(",
+"text":"static void pci_release_dev(struct device *dev)\n{\n\tstruct pci_dev *pci_dev;\n\n\tpci_dev = to_pci_dev(dev);\n\tpci_release_capabilities(pci_dev);\n\tpci_release_of_node(pci_dev);\n\tpcibios_release_device(pci_dev);\n\tpci_bus_put(pci_dev->bus);\n\tbitmap_free(pci_dev->dma_alias_mask);\n\tdev_dbg(dev, \"device released\\n\");\n\tkfree(pci_dev);\n}\n",
+"bytes":328,
+"sha256":"78949d0f2f1fa2363360f56e7d1f2685b96d1460a75affcc1bc9dbf7d1303e13"
+},
+"pci_setup_device":{
+"source":"drivers/pci/probe.c",
+"prefix":"int pci_setup_device(",
+"text":"int pci_setup_device(struct pci_dev *dev)\n{\n\tu32 class;\n\tu16 cmd;\n\tu8 hdr_type;\n\tint err, pos = 0;\n\tstruct pci_bus_region region;\n\tstruct resource *res;\n\n\thdr_type = pci_hdr_type(dev);\n\n\tdev->sysdata = dev->bus->sysdata;\n\tdev->dev.parent = dev->bus->bridge;\n\tdev->dev.bus = &pci_bus_type;\n\tdev->hdr_type = hdr_type & 0x7f;\n\tdev->multifunction = !!(hdr_type & 0x80);\n\tdev->error_state = pci_channel_io_normal;\n\tset_pcie_port_type(dev);\n\n\terr = pci_set_of_node(dev);\n\tif (err)\n\t\treturn err;\n\tpci_set_acpi_fwnode(dev);\n\n\tpci_dev_assign_slot(dev);\n\n\t/*\n\t * Assume 32-bit PCI; let 64-bit PCI cards (which are far rarer)\n\t * set this higher, assuming the system even supports it.\n\t */\n\tdev->dma_mask = 0xffffffff;\n\n\tdev_set_name(&dev->dev, \"%04x:%02x:%02x.%d\", pci_domain_nr(dev->bus),\n\t\t     dev->bus->number, PCI_SLOT(dev->devfn),\n\t\t     PCI_FUNC(dev->devfn));\n\n\tclass = pci_class(dev);\n\n\tdev->revision = class & 0xff;\n\tdev->class = class >> 8;\t\t    /* upper 3 bytes */\n\n\tif (pci_early_dump)\n\t\tearly_dump_pci_device(dev);\n\n\t/* Need to have dev->class ready */\n\tdev->cfg_size = pci_cfg_space_size(dev);\n\n\t/* Need to have dev->cfg_size ready */\n\tset_pcie_thunderbolt(dev);\n\n\tset_pcie_untrusted(dev);\n\n\tif (pci_is_pcie(dev))\n\t\tdev->supported_speeds = pcie_get_supported_speeds(dev);\n\n\t/* \"Unknown power state\" */\n\tdev->current_state = PCI_UNKNOWN;\n\n\t/* Early fixups, before probing the BARs */\n\tpci_fixup_device(pci_fixup_early, dev);\n\n\tpci_set_removable(dev);\n\n\tpci_info(dev, \"[%04x:%04x] type %02x class %#08x %s\\n\",\n\t\t dev->vendor, dev->device, dev->hdr_type, dev->class,\n\t\t pci_type_str(dev));\n\n\t/* Device class may be changed after fixup */\n\tclass = dev->class >> 8;\n\n\tif (dev->non_compliant_bars && !dev->mmio_always_on) {\n\t\tpci_read_config_word(dev, PCI_COMMAND, &cmd);\n\t\tif (cmd & (PCI_COMMAND_IO | PCI_COMMAND_MEMORY)) {\n\t\t\tpci_info(dev, \"device has non-compliant BARs; disabling IO/MEM decoding\\n\");\n\t\t\tcmd &= ~PCI_COMMAND_IO;\n\t\t\tcmd &= ~PCI_COMMAND_MEMORY;\n\t\t\tpci_write_config_word(dev, PCI_COMMAND, cmd);\n\t\t}\n\t}\n\n\tdev->broken_intx_masking = pci_intx_mask_broken(dev);\n\n\tswitch (dev->hdr_type) {\t\t    /* header type */\n\tcase PCI_HEADER_TYPE_NORMAL:\t\t    /* standard header */\n\t\tif (class == PCI_CLASS_BRIDGE_PCI)\n\t\t\tgoto bad;\n\t\tpci_read_irq(dev);\n\t\tpci_read_bases(dev, 6, PCI_ROM_ADDRESS);\n\n\t\tpci_subsystem_ids(dev, &dev->subsystem_vendor, &dev->subsystem_device);\n\n\t\t/*\n\t\t * Do the ugly legacy mode stuff here rather than broken chip\n\t\t * quirk code. Legacy mode ATA controllers have fixed\n\t\t * addresses. These are not always echoed in BAR0-3, and\n\t\t * BAR0-3 in a few cases contain junk!\n\t\t */\n\t\tif (class == PCI_CLASS_STORAGE_IDE) {\n\t\t\tu8 progif;\n\t\t\tpci_read_config_byte(dev, PCI_CLASS_PROG, &progif);\n\t\t\tif ((progif & 1) == 0) {\n\t\t\t\tregion.start = 0x1F0;\n\t\t\t\tregion.end = 0x1F7;\n\t\t\t\tres = &dev->resource[0];\n\t\t\t\tres->flags = LEGACY_IO_RESOURCE;\n\t\t\t\tpcibios_bus_to_resource(dev->bus, res, &region);\n\t\t\t\tpci_info(dev, \"BAR 0 %pR: legacy IDE quirk\\n\",\n\t\t\t\t\t res);\n\t\t\t\tregion.start = 0x3F6;\n\t\t\t\tregion.end = 0x3F6;\n\t\t\t\tres = &dev->resource[1];\n\t\t\t\tres->flags = LEGACY_IO_RESOURCE;\n\t\t\t\tpcibios_bus_to_resource(dev->bus, res, &region);\n\t\t\t\tpci_info(dev, \"BAR 1 %pR: legacy IDE quirk\\n\",\n\t\t\t\t\t res);\n\t\t\t}\n\t\t\tif ((progif & 4) == 0) {\n\t\t\t\tregion.start = 0x170;\n\t\t\t\tregion.end = 0x177;\n\t\t\t\tres = &dev->resource[2];\n\t\t\t\tres->flags = LEGACY_IO_RESOURCE;\n\t\t\t\tpcibios_bus_to_resource(dev->bus, res, &region);\n\t\t\t\tpci_info(dev, \"BAR 2 %pR: legacy IDE quirk\\n\",\n\t\t\t\t\t res);\n\t\t\t\tregion.start = 0x376;\n\t\t\t\tregion.end = 0x376;\n\t\t\t\tres = &dev->resource[3];\n\t\t\t\tres->flags = LEGACY_IO_RESOURCE;\n\t\t\t\tpcibios_bus_to_resource(dev->bus, res, &region);\n\t\t\t\tpci_info(dev, \"BAR 3 %pR: legacy IDE quirk\\n\",\n\t\t\t\t\t res);\n\t\t\t}\n\t\t}\n\t\tbreak;\n\n\tcase PCI_HEADER_TYPE_BRIDGE:\t\t    /* bridge header */\n\t\t/*\n\t\t * The PCI-to-PCI bridge spec requires that subtractive\n\t\t * decoding (i.e. transparent) bridge must have programming\n\t\t * interface code of 0x01.\n\t\t */\n\t\tpci_read_irq(dev);\n\t\tdev->transparent = ((dev->class & 0xff) == 1);\n\t\tpci_read_bases(dev, 2, PCI_ROM_ADDRESS1);\n\t\tpci_read_bridge_windows(dev);\n\t\tset_pcie_hotplug_bridge(dev);\n\t\tpos = pci_find_capability(dev, PCI_CAP_ID_SSVID);\n\t\tif (pos) {\n\t\t\tpci_read_config_word(dev, pos + PCI_SSVID_VENDOR_ID, &dev->subsystem_vendor);\n\t\t\tpci_read_config_word(dev, pos + PCI_SSVID_DEVICE_ID, &dev->subsystem_device);\n\t\t}\n\t\tbreak;\n\n\tcase PCI_HEADER_TYPE_CARDBUS:\t\t    /* CardBus bridge header */\n\t\tif (class != PCI_CLASS_BRIDGE_CARDBUS)\n\t\t\tgoto bad;\n\t\tpci_read_irq(dev);\n\t\tpci_read_bases(dev, 1, 0);\n\t\tpci_read_config_word(dev, PCI_CB_SUBSYSTEM_VENDOR_ID, &dev->subsystem_vendor);\n\t\tpci_read_config_word(dev, PCI_CB_SUBSYSTEM_ID, &dev->subsystem_device);\n\t\tbreak;\n\n\tdefault:\t\t\t\t    /* unknown header */\n\t\tpci_err(dev, \"unknown header type %02x, ignoring device\\n\",\n\t\t\tdev->hdr_type);\n\t\tpci_release_of_node(dev);\n\t\treturn -EIO;\n\n\tbad:\n\t\tpci_err(dev, \"ignoring class %#08x (doesn't match header type %02x)\\n\",\n\t\t\tdev->class, dev->hdr_type);\n\t\tdev->class = PCI_CLASS_NOT_DEFINED << 8;\n\t}\n\n\t/* We found a fine healthy device, go go go... */\n\treturn 0;\n}\n",
+"bytes":5070,
+"sha256":"f97424235a56f3205dc944643e2258b1557c40a5de5fee55cb24ae883523c451"
+},
+"pci_device_add":{
+"source":"drivers/pci/probe.c",
+"prefix":"void pci_device_add(",
+"text":"void pci_device_add(struct pci_dev *dev, struct pci_bus *bus)\n{\n\tint ret;\n\n\tpci_configure_device(dev);\n\n\tdevice_initialize(&dev->dev);\n\tdev->dev.release = pci_release_dev;\n\n\tset_dev_node(&dev->dev, pcibus_to_node(bus));\n\tdev->dev.dma_mask = &dev->dma_mask;\n\tdev->dev.dma_parms = &dev->dma_parms;\n\tdev->dev.coherent_dma_mask = 0xffffffffull;\n\n\tdma_set_max_seg_size(&dev->dev, 65536);\n\tdma_set_seg_boundary(&dev->dev, 0xffffffff);\n\n\tpcie_failed_link_retrain(dev);\n\n\t/* Fix up broken headers */\n\tpci_fixup_device(pci_fixup_header, dev);\n\n\tpci_reassigndev_resource_alignment(dev);\n\n\tdev->state_saved = false;\n\n\tpci_init_capabilities(dev);\n\n\t/*\n\t * Add the device to our list of discovered devices\n\t * and the bus list for fixup functions, etc.\n\t */\n\tdown_write(&pci_bus_sem);\n\tlist_add_tail(&dev->bus_list, &bus->devices);\n\tup_write(&pci_bus_sem);\n\n\tret = pcibios_device_add(dev);\n\tWARN_ON(ret < 0);\n\n\t/* Set up MSI IRQ domain */\n\tpci_set_msi_domain(dev);\n\n\t/* Notifier could use PCI capabilities */\n\tdev->match_driver = false;\n\tret = device_add(&dev->dev);\n\tWARN_ON(ret < 0);\n\n\tpci_npem_create(dev);\n}\n",
+"bytes":1099,
+"sha256":"aac50bcbdf53443c9843f6bea40e2d05be920809b5c716c411c3f423b1eb21d5"
+},
+"pci_iov_add_virtfn":{
+"source":"drivers/pci/iov.c",
+"prefix":"int pci_iov_add_virtfn(",
+"text":"int pci_iov_add_virtfn(struct pci_dev *dev, int id)\n{\n\tint i;\n\tint rc = -ENOMEM;\n\tu64 size;\n\tstruct pci_dev *virtfn;\n\tstruct resource *res;\n\tstruct pci_sriov *iov = dev->sriov;\n\tstruct pci_bus *bus;\n\n\tbus = virtfn_add_bus(dev->bus, pci_iov_virtfn_bus(dev, id));\n\tif (!bus)\n\t\tgoto failed;\n\n\tvirtfn = pci_alloc_dev(bus);\n\tif (!virtfn)\n\t\tgoto failed0;\n\n\tvirtfn->devfn = pci_iov_virtfn_devfn(dev, id);\n\tvirtfn->vendor = dev->vendor;\n\tvirtfn->device = iov->vf_device;\n\tvirtfn->is_virtfn = 1;\n\tvirtfn->physfn = pci_dev_get(dev);\n\tvirtfn->no_command_memory = 1;\n\n\tif (id == 0)\n\t\tpci_read_vf_config_common(virtfn);\n\n\trc = pci_setup_device(virtfn);\n\tif (rc)\n\t\tgoto failed1;\n\n\tvirtfn->dev.parent = dev->dev.parent;\n\tvirtfn->multifunction = 0;\n\n\tfor (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {\n\t\tres = &dev->resource[i + PCI_IOV_RESOURCES];\n\t\tif (!res->parent)\n\t\t\tcontinue;\n\t\tvirtfn->resource[i].name = pci_name(virtfn);\n\t\tvirtfn->resource[i].flags = res->flags;\n\t\tsize = pci_iov_resource_size(dev, i + PCI_IOV_RESOURCES);\n\t\tvirtfn->resource[i].start = res->start + size * id;\n\t\tvirtfn->resource[i].end = virtfn->resource[i].start + size - 1;\n\t\trc = request_resource(res, &virtfn->resource[i]);\n\t\tBUG_ON(rc);\n\t}\n\n\tpci_device_add(virtfn, virtfn->bus);\n\trc = pci_iov_sysfs_link(dev, virtfn, id);\n\tif (rc)\n\t\tgoto failed1;\n\n\tpci_bus_add_device(virtfn);\n\n\treturn 0;\n\nfailed1:\n\tpci_stop_and_remove_bus_device(virtfn);\n\tpci_dev_put(dev);\nfailed0:\n\tvirtfn_remove_bus(dev->bus, bus);\nfailed:\n\n\treturn rc;\n}\n",
+"bytes":1482,
+"sha256":"962195aca0732d71b2ebf6df36bf4a4761619ae3c5c9c384a29958129ddc7314"
+},
+"pci_iov_virtfn_bus":{
+"source":"drivers/pci/iov.c",
+"prefix":"int pci_iov_virtfn_bus(",
+"text":"int pci_iov_virtfn_bus(struct pci_dev *dev, int vf_id)\n{\n\tif (!dev->is_physfn)\n\t\treturn -EINVAL;\n\treturn dev->bus->number + ((dev->devfn + dev->sriov->offset +\n\t\t\t\t    dev->sriov->stride * vf_id) >> 8);\n}\n",
+"bytes":205,
+"sha256":"3ea92587142f845f8a5c831a475c531c64ad80f1bba1676b972a117e35a86f89"
+},
+"pci_iov_virtfn_devfn":{
+"source":"drivers/pci/iov.c",
+"prefix":"int pci_iov_virtfn_devfn(",
+"text":"int pci_iov_virtfn_devfn(struct pci_dev *dev, int vf_id)\n{\n\tif (!dev->is_physfn)\n\t\treturn -EINVAL;\n\treturn (dev->devfn + dev->sriov->offset +\n\t\tdev->sriov->stride * vf_id) & 0xff;\n}\n",
+"bytes":182,
+"sha256":"8e74c7029d695608d4395dc24a6e70a5db322b7051d67044b67a3a9a1b7241e4"
+},
+"dev_set_name":{
+"source":"drivers/base/core.c",
+"prefix":"int dev_set_name(",
+"text":"int dev_set_name(struct device *dev, const char *fmt, ...)\n{\n\tva_list vargs;\n\tint err;\n\n\tva_start(vargs, fmt);\n\terr = kobject_set_name_vargs(&dev->kobj, fmt, vargs);\n\tva_end(vargs);\n\treturn err;\n}\n",
+"bytes":197,
+"sha256":"ebff8c5bb442f87cfe4613715baf64641cd83b58931de66f7ec0756502253315"
+},
+"device_release":{
+"source":"drivers/base/core.c",
+"prefix":"static void device_release(",
+"text":"static void device_release(struct kobject *kobj)\n{\n\tstruct device *dev = kobj_to_dev(kobj);\n\tstruct device_private *p = dev->p;\n\n\t/*\n\t * Some platform devices are driven without driver attached\n\t * and managed resources may have been acquired.  Make sure\n\t * all resources are released.\n\t *\n\t * Drivers still can add resources into device after device\n\t * is deleted but alive, so release devres here to avoid\n\t * possible memory leak.\n\t */\n\tdevres_release_all(dev);\n\n\tkfree(dev->dma_range_map);\n\tkfree(dev->driver_override.name);\n\n\tif (dev->release)\n\t\tdev->release(dev);\n\telse if (dev->type && dev->type->release)\n\t\tdev->type->release(dev);\n\telse if (dev->class && dev->class->dev_release)\n\t\tdev->class->dev_release(dev);\n\telse\n\t\tWARN(1, KERN_ERR \"Device '%s' does not have a release() function, it is broken and must be fixed. See Documentation/core-api/kobject.rst.\\n\",\n\t\t\tdev_name(dev));\n\tkfree(p);\n}\n",
+"bytes":905,
+"sha256":"1c6bfbb50f37de4ba84fcb154b5fe88d565402e4867ab3a992536c52fa0e0c5a"
+},
+"kobject_set_name_vargs":{
+"source":"lib/kobject.c",
+"prefix":"int kobject_set_name_vargs(",
+"text":"int kobject_set_name_vargs(struct kobject *kobj, const char *fmt,\n\t\t\t\t  va_list vargs)\n{\n\tconst char *s;\n\n\tif (kobj->name && !fmt)\n\t\treturn 0;\n\n\ts = kvasprintf_const(GFP_KERNEL, fmt, vargs);\n\tif (!s)\n\t\treturn -ENOMEM;\n\n\t/*\n\t * ewww... some of these buggers have '/' in the name ... If\n\t * that's the case, we need to make sure we have an actual\n\t * allocated copy to modify, since kvasprintf_const may have\n\t * returned something from .rodata.\n\t */\n\tif (strchr(s, '/')) {\n\t\tchar *t;\n\n\t\tt = kstrdup(s, GFP_KERNEL);\n\t\tkfree_const(s);\n\t\tif (!t)\n\t\t\treturn -ENOMEM;\n\t\ts = strreplace(t, '/', '!');\n\t}\n\tkfree_const(kobj->name);\n\tkobj->name = s;\n\n\treturn 0;\n}\n",
+"bytes":652,
+"sha256":"64afeb0bca6377076d6881e3f4412ee44e2b2200bb0254b9aee3116d3db9ee6d"
+},
+"kobject_cleanup":{
+"source":"lib/kobject.c",
+"prefix":"static void kobject_cleanup(",
+"text":"static void kobject_cleanup(struct kobject *kobj)\n{\n\tstruct kobject *parent = kobj->parent;\n\tconst struct kobj_type *t = get_ktype(kobj);\n\tconst char *name = kobj->name;\n\n\tpr_debug(\"'%s' (%p): %s, parent %p\\n\",\n\t\t kobject_name(kobj), kobj, __func__, kobj->parent);\n\n\tif (t && !t->release)\n\t\tpr_debug(\"'%s' (%p): does not have a release() function, it is broken and must be fixed. See Documentation/core-api/kobject.rst.\\n\",\n\t\t\t kobject_name(kobj), kobj);\n\n\t/* remove from sysfs if the caller did not do it */\n\tif (kobj->state_in_sysfs) {\n\t\tpr_debug(\"'%s' (%p): auto cleanup kobject_del\\n\",\n\t\t\t kobject_name(kobj), kobj);\n\t\t__kobject_del(kobj);\n\t} else {\n\t\t/* avoid dropping the parent reference unnecessarily */\n\t\tparent = NULL;\n\t}\n\n\tif (t && t->release) {\n\t\tpr_debug(\"'%s' (%p): calling ktype release\\n\",\n\t\t\t kobject_name(kobj), kobj);\n\t\tt->release(kobj);\n\t}\n\n\t/* free name if we allocated it */\n\tif (name) {\n\t\tpr_debug(\"'%s': free name\\n\", name);\n\t\tkfree_const(name);\n\t}\n\n\tkobject_put(parent);\n}\n",
+"bytes":998,
+"sha256":"c73d5bfc20826a2dc785804dd717d297e80f3bbf1084fb3aac3eab4b583f884c"
+},
+"kvasprintf_const":{
+"source":"lib/kasprintf.c",
+"prefix":"const char *kvasprintf_const(",
+"text":"const char *kvasprintf_const(gfp_t gfp, const char *fmt, va_list ap)\n{\n\tif (!strchr(fmt, '%'))\n\t\treturn kstrdup_const(fmt, gfp);\n\tif (!strcmp(fmt, \"%s\"))\n\t\treturn kstrdup_const(va_arg(ap, const char*), gfp);\n\treturn kvasprintf(gfp, fmt, ap);\n}\n",
+"bytes":244,
+"sha256":"05e4ebe15c62c49c59977dae6b70a5244b101c4b8a073457dd4c52c6328b7987"
+},
+"kvasprintf":{
+"source":"lib/kasprintf.c",
+"prefix":"char *kvasprintf(",
+"text":"char *kvasprintf(gfp_t gfp, const char *fmt, va_list ap)\n{\n\tunsigned int first, second;\n\tchar *p;\n\tva_list aq;\n\n\tva_copy(aq, ap);\n\tfirst = vsnprintf(NULL, 0, fmt, aq);\n\tva_end(aq);\n\n\tp = kmalloc_track_caller(first+1, gfp);\n\tif (!p)\n\t\treturn NULL;\n\n\tsecond = vsnprintf(p, first+1, fmt, ap);\n\tWARN(first != second, \"different return values (%u and %u) from vsnprintf(\\\"%s\\\", ...)\",\n\t     first, second, fmt);\n\n\treturn p;\n}\n",
+"bytes":421,
+"sha256":"a9417383e6a48a16282156403c041b2d8d2d613f04aecf568b263ceff78f7f48"
+},
+"kstrdup_const":{
+"source":"mm/util.c",
+"prefix":"const char *kstrdup_const(",
+"text":"const char *kstrdup_const(const char *s, gfp_t gfp)\n{\n\tif (is_kernel_rodata((unsigned long)s))\n\t\treturn s;\n\n\treturn kstrdup(s, gfp);\n}\n",
+"bytes":135,
+"sha256":"30bbdd18e859a89a43af3ecdb5987d1aec365d7e3dfcaa72e20511bc90ca0046"
+},
+"kfree_const":{
+"source":"mm/util.c",
+"prefix":"void kfree_const(",
+"text":"void kfree_const(const void *x)\n{\n\tif (!is_kernel_rodata((unsigned long)x))\n\t\tkfree(x);\n}\n",
+"bytes":90,
+"sha256":"ece147446b951212075c357920f62c8631ec1020c9a67cac6f7805abe73cb35a"
+},
+"kstrdup":{
+"source":"mm/util.c",
+"prefix":"noinline\nchar *kstrdup(",
+"text":"noinline\nchar *kstrdup(const char *s, gfp_t gfp)\n{\n\tsize_t len;\n\tchar *buf;\n\n\tif (!s)\n\t\treturn NULL;\n\n\tlen = strlen(s) + 1;\n\tbuf = kmalloc_track_caller(len, gfp);\n\tif (buf)\n\t\tmemcpy(buf, s, len);\n\treturn buf;\n}\n",
+"bytes":211,
+"sha256":"4977242534534944793856dec18f2a2ec8f7d971fee0cac94e95b4b8d74451d5"
+},
+"is_kernel_rodata":{
+"source":"include/asm-generic/sections.h",
+"prefix":"static inline bool is_kernel_rodata(",
+"text":"static inline bool is_kernel_rodata(unsigned long addr)\n{\n\treturn addr >= (unsigned long)__start_rodata &&\n\t       addr < (unsigned long)__end_rodata;\n}\n",
+"bytes":153,
+"sha256":"258e98db9300b38c389ea0b78224958d5e2c3777d55623163a82b5abc8ac4905"
+}
+},
+"kernelBuilt":false,
+"actualDeviceInitialized":false,
+"trustedNativeBootstrapAuthenticated":false,
+"completeAllocationClosure":false,
+"finalFreeCertified":false,
+"productionInstallation":false
 }

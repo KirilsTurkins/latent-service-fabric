@@ -194,17 +194,19 @@ impl BlobInvoker for S3BlobProvider {
                 &[u8::from(expected_size.is_some())],
                 &expected_size.unwrap_or(0).to_le_bytes(),
             ])?);
-        Ok(Box::pin(async move {
-            let mut call = inner.dispatch(admission, "create", cost).await?;
-            let _input = input;
-            let stage = handles::Staging::new(&inner, tenant, media_type, expected_size)?;
-            finish(&mut call, AuditProviderOutcome::HostCompleted).await?;
-            Ok(Box::new(handles::Writer {
-                data: Some(stage),
-                inner,
-                binding,
-            }) as Box<dyn BlobWriter>)
-        }))
+        let prepared =
+            admission.prepare_io_future_with(move |admission: PoolAdmission| async move {
+                let mut call = inner.dispatch(admission, "create", cost).await?;
+                let _input = input;
+                let stage = handles::Staging::new(&inner, tenant, media_type, expected_size)?;
+                finish(&mut call, AuditProviderOutcome::HostCompleted).await?;
+                Ok(Box::new(handles::Writer {
+                    data: Some(stage),
+                    inner,
+                    binding,
+                }) as Box<dyn BlobWriter>)
+            })?;
+        Ok(prepared.finish(admission))
     }
     fn open(
         &self,
@@ -231,20 +233,22 @@ impl BlobInvoker for S3BlobProvider {
                 &reference.size.to_le_bytes(),
                 reference.media_type.as_bytes(),
             ])?);
-        Ok(Box::pin(async move {
-            let mut call = inner.dispatch(admission, "open", cost).await?;
-            let _memory = memory;
-            let handle = inner.inventory.handle()?;
-            let metadata = inner.pools.reserve_protocol_metadata(super::RECORD_BYTES)?;
-            let record = inner.inventory.lookup(&tenant, &reference)?;
-            finish(&mut call, AuditProviderOutcome::HostCompleted).await?;
-            Ok(Box::new(handles::Reader {
-                record: Some(record),
-                inner,
-                binding,
-                _handle: handle,
-                _metadata: metadata,
-            }) as Box<dyn BlobReader>)
-        }))
+        let prepared =
+            admission.prepare_io_future_with(move |admission: PoolAdmission| async move {
+                let mut call = inner.dispatch(admission, "open", cost).await?;
+                let _memory = memory;
+                let handle = inner.inventory.handle()?;
+                let metadata = inner.pools.reserve_protocol_metadata(super::RECORD_BYTES)?;
+                let record = inner.inventory.lookup(&tenant, &reference)?;
+                finish(&mut call, AuditProviderOutcome::HostCompleted).await?;
+                Ok(Box::new(handles::Reader {
+                    record: Some(record),
+                    inner,
+                    binding,
+                    _handle: handle,
+                    _metadata: metadata,
+                }) as Box<dyn BlobReader>)
+            })?;
+        Ok(prepared.finish(admission))
     }
 }

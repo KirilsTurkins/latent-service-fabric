@@ -2,7 +2,10 @@
 //! pool connection survives every pending Arc<TcpStream> and is never parked.
 use crate::{error, provider::Inner, StreamError, StreamErrorCode, StreamResolution, StreamUsage};
 use latent_capabilities::broker::{
-    io::{IoCall, IoInputChunk, IoOutputChunk, IoTransfer, IoTransferOptions},
+    io::{
+        IoCall, IoFuture, IoInputChunk, IoOutputChunk, IoTransfer, IoTransferBuffer,
+        IoTransferOptions,
+    },
     network::{
         OutboundStream, StreamInterest, StreamObservation, StreamReadiness, StreamScope,
         StreamShutdown, StreamState, MAXIMUM_CHUNK_BYTES, STREAM_CAPABILITY,
@@ -14,22 +17,16 @@ use latent_capabilities::broker::{
     AuditProviderOutcome, CapabilityAuditDurability, CapabilityCallCost, CapabilityRequestDigest,
     CapabilityStreamBudget, ProviderCall,
 };
-use latent_core::{budget::HostMemoryReservation, BoxFuture, BudgetDimension};
+use latent_core::{budget::HostMemoryReservation, BudgetDimension};
 use latent_network::{canonical, NetworkError};
 use latent_policy::capability::{ResourceTarget, StreamEndpoint};
 use std::{
     future::Future,
-    io,
     net::SocketAddr,
-    pin::Pin,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
-use tokio::{
-    io::Interest,
-    net::{TcpSocket, TcpStream},
-    sync::Notify,
-};
+use tokio::{io::Interest, net::TcpSocket, sync::Notify};
 
 // One accepted readiness/DNS/connect future stays owned by the original IoCall.
 // Only its pinned authority is inspected periodically; network work is never
@@ -182,9 +179,6 @@ impl SocketMemory {
             Self::Kernel(owner) => owner.confirm(),
         }
     }
-}
-struct Connecting {
-    future: Pin<Box<dyn Future<Output = io::Result<TcpStream>> + Send>>,
 }
 // Declared before every actual resolver/socket future. Unwinding, cancellation,
 // failed currentness and ordinary errors all drop those futures before moving
@@ -706,17 +700,14 @@ async fn create_socket(
         return Err(error(StreamErrorCode::Exhausted));
     }
     let peer = SocketAddr::new(address, destination.endpoint.port);
-    let mut connecting = Connecting {
-        future: Box::pin(socket.connect(peer)),
-    };
+    // This future never escapes this lexical owner. Pin it inline rather than
+    // adding a second unowned heap allocation inside the admitted connect F.
+    let connecting = socket.connect(peer);
+    let mut connecting = std::pin::pin!(connecting);
     recheck_io(call.io(), deadline.min(valid_until)).await?;
-    let stream = wait_current(
-        call.io(),
-        deadline.min(valid_until),
-        connecting.future.as_mut(),
-    )
-    .await?
-    .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
+    let stream = wait_current(call.io(), deadline.min(valid_until), connecting.as_mut())
+        .await?
+        .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
     let peer = stream
         .peer_addr()
         .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
@@ -1067,10 +1058,63 @@ impl OutboundStream for Handle {
         &self,
         maximum: usize,
         timeout: Option<u32>,
-    ) -> Result<BoxFuture<'static, Result<Option<IoOutputChunk>, StreamError>>, StreamError> {
+    ) -> Result<IoFuture<'static, Result<Option<IoOutputChunk>, StreamError>>, StreamError> {
         if maximum == 0 || maximum > MAXIMUM_CHUNK_BYTES {
             return Err(error(StreamErrorCode::InvalidInput));
         }
+        let connection = Arc::clone(&self.connection);
+        let prepared = self.connection.call.prepare_io_future_with(
+            move |(pending, mut buffer): (Pending, IoTransferBuffer)| async move {
+                let mut call = connection
+                    .authorize("read", CapabilityCallCost::new(maximum))
+                    .await?;
+                connection.scope.charge_transfer(maximum)?;
+                let result = connection
+                    .wait(&pending, call.deadline(), async {
+                        loop {
+                            recheck_provider(&mut call).await?;
+                            match pending.socket.try_read(buffer.spare_mut()?) {
+                                Ok(None) => pending
+                                    .socket
+                                    .readable()
+                                    .await
+                                    .map_err(|_| error(StreamErrorCode::IoFailed))?,
+                                Ok(Some(count)) => break Ok(count),
+                                Err(error) => break Err(error),
+                            }
+                        }
+                    })
+                    .await
+                    .and_then(|value| value);
+                let count = match result {
+                    Ok(count) => count,
+                    Err(failure) => {
+                        connection.abort(failure.code);
+                        connection.audit(call, false).await?;
+                        return Err(connection.terminal_error(failure));
+                    }
+                };
+                {
+                    let mut state = connection
+                        .state
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    state.read_eof |= count == 0;
+                    state.delivered_read += count as u64;
+                    if count != 0 {
+                        state.last_progress = Instant::now();
+                    }
+                }
+                buffer.advance_written(count)?;
+                let result = if count == 0 {
+                    None
+                } else {
+                    Some(buffer.finish()?)
+                };
+                connection.audit(call, true).await?;
+                Ok(result)
+            },
+        )?;
         let pending = self.connection.pending(0, timeout)?;
         let window = self.connection.scope.reserve_chunk(maximum * 2)?;
         let mut buffer = self.connection.transfer.output_buffer(maximum)?;
@@ -1078,63 +1122,13 @@ impl OutboundStream for Handle {
             _connection: Arc::clone(&self.connection),
             _window: window,
         }))?;
-        let connection = Arc::clone(&self.connection);
-        Ok(Box::pin(async move {
-            let mut call = connection
-                .authorize("read", CapabilityCallCost::new(maximum))
-                .await?;
-            connection.scope.charge_transfer(maximum)?;
-            let result = connection
-                .wait(&pending, call.deadline(), async {
-                    loop {
-                        recheck_provider(&mut call).await?;
-                        match pending.socket.try_read(buffer.spare_mut()?) {
-                            Ok(None) => pending
-                                .socket
-                                .readable()
-                                .await
-                                .map_err(|_| error(StreamErrorCode::IoFailed))?,
-                            Ok(Some(count)) => break Ok(count),
-                            Err(error) => break Err(error),
-                        }
-                    }
-                })
-                .await
-                .and_then(|value| value);
-            let count = match result {
-                Ok(count) => count,
-                Err(failure) => {
-                    connection.abort(failure.code);
-                    connection.audit(call, false).await?;
-                    return Err(connection.terminal_error(failure));
-                }
-            };
-            {
-                let mut state = connection
-                    .state
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner);
-                state.read_eof |= count == 0;
-                state.delivered_read += count as u64;
-                if count != 0 {
-                    state.last_progress = Instant::now();
-                }
-            }
-            buffer.advance_written(count)?;
-            let result = if count == 0 {
-                None
-            } else {
-                Some(buffer.finish()?)
-            };
-            connection.audit(call, true).await?;
-            Ok(result)
-        }))
+        Ok(prepared.finish((pending, buffer)))
     }
     fn write(
         &self,
         bytes: Vec<u8>,
         timeout: Option<u32>,
-    ) -> Result<BoxFuture<'static, Result<u32, StreamError>>, StreamError> {
+    ) -> Result<IoFuture<'static, Result<u32, StreamError>>, StreamError> {
         let maximum = bytes.capacity();
         let mut bytes = Some(bytes);
         self.write_from(maximum, timeout, &mut || {
@@ -1146,10 +1140,91 @@ impl OutboundStream for Handle {
         maximum: usize,
         timeout: Option<u32>,
         produce: &mut dyn FnMut() -> Result<Vec<u8>, latent_core::PlatformError>,
-    ) -> Result<BoxFuture<'static, Result<u32, StreamError>>, StreamError> {
+    ) -> Result<IoFuture<'static, Result<u32, StreamError>>, StreamError> {
         if maximum == 0 || maximum > MAXIMUM_CHUNK_BYTES {
             return Err(error(StreamErrorCode::InvalidInput));
         }
+        let connection = Arc::clone(&self.connection);
+        let prepared = self.connection.call.prepare_io_future_with(
+            move |(pending, input, cost): (Pending, IoInputChunk, CapabilityCallCost)| async move {
+                let mut call = connection.authorize("write", cost).await?;
+                connection.scope.charge_transfer(input.as_ref().len())?;
+                let mut accepted_prefix = 0u32;
+                let result = connection
+                    .wait(&pending, call.deadline(), async {
+                        loop {
+                            recheck_provider(&mut call).await?;
+                            connection
+                                .state
+                                .lock()
+                                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                                .attempted_write = true;
+                            match pending.socket.try_write(input.as_ref()) {
+                                Ok(None) => pending
+                                    .socket
+                                    .writable()
+                                    .await
+                                    .map_err(|_| error(StreamErrorCode::IoFailed))?,
+                                Ok(Some(count)) => {
+                                    accepted_prefix = u32::try_from(count).expect("bounded chunk");
+                                    // Flush only this accepted plaintext prefix.
+                                    // No new write or retry occurs while waiting.
+                                    loop {
+                                        recheck_provider(&mut call).await?;
+                                        if pending.socket.flush_pending()? {
+                                            break;
+                                        }
+                                        pending
+                                            .socket
+                                            .writable()
+                                            .await
+                                            .map_err(|_| error(StreamErrorCode::IoFailed))?;
+                                    }
+                                    break Ok(count);
+                                }
+                                Err(error) => break Err(error),
+                            }
+                        }
+                    })
+                    .await
+                    .and_then(|value| value);
+                let count = match result {
+                    Ok(count) if count != 0 => count,
+                    Ok(_) => {
+                        connection.abort(StreamErrorCode::IoFailed);
+                        connection.audit(call, false).await?;
+                        return Err(error(StreamErrorCode::IoFailed).uncertain(true));
+                    }
+                    Err(mut failure) => {
+                        failure.accepted_prefix_bytes =
+                            failure.accepted_prefix_bytes.max(accepted_prefix);
+                        if failure.accepted_prefix_bytes != 0 {
+                            connection
+                                .state
+                                .lock()
+                                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                                .accepted_write += u64::from(failure.accepted_prefix_bytes);
+                        }
+                        connection.abort(failure.code);
+                        connection.audit(call, false).await?;
+                        return Err(connection.terminal_error(failure));
+                    }
+                };
+                {
+                    let mut state = connection
+                        .state
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    state.accepted_write += count as u64;
+                    state.last_progress = Instant::now();
+                }
+                if let Err(mut failure) = connection.audit(call, true).await {
+                    failure.accepted_prefix_bytes = u32::try_from(count).expect("bounded chunk");
+                    return Err(failure.uncertain(true));
+                }
+                Ok(u32::try_from(count).expect("bounded chunk"))
+            },
+        )?;
         let pending = self.connection.pending(1, timeout)?;
         let window = self.connection.scope.reserve_chunk(maximum)?;
         let mut input: IoInputChunk = self.connection.transfer.input_with(maximum, produce)?;
@@ -1160,130 +1235,56 @@ impl OutboundStream for Handle {
             _connection: Arc::clone(&self.connection),
             _window: window,
         }))?;
-        let connection = Arc::clone(&self.connection);
-        Ok(Box::pin(async move {
-            let mut call = connection.authorize("write", cost).await?;
-            connection.scope.charge_transfer(input.as_ref().len())?;
-            let mut accepted_prefix = 0u32;
-            let result = connection
-                .wait(&pending, call.deadline(), async {
-                    loop {
-                        recheck_provider(&mut call).await?;
-                        connection
-                            .state
-                            .lock()
-                            .unwrap_or_else(std::sync::PoisonError::into_inner)
-                            .attempted_write = true;
-                        match pending.socket.try_write(input.as_ref()) {
-                            Ok(None) => pending
-                                .socket
-                                .writable()
-                                .await
-                                .map_err(|_| error(StreamErrorCode::IoFailed))?,
-                            Ok(Some(count)) => {
-                                accepted_prefix = u32::try_from(count).expect("bounded chunk");
-                                // Flush only this accepted plaintext prefix.
-                                // No new write or retry occurs while waiting.
-                                loop {
-                                    recheck_provider(&mut call).await?;
-                                    if pending.socket.flush_pending()? {
-                                        break;
-                                    }
-                                    pending
-                                        .socket
-                                        .writable()
-                                        .await
-                                        .map_err(|_| error(StreamErrorCode::IoFailed))?;
-                                }
-                                break Ok(count);
-                            }
-                            Err(error) => break Err(error),
-                        }
-                    }
-                })
-                .await
-                .and_then(|value| value);
-            let count = match result {
-                Ok(count) if count != 0 => count,
-                Ok(_) => {
-                    connection.abort(StreamErrorCode::IoFailed);
-                    connection.audit(call, false).await?;
-                    return Err(error(StreamErrorCode::IoFailed).uncertain(true));
-                }
-                Err(mut failure) => {
-                    failure.accepted_prefix_bytes =
-                        failure.accepted_prefix_bytes.max(accepted_prefix);
-                    if failure.accepted_prefix_bytes != 0 {
-                        connection
-                            .state
-                            .lock()
-                            .unwrap_or_else(std::sync::PoisonError::into_inner)
-                            .accepted_write += u64::from(failure.accepted_prefix_bytes);
-                    }
-                    connection.abort(failure.code);
-                    connection.audit(call, false).await?;
-                    return Err(connection.terminal_error(failure));
-                }
-            };
-            {
-                let mut state = connection
-                    .state
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner);
-                state.accepted_write += count as u64;
-                state.last_progress = Instant::now();
-            }
-            if let Err(mut failure) = connection.audit(call, true).await {
-                failure.accepted_prefix_bytes = u32::try_from(count).expect("bounded chunk");
-                return Err(failure.uncertain(true));
-            }
-            Ok(u32::try_from(count).expect("bounded chunk"))
-        }))
+        Ok(prepared.finish((pending, input, cost)))
     }
     fn ready(
         &self,
         interest: StreamInterest,
         timeout: Option<u32>,
-    ) -> Result<BoxFuture<'static, Result<StreamReadiness, StreamError>>, StreamError> {
-        let pending = self.connection.pending(2, timeout)?;
+    ) -> Result<IoFuture<'static, Result<StreamReadiness, StreamError>>, StreamError> {
         let connection = Arc::clone(&self.connection);
-        Ok(Box::pin(async move {
-            let call = connection
-                .authorize("ready", CapabilityCallCost::new(0))
-                .await?;
-            let selected = match interest {
-                StreamInterest::Readable => Interest::READABLE,
-                StreamInterest::Writable => Interest::WRITABLE,
-                StreamInterest::Either => Interest::READABLE | Interest::WRITABLE,
-            };
-            if matches!(interest, StreamInterest::Readable | StreamInterest::Either)
-                && pending.socket.buffered_readable()?
-            {
-                connection.audit(call, true).await?;
-                return Ok(StreamReadiness {
-                    readable: true,
-                    writable: false,
-                });
-            }
-            let result = connection
-                .wait(&pending, call.deadline(), pending.socket.ready(selected))
-                .await
-                .and_then(|value| value.map_err(|_| error(StreamErrorCode::IoFailed)));
-            match result {
-                Ok(ready) => {
-                    connection.audit(call, true).await?;
-                    Ok(StreamReadiness {
-                        readable: ready.is_readable() || ready.is_read_closed(),
-                        writable: ready.is_writable() || ready.is_write_closed(),
-                    })
-                }
-                Err(failure) => {
-                    connection.abort(failure.code);
-                    connection.audit(call, false).await?;
-                    Err(failure.uncertain(connection.observe().application_write_attempted))
-                }
-            }
-        }))
+        let prepared =
+            self.connection
+                .call
+                .prepare_io_future_with(move |pending: Pending| async move {
+                    let call = connection
+                        .authorize("ready", CapabilityCallCost::new(0))
+                        .await?;
+                    let selected = match interest {
+                        StreamInterest::Readable => Interest::READABLE,
+                        StreamInterest::Writable => Interest::WRITABLE,
+                        StreamInterest::Either => Interest::READABLE | Interest::WRITABLE,
+                    };
+                    if matches!(interest, StreamInterest::Readable | StreamInterest::Either)
+                        && pending.socket.buffered_readable()?
+                    {
+                        connection.audit(call, true).await?;
+                        return Ok(StreamReadiness {
+                            readable: true,
+                            writable: false,
+                        });
+                    }
+                    let result = connection
+                        .wait(&pending, call.deadline(), pending.socket.ready(selected))
+                        .await
+                        .and_then(|value| value.map_err(|_| error(StreamErrorCode::IoFailed)));
+                    match result {
+                        Ok(ready) => {
+                            connection.audit(call, true).await?;
+                            Ok(StreamReadiness {
+                                readable: ready.is_readable() || ready.is_read_closed(),
+                                writable: ready.is_writable() || ready.is_write_closed(),
+                            })
+                        }
+                        Err(failure) => {
+                            connection.abort(failure.code);
+                            connection.audit(call, false).await?;
+                            Err(failure.uncertain(connection.observe().application_write_attempted))
+                        }
+                    }
+                })?;
+        let pending = self.connection.pending(2, timeout)?;
+        Ok(prepared.finish(pending))
     }
     fn inspect(&self) -> StreamObservation {
         self.connection.observe()
@@ -1291,7 +1292,7 @@ impl OutboundStream for Handle {
     fn shutdown(
         &self,
         how: StreamShutdown,
-    ) -> Result<BoxFuture<'static, Result<StreamObservation, StreamError>>, StreamError> {
+    ) -> Result<IoFuture<'static, Result<StreamObservation, StreamError>>, StreamError> {
         if how == StreamShutdown::Receive
             || (how == StreamShutdown::Send
                 && self.connection.endpoint.transport
@@ -1299,89 +1300,100 @@ impl OutboundStream for Handle {
         {
             return Err(error(StreamErrorCode::Unsupported));
         }
+        let connection = Arc::clone(&self.connection);
+        let prepared =
+            self.connection
+                .call
+                .prepare_io_future_with(move |pending: Pending| async move {
+                    let mut call = connection
+                        .authorize("shutdown", CapabilityCallCost::new(0))
+                        .await?;
+                    let current = connection
+                        .wait(&pending, call.deadline(), recheck_provider(&mut call))
+                        .await
+                        .and_then(|value| value.map_err(Into::into));
+                    if let Err(failure) = current {
+                        connection.abort(failure.code);
+                        connection.audit(call, false).await?;
+                        return Err(connection.terminal_error(failure));
+                    }
+                    if how == StreamShutdown::Both {
+                        connection.stop(None);
+                    } else {
+                        connection
+                            .wait(&pending, call.deadline(), async {
+                                loop {
+                                    recheck_provider(&mut call).await?;
+                                    if pending.socket.shutdown_send()?.is_some() {
+                                        break Ok::<_, StreamError>(());
+                                    }
+                                    pending
+                                        .socket
+                                        .writable()
+                                        .await
+                                        .map_err(|_| error(StreamErrorCode::IoFailed))?;
+                                }
+                            })
+                            .await??;
+                        connection
+                            .state
+                            .lock()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner)
+                            .write_shut = true;
+                    }
+                    connection.audit(call, true).await?;
+                    drop(pending);
+                    Ok(connection.observe())
+                })?;
         let pending = self.connection.pending(1, None)?;
-        let connection = Arc::clone(&self.connection);
-        Ok(Box::pin(async move {
-            let mut call = connection
-                .authorize("shutdown", CapabilityCallCost::new(0))
-                .await?;
-            let current = connection
-                .wait(&pending, call.deadline(), recheck_provider(&mut call))
-                .await
-                .and_then(|value| value.map_err(Into::into));
-            if let Err(failure) = current {
-                connection.abort(failure.code);
-                connection.audit(call, false).await?;
-                return Err(connection.terminal_error(failure));
-            }
-            if how == StreamShutdown::Both {
-                connection.stop(None);
-            } else {
-                connection
-                    .wait(&pending, call.deadline(), async {
-                        loop {
-                            recheck_provider(&mut call).await?;
-                            if pending.socket.shutdown_send()?.is_some() {
-                                break Ok::<_, StreamError>(());
-                            }
-                            pending
-                                .socket
-                                .writable()
-                                .await
-                                .map_err(|_| error(StreamErrorCode::IoFailed))?;
-                        }
-                    })
-                    .await??;
-                connection
-                    .state
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner)
-                    .write_shut = true;
-            }
-            connection.audit(call, true).await?;
-            drop(pending);
-            Ok(connection.observe())
-        }))
+        Ok(prepared.finish(pending))
     }
-    fn close(self: Box<Self>) -> BoxFuture<'static, Result<StreamObservation, StreamError>> {
+    fn close(self: Box<Self>) -> IoFuture<'static, Result<StreamObservation, StreamError>> {
         let connection = Arc::clone(&self.connection);
+        let prepared =
+            connection
+                .call
+                .prepare_io_future_with(move |connection: Arc<Connection>| async move {
+                    let call = connection
+                        .authorize("close", CapabilityCallCost::new(0))
+                        .await?;
+                    loop {
+                        let changed = connection.changed.notified();
+                        tokio::pin!(changed);
+                        changed.as_mut().enable();
+                        if {
+                            let usage = connection.usage()?;
+                            usage.pending_operations == 0 && usage.connections == 0
+                        } {
+                            break;
+                        }
+                        if tokio::time::timeout_at(connection.deadline.into(), changed)
+                            .await
+                            .is_err()
+                        {
+                            return Err(error(StreamErrorCode::Uncertain)
+                                .uncertain(connection.observe().application_write_attempted));
+                        }
+                    }
+                    let quarantined = connection
+                        .state
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .quarantined;
+                    if quarantined {
+                        connection.audit(call, false).await?;
+                        return Err(error(StreamErrorCode::Uncertain)
+                            .uncertain(connection.observe().application_write_attempted));
+                    }
+                    connection.audit(call, true).await?;
+                    Ok(connection.observe())
+                });
         connection.stop(None);
         drop(self);
-        Box::pin(async move {
-            let call = connection
-                .authorize("close", CapabilityCallCost::new(0))
-                .await?;
-            loop {
-                let changed = connection.changed.notified();
-                tokio::pin!(changed);
-                changed.as_mut().enable();
-                if {
-                    let usage = connection.usage()?;
-                    usage.pending_operations == 0 && usage.connections == 0
-                } {
-                    break;
-                }
-                if tokio::time::timeout_at(connection.deadline.into(), changed)
-                    .await
-                    .is_err()
-                {
-                    return Err(error(StreamErrorCode::Uncertain)
-                        .uncertain(connection.observe().application_write_attempted));
-                }
-            }
-            let quarantined = connection
-                .state
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .quarantined;
-            if quarantined {
-                connection.audit(call, false).await?;
-                return Err(error(StreamErrorCode::Uncertain)
-                    .uncertain(connection.observe().application_write_attempted));
-            }
-            connection.audit(call, true).await?;
-            Ok(connection.observe())
-        })
+        match prepared {
+            Ok(prepared) => prepared.finish(connection),
+            Err(error) => IoFuture::failed(error.into()),
+        }
     }
 }
 impl Drop for Handle {

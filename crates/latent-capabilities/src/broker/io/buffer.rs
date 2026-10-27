@@ -1,7 +1,7 @@
+use super::Shared;
 use super::{
     capacity, invalid, stream::StreamLifetime, Charge, Kind, OperationOwner, PlatformError,
 };
-use std::sync::Arc;
 use zeroize::Zeroizing;
 
 /// Fixed-capacity storage. Adapters can borrow initialized spare bytes, never
@@ -14,7 +14,7 @@ pub struct IoBuffer {
     _host: Option<latent_core::budget::HostMemoryReservation>,
     _metadata: Charge,
     _slot: Charge,
-    pub(super) stream: Option<Arc<StreamLifetime>>,
+    pub(super) stream: Option<Shared<StreamLifetime>>,
     pub(super) operation: OperationOwner,
 }
 impl IoBuffer {
@@ -48,14 +48,10 @@ impl IoBuffer {
             metadata.checked_add(512).ok_or_else(super::capacity)?,
         )?;
         let charge = op.runtime.counters.acquire(Kind::Staged, capacity)?;
-        let mut native = if host {
-            Some(
-                op.with_session(|session| session.core.budget.reserve_host_memory(capacity as u64))
-                    .map_err(|_| super::capacity())?,
-            )
-        } else {
-            None
-        };
+        let layout = std::alloc::Layout::array::<u8>(capacity).map_err(|_| super::capacity())?;
+        let mut native = op.with_session(|session| {
+            super::reserve_allocation(&session.core.budget, layout, host)
+        })?;
         // Vec repetition requests exactly its length as capacity. No reserve,
         // push, extension, shrink or realloc is exposed after construction.
         let bytes = Zeroizing::new(vec![0; capacity]);
@@ -76,6 +72,12 @@ impl IoBuffer {
             stream: None,
             operation: op.clone(),
         })
+    }
+    #[cfg(test)]
+    pub(super) fn charged_to(&self, budget: &latent_core::ActivationBudget) -> bool {
+        self._host
+            .as_ref()
+            .is_some_and(|guard| guard.is_from_budget(budget))
     }
     #[must_use]
     pub fn capacity(&self) -> usize {

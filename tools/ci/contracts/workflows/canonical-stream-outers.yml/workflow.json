@@ -5,15 +5,20 @@
       "cancel-in-progress": false,
       "group": "canonical-stream-outers-${{ github.ref }}"
     },
-    "name": "Focused real I/O native ownership",
+    "name": "Focused reachable I/O native ownership",
     "on": {
       "push": {
         "branches": [
-          "feat/sdk-736-io-operation-native-20261026"
+          "feat/sdk-736-io-graph-native-20261026"
         ],
         "paths": [
           ".github/workflows/canonical-stream-outers.yml",
           "crates/latent-capabilities/**",
+          "crates/latent-http/**",
+          "crates/latent-blobs/**",
+          "crates/latent-streams/**",
+          "crates/latent-wasmtime/**",
+          "apps/latentd/**",
           "Cargo.toml",
           "Cargo.lock",
           "rust-toolchain.toml",
@@ -31,7 +36,7 @@
   "requiredJobs": [
     "stream-outers"
   ],
-  "reviewReason": "Reviewed #736 real I/O native backing: three new original Phase3 budget/physical lifetime controls plus changed node2048 layout check and unchanged Phase1 reference. One existing latent-capabilities locked all-features target,5cases/12commands/24raw; original45m/2395+5/895+5/55+5/25+5/j2 unchanged. No canonical9/producer11/language/compiler/guest replay. Wasmtime275/cache14/currentv20cohort unchanged and unexecuted by this owner; Shared full physical Arc+billing retained through lastWeak. Prior owner functions exact; source-only pending owning outcome.",
+  "reviewReason": "Reviewed #736 reachable broker I/O ownership: seven new cases (three typed provider-future controls, four actual buffer/ring/transfer/Request controls) plus one unchanged Phase1 reference. One locked provider CHECK --tests/all-features (actual HTTP/Blob/Streams/Wasmtime/latentd), one existing capabilities libtest target/probe and eight exact list/run pairs:19commands38raw. Original45m/2395+5/895+5/55+5/25+5/j2; no prior canonical/producer/I/O aggregate replay. Cargo check may execute host build scripts, no engine/guest execution. Current275+14 maintained Wasmtime/cache source and cohort unchanged; remaining imported/naked-Vec/transitive/node infrastructure gaps explicit. Source-only pending owning outcome.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

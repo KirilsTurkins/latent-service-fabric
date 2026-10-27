@@ -4,6 +4,7 @@ use super::{
 };
 use latent_capabilities::broker::{
     blob::{BlobChunk, BlobSeal},
+    pools::PoolAdmission,
     SessionResourceTableReservation,
 };
 
@@ -19,7 +20,11 @@ pub(super) struct Reader {
     pub binding: SessionResourceTableReservation,
 }
 impl BlobWriter for Writer {
-    fn write(&mut self, offset: u64, bytes: Vec<u8>) -> Result<BlobFuture<'_, u64>, BlobError> {
+    fn write<'a>(
+        &'a mut self,
+        offset: u64,
+        bytes: Vec<u8>,
+    ) -> Result<BlobFuture<'a, u64>, BlobError> {
         let data = self.data.as_ref().ok_or(BlobError::InvalidState)?;
         if offset != data.written()
             || bytes.capacity() > self.inner.store.limits().maximum_chunk_bytes
@@ -44,24 +49,57 @@ impl BlobWriter for Writer {
         if !bytes.is_empty() {
             cost = cost.with_charge(BudgetDimension::BlobWriteBytes, bytes.len() as u64)?;
         }
-        let mut data = self.data.take().expect("validated writer");
-        Ok(Box::pin(async move {
-            let call = execute::dispatch(&self.inner, admission, "write", cost).await?;
-            let completion = execute::run(&self.inner, call, "write", move |call| {
-                let _memory = memory;
-                let count = data
-                    .write(offset, &bytes, &|| checkpoint(call))
-                    .map_err(map);
-                drop(bytes);
-                Ok((data, count?))
-            })
-            .await?;
-            let (data, count) = completion.value?;
-            self.data = Some(data);
-            Ok(count)
-        }))
+        let prepared = self.binding.prepare_io_future_with(
+            move |(this, admission, mut data): (
+                &'a mut Self,
+                PoolAdmission,
+                crate::local::LocalBlobWriter,
+            )| async move {
+                let call = execute::dispatch(&this.inner, admission, "write", cost).await?;
+                let completion = execute::run(&this.inner, call, "write", move |call| {
+                    let _memory = memory;
+                    let count = data
+                        .write(offset, &bytes, &|| checkpoint(call))
+                        .map_err(map);
+                    drop(bytes);
+                    Ok((data, count?))
+                })
+                .await?;
+                let (data, count) = completion.value?;
+                this.data = Some(data);
+                Ok(count)
+            },
+        )?;
+        let data = self.data.take().expect("validated writer");
+        Ok(prepared.finish((self, admission, data)))
     }
     fn seal(mut self: Box<Self>) -> Result<BlobFuture<'static, BlobSeal>, BlobError> {
+        if self.data.is_none() {
+            return Err(BlobError::InvalidState);
+        }
+        let prepared = self.binding.prepare_io_future_with(
+            move |(this, admission, data, cost): (
+                Box<Self>,
+                PoolAdmission,
+                crate::local::LocalBlobWriter,
+                CapabilityCallCost,
+            )| async move {
+                let call = execute::dispatch(&this.inner, admission, "seal", cost).await?;
+                let completion = execute::run(&this.inner, call, "seal", move |call| {
+                    data.seal(&|| checkpoint(call)).map_err(map)
+                })
+                .await?;
+                let reference = completion.value?;
+                Ok(BlobSeal {
+                    reference: BlobReference {
+                        digest: reference.digest.0,
+                        size: reference.size_bytes,
+                        media_type: reference.media_type,
+                    },
+                    owner: completion.call,
+                })
+            },
+        )?;
         let data = self.data.take().ok_or(BlobError::InvalidState)?;
         let admission = self
             .binding
@@ -72,26 +110,15 @@ impl BlobWriter for Writer {
                 b"blob-seal-v1",
                 &data.written().to_le_bytes(),
             ])?);
-        Ok(Box::pin(async move {
-            let call = execute::dispatch(&self.inner, admission, "seal", cost).await?;
-            let completion = execute::run(&self.inner, call, "seal", move |call| {
-                data.seal(&|| checkpoint(call)).map_err(map)
-            })
-            .await?;
-            let reference = completion.value?;
-            Ok(BlobSeal {
-                reference: BlobReference {
-                    digest: reference.digest.0,
-                    size: reference.size_bytes,
-                    media_type: reference.media_type,
-                },
-                owner: completion.call,
-            })
-        }))
+        Ok(prepared.finish((self, admission, data, cost)))
     }
 }
 impl BlobReader for Reader {
-    fn read(&mut self, offset: u64, length: u32) -> Result<BlobFuture<'_, BlobChunk>, BlobError> {
+    fn read<'a>(
+        &'a mut self,
+        offset: u64,
+        length: u32,
+    ) -> Result<BlobFuture<'a, BlobChunk>, BlobError> {
         let data = self.data.as_ref().ok_or(BlobError::InvalidState)?;
         if length as usize > self.inner.store.limits().maximum_chunk_bytes
             || offset
@@ -114,29 +141,36 @@ impl BlobReader for Reader {
         if length != 0 {
             cost = cost.with_charge(BudgetDimension::BlobReadBytes, u64::from(length))?;
         }
+        let prepared = self.binding.prepare_io_future_with(
+            move |(this, admission, data): (
+                &'a mut Self,
+                PoolAdmission,
+                crate::local::LocalBlobReader,
+            )| async move {
+                let call = execute::dispatch(&this.inner, admission, "read", cost).await?;
+                let mut buffer = call.io().buffer((length as usize).max(1), 512)?;
+                let copy = call.io().reserve_scratch((length as usize).max(1), 512)?;
+                let completion = execute::run(&this.inner, call, "read", move |call| {
+                    let count = data
+                        .read(
+                            &crate::BlobRange {
+                                offset,
+                                length: u64::from(length),
+                            },
+                            &mut buffer.spare_mut()?[..length as usize],
+                            &|| checkpoint(call),
+                        )
+                        .map_err(map)?;
+                    buffer.advance_written(count)?;
+                    Ok((data, buffer, copy))
+                })
+                .await?;
+                let (data, buffer, copy) = completion.value?;
+                this.data = Some(data);
+                BlobChunk::new(buffer, copy, completion.call)
+            },
+        )?;
         let data = self.data.take().expect("validated reader");
-        Ok(Box::pin(async move {
-            let call = execute::dispatch(&self.inner, admission, "read", cost).await?;
-            let mut buffer = call.io().buffer((length as usize).max(1), 512)?;
-            let copy = call.io().reserve_scratch((length as usize).max(1), 512)?;
-            let completion = execute::run(&self.inner, call, "read", move |call| {
-                let count = data
-                    .read(
-                        &crate::BlobRange {
-                            offset,
-                            length: u64::from(length),
-                        },
-                        &mut buffer.spare_mut()?[..length as usize],
-                        &|| checkpoint(call),
-                    )
-                    .map_err(map)?;
-                buffer.advance_written(count)?;
-                Ok((data, buffer, copy))
-            })
-            .await?;
-            let (data, buffer, copy) = completion.value?;
-            self.data = Some(data);
-            BlobChunk::new(buffer, copy, completion.call)
-        }))
+        Ok(prepared.finish((self, admission, data)))
     }
 }

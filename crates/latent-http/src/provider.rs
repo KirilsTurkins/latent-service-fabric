@@ -195,11 +195,14 @@ impl OutboundHttpInvoker for HttpProvider {
         let deadline = request.timeout_millis.map_or(original, |millis| {
             now + Duration::from_millis(millis).min(original.saturating_duration_since(now))
         });
+        let prepared = session.prepare_io_future_with(|(inner, input, client, admission)| {
+            crate::execute::run(inner, input, client, admission)
+        })?;
         let client = self.inner.client(destination.index)?;
         let admission = self.inner.pools.admit_until(&client, session, deadline)?;
         let memory = Arc::new(admission.reserve_input(size.retained, 4096)?);
         let inner = Arc::clone(&self.inner);
-        Ok(Box::pin(crate::execute::run(
+        Ok(prepared.finish((
             inner,
             crate::execute::RequestOwner {
                 request,

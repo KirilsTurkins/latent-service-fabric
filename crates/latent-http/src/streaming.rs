@@ -4,9 +4,11 @@ use crate::{
     HttpProviderConfig,
 };
 use latent_capabilities::broker::{
-    pools::ProviderPools,
+    io::IoMemory,
+    pools::{PoolAdmission, ProviderClient, ProviderPools},
     streaming_http::{
-        StreamingHttpError, StreamingHttpInvocation, StreamingHttpInvoker, StreamingHttpRequest,
+        HttpPhaseError, HttpPhaseFuture, HttpUpload, StreamingHttpError, StreamingHttpInvocation,
+        StreamingHttpInvoker, StreamingHttpRequest,
     },
     CapabilitySession, ProviderReference,
 };
@@ -180,10 +182,14 @@ impl StreamingHttpInvoker for StreamingHttpProvider {
         let deadline = request.metadata.timeout_millis.map_or(original, |millis| {
             now + Duration::from_millis(millis).min(original.saturating_duration_since(now))
         });
+        let prepared =
+            session.prepare_io_future_with(|(inner, input, length, client, admission)| {
+                exchange::open(inner, input, length, client, admission)
+            })?;
         let client = inner.client(destination.index)?;
         let admission = inner.pools.admit_until(&client, session, deadline)?;
         let memory = Arc::new(admission.reserve_input(size.retained, 4096)?);
-        Ok(Box::pin(exchange::open(
+        Ok(prepared.finish((
             Arc::clone(inner),
             crate::execute::RequestOwner {
                 request: request.metadata,
@@ -208,7 +214,7 @@ impl StreamingHttpInvoker for StreamingHttpProvider {
         let inner = &self.provider.inner;
         if timeout_millis.is_none_or(|millis| millis == 0) {
             let opening = self.start(session, request)?;
-            return Ok(Box::pin(async move { opening.await.map_err(Into::into) }));
+            return Ok(HttpPhaseFuture::legacy(opening));
         }
         if !inner.phase_timing {
             return Err(latent_capabilities::broker::streaming_http::HttpPhaseError::Unsupported);
@@ -236,6 +242,7 @@ impl StreamingHttpInvoker for StreamingHttpProvider {
         let deadline = request.metadata.timeout_millis.map_or(original, |millis| {
             now + Duration::from_millis(millis).min(original.saturating_duration_since(now))
         });
+        let prepared = session.prepare_io_future_with(open_with_deadline)?;
         let client = inner.client(destination.index)?;
         let admission = inner.pools.admit_until(&client, session, deadline)?;
         let memory = Arc::new(admission.reserve_input(size.retained, 4096)?);
@@ -243,27 +250,45 @@ impl StreamingHttpInvoker for StreamingHttpProvider {
         // its final checkpoint even when opening returns a terminal error.
         let original_owner = Arc::clone(&memory);
         let deadline = phase::Deadline::new(admission.stop_handle(), timeout_millis)?;
-        let opening = exchange::open(
-            Arc::clone(inner),
-            crate::execute::RequestOwner {
+        Ok(HttpPhaseFuture::Direct(prepared.finish(TimedOpening {
+            inner: Arc::clone(inner),
+            input: crate::execute::RequestOwner {
                 request: request.metadata,
                 destination,
                 memory,
                 logical: size.logical,
             },
-            request.body_length,
+            length: request.body_length,
             client,
             admission,
-        );
-        Ok(Box::pin(async move {
-            let result = deadline
-                .wait(
-                    opening,
-                    latent_capabilities::broker::streaming_http::HttpPhaseError::ConnectTimeout,
-                )
-                .await;
-            drop(original_owner);
-            result?.map_err(Into::into)
-        }))
+            deadline,
+            original_owner,
+        })))
     }
+}
+
+struct TimedOpening {
+    inner: Arc<Inner>,
+    input: crate::execute::RequestOwner,
+    length: Option<u64>,
+    client: Arc<ProviderClient<crate::network::Network>>,
+    admission: PoolAdmission,
+    deadline: phase::Deadline,
+    original_owner: Arc<IoMemory>,
+}
+async fn open_with_deadline(args: TimedOpening) -> Result<Box<dyn HttpUpload>, HttpPhaseError> {
+    let original_owner = args.original_owner;
+    let opening = exchange::open(
+        args.inner,
+        args.input,
+        args.length,
+        args.client,
+        args.admission,
+    );
+    let result = args
+        .deadline
+        .wait(opening, HttpPhaseError::ConnectTimeout)
+        .await;
+    drop(original_owner);
+    result?.map_err(Into::into)
 }

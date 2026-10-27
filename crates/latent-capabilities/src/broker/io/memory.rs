@@ -42,11 +42,17 @@ impl IoMemory {
         )?;
         let charge = operation.runtime.counters.acquire(Kind::Staged, bytes)?;
         let native = if host {
-            Some(
-                operation
-                    .with_session(|session| session.core.budget.reserve_host_memory(bytes as u64))
-                    .map_err(|_| capacity())?,
-            )
+            Some(operation.with_session(|session| {
+                let bytes = bytes
+                    .checked_add(super::ALLOCATION_BOOKKEEPING)
+                    .and_then(|n| u64::try_from(n).ok())
+                    .ok_or_else(capacity)?;
+                session
+                    .core
+                    .budget
+                    .reserve_host_memory(bytes)
+                    .map_err(|_| capacity())
+            })?)
         } else {
             None
         };
@@ -58,10 +64,31 @@ impl IoMemory {
             _operation: operation.clone(),
         })
     }
-    pub(super) fn confirm_host(&mut self) {
-        if let Some(native) = &mut self.host {
-            native.confirm();
+    #[cfg(test)]
+    pub(super) fn charged_to(&self, budget: &latent_core::ActivationBudget) -> bool {
+        self.host
+            .as_ref()
+            .is_some_and(|guard| guard.is_from_budget(budget))
+    }
+    pub(super) fn confirm_host_capacity(
+        &mut self,
+        capacity_bytes: usize,
+    ) -> Result<(), PlatformError> {
+        if capacity_bytes == 0 {
+            return Ok(());
         }
+        if let Some(native) = &mut self.host {
+            let bytes = capacity_bytes
+                .checked_add(super::ALLOCATION_BOOKKEEPING)
+                .and_then(|n| u64::try_from(n).ok())
+                .ok_or_else(capacity)?;
+            if bytes > native.bytes() {
+                return Err(capacity());
+            }
+            // An unused larger maximum remains reserved, never reported physical.
+            native.confirm_bytes(bytes);
+        }
+        Ok(())
     }
 }
 impl IoAdmission {

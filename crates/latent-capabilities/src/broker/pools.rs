@@ -17,6 +17,7 @@ use tokio::sync::Notify;
 use zeroize::Zeroizing;
 
 mod admission;
+pub(in crate::broker) use admission::RequestOwner;
 mod ingress;
 pub use ingress::IngressRequest;
 mod deferred;
@@ -56,6 +57,9 @@ pub(super) struct Inner {
     broker: Arc<ActivationCapabilityBroker>,
     io: Arc<IoRuntime>,
     quotas: Arc<Quotas>,
+    // The SAME one fixed request Vec; per-slot locks let Request::drop retire
+    // only its original weak row without taking the caller/pool state lock.
+    requests: Vec<Mutex<admission::RequestSlot>>,
     state: Mutex<State>,
     maintenance: Mutex<()>,
     changed: Arc<Notify>,
@@ -71,7 +75,6 @@ struct State {
     retained_epochs: Vec<Weak<Epoch>>,
     clients: Vec<Arc<dyn ErasedClient>>,
     retained_clients: Vec<Weak<dyn ErasedClient>>,
-    requests: Vec<Weak<admission::Request>>,
     tenants: Vec<Weak<admission::Tenant>>,
     last_tenant: String,
 }
@@ -156,6 +159,9 @@ impl ProviderPools {
             Kind::Metadata,
             8192 + slots * 128 + limits.maximum_clients * 128 + limits.maximum_configurations * 128,
         )?;
+        if std::mem::size_of::<Mutex<admission::RequestSlot>>() > 128 {
+            return Err(capacity());
+        }
         // A fresh registry cannot bypass live lowering or the retained resources
         // of an older registry on the same broker generation.
         broker
@@ -167,6 +173,9 @@ impl ProviderPools {
             broker,
             io,
             quotas,
+            requests: std::iter::repeat_with(|| Mutex::new(admission::RequestSlot::default()))
+                .take(slots)
+                .collect(),
             state: Mutex::new(State {
                 next_instance: 0,
                 next_request: 0,
@@ -174,7 +183,6 @@ impl ProviderPools {
                 retained_epochs: Vec::with_capacity(limits.maximum_configurations),
                 clients: Vec::with_capacity(limits.maximum_clients),
                 retained_clients: Vec::with_capacity(limits.maximum_clients),
-                requests: std::iter::repeat_with(Weak::new).take(slots).collect(),
                 tenants: std::iter::repeat_with(Weak::new).take(slots).collect(),
                 last_tenant: String::with_capacity(256),
             }),
