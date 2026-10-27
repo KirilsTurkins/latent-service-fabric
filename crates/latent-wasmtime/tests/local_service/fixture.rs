@@ -124,6 +124,32 @@ impl latent_executor::PreparationReadWait for ObservedReadWait {
             .await;
         })
     }
+
+    fn wait_until_owned<'a>(
+        &'a self,
+        deadline: Instant,
+        budget: &latent_core::ActivationBudget,
+    ) -> Result<latent_executor::OwnedPreparationWait<'a>, PlatformError> {
+        struct Active<'a>(&'a AtomicU64);
+        impl Drop for Active<'_> {
+            fn drop(&mut self) {
+                self.0.fetch_sub(1, Ordering::AcqRel);
+            }
+        }
+        // Retain both real allocations on the same original budget. If the
+        // observation wrapper refuses, its still-unpolled inner sleep drops.
+        let wait = latent_executor::PreparationReadWait::wait_until_owned(
+            &latent_node::CurrentnessReadTimer,
+            deadline,
+            budget,
+        )?;
+        latent_executor::OwnedPreparationWait::try_boxed(budget, || async move {
+            self.active.fetch_add(1, Ordering::AcqRel);
+            let _active = Active(&self.active);
+            self.entered.notify_one();
+            wait.await;
+        })
+    }
 }
 pub struct RuntimeIdentities {
     pub tenant: TenantId,

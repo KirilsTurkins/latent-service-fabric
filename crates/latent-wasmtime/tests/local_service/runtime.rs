@@ -917,3 +917,228 @@ async fn root_deadline_does_not_complete_long_timer_and_cpu_loop_remains_contain
     );
     f.idle().await;
 }
+
+mod owned_timer {
+    use super::super::fixture::ObservedReadWait;
+    use latent_core::{
+        ActivationBudget, BudgetProfile, ClockSample, EffectiveActivationBudget, PlatformErrorCode,
+        ResourceBudget,
+    };
+    use latent_executor::{OwnedPreparationWait, PreparationReadWait};
+    use std::{
+        future::{pending, Future},
+        mem::size_of,
+        pin::Pin,
+        sync::{
+            atomic::{AtomicU64, AtomicUsize, Ordering},
+            Arc,
+        },
+        task::{Context, Poll, Waker},
+        time::{Duration, Instant},
+    };
+
+    fn original(memory: u64) -> ActivationBudget {
+        let limits = ResourceBudget {
+            cpu_fuel: 1_000_000,
+            memory_bytes: memory,
+            wall_time_limit_millis: Some(30_000),
+            child_calls: 0,
+            outbound_requests: 0,
+            state_read_bytes: 0,
+            state_write_bytes: 0,
+            blob_read_bytes: 0,
+            blob_write_bytes: 0,
+            log_bytes: 0,
+            effect_count: 0,
+        };
+        let grant = EffectiveActivationBudget::admit_profile_at(
+            BudgetProfile::Phase3,
+            &limits,
+            &limits,
+            &limits,
+            None,
+            ClockSample::new(1000, Instant::now()),
+        )
+        .unwrap();
+        ActivationBudget::with_profile(grant, BudgetProfile::Phase3).unwrap()
+    }
+
+    struct PendingOwned {
+        budget: ActivationBudget,
+        drops: Arc<AtomicUsize>,
+        payload: [u8; 32],
+    }
+    impl Future for PendingOwned {
+        type Output = ();
+
+        fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<()> {
+            assert_eq!(self.payload[0], 42);
+            Poll::Pending
+        }
+    }
+    impl Drop for PendingOwned {
+        fn drop(&mut self) {
+            // This actual destructor must run while its complete Box charge is
+            // live. The frozen by-value field order supplies the subsequent
+            // Box-deallocation-before-reservation-drop source witness.
+            assert_eq!(self.budget.host_memory_bytes(), size_of::<Self>() as u64);
+            self.drops.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    #[test]
+    fn original_budget_refuses_before_factory_and_preserves_foreign_capacity() {
+        let budget = original(4096);
+        let foreign = original(4096);
+        let foreign_hold = foreign.reserve_host_memory(19).unwrap();
+        let full = budget.reserve_host_memory(4096).unwrap();
+        let calls = AtomicUsize::new(0);
+        let drops = Arc::new(AtomicUsize::new(0));
+        let result = OwnedPreparationWait::try_boxed(&budget, || {
+            calls.fetch_add(1, Ordering::SeqCst);
+            PendingOwned {
+                budget: budget.clone(),
+                drops: Arc::clone(&drops),
+                payload: [42; 32],
+            }
+        });
+        assert!(matches!(
+            result,
+            Err(ref error) if error.code == PlatformErrorCode::ResourceExhausted
+        ));
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+        assert_eq!(drops.load(Ordering::SeqCst), 0);
+        assert_eq!(budget.host_memory_bytes(), 4096);
+        assert_eq!(foreign.host_memory_bytes(), 19);
+        drop(full);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(foreign.host_memory_bytes(), 19);
+        drop(foreign_hold);
+    }
+
+    #[test]
+    fn pending_drop_keeps_original_charge_through_concrete_future_destruction() {
+        let budget = original(4096);
+        let drops = Arc::new(AtomicUsize::new(0));
+        let mut wait = OwnedPreparationWait::try_boxed(&budget, || PendingOwned {
+            budget: budget.clone(),
+            drops: Arc::clone(&drops),
+            payload: [42; 32],
+        })
+        .unwrap();
+        assert_eq!(budget.host_memory_bytes(), size_of::<PendingOwned>() as u64);
+        assert!(Pin::new(&mut wait)
+            .poll(&mut Context::from_waker(Waker::noop()))
+            .is_pending());
+        assert_eq!(drops.load(Ordering::SeqCst), 0);
+        drop(wait);
+        assert_eq!(drops.load(Ordering::SeqCst), 1);
+        assert_eq!(budget.host_memory_bytes(), 0);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn actual_sleep_pending_cancel_and_elapsed_keep_original_charge_until_drop() {
+        let budget = original(4096);
+        let timer = latent_node::CurrentnessReadTimer;
+        for cancel in [true, false] {
+            let deadline = tokio::time::Instant::now().into_std() + Duration::from_secs(1);
+            let mut wait = timer.wait_until_owned(deadline, &budget).unwrap();
+            assert_eq!(
+                budget.host_memory_bytes(),
+                size_of::<tokio::time::Sleep>() as u64
+            );
+            assert!(Pin::new(&mut wait)
+                .poll(&mut Context::from_waker(Waker::noop()))
+                .is_pending());
+            if cancel {
+                drop(wait);
+                assert_eq!(budget.host_memory_bytes(), 0);
+                tokio::time::advance(Duration::from_secs(2)).await;
+            } else {
+                tokio::time::advance(Duration::from_secs(1)).await;
+                (&mut wait).await;
+                assert_ne!(budget.host_memory_bytes(), 0);
+                drop(wait);
+                assert_eq!(budget.host_memory_bytes(), 0);
+            }
+        }
+    }
+
+    #[test]
+    fn unknown_owned_provider_refuses_without_legacy_fallback() {
+        struct Legacy(AtomicUsize);
+        impl PreparationReadWait for Legacy {
+            fn now(&self) -> Instant {
+                panic!("owned refusal must not consult the legacy clock");
+            }
+
+            fn wait_until(&self, _: Instant) -> latent_core::BoxFuture<'_, ()> {
+                self.0.fetch_add(1, Ordering::SeqCst);
+                Box::pin(pending())
+            }
+        }
+        let budget = original(4096);
+        let legacy = Legacy(AtomicUsize::new(0));
+        assert!(matches!(
+            legacy.wait_until_owned(Instant::now(), &budget),
+            Err(ref error) if error.code == PlatformErrorCode::Unavailable
+        ));
+        assert_eq!(legacy.0.load(Ordering::SeqCst), 0);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        drop(legacy.wait_until(Instant::now()));
+        assert_eq!(legacy.0.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn observed_inner_and_outer_refusals_and_pending_drop_preserve_originals() {
+        let sleep_bytes = size_of::<tokio::time::Sleep>() as u64;
+        assert!(sleep_bytes > 1);
+        for memory in [sleep_bytes - 1, sleep_bytes] {
+            let budget = original(memory);
+            let observer = ObservedReadWait {
+                active: AtomicU64::new(0),
+                entered: tokio::sync::Notify::new(),
+            };
+            assert!(matches!(
+                observer.wait_until_owned(
+                    tokio::time::Instant::now().into_std() + Duration::from_secs(1),
+                    &budget,
+                ),
+                Err(ref error) if error.code == PlatformErrorCode::ResourceExhausted
+            ));
+            assert_eq!(budget.host_memory_bytes(), 0);
+            assert_eq!(observer.active.load(Ordering::Acquire), 0);
+            let notified = observer.entered.notified();
+            tokio::pin!(notified);
+            assert!(notified
+                .as_mut()
+                .poll(&mut Context::from_waker(Waker::noop()))
+                .is_pending());
+        }
+        let budget = original(4096);
+        let foreign = original(4096);
+        let foreign_hold = foreign.reserve_host_memory(23).unwrap();
+        let observer = ObservedReadWait {
+            active: AtomicU64::new(0),
+            entered: tokio::sync::Notify::new(),
+        };
+        let mut wait = observer
+            .wait_until_owned(
+                tokio::time::Instant::now().into_std() + Duration::from_secs(1),
+                &budget,
+            )
+            .unwrap();
+        assert!(budget.host_memory_bytes() > sleep_bytes);
+        assert_eq!(observer.active.load(Ordering::Acquire), 0);
+        assert!(Pin::new(&mut wait)
+            .poll(&mut Context::from_waker(Waker::noop()))
+            .is_pending());
+        observer.entered.notified().await;
+        assert_eq!(observer.active.load(Ordering::Acquire), 1);
+        drop(wait);
+        assert_eq!(observer.active.load(Ordering::Acquire), 0);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(foreign.host_memory_bytes(), 23);
+        drop(foreign_hold);
+    }
+}

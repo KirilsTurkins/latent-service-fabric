@@ -1,7 +1,7 @@
 name: Protected stream host source controls
 on:
   push:
-    branches: ['feat/protected-stream-custody-20261026']
+    branches: ['feat/protected-stream-custody-20261026', 'feat/sdk-owned-timer-box-20261027']
 permissions:
   contents: read
 concurrency:
@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   host-controls:
-    name: Current Rust types and six original-owner controls
+    name: Bounded host source controls
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -31,10 +31,19 @@ jobs:
           cache-workspace-crates: false
           cache-targets: true
       - name: Refuse incomplete or ignored focused outcomes
+        if: github.ref == 'refs/heads/feat/protected-stream-custody-20261026'
         run: python3 -B -m unittest tools.tests.test_host_stream_protected -v
       - name: Compile current source and execute exactly six host controls
+        if: github.ref == 'refs/heads/feat/protected-stream-custody-20261026'
         run: >-
           python3 -B tools/qualify_host_stream_protected.py
+          --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/protected-stream-host"
+      - name: Compile one current target and execute exactly five owned timer Box controls
+        if: github.ref == 'refs/heads/feat/sdk-owned-timer-box-20261027'
+        run: >-
+          python3 -B tools/qualify_host_stream_protected.py
+          --owned-timer-box
           --source-commit "${{ github.sha }}"
           --output "$RUNNER_TEMP/protected-stream-host"
       - name: Retain only finite public command channels and receipt
