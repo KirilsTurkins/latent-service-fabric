@@ -31,6 +31,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_stream_outer_owner.py",
-  "reviewReason": "Reviewed #736 source-owned HTTP policy/digest allocation removal. Borrow existing ResourceTarget grammar without JSON Value/serialized Vec/owned ResourceRequest and stream the original bounded length-framed digest without a temporary parts Vec. Exact original predicates, sealed policy/admission, redirect one-slot ownership, all old modes, 275/cache14 and grants remain. Four exact ordinary controls (two NEW semantic/golden/bounds controls plus existing redirect/managed component); two locked targets,12commands24raw, original job/process/cleanup/log/source caps. Semantic controls have no ActivationBudget claim. Opaque Url/IDNA/IP formatter/origin/redirect/wire/control/TLS/transitive costs remain explicit gaps. Old ten-case CLI retains selectors/oracles with necessary exact registry84-to86 refresh; no old programme replay.",
+  "reviewReason": "Reviewed #736 canonical IP Display stack sink: original predicate/domain/stream gates and exact39-byte bound; policy155-to157 append2; four ordinary cases/two locked libs/12commands24raw. Original modes, caps and275/cache14 retained; no ActivationBudget/RSS/full-cost claim.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

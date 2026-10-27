@@ -299,6 +299,30 @@ class StreamOuterOwnerReader(unittest.TestCase):
             with self.assertRaises(ValueError):
                 owner.http_metadata_result(b'', case)
 
+
+        self.assertEqual(len(owner.HTTP_IP_FORMAT_CASES), 4)
+        self.assertEqual(len(set(owner.HTTP_IP_FORMAT_CASES)), 4)
+        self.assertEqual(len(owner.HTTP_IP_FORMAT_NEW_CASES), 2)
+        self.assertEqual(len(owner.HTTP_IP_FORMAT_POLICY_CASES), 3)
+        self.assertEqual(owner.HTTP_IP_FORMAT_HTTP_CASES,
+            (owner.HTTP_METADATA_SEMANTIC_CASES[0],))
+        for case in owner.HTTP_IP_FORMAT_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            value = owner.http_ip_format_result(raw, case)
+            self.assertEqual((value['passed'], value['failed'], value['ignored']), (1, 0, 0))
+            self.assertEqual(value['scope'],
+                'ordinary-host-IP-display-and-target-grammar-bounds-no-ActivationBudget')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case'),
+                raw + b'http-utf8-view forged\n'):
+                with self.assertRaises(ValueError):
+                    owner.http_ip_format_result(changed, case)
+        for case in (*owner.HTTP_INPUT_API_CASES, owner.HTTP_METADATA_REDIRECT_CASE,
+            owner.HTTP_METADATA_MANAGED_CASE, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.http_ip_format_result(b'', case)
+
     def test_private_fixture_identity_is_bounded_and_changes_are_observed(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / 'fixture.wasm'

@@ -1,7 +1,7 @@
-name: Focused borrowed HTTP policy and digest
+name: Focused canonical IP formatting
 on:
   push:
-    branches: ['feat/sdk-736-http-metadata-native-20261027']
+    branches: ['feat/sdk-736-http-ip-format-20261027']
     paths:
       - '.github/workflows/canonical-stream-outers.yml'
       - 'crates/latent-capabilities/**'
@@ -25,7 +25,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   stream-outers:
-    name: Four borrowed HTTP metadata controls
+    name: Four canonical IP formatting controls
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -64,17 +64,17 @@ jobs:
       - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
-      - name: Build two exact targets and execute four HTTP metadata controls
+      - name: Build two exact lib targets and execute four canonical IP controls
         run: >-
           python3 -B tools/qualify_stream_outers.py
           --source-commit "${{ github.sha }}"
-          --http-metadata
+          --http-ip-format
           --output "$RUNNER_TEMP/canonical-stream-outers"
-      - name: Retain four source-bound HTTP metadata outcomes
+      - name: Retain four source-bound canonical IP outcomes
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
-          name: borrowed-http-metadata-${{ github.sha }}
+          name: canonical-ip-format-${{ github.sha }}
           path: |
             ${{ runner.temp }}/canonical-stream-outers/receipt.json
             ${{ runner.temp }}/canonical-stream-outers/FAILED.json
