@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/rust_capsule_build.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review Rust wit-bindgen 0.63.0 macro compatibility and separate 0.62.0 CLI selection; preserve existing execution commands and qualification cases.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e63540cd434a3cd61a8daa7860962d7ba5499683726b3c3a94bfec94e5570d64"
+{"kind":"owner","path":"tools/rust_capsule_build.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review Rust wit-bindgen 0.63.0 macro compatibility and separate 0.62.0 CLI selection; preserve existing execution commands and qualification cases.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "e63540cd434a3cd61a8daa7860962d7ba5499683726b3c3a94bfec94e5570d64"
 }

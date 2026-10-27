@@ -196,5 +196,23 @@ class RootReturnNormalControls(unittest.TestCase):
                 self.assertFalse((output/'outside.cs').exists())
 
 
+
+
+class RootReturnSupplementalControls(unittest.TestCase):
+    def test_pinned_flat_u32_auxiliary_has_complete_normal_inverse(self):
+        from tools.dotnet_guest import async_exports as a
+        from tools.rust_capsule_project import ROOT
+        normal = (ROOT/'sdk/dotnet-guest/tests/fixtures/root-join-cause/ProbeInterop.normal.cs.fixture').read_text()
+        selected, receipt = a.diagnostic_join_cause(a.JOIN_CAUSE_FILE, normal)
+        self.assertEqual(selected.replace(a.JOIN_CAUSE_SELECTED, a.JOIN_CAUSE_NORMAL), normal)
+        self.assertEqual(receipt['normalSha256'], a.JOIN_CAUSE_NORMAL_SHA256)
+        self.assertFalse(receipt['physicalRetirementQualified'])
+        self.assertFalse(receipt['originalTrapQualified'])
+        for name, text in [("other.cs", ""), (a.JOIN_CAUSE_FILE, ""),
+                           (a.JOIN_CAUSE_FILE, a.JOIN_CAUSE_NORMAL)]:
+            with self.assertRaisesRegex(ValueError, 'unreviewed-normal-helper'):
+                a.diagnostic_join_cause(name, text)
+
+
 if __name__ == '__main__':
     unittest.main()

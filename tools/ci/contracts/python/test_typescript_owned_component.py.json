@@ -1,18 +1,9 @@
-{
-  "cases":["TypeScriptOwnedComponentTests.test_evidence_parser_refuses_owner_leaks_zero_start_and_false_scope","TypeScriptOwnedComponentTests.test_failed_or_promoted_input_cannot_reach_normal_compiler_validation","TypeScriptOwnedComponentTests.test_setup_time_reduces_the_single_monotonic_nine_hundred_second_budget"],
-  "guards":{
-    "TypeScriptOwnedComponentTests.test_evidence_parser_refuses_owner_leaks_zero_start_and_false_scope":
-      "3d958db2389d0aa542e1408c9b61d9cd9e30fed48163518a3b0d4ce095e70aee",
-    "TypeScriptOwnedComponentTests.test_failed_or_promoted_input_cannot_reach_normal_compiler_validation":
-      "3d958db2389d0aa542e1408c9b61d9cd9e30fed48163518a3b0d4ce095e70aee",
-    "TypeScriptOwnedComponentTests.test_setup_time_reduces_the_single_monotonic_nine_hundred_second_budget":
-      "3d958db2389d0aa542e1408c9b61d9cd9e30fed48163518a3b0d4ce095e70aee"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_typescript_owned_component.py",
-  "reviewReason":"Evidence/input/deadline refusal controls exercise the real parser and selector; synthetic parser specimens are explicitly not engine observations and all actual canonical cases remain mandatory.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "3d958db2389d0aa542e1408c9b61d9cd9e30fed48163518a3b0d4ce095e70aee":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:696f8bd5bb4df8e863d25b6aa763d9fa93c596661b7eb783f77d2c5df9f273c6","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["TypeScriptOwnedComponentTests.test_evidence_parser_refuses_owner_leaks_zero_start_and_false_scope","TypeScriptOwnedComponentTests.test_failed_or_promoted_input_cannot_reach_normal_compiler_validation","TypeScriptOwnedComponentTests.test_setup_time_reduces_the_single_monotonic_nine_hundred_second_budget"],"guards":{"TypeScriptOwnedComponentTests.test_evidence_parser_refuses_owner_leaks_zero_start_and_false_scope":
+  "3d958db2389d0aa542e1408c9b61d9cd9e30fed48163518a3b0d4ce095e70aee"
+,"TypeScriptOwnedComponentTests.test_failed_or_promoted_input_cannot_reach_normal_compiler_validation":
+  "3d958db2389d0aa542e1408c9b61d9cd9e30fed48163518a3b0d4ce095e70aee"
+,"TypeScriptOwnedComponentTests.test_setup_time_reduces_the_single_monotonic_nine_hundred_second_budget":
+  "3d958db2389d0aa542e1408c9b61d9cd9e30fed48163518a3b0d4ce095e70aee"
+},"kind":"python","module":"tools/tests/test_typescript_owned_component.py","reviewReason":"Evidence/input/deadline refusal controls exercise the real parser and selector; synthetic parser specimens are explicitly not engine observations and all actual canonical cases remain mandatory.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "3d958db2389d0aa542e1408c9b61d9cd9e30fed48163518a3b0d4ce095e70aee"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:696f8bd5bb4df8e863d25b6aa763d9fa93c596661b7eb783f77d2c5df9f273c6","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

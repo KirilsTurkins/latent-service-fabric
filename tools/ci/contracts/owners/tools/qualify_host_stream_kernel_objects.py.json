@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_host_stream_kernel_objects.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Correct the owning target to the exact maintained scheduler containing translation unit; authenticate its three complete original files, preserve all56 objects243 oracles and existing bodies/configuration/bounds, and retain the original failed standalone-wait attempt.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2a5f32b7797677ceaf8c4f1f0343859b1456ab00a54ff9ee52516b317e0e9cd7"
+{"kind":"owner","path":"tools/qualify_host_stream_kernel_objects.py","reviewBoundary":"committed-fingerprint","reviewReason":"Correct the owning target to the exact maintained scheduler containing translation unit; authenticate its three complete original files, preserve all56 objects243 oracles and existing bodies/configuration/bounds, and retain the original failed standalone-wait attempt.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "2a5f32b7797677ceaf8c4f1f0343859b1456ab00a54ff9ee52516b317e0e9cd7"
 }

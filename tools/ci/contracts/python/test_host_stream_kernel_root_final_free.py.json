@@ -1,26 +1,17 @@
-{
-  "cases":["RootFinalFreeSource.test_actual_page_guard_rejects_partial_tail_free_and_every_original_bad_page_state","RootFinalFreeSource.test_actual_terminal_entry_guards_retain_late_close_incomplete_and_uncertain_graphs","RootFinalFreeSource.test_all_original_owner_slots_and_historical_application_births_refuse","RootFinalFreeSource.test_exact_successful_source_and_all_other_outputs_preserved","RootFinalFreeSource.test_irq_closed_precedes_request_return_and_old_armed_readers_cannot_requeue","RootFinalFreeSource.test_original_generation_parent_chain_and_stored_pool_identity_are_source_bound","RootFinalFreeSource.test_physical_return_and_ref_puts_follow_unpublication_and_real_page_return"],
-  "guards":{
-    "RootFinalFreeSource.test_actual_page_guard_rejects_partial_tail_free_and_every_original_bad_page_state":
-      "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c",
-    "RootFinalFreeSource.test_actual_terminal_entry_guards_retain_late_close_incomplete_and_uncertain_graphs":
-      "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c",
-    "RootFinalFreeSource.test_all_original_owner_slots_and_historical_application_births_refuse":
-      "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c",
-    "RootFinalFreeSource.test_exact_successful_source_and_all_other_outputs_preserved":
-      "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c",
-    "RootFinalFreeSource.test_irq_closed_precedes_request_return_and_old_armed_readers_cannot_requeue":
-      "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c",
-    "RootFinalFreeSource.test_original_generation_parent_chain_and_stored_pool_identity_are_source_bound":
-      "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c",
-    "RootFinalFreeSource.test_physical_return_and_ref_puts_follow_unpublication_and_real_page_return":
-      "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_host_stream_kernel_root_final_free.py",
-  "reviewReason":"Bind all original allocation-view fields, finite original parent ancestry and exact stored pool/worker tickets before Root return.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f4cf8c46f463fe3a90aa569db7e01120561b5c3a553b1902c0216a7ced689ef5","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["RootFinalFreeSource.test_actual_page_guard_rejects_partial_tail_free_and_every_original_bad_page_state","RootFinalFreeSource.test_actual_terminal_entry_guards_retain_late_close_incomplete_and_uncertain_graphs","RootFinalFreeSource.test_all_original_owner_slots_and_historical_application_births_refuse","RootFinalFreeSource.test_exact_successful_source_and_all_other_outputs_preserved","RootFinalFreeSource.test_irq_closed_precedes_request_return_and_old_armed_readers_cannot_requeue","RootFinalFreeSource.test_original_generation_parent_chain_and_stored_pool_identity_are_source_bound","RootFinalFreeSource.test_physical_return_and_ref_puts_follow_unpublication_and_real_page_return"],"guards":{"RootFinalFreeSource.test_actual_page_guard_rejects_partial_tail_free_and_every_original_bad_page_state":
+  "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c"
+,"RootFinalFreeSource.test_actual_terminal_entry_guards_retain_late_close_incomplete_and_uncertain_graphs":
+  "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c"
+,"RootFinalFreeSource.test_all_original_owner_slots_and_historical_application_births_refuse":
+  "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c"
+,"RootFinalFreeSource.test_exact_successful_source_and_all_other_outputs_preserved":
+  "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c"
+,"RootFinalFreeSource.test_irq_closed_precedes_request_return_and_old_armed_readers_cannot_requeue":
+  "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c"
+,"RootFinalFreeSource.test_original_generation_parent_chain_and_stored_pool_identity_are_source_bound":
+  "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c"
+,"RootFinalFreeSource.test_physical_return_and_ref_puts_follow_unpublication_and_real_page_return":
+  "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_root_final_free.py","reviewReason":"Bind all original allocation-view fields, finite original parent ancestry and exact stored pool/worker tickets before Root return.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "79c4c6d114e69293ff2bb1ab3236819d865e2d2d159db44e29720f3bdb92856c"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f4cf8c46f463fe3a90aa569db7e01120561b5c3a553b1902c0216a7ced689ef5","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

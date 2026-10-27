@@ -1,26 +1,17 @@
-{
-  "cases":["GuardedStackSource.test_actual_task_address_is_bound_before_any_abort_task_field_read","GuardedStackSource.test_mailbox_outside_lock_load_has_single_copy_writers","GuardedStackSource.test_no_runtime_enablement_or_racy_instrumentation_absence_shortcut","GuardedStackSource.test_original_mapping_and_lazy_free_definitions_are_not_replaced","GuardedStackSource.test_real_synchronous_unmap_precedes_view_finish_and_parent_abort","GuardedStackSource.test_va_return_does_not_give_bank_metadata_to_global_free_tree","GuardedStackSource.test_whole_upstream_and_execution_claims_are_closed"],
-  "guards":{
-    "GuardedStackSource.test_actual_task_address_is_bound_before_any_abort_task_field_read":
-      "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb",
-    "GuardedStackSource.test_mailbox_outside_lock_load_has_single_copy_writers":
-      "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb",
-    "GuardedStackSource.test_no_runtime_enablement_or_racy_instrumentation_absence_shortcut":
-      "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb",
-    "GuardedStackSource.test_original_mapping_and_lazy_free_definitions_are_not_replaced":
-      "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb",
-    "GuardedStackSource.test_real_synchronous_unmap_precedes_view_finish_and_parent_abort":
-      "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb",
-    "GuardedStackSource.test_va_return_does_not_give_bank_metadata_to_global_free_tree":
-      "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb",
-    "GuardedStackSource.test_whole_upstream_and_execution_claims_are_closed":
-      "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_host_stream_kernel_guarded_stack.py",
-  "reviewReason":"Reviewed source-only private cleanup task and guarded stack constructor plus one four-TU object recipe; old lanes and limits unchanged; measurements compile-only and runtime installation gates stay false.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:4860fff07c72f1a2ff98af6385797aebbaac4443a670af112718d397194def7d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["GuardedStackSource.test_actual_task_address_is_bound_before_any_abort_task_field_read","GuardedStackSource.test_mailbox_outside_lock_load_has_single_copy_writers","GuardedStackSource.test_no_runtime_enablement_or_racy_instrumentation_absence_shortcut","GuardedStackSource.test_original_mapping_and_lazy_free_definitions_are_not_replaced","GuardedStackSource.test_real_synchronous_unmap_precedes_view_finish_and_parent_abort","GuardedStackSource.test_va_return_does_not_give_bank_metadata_to_global_free_tree","GuardedStackSource.test_whole_upstream_and_execution_claims_are_closed"],"guards":{"GuardedStackSource.test_actual_task_address_is_bound_before_any_abort_task_field_read":
+  "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb"
+,"GuardedStackSource.test_mailbox_outside_lock_load_has_single_copy_writers":
+  "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb"
+,"GuardedStackSource.test_no_runtime_enablement_or_racy_instrumentation_absence_shortcut":
+  "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb"
+,"GuardedStackSource.test_original_mapping_and_lazy_free_definitions_are_not_replaced":
+  "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb"
+,"GuardedStackSource.test_real_synchronous_unmap_precedes_view_finish_and_parent_abort":
+  "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb"
+,"GuardedStackSource.test_va_return_does_not_give_bank_metadata_to_global_free_tree":
+  "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb"
+,"GuardedStackSource.test_whole_upstream_and_execution_claims_are_closed":
+  "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_guarded_stack.py","reviewReason":"Reviewed source-only private cleanup task and guarded stack constructor plus one four-TU object recipe; old lanes and limits unchanged; measurements compile-only and runtime installation gates stay false.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "428ba386cade7010b4a2fe0c9fc5a9013e4eb8f8e42a85fd141cbf8637110abb"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:4860fff07c72f1a2ff98af6385797aebbaac4443a670af112718d397194def7d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

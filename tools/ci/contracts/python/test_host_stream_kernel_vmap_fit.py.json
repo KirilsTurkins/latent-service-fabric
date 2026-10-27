@@ -1,20 +1,11 @@
-{
-  "cases":["VmapFitSource.test_actual_shared_arithmetic_all_residues_tail_window_exact_fit_and_overflow","VmapFitSource.test_augmented_walk_skips_padding_gaps_chooses_one_eligible_original_left_edge","VmapFitSource.test_exact_e518_preimage_shared_predicate_and_unchanged_mapping_retirement","VmapFitSource.test_one_combined_64_unit_budget_counts_predicates_and_refuses_cycles"],
-  "guards":{
-    "VmapFitSource.test_actual_shared_arithmetic_all_residues_tail_window_exact_fit_and_overflow":
-      "e80f84f86075a233f1eafc80b0c0b0c030690f05fe99b047d50d174322515919",
-    "VmapFitSource.test_augmented_walk_skips_padding_gaps_chooses_one_eligible_original_left_edge":
-      "e80f84f86075a233f1eafc80b0c0b0c030690f05fe99b047d50d174322515919",
-    "VmapFitSource.test_exact_e518_preimage_shared_predicate_and_unchanged_mapping_retirement":
-      "e80f84f86075a233f1eafc80b0c0b0c030690f05fe99b047d50d174322515919",
-    "VmapFitSource.test_one_combined_64_unit_budget_counts_predicates_and_refuses_cycles":
-      "e80f84f86075a233f1eafc80b0c0b0c030690f05fe99b047d50d174322515919"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_host_stream_kernel_vmap_fit.py",
-  "reviewReason":"Reviewed bounded augmented extent fit selection and four new source controls; original limits and prior controls retained.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "e80f84f86075a233f1eafc80b0c0b0c030690f05fe99b047d50d174322515919":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:58931a2bcb24c99db66abe4110a17f2925be8315043676506b647a6b2e83fe54","class:setup-sha256:8fa9ba1340bc900ad1abba34a19d3727fc229acec3ef57b4b4ff658ff4397241"],"skipSites":[]}
-  }
-}
+{"cases":["VmapFitSource.test_actual_shared_arithmetic_all_residues_tail_window_exact_fit_and_overflow","VmapFitSource.test_augmented_walk_skips_padding_gaps_chooses_one_eligible_original_left_edge","VmapFitSource.test_exact_e518_preimage_shared_predicate_and_unchanged_mapping_retirement","VmapFitSource.test_one_combined_64_unit_budget_counts_predicates_and_refuses_cycles"],"guards":{"VmapFitSource.test_actual_shared_arithmetic_all_residues_tail_window_exact_fit_and_overflow":
+  "e80f84f86075a233f1eafc80b0c0b0c030690f05fe99b047d50d174322515919"
+,"VmapFitSource.test_augmented_walk_skips_padding_gaps_chooses_one_eligible_original_left_edge":
+  "e80f84f86075a233f1eafc80b0c0b0c030690f05fe99b047d50d174322515919"
+,"VmapFitSource.test_exact_e518_preimage_shared_predicate_and_unchanged_mapping_retirement":
+  "e80f84f86075a233f1eafc80b0c0b0c030690f05fe99b047d50d174322515919"
+,"VmapFitSource.test_one_combined_64_unit_budget_counts_predicates_and_refuses_cycles":
+  "e80f84f86075a233f1eafc80b0c0b0c030690f05fe99b047d50d174322515919"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_vmap_fit.py","reviewReason":"Reviewed bounded augmented extent fit selection and four new source controls; original limits and prior controls retained.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "e80f84f86075a233f1eafc80b0c0b0c030690f05fe99b047d50d174322515919"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:58931a2bcb24c99db66abe4110a17f2925be8315043676506b647a6b2e83fe54","class:setup-sha256:8fa9ba1340bc900ad1abba34a19d3727fc229acec3ef57b4b4ff658ff4397241"],"skipSites":[]}}}

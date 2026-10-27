@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Reviewed exact generated compiler-private four-operation managed owner bridge and StaticMethod UnsafeAccessor glue; unchanged public graph and genuine wit-bindgen0.62 full fixture CSharp compilation, no guest credit.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a1a6b83a032f0c84b50c81aa8939252aa9b48e85e8127ffd6b501fd6f55d86a0"
+  "sha256": "667202cb81e3518b09c5c06a745bd300b101e525837a14a2b34650386436815f"
 }

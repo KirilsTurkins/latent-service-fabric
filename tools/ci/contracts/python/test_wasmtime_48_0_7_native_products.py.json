@@ -1,20 +1,11 @@
-{
-  "cases":["WasmtimeSecurityNativeProducts.test_actual_security_current_git_materials_bind_all_auxiliary_trees","WasmtimeSecurityNativeProducts.test_current_tuple_keeps_all_twelve_original_controls_and_historical_tuple","WasmtimeSecurityNativeProducts.test_direct_cli_requires_no_repository_cwd_pythonpath_or_output","WasmtimeSecurityNativeProducts.test_official_manual_origin_refuses_push_old_native_and_every_foreign_identity"],
-  "guards":{
-    "WasmtimeSecurityNativeProducts.test_actual_security_current_git_materials_bind_all_auxiliary_trees":
-      "e60a4d90559303eeafab4134b3d840cf132281085037a9fed2f12e28de80f050",
-    "WasmtimeSecurityNativeProducts.test_current_tuple_keeps_all_twelve_original_controls_and_historical_tuple":
-      "e60a4d90559303eeafab4134b3d840cf132281085037a9fed2f12e28de80f050",
-    "WasmtimeSecurityNativeProducts.test_direct_cli_requires_no_repository_cwd_pythonpath_or_output":
-      "e60a4d90559303eeafab4134b3d840cf132281085037a9fed2f12e28de80f050",
-    "WasmtimeSecurityNativeProducts.test_official_manual_origin_refuses_push_old_native_and_every_foreign_identity":
-      "e60a4d90559303eeafab4134b3d840cf132281085037a9fed2f12e28de80f050"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_wasmtime_48_0_7_native_products.py",
-  "reviewReason":"Four pure controls bind the distinct successful Wasmtime 48.0.7 manual SDK producer; preserve default push-only historical wrappers and every twelve-stage producer obligation",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "e60a4d90559303eeafab4134b3d840cf132281085037a9fed2f12e28de80f050":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ce28f7709ddd52ff4d6fad5c0eed9f811bc3db00a4d97a949db15e23c99ab387","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["WasmtimeSecurityNativeProducts.test_actual_security_current_git_materials_bind_all_auxiliary_trees","WasmtimeSecurityNativeProducts.test_current_tuple_keeps_all_twelve_original_controls_and_historical_tuple","WasmtimeSecurityNativeProducts.test_direct_cli_requires_no_repository_cwd_pythonpath_or_output","WasmtimeSecurityNativeProducts.test_official_manual_origin_refuses_push_old_native_and_every_foreign_identity"],"guards":{"WasmtimeSecurityNativeProducts.test_actual_security_current_git_materials_bind_all_auxiliary_trees":
+  "e60a4d90559303eeafab4134b3d840cf132281085037a9fed2f12e28de80f050"
+,"WasmtimeSecurityNativeProducts.test_current_tuple_keeps_all_twelve_original_controls_and_historical_tuple":
+  "e60a4d90559303eeafab4134b3d840cf132281085037a9fed2f12e28de80f050"
+,"WasmtimeSecurityNativeProducts.test_direct_cli_requires_no_repository_cwd_pythonpath_or_output":
+  "e60a4d90559303eeafab4134b3d840cf132281085037a9fed2f12e28de80f050"
+,"WasmtimeSecurityNativeProducts.test_official_manual_origin_refuses_push_old_native_and_every_foreign_identity":
+  "e60a4d90559303eeafab4134b3d840cf132281085037a9fed2f12e28de80f050"
+},"kind":"python","module":"tools/tests/test_wasmtime_48_0_7_native_products.py","reviewReason":"Four pure controls bind the distinct successful Wasmtime 48.0.7 manual SDK producer; preserve default push-only historical wrappers and every twelve-stage producer obligation","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "e60a4d90559303eeafab4134b3d840cf132281085037a9fed2f12e28de80f050"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ce28f7709ddd52ff4d6fad5c0eed9f811bc3db00a4d97a949db15e23c99ab387","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

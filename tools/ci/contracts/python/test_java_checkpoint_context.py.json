@@ -1,22 +1,13 @@
-{
-  "cases":["CheckpointContext.test_acquisition_rejects_redirect_digest_length_and_expired_deadline_without_installing","CheckpointContext.test_correct_jar_has_one_canonical_cache_identity_and_real_probe_declares_no_native_route","CheckpointContext.test_pinned_source_is_reversibly_changed_at_final_find_without_new_replacement_classes","CheckpointContext.test_probe_overlay_keeps_all_original_nonreplacement_bytes_and_refuses_incomplete_classes","CheckpointContext.test_selected_model_jars_require_exact_lock_metadata_names_and_finite_total"],
-  "guards":{
-    "CheckpointContext.test_acquisition_rejects_redirect_digest_length_and_expired_deadline_without_installing":
-      "c6a1603b85701305f52654bca99a1c3abbb776a752b70dc85a1f6625577ce40a",
-    "CheckpointContext.test_correct_jar_has_one_canonical_cache_identity_and_real_probe_declares_no_native_route":
-      "c6a1603b85701305f52654bca99a1c3abbb776a752b70dc85a1f6625577ce40a",
-    "CheckpointContext.test_pinned_source_is_reversibly_changed_at_final_find_without_new_replacement_classes":
-      "c6a1603b85701305f52654bca99a1c3abbb776a752b70dc85a1f6625577ce40a",
-    "CheckpointContext.test_probe_overlay_keeps_all_original_nonreplacement_bytes_and_refuses_incomplete_classes":
-      "c6a1603b85701305f52654bca99a1c3abbb776a752b70dc85a1f6625577ce40a",
-    "CheckpointContext.test_selected_model_jars_require_exact_lock_metadata_names_and_finite_total":
-      "c6a1603b85701305f52654bca99a1c3abbb776a752b70dc85a1f6625577ce40a"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_java_checkpoint_context.py",
-  "reviewReason":"Five bounded source/acquisition/ZIP-overlay controls retain all four prior guards and verify unchanged original Fiber/nonreplacement bytes; actual pinned-body controls remain separate hosted JVM evidence.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "c6a1603b85701305f52654bca99a1c3abbb776a752b70dc85a1f6625577ce40a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:83fc782349ffce50075eb91dfeda1d2ab8478dc13da9f28268090a591c753e8b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["CheckpointContext.test_acquisition_rejects_redirect_digest_length_and_expired_deadline_without_installing","CheckpointContext.test_correct_jar_has_one_canonical_cache_identity_and_real_probe_declares_no_native_route","CheckpointContext.test_pinned_source_is_reversibly_changed_at_final_find_without_new_replacement_classes","CheckpointContext.test_probe_overlay_keeps_all_original_nonreplacement_bytes_and_refuses_incomplete_classes","CheckpointContext.test_selected_model_jars_require_exact_lock_metadata_names_and_finite_total"],"guards":{"CheckpointContext.test_acquisition_rejects_redirect_digest_length_and_expired_deadline_without_installing":
+  "c6a1603b85701305f52654bca99a1c3abbb776a752b70dc85a1f6625577ce40a"
+,"CheckpointContext.test_correct_jar_has_one_canonical_cache_identity_and_real_probe_declares_no_native_route":
+  "c6a1603b85701305f52654bca99a1c3abbb776a752b70dc85a1f6625577ce40a"
+,"CheckpointContext.test_pinned_source_is_reversibly_changed_at_final_find_without_new_replacement_classes":
+  "c6a1603b85701305f52654bca99a1c3abbb776a752b70dc85a1f6625577ce40a"
+,"CheckpointContext.test_probe_overlay_keeps_all_original_nonreplacement_bytes_and_refuses_incomplete_classes":
+  "c6a1603b85701305f52654bca99a1c3abbb776a752b70dc85a1f6625577ce40a"
+,"CheckpointContext.test_selected_model_jars_require_exact_lock_metadata_names_and_finite_total":
+  "c6a1603b85701305f52654bca99a1c3abbb776a752b70dc85a1f6625577ce40a"
+},"kind":"python","module":"tools/tests/test_java_checkpoint_context.py","reviewReason":"Five bounded source/acquisition/ZIP-overlay controls retain all four prior guards and verify unchanged original Fiber/nonreplacement bytes; actual pinned-body controls remain separate hosted JVM evidence.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "c6a1603b85701305f52654bca99a1c3abbb776a752b70dc85a1f6625577ce40a"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:83fc782349ffce50075eb91dfeda1d2ab8478dc13da9f28268090a591c753e8b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

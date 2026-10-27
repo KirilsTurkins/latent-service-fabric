@@ -1,18 +1,9 @@
-{
-  "cases":["HostCodecLinearMemoryNativeProducts.test_cli_help_outside_checkout_creates_no_output_or_pythonpath_requirement","HostCodecLinearMemoryNativeProducts.test_exact_v7_origin_and_complete_old_selector_prefix_preserve_original_v1_pins","HostCodecLinearMemoryNativeProducts.test_fixed_tuple_matches_whole_authenticated_archive_and_its_finite_native_only_scope"],
-  "guards":{
-    "HostCodecLinearMemoryNativeProducts.test_cli_help_outside_checkout_creates_no_output_or_pythonpath_requirement":
-      "c218d6d1d14ff19d4cb07445a6fc5538726275a8c879906847173e8d63e63179",
-    "HostCodecLinearMemoryNativeProducts.test_exact_v7_origin_and_complete_old_selector_prefix_preserve_original_v1_pins":
-      "c218d6d1d14ff19d4cb07445a6fc5538726275a8c879906847173e8d63e63179",
-    "HostCodecLinearMemoryNativeProducts.test_fixed_tuple_matches_whole_authenticated_archive_and_its_finite_native_only_scope":
-      "c218d6d1d14ff19d4cb07445a6fc5538726275a8c879906847173e8d63e63179"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_host_codec_linear_memory_native_products.py",
-  "reviewReason":"Review one normal C build and all original17 signed lifecycle oracles on the independently verified immutable114 native cohort; admit only the exact unselected stream-test correction, retain original defaults/caps and old receipts, no native rebuild.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "c218d6d1d14ff19d4cb07445a6fc5538726275a8c879906847173e8d63e63179":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7c6c93c91b1868ffcc3dad75fca86ec5b3d5d33f38b15bd566879c942834eeb7","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["HostCodecLinearMemoryNativeProducts.test_cli_help_outside_checkout_creates_no_output_or_pythonpath_requirement","HostCodecLinearMemoryNativeProducts.test_exact_v7_origin_and_complete_old_selector_prefix_preserve_original_v1_pins","HostCodecLinearMemoryNativeProducts.test_fixed_tuple_matches_whole_authenticated_archive_and_its_finite_native_only_scope"],"guards":{"HostCodecLinearMemoryNativeProducts.test_cli_help_outside_checkout_creates_no_output_or_pythonpath_requirement":
+  "c218d6d1d14ff19d4cb07445a6fc5538726275a8c879906847173e8d63e63179"
+,"HostCodecLinearMemoryNativeProducts.test_exact_v7_origin_and_complete_old_selector_prefix_preserve_original_v1_pins":
+  "c218d6d1d14ff19d4cb07445a6fc5538726275a8c879906847173e8d63e63179"
+,"HostCodecLinearMemoryNativeProducts.test_fixed_tuple_matches_whole_authenticated_archive_and_its_finite_native_only_scope":
+  "c218d6d1d14ff19d4cb07445a6fc5538726275a8c879906847173e8d63e63179"
+},"kind":"python","module":"tools/tests/test_host_codec_linear_memory_native_products.py","reviewReason":"Review one normal C build and all original17 signed lifecycle oracles on the independently verified immutable114 native cohort; admit only the exact unselected stream-test correction, retain original defaults/caps and old receipts, no native rebuild.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "c218d6d1d14ff19d4cb07445a6fc5538726275a8c879906847173e8d63e63179"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7c6c93c91b1868ffcc3dad75fca86ec5b3d5d33f38b15bd566879c942834eeb7","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

@@ -47,10 +47,14 @@ RECIPE += guest_dependency_inputs.RECIPE
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
           *, tools: Path, offline: bool = False, executable_approval: str | None = None,
-          compiler_methods: bool = False, _deadline: float | None = None, _root_return_capture: tuple | None = None):
+          compiler_methods: bool = False, _deadline: float | None = None, _root_return_capture: tuple | None = None, _root_join_cause: bool = False, _root_return_commands=None):
     if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
                                  or _deadline <= time.monotonic() + 5):
         raise ValueError('dotnet-build-original-owner-deadline')
+    if type(_root_join_cause) is not bool or (_root_join_cause and _root_return_capture is None):
+        raise ValueError('root-join-cause-requires-explicit-capture')
+    if _root_return_commands is not None and (_root_return_capture is None or not callable(_root_return_commands)):
+        raise ValueError('root-return-command-owner-requires-explicit-capture')
     if _root_return_capture is not None and (type(_root_return_capture) is not tuple
             or len(_root_return_capture) != 2 or not all(callable(item) for item in _root_return_capture)):
         raise ValueError("dotnet-root-return-capture-selection")
@@ -85,7 +89,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path = work / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
-            commands = Commands(work, output, build_environment(temporary))
+            commands = (Commands(work, output, build_environment(temporary)) if _root_return_commands is None
+                        else _root_return_commands(work, output, build_environment(temporary)))
             if _deadline is not None:
                 if _deadline <= time.monotonic() + 5:
                     raise ValueError('compiler-setup-consumed-parent-cleanup-reserve')
@@ -111,6 +116,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             verified = verify_inputs(observed.dependency_root, 'dotnet')
             compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline, captured=verified is not None,
                 compiler_methods=True)
+            if _root_join_cause:
+                compiler.development_root_join_cause = True
             write_json(output / "compiler-inputs.json", compiler.before)
             materials.extend(compiler.materials)
             write_json(output / 'compiler-patches-preparation.json', {'formatVersion': 1, 'patches': compiler.compiler_patches})

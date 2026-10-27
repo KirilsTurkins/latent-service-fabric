@@ -1,18 +1,9 @@
-{
-  "cases":["NumericConstructorEvidence.test_changed_original_payload_names_headers_and_excess_bytes_are_refused","NumericConstructorEvidence.test_init_replacement_preserves_every_other_original_entry_and_reproduces_old_payload","NumericConstructorEvidence.test_original_failure_origin_cannot_be_relabelled_as_a_success_or_different_image"],
-  "guards":{
-    "NumericConstructorEvidence.test_changed_original_payload_names_headers_and_excess_bytes_are_refused":
-      "d59719da7e82d7950b7f6e0f90f56d76f221755444bf31a7f89a84434a7b2ab7",
-    "NumericConstructorEvidence.test_init_replacement_preserves_every_other_original_entry_and_reproduces_old_payload":
-      "d59719da7e82d7950b7f6e0f90f56d76f221755444bf31a7f89a84434a7b2ab7",
-    "NumericConstructorEvidence.test_original_failure_origin_cannot_be_relabelled_as_a_success_or_different_image":
-      "d59719da7e82d7950b7f6e0f90f56d76f221755444bf31a7f89a84434a7b2ab7"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_kernel_vm_numeric.py",
-  "reviewReason":"Observe only numeric BEGIN refusal on the exact retained failed556 linked kernel; replace only fixed initramfs init, no kernel rebuild or qualification claims. Three additive offline origin and archive controls; same VM resource limits.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "d59719da7e82d7950b7f6e0f90f56d76f221755444bf31a7f89a84434a7b2ab7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f7acabc2aab33532a596600c860c9ef79e2f9a4a1896f90ce73504aa5ec9a9d8","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["NumericConstructorEvidence.test_changed_original_payload_names_headers_and_excess_bytes_are_refused","NumericConstructorEvidence.test_init_replacement_preserves_every_other_original_entry_and_reproduces_old_payload","NumericConstructorEvidence.test_original_failure_origin_cannot_be_relabelled_as_a_success_or_different_image"],"guards":{"NumericConstructorEvidence.test_changed_original_payload_names_headers_and_excess_bytes_are_refused":
+  "d59719da7e82d7950b7f6e0f90f56d76f221755444bf31a7f89a84434a7b2ab7"
+,"NumericConstructorEvidence.test_init_replacement_preserves_every_other_original_entry_and_reproduces_old_payload":
+  "d59719da7e82d7950b7f6e0f90f56d76f221755444bf31a7f89a84434a7b2ab7"
+,"NumericConstructorEvidence.test_original_failure_origin_cannot_be_relabelled_as_a_success_or_different_image":
+  "d59719da7e82d7950b7f6e0f90f56d76f221755444bf31a7f89a84434a7b2ab7"
+},"kind":"python","module":"tools/tests/test_kernel_vm_numeric.py","reviewReason":"Observe only numeric BEGIN refusal on the exact retained failed556 linked kernel; replace only fixed initramfs init, no kernel rebuild or qualification claims. Three additive offline origin and archive controls; same VM resource limits.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "d59719da7e82d7950b7f6e0f90f56d76f221755444bf31a7f89a84434a7b2ab7"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f7acabc2aab33532a596600c860c9ef79e2f9a4a1896f90ce73504aa5ec9a9d8","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

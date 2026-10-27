@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_typescript_buffer_globals.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Fingerprint one bounded normal global Buffer owner with actual CLI activation/revision binding, original budgets, unchanged input validators, private cleanup before success and public-only artifact collector.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "689bf15f4bdba9e1a2456814251adeae7a55f854a379407fe80d77f41a11f886"
+{"kind":"owner","path":"tools/qualify_typescript_buffer_globals.py","reviewBoundary":"committed-fingerprint","reviewReason":"Fingerprint one bounded normal global Buffer owner with actual CLI activation/revision binding, original budgets, unchanged input validators, private cleanup before success and public-only artifact collector.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "689bf15f4bdba9e1a2456814251adeae7a55f854a379407fe80d77f41a11f886"
 }

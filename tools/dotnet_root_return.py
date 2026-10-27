@@ -1,4 +1,4 @@
-"""Closed NORMAL root-return experiment; no runtime or diagnostic bridge rewrite."""
+"""Closed NORMAL experiment plus separately selected auxiliary Join-cause build."""
 from __future__ import annotations
 
 from contextlib import ExitStack
@@ -250,7 +250,7 @@ def stage_probe_sources(compiled, output, binding, *, compiler_returned):
     return names, records
 
 
-def retain_probe_inputs(compiled, output, binding, compiler):
+def retain_probe_inputs(compiled, output, binding, compiler, *, _join_cause=False):
     """Data-only capture inside original build owner, BEFORE its cleanup."""
     outputs = binding['outputs']
     names, records = stage_probe_sources(compiled, output, binding, compiler_returned=True)
@@ -293,12 +293,15 @@ def retain_probe_inputs(compiled, output, binding, compiler):
         require(total <= 32*1024**2 and raw.startswith(b'MZ'), 'root-return-pre-aot-assembly-bound')
         (destination/name).write_bytes(raw)
         records[name] = file_identity(destination/name, 8*1024**2)
-    write_json(output/'probe-inputs.json', {'formatVersion': 1, 'completeActualGeneratedSources': names,
+    receipt = {'formatVersion': 1, 'completeActualGeneratedSources': names,
         'files': records, 'diagnosticRewritePerformed': False, 'normalCompilationCount': 1,
-        'actualIlcRoot': file_identity(destination/'application.dll', 8*1024**2)})
+        'actualIlcRoot': file_identity(destination/'application.dll', 8*1024**2)}
+    if _join_cause:
+        receipt.update(diagnosticRewritePerformed=True, normalCompilationCount=0, auxiliaryCompilationCount=1)
+    write_json(output/'probe-inputs.json', receipt)
 
 
-def retain_probe_failure(compiled, output):
+def retain_probe_failure(compiled, output, *, _join_cause=False):
     """Keep bounded actual generator bytes if a later compiler phase fails.
 
     These are independently generated inputs, NOT a successful AOT product or
@@ -310,7 +313,7 @@ def retain_probe_failure(compiled, output):
     binding = read_json(receipt, 4*1024**2)
     _names, records = stage_probe_sources(compiled, output, binding, compiler_returned=False)
     write_json(output/'probe-inputs.json', {'formatVersion': 1, 'files': records,
-        'compilerSucceeded': False, 'actualAotBindingConfirmed': False, 'diagnosticRewritePerformed': False})
+        'compilerSucceeded': False, 'actualAotBindingConfirmed': False, 'diagnosticRewritePerformed': _join_cause})
 
 
 def node_configuration(work, releases):
@@ -565,3 +568,262 @@ def qualify(output, tools, archive):
         except BaseException:
             pass  # Preserve the original failure; absent ADMISSION cannot receive qualification.
         raise
+
+
+
+def retain_join_cause_inputs(compiled, output, binding, compiler):
+    """Capture the distinct auxiliary identity; never label it NORMAL or drained."""
+    from tools.dotnet_guest.async_exports import (JOIN_CAUSE_FILE, JOIN_CAUSE_NORMAL,
+        JOIN_CAUSE_SELECTED, JOIN_CAUSE_NORMAL_SHA256)
+    selected = read_file(compiled/'generated'/JOIN_CAUSE_FILE, 1024**2)
+    text = selected.decode('utf-8')
+    require(text.count(JOIN_CAUSE_SELECTED) == 1, 'root-return-auxiliary-selected-shape')
+    normal = text.replace(JOIN_CAUSE_SELECTED, JOIN_CAUSE_NORMAL).encode('utf-8')
+    require(hashlib.sha256(normal).hexdigest() == JOIN_CAUSE_NORMAL_SHA256,
+        'root-return-auxiliary-normal-source-inverse')
+    expected = {'profile': 'dotnet-ac7-join-cause-auxiliary-v1', 'source': JOIN_CAUSE_FILE,
+        'normalSha256': JOIN_CAUSE_NORMAL_SHA256,
+        'selectedSha256': hashlib.sha256(selected).hexdigest(), 'taskReturnOperand': 'int',
+        'diagnosticWords': [0x4A430001, 0x4A430002, 0x4A430003],
+        'physicalRetirementQualified': False, 'originalTrapQualified': False}
+    require(binding.get('developmentJoinCause') == expected, 'root-return-auxiliary-binding-receipt')
+    retain_probe_inputs(compiled, output, binding, compiler, _join_cause=True)
+    write_json(output/'join-cause-auxiliary.json', expected)
+
+
+def retain_join_cause_failure(compiled, output):
+    retain_probe_failure(compiled, output, _join_cause=True)
+
+
+def build_join_cause_variant(project, output, native, tools, parent_deadline, command_owner=None):
+    """Explicit test-only variant. A future reviewed owner must sign/admit it."""
+    require(snapshot(project) == snapshot(fixture(output.parent/'paired-normal-project')),
+        'root-return-auxiliary-exact-normal-fixture')
+    return build(project, output, native['examples/capsule_contracts'], native['examples/package'],
+        'https://github.com/KirilsTurkins/latent-service-fabric', tools=tools, offline=True,
+        _deadline=parent_deadline,
+        _root_return_capture=(retain_join_cause_inputs, retain_join_cause_failure), _root_join_cause=True,
+        _root_return_commands=command_owner)
+
+
+JOIN_BRANCH = 'test/sdk-dotnet-join-cause-20261027'
+JOIN_CASE = 'dotnet_join_cause_borrows_one_word_before_unchanged_native_finalization'
+JOIN_UNIT_PREFIX = 'development_trap_observer::join_cause_tests::'
+JOIN_UNIT_CASES = tuple(JOIN_UNIT_PREFIX + name for name in (
+    'scalar_observer_is_closed_single_claim_and_never_replaces_first',
+    'failed_call_lift_wrong_digest_shape_and_nonword_are_never_causes',
+    'three_words_have_distinct_causes_without_any_frame_or_result_owner'))
+
+
+class JoinCauseCommands(Commands):
+    """One programme's shared16MiB diagnostics and original absolute clock."""
+    def __init__(self, root, output, environment, shared, deadline):
+        super().__init__(root, output, environment, deadline_seconds=1320, command_seconds=600)
+        self.shared, self.original_deadline = shared, deadline
+        self.deadline = min(self.deadline, deadline-5)
+
+    def run(self, stage, *command):
+        from tools.build_process import run_bounded_result
+        remaining = 16*1024**2-self.shared['bytes']
+        require(remaining > 0 and len(self.shared['records']) < 128, 'join-cause-command-retention-bound')
+        timeout = min(self.command_seconds, self.deadline-time.monotonic(),
+                      self.original_deadline-5-time.monotonic())
+        require(timeout > 0, 'join-cause-original-deadline')
+        start = time.monotonic()
+        result = run_bounded_result([str(x) for x in command], cwd=self.root, env=self.environment,
+            timeout_seconds=timeout, max_output_bytes=min(4*1024**2, remaining))
+        self.shared['bytes'] += len(result.stdout)+len(result.stderr)
+        logs = {}
+        for channel in ('stdout', 'stderr'):
+            path = self.output/'logs'/f'{len(self.records):02d}-{stage}.{channel}.txt'
+            with path.open('xb') as stream: stream.write(getattr(result, channel))
+            logs[channel] = str(path)
+        row = {'stage': stage, 'argv': [str(x) for x in command], 'cwd': str(self.root),
+            'exitCode': result.returncode, 'seconds': time.monotonic()-start, 'logs': logs,
+            'completedOwnedProcess': True}
+        self.records.append(row); self.shared['records'].append(row)
+        require(result.returncode == 0, 'join-cause-command-nonzero')
+        return result.stdout
+
+
+def join_cause_observations(raw, components):
+    require(type(raw) is bytes and len(raw) <= 4*1024**2, 'join-cause-native-output-bound')
+    prefix = 'DOTNET_JOIN_CAUSE_AUX '
+    lines = [s[len(prefix):] for s in raw.decode('utf-8').splitlines() if s.startswith(prefix)]
+    require(len(lines) == 6 and all(len(s) <= 4096 for s in lines), 'join-cause-six-signed-observations')
+    rows = [json.loads(s) for s in lines]
+    expected = [(False, 8, 'quiescence'), (False, 9, 'originalFault'), (False, 10, 'unexpected'),
+                (True, 8, 'quiescence'), (True, 9, 'originalFault'), (True, 10, 'unexpected')]
+    for row, (auxiliary, mode, cause) in zip(rows, expected, strict=True):
+        require(type(row) is dict and set(row) == {'component', 'mode', 'auxiliary', 'observation',
+            'terminalOutcome', 'acceptedCauseEvidence', 'originalTrapQualified', 'physicalRetirementQualified'},
+            'join-cause-closed-observation-fields')
+        require(type(row['auxiliary']) is bool and row['auxiliary'] is auxiliary
+            and type(row['mode']) is int and row['mode'] == mode
+            and row['component'] == components[int(auxiliary)] and row['terminalOutcome'] == 'guest-trap'
+            and row['acceptedCauseEvidence'] is (auxiliary and mode != 10)
+            and row['originalTrapQualified'] is False and row['physicalRetirementQualified'] is False,
+            'join-cause-paired-original-outcomes')
+        if auxiliary:
+            s = row['observation']
+            require(type(s) is dict and set(s) == {'claims', 'invalid', 'cause'}
+                and type(s['claims']) is int and s['claims'] == 1
+                and s['invalid'] is False and s['cause'] == cause, 'join-cause-exact-single-scalar')
+        else:
+            require(row['observation'] is None, 'join-cause-normal-unarmed')
+    return rows
+
+
+def join_native_examples(raw, target):
+    require(len(raw) <= 4*1024**2, 'join-cause-cargo-inventory-bound')
+    found, finished = {}, False
+    for line in raw.splitlines():
+        require(len(line) <= 1024**2 and not finished, 'join-cause-cargo-inventory-shape')
+        item = json.loads(line)
+        if item.get('reason') == 'build-finished':
+            require(item.get('success') is True, 'join-cause-native-build-failed'); finished = True
+        elif item.get('reason') == 'compiler-artifact':
+            if Path(item['manifest_path']).resolve() != (ROOT/'crates/latent-packaging/Cargo.toml').resolve(): continue
+            name = item['target']['name']
+            if item['target']['kind'] != ['example'] or name not in ('capsule_contracts', 'package'): continue
+            path = Path(item['executable']).resolve(strict=True)
+            require(item['profile']['test'] is False and name not in found
+                and path.is_relative_to((target/'debug/examples').resolve())
+                and Path(item['target']['src_path']).resolve() == (ROOT/'crates/latent-packaging/examples'/f'{name}.rs').resolve(),
+                'join-cause-exact-native-example')
+            found[name] = path
+    require(finished and set(found) == {'capsule_contracts', 'package'}, 'join-cause-two-current-examples')
+    return {'examples/'+k: v for k, v in found.items()}
+
+
+def join_public_admission(output):
+    """Same4095-file/64MiB-file/128MiB union; no native binary or key export."""
+    public = output/'public'; public.mkdir(mode=0o700)
+    paths = list(output.glob('*.json'))+list((output/'commands/logs').glob('*.txt'))
+    for name in ('dotnet-root-return-normal', 'dotnet-root-return-join-cause'):
+        folder = output/name
+        paths.extend(folder.glob('*.json'))
+        paths.extend(p for p in (folder/'logs').glob('*.txt') if p.is_file())
+        paths.extend(p for p in (folder/'probe-inputs').glob('*') if p.is_file())
+        if (folder/'component.wasm').exists(): paths.append(folder/'component.wasm')
+    require(len(paths) == len(set(paths)) <= 4095, 'join-cause-public-count')
+    total, rows = 0, []
+    for path in sorted(paths):
+        require(time.monotonic() < float(os.environ['LSF_ROOT_RETURN_DEADLINE']), 'join-cause-public-deadline')
+        require(not path.is_symlink(), 'join-cause-public-symlink')
+        identity = file_identity(path, 64*1024**2); total += identity['bytes']
+        require(total <= PUBLIC_BYTES, 'join-cause-public-union')
+        data = read_file(path, 64*1024**2); require(digest(data) == identity['sha256'], 'join-cause-public-source-changed')
+        name = path.relative_to(output).as_posix(); destination = public/name; destination.parent.mkdir(parents=True, exist_ok=True)
+        with destination.open('xb') as stream: stream.write(data)
+        rows.append({'path': name, **identity})
+    write_json(public/'ADMISSION.json', {'formatVersion': 1, 'files': rows, 'bytes': total,
+        'maximumBytes': PUBLIC_BYTES, 'productExecutionPermission': False})
+
+
+def qualify_join_cause(output, tools, source_commit):
+    from tools import ci_rust_artifacts as artifacts
+    from tools.build_observation import resolve_tools, file_identity as tool_identity
+    import tomllib
+    require(os.environ.get('GITHUB_EVENT_NAME') == 'push'
+        and os.environ.get('GITHUB_REF') == 'refs/heads/'+JOIN_BRANCH, 'join-cause-closed-push-branch')
+    require(sys.platform == 'linux' and sys.version_info >= (3, 13), 'join-cause-linux-python313')
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents, 'join-cause-output-ownership')
+    output = fresh(output); deadline = float(os.environ['LSF_ROOT_RETURN_DEADLINE'])
+    require(math.isfinite(deadline) and time.monotonic() < deadline <= time.monotonic()+1320, 'join-cause-one-original-deadline')
+    shared = {'bytes': 0, 'records': []}; environment = build_environment(output)
+    environment.update(CARGO_TARGET_DIR=str(ROOT/'target'), CARGO_INCREMENTAL='0', CARGO_BUILD_JOBS='2',
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0', CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true', CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true',
+        CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true', RUSTUP_TOOLCHAIN='1.97.1', RUSTUP_AUTO_INSTALL='0')
+    commands = JoinCauseCommands(ROOT, fresh(output/'commands'), environment, shared, deadline)
+    record = {'schemaVersion': 'latent.dotnet.join-cause.auxiliary.v1', 'status': 'in-progress',
+        'fullAC7Qualified': False, 'physicalRetirementQualified': False, 'originalTrapQualified': False,
+        'nativeAccountingComplete': False, 'reusedDatedNativeFive': False, 'runtimePolicyChanged': False,
+        'hermetic': False, 'implicitCompilerInputsAttested': False,
+        'limits': {'absoluteSeconds': 1320, 'cleanupReserveSeconds': 5, 'commandSeconds': 600,
+            'commandCount': 128, 'diagnosticBytes': 16*1024**2, 'publicBytes': PUBLIC_BYTES,
+            'sourceFiles': 8992, 'sourceRawBytes': 75*1024**2, 'sourceArchiveBytes': 82*1024**2},
+        'ownerCaps': OWNER_CAPS, 'signedCalls': 6, 'observerUnitCases': list(JOIN_UNIT_CASES)}
+    try:
+        require(re.fullmatch(r'[0-9a-f]{40}', source_commit), 'join-cause-explicit-source-commit')
+        require(subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, timeout=15).decode().strip() == source_commit
+            and not subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, timeout=15), 'join-cause-clean-current-source')
+        before = source_map(); write_json(output/'current-git-inputs.json', before); record['sourceCommit'] = source_commit
+        pins = tomllib.loads(read_file(ROOT/'tools/toolchain.toml', 128*1024).decode())
+        native_tools, identities = resolve_tools(pins, ROOT, environment, _deadline=commands.deadline)
+        record['toolIdentities'] = identities; environment['RUSTC'] = str(native_tools['rustc'])
+        target = ROOT/'target'
+        commands.run('build-current-frontends', native_tools['cargo'], '--config', '.cargo/managed-guest.toml',
+            'build', '--locked', '-p', 'latent-packaging', '--example', 'capsule_contracts', '--example', 'package',
+            '--message-format=json')
+        native = join_native_examples(read_file(commands.output/'logs/00-build-current-frontends.stdout.txt', 4*1024**2), target)
+        record['nativeFrontends'] = {k: file_identity(v, 512*1024**2) for k, v in native.items()}
+        commands.run('build-current-dev-test-host', native_tools['cargo'], '--config', '.cargo/managed-guest.toml',
+            'test', '--locked', '-p', 'latent-wasmtime', '--features', 'development-test-host',
+            '--lib', '--test', 'local_service', '--no-run', '--message-format=json')
+        inventory_path = commands.output/'logs/01-build-current-dev-test-host.stdout.txt'
+        suites = (artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'latent_wasmtime', 'src/lib.rs',
+                    JOIN_UNIT_PREFIX, frozenset(JOIN_UNIT_CASES), False, kind='lib'),
+                  artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'local_service', 'tests/local_service.rs',
+                    JOIN_CASE, frozenset({JOIN_CASE}), True, kind='test'))
+        owners = [artifacts.read_inventory(inventory_path, ROOT, s, target=target) for s in suites]
+        record['testExecutables'] = [file_identity(a.executable, 512*1024**2) for a in owners]
+        def command_owner(root, folder, env): return JoinCauseCommands(root, folder, env, shared, deadline)
+        components = []
+        for name, auxiliary in (('dotnet-root-return-normal', False), ('dotnet-root-return-join-cause', True)):
+            project = fixture(output/(name+'-project')); captured = inventory(snapshot(project))
+            if components: require(captured == first_capture, 'join-cause-normal-auxiliary-source-pair')
+            else: first_capture = captured
+            if auxiliary:
+                artifact = build_join_cause_variant(project, output/name, native, tools, deadline, command_owner)
+            else:
+                artifact = build(project, output/name, native['examples/capsule_contracts'], native['examples/package'],
+                    'https://github.com/KirilsTurkins/latent-service-fabric', tools=tools, offline=True,
+                    _deadline=deadline, _root_return_capture=(retain_probe_inputs, retain_probe_failure),
+                    _root_return_commands=command_owner)
+            require(read_file(artifact/'source-inputs.json') == captured, 'join-cause-built-source-inputs')
+            components.append(file_identity(artifact/'component.wasm', 64*1024**2)['sha256'])
+        require(components[0] != components[1], 'join-cause-distinct-components')
+        record['components'] = components
+        def library_probe(argv, *, cwd, env, timeout, maximum):
+            require(argv == ['rustc', '--print', 'target-libdir'] and cwd == ROOT and timeout == 30 and maximum == 4096,
+                'join-cause-library-probe-owner')
+            commands.command_seconds = 25; commands.environment = env
+            value = commands.run('rust-library-path', native_tools['rustc'], *argv[1:]); require(len(value) <= maximum, 'join-cause-library-probe-bound')
+            return 0, value
+        for ordinal, (suite, owner) in enumerate(zip(suites, owners, strict=True)):
+            commands.environment = artifacts.cargo_environment(ROOT, owner, environment, target=target, execute=library_probe)
+            commands.environment.update(LSF_GUEST_SDK_LANGUAGE='dotnet', LSF_GUEST_CAPSULES=str(output))
+            commands.command_seconds = 25
+            selection = (suite.filter, '--exact', '--ignored') if ordinal else (suite.filter,)
+            listed = commands.run('list-'+str(ordinal), owner.executable, *selection, '--list')
+            require(len(listed) <= 65536, 'join-cause-list-bound'); artifacts.validate_listing(listed, suite)
+            commands.command_seconds = 300 if ordinal else 30
+            raw = commands.run('execute-'+str(ordinal), owner.executable, *selection, '--show-output', '--test-threads=1')
+            passed = 1 if ordinal else 3
+            require(re.search(rf'^test result: ok\. {passed} passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out; finished in [0-9.]+s$',
+                raw.decode(), re.M), 'join-cause-exact-native-test-result')
+            if ordinal: record['observations'] = join_cause_observations(raw, components)
+        require(source_map() == before and not subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, timeout=15),
+            'join-cause-source-after')
+        require(components == [file_identity(output/name/'component.wasm', 64*1024**2)['sha256']
+            for name in ('dotnet-root-return-normal', 'dotnet-root-return-join-cause')]
+            and identities == [tool_identity(path, name) for name, path in sorted(native_tools.items())],
+            'join-cause-components-tools-after')
+        require(record['testExecutables'] == [file_identity(a.executable, 512*1024**2) for a in owners]
+            and record['nativeFrontends'] == {k: file_identity(v, 512*1024**2) for k, v in native.items()},
+            'join-cause-native-products-after')
+        record.update(status='passed', sourceBeforeEqualsAfter=True, diagnosticBytes=shared['bytes'],
+            commandCount=len(shared['records']))
+        write_json(output/'qualified.json', record)
+        return record
+    except BaseException as error:
+        record.update(status='failed', errorCategory=type(error).__name__)
+        write_json(output/'FAILED.json', record)
+        raise
+    finally:
+        write_json(output/'commands.json', shared['records'])
+        try: join_public_admission(output)
+        except BaseException:
+            if record['status'] == 'passed': raise

@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/typescript_buffer_commonjs_fixture.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Use unchanged native lock bytes from explicitly named application data fixture; real external native lock path unchanged",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "dcd98f2cd3985d66b026fe286414cce5ae267b4f1e02ce72aadd1680a894cb3f"
+{"kind":"owner","path":"tools/typescript_buffer_commonjs_fixture.py","reviewBoundary":"committed-fingerprint","reviewReason":"Use unchanged native lock bytes from explicitly named application data fixture; real external native lock path unchanged","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "dcd98f2cd3985d66b026fe286414cce5ae267b4f1e02ce72aadd1680a894cb3f"
 }

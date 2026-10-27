@@ -1,26 +1,17 @@
-{
-  "cases":["CleanupProviderExecutorSource.test_complete_six_part_admission_before_first_birth_or_write","CleanupProviderExecutorSource.test_finite_worker_cannot_enter_original_spare_allocator_retry","CleanupProviderExecutorSource.test_manual_park_requires_all_real_refs_colors_and_rcu","CleanupProviderExecutorSource.test_real_drop_notification_precedes_actual_decrement","CleanupProviderExecutorSource.test_restore_uses_real_borrowed_original_without_allocation","CleanupProviderExecutorSource.test_three_whole_ordinary_bodies_project_exactly","CleanupProviderExecutorSource.test_unselected_whole_source_and_no_constructor_guard_widening"],
-  "guards":{
-    "CleanupProviderExecutorSource.test_complete_six_part_admission_before_first_birth_or_write":
-      "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071",
-    "CleanupProviderExecutorSource.test_finite_worker_cannot_enter_original_spare_allocator_retry":
-      "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071",
-    "CleanupProviderExecutorSource.test_manual_park_requires_all_real_refs_colors_and_rcu":
-      "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071",
-    "CleanupProviderExecutorSource.test_real_drop_notification_precedes_actual_decrement":
-      "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071",
-    "CleanupProviderExecutorSource.test_restore_uses_real_borrowed_original_without_allocation":
-      "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071",
-    "CleanupProviderExecutorSource.test_three_whole_ordinary_bodies_project_exactly":
-      "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071",
-    "CleanupProviderExecutorSource.test_unselected_whole_source_and_no_constructor_guard_widening":
-      "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_host_stream_kernel_cleanup_provider_executor.py",
-  "reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:4dee94537455aab3928810ff1de97625f025063a253ed0473d7e9dd2527b8e7d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["CleanupProviderExecutorSource.test_complete_six_part_admission_before_first_birth_or_write","CleanupProviderExecutorSource.test_finite_worker_cannot_enter_original_spare_allocator_retry","CleanupProviderExecutorSource.test_manual_park_requires_all_real_refs_colors_and_rcu","CleanupProviderExecutorSource.test_real_drop_notification_precedes_actual_decrement","CleanupProviderExecutorSource.test_restore_uses_real_borrowed_original_without_allocation","CleanupProviderExecutorSource.test_three_whole_ordinary_bodies_project_exactly","CleanupProviderExecutorSource.test_unselected_whole_source_and_no_constructor_guard_widening"],"guards":{"CleanupProviderExecutorSource.test_complete_six_part_admission_before_first_birth_or_write":
+  "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071"
+,"CleanupProviderExecutorSource.test_finite_worker_cannot_enter_original_spare_allocator_retry":
+  "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071"
+,"CleanupProviderExecutorSource.test_manual_park_requires_all_real_refs_colors_and_rcu":
+  "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071"
+,"CleanupProviderExecutorSource.test_real_drop_notification_precedes_actual_decrement":
+  "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071"
+,"CleanupProviderExecutorSource.test_restore_uses_real_borrowed_original_without_allocation":
+  "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071"
+,"CleanupProviderExecutorSource.test_three_whole_ordinary_bodies_project_exactly":
+  "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071"
+,"CleanupProviderExecutorSource.test_unselected_whole_source_and_no_constructor_guard_widening":
+  "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_cleanup_provider_executor.py","reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "aca2ba89f20db6486c97cef3207569e8aeab50a08cad0a6202400daa3e6a0071"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:4dee94537455aab3928810ff1de97625f025063a253ed0473d7e9dd2527b8e7d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

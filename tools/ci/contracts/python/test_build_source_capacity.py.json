@@ -1,28 +1,19 @@
-{
-  "schemaVersion":"latent.ci.contracts.v2",
-  "kind":"python",
-  "reviewReason":"Reviewed cache security backport: complete14 source/fixedzstd0.14.3,safe8.2.0,sys2.1.2; distinctcache-repaircohort. ParentCHECKusesSAMEexistingv17FEATURES, cachelibtestBUILD plusprobe/list/exactupstreamroundtrip, fixed5commands/unchanged45m2400/900/60/30/j2/cleanup. No fixture or old6replay; fe9historicalonly.",
-  "module":"tools/tests/test_build_source_capacity.py",
-  "cases":["SourceCapacityTests.test_archive_and_content_byte_limits_are_enforced_independently","SourceCapacityTests.test_capture_byte_allowances_are_fixed_and_reject_one_over","SourceCapacityTests.test_committed_crlf_export_is_charged_as_archived_bytes","SourceCapacityTests.test_current_committed_repository_fits_capture_and_attribution_limits","SourceCapacityTests.test_current_committed_selection_passes_preflight_without_running_archive","SourceCapacityTests.test_source_inventory_uses_capture_file_ceiling_and_rejects_one_over","SourceCapacityTests.test_tree_file_limit_rejects_before_archive_and_cleans_up","SourceCapacityTests.test_tree_full_file_ceiling_passes_but_one_over_refuses_before_archive"],
-  "guards":{
-    "SourceCapacityTests.test_current_committed_repository_fits_capture_and_attribution_limits":
-      "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e",
-    "SourceCapacityTests.test_tree_file_limit_rejects_before_archive_and_cleans_up":
-      "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e",
-    "SourceCapacityTests.test_source_inventory_uses_capture_file_ceiling_and_rejects_one_over":
-      "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e",
-    "SourceCapacityTests.test_current_committed_selection_passes_preflight_without_running_archive":
-      "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e",
-    "SourceCapacityTests.test_tree_full_file_ceiling_passes_but_one_over_refuses_before_archive":
-      "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e",
-    "SourceCapacityTests.test_capture_byte_allowances_are_fixed_and_reject_one_over":
-      "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e",
-    "SourceCapacityTests.test_archive_and_content_byte_limits_are_enforced_independently":
-      "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e",
-    "SourceCapacityTests.test_committed_crlf_export_is_charged_as_archived_bytes":
-      "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e"
-  },
-  "guardDefinitions":{
-    "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:889f7ecdf900ceeab039b1eb04e16df6149ceed7a48f6d231c6c5fb40f7f6ca2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
-  }
-}
+{"schemaVersion":"latent.ci.contracts.v2","kind":"python","reviewReason":"Reviewed cache security backport: complete14 source/fixedzstd0.14.3,safe8.2.0,sys2.1.2; distinctcache-repaircohort. ParentCHECKusesSAMEexistingv17FEATURES, cachelibtestBUILD plusprobe/list/exactupstreamroundtrip, fixed5commands/unchanged45m2400/900/60/30/j2/cleanup. No fixture or old6replay; fe9historicalonly.","module":"tools/tests/test_build_source_capacity.py","cases":["SourceCapacityTests.test_archive_and_content_byte_limits_are_enforced_independently","SourceCapacityTests.test_capture_byte_allowances_are_fixed_and_reject_one_over","SourceCapacityTests.test_committed_crlf_export_is_charged_as_archived_bytes","SourceCapacityTests.test_current_committed_repository_fits_capture_and_attribution_limits","SourceCapacityTests.test_current_committed_selection_passes_preflight_without_running_archive","SourceCapacityTests.test_source_inventory_uses_capture_file_ceiling_and_rejects_one_over","SourceCapacityTests.test_tree_file_limit_rejects_before_archive_and_cleans_up","SourceCapacityTests.test_tree_full_file_ceiling_passes_but_one_over_refuses_before_archive"],"guards":{"SourceCapacityTests.test_current_committed_repository_fits_capture_and_attribution_limits":
+  "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e"
+,"SourceCapacityTests.test_tree_file_limit_rejects_before_archive_and_cleans_up":
+  "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e"
+,"SourceCapacityTests.test_source_inventory_uses_capture_file_ceiling_and_rejects_one_over":
+  "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e"
+,"SourceCapacityTests.test_current_committed_selection_passes_preflight_without_running_archive":
+  "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e"
+,"SourceCapacityTests.test_tree_full_file_ceiling_passes_but_one_over_refuses_before_archive":
+  "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e"
+,"SourceCapacityTests.test_capture_byte_allowances_are_fixed_and_reject_one_over":
+  "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e"
+,"SourceCapacityTests.test_archive_and_content_byte_limits_are_enforced_independently":
+  "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e"
+,"SourceCapacityTests.test_committed_crlf_export_is_charged_as_archived_bytes":
+  "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e"
+},"guardDefinitions":{
+  "d83662c18ab4e893ce6bdb89c2e66765f4dcfb4e6a0ce9aa88d0d48c9204086e"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:889f7ecdf900ceeab039b1eb04e16df6149ceed7a48f6d231c6c5fb40f7f6ca2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}}}

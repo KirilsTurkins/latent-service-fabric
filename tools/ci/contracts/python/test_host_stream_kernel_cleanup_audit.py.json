@@ -1,24 +1,15 @@
-{
-  "cases":["CleanupAuditSource.test_actual_unused_context_name_paths_return_before_allocation","CleanupAuditSource.test_fixed_actual_source_and_runtime_transition_gate","CleanupAuditSource.test_key_bound_and_charge_precede_first_copy","CleanupAuditSource.test_original_context_initialization_projects_exactly","CleanupAuditSource.test_original_filter_and_rcu_extent_project_exactly","CleanupAuditSource.test_original_real_switch_filters_work_flags_and_failure_log_are_kept"],
-  "guards":{
-    "CleanupAuditSource.test_actual_unused_context_name_paths_return_before_allocation":
-      "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef",
-    "CleanupAuditSource.test_fixed_actual_source_and_runtime_transition_gate":
-      "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef",
-    "CleanupAuditSource.test_key_bound_and_charge_precede_first_copy":
-      "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef",
-    "CleanupAuditSource.test_original_context_initialization_projects_exactly":
-      "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef",
-    "CleanupAuditSource.test_original_filter_and_rcu_extent_project_exactly":
-      "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef",
-    "CleanupAuditSource.test_original_real_switch_filters_work_flags_and_failure_log_are_kept":
-      "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_host_stream_kernel_cleanup_audit.py",
-  "reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a56de31efe2544fcb30540ff646da0152f3d5bb744b8e5c54cfa07941ea8b5ce","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["CleanupAuditSource.test_actual_unused_context_name_paths_return_before_allocation","CleanupAuditSource.test_fixed_actual_source_and_runtime_transition_gate","CleanupAuditSource.test_key_bound_and_charge_precede_first_copy","CleanupAuditSource.test_original_context_initialization_projects_exactly","CleanupAuditSource.test_original_filter_and_rcu_extent_project_exactly","CleanupAuditSource.test_original_real_switch_filters_work_flags_and_failure_log_are_kept"],"guards":{"CleanupAuditSource.test_actual_unused_context_name_paths_return_before_allocation":
+  "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef"
+,"CleanupAuditSource.test_fixed_actual_source_and_runtime_transition_gate":
+  "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef"
+,"CleanupAuditSource.test_key_bound_and_charge_precede_first_copy":
+  "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef"
+,"CleanupAuditSource.test_original_context_initialization_projects_exactly":
+  "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef"
+,"CleanupAuditSource.test_original_filter_and_rcu_extent_project_exactly":
+  "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef"
+,"CleanupAuditSource.test_original_real_switch_filters_work_flags_and_failure_log_are_kept":
+  "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_cleanup_audit.py","reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "4226e377dbcc8936eeca490778aab94e4f6f8377bf70b890290a2789f4fe24ef"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a56de31efe2544fcb30540ff646da0152f3d5bb744b8e5c54cfa07941ea8b5ce","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

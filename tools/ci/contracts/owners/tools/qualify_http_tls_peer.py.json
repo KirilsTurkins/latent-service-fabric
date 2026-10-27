@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_http_tls_peer.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve six original TLS controls and existing commands; add bounded TLS subprocess input refusal and actual process TLS12/TLS13/domain/name-refusal/reap controls without native or guest compilation.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "eaf03d1266884e433be6c9e05fb71deb9774f589b1536c7cf045cc10091c192b"
+{"kind":"owner","path":"tools/qualify_http_tls_peer.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve six original TLS controls and existing commands; add bounded TLS subprocess input refusal and actual process TLS12/TLS13/domain/name-refusal/reap controls without native or guest compilation.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "eaf03d1266884e433be6c9e05fb71deb9774f589b1536c7cf045cc10091c192b"
 }

@@ -1,24 +1,15 @@
-{
-  "cases":["ImportCancellationTests.test_admission_refusal_never_supplies_release_or_starts_native_call","ImportCancellationTests.test_changed_or_ambiguous_generated_graph_refuses","ImportCancellationTests.test_default_bytes_and_actual_captured_binding_shape","ImportCancellationTests.test_logical_rejection_precedes_release_and_default_call_stays_lazy","ImportCancellationTests.test_nested_selected_frames_keep_the_original_handles","ImportCancellationTests.test_observer_and_handoff_are_bound_by_owned_source_recipes"],
-  "guards":{
-    "ImportCancellationTests.test_admission_refusal_never_supplies_release_or_starts_native_call":
-      "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b",
-    "ImportCancellationTests.test_changed_or_ambiguous_generated_graph_refuses":
-      "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b",
-    "ImportCancellationTests.test_default_bytes_and_actual_captured_binding_shape":
-      "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b",
-    "ImportCancellationTests.test_logical_rejection_precedes_release_and_default_call_stays_lazy":
-      "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b",
-    "ImportCancellationTests.test_nested_selected_frames_keep_the_original_handles":
-      "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b",
-    "ImportCancellationTests.test_observer_and_handoff_are_bound_by_owned_source_recipes":
-      "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_typescript_import_cancellation.py",
-  "reviewReason":"Six additive host-only compiler handoff controls for optional canonical borrow-release acknowledgement; original controls and guards unchanged; native and signed qualification remain pending",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9ef4ea2d6d14461fcccb309d080882fc3cf357c31d307c34ec9f7d9dc051b1ec","class:setup-sha256:45b128723e95da14cac61b22e456683f319c84316865c3f115415516423db378","class:skip:self.skipTest('Node is required for host-only handoff controls')"],"skipSites":[]}
-  }
-}
+{"cases":["ImportCancellationTests.test_admission_refusal_never_supplies_release_or_starts_native_call","ImportCancellationTests.test_changed_or_ambiguous_generated_graph_refuses","ImportCancellationTests.test_default_bytes_and_actual_captured_binding_shape","ImportCancellationTests.test_logical_rejection_precedes_release_and_default_call_stays_lazy","ImportCancellationTests.test_nested_selected_frames_keep_the_original_handles","ImportCancellationTests.test_observer_and_handoff_are_bound_by_owned_source_recipes"],"guards":{"ImportCancellationTests.test_admission_refusal_never_supplies_release_or_starts_native_call":
+  "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b"
+,"ImportCancellationTests.test_changed_or_ambiguous_generated_graph_refuses":
+  "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b"
+,"ImportCancellationTests.test_default_bytes_and_actual_captured_binding_shape":
+  "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b"
+,"ImportCancellationTests.test_logical_rejection_precedes_release_and_default_call_stays_lazy":
+  "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b"
+,"ImportCancellationTests.test_nested_selected_frames_keep_the_original_handles":
+  "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b"
+,"ImportCancellationTests.test_observer_and_handoff_are_bound_by_owned_source_recipes":
+  "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b"
+},"kind":"python","module":"tools/tests/test_typescript_import_cancellation.py","reviewReason":"Six additive host-only compiler handoff controls for optional canonical borrow-release acknowledgement; original controls and guards unchanged; native and signed qualification remain pending","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "3974c11ce1725a15cd91eef3e6c3a711e5bda7741f0fe1a7c1f2baf816e4ec2b"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9ef4ea2d6d14461fcccb309d080882fc3cf357c31d307c34ec9f7d9dc051b1ec","class:setup-sha256:45b128723e95da14cac61b22e456683f319c84316865c3f115415516423db378","class:skip:self.skipTest('Node is required for host-only handoff controls')"],"skipSites":[]}}}

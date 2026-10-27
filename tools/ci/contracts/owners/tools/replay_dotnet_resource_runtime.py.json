@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/replay_dotnet_resource_runtime.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Exact original77 compiler ancestry is retained separately from source-bound actual-Pending f919 host; same AOT component and programme",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b227b50cd159e276ce770094801057e3cbdb8a93631c79a501767c5dbcad8cb5"
+{"kind":"owner","path":"tools/replay_dotnet_resource_runtime.py","reviewBoundary":"committed-fingerprint","reviewReason":"Exact original77 compiler ancestry is retained separately from source-bound actual-Pending f919 host; same AOT component and programme","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "b227b50cd159e276ce770094801057e3cbdb8a93631c79a501767c5dbcad8cb5"
 }

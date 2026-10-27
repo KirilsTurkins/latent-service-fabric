@@ -2,7 +2,7 @@ name: .NET guest qualification
 
 on:
   push:
-    branches: [test/sdk-dotnet-root-return-20261027]
+    branches: [test/sdk-dotnet-root-return-20261027, test/sdk-dotnet-join-cause-20261027]
   pull_request:
     paths:
       - 'sdk/dotnet-guest/**'
@@ -99,7 +99,7 @@ env:
 
 jobs:
   toolchain:
-    if: github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' && github.head_ref != 'test/sdk-dotnet-root-return-20261027'
+    if: github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' && github.head_ref != 'test/sdk-dotnet-root-return-20261027' && github.ref != 'refs/heads/test/sdk-dotnet-join-cause-20261027' && github.head_ref != 'test/sdk-dotnet-join-cause-20261027'
     name: NativeAOT component qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -755,8 +755,8 @@ jobs:
           retention-days: 3
 
   root-return:
-    name: Normal managed accepted work after application root return
-    if: github.event_name == 'push' && github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
+    name: ${{ github.ref == 'refs/heads/test/sdk-dotnet-join-cause-20261027' && 'Auxiliary managed Join cause before unchanged finalization' || 'Normal managed accepted work after application root return' }}
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027' || github.ref == 'refs/heads/test/sdk-dotnet-join-cause-20261027')
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -805,6 +805,7 @@ jobs:
         with:
           version: 1.254.0
       - name: Acquire the fixed same-core normal products without rebuilding them
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
         timeout-minutes: 2
         env:
           GH_TOKEN: ${{ github.token }}
@@ -817,6 +818,7 @@ jobs:
         timeout-minutes: 1
         run: python3 -m pip install --requirement tools/requirements.lock
       - name: Check only the new closed normal observer and programme controls
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
         timeout-minutes: 1
         run: python3 -B -m unittest tools.tests.test_dotnet_task_runtime.RootReturnNormalControls -v
       - name: Install captured NativeAOT namespace and loader inputs
@@ -840,10 +842,19 @@ jobs:
           python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
             --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
       - name: Compile one normal component and execute eleven root cases plus four grant denials
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
         timeout-minutes: 22
         run: >-
           python3 tools/qualify_dotnet_task_runtime.py --root-return
           --prerequisite-archive "$RUNNER_TEMP/root-return-normal.zip"
+          --tools "$RUNNER_TEMP/dotnet-authoring-tools"
+          --output "$RUNNER_TEMP/dotnet-root-return"
+      - name: Build current dev-test-host and execute only three scalar controls plus six signed cause calls
+        if: github.ref == 'refs/heads/test/sdk-dotnet-join-cause-20261027'
+        timeout-minutes: 22
+        run: >-
+          python3 tools/qualify_dotnet_task_runtime.py --join-cause
+          --source-commit "${{ github.sha }}"
           --tools "$RUNNER_TEMP/dotnet-authoring-tools"
           --output "$RUNNER_TEMP/dotnet-root-return"
       - name: Retain admitted actual helper and results including failures

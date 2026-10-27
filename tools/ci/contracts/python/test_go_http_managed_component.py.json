@@ -1,18 +1,9 @@
-{
-  "cases":["ManagedGoBuildReuseControls.test_compile_failure_old_profile_relabel_and_original_source_component_or_current_sdk_drift_refuse","ManagedGoBuildReuseControls.test_original_failed_reader_can_supply_only_successful_exact_build_and_current_recipe_sdk","ManagedGoBuildReuseControls.test_unknown_archive_refuses_before_zip_parsing_or_output"],
-  "guards":{
-    "ManagedGoBuildReuseControls.test_compile_failure_old_profile_relabel_and_original_source_component_or_current_sdk_drift_refuse":
-      "7cd769457aeac8e1e7a941a3f24504b1f207b0c22936434c347a87d59a421ad7",
-    "ManagedGoBuildReuseControls.test_original_failed_reader_can_supply_only_successful_exact_build_and_current_recipe_sdk":
-      "7cd769457aeac8e1e7a941a3f24504b1f207b0c22936434c347a87d59a421ad7",
-    "ManagedGoBuildReuseControls.test_unknown_archive_refuses_before_zip_parsing_or_output":
-      "7cd769457aeac8e1e7a941a3f24504b1f207b0c22936434c347a87d59a421ad7"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_go_http_managed_component.py",
-  "reviewReason":"Measured v5 wait-for then context timer-start/next reader correction; retain all old tests/limits and replay exact authenticated original successful build without recompilation; failed original qualification retained. Only closed actual-record fixture setup digest changes; all existing skips/decorators/classes retained.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "7cd769457aeac8e1e7a941a3f24504b1f207b0c22936434c347a87d59a421ad7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:77ba435b6584ff7d73b48cdddad3a1c57026c06c9979c5ee8a27166d18c557c3","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["ManagedGoBuildReuseControls.test_compile_failure_old_profile_relabel_and_original_source_component_or_current_sdk_drift_refuse","ManagedGoBuildReuseControls.test_original_failed_reader_can_supply_only_successful_exact_build_and_current_recipe_sdk","ManagedGoBuildReuseControls.test_unknown_archive_refuses_before_zip_parsing_or_output"],"guards":{"ManagedGoBuildReuseControls.test_compile_failure_old_profile_relabel_and_original_source_component_or_current_sdk_drift_refuse":
+  "7cd769457aeac8e1e7a941a3f24504b1f207b0c22936434c347a87d59a421ad7"
+,"ManagedGoBuildReuseControls.test_original_failed_reader_can_supply_only_successful_exact_build_and_current_recipe_sdk":
+  "7cd769457aeac8e1e7a941a3f24504b1f207b0c22936434c347a87d59a421ad7"
+,"ManagedGoBuildReuseControls.test_unknown_archive_refuses_before_zip_parsing_or_output":
+  "7cd769457aeac8e1e7a941a3f24504b1f207b0c22936434c347a87d59a421ad7"
+},"kind":"python","module":"tools/tests/test_go_http_managed_component.py","reviewReason":"Measured v5 wait-for then context timer-start/next reader correction; retain all old tests/limits and replay exact authenticated original successful build without recompilation; failed original qualification retained. Only closed actual-record fixture setup digest changes; all existing skips/decorators/classes retained.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "7cd769457aeac8e1e7a941a3f24504b1f207b0c22936434c347a87d59a421ad7"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:77ba435b6584ff7d73b48cdddad3a1c57026c06c9979c5ee8a27166d18c557c3","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

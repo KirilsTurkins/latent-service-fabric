@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_java_llvm_private_stores.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Source-only R8 private-scalar candidate: exact seven-member supplement, original nine units and thirteen SjLj witnesses plus two new lit files, unchanged process owner/build bounds; new tuple unfilled and default-false public backend route requires unchanged C before one normal Clang/component. Historical R7/diagnostic modes, all old cases and default commands retained.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b3adfe93ab1e46420ae216deeee95fdcd72e1f8a25d6f8b0ab8bc5b1be083fc5"
+{"kind":"owner","path":"tools/qualify_java_llvm_private_stores.py","reviewBoundary":"committed-fingerprint","reviewReason":"Source-only R8 private-scalar candidate: exact seven-member supplement, original nine units and thirteen SjLj witnesses plus two new lit files, unchanged process owner/build bounds; new tuple unfilled and default-false public backend route requires unchanged C before one normal Clang/component. Historical R7/diagnostic modes, all old cases and default commands retained.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "b3adfe93ab1e46420ae216deeee95fdcd72e1f8a25d6f8b0ab8bc5b1be083fc5"
 }

@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_java_resources.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Restore modes only after the exact original normal tuple validation; bind the actually executed prepared helper; no compiler or native product changes.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "dda4331416a361bb2945ea493e5e85ce79ebf5f7e77d829bf9198090e68174cd"
+{"kind":"owner","path":"tools/qualify_java_resources.py","reviewBoundary":"committed-fingerprint","reviewReason":"Restore modes only after the exact original normal tuple validation; bind the actually executed prepared helper; no compiler or native product changes.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "dda4331416a361bb2945ea493e5e85ce79ebf5f7e77d829bf9198090e68174cd"
 }

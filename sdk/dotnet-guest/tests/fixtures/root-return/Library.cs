@@ -44,6 +44,10 @@ public static class Library
                 faultIdentity = new FaultIdentity(); // BEFORE child admission; accessor never observes Task.Exception.
                 Pending(Task.Run(UnobservedFault));
                 break;
+            case 10:
+                faultIdentity = new FaultIdentity(); // The known sentinel is NOT the thrown exception.
+                Pending(Task.Run(UnexpectedFault));
+                break;
             default: throw new ArgumentOutOfRangeException(nameof(mode));
         }
         if (SynchronizationContext.Current is not null || context.Value != "original-root")
@@ -194,6 +198,15 @@ public static class Library
         await new TaskCompletionSource<bool>(
             TaskCreationOptions.RunContinuationsAsynchronously).Task;
         throw new InvalidOperationException("unknown-source-was-invented-ready");
+    }
+
+    private static async Task UnexpectedFault()
+    {
+        await Task.Delay(DelayMillis);
+        ChildEntry();
+        // A distinct exception reaches the REAL Join classifier. No task
+        // exception is read/observed before that original Join boundary.
+        throw new InvalidOperationException("distinct-unobserved-child-fault");
     }
 
     private static async Task UnobservedFault()

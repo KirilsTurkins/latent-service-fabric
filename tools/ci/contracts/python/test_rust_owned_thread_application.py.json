@@ -1,20 +1,11 @@
-{
-  "cases":["OwnedThreadApplication.test_actual_emission_selection_refuses_replay_and_foreign_or_failed_targets","OwnedThreadApplication.test_executor_object_requires_the_actual_captured_package_manifest_and_target_emission","OwnedThreadApplication.test_native_derivation_disagreement_stops_before_normal_encoding_or_proof_claims","OwnedThreadApplication.test_source_archive_retains_hidden_cargo_and_cas_bytes_without_compiler_outputs"],
-  "guards":{
-    "OwnedThreadApplication.test_actual_emission_selection_refuses_replay_and_foreign_or_failed_targets":
-      "82cf91834621e4f47d652716b1bccb64f40daa250d858894d1a017e9ce3545fb",
-    "OwnedThreadApplication.test_executor_object_requires_the_actual_captured_package_manifest_and_target_emission":
-      "82cf91834621e4f47d652716b1bccb64f40daa250d858894d1a017e9ce3545fb",
-    "OwnedThreadApplication.test_native_derivation_disagreement_stops_before_normal_encoding_or_proof_claims":
-      "82cf91834621e4f47d652716b1bccb64f40daa250d858894d1a017e9ce3545fb",
-    "OwnedThreadApplication.test_source_archive_retains_hidden_cargo_and_cas_bytes_without_compiler_outputs":
-      "82cf91834621e4f47d652716b1bccb64f40daa250d858894d1a017e9ce3545fb"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_rust_owned_thread_application.py",
-  "reviewReason":"Bind finite original-object catalogue and exact Rust normal component proof controls",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "82cf91834621e4f47d652716b1bccb64f40daa250d858894d1a017e9ce3545fb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:07faf286bf1ffb3fa85b3155ac75be4c8f2065875f75c7d4d9530cca94abc643","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["OwnedThreadApplication.test_actual_emission_selection_refuses_replay_and_foreign_or_failed_targets","OwnedThreadApplication.test_executor_object_requires_the_actual_captured_package_manifest_and_target_emission","OwnedThreadApplication.test_native_derivation_disagreement_stops_before_normal_encoding_or_proof_claims","OwnedThreadApplication.test_source_archive_retains_hidden_cargo_and_cas_bytes_without_compiler_outputs"],"guards":{"OwnedThreadApplication.test_actual_emission_selection_refuses_replay_and_foreign_or_failed_targets":
+  "82cf91834621e4f47d652716b1bccb64f40daa250d858894d1a017e9ce3545fb"
+,"OwnedThreadApplication.test_executor_object_requires_the_actual_captured_package_manifest_and_target_emission":
+  "82cf91834621e4f47d652716b1bccb64f40daa250d858894d1a017e9ce3545fb"
+,"OwnedThreadApplication.test_native_derivation_disagreement_stops_before_normal_encoding_or_proof_claims":
+  "82cf91834621e4f47d652716b1bccb64f40daa250d858894d1a017e9ce3545fb"
+,"OwnedThreadApplication.test_source_archive_retains_hidden_cargo_and_cas_bytes_without_compiler_outputs":
+  "82cf91834621e4f47d652716b1bccb64f40daa250d858894d1a017e9ce3545fb"
+},"kind":"python","module":"tools/tests/test_rust_owned_thread_application.py","reviewReason":"Bind finite original-object catalogue and exact Rust normal component proof controls","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "82cf91834621e4f47d652716b1bccb64f40daa250d858894d1a017e9ce3545fb"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:07faf286bf1ffb3fa85b3155ac75be4c8f2065875f75c7d4d9530cca94abc643","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
