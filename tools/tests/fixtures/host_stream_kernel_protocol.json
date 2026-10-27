@@ -1,167 +1,167 @@
 {
-  "schemaVersion": "lsf.kernel-maintained-protocol-preimages.v1",
-  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
-  "source": {
-    "net/socket.c": {
-      "bytes": 92491,
-      "sha256": "95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
-      "gitBlob": "723bc3a1ba5cdd17f559a65de73d9c87911e6954"
-    },
-    "net/core/sock.c": {
-      "bytes": 111636,
-      "sha256": "f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
-      "gitBlob": "75db38fdfd35fe87b87ac2755b0ef1db6fb96415"
-    },
-    "net/ipv4/af_inet.c": {
-      "bytes": 51938,
-      "sha256": "9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
-      "gitBlob": "c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed"
-    },
-    "fs/inode.c": {
-      "bytes": 75338,
-      "sha256": "73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
-      "gitBlob": "7942673f686fdc24d92c2fb8033c2fb3b6df7709"
-    },
-    "include/net/sock.h": {
-      "bytes": 85865,
-      "sha256": "5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
-      "gitBlob": "efa549885b7f85e50c55f95ad4eae0c1ef75797a"
-    },
-    "security/security.c": {
-      "bytes": 180030,
-      "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
-      "gitBlob": "b31fd25f4e5e3d37e22e111fa67351b51ef99d2f"
-    }
-  },
-  "sections": {
-    "sock_alloc_inode": {
-      "source": "net/socket.c",
-      "sha256": "b2a4c7fe9a88f5650acc0304baef5ccfcd4bd8c058281877e457aa76d07d17d5",
-      "text": "static struct inode *sock_alloc_inode(struct super_block *sb)\n{\n\tstruct socket_alloc *ei;\n\n\tei = alloc_inode_sb(sb, sock_inode_cachep, GFP_KERNEL);\n\tif (!ei)\n\t\treturn NULL;\n\tinit_waitqueue_head(&ei->socket.wq.wait);\n\tei->socket.wq.fasync_list = NULL;\n\tei->socket.wq.flags = 0;\n\n\tei->socket.state = SS_UNCONNECTED;\n\tei->socket.flags = 0;\n\tei->socket.ops = NULL;\n\tei->socket.sk = NULL;\n\tei->socket.file = NULL;\n\n\treturn &ei->vfs_inode;\n}\n",
-      "allocationClosureProven": false
-    },
-    "sock_free_inode": {
-      "source": "net/socket.c",
-      "sha256": "07c1f8c09073f59cd415b72c937bf7e4a51e0933f29b287af9ef4685a228c8dd",
-      "text": "static void sock_free_inode(struct inode *inode)\n{\n\tstruct socket_alloc *ei;\n\n\tei = container_of(inode, struct socket_alloc, vfs_inode);\n\tkmem_cache_free(sock_inode_cachep, ei);\n}\n",
-      "allocationClosureProven": false
-    },
-    "sock_alloc": {
-      "source": "net/socket.c",
-      "sha256": "f4fce698474d356cc045ab1e9927cb7816b01cf2adfdc7960b55e8ed3f627f1e",
-      "text": "struct socket *sock_alloc(void)\n{\n\tstruct inode *inode;\n\tstruct socket *sock;\n\n\tinode = new_inode_pseudo(sock_mnt->mnt_sb);\n\tif (!inode)\n\t\treturn NULL;\n\n\tsock = SOCKET_I(inode);\n\n\tinode->i_ino = get_next_ino();\n\tinode->i_mode = S_IFSOCK | S_IRWXUGO;\n\tinode->i_uid = current_fsuid();\n\tinode->i_gid = current_fsgid();\n\tinode->i_op = &sockfs_inode_ops;\n\n\treturn sock;\n}\n",
-      "allocationClosureProven": false
-    },
-    "__sock_create": {
-      "source": "net/socket.c",
-      "sha256": "f70b1abc95a7b24a1d2ed7a8382df13d2db8bbce87834ee8fbbc2d800196a929",
-      "text": "int __sock_create(struct net *net, int family, int type, int protocol,\n\t\t\t struct socket **res, int kern)\n{\n\tint err;\n\tstruct socket *sock;\n\tconst struct net_proto_family *pf;\n\n\t/*\n\t *      Check protocol is in range\n\t */\n\tif (family < 0 || family >= NPROTO)\n\t\treturn -EAFNOSUPPORT;\n\tif (type < 0 || type >= SOCK_MAX)\n\t\treturn -EINVAL;\n\n\t/* Compatibility.\n\n\t   This uglymoron is moved from INET layer to here to avoid\n\t   deadlock in module load.\n\t */\n\tif (family == PF_INET && type == SOCK_PACKET) {\n\t\tpr_info_once(\"%s uses obsolete (PF_INET,SOCK_PACKET)\\n\",\n\t\t\t     current->comm);\n\t\tfamily = PF_PACKET;\n\t}\n\n\terr = security_socket_create(family, type, protocol, kern);\n\tif (err)\n\t\treturn err;\n\n\t/*\n\t *\tAllocate the socket and allow the family to set things up. if\n\t *\tthe protocol is 0, the family is instructed to select an appropriate\n\t *\tdefault.\n\t */\n\tsock = sock_alloc();\n\tif (!sock) {\n\t\tnet_warn_ratelimited(\"socket: no more sockets\\n\");\n\t\treturn -ENFILE;\t/* Not exactly a match, but its the\n\t\t\t\t   closest posix thing */\n\t}\n\n\tsock->type = type;\n\n#ifdef CONFIG_MODULES\n\t/* Attempt to load a protocol module if the find failed.\n\t *\n\t * 12/09/1996 Marcin: But! this makes REALLY only sense, if the user\n\t * requested real, full-featured networking support upon configuration.\n\t * Otherwise module support will break!\n\t */\n\tif (rcu_access_pointer(net_families[family]) == NULL)\n\t\trequest_module(\"net-pf-%d\", family);\n#endif\n\n\trcu_read_lock();\n\tpf = rcu_dereference(net_families[family]);\n\terr = -EAFNOSUPPORT;\n\tif (!pf)\n\t\tgoto out_release;\n\n\t/*\n\t * We will call the ->create function, that possibly is in a loadable\n\t * module, so we have to bump that loadable module refcnt first.\n\t */\n\tif (!try_module_get(pf->owner))\n\t\tgoto out_release;\n\n\t/* Now protected by module ref count */\n\trcu_read_unlock();\n\n\terr = pf->create(net, sock, protocol, kern);\n\tif (err < 0) {\n\t\t/* ->create should release the allocated sock->sk object on error\n\t\t * but it may leave the dangling pointer\n\t\t */\n\t\tsock->sk = NULL;\n\t\tgoto out_module_put;\n\t}\n\n\t/*\n\t * Now to bump the refcnt of the [loadable] module that owns this\n\t * socket at sock_release time we decrement its refcnt.\n\t */\n\tif (!try_module_get(sock->ops->owner))\n\t\tgoto out_module_busy;\n\n\t/*\n\t * Now that we're done with the ->create function, the [loadable]\n\t * module can have its refcnt decremented\n\t */\n\tmodule_put(pf->owner);\n\terr = security_socket_post_create(sock, family, type, protocol, kern);\n\tif (err)\n\t\tgoto out_sock_release;\n\t*res = sock;\n\n\treturn 0;\n\nout_module_busy:\n\terr = -EAFNOSUPPORT;\nout_module_put:\n\tsock->ops = NULL;\n\tmodule_put(pf->owner);\nout_sock_release:\n\tsock_release(sock);\n\treturn err;\n\nout_release:\n\trcu_read_unlock();\n\tgoto out_sock_release;\n}\n",
-      "allocationClosureProven": false
-    },
-    "alloc_inode": {
-      "source": "fs/inode.c",
-      "sha256": "0928ddbe8a0eabd87ecc6dfcc000c38e3ab1125bac6c0f94c244ed98df57eeed",
-      "text": "static struct inode *alloc_inode(struct super_block *sb)\n{\n\tconst struct super_operations *ops = sb->s_op;\n\tstruct inode *inode;\n\n\tif (ops->alloc_inode)\n\t\tinode = ops->alloc_inode(sb);\n\telse\n\t\tinode = alloc_inode_sb(sb, inode_cachep, GFP_KERNEL);\n\n\tif (!inode)\n\t\treturn NULL;\n\n\tif (unlikely(inode_init_always(sb, inode))) {\n\t\tif (ops->destroy_inode) {\n\t\t\tops->destroy_inode(inode);\n\t\t\tif (!ops->free_inode)\n\t\t\t\treturn NULL;\n\t\t}\n\t\tinode->free_inode = ops->free_inode;\n\t\ti_callback(&inode->i_rcu);\n\t\treturn NULL;\n\t}\n\n\treturn inode;\n}\n",
-      "allocationClosureProven": false
-    },
-    "inode_init_always_gfp": {
-      "source": "fs/inode.c",
-      "sha256": "aebc8d3bcd037232f107c55cf9666a6afdfa0cc71eee306319de8f4256370a83",
-      "text": "int inode_init_always_gfp(struct super_block *sb, struct inode *inode, gfp_t gfp)\n{\n\tstatic const struct inode_operations empty_iops;\n\tstatic const struct file_operations no_open_fops = {.open = no_open};\n\tstruct address_space *const mapping = &inode->i_data;\n\n\tinode->i_sb = sb;\n\tinode->i_blkbits = sb->s_blocksize_bits;\n\tinode->i_flags = 0;\n\tinode->i_state = 0;\n\tatomic64_set(&inode->i_sequence, 0);\n\tatomic_set(&inode->i_count, 1);\n\tinode->i_op = &empty_iops;\n\tinode->i_fop = &no_open_fops;\n\tinode->i_ino = 0;\n\tinode->__i_nlink = 1;\n\tinode->i_opflags = 0;\n\tif (sb->s_xattr)\n\t\tinode->i_opflags |= IOP_XATTR;\n\ti_uid_write(inode, 0);\n\ti_gid_write(inode, 0);\n\tatomic_set(&inode->i_writecount, 0);\n\tinode->i_size = 0;\n\tinode->i_write_hint = WRITE_LIFE_NOT_SET;\n\tinode->i_blocks = 0;\n\tinode->i_bytes = 0;\n\tinode->i_generation = 0;\n\tinode->i_pipe = NULL;\n\tinode->i_cdev = NULL;\n\tinode->i_link = NULL;\n\tinode->i_dir_seq = 0;\n\tinode->i_rdev = 0;\n\tinode->dirtied_when = 0;\n\n#ifdef CONFIG_CGROUP_WRITEBACK\n\tinode->i_wb_frn_winner = 0;\n\tinode->i_wb_frn_avg_time = 0;\n\tinode->i_wb_frn_history = 0;\n#endif\n\n\tspin_lock_init(&inode->i_lock);\n\tlockdep_set_class(&inode->i_lock, &sb->s_type->i_lock_key);\n\n\tinit_rwsem(&inode->i_rwsem);\n\tlockdep_set_class(&inode->i_rwsem, &sb->s_type->i_mutex_key);\n\n\tatomic_set(&inode->i_dio_count, 0);\n\n\tmapping->a_ops = &empty_aops;\n\tmapping->host = inode;\n\tmapping->flags = 0;\n\tmapping->wb_err = 0;\n\tatomic_set(&mapping->i_mmap_writable, 0);\n#ifdef CONFIG_READ_ONLY_THP_FOR_FS\n\tatomic_set(&mapping->nr_thps, 0);\n#endif\n\tmapping_set_gfp_mask(mapping, GFP_HIGHUSER_MOVABLE);\n\tmapping->i_private_data = NULL;\n\tmapping->writeback_index = 0;\n\tinit_rwsem(&mapping->invalidate_lock);\n\tlockdep_set_class_and_name(&mapping->invalidate_lock,\n\t\t\t\t   &sb->s_type->invalidate_lock_key,\n\t\t\t\t   \"mapping.invalidate_lock\");\n\tif (sb->s_iflags & SB_I_STABLE_WRITES)\n\t\tmapping_set_stable_writes(mapping);\n\tinode->i_private = NULL;\n\tinode->i_mapping = mapping;\n\tINIT_HLIST_HEAD(&inode->i_dentry);\t/* buggered by rcu freeing */\n#ifdef CONFIG_FS_POSIX_ACL\n\tinode->i_acl = inode->i_default_acl = ACL_NOT_CACHED;\n#endif\n\n#ifdef CONFIG_FSNOTIFY\n\tinode->i_fsnotify_mask = 0;\n#endif\n\tinode->i_flctx = NULL;\n\n\tif (unlikely(security_inode_alloc(inode, gfp)))\n\t\treturn -ENOMEM;\n\n\tthis_cpu_inc(nr_inodes);\n\n\treturn 0;\n}\n",
-      "allocationClosureProven": false
-    },
-    "destroy_inode": {
-      "source": "fs/inode.c",
-      "sha256": "e6f874f93fe57171dcbd7285fa78f34538775686acf29f0afcae8b24fe592ddb",
-      "text": "static void destroy_inode(struct inode *inode)\n{\n\tconst struct super_operations *ops = inode->i_sb->s_op;\n\n\tBUG_ON(!list_empty(&inode->i_lru));\n\t__destroy_inode(inode);\n\tif (ops->destroy_inode) {\n\t\tops->destroy_inode(inode);\n\t\tif (!ops->free_inode)\n\t\t\treturn;\n\t}\n\tinode->free_inode = ops->free_inode;\n\tcall_rcu(&inode->i_rcu, i_callback);\n}\n",
-      "allocationClosureProven": false
-    },
-    "lsm_inode_alloc": {
-      "source": "security/security.c",
-      "sha256": "25e3909f7a702fe2544d84c4283c10c0a8dfed1737caf757cc7a661922198423",
-      "text": "static int lsm_inode_alloc(struct inode *inode, gfp_t gfp)\n{\n\tif (!lsm_inode_cache) {\n\t\tinode->i_security = NULL;\n\t\treturn 0;\n\t}\n\n\tinode->i_security = kmem_cache_zalloc(lsm_inode_cache, gfp);\n\tif (inode->i_security == NULL)\n\t\treturn -ENOMEM;\n\treturn 0;\n}\n",
-      "allocationClosureProven": false
-    },
-    "security_inode_alloc": {
-      "source": "security/security.c",
-      "sha256": "a67826845173334a1eae4ec3d6c8629298238387017aa51d7660e0cd7aa39689",
-      "text": "int security_inode_alloc(struct inode *inode, gfp_t gfp)\n{\n\tint rc = lsm_inode_alloc(inode, gfp);\n\n\tif (unlikely(rc))\n\t\treturn rc;\n\trc = call_int_hook(inode_alloc_security, inode);\n\tif (unlikely(rc))\n\t\tsecurity_inode_free(inode);\n\treturn rc;\n}\n",
-      "allocationClosureProven": false
-    },
-    "security_inode_free": {
-      "source": "security/security.c",
-      "sha256": "cd11365910e7ca4f4eb995238947971ae1f36da710313d279bc14c43bb01b869",
-      "text": "void security_inode_free(struct inode *inode)\n{\n\tcall_void_hook(inode_free_security, inode);\n\tif (!inode->i_security)\n\t\treturn;\n\tcall_rcu((struct rcu_head *)inode->i_security, inode_free_by_rcu);\n}\n",
-      "allocationClosureProven": false
-    },
-    "inode_free_by_rcu": {
-      "source": "security/security.c",
-      "sha256": "950aa493d5a0c8457d3f4051362581880a28fb4d0c5848b982490b2d9264b305",
-      "text": "static void inode_free_by_rcu(struct rcu_head *head)\n{\n\t/* The rcu head is at the start of the inode blob */\n\tcall_void_hook(inode_free_security_rcu, head);\n\tkmem_cache_free(lsm_inode_cache, head);\n}\n",
-      "allocationClosureProven": false
-    },
-    "lsm_sock_alloc": {
-      "source": "security/security.c",
-      "sha256": "3e59fd1f75e64e068dc9c20ff0eb698411770d75ed6cd673a865cd04709f102d",
-      "text": "static int lsm_sock_alloc(struct sock *sock, gfp_t gfp)\n{\n\treturn lsm_blob_alloc(&sock->sk_security, blob_sizes.lbs_sock, gfp);\n}\n",
-      "allocationClosureProven": false
-    },
-    "security_sk_alloc": {
-      "source": "security/security.c",
-      "sha256": "3dfbacd9667d9637ab5d135e8fcb6af5559062bb806f689831804ab9cae39a6d",
-      "text": "int security_sk_alloc(struct sock *sk, int family, gfp_t priority)\n{\n\tint rc = lsm_sock_alloc(sk, priority);\n\n\tif (unlikely(rc))\n\t\treturn rc;\n\trc = call_int_hook(sk_alloc_security, sk, family, priority);\n\tif (unlikely(rc))\n\t\tsecurity_sk_free(sk);\n\treturn rc;\n}\n",
-      "allocationClosureProven": false
-    },
-    "security_sk_free": {
-      "source": "security/security.c",
-      "sha256": "55234c439a6dee8d82b6d9f7d427973e8c577755d33369882609514cb7262730",
-      "text": "void security_sk_free(struct sock *sk)\n{\n\tcall_void_hook(sk_free_security, sk);\n\tkfree(sk->sk_security);\n\tsk->sk_security = NULL;\n}\n",
-      "allocationClosureProven": false
-    },
-    "sk_prot_alloc": {
-      "source": "net/core/sock.c",
-      "sha256": "7417e2a7b92a95ab3ddd5ece7bc4d762e0881cdb46b00e59feefaa837d769fb8",
-      "text": "static struct sock *sk_prot_alloc(struct proto *prot, gfp_t priority,\n\t\tint family)\n{\n\tstruct sock *sk;\n\tstruct kmem_cache *slab;\n\n\tslab = prot->slab;\n\tif (slab != NULL) {\n\t\tsk = kmem_cache_alloc(slab, priority & ~__GFP_ZERO);\n\t\tif (!sk)\n\t\t\treturn sk;\n\t\tif (want_init_on_alloc(priority))\n\t\t\tsk_prot_clear_nulls(sk, prot->obj_size);\n\t} else\n\t\tsk = kmalloc(prot->obj_size, priority);\n\n\tif (sk != NULL) {\n\t\tif (security_sk_alloc(sk, family, priority))\n\t\t\tgoto out_free;\n\n\t\tif (!try_module_get(prot->owner))\n\t\t\tgoto out_free_sec;\n\t}\n\n\treturn sk;\n\nout_free_sec:\n\tsecurity_sk_free(sk);\nout_free:\n\tif (slab != NULL)\n\t\tkmem_cache_free(slab, sk);\n\telse\n\t\tkfree(sk);\n\treturn NULL;\n}\n",
-      "allocationClosureProven": false
-    },
-    "sk_prot_free": {
-      "source": "net/core/sock.c",
-      "sha256": "13c17c8e026b862723883be68779b1d5b49091afd737f16c6d690f2e8f472f5a",
-      "text": "static void sk_prot_free(struct proto *prot, struct sock *sk)\n{\n\tstruct kmem_cache *slab;\n\tstruct module *owner;\n\n\towner = prot->owner;\n\tslab = prot->slab;\n\n\tcgroup_sk_free(&sk->sk_cgrp_data);\n\tmem_cgroup_sk_free(sk);\n\tsecurity_sk_free(sk);\n\n\tsk_owner_put(sk);\n\n\tif (slab != NULL)\n\t\tkmem_cache_free(slab, sk);\n\telse\n\t\tkfree(sk);\n\tmodule_put(owner);\n}\n",
-      "allocationClosureProven": false
-    },
-    "sk_alloc": {
-      "source": "net/core/sock.c",
-      "sha256": "b68c064457dbc0a47e67de2e3f2ed06681eb46adbeac59187954f386b24858cf",
-      "text": "struct sock *sk_alloc(struct net *net, int family, gfp_t priority,\n\t\t      struct proto *prot, int kern)\n{\n\tstruct sock *sk;\n\n\tsk = sk_prot_alloc(prot, priority | __GFP_ZERO, family);\n\tif (sk) {\n\t\tsk->sk_family = family;\n\t\t/*\n\t\t * See comment in struct sock definition to understand\n\t\t * why we need sk_prot_creator -acme\n\t\t */\n\t\tsk->sk_prot = sk->sk_prot_creator = prot;\n\t\tsk->sk_kern_sock = kern;\n\t\tsock_lock_init(sk);\n\t\tsk->sk_net_refcnt = kern ? 0 : 1;\n\t\tif (likely(sk->sk_net_refcnt)) {\n\t\t\tget_net_track(net, &sk->ns_tracker, priority);\n\t\t\tsock_inuse_add(net, 1);\n\t\t} else {\n\t\t\tnet_passive_inc(net);\n\t\t\t__netns_tracker_alloc(net, &sk->ns_tracker,\n\t\t\t\t\t      false, priority);\n\t\t}\n\n\t\tsock_net_set(sk, net);\n\t\trefcount_set(&sk->sk_wmem_alloc, 1);\n\n\t\tmem_cgroup_sk_alloc(sk);\n\t\tcgroup_sk_alloc(&sk->sk_cgrp_data);\n\t\tsock_update_classid(&sk->sk_cgrp_data);\n\t\tsock_update_netprioidx(&sk->sk_cgrp_data);\n\t\tsk_tx_queue_clear(sk);\n\t}\n\n\treturn sk;\n}\n",
-      "allocationClosureProven": false
-    },
-    "sock_lock_init": {
-      "source": "net/core/sock.c",
-      "sha256": "7f4ce225c754031bff7ed24fc7646aaf9532359aecf86d24b6218c9daa8ba7c9",
-      "text": "static inline void sock_lock_init(struct sock *sk)\n{\n\tsk_owner_clear(sk);\n\n\tif (sk->sk_kern_sock)\n\t\tsock_lock_init_class_and_name(\n\t\t\tsk,\n\t\t\taf_family_kern_slock_key_strings[sk->sk_family],\n\t\t\taf_family_kern_slock_keys + sk->sk_family,\n\t\t\taf_family_kern_key_strings[sk->sk_family],\n\t\t\taf_family_kern_keys + sk->sk_family);\n\telse\n\t\tsock_lock_init_class_and_name(\n\t\t\tsk,\n\t\t\taf_family_slock_key_strings[sk->sk_family],\n\t\t\taf_family_slock_keys + sk->sk_family,\n\t\t\taf_family_key_strings[sk->sk_family],\n\t\t\taf_family_keys + sk->sk_family);\n}\n",
-      "allocationClosureProven": false
-    },
-    "__sk_destruct": {
-      "source": "net/core/sock.c",
-      "sha256": "8c00b84b11c686f8afc0802168b0859eef09ec8d5f74d46b991c2478cc7ff72a",
-      "text": "static void __sk_destruct(struct rcu_head *head)\n{\n\tstruct sock *sk = container_of(head, struct sock, sk_rcu);\n\tstruct net *net = sock_net(sk);\n\tstruct sk_filter *filter;\n\n\tif (sk->sk_destruct)\n\t\tsk->sk_destruct(sk);\n\n\tfilter = rcu_dereference_check(sk->sk_filter,\n\t\t\t\t       refcount_read(&sk->sk_wmem_alloc) == 0);\n\tif (filter) {\n\t\tsk_filter_uncharge(sk, filter);\n\t\tRCU_INIT_POINTER(sk->sk_filter, NULL);\n\t}\n\n\tsock_disable_timestamp(sk, SK_FLAGS_TIMESTAMP);\n\n#ifdef CONFIG_BPF_SYSCALL\n\tbpf_sk_storage_free(sk);\n#endif\n\n\tif (atomic_read(&sk->sk_omem_alloc))\n\t\tpr_debug(\"%s: optmem leakage (%d bytes) detected\\n\",\n\t\t\t __func__, atomic_read(&sk->sk_omem_alloc));\n\n\tif (sk->sk_frag.page) {\n\t\tput_page(sk->sk_frag.page);\n\t\tsk->sk_frag.page = NULL;\n\t}\n\n\t/* We do not need to acquire sk->sk_peer_lock, we are the last user. */\n\tput_cred(sk->sk_peer_cred);\n\tput_pid(sk->sk_peer_pid);\n\n\tif (likely(sk->sk_net_refcnt)) {\n\t\tput_net_track(net, &sk->ns_tracker);\n\t} else {\n\t\t__netns_tracker_free(net, &sk->ns_tracker, false);\n\t\tnet_passive_dec(net);\n\t}\n\tsk_prot_free(sk->sk_prot_creator, sk);\n}\n",
-      "allocationClosureProven": false
-    },
-    "sk_destruct": {
-      "source": "net/core/sock.c",
-      "sha256": "2fba5485c7624b14a5693c2e063054628bb8b316fa24f555533a5b99064e1912",
-      "text": "void sk_destruct(struct sock *sk)\n{\n\tbool use_call_rcu = sock_flag(sk, SOCK_RCU_FREE);\n\n\tif (rcu_access_pointer(sk->sk_reuseport_cb)) {\n\t\treuseport_detach_sock(sk);\n\t\tuse_call_rcu = true;\n\t}\n\n\tif (use_call_rcu)\n\t\tcall_rcu(&sk->sk_rcu, __sk_destruct);\n\telse\n\t\t__sk_destruct(&sk->sk_rcu);\n}\n",
-      "allocationClosureProven": false
-    },
-    "inet_create": {
-      "source": "net/ipv4/af_inet.c",
-      "sha256": "794f23438663330a2230e069d8464abdec2a5779c4307cf6383f9280e990a454",
-      "text": "static int inet_create(struct net *net, struct socket *sock, int protocol,\n\t\t       int kern)\n{\n\tstruct sock *sk;\n\tstruct inet_protosw *answer;\n\tstruct inet_sock *inet;\n\tstruct proto *answer_prot;\n\tunsigned char answer_flags;\n\tint try_loading_module = 0;\n\tint err;\n\n\tif (protocol < 0 || protocol >= IPPROTO_MAX)\n\t\treturn -EINVAL;\n\n\tsock->state = SS_UNCONNECTED;\n\n\t/* Look for the requested type/protocol pair. */\nlookup_protocol:\n\terr = -ESOCKTNOSUPPORT;\n\trcu_read_lock();\n\tlist_for_each_entry_rcu(answer, &inetsw[sock->type], list) {\n\n\t\terr = 0;\n\t\t/* Check the non-wild match. */\n\t\tif (protocol == answer->protocol) {\n\t\t\tif (protocol != IPPROTO_IP)\n\t\t\t\tbreak;\n\t\t} else {\n\t\t\t/* Check for the two wild cases. */\n\t\t\tif (IPPROTO_IP == protocol) {\n\t\t\t\tprotocol = answer->protocol;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tif (IPPROTO_IP == answer->protocol)\n\t\t\t\tbreak;\n\t\t}\n\t\terr = -EPROTONOSUPPORT;\n\t}\n\n\tif (unlikely(err)) {\n\t\tif (try_loading_module < 2) {\n\t\t\trcu_read_unlock();\n\t\t\t/*\n\t\t\t * Be more specific, e.g. net-pf-2-proto-132-type-1\n\t\t\t * (net-pf-PF_INET-proto-IPPROTO_SCTP-type-SOCK_STREAM)\n\t\t\t */\n\t\t\tif (++try_loading_module == 1)\n\t\t\t\trequest_module(\"net-pf-%d-proto-%d-type-%d\",\n\t\t\t\t\t       PF_INET, protocol, sock->type);\n\t\t\t/*\n\t\t\t * Fall back to generic, e.g. net-pf-2-proto-132\n\t\t\t * (net-pf-PF_INET-proto-IPPROTO_SCTP)\n\t\t\t */\n\t\t\telse\n\t\t\t\trequest_module(\"net-pf-%d-proto-%d\",\n\t\t\t\t\t       PF_INET, protocol);\n\t\t\tgoto lookup_protocol;\n\t\t} else\n\t\t\tgoto out_rcu_unlock;\n\t}\n\n\terr = -EPERM;\n\tif (sock->type == SOCK_RAW && !kern &&\n\t    !ns_capable(net->user_ns, CAP_NET_RAW))\n\t\tgoto out_rcu_unlock;\n\n\tsock->ops = answer->ops;\n\tanswer_prot = answer->prot;\n\tanswer_flags = answer->flags;\n\trcu_read_unlock();\n\n\tWARN_ON(!answer_prot->slab);\n\n\terr = -ENOMEM;\n\tsk = sk_alloc(net, PF_INET, GFP_KERNEL, answer_prot, kern);\n\tif (!sk)\n\t\tgoto out;\n\n\terr = 0;\n\tif (INET_PROTOSW_REUSE & answer_flags)\n\t\tsk->sk_reuse = SK_CAN_REUSE;\n\n\tif (INET_PROTOSW_ICSK & answer_flags)\n\t\tinet_init_csk_locks(sk);\n\n\tinet = inet_sk(sk);\n\tinet_assign_bit(IS_ICSK, sk, INET_PROTOSW_ICSK & answer_flags);\n\n\tinet_clear_bit(NODEFRAG, sk);\n\n\tif (SOCK_RAW == sock->type) {\n\t\tinet->inet_num = protocol;\n\t\tif (IPPROTO_RAW == protocol)\n\t\t\tinet_set_bit(HDRINCL, sk);\n\t}\n\n\tif (READ_ONCE(net->ipv4.sysctl_ip_no_pmtu_disc))\n\t\tinet->pmtudisc = IP_PMTUDISC_DONT;\n\telse\n\t\tinet->pmtudisc = IP_PMTUDISC_WANT;\n\n\tatomic_set(&inet->inet_id, 0);\n\n\tsock_init_data(sock, sk);\n\n\tsk->sk_destruct\t   = inet_sock_destruct;\n\tsk->sk_protocol\t   = protocol;\n\tsk->sk_backlog_rcv = sk->sk_prot->backlog_rcv;\n\tsk->sk_txrehash = READ_ONCE(net->core.sysctl_txrehash);\n\n\tinet->uc_ttl\t= -1;\n\tinet_set_bit(MC_LOOP, sk);\n\tinet->mc_ttl\t= 1;\n\tinet_set_bit(MC_ALL, sk);\n\tinet->mc_index\t= 0;\n\tinet->mc_list\t= NULL;\n\tinet->rcv_tos\t= 0;\n\n\tif (inet->inet_num) {\n\t\t/* It assumes that any protocol which allows\n\t\t * the user to assign a number at socket\n\t\t * creation time automatically\n\t\t * shares.\n\t\t */\n\t\tinet->inet_sport = htons(inet->inet_num);\n\t\t/* Add to protocol hash chains. */\n\t\terr = sk->sk_prot->hash(sk);\n\t\tif (err)\n\t\t\tgoto out_sk_release;\n\t}\n\n\tif (sk->sk_prot->init) {\n\t\terr = sk->sk_prot->init(sk);\n\t\tif (err)\n\t\t\tgoto out_sk_release;\n\t}\n\n\tif (!kern) {\n\t\terr = BPF_CGROUP_RUN_PROG_INET_SOCK(sk);\n\t\tif (err)\n\t\t\tgoto out_sk_release;\n\t}\nout:\n\treturn err;\nout_rcu_unlock:\n\trcu_read_unlock();\n\tgoto out;\nout_sk_release:\n\tsk_common_release(sk);\n\tsock->sk = NULL;\n\tgoto out;\n}\n",
-      "allocationClosureProven": false
-    }
-  },
-  "kernelBuilt": false,
-  "actualKernelExecuted": false,
-  "productionInstallation": false
+"schemaVersion":"lsf.kernel-maintained-protocol-preimages.v1",
+"upstreamCommit":"7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+"source":{
+"net/socket.c":{
+"bytes":92491,
+"sha256":"95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
+"gitBlob":"723bc3a1ba5cdd17f559a65de73d9c87911e6954"
+},
+"net/core/sock.c":{
+"bytes":111636,
+"sha256":"f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
+"gitBlob":"75db38fdfd35fe87b87ac2755b0ef1db6fb96415"
+},
+"net/ipv4/af_inet.c":{
+"bytes":51938,
+"sha256":"9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
+"gitBlob":"c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed"
+},
+"fs/inode.c":{
+"bytes":75338,
+"sha256":"73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
+"gitBlob":"7942673f686fdc24d92c2fb8033c2fb3b6df7709"
+},
+"include/net/sock.h":{
+"bytes":85865,
+"sha256":"5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
+"gitBlob":"efa549885b7f85e50c55f95ad4eae0c1ef75797a"
+},
+"security/security.c":{
+"bytes":180030,
+"sha256":"b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
+"gitBlob":"b31fd25f4e5e3d37e22e111fa67351b51ef99d2f"
+}
+},
+"sections":{
+"sock_alloc_inode":{
+"source":"net/socket.c",
+"sha256":"b2a4c7fe9a88f5650acc0304baef5ccfcd4bd8c058281877e457aa76d07d17d5",
+"text":"static struct inode *sock_alloc_inode(struct super_block *sb)\n{\n\tstruct socket_alloc *ei;\n\n\tei = alloc_inode_sb(sb, sock_inode_cachep, GFP_KERNEL);\n\tif (!ei)\n\t\treturn NULL;\n\tinit_waitqueue_head(&ei->socket.wq.wait);\n\tei->socket.wq.fasync_list = NULL;\n\tei->socket.wq.flags = 0;\n\n\tei->socket.state = SS_UNCONNECTED;\n\tei->socket.flags = 0;\n\tei->socket.ops = NULL;\n\tei->socket.sk = NULL;\n\tei->socket.file = NULL;\n\n\treturn &ei->vfs_inode;\n}\n",
+"allocationClosureProven":false
+},
+"sock_free_inode":{
+"source":"net/socket.c",
+"sha256":"07c1f8c09073f59cd415b72c937bf7e4a51e0933f29b287af9ef4685a228c8dd",
+"text":"static void sock_free_inode(struct inode *inode)\n{\n\tstruct socket_alloc *ei;\n\n\tei = container_of(inode, struct socket_alloc, vfs_inode);\n\tkmem_cache_free(sock_inode_cachep, ei);\n}\n",
+"allocationClosureProven":false
+},
+"sock_alloc":{
+"source":"net/socket.c",
+"sha256":"f4fce698474d356cc045ab1e9927cb7816b01cf2adfdc7960b55e8ed3f627f1e",
+"text":"struct socket *sock_alloc(void)\n{\n\tstruct inode *inode;\n\tstruct socket *sock;\n\n\tinode = new_inode_pseudo(sock_mnt->mnt_sb);\n\tif (!inode)\n\t\treturn NULL;\n\n\tsock = SOCKET_I(inode);\n\n\tinode->i_ino = get_next_ino();\n\tinode->i_mode = S_IFSOCK | S_IRWXUGO;\n\tinode->i_uid = current_fsuid();\n\tinode->i_gid = current_fsgid();\n\tinode->i_op = &sockfs_inode_ops;\n\n\treturn sock;\n}\n",
+"allocationClosureProven":false
+},
+"__sock_create":{
+"source":"net/socket.c",
+"sha256":"f70b1abc95a7b24a1d2ed7a8382df13d2db8bbce87834ee8fbbc2d800196a929",
+"text":"int __sock_create(struct net *net, int family, int type, int protocol,\n\t\t\t struct socket **res, int kern)\n{\n\tint err;\n\tstruct socket *sock;\n\tconst struct net_proto_family *pf;\n\n\t/*\n\t *      Check protocol is in range\n\t */\n\tif (family < 0 || family >= NPROTO)\n\t\treturn -EAFNOSUPPORT;\n\tif (type < 0 || type >= SOCK_MAX)\n\t\treturn -EINVAL;\n\n\t/* Compatibility.\n\n\t   This uglymoron is moved from INET layer to here to avoid\n\t   deadlock in module load.\n\t */\n\tif (family == PF_INET && type == SOCK_PACKET) {\n\t\tpr_info_once(\"%s uses obsolete (PF_INET,SOCK_PACKET)\\n\",\n\t\t\t     current->comm);\n\t\tfamily = PF_PACKET;\n\t}\n\n\terr = security_socket_create(family, type, protocol, kern);\n\tif (err)\n\t\treturn err;\n\n\t/*\n\t *\tAllocate the socket and allow the family to set things up. if\n\t *\tthe protocol is 0, the family is instructed to select an appropriate\n\t *\tdefault.\n\t */\n\tsock = sock_alloc();\n\tif (!sock) {\n\t\tnet_warn_ratelimited(\"socket: no more sockets\\n\");\n\t\treturn -ENFILE;\t/* Not exactly a match, but its the\n\t\t\t\t   closest posix thing */\n\t}\n\n\tsock->type = type;\n\n#ifdef CONFIG_MODULES\n\t/* Attempt to load a protocol module if the find failed.\n\t *\n\t * 12/09/1996 Marcin: But! this makes REALLY only sense, if the user\n\t * requested real, full-featured networking support upon configuration.\n\t * Otherwise module support will break!\n\t */\n\tif (rcu_access_pointer(net_families[family]) == NULL)\n\t\trequest_module(\"net-pf-%d\", family);\n#endif\n\n\trcu_read_lock();\n\tpf = rcu_dereference(net_families[family]);\n\terr = -EAFNOSUPPORT;\n\tif (!pf)\n\t\tgoto out_release;\n\n\t/*\n\t * We will call the ->create function, that possibly is in a loadable\n\t * module, so we have to bump that loadable module refcnt first.\n\t */\n\tif (!try_module_get(pf->owner))\n\t\tgoto out_release;\n\n\t/* Now protected by module ref count */\n\trcu_read_unlock();\n\n\terr = pf->create(net, sock, protocol, kern);\n\tif (err < 0) {\n\t\t/* ->create should release the allocated sock->sk object on error\n\t\t * but it may leave the dangling pointer\n\t\t */\n\t\tsock->sk = NULL;\n\t\tgoto out_module_put;\n\t}\n\n\t/*\n\t * Now to bump the refcnt of the [loadable] module that owns this\n\t * socket at sock_release time we decrement its refcnt.\n\t */\n\tif (!try_module_get(sock->ops->owner))\n\t\tgoto out_module_busy;\n\n\t/*\n\t * Now that we're done with the ->create function, the [loadable]\n\t * module can have its refcnt decremented\n\t */\n\tmodule_put(pf->owner);\n\terr = security_socket_post_create(sock, family, type, protocol, kern);\n\tif (err)\n\t\tgoto out_sock_release;\n\t*res = sock;\n\n\treturn 0;\n\nout_module_busy:\n\terr = -EAFNOSUPPORT;\nout_module_put:\n\tsock->ops = NULL;\n\tmodule_put(pf->owner);\nout_sock_release:\n\tsock_release(sock);\n\treturn err;\n\nout_release:\n\trcu_read_unlock();\n\tgoto out_sock_release;\n}\n",
+"allocationClosureProven":false
+},
+"alloc_inode":{
+"source":"fs/inode.c",
+"sha256":"0928ddbe8a0eabd87ecc6dfcc000c38e3ab1125bac6c0f94c244ed98df57eeed",
+"text":"static struct inode *alloc_inode(struct super_block *sb)\n{\n\tconst struct super_operations *ops = sb->s_op;\n\tstruct inode *inode;\n\n\tif (ops->alloc_inode)\n\t\tinode = ops->alloc_inode(sb);\n\telse\n\t\tinode = alloc_inode_sb(sb, inode_cachep, GFP_KERNEL);\n\n\tif (!inode)\n\t\treturn NULL;\n\n\tif (unlikely(inode_init_always(sb, inode))) {\n\t\tif (ops->destroy_inode) {\n\t\t\tops->destroy_inode(inode);\n\t\t\tif (!ops->free_inode)\n\t\t\t\treturn NULL;\n\t\t}\n\t\tinode->free_inode = ops->free_inode;\n\t\ti_callback(&inode->i_rcu);\n\t\treturn NULL;\n\t}\n\n\treturn inode;\n}\n",
+"allocationClosureProven":false
+},
+"inode_init_always_gfp":{
+"source":"fs/inode.c",
+"sha256":"aebc8d3bcd037232f107c55cf9666a6afdfa0cc71eee306319de8f4256370a83",
+"text":"int inode_init_always_gfp(struct super_block *sb, struct inode *inode, gfp_t gfp)\n{\n\tstatic const struct inode_operations empty_iops;\n\tstatic const struct file_operations no_open_fops = {.open = no_open};\n\tstruct address_space *const mapping = &inode->i_data;\n\n\tinode->i_sb = sb;\n\tinode->i_blkbits = sb->s_blocksize_bits;\n\tinode->i_flags = 0;\n\tinode->i_state = 0;\n\tatomic64_set(&inode->i_sequence, 0);\n\tatomic_set(&inode->i_count, 1);\n\tinode->i_op = &empty_iops;\n\tinode->i_fop = &no_open_fops;\n\tinode->i_ino = 0;\n\tinode->__i_nlink = 1;\n\tinode->i_opflags = 0;\n\tif (sb->s_xattr)\n\t\tinode->i_opflags |= IOP_XATTR;\n\ti_uid_write(inode, 0);\n\ti_gid_write(inode, 0);\n\tatomic_set(&inode->i_writecount, 0);\n\tinode->i_size = 0;\n\tinode->i_write_hint = WRITE_LIFE_NOT_SET;\n\tinode->i_blocks = 0;\n\tinode->i_bytes = 0;\n\tinode->i_generation = 0;\n\tinode->i_pipe = NULL;\n\tinode->i_cdev = NULL;\n\tinode->i_link = NULL;\n\tinode->i_dir_seq = 0;\n\tinode->i_rdev = 0;\n\tinode->dirtied_when = 0;\n\n#ifdef CONFIG_CGROUP_WRITEBACK\n\tinode->i_wb_frn_winner = 0;\n\tinode->i_wb_frn_avg_time = 0;\n\tinode->i_wb_frn_history = 0;\n#endif\n\n\tspin_lock_init(&inode->i_lock);\n\tlockdep_set_class(&inode->i_lock, &sb->s_type->i_lock_key);\n\n\tinit_rwsem(&inode->i_rwsem);\n\tlockdep_set_class(&inode->i_rwsem, &sb->s_type->i_mutex_key);\n\n\tatomic_set(&inode->i_dio_count, 0);\n\n\tmapping->a_ops = &empty_aops;\n\tmapping->host = inode;\n\tmapping->flags = 0;\n\tmapping->wb_err = 0;\n\tatomic_set(&mapping->i_mmap_writable, 0);\n#ifdef CONFIG_READ_ONLY_THP_FOR_FS\n\tatomic_set(&mapping->nr_thps, 0);\n#endif\n\tmapping_set_gfp_mask(mapping, GFP_HIGHUSER_MOVABLE);\n\tmapping->i_private_data = NULL;\n\tmapping->writeback_index = 0;\n\tinit_rwsem(&mapping->invalidate_lock);\n\tlockdep_set_class_and_name(&mapping->invalidate_lock,\n\t\t\t\t   &sb->s_type->invalidate_lock_key,\n\t\t\t\t   \"mapping.invalidate_lock\");\n\tif (sb->s_iflags & SB_I_STABLE_WRITES)\n\t\tmapping_set_stable_writes(mapping);\n\tinode->i_private = NULL;\n\tinode->i_mapping = mapping;\n\tINIT_HLIST_HEAD(&inode->i_dentry);\t/* buggered by rcu freeing */\n#ifdef CONFIG_FS_POSIX_ACL\n\tinode->i_acl = inode->i_default_acl = ACL_NOT_CACHED;\n#endif\n\n#ifdef CONFIG_FSNOTIFY\n\tinode->i_fsnotify_mask = 0;\n#endif\n\tinode->i_flctx = NULL;\n\n\tif (unlikely(security_inode_alloc(inode, gfp)))\n\t\treturn -ENOMEM;\n\n\tthis_cpu_inc(nr_inodes);\n\n\treturn 0;\n}\n",
+"allocationClosureProven":false
+},
+"destroy_inode":{
+"source":"fs/inode.c",
+"sha256":"e6f874f93fe57171dcbd7285fa78f34538775686acf29f0afcae8b24fe592ddb",
+"text":"static void destroy_inode(struct inode *inode)\n{\n\tconst struct super_operations *ops = inode->i_sb->s_op;\n\n\tBUG_ON(!list_empty(&inode->i_lru));\n\t__destroy_inode(inode);\n\tif (ops->destroy_inode) {\n\t\tops->destroy_inode(inode);\n\t\tif (!ops->free_inode)\n\t\t\treturn;\n\t}\n\tinode->free_inode = ops->free_inode;\n\tcall_rcu(&inode->i_rcu, i_callback);\n}\n",
+"allocationClosureProven":false
+},
+"lsm_inode_alloc":{
+"source":"security/security.c",
+"sha256":"25e3909f7a702fe2544d84c4283c10c0a8dfed1737caf757cc7a661922198423",
+"text":"static int lsm_inode_alloc(struct inode *inode, gfp_t gfp)\n{\n\tif (!lsm_inode_cache) {\n\t\tinode->i_security = NULL;\n\t\treturn 0;\n\t}\n\n\tinode->i_security = kmem_cache_zalloc(lsm_inode_cache, gfp);\n\tif (inode->i_security == NULL)\n\t\treturn -ENOMEM;\n\treturn 0;\n}\n",
+"allocationClosureProven":false
+},
+"security_inode_alloc":{
+"source":"security/security.c",
+"sha256":"a67826845173334a1eae4ec3d6c8629298238387017aa51d7660e0cd7aa39689",
+"text":"int security_inode_alloc(struct inode *inode, gfp_t gfp)\n{\n\tint rc = lsm_inode_alloc(inode, gfp);\n\n\tif (unlikely(rc))\n\t\treturn rc;\n\trc = call_int_hook(inode_alloc_security, inode);\n\tif (unlikely(rc))\n\t\tsecurity_inode_free(inode);\n\treturn rc;\n}\n",
+"allocationClosureProven":false
+},
+"security_inode_free":{
+"source":"security/security.c",
+"sha256":"cd11365910e7ca4f4eb995238947971ae1f36da710313d279bc14c43bb01b869",
+"text":"void security_inode_free(struct inode *inode)\n{\n\tcall_void_hook(inode_free_security, inode);\n\tif (!inode->i_security)\n\t\treturn;\n\tcall_rcu((struct rcu_head *)inode->i_security, inode_free_by_rcu);\n}\n",
+"allocationClosureProven":false
+},
+"inode_free_by_rcu":{
+"source":"security/security.c",
+"sha256":"950aa493d5a0c8457d3f4051362581880a28fb4d0c5848b982490b2d9264b305",
+"text":"static void inode_free_by_rcu(struct rcu_head *head)\n{\n\t/* The rcu head is at the start of the inode blob */\n\tcall_void_hook(inode_free_security_rcu, head);\n\tkmem_cache_free(lsm_inode_cache, head);\n}\n",
+"allocationClosureProven":false
+},
+"lsm_sock_alloc":{
+"source":"security/security.c",
+"sha256":"3e59fd1f75e64e068dc9c20ff0eb698411770d75ed6cd673a865cd04709f102d",
+"text":"static int lsm_sock_alloc(struct sock *sock, gfp_t gfp)\n{\n\treturn lsm_blob_alloc(&sock->sk_security, blob_sizes.lbs_sock, gfp);\n}\n",
+"allocationClosureProven":false
+},
+"security_sk_alloc":{
+"source":"security/security.c",
+"sha256":"3dfbacd9667d9637ab5d135e8fcb6af5559062bb806f689831804ab9cae39a6d",
+"text":"int security_sk_alloc(struct sock *sk, int family, gfp_t priority)\n{\n\tint rc = lsm_sock_alloc(sk, priority);\n\n\tif (unlikely(rc))\n\t\treturn rc;\n\trc = call_int_hook(sk_alloc_security, sk, family, priority);\n\tif (unlikely(rc))\n\t\tsecurity_sk_free(sk);\n\treturn rc;\n}\n",
+"allocationClosureProven":false
+},
+"security_sk_free":{
+"source":"security/security.c",
+"sha256":"55234c439a6dee8d82b6d9f7d427973e8c577755d33369882609514cb7262730",
+"text":"void security_sk_free(struct sock *sk)\n{\n\tcall_void_hook(sk_free_security, sk);\n\tkfree(sk->sk_security);\n\tsk->sk_security = NULL;\n}\n",
+"allocationClosureProven":false
+},
+"sk_prot_alloc":{
+"source":"net/core/sock.c",
+"sha256":"7417e2a7b92a95ab3ddd5ece7bc4d762e0881cdb46b00e59feefaa837d769fb8",
+"text":"static struct sock *sk_prot_alloc(struct proto *prot, gfp_t priority,\n\t\tint family)\n{\n\tstruct sock *sk;\n\tstruct kmem_cache *slab;\n\n\tslab = prot->slab;\n\tif (slab != NULL) {\n\t\tsk = kmem_cache_alloc(slab, priority & ~__GFP_ZERO);\n\t\tif (!sk)\n\t\t\treturn sk;\n\t\tif (want_init_on_alloc(priority))\n\t\t\tsk_prot_clear_nulls(sk, prot->obj_size);\n\t} else\n\t\tsk = kmalloc(prot->obj_size, priority);\n\n\tif (sk != NULL) {\n\t\tif (security_sk_alloc(sk, family, priority))\n\t\t\tgoto out_free;\n\n\t\tif (!try_module_get(prot->owner))\n\t\t\tgoto out_free_sec;\n\t}\n\n\treturn sk;\n\nout_free_sec:\n\tsecurity_sk_free(sk);\nout_free:\n\tif (slab != NULL)\n\t\tkmem_cache_free(slab, sk);\n\telse\n\t\tkfree(sk);\n\treturn NULL;\n}\n",
+"allocationClosureProven":false
+},
+"sk_prot_free":{
+"source":"net/core/sock.c",
+"sha256":"13c17c8e026b862723883be68779b1d5b49091afd737f16c6d690f2e8f472f5a",
+"text":"static void sk_prot_free(struct proto *prot, struct sock *sk)\n{\n\tstruct kmem_cache *slab;\n\tstruct module *owner;\n\n\towner = prot->owner;\n\tslab = prot->slab;\n\n\tcgroup_sk_free(&sk->sk_cgrp_data);\n\tmem_cgroup_sk_free(sk);\n\tsecurity_sk_free(sk);\n\n\tsk_owner_put(sk);\n\n\tif (slab != NULL)\n\t\tkmem_cache_free(slab, sk);\n\telse\n\t\tkfree(sk);\n\tmodule_put(owner);\n}\n",
+"allocationClosureProven":false
+},
+"sk_alloc":{
+"source":"net/core/sock.c",
+"sha256":"b68c064457dbc0a47e67de2e3f2ed06681eb46adbeac59187954f386b24858cf",
+"text":"struct sock *sk_alloc(struct net *net, int family, gfp_t priority,\n\t\t      struct proto *prot, int kern)\n{\n\tstruct sock *sk;\n\n\tsk = sk_prot_alloc(prot, priority | __GFP_ZERO, family);\n\tif (sk) {\n\t\tsk->sk_family = family;\n\t\t/*\n\t\t * See comment in struct sock definition to understand\n\t\t * why we need sk_prot_creator -acme\n\t\t */\n\t\tsk->sk_prot = sk->sk_prot_creator = prot;\n\t\tsk->sk_kern_sock = kern;\n\t\tsock_lock_init(sk);\n\t\tsk->sk_net_refcnt = kern ? 0 : 1;\n\t\tif (likely(sk->sk_net_refcnt)) {\n\t\t\tget_net_track(net, &sk->ns_tracker, priority);\n\t\t\tsock_inuse_add(net, 1);\n\t\t} else {\n\t\t\tnet_passive_inc(net);\n\t\t\t__netns_tracker_alloc(net, &sk->ns_tracker,\n\t\t\t\t\t      false, priority);\n\t\t}\n\n\t\tsock_net_set(sk, net);\n\t\trefcount_set(&sk->sk_wmem_alloc, 1);\n\n\t\tmem_cgroup_sk_alloc(sk);\n\t\tcgroup_sk_alloc(&sk->sk_cgrp_data);\n\t\tsock_update_classid(&sk->sk_cgrp_data);\n\t\tsock_update_netprioidx(&sk->sk_cgrp_data);\n\t\tsk_tx_queue_clear(sk);\n\t}\n\n\treturn sk;\n}\n",
+"allocationClosureProven":false
+},
+"sock_lock_init":{
+"source":"net/core/sock.c",
+"sha256":"7f4ce225c754031bff7ed24fc7646aaf9532359aecf86d24b6218c9daa8ba7c9",
+"text":"static inline void sock_lock_init(struct sock *sk)\n{\n\tsk_owner_clear(sk);\n\n\tif (sk->sk_kern_sock)\n\t\tsock_lock_init_class_and_name(\n\t\t\tsk,\n\t\t\taf_family_kern_slock_key_strings[sk->sk_family],\n\t\t\taf_family_kern_slock_keys + sk->sk_family,\n\t\t\taf_family_kern_key_strings[sk->sk_family],\n\t\t\taf_family_kern_keys + sk->sk_family);\n\telse\n\t\tsock_lock_init_class_and_name(\n\t\t\tsk,\n\t\t\taf_family_slock_key_strings[sk->sk_family],\n\t\t\taf_family_slock_keys + sk->sk_family,\n\t\t\taf_family_key_strings[sk->sk_family],\n\t\t\taf_family_keys + sk->sk_family);\n}\n",
+"allocationClosureProven":false
+},
+"__sk_destruct":{
+"source":"net/core/sock.c",
+"sha256":"8c00b84b11c686f8afc0802168b0859eef09ec8d5f74d46b991c2478cc7ff72a",
+"text":"static void __sk_destruct(struct rcu_head *head)\n{\n\tstruct sock *sk = container_of(head, struct sock, sk_rcu);\n\tstruct net *net = sock_net(sk);\n\tstruct sk_filter *filter;\n\n\tif (sk->sk_destruct)\n\t\tsk->sk_destruct(sk);\n\n\tfilter = rcu_dereference_check(sk->sk_filter,\n\t\t\t\t       refcount_read(&sk->sk_wmem_alloc) == 0);\n\tif (filter) {\n\t\tsk_filter_uncharge(sk, filter);\n\t\tRCU_INIT_POINTER(sk->sk_filter, NULL);\n\t}\n\n\tsock_disable_timestamp(sk, SK_FLAGS_TIMESTAMP);\n\n#ifdef CONFIG_BPF_SYSCALL\n\tbpf_sk_storage_free(sk);\n#endif\n\n\tif (atomic_read(&sk->sk_omem_alloc))\n\t\tpr_debug(\"%s: optmem leakage (%d bytes) detected\\n\",\n\t\t\t __func__, atomic_read(&sk->sk_omem_alloc));\n\n\tif (sk->sk_frag.page) {\n\t\tput_page(sk->sk_frag.page);\n\t\tsk->sk_frag.page = NULL;\n\t}\n\n\t/* We do not need to acquire sk->sk_peer_lock, we are the last user. */\n\tput_cred(sk->sk_peer_cred);\n\tput_pid(sk->sk_peer_pid);\n\n\tif (likely(sk->sk_net_refcnt)) {\n\t\tput_net_track(net, &sk->ns_tracker);\n\t} else {\n\t\t__netns_tracker_free(net, &sk->ns_tracker, false);\n\t\tnet_passive_dec(net);\n\t}\n\tsk_prot_free(sk->sk_prot_creator, sk);\n}\n",
+"allocationClosureProven":false
+},
+"sk_destruct":{
+"source":"net/core/sock.c",
+"sha256":"2fba5485c7624b14a5693c2e063054628bb8b316fa24f555533a5b99064e1912",
+"text":"void sk_destruct(struct sock *sk)\n{\n\tbool use_call_rcu = sock_flag(sk, SOCK_RCU_FREE);\n\n\tif (rcu_access_pointer(sk->sk_reuseport_cb)) {\n\t\treuseport_detach_sock(sk);\n\t\tuse_call_rcu = true;\n\t}\n\n\tif (use_call_rcu)\n\t\tcall_rcu(&sk->sk_rcu, __sk_destruct);\n\telse\n\t\t__sk_destruct(&sk->sk_rcu);\n}\n",
+"allocationClosureProven":false
+},
+"inet_create":{
+"source":"net/ipv4/af_inet.c",
+"sha256":"794f23438663330a2230e069d8464abdec2a5779c4307cf6383f9280e990a454",
+"text":"static int inet_create(struct net *net, struct socket *sock, int protocol,\n\t\t       int kern)\n{\n\tstruct sock *sk;\n\tstruct inet_protosw *answer;\n\tstruct inet_sock *inet;\n\tstruct proto *answer_prot;\n\tunsigned char answer_flags;\n\tint try_loading_module = 0;\n\tint err;\n\n\tif (protocol < 0 || protocol >= IPPROTO_MAX)\n\t\treturn -EINVAL;\n\n\tsock->state = SS_UNCONNECTED;\n\n\t/* Look for the requested type/protocol pair. */\nlookup_protocol:\n\terr = -ESOCKTNOSUPPORT;\n\trcu_read_lock();\n\tlist_for_each_entry_rcu(answer, &inetsw[sock->type], list) {\n\n\t\terr = 0;\n\t\t/* Check the non-wild match. */\n\t\tif (protocol == answer->protocol) {\n\t\t\tif (protocol != IPPROTO_IP)\n\t\t\t\tbreak;\n\t\t} else {\n\t\t\t/* Check for the two wild cases. */\n\t\t\tif (IPPROTO_IP == protocol) {\n\t\t\t\tprotocol = answer->protocol;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\tif (IPPROTO_IP == answer->protocol)\n\t\t\t\tbreak;\n\t\t}\n\t\terr = -EPROTONOSUPPORT;\n\t}\n\n\tif (unlikely(err)) {\n\t\tif (try_loading_module < 2) {\n\t\t\trcu_read_unlock();\n\t\t\t/*\n\t\t\t * Be more specific, e.g. net-pf-2-proto-132-type-1\n\t\t\t * (net-pf-PF_INET-proto-IPPROTO_SCTP-type-SOCK_STREAM)\n\t\t\t */\n\t\t\tif (++try_loading_module == 1)\n\t\t\t\trequest_module(\"net-pf-%d-proto-%d-type-%d\",\n\t\t\t\t\t       PF_INET, protocol, sock->type);\n\t\t\t/*\n\t\t\t * Fall back to generic, e.g. net-pf-2-proto-132\n\t\t\t * (net-pf-PF_INET-proto-IPPROTO_SCTP)\n\t\t\t */\n\t\t\telse\n\t\t\t\trequest_module(\"net-pf-%d-proto-%d\",\n\t\t\t\t\t       PF_INET, protocol);\n\t\t\tgoto lookup_protocol;\n\t\t} else\n\t\t\tgoto out_rcu_unlock;\n\t}\n\n\terr = -EPERM;\n\tif (sock->type == SOCK_RAW && !kern &&\n\t    !ns_capable(net->user_ns, CAP_NET_RAW))\n\t\tgoto out_rcu_unlock;\n\n\tsock->ops = answer->ops;\n\tanswer_prot = answer->prot;\n\tanswer_flags = answer->flags;\n\trcu_read_unlock();\n\n\tWARN_ON(!answer_prot->slab);\n\n\terr = -ENOMEM;\n\tsk = sk_alloc(net, PF_INET, GFP_KERNEL, answer_prot, kern);\n\tif (!sk)\n\t\tgoto out;\n\n\terr = 0;\n\tif (INET_PROTOSW_REUSE & answer_flags)\n\t\tsk->sk_reuse = SK_CAN_REUSE;\n\n\tif (INET_PROTOSW_ICSK & answer_flags)\n\t\tinet_init_csk_locks(sk);\n\n\tinet = inet_sk(sk);\n\tinet_assign_bit(IS_ICSK, sk, INET_PROTOSW_ICSK & answer_flags);\n\n\tinet_clear_bit(NODEFRAG, sk);\n\n\tif (SOCK_RAW == sock->type) {\n\t\tinet->inet_num = protocol;\n\t\tif (IPPROTO_RAW == protocol)\n\t\t\tinet_set_bit(HDRINCL, sk);\n\t}\n\n\tif (READ_ONCE(net->ipv4.sysctl_ip_no_pmtu_disc))\n\t\tinet->pmtudisc = IP_PMTUDISC_DONT;\n\telse\n\t\tinet->pmtudisc = IP_PMTUDISC_WANT;\n\n\tatomic_set(&inet->inet_id, 0);\n\n\tsock_init_data(sock, sk);\n\n\tsk->sk_destruct\t   = inet_sock_destruct;\n\tsk->sk_protocol\t   = protocol;\n\tsk->sk_backlog_rcv = sk->sk_prot->backlog_rcv;\n\tsk->sk_txrehash = READ_ONCE(net->core.sysctl_txrehash);\n\n\tinet->uc_ttl\t= -1;\n\tinet_set_bit(MC_LOOP, sk);\n\tinet->mc_ttl\t= 1;\n\tinet_set_bit(MC_ALL, sk);\n\tinet->mc_index\t= 0;\n\tinet->mc_list\t= NULL;\n\tinet->rcv_tos\t= 0;\n\n\tif (inet->inet_num) {\n\t\t/* It assumes that any protocol which allows\n\t\t * the user to assign a number at socket\n\t\t * creation time automatically\n\t\t * shares.\n\t\t */\n\t\tinet->inet_sport = htons(inet->inet_num);\n\t\t/* Add to protocol hash chains. */\n\t\terr = sk->sk_prot->hash(sk);\n\t\tif (err)\n\t\t\tgoto out_sk_release;\n\t}\n\n\tif (sk->sk_prot->init) {\n\t\terr = sk->sk_prot->init(sk);\n\t\tif (err)\n\t\t\tgoto out_sk_release;\n\t}\n\n\tif (!kern) {\n\t\terr = BPF_CGROUP_RUN_PROG_INET_SOCK(sk);\n\t\tif (err)\n\t\t\tgoto out_sk_release;\n\t}\nout:\n\treturn err;\nout_rcu_unlock:\n\trcu_read_unlock();\n\tgoto out;\nout_sk_release:\n\tsk_common_release(sk);\n\tsock->sk = NULL;\n\tgoto out;\n}\n",
+"allocationClosureProven":false
+}
+},
+"kernelBuilt":false,
+"actualKernelExecuted":false,
+"productionInstallation":false
 }

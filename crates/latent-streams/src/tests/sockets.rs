@@ -70,7 +70,7 @@ async fn actual_tcp_partial_reads_eof_and_send_half_close() {
     while let Some(mut chunk) = stream.read(2, None).unwrap().await.unwrap() {
         let bytes = chunk.copy_bytes().unwrap();
         assert!(!bytes.is_empty() && bytes.len() <= 2);
-        received.extend(bytes);
+        received.extend_from_slice(&bytes);
     }
     assert_eq!(received, b"onetwo");
     assert_eq!(stream.inspect().state, StreamState::ReadEofWriteShut);
@@ -148,7 +148,10 @@ async fn retained_chunks_keep_original_charges_after_socket_close() {
     assert!(control.budget.host_memory_bytes() >= 64 * 1024);
     let first_bytes = first.copy_bytes().unwrap();
     let second_bytes = second.copy_bytes().unwrap();
-    assert!(first_bytes.iter().chain(&second_bytes).all(|b| *b == 0x5a));
+    assert!(first_bytes
+        .iter()
+        .chain(second_bytes.iter())
+        .all(|b| *b == 0x5a));
     drop(first_bytes);
     drop(second_bytes);
     drop(first);

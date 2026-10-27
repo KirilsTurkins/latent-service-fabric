@@ -1,48 +1,48 @@
 {
-  "upstreamCommit": "adc218676eef25575469234709c2d87185ca223a",
-  "purpose": "exact original initialization and cookie generation, no synthetic cookie/reset",
-  "functions": {
-    "sk_alloc": {
-      "source": "net/core/sock.c",
-      "prefix": "struct sock *",
-      "sha256": "155dff9763733f378c1e2f778ee3658e31c944df06259c1395d61f081ce87ee2",
-      "text": "struct sock *sk_alloc(struct net *net, int family, gfp_t priority,\n\t\t      struct proto *prot, int kern)\n{\n\tstruct sock *sk;\n\n\tsk = sk_prot_alloc(prot, priority | __GFP_ZERO, family);\n\tif (sk) {\n\t\tsk->sk_family = family;\n\t\t/*\n\t\t * See comment in struct sock definition to understand\n\t\t * why we need sk_prot_creator -acme\n\t\t */\n\t\tsk->sk_prot = sk->sk_prot_creator = prot;\n\t\tsk->sk_kern_sock = kern;\n\t\tsock_lock_init(sk);\n\t\tsk->sk_net_refcnt = kern ? 0 : 1;\n\t\tif (likely(sk->sk_net_refcnt)) {\n\t\t\tget_net_track(net, &sk->ns_tracker, priority);\n\t\t\tsock_inuse_add(net, 1);\n\t\t} else {\n\t\t\t__netns_tracker_alloc(net, &sk->ns_tracker,\n\t\t\t\t\t      false, priority);\n\t\t}\n\n\t\tsock_net_set(sk, net);\n\t\trefcount_set(&sk->sk_wmem_alloc, 1);\n\n\t\tmem_cgroup_sk_alloc(sk);\n\t\tcgroup_sk_alloc(&sk->sk_cgrp_data);\n\t\tsock_update_classid(&sk->sk_cgrp_data);\n\t\tsock_update_netprioidx(&sk->sk_cgrp_data);\n\t\tsk_tx_queue_clear(sk);\n\t}\n\n\treturn sk;\n}\n"
-    },
-    "sk_clone_lock": {
-      "source": "net/core/sock.c",
-      "prefix": "struct sock *",
-      "sha256": "0169e1a2d03503c1264feb69d6495c6fa1f3dca336e14612f0330144c7489ccb",
-      "text": "struct sock *sk_clone_lock(const struct sock *sk, const gfp_t priority)\n{\n\tstruct proto *prot = READ_ONCE(sk->sk_prot);\n\tstruct sk_filter *filter;\n\tbool is_charged = true;\n\tstruct sock *newsk;\n\n\tnewsk = sk_prot_alloc(prot, priority, sk->sk_family);\n\tif (!newsk)\n\t\tgoto out;\n\n\tsock_copy(newsk, sk);\n\n\tnewsk->sk_prot_creator = prot;\n\n\t/* SANITY */\n\tif (likely(newsk->sk_net_refcnt)) {\n\t\tget_net_track(sock_net(newsk), &newsk->ns_tracker, priority);\n\t\tsock_inuse_add(sock_net(newsk), 1);\n\t} else {\n\t\t/* Kernel sockets are not elevating the struct net refcount.\n\t\t * Instead, use a tracker to more easily detect if a layer\n\t\t * is not properly dismantling its kernel sockets at netns\n\t\t * destroy time.\n\t\t */\n\t\t__netns_tracker_alloc(sock_net(newsk), &newsk->ns_tracker,\n\t\t\t\t      false, priority);\n\t}\n\tsk_node_init(&newsk->sk_node);\n\tsock_lock_init(newsk);\n\tbh_lock_sock(newsk);\n\tnewsk->sk_backlog.head\t= newsk->sk_backlog.tail = NULL;\n\tnewsk->sk_backlog.len = 0;\n\n\tatomic_set(&newsk->sk_rmem_alloc, 0);\n\n\t/* sk_wmem_alloc set to one (see sk_free() and sock_wfree()) */\n\trefcount_set(&newsk->sk_wmem_alloc, 1);\n\n\tatomic_set(&newsk->sk_omem_alloc, 0);\n\tsk_init_common(newsk);\n\n\tnewsk->sk_dst_cache\t= NULL;\n\tnewsk->sk_dst_pending_confirm = 0;\n\tnewsk->sk_wmem_queued\t= 0;\n\tnewsk->sk_forward_alloc = 0;\n\tnewsk->sk_reserved_mem  = 0;\n\tatomic_set(&newsk->sk_drops, 0);\n\tnewsk->sk_send_head\t= NULL;\n\tnewsk->sk_userlocks\t= sk->sk_userlocks & ~SOCK_BINDPORT_LOCK;\n\tatomic_set(&newsk->sk_zckey, 0);\n\n\tsock_reset_flag(newsk, SOCK_DONE);\n\n\t/* sk->sk_memcg will be populated at accept() time */\n\tnewsk->sk_memcg = NULL;\n\n\tcgroup_sk_clone(&newsk->sk_cgrp_data);\n\n\trcu_read_lock();\n\tfilter = rcu_dereference(sk->sk_filter);\n\tif (filter != NULL)\n\t\t/* though it's an empty new sock, the charging may fail\n\t\t * if sysctl_optmem_max was changed between creation of\n\t\t * original socket and cloning\n\t\t */\n\t\tis_charged = sk_filter_charge(newsk, filter);\n\tRCU_INIT_POINTER(newsk->sk_filter, filter);\n\trcu_read_unlock();\n\n\tif (unlikely(!is_charged || xfrm_sk_clone_policy(newsk, sk))) {\n\t\t/* We need to make sure that we don't uncharge the new\n\t\t * socket if we couldn't charge it in the first place\n\t\t * as otherwise we uncharge the parent's filter.\n\t\t */\n\t\tif (!is_charged)\n\t\t\tRCU_INIT_POINTER(newsk->sk_filter, NULL);\n\t\tsk_free_unlock_clone(newsk);\n\t\tnewsk = NULL;\n\t\tgoto out;\n\t}\n\tRCU_INIT_POINTER(newsk->sk_reuseport_cb, NULL);\n\n\tif (bpf_sk_storage_clone(sk, newsk)) {\n\t\tsk_free_unlock_clone(newsk);\n\t\tnewsk = NULL;\n\t\tgoto out;\n\t}\n\n\t/* Clear sk_user_data if parent had the pointer tagged\n\t * as not suitable for copying when cloning.\n\t */\n\tif (sk_user_data_is_nocopy(newsk))\n\t\tnewsk->sk_user_data = NULL;\n\n\tnewsk->sk_err\t   = 0;\n\tnewsk->sk_err_soft = 0;\n\tnewsk->sk_priority = 0;\n\tnewsk->sk_incoming_cpu = raw_smp_processor_id();\n\n\t/* Before updating sk_refcnt, we must commit prior changes to memory\n\t * (Documentation/RCU/rculist_nulls.rst for details)\n\t */\n\tsmp_wmb();\n\trefcount_set(&newsk->sk_refcnt, 2);\n\n\tsk_set_socket(newsk, NULL);\n\tsk_tx_queue_clear(newsk);\n\tRCU_INIT_POINTER(newsk->sk_wq, NULL);\n\n\tif (newsk->sk_prot->sockets_allocated)\n\t\tsk_sockets_allocated_inc(newsk);\n\n\tif (sock_needs_netstamp(sk) && newsk->sk_flags & SK_FLAGS_TIMESTAMP)\n\t\tnet_enable_timestamp();\nout:\n\treturn newsk;\n}\n"
-    },
-    "sk_init_common": {
-      "source": "net/core/sock.c",
-      "prefix": "static void ",
-      "sha256": "e4518de0b7e7c8106bdee62944b87f23f4e5e796820984de916abdcc7a555f0b",
-      "text": "static void sk_init_common(struct sock *sk)\n{\n\tskb_queue_head_init(&sk->sk_receive_queue);\n\tskb_queue_head_init(&sk->sk_write_queue);\n\tskb_queue_head_init(&sk->sk_error_queue);\n\n\trwlock_init(&sk->sk_callback_lock);\n\tlockdep_set_class_and_name(&sk->sk_receive_queue.lock,\n\t\t\taf_rlock_keys + sk->sk_family,\n\t\t\taf_family_rlock_key_strings[sk->sk_family]);\n\tlockdep_set_class_and_name(&sk->sk_write_queue.lock,\n\t\t\taf_wlock_keys + sk->sk_family,\n\t\t\taf_family_wlock_key_strings[sk->sk_family]);\n\tlockdep_set_class_and_name(&sk->sk_error_queue.lock,\n\t\t\taf_elock_keys + sk->sk_family,\n\t\t\taf_family_elock_key_strings[sk->sk_family]);\n\tif (sk->sk_kern_sock)\n\t\tlockdep_set_class_and_name(&sk->sk_callback_lock,\n\t\t\taf_kern_callback_keys + sk->sk_family,\n\t\t\taf_family_kern_clock_key_strings[sk->sk_family]);\n\telse\n\t\tlockdep_set_class_and_name(&sk->sk_callback_lock,\n\t\t\taf_callback_keys + sk->sk_family,\n\t\t\taf_family_clock_key_strings[sk->sk_family]);\n}\n"
-    },
-    "sock_copy": {
-      "source": "net/core/sock.c",
-      "prefix": "static void ",
-      "sha256": "24de46beb410da0fe3f684c70d1a8a2a90227f74f511b372b8d8413d280eee78",
-      "text": "static void sock_copy(struct sock *nsk, const struct sock *osk)\n{\n\tconst struct proto *prot = READ_ONCE(osk->sk_prot);\n#ifdef CONFIG_SECURITY_NETWORK\n\tvoid *sptr = nsk->sk_security;\n#endif\n\n\t/* If we move sk_tx_queue_mapping out of the private section,\n\t * we must check if sk_tx_queue_clear() is called after\n\t * sock_copy() in sk_clone_lock().\n\t */\n\tBUILD_BUG_ON(offsetof(struct sock, sk_tx_queue_mapping) <\n\t\t     offsetof(struct sock, sk_dontcopy_begin) ||\n\t\t     offsetof(struct sock, sk_tx_queue_mapping) >=\n\t\t     offsetof(struct sock, sk_dontcopy_end));\n\n\tmemcpy(nsk, osk, offsetof(struct sock, sk_dontcopy_begin));\n\n\tunsafe_memcpy(&nsk->sk_dontcopy_end, &osk->sk_dontcopy_end,\n\t\t      prot->obj_size - offsetof(struct sock, sk_dontcopy_end),\n\t\t      /* alloc is larger than struct, see sk_prot_alloc() */);\n\n#ifdef CONFIG_SECURITY_NETWORK\n\tnsk->sk_security = sptr;\n\tsecurity_sk_clone(osk, nsk);\n#endif\n}\n"
-    },
-    "sock_gen_cookie": {
-      "source": "include/linux/sock_diag.h",
-      "prefix": "static inline u64 ",
-      "sha256": "f48edd228dd1bffe50a020862488577daf6033b89b585a365b1afbf4652e3a44",
-      "text": "static inline u64 sock_gen_cookie(struct sock *sk)\n{\n\tu64 cookie;\n\n\tpreempt_disable();\n\tcookie = __sock_gen_cookie(sk);\n\tpreempt_enable();\n\n\treturn cookie;\n}\n"
-    },
-    "__sock_gen_cookie": {
-      "source": "net/core/sock_diag.c",
-      "prefix": "u64 ",
-      "sha256": "bcd9241165453959be61b6e1194cb6ddb14a06d7c147d0bae34064f5d5c73fa5",
-      "text": "u64 __sock_gen_cookie(struct sock *sk)\n{\n\tu64 res = atomic64_read(&sk->sk_cookie);\n\n\tif (!res) {\n\t\tu64 new = gen_cookie_next(&sock_cookie);\n\n\t\tatomic64_cmpxchg(&sk->sk_cookie, res, new);\n\n\t\t/* Another thread might have changed sk_cookie before us. */\n\t\tres = atomic64_read(&sk->sk_cookie);\n\t}\n\treturn res;\n}\n"
-    },
-    "gen_cookie_next": {
-      "source": "include/linux/cookie.h",
-      "prefix": "static __always_inline u64 ",
-      "sha256": "1ea85a5fdc5403ef4d75a756df7cd00071566e772025d2da970eb24bc1ed0d43",
-      "text": "static __always_inline u64 gen_cookie_next(struct gen_cookie *gc)\n{\n\tstruct pcpu_gen_cookie *local = this_cpu_ptr(gc->local);\n\tu64 val;\n\n\tif (likely(local_inc_return(&local->nesting) == 1)) {\n\t\tval = local->last;\n\t\tif (__is_defined(CONFIG_SMP) &&\n\t\t    unlikely((val & (COOKIE_LOCAL_BATCH - 1)) == 0)) {\n\t\t\ts64 next = atomic64_add_return(COOKIE_LOCAL_BATCH,\n\t\t\t\t\t\t       &gc->forward_last);\n\t\t\tval = next - COOKIE_LOCAL_BATCH;\n\t\t}\n\t\tlocal->last = ++val;\n\t} else {\n\t\tval = atomic64_dec_return(&gc->reverse_last);\n\t}\n\tlocal_dec(&local->nesting);\n\treturn val;\n}\n"
-    }
-  }
+"upstreamCommit":"adc218676eef25575469234709c2d87185ca223a",
+"purpose":"exact original initialization and cookie generation, no synthetic cookie/reset",
+"functions":{
+"sk_alloc":{
+"source":"net/core/sock.c",
+"prefix":"struct sock *",
+"sha256":"155dff9763733f378c1e2f778ee3658e31c944df06259c1395d61f081ce87ee2",
+"text":"struct sock *sk_alloc(struct net *net, int family, gfp_t priority,\n\t\t      struct proto *prot, int kern)\n{\n\tstruct sock *sk;\n\n\tsk = sk_prot_alloc(prot, priority | __GFP_ZERO, family);\n\tif (sk) {\n\t\tsk->sk_family = family;\n\t\t/*\n\t\t * See comment in struct sock definition to understand\n\t\t * why we need sk_prot_creator -acme\n\t\t */\n\t\tsk->sk_prot = sk->sk_prot_creator = prot;\n\t\tsk->sk_kern_sock = kern;\n\t\tsock_lock_init(sk);\n\t\tsk->sk_net_refcnt = kern ? 0 : 1;\n\t\tif (likely(sk->sk_net_refcnt)) {\n\t\t\tget_net_track(net, &sk->ns_tracker, priority);\n\t\t\tsock_inuse_add(net, 1);\n\t\t} else {\n\t\t\t__netns_tracker_alloc(net, &sk->ns_tracker,\n\t\t\t\t\t      false, priority);\n\t\t}\n\n\t\tsock_net_set(sk, net);\n\t\trefcount_set(&sk->sk_wmem_alloc, 1);\n\n\t\tmem_cgroup_sk_alloc(sk);\n\t\tcgroup_sk_alloc(&sk->sk_cgrp_data);\n\t\tsock_update_classid(&sk->sk_cgrp_data);\n\t\tsock_update_netprioidx(&sk->sk_cgrp_data);\n\t\tsk_tx_queue_clear(sk);\n\t}\n\n\treturn sk;\n}\n"
+},
+"sk_clone_lock":{
+"source":"net/core/sock.c",
+"prefix":"struct sock *",
+"sha256":"0169e1a2d03503c1264feb69d6495c6fa1f3dca336e14612f0330144c7489ccb",
+"text":"struct sock *sk_clone_lock(const struct sock *sk, const gfp_t priority)\n{\n\tstruct proto *prot = READ_ONCE(sk->sk_prot);\n\tstruct sk_filter *filter;\n\tbool is_charged = true;\n\tstruct sock *newsk;\n\n\tnewsk = sk_prot_alloc(prot, priority, sk->sk_family);\n\tif (!newsk)\n\t\tgoto out;\n\n\tsock_copy(newsk, sk);\n\n\tnewsk->sk_prot_creator = prot;\n\n\t/* SANITY */\n\tif (likely(newsk->sk_net_refcnt)) {\n\t\tget_net_track(sock_net(newsk), &newsk->ns_tracker, priority);\n\t\tsock_inuse_add(sock_net(newsk), 1);\n\t} else {\n\t\t/* Kernel sockets are not elevating the struct net refcount.\n\t\t * Instead, use a tracker to more easily detect if a layer\n\t\t * is not properly dismantling its kernel sockets at netns\n\t\t * destroy time.\n\t\t */\n\t\t__netns_tracker_alloc(sock_net(newsk), &newsk->ns_tracker,\n\t\t\t\t      false, priority);\n\t}\n\tsk_node_init(&newsk->sk_node);\n\tsock_lock_init(newsk);\n\tbh_lock_sock(newsk);\n\tnewsk->sk_backlog.head\t= newsk->sk_backlog.tail = NULL;\n\tnewsk->sk_backlog.len = 0;\n\n\tatomic_set(&newsk->sk_rmem_alloc, 0);\n\n\t/* sk_wmem_alloc set to one (see sk_free() and sock_wfree()) */\n\trefcount_set(&newsk->sk_wmem_alloc, 1);\n\n\tatomic_set(&newsk->sk_omem_alloc, 0);\n\tsk_init_common(newsk);\n\n\tnewsk->sk_dst_cache\t= NULL;\n\tnewsk->sk_dst_pending_confirm = 0;\n\tnewsk->sk_wmem_queued\t= 0;\n\tnewsk->sk_forward_alloc = 0;\n\tnewsk->sk_reserved_mem  = 0;\n\tatomic_set(&newsk->sk_drops, 0);\n\tnewsk->sk_send_head\t= NULL;\n\tnewsk->sk_userlocks\t= sk->sk_userlocks & ~SOCK_BINDPORT_LOCK;\n\tatomic_set(&newsk->sk_zckey, 0);\n\n\tsock_reset_flag(newsk, SOCK_DONE);\n\n\t/* sk->sk_memcg will be populated at accept() time */\n\tnewsk->sk_memcg = NULL;\n\n\tcgroup_sk_clone(&newsk->sk_cgrp_data);\n\n\trcu_read_lock();\n\tfilter = rcu_dereference(sk->sk_filter);\n\tif (filter != NULL)\n\t\t/* though it's an empty new sock, the charging may fail\n\t\t * if sysctl_optmem_max was changed between creation of\n\t\t * original socket and cloning\n\t\t */\n\t\tis_charged = sk_filter_charge(newsk, filter);\n\tRCU_INIT_POINTER(newsk->sk_filter, filter);\n\trcu_read_unlock();\n\n\tif (unlikely(!is_charged || xfrm_sk_clone_policy(newsk, sk))) {\n\t\t/* We need to make sure that we don't uncharge the new\n\t\t * socket if we couldn't charge it in the first place\n\t\t * as otherwise we uncharge the parent's filter.\n\t\t */\n\t\tif (!is_charged)\n\t\t\tRCU_INIT_POINTER(newsk->sk_filter, NULL);\n\t\tsk_free_unlock_clone(newsk);\n\t\tnewsk = NULL;\n\t\tgoto out;\n\t}\n\tRCU_INIT_POINTER(newsk->sk_reuseport_cb, NULL);\n\n\tif (bpf_sk_storage_clone(sk, newsk)) {\n\t\tsk_free_unlock_clone(newsk);\n\t\tnewsk = NULL;\n\t\tgoto out;\n\t}\n\n\t/* Clear sk_user_data if parent had the pointer tagged\n\t * as not suitable for copying when cloning.\n\t */\n\tif (sk_user_data_is_nocopy(newsk))\n\t\tnewsk->sk_user_data = NULL;\n\n\tnewsk->sk_err\t   = 0;\n\tnewsk->sk_err_soft = 0;\n\tnewsk->sk_priority = 0;\n\tnewsk->sk_incoming_cpu = raw_smp_processor_id();\n\n\t/* Before updating sk_refcnt, we must commit prior changes to memory\n\t * (Documentation/RCU/rculist_nulls.rst for details)\n\t */\n\tsmp_wmb();\n\trefcount_set(&newsk->sk_refcnt, 2);\n\n\tsk_set_socket(newsk, NULL);\n\tsk_tx_queue_clear(newsk);\n\tRCU_INIT_POINTER(newsk->sk_wq, NULL);\n\n\tif (newsk->sk_prot->sockets_allocated)\n\t\tsk_sockets_allocated_inc(newsk);\n\n\tif (sock_needs_netstamp(sk) && newsk->sk_flags & SK_FLAGS_TIMESTAMP)\n\t\tnet_enable_timestamp();\nout:\n\treturn newsk;\n}\n"
+},
+"sk_init_common":{
+"source":"net/core/sock.c",
+"prefix":"static void ",
+"sha256":"e4518de0b7e7c8106bdee62944b87f23f4e5e796820984de916abdcc7a555f0b",
+"text":"static void sk_init_common(struct sock *sk)\n{\n\tskb_queue_head_init(&sk->sk_receive_queue);\n\tskb_queue_head_init(&sk->sk_write_queue);\n\tskb_queue_head_init(&sk->sk_error_queue);\n\n\trwlock_init(&sk->sk_callback_lock);\n\tlockdep_set_class_and_name(&sk->sk_receive_queue.lock,\n\t\t\taf_rlock_keys + sk->sk_family,\n\t\t\taf_family_rlock_key_strings[sk->sk_family]);\n\tlockdep_set_class_and_name(&sk->sk_write_queue.lock,\n\t\t\taf_wlock_keys + sk->sk_family,\n\t\t\taf_family_wlock_key_strings[sk->sk_family]);\n\tlockdep_set_class_and_name(&sk->sk_error_queue.lock,\n\t\t\taf_elock_keys + sk->sk_family,\n\t\t\taf_family_elock_key_strings[sk->sk_family]);\n\tif (sk->sk_kern_sock)\n\t\tlockdep_set_class_and_name(&sk->sk_callback_lock,\n\t\t\taf_kern_callback_keys + sk->sk_family,\n\t\t\taf_family_kern_clock_key_strings[sk->sk_family]);\n\telse\n\t\tlockdep_set_class_and_name(&sk->sk_callback_lock,\n\t\t\taf_callback_keys + sk->sk_family,\n\t\t\taf_family_clock_key_strings[sk->sk_family]);\n}\n"
+},
+"sock_copy":{
+"source":"net/core/sock.c",
+"prefix":"static void ",
+"sha256":"24de46beb410da0fe3f684c70d1a8a2a90227f74f511b372b8d8413d280eee78",
+"text":"static void sock_copy(struct sock *nsk, const struct sock *osk)\n{\n\tconst struct proto *prot = READ_ONCE(osk->sk_prot);\n#ifdef CONFIG_SECURITY_NETWORK\n\tvoid *sptr = nsk->sk_security;\n#endif\n\n\t/* If we move sk_tx_queue_mapping out of the private section,\n\t * we must check if sk_tx_queue_clear() is called after\n\t * sock_copy() in sk_clone_lock().\n\t */\n\tBUILD_BUG_ON(offsetof(struct sock, sk_tx_queue_mapping) <\n\t\t     offsetof(struct sock, sk_dontcopy_begin) ||\n\t\t     offsetof(struct sock, sk_tx_queue_mapping) >=\n\t\t     offsetof(struct sock, sk_dontcopy_end));\n\n\tmemcpy(nsk, osk, offsetof(struct sock, sk_dontcopy_begin));\n\n\tunsafe_memcpy(&nsk->sk_dontcopy_end, &osk->sk_dontcopy_end,\n\t\t      prot->obj_size - offsetof(struct sock, sk_dontcopy_end),\n\t\t      /* alloc is larger than struct, see sk_prot_alloc() */);\n\n#ifdef CONFIG_SECURITY_NETWORK\n\tnsk->sk_security = sptr;\n\tsecurity_sk_clone(osk, nsk);\n#endif\n}\n"
+},
+"sock_gen_cookie":{
+"source":"include/linux/sock_diag.h",
+"prefix":"static inline u64 ",
+"sha256":"f48edd228dd1bffe50a020862488577daf6033b89b585a365b1afbf4652e3a44",
+"text":"static inline u64 sock_gen_cookie(struct sock *sk)\n{\n\tu64 cookie;\n\n\tpreempt_disable();\n\tcookie = __sock_gen_cookie(sk);\n\tpreempt_enable();\n\n\treturn cookie;\n}\n"
+},
+"__sock_gen_cookie":{
+"source":"net/core/sock_diag.c",
+"prefix":"u64 ",
+"sha256":"bcd9241165453959be61b6e1194cb6ddb14a06d7c147d0bae34064f5d5c73fa5",
+"text":"u64 __sock_gen_cookie(struct sock *sk)\n{\n\tu64 res = atomic64_read(&sk->sk_cookie);\n\n\tif (!res) {\n\t\tu64 new = gen_cookie_next(&sock_cookie);\n\n\t\tatomic64_cmpxchg(&sk->sk_cookie, res, new);\n\n\t\t/* Another thread might have changed sk_cookie before us. */\n\t\tres = atomic64_read(&sk->sk_cookie);\n\t}\n\treturn res;\n}\n"
+},
+"gen_cookie_next":{
+"source":"include/linux/cookie.h",
+"prefix":"static __always_inline u64 ",
+"sha256":"1ea85a5fdc5403ef4d75a756df7cd00071566e772025d2da970eb24bc1ed0d43",
+"text":"static __always_inline u64 gen_cookie_next(struct gen_cookie *gc)\n{\n\tstruct pcpu_gen_cookie *local = this_cpu_ptr(gc->local);\n\tu64 val;\n\n\tif (likely(local_inc_return(&local->nesting) == 1)) {\n\t\tval = local->last;\n\t\tif (__is_defined(CONFIG_SMP) &&\n\t\t    unlikely((val & (COOKIE_LOCAL_BATCH - 1)) == 0)) {\n\t\t\ts64 next = atomic64_add_return(COOKIE_LOCAL_BATCH,\n\t\t\t\t\t\t       &gc->forward_last);\n\t\t\tval = next - COOKIE_LOCAL_BATCH;\n\t\t}\n\t\tlocal->last = ++val;\n\t} else {\n\t\tval = atomic64_dec_return(&gc->reverse_last);\n\t}\n\tlocal_dec(&local->nesting);\n\treturn val;\n}\n"
+}
+}
 }

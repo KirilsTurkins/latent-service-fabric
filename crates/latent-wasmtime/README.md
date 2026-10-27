@@ -41,6 +41,13 @@ creation remains disabled by default and whose receipts grant no authority.
 
 ## Integration boundaries
 
+Network and streaming HTTP chunk replies use the private
+[byte-copy lowering owner](src/host/io_copy.rs). It delegates the existing
+canonical `list<u8>` ABI while retaining the actual prepaid immutable bytes
+through destination validation and lowering. Source-resource closure cannot
+refund a copy still held by the reply. Other variable-length reply graphs keep
+their separate accounting requirements.
+
 The Phase 0 facade retains echo framing over the shared backend; it is not a second product engine. `aot-test-timings`, `development-clock-fixture`, `development-test-host` and `java-guest-diagnostic` expose explicit measurement/fixture/diagnostic surfaces, not extra application authority. The external profile requires its actual admission/compiler/OS owners; its name alone cannot supply them. In-process Wasmtime isolation does not claim resistance to arbitrary engine/host compromise. Native AOT cache validity remains separate from permission to start a new activation.
 
 ## Dependencies and build

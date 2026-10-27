@@ -1,7 +1,7 @@
 //! Fixed Store-local resources; no number can create or extend authority.
 use latent_capabilities::broker::{
     http::HttpError,
-    io::IoOutputChunk,
+    io::{IoOutputChunk, IoOutputCopy},
     streaming_http::{HttpBody, HttpUpload, StreamingHttpError as Error},
     CapabilitySession, SessionResourceTableReservation,
 };
@@ -191,7 +191,7 @@ impl Table {
         entry.state.store(0, Ordering::Release);
         Ok(())
     }
-    pub(super) fn chunk_bytes(&mut self, rep: u32) -> Result<Vec<u8>, Error> {
+    pub(super) fn chunk_bytes(&mut self, rep: u32) -> Result<IoOutputCopy, Error> {
         let Some(Value::Chunk { value, delivered }) = &mut self.entry(rep, Kind::Chunk)?.value
         else {
             return Err(Error::InvalidState);
@@ -199,8 +199,9 @@ impl Table {
         if *delivered {
             return Err(Error::InvalidState);
         }
+        let bytes = value.copy_bytes()?;
         *delivered = true;
-        Ok(value.bytes().to_vec())
+        Ok(bytes)
     }
     pub(super) fn trailers(&mut self, rep: u32) -> Result<Vec<super::wit::Header>, Error> {
         let Some(Value::Body {
