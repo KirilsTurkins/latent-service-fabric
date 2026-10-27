@@ -69,7 +69,8 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
         port = read_json(greeting / 'task-wait-port.json')
         require(port['profile'] == PROFILE and port['completion'] == 'actual-task-only'
                 and port['selection']['requiredDeclarations'] == sorted((
-                    'latent:clock/monotonic@0.1.0', 'latent:runtime/activation@0.1.0'))
+                    'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0',
+                    'latent:random/random@0.1.0', 'latent:runtime/activation@0.1.0'))
                 and len(port['nativeAotReferenceBinding']['responseFiles']) == 1,
                 'dotnet-published-tasks-final-corelib-binding')
         record['taskWaitPort'] = port
