@@ -471,7 +471,7 @@ def signed_node(native, artifact, output, commands, record):
             record['cases'].append({'tenant': tenant, 'mode': mode, 'invocation': row,
                 'originalCauseQualified': False if mode in (8, 9) else None,
                 'physical': sample(first, probe, activation, 2), 'providerIdle': provider_idle(client, target)})
-            write_json(output/'node-progress.json', record)
+            write_json(output/f"node-progress-{len(record['cases']):02d}.json", record)
         for tenant in TENANTS: delete_all(clients[tenant], [targets[tenant]['name']])
         record['finalPhysical'] = sample(first, probe, 'after-two-tenants', 0)
         clients['foreign'].node = None
