@@ -22,16 +22,11 @@ use latent_network::{canonical, NetworkError};
 use latent_policy::capability::{ResourceTarget, StreamEndpoint};
 use std::{
     future::Future,
-    io,
     net::SocketAddr,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
-use tokio::{
-    io::Interest,
-    net::{TcpSocket, TcpStream},
-    sync::Notify,
-};
+use tokio::{io::Interest, net::TcpSocket, sync::Notify};
 
 // One accepted readiness/DNS/connect future stays owned by the original IoCall.
 // Only its pinned authority is inspected periodically; network work is never

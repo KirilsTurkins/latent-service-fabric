@@ -30,7 +30,7 @@ pub(super) struct Tenant {
 }
 pub(in crate::broker) struct Request {
     owner: Weak<Inner>,
-    pub client: Arc<client::ClientCore>,
+    pub(super) client: Arc<client::ClientCore>,
     tenant: Arc<Tenant>,
     pub(super) sequence: u64,
     slot: usize,

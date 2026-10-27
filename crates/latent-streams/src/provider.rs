@@ -569,7 +569,7 @@ impl OutboundStreamInvoker for StreamProvider {
         let inner = Arc::clone(&self.inner);
         let prepared = session.prepare_io_future_with(
             move |(scope, client, admission): (
-                Arc<StreamScope>,
+                StreamScope,
                 Arc<ProviderClient<Socket>>,
                 PoolAdmission,
             )| {
