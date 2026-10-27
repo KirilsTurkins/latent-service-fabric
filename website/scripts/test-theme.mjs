@@ -205,8 +205,14 @@ try {
       for (const entry of [...inventory.outputs, ...inventory.maintained]) {
         const context = await browser.newContext({viewport: {width: 1440, height: 760}});
         const errors = [];
+        const illustrationFixtureUrl = `${prefix}/__lsf-theme-review__/`;
         await context.route('**/*', route => {
           if (new URL(route.request().url()).origin !== server.origin) { errors.push('External illustration dependency'); return route.abort(); }
+          if (route.request().url() === illustrationFixtureUrl) return route.fulfill({
+            status: 200,
+            contentType: 'text/html; charset=utf-8',
+            body: '<!doctype html><html><head><title>Illustration review</title></head><body></body></html>',
+          });
           return route.continue();
         });
         const page = await context.newPage();
@@ -242,7 +248,7 @@ try {
                 }
               }
             }
-            await page.goto('about:blank', {waitUntil: 'load', timeout: 15000});
+            assert.equal((await page.goto(illustrationFixtureUrl, {waitUntil: 'load', timeout: 15000})).status(), 200);
             await page.setContent(`<html><body style="margin:0"><img alt="${label} palette review" src="${prefix}${assetRoute(selected)}" style="display:block;width:100%;height:auto"></body></html>`);
             await waitForImage(page);
             await screenshot(page, `${variant}-${path.basename(entry.path, '.svg')}-${label}`);
@@ -259,7 +265,7 @@ try {
             await page.waitForURL(`${prefix}${assetRoute(asset)}`);
             await page.locator('svg').evaluate(element => { element.style.width = '2880px'; element.style.maxWidth = 'none'; });
             assert.ok((await page.locator('svg').boundingBox()).width >= 2880);
-            await page.goto('about:blank', {waitUntil: 'load', timeout: 15000});
+            assert.equal((await page.goto(illustrationFixtureUrl, {waitUntil: 'load', timeout: 15000})).status(), 200);
             await page.setContent(`<html><body style="margin:0;background:${palette.modes[mode].canvas}"><img alt="Presentation at twice its design width" src="${prefix}${assetRoute(asset)}" style="display:block;width:2880px;max-width:none;height:auto"></body></html>`);
             await waitForImage(page);
             assert.equal((await page.locator('img').boundingBox()).width, 2880);
