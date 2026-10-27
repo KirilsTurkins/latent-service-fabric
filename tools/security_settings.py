@@ -14,6 +14,7 @@ if __package__ in (None, ""):
 from tools.security_common import SecurityError, decode_json, require
 
 REPOSITORY = "KirilsTurkins/latent-service-fabric"
+DEPENDABOT_TARGET_BRANCH = "development"
 
 
 def request(endpoint: str, method: str = "GET", payload: dict | None = None) -> tuple[int, object]:
@@ -39,9 +40,10 @@ def require_success(endpoint: str, method: str = "GET", payload: dict | None = N
 def settings(enable: bool = False) -> dict:
     repository = require_success("")
     require(repository.get("permissions", {}).get("admin") is True, "settings-verification-needs-operator-admin")
+    security_updates_expected = repository["default_branch"] == DEPENDABOT_TARGET_BRANCH
     if enable:
         require_success("vulnerability-alerts", "PUT")
-        require_success("automated-security-fixes", "PUT")
+        require_success("automated-security-fixes", "PUT" if security_updates_expected else "DELETE")
         require_success("private-vulnerability-reporting", "PUT")
         require_success("", "PATCH", {"security_and_analysis": {
             "secret_scanning": {"status": "enabled"},
@@ -55,16 +57,22 @@ def settings(enable: bool = False) -> dict:
     scanning = require_success("code-scanning/default-setup")
     workflow_permissions = require_success("actions/permissions/workflow")
     default = repository["default_branch"]
+    security_updates_expected = default == DEPENDABOT_TARGET_BRANCH
     active, unused = request(f"contents/.github/workflows/security-baseline.yml?ref={default}")
     require(active in {200, 404}, "scheduled-definition-state-unavailable")
     protection = require_success("branches/development/protection/required_status_checks")
     services = repository["security_and_analysis"]
-    enabled = (alerts == 204 and updates.get("enabled") is True and updates.get("paused") is False
+    updates_match_policy = (updates.get("enabled") is security_updates_expected
+                            and (not security_updates_expected or updates.get("paused") is False))
+    enabled = (alerts == 204 and updates_match_policy
                and disclosure.get("enabled") is True
                and services.get("secret_scanning", {}).get("status") == "enabled"
                and services.get("secret_scanning_push_protection", {}).get("status") == "enabled")
     return {"schema": 1, "repository": REPOSITORY, "observed_at": datetime.now(timezone.utc).isoformat(),
             "settings_enabled": enabled, "default_branch": default, "vulnerability_alerts": alerts == 204,
+            "dependabot_target_branch": DEPENDABOT_TARGET_BRANCH,
+            "dependabot_security_updates_expected": security_updates_expected,
+            "dependabot_security_updates_match_policy": updates_match_policy,
             "security_and_analysis": services, "dependabot_security_updates": updates,
             "private_vulnerability_reporting": disclosure, "code_scanning_default_setup": scanning,
             "workflow_permissions": workflow_permissions, "scheduled_definition_on_default": active == 200,
@@ -74,7 +82,8 @@ def settings(enable: bool = False) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--enable", action="store_true", help="Explicitly enable supported monitoring/protection settings")
+    parser.add_argument("--enable", action="store_true",
+                        help="Apply development-only Dependabot policy and enable monitoring/protection settings")
     arguments = parser.parse_args()
     try:
         report = settings(arguments.enable)
