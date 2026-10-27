@@ -325,7 +325,7 @@ fn canonical_utf8_view_uses_same_store_for_all_encodings_and_exact_destinations(
         .unwrap()
         .write_into(&mut output)
         .unwrap();
-    assert_eq!(output, b"a\xc3\xa9\xf0\x9d\x84\x9e");
+    assert_eq!(&output, b"a\xc3\xa9\xf0\x9d\x84\x9e");
     // A view-only decode error occurs after a successful canonical call.
     // A result-Lift error instead skips pinned call_raw/post_return exit;
     // never require recovery or a second call in that terminal instance.
@@ -378,7 +378,7 @@ fn canonical_utf8_view_rejects_foreign_store_without_poisoning_original() {
         .unwrap()
         .write_into(&mut output)
         .unwrap();
-    assert_eq!(output, b"a\xc3\xa9\xf0\x9d\x84\x9e");
+    assert_eq!(&output, b"a\xc3\xa9\xf0\x9d\x84\x9e");
     let (fresh,) = function.call(&mut store, ()).unwrap();
     assert_eq!(fresh.utf8_view(&store).unwrap().len(), 7);
     println!("http-utf8-view wrong-store=refused original-store=fresh");

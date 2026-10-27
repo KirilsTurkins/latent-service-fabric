@@ -404,7 +404,7 @@ pub fn utf8_view_bytes() -> Vec<u8> {
     let mut exports = ComponentExportSection::new();
     for (index, (name, _, _, _)) in forms.iter().enumerate() {
         exports.export(
-            name,
+            *name,
             ComponentExportKind::Func,
             u32::try_from(index).unwrap(),
             None,
