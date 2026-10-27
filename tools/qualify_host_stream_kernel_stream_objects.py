@@ -90,22 +90,22 @@ CONSTRUCTOR_MMIO_SOURCE_PATHS = tuple(sorted((*POST_INIT_SOURCE_PATHS,
     'tools/host_stream_kernel_stream_constructor.py',
     'tools/host_stream_kernel_stream_vwindow.py',
     'research/standard-outbound/linux-6.12-lineage/stream-constructor-sources.json')))
-CONSTRUCTOR_MMIO_SOURCE_SHA = 'b0a2bec756df4bc5fad16aedf05319abea475ffe28403a4034003e5065d7df3f'
-CONSTRUCTOR_MMIO_SOURCE_BYTES = 825909
+CONSTRUCTOR_MMIO_SOURCE_SHA = '872aaaa96e9e6e19fd5a6333ab0f7c85d9b625991ef341f4babfab72666b9434'
+CONSTRUCTOR_MMIO_SOURCE_BYTES = 826518
 CONSTRUCTOR_MMIO_ADDED_LIMITS = {
     'tools/host_stream_kernel_stream_constructor.py':73498,
-    'tools/host_stream_kernel_stream_vwindow.py':35613,
+    'tools/host_stream_kernel_stream_vwindow.py':36222,
     'research/standard-outbound/linux-6.12-lineage/stream-constructor-sources.json':182209}
-CONSTRUCTOR_MMIO_LOGICAL_SHA = '9e8359968e9b48832199ec8ce420ee63980f41614cafca2342889930d7da98d0'
+CONSTRUCTOR_MMIO_LOGICAL_SHA = 'd82bc355e28a491a751cf80281acbed5faba12d3f5c82a9ce3bf947e8195e82a'
 CONSTRUCTOR_MMIO_BRANCH = 'test/sdk-738-constructor-mmio-objects-20261027'
 CONSTRUCTOR_MMIO_TARGETS = ('net/factory.o', 'drivers/base/dd.o', 'drivers/pci/bus.o', 'drivers/pci/pci-driver.o', 'drivers/pci/pci-sysfs.o', 'drivers/pci/pci.o', 'drivers/pci/proc.o', 'drivers/pci/iomap.o', 'drivers/virtio/virtio.o', 'drivers/virtio/virtio_pci_common.o', 'drivers/virtio/virtio_pci_modern_dev.o', 'drivers/net/virtio_net.o', 'kernel/resource.o', 'arch/x86/mm/pat/memtype.o', 'arch/x86/mm/pat/memtype_interval.o', 'arch/x86/mm/ioremap.o', 'mm/vmalloc.o', 'lib/kobject.o', 'lib/idr.o', 'lib/radix-tree.o', 'fs/proc/generic.o', 'fs/proc/inode.o')
 CONSTRUCTOR_MMIO_DERIVED = (
     ('constructor-admission',398,'f9820d0e9a9d9d0eedeb469c6fe03556ba25d09be91932da5b2b31ee255d5df9'),
     ('constructor-resource-pat',407,'6741a2f5cf10b1810dbe7d78d64cb65f326071a9fccdcf7fc0abbc4c5c1a02c6'),
-    ('constructor-vwindow',410,'f7480592da537d3bbdcfbd6e548fde1dfb80cce0f1ce71264363666d6af2a058'),
-    ('constructor-ancestors',414,'0fa3f660bfd62fdbb130a5f84ea7d4794c32a73b7e45b77a498ab02d97a0a133'),
-    ('constructor-leaf',417,'8954ac80417c4ea68feab4cd8fb1941cbc6bb03f88a94055f8fd7ef701567a5d'),
-    ('constructor-mmio',427,'3d7522635a49b39c69ca198376d4306e9b06854ac232fab7af43fac79b084e86'))
+    ('constructor-vwindow',410,'1f802d58d9912ee5e03ab4d7ecfd9279e6be4afe64dc6c28d8fda753ccd0a496'),
+    ('constructor-ancestors',414,'aec9bff62f308b66acd801067c55798b1adf0afed994317288d944b906337b11'),
+    ('constructor-leaf',417,'4df5a1974e6d0ba7f568d64962f02c57aac7b85b076ae7f3bd9e8407bb4013dc'),
+    ('constructor-mmio',427,'5bcbe30d529fc6bea791474f809516d0a5dbff2b1dcaaf1a3b87bf697a9a8b82'))
 
 CONFIG = {'bytes':143135, 'sha256':'0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6'}
 TARGETS = ('net/factory.o','net/socket.o','net/core/sock.o','net/ipv4/af_inet.o',

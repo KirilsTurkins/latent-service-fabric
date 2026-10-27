@@ -40,6 +40,16 @@ def _guard(original, condition, result):
         '    if ('+condition+') return'+result+';\n#endif\n'+original[at+1:]+'}\n'
 
 
+def _vmlist_scope(editor):
+    # Keep ONE actual native static object per selected/ordinary translation
+    # unit. Its original declaration is later than the early free guards.
+    declaration='static struct vm_struct *vmlist __initdata;\n'
+    include='#ifdef CONFIG_LSF_STREAM_FACTORY\n#include "lsf-stream-constructor-vwindow.c"\n#endif\n'
+    editor.edit(declaration,'#ifndef CONFIG_LSF_STREAM_FACTORY\n'+declaration+'#endif\n')
+    editor.edit(include,'#ifdef CONFIG_LSF_STREAM_FACTORY\n'+declaration+
+                '#include "lsf-stream-constructor-vwindow.c"\n#endif\n')
+
+
 def transform(outputs, kasan):
     constructor_sources()
     require(type(outputs) is dict and len(outputs) == 407 and
@@ -92,6 +102,7 @@ def transform(outputs, kasan):
     # Editor checks the complete TU inverse. The actual native registration,
     # insertion and free-space generation still execute in their original order.
     editor.edit(original,changed)
+    _vmlist_scope(editor)
     result['mm/vmalloc.c']=editor.finish().encode()
     require('include/linux/kasan.h' not in outputs,'vwindow-new-kasan-input')
     result['include/linux/kasan.h']=kasan
@@ -105,7 +116,7 @@ def transform(outputs, kasan):
 
 # Separately frozen static-ancestor increment. The original reservation stage
 # above remains reconstructible byte-for-byte; no historical tuple is retagged.
-ANCESTOR_INPUT_SHA = 'f7480592da537d3bbdcfbd6e548fde1dfb80cce0f1ce71264363666d6af2a058'
+ANCESTOR_INPUT_SHA = '1f802d58d9912ee5e03ab4d7ecfd9279e6be4afe64dc6c28d8fda753ccd0a496'
 ANCESTOR_PRIMARY = {'arch/x86/include/asm/pgalloc.h': (5317, '4aab1f7de117aed2aadb1886f5b9f37b96818518dbb418763fe4afa4de9b2035'), 'include/asm-generic/pgalloc.h': (6160, '08c4b5d8812e8fd5258e40c1a50cf9f413283718e686224f2353ea940339bf57'), 'arch/x86/include/asm/pgtable_64_types.h': (6561, '7531b815a6df7664de41db97a4809b466d296bf5e66b5dd0819c401f1ac9692f'), 'init/main.c': (38923, '3c40fe882bf9d1a69b0c9972986b73b78a90c4a601c9ac0b08c9551ac505d1c5'), 'mm/mm_init.c': (77294, 'b44fc9b12eb948b588d5455fb43baf71cd4406bb2213d14402c6123457d206f3'), 'mm/init-mm.c': (1809, '51033efd18a50551f46632c9aff94dfad1cc1cb6c89c62f1d5801bfb62c613d7'), 'arch/x86/mm/pgtable.c': (23018, '76c0285ddb4b9735886cb3dc5235a8962717173724c5a46e9ee8d06a3d4ca7ba'), 'mm/memory.c': (196705, '134b138551e90a3ce3a4d9f79391d11fdec7d2d79dd34a9eca2739a2eea8c64f')}
 ANCESTOR_PREIMAGES = {'mm/lsf-stream-constructor-vwindow.c': (3106, '0ef4911f9c2359a680d162d76c708df590598198f455e29350949aabae36df75'), 'net/factory.c': (37684, '9e43c389c09082c55b8b7b16f965ac8e6e17f48bba6382b37a6c9269b5ff3c26'), 'net/factory-cleanup-observer.c': (3208, 'd945e5440fecbf32ab66e17d51f3f5e6b152176797e8649edbff70dd6fefe833')}
 ANCESTOR_BODIES = {'mm/lsf-stream-constructor-vwindow.c::static void __init lsf_stream_vwindow_register(': (964, 'c567adb024da144d785e71cbea21b1285b4ca58ff877c7d4ebb6ec02d0725603'), 'mm/lsf-stream-constructor-vwindow.c::int lsf_prepaid_stream_vwindow_static_geometry(': (313, '2d07e4e14cbc2bc41949d2b9d5ee4887b7c73b7958ba8ac0ab3b3ae5e32ef9e4'), 'net/factory-cleanup-observer.c::static int lsf_cleanup_bootstrap_fits(': (500, '82af88e8d247cf16f9c13571aa6ce82d968edba7c54f9435cf317427747808bd')}
@@ -188,7 +199,7 @@ def ancestor_transform(outputs, primary):
 
 # Actual Root-bank PTE attachment/retirement; intentionally separate from the
 # frozen static ancestor source. Full MMIO view/caller integration is later.
-LEAF_INPUT_SHA = '0fa3f660bfd62fdbb130a5f84ea7d4794c32a73b7e45b77a498ab02d97a0a133'
+LEAF_INPUT_SHA = 'aec9bff62f308b66acd801067c55798b1adf0afed994317288d944b906337b11'
 LEAF_PREIMAGES = {'net/factory-stream-rx-preallocate.c': (46747, 'bc7e0042c3e730cec7e20219e35a39ae3f48b9464680409c72620c6947bcaa05'), 'net/device-prepaid.h': (19044, 'c1589dac76fd18b809bb895b73887cb6e3074a548fac4ce9958a9d8a6fc964bf'), 'net/factory.c': (37768, '61838947efcbcfc88aac08f293daa39e1fe15b35cb52822629d5c6492d8e198d'), 'drivers/pci/bus.c': (13188, '4c6ccb0c196dbb7c733b85f838456d634e799b39844691c33802899864f77f30'), 'net/factory-stream-stop.c': (6416, '0f8be0b7c85fb11cdeb725da7c00047642b567031e8ca1c716f7bb1b31c37596'), 'net/factory-stream-root-final-free.c': (14013, '8755c6b9c5102a6b5549d33e45a4ca8d699b5cb78812c67ceeea88363eb7e41d'), 'mm/lsf-stream-constructor-vwindow.c': (2543, '984507b151a7b7374750cc723efc720a982dacc31f0478a91d4cf53581eca836')}
 LEAF_BODIES = {'drivers/pci/bus.c::void pci_bus_add_device(': (1382, 'c563a688f0ded7d51192c1821d1268c1b82c91771d4aa2f49ff4f7edbe3accc6'), 'net/factory-stream-stop.c::static int lsf_factory_stream_stop(': (3545, '3843c093bd0b4743a036d0f69c565937f71dfa332ec1a361cc2f42d38b790cb8'), 'net/factory-stream-root-final-free.c::static int lsf_stream_root_closed_locked(': (3092, 'd3451a19a474c9d9571113f9a7c0a2cec1e15e4ab858a826697d3c68399d1cdb')}
 LEAF_FILES = {
@@ -264,7 +275,7 @@ def leaf_transform(outputs):
 
 # Closed protected MMIO increment, after the separately frozen Root-leaf stage.
 # No old definition/tuple is retagged. This stage remains unselected source.
-MMIO_INPUT_SHA = '8954ac80417c4ea68feab4cd8fb1941cbc6bb03f88a94055f8fd7ef701567a5d'
+MMIO_INPUT_SHA = '4df5a1974e6d0ba7f568d64962f02c57aac7b85b076ae7f3bd9e8407bb4013dc'
 MMIO_PRIMARY = {'arch/x86/mm/ioremap.c': (25575, 'f1aaca82ffe0ae49cda91949eca5cf812686fcef76e545f8c866cd2910c4ff22'), 'drivers/pci/iomap.c': (6398, '5d6f0ebaa4d44587bbb0587b7f84454c99dbc6ce8e25f5fca4e75826ae0a3578'), 'drivers/virtio/virtio_pci_modern_dev.c': (22423, 'f13ee888d9f2d8207c714714a6497c7b44c07206b573989c572090c1e1aabc47'), 'include/linux/kmsan.h': (11793, '95dec7df4903a40aab86c3bb6a56eb5f72a0796f180d8a463ebbfb7afabe0f5e'), 'arch/x86/include/asm/vmalloc.h': (560, 'ded5d5eee94255a94a6e2bc9bcea720b29c668572704ee153c760297828a0173')}
 MMIO_PREIMAGES = {'net/device-prepaid.h': (19132, '698186a8da2fa0c3905fc38d4a20362280c1db3afb1a4e8c07d9ad393c0d7bc3'), 'net/factory.c': (37852, '0d921cdfd4bc88c39300d15b14a7b50af2bdea12dbed009d421aab7a00e702ba'), 'net/factory-stream-rx-preallocate.c': (46859, 'd8fbc0ddec1ab68abb2026d5e2959f9160d8913ec7ab1b33299abfc0b0743c45'), 'mm/lsf-stream-constructor-vwindow.c': (2592, 'ac7c8f0eda8c7b89f18c86849b8899801ddb2cc9820b0edb1e25fa138a15a5e2'), 'drivers/virtio/virtio_pci_common.c': (27085, '3009396403ba596c637f6a87ae085a072a26e4ca367a0944571e5d28164cf580')}
 MMIO_BODIES = {'arch/x86/mm/ioremap.c::static void __iomem *\n__ioremap_caller(': (3663, '1bf5888e8b4ced4af180ab4e53b4a6103d33762efbe160103184ee33e53f2466'), 'arch/x86/mm/ioremap.c::void __iomem *ioremap(': (512, '4e228d80cc7e503b208ff81ea7dd56a1e2e551f58d9cc62c6564e3c430ddf654'), 'arch/x86/mm/ioremap.c::void iounmap(': (1457, '15c1662a68e5ce4fd703f77cf652c419e0efec5fed485e86d9fcde32bcf54967'), 'drivers/pci/iomap.c::void __iomem *pci_iomap_range(': (635, '80e55856ab321b2fd347dc8f55db2221a0d8f8c2033ac25ed5eee28df7fb54fc'), 'drivers/virtio/virtio_pci_modern_dev.c::int vp_modern_probe(': (4421, '5c69bde310a5a7957a216594177035c2ac51588fdbd8cb3a52c0064b19324380'), 'drivers/virtio/virtio_pci_modern_dev.c::void vp_modern_remove(': (362, 'f52efaffe46dd42ae8d05ad52c3703bff2afd3860906c102f5da1182b68412af'), 'drivers/virtio/virtio_pci_common.c::static void virtio_pci_remove(': (598, '10f1c2b0a2e2092a6f2482d34def0912896cb550475830d19bcd4011a174603e')}
