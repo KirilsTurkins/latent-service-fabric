@@ -346,12 +346,14 @@ pub enum DevelopmentJoinRejectReason {
 pub(crate) enum DevelopmentHostAdmissionEdge {
     Bind,
     ClockAdmission,
+    RuntimeSynchronous,
 }
 impl DevelopmentHostAdmissionEdge {
     pub(crate) fn wire_name(self) -> &'static str {
         match self {
             Self::Bind => "bind",
             Self::ClockAdmission => "clock-admission",
+            Self::RuntimeSynchronous => "runtime-synchronous",
         }
     }
 }

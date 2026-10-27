@@ -129,7 +129,7 @@ impl HostCapabilities {
         Ok(Some(call))
     }
     #[cfg(feature = "development-test-host")]
-    fn observe_host_admission_refusal(
+    pub(super) fn observe_host_admission_refusal(
         &self,
         session: &CapabilitySession,
         edge: crate::development_trap_observer::DevelopmentHostAdmissionEdge,
