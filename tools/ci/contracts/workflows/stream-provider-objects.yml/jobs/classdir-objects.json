@@ -1,172 +1,188 @@
 {
-  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
-  "before": {},
-  "coverage": {},
-  "definition": {
-    "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027'",
-    "name": "Changed class-directory translation units without image or boot",
-    "runs-on": "ubuntu-24.04",
-    "steps": [
-      {
-        "uses": "KirilsTurkins/lsf-checkout",
-        "with": {
-          "fetch-depth": 16,
-          "persist-credentials": false
-        }
-      },
-      {
-        "uses": "KirilsTurkins/lsf-setup-python",
-        "with": {
-          "python-version": "3.13.5"
-        }
-      },
-      {
-        "uses": "dtolnay/rust-toolchain"
-      },
-      {
-        "name": "Capture the original bounded object owner start",
-        "run": "python3 -c 'import time; print(\"STREAM_OBJECT_STARTED=\" + str(time.monotonic()))' >> \"$GITHUB_ENV\"\n"
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026'",
-        "name": "Check only the new fixed classdir source and object-allowlist controls",
-        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets -v"
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026'",
-        "name": "Compile only four changed class-directory translation units",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026'",
-        "name": "Check only the two new empty-classdir source and nine-target controls",
-        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels -v"
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026'",
-        "name": "Compile only nine changed empty-classdir translation units",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir-kernfs --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'",
-        "name": "Check only two NETDEV directory source and admission controls",
-        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets -v"
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'",
-        "name": "Compile only nine changed NETDEV own-directory translation units",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-directory --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026'",
-        "name": "Check only two readonly layout source and ELF controls",
-        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_layout_source_freeze_preserves_notify_and_all_prior_modes tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_layout_elf_refuses_malformed_tables_and_reports_only_incomplete_lower_bound -v"
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026'",
-        "name": "Compile eleven fixed allocating and notify translation units with readonly data",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-layout --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026'",
-        "name": "Check only the new POST_INIT source and eight-target boundary controls",
-        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_post_init_projection_keeps_whole_ordinary_body_and_original_unwind tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_post_init_instances_are_bound_before_next_and_both_chains_preflight tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_post_init_owner_keeps_exact_eight_targets_and_denies_size_probe_union -v"
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026'",
-        "name": "Compile only eight actual changed POST_INIT translation units",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-post-init --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027'",
-        "name": "Check only new constructor bundle and closed22-target controls",
-        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_constructor_bundle_physical_sources_and_logical_origins_are_closed tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_constructor_mmio_owner_keeps_only_twenty_two_changed_targets_and_stage_union -v"
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027'",
-        "name": "Compile only22 changed cumulative constructor and MMIO translation units",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --constructor-mmio --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027'",
-        "name": "Check only the new VP owner cold-source and mode control",
-        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.VpTransportOwner.test_vp_owner_cold_materials_exact_mode_and_public_stage -v"
-      },
-      {
-        "if": "github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027'",
-        "name": "Compile exactly22 cumulative VP bookkeeping translation units",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --vp-transport --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "id": "admission",
-        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' }}",
-        "name": "Admit the fixed bounded public union before any upload",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "id": "kernfs_admission",
-        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' }}",
-        "name": "Admit only the nine-target empty-classdir public union",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir-kernfs --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "id": "directory_admission",
-        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' }}",
-        "name": "Admit only the nine-target NETDEV directory public union",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-directory --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "id": "layout_admission",
-        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026' }}",
-        "name": "Admit only the eleven-target readonly-layout public union",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-layout --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "id": "post_init_admission",
-        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026' }}",
-        "name": "Admit only the eight-target POST_INIT public union",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-post-init --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "id": "constructor_mmio_admission",
-        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027' }}",
-        "name": "Admit only the22-target constructor MMIO public union",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --constructor-mmio --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "id": "vp_admission",
-        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027' }}",
-        "name": "Admit only the22-target VP bookkeeping public union",
-        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --vp-transport --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
-      },
-      {
-        "if": "${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true' || steps.layout_admission.outputs.admitted == 'true' || steps.post_init_admission.outputs.admitted == 'true' || steps.constructor_mmio_admission.outputs.admitted == 'true' || steps.vp_admission.outputs.admitted == 'true') }}",
-        "name": "Retain only admitted object evidence",
-        "uses": "KirilsTurkins/lsf-upload-artifact",
-        "with": {
-          "if-no-files-found": "error",
-          "name": "protected-stream-classdir-objects-${{ github.sha }}",
-          "path": "${{ runner.temp }}/stream-provider-classdir-objects/receipt.json\n${{ runner.temp }}/stream-provider-classdir-objects/layout.json\n${{ runner.temp }}/stream-provider-classdir-objects/source-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/derived-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/baseline-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/commands.json\n${{ runner.temp }}/stream-provider-classdir-objects/baseline.config\n${{ runner.temp }}/stream-provider-classdir-objects/selected.config\n${{ runner.temp }}/stream-provider-classdir-objects/generated-autoconf.h\n${{ runner.temp }}/stream-provider-classdir-objects/ADMISSION.json\n${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stdout.txt\n${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stderr.txt\n${{ runner.temp }}/stream-provider-classdir-objects/objects/**/*.o\n",
-          "retention-days": 7
-        }
-      },
-      {
-        "if": "${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true' || steps.layout_admission.outputs.fallback == 'true' || steps.post_init_admission.outputs.fallback == 'true' || steps.constructor_mmio_admission.outputs.fallback == 'true' || steps.vp_admission.outputs.fallback == 'true') }}",
-        "name": "Retain only the bounded admission-failure receipt",
-        "uses": "KirilsTurkins/lsf-upload-artifact",
-        "with": {
-          "if-no-files-found": "error",
-          "name": "protected-stream-classdir-objects-FAILED-${{ github.sha }}",
-          "path": "${{ runner.temp }}/stream-provider-classdir-objects/FAILED.json",
-          "retention-days": 7
-        }
-      }
-    ],
-    "timeout-minutes": 25
-  },
-  "jobId": "classdir-objects",
-  "kind": "job",
-  "reviewReason": "Reviewed closed VP67-physical/94-logical/430-derived compile-only mode, same22 targets and all historical modes/config/process/public limits.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/stream-provider-objects.yml"
+"baselineRevision":"50f003dd006e0786494936c49e55dc683cf26fd6",
+"before":{},
+"coverage":{},
+"definition":{
+"if":"github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-msi-context-objects-20261027'",
+"name":"Changed class-directory translation units without image or boot",
+"runs-on":"ubuntu-24.04",
+"timeout-minutes":25,
+"steps":[
+{
+"uses":"KirilsTurkins/lsf-checkout",
+"with":{
+"fetch-depth":16,
+"persist-credentials":false
+}
+},
+{
+"uses":"KirilsTurkins/lsf-setup-python",
+"with":{
+"python-version":"3.13.5"
+}
+},
+{
+"uses":"dtolnay/rust-toolchain"
+},
+{
+"name":"Capture the original bounded object owner start",
+"run":"python3 -c 'import time; print(\"STREAM_OBJECT_STARTED=\" + str(time.monotonic()))' >> \"$GITHUB_ENV\"\n"
+},
+{
+"name":"Check only the new fixed classdir source and object-allowlist controls",
+"if":"github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026'",
+"run":"python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets -v"
+},
+{
+"name":"Compile only four changed class-directory translation units",
+"if":"github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026'",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Check only the two new empty-classdir source and nine-target controls",
+"if":"github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026'",
+"run":"python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels -v"
+},
+{
+"name":"Compile only nine changed empty-classdir translation units",
+"if":"github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026'",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir-kernfs --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Check only two NETDEV directory source and admission controls",
+"if":"github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'",
+"run":"python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets -v"
+},
+{
+"name":"Compile only nine changed NETDEV own-directory translation units",
+"if":"github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026'",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-directory --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Check only two readonly layout source and ELF controls",
+"if":"github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026'",
+"run":"python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_layout_source_freeze_preserves_notify_and_all_prior_modes tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_layout_elf_refuses_malformed_tables_and_reports_only_incomplete_lower_bound -v"
+},
+{
+"name":"Compile eleven fixed allocating and notify translation units with readonly data",
+"if":"github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026'",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-layout --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Check only the new POST_INIT source and eight-target boundary controls",
+"if":"github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026'",
+"run":"python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_post_init_projection_keeps_whole_ordinary_body_and_original_unwind tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_post_init_instances_are_bound_before_next_and_both_chains_preflight tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_post_init_owner_keeps_exact_eight_targets_and_denies_size_probe_union -v"
+},
+{
+"name":"Compile only eight actual changed POST_INIT translation units",
+"if":"github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026'",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-post-init --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Check only new constructor bundle and closed22-target controls",
+"if":"github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027'",
+"run":"python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_constructor_bundle_physical_sources_and_logical_origins_are_closed tools.tests.test_host_stream_kernel_stream_objects.StreamObjectOwner.test_constructor_mmio_owner_keeps_only_twenty_two_changed_targets_and_stage_union -v"
+},
+{
+"name":"Compile only22 changed cumulative constructor and MMIO translation units",
+"if":"github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027'",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --constructor-mmio --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Check only the new VP owner cold-source and mode control",
+"if":"github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027'",
+"run":"python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.VpTransportOwner.test_vp_owner_cold_materials_exact_mode_and_public_stage -v"
+},
+{
+"name":"Compile exactly22 cumulative VP bookkeeping translation units",
+"if":"github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027'",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --vp-transport --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Check only the new MSI source and six-target owner selector",
+"if":"github.ref == 'refs/heads/test/sdk-738-msi-context-objects-20261027'",
+"run":"python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.MsiContextOwner.test_msi_owner_has_exact_sources_targets_and_closed_union -v"
+},
+{
+"name":"Compile exactly six actual MSI context and group translation units",
+"if":"github.ref == 'refs/heads/test/sdk-738-msi-context-objects-20261027'",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --msi-context --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Admit the fixed bounded public union before any upload",
+"id":"admission",
+"if":"${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' }}",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Admit only the nine-target empty-classdir public union",
+"id":"kernfs_admission",
+"if":"${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' }}",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --classdir-kernfs --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Admit only the nine-target NETDEV directory public union",
+"id":"directory_admission",
+"if":"${{ always() && github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' }}",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-directory --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Admit only the eleven-target readonly-layout public union",
+"id":"layout_admission",
+"if":"${{ always() && github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026' }}",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-layout --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Admit only the eight-target POST_INIT public union",
+"id":"post_init_admission",
+"if":"${{ always() && github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026' }}",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --netdev-post-init --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Admit only the22-target constructor MMIO public union",
+"id":"constructor_mmio_admission",
+"if":"${{ always() && github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027' }}",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --constructor-mmio --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Admit only the22-target VP bookkeeping public union",
+"id":"vp_admission",
+"if":"${{ always() && github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027' }}",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --vp-transport --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Admit only the six-target MSI context public union",
+"id":"msi_admission",
+"if":"${{ always() && github.ref == 'refs/heads/test/sdk-738-msi-context-objects-20261027' }}",
+"run":"python3 -B tools/qualify_host_stream_kernel_stream_objects.py --msi-context --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+},
+{
+"name":"Retain only admitted object evidence",
+"if":"${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true' || steps.layout_admission.outputs.admitted == 'true' || steps.post_init_admission.outputs.admitted == 'true' || steps.constructor_mmio_admission.outputs.admitted == 'true' || steps.vp_admission.outputs.admitted == 'true' || steps.msi_admission.outputs.admitted == 'true') }}",
+"uses":"KirilsTurkins/lsf-upload-artifact",
+"with":{
+"name":"protected-stream-classdir-objects-${{ github.sha }}",
+"retention-days":7,
+"if-no-files-found":"error",
+"path":"${{ runner.temp }}/stream-provider-classdir-objects/receipt.json\n${{ runner.temp }}/stream-provider-classdir-objects/layout.json\n${{ runner.temp }}/stream-provider-classdir-objects/source-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/derived-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/baseline-inputs.json\n${{ runner.temp }}/stream-provider-classdir-objects/commands.json\n${{ runner.temp }}/stream-provider-classdir-objects/baseline.config\n${{ runner.temp }}/stream-provider-classdir-objects/selected.config\n${{ runner.temp }}/stream-provider-classdir-objects/generated-autoconf.h\n${{ runner.temp }}/stream-provider-classdir-objects/ADMISSION.json\n${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stdout.txt\n${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stderr.txt\n${{ runner.temp }}/stream-provider-classdir-objects/objects/**/*.o\n"
+}
+},
+{
+"name":"Retain only the bounded admission-failure receipt",
+"if":"${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true' || steps.layout_admission.outputs.fallback == 'true' || steps.post_init_admission.outputs.fallback == 'true' || steps.constructor_mmio_admission.outputs.fallback == 'true' || steps.vp_admission.outputs.fallback == 'true' || steps.msi_admission.outputs.fallback == 'true') }}",
+"uses":"KirilsTurkins/lsf-upload-artifact",
+"with":{
+"name":"protected-stream-classdir-objects-FAILED-${{ github.sha }}",
+"retention-days":7,
+"if-no-files-found":"error",
+"path":"${{ runner.temp }}/stream-provider-classdir-objects/FAILED.json"
+}
+}
+]
+},
+"jobId":"classdir-objects",
+"kind":"job",
+"reviewReason":"Reviewed closed MSI69/100/439 mode, six actual native TUs, original1320/1200/j2 and71-member public path; all old commands and guards retained.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/stream-provider-objects.yml"
 }
