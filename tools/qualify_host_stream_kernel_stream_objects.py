@@ -362,6 +362,7 @@ def constructor_materials(root):
     physical=selected_sources(root,constructor_mmio=True)
     # Pin actual current code BEFORE importing the new reader. The physical
     # freeze above is external to that reader's own identity computation.
+    sys.path.insert(0,str(root))
     from tools import host_stream_kernel_stream_constructor as constructor
     require(Path(constructor.__file__).resolve()==(root/'tools/host_stream_kernel_stream_constructor.py').resolve(),
             'constructor-current-reader-origin')

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_stream_objects.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed fixed65-physical/90-logical/427-derived constructor MMIO22-object source check, unchanged config/process/public bounds and all historical modes; add only two pure reader/mode controls.",
+  "reviewReason": "Direct-script constructor material reader adds only the fixed verified repository root to its import path after the65-physical cryptographic freeze; historical modes, source tuple, process and public bounds unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1907d49ab737849a2aa620cdd78d91ec3b72b1bbf52fcadb93dfc90ad1c9bf0c"
+  "sha256": "4b8db972560f47c31b6d3370c733449642ad7bb5de245a96f7eae12aee95d7db"
 }
