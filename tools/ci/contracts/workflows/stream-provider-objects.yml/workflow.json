@@ -18,7 +18,8 @@
           "test/sdk-738-constructor-mmio-objects-20261027",
           "test/sdk-738-vp-transport-objects-20261027",
           "test/sdk-738-msi-context-objects-20261027",
-          "test/sdk-738-q35-msi-domain-objects-20261027"
+          "test/sdk-738-q35-msi-domain-objects-20261027",
+          "test/sdk-738-msi-descriptor-objects-20261027"
         ]
       }
     },
@@ -30,7 +31,7 @@
     "classdir-objects",
     "normal-objects"
   ],
-  "reviewReason": "Add only the closed Q35 seven-object branch; preserve every existing trigger, job, action pin and bound.",
+  "reviewReason": "Add only the closed MSI descriptor push branch; preserve all historical branches, permissions, concurrency, pinned actions and deadlines.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }
