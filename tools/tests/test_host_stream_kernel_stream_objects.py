@@ -397,4 +397,75 @@ class StreamObjectOwner(unittest.TestCase):
             with self.assertRaises(ValueError):owner.admit(output,netdev_post_init=True)
 
 
+    def test_constructor_bundle_physical_sources_and_logical_origins_are_closed(self):
+        from tools import host_stream_kernel_stream_constructor as constructor
+        current=owner.selected_sources(owner.ROOT,constructor_mmio=True)
+        materials=owner.constructor_materials(owner.ROOT)
+        self.assertEqual(len(current),65)
+        self.assertEqual(materials['physicalInputs'],current)
+        self.assertEqual(len(materials['logicalIdentities']),90)
+        self.assertEqual(set(materials['logicalOrigins']),set(materials['logicalIdentities']))
+        self.assertEqual(set(current),set(owner.POST_INIT_SOURCE_PATHS)|set(owner.CONSTRUCTOR_MMIO_ADDED_LIMITS))
+        logical=constructor.constructor_sources()
+        self.assertEqual(len(logical),26)
+        for ordinal,(name,kind,length,sha) in enumerate(constructor.CONSTRUCTOR_BUNDLE_ROWS):
+            self.assertNotIn(name,current)
+            self.assertEqual(owner.identity(logical[name]),{'bytes':length,'sha256':sha})
+            self.assertEqual(materials['logicalOrigins'][name],{
+                'kind':'utf8-source-bundle','path':constructor.CONSTRUCTOR_BUNDLE,
+                'ordinal':ordinal,'sourceType':kind})
+        for name in owner.POST_INIT_SOURCE_PATHS:
+            self.assertEqual(materials['logicalOrigins'][name],{'kind':'physical-file','path':name})
+        raw=(owner.ROOT/constructor.CONSTRUCTOR_BUNDLE).read_bytes()
+        # The real frozen whole-container pin stays in force: no test swaps a
+        # pin to fabricate an accepted modified row or guessed C preimage.
+        malformed=[raw[:-1],raw+b' ',b'\xff'+raw[1:],raw.replace(b'"type":"c"',b'"type":"h"',1)]
+        model=json.loads(raw);model['sources'][1]=model['sources'][0]
+        malformed.append((json.dumps(model,separators=(',',':'))+'\n').encode())
+        for candidate in malformed:
+            with self.subTest(bytes=len(candidate)),self.assertRaises(ValueError):
+                constructor._constructor_decode(candidate)
+        for name in ('../outside.c','unknown.c','factory-stream-mmio.c/child','x\\y.c'):
+            with self.subTest(name=name),self.assertRaises(ValueError):constructor._constructor_source(name)
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            for name in owner.CONSTRUCTOR_MMIO_SOURCE_PATHS:
+                q=root/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes((owner.ROOT/name).read_bytes())
+            self.assertEqual(owner.selected_sources(root,constructor_mmio=True),current)
+            bundle=root/constructor.CONSTRUCTOR_BUNDLE;bundle.write_bytes(raw+b'\n')
+            with self.assertRaises(ValueError):owner.selected_sources(root,constructor_mmio=True)
+
+    def test_constructor_mmio_owner_keeps_only_twenty_two_changed_targets_and_stage_union(self):
+        expected=('net/factory.o','drivers/base/dd.o','drivers/pci/bus.o','drivers/pci/pci-driver.o',
+            'drivers/pci/pci-sysfs.o','drivers/pci/pci.o','drivers/pci/proc.o','drivers/pci/iomap.o',
+            'drivers/virtio/virtio.o','drivers/virtio/virtio_pci_common.o',
+            'drivers/virtio/virtio_pci_modern_dev.o','drivers/net/virtio_net.o','kernel/resource.o',
+            'arch/x86/mm/pat/memtype.o','arch/x86/mm/pat/memtype_interval.o','arch/x86/mm/ioremap.o',
+            'mm/vmalloc.o','lib/kobject.o','lib/idr.o','lib/radix-tree.o','fs/proc/generic.o','fs/proc/inode.o')
+        self.assertEqual(owner.mode_targets(constructor_mmio=True),expected)
+        for name in expected:
+            self.assertEqual(owner.public_allowed('objects/'+name,constructor_mmio=True),owner.MAX_OBJECT)
+        for old in ('classdir','classdir_kernfs','netdev_directory','netdev_layout','netdev_post_init'):
+            with self.subTest(mode=old),self.assertRaises(ValueError):
+                owner.mode_targets(constructor_mmio=True,**{old:True})
+        with self.assertRaises(ValueError):owner.mode_targets(constructor_mmio=1)
+        for name in ('layout.json','objects/net/socket.o','objects/drivers/virtio/virtio_ring.o',
+            'objects/drivers/base/core.o','source-tree.tar','private/key'):
+            self.assertIsNone(owner.public_allowed(name,constructor_mmio=True))
+        for old in ('eighteen-objects','classdir-objects','classdir-kernfs-objects',
+            'netdev-directory-objects','netdev-layout-objects','netdev-post-init-objects'):
+            self.assertIsNone(owner.public_allowed('logs/00-'+old+'.stdout.txt',constructor_mmio=True))
+        self.assertIsNotNone(owner.public_allowed('logs/00-baseline-fetch.stdout.txt',constructor_mmio=True))
+        self.assertIsNotNone(owner.public_allowed('logs/31-constructor-mmio-objects.stderr.txt',constructor_mmio=True))
+        self.assertIsNone(owner.public_allowed('logs/32-constructor-mmio-objects.stderr.txt',constructor_mmio=True))
+        self.assertEqual([row[1] for row in owner.CONSTRUCTOR_MMIO_DERIVED],[398,407,410,414,417,427])
+        with self.assertRaises(ValueError):owner.constructor_compose({},Path('not-a-kernel-tree'))
+        with tempfile.TemporaryDirectory() as directory:
+            output=Path(directory)
+            (output/'receipt.json').write_bytes(b'{"status":"failed","stage":"constructor-mmio-objects"}\n')
+            self.assertEqual(set(owner.admit(output,constructor_mmio=True)['files']),{'receipt.json'})
+            q=output/'objects/net/socket.o';q.parent.mkdir(parents=True);q.write_bytes(b'not-a-product')
+            with self.assertRaises(ValueError):owner.admit(output,constructor_mmio=True)
+
+
 if __name__=='__main__':unittest.main()

@@ -341,7 +341,8 @@ def _stored_zip_preflight(archive, limits, expected_files, revision, cancellatio
             _zip_require(len(actual_files) <= limits.max_entries and size <= limits.max_file_bytes,
                          "file count or byte limit exceeded")
             total += size
-            _zip_require(total <= limits.max_total_bytes, "source total byte limit exceeded")
+            if total > limits.max_total_bytes:
+                raise SnapshotError("captured source total limit exceeded")
             mode = 0o755 if expected_files[name] == "100755" else 0o644
 
         creator_system = creator >> 8
