@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-msi-context-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-q35-msi-domain-objects-20261027'",
+    "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-msi-context-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-q35-msi-domain-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-msi-descriptor-objects-20261027'",
     "name": "Changed class-directory translation units without image or boot",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -118,6 +118,16 @@
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --q35-msi-domain --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
+        "if": "github.ref == 'refs/heads/test/sdk-738-msi-descriptor-objects-20261027'",
+        "name": "Check only five new MSI descriptor source and owner controls",
+        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.MsiDescriptorSource.test_captured_inventory_and_native_preload_refusal tools.tests.test_host_stream_kernel_stream_objects.MsiDescriptorSource.test_native_node_clones_have_exact_whole_body_inverses tools.tests.test_host_stream_kernel_stream_objects.MsiDescriptorSource.test_same_operation_marker_and_current_attempt_cleanup tools.tests.test_host_stream_kernel_stream_objects.MsiDescriptorSource.test_aggregate_admission_and_real_irq_cut tools.tests.test_host_stream_kernel_stream_objects.MsiDescriptorOwner.test_closed_targets_materials_and_public_union -v"
+      },
+      {
+        "if": "github.ref == 'refs/heads/test/sdk-738-msi-descriptor-objects-20261027'",
+        "name": "Compile six actual MSI descriptor and XArray objects",
+        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --msi-descriptor --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+      },
+      {
         "id": "admission",
         "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' }}",
         "name": "Admit the fixed bounded public union before any upload",
@@ -172,7 +182,13 @@
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --q35-msi-domain --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "if": "${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true' || steps.layout_admission.outputs.admitted == 'true' || steps.post_init_admission.outputs.admitted == 'true' || steps.constructor_mmio_admission.outputs.admitted == 'true' || steps.vp_admission.outputs.admitted == 'true' || steps.msi_admission.outputs.admitted == 'true' || steps.q35_admission.outputs.admitted == 'true') }}",
+        "id": "msi_descriptor_admission",
+        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-msi-descriptor-objects-20261027' }}",
+        "name": "Admit only the six-target MSI descriptor public union",
+        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --msi-descriptor --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+      },
+      {
+        "if": "${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true' || steps.layout_admission.outputs.admitted == 'true' || steps.post_init_admission.outputs.admitted == 'true' || steps.constructor_mmio_admission.outputs.admitted == 'true' || steps.vp_admission.outputs.admitted == 'true' || steps.msi_admission.outputs.admitted == 'true' || steps.q35_admission.outputs.admitted == 'true' || steps.msi_descriptor_admission.outputs.admitted == 'true') }}",
         "name": "Retain only admitted object evidence",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
@@ -183,7 +199,7 @@
         }
       },
       {
-        "if": "${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true' || steps.layout_admission.outputs.fallback == 'true' || steps.post_init_admission.outputs.fallback == 'true' || steps.constructor_mmio_admission.outputs.fallback == 'true' || steps.vp_admission.outputs.fallback == 'true' || steps.msi_admission.outputs.fallback == 'true' || steps.q35_admission.outputs.fallback == 'true') }}",
+        "if": "${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true' || steps.layout_admission.outputs.fallback == 'true' || steps.post_init_admission.outputs.fallback == 'true' || steps.constructor_mmio_admission.outputs.fallback == 'true' || steps.vp_admission.outputs.fallback == 'true' || steps.msi_admission.outputs.fallback == 'true' || steps.q35_admission.outputs.fallback == 'true' || steps.msi_descriptor_admission.outputs.fallback == 'true') }}",
         "name": "Retain only the bounded admission-failure receipt",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
@@ -198,7 +214,7 @@
   },
   "jobId": "classdir-objects",
   "kind": "job",
-  "reviewReason": "Add only five new Q35 source/loader controls, one parser and the closed seven-object domain/table route; preserve all old commands, coverage mappings and limits.",
+  "reviewReason": "Route the exact descriptor branch through five new pure controls, one six-target object owner and bounded admission; preserve all old commands, before/coverage relationships and runtime-closed scope.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }

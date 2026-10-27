@@ -870,4 +870,140 @@ class Q35MsiOwner(unittest.TestCase):
             with self.assertRaises(ValueError):owner.admit(out,q35=True)
 
 
+class MsiDescriptorSource(unittest.TestCase):
+    @staticmethod
+    def _raw(name):
+        return (owner.ROOT/'research/standard-outbound/linux-6.12-lineage/msi-descriptor'/name).read_text(encoding='utf-8')
+
+    def test_captured_inventory_and_native_preload_refusal(self):
+        import importlib.util
+        base=owner.q35_materials(owner.ROOT)
+        current=owner.msi_descriptor_materials(owner.ROOT)
+        self.assertEqual((len(current['physicalInputs']),len(current['logicalIdentities'])),(83,114))
+        self.assertEqual(current['prior78Physical'],base['physicalInputs'])
+        self.assertEqual(current['prior109Logical'],base['logicalIdentities'])
+        self.assertEqual(current['projectionOutputCount'],456)
+        self.assertEqual(set(owner.MSI_DESCRIPTOR_NATIVE_PINS),{'lib/xarray.c','include/linux/xarray.h'})
+        self.assertFalse(set(owner.MSI_DESCRIPTOR_NATIVE_PINS)&set(current['physicalInputs']))
+        bad={n:b'x' for n in owner.MSI_DESCRIPTOR_NATIVE_PINS}
+        with patch.object(importlib.util,'spec_from_file_location',side_effect=AssertionError('load-before-auth')), \
+                patch.object(owner,'identity',side_effect=AssertionError('wrong-length-hash')):
+            with self.assertRaises(ValueError):owner.msi_descriptor_stage(owner.ROOT,bad)
+        with patch.object(owner,'q35_materials',return_value=base), \
+                patch.object(owner,'read',return_value=b'x'), \
+                patch.object(owner,'identity',side_effect=AssertionError('wrong-length-hash')):
+            with self.assertRaises(ValueError):owner.msi_descriptor_capture(owner.ROOT)
+
+    def test_native_node_clones_have_exact_whole_body_inverses(self):
+        import hashlib
+        from tools.host_stream_kernel_device_security import function
+        raw=self._raw('lsf-stream-msi-xarray.c')
+        expected={'static void *xas_alloc(': '20a04052b6accaf80b577380a94ff103cb87db6c5f22561e7e554642b635707f', 'bool xas_nomem(': '9fe1db9d57e36d6cb3db7813b9262731cc43be1101e589b154c79e340c93d030', 'static bool __xas_nomem(': 'c938c3902230d47b43cb748ee92bad346e0a4c8689b847cad93a68938a41ac4f', 'void xas_destroy(': '20d19541915b9364c2abab776fb9c716b20ba28825b9eb7ac1621b9171639f12'}
+        replacements={
+            'static void *xas_alloc(':('static struct xa_node *lsf_msi_xas_alloc(',[
+                ('\tif (parent || shift || xas->xa_index > 2u || xas->xa_shift || xas->xa_sibs) {\n'
+                 '\t\tlsf_factory_stream_constructor_retain_unknown();\n'
+                 '\t\txas_set_err(xas, -EOPNOTSUPP); return NULL;\n\t}\n\n',''),
+                ('\t\tif (!lsf_msi_store_node_for(node, xas->xa) ||\n'
+                 '\t\t    node->array != (struct xarray *)xas) {\n'
+                 '\t\t\tlsf_factory_stream_constructor_retain_unknown();\n'
+                 '\t\t\txas_set_err(xas, -EOPNOTSUPP); return NULL;\n\t\t}\n','')]),
+            'bool xas_nomem(':('static bool lsf_msi_xas_nomem(',[]),
+            'static bool __xas_nomem(':('static bool lsf_msi_internal_xas_nomem(',[]),
+            'void xas_destroy(':('static void lsf_msi_xas_destroy(',[
+                ('\t\tif (!lsf_msi_store_node_for(node, xas->xa) ||\n'
+                 '\t\t    node->array != (struct xarray *)xas || rcu_access_pointer(node->parent)) {\n'
+                 '\t\t\tlsf_factory_stream_constructor_retain_unknown(); return;\n\t\t}\n',''),
+                ('\t\t/* The last same-operation check has completed. Do not retain a\n'
+                 '\t\t * dead xa_state stack address in the original bank after cleanup. */\n'
+                 '\t\tnode->array = NULL;\n','')]),
+        }
+        for original,(prefix,edits) in replacements.items():
+            with self.subTest(function=original):
+                current=function(raw,prefix)
+                for before,after in edits:
+                    self.assertEqual(current.count(before),1)
+                    current=current.replace(before,after,1)
+                current=current.replace(prefix,original,1).replace('lsf_msi_xa_preallocate(xas, gfp)',
+                    'kmem_cache_alloc_lru(radix_tree_node_cachep, xas->xa_lru, gfp)')
+                self.assertEqual(hashlib.sha256(current.encode()).hexdigest(),expected[original])
+
+    def test_same_operation_marker_and_current_attempt_cleanup(self):
+        from tools.host_stream_kernel_device_security import function
+        nodes=self._raw('lsf-stream-msi-xarray.c')
+        factory=self._raw('factory-stream-msi-descriptor.c')
+        allocate=function(nodes,'static struct xa_node *lsf_msi_xa_preallocate(')
+        self.assertIn('node->array = (struct xarray *)xas;',allocate)
+        self.assertLess(allocate.index('lsf_msi_store_node_take'),allocate.index('INIT_LIST_HEAD'))
+        consume=function(nodes,'static struct xa_node *lsf_msi_xas_alloc(')
+        self.assertLess(consume.index('node->array != (struct xarray *)xas'),consume.index('xas->xa_alloc = NULL'))
+        self.assertLess(consume.index('xas->xa_alloc = NULL'),consume.index('node->array = xas->xa'))
+        destroy=function(nodes,'static void lsf_msi_xas_destroy(')
+        self.assertLess(destroy.index('node->array != (struct xarray *)xas'),destroy.index('node->array = NULL'))
+        self.assertLess(destroy.index('node->array = NULL'),destroy.index('radix_tree_node_rcu_free'))
+        current=function(factory,'int lsf_msi_store_node_for(')
+        for guard in ('first->phase == LSF_PREPAID_LIVE','latest == first',
+                'latest->generation == record->security_cache_identity',
+                'first->security_cache_identity == context.generation'):
+            self.assertIn(guard,current)
+        late=function(factory,'static struct lsf_prepaid_view *lsf_msi_store_record_locked(')
+        self.assertIn('first->phase != LSF_PREPAID_RETURNED',late)
+        self.assertNotIn('latest',late);self.assertNotIn('node->array',late)
+        callback=function(factory,'int lsf_msi_store_radix_selected(')
+        for kind in ('LSF_DEVICE_CLEANUP_PID_RADIX','LSF_DEVICE_IDR_NODE',
+                'LSF_DEVICE_STREAM_CLASSDIR_IDR','LSF_DEVICE_STREAM_NETDEV_DIRECTORY_IDR'):
+            self.assertIn(kind,callback)
+        self.assertIn('factory.pool.poisoned = 1',callback)
+
+    def test_aggregate_admission_and_real_irq_cut(self):
+        from tools.host_stream_kernel_device_security import function
+        factory=self._raw('factory-stream-msi-descriptor.c')
+        descriptor=self._raw('lsf-stream-msi-descriptor.c')
+        prepare=function(factory,'int lsf_msi_store_prepare(')
+        self.assertIn('attempts >= 3u',prepare)
+        self.assertIn('nvec != (attempts == 2u ? 2u : 3u)',prepare)
+        self.assertLess(prepare.index('lsf_stream_constructor_allocate_locked'),prepare.index('plan->nvec = nvec'))
+        self.assertNotIn('lsf_device_publish',prepare)
+        take=function(factory,'void *lsf_msi_store_take(')
+        for guard in ('lsf_stream_bind_current_locked','found->deferred != LSF_PREPAID_PRIVATE',
+                'record->cache_bucket != pci.slot','record->cache_anchor != pci.generation'):
+            self.assertIn(guard,take)
+        alloc=function(descriptor,'struct msi_desc *lsf_msi_descriptor_allocate(')
+        for guard in ('init->affinity','init->nvec_used != 1u','init->msi_index >= 3u',
+                'init->pci.mask_base != to_pci_dev(dev)->msix_base'):
+            self.assertIn(guard,alloc)
+        self.assertNotIn('kzalloc(',alloc);self.assertNotIn('kmemdup_array(',alloc)
+        cut=function(descriptor,'int lsf_msi_descriptor_setup(')
+        self.assertIn('return -EOPNOTSUPP;',cut)
+        for forbidden in ('msi_domain_alloc_irqs_all_locked(', 'irq_domain_alloc_descs(',
+                'request_irq(', 'alloc_percpu('):self.assertNotIn(forbidden,cut)
+        projection=self._raw('projector.py')
+        self.assertIn('return lsf_msi_descriptor_setup(dev, nvec, type);',projection)
+        self.assertIn('lsf_factory_selected_consumer',projection)
+
+
+class MsiDescriptorOwner(unittest.TestCase):
+    def test_closed_targets_materials_and_public_union(self):
+        targets=('kernel/irq/msi.o','drivers/pci/msi/irqdomain.o','drivers/pci/msi/msi.o',
+            'lib/xarray.o','lib/radix-tree.o','net/factory.o')
+        self.assertEqual(owner.mode_targets(msi_descriptor=True),targets)
+        with self.assertRaises(ValueError):owner.mode_targets(msi_descriptor=1)
+        for old in ('classdir','classdir_kernfs','netdev_directory','netdev_layout',
+                'netdev_post_init','constructor_mmio','vp_transport','msi_context','q35'):
+            with self.subTest(mode=old),self.assertRaises(ValueError):
+                owner.mode_targets(msi_descriptor=True,**{old:True})
+        self.assertEqual((owner.MAX_COMMANDS,owner.MAX_OBJECT,owner.MAX_PUBLIC),(32,16*1024**2,128*1024**2))
+        for t in targets:self.assertEqual(owner.public_allowed('objects/'+t,msi_descriptor=True),owner.MAX_OBJECT)
+        self.assertIsNone(owner.public_allowed('objects/arch/x86/kernel/apic/vector.o',msi_descriptor=True))
+        self.assertIsNone(owner.public_allowed('objects/lib/xarray.o',q35=True))
+        self.assertEqual(owner.public_allowed('logs/00-msi-descriptor-objects.stdout.txt',msi_descriptor=True),4*1024**2)
+        self.assertIsNone(owner.public_allowed('logs/00-q35-msi-domain-objects.stdout.txt',msi_descriptor=True))
+        with self.assertRaises(ValueError):owner.msi_descriptor_compose({},Path('not-a-kernel-tree'),Path('not-created'))
+        with tempfile.TemporaryDirectory() as directory:
+            out=Path(directory);(out/'receipt.json').write_bytes(b'{"status":"failed"}\n')
+            self.assertEqual(set(owner.admit(out,msi_descriptor=True)['files']),{'receipt.json'})
+            bad=out/'objects/net/socket.o';bad.parent.mkdir(parents=True);bad.write_bytes(b'not-an-object')
+            with self.assertRaises(ValueError):owner.admit(out,msi_descriptor=True)
+
+
 if __name__=='__main__':unittest.main()
