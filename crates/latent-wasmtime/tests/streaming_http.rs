@@ -126,6 +126,14 @@ async fn resource_guest_drains_chunks_and_trailers_then_reclaims_all_owners() {
     assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
     f.idle();
     assert_eq!(f.io.snapshot(), IoSnapshot::default());
+    assert_eq!(
+        control.budget.host_memory_bytes(),
+        output.capacity() as u64 + 256
+    );
+    assert_eq!(control.budget.outstanding_reservations(), 1);
+    drop(output);
+    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.outstanding_reservations(), 0);
     server.await.unwrap();
     assert!(f
         .pools

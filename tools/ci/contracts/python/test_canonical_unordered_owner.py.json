@@ -1,36 +1,16 @@
 {
-  "cases": [
-    "UnorderedOwnerReader.test_compiled_owned_header_witnesses_cannot_be_omitted_or_weakened",
-    "UnorderedOwnerReader.test_scoped_actual_sequences_refuse_old_epochs_wrong_owners_and_extra_rows"
-  ],
-  "guards": {
-    "UnorderedOwnerReader.test_compiled_owned_header_witnesses_cannot_be_omitted_or_weakened": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:84d5b95a4970686df5db69e0062d681ee46bcefae476f60023fe5e5845427718",
-        "class:setup-sha256:2ed76c1b5ea696428c412e5e1a6101672461112b309d705569dd8126f0f1a401"
-      ],
-      "skipSites": []
-    },
-    "UnorderedOwnerReader.test_scoped_actual_sequences_refuse_old_epochs_wrong_owners_and_extra_rows": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:84d5b95a4970686df5db69e0062d681ee46bcefae476f60023fe5e5845427718",
-        "class:setup-sha256:2ed76c1b5ea696428c412e5e1a6101672461112b309d705569dd8126f0f1a401"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_canonical_unordered_owner.py",
-  "reviewReason": "Reviewed private sized unordered strong/weak headers with exact allocator Layout, last-weak deallocation-before-refund and same-charge unwind retention. Six NEW private controls, eight source-affected/new canonical cases (nine refusal scenarios) and four affected ordinary host cases; unchanged two locked Cargo builds, original45m/2400/900/60/30 caps,cleanup5,two jobs. No old private groups,Java replay,RSS or whole-runtime qualification.",
-  "schemaVersion": "latent.ci.contracts.v1"
+"cases":["UnorderedOwnerReader.test_compiled_owned_header_witnesses_cannot_be_omitted_or_weakened","UnorderedOwnerReader.test_scoped_actual_sequences_refuse_old_epochs_wrong_owners_and_extra_rows"],
+"guards":{
+"UnorderedOwnerReader.test_compiled_owned_header_witnesses_cannot_be_omitted_or_weakened":
+      "6135ef56c744af6b4c4d490721afc111fbec8478d78961634d06da54c1338659",
+"UnorderedOwnerReader.test_scoped_actual_sequences_refuse_old_epochs_wrong_owners_and_extra_rows":
+      "6135ef56c744af6b4c4d490721afc111fbec8478d78961634d06da54c1338659"
+},
+"kind":"python",
+"module":"tools/tests/test_canonical_unordered_owner.py",
+"reviewReason":"Reviewed private sized unordered strong/weak headers with exact allocator Layout, last-weak deallocation-before-refund and same-charge unwind retention. Six NEW private controls, eight source-affected/new canonical cases (nine refusal scenarios) and four affected ordinary host cases; unchanged two locked Cargo builds, original45m/2400/900/60/30 caps,cleanup5,two jobs. No old private groups,Java replay,RSS or whole-runtime qualification.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"6135ef56c744af6b4c4d490721afc111fbec8478d78961634d06da54c1338659":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:84d5b95a4970686df5db69e0062d681ee46bcefae476f60023fe5e5845427718","class:setup-sha256:2ed76c1b5ea696428c412e5e1a6101672461112b309d705569dd8126f0f1a401"],"skipSites":[]}
+}
 }

@@ -1,78 +1,78 @@
 {
-  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
-  "before": {},
-  "coverage": {},
-  "definition": {
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
-    },
-    "name": "Eight reachable I/O backing controls and provider typecheck",
-    "runs-on": "ubuntu-24.04",
-    "steps": [
-      {
-        "uses": "KirilsTurkins/lsf-checkout",
-        "with": {
-          "persist-credentials": false
-        }
-      },
-      {
-        "uses": "KirilsTurkins/lsf-setup-python",
-        "with": {
-          "python-version": "3.13.5"
-        }
-      },
-      {
-        "uses": "dtolnay/rust-toolchain"
-      },
-      {
-        "uses": "KirilsTurkins/lsf-rust-cache",
-        "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
-          "cache-on-failure": false,
-          "cache-targets": false,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
-          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
-          "save-if": false,
-          "shared-key": "host-contracts"
-        }
-      },
-      {
-        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
-        "with": {
-          "version": "1.254.0"
-        }
-      },
-      {
-        "name": "Typecheck provider integration and execute eight I/O ownership controls",
-        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --io-graph --output \"$RUNNER_TEMP/canonical-stream-outers\""
-      },
-      {
-        "if": "always()",
-        "name": "Retain provider typecheck and eight source-bound I/O outcomes",
-        "uses": "KirilsTurkins/lsf-upload-artifact",
-        "with": {
-          "if-no-files-found": "warn",
-          "name": "io-graph-native-${{ github.sha }}",
-          "path": "${{ runner.temp }}/canonical-stream-outers/receipt.json\n${{ runner.temp }}/canonical-stream-outers/FAILED.json\n${{ runner.temp }}/canonical-stream-outers/source-inputs.json\n${{ runner.temp }}/canonical-stream-outers/commands.json\n${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt\n",
-          "retention-days": 3
-        }
-      }
-    ],
-    "timeout-minutes": 45
-  },
-  "jobId": "stream-outers",
-  "kind": "job",
-  "reviewReason": "Reviewed #736 reachable broker I/O ownership: seven new cases (three typed provider-future controls, four actual buffer/ring/transfer/Request controls) plus one unchanged Phase1 reference. One locked provider CHECK --tests/all-features (actual HTTP/Blob/Streams/Wasmtime/latentd), one existing capabilities libtest target/probe and eight exact list/run pairs:19commands38raw. Original45m/2395+5/895+5/55+5/25+5/j2; no prior canonical/producer/I/O aggregate replay. Cargo check may execute host build scripts, no engine/guest execution. Current275+14 maintained Wasmtime/cache source and cohort unchanged; remaining imported/naked-Vec/transitive/node infrastructure gaps explicit. Source-only pending owning outcome.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/canonical-stream-outers.yml"
+"baselineRevision":"50f003dd006e0786494936c49e55dc683cf26fd6",
+"before":{},
+"coverage":{},
+"definition":{
+"env":{
+"CARGO_BUILD_JOBS":"2",
+"CARGO_INCREMENTAL":"0",
+"CARGO_PROFILE_DEV_DEBUG":"0",
+"CARGO_PROFILE_DEV_DEBUG_ASSERTIONS":"true",
+"CARGO_PROFILE_DEV_OVERFLOW_CHECKS":"true",
+"CARGO_PROFILE_TEST_DEBUG":"0",
+"CARGO_PROFILE_TEST_DEBUG_ASSERTIONS":"true",
+"CARGO_PROFILE_TEST_OVERFLOW_CHECKS":"true"
+},
+"name":"Three paid-copy and managed lowering controls",
+"runs-on":"ubuntu-24.04",
+"steps":[
+{
+"uses":"KirilsTurkins/lsf-checkout",
+"with":{
+"persist-credentials":false
+}
+},
+{
+"uses":"KirilsTurkins/lsf-setup-python",
+"with":{
+"python-version":"3.13.5"
+}
+},
+{
+"uses":"dtolnay/rust-toolchain"
+},
+{
+"uses":"KirilsTurkins/lsf-rust-cache",
+"with":{
+"cache-all-crates":false,
+"cache-bin":false,
+"cache-directories":"target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
+"cache-on-failure":false,
+"cache-targets":false,
+"cache-workspace-crates":false,
+"key":"ubuntu-24.04",
+"prefix-key":"lsf-ci-dependencies-v3-contract-profiles",
+"save-if":false,
+"shared-key":"host-contracts"
+}
+},
+{
+"uses":"KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
+"with":{
+"version":"1.254.0"
+}
+},
+{
+"name":"Typecheck stream consumers and execute three paid-copy lowering controls",
+"run":"python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --io-copy --output \"$RUNNER_TEMP/canonical-stream-outers\""
+},
+{
+"if":"always()",
+"name":"Retain stream typecheck and three source-bound copy outcomes",
+"uses":"KirilsTurkins/lsf-upload-artifact",
+"with":{
+"if-no-files-found":"warn",
+"name":"owned-stream-copy-${{ github.sha }}",
+"path":"${{ runner.temp }}/canonical-stream-outers/receipt.json\n${{ runner.temp }}/canonical-stream-outers/FAILED.json\n${{ runner.temp }}/canonical-stream-outers/source-inputs.json\n${{ runner.temp }}/canonical-stream-outers/commands.json\n${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt\n",
+"retention-days":3
+}
+}
+],
+"timeout-minutes":45
+},
+"jobId":"stream-outers",
+"kind":"job",
+"reviewReason":"Reviewed #736 affine stream-copy owner and exact manual list<u8> lowering: one new broker physical lifetime/refusal case, affected transfer capacity case and existing managed HTTP drain case;3cases11commands22raw. One streams CHECK --tests/all-features, two locked actual libtest targets and probes; same45m/2395+5/895+5/55+5/25+5/j2. SDK language and external fixture selectors removed and required absent. Broker1MiB/100k/30s differs from normal managed16MiB/1e12/5s. Managed case actually assembles/compiles/executes its original component, not a signed real node or full cost/RSS qualification. Every prior owner function, case guard and coverage field retained; no old eight-case/canonical/language programme replay. Source-only pending bounded owning result.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/canonical-stream-outers.yml"
 }

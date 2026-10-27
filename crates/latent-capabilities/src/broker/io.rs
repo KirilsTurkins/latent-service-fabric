@@ -35,7 +35,9 @@ pub use buffer::IoBuffer;
 use limits::{Charge, Counters, Kind};
 pub use limits::{IoLimits, IoSnapshot};
 pub use stream::{IoStreamReader, IoStreamTerminal, IoStreamWriter};
-pub use transfer::{IoInputChunk, IoOutputChunk, IoTransfer, IoTransferBuffer, IoTransferOptions};
+pub use transfer::{
+    IoInputChunk, IoOutputChunk, IoOutputCopy, IoTransfer, IoTransferBuffer, IoTransferOptions,
+};
 
 const OPERATION_METADATA: usize = 2048;
 const CANCEL_POLL: Duration = Duration::from_millis(10);

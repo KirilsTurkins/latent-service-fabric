@@ -53,6 +53,11 @@ FIXED_RESULT_SHA256 = "250215cc98e4aa89d079b1d5434de202ee864eedc4ceb5d1d8dbc6b42
 # its affine ProviderCall drops. No host pointer, resource or raw access is added.
 RANDOM_RESULT = f"{CRATE}/src/host/random/completion.rs"
 RANDOM_RESULT_SHA256 = "4490c7099ef74dd0c5cb0ae0c7a280904f71f8f97f2b5c91a752b1c681443802"
+# Exact paid-copy wrapper only: both audited unsafe trait implementations
+# delegate the unchanged pinned list<u8> ABI while the original copy stays live.
+# Whole-file identity and the two item allowances/sites must all remain exact.
+STREAM_COPY_RESULT = f"{CRATE}/src/host/io_copy.rs"
+STREAM_COPY_RESULT_SHA256 = "032f6811f59841b185ae3805ec5a0a8b3f65cf36a0647b0006fa23c1e138a4e8"
 # The actual allocator-failure test must implement Wasmtime's unsafe trait,
 # but this exact item always refuses and creates no memory or native pointer.
 # Strip only this item at this test path; every other allowance/site is checked.
@@ -161,6 +166,14 @@ def validate(root: Path) -> list[str]:
         elif relative == RANDOM_RESULT:
             if hashlib.sha256(source.encode("utf-8")).hexdigest() != RANDOM_RESULT_SHA256:
                 errors.append("audited random-result lowering changed; review pinned ABI, zeroization and physical output ownership")
+            else:
+                source = ""
+        elif relative == STREAM_COPY_RESULT:
+            if (hashlib.sha256(source.encode("utf-8")).hexdigest() != STREAM_COPY_RESULT_SHA256
+                    or len(unsafe.findall(source)) != 2 or len(lowered.findall(source)) != 2
+                    or source.count("unsafe impl ComponentType for ChunkBytes") != 1
+                    or source.count("unsafe impl Lower for ChunkBytes") != 1):
+                errors.append("audited stream-copy lowering changed; review pinned ABI and physical copy ownership")
             else:
                 source = ""
         elif relative == REFUSING_CREATOR_TEST:

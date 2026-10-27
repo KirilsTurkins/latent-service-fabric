@@ -1,36 +1,36 @@
 {
-  "cases": [
-    "StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows",
-    "StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed"
-  ],
-  "guards": {
-    "StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_stream_outer_owner.py",
-  "reviewReason": "Reviewed #736 reachable broker I/O ownership: seven new cases (three typed provider-future controls, four actual buffer/ring/transfer/Request controls) plus one unchanged Phase1 reference. One locked provider CHECK --tests/all-features (actual HTTP/Blob/Streams/Wasmtime/latentd), one existing capabilities libtest target/probe and eight exact list/run pairs:19commands38raw. Original45m/2395+5/895+5/55+5/25+5/j2; no prior canonical/producer/I/O aggregate replay. Cargo check may execute host build scripts, no engine/guest execution. Current275+14 maintained Wasmtime/cache source and cohort unchanged; remaining imported/naked-Vec/transitive/node infrastructure gaps explicit. Source-only pending owning outcome.",
-  "schemaVersion": "latent.ci.contracts.v1"
+"cases":[
+"StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows",
+"StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed"
+],
+"guards":{
+"StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows":{
+"bases":[
+"unittest.TestCase"
+],
+"classDecorators":[],
+"decorators":[],
+"fixtureGuards":[
+"module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
+"class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+],
+"skipSites":[]
+},
+"StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed":{
+"bases":[
+"unittest.TestCase"
+],
+"classDecorators":[],
+"decorators":[],
+"fixtureGuards":[
+"module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
+"class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+],
+"skipSites":[]
+}
+},
+"kind":"python",
+"module":"tools/tests/test_stream_outer_owner.py",
+"reviewReason":"Reviewed #736 affine stream-copy owner and exact manual list<u8> lowering: one new broker physical lifetime/refusal case, affected transfer capacity case and existing managed HTTP drain case;3cases11commands22raw. One streams CHECK --tests/all-features, two locked actual libtest targets and probes; same45m/2395+5/895+5/55+5/25+5/j2. SDK language and external fixture selectors removed and required absent. Broker1MiB/100k/30s differs from normal managed16MiB/1e12/5s. Managed case actually assembles/compiles/executes its original component, not a signed real node or full cost/RSS qualification. Every prior owner function, case guard and coverage field retained; no old eight-case/canonical/language programme replay. Source-only pending bounded owning result.",
+"schemaVersion":"latent.ci.contracts.v1"
 }

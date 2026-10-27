@@ -91,7 +91,9 @@ pub(crate) fn install(
                         .network
                         .chunk_bytes(chunk.rep());
                     synchronize(&mut store)?;
-                    Ok((result.map_err(convert_error),))
+                    Ok((result
+                        .map(super::io_copy::ChunkBytes)
+                        .map_err(convert_error),))
                 })
             })
         },

@@ -141,6 +141,45 @@ class StreamOuterOwnerReader(unittest.TestCase):
             changed = [{**records[0], field: value}, *records[1:], finished]
             with self.assertRaises(ValueError):
                 owner.io_graph_check_result(raw_inventory(changed))
+        self.assertEqual((len(owner.IO_COPY_CASES), len(owner.IO_COPY_NEW_CASES)), (3, 1))
+        self.assertEqual(owner.IO_COPY_CAP_CASES[1], owner.IO_GRAPH_CASES[5])
+        self.assertEqual(owner.IO_COPY_MANAGED_CASE,
+            'resource_guest_drains_chunks_and_trailers_then_reclaims_all_owners')
+        self.assertEqual(owner.IO_COPY_CHECK_ARGS, ('check', '--locked', '--tests',
+            '--all-features', '-p', 'latent-streams', '--message-format=json'))
+        for index, case in enumerate(owner.IO_COPY_CASES):
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            value = owner.io_copy_result(raw, case)
+            self.assertEqual((value['passed'], value['ignored']), (1, 0))
+            self.assertEqual(value['scope'], 'original-Phase3-affine-copy-owner-control'
+                if index == 0 else 'affected-original-Phase3-transfer-capacity-control'
+                if index == 1 else 'managed-component-streaming-http-lowering')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case')):
+                with self.assertRaises(ValueError):
+                    owner.io_copy_result(changed, case)
+        for case in (*owner.IO_GRAPH_CASES[:5], 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.io_copy_result(b'', case)
+        manifest, target, source = owner.IO_COPY_CHECK_TARGETS[0]
+        path = (owner.ROOT / manifest).resolve()
+        checked = {'reason': 'compiler-artifact', 'manifest_path': str(path),
+            'target': {'kind': ['lib'], 'name': target, 'src_path': str(path.parent / source)},
+            'profile': {'test': True}, 'executable': None, 'features': []}
+        self.assertEqual(owner.io_copy_check_result(raw_inventory([checked, finished]))[0]['target'],
+            'latent_streams')
+        for rows in ([checked], [finished], [checked, checked, finished],
+            [checked, {'reason': 'build-finished', 'success': False}]):
+            with self.assertRaises(ValueError):
+                owner.io_copy_check_result(raw_inventory(rows))
+        for name in owner.IO_COPY_FORBIDDEN_FIXTURE_ENV:
+            with self.assertRaises(ValueError):
+                owner.require_io_copy_environment({name: 'external-fixture'})
+            environment = {name: 'external-fixture', 'PATH': 'normal-pinned-tools'}
+            self.assertIs(owner.io_copy_environment(environment), environment)
+            self.assertEqual(environment, {'PATH': 'normal-pinned-tools'})
+            owner.require_io_copy_environment(environment)
 
     def test_private_fixture_identity_is_bounded_and_changes_are_observed(self):
         with tempfile.TemporaryDirectory() as temporary:

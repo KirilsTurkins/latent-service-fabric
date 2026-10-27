@@ -106,6 +106,22 @@ rustix = { version = "=1.1.5", features = ["fs"] }
                 self.assertTrue(boundary.validate_guest(self.root))
 
     def test_second_unsafe_site_and_nested_allowance_fail(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.STREAM_COPY_RESULT).read_text(encoding="utf-8")
+        self.write(boundary.STREAM_COPY_RESULT, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        for changed in (
+            source.replace('pub(super) struct ChunkBytes(pub(super) IoOutputCopy);', 'pub(super) struct ChunkBytes(pub(super) ());'),
+            source.replace('self.0.as_ref().linear_lower_to_memory(cx, ty, offset)', 'unrelated_lower(cx, ty, offset)'),
+            source + '\nunsafe fn extra_copy_site() {}\n',
+            source + '\n#[allow(unsafe_code)] fn extra_copy_allowance() {}\n',
+            source.replace('#[allow(', '#![allow(', 1),
+        ):
+            with self.subTest(copy_change=changed[-120:]):
+                self.assertNotEqual(changed, source)
+                self.write(boundary.STREAM_COPY_RESULT, changed)
+                self.assertTrue(boundary.validate(self.root))
+        self.write(boundary.STREAM_COPY_RESULT, source)
+        self.assertEqual(boundary.validate(self.root), [])
         for addition in ("unsafe { second_load() }", "#[allow(unsafe_code)]\nfn extra() {}"):
             with self.subTest(addition=addition):
                 self.write(f"{boundary.CRATE}/src/extra.rs", addition)

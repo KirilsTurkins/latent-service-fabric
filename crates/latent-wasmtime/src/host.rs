@@ -13,6 +13,7 @@ pub(crate) mod clock;
 pub(crate) mod context;
 pub(crate) mod events;
 pub(crate) mod http;
+mod io_copy;
 mod logging;
 pub(crate) mod metrics;
 pub(crate) mod native;

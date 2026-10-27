@@ -1,65 +1,21 @@
 {
-  "cases": [
-    "TypeScriptHostToolTests.test_discovered_regular_tool_binds_its_resolved_bytes",
-    "TypeScriptHostToolTests.test_missing_tool_keeps_existing_concrete_diagnostic_path",
-    "TypeScriptHostToolTests.test_only_discovered_host_path_is_resolved_strictly",
-    "TypeScriptHostToolTests.test_staged_recipe_resolves_all_adapter_modules_without_checkout_fallback"
-  ],
-  "guards": {
-    "TypeScriptHostToolTests.test_discovered_regular_tool_binds_its_resolved_bytes": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:3f2c568fe574e61a0619082c1368b308f15a8642fd7ac9697422ea38e15111a2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptHostToolTests.test_missing_tool_keeps_existing_concrete_diagnostic_path": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:3f2c568fe574e61a0619082c1368b308f15a8642fd7ac9697422ea38e15111a2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptHostToolTests.test_only_discovered_host_path_is_resolved_strictly": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:3f2c568fe574e61a0619082c1368b308f15a8642fd7ac9697422ea38e15111a2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptHostToolTests.test_staged_recipe_resolves_all_adapter_modules_without_checkout_fallback": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:3f2c568fe574e61a0619082c1368b308f15a8642fd7ac9697422ea38e15111a2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": [
-        "self.skipTest('requires Node')",
-        "skip-control-sha256:ce3228b2038bd766a07ef888c1ac969bbcd325a617b4408849d6f7a997ee13ba"
-      ]
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_typescript_host_tools.py",
-  "reviewReason": "Retain all three existing cases and setup/skip guards exactly; add an isolated staged Node adapter import control with its own Node-availability check.",
-  "schemaVersion": "latent.ci.contracts.v1"
+"cases":["TypeScriptHostToolTests.test_discovered_regular_tool_binds_its_resolved_bytes","TypeScriptHostToolTests.test_missing_tool_keeps_existing_concrete_diagnostic_path","TypeScriptHostToolTests.test_only_discovered_host_path_is_resolved_strictly","TypeScriptHostToolTests.test_staged_recipe_resolves_all_adapter_modules_without_checkout_fallback"],
+"guards":{
+"TypeScriptHostToolTests.test_discovered_regular_tool_binds_its_resolved_bytes":
+      "16e22e3f2f5aa6b27e620f0e46561d0a304f23b96a4801fa454ef45f494202fc",
+"TypeScriptHostToolTests.test_missing_tool_keeps_existing_concrete_diagnostic_path":
+      "16e22e3f2f5aa6b27e620f0e46561d0a304f23b96a4801fa454ef45f494202fc",
+"TypeScriptHostToolTests.test_only_discovered_host_path_is_resolved_strictly":
+      "16e22e3f2f5aa6b27e620f0e46561d0a304f23b96a4801fa454ef45f494202fc",
+"TypeScriptHostToolTests.test_staged_recipe_resolves_all_adapter_modules_without_checkout_fallback":
+      "09a81e30285aa39fcdea5f4ffe1dd7db66be3e210ff639919ef2bbbf8bcc4d30"
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_host_tools.py",
+"reviewReason":"Retain all three existing cases and setup/skip guards exactly; add an isolated staged Node adapter import control with its own Node-availability check.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"16e22e3f2f5aa6b27e620f0e46561d0a304f23b96a4801fa454ef45f494202fc":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:3f2c568fe574e61a0619082c1368b308f15a8642fd7ac9697422ea38e15111a2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
+"09a81e30285aa39fcdea5f4ffe1dd7db66be3e210ff639919ef2bbbf8bcc4d30":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:3f2c568fe574e61a0619082c1368b308f15a8642fd7ac9697422ea38e15111a2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["self.skipTest('requires Node')","skip-control-sha256:ce3228b2038bd766a07ef888c1ac969bbcd325a617b4408849d6f7a997ee13ba"]}
+}
 }

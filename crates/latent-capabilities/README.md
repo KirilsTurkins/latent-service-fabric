@@ -16,6 +16,12 @@ The broker implements bounded call acceptance and accounting. Protocol crates ow
 | [src/broker/local_service.rs](src/broker/local_service.rs) | Trusted local-call port into the normal child activation lifecycle. |
 | [src/namespace/mod.rs](src/namespace/mod.rs) | Current namespace/result authority over existing policy and publication owners. |
 
+`IoOutputChunk::copy_bytes` materializes its prepaid copy once and returns an
+immutable `IoOutputCopy`. Retain that owner through consumption or canonical
+lowering; it keeps the original copy allowance and transfer alive after the
+source chunk closes. It provides borrowed bytes, without cloning or extracting
+an unowned `Vec`. Further caller-created copies require their own admission.
+
 ## Execution and ownership
 
 1. A trusted catalog compiler binds exact imports to installed providers, policy snapshots and publication dependencies.
