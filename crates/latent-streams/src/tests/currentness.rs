@@ -3,7 +3,8 @@ use crate::StreamErrorCode;
 use latent_capabilities::broker::network::{OutboundStreamInvoker, StreamConnectRequest};
 use latent_policy::capability::{MutationRequest, RecordKind};
 use std::{
-    future::poll_fn,
+    future::{poll_fn, Future},
+    pin::Pin,
     task::Poll,
     time::{Duration, Instant},
 };
@@ -35,7 +36,7 @@ async fn a_policy_change_while_readable_is_pending_is_checked_before_syscall() {
         .unwrap();
     let (mut peer, _) = listener.accept().await.unwrap();
     let mut pending = stream.read(4, None).unwrap();
-    assert!(poll_fn(|cx| Poll::Ready(pending.as_mut().poll(cx)))
+    assert!(poll_fn(|cx| Poll::Ready(Pin::new(&mut pending).poll(cx)))
         .await
         .is_pending());
     fixture
@@ -95,7 +96,7 @@ async fn provider_retirement_wakes_pending_read_without_early_refund() {
         .unwrap();
     let (mut peer, _) = listener.accept().await.unwrap();
     let mut pending = stream.read(4, None).unwrap();
-    assert!(poll_fn(|cx| Poll::Ready(pending.as_mut().poll(cx)))
+    assert!(poll_fn(|cx| Poll::Ready(Pin::new(&mut pending).poll(cx)))
         .await
         .is_pending());
     fixture.provider.retire();
