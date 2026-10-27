@@ -133,6 +133,7 @@ restore/collective gates still need an explicit scoped ADR resolution.
 
 - [ADR-0059: Defer general outbound streams; evaluate typed protocol boundaries first](0059-defer-general-outbound-streams.md)
 - [ADR-0061: Bound standard outbound streams beneath language runtimes](0061-bound-standard-outbound-streams.md)
+- [ADR-0064: Admit q35 IRQ infrastructure before birth (proposed)](0064-admit-q35-irq-infrastructure-before-birth.md)
 
 ### Library concurrency research
 
