@@ -883,7 +883,7 @@ JOIN_TASK_RETURN_TRANSLATIONS = {
         "path": "crates/latent-wasmtime/tests/local_service.rs",
         "mode": "100644",
         "producerGitBlob": "aacae1406d37ba1db950851f74facd4eaf45b17c",
-        "currentGitBlob": "be20135b9b165215cbc79a124f9381067c09b135"
+        "currentGitBlob": "588036204d684c45dee06106b2de935022fac49c"
     },
     "crates/vendor/wasmtime/Cargo.toml": {
         "path": "crates/vendor/wasmtime/Cargo.toml",
@@ -1130,6 +1130,7 @@ def qualify_join_cause_replay(output, archive, source_commit, *, task_return_wit
     original = output/'original-attempt'; original.mkdir()
     if task_return_witness:
         record.update(schemaVersion='latent.dotnet.canonical-task-return.replay.v1',
+            plannedSignedCalls=record.pop('signedCalls'),
             stage='canonicalTaskReturnBeforeScopeExit', oldPostCallProgrammeQualified=False,
             currentObserverUnitCases=list(JOIN_UNIT_CASES))
     try:
@@ -1218,6 +1219,8 @@ def qualify_join_cause_replay(output, archive, source_commit, *, task_return_wit
             raw.decode(), re.M), 'join-replay-exact-native-result')
         record['observations'] = (join_task_return_observations(raw, JOIN_REPLAY_COMPONENTS)
             if task_return_witness else join_cause_observations(raw, JOIN_REPLAY_COMPONENTS))
+        if task_return_witness:
+            record['executedSignedCalls'] = len(record['observations'])
         require(source_map() == before and not subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, timeout=15)
             and executable_before == file_identity(owner.executable, 512*1024**2)
             and identities == [tool_identity(path, name) for name, path in sorted(native_tools.items())]

@@ -462,6 +462,67 @@ async fn dotnet_join_cause_canonical_task_return_witness_preserves_original_fail
                 let terminal = match &receipt.outcome {
                     ActivationOutcome::Failed { error, .. } => {
                         assert_eq!(error.code, latent_core::PlatformErrorCode::GuestTrap);
+                        let classified = (|| {
+                            use latent_core::error::GuestTrapKind;
+                            let mut details = error
+                                .details
+                                .iter()
+                                .filter(|d| d.kind == "activation.guest-trap-kind");
+                            let detail = details.next()?;
+                            if details.next().is_some() {
+                                return None;
+                            }
+                            let kind = GuestTrapKind::from_wire_name(detail.fields.get("kind")?)?;
+                            let phase = match (kind, detail.fields.get("phase").map(String::as_str))
+                            {
+                                (_, None) => None,
+                                (GuestTrapKind::RuntimeError, Some("instantiate")) => {
+                                    Some("instantiate")
+                                }
+                                (GuestTrapKind::RuntimeError, Some("export-lookup")) => {
+                                    Some("export-lookup")
+                                }
+                                (GuestTrapKind::RuntimeError, Some("call-and-postreturn")) => {
+                                    Some("call-and-postreturn")
+                                }
+                                _ => return None,
+                            };
+                            if detail.fields.len() != 1 + usize::from(phase.is_some()) {
+                                return None;
+                            }
+                            let mut hosts = error
+                                .details
+                                .iter()
+                                .filter(|d| d.kind == "activation.guest-host-failure");
+                            let host = if let Some(detail) = hosts.next() {
+                                if detail.fields.len() != 1 {
+                                    return None;
+                                }
+                                Some(
+                                    latent_core::PlatformErrorCode::from_wire_code(
+                                        detail.fields.get("code")?,
+                                    )?
+                                    .wire_code(),
+                                )
+                            } else {
+                                None
+                            };
+                            if hosts.next().is_some()
+                                || (host.is_some() && kind != GuestTrapKind::RuntimeError)
+                            {
+                                return None;
+                            }
+                            Some((kind.wire_name(), phase, host))
+                        })();
+                        let (trap_kind, phase, host) = classified
+                            .map(|(k, p, h)| (Some(k), p, h))
+                            .unwrap_or((None, None, None));
+                        println!(
+                            "DOTNET_JOIN_FAILURE_CLASSIFICATION {}",
+                            serde_json::json!({
+                            "mode":mode,"auxiliary":auxiliary,"trapKind":trap_kind,
+                            "runtimePhase":phase,"hostFailureCode":host})
+                        );
                         "guest-trap"
                     }
                     ActivationOutcome::DeclaredError { .. } => panic!("unexpected declared error"),
@@ -472,6 +533,10 @@ async fn dotnet_join_cause_canonical_task_return_witness_preserves_original_fail
                 let snapshot = guard.as_ref().map(|g| g.snapshot().unwrap());
                 let post_call = guard.as_ref().map(|g| g.post_call_snapshot().unwrap());
                 let rejection = guard.as_ref().and_then(|g| g.rejection().unwrap());
+                let cause_evidence = auxiliary
+                    && expected != DevelopmentJoinCause::Unexpected
+                    && snapshot
+                        .is_some_and(|s| s.claims == 1 && !s.invalid && s.cause == Some(expected));
                 // Emit the closed first refusal before any assertion can fail.
                 // This NEW stage cannot turn the old failed outer oracle green.
                 println!(
@@ -482,7 +547,7 @@ async fn dotnet_join_cause_canonical_task_return_witness_preserves_original_fail
                         "taskReturnWitness":snapshot,"postCallObservation":post_call,
                         "rejection":rejection,"terminalOutcome":terminal,
                         "outerInvocationSucceeded":false,
-                        "canonicalTaskReturnCauseEvidence":auxiliary && expected != DevelopmentJoinCause::Unexpected,
+                        "canonicalTaskReturnCauseEvidence":cause_evidence,
                         "oldPostCallProgrammeQualified":false,
                         "originalTrapQualified":false,"physicalRetirementQualified":false})
                 );
