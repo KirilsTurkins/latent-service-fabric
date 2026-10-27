@@ -90,13 +90,13 @@ CONSTRUCTOR_MMIO_SOURCE_PATHS = tuple(sorted((*POST_INIT_SOURCE_PATHS,
     'tools/host_stream_kernel_stream_constructor.py',
     'tools/host_stream_kernel_stream_vwindow.py',
     'research/standard-outbound/linux-6.12-lineage/stream-constructor-sources.json')))
-CONSTRUCTOR_MMIO_SOURCE_SHA = '872aaaa96e9e6e19fd5a6333ab0f7c85d9b625991ef341f4babfab72666b9434'
-CONSTRUCTOR_MMIO_SOURCE_BYTES = 826518
+CONSTRUCTOR_MMIO_SOURCE_SHA = 'c82f02df5177559c573e21fa4b068b7e4dbfba00aecd43c1fb779b53f69b0adb'
+CONSTRUCTOR_MMIO_SOURCE_BYTES = 827370
 CONSTRUCTOR_MMIO_ADDED_LIMITS = {
     'tools/host_stream_kernel_stream_constructor.py':73498,
-    'tools/host_stream_kernel_stream_vwindow.py':36222,
+    'tools/host_stream_kernel_stream_vwindow.py':37074,
     'research/standard-outbound/linux-6.12-lineage/stream-constructor-sources.json':182209}
-CONSTRUCTOR_MMIO_LOGICAL_SHA = 'd82bc355e28a491a751cf80281acbed5faba12d3f5c82a9ce3bf947e8195e82a'
+CONSTRUCTOR_MMIO_LOGICAL_SHA = '9eb7fe5dd786082feaca723ffcff9c4ff6bf5f52e7e7e9350737894a4651c4e0'
 CONSTRUCTOR_MMIO_BRANCH = 'test/sdk-738-constructor-mmio-objects-20261027'
 CONSTRUCTOR_MMIO_TARGETS = ('net/factory.o', 'drivers/base/dd.o', 'drivers/pci/bus.o', 'drivers/pci/pci-driver.o', 'drivers/pci/pci-sysfs.o', 'drivers/pci/pci.o', 'drivers/pci/proc.o', 'drivers/pci/iomap.o', 'drivers/virtio/virtio.o', 'drivers/virtio/virtio_pci_common.o', 'drivers/virtio/virtio_pci_modern_dev.o', 'drivers/net/virtio_net.o', 'kernel/resource.o', 'arch/x86/mm/pat/memtype.o', 'arch/x86/mm/pat/memtype_interval.o', 'arch/x86/mm/ioremap.o', 'mm/vmalloc.o', 'lib/kobject.o', 'lib/idr.o', 'lib/radix-tree.o', 'fs/proc/generic.o', 'fs/proc/inode.o')
 CONSTRUCTOR_MMIO_DERIVED = (
@@ -105,7 +105,7 @@ CONSTRUCTOR_MMIO_DERIVED = (
     ('constructor-vwindow',410,'1f802d58d9912ee5e03ab4d7ecfd9279e6be4afe64dc6c28d8fda753ccd0a496'),
     ('constructor-ancestors',414,'aec9bff62f308b66acd801067c55798b1adf0afed994317288d944b906337b11'),
     ('constructor-leaf',417,'4df5a1974e6d0ba7f568d64962f02c57aac7b85b076ae7f3bd9e8407bb4013dc'),
-    ('constructor-mmio',427,'5bcbe30d529fc6bea791474f809516d0a5dbff2b1dcaaf1a3b87bf697a9a8b82'))
+    ('constructor-mmio',427,'17fb144ef54af90af8ac9c338bcf7315f702bea92049dfcbe1da37e20a9db0a0'))
 
 CONFIG = {'bytes':143135, 'sha256':'0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6'}
 TARGETS = ('net/factory.o','net/socket.o','net/core/sock.o','net/ipv4/af_inet.o',
@@ -587,7 +587,7 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
             q=tree/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
         write_json(scratch/'derived-inputs.json',rows,4*MAX_DOCUMENT);public_sources['derived-inputs.json']=scratch/'derived-inputs.json'
         command('constructor-mmio-objects' if constructor_mmio else 'netdev-post-init-objects' if netdev_post_init else 'netdev-layout-objects' if netdev_layout else 'netdev-directory-objects' if netdev_directory else 'classdir-kernfs-objects' if classdir_kernfs else 'classdir-objects' if classdir else 'eighteen-objects',
-            *common,'-j2',*targets,root=tree,cap=1200)
+            *common,*(['-k'] if constructor_mmio else []),'-j2',*targets,root=tree,cap=1200)
         require(read(build/'.config',MAX_DOCUMENT)==selected,'actual-config-mutated')
         autoconf=read(build/'include/generated/autoconf.h',MAX_DOCUMENT)
         require(b'#define CONFIG_LSF_STREAM_FACTORY 1\n' in autoconf and b'#define CONFIG_RUST ' not in autoconf,
