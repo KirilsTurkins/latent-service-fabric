@@ -12,29 +12,30 @@ pub(crate) fn digest(
     request: &HttpRequest,
     destination: &Destination,
 ) -> Result<CapabilityRequestDigest, HttpError> {
-    let mut parts = Vec::with_capacity(8 + request.headers.len() * 2);
-    parts.push(request.method.as_str().as_bytes());
-    parts.push(destination.url.as_str().as_bytes());
-    parts.push(request.body.as_deref().unwrap_or_default());
-    parts.push(
+    let leading = [
+        request.method.as_str().as_bytes(),
+        destination.url.as_str().as_bytes(),
+        request.body.as_deref().unwrap_or_default(),
         request
             .body_media_type
             .as_deref()
             .unwrap_or_default()
             .as_bytes(),
-    );
-    parts.push(
         request
             .idempotency_key
             .as_deref()
             .unwrap_or_default()
             .as_bytes(),
-    );
-    for header in &request.headers {
-        parts.push(header.name.as_bytes());
-        parts.push(header.value.as_bytes());
-    }
-    CapabilityRequestDigest::from_parts(&parts).map_err(Into::into)
+    ];
+    CapabilityRequestDigest::from_parts_iter(
+        leading.into_iter().chain(
+            request
+                .headers
+                .iter()
+                .flat_map(|header| [header.name.as_bytes(), header.value.as_bytes()]),
+        ),
+    )
+    .map_err(Into::into)
 }
 pub(crate) fn build(
     inner: &Inner,

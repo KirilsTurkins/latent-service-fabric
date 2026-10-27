@@ -242,6 +242,14 @@ pub enum ResourceTarget<'a> {
 }
 
 impl ResourceTarget<'_> {
+    /// Validate only the closed target grammar, without allocating a JSON DTO.
+    /// This is not a policy decision, provider installation, or execution grant.
+    /// Serialized explanation inputs retain their separate document bounds.
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.valid()
+    }
+
     pub(super) fn valid(&self) -> bool {
         match self {
             Self::Context | Self::Clock | Self::Random => true,
