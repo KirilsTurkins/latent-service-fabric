@@ -1,30 +1,21 @@
-{
-  "cases":["KernelRetirementObjectCheck.test_after_hashes_are_checked_even_when_the_original_deriver_raises","KernelRetirementObjectCheck.test_all_eighty_seven_definitions_must_be_unique_global_text_not_local_or_undefined","KernelRetirementObjectCheck.test_local_or_wrong_repository_event_and_branch_refuse_before_source_or_output","KernelRetirementObjectCheck.test_new_workflow_has_one_fixed_job_no_dispatch_inputs_or_sdk_build","KernelRetirementObjectCheck.test_only_factory_and_all_eighty_seven_original_oracles_are_selected","KernelRetirementObjectCheck.test_original_132_materials_are_kept_and_two_new_sources_are_frozen","KernelRetirementObjectCheck.test_original_configuration_and_generated_security_cannot_be_weakened","KernelRetirementObjectCheck.test_parent_recipe_drift_is_not_accepted_as_a_new_alias","KernelRetirementObjectCheck.test_unknown_output_membership_or_eighth_changed_fragment_refuses"],
-  "guards":{
-    "KernelRetirementObjectCheck.test_after_hashes_are_checked_even_when_the_original_deriver_raises":
-      "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6",
-    "KernelRetirementObjectCheck.test_all_eighty_seven_definitions_must_be_unique_global_text_not_local_or_undefined":
-      "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6",
-    "KernelRetirementObjectCheck.test_local_or_wrong_repository_event_and_branch_refuse_before_source_or_output":
-      "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6",
-    "KernelRetirementObjectCheck.test_new_workflow_has_one_fixed_job_no_dispatch_inputs_or_sdk_build":
-      "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6",
-    "KernelRetirementObjectCheck.test_only_factory_and_all_eighty_seven_original_oracles_are_selected":
-      "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6",
-    "KernelRetirementObjectCheck.test_original_132_materials_are_kept_and_two_new_sources_are_frozen":
-      "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6",
-    "KernelRetirementObjectCheck.test_original_configuration_and_generated_security_cannot_be_weakened":
-      "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6",
-    "KernelRetirementObjectCheck.test_parent_recipe_drift_is_not_accepted_as_a_new_alias":
-      "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6",
-    "KernelRetirementObjectCheck.test_unknown_output_membership_or_eighth_changed_fragment_refuses":
-      "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_host_stream_kernel_retirement.py",
-  "reviewReason":"Reviewed fixed one-object maintained factory retirement source check; original56/243 record and all existing jobs/guards remain unchanged; source and physical qualification gates stay separate.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:3f4cf242393c164bb1a1c3ef6757ea65cb0964546e48534e8f0fcfcf352cae11","class:setup-sha256:6e1c753d79f2ea011eadc64bb4b5ef3a361e145f77c20e56d42b9c68d4ac4c19"],"skipSites":[]}
-  }
-}
+{"cases":["KernelRetirementObjectCheck.test_after_hashes_are_checked_even_when_the_original_deriver_raises","KernelRetirementObjectCheck.test_all_eighty_seven_definitions_must_be_unique_global_text_not_local_or_undefined","KernelRetirementObjectCheck.test_local_or_wrong_repository_event_and_branch_refuse_before_source_or_output","KernelRetirementObjectCheck.test_new_workflow_has_one_fixed_job_no_dispatch_inputs_or_sdk_build","KernelRetirementObjectCheck.test_only_factory_and_all_eighty_seven_original_oracles_are_selected","KernelRetirementObjectCheck.test_original_132_materials_are_kept_and_two_new_sources_are_frozen","KernelRetirementObjectCheck.test_original_configuration_and_generated_security_cannot_be_weakened","KernelRetirementObjectCheck.test_parent_recipe_drift_is_not_accepted_as_a_new_alias","KernelRetirementObjectCheck.test_unknown_output_membership_or_eighth_changed_fragment_refuses"],"guards":{"KernelRetirementObjectCheck.test_after_hashes_are_checked_even_when_the_original_deriver_raises":
+  "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6"
+,"KernelRetirementObjectCheck.test_all_eighty_seven_definitions_must_be_unique_global_text_not_local_or_undefined":
+  "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6"
+,"KernelRetirementObjectCheck.test_local_or_wrong_repository_event_and_branch_refuse_before_source_or_output":
+  "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6"
+,"KernelRetirementObjectCheck.test_new_workflow_has_one_fixed_job_no_dispatch_inputs_or_sdk_build":
+  "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6"
+,"KernelRetirementObjectCheck.test_only_factory_and_all_eighty_seven_original_oracles_are_selected":
+  "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6"
+,"KernelRetirementObjectCheck.test_original_132_materials_are_kept_and_two_new_sources_are_frozen":
+  "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6"
+,"KernelRetirementObjectCheck.test_original_configuration_and_generated_security_cannot_be_weakened":
+  "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6"
+,"KernelRetirementObjectCheck.test_parent_recipe_drift_is_not_accepted_as_a_new_alias":
+  "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6"
+,"KernelRetirementObjectCheck.test_unknown_output_membership_or_eighth_changed_fragment_refuses":
+  "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_retirement.py","reviewReason":"Reviewed fixed one-object maintained factory retirement source check; original56/243 record and all existing jobs/guards remain unchanged; source and physical qualification gates stay separate.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "cf5d17219e2286b2c81d915d68d5563a73cc385ccd4cbcb6a1f54e7d0e577ad6"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:3f4cf242393c164bb1a1c3ef6757ea65cb0964546e48534e8f0fcfcf352cae11","class:setup-sha256:6e1c753d79f2ea011eadc64bb4b5ef3a361e145f77c20e56d42b9c68d4ac4c19"],"skipSites":[]}}}

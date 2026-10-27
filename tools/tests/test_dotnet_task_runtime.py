@@ -165,5 +165,36 @@ class RootReturnNormalControls(unittest.TestCase):
         self.assertEqual(len(selected.STEPS)+len(selected.PROFILES), 15)
 
 
+    def test_retention_closes17_and_keeps_component_before_shape_refusal(self):
+        import hashlib
+        import json
+        from tools import dotnet_root_return as selected
+        from tools.phase2_operator_process import WorkflowError
+        self.assertEqual(len(selected.PROBE_SOURCES), 17)
+        for count, extra in ((17, False), (16, False), (17, True)):
+            with self.subTest(count=count, unsafe_extra=extra), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary); compiled = root/'compiled'; generated = compiled/'generated'
+                generated.mkdir(parents=True); output = root/'output'; output.mkdir()
+                # Parser-only fixture bytes, never a real compiled programme.
+                component = b'\0asm\x0d\0\x01\0'; (compiled/'component.wasm').write_bytes(component)
+                outputs = {}
+                for name in selected.PROBE_SOURCES[:count]:
+                    raw = ('// parser control '+name).encode(); (generated/name).write_bytes(raw)
+                    outputs[name] = hashlib.sha256(raw).hexdigest()
+                if extra: outputs['../outside.cs'] = '0'*64
+                if count == 17 and not extra:
+                    names, records = selected.stage_probe_sources(compiled, output, {'outputs': outputs}, compiler_returned=True)
+                    self.assertEqual(tuple(names), selected.PROBE_SOURCES); self.assertEqual(len(records), 17)
+                else:
+                    with self.assertRaises(WorkflowError):
+                        selected.stage_probe_sources(compiled, output, {'outputs': outputs}, compiler_returned=True)
+                report = json.loads((output/'probe-capture-inventory.json').read_bytes())
+                self.assertEqual(report['csharpCount'], count+int(extra))
+                self.assertFalse(report['captureComplete'])
+                self.assertEqual((output/'component.wasm').read_bytes(), component)
+                self.assertEqual(len(list((output/'probe-inputs').glob('*.cs'))), count)
+                self.assertFalse((output/'outside.cs').exists())
+
+
 if __name__ == '__main__':
     unittest.main()

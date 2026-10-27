@@ -1,30 +1,21 @@
-{
-  "cases":["CurrentJavaHttpInputs.test_changed_profile_or_added_approval_field_refuses_packaging","CurrentJavaHttpInputs.test_compiler_profile_is_java_only_and_requires_an_explicit_selected_capture","CurrentJavaHttpInputs.test_current_diagnostic_and_value_captures_keep_real_http_stage_and_fault_selector","CurrentJavaHttpInputs.test_current_selection_changes_transport_operation_without_rewriting_legacy_custody","CurrentJavaHttpInputs.test_early_http_compiler_selection_is_exclusive_before_creating_output","CurrentJavaHttpInputs.test_early_http_denial_is_separate_and_retains_original_post_stage_rollback_input","CurrentJavaHttpInputs.test_packaging_keeps_exact_declared_current_native_profile","CurrentJavaHttpInputs.test_profile_is_explicit_and_exclusive_before_project_creation","CurrentJavaHttpInputs.test_read_only_cache_selection_refuses_wrong_language_missing_and_relative_roots"],
-  "guards":{
-    "CurrentJavaHttpInputs.test_changed_profile_or_added_approval_field_refuses_packaging":
-      "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0",
-    "CurrentJavaHttpInputs.test_compiler_profile_is_java_only_and_requires_an_explicit_selected_capture":
-      "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0",
-    "CurrentJavaHttpInputs.test_current_diagnostic_and_value_captures_keep_real_http_stage_and_fault_selector":
-      "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0",
-    "CurrentJavaHttpInputs.test_current_selection_changes_transport_operation_without_rewriting_legacy_custody":
-      "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0",
-    "CurrentJavaHttpInputs.test_early_http_compiler_selection_is_exclusive_before_creating_output":
-      "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0",
-    "CurrentJavaHttpInputs.test_early_http_denial_is_separate_and_retains_original_post_stage_rollback_input":
-      "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0",
-    "CurrentJavaHttpInputs.test_packaging_keeps_exact_declared_current_native_profile":
-      "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0",
-    "CurrentJavaHttpInputs.test_profile_is_explicit_and_exclusive_before_project_creation":
-      "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0",
-    "CurrentJavaHttpInputs.test_read_only_cache_selection_refuses_wrong_language_missing_and_relative_roots":
-      "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_java_current_http_inputs.py",
-  "reviewReason":"Add separate early HTTP fixture and exclusive compiler selection; retain original post-stage rollback source and all guards.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:5a7d125c7636d102096f7610747e7fb49f702f82f2563192c57676b0e58c8290","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["CurrentJavaHttpInputs.test_changed_profile_or_added_approval_field_refuses_packaging","CurrentJavaHttpInputs.test_compiler_profile_is_java_only_and_requires_an_explicit_selected_capture","CurrentJavaHttpInputs.test_current_diagnostic_and_value_captures_keep_real_http_stage_and_fault_selector","CurrentJavaHttpInputs.test_current_selection_changes_transport_operation_without_rewriting_legacy_custody","CurrentJavaHttpInputs.test_early_http_compiler_selection_is_exclusive_before_creating_output","CurrentJavaHttpInputs.test_early_http_denial_is_separate_and_retains_original_post_stage_rollback_input","CurrentJavaHttpInputs.test_packaging_keeps_exact_declared_current_native_profile","CurrentJavaHttpInputs.test_profile_is_explicit_and_exclusive_before_project_creation","CurrentJavaHttpInputs.test_read_only_cache_selection_refuses_wrong_language_missing_and_relative_roots"],"guards":{"CurrentJavaHttpInputs.test_changed_profile_or_added_approval_field_refuses_packaging":
+  "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0"
+,"CurrentJavaHttpInputs.test_compiler_profile_is_java_only_and_requires_an_explicit_selected_capture":
+  "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0"
+,"CurrentJavaHttpInputs.test_current_diagnostic_and_value_captures_keep_real_http_stage_and_fault_selector":
+  "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0"
+,"CurrentJavaHttpInputs.test_current_selection_changes_transport_operation_without_rewriting_legacy_custody":
+  "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0"
+,"CurrentJavaHttpInputs.test_early_http_compiler_selection_is_exclusive_before_creating_output":
+  "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0"
+,"CurrentJavaHttpInputs.test_early_http_denial_is_separate_and_retains_original_post_stage_rollback_input":
+  "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0"
+,"CurrentJavaHttpInputs.test_packaging_keeps_exact_declared_current_native_profile":
+  "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0"
+,"CurrentJavaHttpInputs.test_profile_is_explicit_and_exclusive_before_project_creation":
+  "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0"
+,"CurrentJavaHttpInputs.test_read_only_cache_selection_refuses_wrong_language_missing_and_relative_roots":
+  "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0"
+},"kind":"python","module":"tools/tests/test_java_current_http_inputs.py","reviewReason":"Add separate early HTTP fixture and exclusive compiler selection; retain original post-stage rollback source and all guards.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "dc7cc5d4584bb2acdee5b668ddb4a6cb040c0b703aa816b29aa37addff22b6a0"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:5a7d125c7636d102096f7610747e7fb49f702f82f2563192c57676b0e58c8290","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

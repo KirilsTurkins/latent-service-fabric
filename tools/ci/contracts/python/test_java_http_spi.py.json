@@ -1,32 +1,23 @@
-{
-  "cases":["JavaHttpPublicSpi.test_absent_new_native_authenticator_refuses_before_any_product_or_build","JavaHttpPublicSpi.test_actual_cli_consumption_preserves_string_u64_and_integer_u32_fields","JavaHttpPublicSpi.test_every_result_requires_real_guest_work_exact_factory_static_state_and_revision","JavaHttpPublicSpi.test_failed_build_keeps_closed_stage_and_original_exception_without_raw_message","JavaHttpPublicSpi.test_failed_invocation_preserves_original_exception_while_attempting_process_close","JavaHttpPublicSpi.test_normal_project_captures_same_public_closure_without_changing_default_programme","JavaHttpPublicSpi.test_public_factory_delegates_only_to_ordinary_url_connection_and_fresh_default_is_separate","JavaHttpPublicSpi.test_unknown_or_boolean_numeric_consumption_cannot_be_qualification","JavaSpiComponentIdentityFence.test_shared_producer_bound_identity_guard_runs_before_signed_spi_execution","JavaSpiManualWorkflow.test_explicit_false_selector_restores_entire_baseline_and_duplicates_only_same_spi_job"],
-  "guards":{
-    "JavaHttpPublicSpi.test_absent_new_native_authenticator_refuses_before_any_product_or_build":
-      "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea",
-    "JavaHttpPublicSpi.test_actual_cli_consumption_preserves_string_u64_and_integer_u32_fields":
-      "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea",
-    "JavaHttpPublicSpi.test_every_result_requires_real_guest_work_exact_factory_static_state_and_revision":
-      "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea",
-    "JavaHttpPublicSpi.test_failed_build_keeps_closed_stage_and_original_exception_without_raw_message":
-      "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea",
-    "JavaHttpPublicSpi.test_failed_invocation_preserves_original_exception_while_attempting_process_close":
-      "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea",
-    "JavaHttpPublicSpi.test_normal_project_captures_same_public_closure_without_changing_default_programme":
-      "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea",
-    "JavaHttpPublicSpi.test_public_factory_delegates_only_to_ordinary_url_connection_and_fresh_default_is_separate":
-      "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea",
-    "JavaHttpPublicSpi.test_unknown_or_boolean_numeric_consumption_cannot_be_qualification":
-      "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea",
-    "JavaSpiComponentIdentityFence.test_shared_producer_bound_identity_guard_runs_before_signed_spi_execution":
-      "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea",
-    "JavaSpiManualWorkflow.test_explicit_false_selector_restores_entire_baseline_and_duplicates_only_same_spi_job":
-      "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_java_http_spi.py",
-  "reviewReason":"Validate exact reviewed sealed compiler/cache setup and SDK argument inverse before all unchanged historical workflow assertions; same cases and skip/decorator predicates.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:223cc1d212f33c4327ab53029e24ec28d57317bceecc0e50aacd0838c713ed68","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["JavaHttpPublicSpi.test_absent_new_native_authenticator_refuses_before_any_product_or_build","JavaHttpPublicSpi.test_actual_cli_consumption_preserves_string_u64_and_integer_u32_fields","JavaHttpPublicSpi.test_every_result_requires_real_guest_work_exact_factory_static_state_and_revision","JavaHttpPublicSpi.test_failed_build_keeps_closed_stage_and_original_exception_without_raw_message","JavaHttpPublicSpi.test_failed_invocation_preserves_original_exception_while_attempting_process_close","JavaHttpPublicSpi.test_normal_project_captures_same_public_closure_without_changing_default_programme","JavaHttpPublicSpi.test_public_factory_delegates_only_to_ordinary_url_connection_and_fresh_default_is_separate","JavaHttpPublicSpi.test_unknown_or_boolean_numeric_consumption_cannot_be_qualification","JavaSpiComponentIdentityFence.test_shared_producer_bound_identity_guard_runs_before_signed_spi_execution","JavaSpiManualWorkflow.test_explicit_false_selector_restores_entire_baseline_and_duplicates_only_same_spi_job"],"guards":{"JavaHttpPublicSpi.test_absent_new_native_authenticator_refuses_before_any_product_or_build":
+  "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea"
+,"JavaHttpPublicSpi.test_actual_cli_consumption_preserves_string_u64_and_integer_u32_fields":
+  "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea"
+,"JavaHttpPublicSpi.test_every_result_requires_real_guest_work_exact_factory_static_state_and_revision":
+  "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea"
+,"JavaHttpPublicSpi.test_failed_build_keeps_closed_stage_and_original_exception_without_raw_message":
+  "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea"
+,"JavaHttpPublicSpi.test_failed_invocation_preserves_original_exception_while_attempting_process_close":
+  "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea"
+,"JavaHttpPublicSpi.test_normal_project_captures_same_public_closure_without_changing_default_programme":
+  "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea"
+,"JavaHttpPublicSpi.test_public_factory_delegates_only_to_ordinary_url_connection_and_fresh_default_is_separate":
+  "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea"
+,"JavaHttpPublicSpi.test_unknown_or_boolean_numeric_consumption_cannot_be_qualification":
+  "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea"
+,"JavaSpiComponentIdentityFence.test_shared_producer_bound_identity_guard_runs_before_signed_spi_execution":
+  "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea"
+,"JavaSpiManualWorkflow.test_explicit_false_selector_restores_entire_baseline_and_duplicates_only_same_spi_job":
+  "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea"
+},"kind":"python","module":"tools/tests/test_java_http_spi.py","reviewReason":"Validate exact reviewed sealed compiler/cache setup and SDK argument inverse before all unchanged historical workflow assertions; same cases and skip/decorator predicates.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "2bbef4f9d8073a3289ddfd7524cf7bd4771fa67435745ae2361a863b7f445fea"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:223cc1d212f33c4327ab53029e24ec28d57317bceecc0e50aacd0838c713ed68","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
