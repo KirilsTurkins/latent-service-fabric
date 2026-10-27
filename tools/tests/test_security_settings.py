@@ -21,19 +21,27 @@ class SecuritySettingsTests(unittest.TestCase):
             "branches/development/protection/required_status_checks": {"contexts": ["CI result"]},
         }
 
-    def test_enabled_settings_are_separate_from_inactive_schedule_and_required_gate(self) -> None:
-        responses = self.fixture()
+    def observe(self, responses=None, *, alerts=204, enable=False):
+        responses = self.fixture() if responses is None else responses
+        writes = []
 
         def request(endpoint, method="GET", payload=None):
-            self.assertEqual(method, "GET")
-            if endpoint == "vulnerability-alerts":
+            if method != "GET":
+                self.assertTrue(enable)
+                writes.append((endpoint, method, copy.deepcopy(payload)))
                 return 204, None
+            if endpoint == "vulnerability-alerts":
+                return alerts, None
             if endpoint.startswith("contents/"):
                 return 404, None
             return 200, responses[endpoint]
 
         with patch("tools.security_settings.request", side_effect=request):
-            report = settings()
+            return settings(enable), writes
+
+    def test_enabled_settings_are_separate_from_inactive_schedule_and_required_gate(self) -> None:
+        report, writes = self.observe()
+        self.assertEqual(writes, [])
         self.assertTrue(report["settings_enabled"])
         self.assertEqual(report["dependabot_target_branch"], "development")
         self.assertFalse(report["dependabot_security_updates_expected"])
@@ -44,21 +52,12 @@ class SecuritySettingsTests(unittest.TestCase):
 
     def test_disabled_or_unavailable_service_never_becomes_enabled(self) -> None:
         for state in (404, 403, 500):
-            responses = self.fixture()
-
-            def request(endpoint, method="GET", payload=None):
-                if endpoint == "vulnerability-alerts":
-                    return state, None
-                if endpoint.startswith("contents/"):
-                    return 404, None
-                return 200, responses[endpoint]
-
-            with patch("tools.security_settings.request", side_effect=request):
+            with self.subTest(status=state):
                 if state == 404:
-                    self.assertFalse(settings()["settings_enabled"])
+                    self.assertFalse(self.observe(alerts=state)[0]["settings_enabled"])
                 else:
                     with self.assertRaises(SecurityError):
-                        settings()
+                        self.observe(alerts=state)
 
     def test_enabling_is_explicit_and_does_not_change_branch_or_merge_policy(self) -> None:
         for default, method in (("release", "DELETE"), ("development", "PUT"), ("main", "DELETE")):
@@ -66,20 +65,8 @@ class SecuritySettingsTests(unittest.TestCase):
                 responses = self.fixture()
                 responses[""]["default_branch"] = default
                 responses["automated-security-fixes"]["enabled"] = default == "development"
-                writes = []
-
-                def request(endpoint, method="GET", payload=None):
-                    if method != "GET":
-                        writes.append((endpoint, method, copy.deepcopy(payload)))
-                        return 204, None
-                    if endpoint == "vulnerability-alerts":
-                        return 204, None
-                    if endpoint.startswith("contents/"):
-                        return 404, None
-                    return 200, responses[endpoint]
-
-                with patch("tools.security_settings.request", side_effect=request):
-                    self.assertTrue(settings(enable=True)["settings_enabled"])
+                report, writes = self.observe(responses, enable=True)
+                self.assertTrue(report["settings_enabled"])
                 self.assertEqual([entry[0] for entry in writes], ["vulnerability-alerts", "automated-security-fixes",
                                                                 "private-vulnerability-reporting", ""])
                 self.assertEqual(writes[1], ("automated-security-fixes", method, None))
@@ -100,16 +87,8 @@ class SecuritySettingsTests(unittest.TestCase):
                 responses[""]["default_branch"] = default
                 responses["automated-security-fixes"] = {"enabled": enabled, "paused": paused}
 
-                def request(endpoint, method="GET", payload=None):
-                    self.assertEqual(method, "GET")
-                    if endpoint == "vulnerability-alerts":
-                        return 204, None
-                    if endpoint.startswith("contents/"):
-                        return 404, None
-                    return 200, responses[endpoint]
-
-                with patch("tools.security_settings.request", side_effect=request):
-                    report = settings()
+                report, writes = self.observe(responses)
+                self.assertEqual(writes, [])
                 self.assertEqual(report["settings_enabled"], compliant)
                 self.assertEqual(report["dependabot_security_updates_match_policy"], compliant)
 
