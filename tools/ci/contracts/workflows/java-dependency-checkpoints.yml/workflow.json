@@ -1,36 +1,36 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "java-dependency-checkpoints-${{ github.ref }}"
-    },
-    "name": "Java published dependency checkpoints",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/java-runtime-next-20261023"
-        ],
-        "paths": [
-          "tools/fixtures/java-dependency-checkpoints/**",
-          "tools/java_dependency_checkpoint_*.py",
-          "tools/qualify_java_dependency_checkpoints.py",
-          "tools/tests/test_java_dependency_checkpoints.py",
-          "sdk/java-guest/fibers/conformance/compiler/DependencyCheckpointControl.java",
-          ".github/workflows/java-dependency-checkpoints.yml"
-        ]
-      },
-      "workflow_dispatch": null
-    },
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "dependency-checkpoints"
-  ],
-  "reviewReason": "Add one bounded unchanged Commons AtomicSafeInitializer dependency-loop qualification with actual maintained-plugin IR controls and six signed two-tenant calls. Preserve original Java budgets, clocks/runtime-only grants, prior suites and separate 193-control native provenance; unsigned compiler warm-up counted separately, no native rebuild or whole-ticket/GC qualification claim. Reference processes use15s maximum,60s total; every real outcome remains required.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/java-dependency-checkpoints.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"java-dependency-checkpoints-${{ github.ref }}"
+},
+"name":"Java published dependency checkpoints",
+"on":{
+"push":{
+"branches":[
+"feat/java-runtime-next-20261023"
+],
+"paths":[
+"tools/fixtures/java-dependency-checkpoints/**",
+"tools/java_dependency_checkpoint_*.py",
+"tools/qualify_java_dependency_checkpoints.py",
+"tools/tests/test_java_dependency_checkpoints.py",
+"sdk/java-guest/fibers/conformance/compiler/DependencyCheckpointControl.java",
+".github/workflows/java-dependency-checkpoints.yml"
+]
+},
+"workflow_dispatch":null
+},
+"permissions":{
+"actions":"read",
+"contents":"read"
+}
+},
+"requiredJobs":[
+"dependency-checkpoints"
+],
+"reviewReason":"Add one bounded unchanged Commons AtomicSafeInitializer dependency-loop qualification with actual maintained-plugin IR controls and six signed two-tenant calls. Preserve original Java budgets, clocks/runtime-only grants, prior suites and separate 193-control native provenance; unsigned compiler warm-up counted separately, no native rebuild or whole-ticket/GC qualification claim. Reference processes use15s maximum,60s total; every real outcome remains required.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/java-dependency-checkpoints.yml"
 }

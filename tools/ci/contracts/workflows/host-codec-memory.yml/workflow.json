@@ -1,38 +1,38 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "host-codec-memory-${{ github.ref }}"
-    },
-    "name": "Ordinary host shared table and runtime memory diagnostics",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/host-codec-memory-736-20261021",
-          "feat/typescript-table-memory-20261022",
-          "feat/activation-registry-memory-20261022",
-          "feat/activation-funcrefs-memory-20261022",
-          "feat/component-resource-map-memory-20261022",
-          "feat/linear-memory-notifications-20261022",
-          "feat/hostcall-future-memory-20261022",
-          "feat/owned-context-replies-memory-20261022",
-          "feat/capability-lowering-current-20261022",
-          "feat/streaming-table-memory-20261022",
-          "feat/runtime-shared-memory-20261022",
-          "feat/session-core-memory-20261022"
-        ]
-      },
-      "workflow_dispatch": {}
-    },
-    "permissions": {
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "native"
-  ],
-  "reviewReason": "Keep the same branch and native recipe for exactly177 original-budget ownership controls",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/host-codec-memory.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"host-codec-memory-${{ github.ref }}"
+},
+"name":"Ordinary host shared table and runtime memory diagnostics",
+"on":{
+"push":{
+"branches":[
+"feat/host-codec-memory-736-20261021",
+"feat/typescript-table-memory-20261022",
+"feat/activation-registry-memory-20261022",
+"feat/activation-funcrefs-memory-20261022",
+"feat/component-resource-map-memory-20261022",
+"feat/linear-memory-notifications-20261022",
+"feat/hostcall-future-memory-20261022",
+"feat/owned-context-replies-memory-20261022",
+"feat/capability-lowering-current-20261022",
+"feat/streaming-table-memory-20261022",
+"feat/runtime-shared-memory-20261022",
+"feat/session-core-memory-20261022"
+]
+},
+"workflow_dispatch":{}
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"native"
+],
+"reviewReason":"Keep the same branch and native recipe for exactly177 original-budget ownership controls",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/host-codec-memory.yml"
 }

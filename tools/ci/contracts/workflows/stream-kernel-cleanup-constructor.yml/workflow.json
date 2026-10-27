@@ -1,36 +1,36 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "stream-kernel-cleanup-constructor-${{ github.ref }}"
-    },
-    "name": "Stream retained paid constructor source programme",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/stream-kernel-cleanup-constructor-cancel-20261023"
-        ],
-        "paths": [
-          ".github/workflows/stream-kernel-cleanup-constructor.yml",
-          "tools/qualify_host_stream_kernel_cleanup_constructor.py",
-          "tools/host_stream_kernel_cleanup_constructor_*.py",
-          "tools/tests/test_host_stream_kernel_cleanup_constructor_*.py",
-          "tools/tests/fixtures/host_stream_kernel_cleanup_constructor_wait.json",
-          "research/standard-outbound/linux-6.12-lineage/*cleanup-provider-constructor.c",
-          "research/standard-outbound/linux-6.12-lineage/cleanup-constructor-wait-source-freeze-r1.json"
-        ]
-      },
-      "workflow_dispatch": null
-    },
-    "permissions": {
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "cleanup-constructor"
-  ],
-  "reviewReason": "Additive retained paid constructor completion/deadline source controls and four changed defining-object geometry programme only. Preserve old24-object/native-atomic programmes and all prior cases. Full consumer, public IoCall integration and wall-clock bounds stay unqualified. Exact feature-only push fallback permits the owning programme if new manual workflow dispatch is not registered; no existing workflow or job changes.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/stream-kernel-cleanup-constructor.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"stream-kernel-cleanup-constructor-${{ github.ref }}"
+},
+"name":"Stream retained paid constructor source programme",
+"on":{
+"push":{
+"branches":[
+"feat/stream-kernel-cleanup-constructor-cancel-20261023"
+],
+"paths":[
+".github/workflows/stream-kernel-cleanup-constructor.yml",
+"tools/qualify_host_stream_kernel_cleanup_constructor.py",
+"tools/host_stream_kernel_cleanup_constructor_*.py",
+"tools/tests/test_host_stream_kernel_cleanup_constructor_*.py",
+"tools/tests/fixtures/host_stream_kernel_cleanup_constructor_wait.json",
+"research/standard-outbound/linux-6.12-lineage/*cleanup-provider-constructor.c",
+"research/standard-outbound/linux-6.12-lineage/cleanup-constructor-wait-source-freeze-r1.json"
+]
+},
+"workflow_dispatch":null
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"cleanup-constructor"
+],
+"reviewReason":"Additive retained paid constructor completion/deadline source controls and four changed defining-object geometry programme only. Preserve old24-object/native-atomic programmes and all prior cases. Full consumer, public IoCall integration and wall-clock bounds stay unqualified. Exact feature-only push fallback permits the owning programme if new manual workflow dispatch is not registered; no existing workflow or job changes.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/stream-kernel-cleanup-constructor.yml"
 }

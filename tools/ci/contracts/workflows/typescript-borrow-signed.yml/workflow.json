@@ -1,69 +1,69 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "typescript-borrow-signed-${{ github.ref }}"
-    },
-    "name": "TypeScript signed canonical borrow release",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/typescript-borrow-release-probe-20261024",
-          "feat/typescript-accepted-close-20261025"
-        ],
-        "paths": [
-          ".github/workflows/typescript-borrow-signed.yml",
-          "tools/qualify_typescript_borrow_signed.py",
-          "tools/typescript_guest/borrow_*.py",
-          "tools/typescript_guest/borrow_probe.mjs",
-          "tools/typescript_guest/compiler.py",
-          "tools/typescript_guest/runtime_profile.py",
-          "tools/typescript_guest/componentize.mjs",
-          "tools/typescript_guest/async_waiters.mjs",
-          "tools/typescript_guest/node_net*.mjs",
-          "tools/typescript_guest/net_*.mjs",
-          "tools/typescript_guest/net_profile.py",
-          "tools/typescript_guest/build.py",
-          "tools/typescript_guest/bundle.mjs",
-          "tools/typescript_guest/import_cancellation.mjs",
-          "tools/java_phase_native_products.py",
-          "tools/guest_compatibility_context*.py",
-          "tools/guest_compatibility_outcomes.py",
-          "tools/tests/test_typescript_node_net.py",
-          "tools/tests/fixtures/typescript_node_net_generated.json",
-          "sdk/typescript-guest/runtime/net.d.ts",
-          "wit/platform/network/package.wit",
-          "sdk/typescript-guest/probes/node-net/**",
-          "tools/tests/test_typescript_native_carrier_scheduling.py",
-          "tools/tests/test_typescript_borrow*.py",
-          "sdk/typescript-guest/probes/borrow-release/**",
-          "crates/latent-wasmtime/src/backend.rs",
-          "crates/latent-wasmtime/src/containment.rs",
-          "crates/latent-wasmtime/src/lib.rs",
-          "crates/latent-wasmtime/src/development_trap_observer.rs",
-          "crates/latent-wasmtime/src/development_borrow_admission.rs",
-          "crates/latent-wasmtime/src/host.rs",
-          "crates/latent-wasmtime/src/host/runtime.rs",
-          "crates/latent-wasmtime/src/config.rs",
-          "crates/latent-wasmtime/src/config/engine.rs",
-          "crates/latent-wasmtime/src/config/profile.rs",
-          "crates/latent-wasmtime/tests/local_service/fixture.rs",
-          "crates/latent-wasmtime/tests/typescript_import_borrow_release*",
-          "crates/latent-wasmtime/tests/typescript_import_borrow_release/**",
-          "crates/latent-wasmtime/tests/local_service/packages.rs",
-          "crates/latent-wasmtime/tests/guest_sdk/package.rs"
-        ]
-      }
-    },
-    "permissions": {
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "signed-borrow"
-  ],
-  "reviewReason": "Retain all prior Socket controls and skip predicates, add accepted-close/EOF/original-rejection guards and bind the one eight-case signed published-client programme without changing runtime funding.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/typescript-borrow-signed.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"typescript-borrow-signed-${{ github.ref }}"
+},
+"name":"TypeScript signed canonical borrow release",
+"on":{
+"push":{
+"branches":[
+"feat/typescript-borrow-release-probe-20261024",
+"feat/typescript-accepted-close-20261025"
+],
+"paths":[
+".github/workflows/typescript-borrow-signed.yml",
+"tools/qualify_typescript_borrow_signed.py",
+"tools/typescript_guest/borrow_*.py",
+"tools/typescript_guest/borrow_probe.mjs",
+"tools/typescript_guest/compiler.py",
+"tools/typescript_guest/runtime_profile.py",
+"tools/typescript_guest/componentize.mjs",
+"tools/typescript_guest/async_waiters.mjs",
+"tools/typescript_guest/node_net*.mjs",
+"tools/typescript_guest/net_*.mjs",
+"tools/typescript_guest/net_profile.py",
+"tools/typescript_guest/build.py",
+"tools/typescript_guest/bundle.mjs",
+"tools/typescript_guest/import_cancellation.mjs",
+"tools/java_phase_native_products.py",
+"tools/guest_compatibility_context*.py",
+"tools/guest_compatibility_outcomes.py",
+"tools/tests/test_typescript_node_net.py",
+"tools/tests/fixtures/typescript_node_net_generated.json",
+"sdk/typescript-guest/runtime/net.d.ts",
+"wit/platform/network/package.wit",
+"sdk/typescript-guest/probes/node-net/**",
+"tools/tests/test_typescript_native_carrier_scheduling.py",
+"tools/tests/test_typescript_borrow*.py",
+"sdk/typescript-guest/probes/borrow-release/**",
+"crates/latent-wasmtime/src/backend.rs",
+"crates/latent-wasmtime/src/containment.rs",
+"crates/latent-wasmtime/src/lib.rs",
+"crates/latent-wasmtime/src/development_trap_observer.rs",
+"crates/latent-wasmtime/src/development_borrow_admission.rs",
+"crates/latent-wasmtime/src/host.rs",
+"crates/latent-wasmtime/src/host/runtime.rs",
+"crates/latent-wasmtime/src/config.rs",
+"crates/latent-wasmtime/src/config/engine.rs",
+"crates/latent-wasmtime/src/config/profile.rs",
+"crates/latent-wasmtime/tests/local_service/fixture.rs",
+"crates/latent-wasmtime/tests/typescript_import_borrow_release*",
+"crates/latent-wasmtime/tests/typescript_import_borrow_release/**",
+"crates/latent-wasmtime/tests/local_service/packages.rs",
+"crates/latent-wasmtime/tests/guest_sdk/package.rs"
+]
+}
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"signed-borrow"
+],
+"reviewReason":"Retain all prior Socket controls and skip predicates, add accepted-close/EOF/original-rejection guards and bind the one eight-case signed published-client programme without changing runtime funding.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/typescript-borrow-signed.yml"
 }
