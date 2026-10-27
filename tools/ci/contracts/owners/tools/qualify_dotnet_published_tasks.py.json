@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_published_tasks.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain strict original normal-native authentication and every published graph/task/grant/retirement assertion; restore executable modes only on the five authenticated artifact binaries.",
+  "reviewReason": "Keep exact profile, completion, single final CoreLib reference and graph/task/grant/retirement checks. Match the existing finite task-wait receipt's exact monotonic/wall/random/activation declarations; no grant or runtime change. Real failed artifact12710979241 built successfully and stopped only at the stale two-declaration expectation.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0dadc2b5cb965e61e43dc81d7e414ca97e7a4251821e482c595b7a54368e9501"
+  "sha256": "f6a0f5fca0cb941cfae565e45761662adce2c8a122723c3f7128b8e06560cacc"
 }
