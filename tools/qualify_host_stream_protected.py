@@ -182,6 +182,12 @@ OWNED_TIMER_CASES = (
 )
 
 
+def owned_timer_command_retired(row):
+    return (type(row['returncode']) is int and row['returncode'] == 0
+        and row['cleaned'] is True and type(row['reaped']) is int
+        and row['reaped'] >= 0)
+
+
 def qualify_owned_timer_box(output, revision):
     require(sys.platform == 'linux' and platform.machine() == 'x86_64', 'real-linux-x86-required')
     require(re.fullmatch(r'[0-9a-f]{40}', revision) is not None, 'source-revision')
@@ -259,8 +265,8 @@ def qualify_owned_timer_box(output, revision):
         require(receipt['cases'] == list(OWNED_TIMER_CASES) and
             len(set(receipt['cases'])) == 5 and len(commands.rows) == 15,
             'all-five-owned-timer-required')
-        require(all(row['returncode'] == 0 and row['cleaned'] and row['reaped']
-            for row in commands.rows), 'owned-timer-command-retirement')
+        require(all(owned_timer_command_retired(row) for row in commands.rows),
+            'owned-timer-command-retirement')
         receipt['status'] = 'owned-timer-box-five-controls-passed'
         receipt['phase'] = 'complete-box-layout-only'
     except BaseException as fault:

@@ -39,6 +39,17 @@ class OwnedTimerBoxOwner(unittest.TestCase):
         self.assertEqual(owner.OWNED_TIMER_CASES, expected)
         self.assertEqual(owner.OWNED_TIMER_BRANCH, 'feat/sdk-owned-timer-box-20261027')
         self.assertTrue(callable(owner.qualify_owned_timer_box))
+        for count in (0, 1, 7):
+            self.assertTrue(owner.owned_timer_command_retired(
+                {'returncode': 0, 'cleaned': True, 'reaped': count}))
+        for count in (-1, False, True, None, '0'):
+            self.assertFalse(owner.owned_timer_command_retired(
+                {'returncode': 0, 'cleaned': True, 'reaped': count}))
+        for field, value in (('cleaned', False), ('cleaned', 1),
+                ('returncode', 1), ('returncode', -1), ('returncode', False)):
+            row = {'returncode': 0, 'cleaned': True, 'reaped': 0}
+            row[field] = value
+            self.assertFalse(owner.owned_timer_command_retired(row))
         old = owner.CASES['latent-streams'][0]
         for name in expected:
             raw = ('test '+name+' ... ok\ntest result: ok. 1 passed; 0 failed; '
