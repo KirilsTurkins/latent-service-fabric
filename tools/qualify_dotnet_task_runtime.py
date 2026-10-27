@@ -102,6 +102,16 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
 
 
 if __name__ == '__main__':
+    if '--root-return' in sys.argv[1:]:
+        parser = argparse.ArgumentParser(description='Closed NORMAL root-return fixture')
+        parser.add_argument('--root-return', action='store_true', required=True)
+        for name in ('output', 'tools', 'prerequisite-archive'):
+            parser.add_argument('--'+name, type=Path, required=True)
+        arguments = parser.parse_args()
+        from tools.dotnet_root_return import qualify as root_return
+        print(json.dumps(root_return(arguments.output.resolve(), arguments.tools.resolve(),
+                                    arguments.prerequisite_archive.resolve())))
+        raise SystemExit(0)
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('output', 'tools', 'native-qualification'):
         parser.add_argument('--' + name, type=Path, required=True)

@@ -47,10 +47,12 @@ RECIPE += guest_dependency_inputs.RECIPE
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
           *, tools: Path, offline: bool = False, executable_approval: str | None = None,
-          compiler_methods: bool = False, _deadline: float | None = None):
+          compiler_methods: bool = False, _deadline: float | None = None, _root_return_capture: bool = False):
     if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
                                  or _deadline <= time.monotonic() + 5):
         raise ValueError('dotnet-build-original-owner-deadline')
+    if type(_root_return_capture) is not bool:
+        raise ValueError("dotnet-root-return-capture-selection")
     if type(compiler_methods) is not bool:
         raise ValueError('dotnet compiler method observations require an explicit boolean')
     project_path, output, tools = map(checked_path, (project_path, output, tools))
@@ -71,6 +73,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         guest_resources.select(files)
         source_inputs = inventory(files)
         recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
+        if _root_return_capture:
+            recipe_files["tools/dotnet_root_return.py"] = read_file(ROOT / "tools/dotnet_root_return.py")
         recipe = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe)
@@ -130,7 +134,20 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             write_json(output / "diagnostic-source.json", {
                 "capturedSource": str(temporary / "compiled/project/src"),
                 "requestedSource": str(project_path / "src")})
-            component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
+            try:
+                component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
+            except BaseException:
+                if _root_return_capture:
+                    try:
+                        from tools.dotnet_root_return import retain_probe_failure
+                        retain_probe_failure(temporary / "compiled", output)
+                    except Exception as capture_error:
+                        write_json(output / "probe-inputs-unavailable.json", {"status": "unavailable",
+                            "reason": type(capture_error).__name__, "compilerSucceeded": False})
+                raise
+            if _root_return_capture:
+                from tools.dotnet_root_return import retain_probe_inputs
+                retain_probe_inputs(temporary / "compiled", output, generated["bindings"], compiler)
             # Native ports are derived inside the owned compiler workspace.
             # Bind the completed derivation and real linker observation rather
             # than the initial composer-only receipt written before approval.

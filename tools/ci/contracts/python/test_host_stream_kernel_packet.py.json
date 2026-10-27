@@ -1,38 +1,29 @@
-{
-  "cases":["KernelLinearPacketSource.test_allocating_send_alternatives_refuse_before_original_calls","KernelLinearPacketSource.test_audit_and_normal_dispatchers_remain_distinct_from_packet","KernelLinearPacketSource.test_changed_duplicate_crlf_and_missing_whole_source_refuse","KernelLinearPacketSource.test_collapse_refuses_unknown_and_foreign_packet_before_lookup_or_copy","KernelLinearPacketSource.test_control_packets_reserve_under_actual_sock_before_original_constructor","KernelLinearPacketSource.test_copied_payload_uses_real_linear_copy_and_original_accounting_tail","KernelLinearPacketSource.test_copy_dispatch_has_exact_normal_definition_and_no_stale_birth_fallback","KernelLinearPacketSource.test_exact_parent_sources_and_primary_new_source_provenance","KernelLinearPacketSource.test_full_head_and_header_before_publication_and_no_generic_fallback","KernelLinearPacketSource.test_prior_birth_generation_and_closed_kind_routes_precede_any_use","KernelLinearPacketSource.test_private_copy_include_follows_unchanged_static_dependency_before_public_copies","KernelLinearPacketSource.test_private_passive_fastopen_repair_and_receive_injection_refuse_first","KernelLinearPacketSource.test_retransmit_copy_proves_linear_origin_and_checked_extent_before_new_birth"],
-  "guards":{
-    "KernelLinearPacketSource.test_allocating_send_alternatives_refuse_before_original_calls":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1",
-    "KernelLinearPacketSource.test_audit_and_normal_dispatchers_remain_distinct_from_packet":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1",
-    "KernelLinearPacketSource.test_changed_duplicate_crlf_and_missing_whole_source_refuse":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1",
-    "KernelLinearPacketSource.test_collapse_refuses_unknown_and_foreign_packet_before_lookup_or_copy":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1",
-    "KernelLinearPacketSource.test_control_packets_reserve_under_actual_sock_before_original_constructor":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1",
-    "KernelLinearPacketSource.test_copied_payload_uses_real_linear_copy_and_original_accounting_tail":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1",
-    "KernelLinearPacketSource.test_copy_dispatch_has_exact_normal_definition_and_no_stale_birth_fallback":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1",
-    "KernelLinearPacketSource.test_exact_parent_sources_and_primary_new_source_provenance":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1",
-    "KernelLinearPacketSource.test_full_head_and_header_before_publication_and_no_generic_fallback":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1",
-    "KernelLinearPacketSource.test_prior_birth_generation_and_closed_kind_routes_precede_any_use":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1",
-    "KernelLinearPacketSource.test_private_copy_include_follows_unchanged_static_dependency_before_public_copies":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1",
-    "KernelLinearPacketSource.test_private_passive_fastopen_repair_and_receive_injection_refuse_first":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1",
-    "KernelLinearPacketSource.test_retransmit_copy_proves_linear_origin_and_checked_extent_before_new_birth":
-      "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_host_stream_kernel_packet.py",
-  "reviewReason":"Retain every prior packet source case and guard; authenticate the exact maintained static zerocopy helper and add its declaration-order regression after actual unlinked Kbuild failure. No implementation body, configuration, budget or oracle changes.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf","class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"],"skipSites":[]}
-  }
-}
+{"cases":["KernelLinearPacketSource.test_allocating_send_alternatives_refuse_before_original_calls","KernelLinearPacketSource.test_audit_and_normal_dispatchers_remain_distinct_from_packet","KernelLinearPacketSource.test_changed_duplicate_crlf_and_missing_whole_source_refuse","KernelLinearPacketSource.test_collapse_refuses_unknown_and_foreign_packet_before_lookup_or_copy","KernelLinearPacketSource.test_control_packets_reserve_under_actual_sock_before_original_constructor","KernelLinearPacketSource.test_copied_payload_uses_real_linear_copy_and_original_accounting_tail","KernelLinearPacketSource.test_copy_dispatch_has_exact_normal_definition_and_no_stale_birth_fallback","KernelLinearPacketSource.test_exact_parent_sources_and_primary_new_source_provenance","KernelLinearPacketSource.test_full_head_and_header_before_publication_and_no_generic_fallback","KernelLinearPacketSource.test_prior_birth_generation_and_closed_kind_routes_precede_any_use","KernelLinearPacketSource.test_private_copy_include_follows_unchanged_static_dependency_before_public_copies","KernelLinearPacketSource.test_private_passive_fastopen_repair_and_receive_injection_refuse_first","KernelLinearPacketSource.test_retransmit_copy_proves_linear_origin_and_checked_extent_before_new_birth"],"guards":{"KernelLinearPacketSource.test_allocating_send_alternatives_refuse_before_original_calls":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+,"KernelLinearPacketSource.test_audit_and_normal_dispatchers_remain_distinct_from_packet":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+,"KernelLinearPacketSource.test_changed_duplicate_crlf_and_missing_whole_source_refuse":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+,"KernelLinearPacketSource.test_collapse_refuses_unknown_and_foreign_packet_before_lookup_or_copy":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+,"KernelLinearPacketSource.test_control_packets_reserve_under_actual_sock_before_original_constructor":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+,"KernelLinearPacketSource.test_copied_payload_uses_real_linear_copy_and_original_accounting_tail":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+,"KernelLinearPacketSource.test_copy_dispatch_has_exact_normal_definition_and_no_stale_birth_fallback":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+,"KernelLinearPacketSource.test_exact_parent_sources_and_primary_new_source_provenance":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+,"KernelLinearPacketSource.test_full_head_and_header_before_publication_and_no_generic_fallback":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+,"KernelLinearPacketSource.test_prior_birth_generation_and_closed_kind_routes_precede_any_use":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+,"KernelLinearPacketSource.test_private_copy_include_follows_unchanged_static_dependency_before_public_copies":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+,"KernelLinearPacketSource.test_private_passive_fastopen_repair_and_receive_injection_refuse_first":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+,"KernelLinearPacketSource.test_retransmit_copy_proves_linear_origin_and_checked_extent_before_new_birth":
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_packet.py","reviewReason":"Retain every prior packet source case and guard; authenticate the exact maintained static zerocopy helper and add its declaration-order regression after actual unlinked Kbuild failure. No implementation body, configuration, budget or oracle changes.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "bdad3575f61f52b0172cd35f9246db9e1e7cb3622f4694a9c037e64412d75bf1"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6c4727a3f0f5a392a6110f942bdaa0e2c604f24ba08d4ee2e1c3736f107f25bf","class:setup-sha256:eb87b30753a51233dbe68f46e52c1f8002db510fb97ceca680f37310caa4c783"],"skipSites":[]}}}

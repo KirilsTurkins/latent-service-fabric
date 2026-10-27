@@ -1,6 +1,8 @@
 name: .NET guest qualification
 
 on:
+  push:
+    branches: [test/sdk-dotnet-root-return-20261027]
   pull_request:
     paths:
       - 'sdk/dotnet-guest/**'
@@ -97,6 +99,7 @@ env:
 
 jobs:
   toolchain:
+    if: github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' && github.head_ref != 'test/sdk-dotnet-root-return-20261027'
     name: NativeAOT component qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -750,3 +753,105 @@ jobs:
             ${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json
           if-no-files-found: warn
           retention-days: 3
+
+  root-return:
+    name: Normal managed accepted work after application root return
+    if: github.event_name == 'push' && github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      RUSTUP_TOOLCHAIN: '1.97.1'
+      RUSTUP_AUTO_INSTALL: '0'
+    steps:
+      - name: Establish the one original 1320-second programme deadline
+        timeout-minutes: 1
+        shell: bash
+        run: python3 -c 'import os,time; open(os.environ["GITHUB_ENV"],"a").write("LSF_ROOT_RETURN_DEADLINE="+str(time.monotonic()+1320)+"\n")'
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
+        timeout-minutes: 2
+        with:
+          dotnet-version: '10.0.100'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        timeout-minutes: 2
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          version: 1.254.0
+      - name: Acquire the fixed same-core normal products without rebuilding them
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          timeout 90s gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12731925685/zip > "$RUNNER_TEMP/root-return-normal.zip"
+          test "$(stat --format=%s "$RUNNER_TEMP/root-return-normal.zip")" = 76670714
+          printf '%s  %s\n' eab2202cc3522f225624a771bc446c26af3a422ae201abae0784bb3c38a0582e "$RUNNER_TEMP/root-return-normal.zip" | sha256sum --check --strict
+      - name: Install the existing locked Python parser dependencies
+        timeout-minutes: 1
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Check only the new closed normal observer and programme controls
+        timeout-minutes: 1
+        run: python3 -B -m unittest tools.tests.test_dotnet_task_runtime.RootReturnNormalControls -v
+      - name: Install captured NativeAOT namespace and loader inputs
+        timeout-minutes: 2
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install the pinned native compiler and closed runtime
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-authoring-bindgen"
+          export PATH="$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH"
+          printf '%s\n' "$RUNNER_TEMP/dotnet-authoring-bindgen" >> "$GITHUB_PATH"
+          python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Compile one normal component and execute eleven root cases plus four grant denials
+        timeout-minutes: 22
+        run: >-
+          python3 tools/qualify_dotnet_task_runtime.py --root-return
+          --prerequisite-archive "$RUNNER_TEMP/root-return-normal.zip"
+          --tools "$RUNNER_TEMP/dotnet-authoring-tools"
+          --output "$RUNNER_TEMP/dotnet-root-return"
+      - name: Retain admitted actual helper and results including failures
+        timeout-minutes: 2
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: dotnet-root-return-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-root-return/public/**
+          if-no-files-found: warn
+          retention-days: 7
