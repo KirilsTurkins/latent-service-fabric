@@ -2422,6 +2422,177 @@ def qualify_http_metadata(output, revision):
         write_json(output / 'commands.json', commands.records)
 
 
+HTTP_IP_FORMAT_BRANCH = 'feat/sdk-736-http-ip-format-20261027'
+HTTP_IP_FORMAT_PREFIX = 'capability::resources::stream_tests::'
+HTTP_IP_FORMAT_NEW_CASES = tuple(HTTP_IP_FORMAT_PREFIX + name for name in (
+    'canonical_ip_stack_spelling_preserves_original_display_and_host_gates',
+    'canonical_ip_fixed_writer_refuses_whole_overflowing_chunks'))
+HTTP_IP_FORMAT_POLICY_CASES = (*HTTP_IP_FORMAT_NEW_CASES,
+    HTTP_IP_FORMAT_PREFIX + 'malformed_ambiguous_and_wildcard_endpoints_fail_closed')
+HTTP_IP_FORMAT_HTTP_CASES = ('tests::ownership::borrowed_http_target_validation_preserves_descriptor_and_destination_semantics',)
+HTTP_IP_FORMAT_CASES = (*HTTP_IP_FORMAT_POLICY_CASES, *HTTP_IP_FORMAT_HTTP_CASES)
+HTTP_IP_FORMAT_SOURCE_PATHS = (
+    'crates/latent-policy/src/capability/resources.rs',
+    'crates/latent-http/src/tests/ownership.rs')
+
+
+def http_ip_format_result(raw, case):
+    require(case in HTTP_IP_FORMAT_CASES, 'fixed-case')
+    require(len(raw) <= artifacts.MAX_OUTPUT_BYTES, 'case-output-bound')
+    require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
+        == [case.encode()], 'one-exact-success')
+    summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
+        rb'(\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    require(len(summaries) == 1 and summaries[0][:4] == (b'1', b'0', b'0', b'0')
+        and int(summaries[0][4]) <= 10000, 'one-executed-no-skip')
+    require(not re.findall(rb'^(http-utf8-view [^\r\n]+)$', raw, re.M), 'no-old-api-programme-marker')
+    return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0,
+        'ignored': 0, 'filteredOut': int(summaries[0][4]),
+        'scope': 'ordinary-host-IP-display-and-target-grammar-bounds-no-ActivationBudget'}
+
+
+def qualify_http_ip_format(output, revision):
+    require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
+        and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
+        and os.environ.get('GITHUB_REF_NAME') == HTTP_IP_FORMAT_BRANCH
+        and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'one-exact-hosted-push')
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
+        'owned-output')
+    output = fresh(output)
+    environment = io_copy_environment(build_environment(output))
+    environment.update(CARGO_TARGET_DIR=str(ROOT / 'target'), CARGO_INCREMENTAL='0',
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+        CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+    logs = output / 'commands'
+    logs.mkdir()
+    # The original five-second reaping reserve remains inside every cap.
+    commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895)
+    receipt = {'schemaVersion': 'lsf.owned-http-ip-format.v1', 'status': 'in-progress',
+        'sourceRevision': revision, 'selectedCases': list(HTTP_IP_FORMAT_CASES), 'observations': [],
+        'casesStarted': [], 'casesPassed': [], 'newCases': list(HTTP_IP_FORMAT_NEW_CASES),
+        'unchangedReferenceCases': [HTTP_IP_FORMAT_POLICY_CASES[-1], *HTTP_IP_FORMAT_HTTP_CASES],
+        'fullCostModelQualified': False, 'fullHttpSuiteExecuted': False, 'fullRuntimeSuiteExecuted': False,
+        'fullVendorSuiteExecuted': False, 'signedRealNodeGuestExecuted': False,
+        'wasmtimeExecuted': False, 'guestComponentCompiled': False,
+        'fixtureAssembled': False, 'cargoBuildMayRunHostBuildScripts': True,
+        'hermetic': False, 'compilerImplicitInputsAttested': False,
+        'scope': 'remove the canonical_host IP comparison String with the original default Display and exact byte equality in a bounded39-byte private writer; domain/stream authority gates unchanged; opaque Url/parser/origin/redirect/wire/control/TLS/transitive and complete stack/native costs remain open',
+        'limits': {'overallSeconds': 2400, 'buildCommandSeconds': 900,
+            'caseProcessSeconds': 60, 'listProcessSeconds': 30, 'cleanupReserveSeconds': 5},
+        'budgetFixtures': {'allFourOrdinaryControls': {'activationBudgetInstalled': False,
+            'scope': 'IP-display/target-grammar/stack-writer-bounds-not-memory-or-RSS-qualification',
+            'engineExecuted': False}, 'genericHostOrRSSCeilingClaimed': False},
+        'canonicalIpDisplayCapacityBytes': 39,
+        'externalFixtureInputsAbsent': list(IO_COPY_FORBIDDEN_FIXTURE_ENV),
+        'oldHttpMetadataFourCaseProgrammeExecuted': False,
+        'oldHttpInputTenCaseProgrammeExecuted': False,
+        'oldPublicWasmStringApiCasesExecuted': False,
+        'oldCanonicalCasesExecuted': False, 'oldStreamProgrammeExecuted': False,
+        'oldProducerProgrammeExecuted': False, 'oldEightGraphProgrammeExecuted': False,
+        'oldThreeCopyProgrammeExecuted': False, 'oldBlobOutputNativeCasesExecuted': False,
+        'oldBlobInputProgrammeExecuted': False, 'privateVendorUnitTestsExecuted': False,
+        'cacheRoundtripExecuted': False, 'sdkGuestCompilerInvoked': False,
+        'commandLedgerBoundary': '12 supervised build/library/list/test commands and24 raw channels; normal pinned-tool resolver probes retain their existing owner and are not this ledger'}
+    try:
+        artifacts.require_source(ROOT, revision, environment)
+        before = source_inputs()
+        receipt['sourceBefore'] = before
+        receipt['canonicalIpSourceFiles'] = {path: identity(read_file(ROOT / path, 4 * 1024**2))
+            for path in HTTP_IP_FORMAT_SOURCE_PATHS}
+        write_json(output / 'source-inputs.json', before)
+        checked = source.verify()
+        receipt['wasmtimeSource'] = checked
+        toolchain = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml', 128 * 1024).decode())
+        require(toolchain['rust']['toolchain'] == '1.97.1'
+            and toolchain['contracts']['wasm-tools'] == '1.254.0', 'normal-tool-pins')
+        tools, pins = resolve_tools(toolchain, ROOT, environment, _deadline=commands.deadline)
+        receipt['observedTools'] = pins
+        environment.update(RUSTC=str(tools['rustc']), RUSTUP_TOOLCHAIN=toolchain['rust']['toolchain'])
+        def runtime_environment(artifact, label):
+            def probe(argv, *, cwd, env, timeout, maximum):
+                require(argv == ['rustc', '--print', 'target-libdir'] and cwd == ROOT
+                    and timeout == 30 and maximum == 4096, 'normal-library-probe')
+                commands.command_seconds = 25
+                require_io_copy_environment(env)
+                commands.environment = env
+                raw = commands.run(label + '-rust-library-path', tools['rustc'], *argv[1:])
+                require(len(raw) <= maximum, 'rust-library-output-bound')
+                return 0, raw
+            return artifacts.cargo_environment(ROOT, artifact, environment,
+                target=ROOT / 'target', execute=probe)
+
+        targets = (
+            ('policy', HTTP_IP_FORMAT_POLICY_CASES,
+             ('test', '-p', 'latent-policy', '--locked', '--lib', '--all-features',
+              '--no-run', '--message-format=json'),
+             artifacts.Suite('crates/latent-policy/Cargo.toml', 'latent_policy',
+                'src/lib.rs', HTTP_IP_FORMAT_PREFIX, frozenset(HTTP_IP_FORMAT_POLICY_CASES), True),
+             'latent-policy.lib.latent-policy', 157),
+            ('http', HTTP_IP_FORMAT_HTTP_CASES,
+             ('test', '-p', 'latent-http', '--locked', '--lib', '--all-features',
+              '--no-run', '--message-format=json'),
+             artifacts.Suite('crates/latent-http/Cargo.toml', 'latent_http',
+                'src/lib.rs', 'tests::ownership::', frozenset(HTTP_IP_FORMAT_HTTP_CASES), True),
+             'latent-http.lib.latent-http', 86),
+        )
+        executables = []
+        for label, cases, argv, suite, suite_id, minimum in targets:
+            receipt['stage'] = 'build-' + label
+            require_io_copy_environment(environment)
+            commands.environment = environment
+            commands.command_seconds = 895
+            ordinal = len(commands.records)
+            commands.run('build-' + label, tools['cargo'], *argv)
+            artifact = artifacts.read_inventory(logs / f'logs/{ordinal:02d}-build-{label}.stdout.txt',
+                ROOT, suite, target=ROOT / 'target')
+            executable = file_identity(artifact.executable, label + '-ip-format-controls', 512 * 1024**2)
+            receipt[label + 'Executable'] = executable
+            executables.append((artifact.executable, executable, label + '-ip-format-controls'))
+            run_env = io_copy_environment(runtime_environment(artifact, label))
+            contract, = [row for row in registry.load()['suites'] if row['id'] == suite_id]
+            require(contract['minimumCases'] == minimum
+                and set(cases) <= set(contract['expectedCases'])
+                and not set(cases) & set(contract['expectedIgnored']), 'normal-IP-suite-contract')
+            require_io_copy_environment(run_env)
+            commands.environment = run_env
+            for index, case in enumerate(cases):
+                receipt['stage'] = case
+                commands.command_seconds = 25
+                listed = commands.run(f'{label}-list-{index}', artifact.executable,
+                    case, '--exact', '--list')
+                require(len(listed) <= artifacts.MAX_LIST_BYTES, 'list-bound')
+                artifacts.validate_listing(listed, artifacts.Suite(suite.manifest, suite.target,
+                    suite.source, case, frozenset((case,)), True))
+                commands.command_seconds = 55
+                receipt['casesStarted'].append(case)
+                require_io_copy_environment(commands.environment)
+                raw = commands.run(f'{label}-case-{index}', artifact.executable,
+                    case, '--exact', '--show-output', '--test-threads=1')
+                receipt['observations'].append(http_ip_format_result(raw, case))
+                receipt['casesPassed'].append(case)
+        require(len(commands.records) == 12 and len(receipt['observations']) == 4,
+            'two-builds-two-library-probes-four-exact-cases')
+        require(time.monotonic() < commands.deadline, 'overall-deadline')
+        require(source_inputs() == before and source.verify() == checked, 'final-source')
+        for path, bound, label in executables:
+            require(file_identity(path, label, 512 * 1024**2) == bound, 'final-executable')
+        require([file_identity(tools[name], name) for name in sorted(tools)] == pins, 'final-tools')
+        artifacts.require_source(ROOT, revision, environment)
+        require_io_copy_environment(environment)
+        require_io_copy_environment(commands.environment)
+        require(time.monotonic() < commands.deadline, 'final-deadline')
+        receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True,
+            executed=list(HTTP_IP_FORMAT_CASES), ignored=[])
+        write_json(output / 'receipt.json', receipt)
+    except BaseException:
+        receipt['status'] = 'failed'
+        write_json(output / 'FAILED.json', receipt)
+        raise
+    finally:
+        write_json(output / 'commands.json', commands.records)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -2438,8 +2609,11 @@ if __name__ == '__main__':
     modes.add_argument('--blob-input', action='store_true')
     modes.add_argument('--http-input', action='store_true')
     modes.add_argument('--http-metadata', action='store_true')
+    modes.add_argument('--http-ip-format', action='store_true')
     args = parser.parse_args()
-    if args.http_metadata:
+    if args.http_ip_format:
+        qualify_http_ip_format(args.output.resolve(), args.source_commit)
+    elif args.http_metadata:
         qualify_http_metadata(args.output.resolve(), args.source_commit)
     elif args.http_input:
         qualify_http_input(args.output.resolve(), args.source_commit)
