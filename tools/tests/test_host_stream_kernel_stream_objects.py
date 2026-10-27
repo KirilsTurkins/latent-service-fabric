@@ -468,4 +468,86 @@ class StreamObjectOwner(unittest.TestCase):
             with self.assertRaises(ValueError):owner.admit(output,constructor_mmio=True)
 
 
+class VpTransportMaterials(unittest.TestCase):
+    """Source-reader controls only; no native producer/IRQ/fit qualification."""
+    def test_vp_transport_container_binds_complete_typed_materials(self):
+        import hashlib
+        from tools import host_stream_kernel_vp_transport as stage
+        raw=(stage.ROOT/stage.BUNDLE_PATH).read_bytes()
+        values=stage.decode_materials(raw)
+        self.assertEqual(set(values),set(stage.MATERIAL_PINS))
+        self.assertEqual(len(values),3)
+        for name,value in values.items():
+            self.assertEqual((len(value),hashlib.sha256(value).hexdigest()),stage.MATERIAL_PINS[name])
+        for altered in (raw[:-1],raw+b' ',raw.replace(b'IRQ',b'IrQ',1)):
+            with self.assertRaises(ValueError):stage.decode_materials(altered)
+
+    def test_vp_transport_forged_container_still_rejects_row_and_schema_forgery(self):
+        import copy
+        import hashlib
+        from unittest.mock import patch
+        from tools import host_stream_kernel_vp_transport as stage
+        original=json.loads((stage.ROOT/stage.BUNDLE_PATH).read_bytes())
+        def forged(value):
+            raw=(json.dumps(value,separators=(',',':'))+'\n').encode()
+            with patch.object(stage,'BUNDLE_PIN',(len(raw),hashlib.sha256(raw).hexdigest())):
+                with self.assertRaises(ValueError):stage.decode_materials(raw)
+        for key,value in (('path','include/net/unknown.h'),('bytes',True),
+                          ('sha256','0'*64),('text','/* substituted body */\n')):
+            value0=copy.deepcopy(original);value0['materials'][0][key]=value;forged(value0)
+        value=copy.deepcopy(original);value['materials'][1]=value['materials'][0];forged(value)
+        value=copy.deepcopy(original);value['schemaVersion']=True;forged(value)
+        raw=b'{"schemaVersion":1,"schemaVersion":1,"materials":[]}'
+        with patch.object(stage,'BUNDLE_PIN',(len(raw),hashlib.sha256(raw).hexdigest())):
+            with self.assertRaises(ValueError):stage.decode_materials(raw)
+
+    def test_vp_transport_refuses_incomplete_or_counterfeit_prior_source_map(self):
+        from tools import host_stream_kernel_vp_transport as stage
+        with self.assertRaises(ValueError):stage.transform({})
+        fake={str(n):b'not-original-source' for n in range(427)}
+        before=dict(fake)
+        with self.assertRaises(ValueError):stage.transform(fake)
+        self.assertEqual(fake,before)
+
+
+class VpTransportOwner(unittest.TestCase):
+    def test_vp_owner_cold_materials_exact_mode_and_public_stage(self):
+        import subprocess
+        import sys
+        from tools import qualify_host_stream_kernel_stream_objects as owner
+        self.assertIs(owner.mode_targets(vp_transport=True),owner.CONSTRUCTOR_MMIO_TARGETS)
+        with self.assertRaises(ValueError):owner.mode_targets(constructor_mmio=True,vp_transport=True)
+        with self.assertRaises(ValueError):owner.mode_targets(vp_transport=1)
+        self.assertEqual(owner.public_allowed('objects/net/factory.o',vp_transport=True),owner.MAX_OBJECT)
+        self.assertIsNotNone(owner.public_allowed('logs/00-vp-transport-objects.stdout.txt',vp_transport=True))
+        self.assertIsNone(owner.public_allowed('logs/00-constructor-mmio-objects.stdout.txt',vp_transport=True))
+        self.assertIsNone(owner.public_allowed('logs/00-vp-transport-objects.stdout.txt',constructor_mmio=True))
+        self.assertIsNone(owner.public_allowed('objects/net/socket.o',vp_transport=True))
+        with self.assertRaises(ValueError):owner.vp_compose({})
+        # Cold direct-script-like import, without invoking hosted run/main or
+        # a native projection/compiler. Earlier constructor import failure
+        # must not recur in the new exact67/94 material path.
+        code = """import json,runpy,sys
+from pathlib import Path
+path=Path(sys.argv[1]).resolve();root=path.parents[1]
+assert all(Path(p).resolve()!=root for p in sys.path)
+assert not any(n=='tools' or n.startswith('tools.') for n in sys.modules)
+module=runpy.run_path(str(path),run_name='cold_vp_materials')
+actual=module['vp_materials'](root)
+assert actual['runtimeOrFundingQualified'] is False
+print(json.dumps({'physical':len(actual['physicalInputs']),'logical':len(actual['logicalIdentities']),
+    'priorPhysical':len(actual['prior65Physical']),'priorLogical':len(actual['prior90Logical']),
+    'outputs':actual['projectionOutputCount']}))
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            result=subprocess.run([sys.executable,'-I','-B','-c',code,owner.__file__],
+                cwd=directory,capture_output=True,check=False,timeout=15)
+            self.assertEqual(result.returncode,0,result.stderr.decode('utf-8',errors='replace')[:4096])
+            self.assertEqual(json.loads(result.stdout),{'physical':67,'logical':94,
+                'priorPhysical':65,'priorLogical':90,'outputs':430})
+            output=Path(directory)/'public';output.mkdir()
+            (output/'receipt.json').write_bytes(b'{"status":"failed"}\n')
+            self.assertEqual(set(owner.admit(output,vp_transport=True)['files']),{'receipt.json'})
+
+
 if __name__=='__main__':unittest.main()

@@ -134,6 +134,23 @@ DOCUMENTS = {'receipt.json':MAX_DOCUMENT,'source-inputs.json':16*MAX_DOCUMENT,
     'generated-autoconf.h':MAX_DOCUMENT}
 
 
+
+# Separate current VP stage; all dated constructor source/mode constants above
+# remain immutable. New execution files are pinned outside their own reader.
+VP_BRANCH = 'test/sdk-738-vp-transport-objects-20261027'
+VP_ADDED_PINS = {
+    'tools/host_stream_kernel_vp_transport.py': (7753, '75e8badd708595c5bf91e554f5b7726bb0ce509697e01919ec29a739b5b0d097'),
+    'research/standard-outbound/linux-6.12-lineage/stream-vp-transport-sources.json':
+        (26247, '9944ebe14f466f6a02e52d574f1ce86d79bc3f73ea32905bb705b689a5a1da58')}
+VP_PHYSICAL_SHA = 'ba53e8b7d08b03c15e743bd521189469c6c5cfb375d9485ba9bd17c35014df54'
+VP_PHYSICAL_BYTES = 861370
+VP_LOGICAL_SHA = '3ce0a7679df01a4ac357000bf2cd73225288cf1b79a75f16c905e4dfdbb920af'
+VP_DERIVED_SHA = '0768391742d6748633a9af27da9c5f60430ff37ecca83f74d8d1b60b20ac8441'
+VP_TARGETS = CONSTRUCTOR_MMIO_TARGETS
+VP_STAGES = tuple('vp-transport-objects' if stage=='constructor-mmio-objects' else stage
+    for stage in CONSTRUCTOR_MMIO_STAGES)
+
+
 def require(value, code):
     if not value:
         raise ValueError('stream-object-'+code)
@@ -171,11 +188,11 @@ def deadline(started, now=None):
     return end
 
 
-def mode_targets(classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False):
+def mode_targets(classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False):
     require(all(type(value) is bool for value in
-        (classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio)) and
-        sum((classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio))<=1,'closed-classdir-mode')
-    return CONSTRUCTOR_MMIO_TARGETS if constructor_mmio else POST_INIT_TARGETS if netdev_post_init else LAYOUT_TARGETS if netdev_layout else DIRECTORY_TARGETS if netdev_directory else REGISTRATION_TARGETS if classdir_kernfs else CLASSDIR_TARGETS if classdir else TARGETS
+        (classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport)) and
+        sum((classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport))<=1,'closed-classdir-mode')
+    return VP_TARGETS if vp_transport else CONSTRUCTOR_MMIO_TARGETS if constructor_mmio else POST_INIT_TARGETS if netdev_post_init else LAYOUT_TARGETS if netdev_layout else DIRECTORY_TARGETS if netdev_directory else REGISTRATION_TARGETS if classdir_kernfs else CLASSDIR_TARGETS if classdir else TARGETS
 
 
 def selected_sources(root, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False):
@@ -402,6 +419,60 @@ def constructor_compose(values, tree):
         values['net/factory-private.h'],'constructor-unselected-final-projection')
     return values,records
 
+
+def vp_selected_sources(root):
+    rows=selected_sources(root,constructor_mmio=True)
+    for name,(length,sha) in VP_ADDED_PINS.items():
+        require(name not in rows,'vp-new-physical-only')
+        raw=read(root/name,length)
+        require(identity(raw)=={'bytes':length,'sha256':sha},'vp-added-source-identity')
+        rows[name]=identity(raw)
+    require(len(rows)==67 and sum(row['bytes'] for row in rows.values())==VP_PHYSICAL_BYTES and
+        hashlib.sha256(canonical(rows)).hexdigest()==VP_PHYSICAL_SHA,'vp-frozen-67-physical')
+    return rows
+
+
+def vp_materials(root):
+    # Pin BOTH new actual execution files before importing their projector.
+    physical=vp_selected_sources(root)
+    sys.path.insert(0,str(root))
+    from tools import host_stream_kernel_vp_transport as stage
+    require(Path(stage.__file__).resolve()==(root/'tools/host_stream_kernel_vp_transport.py').resolve(),
+        'vp-current-reader-origin')
+    base=constructor_materials(root)
+    payloads=stage.materials(root)
+    require(type(payloads) is dict and len(payloads)==3,'vp-three-logical-materials')
+    logical=dict(base['logicalIdentities']);origins=dict(base['logicalOrigins'])
+    module='tools/host_stream_kernel_vp_transport.py'
+    require(module not in logical,'vp-new-projector-logical-only')
+    logical[module]=physical[module];origins[module]={'kind':'physical-file','path':module}
+    for ordinal,(name,raw) in enumerate(payloads.items()):
+        key='vp-transport:'+name
+        require(key not in logical and type(raw) is bytes,'vp-new-payload-logical-only')
+        logical[key]=identity(raw)
+        origins[key]={'kind':'utf8-source-bundle','path':stage.BUNDLE_PATH,
+            'ordinal':ordinal,'sourceType':'h' if name.endswith('.h') else 'c'}
+    require(len(logical)==len(origins)==94 and
+        hashlib.sha256(canonical(logical)).hexdigest()==VP_LOGICAL_SHA,'vp-frozen-94-logical')
+    return {'physicalInputs':physical,'logicalIdentities':logical,'logicalOrigins':origins,
+        'prior65Physical':base['physicalInputs'],'prior90Logical':base['logicalIdentities'],
+        'projectionOutputCount':430,'runtimeOrFundingQualified':False}
+
+
+def vp_compose(values):
+    require(len(values)==427 and hashlib.sha256(canonical({n:identity(raw)
+        for n,raw in values.items()})).hexdigest()==CONSTRUCTOR_MMIO_DERIVED[-1][2],
+        'vp-original-427-input')
+    vp_materials(ROOT)
+    from tools import host_stream_kernel_vp_transport as stage
+    result=stage.transform(values)
+    rows={n:identity(raw) for n,raw in result.items()}
+    require(len(rows)==430 and hashlib.sha256(canonical(rows)).hexdigest()==VP_DERIVED_SHA and
+        b'lsf_factory_selected_consumer(void)\n{\n    return NULL;\n}' in result['net/factory-private.h'],
+        'vp-unselected-final-430')
+    return result,{'stage':'vp-transport','files':430,'actualDerivedIdentity':identity(canonical(rows))}
+
+
 def object_identity(path):
     raw=read(path,MAX_OBJECT)
     require(len(raw)>=64 and raw[:7]==b'\x7fELF\x02\x01\x01' and
@@ -413,18 +484,18 @@ def object_identity(path):
     return identity(raw)
 
 
-def public_allowed(name, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False):
-    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio)
+def public_allowed(name, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False):
+    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport)
     if name in DOCUMENTS:return DOCUMENTS[name]
     if netdev_layout and name=='layout.json':return 64*1024
     if name in {'objects/'+n for n in targets}:return MAX_OBJECT
     match=re.fullmatch(r'logs/([0-9]{2})-([a-z0-9-]+)\.(stdout|stderr)\.txt',name)
-    if match and int(match[1])<MAX_COMMANDS and match[2] in (CONSTRUCTOR_MMIO_STAGES if constructor_mmio else POST_INIT_STAGES if netdev_post_init else LAYOUT_STAGES if netdev_layout else DIRECTORY_STAGES if netdev_directory else REGISTRATION_STAGES if classdir_kernfs else STAGES):return 4*1024**2
+    if match and int(match[1])<MAX_COMMANDS and match[2] in (VP_STAGES if vp_transport else CONSTRUCTOR_MMIO_STAGES if constructor_mmio else POST_INIT_STAGES if netdev_post_init else LAYOUT_STAGES if netdev_layout else DIRECTORY_STAGES if netdev_directory else REGISTRATION_STAGES if classdir_kernfs else STAGES):return 4*1024**2
     return None
 
 
-def admit(output, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False):
-    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio)
+def admit(output, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False):
+    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport)
     require(not output.is_symlink() and output.is_dir(),'public-output-directory')
     rows={};total=logs=0
     for q in sorted(output.rglob('*')):
@@ -432,7 +503,7 @@ def admit(output, *, classdir=False, classdir_kernfs=False, netdev_directory=Fal
         if q.is_dir():continue
         name=q.relative_to(output).as_posix()
         if name=='ADMISSION.json':continue
-        maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio);require(maximum is not None,'public-member')
+        maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport);require(maximum is not None,'public-member')
         raw=read(q,maximum);total+=len(raw)
         if name.startswith('logs/'):logs+=len(raw)
         require(total<=MAX_PUBLIC-MAX_DOCUMENT and logs<=16*1024**2,'public-union-bound')
@@ -449,16 +520,17 @@ def _copy_public(source, output, name, maximum):
     raw=read(source,maximum);q=output/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
 
 
-def run(output, revision, started, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False):
-    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio)
+def run(output, revision, started, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False):
+    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport)
     end=deadline(started) # Before imports, filesystem mutation or tool probes.
     require(sys.platform=='linux' and os.environ.get('GITHUB_ACTIONS')=='true' and
         os.environ.get('GITHUB_REPOSITORY')=='KirilsTurkins/latent-service-fabric' and
-        os.environ.get('GITHUB_REF_NAME')==(CONSTRUCTOR_MMIO_BRANCH if constructor_mmio else POST_INIT_BRANCH if netdev_post_init else LAYOUT_BRANCH if netdev_layout else DIRECTORY_BRANCH if netdev_directory else REGISTRATION_BRANCH if classdir_kernfs else CLASSDIR_BRANCH if classdir else BRANCH) and os.environ.get('GITHUB_EVENT_NAME')=='push',
+        os.environ.get('GITHUB_REF_NAME')==(VP_BRANCH if vp_transport else CONSTRUCTOR_MMIO_BRANCH if constructor_mmio else POST_INIT_BRANCH if netdev_post_init else LAYOUT_BRANCH if netdev_layout else DIRECTORY_BRANCH if netdev_directory else REGISTRATION_BRANCH if classdir_kernfs else CLASSDIR_BRANCH if classdir else BRANCH) and os.environ.get('GITHUB_EVENT_NAME')=='push',
         'fixed-hosted-origin')
     require(type(revision) is str and re.fullmatch('[0-9a-f]{40}',revision),'source-revision')
-    before=selected_sources(ROOT,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio)
+    before=vp_selected_sources(ROOT) if vp_transport else selected_sources(ROOT,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio)
     constructor_before=constructor_materials(ROOT) if constructor_mmio else None
+    vp_before=vp_materials(ROOT) if vp_transport else None
     output=output.resolve()
     require(output!=ROOT and ROOT not in output.parents and output not in ROOT.parents and
         not output.exists(),'fresh-public-outside-source')
@@ -472,11 +544,13 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
     environment.update(PYTHONDONTWRITEBYTECODE='1',LC_ALL='C',LANG='C',TMPDIR=str(scratch/'tmp'),
         KBUILD_BUILD_USER='lsf-object-check',KBUILD_BUILD_HOST='isolated-ci',
         KBUILD_BUILD_TIMESTAMP='2026-10-23 00:00:00 UTC',KCONFIG_NOTIMESTAMP='1')
-    if classdir_kernfs or netdev_directory or netdev_layout or netdev_post_init or constructor_mmio:
+    if classdir_kernfs or netdev_directory or netdev_layout or netdev_post_init or constructor_mmio or vp_transport:
         environment.update(GIT_NO_LAZY_FETCH='1',GIT_TERMINAL_PROMPT='0')
+    if vp_transport:
+        environment.update(RUSTUP_TOOLCHAIN='1.97.1',RUSTUP_AUTO_INSTALL='0')
     commands=objects.Commands(ROOT,scratch/'commands',environment,deadline_seconds=end-time.monotonic(),command_seconds=1200)
     commands.deadline=end-5.0 # ONE reserve; run_owned itself includes cleanup.
-    receipt={'schemaVersion':'lsf.stream-constructor-mmio-objects.v1' if constructor_mmio else 'lsf.stream-netdev-post-init-objects.v1' if netdev_post_init else 'lsf.stream-netdev-layout-objects.v1' if netdev_layout else 'lsf.stream-netdev-directory-objects.v1' if netdev_directory else 'lsf.stream-classdir-kernfs-objects.v1' if classdir_kernfs else 'lsf.stream-classdir-objects.v1' if classdir else 'lsf.stream-normal-objects.v1','status':'in-progress','stage':'preflight',
+    receipt={'schemaVersion':'lsf.stream-vp-transport-objects.v1' if vp_transport else 'lsf.stream-constructor-mmio-objects.v1' if constructor_mmio else 'lsf.stream-netdev-post-init-objects.v1' if netdev_post_init else 'lsf.stream-netdev-layout-objects.v1' if netdev_layout else 'lsf.stream-netdev-directory-objects.v1' if netdev_directory else 'lsf.stream-classdir-kernfs-objects.v1' if classdir_kernfs else 'lsf.stream-classdir-objects.v1' if classdir else 'lsf.stream-normal-objects.v1','status':'in-progress','stage':'preflight',
         'sourceRevision':revision,'checkpoint':CHECKPOINT,'baselineRecipeRevision':BASELINE,
         'baselineRecipeTree':BASELINE_TREE,'sourceBefore':before,'sourceAfter':None,'checkpoint45SourceDigest':CHECKPOINT45_SHA,
         'objectTargets':list(targets),'products':{},'compiledObjectsOnly':True,'kernelLinked':False,
@@ -487,7 +561,7 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
         'maximumCompileSeconds':1200,'privateScratchRetained':True}
     error=None;tools={};public_sources={}
     def command(stage,*argv,cap=120,root=None):
-        require(stage in (CONSTRUCTOR_MMIO_STAGES if constructor_mmio else POST_INIT_STAGES if netdev_post_init else LAYOUT_STAGES if netdev_layout else DIRECTORY_STAGES if netdev_directory else REGISTRATION_STAGES if classdir_kernfs else STAGES) and len(commands.records)<MAX_COMMANDS,'fixed-command-count')
+        require(stage in (VP_STAGES if vp_transport else CONSTRUCTOR_MMIO_STAGES if constructor_mmio else POST_INIT_STAGES if netdev_post_init else LAYOUT_STAGES if netdev_layout else DIRECTORY_STAGES if netdev_directory else REGISTRATION_STAGES if classdir_kernfs else STAGES) and len(commands.records)<MAX_COMMANDS,'fixed-command-count')
         require(time.monotonic()<commands.deadline,'original-deadline')
         commands.root=ROOT if root is None else root
         commands.command_seconds=min(cap,1200)
@@ -496,8 +570,17 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
     try:
         current_inputs=input_files(ROOT)
         source_record={'currentBefore':current_inputs,'currentAfter':None,
-            ('current65Physical' if constructor_mmio else 'current62' if netdev_post_init else 'current59' if netdev_layout else 'current55' if netdev_directory else 'current52' if classdir_kernfs else 'current50' if classdir else 'current47'):before,'currentSourceRevision':revision,'originalBaselineSourceRevision':BASELINE}
-        if constructor_mmio:
+            ('current67Physical' if vp_transport else 'current65Physical' if constructor_mmio else 'current62' if netdev_post_init else 'current59' if netdev_layout else 'current55' if netdev_directory else 'current52' if classdir_kernfs else 'current50' if classdir else 'current47'):before,'currentSourceRevision':revision,'originalBaselineSourceRevision':BASELINE}
+        if vp_transport:
+            require(vp_before['physicalInputs']==before,'vp-initial-materials')
+            source_record.update(current94Logical=vp_before['logicalIdentities'],
+                logicalOrigins=vp_before['logicalOrigins'],prior65PhysicalBefore=vp_before['prior65Physical'],
+                prior90LogicalBefore=vp_before['prior90Logical'],prior65PhysicalAfter=None,
+                prior90LogicalAfter=None,current67PhysicalAfter=None,
+                current94LogicalAfter=None,logicalOriginsAfter=None)
+            receipt.update(currentPhysicalSourceCount=67,currentLogicalSourceCount=94,
+                sourceStorage='closed-vp-and-constructor-utf8-bundles',vpProjectionStages=None)
+        elif constructor_mmio:
             require(constructor_before['physicalInputs']==before,'constructor-initial-materials')
             source_record.update(current90Logical=constructor_before['logicalIdentities'],
                 logicalOrigins=constructor_before['logicalOrigins'],current65PhysicalAfter=None,
@@ -510,7 +593,7 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
         require(command('source-head',git,'rev-parse','HEAD',cap=15).decode().strip()==revision,'actual-checkout')
         tree_before=command('source-tree',git,'ls-tree','-rz','--full-tree','HEAD',cap=30)
         command('source-clean',git,'diff','--no-ext-diff','--exit-code','HEAD','--',cap=30)
-        if classdir_kernfs or netdev_directory or netdev_layout or netdev_post_init or constructor_mmio:
+        if classdir_kernfs or netdev_directory or netdev_layout or netdev_post_init or constructor_mmio or vp_transport:
             # ONE exact shallow acquisition, never history search/lazy fallback.
             # A growing current branch is not baseline authority. Same owner,
             # original absolute1320s deadline and single5s reserve apply.
@@ -578,23 +661,27 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
         command('baseline-clean-after',git,'diff','--no-ext-diff','--exit-code','HEAD','--',cap=30,root=recipe)
         require(command('baseline-tree-after',git,'rev-parse','HEAD^{tree}',cap=15,root=recipe).decode().strip()==BASELINE_TREE,'baseline-tree-after')
         values=current_compose(derived_read(baseline_output/'derived',baseline['derived']),tree,
-            classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init or constructor_mmio)
-        if constructor_mmio:
+            classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init or constructor_mmio or vp_transport)
+        if constructor_mmio or vp_transport:
             values,actual_stages=constructor_compose(values,tree)
-            receipt['constructorProjectionStages']=actual_stages
+            if vp_transport:
+                values,vp_stage=vp_compose(values)
+                receipt['vpProjectionStages']=[*actual_stages,vp_stage]
+            else:
+                receipt['constructorProjectionStages']=actual_stages
         rows=derived_write(scratch/'current-derived',values)
         for name,raw in values.items():
             q=tree/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
         write_json(scratch/'derived-inputs.json',rows,4*MAX_DOCUMENT);public_sources['derived-inputs.json']=scratch/'derived-inputs.json'
-        command('constructor-mmio-objects' if constructor_mmio else 'netdev-post-init-objects' if netdev_post_init else 'netdev-layout-objects' if netdev_layout else 'netdev-directory-objects' if netdev_directory else 'classdir-kernfs-objects' if classdir_kernfs else 'classdir-objects' if classdir else 'eighteen-objects',
-            *common,*(['-k'] if constructor_mmio else []),'-j2',*targets,root=tree,cap=1200)
+        command('vp-transport-objects' if vp_transport else 'constructor-mmio-objects' if constructor_mmio else 'netdev-post-init-objects' if netdev_post_init else 'netdev-layout-objects' if netdev_layout else 'netdev-directory-objects' if netdev_directory else 'classdir-kernfs-objects' if classdir_kernfs else 'classdir-objects' if classdir else 'eighteen-objects',
+            *common,*(['-k'] if constructor_mmio or vp_transport else []),'-j2',*targets,root=tree,cap=1200)
         require(read(build/'.config',MAX_DOCUMENT)==selected,'actual-config-mutated')
         autoconf=read(build/'include/generated/autoconf.h',MAX_DOCUMENT)
         require(b'#define CONFIG_LSF_STREAM_FACTORY 1\n' in autoconf and b'#define CONFIG_RUST ' not in autoconf,
             'actual-selected-autoconf')
         (scratch/'generated-autoconf.h').write_bytes(autoconf);public_sources['generated-autoconf.h']=scratch/'generated-autoconf.h'
         receipt['products']={name:object_identity(build/name) for name in targets}
-        require(len(receipt['products'])==len(targets),'twenty-two-constructor-exact-products' if constructor_mmio else 'eight-post-init-exact-products' if netdev_post_init else 'eleven-layout-exact-products' if netdev_layout else 'nine-directory-exact-products' if netdev_directory else 'nine-exact-products' if classdir_kernfs else 'four-exact-products' if classdir else 'eighteen-exact-products')
+        require(len(receipt['products'])==len(targets),'twenty-two-vp-exact-products' if vp_transport else 'twenty-two-constructor-exact-products' if constructor_mmio else 'eight-post-init-exact-products' if netdev_post_init else 'eleven-layout-exact-products' if netdev_layout else 'nine-directory-exact-products' if netdev_directory else 'nine-exact-products' if classdir_kernfs else 'four-exact-products' if classdir else 'eighteen-exact-products')
         for name in targets:public_sources['objects/'+name]=build/name
         if netdev_layout:
             receipt['stage']='readonly-layout'
@@ -617,10 +704,17 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
         command('source-clean-after',git,'diff','--no-ext-diff','--exit-code','HEAD','--',cap=30)
         require(command('source-tree-after',git,'ls-tree','-rz','--full-tree','HEAD',cap=30)==tree_before,'source-tree-mutated')
         require(command('source-head-after',git,'rev-parse','HEAD',cap=15).decode().strip()==revision,'source-head-mutated')
-        receipt['sourceAfter']=selected_sources(ROOT,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio)
+        receipt['sourceAfter']=vp_selected_sources(ROOT) if vp_transport else selected_sources(ROOT,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio)
         require(receipt['sourceAfter']==before and input_files(ROOT)==current_inputs,'current-source-mutated')
         require(time.monotonic()<commands.deadline,'original-deadline')
-        if constructor_mmio:
+        if vp_transport:
+            vp_after=vp_materials(ROOT)
+            require(vp_after==vp_before,'vp-materials-mutated')
+            source_record.update(current67PhysicalAfter=vp_after['physicalInputs'],
+                current94LogicalAfter=vp_after['logicalIdentities'],
+                prior65PhysicalAfter=vp_after['prior65Physical'],prior90LogicalAfter=vp_after['prior90Logical'],
+                logicalOriginsAfter=vp_after['logicalOrigins'])
+        elif constructor_mmio:
             constructor_after=constructor_materials(ROOT)
             require(constructor_after==constructor_before,'constructor-materials-mutated')
             source_record.update(current65PhysicalAfter=constructor_after['physicalInputs'],
@@ -641,12 +735,12 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
             write_json(output/'receipt.json',receipt,MAX_DOCUMENT)
             write_json(output/'commands.json',commands.records,MAX_DOCUMENT)
             for name,q in public_sources.items():
-                maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio);require(maximum is not None,'public-source')
+                maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport);require(maximum is not None,'public-source')
                 _copy_public(q,output,name,maximum)
             for q in sorted((scratch/'commands/logs').iterdir()):
-                name='logs/'+q.name;maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio);require(maximum is not None,'public-command-channel')
+                name='logs/'+q.name;maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport);require(maximum is not None,'public-command-channel')
                 _copy_public(q,output,name,maximum)
-            admit(output,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio)
+            admit(output,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport)
         except BaseException as retention:
             receipt['status']='failed';receipt['retentionFailure']='bounded-public-admission-failed'
             raw=canonical(receipt)
@@ -669,15 +763,16 @@ def main():
     parser.add_argument('--netdev-layout',action='store_true',help='fixed eleven allocating/notify objects and readonly layout data only')
     parser.add_argument('--netdev-post-init',action='store_true',help='fixed eight changed POST_INIT objects only; no readonly size-probe replay')
     parser.add_argument('--constructor-mmio',action='store_true',help='fixed22 changed cumulative constructor/MMIO objects only')
+    parser.add_argument('--vp-transport',action='store_true',help='fixed22 current VP bookkeeping objects only; IRQ gate closed')
     parser.add_argument('--baseline-worker',action='store_true')
     parser.add_argument('--recipe',type=Path);parser.add_argument('--kernel-tree',type=Path);parser.add_argument('--config',type=Path)
     args=parser.parse_args()
-    mode_targets(args.classdir,args.classdir_kernfs,args.netdev_directory,args.netdev_layout,args.netdev_post_init,args.constructor_mmio)
-    require(not ((args.classdir or args.classdir_kernfs or args.netdev_directory or args.netdev_layout or args.netdev_post_init or args.constructor_mmio) and args.baseline_worker),'one-private-mode')
+    mode_targets(args.classdir,args.classdir_kernfs,args.netdev_directory,args.netdev_layout,args.netdev_post_init,args.constructor_mmio,args.vp_transport)
+    require(not ((args.classdir or args.classdir_kernfs or args.netdev_directory or args.netdev_layout or args.netdev_post_init or args.constructor_mmio or args.vp_transport) and args.baseline_worker),'one-private-mode')
     if args.admit:
         require(not args.baseline_worker,'one-private-mode')
         try:
-            admit(args.output,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs,netdev_directory=args.netdev_directory,netdev_layout=args.netdev_layout,netdev_post_init=args.netdev_post_init,constructor_mmio=args.constructor_mmio)
+            admit(args.output,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs,netdev_directory=args.netdev_directory,netdev_layout=args.netdev_layout,netdev_post_init=args.netdev_post_init,constructor_mmio=args.constructor_mmio,vp_transport=args.vp_transport)
         except BaseException:
             # Fixed fallback only; never upload any rejected directory/glob.
             require(not args.output.is_symlink(),'fallback-output-symlink')
@@ -704,7 +799,7 @@ def main():
     elif args.baseline_worker:
         require(args.recipe and args.kernel_tree and args.config,'worker-fixed-inputs')
         baseline_worker(args.recipe,args.kernel_tree,args.config,args.output)
-    else:run(args.output,args.source_commit,args.started,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs,netdev_directory=args.netdev_directory,netdev_layout=args.netdev_layout,netdev_post_init=args.netdev_post_init,constructor_mmio=args.constructor_mmio)
+    else:run(args.output,args.source_commit,args.started,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs,netdev_directory=args.netdev_directory,netdev_layout=args.netdev_layout,netdev_post_init=args.netdev_post_init,constructor_mmio=args.constructor_mmio,vp_transport=args.vp_transport)
 
 
 if __name__=='__main__':

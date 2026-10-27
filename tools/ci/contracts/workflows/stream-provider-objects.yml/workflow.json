@@ -15,7 +15,8 @@
           "test/sdk-738-netdev-directory-objects-20261026",
           "test/sdk-738-netdev-layout-objects-20261026",
           "test/sdk-738-netdev-post-init-objects-20261026",
-          "test/sdk-738-constructor-mmio-objects-20261027"
+          "test/sdk-738-constructor-mmio-objects-20261027",
+          "test/sdk-738-vp-transport-objects-20261027"
         ]
       }
     },
@@ -27,7 +28,7 @@
     "classdir-objects",
     "normal-objects"
   ],
-  "reviewReason": "Reviewed fixed65-physical/90-logical/427-derived constructor MMIO22-object source check, unchanged config/process/public bounds and all historical modes; add only two pure reader/mode controls.",
+  "reviewReason": "Reviewed closed VP67-physical/94-logical/430-derived compile-only mode, same22 targets and all historical modes/config/process/public limits.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }

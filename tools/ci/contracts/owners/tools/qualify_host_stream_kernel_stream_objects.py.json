@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_stream_objects.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Exact native virtio type and private PCI inline declarations before selected factory fragments; preserve both original checks/all26 payloads and update only current projector/source/final-stage identities.",
+  "reviewReason": "Reviewed VP-only installed1.97.1 child override with automatic toolchain installation disabled; unchanged67/94/430 inputs, old modes, targets, deadlines and caps.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c15fd8191b539f34c879c237ea0a2ee6546f4691439918ab1dab6a60afaac462"
+  "sha256": "5e065271f19d13e486af07e385e34544447a548837a1c925d5ee28af7e8fbd29"
 }
