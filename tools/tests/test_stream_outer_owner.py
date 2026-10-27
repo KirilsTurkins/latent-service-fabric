@@ -253,6 +253,32 @@ class StreamOuterOwnerReader(unittest.TestCase):
             with self.assertRaises(ValueError):
                 owner.blob_input_check_result(raw_inventory([{**records[0], field: value}, records[1], finished]))
 
+        self.assertEqual((len(owner.HTTP_INPUT_CASES), len(owner.HTTP_INPUT_NEW_CASES)), (10, 8))
+        self.assertEqual(len(set(owner.HTTP_INPUT_CASES)), 10)
+        self.assertEqual(owner.HTTP_INPUT_FORBIDDEN_FIXTURE_ENV, owner.IO_COPY_FORBIDDEN_FIXTURE_ENV)
+        for case in owner.HTTP_INPUT_CASES:
+            prefix = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            marker = owner.HTTP_INPUT_API_MARKERS.get(case)
+            raw = prefix + (marker + b'\n' if marker else b'')
+            value = owner.http_input_result(raw, case)
+            self.assertEqual((value['passed'], value['failed'], value['ignored']), (1, 0, 0))
+            self.assertEqual(value['apiMarker'], marker.decode() if marker else None)
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case')):
+                with self.assertRaises(ValueError):
+                    owner.http_input_result(changed, case)
+            if marker:
+                for changed in (prefix, raw + marker + b'\n', raw.replace(marker, b'http-utf8-view forged')):
+                    with self.assertRaises(ValueError):
+                        owner.http_input_result(changed, case)
+            else:
+                with self.assertRaises(ValueError):
+                    owner.http_input_result(raw + b'http-utf8-view forged\n', case)
+        for case in (*owner.BLOB_INPUT_CASES, *owner.BLOB_COPY_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.http_input_result(b'', case)
+
     def test_private_fixture_identity_is_bounded_and_changes_are_observed(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / 'fixture.wasm'

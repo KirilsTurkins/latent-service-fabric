@@ -533,3 +533,21 @@ returned inner futures and Legacy completion/collections remain explicit gaps.
 This narrows two physical factory allocations only, not whole736 cost-model or
 node/runtime completion. Mandatory275-file Wasmtime/14-file workspace-isolated
 cache authentication and all fixed dependency locks remain unchanged in scope.
+
+The v21 source stage adds the opt-in WasmStr UTF-8 view for the buffered HTTP
+ingress path. The view validates the original Store and all UTF-8, UTF-16 and
+compact encodings, measures exact output length, and writes into caller-prepaid
+fixed storage without allocating a decoded payload. Existing lifting and decoding
+remain unchanged. The joined HTTP source carries original-session native credits
+through request, body, Bytes and the current transport hop; redirect hops preserve
+the original credit identity while retiring the previous running permit.
+
+This source stage alone is not compiler qualification. Two actual canonical-component
+controls and
+the bounded HTTP owner are prepared separately; private vendor source controls
+are not an executed qualification. Parser, redirect URL, wire HeaderMap, digest,
+TLS, Bytes/control and other transitive allocations remain explicit gaps. The
+34 changed original files, 22 added implementation/license files, immutable
+250-file registry inventory, 275 maintained files and strict 14-file isolated
+cache authentication remain the same finite sets. Earlier v20 and other dated
+receipts retain their original source and execution identities.

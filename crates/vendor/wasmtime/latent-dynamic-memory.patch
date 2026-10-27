@@ -1809,7 +1809,7 @@
 +        // One intentionally retained affine owner; no retry/reset or fake free.
 +    }
 +}
---- /dev/null
+--- a/src/runtime/component/concurrent/call_future.rs
 +++ b/src/runtime/component/concurrent/call_future.rs
 @@ -0,0 +1,264 @@
 +//! Backing for the abortable async-import future before its first poll.
@@ -3885,7 +3885,7 @@
  /// Helper structure to manage moving a `T` in/out of an interior `Mutex` which
  /// contains an
  /// `Option<T>`
---- /dev/null
+--- a/src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs
 +++ b/src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs
 @@ -0,0 +1,1364 @@
 +//! OWNER-ONLY canonical-entry controls. This counter owner is NOT ActivationBudget.
@@ -5252,7 +5252,7 @@
 +    assert_eq!(*trace.lock().unwrap(), ["P"]);
 +    assert_eq!(probe.live.load(SeqCst), 0);
 +}
---- /dev/null
+--- a/src/runtime/component/concurrent/host_futures/LICENSE-APACHE
 +++ b/src/runtime/component/concurrent/host_futures/LICENSE-APACHE
 @@ -0,0 +1,202 @@
 +                              Apache License
@@ -5457,7 +5457,7 @@
 +WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 +See the License for the specific language governing permissions and
 +limitations under the License.
---- /dev/null
+--- a/src/runtime/component/concurrent/host_futures/LICENSE-MIT
 +++ b/src/runtime/component/concurrent/host_futures/LICENSE-MIT
 @@ -0,0 +1,26 @@
 +Copyright (c) 2016 Alex Crichton
@@ -5486,7 +5486,7 @@
 +OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 +IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 +DEALINGS IN THE SOFTWARE.
---- /dev/null
+--- a/src/runtime/component/concurrent/host_futures/abort.rs
 +++ b/src/runtime/component/concurrent/host_futures/abort.rs
 @@ -0,0 +1,12 @@
 +pub(super) fn abort(s: &str) -> ! {
@@ -5501,7 +5501,7 @@
 +    let _bomb = DoublePanic;
 +    panic!("{}", s);
 +}
---- /dev/null
+--- a/src/runtime/component/concurrent/host_futures/mod.rs
 +++ b/src/runtime/component/concurrent/host_futures/mod.rs
 @@ -0,0 +1,87 @@
 +//! Host future backing selected without retaining a native-memory factory.
@@ -5591,7 +5591,7 @@
 +        }
 +    }
 +}
---- /dev/null
+--- a/src/runtime/component/concurrent/host_futures/paid/iter.rs
 +++ b/src/runtime/component/concurrent/host_futures/paid/iter.rs
 @@ -0,0 +1,184 @@
 +use super::Arc;
@@ -5778,7 +5778,7 @@
 +
 +unsafe impl<Fut: Send + Unpin> Send for IntoIter<Fut> {}
 +unsafe impl<Fut: Sync + Unpin> Sync for IntoIter<Fut> {}
---- /dev/null
+--- a/src/runtime/component/concurrent/host_futures/paid/mod.rs
 +++ b/src/runtime/component/concurrent/host_futures/paid/mod.rs
 @@ -0,0 +1,681 @@
 +//! An unbounded set of futures.
@@ -6462,7 +6462,7 @@
 +        Arc::<ReadyToRunQueue<Fut>>::layout(),
 +    )
 +}
---- /dev/null
+--- a/src/runtime/component/concurrent/host_futures/paid/ready_to_run_queue.rs
 +++ b/src/runtime/component/concurrent/host_futures/paid/ready_to_run_queue.rs
 @@ -0,0 +1,113 @@
 +use super::Arc;
@@ -6578,7 +6578,7 @@
 +        }
 +    }
 +}
---- /dev/null
+--- a/src/runtime/component/concurrent/host_futures/paid/task.rs
 +++ b/src/runtime/component/concurrent/host_futures/paid/task.rs
 @@ -0,0 +1,268 @@
 +use super::{Arc, Weak, atomic};
@@ -6849,7 +6849,7 @@
 +        drop(unsafe { Arc::<T>::from_raw(data.cast::<T>()) })
 +    }
 +}
---- /dev/null
+--- a/src/runtime/component/concurrent/host_futures/paid_arc.rs
 +++ b/src/runtime/component/concurrent/host_futures/paid_arc.rs
 @@ -0,0 +1,230 @@
 +//! Sized-only shared backing with an owned declared allocation layout.
@@ -7082,7 +7082,7 @@
 +        }
 +    }
 +}
---- /dev/null
+--- a/src/runtime/component/concurrent/host_futures/tests.rs
 +++ b/src/runtime/component/concurrent/host_futures/tests.rs
 @@ -0,0 +1,366 @@
 +use super::*;
@@ -7451,7 +7451,7 @@
 +    assert_eq!(probe.refunds.load(SeqCst), 0);
 +    assert_eq!(probe.live.load(SeqCst), before);
 +}
---- /dev/null
+--- a/src/runtime/component/concurrent/pending_future.rs
 +++ b/src/runtime/component/concurrent/pending_future.rs
 @@ -0,0 +1,385 @@
 +//! Prepare the exact pending continuation Box before the initial host poll.
@@ -7839,7 +7839,7 @@
 +        assert_eq!(probe.requests.load(Ordering::SeqCst), 1);
 +    }
 +}
---- /dev/null
+--- a/src/runtime/component/concurrent/sync_result.rs
 +++ b/src/runtime/component/concurrent/sync_result.rs
 @@ -0,0 +1,392 @@
 +//! Same-budget ownership of only the sync-lowered host result Box.
@@ -8234,7 +8234,7 @@
 +        assert_eq!(probe.owners_dropped.load(Ordering::SeqCst), 0);
 +    }
 +}
---- /dev/null
+--- a/src/runtime/component/concurrent/work_queue.rs
 +++ b/src/runtime/component/concurrent/work_queue.rs
 @@ -0,0 +1,541 @@
 +//! Exact, pre-admitted backing for scheduler queue entries.
@@ -8778,7 +8778,7 @@
 +        assert_eq!(probe.live.load(Ordering::SeqCst), 3);
 +    }
 +}
---- /dev/null
+--- a/src/runtime/component/concurrent/worker_function.rs
 +++ b/src/runtime/component/concurrent/worker_function.rs
 @@ -0,0 +1,375 @@
 +//! Pre-admit the exact completion closure before the initial host poll.
@@ -9156,7 +9156,7 @@
 +        }
 +    }
 +}
---- /dev/null
+--- a/src/runtime/component/dynamic_memory.rs
 +++ b/src/runtime/component/dynamic_memory.rs
 @@ -0,0 +1,217 @@
 +//! Explicit allocation admission for dynamic component values.
@@ -9848,14 +9848,44 @@
              memory,
 --- a/src/runtime/component/func/typed.rs
 +++ b/src/runtime/component/func/typed.rs
-@@ -1587,6 +1587,32 @@
-                 } else {
-                     self.decode_utf16(memory, self.len ^ UTF16_TAG)
-                 }
-+            }
-+        }
+@@ -1573,6 +1573,33 @@
+         self.to_str_from_memory(encoding, memory)
+     }
+ 
++    /// Borrow a validated view which can encode this string into prepaid storage.
++    ///
++    /// Measuring and writing allocate no payload storage. The view retains a
++    /// borrow of this store's linear memory, so it cannot survive a mutable
++    /// store access or guest reentry. All accepted canonical string encodings
++    /// are validated before the view is returned.
++    ///
++    /// The caller must reserve its original allocation budget before allocating
++    /// the destination. This method does not create a budget or an owned string.
++    ///
++    /// # Errors
++    ///
++    /// Returns an error for invalid encoding or an overflowing decoded length.
++    ///
++    /// # Panics
++    ///
++    /// Panics if this string is not owned by `store`.
++    pub fn utf8_view<'a, T: 'static>(
++        &self,
++        store: impl Into<StoreContext<'a, T>>,
++    ) -> Result<WasmStrUtf8<'a>> {
++        let store = store.into().0;
++        let memory = self.instance.options_memory(store, self.options);
++        let encoding = self.instance.options(store, self.options).string_encoding;
++        WasmStrUtf8::from_memory(self.ptr, self.len, encoding, memory)
 +    }
 +
+     pub(crate) fn to_str_from_memory<'a>(
+         &self,
+         encoding: StringEncoding,
+@@ -1591,6 +1618,32 @@
+         }
+     }
+ 
 +    pub(crate) fn to_string_accounted(&self, cx: &LiftContext<'_>) -> Result<String> {
 +        use crate::component::dynamic_memory::{decoded_text, text};
 +        let memory = cx.memory();
@@ -9878,9 +9908,218 @@
 +                    .checked_mul(2)
 +                    .ok_or_else(|| format_err!("dynamic-value-allocation-overflow"))?;
 +                decoded_text(scope, &memory[self.ptr..][..len], true)
-             }
-         }
++            }
++        }
++    }
++
+     fn decode_utf8<'a>(&self, memory: &'a [u8]) -> Result<Cow<'a, str>> {
+         // Note that bounds-checking already happen in construction of `WasmStr`
+         // so this is never expected to panic. This could theoretically be
+@@ -1614,6 +1667,122 @@
+         Ok(encoding_rs::mem::decode_latin1(
+             &memory[self.ptr..][..self.len],
+         ))
++    }
++}
++
++/// An opaque, validated canonical string borrowed from a particular store.
++///
++/// Created by [`WasmStr::utf8_view`]. This view owns no payload allocation and
++/// exposes no raw guest pointer. Its exact UTF-8 length allows the caller to
++/// reserve and allocate its own storage before [`Self::write_into`].
++pub struct WasmStrUtf8<'a> {
++    encoded: WasmStrEncoding<'a>,
++    utf8_len: usize,
++}
++
++enum WasmStrEncoding<'a> {
++    Utf8(&'a str),
++    Utf16(&'a [u8]),
++    Latin1(&'a [u8]),
++}
++
++impl<'a> WasmStrUtf8<'a> {
++    fn from_memory(
++        ptr: usize,
++        len: usize,
++        encoding: StringEncoding,
++        memory: &'a [u8],
++    ) -> Result<Self> {
++        let (units, width, align) = match encoding {
++            StringEncoding::Utf8 => (len, 1, 1),
++            StringEncoding::Utf16 => (len, 2, 2),
++            StringEncoding::CompactUtf16 if len & UTF16_TAG == 0 => (len, 1, 2),
++            StringEncoding::CompactUtf16 => (len ^ UTF16_TAG, 2, 2),
++        };
++        ensure!(ptr % align == 0, "string pointer not aligned to {align}");
++        let end = units
++            .checked_mul(width)
++            .and_then(|bytes| ptr.checked_add(bytes))
++            .ok_or_else(|| format_err!("dynamic-value-allocation-overflow"))?;
++        let bytes = memory
++            .get(ptr..end)
++            .ok_or_else(|| format_err!("string pointer/length out of bounds of memory"))?;
++        let encoded = match encoding {
++            StringEncoding::Utf8 => WasmStrEncoding::Utf8(str::from_utf8(bytes)?),
++            StringEncoding::CompactUtf16 if width == 1 => WasmStrEncoding::Latin1(bytes),
++            _ => WasmStrEncoding::Utf16(bytes),
++        };
++        // Match the allocation-free measurement used by dynamic_memory's
++        // decoded_text. UTF-16 is fully validated before any destination exists.
++        let utf8_len = match &encoded {
++            WasmStrEncoding::Utf8(text) => text.len(),
++            WasmStrEncoding::Latin1(bytes) => bytes
++                .iter()
++                .try_fold(0usize, |n, b| n.checked_add(char::from(*b).len_utf8()))
++                .ok_or_else(|| format_err!("dynamic-value-allocation-overflow"))?,
++            WasmStrEncoding::Utf16(bytes) => {
++                let mut count = 0usize;
++                for ch in core::char::decode_utf16(
++                    bytes
++                        .chunks_exact(2)
++                        .map(|b| u16::from_le_bytes([b[0], b[1]])),
++                ) {
++                    count = count
++                        .checked_add(ch?.len_utf8())
++                        .ok_or_else(|| format_err!("dynamic-value-allocation-overflow"))?;
++                }
++                count
++            }
++        };
++        Ok(Self { encoded, utf8_len })
++    }
++
++    /// Exact size of the validated UTF-8 output, in bytes.
++    pub fn len(&self) -> usize {
++        self.utf8_len
++    }
++
++    /// Whether the validated output is empty.
++    pub fn is_empty(&self) -> bool {
++        self.utf8_len == 0
++    }
++
++    /// Write into a caller-owned buffer whose length is exactly [`Self::len`].
++    ///
++    /// A destination-length error leaves every destination byte unchanged.
++    /// Encoding was validated on creation; immutable store-borrowed input cannot
++    /// change between measurement and writing. No `Vec`, `String`, or other
++    /// payload allocation is performed here.
++    pub fn write_into(&self, destination: &mut [u8]) -> Result<()> {
++        ensure!(
++            destination.len() == self.utf8_len,
++            "canonical-string-destination-length"
++        );
++        let mut offset = 0;
++        fn write(destination: &mut [u8], offset: &mut usize, ch: char) {
++            let mut scratch = [0; 4];
++            let bytes = ch.encode_utf8(&mut scratch).as_bytes();
++            destination[*offset..*offset + bytes.len()].copy_from_slice(bytes);
++            *offset += bytes.len();
++        }
++        match &self.encoded {
++            WasmStrEncoding::Utf8(text) => destination.copy_from_slice(text.as_bytes()),
++            WasmStrEncoding::Latin1(bytes) => {
++                for byte in *bytes {
++                    write(destination, &mut offset, char::from(*byte));
++                }
++            }
++            WasmStrEncoding::Utf16(bytes) => {
++                for ch in core::char::decode_utf16(
++                    bytes
++                        .chunks_exact(2)
++                        .map(|b| u16::from_le_bytes([b[0], b[1]])),
++                ) {
++                    write(destination, &mut offset, ch?);
++                }
++            }
++        }
++        Ok(())
      }
+ }
+ 
+@@ -3118,3 +3287,81 @@
+     // a tradeoff of propagating a lot of unsafety, so it may not be worth it.
+     panic!("bad type information detected");
+ }
++
++#[cfg(test)]
++mod wasm_str_utf8_view_tests {
++    use super::{StringEncoding, UTF16_TAG, WasmStrUtf8};
++
++    #[test]
++    fn utf8_view_measures_and_writes_without_owning_the_source() {
++        let bytes = "a\u{e9}\u{1d11e}".as_bytes();
++        let view = WasmStrUtf8::from_memory(0, bytes.len(), StringEncoding::Utf8, bytes).unwrap();
++        assert_eq!(view.len(), bytes.len());
++        assert!(!view.is_empty());
++        let mut output = [0; 7];
++        view.write_into(&mut output).unwrap();
++        assert_eq!(output, bytes);
++        assert!(WasmStrUtf8::from_memory(0, 1, StringEncoding::Utf8, &[0xff]).is_err());
++    }
++
++    #[test]
++    fn utf16_view_validates_surrogates_before_output() {
++        let bytes = [0x61, 0, 0x34, 0xd8, 0x1e, 0xdd];
++        let view = WasmStrUtf8::from_memory(0, 3, StringEncoding::Utf16, &bytes).unwrap();
++        let mut output = [0; 5];
++        view.write_into(&mut output).unwrap();
++        assert_eq!(output, "a\u{1d11e}".as_bytes());
++        for invalid in [[0, 0xd8], [0, 0xdc]] {
++            assert!(WasmStrUtf8::from_memory(0, 1, StringEncoding::Utf16, &invalid).is_err());
++        }
++    }
++
++    #[test]
++    fn compact_view_handles_latin1_and_tagged_utf16() {
++        let latin1 = [0x41, 0x80, 0xff];
++        let view = WasmStrUtf8::from_memory(0, 3, StringEncoding::CompactUtf16, &latin1).unwrap();
++        let mut output = [0; 5];
++        view.write_into(&mut output).unwrap();
++        assert_eq!(output, "A\u{80}\u{ff}".as_bytes());
++        let utf16 = [0x34, 0xd8, 0x1e, 0xdd];
++        let view = WasmStrUtf8::from_memory(0, UTF16_TAG | 2, StringEncoding::CompactUtf16, &utf16)
++            .unwrap();
++        let mut output = [0; 4];
++        view.write_into(&mut output).unwrap();
++        assert_eq!(output, "\u{1d11e}".as_bytes());
++    }
++
++    #[test]
++    fn empty_views_and_bounds_are_checked_for_every_encoding() {
++        for (encoding, len) in [
++            (StringEncoding::Utf8, 0),
++            (StringEncoding::Utf16, 0),
++            (StringEncoding::CompactUtf16, 0),
++            (StringEncoding::CompactUtf16, UTF16_TAG),
++        ] {
++            let view = WasmStrUtf8::from_memory(0, len, encoding, &[]).unwrap();
++            assert!(view.is_empty());
++            view.write_into(&mut []).unwrap();
++        }
++        assert!(WasmStrUtf8::from_memory(0, 2, StringEncoding::Utf8, b"x").is_err());
++        assert!(WasmStrUtf8::from_memory(1, 0, StringEncoding::Utf16, &[0, 0]).is_err());
++        assert!(WasmStrUtf8::from_memory(0, usize::MAX, StringEncoding::Utf16, &[]).is_err());
++        assert!(WasmStrUtf8::from_memory(usize::MAX, 1, StringEncoding::Utf8, &[]).is_err());
++    }
++
++    #[test]
++    fn wrong_destination_length_never_writes_partial_output() {
++        let bytes = [0xff];
++        let view = WasmStrUtf8::from_memory(0, 1, StringEncoding::CompactUtf16, &bytes).unwrap();
++        assert_eq!(view.len(), 2);
++        let mut short = [0x55; 1];
++        assert!(view.write_into(&mut short).is_err());
++        assert_eq!(short, [0x55; 1]);
++        let mut long = [0x55; 3];
++        assert!(view.write_into(&mut long).is_err());
++        assert_eq!(long, [0x55; 3]);
++        let mut exact = [0; 2];
++        view.write_into(&mut exact).unwrap();
++        assert_eq!(exact, "\u{ff}".as_bytes());
++    }
++}
 --- a/src/runtime/component/instance.rs
 +++ b/src/runtime/component/instance.rs
 @@ -1,5 +1,6 @@
@@ -10072,16 +10311,17 @@
  mod resources;
  mod storage;
  pub(crate) mod store;
-@@ -126,7 +128,7 @@
+@@ -126,7 +128,8 @@
      VMComponentAsyncStore, VecBuffer, WriteBuffer,
  };
  pub use self::func::{
 -    ComponentNamedList, ComponentType, Func, Lift, Lower, TypedFunc, WasmList, WasmStr,
 +    ComponentNamedList, ComponentType, Func, HostOutput, Lift, Lower, TypedFunc, WasmList, WasmStr,
++    WasmStrUtf8,
  };
  pub use self::has_data::*;
  pub use self::instance::{Instance, InstancePre};
-@@ -810,3 +812,9 @@
+@@ -810,3 +813,9 @@
  
  #[cfg(not(feature = "component-model-async"))]
  pub(crate) use concurrent_disabled as concurrent;
@@ -10091,7 +10331,7 @@
 +
 +/// Native source cohort for the maintained original-owner dynamic value extension.
 +pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-memory-v10";
---- /dev/null
+--- a/src/runtime/component/resource_types.rs
 +++ b/src/runtime/component/resource_types.rs
 @@ -0,0 +1,140 @@
 +//! Instance resource substitutions can escape their Store in type/InstancePre
@@ -10414,7 +10654,7 @@
          }
          bits >>= 1;
          offset += 1;
---- /dev/null
+--- a/src/runtime/component/values/accounted.rs
 +++ b/src/runtime/component/values/accounted.rs
 @@ -0,0 +1,403 @@
 +//! Accounted dynamic lifting. Derived from the pinned 48.0.7 values.rs paths.
@@ -11173,7 +11413,7 @@
  mod registry;
  
  pub use registry::*;
---- /dev/null
+--- a/src/runtime/module/native_registry.rs
 +++ b/src/runtime/module/native_registry.rs
 @@ -0,0 +1,242 @@
 +//! Store-local ordered indices whose selected backing uses the original owner.
@@ -11640,7 +11880,7 @@
          Ok(id)
      }
  
---- /dev/null
+--- a/src/runtime/native_memory.rs
 +++ b/src/runtime/native_memory.rs
 @@ -0,0 +1,386 @@
 +//! Affine ownership for selected invocation-created engine backing buffers.
@@ -12430,7 +12670,7 @@
      /// Push the given `VMFuncRef` into this arena, returning a
      /// pinned pointer to it.
      ///
---- /dev/null
+--- a/src/runtime/store/func_refs/native.rs
 +++ b/src/runtime/store/func_refs/native.rs
 @@ -0,0 +1,112 @@
 +//! Paid Store-local function-reference containers. Shared host closure backing

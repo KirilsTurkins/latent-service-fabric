@@ -28,6 +28,7 @@ mod future;
 mod limits;
 pub use future::{IoFuture, PreparedIoFuture, PreparedIoFutureWith};
 mod memory;
+pub(in crate::broker) use memory::HttpInputOrigin;
 pub use memory::IoMemory;
 mod stream;
 mod transfer;

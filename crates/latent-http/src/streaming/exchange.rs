@@ -143,7 +143,7 @@ pub(super) async fn open(
         };
         connection.wrote.store(false, Ordering::Release);
         let wrote = Arc::clone(&connection.wrote);
-        connection.input = Some(Arc::clone(&input.memory));
+        connection.input = Some(input.request.memory().clone());
         let reply: IoFuture<'static, _> = reply_future.finish((&mut connection.sender, wire));
         Ok::<_, Error>((transfer, scratch, sender, socket, wrote, reply))
     }
@@ -163,7 +163,13 @@ pub(super) async fn open(
             response: None,
             reply: Some(reply),
             sender,
-            input: Some(Arc::clone(&input.memory)),
+            input: Some(Arc::clone(
+                input
+                    .request
+                    .memory()
+                    .legacy()
+                    .expect("streaming remains preallocated"),
+            )),
             _scratch: scratch,
             transfer,
             call,

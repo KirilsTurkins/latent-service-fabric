@@ -129,6 +129,7 @@ pub use self::concurrent::{
 };
 pub use self::func::{
     ComponentNamedList, ComponentType, Func, HostOutput, Lift, Lower, TypedFunc, WasmList, WasmStr,
+    WasmStrUtf8,
 };
 pub use self::has_data::*;
 pub use self::instance::{Instance, InstancePre};

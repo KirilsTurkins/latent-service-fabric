@@ -7,7 +7,10 @@ use crate::{
     HttpError, HttpProviderConfig,
 };
 use latent_capabilities::broker::{
-    http::{HttpInvocation, HttpRequest, OutboundHttpInvoker, HTTP_CAPABILITY},
+    http::{
+        HttpInputLimits, HttpInvocation, HttpOwnedRequest, HttpRequest, HttpRequestSource,
+        OutboundHttpInvoker, PreparedHttpInput, HTTP_CAPABILITY,
+    },
     pools::{InstalledProvider, ProviderClient, ProviderMetadata, ProviderPools, ProviderSetup},
     CapabilitySession, ProviderBudgetRequirement, ProviderConfiguration, ProviderReference,
 };
@@ -174,6 +177,55 @@ impl HttpProvider {
     }
 }
 impl OutboundHttpInvoker for HttpProvider {
+    fn start_from(
+        &self,
+        session: &CapabilitySession,
+        source: &mut dyn HttpRequestSource,
+    ) -> Result<HttpInvocation, HttpError> {
+        if self.inner.streaming.is_some() || !session.uses_provider(&self.reference())? {
+            return Err(HttpError::PermissionDenied);
+        }
+        // The concrete F is admitted before URL decoding or any effectful Args.
+        let prepared = session.prepare_io_future_with(|(inner, input, client, admission)| {
+            crate::execute::run(inner, input, client, admission)
+        })?;
+        let ingress = PreparedHttpInput::new(session, source)?;
+        let destination = destination::parse(ingress.url(), &self.inner.config)?;
+        self.inner
+            .check_credential_tenant(session.tenant(), destination.index)?;
+        let now = Instant::now();
+        let original = session.deadline()?;
+        let deadline = source.timeout_millis().map_or(original, |millis| {
+            now + Duration::from_millis(millis).min(original.saturating_duration_since(now))
+        });
+        let client = self.inner.client(destination.index)?;
+        let admission = self.inner.pools.admit_until(&client, session, deadline)?;
+        let limits = self.inner.config.limits;
+        let request = ingress.finish(
+            &admission,
+            source,
+            HttpInputLimits {
+                maximum_headers: limits.maximum_headers,
+                maximum_header_bytes: limits.maximum_header_bytes,
+                maximum_body_bytes: limits.maximum_request_body_bytes,
+            },
+        )?;
+        let size = headers::validate(
+            &request,
+            &self.inner.config.destinations[destination.index],
+            limits,
+        )?;
+        Ok(prepared.finish((
+            Arc::clone(&self.inner),
+            crate::execute::RequestOwner {
+                request,
+                destination,
+                logical: size.logical,
+            },
+            client,
+            admission,
+        )))
+    }
     fn start(
         &self,
         session: &CapabilitySession,
@@ -205,9 +257,8 @@ impl OutboundHttpInvoker for HttpProvider {
         Ok(prepared.finish((
             inner,
             crate::execute::RequestOwner {
-                request,
+                request: HttpOwnedRequest::preallocated(request, memory),
                 destination,
-                memory,
                 logical: size.logical,
             },
             client,
