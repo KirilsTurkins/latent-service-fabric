@@ -902,6 +902,14 @@ class RepositoryMigrationTests(unittest.TestCase):
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
         for key, original in legacy["after"].items():
             value = dict(original)
+            if value["workflow"] == ".github/workflows/dotnet-guest.yml" and value["job"] == "toolchain":
+                # Only the reviewed closed root-return branch excludes this job.
+                # No status override is introduced: ordinary branches retain
+                # GitHub's implicit success() and every original command field.
+                self.assertEqual(value["jobIf"], "success()", key)
+                value["jobIf"] = (
+                    "github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' "
+                    "&& github.head_ref != 'test/sdk-dotnet-root-return-20261027'")
             if value['workflow'] == '.github/workflows/developer-tools.yml' and value['job'] in {'contracts', 'guest-tools', 'wsl-image'}:
                 # Only the closed default-false data-only mode skips these
                 # jobs. Every existing ordinary command remains mandatory.

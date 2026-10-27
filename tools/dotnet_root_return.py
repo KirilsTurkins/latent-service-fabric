@@ -64,6 +64,25 @@ PROFILES = ((CLOCK, 'clockMonotonic', 'activation-monotonic-v1', ['now-nanos'], 
     (RANDOM, 'random', 'system-random-v1', ['bytes'], 'random'),
     (ACTIVATION, 'activationRuntime', None, OPERATIONS, 'clock'))
 PUBLIC_BYTES = 128 * 1024**2
+PROBE_SOURCES = (
+    'LsfManagedWorkRoot.g.cs',
+    'Service.cs',
+    'ServiceWorld.wit.Exports.examples.greeting.ApiExportsInterop.cs',
+    'ServiceWorld.wit.Exports.examples.greeting.IApiExports.cs',
+    'ServiceWorld.wit.Imports.latent.clock.IMonotonicImports.cs',
+    'ServiceWorld.wit.Imports.latent.clock.IWallImports.cs',
+    'ServiceWorld.wit.Imports.latent.clock.MonotonicImportsInterop.cs',
+    'ServiceWorld.wit.Imports.latent.clock.WallImportsInterop.cs',
+    'ServiceWorld.wit.Imports.latent.dotnetManagedWork.IOwnerImports.cs',
+    'ServiceWorld.wit.Imports.latent.dotnetManagedWork.OwnerImportsInterop.cs',
+    'ServiceWorld.wit.Imports.latent.dotnetRetirement.IOwnerImports.cs',
+    'ServiceWorld.wit.Imports.latent.dotnetRetirement.OwnerImportsInterop.cs',
+    'ServiceWorld.wit.Imports.latent.random.IRandomImports.cs',
+    'ServiceWorld.wit.Imports.latent.random.RandomImportsInterop.cs',
+    'ServiceWorld.wit.Imports.latent.runtime.ActivationImportsInterop.cs',
+    'ServiceWorld.wit.Imports.latent.runtime.IActivationImports.cs',
+    'ServiceWorld_wasm_import_linkage_attribute.cs',
+)
 
 
 def source_map():
@@ -197,24 +216,54 @@ def fixture(output):
     return project
 
 
+def stage_probe_sources(compiled, output, binding, *, compiler_returned):
+    """Bounded diagnostic FIRST; retain valid known inputs before strict closure."""
+    outputs = binding['outputs']
+    names = sorted(name for name in outputs if name.endswith('.cs'))
+    details = []
+    for name in names[:64]:
+        safe = len(name) <= 256 and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_.-]*\.cs', name) is not None
+        source = compiled/'generated'/name if safe else None
+        size = source.lstat().st_size if source is not None and source.exists() else None
+        details.append({'name': name[:256], 'bytes': size, 'safeFlatName': safe})
+    write_json(output/'probe-capture-inventory.json', {'formatVersion': 1,
+        'outputCount': len(outputs), 'csharpCount': len(names), 'reported': details,
+        'reportTruncated': len(names) > 64, 'expectedSources': PROBE_SOURCES,
+        'compilerReturned': compiler_returned, 'captureComplete': False})
+    # Compiler.compile's pinned successful return is compiled/component.wasm.
+    # This is retained before any capture closure/shape check can lose it.
+    if compiler_returned:
+        component = read_file(compiled/'component.wasm', 64*1024**2)
+        (output/'component.wasm').write_bytes(component)
+    write_json(output/'probe-generated-bindings.json', binding)
+    destination = output/'probe-inputs'; destination.mkdir()
+    total, records = 0, {}
+    for name in PROBE_SOURCES:
+        if name not in outputs:
+            continue
+        raw = read_file(compiled/'generated'/name, 1024**2); total += len(raw)
+        require(total <= 4*1024**2 and hashlib.sha256(raw).hexdigest() == outputs[name],
+            'root-return-generated-source-identity')
+        (destination/name).write_bytes(raw)
+        records[name] = file_identity(destination/name, 1024**2)
+    require(tuple(names) == PROBE_SOURCES, 'root-return-generated-source-shape')
+    return names, records
+
+
 def retain_probe_inputs(compiled, output, binding, compiler):
     """Data-only capture inside original build owner, BEFORE its cleanup."""
     outputs = binding['outputs']
-    names = sorted(name for name in outputs if name.endswith('.cs'))
-    require(0 < len(names) <= 16 and all(re.fullmatch(r'[A-Za-z_][A-Za-z0-9_.-]*\.cs', n) for n in names),
-        'root-return-generated-source-shape')
+    names, records = stage_probe_sources(compiled, output, binding, compiler_returned=True)
     actual = list((compiled/'project/obj').rglob('bindings.json'))
     require(len(actual) == 1 and read_json(actual[0])['outputs'] == outputs, 'root-return-actual-bindings')
-    destination = output/'probe-inputs'; destination.mkdir()
-    total, found, records = 0, 0, {}
+    destination = output/'probe-inputs'
+    total, found = 0, 0
     for name in names:
         raw = read_file(actual[0].parent/name, 1024**2)
         total += len(raw)
         require(total <= 4*1024**2 and hashlib.sha256(raw).hexdigest() == outputs[name]
             and raw == read_file(compiled/'generated'/name, 1024**2), 'root-return-generated-source-identity')
         found += b'public static unsafe int wasmExportProbe(' in raw
-        (destination/name).write_bytes(raw)
-        records[name] = file_identity(destination/name, 1024**2)
     require(found == 1, 'root-return-complete-actual-probe-helper')
     # Use the ACTUAL ILC response root, not an assumed output directory.
     responses = list((compiled/'project/obj').rglob('*.rsp'))
@@ -258,16 +307,8 @@ def retain_probe_failure(compiled, output):
     receipt = compiled/'generated/bindings.json'
     if not receipt.is_file():
         return
-    binding = read_json(receipt, 4*1024**2); outputs = binding['outputs']
-    names = sorted(n for n in outputs if n.endswith('.cs'))
-    require(0 < len(names) <= 16 and all(re.fullmatch(r'[A-Za-z_][A-Za-z0-9_.-]*\.cs', n) for n in names),
-        'root-return-failed-generated-shape')
-    destination = output/'probe-inputs'; destination.mkdir()
-    records, total = {}, 0
-    for name in names:
-        raw = read_file(compiled/'generated'/name, 1024**2); total += len(raw)
-        require(total <= 4*1024**2 and hashlib.sha256(raw).hexdigest() == outputs[name], 'root-return-failed-generated-identity')
-        (destination/name).write_bytes(raw); records[name] = file_identity(destination/name, 1024**2)
+    binding = read_json(receipt, 4*1024**2)
+    _names, records = stage_probe_sources(compiled, output, binding, compiler_returned=False)
     write_json(output/'probe-inputs.json', {'formatVersion': 1, 'files': records,
         'compilerSucceeded': False, 'actualAotBindingConfirmed': False, 'diagnosticRewritePerformed': False})
 
@@ -501,7 +542,7 @@ def qualify(output, tools, archive):
             record['normalComponentBuildCount'] = 1
             artifact = build(project, output/'build', native['examples/capsule_contracts'], native['examples/package'],
                 'https://github.com/KirilsTurkins/latent-service-fabric', tools=tools, offline=True,
-                _deadline=parent_deadline, _root_return_capture=True)
+                _deadline=parent_deadline, _root_return_capture=(retain_probe_inputs, retain_probe_failure))
             require(read_file(artifact/'source-inputs.json') == captured, 'root-return-normal-capture-identity')
             stage = 'signed-two-tenant-node'
             signed_node(native, artifact, output, commands, record)
