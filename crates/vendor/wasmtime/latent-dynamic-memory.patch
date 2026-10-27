@@ -61,7 +61,15 @@
   "pkg-config",
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -373,6 +373,7 @@
+@@ -75,6 +75,7 @@
+     "wasmtime-component-macro?/component-model-async",
+     "dep:futures",
+ ]
++development-task-return-observation = ["component-model-async"]
+ component-model-bytes = ["dep:bytes"]
+ coredump = [
+     "dep:wasm-encoder",
+@@ -373,6 +374,7 @@
  
  [dependencies.wasmtime-cache]
  version = "=48.0.7"
@@ -2164,7 +2172,7 @@
                  })
              },
              move |func, store, results| {
-@@ -188,10 +212,36 @@
+@@ -188,10 +212,52 @@
                  } else {
                      MAX_FLAT_RESULTS
                  };
@@ -2189,7 +2197,23 @@
 +                        )?;
 +                        Ok(owner)
 +                    })?;
-+                    return Ok(dynamic_memory::boxed(Some(&memory), values)?);
++                    let result = dynamic_memory::boxed(Some(&memory), values)?;
++                    #[cfg(feature = "development-task-return-observation")]
++                    if func.abi_async(store) && memory.development_task_return_enabled() {
++                        use crate::component::DevelopmentTaskReturnEvent as Event;
++                        // This closure belongs to this host-root Func/GuestTask.
++                        // Typed lifting and original result Box admission succeeded;
++                        // task_complete/scope-exit and outer-call failures stay original.
++                        let event = match result.values.as_slice() {
++                            [Val::U32(0x4A43_0001)] => Event::Quiescence,
++                            [Val::U32(0x4A43_0002)] => Event::OriginalFault,
++                            [Val::U32(0x4A43_0003)] => Event::Unexpected,
++                            [Val::U32(_)] => Event::UnknownWord,
++                            _ => Event::WrongShape,
++                        };
++                        memory.development_task_return(event);
++                    }
++                    return Ok(result);
 +                }
                  let results = func.with_lift_context(store, |cx, ty| {
                      Self::lift_results(cx, ty, results, max_flat)?.collect::<Result<Vec<_>>>()
@@ -9158,7 +9182,7 @@
 +}
 --- a/src/runtime/component/dynamic_memory.rs
 +++ b/src/runtime/component/dynamic_memory.rs
-@@ -0,0 +1,217 @@
+@@ -0,0 +1,241 @@
 +//! Explicit allocation admission for dynamic component values.
 +//!
 +//! This optional embedding extension leaves the ordinary Wasmtime API unchanged.
@@ -9166,6 +9190,23 @@
 +use crate::component::Val;
 +use crate::prelude::*;
 +use alloc::sync::Arc;
++
++/// Closed development-only result of an authenticated async root task lift.
++/// No raw word, value, result reference or error is passed to the embedding.
++#[cfg(feature = "development-task-return-observation")]
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum DevelopmentTaskReturnEvent {
++    /// Compiler diagnostic quiescence word.
++    Quiescence,
++    /// Compiler diagnostic original-fault word.
++    OriginalFault,
++    /// Compiler diagnostic unexpected-cause negative control.
++    Unexpected,
++    /// The lifted result was not exactly one U32.
++    WrongShape,
++    /// The U32 was outside the closed diagnostic set.
++    UnknownWord,
++}
 +
 +/// Original-owner allocation admission for a dynamic component call.
 +///
@@ -9181,6 +9222,13 @@
 +    fn release(&self, bytes: usize);
 +    /// Create an independent, refundable owner for the queued parameter copy.
 +    fn fork(&self) -> Result<Arc<dyn DynamicValueMemory>>;
++    /// Optional development observation; it cannot replace a result or failure.
++    /// Invoked only after an async root Func's typed lift and result Box admission.
++    #[cfg(feature = "development-task-return-observation")]
++    fn development_task_return(&self, _event: DevelopmentTaskReturnEvent) {}
++    /// Disabled unless an embedding attached an explicit original-call sink.
++    #[cfg(feature = "development-task-return-observation")]
++    fn development_task_return_enabled(&self) -> bool { false }
 +}
 +
 +pub(crate) const ALLOCATION_METADATA: usize = 64;
@@ -10321,16 +10369,22 @@
  };
  pub use self::has_data::*;
  pub use self::instance::{Instance, InstancePre};
-@@ -810,3 +813,9 @@
+@@ -810,3 +813,15 @@
  
  #[cfg(not(feature = "component-model-async"))]
  pub(crate) use concurrent_disabled as concurrent;
 +
 +mod dynamic_memory;
 +pub use dynamic_memory::DynamicValueMemory;
++#[cfg(feature = "development-task-return-observation")]
++pub use dynamic_memory::DevelopmentTaskReturnEvent;
 +
 +/// Native source cohort for the maintained original-owner dynamic value extension.
++#[cfg(not(feature = "development-task-return-observation"))]
 +pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-memory-v10";
++/// Separate development engine/cache identity; ordinary builds retain their cohort.
++#[cfg(feature = "development-task-return-observation")]
++pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-memory-v10-development-task-return-v1";
 --- a/src/runtime/component/resource_types.rs
 +++ b/src/runtime/component/resource_types.rs
 @@ -0,0 +1,140 @@

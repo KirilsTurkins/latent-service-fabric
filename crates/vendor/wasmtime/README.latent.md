@@ -551,3 +551,22 @@ TLS, Bytes/control and other transitive allocations remain explicit gaps. The
 250-file registry inventory, 275 maintained files and strict 14-file isolated
 cache authentication remain the same finite sets. Earlier v20 and other dated
 receipts retain their original source and execution identities.
+
+
+Development-only canonical TaskReturn witness
+---------------------------------------------
+
+The explicitly selected development-task-return-observation feature borrows the
+original admitted root Func result after typed lifting and Box admission, before
+the unchanged task_complete and scope-exit checks. Only three known u32 tags are
+decoded into fixed enum events before the optional original output-memory sink
+is called. Unknown words and other shapes carry refusal tags, never raw values.
+The unselected feature retains the original dynamic-memory cache cohort literal;
+the selected feature uses a distinct development suffix. No task, result, memory,
+session, cancellation, deadline, or finalization ownership is replaced.
+
+This witness is a separate development diagnostic stage. A later failed outer
+call stays failed, and the original post-call observer stays invalid. It does
+not qualify original exception causality, physical retirement, production
+execution, or complete native accounting. The existing signed guest components
+contain no serialized engine cache and are not rebuilt or relabeled.

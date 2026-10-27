@@ -6,6 +6,23 @@ use crate::component::Val;
 use crate::prelude::*;
 use alloc::sync::Arc;
 
+/// Closed development-only result of an authenticated async root task lift.
+/// No raw word, value, result reference or error is passed to the embedding.
+#[cfg(feature = "development-task-return-observation")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DevelopmentTaskReturnEvent {
+    /// Compiler diagnostic quiescence word.
+    Quiescence,
+    /// Compiler diagnostic original-fault word.
+    OriginalFault,
+    /// Compiler diagnostic unexpected-cause negative control.
+    Unexpected,
+    /// The lifted result was not exactly one U32.
+    WrongShape,
+    /// The U32 was outside the closed diagnostic set.
+    UnknownWord,
+}
+
 /// Original-owner allocation admission for a dynamic component call.
 ///
 /// `reserve` runs before allocation; `confirm` runs after successful allocation.
@@ -20,6 +37,13 @@ pub trait DynamicValueMemory: Send + Sync {
     fn release(&self, bytes: usize);
     /// Create an independent, refundable owner for the queued parameter copy.
     fn fork(&self) -> Result<Arc<dyn DynamicValueMemory>>;
+    /// Optional development observation; it cannot replace a result or failure.
+    /// Invoked only after an async root Func's typed lift and result Box admission.
+    #[cfg(feature = "development-task-return-observation")]
+    fn development_task_return(&self, _event: DevelopmentTaskReturnEvent) {}
+    /// Disabled unless an embedding attached an explicit original-call sink.
+    #[cfg(feature = "development-task-return-observation")]
+    fn development_task_return_enabled(&self) -> bool { false }
 }
 
 pub(crate) const ALLOCATION_METADATA: usize = 64;

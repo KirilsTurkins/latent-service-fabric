@@ -105,13 +105,15 @@ if __name__ == '__main__':
     if '--join-cause-replay' in sys.argv[1:]:
         parser = argparse.ArgumentParser(description='Closed retained-component Join-cause replay')
         parser.add_argument('--join-cause-replay', action='store_true', required=True)
+        parser.add_argument('--task-return-witness', action='store_true')
         for name in ('output', 'replay-archive'):
             parser.add_argument('--'+name, type=Path, required=True)
         parser.add_argument('--source-commit', required=True)
         arguments = parser.parse_args()
         from tools.dotnet_root_return import qualify_join_cause_replay
         print(json.dumps(qualify_join_cause_replay(arguments.output.resolve(),
-            arguments.replay_archive.resolve(), arguments.source_commit)))
+            arguments.replay_archive.resolve(), arguments.source_commit,
+            task_return_witness=arguments.task_return_witness)))
         raise SystemExit(0)
     if '--join-cause' in sys.argv[1:]:
         parser = argparse.ArgumentParser(description='Closed auxiliary Join-cause fixture')

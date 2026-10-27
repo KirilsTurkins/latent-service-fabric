@@ -816,6 +816,12 @@ pub(crate) use concurrent_disabled as concurrent;
 
 mod dynamic_memory;
 pub use dynamic_memory::DynamicValueMemory;
+#[cfg(feature = "development-task-return-observation")]
+pub use dynamic_memory::DevelopmentTaskReturnEvent;
 
 /// Native source cohort for the maintained original-owner dynamic value extension.
+#[cfg(not(feature = "development-task-return-observation"))]
 pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-memory-v10";
+/// Separate development engine/cache identity; ordinary builds retain their cohort.
+#[cfg(feature = "development-task-return-observation")]
+pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-memory-v10-development-task-return-v1";

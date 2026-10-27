@@ -75,6 +75,7 @@ component-model-async = [
     "wasmtime-component-macro?/component-model-async",
     "dep:futures",
 ]
+development-task-return-observation = ["component-model-async"]
 component-model-bytes = ["dep:bytes"]
 coredump = [
     "dep:wasm-encoder",

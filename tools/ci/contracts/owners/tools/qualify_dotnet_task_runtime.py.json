@@ -1,2 +1,8 @@
-{"kind":"owner","path":"tools/qualify_dotnet_task_runtime.py","reviewBoundary":"committed-fingerprint","reviewReason":"Replay the authenticated completed component pair with only the tenant-correct local_service target and six signed calls; preserve historical full/NORMAL definitions, all original grants, deadlines, logs and public bounds.","schemaVersion":"latent.ci.contracts.v1","sha256":
-        "907e4147d0660a2ce5c614eea564fc993cff44dd9b519aaf9627a45db146c08b"}
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_task_runtime.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Select the explicit canonical TaskReturn-stage replay: authenticate the unchanged two components and reviewed native source translations, build only current latent-wasmtime lib/local_service, run current three units and six signed calls, preserving all historical modes and failure semantics.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "c12a01f3d2117849eb79a7261eb9ce488adf3a28c7e5c1ab62e94560d5a7ac3e"
+}

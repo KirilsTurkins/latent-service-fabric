@@ -1,51 +1,59 @@
-{"cases":["RetainedCancellation.test_cancel_failure_restores_user_context_and_stops_case","RetainedCancellation.test_compatible_selection_failure_prevents_http_checks","RetainedCancellation.test_current_requires_terminal_and_retained_activation","RetainedCancellation.test_current_terminal_selects_original_then_compatible_before_replay","RetainedCancellation.test_foreign_original_command_metadata_refuses_replay","RetainedCancellation.test_historical_runtime_uses_original_binding_without_switches","RetainedCancellation.test_missing_cancellation_disposition_cannot_claim_case","RetainedCancellation.test_non_already_committed_result_cannot_claim_case","RetainedCancellation.test_original_http_get_failure_suppresses_replay_query_and_success","RetainedCancellation.test_original_selection_failure_prevents_cancel_without_retry","RetainedCancellation.test_query_failure_suppresses_success","RetainedCancellation.test_replay_failure_suppresses_query_and_success","RetainedCancellationSessions.test_consumed_prefix_refuses_default_old_session_names_before_cancel","RetainedCancellationSessions.test_default_live_runtime_reuse_keeps_original_behavior_without_new_phase","RetainedCancellationSessions.test_duplicate_cancellation_cannot_reuse_completed_phase_or_evidence","RetainedCancellationSessions.test_existing_exclusive_receipt_cannot_be_overwritten_or_claimed","RetainedCancellationSessions.test_metadata_or_runtime_start_failure_is_retained_without_retry_or_cancel","RetainedCancellationSessions.test_new_slots_keep_metadata_empty_and_runtime_one_publication","RetainedCancellationSessions.test_original_lease_failure_or_cancellation_prevents_new_start_and_cancel","RetainedCancellationSessions.test_phase_is_literal_bool_terminal_and_two_original_publications_only","RetainedCancellationSessions.test_real_sequence_uses_four_unique_sessions_before_unchanged_writer_suffix","RetainedCancellationSessions.test_return_phase_failure_after_cancel_prevents_http_and_success","RetainedCancellationSessions.test_uncertain_metadata_or_trigger_never_starts_cancellation_runtime"],"guards":{"RetainedCancellation.test_cancel_failure_restores_user_context_and_stops_case":
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-,"RetainedCancellation.test_compatible_selection_failure_prevents_http_checks":
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-,"RetainedCancellation.test_current_requires_terminal_and_retained_activation":
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-,"RetainedCancellation.test_current_terminal_selects_original_then_compatible_before_replay":
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-,"RetainedCancellation.test_foreign_original_command_metadata_refuses_replay":
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-,"RetainedCancellation.test_historical_runtime_uses_original_binding_without_switches":
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-,"RetainedCancellation.test_missing_cancellation_disposition_cannot_claim_case":
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-,"RetainedCancellation.test_non_already_committed_result_cannot_claim_case":
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-,"RetainedCancellation.test_original_http_get_failure_suppresses_replay_query_and_success":
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-,"RetainedCancellation.test_original_selection_failure_prevents_cancel_without_retry":
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-,"RetainedCancellation.test_query_failure_suppresses_success":
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-,"RetainedCancellation.test_replay_failure_suppresses_query_and_success":
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-,"RetainedCancellationSessions.test_consumed_prefix_refuses_default_old_session_names_before_cancel":
-  "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
-,"RetainedCancellationSessions.test_default_live_runtime_reuse_keeps_original_behavior_without_new_phase":
-  "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
-,"RetainedCancellationSessions.test_duplicate_cancellation_cannot_reuse_completed_phase_or_evidence":
-  "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
-,"RetainedCancellationSessions.test_existing_exclusive_receipt_cannot_be_overwritten_or_claimed":
-  "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
-,"RetainedCancellationSessions.test_metadata_or_runtime_start_failure_is_retained_without_retry_or_cancel":
-  "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
-,"RetainedCancellationSessions.test_new_slots_keep_metadata_empty_and_runtime_one_publication":
-  "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
-,"RetainedCancellationSessions.test_original_lease_failure_or_cancellation_prevents_new_start_and_cancel":
-  "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
-,"RetainedCancellationSessions.test_phase_is_literal_bool_terminal_and_two_original_publications_only":
-  "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
-,"RetainedCancellationSessions.test_real_sequence_uses_four_unique_sessions_before_unchanged_writer_suffix":
-  "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
-,"RetainedCancellationSessions.test_return_phase_failure_after_cancel_prevents_http_and_success":
-  "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
-,"RetainedCancellationSessions.test_uncertain_metadata_or_trigger_never_starts_cancellation_runtime":
-  "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
-},"kind":"python","module":"tools/tests/test_java_retained_cancellation.py","reviewReason":"Add mocked real CurrentActivation, strict Node session-order and exclusive Evidence controls for four distinct retained-cancellation sessions, preserving existing cases, original phase prefixes, caller and publication checks, failure propagation and limits; no native qualification claim.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0","class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"],"skipSites":[]},
-  "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "RetainedCancellation.test_cancel_failure_restores_user_context_and_stops_case":
+      "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b",
+    "RetainedCancellation.test_compatible_selection_failure_prevents_http_checks":
+      "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b",
+    "RetainedCancellation.test_current_requires_terminal_and_retained_activation":
+      "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b",
+    "RetainedCancellation.test_current_terminal_selects_original_then_compatible_before_replay":
+      "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b",
+    "RetainedCancellation.test_foreign_original_command_metadata_refuses_replay":
+      "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b",
+    "RetainedCancellation.test_historical_runtime_uses_original_binding_without_switches":
+      "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b",
+    "RetainedCancellation.test_missing_cancellation_disposition_cannot_claim_case":
+      "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b",
+    "RetainedCancellation.test_non_already_committed_result_cannot_claim_case":
+      "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b",
+    "RetainedCancellation.test_original_http_get_failure_suppresses_replay_query_and_success":
+      "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b",
+    "RetainedCancellation.test_original_selection_failure_prevents_cancel_without_retry":
+      "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b",
+    "RetainedCancellation.test_query_failure_suppresses_success":
+      "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b",
+    "RetainedCancellation.test_replay_failure_suppresses_query_and_success":
+      "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b",
+    "RetainedCancellationSessions.test_consumed_prefix_refuses_default_old_session_names_before_cancel":
+      "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe",
+    "RetainedCancellationSessions.test_default_live_runtime_reuse_keeps_original_behavior_without_new_phase":
+      "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe",
+    "RetainedCancellationSessions.test_duplicate_cancellation_cannot_reuse_completed_phase_or_evidence":
+      "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe",
+    "RetainedCancellationSessions.test_existing_exclusive_receipt_cannot_be_overwritten_or_claimed":
+      "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe",
+    "RetainedCancellationSessions.test_metadata_or_runtime_start_failure_is_retained_without_retry_or_cancel":
+      "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe",
+    "RetainedCancellationSessions.test_new_slots_keep_metadata_empty_and_runtime_one_publication":
+      "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe",
+    "RetainedCancellationSessions.test_original_lease_failure_or_cancellation_prevents_new_start_and_cancel":
+      "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe",
+    "RetainedCancellationSessions.test_phase_is_literal_bool_terminal_and_two_original_publications_only":
+      "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe",
+    "RetainedCancellationSessions.test_real_sequence_uses_four_unique_sessions_before_unchanged_writer_suffix":
+      "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe",
+    "RetainedCancellationSessions.test_return_phase_failure_after_cancel_prevents_http_and_success":
+      "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe",
+    "RetainedCancellationSessions.test_uncertain_metadata_or_trigger_never_starts_cancellation_runtime":
+      "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_java_retained_cancellation.py",
+  "reviewReason":"Add mocked real CurrentActivation, strict Node session-order and exclusive Evidence controls for four distinct retained-cancellation sessions, preserving existing cases, original phase prefixes, caller and publication checks, failure propagation and limits; no native qualification claim.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "6ab316576be23d2d71842f0afae2e1cc02e1a49bae9e51a35c69632d4b13fe4b":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0","class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"],"skipSites":[]},
+    "fcdfbfd0c8004da988e3f11905838ad6c8e559f8890cd4346f40c4c2f9dfa1fe":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

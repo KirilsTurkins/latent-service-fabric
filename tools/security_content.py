@@ -12,7 +12,7 @@ BINARY_SUFFIXES = frozenset({".gz", ".zip", ".wasm", ".png", ".jpg", ".jpeg", ".
                              ".pdf", ".woff", ".woff2", ".exe", ".dll", ".pdb", ".a", ".so", ".bin"})
 MAX_TEXT_BYTES = 384 * 1024 * 1024
 MAX_TEXT_FILE_BYTES = 16 * 1024 * 1024
-SOURCE_ROOTS = frozenset({"apps", "crates", "sdk", "tools", "examples", "tests"})
+SOURCE_ROOTS = frozenset({"apps", "crates", "sdk", "tools", "examples", "tests", "research"})
 TEXT_SUFFIXES = frozenset({".md", ".svg", ".rs", ".py", ".go", ".java", ".cs", ".c", ".h", ".cpp", ".hpp",
                           ".js", ".ts", ".mjs", ".cjs", ".tsx", ".sh", ".ps1", ".yml", ".yaml", ".json",
                           ".toml", ".txt", ".lock", ".xml", ".pem", ".key", ".crt"})

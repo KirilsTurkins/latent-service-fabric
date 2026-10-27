@@ -60,7 +60,8 @@ pub use development_borrow_admission::DevelopmentBorrowAdmissionSnapshot;
 #[cfg(feature = "development-test-host")]
 pub use development_trap_observer::{
     DevelopmentJoinCause, DevelopmentJoinCauseGuard, DevelopmentJoinCauseSnapshot,
-    DevelopmentTrapFrame, DevelopmentTrapGuard, DevelopmentTrapSnapshot,
+    DevelopmentJoinRejectReason, DevelopmentTaskReturnGuard, DevelopmentTrapFrame,
+    DevelopmentTrapGuard, DevelopmentTrapSnapshot,
 };
 pub use factory::WasmtimeComponentEngineFactory;
 pub use host::policy::ContextExposurePolicy;

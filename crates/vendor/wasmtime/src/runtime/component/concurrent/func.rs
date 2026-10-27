@@ -233,7 +233,23 @@ impl Func {
                         )?;
                         Ok(owner)
                     })?;
-                    return Ok(dynamic_memory::boxed(Some(&memory), values)?);
+                    let result = dynamic_memory::boxed(Some(&memory), values)?;
+                    #[cfg(feature = "development-task-return-observation")]
+                    if func.abi_async(store) && memory.development_task_return_enabled() {
+                        use crate::component::DevelopmentTaskReturnEvent as Event;
+                        // This closure belongs to this host-root Func/GuestTask.
+                        // Typed lifting and original result Box admission succeeded;
+                        // task_complete/scope-exit and outer-call failures stay original.
+                        let event = match result.values.as_slice() {
+                            [Val::U32(0x4A43_0001)] => Event::Quiescence,
+                            [Val::U32(0x4A43_0002)] => Event::OriginalFault,
+                            [Val::U32(0x4A43_0003)] => Event::Unexpected,
+                            [Val::U32(_)] => Event::UnknownWord,
+                            _ => Event::WrongShape,
+                        };
+                        memory.development_task_return(event);
+                    }
+                    return Ok(result);
                 }
                 let results = func.with_lift_context(store, |cx, ty| {
                     Self::lift_results(cx, ty, results, max_flat)?.collect::<Result<Vec<_>>>()

@@ -845,6 +845,101 @@ JOIN_REPLAY_FIXTURE_TRANSLATION = {
     'path': 'crates/latent-wasmtime/tests/local_service/fixture.rs', 'mode': '100644',
     'producerGitBlob': 'a19dbcdef71bb2147e426753b67bb5b3eebbcb99',
     'currentGitBlob': '4d4e2ee16abca8713acefaee82a657816c90e795'}
+JOIN_TASK_RETURN_CASE = 'dotnet_join_cause_canonical_task_return_witness_preserves_original_failure'
+# Filled from the reviewed concrete source freeze; never discover/authorize a
+# changed native source at execution time. Guest/compiler inputs stay original.
+JOIN_TASK_RETURN_TRANSLATIONS = {
+    "crates/latent-wasmtime/Cargo.toml": {
+        "path": "crates/latent-wasmtime/Cargo.toml",
+        "mode": "100644",
+        "producerGitBlob": "4449762d4ec62401201e339060fee3edbd673318",
+        "currentGitBlob": "1d157ea092c6a214b03f02e0bc0cdfeeec801209"
+    },
+    "crates/latent-wasmtime/src/backend.rs": {
+        "path": "crates/latent-wasmtime/src/backend.rs",
+        "mode": "100644",
+        "producerGitBlob": "53415e204b998a397f0499cb346750cbd0cff6b0",
+        "currentGitBlob": "9240717cf4dbfe86a4cc80eed0196ed4107dca07"
+    },
+    "crates/latent-wasmtime/src/development_trap_observer.rs": {
+        "path": "crates/latent-wasmtime/src/development_trap_observer.rs",
+        "mode": "100644",
+        "producerGitBlob": "48ea7fb574727cd58580fb21270b42e64996721a",
+        "currentGitBlob": "02a14f19b8d55d5e76de3df623293b332d78c109"
+    },
+    "crates/latent-wasmtime/src/lib.rs": {
+        "path": "crates/latent-wasmtime/src/lib.rs",
+        "mode": "100644",
+        "producerGitBlob": "19361ecabfd630bbc91c51f3d51aa70e337646d2",
+        "currentGitBlob": "3d27f8fd14c8e2ee3711f66298d4a070add43f53"
+    },
+    "crates/latent-wasmtime/src/values/memory.rs": {
+        "path": "crates/latent-wasmtime/src/values/memory.rs",
+        "mode": "100644",
+        "producerGitBlob": "17c1a6186a5d114a8188c460b0e13ccfed15778e",
+        "currentGitBlob": "90752a059d8b077f86e9cf918d08a1061f14e944"
+    },
+    "crates/latent-wasmtime/tests/local_service.rs": {
+        "path": "crates/latent-wasmtime/tests/local_service.rs",
+        "mode": "100644",
+        "producerGitBlob": "aacae1406d37ba1db950851f74facd4eaf45b17c",
+        "currentGitBlob": "be20135b9b165215cbc79a124f9381067c09b135"
+    },
+    "crates/vendor/wasmtime/Cargo.toml": {
+        "path": "crates/vendor/wasmtime/Cargo.toml",
+        "mode": "100644",
+        "producerGitBlob": "8638a4d81998f74aa2b499f066f5321ace6fb73c",
+        "currentGitBlob": "af1622f6b2a056cc680e4f00ca849622700acca5"
+    },
+    "crates/vendor/wasmtime/README.latent.md": {
+        "path": "crates/vendor/wasmtime/README.latent.md",
+        "mode": "100644",
+        "producerGitBlob": "fb99e211e750f106d52aecef9778389a4e76c597",
+        "currentGitBlob": "3b8c8a5b53304635fa4ca10e23658c1379e49785"
+    },
+    "crates/vendor/wasmtime/UPSTREAM.latent.json": {
+        "path": "crates/vendor/wasmtime/UPSTREAM.latent.json",
+        "mode": "100644",
+        "producerGitBlob": "a82f0bd7bde7c6b1a2ae88cd8e9a4b0b24803301",
+        "currentGitBlob": "5a76bff5036e1e88f8f88449a36544e6c8490991"
+    },
+    "crates/vendor/wasmtime/latent-dynamic-memory.patch": {
+        "path": "crates/vendor/wasmtime/latent-dynamic-memory.patch",
+        "mode": "100644",
+        "producerGitBlob": "19928c6dc8132246e9d91400e85c753f1556a863",
+        "currentGitBlob": "6f3b2ca1010c64dea66b0d6f47609b705efa0ec3"
+    },
+    "crates/vendor/wasmtime/src/runtime/component/concurrent/func.rs": {
+        "path": "crates/vendor/wasmtime/src/runtime/component/concurrent/func.rs",
+        "mode": "100644",
+        "producerGitBlob": "8a2f1103e409d9d4f344a7e28141ce207de39fe2",
+        "currentGitBlob": "d61a920bbbc23ac361e84ae9130f0ecf3a38e7a8"
+    },
+    "crates/vendor/wasmtime/src/runtime/component/dynamic_memory.rs": {
+        "path": "crates/vendor/wasmtime/src/runtime/component/dynamic_memory.rs",
+        "mode": "100644",
+        "producerGitBlob": "877b2ae231095305770eaab11c6784e85cfc9674",
+        "currentGitBlob": "c4bceb96e7384c66f17af07915914ae9879ca64d"
+    },
+    "crates/vendor/wasmtime/src/runtime/component/mod.rs": {
+        "path": "crates/vendor/wasmtime/src/runtime/component/mod.rs",
+        "mode": "100644",
+        "producerGitBlob": "8116c8190b40dcdcff36e7eda59c7ce3680937cc",
+        "currentGitBlob": "7ff5c6eecc37b2b5662bacf3abe180e66c7fa344"
+    },
+    "tools/host_codec_wasmtime.py": {
+        "path": "tools/host_codec_wasmtime.py",
+        "mode": "100644",
+        "producerGitBlob": "57dae86dcb443c3529e43a0f6e7ba26eb86da666",
+        "currentGitBlob": "79acdd745c2a7618f4bf5f0c4a02d6679ddf52d1"
+    },
+    "tools/tests/test_host_codec_wasmtime.py": {
+        "path": "tools/tests/test_host_codec_wasmtime.py",
+        "mode": "100644",
+        "producerGitBlob": "d3be3827a28b5e4f47bdda255c9f011329e62f22",
+        "currentGitBlob": "6914fc9169fba13e493340936696c32c6560b60a"
+    }
+}
 
 
 def join_replay_extract(archive, output, deadline):
@@ -922,7 +1017,7 @@ def join_replay_extract(archive, output, deadline):
     return admission
 
 
-def join_replay_packages(original, output, current, deadline):
+def join_replay_packages(original, output, current, deadline, *, task_return_witness=False):
     producer = read_json(original/'current-git-inputs.json', 4*1024**2)
     old = {r['path']: r for r in producer}; now = {r['path']: r for r in current}
     require(len(old) == len(producer) and len(now) == len(current), 'join-replay-unique-git-inputs')
@@ -935,13 +1030,21 @@ def join_replay_packages(original, output, current, deadline):
     protected_paths = {p for p in old.keys() | now.keys() if protected(p) and p != excluded}
     translation = JOIN_REPLAY_FIXTURE_TRANSLATION
     require(translation['path'] in protected_paths, 'join-replay-explicit-fixture-source')
+    translations = {translation['path']: translation}
+    if task_return_witness:
+        require(JOIN_TASK_RETURN_TRANSLATIONS, 'join-task-return-reviewed-native-source-freeze')
+        translations.update(JOIN_TASK_RETURN_TRANSLATIONS)
+        protected_paths.update(translations)
     for path in protected_paths:
         require(path in old and path in now, 'join-replay-protected-source-set')
-        if path == translation['path']:
-            require(old[path] == {'path': path, 'mode': translation['mode'],
-                'gitBlob': translation['producerGitBlob']}
-                and now[path] == {'path': path, 'mode': translation['mode'],
-                    'gitBlob': translation['currentGitBlob']}, 'join-replay-reviewed-fixture-translation')
+        if path in translations:
+            reviewed = translations[path]
+            require(old[path] == {'path': path, 'mode': reviewed['mode'],
+                'gitBlob': reviewed['producerGitBlob']}
+                and now[path] == {'path': path, 'mode': reviewed['mode'],
+                    'gitBlob': reviewed['currentGitBlob']},
+                'join-replay-reviewed-native-translation' if task_return_witness
+                else 'join-replay-reviewed-fixture-translation')
         else:
             require(old[path] == now[path], 'join-replay-original-component-and-observer-implementation')
     restored, components = [], []
@@ -978,10 +1081,16 @@ def join_replay_packages(original, output, current, deadline):
             and marker['sourceDigest'] == digest(read_file(output/name/'source-inputs.json', 1024**2)),
             'join-replay-original-build-receipt')
         components.append(identity['sha256'])
-    return {'originalProducer': JOIN_REPLAY['producer'], 'protectedGitPaths': len(protected_paths),
+    provenance = {'originalProducer': JOIN_REPLAY['producer'], 'protectedGitPaths': len(protected_paths),
         'reviewedNativeHarnessTranslation': translation,
         'restoredOriginalWitBodies': restored, 'components': components,
         'datedObserverUnitsPassed': list(JOIN_UNIT_CASES), 'observerUnitsExecutedAgain': False}
+    if task_return_witness:
+        provenance.pop('observerUnitsExecutedAgain')
+        provenance.update(reviewedNativeEngineTranslations=translations,
+            datedObserverUnitsUsedAsCurrentCoverage=False,
+            currentObserverUnitResults='current-observer-controls.json')
+    return provenance
 
 
 def join_replay_variant_map(output):
@@ -994,11 +1103,12 @@ def join_replay_variant_map(output):
     return rows
 
 
-def qualify_join_cause_replay(output, archive, source_commit):
-    """Reuse actual components; compile only the tenant-correct native harness."""
+def qualify_join_cause_replay(output, archive, source_commit, *, task_return_witness=False):
+    """Reuse actual components with an explicit old or TaskReturn-stage owner."""
     from tools import ci_rust_artifacts as artifacts
     from tools.build_observation import resolve_tools, file_identity as tool_identity
     import tomllib
+    require(type(task_return_witness) is bool, 'join-task-return-closed-mode')
     require(os.environ.get('GITHUB_EVENT_NAME') == 'push'
         and os.environ.get('GITHUB_REF') == 'refs/heads/'+JOIN_BRANCH, 'join-replay-closed-push')
     require(sys.platform == 'linux' and sys.version_info >= (3, 13), 'join-replay-platform')
@@ -1018,6 +1128,10 @@ def qualify_join_cause_replay(output, archive, source_commit):
         'fullAC7Qualified': False, 'physicalRetirementQualified': False, 'originalTrapQualified': False,
         'nativeAccountingComplete': False, 'runtimePolicyChanged': False, 'ownerCaps': OWNER_CAPS}
     original = output/'original-attempt'; original.mkdir()
+    if task_return_witness:
+        record.update(schemaVersion='latent.dotnet.canonical-task-return.replay.v1',
+            stage='canonicalTaskReturnBeforeScopeExit', oldPostCallProgrammeQualified=False,
+            currentObserverUnitCases=list(JOIN_UNIT_CASES))
     try:
         require(re.fullmatch(r'[0-9a-f]{40}', source_commit), 'join-replay-source-commit')
         require(subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, timeout=15).decode().strip() == source_commit
@@ -1026,7 +1140,8 @@ def qualify_join_cause_replay(output, archive, source_commit):
         before = source_map(); write_json(output/'current-git-inputs.json', before)
         admission = join_replay_extract(archive, original, deadline)
         record['originalAdmission'] = {'files': len(admission['files']), 'bytes': admission['bytes']}
-        record['provenance'] = join_replay_packages(original, output, before, deadline)
+        record['provenance'] = join_replay_packages(original, output, before, deadline,
+            task_return_witness=task_return_witness)
         variants_before = join_replay_variant_map(output)
         expected_variants = {r['path']: r for r in admission['files'] if r['path'].startswith(
             ('dotnet-root-return-normal/', 'dotnet-root-return-join-cause/'))}
@@ -1042,11 +1157,19 @@ def qualify_join_cause_replay(output, archive, source_commit):
         pins = tomllib.loads(read_file(ROOT/'tools/toolchain.toml', 128*1024).decode())
         native_tools, identities = resolve_tools(pins, ROOT, environment, _deadline=commands.deadline)
         record['toolIdentities'] = identities; environment['RUSTC'] = str(native_tools['rustc'])
-        commands.run('build-current-local-service', native_tools['cargo'], '--config', '.cargo/managed-guest.toml',
-            'test', '--locked', '-p', 'latent-wasmtime', '--features', 'development-test-host',
-            '--test', 'local_service', '--no-run', '--message-format=json')
+        if task_return_witness:
+            from tools import host_codec_wasmtime
+            record['nativeSourceCohort'] = host_codec_wasmtime.verify(ROOT)
+            commands.run('build-current-local-service', native_tools['cargo'], '--config', '.cargo/managed-guest.toml',
+                'test', '--locked', '-p', 'latent-wasmtime', '--features', 'development-test-host',
+                '--lib', '--test', 'local_service', '--no-run', '--message-format=json')
+        else:
+            commands.run('build-current-local-service', native_tools['cargo'], '--config', '.cargo/managed-guest.toml',
+                'test', '--locked', '-p', 'latent-wasmtime', '--features', 'development-test-host',
+                '--test', 'local_service', '--no-run', '--message-format=json')
+        selected_case = JOIN_TASK_RETURN_CASE if task_return_witness else JOIN_CASE
         suite = artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'local_service', 'tests/local_service.rs',
-            JOIN_CASE, frozenset({JOIN_CASE}), True, kind='test')
+            selected_case, frozenset({selected_case}), True, kind='test')
         owner = artifacts.read_inventory(commands.output/'logs/00-build-current-local-service.stdout.txt',
             ROOT, suite, target=ROOT/'target')
         executable_before = file_identity(owner.executable, 512*1024**2)
@@ -1057,18 +1180,44 @@ def qualify_join_cause_replay(output, archive, source_commit):
             value = commands.run('rust-library-path', native_tools['rustc'], *argv[1:])
             require(len(value) <= maximum, 'join-replay-library-bound')
             return 0, value
+        if task_return_witness:
+            unit_suite = artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'latent_wasmtime',
+                'src/lib.rs', JOIN_UNIT_PREFIX, frozenset(JOIN_UNIT_CASES), False, kind='lib')
+            unit_owner = artifacts.read_inventory(commands.output/'logs/00-build-current-local-service.stdout.txt',
+                ROOT, unit_suite, target=ROOT/'target')
+            unit_before = file_identity(unit_owner.executable, 512*1024**2)
+            commands.environment = artifacts.cargo_environment(ROOT, unit_owner, environment,
+                target=ROOT/'target', execute=library_probe)
+            commands.command_seconds = 25
+            unit_listed = commands.run('list-current-observer-controls', unit_owner.executable,
+                JOIN_UNIT_PREFIX, '--list')
+            require(len(unit_listed) <= 65536, 'join-task-return-unit-list-bound')
+            artifacts.validate_listing(unit_listed, unit_suite)
+            commands.command_seconds = 30
+            unit_raw = commands.run('execute-current-observer-controls', unit_owner.executable,
+                JOIN_UNIT_PREFIX, '--show-output', '--test-threads=1')
+            require(re.search(r'^test result: ok\. 3 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out; finished in [0-9.]+s$',
+                unit_raw.decode(), re.M), 'join-task-return-current-unit-result')
+            require(file_identity(unit_owner.executable, 512*1024**2) == unit_before,
+                'join-task-return-unit-executable-after')
+            record.update(currentObserverUnitsPassed=True, currentUnitExecutable=unit_before,
+                observerUnitsExecutedAgain=True)
+            write_json(output/'current-observer-controls.json', {'sourceCommit': source_commit,
+                'cases': list(JOIN_UNIT_CASES), 'currentSourcePassed': True,
+                'priorDatedUnitsRetagged': False, 'executable': unit_before})
         commands.environment = artifacts.cargo_environment(ROOT, owner, environment,
             target=ROOT/'target', execute=library_probe)
         commands.environment.update(LSF_GUEST_SDK_LANGUAGE='dotnet', LSF_GUEST_CAPSULES=str(output))
         commands.command_seconds = 25
-        selection = (JOIN_CASE, '--exact', '--ignored')
+        selection = (selected_case, '--exact', '--ignored')
         listed = commands.run('list-signed', owner.executable, *selection, '--list')
         require(len(listed) <= 65536, 'join-replay-list-bound'); artifacts.validate_listing(listed, suite)
         commands.command_seconds = 300
         raw = commands.run('execute-signed', owner.executable, *selection, '--show-output', '--test-threads=1')
         require(re.search(r'^test result: ok\. 1 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out; finished in [0-9.]+s$',
             raw.decode(), re.M), 'join-replay-exact-native-result')
-        record['observations'] = join_cause_observations(raw, JOIN_REPLAY_COMPONENTS)
+        record['observations'] = (join_task_return_observations(raw, JOIN_REPLAY_COMPONENTS)
+            if task_return_witness else join_cause_observations(raw, JOIN_REPLAY_COMPONENTS))
         require(source_map() == before and not subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, timeout=15)
             and executable_before == file_identity(owner.executable, 512*1024**2)
             and identities == [tool_identity(path, name) for name, path in sorted(native_tools.items())]
@@ -1078,6 +1227,9 @@ def qualify_join_cause_replay(output, archive, source_commit):
             and list(JOIN_REPLAY_COMPONENTS) == [file_identity(output/name/'component.wasm', 64*1024**2)['sha256']
                 for name in ('dotnet-root-return-normal', 'dotnet-root-return-join-cause')],
             'join-replay-current-code-products-after')
+        if task_return_witness:
+            require(file_identity(unit_owner.executable, 512*1024**2) == unit_before,
+                'join-task-return-unit-product-final')
         record.update(status='passed', sourceCommit=source_commit, sourceBeforeEqualsAfter=True,
             testExecutable=executable_before, commandCount=len(shared['records']), diagnosticBytes=shared['bytes'])
         write_json(output/'qualified.json', record)
@@ -1104,3 +1256,51 @@ def qualify_join_cause_replay(output, archive, source_commit):
             rows.append({'path': name, **identity})
         write_json(public/'ADMISSION.json', {'formatVersion': 1, 'files': rows, 'bytes': total,
             'maximumBytes': PUBLIC_BYTES, 'productExecutionPermission': False})
+
+
+def join_task_return_observations(raw, components):
+    """A distinct stage witness; never reinterpret the failed post-call oracle."""
+    require(type(raw) is bytes and len(raw) <= 4*1024**2, 'task-return-native-output-bound')
+    prefix = 'DOTNET_JOIN_TASK_RETURN '
+    lines = [s[len(prefix):] for s in raw.decode('utf-8').splitlines() if s.startswith(prefix)]
+    require(len(lines) == 6 and all(len(s) <= 4096 for s in lines), 'task-return-six-paired-rows')
+    rows = [json.loads(s) for s in lines]
+    rejections = {'claimRepeated', 'componentMismatch', 'contractMismatch', 'exportMismatch',
+        'callFailed', 'liftFailed', 'wrongShape', 'unknownWord', 'duplicateCapture',
+        'sessionUnavailable', 'sessionClosed', 'nativeDuplicateReturn', 'nativeInvalidReturn'}
+    expected = [(False, 8, 'quiescence'), (False, 9, 'originalFault'), (False, 10, 'unexpected'),
+                (True, 8, 'quiescence'), (True, 9, 'originalFault'), (True, 10, 'unexpected')]
+    for row, (auxiliary, mode, cause) in zip(rows, expected, strict=True):
+        require(type(row) is dict and set(row) == {'component', 'mode', 'auxiliary', 'stage',
+            'taskReturnWitness', 'postCallObservation', 'rejection', 'terminalOutcome',
+            'outerInvocationSucceeded', 'canonicalTaskReturnCauseEvidence',
+            'oldPostCallProgrammeQualified', 'originalTrapQualified', 'physicalRetirementQualified'},
+            'task-return-closed-row')
+        require(type(row['auxiliary']) is bool and row['auxiliary'] is auxiliary
+            and type(row['mode']) is int and row['mode'] == mode
+            and row['component'] == components[int(auxiliary)]
+            and row['stage'] == 'canonicalTaskReturnBeforeScopeExit'
+            and row['terminalOutcome'] == 'guest-trap' and row['outerInvocationSucceeded'] is False
+            and row['canonicalTaskReturnCauseEvidence'] is (auxiliary and mode != 10)
+            and row['oldPostCallProgrammeQualified'] is False
+            and row['originalTrapQualified'] is False and row['physicalRetirementQualified'] is False,
+            'task-return-distinct-failed-outer-contract')
+        if auxiliary:
+            witness, post = row['taskReturnWitness'], row['postCallObservation']
+            require(type(witness) is dict and set(witness) == {'claims', 'invalid', 'cause'}
+                and type(witness['claims']) is int and witness['claims'] == 1
+                and witness['invalid'] is False and witness['cause'] == cause,
+                'task-return-one-typed-known-cause')
+            require(type(post) is dict and set(post) == {'claims', 'invalid', 'cause'}
+                and type(post['claims']) is int and post['claims'] == 1
+                and type(post['invalid']) is bool and post['cause'] in (None, cause)
+                and (row['rejection'] is None or type(row['rejection']) is str
+                     and row['rejection'] in rejections),
+                'task-return-retain-original-post-call-disposition')
+            require(post['invalid'] or post['cause'] == cause, 'task-return-no-old-model-laundering')
+            require((row['rejection'] is not None) if post['invalid'] else row['rejection'] is None,
+                'task-return-explicit-original-refusal')
+        else:
+            require(row['taskReturnWitness'] is None and row['postCallObservation'] is None
+                and row['rejection'] is None, 'task-return-normal-unarmed')
+    return rows

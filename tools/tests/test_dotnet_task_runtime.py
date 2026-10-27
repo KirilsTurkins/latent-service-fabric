@@ -212,7 +212,8 @@ class RootReturnSupplementalControls(unittest.TestCase):
         # test registration; unavailable diagnostic prerequisites must refuse.
         rust = (ROOT/'crates/latent-wasmtime/tests/local_service.rs').read_text()
         signature = 'async fn dotnet_join_cause_borrows_one_word_before_unchanged_native_finalization() {'
-        prefix, body = rust.split(signature)
+        prefix, remaining = rust.split(signature, 1)
+        body = remaining.split('\n#[tokio::test(', 1)[0]
         attributes = prefix.rsplit('\n\n', 1)[1]
         self.assertNotIn('#[cfg', attributes)
         self.assertIn('#[tokio::test(', attributes)
@@ -257,6 +258,41 @@ class RootReturnSupplementalControls(unittest.TestCase):
                            (a.JOIN_CAUSE_FILE, a.JOIN_CAUSE_NORMAL)]:
             with self.assertRaisesRegex(ValueError, 'unreviewed-normal-helper'):
                 a.diagnostic_join_cause(name, text)
+
+    def test_task_return_stage_parser_never_qualifies_the_failed_old_oracle(self):
+        import copy
+        import json
+        from tools import dotnet_root_return as selected
+        from tools.phase2_operator_process import WorkflowError
+        rows = []
+        for auxiliary in (False, True):
+            for mode, cause in ((8, 'quiescence'), (9, 'originalFault'), (10, 'unexpected')):
+                rows.append({'component': selected.JOIN_REPLAY_COMPONENTS[int(auxiliary)],
+                    'mode': mode, 'auxiliary': auxiliary, 'stage': 'canonicalTaskReturnBeforeScopeExit',
+                    'taskReturnWitness': {'claims': 1, 'invalid': False, 'cause': cause} if auxiliary else None,
+                    'postCallObservation': {'claims': 1, 'invalid': True, 'cause': None} if auxiliary else None,
+                    'rejection': 'callFailed' if auxiliary else None,
+                    'terminalOutcome': 'guest-trap', 'outerInvocationSucceeded': False,
+                    'canonicalTaskReturnCauseEvidence': auxiliary and mode != 10,
+                    'oldPostCallProgrammeQualified': False, 'originalTrapQualified': False,
+                    'physicalRetirementQualified': False})
+        def encoded(items):
+            return ''.join('DOTNET_JOIN_TASK_RETURN '+json.dumps(r)+'\n' for r in items).encode()
+        self.assertEqual(selected.join_task_return_observations(encoded(rows), selected.JOIN_REPLAY_COMPONENTS), rows)
+        # Parser fixtures are not guest executions or evidence. Every mutation
+        # below must refuse, including laundering a failed old post-call model.
+        for field, value in [('oldPostCallProgrammeQualified', True),
+                             ('outerInvocationSucceeded', True), ('rejection', ['callFailed'])]:
+            bad = copy.deepcopy(rows); bad[4][field] = value
+            with self.assertRaises(WorkflowError):
+                selected.join_task_return_observations(encoded(bad), selected.JOIN_REPLAY_COMPONENTS)
+        for change in ({'invalid': True}, {'claims': 2}, {'cause': 'unknown'}):
+            bad = copy.deepcopy(rows); bad[4]['taskReturnWitness'].update(change)
+            with self.assertRaises(WorkflowError):
+                selected.join_task_return_observations(encoded(bad), selected.JOIN_REPLAY_COMPONENTS)
+        bad = copy.deepcopy(rows); bad[5]['canonicalTaskReturnCauseEvidence'] = True
+        with self.assertRaises(WorkflowError):
+            selected.join_task_return_observations(encoded(bad), selected.JOIN_REPLAY_COMPONENTS)
 
 
 if __name__ == '__main__':
