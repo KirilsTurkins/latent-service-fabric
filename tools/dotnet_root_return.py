@@ -883,7 +883,7 @@ JOIN_TASK_RETURN_TRANSLATIONS = {
         "path": "crates/latent-wasmtime/tests/local_service.rs",
         "mode": "100644",
         "producerGitBlob": "aacae1406d37ba1db950851f74facd4eaf45b17c",
-        "currentGitBlob": "588036204d684c45dee06106b2de935022fac49c"
+        "currentGitBlob": "73cf596dd58d84e8322fe53b62404656d2303b1a"
     },
     "crates/vendor/wasmtime/Cargo.toml": {
         "path": "crates/vendor/wasmtime/Cargo.toml",

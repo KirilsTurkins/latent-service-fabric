@@ -421,6 +421,10 @@ async fn dotnet_join_cause_canonical_task_return_witness_preserves_original_fail
                 },
             )
             .await;
+            let journal = f.manager.journal();
+            f.broker
+                .install_diagnostic_sink(std::sync::Arc::new(journal.clone()))
+                .unwrap();
             for (mode, id, expected) in [
                 (
                     8,
@@ -452,7 +456,15 @@ async fn dotnet_join_cause_canonical_task_return_witness_preserves_original_fail
                         )
                         .unwrap()
                 });
+                let diagnostic_tenant = request.target.tenant.clone();
                 let receipt = f.manager.start(request).unwrap().await;
+                let page = journal
+                    .inspect_tree(&diagnostic_tenant, &receipt.activation_id, 1, None)
+                    .unwrap();
+                let journal_record = page
+                    .nodes
+                    .iter()
+                    .find(|node| node.activation_id == receipt.activation_id);
                 assert_eq!(
                     receipt.resolved_revision.as_ref().unwrap().release,
                     actual_release
@@ -462,6 +474,25 @@ async fn dotnet_join_cause_canonical_task_return_witness_preserves_original_fail
                 let terminal = match &receipt.outcome {
                     ActivationOutcome::Failed { error, .. } => {
                         assert_eq!(error.code, latent_core::PlatformErrorCode::GuestTrap);
+                        let numeric = |d: &latent_core::diagnostic::ActivationDiagnostic,
+                                       terminal: bool| {
+                            serde_json::json!({"stage":d.stage as u32,"reason":d.reason as u32,
+                                "configuredBound":d.configured_bound,"calculatedRequirement":d.calculated_requirement,
+                                "terminal":terminal})
+                        };
+                        let last_observed = journal_record
+                            .filter(|node| !node.diagnostic_is_terminal)
+                            .and_then(|node| node.diagnostic.as_ref())
+                            .map(|d| numeric(d, false));
+                        let terminal_diagnostic =
+                            latent_core::diagnostic::ActivationDiagnostic::from_error(error);
+                        println!(
+                            "DOTNET_JOIN_RESOURCE_DIAGNOSTIC {}",
+                            serde_json::json!({
+                            "mode":mode,"auxiliary":auxiliary,"lastObservedDiagnostic":last_observed,
+                            "terminalDiagnostic":terminal_diagnostic.as_ref().map(|d| numeric(d, true)),
+                            "journalDiagnosticIsTerminal":journal_record.map(|node| node.diagnostic_is_terminal)})
+                        );
                         let classified = (|| {
                             use latent_core::error::GuestTrapKind;
                             let mut details = error
