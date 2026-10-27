@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_go_closed_filesystem.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Actual CI118482127658 fails before Wasmtime compilation because generic backend invokes the original exact Go52 case without either required adapter env. Reuse the existing authenticated old/current source producer and pinned wasm-tools1.254.0 in prepare-only mode, pass BOTH fixed paths through unchanged full generic --ignored command. No test/skip/Cargo/native changes; same original64KiB/10k native gate. Old harness RED/current40 focused PASS; local real pinned WAT parsing prepares1246/1245B inputs but supplies no new Rust execution credit.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "7f08ab4b48d1a28ebd255ea962c98639cea0a19be09643a3edac0b6ff19a3c25"
+{"kind":"owner","path":"tools/qualify_go_closed_filesystem.py","reviewBoundary":"committed-fingerprint","reviewReason":"Actual CI118482127658 fails before Wasmtime compilation because generic backend invokes the original exact Go52 case without either required adapter env. Reuse the existing authenticated old/current source producer and pinned wasm-tools1.254.0 in prepare-only mode, pass BOTH fixed paths through unchanged full generic --ignored command. No test/skip/Cargo/native changes; same original64KiB/10k native gate. Old harness RED/current40 focused PASS; local real pinned WAT parsing prepares1246/1245B inputs but supplies no new Rust execution credit.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "7f08ab4b48d1a28ebd255ea962c98639cea0a19be09643a3edac0b6ff19a3c25"
 }

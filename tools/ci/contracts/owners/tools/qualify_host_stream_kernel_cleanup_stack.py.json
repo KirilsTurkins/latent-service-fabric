@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_host_stream_kernel_cleanup_stack.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed actual maintained public kthread_create_worker GLOBAL oracle; static __kthread_create_worker excluded,111 total and original87factory oracles retained; no source/bounds change.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "dcd6300a726cfee952db7913faa6feb1051eafcf6b36c3caf9a95597b7d26a04"
+{"kind":"owner","path":"tools/qualify_host_stream_kernel_cleanup_stack.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reviewed actual maintained public kthread_create_worker GLOBAL oracle; static __kthread_create_worker excluded,111 total and original87factory oracles retained; no source/bounds change.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "dcd6300a726cfee952db7913faa6feb1051eafcf6b36c3caf9a95597b7d26a04"
 }

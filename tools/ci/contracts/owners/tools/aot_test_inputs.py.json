@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/aot_test_inputs.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the exact five-feature all-features test closure and increment its shared producer/consumer profile to v5; keep production feature defaults, preparation commands, executable identities and limits unchanged.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9550e41482c08111a526e57b56bb5882712f933023e68bae616b02f7bdff3a5a"
+{"kind":"owner","path":"tools/aot_test_inputs.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind the exact five-feature all-features test closure and increment its shared producer/consumer profile to v5; keep production feature defaults, preparation commands, executable identities and limits unchanged.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "9550e41482c08111a526e57b56bb5882712f933023e68bae616b02f7bdff3a5a"
 }

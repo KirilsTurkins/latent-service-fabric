@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/build_process.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Use only Windows adaptive no-progress pipe polling: positive100us start/reset after actual progress, double consecutive empty polls to original10ms cap. Preserve Linux10ms, all read/output quotas, command/cleanup deadlines, Job-before-resume, cancellation and retirement. No throughput or full capture qualification is claimed before measured verification.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3e7f5965d8334ea86e5154fa7fa733d2aa99a994c579e59554ab6a7c3549a93a"
+{"kind":"owner","path":"tools/build_process.py","reviewBoundary":"committed-fingerprint","reviewReason":"Use only Windows adaptive no-progress pipe polling: positive100us start/reset after actual progress, double consecutive empty polls to original10ms cap. Preserve Linux10ms, all read/output quotas, command/cleanup deadlines, Job-before-resume, cancellation and retirement. No throughput or full capture qualification is claimed before measured verification.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "3e7f5965d8334ea86e5154fa7fa733d2aa99a994c579e59554ab6a7c3549a93a"
 }

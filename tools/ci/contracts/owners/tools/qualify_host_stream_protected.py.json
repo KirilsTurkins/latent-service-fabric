@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_host_stream_protected.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review five native owned-timer Box controls on the original activation budget; unknown implementations refuse, generic waits and historical six controls remain, full driver/transitive/Go accounting stays unqualified.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "eabf1038f64bcdd124bc4850745d2218876c7c566ca9a6af65012c6b8137d403"
+{"kind":"owner","path":"tools/qualify_host_stream_protected.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review five native owned-timer Box controls on the original activation budget; unknown implementations refuse, generic waits and historical six controls remain, full driver/transitive/Go accounting stays unqualified.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "eabf1038f64bcdd124bc4850745d2218876c7c566ca9a6af65012c6b8137d403"
 }

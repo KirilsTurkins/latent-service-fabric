@@ -1,24 +1,15 @@
-{
-  "cases":["StandardThreadSource.test_captured_executor_identity_target_and_original_closure_cannot_drift","StandardThreadSource.test_captured_executor_overlay_preserves_original_crate_selection_and_support_sources","StandardThreadSource.test_changed_upstream_selector_or_packet_is_refused_before_derivation","StandardThreadSource.test_composed_tls_thread_and_packet_selectors_preserve_original_other_targets","StandardThreadSource.test_exact_runtime_source_closure_and_tls_reference_are_required","StandardThreadSource.test_source_build_keeps_legacy_recipe_and_closes_first_thread_profile_combinations"],
-  "guards":{
-    "StandardThreadSource.test_captured_executor_identity_target_and_original_closure_cannot_drift":
-      "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776",
-    "StandardThreadSource.test_captured_executor_overlay_preserves_original_crate_selection_and_support_sources":
-      "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776",
-    "StandardThreadSource.test_changed_upstream_selector_or_packet_is_refused_before_derivation":
-      "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776",
-    "StandardThreadSource.test_composed_tls_thread_and_packet_selectors_preserve_original_other_targets":
-      "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776",
-    "StandardThreadSource.test_exact_runtime_source_closure_and_tls_reference_are_required":
-      "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776",
-    "StandardThreadSource.test_source_build_keeps_legacy_recipe_and_closes_first_thread_profile_combinations":
-      "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_rust_standard_thread_profile.py",
-  "reviewReason":"Authenticate exact owned std and captured executor selectors; retain legacy recipe and refuse unsupported target, source and facility combinations",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b89c92232473b4a36a9cfe3c866b5b846ca8afb33aa2c8b61f96fa450bb1f217","class:setup-sha256:08e55ee5b8ffbb11c7d1bbcd01086e65bef5df1b6dc739fe88dc203a43f0e6f3"],"skipSites":[]}
-  }
-}
+{"cases":["StandardThreadSource.test_captured_executor_identity_target_and_original_closure_cannot_drift","StandardThreadSource.test_captured_executor_overlay_preserves_original_crate_selection_and_support_sources","StandardThreadSource.test_changed_upstream_selector_or_packet_is_refused_before_derivation","StandardThreadSource.test_composed_tls_thread_and_packet_selectors_preserve_original_other_targets","StandardThreadSource.test_exact_runtime_source_closure_and_tls_reference_are_required","StandardThreadSource.test_source_build_keeps_legacy_recipe_and_closes_first_thread_profile_combinations"],"guards":{"StandardThreadSource.test_captured_executor_identity_target_and_original_closure_cannot_drift":
+  "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776"
+,"StandardThreadSource.test_captured_executor_overlay_preserves_original_crate_selection_and_support_sources":
+  "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776"
+,"StandardThreadSource.test_changed_upstream_selector_or_packet_is_refused_before_derivation":
+  "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776"
+,"StandardThreadSource.test_composed_tls_thread_and_packet_selectors_preserve_original_other_targets":
+  "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776"
+,"StandardThreadSource.test_exact_runtime_source_closure_and_tls_reference_are_required":
+  "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776"
+,"StandardThreadSource.test_source_build_keeps_legacy_recipe_and_closes_first_thread_profile_combinations":
+  "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776"
+},"kind":"python","module":"tools/tests/test_rust_standard_thread_profile.py","reviewReason":"Authenticate exact owned std and captured executor selectors; retain legacy recipe and refuse unsupported target, source and facility combinations","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "ba9264a54c2e640ec9bbcb8c16081e2026a623b51d2d03b5b5f96821b151b776"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b89c92232473b4a36a9cfe3c866b5b846ca8afb33aa2c8b61f96fa450bb1f217","class:setup-sha256:08e55ee5b8ffbb11c7d1bbcd01086e65bef5df1b6dc739fe88dc203a43f0e6f3"],"skipSites":[]}}}

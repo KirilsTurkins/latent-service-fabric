@@ -1,18 +1,9 @@
-{
-  "cases":["CThreadReadyRuntime.test_fixed_v4_admission_runs_before_any_compiler_or_node_work","CThreadReadyRuntime.test_pre_call_audit_idle_requires_real_zero_samples_and_bounds_nonquiescent_work","CThreadReadyRuntime.test_seventeen_outcomes_oracles_caps_and_default_assert_current_are_unchanged"],
-  "guards":{
-    "CThreadReadyRuntime.test_fixed_v4_admission_runs_before_any_compiler_or_node_work":
-      "35004146c6046b13b36cc3eb48b72b1a2d5fb0a29449d854271d869bd9b72883",
-    "CThreadReadyRuntime.test_pre_call_audit_idle_requires_real_zero_samples_and_bounds_nonquiescent_work":
-      "35004146c6046b13b36cc3eb48b72b1a2d5fb0a29449d854271d869bd9b72883",
-    "CThreadReadyRuntime.test_seventeen_outcomes_oracles_caps_and_default_assert_current_are_unchanged":
-      "35004146c6046b13b36cc3eb48b72b1a2d5fb0a29449d854271d869bd9b72883"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_c_thread_ready_runtime.py",
-  "reviewReason":"Retain exact historical seventeen outcomes while pinning bounded actual audit-idle helper and fail-closed live/nonquiescent controls",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "35004146c6046b13b36cc3eb48b72b1a2d5fb0a29449d854271d869bd9b72883":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ccedc149b2e476df1c34fec69078d4045db4b9e3a1907acfe40b19b4a0248982","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["CThreadReadyRuntime.test_fixed_v4_admission_runs_before_any_compiler_or_node_work","CThreadReadyRuntime.test_pre_call_audit_idle_requires_real_zero_samples_and_bounds_nonquiescent_work","CThreadReadyRuntime.test_seventeen_outcomes_oracles_caps_and_default_assert_current_are_unchanged"],"guards":{"CThreadReadyRuntime.test_fixed_v4_admission_runs_before_any_compiler_or_node_work":
+  "35004146c6046b13b36cc3eb48b72b1a2d5fb0a29449d854271d869bd9b72883"
+,"CThreadReadyRuntime.test_pre_call_audit_idle_requires_real_zero_samples_and_bounds_nonquiescent_work":
+  "35004146c6046b13b36cc3eb48b72b1a2d5fb0a29449d854271d869bd9b72883"
+,"CThreadReadyRuntime.test_seventeen_outcomes_oracles_caps_and_default_assert_current_are_unchanged":
+  "35004146c6046b13b36cc3eb48b72b1a2d5fb0a29449d854271d869bd9b72883"
+},"kind":"python","module":"tools/tests/test_c_thread_ready_runtime.py","reviewReason":"Retain exact historical seventeen outcomes while pinning bounded actual audit-idle helper and fail-closed live/nonquiescent controls","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "35004146c6046b13b36cc3eb48b72b1a2d5fb0a29449d854271d869bd9b72883"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ccedc149b2e476df1c34fec69078d4045db4b9e3a1907acfe40b19b4a0248982","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

@@ -1,26 +1,17 @@
-{
-  "cases":["GoNetworkRuntimeTests.test_complete_ordered_go_cases_and_zero_user_owners_do_not_claim_kernel_retirement","GoNetworkRuntimeTests.test_extra_private_unknown_and_boolean_numeric_case_fields_fail_closed","GoNetworkRuntimeTests.test_missing_duplicate_reordered_or_failed_ordinary_cases_cannot_pass","GoNetworkRuntimeTests.test_original_guarded_modes_are_unchanged_and_new_mode_uses_ordinary_half_close_eof","GoNetworkRuntimeTests.test_retained_owner_incomplete_stop_or_kernel_promotion_is_not_completion","GoNetworkRuntimeTests.test_targeted_native_builder_and_pending_barrier_preserve_real_owners_and_caps","GoNetworkRuntimeTests.test_wrong_native_case_ignored_case_or_oversized_output_is_not_actual_execution"],
-  "guards":{
-    "GoNetworkRuntimeTests.test_complete_ordered_go_cases_and_zero_user_owners_do_not_claim_kernel_retirement":
-      "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93",
-    "GoNetworkRuntimeTests.test_extra_private_unknown_and_boolean_numeric_case_fields_fail_closed":
-      "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93",
-    "GoNetworkRuntimeTests.test_missing_duplicate_reordered_or_failed_ordinary_cases_cannot_pass":
-      "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93",
-    "GoNetworkRuntimeTests.test_original_guarded_modes_are_unchanged_and_new_mode_uses_ordinary_half_close_eof":
-      "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93",
-    "GoNetworkRuntimeTests.test_retained_owner_incomplete_stop_or_kernel_promotion_is_not_completion":
-      "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93",
-    "GoNetworkRuntimeTests.test_targeted_native_builder_and_pending_barrier_preserve_real_owners_and_caps":
-      "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93",
-    "GoNetworkRuntimeTests.test_wrong_native_case_ignored_case_or_oversized_output_is_not_actual_execution":
-      "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_go_network_runtime.py",
-  "reviewReason":"Seven closed actual evidence, type/private-field, original guarded source and native targeted-boundary controls.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:db1b1431177c26bc53855ef4ac51adbc24f2fc48c7280b21763b23ad2dff36f1","class:setup-sha256:1c83ac4f0093394436c74d3bfc483fcab751928038f25db362f7ec4d60acc7d7"],"skipSites":[]}
-  }
-}
+{"cases":["GoNetworkRuntimeTests.test_complete_ordered_go_cases_and_zero_user_owners_do_not_claim_kernel_retirement","GoNetworkRuntimeTests.test_extra_private_unknown_and_boolean_numeric_case_fields_fail_closed","GoNetworkRuntimeTests.test_missing_duplicate_reordered_or_failed_ordinary_cases_cannot_pass","GoNetworkRuntimeTests.test_original_guarded_modes_are_unchanged_and_new_mode_uses_ordinary_half_close_eof","GoNetworkRuntimeTests.test_retained_owner_incomplete_stop_or_kernel_promotion_is_not_completion","GoNetworkRuntimeTests.test_targeted_native_builder_and_pending_barrier_preserve_real_owners_and_caps","GoNetworkRuntimeTests.test_wrong_native_case_ignored_case_or_oversized_output_is_not_actual_execution"],"guards":{"GoNetworkRuntimeTests.test_complete_ordered_go_cases_and_zero_user_owners_do_not_claim_kernel_retirement":
+  "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93"
+,"GoNetworkRuntimeTests.test_extra_private_unknown_and_boolean_numeric_case_fields_fail_closed":
+  "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93"
+,"GoNetworkRuntimeTests.test_missing_duplicate_reordered_or_failed_ordinary_cases_cannot_pass":
+  "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93"
+,"GoNetworkRuntimeTests.test_original_guarded_modes_are_unchanged_and_new_mode_uses_ordinary_half_close_eof":
+  "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93"
+,"GoNetworkRuntimeTests.test_retained_owner_incomplete_stop_or_kernel_promotion_is_not_completion":
+  "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93"
+,"GoNetworkRuntimeTests.test_targeted_native_builder_and_pending_barrier_preserve_real_owners_and_caps":
+  "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93"
+,"GoNetworkRuntimeTests.test_wrong_native_case_ignored_case_or_oversized_output_is_not_actual_execution":
+  "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93"
+},"kind":"python","module":"tools/tests/test_go_network_runtime.py","reviewReason":"Seven closed actual evidence, type/private-field, original guarded source and native targeted-boundary controls.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "3950ad9f81412a43b39609911d67aea06c34524fa68144919e5eb25d2c620f93"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:db1b1431177c26bc53855ef4ac51adbc24f2fc48c7280b21763b23ad2dff36f1","class:setup-sha256:1c83ac4f0093394436c74d3bfc483fcab751928038f25db362f7ec4d60acc7d7"],"skipSites":[]}}}

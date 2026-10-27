@@ -1,28 +1,19 @@
-{
-  "cases":["NodeWorkerStackReference.test_changed_source_fails_before_any_build_or_output","NodeWorkerStackReference.test_exact_four_bounded_native_mappings_and_two_ambient_old_refusals_are_required","NodeWorkerStackReference.test_fixed_registry_closure_matches_maintained_lock_and_unknown_inputs_refuse","NodeWorkerStackReference.test_host_bytes_exception_requires_authenticated_source_and_matching_local_lock","NodeWorkerStackReference.test_old_semantic_derivation_changes_only_explicit_stack_size_and_rejects_unknown_shape","NodeWorkerStackReference.test_only_five_named_zero_filtered_successes_are_evidence","NodeWorkerStackReference.test_same_target_executable_alias_and_later_overwrite_are_rejected","NodeWorkerStackReference.test_unsupported_platform_refuses_before_output_or_native_process"],
-  "guards":{
-    "NodeWorkerStackReference.test_changed_source_fails_before_any_build_or_output":
-      "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b",
-    "NodeWorkerStackReference.test_exact_four_bounded_native_mappings_and_two_ambient_old_refusals_are_required":
-      "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b",
-    "NodeWorkerStackReference.test_fixed_registry_closure_matches_maintained_lock_and_unknown_inputs_refuse":
-      "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b",
-    "NodeWorkerStackReference.test_host_bytes_exception_requires_authenticated_source_and_matching_local_lock":
-      "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b",
-    "NodeWorkerStackReference.test_old_semantic_derivation_changes_only_explicit_stack_size_and_rejects_unknown_shape":
-      "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b",
-    "NodeWorkerStackReference.test_only_five_named_zero_filtered_successes_are_evidence":
-      "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b",
-    "NodeWorkerStackReference.test_same_target_executable_alias_and_later_overwrite_are_rejected":
-      "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b",
-    "NodeWorkerStackReference.test_unsupported_platform_refuses_before_output_or_native_process":
-      "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_node_worker_stacks.py",
-  "reviewReason":"Preserve reviewed physical result-owner retirement, authenticate the exact host-only bytes source and upstream advisory identity, project only original registry guest inputs, and retain exact before/after source decision fences; all previous cases, limits and execution guards preserved.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:4b59dbdabd2154c799aaf1d547758b4b210857c143e650901822c990cd053add","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["NodeWorkerStackReference.test_changed_source_fails_before_any_build_or_output","NodeWorkerStackReference.test_exact_four_bounded_native_mappings_and_two_ambient_old_refusals_are_required","NodeWorkerStackReference.test_fixed_registry_closure_matches_maintained_lock_and_unknown_inputs_refuse","NodeWorkerStackReference.test_host_bytes_exception_requires_authenticated_source_and_matching_local_lock","NodeWorkerStackReference.test_old_semantic_derivation_changes_only_explicit_stack_size_and_rejects_unknown_shape","NodeWorkerStackReference.test_only_five_named_zero_filtered_successes_are_evidence","NodeWorkerStackReference.test_same_target_executable_alias_and_later_overwrite_are_rejected","NodeWorkerStackReference.test_unsupported_platform_refuses_before_output_or_native_process"],"guards":{"NodeWorkerStackReference.test_changed_source_fails_before_any_build_or_output":
+  "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b"
+,"NodeWorkerStackReference.test_exact_four_bounded_native_mappings_and_two_ambient_old_refusals_are_required":
+  "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b"
+,"NodeWorkerStackReference.test_fixed_registry_closure_matches_maintained_lock_and_unknown_inputs_refuse":
+  "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b"
+,"NodeWorkerStackReference.test_host_bytes_exception_requires_authenticated_source_and_matching_local_lock":
+  "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b"
+,"NodeWorkerStackReference.test_old_semantic_derivation_changes_only_explicit_stack_size_and_rejects_unknown_shape":
+  "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b"
+,"NodeWorkerStackReference.test_only_five_named_zero_filtered_successes_are_evidence":
+  "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b"
+,"NodeWorkerStackReference.test_same_target_executable_alias_and_later_overwrite_are_rejected":
+  "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b"
+,"NodeWorkerStackReference.test_unsupported_platform_refuses_before_output_or_native_process":
+  "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b"
+},"kind":"python","module":"tools/tests/test_node_worker_stacks.py","reviewReason":"Preserve reviewed physical result-owner retirement, authenticate the exact host-only bytes source and upstream advisory identity, project only original registry guest inputs, and retain exact before/after source decision fences; all previous cases, limits and execution guards preserved.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "9542cf0b570cda36e850e129d2e27f4754f405aa8bfa4df64972559744bdff7b"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:4b59dbdabd2154c799aaf1d547758b4b210857c143e650901822c990cd053add","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

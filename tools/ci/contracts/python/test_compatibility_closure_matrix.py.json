@@ -1,20 +1,11 @@
-{
-  "schemaVersion":"latent.ci.contracts.v2",
-  "kind":"python",
-  "reviewReason":"Reviewed final eight logical cells: six immutable successful source/profile epochs plus current Go baseline/reached/initializer and fixed completed61a .NET builder/newpositive node-only. Exact passive postimages, source/SDK/WIT/materials/native/deadline/original failure gates remain strict. Original cases/skips/decorators preserved; additive bounded controls only.",
-  "module":"tools/tests/test_compatibility_closure_matrix.py",
-  "cases":["CompatibilityClosureMatrix.test_exact_case_results_and_order_cannot_be_replaced_by_a_matching_unknown_trap","CompatibilityClosureMatrix.test_missing_mandatory_cells_and_historical_scope_are_not_runtime_credit","CompatibilityClosureMatrix.test_normal_dotnet_owner_still_uses_original_validator_and_retained_modes_cannot_be_mixed","CompatibilityClosureMatrix.test_public_projection_excludes_keys_caches_and_refuses_union_change_or_overflow"],
-  "guards":{
-    "CompatibilityClosureMatrix.test_normal_dotnet_owner_still_uses_original_validator_and_retained_modes_cannot_be_mixed":
-      "c5703206d62e4ae71144b579900a495b205928f65c67dd53ab518ebf4cb7a2d9",
-    "CompatibilityClosureMatrix.test_exact_case_results_and_order_cannot_be_replaced_by_a_matching_unknown_trap":
-      "c5703206d62e4ae71144b579900a495b205928f65c67dd53ab518ebf4cb7a2d9",
-    "CompatibilityClosureMatrix.test_missing_mandatory_cells_and_historical_scope_are_not_runtime_credit":
-      "c5703206d62e4ae71144b579900a495b205928f65c67dd53ab518ebf4cb7a2d9",
-    "CompatibilityClosureMatrix.test_public_projection_excludes_keys_caches_and_refuses_union_change_or_overflow":
-      "c5703206d62e4ae71144b579900a495b205928f65c67dd53ab518ebf4cb7a2d9"
-  },
-  "guardDefinitions":{
-    "c5703206d62e4ae71144b579900a495b205928f65c67dd53ab518ebf4cb7a2d9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:ea4bc5a743e92458b905b75edd9bbebdd4001b393c5c4b12df5d4539d5deded8","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
-  }
-}
+{"schemaVersion":"latent.ci.contracts.v2","kind":"python","reviewReason":"Reviewed final eight logical cells: six immutable successful source/profile epochs plus current Go baseline/reached/initializer and fixed completed61a .NET builder/newpositive node-only. Exact passive postimages, source/SDK/WIT/materials/native/deadline/original failure gates remain strict. Original cases/skips/decorators preserved; additive bounded controls only.","module":"tools/tests/test_compatibility_closure_matrix.py","cases":["CompatibilityClosureMatrix.test_exact_case_results_and_order_cannot_be_replaced_by_a_matching_unknown_trap","CompatibilityClosureMatrix.test_missing_mandatory_cells_and_historical_scope_are_not_runtime_credit","CompatibilityClosureMatrix.test_normal_dotnet_owner_still_uses_original_validator_and_retained_modes_cannot_be_mixed","CompatibilityClosureMatrix.test_public_projection_excludes_keys_caches_and_refuses_union_change_or_overflow"],"guards":{"CompatibilityClosureMatrix.test_normal_dotnet_owner_still_uses_original_validator_and_retained_modes_cannot_be_mixed":
+  "c5703206d62e4ae71144b579900a495b205928f65c67dd53ab518ebf4cb7a2d9"
+,"CompatibilityClosureMatrix.test_exact_case_results_and_order_cannot_be_replaced_by_a_matching_unknown_trap":
+  "c5703206d62e4ae71144b579900a495b205928f65c67dd53ab518ebf4cb7a2d9"
+,"CompatibilityClosureMatrix.test_missing_mandatory_cells_and_historical_scope_are_not_runtime_credit":
+  "c5703206d62e4ae71144b579900a495b205928f65c67dd53ab518ebf4cb7a2d9"
+,"CompatibilityClosureMatrix.test_public_projection_excludes_keys_caches_and_refuses_union_change_or_overflow":
+  "c5703206d62e4ae71144b579900a495b205928f65c67dd53ab518ebf4cb7a2d9"
+},"guardDefinitions":{
+  "c5703206d62e4ae71144b579900a495b205928f65c67dd53ab518ebf4cb7a2d9"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:ea4bc5a743e92458b905b75edd9bbebdd4001b393c5c4b12df5d4539d5deded8","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}}}

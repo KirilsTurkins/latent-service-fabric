@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_dotnet_published_tasks.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Keep exact profile, completion, single final CoreLib reference and graph/task/grant/retirement checks. Match the existing finite task-wait receipt's exact monotonic/wall/random/activation declarations; no grant or runtime change. Real failed artifact12710979241 built successfully and stopped only at the stale two-declaration expectation.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f6a0f5fca0cb941cfae565e45761662adce2c8a122723c3f7128b8e06560cacc"
+{"kind":"owner","path":"tools/qualify_dotnet_published_tasks.py","reviewBoundary":"committed-fingerprint","reviewReason":"Keep exact profile, completion, single final CoreLib reference and graph/task/grant/retirement checks. Match the existing finite task-wait receipt's exact monotonic/wall/random/activation declarations; no grant or runtime change. Real failed artifact12710979241 built successfully and stopped only at the stale two-declaration expectation.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "f6a0f5fca0cb941cfae565e45761662adce2c8a122723c3f7128b8e06560cacc"
 }

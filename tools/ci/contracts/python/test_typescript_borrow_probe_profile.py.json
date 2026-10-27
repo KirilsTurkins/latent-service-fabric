@@ -1,24 +1,17 @@
-{
-"cases":["BorrowProbeProfileTests.test_default_is_lazy_and_wrong_profile_or_modules_refuse","BorrowProbeProfileTests.test_exact_owned_graph_admitted_and_changed_or_extra_inputs_refuse","BorrowProbeProfileTests.test_generated_read_shape_is_exact_before_private_declaration_staging","BorrowProbeProfileTests.test_private_builtin_configuration_refuses_unselected_or_changed_runtime","BorrowProbeProfileTests.test_readonly_pre_wizer_capture_preserves_original_sync_result_and_refuses_mutation"],
-"guards":{
-"BorrowProbeProfileTests.test_default_is_lazy_and_wrong_profile_or_modules_refuse":
-      "f11c4092ed4fd7c1ea59e56b775950809f581d965a404dbc2dc791df3df827ea",
-"BorrowProbeProfileTests.test_exact_owned_graph_admitted_and_changed_or_extra_inputs_refuse":
-      "f11c4092ed4fd7c1ea59e56b775950809f581d965a404dbc2dc791df3df827ea",
-"BorrowProbeProfileTests.test_generated_read_shape_is_exact_before_private_declaration_staging":
-      "f11c4092ed4fd7c1ea59e56b775950809f581d965a404dbc2dc791df3df827ea",
-"BorrowProbeProfileTests.test_private_builtin_configuration_refuses_unselected_or_changed_runtime":
-      "6aaa32eebc2309c78be2d8bd87a6388391548ef2ec3bd0302123f2f50f2419ac",
-"BorrowProbeProfileTests.test_readonly_pre_wizer_capture_preserves_original_sync_result_and_refuses_mutation":
-      "d9014732305b5808853f9ba1379955b8cd7d8f249d3e4c3f32bc50fe6aa91c69"
-},
-"kind":"python",
-"module":"tools/tests/test_typescript_borrow_probe_profile.py",
-"reviewReason":"Add one bounded host-only diagnostic tap control proving lazy default, unchanged synchronous result identity, fixed captures, size refusal and mutation rejection; owning source inventory increases4to5 with no skips and no runtime pass claim.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"f11c4092ed4fd7c1ea59e56b775950809f581d965a404dbc2dc791df3df827ea":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a47d6d47c8316ed44c6264df1928594c6c1922f8c83fde60219202cbe6cf5538","class:setup-sha256:019c1a00f2242bdbffb14e2f795b9b25c4c7c1d9fc0e57e52d12da44e1aa5318"],"skipSites":[]},
-"6aaa32eebc2309c78be2d8bd87a6388391548ef2ec3bd0302123f2f50f2419ac":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a47d6d47c8316ed44c6264df1928594c6c1922f8c83fde60219202cbe6cf5538","class:setup-sha256:019c1a00f2242bdbffb14e2f795b9b25c4c7c1d9fc0e57e52d12da44e1aa5318"],"skipSites":["self.skipTest('Node required for host-only module guard')","skip-control-sha256:1dd652a1cff3ceb63af7d3b05b6b31fa19dbf07e8add202a5ffb49ec958c8899"]},
-"d9014732305b5808853f9ba1379955b8cd7d8f249d3e4c3f32bc50fe6aa91c69":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a47d6d47c8316ed44c6264df1928594c6c1922f8c83fde60219202cbe6cf5538","class:setup-sha256:019c1a00f2242bdbffb14e2f795b9b25c4c7c1d9fc0e57e52d12da44e1aa5318"],"skipSites":["self.skipTest('Node required for host-only diagnostic capture')","skip-control-sha256:22dc823b2bba32dfe68488634897793eb972717862b98cbd0dafe525e4d6799a"]}
-}
-}
+{"cases":["BorrowProbeProfileTests.test_default_is_lazy_and_wrong_profile_or_modules_refuse","BorrowProbeProfileTests.test_exact_owned_graph_admitted_and_changed_or_extra_inputs_refuse","BorrowProbeProfileTests.test_generated_read_shape_is_exact_before_private_declaration_staging","BorrowProbeProfileTests.test_private_builtin_configuration_refuses_unselected_or_changed_runtime","BorrowProbeProfileTests.test_readonly_pre_wizer_capture_preserves_original_sync_result_and_refuses_mutation"],"guards":{"BorrowProbeProfileTests.test_default_is_lazy_and_wrong_profile_or_modules_refuse":
+  "f11c4092ed4fd7c1ea59e56b775950809f581d965a404dbc2dc791df3df827ea"
+,"BorrowProbeProfileTests.test_exact_owned_graph_admitted_and_changed_or_extra_inputs_refuse":
+  "f11c4092ed4fd7c1ea59e56b775950809f581d965a404dbc2dc791df3df827ea"
+,"BorrowProbeProfileTests.test_generated_read_shape_is_exact_before_private_declaration_staging":
+  "f11c4092ed4fd7c1ea59e56b775950809f581d965a404dbc2dc791df3df827ea"
+,"BorrowProbeProfileTests.test_private_builtin_configuration_refuses_unselected_or_changed_runtime":
+  "6aaa32eebc2309c78be2d8bd87a6388391548ef2ec3bd0302123f2f50f2419ac"
+,"BorrowProbeProfileTests.test_readonly_pre_wizer_capture_preserves_original_sync_result_and_refuses_mutation":
+  "d9014732305b5808853f9ba1379955b8cd7d8f249d3e4c3f32bc50fe6aa91c69"
+},"kind":"python","module":"tools/tests/test_typescript_borrow_probe_profile.py","reviewReason":"Add one bounded host-only diagnostic tap control proving lazy default, unchanged synchronous result identity, fixed captures, size refusal and mutation rejection; owning source inventory increases4to5 with no skips and no runtime pass claim.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "f11c4092ed4fd7c1ea59e56b775950809f581d965a404dbc2dc791df3df827ea"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a47d6d47c8316ed44c6264df1928594c6c1922f8c83fde60219202cbe6cf5538","class:setup-sha256:019c1a00f2242bdbffb14e2f795b9b25c4c7c1d9fc0e57e52d12da44e1aa5318"],"skipSites":[]},
+  "6aaa32eebc2309c78be2d8bd87a6388391548ef2ec3bd0302123f2f50f2419ac"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a47d6d47c8316ed44c6264df1928594c6c1922f8c83fde60219202cbe6cf5538","class:setup-sha256:019c1a00f2242bdbffb14e2f795b9b25c4c7c1d9fc0e57e52d12da44e1aa5318"],"skipSites":["self.skipTest('Node required for host-only module guard')","skip-control-sha256:1dd652a1cff3ceb63af7d3b05b6b31fa19dbf07e8add202a5ffb49ec958c8899"]},
+  "d9014732305b5808853f9ba1379955b8cd7d8f249d3e4c3f32bc50fe6aa91c69"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a47d6d47c8316ed44c6264df1928594c6c1922f8c83fde60219202cbe6cf5538","class:setup-sha256:019c1a00f2242bdbffb14e2f795b9b25c4c7c1d9fc0e57e52d12da44e1aa5318"],"skipSites":["self.skipTest('Node required for host-only diagnostic capture')","skip-control-sha256:22dc823b2bba32dfe68488634897793eb972717862b98cbd0dafe525e4d6799a"]}}}

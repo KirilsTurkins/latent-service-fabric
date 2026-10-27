@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_typescript_borrow_signed.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add finite normal Socket programme to existing signed owner with original six borrow obligations retained, seventeen source/owning controls, no engine rebuild or qualification promotion.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "04320a80e3ae8d7a1cfdb41c18915ad0ea3962aafc263becf47162e1ac3694e4"
+{"kind":"owner","path":"tools/qualify_typescript_borrow_signed.py","reviewBoundary":"committed-fingerprint","reviewReason":"Add finite normal Socket programme to existing signed owner with original six borrow obligations retained, seventeen source/owning controls, no engine rebuild or qualification promotion.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "04320a80e3ae8d7a1cfdb41c18915ad0ea3962aafc263becf47162e1ac3694e4"
 }

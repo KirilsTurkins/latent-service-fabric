@@ -1,28 +1,19 @@
-{
-  "cases":["KernelDeviceUeventSource.test_add_reserves_before_pernet_mutex_and_publication_normal_body_projects_exactly","KernelDeviceUeventSource.test_bank_fence_has_only_no_backing_allocation_failure_rollback","KernelDeviceUeventSource.test_exact_parent_wholes_definitions_and_all_uninstalled_gates","KernelDeviceUeventSource.test_missing_duplicate_crlf_changed_function_or_struct_refuse","KernelDeviceUeventSource.test_real_cross_namespace_recipient_and_tap_delivery_remain_in_original_definitions","KernelDeviceUeventSource.test_rehashed_members_or_enablement_assertion_are_not_accepted","KernelDeviceUeventSource.test_remove_updates_only_success_after_actual_rcu_wait_normal_body_is_exact","KernelDeviceUeventSource.test_typed_marker_is_conditional_and_does_not_add_allocation_authority"],
-  "guards":{
-    "KernelDeviceUeventSource.test_add_reserves_before_pernet_mutex_and_publication_normal_body_projects_exactly":
-      "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c",
-    "KernelDeviceUeventSource.test_bank_fence_has_only_no_backing_allocation_failure_rollback":
-      "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c",
-    "KernelDeviceUeventSource.test_exact_parent_wholes_definitions_and_all_uninstalled_gates":
-      "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c",
-    "KernelDeviceUeventSource.test_missing_duplicate_crlf_changed_function_or_struct_refuse":
-      "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c",
-    "KernelDeviceUeventSource.test_real_cross_namespace_recipient_and_tap_delivery_remain_in_original_definitions":
-      "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c",
-    "KernelDeviceUeventSource.test_rehashed_members_or_enablement_assertion_are_not_accepted":
-      "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c",
-    "KernelDeviceUeventSource.test_remove_updates_only_success_after_actual_rcu_wait_normal_body_is_exact":
-      "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c",
-    "KernelDeviceUeventSource.test_typed_marker_is_conditional_and_does_not_add_allocation_authority":
-      "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_host_stream_kernel_device_uevent.py",
-  "reviewReason":"Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:2bddc9b7dd69f43e9ea192515d4f9614baa14f133a6da1a72ad534e92b17e32c","class:setup-sha256:fe276e8ec581e2a0d98ad244bc2a6e8e63cc8428427d0fc37c0cbdfd562b11a6"],"skipSites":[]}
-  }
-}
+{"cases":["KernelDeviceUeventSource.test_add_reserves_before_pernet_mutex_and_publication_normal_body_projects_exactly","KernelDeviceUeventSource.test_bank_fence_has_only_no_backing_allocation_failure_rollback","KernelDeviceUeventSource.test_exact_parent_wholes_definitions_and_all_uninstalled_gates","KernelDeviceUeventSource.test_missing_duplicate_crlf_changed_function_or_struct_refuse","KernelDeviceUeventSource.test_real_cross_namespace_recipient_and_tap_delivery_remain_in_original_definitions","KernelDeviceUeventSource.test_rehashed_members_or_enablement_assertion_are_not_accepted","KernelDeviceUeventSource.test_remove_updates_only_success_after_actual_rcu_wait_normal_body_is_exact","KernelDeviceUeventSource.test_typed_marker_is_conditional_and_does_not_add_allocation_authority"],"guards":{"KernelDeviceUeventSource.test_add_reserves_before_pernet_mutex_and_publication_normal_body_projects_exactly":
+  "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c"
+,"KernelDeviceUeventSource.test_bank_fence_has_only_no_backing_allocation_failure_rollback":
+  "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c"
+,"KernelDeviceUeventSource.test_exact_parent_wholes_definitions_and_all_uninstalled_gates":
+  "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c"
+,"KernelDeviceUeventSource.test_missing_duplicate_crlf_changed_function_or_struct_refuse":
+  "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c"
+,"KernelDeviceUeventSource.test_real_cross_namespace_recipient_and_tap_delivery_remain_in_original_definitions":
+  "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c"
+,"KernelDeviceUeventSource.test_rehashed_members_or_enablement_assertion_are_not_accepted":
+  "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c"
+,"KernelDeviceUeventSource.test_remove_updates_only_success_after_actual_rcu_wait_normal_body_is_exact":
+  "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c"
+,"KernelDeviceUeventSource.test_typed_marker_is_conditional_and_does_not_add_allocation_authority":
+  "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_device_uevent.py","reviewReason":"Reviewed grouped uninstalled PCI registration sysfs IDR and uevent consumers; exclusive48object/201function compile retains all prior profiles commands cases security and original bounds; no runtime physical closure link boot or installation qualification","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "ee03841c03d196e359f99ee14950acfa8991654c931ed40a36a56e524b8ce14c"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:2bddc9b7dd69f43e9ea192515d4f9614baa14f133a6da1a72ad534e92b17e32c","class:setup-sha256:fe276e8ec581e2a0d98ad244bc2a6e8e63cc8428427d0fc37c0cbdfd562b11a6"],"skipSites":[]}}}

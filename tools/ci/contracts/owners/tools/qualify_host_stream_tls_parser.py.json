@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_host_stream_tls_parser.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review the libc 0.2.191 reference-lock identity; preserve exact dependency closure and every existing qualification case.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2dabb12c8ef29eb8dc94d4672acfcfa06de5dcb9474de07ee579714c1a1fd088"
+{"kind":"owner","path":"tools/qualify_host_stream_tls_parser.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review the libc 0.2.191 reference-lock identity; preserve exact dependency closure and every existing qualification case.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "2dabb12c8ef29eb8dc94d4672acfcfa06de5dcb9474de07ee579714c1a1fd088"
 }

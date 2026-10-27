@@ -1,16 +1,7 @@
-{
-  "cases":["BuildDeadline.test_invalid_or_expired_deadlines_refuse_before_any_output_or_source_mutation","BuildDeadline.test_real_six_builder_setup_cannot_renew_the_admitted_parent_deadline_before_first_tool"],
-  "guards":{
-    "BuildDeadline.test_invalid_or_expired_deadlines_refuse_before_any_output_or_source_mutation":
-      "972f371e0bee1ac1d75c91f5dbeb1f8fd694cdab58d2de2e7b058dba9fae3a77",
-    "BuildDeadline.test_real_six_builder_setup_cannot_renew_the_admitted_parent_deadline_before_first_tool":
-      "972f371e0bee1ac1d75c91f5dbeb1f8fd694cdab58d2de2e7b058dba9fae3a77"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_compatibility_build_deadline.py",
-  "reviewReason":"Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "972f371e0bee1ac1d75c91f5dbeb1f8fd694cdab58d2de2e7b058dba9fae3a77":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:265be05f8ff94a157b885123c5c1611645283f5f88acb65139456fee3b45dc0e","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["BuildDeadline.test_invalid_or_expired_deadlines_refuse_before_any_output_or_source_mutation","BuildDeadline.test_real_six_builder_setup_cannot_renew_the_admitted_parent_deadline_before_first_tool"],"guards":{"BuildDeadline.test_invalid_or_expired_deadlines_refuse_before_any_output_or_source_mutation":
+  "972f371e0bee1ac1d75c91f5dbeb1f8fd694cdab58d2de2e7b058dba9fae3a77"
+,"BuildDeadline.test_real_six_builder_setup_cannot_renew_the_admitted_parent_deadline_before_first_tool":
+  "972f371e0bee1ac1d75c91f5dbeb1f8fd694cdab58d2de2e7b058dba9fae3a77"
+},"kind":"python","module":"tools/tests/test_compatibility_build_deadline.py","reviewReason":"Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "972f371e0bee1ac1d75c91f5dbeb1f8fd694cdab58d2de2e7b058dba9fae3a77"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:265be05f8ff94a157b885123c5c1611645283f5f88acb65139456fee3b45dc0e","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/java_guest/compiler_profile_distribution.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add one normal unchanged published-worker component and source-matched twelve-call owner; preserve historical programmes and shared parent cleanup budgets.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "12443a135d933054ff3dc0ef9e06bca9a903ad2dd869b16b55e1cb2f245491b0"
+{"kind":"owner","path":"tools/java_guest/compiler_profile_distribution.py","reviewBoundary":"committed-fingerprint","reviewReason":"Add one normal unchanged published-worker component and source-matched twelve-call owner; preserve historical programmes and shared parent cleanup budgets.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "12443a135d933054ff3dc0ef9e06bca9a903ad2dd869b16b55e1cb2f245491b0"
 }

@@ -1,29 +1,21 @@
-{
-  "cases":["JavaHttpMixed.test_actual_fixture_compiles_with_checked_json_and_io_signatures","JavaHttpMixed.test_compiler_cache_resolves_only_strict_original_configurations_without_guest_compile","JavaHttpMixed.test_every_result_requires_exact_revision_single_use_counts_and_known_retirement","JavaHttpMixed.test_gate_release_requires_same_request_and_completed_sibling_after_pending_event","JavaHttpMixed.test_pending_observer_failure_retains_partial_streams_and_preserves_original_exception","JavaHttpMixed.test_project_retains_exact_phase_world_sdk_and_original_client_declarations","JavaHttpMixed.test_released_body_is_never_released_again_while_guest_completion_is_pending","JavaHttpMixed.test_response_boundary_is_exact_wire_bytes_and_existing_oversize_stays_distinct"],
-  "guards":{
-    "JavaHttpMixed.test_actual_fixture_compiles_with_checked_json_and_io_signatures":
-      "9be24de6b99d3186f82453828f44aed52a8100ba51b443016ec2e492aa2abf02",
-    "JavaHttpMixed.test_compiler_cache_resolves_only_strict_original_configurations_without_guest_compile":
-      "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628",
-    "JavaHttpMixed.test_every_result_requires_exact_revision_single_use_counts_and_known_retirement":
-      "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628",
-    "JavaHttpMixed.test_gate_release_requires_same_request_and_completed_sibling_after_pending_event":
-      "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628",
-    "JavaHttpMixed.test_pending_observer_failure_retains_partial_streams_and_preserves_original_exception":
-      "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628",
-    "JavaHttpMixed.test_project_retains_exact_phase_world_sdk_and_original_client_declarations":
-      "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628",
-    "JavaHttpMixed.test_released_body_is_never_released_again_while_guest_completion_is_pending":
-      "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628",
-    "JavaHttpMixed.test_response_boundary_is_exact_wire_bytes_and_existing_oversize_stays_distinct":
-      "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_java_http_mixed.py",
-  "reviewReason":"Add bounded pending-observer partial evidence and original-exception identity control; preserve all seven prior cases and guards",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "9be24de6b99d3186f82453828f44aed52a8100ba51b443016ec2e492aa2abf02":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(shutil.which('javac'), 'Host JDK required for checked-signature source control')"],"fixtureGuards":["module:setup-sha256:86b72e157a19a491b51a20d9d048298890e63ef3cddbe32ffad2f1b64f9ccebd","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["skip-control-sha256:8355c242cbf61ae62478ce981a12aea008179479e69523d7a45bd7dee5cddc87","unittest.skipUnless(shutil.which('javac'), 'Host JDK required for checked-signature source control')"]},
-    "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:86b72e157a19a491b51a20d9d048298890e63ef3cddbe32ffad2f1b64f9ccebd","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["JavaHttpMixed.test_actual_fixture_compiles_with_checked_json_and_io_signatures","JavaHttpMixed.test_compiler_cache_resolves_only_strict_original_configurations_without_guest_compile","JavaHttpMixed.test_every_result_requires_exact_revision_single_use_counts_and_known_retirement","JavaHttpMixed.test_gate_release_requires_same_request_and_completed_sibling_after_pending_event","JavaHttpMixed.test_pending_observer_failure_retains_partial_streams_and_preserves_original_exception","JavaHttpMixed.test_project_retains_exact_phase_world_sdk_and_original_client_declarations","JavaHttpMixed.test_released_body_is_never_released_again_while_guest_completion_is_pending","JavaHttpMixed.test_response_boundary_is_exact_wire_bytes_and_existing_oversize_stays_distinct"],"guards":{"JavaHttpMixed.test_actual_fixture_compiles_with_checked_json_and_io_signatures":
+  "9be24de6b99d3186f82453828f44aed52a8100ba51b443016ec2e492aa2abf02"
+,"JavaHttpMixed.test_compiler_cache_resolves_only_strict_original_configurations_without_guest_compile":
+  "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628"
+,"JavaHttpMixed.test_every_result_requires_exact_revision_single_use_counts_and_known_retirement":
+  "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628"
+,"JavaHttpMixed.test_gate_release_requires_same_request_and_completed_sibling_after_pending_event":
+  "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628"
+,"JavaHttpMixed.test_pending_observer_failure_retains_partial_streams_and_preserves_original_exception":
+  "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628"
+,"JavaHttpMixed.test_project_retains_exact_phase_world_sdk_and_original_client_declarations":
+  "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628"
+,"JavaHttpMixed.test_released_body_is_never_released_again_while_guest_completion_is_pending":
+  "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628"
+,"JavaHttpMixed.test_response_boundary_is_exact_wire_bytes_and_existing_oversize_stays_distinct":
+  "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628"
+},"kind":"python","module":"tools/tests/test_java_http_mixed.py","reviewReason":"Add bounded pending-observer partial evidence and original-exception identity control; preserve all seven prior cases and guards","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "9be24de6b99d3186f82453828f44aed52a8100ba51b443016ec2e492aa2abf02"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(shutil.which('javac'), 'Host JDK required for checked-signature source control')"],"fixtureGuards":["module:setup-sha256:86b72e157a19a491b51a20d9d048298890e63ef3cddbe32ffad2f1b64f9ccebd","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["skip-control-sha256:8355c242cbf61ae62478ce981a12aea008179479e69523d7a45bd7dee5cddc87","unittest.skipUnless(shutil.which('javac'), 'Host JDK required for checked-signature source control')"]},
+  "191a815f3de52b57514eb54bb0c447713738d5aba22ae2215087de4b9e1d3628"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:86b72e157a19a491b51a20d9d048298890e63ef3cddbe32ffad2f1b64f9ccebd","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

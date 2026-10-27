@@ -1,26 +1,17 @@
-{
-  "cases":["TypeScriptOwnedControlsTests.test_actual_rust_source_inventory_requires_all_thirteen_successes","TypeScriptOwnedControlsTests.test_emitted_core_inventory_refuses_missing_extra_or_changed_contract","TypeScriptOwnedControlsTests.test_exact_source_inventory_rejects_skips_missing_and_extra_cases","TypeScriptOwnedControlsTests.test_monotonic_deadline_clips_every_stage_and_refuses_late_success","TypeScriptOwnedControlsTests.test_native_evidence_requires_new_record_abi_and_real_cancel_counters","TypeScriptOwnedControlsTests.test_native_refusal_evidence_cannot_turn_retained_owners_into_refund","TypeScriptOwnedControlsTests.test_workflow_requires_same_source_and_owning_workflow_head"],
-  "guards":{
-    "TypeScriptOwnedControlsTests.test_actual_rust_source_inventory_requires_all_thirteen_successes":
-      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
-    "TypeScriptOwnedControlsTests.test_emitted_core_inventory_refuses_missing_extra_or_changed_contract":
-      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
-    "TypeScriptOwnedControlsTests.test_exact_source_inventory_rejects_skips_missing_and_extra_cases":
-      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
-    "TypeScriptOwnedControlsTests.test_monotonic_deadline_clips_every_stage_and_refuses_late_success":
-      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
-    "TypeScriptOwnedControlsTests.test_native_evidence_requires_new_record_abi_and_real_cancel_counters":
-      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
-    "TypeScriptOwnedControlsTests.test_native_refusal_evidence_cannot_turn_retained_owners_into_refund":
-      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
-    "TypeScriptOwnedControlsTests.test_workflow_requires_same_source_and_owning_workflow_head":
-      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_typescript_owned_controls.py",
-  "reviewReason":"Review late unlifted host-lowered backing disposal only: retain all prior cases, add exact source/metadata controls, strict17 Rust and32 source inventories, and no runtime or full-heap claim.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9012dadbfef5ab083be978437c0bce09505a4abedffd495facf27193da0ccbdf","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["TypeScriptOwnedControlsTests.test_actual_rust_source_inventory_requires_all_thirteen_successes","TypeScriptOwnedControlsTests.test_emitted_core_inventory_refuses_missing_extra_or_changed_contract","TypeScriptOwnedControlsTests.test_exact_source_inventory_rejects_skips_missing_and_extra_cases","TypeScriptOwnedControlsTests.test_monotonic_deadline_clips_every_stage_and_refuses_late_success","TypeScriptOwnedControlsTests.test_native_evidence_requires_new_record_abi_and_real_cancel_counters","TypeScriptOwnedControlsTests.test_native_refusal_evidence_cannot_turn_retained_owners_into_refund","TypeScriptOwnedControlsTests.test_workflow_requires_same_source_and_owning_workflow_head"],"guards":{"TypeScriptOwnedControlsTests.test_actual_rust_source_inventory_requires_all_thirteen_successes":
+  "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba"
+,"TypeScriptOwnedControlsTests.test_emitted_core_inventory_refuses_missing_extra_or_changed_contract":
+  "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba"
+,"TypeScriptOwnedControlsTests.test_exact_source_inventory_rejects_skips_missing_and_extra_cases":
+  "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba"
+,"TypeScriptOwnedControlsTests.test_monotonic_deadline_clips_every_stage_and_refuses_late_success":
+  "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba"
+,"TypeScriptOwnedControlsTests.test_native_evidence_requires_new_record_abi_and_real_cancel_counters":
+  "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba"
+,"TypeScriptOwnedControlsTests.test_native_refusal_evidence_cannot_turn_retained_owners_into_refund":
+  "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba"
+,"TypeScriptOwnedControlsTests.test_workflow_requires_same_source_and_owning_workflow_head":
+  "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba"
+},"kind":"python","module":"tools/tests/test_typescript_owned_controls.py","reviewReason":"Review late unlifted host-lowered backing disposal only: retain all prior cases, add exact source/metadata controls, strict17 Rust and32 source inventories, and no runtime or full-heap claim.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9012dadbfef5ab083be978437c0bce09505a4abedffd495facf27193da0ccbdf","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

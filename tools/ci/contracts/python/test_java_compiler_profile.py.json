@@ -1,24 +1,15 @@
-{
-  "cases":["NormalJavaCompilerProfile.test_expired_origin_uses_only_exact_archived_prepared_cache","NormalJavaCompilerProfile.test_foreign_artifact_redirect_never_receives_a_blob_request","NormalJavaCompilerProfile.test_only_two_complete_source_owned_inventories_admit_and_retain_identity","NormalJavaCompilerProfile.test_partial_or_unreviewed_source_cannot_change_normal_default","NormalJavaCompilerProfile.test_unfilled_source_preserves_official_default_and_refuses_new_sdk_before_inventory","NormalJavaCompilerProfile.test_unqualified_builder_refuses_before_reading_any_candidate_archive"],
-  "guards":{
-    "NormalJavaCompilerProfile.test_expired_origin_uses_only_exact_archived_prepared_cache":
-      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced",
-    "NormalJavaCompilerProfile.test_foreign_artifact_redirect_never_receives_a_blob_request":
-      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced",
-    "NormalJavaCompilerProfile.test_only_two_complete_source_owned_inventories_admit_and_retain_identity":
-      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced",
-    "NormalJavaCompilerProfile.test_partial_or_unreviewed_source_cannot_change_normal_default":
-      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced",
-    "NormalJavaCompilerProfile.test_unfilled_source_preserves_official_default_and_refuses_new_sdk_before_inventory":
-      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced",
-    "NormalJavaCompilerProfile.test_unqualified_builder_refuses_before_reading_any_candidate_archive":
-      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_java_compiler_profile.py",
-  "reviewReason":"Add one real-filesystem expired-origin prepared-cache hit, tamper, cold-miss and expired-origin refusal control; preserve all prior five case guards.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:88a6facd35ce17d7876a10d929e8c24545d360d0506a7001b6440fbb2d9e2569","class:setup-sha256:f184076f2562c96f619c11dab218a49c27dd3267d7786fae4ab7e60f8ce08ef6"],"skipSites":[]}
-  }
-}
+{"cases":["NormalJavaCompilerProfile.test_expired_origin_uses_only_exact_archived_prepared_cache","NormalJavaCompilerProfile.test_foreign_artifact_redirect_never_receives_a_blob_request","NormalJavaCompilerProfile.test_only_two_complete_source_owned_inventories_admit_and_retain_identity","NormalJavaCompilerProfile.test_partial_or_unreviewed_source_cannot_change_normal_default","NormalJavaCompilerProfile.test_unfilled_source_preserves_official_default_and_refuses_new_sdk_before_inventory","NormalJavaCompilerProfile.test_unqualified_builder_refuses_before_reading_any_candidate_archive"],"guards":{"NormalJavaCompilerProfile.test_expired_origin_uses_only_exact_archived_prepared_cache":
+  "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced"
+,"NormalJavaCompilerProfile.test_foreign_artifact_redirect_never_receives_a_blob_request":
+  "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced"
+,"NormalJavaCompilerProfile.test_only_two_complete_source_owned_inventories_admit_and_retain_identity":
+  "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced"
+,"NormalJavaCompilerProfile.test_partial_or_unreviewed_source_cannot_change_normal_default":
+  "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced"
+,"NormalJavaCompilerProfile.test_unfilled_source_preserves_official_default_and_refuses_new_sdk_before_inventory":
+  "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced"
+,"NormalJavaCompilerProfile.test_unqualified_builder_refuses_before_reading_any_candidate_archive":
+  "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced"
+},"kind":"python","module":"tools/tests/test_java_compiler_profile.py","reviewReason":"Add one real-filesystem expired-origin prepared-cache hit, tamper, cold-miss and expired-origin refusal control; preserve all prior five case guards.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:88a6facd35ce17d7876a10d929e8c24545d360d0506a7001b6440fbb2d9e2569","class:setup-sha256:f184076f2562c96f619c11dab218a49c27dd3267d7786fae4ab7e60f8ce08ef6"],"skipSites":[]}}}

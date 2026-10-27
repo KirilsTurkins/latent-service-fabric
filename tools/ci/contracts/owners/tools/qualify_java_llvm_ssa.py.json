@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_java_llvm_ssa.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Closed source-branch compiler producer and always-run fixed-artifact admission; no arbitrary source, compiler or upload selector.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f6ce47a54402ce8f0cfe1c3de19cd73558ce0714691ccd0c25c4cf0acbac5e76"
+{"kind":"owner","path":"tools/qualify_java_llvm_ssa.py","reviewBoundary":"committed-fingerprint","reviewReason":"Closed source-branch compiler producer and always-run fixed-artifact admission; no arbitrary source, compiler or upload selector.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "f6ce47a54402ce8f0cfe1c3de19cd73558ce0714691ccd0c25c4cf0acbac5e76"
 }

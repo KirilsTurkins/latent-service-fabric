@@ -13,7 +13,7 @@ PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
 COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v21-cache-repair"
-RECORD_SHA256 = "521f04270c043729b66898348ed814f890aff4e79ee6f2aea6aaf23141b5b45f"
+RECORD_SHA256 = "d79a0738a97b1cef89cc24c721c63fa95460d923f7b16af5e8b8df353f58f440"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {

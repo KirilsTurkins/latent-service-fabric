@@ -1,26 +1,17 @@
-{
-  "cases":["CleanupConstructorSource.test_abort_drain_never_replays_destructors_or_revives_refcount","CleanupConstructorSource.test_fixed_source_membership_and_runtime_gates","CleanupConstructorSource.test_full_numa_copy_projects_exactly_to_original","CleanupConstructorSource.test_original_error_actions_and_labels_stay_in_exact_order","CleanupConstructorSource.test_task_lsm_full_dispatch_and_error_free_remain_real","CleanupConstructorSource.test_usage_one_abort_has_real_stack_return_and_original_delayed_free","CleanupConstructorSource.test_vm_preparation_precedes_locks_and_atomic_commit_precedes_visibility"],
-  "guards":{
-    "CleanupConstructorSource.test_abort_drain_never_replays_destructors_or_revives_refcount":
-      "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898",
-    "CleanupConstructorSource.test_fixed_source_membership_and_runtime_gates":
-      "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898",
-    "CleanupConstructorSource.test_full_numa_copy_projects_exactly_to_original":
-      "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898",
-    "CleanupConstructorSource.test_original_error_actions_and_labels_stay_in_exact_order":
-      "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898",
-    "CleanupConstructorSource.test_task_lsm_full_dispatch_and_error_free_remain_real":
-      "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898",
-    "CleanupConstructorSource.test_usage_one_abort_has_real_stack_return_and_original_delayed_free":
-      "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898",
-    "CleanupConstructorSource.test_vm_preparation_precedes_locks_and_atomic_commit_precedes_visibility":
-      "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_host_stream_kernel_cleanup_constructor.py",
-  "reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d33183fb347d708b3d864b558840fcb1fb85bb0a145c092af3c3fa9af422b389","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["CleanupConstructorSource.test_abort_drain_never_replays_destructors_or_revives_refcount","CleanupConstructorSource.test_fixed_source_membership_and_runtime_gates","CleanupConstructorSource.test_full_numa_copy_projects_exactly_to_original","CleanupConstructorSource.test_original_error_actions_and_labels_stay_in_exact_order","CleanupConstructorSource.test_task_lsm_full_dispatch_and_error_free_remain_real","CleanupConstructorSource.test_usage_one_abort_has_real_stack_return_and_original_delayed_free","CleanupConstructorSource.test_vm_preparation_precedes_locks_and_atomic_commit_precedes_visibility"],"guards":{"CleanupConstructorSource.test_abort_drain_never_replays_destructors_or_revives_refcount":
+  "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898"
+,"CleanupConstructorSource.test_fixed_source_membership_and_runtime_gates":
+  "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898"
+,"CleanupConstructorSource.test_full_numa_copy_projects_exactly_to_original":
+  "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898"
+,"CleanupConstructorSource.test_original_error_actions_and_labels_stay_in_exact_order":
+  "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898"
+,"CleanupConstructorSource.test_task_lsm_full_dispatch_and_error_free_remain_real":
+  "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898"
+,"CleanupConstructorSource.test_usage_one_abort_has_real_stack_return_and_original_delayed_free":
+  "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898"
+,"CleanupConstructorSource.test_vm_preparation_precedes_locks_and_atomic_commit_precedes_visibility":
+  "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_cleanup_constructor.py","reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "e5dad23e1f2f85204aa15fd152896c064b322ff53ca4b099a413bf84999d5898"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d33183fb347d708b3d864b558840fcb1fb85bb0a145c092af3c3fa9af422b389","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

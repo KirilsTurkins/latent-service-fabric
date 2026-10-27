@@ -1,20 +1,11 @@
-{
-  "cases":["ExactJavaPhaseSurface.test_actual_pair_requires_selected_profile_and_preserves_both_inputs","ExactJavaPhaseSurface.test_both_full_source_interface_hashes_and_default_compiler_gate_remain_bound","ExactJavaPhaseSurface.test_compiled_body_owner_operations_exports_and_extra_omissions_remain_strict","ExactJavaPhaseSurface.test_source_response_resource_and_phase_mutations_never_gain_an_exception"],
-  "guards":{
-    "ExactJavaPhaseSurface.test_actual_pair_requires_selected_profile_and_preserves_both_inputs":
-      "a27ccebc778dbea233ebb37ca6d5ea8bf2bbf708ea0c51fc5f473817358841a4",
-    "ExactJavaPhaseSurface.test_both_full_source_interface_hashes_and_default_compiler_gate_remain_bound":
-      "a27ccebc778dbea233ebb37ca6d5ea8bf2bbf708ea0c51fc5f473817358841a4",
-    "ExactJavaPhaseSurface.test_compiled_body_owner_operations_exports_and_extra_omissions_remain_strict":
-      "a27ccebc778dbea233ebb37ca6d5ea8bf2bbf708ea0c51fc5f473817358841a4",
-    "ExactJavaPhaseSurface.test_source_response_resource_and_phase_mutations_never_gain_an_exception":
-      "a27ccebc778dbea233ebb37ca6d5ea8bf2bbf708ea0c51fc5f473817358841a4"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_java_phase_surface.py",
-  "reviewReason":"Reviewed source-hashed selected HTTP0.4 nominal-owner emission: only unused legacy response omission allowed after full pinned source pair, all other graphs/default0.3 strict; four actual-pair/adversarial controls added, old commands/cases/guards/bounds retained.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "a27ccebc778dbea233ebb37ca6d5ea8bf2bbf708ea0c51fc5f473817358841a4":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:64936dfe9d6b32b939cc1e6369048737d11b2197378cc40b271eca98ed060fa6","class:setup-sha256:256cfe14bd029dff1c1e9400ab5b20dcaa384e41e1a328a0e53bd5e1befc07f3"],"skipSites":[]}
-  }
-}
+{"cases":["ExactJavaPhaseSurface.test_actual_pair_requires_selected_profile_and_preserves_both_inputs","ExactJavaPhaseSurface.test_both_full_source_interface_hashes_and_default_compiler_gate_remain_bound","ExactJavaPhaseSurface.test_compiled_body_owner_operations_exports_and_extra_omissions_remain_strict","ExactJavaPhaseSurface.test_source_response_resource_and_phase_mutations_never_gain_an_exception"],"guards":{"ExactJavaPhaseSurface.test_actual_pair_requires_selected_profile_and_preserves_both_inputs":
+  "a27ccebc778dbea233ebb37ca6d5ea8bf2bbf708ea0c51fc5f473817358841a4"
+,"ExactJavaPhaseSurface.test_both_full_source_interface_hashes_and_default_compiler_gate_remain_bound":
+  "a27ccebc778dbea233ebb37ca6d5ea8bf2bbf708ea0c51fc5f473817358841a4"
+,"ExactJavaPhaseSurface.test_compiled_body_owner_operations_exports_and_extra_omissions_remain_strict":
+  "a27ccebc778dbea233ebb37ca6d5ea8bf2bbf708ea0c51fc5f473817358841a4"
+,"ExactJavaPhaseSurface.test_source_response_resource_and_phase_mutations_never_gain_an_exception":
+  "a27ccebc778dbea233ebb37ca6d5ea8bf2bbf708ea0c51fc5f473817358841a4"
+},"kind":"python","module":"tools/tests/test_java_phase_surface.py","reviewReason":"Reviewed source-hashed selected HTTP0.4 nominal-owner emission: only unused legacy response omission allowed after full pinned source pair, all other graphs/default0.3 strict; four actual-pair/adversarial controls added, old commands/cases/guards/bounds retained.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "a27ccebc778dbea233ebb37ca6d5ea8bf2bbf708ea0c51fc5f473817358841a4"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:64936dfe9d6b32b939cc1e6369048737d11b2197378cc40b271eca98ed060fa6","class:setup-sha256:256cfe14bd029dff1c1e9400ab5b20dcaa384e41e1a328a0e53bd5e1befc07f3"],"skipSites":[]}}}

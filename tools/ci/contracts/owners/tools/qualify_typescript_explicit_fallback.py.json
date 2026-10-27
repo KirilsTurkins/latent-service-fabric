@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_typescript_explicit_fallback.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "New finite TypeScript programme: one normal captured transitive component, four actual fallback uncaught and fresh outcomes, unchanged native lineage and explicit physical retirement; no engine or host build.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "74f35f1c01a53da4582535153b2febaca23c46297bfef51d9ef6e932858b8dc9"
+{"kind":"owner","path":"tools/qualify_typescript_explicit_fallback.py","reviewBoundary":"committed-fingerprint","reviewReason":"New finite TypeScript programme: one normal captured transitive component, four actual fallback uncaught and fresh outcomes, unchanged native lineage and explicit physical retirement; no engine or host build.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "74f35f1c01a53da4582535153b2febaca23c46297bfef51d9ef6e932858b8dc9"
 }
