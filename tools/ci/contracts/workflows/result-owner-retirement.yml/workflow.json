@@ -1,39 +1,39 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "result-owner-retirement-${{ github.ref }}"
-    },
-    "name": "Physical result owner retirement",
-    "on": {
-      "pull_request": {
-        "paths": [
-          "crates/vendor/bytes/**",
-          "crates/latent-core/src/result_payload.rs",
-          ".github/workflows/result-owner-retirement.yml"
-        ]
-      },
-      "push": {
-        "branches": [
-          "feat/result-box-retirement-20261023"
-        ],
-        "paths": [
-          "crates/vendor/bytes/**",
-          "crates/latent-core/src/result_payload.rs",
-          ".github/workflows/result-owner-retirement.yml"
-        ]
-      },
-      "workflow_dispatch": null
-    },
-    "permissions": {
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "physical-owner"
-  ],
-  "reviewReason": "Add a finite std-only allocator-observed physical result owner regression; preserve all existing CI obligations.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/result-owner-retirement.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":true,
+"group":"result-owner-retirement-${{ github.ref }}"
+},
+"name":"Physical result owner retirement",
+"on":{
+"pull_request":{
+"paths":[
+"crates/vendor/bytes/**",
+"crates/latent-core/src/result_payload.rs",
+".github/workflows/result-owner-retirement.yml"
+]
+},
+"push":{
+"branches":[
+"feat/result-box-retirement-20261023"
+],
+"paths":[
+"crates/vendor/bytes/**",
+"crates/latent-core/src/result_payload.rs",
+".github/workflows/result-owner-retirement.yml"
+]
+},
+"workflow_dispatch":null
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"physical-owner"
+],
+"reviewReason":"Add a finite std-only allocator-observed physical result owner regression; preserve all existing CI obligations.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/result-owner-retirement.yml"
 }

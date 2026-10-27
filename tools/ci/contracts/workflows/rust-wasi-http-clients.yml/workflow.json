@@ -1,41 +1,41 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "rust-wasi-http-clients-${{ github.ref }}"
-    },
-    "name": "Rust ordinary WASI HTTP signed runtime",
-    "on": {
-      "push": {
-        "branches": [
-          "fix/rust-http-explicit-async-entry-20261021"
-        ],
-        "paths": [
-          ".github/workflows/rust-wasi-http-clients.yml",
-          "tools/qualify_rust_wasi_http_runtime.py",
-          "tools/rust_wasi_http_runtime_fixture.py",
-          "tools/rust_wasi_http_runtime_node.py",
-          "tools/rust_wasi_http_root.py",
-          "tools/rust_wasi_http_compose.py",
-          "tools/activation_stack_native_products.py",
-          "tools/activation_stack_native_source.py",
-          "tools/tests/test_rust_wasi_http_runtime.py",
-          "tools/tests/test_rust_wasi_http_runtime_fixture.py",
-          "tools/tests/test_rust_wasi_http_profile.py"
-        ]
-      },
-      "workflow_dispatch": null
-    },
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "ordinary-clients"
-  ],
-  "reviewReason": "Reviewed c713 native acquisition and exact shared source projection preserve all original Rust64 runtime oracles, caps and commands, with additive reader/source controls and a fresh source-bound adapter.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/rust-wasi-http-clients.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"rust-wasi-http-clients-${{ github.ref }}"
+},
+"name":"Rust ordinary WASI HTTP signed runtime",
+"on":{
+"push":{
+"branches":[
+"fix/rust-http-explicit-async-entry-20261021"
+],
+"paths":[
+".github/workflows/rust-wasi-http-clients.yml",
+"tools/qualify_rust_wasi_http_runtime.py",
+"tools/rust_wasi_http_runtime_fixture.py",
+"tools/rust_wasi_http_runtime_node.py",
+"tools/rust_wasi_http_root.py",
+"tools/rust_wasi_http_compose.py",
+"tools/activation_stack_native_products.py",
+"tools/activation_stack_native_source.py",
+"tools/tests/test_rust_wasi_http_runtime.py",
+"tools/tests/test_rust_wasi_http_runtime_fixture.py",
+"tools/tests/test_rust_wasi_http_profile.py"
+]
+},
+"workflow_dispatch":null
+},
+"permissions":{
+"actions":"read",
+"contents":"read"
+}
+},
+"requiredJobs":[
+"ordinary-clients"
+],
+"reviewReason":"Reviewed c713 native acquisition and exact shared source projection preserve all original Rust64 runtime oracles, caps and commands, with additive reader/source controls and a fresh source-bound adapter.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/rust-wasi-http-clients.yml"
 }
