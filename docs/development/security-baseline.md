@@ -260,11 +260,14 @@ centrally audits the exact PR head and decides merges, promotion and issue closu
    and exact-head checks. No automation approves or merges dependency/workflow code.
 
 [Dependabot configuration](../../.github/dependabot.yml) proposes weekly updates
-to `development`, capped at three open version PRs per entry. Default-branch Cargo,
-npm and scanner-pip entries use zero version PRs while allowing security proposals.
-The seven-day cooldown affects version updates, not security fixes. GitHub security
-updates target the default branch; `target-branch: development` does not change
-that. These semantics were checked against the official
+only to `development`, capped at three open version PRs per entry. Every entry
+explicitly names that target. The seven-day cooldown applies to version updates.
+GitHub security updates always target the default branch; `target-branch` cannot
+redirect them. Automatic security PRs are therefore disabled while the default
+branch is `release`. Vulnerability alerts and the security baseline's advisory
+scans remain enabled. `python tools/security_settings.py --enable` preserves this
+policy; it enables automatic security PRs only if the default branch itself is
+`development`. These semantics follow the official
 [Dependabot options reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference).
 The nonstandard `tools/requirements.lock` and scanner binary pins retain a manual,
 owned update process; OSV still checks their declared package graphs. Dependabot
