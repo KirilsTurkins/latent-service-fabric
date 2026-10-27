@@ -1,9 +1,9 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Reviewed fixed65-physical/90-logical/427-derived constructor MMIO22-object source check, unchanged config/process/public bounds and all historical modes; add only two pure reader/mode controls.",
+  "reviewReason":"Append only the3 already-passed VP reader cases and1 new cold mode/admission control; preserve all old order and guards.",
   "module":"tools/tests/test_host_stream_kernel_stream_objects.py",
-  "cases":["StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed","StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels","StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets","StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope","StreamObjectOwner.test_constructor_bundle_physical_sources_and_logical_origins_are_closed","StreamObjectOwner.test_constructor_mmio_owner_keeps_only_twenty_two_changed_targets_and_stage_union","StreamObjectOwner.test_layout_elf_refuses_malformed_tables_and_reports_only_incomplete_lower_bound","StreamObjectOwner.test_layout_source_freeze_preserves_notify_and_all_prior_modes","StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources","StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets","StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable","StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work","StreamObjectOwner.test_post_init_instances_are_bound_before_next_and_both_chains_preflight","StreamObjectOwner.test_post_init_owner_keeps_exact_eight_targets_and_denies_size_probe_union","StreamObjectOwner.test_post_init_projection_keeps_whole_ordinary_body_and_original_unwind","StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes"],
+  "cases":["StreamObjectOwner.test_classdir_kernfs_freeze_binds_full_projector_and_keeps_historical_modes_closed","StreamObjectOwner.test_classdir_kernfs_public_gate_keeps_exact_nine_targets_and_current_only_channels","StreamObjectOwner.test_classdir_public_gate_refuses_other_original_object_targets","StreamObjectOwner.test_classdir_source_freeze_is_exact_and_preserves_default_source_scope","StreamObjectOwner.test_constructor_bundle_physical_sources_and_logical_origins_are_closed","StreamObjectOwner.test_constructor_mmio_owner_keeps_only_twenty_two_changed_targets_and_stage_union","StreamObjectOwner.test_layout_elf_refuses_malformed_tables_and_reports_only_incomplete_lower_bound","StreamObjectOwner.test_layout_source_freeze_preserves_notify_and_all_prior_modes","StreamObjectOwner.test_netdev_directory_freeze_preserves_all_fifty_two_sources","StreamObjectOwner.test_netdev_directory_public_gate_is_closed_to_nine_changed_targets","StreamObjectOwner.test_object_gate_accepts_relocatable_without_claiming_link_and_refuses_executable","StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work","StreamObjectOwner.test_post_init_instances_are_bound_before_next_and_both_chains_preflight","StreamObjectOwner.test_post_init_owner_keeps_exact_eight_targets_and_denies_size_probe_union","StreamObjectOwner.test_post_init_projection_keeps_whole_ordinary_body_and_original_unwind","StreamObjectOwner.test_public_gate_rejects_private_members_and_reserves_admission_bytes","VpTransportMaterials.test_vp_transport_container_binds_complete_typed_materials","VpTransportMaterials.test_vp_transport_forged_container_still_rejects_row_and_schema_forgery","VpTransportMaterials.test_vp_transport_refuses_incomplete_or_counterfeit_prior_source_map","VpTransportOwner.test_vp_owner_cold_materials_exact_mode_and_public_stage"],
   "guards":{
     "StreamObjectOwner.test_original_deadline_rejects_invalid_and_expired_start_before_work":
       "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
@@ -36,9 +36,18 @@
     "StreamObjectOwner.test_constructor_bundle_physical_sources_and_logical_origins_are_closed":
       "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
     "StreamObjectOwner.test_constructor_mmio_owner_keeps_only_twenty_two_changed_targets_and_stage_union":
+      "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5",
+    "VpTransportMaterials.test_vp_transport_container_binds_complete_typed_materials":
+      "77d1938e08ef4505b34de5105afafb461f444b9dc32464f317177418edb40faf",
+    "VpTransportMaterials.test_vp_transport_forged_container_still_rejects_row_and_schema_forgery":
+      "77d1938e08ef4505b34de5105afafb461f444b9dc32464f317177418edb40faf",
+    "VpTransportMaterials.test_vp_transport_refuses_incomplete_or_counterfeit_prior_source_map":
+      "77d1938e08ef4505b34de5105afafb461f444b9dc32464f317177418edb40faf",
+    "VpTransportOwner.test_vp_owner_cold_materials_exact_mode_and_public_stage":
       "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5"
   },
   "guardDefinitions":{
-    "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:34251b70f0c15c2dfd5a0c560533b70ad3b9bbeb8b4d3a289222191ae5dc2650","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+    "78b2aaa057bf3a8bca5bc7c6d1ae6ef015734ccd7a9cfef6436fc5251471cbb5":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:34251b70f0c15c2dfd5a0c560533b70ad3b9bbeb8b4d3a289222191ae5dc2650","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
+    "77d1938e08ef4505b34de5105afafb461f444b9dc32464f317177418edb40faf":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:34251b70f0c15c2dfd5a0c560533b70ad3b9bbeb8b4d3a289222191ae5dc2650","class:setup-sha256:ddbcd895fda34fbf8afcf943da5d42b61122efa0a298ea15c9721d1dd95949d9"]}
   }
 }
