@@ -364,6 +364,17 @@ impl PoolAdmission {
     pub fn stop_handle(&self) -> crate::broker::io::IoStopHandle {
         self.io.as_ref().expect("affine admission").stop_handle()
     }
+    /// Materialize borrowed ingress only after this SAME admission prepays it.
+    pub fn copy_input(
+        &self,
+        source: &[u8],
+        metadata: usize,
+    ) -> Result<super::super::io::IoBuffer, PlatformError> {
+        self.io
+            .as_ref()
+            .expect("affine admission")
+            .copy_input(source, metadata)
+    }
     pub fn reserve_input(
         &self,
         bytes: usize,
@@ -872,6 +883,130 @@ mod native_tests {
         assert_eq!(setup.pools.snapshot().unwrap().running_requests, 0);
         assert_eq!(first_control.budget.host_memory_bytes(), first_baseline);
         assert_eq!(second_control.budget.host_memory_bytes(), second_baseline);
+        assert_eq!(setup.pools.inner.io.snapshot(), Default::default());
+    }
+
+    #[tokio::test]
+    async fn native_blob_input_bridge_refuses_original_budget_before_materialization() {
+        let setup = Setup::new(super::super::ProviderPoolLimits::default());
+        let (session, control) =
+            setup.native_session_for(&setup.provider, "a", "blob-input-refusal");
+        let baseline = control.budget.host_memory_bytes();
+        let admission = setup.pools.admit(&setup.client, &session).unwrap();
+        let before = control.budget.host_memory_bytes();
+        let padding_bytes = control.budget.granted().memory_bytes - before - (8 + 64) + 1;
+        let padding = control.budget.reserve_host_memory(padding_bytes).unwrap();
+        let snapshot = setup.pools.inner.io.snapshot();
+        let peak = control.budget.snapshot_at(Instant::now()).peak_memory_bytes;
+        assert_eq!(
+            admission.copy_input(b"resident", 512).err().unwrap().code,
+            latent_core::PlatformErrorCode::ResourceExhausted
+        );
+        assert_eq!(setup.pools.inner.io.snapshot(), snapshot);
+        assert_eq!(control.budget.host_memory_bytes(), before + padding_bytes);
+        assert_eq!(
+            control.budget.snapshot_at(Instant::now()).peak_memory_bytes,
+            peak
+        );
+        drop(padding);
+        let input = admission.copy_input(b"resident", 512).unwrap();
+        assert_eq!(input.bytes(), b"resident");
+        assert_eq!(input.capacity(), 8);
+        assert_eq!(control.budget.host_memory_bytes(), before + 8 + 64);
+        drop(input);
+        assert_eq!(control.budget.host_memory_bytes(), before);
+        drop(admission);
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(setup.pools.inner.io.snapshot(), Default::default());
+    }
+
+    #[tokio::test]
+    async fn native_blob_input_bridge_keeps_credit_through_real_worker_observer_cancel() {
+        let setup = Setup::new(super::super::ProviderPoolLimits::default());
+        let (session, control) =
+            setup.native_session_for(&setup.provider, "a", "blob-input-worker");
+        let baseline = control.budget.host_memory_bytes();
+        let guards = control.budget.outstanding_reservations();
+        let admission = setup.pools.admit(&setup.client, &session).unwrap();
+        let input = admission.copy_input(b"resident", 512).unwrap();
+        let call = admission
+            .wait()
+            .await
+            .unwrap()
+            .start(crate::broker::pools::tests::fixture::dispatch(&session))
+            .unwrap();
+        let held = control.budget.host_memory_bytes();
+        let (entered, started) = tokio::sync::oneshot::channel();
+        let (release, blocked) = std::sync::mpsc::sync_channel(1);
+        let (finished, completed) = tokio::sync::oneshot::channel();
+        let job = setup
+            .pools
+            .spawn_blocking_wait(call, move |call| {
+                assert_eq!(input.bytes(), b"resident");
+                entered.send(()).unwrap();
+                blocked.recv_timeout(Duration::from_secs(2)).unwrap();
+                assert_eq!(input.bytes(), b"resident");
+                drop(input); // Physical bytes + same original reservation.
+                drop(call);
+                let _ = finished.send(());
+            })
+            .await
+            .unwrap();
+        tokio::time::timeout(Duration::from_secs(2), started)
+            .await
+            .unwrap()
+            .unwrap();
+        control.probe.0.store(true, Ordering::Release);
+        drop(job); // Abandon only the response, not its running physical work.
+        assert!(control.budget.host_memory_bytes() >= held);
+        assert_eq!(setup.pools.snapshot().unwrap().running_requests, 1);
+        release.send(()).unwrap();
+        tokio::time::timeout(Duration::from_secs(2), completed)
+            .await
+            .unwrap()
+            .unwrap();
+        // Reap the actual normal worker before claiming the final baseline.
+        let report = setup
+            .pools
+            .shutdown(Instant::now() + Duration::from_secs(2))
+            .await
+            .unwrap();
+        assert!(report.is_clean());
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(control.budget.outstanding_reservations(), guards);
+        assert_eq!(setup.pools.inner.io.snapshot(), Default::default());
+    }
+
+    #[tokio::test]
+    async fn native_blob_input_bridge_owns_borrowed_bytes_and_empty_range_without_escape() {
+        let setup = Setup::new(super::super::ProviderPoolLimits::default());
+        let (session, control) =
+            setup.native_session_for(&setup.provider, "a", "blob-input-borrow");
+        let baseline = control.budget.host_memory_bytes();
+        let admission = setup.pools.admit(&setup.client, &session).unwrap();
+        let mut source = *b"resident";
+        let input = admission.copy_input(&source, 512).unwrap();
+        source.fill(0);
+        assert_eq!(input.bytes(), b"resident");
+        let before_abandon = control.budget.host_memory_bytes();
+        drop(admission);
+        assert_eq!(input.bytes(), b"resident");
+        assert_eq!(control.budget.host_memory_bytes(), before_abandon);
+        assert_eq!(setup.pools.inner.io.snapshot().calls, 1);
+        assert_eq!(setup.pools.snapshot().unwrap().running_requests, 0); // never dispatched
+        drop(input);
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(setup.pools.inner.io.snapshot(), Default::default());
+        let fresh = setup.pools.admit(&setup.client, &session).unwrap();
+        let before = control.budget.host_memory_bytes();
+        let empty = fresh.copy_input(&[], 512).unwrap();
+        assert!(empty.bytes().is_empty());
+        assert_eq!(empty.capacity(), 1); // Genuine allocated minimum, not a zero-size guess.
+        assert_eq!(control.budget.host_memory_bytes(), before + 1 + 64);
+        drop(empty);
+        assert_eq!(control.budget.host_memory_bytes(), before);
+        drop(fresh);
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
         assert_eq!(setup.pools.inner.io.snapshot(), Default::default());
     }
 }

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_stream_outers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed #736 typed prepaid Blob copying for actual local/S3 readers and installed canonical chunk lowering. Three new original-budget pooled-request/copy ownership controls plus existing managed local_blobs component case,4cases13commands26raw. One locked two-package CHECK --tests/all-features and two actual libtest builds/probes. Original45m/2395+5/895+5/55+5/25+5/j2 bounds retained; SDK language/external fixtures removed and required absent. Native1MiB/100k/30s differs from managed16MiB/1e12/5s; managed case really assembles/compiles/executes original component modes0/9/0. S3 consumers typechecked, no S3 network execution or full memory/RSS qualification. Every prior owner mode/case/guard preserved; no oldcopy3/graph8/nativeprogramme replay. Source-only pending focused owning result.",
+  "reviewReason": "Reviewed #736 original-admission-owned Blob input materialization: WasmList descriptor, independent synchronous slice lifetime, exact existing IoBuffer native admission before copy, actual local blocking lifetime and S3 append boundary. Three NEW bridge controls plus one existing real local_blobs managed case,4cases13commands26raw. Original budget grants/45m/2395+5/895+5/55+5/25+5/j2/env retained. All4BlobWriter implementations explicit; old preallocated write(Vec), logical reserve_input and prior owner modes remain unchanged. Managed mode really assembles/compiles/executes original component; S3 source CHECK only, no remote network qualification or full cost/RSS claim. No old output-native3/graph8/programme replay; source-only pending actual focused outcome.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c9b448f02f32d1406d7c7aa9adb75a0b40b1e245487fe9963721b2e46accfca7"
+  "sha256": "5d10248f910970536d4cfb8ad05c69d35c597876c3a7967c8946dcb4245fa8d4"
 }

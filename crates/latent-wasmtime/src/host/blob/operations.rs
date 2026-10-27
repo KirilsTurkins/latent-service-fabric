@@ -8,7 +8,7 @@ pub(super) fn write(
 ) -> wasmtime::Result<()> {
     host.func_wrap_concurrent(
         "write",
-        |access, (rep, offset, bytes): (u64, u64, Vec<u8>)| {
+        |access, (rep, offset, bytes): (u64, u64, wasmtime::component::WasmList<u8>)| {
             Box::pin(async move {
                 let started = Instant::now();
                 let writer = access.with(|mut access| {
@@ -24,9 +24,24 @@ pub(super) fn write(
                 })?;
                 let result = match writer {
                     Ok(Value::Writer(mut writer)) => {
-                        let result = match writer.write(offset, bytes) {
-                            Ok(future) => future.await,
-                            Err(e) => Err(e),
+                        let result = {
+                            let opening = {
+                                let original_writer = writer.as_mut();
+                                access.with(move |mut access| {
+                                    let store = access.as_context_mut();
+                                    // write_from's source lifetime is independent
+                                    // of its future's writer borrow. Only the paid
+                                    // copied IoBuffer survives this Store borrow.
+                                    Ok::<_, wasmtime::Error>(
+                                        original_writer
+                                            .write_from(offset, bytes.as_le_slice(&store)),
+                                    )
+                                })?
+                            };
+                            match opening {
+                                Ok(future) => future.await,
+                                Err(e) => Err(e),
+                            }
                         };
                         Ok((writer, result))
                     }
