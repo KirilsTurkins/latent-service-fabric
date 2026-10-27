@@ -87,6 +87,7 @@ def _capture(owner, deadline: float, maximum: int, cancellation) -> tuple[bytes,
     open_streams = {0, 1}
     used = 0
     finished = False
+    idle_seconds = 0.0001 if os.name == "nt" else 0.01
     while open_streams or not finished:
         if finished:
             # The owner has positively reaped the leader and its process group.
@@ -122,7 +123,11 @@ def _capture(owner, deadline: float, maximum: int, cancellation) -> tuple[bytes,
                 owner.finish(deadline)
             finished = True
         if not progressed:
-            time.sleep(min(0.01, max(0, deadline - time.monotonic())))
+            time.sleep(min(idle_seconds, max(0, deadline - time.monotonic())))
+            if os.name == "nt":
+                idle_seconds = min(idle_seconds * 2, 0.01)
+        elif os.name == "nt":
+            idle_seconds = 0.0001
     return bytes(buffers[0]), bytes(buffers[1])
 
 
