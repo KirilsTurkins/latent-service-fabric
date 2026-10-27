@@ -210,5 +210,211 @@ class BuildSnapshotTests(unittest.TestCase):
             self.assertEqual((parent / "source/tools/driver.sh").stat().st_mode & 0o777, 0o755)
 
 
+class StoredZipSourceTests(unittest.TestCase):
+    @staticmethod
+    def _fixture(records=None, *, descriptor=False):
+        """Synthetic STORED bytes only; not a compiler or qualified Git source."""
+        import binascii
+        import struct
+        if records is None:
+            records = [("tools/", b"", 0x10, 0), ("tools/a.py", b"abc", 0, 0),
+                       ("tools/run.sh", b"#!/bin/sh\n", 0x81ed0000, 3)]
+        revision = "a" * 40
+        extra = b"UT\x05\x00\x01" + struct.pack("<I", 1700000000)
+        output = bytearray()
+        central = []
+        places = {"local": [], "data": [], "central": []}
+        for name, data, external, creator in records:
+            encoded = name.encode("ascii")
+            flags = 8 if descriptor and not name.endswith("/") else 0
+            crc = binascii.crc32(data) & 0xffffffff
+            start = len(output)
+            places["local"].append(start)
+            output.extend(struct.pack("<4s5H3I2H", b"PK\x03\x04", 10, flags, 0, 0, 33,
+                                      0 if flags else crc, len(data), len(data), len(encoded), len(extra)))
+            output.extend(encoded + extra)
+            places["data"].append(len(output))
+            output.extend(data)
+            if flags:
+                output.extend(struct.pack("<4s3I", b"PK\x07\x08", crc, len(data), len(data)))
+            central.append(struct.pack("<4s6H3I5H2I", b"PK\x01\x02", creator << 8, 10,
+                flags, 0, 0, 33, crc, len(data), len(data), len(encoded), len(extra), 0,
+                0, 0, external, start) + encoded + extra)
+        start = len(output)
+        for item in central:
+            places["central"].append(len(output)); output.extend(item)
+        places["eocd"] = len(output)
+        output.extend(struct.pack("<4s4H2IH", b"PK\x05\x06", 0, 0, len(records), len(records),
+                                  len(output) - start, start, len(revision)))
+        output.extend(revision.encode())
+        return bytes(output), places, revision
+
+    @staticmethod
+    def _change(raw, offset, kind, value):
+        import struct
+        output = bytearray(raw); struct.pack_into(kind, output, offset, value)
+        return bytes(output)
+
+    def test_stored_git_zip_matches_tar_modes_crlf_and_committed_inventory(self):
+        from tools import build_snapshot
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary); repo = parent / "repo"
+            repository(repo)
+            (repo / "tools").mkdir()
+            script = b"#!/bin/sh\nexit 0\n"  # Never executed.
+            launcher = b"@echo off\nexit /b 0\n"
+            (repo / "tools/run.sh").write_bytes(script)
+            (repo / "tools/intellij.cmd").write_bytes(launcher)
+            (repo / ".gitattributes").write_bytes(b"/tools/intellij.cmd text eol=crlf\n")
+            git(repo, "add", "."); git(repo, "update-index", "--chmod=+x", "tools/run.sh")
+            git(repo, "commit", "--quiet", "-m", "stored capture mode fixture")
+            revision = git(repo, "rev-parse", "HEAD")
+            listing = subprocess.run(["git", "ls-tree", "-r", "-z", "--full-tree", revision,
+                "--", *build_snapshot.SOURCE_ALLOWLIST], cwd=repo, check=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15).stdout
+            modes = {}
+            for item in listing.split(b"\0"):
+                if item:
+                    head, name = item.decode().split("\t"); modes[name] = head.split()[0]
+            roots = sorted({root for name in modes for root in build_snapshot.SOURCE_ALLOWLIST
+                            if name == root or name.startswith(root + "/")})
+            tar = subprocess.run(["git", "archive", "--format=tar", revision, "--", *roots],
+                cwd=repo, env=build_snapshot.git_environment(), check=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15).stdout
+            legacy = extract_archive(tar, parent / "legacy", SnapshotLimits())
+            (repo / "crates/demo/source.rs").write_bytes(b"dirty, not selected\n")
+            (repo / "tools/untracked.py").write_bytes(b"untracked\n")
+            target = parent / "target"; target.mkdir()
+            with capture_source(repo, revision, target) as snapshot:
+                self.assertEqual(snapshot.inventory, legacy)
+                self.assertEqual({row["path"] for row in json.loads(legacy)}, set(modes))
+                self.assertEqual((snapshot.root / "tools/run.sh").read_bytes(), script)
+                self.assertEqual((snapshot.root / "tools/intellij.cmd").read_bytes(), launcher.replace(b"\n", b"\r\n"))
+                self.assertEqual(next(row["mode"] for row in json.loads(legacy)
+                                      if row["path"] == "tools/run.sh"), 0o755)
+                self.assertFalse((snapshot.root / "tools/untracked.py").exists())
+                captured = snapshot.root
+            self.assertFalse(captured.exists()); self.assertEqual(list(target.iterdir()), [])
+            # The real native signed descriptor branch remains stored and
+            # mode-bound even when Git's small streaming threshold is forced.
+            streamed = subprocess.run(["git", "-c", "core.bigFileThreshold=1", "archive",
+                "--format=zip", "-0", revision, "--", *roots], cwd=repo, check=True,
+                env=build_snapshot.git_environment(), stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, timeout=15).stdout
+            # Native Git's forced streaming also bypasses CRLF conversion in
+            # TAR. Compare both formats under the SAME Git configuration;
+            # the normal-config CRLF assertion above remains mandatory.
+            streamed_tar = subprocess.run(["git", "-c", "core.bigFileThreshold=1", "archive",
+                "--format=tar", revision, "--", *roots], cwd=repo, check=True,
+                env=build_snapshot.git_environment(), stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, timeout=15).stdout
+            streamed_legacy = extract_archive(streamed_tar, parent / "streamed-legacy", SnapshotLimits())
+            same = extract_archive(streamed, parent / "streamed", SnapshotLimits(),
+                archive_format="stored-zip", expected_files=modes, revision=revision)
+            self.assertEqual(same, streamed_legacy)
+
+    def test_stored_zip_preflight_rejects_structural_crc_and_descriptor_faults_before_effects(self):
+        from unittest.mock import patch
+        from tools import build_snapshot
+        raw, at, revision = self._fixture()
+        modes = {"tools/a.py": "100644", "tools/run.sh": "100755"}
+        central, local, end = at["central"][1], at["local"][1], at["eocd"]
+        faults = [
+            ("trailing bytes", raw + b"x"), ("truncated EOCD", raw[:-1]),
+            ("bad commit", raw[:-1] + b"b"),
+            ("multi disk", self._change(raw, end + 4, "<H", 1)),
+            ("excessive metadata", self._change(self._change(raw, end + 8, "<H", 65534), end + 10, "<H", 65534)),
+            ("ZIP64", self._change(self._change(raw, end + 8, "<H", 65535), end + 10, "<H", 65535)),
+            ("central size", self._change(raw, end + 12, "<I", 0xffffffff)),
+            ("central offset", self._change(raw, end + 16, "<I", 1)),
+            ("local alias", self._change(raw, central + 42, "<I", 0)),
+            ("local overlap", self._change(raw, central + 42, "<I", local + 1)),
+            ("name extent", self._change(raw, central + 28, "<H", 513)),
+            ("local CRC", self._change(raw, local + 14, "<I", 1)),
+            ("central CRC", self._change(raw, central + 16, "<I", 1)),
+            ("local size", self._change(raw, local + 22, "<I", 2)),
+            ("payload CRC", self._change(raw, at["data"][1], "<B", 0)),
+        ]
+        streamed, slots, _ = self._fixture(descriptor=True)
+        descriptor = slots["data"][1] + 3
+        faults.extend([("descriptor signature", self._change(streamed, descriptor, "<I", 0)),
+                       ("descriptor CRC", self._change(streamed, descriptor + 4, "<I", 1))])
+        with tempfile.TemporaryDirectory() as temporary:
+            for index, (label, candidate) in enumerate(faults):
+                destination = Path(temporary) / str(index)
+                with self.subTest(label=label), patch.object(build_snapshot.tarfile, "open",
+                        side_effect=AssertionError("ZIP must never fall back to tar")):
+                    with self.assertRaises(SnapshotError):
+                        extract_archive(candidate, destination, SnapshotLimits(),
+                            archive_format="stored-zip", expected_files=modes, revision=revision)
+                self.assertFalse(destination.exists())
+
+    def test_stored_zip_requires_git_paths_modes_and_rejects_unsupported_encoding(self):
+        raw, at, revision = self._fixture()
+        modes = {"tools/a.py": "100644", "tools/run.sh": "100755"}
+        central = at["central"][1]
+        variants = [("missing expected file", raw, {**modes, "tools/absent.py": "100644"}),
+            ("unexpected file", raw, {"tools/a.py": "100644"}),
+            ("wrong executable mode", raw, {**modes, "tools/run.sh": "100644"}),
+            ("invalid Git mode", raw, {**modes, "tools/run.sh": "120000"}),
+            ("mode map required", raw, None),
+            ("encryption", self._change(raw, central + 8, "<H", 1), modes),
+            ("deflate", self._change(raw, central + 10, "<H", 8), modes),
+            ("unknown flags", self._change(raw, central + 8, "<H", 2048), modes),
+            ("entry comment", self._change(raw, central + 32, "<H", 1), modes),
+            ("unknown creator", self._change(raw, central + 4, "<H", 7 << 8), modes),
+            ("unknown DOS attrs", self._change(raw, central + 38, "<I", 4), modes),
+            ("symlink", self._change(self._change(raw, central + 4, "<H", 3 << 8), central + 38, "<I", 0xa1ff0000), modes),
+            ("ZIP64 extra", self._change(raw, central + 46 + len("tools/a.py"), "<H", 1), modes)]
+        for bad in ("../outside", "/absolute", "tools/CON.txt", "tools/x/../a", "tools\\x", "C:/drive"):
+            encoded, _, _ = self._fixture([("tools/", b"", 0x10, 0), (bad, b"x", 0, 0)])
+            variants.append((bad, encoded, modes))
+        for label, names in [("duplicate", ("tools/a.py", "tools/a.py")),
+                             ("case alias", ("tools/A.py", "tools/a.py")),
+                             ("prefix alias", ("tools/a", "tools/a/file.py"))]:
+            encoded, _, _ = self._fixture([("tools/", b"", 0x10, 0),
+                (names[0], b"x", 0, 0), (names[1], b"y", 0, 0)])
+            variants.append((label, encoded, {name: "100644" for name in names}))
+        with tempfile.TemporaryDirectory() as temporary:
+            for index, (label, encoded, expected) in enumerate(variants):
+                destination = Path(temporary) / str(index)
+                with self.subTest(label=label), self.assertRaises(SnapshotError):
+                    extract_archive(encoded, destination, SnapshotLimits(), archive_format="stored-zip",
+                        expected_files=expected, revision=revision)
+                self.assertFalse(destination.exists())
+
+    def test_stored_zip_exact_caps_empty_files_and_explicit_dispatch_are_preserved(self):
+        from dataclasses import replace
+        records = [("tools/", b"", 0x10, 0), ("tools/a/", b"", 0x10, 0),
+            ("tools/a/one", b"ab", 0, 0), ("tools/a/two", b"cde", 0, 0),
+            ("tools/a/empty", b"", 0, 0)]
+        raw, _, revision = self._fixture(records)
+        modes = {name: "100644" for name, _, _, _ in records if not name.endswith("/")}
+        limits = SnapshotLimits(max_entries=3, max_directories=2, max_file_bytes=3,
+                               max_total_bytes=5, max_archive_bytes=len(raw))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            rows = json.loads(extract_archive(raw, root / "exact", limits, archive_format="stored-zip",
+                expected_files=modes, revision=revision))
+            self.assertEqual(len(rows), 3); self.assertEqual(sum(row["size"] for row in rows), 5)
+            self.assertEqual((root / "exact/tools/a/empty").read_bytes(), b"")
+            for field, maximum in [("max_entries", 2), ("max_directories", 1),
+                ("max_file_bytes", 2), ("max_total_bytes", 4), ("max_archive_bytes", len(raw) - 1)]:
+                target = root / field
+                with self.subTest(field=field), self.assertRaises(SnapshotError):
+                    extract_archive(raw, target, replace(limits, **{field: maximum}),
+                        archive_format="stored-zip", expected_files=modes, revision=revision)
+                self.assertFalse(target.exists())
+            with self.assertRaises(SnapshotError):
+                extract_archive(raw, root / "unknown", limits, archive_format="guess",
+                    expected_files=modes, revision=revision)
+            self.assertFalse((root / "unknown").exists())
+            # Unknown formats and ZIP without a real caller revision never gain
+            # authority by looking like a legacy TAR input.
+            with self.assertRaises(SnapshotError):
+                extract_archive(raw, root / "missing-revision", limits, archive_format="stored-zip",
+                    expected_files=modes)
+
+
 if __name__ == "__main__":
     unittest.main()
