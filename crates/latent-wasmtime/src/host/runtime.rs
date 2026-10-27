@@ -657,7 +657,10 @@ impl WaitingTimer {
                     // again. Keep the accepted call and original deadline;
                     // requested elapsed success still needs current authority.
                     self.wait
-                        .wait_until(self.call.deadline().min(now + STOP_OBSERVATION))
+                        .wait_until_owned(
+                            self.call.deadline().min(now + STOP_OBSERVATION),
+                            self.call.budget_accounting(),
+                        )?
                         .await;
                     continue;
                 }
@@ -702,10 +705,12 @@ impl WaitingTimer {
                 .requested
                 .min(self.call.deadline())
                 .min(now + STOP_OBSERVATION);
-            let mut wait = self.wait.wait_until(next);
+            let mut wait = self
+                .wait
+                .wait_until_owned(next, self.call.budget_accounting())?;
             std::future::poll_fn(|context| {
                 positive_timer_observer::poll_pending(
-                    wait.as_mut(),
+                    std::pin::Pin::new(&mut wait),
                     context,
                     &mut self.wait_observed,
                     || {
