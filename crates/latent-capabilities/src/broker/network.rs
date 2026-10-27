@@ -1,6 +1,9 @@
 //! Closed stream boundary. Descriptors cannot mint a session or destination grant.
-use super::{io::IoOutputChunk, CapabilitySession};
-use latent_core::{BoxFuture, PlatformError, PlatformErrorCode};
+use super::{
+    io::{IoFuture, IoOutputChunk},
+    CapabilitySession,
+};
+use latent_core::{PlatformError, PlatformErrorCode};
 use latent_policy::capability::StreamEndpoint;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
@@ -104,7 +107,7 @@ pub struct StreamConnectRequest {
     pub timeout_millis: Option<u32>,
 }
 
-pub type StreamInvocation = BoxFuture<'static, Result<Box<dyn OutboundStream>, StreamError>>;
+pub type StreamInvocation = IoFuture<'static, Result<Box<dyn OutboundStream>, StreamError>>;
 
 /// Finite instantaneous physical ownership observations for trusted node
 /// operators. Live byte counts disappear only with their retained owners;
@@ -144,12 +147,12 @@ pub trait OutboundStream: Send + Sync {
         &self,
         maximum: usize,
         timeout_millis: Option<u32>,
-    ) -> Result<BoxFuture<'static, Result<Option<IoOutputChunk>, StreamError>>, StreamError>;
+    ) -> Result<IoFuture<'static, Result<Option<IoOutputChunk>, StreamError>>, StreamError>;
     fn write(
         &self,
         bytes: Vec<u8>,
         timeout_millis: Option<u32>,
-    ) -> Result<BoxFuture<'static, Result<u32, StreamError>>, StreamError>;
+    ) -> Result<IoFuture<'static, Result<u32, StreamError>>, StreamError>;
     /// Prepay the window and original native memory before invoking this
     /// synchronous producer. The resulting future owns only materialized bytes.
     fn write_from(
@@ -157,18 +160,18 @@ pub trait OutboundStream: Send + Sync {
         maximum: usize,
         timeout_millis: Option<u32>,
         produce: &mut dyn FnMut() -> Result<Vec<u8>, PlatformError>,
-    ) -> Result<BoxFuture<'static, Result<u32, StreamError>>, StreamError>;
+    ) -> Result<IoFuture<'static, Result<u32, StreamError>>, StreamError>;
     fn ready(
         &self,
         interest: StreamInterest,
         timeout_millis: Option<u32>,
-    ) -> Result<BoxFuture<'static, Result<StreamReadiness, StreamError>>, StreamError>;
+    ) -> Result<IoFuture<'static, Result<StreamReadiness, StreamError>>, StreamError>;
     fn inspect(&self) -> StreamObservation;
     fn shutdown(
         &self,
         how: StreamShutdown,
-    ) -> Result<BoxFuture<'static, Result<StreamObservation, StreamError>>, StreamError>;
-    fn close(self: Box<Self>) -> BoxFuture<'static, Result<StreamObservation, StreamError>>;
+    ) -> Result<IoFuture<'static, Result<StreamObservation, StreamError>>, StreamError>;
+    fn close(self: Box<Self>) -> IoFuture<'static, Result<StreamObservation, StreamError>>;
 }
 
 #[derive(Default)]

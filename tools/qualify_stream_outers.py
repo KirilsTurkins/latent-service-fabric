@@ -1016,6 +1016,237 @@ def qualify_io_operations(output, revision):
         write_json(output / 'commands.json', commands.records)
 
 
+IO_GRAPH_BRANCH = 'feat/sdk-736-io-graph-native-20261026'
+IO_GRAPH_CASES = (
+    'broker::io::future::tests::provider_future_refuses_before_builder_and_refunds_unused_preparation',
+    'broker::io::future::tests::provider_future_pin_and_physical_first_cleanup_keep_original_charge',
+    'broker::io::future::tests::provider_future_early_failure_is_inline_and_consumed_once',
+    'broker::io::tests::native_owned_buffer_refuses_before_allocation_and_partial_result_keeps_credit',
+    'broker::io::stream::native_tests::native_ring_preparation_is_atomic_and_delivered_chunks_keep_lifetime',
+    'broker::io::transfer::native_tests::native_transfer_factory_is_prepaid_and_confirms_only_actual_capacity',
+    'broker::pools::admission::native_tests::native_request_preparation_and_last_weak_keep_original_backing',
+    'broker::io::tests::partial_consumers_retain_capacity_and_original_activation_after_close',
+)
+IO_GRAPH_NEW_CASES = IO_GRAPH_CASES[:-1]
+IO_GRAPH_CHECK_ARGS = ('check', '--locked', '--tests', '--all-features',
+    '-p', 'latent-http', '-p', 'latent-blobs', '-p', 'latent-streams',
+    '-p', 'latent-wasmtime', '-p', 'latentd', '--message-format=json')
+IO_GRAPH_CHECK_TARGETS = (
+    ('crates/latent-http/Cargo.toml', 'latent_http', 'src/lib.rs'),
+    ('crates/latent-blobs/Cargo.toml', 'latent_blobs', 'src/lib.rs'),
+    ('crates/latent-streams/Cargo.toml', 'latent_streams', 'src/lib.rs'),
+    ('crates/latent-wasmtime/Cargo.toml', 'latent_wasmtime', 'src/lib.rs'),
+    ('apps/latentd/Cargo.toml', 'latentd', 'src/lib_root.rs'),
+)
+
+
+def io_graph_result(raw, case):
+    require(case in IO_GRAPH_CASES, 'fixed-case')
+    require(len(raw) <= artifacts.MAX_OUTPUT_BYTES, 'case-output-bound')
+    require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
+        == [case.encode()], 'one-exact-success')
+    summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
+        rb'(\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    require(len(summaries) == 1 and summaries[0][:4] == (b'1', b'0', b'0', b'0')
+        and int(summaries[0][4]) <= 10000, 'one-executed-no-skip')
+    return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0,
+        'ignored': 0, 'filteredOut': int(summaries[0][4]),
+        'scope': ('exact-layout-provider-future-backing-instrument-control'
+            if case in IO_GRAPH_CASES[:2] else 'allocation-free-provider-refusal-control'
+            if case == IO_GRAPH_CASES[2] else 'legacy-Phase1-IO-reference'
+            if case == IO_GRAPH_CASES[-1] else 'original-Phase3-broker-owned-graph-control')}
+
+
+def io_graph_check_result(raw):
+    require(len(raw) <= artifacts.MAX_INVENTORY_BYTES, 'integration-inventory-bound')
+    expected = {str((ROOT / manifest).resolve()): (target, source_path)
+        for manifest, target, source_path in IO_GRAPH_CHECK_TARGETS}
+    seen, finished = {}, False
+    lines = raw.splitlines()
+    require(0 < len(lines) <= artifacts.MAX_RECORDS, 'integration-record-bound')
+    for line in lines:
+        require(len(line) <= artifacts.MAX_LINE_BYTES, 'integration-line-bound')
+        if not line.strip():
+            continue
+        require(not finished, 'integration-after-finished')
+        value = json.loads(line, object_pairs_hook=artifacts.unique_object)
+        require(isinstance(value, dict), 'integration-record')
+        if value.get('reason') == 'build-finished':
+            require(value.get('success') is True, 'integration-check-success')
+            finished = True
+        elif value.get('reason') == 'compiler-artifact':
+            manifest = value.get('manifest_path')
+            require(isinstance(manifest, str) and len(manifest) <= 4096,
+                'integration-manifest')
+            manifest = str(Path(manifest).resolve())
+            if manifest not in expected:
+                continue
+            target, profile = value.get('target'), value.get('profile')
+            require(isinstance(target, dict) and isinstance(profile, dict),
+                'integration-target')
+            name, source_path = expected[manifest]
+            if target.get('kind') != ['lib'] or profile.get('test') is not True:
+                continue
+            source_name, features = target.get('src_path'), value.get('features')
+            require(isinstance(source_name, str) and len(source_name) <= 4096
+                and isinstance(features, list) and len(features) <= 256
+                and all(isinstance(feature, str) and len(feature) <= 256
+                    for feature in features), 'integration-source-features')
+            require(target.get('name') == name and
+                Path(source_name).resolve() ==
+                    (Path(manifest).parent / source_path).resolve(), 'integration-owner')
+            require(value.get('executable') is None, 'check-not-test-executable')
+            require(manifest not in seen, 'duplicate-integration-owner')
+            seen[manifest] = {'manifest': str(Path(manifest).relative_to(ROOT)),
+                'target': name, 'source': source_path, 'libtestTypechecked': True,
+                'features': features}
+    require(finished and set(seen) == set(expected), 'complete-integration-check')
+    return [seen[str((ROOT / manifest).resolve())]
+        for manifest, _, _ in IO_GRAPH_CHECK_TARGETS]
+
+
+def qualify_io_graph(output, revision):
+    require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
+        and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
+        and os.environ.get('GITHUB_REF_NAME') == IO_GRAPH_BRANCH
+        and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'one-exact-hosted-push')
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
+        'owned-output')
+    output = fresh(output)
+    environment = build_environment(output)
+    environment.pop(FIXTURE_ENV, None)
+    environment.update(CARGO_TARGET_DIR=str(ROOT / 'target'), CARGO_INCREMENTAL='0',
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+        CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+    logs = output / 'commands'
+    logs.mkdir()
+    # Existing five-second reaping reserve remains inside declared caps.
+    commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895)
+    receipt = {'schemaVersion': 'lsf.io-reachable-graph.v1', 'status': 'in-progress',
+        'sourceRevision': revision, 'selectedCases': list(IO_GRAPH_CASES), 'observations': [],
+        'newCases': list(IO_GRAPH_NEW_CASES),
+        'phase1ReferenceCase': IO_GRAPH_CASES[-1],
+        'fullCostModelQualified': False, 'fullRuntimeSuiteExecuted': False,
+        'fullVendorSuiteExecuted': False, 'signedGuestExecuted': False,
+        'wasmtimeExecuted': False, 'engineOrComponentExecuted': False,
+        'guestComponentCompiled': False, 'cargoCheckBuildScriptsMayCompileHostDependencies': True,
+        'hermetic': False, 'compilerImplicitInputsAttested': False,
+        'scope': 'actual broker-owned buffers/ring/transfer/Request backing and typed provider future Box; full original-budget physical lifetime; logical node ceilings stay separate; naked copied Vec/imported memory/transitive resource heaps and node-shared tenant backing remain open',
+        'limits': {'overallSeconds': 2400, 'buildCommandSeconds': 900,
+            'caseProcessSeconds': 60, 'listProcessSeconds': 30, 'cleanupReserveSeconds': 5},
+        'newControlBudgetFixtures': {
+            'providerFutureBackingControls': {'cases': list(IO_GRAPH_CASES[:2]),
+                'memoryBytes': 'actual Layout<F>+64 or one byte less',
+                'cpuFuelGrant': 1_000_000_000, 'wallTimeGrantMilliseconds': 5_000},
+            'inlineFailureControl': {'case': IO_GRAPH_CASES[2],
+                'activationBudgetCreated': False, 'memoryBytes': None,
+                'cpuFuelGrant': None, 'wallTimeGrantMilliseconds': None},
+            'brokerGraphControls': {'memoryBytes': 1024**2, 'cpuFuelGrant': 100_000,
+                'wallTimeGrantMilliseconds': 30_000},
+            'installedEngineFuel': False, 'guestExecuted': False,
+            'genericHostOrRSSCeilingClaimed': False},
+        'integrationCheck': {'executed': False, 'kind': 'Cargo CHECK --tests typecheck and build scripts; no test or engine execution',
+            'argv': list(IO_GRAPH_CHECK_ARGS)},
+        'fixtureAssembled': False, 'oldCanonicalCasesExecuted': False,
+        'oldStreamProgrammeExecuted': False, 'oldProducerProgrammeExecuted': False,
+        'cacheRoundtripExecuted': False,
+        'commandLedgerBoundary': '19 supervised integration-check/build/library/list/test commands; normal pinned-tool resolver probes retain their existing owner and are not this ledger'}
+    try:
+        artifacts.require_source(ROOT, revision, environment)
+        before = source_inputs()
+        receipt['sourceBefore'] = before
+        write_json(output / 'source-inputs.json', before)
+        checked = source.verify()
+        receipt['wasmtimeSource'] = checked
+        toolchain = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml', 128 * 1024).decode())
+        require(toolchain['rust']['toolchain'] == '1.97.1'
+            and toolchain['contracts']['wasm-tools'] == '1.254.0', 'normal-tool-pins')
+        tools, pins = resolve_tools(toolchain, ROOT, environment, _deadline=commands.deadline)
+        receipt['observedTools'] = pins
+        environment.update(RUSTC=str(tools['rustc']), RUSTUP_TOOLCHAIN=toolchain['rust']['toolchain'])
+        def runtime_environment(artifact, label):
+            def probe(argv, *, cwd, env, timeout, maximum):
+                require(argv == ['rustc', '--print', 'target-libdir'] and cwd == ROOT
+                    and timeout == 30 and maximum == 4096, 'normal-library-probe')
+                commands.command_seconds = 25
+                commands.environment = env
+                raw = commands.run(label + '-rust-library-path', tools['rustc'], *argv[1:])
+                require(len(raw) <= maximum, 'rust-library-output-bound')
+                return 0, raw
+            return artifacts.cargo_environment(ROOT, artifact, environment,
+                target=ROOT / 'target', execute=probe)
+
+        receipt['stage'] = 'provider-integration-check'
+        commands.environment = environment
+        commands.command_seconds = 895
+        check_ordinal = len(commands.records)
+        commands.run('provider-integration-check', tools['cargo'], *IO_GRAPH_CHECK_ARGS)
+        check_raw = read_file(logs / f'logs/{check_ordinal:02d}-provider-integration-check.stdout.txt',
+            artifacts.MAX_INVENTORY_BYTES)
+        receipt['integrationCheck'].update(executed=True,
+            inventory=io_graph_check_result(check_raw), stdout=identity(check_raw))
+
+        targets = (
+            ('io', IO_GRAPH_CASES, (),
+             ('test', '-p', 'latent-capabilities', '--locked', '--lib', '--all-features',
+              '--no-run', '--message-format=json'),
+             artifacts.Suite('crates/latent-capabilities/Cargo.toml', 'latent_capabilities',
+                'src/lib.rs', 'broker::', frozenset(IO_GRAPH_CASES), True)),
+        )
+        executables = []
+        for label, cases, ignored, argv, suite in targets:
+            receipt['stage'] = 'build-' + label
+            commands.environment = environment
+            commands.command_seconds = 895
+            ordinal = len(commands.records)
+            commands.run('build-' + label, tools['cargo'], *argv)
+            artifact = artifacts.read_inventory(logs / f'logs/{ordinal:02d}-build-{label}.stdout.txt',
+                ROOT, suite, target=ROOT / 'target')
+            executable = file_identity(artifact.executable, label + '-native-backing-controls', 512 * 1024**2)
+            receipt[label + 'Executable'] = executable
+            executables.append((artifact.executable, executable, label + '-native-backing-controls'))
+            run_env = runtime_environment(artifact, label)
+            run_env.pop(FIXTURE_ENV, None)
+            if label == 'io':
+                contract, = [row for row in registry.load()['suites']
+                    if row['id'] == 'latent-capabilities.lib.latent-capabilities']
+                require(contract['minimumCases'] == 221
+                    and set(cases) <= set(contract['expectedCases'])
+                    and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
+            commands.environment = run_env
+            for index, case in enumerate(cases):
+                receipt['stage'] = case
+                commands.command_seconds = 25
+                listed = commands.run(f'{label}-list-{index}', artifact.executable,
+                    case, '--exact', *ignored, '--list')
+                require(len(listed) <= artifacts.MAX_LIST_BYTES, 'list-bound')
+                artifacts.validate_listing(listed, artifacts.Suite(suite.manifest, suite.target,
+                    suite.source, case, frozenset((case,)), True))
+                commands.command_seconds = 55
+                raw = commands.run(f'{label}-case-{index}', artifact.executable,
+                    case, '--exact', *ignored, '--show-output', '--test-threads=1')
+                receipt['observations'].append(io_graph_result(raw, case))
+        require(len(commands.records) == 19 and len(receipt['observations']) == 8,
+            'one-check-one-build-one-library-probe-eight-exact-cases')
+        require(time.monotonic() < commands.deadline, 'overall-deadline')
+        require(source_inputs() == before and source.verify() == checked, 'final-source')
+        for path, bound, label in executables:
+            require(file_identity(path, label, 512 * 1024**2) == bound, 'final-executable')
+        require([file_identity(tools[name], name) for name in sorted(tools)] == pins, 'final-tools')
+        artifacts.require_source(ROOT, revision, environment)
+        require(time.monotonic() < commands.deadline, 'final-deadline')
+        receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True,
+            executed=list(IO_GRAPH_CASES), ignored=[])
+        write_json(output / 'receipt.json', receipt)
+    except BaseException:
+        receipt['status'] = 'failed'
+        write_json(output / 'FAILED.json', receipt)
+        raise
+    finally:
+        write_json(output / 'commands.json', commands.records)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -1026,8 +1257,11 @@ if __name__ == '__main__':
     modes.add_argument('--producer-cell', action='store_true')
     modes.add_argument('--producer-factories', action='store_true')
     modes.add_argument('--io-operations', action='store_true')
+    modes.add_argument('--io-graph', action='store_true')
     args = parser.parse_args()
-    if args.io_operations:
+    if args.io_graph:
+        qualify_io_graph(args.output.resolve(), args.source_commit)
+    elif args.io_operations:
         qualify_io_operations(args.output.resolve(), args.source_commit)
     elif args.producer_factories:
         qualify_producer_factories(args.output.resolve(), args.source_commit)

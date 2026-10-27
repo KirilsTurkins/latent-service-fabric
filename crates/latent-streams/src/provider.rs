@@ -5,8 +5,8 @@ use crate::{
     error, StreamError, StreamErrorCode, StreamProviderConfig,
 };
 use latent_capabilities::broker::{
-    network::{OutboundStreamInvoker, StreamConnectRequest, StreamInvocation},
-    pools::{InstalledProvider, ProviderClient, ProviderMetadata, ProviderPools},
+    network::{OutboundStreamInvoker, StreamConnectRequest, StreamInvocation, StreamScope},
+    pools::{InstalledProvider, PoolAdmission, ProviderClient, ProviderMetadata, ProviderPools},
     CapabilitySession, ProviderReference,
 };
 #[cfg(any(test, feature = "development-outbound"))]
@@ -566,16 +566,23 @@ impl OutboundStreamInvoker for StreamProvider {
             }
             deadline = deadline.min(now + Duration::from_millis(u64::from(timeout)));
         }
+        let inner = Arc::clone(&self.inner);
+        let prepared = session.prepare_io_future_with(
+            move |(scope, client, admission): (
+                Arc<StreamScope>,
+                Arc<ProviderClient<Socket>>,
+                PoolAdmission,
+            )| {
+                connection::connect(inner, scope, index, client, admission, deadline)
+            },
+        )?;
         let scope = session.reserve_stream()?;
         let client: Arc<ProviderClient<Socket>> = self.inner.pools.client(
             &self.inner.installed,
             u16::try_from(index).map_err(|_| error(StreamErrorCode::InvalidInput))?,
         )?;
         let admission = self.inner.pools.admit_until(&client, session, deadline)?;
-        let inner = Arc::clone(&self.inner);
-        Ok(Box::pin(connection::connect(
-            inner, scope, index, client, admission, deadline,
-        )))
+        Ok(prepared.finish((scope, client, admission)))
     }
 }
 impl Drop for Inner {

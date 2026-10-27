@@ -1,13 +1,14 @@
 //! Typed immutable-blob port. References and numbers carry no tenant authority.
+use super::io::IoFuture;
 use super::{
     io::{IoBuffer, IoMemory},
     pools::PoolCall,
     CapabilitySession,
 };
-use latent_core::{BoxFuture, PlatformError, PlatformErrorCode};
+use latent_core::{PlatformError, PlatformErrorCode};
 
 pub const BLOB_CAPABILITY: &str = "latent:blob/blob@0.2.0";
-pub type BlobFuture<'a, T> = BoxFuture<'a, Result<T, BlobError>>;
+pub type BlobFuture<'a, T> = IoFuture<'a, Result<T, BlobError>>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BlobError {

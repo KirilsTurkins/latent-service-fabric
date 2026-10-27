@@ -17,7 +17,7 @@ use std::sync::{
 pub(in crate::broker) mod native_backing;
 pub(in crate::broker) mod native_handle;
 mod shared;
-pub(in crate::broker) use shared::{Shared, SharedWeak};
+pub(in crate::broker) use shared::{Prepared as PreparedShared, Shared, SharedWeak};
 pub(in crate::broker) type SessionCoreOwner = shared::Shared<SessionCore>;
 pub(in crate::broker) type StatsOwner = shared::Shared<Stats>;
 pub(in crate::broker) type HandleEntryOwner = shared::Shared<HandleEntry>;
@@ -143,6 +143,26 @@ pub struct SessionResourceTableReservation {
     _slot: Charge,
 }
 impl SessionResourceTableReservation {
+    /// Admit the exact future backing before its source-owned builder runs.
+    pub fn prepare_io_future<Make, F>(
+        &self,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedIoFuture<Make, F>, PlatformError>
+    where
+        Make: FnOnce() -> F,
+    {
+        self.with_session(|session| session.prepare_io_future(make))
+    }
+    /// Admit F before creating/moving effectful Args; factory itself stays private.
+    pub fn prepare_io_future_with<Make, F, Args>(
+        &self,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedIoFutureWith<Make, F, Args>, PlatformError>
+    where
+        Make: FnOnce(Args) -> F,
+    {
+        self.with_session(|session| session.prepare_io_future_with(make))
+    }
     /// Prepay table backing from this table's original activation ledger.
     /// The broker metadata reservation is a separate node/session bound.
     /// Retain the returned guard until the allocation is actually destroyed.
@@ -848,5 +868,28 @@ fn own_resource(resource: ResourceTarget<'_>) -> ResourceRequest {
             recovery_scope: recovery_scope.into(),
             result_policy: result_policy.into(),
         },
+    }
+}
+
+impl CapabilitySession {
+    /// Admit the exact future backing before its source-owned builder runs.
+    pub fn prepare_io_future<Make, F>(
+        &self,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedIoFuture<Make, F>, PlatformError>
+    where
+        Make: FnOnce() -> F,
+    {
+        crate::broker::io::PreparedIoFuture::new(&self.core.budget, make)
+    }
+    /// Admit F before creating/moving effectful Args; factory itself stays private.
+    pub fn prepare_io_future_with<Make, F, Args>(
+        &self,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedIoFutureWith<Make, F, Args>, PlatformError>
+    where
+        Make: FnOnce(Args) -> F,
+    {
+        crate::broker::io::PreparedIoFutureWith::new(&self.core.budget, make)
     }
 }

@@ -18,7 +18,7 @@ fn dispatch(session: &CapabilitySession) -> ProviderCall {
     session.close_handle(handle).unwrap();
     call
 }
-async fn start(io: &IoRuntime, session: &CapabilitySession) -> IoCall {
+pub(super) async fn start(io: &IoRuntime, session: &CapabilitySession) -> IoCall {
     io.admit(session)
         .unwrap()
         .wait()
@@ -485,7 +485,10 @@ async fn retiring_the_broker_wakes_existing_queues_and_denies_new_waiters() {
 
 mod transfer;
 
-fn native_request(fixture: &Fixture, id: &str) -> (latent_executor::ExecutionRequest, Control) {
+pub(super) fn native_request(
+    fixture: &Fixture,
+    id: &str,
+) -> (latent_executor::ExecutionRequest, Control) {
     let (mut request, mut control) = fixture.request(id);
     let profile = latent_core::BudgetProfile::Phase3;
     let grant = EffectiveActivationBudget::admit_profile_at(
@@ -695,4 +698,41 @@ fn native_running_box_cleanup_is_physical_first_and_unwind_conservative() {
     assert!(owner.allocation.is_none());
     drop(owner);
     assert_eq!(legacy.budget.host_memory_bytes(), 0);
+}
+
+#[tokio::test]
+async fn native_owned_buffer_refuses_before_allocation_and_partial_result_keeps_credit() {
+    let fixture = Fixture::new(CapabilityBrokerLimits::default());
+    let (request, control) = native_request(&fixture, "native-owned-buffer");
+    let session = fixture.session(&request, &control);
+    let io = IoRuntime::new(IoLimits::default()).unwrap();
+    let call = start(&io, &session).await;
+    let baseline = control.budget.host_memory_bytes();
+    let guards = control.budget.outstanding_reservations();
+    let bytes = 64 + ALLOCATION_BOOKKEEPING as u64;
+    let padding_bytes = request.budget.memory_bytes - baseline - bytes + 1;
+    let padding = control.budget.reserve_host_memory(padding_bytes).unwrap();
+    let before = io.snapshot();
+    let error = call.buffer(64, 16).err().unwrap();
+    assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+    assert_eq!(io.snapshot(), before);
+    assert_eq!(control.budget.host_memory_bytes(), baseline + padding_bytes);
+    assert_eq!(control.budget.outstanding_reservations(), guards + 1);
+    drop(padding);
+    let mut value = buffer(&call, b"actual resident bytes", 64)
+        .retain()
+        .unwrap();
+    assert_eq!(control.budget.host_memory_bytes(), baseline + bytes);
+    assert!(value.charged_to(&control.budget));
+    value.consume(3).unwrap();
+    assert_eq!(value.bytes(), b"ual resident bytes");
+    assert_eq!(io.snapshot().result_bytes, 64);
+    assert_eq!(control.budget.host_memory_bytes(), baseline + bytes);
+    drop(value);
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    assert_eq!(control.budget.outstanding_reservations(), guards);
+    let fresh = call.buffer(64, 16).unwrap();
+    assert_eq!(fresh.capacity(), 64);
+    drop(fresh);
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
 }

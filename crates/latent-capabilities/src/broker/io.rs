@@ -24,7 +24,9 @@ use tokio::sync::{Notify, OwnedSemaphorePermit, Semaphore};
 
 mod audit;
 mod buffer;
+mod future;
 mod limits;
+pub use future::{IoFuture, PreparedIoFuture, PreparedIoFutureWith};
 mod memory;
 pub use memory::IoMemory;
 mod stream;
@@ -38,6 +40,25 @@ pub use transfer::{IoInputChunk, IoOutputChunk, IoTransfer, IoTransferBuffer, Io
 const OPERATION_METADATA: usize = 2048;
 const CANCEL_POLL: Duration = Duration::from_millis(10);
 const ALLOCATION_BOOKKEEPING: usize = 64;
+
+fn reserve_allocation(
+    budget: &ActivationBudget,
+    layout: Layout,
+    explicit_host: bool,
+) -> Result<Option<HostMemoryReservation>, PlatformError> {
+    if layout.size() == 0 || (!explicit_host && !budget.profile().supports_descendants()) {
+        return Ok(None);
+    }
+    let bytes = layout
+        .size()
+        .checked_add(ALLOCATION_BOOKKEEPING)
+        .and_then(|n| u64::try_from(n).ok())
+        .ok_or_else(capacity)?;
+    budget
+        .reserve_host_memory(bytes)
+        .map(Some)
+        .map_err(|e| e.to_platform_error())
+}
 
 type OperationOwner = Shared<Operation>;
 type OperationWeak = SharedWeak<Operation>;
@@ -185,7 +206,7 @@ struct Operation {
     stop: AtomicBool,
     waiting: AtomicUsize,
     cleaning: AtomicBool,
-    owner: Mutex<Option<Arc<dyn Send + Sync>>>,
+    owner: Mutex<Option<super::pools::RequestOwner>>,
     changed: Notify,
     _metadata: Charge,
     _slot: Charge,
@@ -199,7 +220,8 @@ const _: () = assert!(
         <= OPERATION_METADATA
 );
 
-// Only ProviderCall is a shipping T. Type-connected preparation avoids an
+// ProviderCall preparation is sized; the stream ring reuses the same physical owner.
+// Type-connected preparation avoids an
 // erased/representative Box layout and carries unused credit through queueing.
 struct PreparedRunningCall<T> {
     allocation: Option<HostMemoryReservation>,
@@ -244,17 +266,30 @@ impl<T> PreparedRunningCall<T> {
         owner
     }
 }
-struct RunningCall<T> {
+struct RunningCall<T: ?Sized> {
     value: Option<Box<T>>,
     allocation: Option<HostMemoryReservation>,
 }
-impl<T> Deref for RunningCall<T> {
+impl<T: ?Sized> RunningCall<T> {
+    // The caller admits the exact sized/slice layout BEFORE constructing Box.
+    fn from_box(value: Box<T>, allocation: Option<HostMemoryReservation>) -> Self {
+        let mut owned = Self {
+            value: Some(value),
+            allocation,
+        };
+        if let Some(allocation) = &mut owned.allocation {
+            allocation.confirm();
+        }
+        owned
+    }
+}
+impl<T: ?Sized> Deref for RunningCall<T> {
     type Target = T;
     fn deref(&self) -> &T {
         self.value.as_deref().expect("live running call")
     }
 }
-impl<T> DerefMut for RunningCall<T> {
+impl<T: ?Sized> DerefMut for RunningCall<T> {
     fn deref_mut(&mut self) -> &mut T {
         self.value.as_deref_mut().expect("live running call")
     }
@@ -274,7 +309,7 @@ impl Drop for RefundAfterRetirement {
         }
     }
 }
-impl<T> Drop for RunningCall<T> {
+impl<T: ?Sized> Drop for RunningCall<T> {
     fn drop(&mut self) {
         let allocation = RefundAfterRetirement(self.allocation.take());
         drop(self.value.take()); // actual T AND its Box backing retire first
@@ -452,7 +487,36 @@ pub struct IoAdmission {
     queue_deadline: Instant,
 }
 impl IoAdmission {
-    pub(super) fn retain_owner(&self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {
+    /// Admit the exact future backing before its source-owned builder runs.
+    pub fn prepare_io_future<Make, F>(
+        &self,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedIoFuture<Make, F>, PlatformError>
+    where
+        Make: FnOnce() -> F,
+    {
+        self.operation
+            .as_ref()
+            .expect("affine admission")
+            .with_session(|session| session.prepare_io_future(make))
+    }
+    /// Admit F before creating/moving effectful Args; factory itself stays private.
+    pub fn prepare_io_future_with<Make, F, Args>(
+        &self,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedIoFutureWith<Make, F, Args>, PlatformError>
+    where
+        Make: FnOnce(Args) -> F,
+    {
+        self.operation
+            .as_ref()
+            .expect("affine admission")
+            .with_session(|session| session.prepare_io_future_with(make))
+    }
+    pub(super) fn retain_owner(
+        &self,
+        owner: super::pools::RequestOwner,
+    ) -> Result<(), PlatformError> {
         let mut current = self
             .operation
             .as_ref()
@@ -632,6 +696,28 @@ impl IoLease {
     }
 }
 impl IoCall {
+    /// Admit the exact future backing before its source-owned builder runs.
+    pub fn prepare_io_future<Make, F>(
+        &self,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedIoFuture<Make, F>, PlatformError>
+    where
+        Make: FnOnce() -> F,
+    {
+        self.operation
+            .with_session(|session| session.prepare_io_future(make))
+    }
+    /// Admit F before creating/moving effectful Args; factory itself stays private.
+    pub fn prepare_io_future_with<Make, F, Args>(
+        &self,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedIoFutureWith<Make, F, Args>, PlatformError>
+    where
+        Make: FnOnce(Args) -> F,
+    {
+        self.operation
+            .with_session(|session| session.prepare_io_future_with(make))
+    }
     pub fn recheck_authority(&self) -> Result<(), PlatformError> {
         self.checkpoint()?;
         let mut state = self

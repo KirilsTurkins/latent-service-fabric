@@ -1,7 +1,8 @@
 //! Buffered HTTP v0.2: bounded data and an explicitly installed trusted port.
 //! These DTOs do not grant network authority. Only the original session can do so.
+use super::io::IoFuture;
 use super::{io::IoBuffer, pools::PoolCall, CapabilitySession};
-use latent_core::{BoxFuture, PlatformError, PlatformErrorCode};
+use latent_core::{PlatformError, PlatformErrorCode};
 pub(super) mod refusal;
 
 pub const HTTP_CAPABILITY: &str = "latent:http/client@0.2.0";
@@ -215,7 +216,7 @@ pub struct HttpCompletion {
     pub response: Result<HttpResponse, HttpError>,
     pub owner: PoolCall,
 }
-pub type HttpInvocation = BoxFuture<'static, Result<HttpCompletion, HttpError>>;
+pub type HttpInvocation = IoFuture<'static, Result<HttpCompletion, HttpError>>;
 pub trait OutboundHttpInvoker: Send + Sync {
     /// Reserve bounded queue/input ownership synchronously; no network work is
     /// accepted until the returned future passes its final policy/audit barrier.

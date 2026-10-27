@@ -1,7 +1,7 @@
 //! One accepted transfer, finite totals and independently owned resident chunks.
 use super::{
     capacity, denied, invalid, Authority, Charge, IoBuffer, IoCall, IoMemory, Kind, OperationOwner,
-    PlatformError,
+    PlatformError, Shared,
 };
 use crate::broker::CapabilityStreamBudget;
 use std::sync::{
@@ -29,10 +29,10 @@ struct Transfer {
 /// Affine stream lifetime. Dropping it stops new chunks but cannot refund bytes
 /// retained by an actual socket, guest chunk, or a cancelled reader's buffer.
 pub struct IoTransfer {
-    inner: Arc<Transfer>,
+    inner: Shared<Transfer>,
 }
 struct Slot {
-    inner: Arc<Transfer>,
+    inner: Shared<Transfer>,
 }
 /// Can be moved directly into a transport's immutable byte owner without copying.
 pub struct IoInputChunk {
@@ -78,7 +78,7 @@ impl IoOutputChunk {
         if bytes.capacity() > self.bytes.capacity() {
             return Err(capacity());
         }
-        self.copy.confirm_host();
+        self.copy.confirm_host_capacity(bytes.capacity())?;
         Ok(bytes)
     }
     pub fn retain_owner(&mut self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {
@@ -178,7 +178,15 @@ impl IoCall {
         }
         let stream = runtime.counters.acquire(Kind::Stream, 1)?;
         let metadata = runtime.counters.acquire(Kind::Metadata, 2048)?;
-        let inner = Arc::new(Transfer {
+        // Authority is already locked above. Borrow its SAME original core;
+        // with_session would recursively lock operation.execution here.
+        let core = call.session_core();
+        if Shared::<Transfer>::allocation_bytes()? > 2048 {
+            return Err(capacity());
+        }
+        let backing = Shared::<Transfer>::reserve(&core.budget)?;
+        let host_memory = host_memory || core.budget.profile().supports_descendants();
+        let inner = backing.allocate(Transfer {
             operation: self.operation.clone(),
             budget,
             options,
@@ -202,15 +210,16 @@ impl Transfer {
         }
         Ok(())
     }
-    fn slot(self: &Arc<Self>) -> Result<Slot, PlatformError> {
-        self.check()?;
-        let mut previous = self.outstanding.load(Ordering::Acquire);
+    fn slot(owner: &Shared<Self>) -> Result<Slot, PlatformError> {
+        let this = &**owner;
+        this.check()?;
+        let mut previous = this.outstanding.load(Ordering::Acquire);
         for _ in 0..16 {
             let next = previous
                 .checked_add(1)
-                .filter(|n| *n <= self.options.maximum_outstanding_chunks)
+                .filter(|n| *n <= this.options.maximum_outstanding_chunks)
                 .ok_or_else(capacity)?;
-            match self.outstanding.compare_exchange_weak(
+            match this.outstanding.compare_exchange_weak(
                 previous,
                 next,
                 Ordering::AcqRel,
@@ -218,7 +227,7 @@ impl Transfer {
             ) {
                 Ok(_) => {
                     return Ok(Slot {
-                        inner: Arc::clone(self),
+                        inner: owner.clone(),
                     })
                 }
                 Err(actual) => previous = actual,
@@ -246,7 +255,7 @@ impl IoTransfer {
         if maximum == 0 || maximum > self.maximum_chunk_bytes() {
             return Err(capacity());
         }
-        let slot = self.inner.slot()?;
+        let slot = Transfer::slot(&self.inner)?;
         let mut memory = if self.inner.host_memory {
             IoMemory::reserve_host(&self.inner.operation, maximum, 512)?
         } else {
@@ -256,7 +265,7 @@ impl IoTransfer {
         if bytes.is_empty() || bytes.capacity() > maximum {
             return Err(capacity());
         }
-        memory.confirm_host();
+        memory.confirm_host_capacity(bytes.capacity())?;
         // Construct the real data owner first: a failed total-byte check must
         // drop its bytes before returning the resident-memory reservation.
         let chunk = IoInputChunk {
@@ -279,7 +288,7 @@ impl IoTransfer {
         if capacity == 0 || capacity > self.maximum_chunk_bytes() {
             return Err(invalid());
         }
-        let slot = self.inner.slot()?;
+        let slot = Transfer::slot(&self.inner)?;
         let copy = if self.inner.host_memory {
             IoMemory::reserve_host(&self.inner.operation, capacity, 512)?
         } else {
@@ -333,4 +342,117 @@ fn spend(counter: &AtomicU64, bytes: usize, maximum: u64) -> Result<(), Platform
         }
     }
     Err(capacity())
+}
+
+#[cfg(test)]
+mod native_tests {
+    use super::*;
+    use crate::broker::io::{tests::native_request, IoLimits, IoRuntime};
+    use crate::broker::{
+        tests::fixture::{resource, Fixture, CAP},
+        CapabilityBrokerLimits, CapabilityCallCost, CapabilitySession,
+    };
+    use std::sync::atomic::AtomicUsize;
+    use std::time::Instant;
+
+    async fn start(io: &IoRuntime, session: &CapabilitySession) -> IoCall {
+        let admission = io.admit(session).unwrap().wait().await.unwrap();
+        let handle = session.bind(CAP, "read", resource()).unwrap();
+        let provider = session
+            .dispatch(
+                handle,
+                "read",
+                resource(),
+                &[],
+                CapabilityCallCost::new(32)
+                    .with_stream_budget(CapabilityStreamBudget::new(128, 128).unwrap()),
+                |call| call,
+            )
+            .unwrap();
+        session.close_handle(handle).unwrap();
+        admission.start(provider).unwrap()
+    }
+    #[tokio::test]
+    async fn native_transfer_factory_is_prepaid_and_confirms_only_actual_capacity() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "native-transfer-factory");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let baseline = control.budget.host_memory_bytes();
+        let shell = Shared::<Transfer>::allocation_bytes().unwrap();
+        let options = IoTransferOptions {
+            maximum_chunk_bytes: 64,
+            maximum_outstanding_chunks: 1,
+        };
+        let pad_bytes = request.budget.memory_bytes - baseline - shell + 1;
+        let pad = control.budget.reserve_host_memory(pad_bytes).unwrap();
+        assert_eq!(
+            call.transfer(options).err().unwrap().code,
+            crate::broker::PlatformErrorCode::ResourceExhausted
+        );
+        assert!(!call.operation.execution.lock().unwrap().transfer_issued);
+        assert_eq!(io.snapshot().streams, 0);
+        drop(pad);
+        let transfer = call.transfer(options).unwrap();
+        assert!(transfer.inner.host_memory); // normal native route needs no opt-in
+        assert_eq!(control.budget.host_memory_bytes(), baseline + shell);
+        let base = control.budget.host_memory_bytes();
+        let envelope = 64 + super::super::ALLOCATION_BOOKKEEPING as u64;
+        let padding_bytes = request.budget.memory_bytes - base - envelope + 1;
+        let padding = control.budget.reserve_host_memory(padding_bytes).unwrap();
+        let produced = AtomicUsize::new(0);
+        assert!(transfer
+            .input_with(64, || {
+                produced.fetch_add(1, Ordering::SeqCst);
+                Ok(vec![7; 8])
+            })
+            .is_err());
+        assert_eq!(produced.load(Ordering::SeqCst), 0);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+        drop(padding);
+        let before_peak = control.budget.snapshot_at(Instant::now()).peak_memory_bytes;
+        let input = transfer
+            .input_with(64, || {
+                produced.fetch_add(1, Ordering::SeqCst);
+                Ok(vec![7; 8])
+            })
+            .unwrap();
+        assert_eq!(produced.load(Ordering::SeqCst), 1);
+        assert_eq!(input.bytes.capacity(), 8);
+        assert_eq!(control.budget.host_memory_bytes(), base + envelope);
+        assert!(input._memory.charged_to(&control.budget));
+        assert!(
+            control.budget.snapshot_at(Instant::now()).peak_memory_bytes
+                <= before_peak.max(base + 8 + super::super::ALLOCATION_BOOKKEEPING as u64)
+        );
+        drop(input);
+        assert_eq!(control.budget.host_memory_bytes(), base);
+        let mut output = transfer.output_buffer(16).unwrap();
+        assert_eq!(
+            control.budget.host_memory_bytes(),
+            base + 2 * (16 + super::super::ALLOCATION_BOOKKEEPING as u64)
+        );
+        output.spare_mut().unwrap()[..8].copy_from_slice(b"resident");
+        output.advance_written(8).unwrap();
+        let mut output = output.finish().unwrap();
+        let copy = output.copy_bytes().unwrap();
+        assert_eq!(copy, b"resident");
+        drop(copy); // This ONE concrete lowering retains its real chunk owner.
+        drop(output);
+        assert_eq!(control.budget.host_memory_bytes(), base);
+        drop(transfer);
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        let explicit_call = start(&io, &session).await;
+        let before = control.budget.host_memory_bytes();
+        let explicit = explicit_call.transfer_with_host_memory(options).unwrap();
+        assert_eq!(control.budget.host_memory_bytes(), before + shell);
+        let resident = explicit.output_buffer(16).unwrap();
+        assert_eq!(
+            control.budget.host_memory_bytes(),
+            before + shell + 2 * (16 + super::super::ALLOCATION_BOOKKEEPING as u64)
+        );
+        drop((resident, explicit, explicit_call));
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+    }
 }

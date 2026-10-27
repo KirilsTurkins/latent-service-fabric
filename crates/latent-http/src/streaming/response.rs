@@ -10,10 +10,9 @@ use http::HeaderMap;
 use http_body_util::BodyExt;
 use latent_capabilities::broker::{
     http::{HttpHeaderBlock, HttpResponseHead},
-    io::IoOutputChunk,
-    streaming_http::{HttpBody, StreamingHttpError as Error},
+    io::{IoFuture, IoOutputChunk},
+    streaming_http::{HttpBody, HttpPhaseError, HttpPhaseFuture, StreamingHttpError as Error},
 };
-use latent_core::BoxFuture;
 use std::{sync::Arc, task::Poll};
 /// One bounded Hyper frame may be retained in addition to the explicit guest
 /// window. Its backing allocation remains covered by the owned protocol reserve.
@@ -324,69 +323,46 @@ impl HttpBody for Body {
     fn head(&self) -> &HttpResponseHead {
         &self.head
     }
-    fn read(
-        &mut self,
-        maximum_bytes: usize,
-    ) -> BoxFuture<'_, Result<Option<IoOutputChunk>, Error>> {
-        Box::pin(self.next(maximum_bytes))
+    fn read(&mut self, maximum_bytes: usize) -> IoFuture<'_, Result<Option<IoOutputChunk>, Error>> {
+        let prepared = match self.exchange.call.prepare_io_future_with(Self::read_future) {
+            Ok(prepared) => prepared,
+            Err(error) => return IoFuture::failed(error.into()),
+        };
+        prepared.finish((self, maximum_bytes))
     }
     fn read_with_timeout(
         &mut self,
         maximum_bytes: usize,
         timeout_millis: Option<u32>,
-    ) -> BoxFuture<
-        '_,
-        Result<Option<IoOutputChunk>, latent_capabilities::broker::streaming_http::HttpPhaseError>,
-    > {
-        use latent_capabilities::broker::streaming_http::HttpPhaseError;
+    ) -> HttpPhaseFuture<'_, Option<IoOutputChunk>> {
         if let Err(error) = self.exchange.call.io().checkpoint() {
-            return Box::pin(async move { Err(error.into()) });
+            return HttpPhaseFuture::ready(Err(error.into()));
         }
         if let Some(error) = self.phase_failure {
-            return Box::pin(async move { Err(error) });
+            return HttpPhaseFuture::ready(Err(error));
         }
         if timeout_millis.is_none_or(|millis| millis == 0) {
-            return Box::pin(async move { self.next(maximum_bytes).await.map_err(Into::into) });
+            return HttpPhaseFuture::legacy(self.read(maximum_bytes));
         }
         if !self.exchange.inner.phase_timing {
-            return Box::pin(async { Err(HttpPhaseError::Unsupported) });
+            return HttpPhaseFuture::ready(Err(HttpPhaseError::Unsupported));
         }
         let deadline = match super::phase::Deadline::new(
             self.exchange.call.io().stop_handle(),
             timeout_millis,
         ) {
             Ok(deadline) => deadline,
-            Err(error) => return Box::pin(async move { Err(error) }),
+            Err(error) => return HttpPhaseFuture::ready(Err(error)),
         };
-        Box::pin(async move {
-            match deadline
-                .wait(
-                    self.next(maximum_bytes),
-                    HttpPhaseError::ReadTimeout {
-                        external_completion_uncertain: false,
-                    },
-                )
-                .await
-            {
-                Ok(result) => result.map_err(Into::into),
-                Err(error) => {
-                    // The borrowed read future has been destroyed. Close its
-                    // actual transport before reporting any phase failure;
-                    // retained chunks/body metadata keep their original charges.
-                    self.phase_failure = Some(error);
-                    // A retired phase stream is invalid for the legacy API;
-                    // do not manufacture an original activation deadline.
-                    self.failed = Some(Error::InvalidState);
-                    self.pending = Bytes::new();
-                    self.exchange.socket = None;
-                    self.exchange.terminal_audit().await;
-                    // Audit completion is an async boundary too. An original
-                    // root stop during retirement still wins before reporting.
-                    self.exchange.call.io().checkpoint()?;
-                    Err(error)
-                }
-            }
-        })
+        let prepared = match self
+            .exchange
+            .call
+            .prepare_io_future_with(Self::timed_read_future)
+        {
+            Ok(prepared) => prepared,
+            Err(error) => return HttpPhaseFuture::ready(Err(error.into())),
+        };
+        HttpPhaseFuture::Direct(prepared.finish((self, maximum_bytes, deadline)))
     }
     fn trailers(&self) -> Result<&HttpHeaderBlock, Error> {
         self.exchange.call.io().checkpoint()?;
@@ -397,5 +373,52 @@ impl HttpBody for Body {
             return Err(Error::InvalidState);
         }
         self.trailers.as_ref().ok_or(Error::InvalidState)
+    }
+}
+
+impl Body {
+    fn read_future<'a>(
+        (this, maximum): (&'a mut Self, usize),
+    ) -> impl std::future::Future<Output = Result<Option<IoOutputChunk>, Error>> + Send + 'a {
+        this.next(maximum)
+    }
+    fn timed_read_future<'a>(
+        (this, maximum, deadline): (&'a mut Self, usize, super::phase::Deadline),
+    ) -> impl std::future::Future<Output = Result<Option<IoOutputChunk>, HttpPhaseError>> + Send + 'a
+    {
+        this.next_with_deadline(maximum, deadline)
+    }
+    async fn next_with_deadline(
+        &mut self,
+        maximum_bytes: usize,
+        deadline: super::phase::Deadline,
+    ) -> Result<Option<IoOutputChunk>, HttpPhaseError> {
+        match deadline
+            .wait(
+                self.next(maximum_bytes),
+                HttpPhaseError::ReadTimeout {
+                    external_completion_uncertain: false,
+                },
+            )
+            .await
+        {
+            Ok(result) => result.map_err(Into::into),
+            Err(error) => {
+                // The borrowed read future has been destroyed. Close its
+                // actual transport before reporting any phase failure;
+                // retained chunks/body metadata keep their original charges.
+                self.phase_failure = Some(error);
+                // A retired phase stream is invalid for the legacy API;
+                // do not manufacture an original activation deadline.
+                self.failed = Some(Error::InvalidState);
+                self.pending = Bytes::new();
+                self.exchange.socket = None;
+                self.exchange.terminal_audit().await;
+                // Audit completion is an async boundary too. An original
+                // root stop during retirement still wins before reporting.
+                self.exchange.call.io().checkpoint()?;
+                Err(error)
+            }
+        }
     }
 }

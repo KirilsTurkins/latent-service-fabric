@@ -91,6 +91,56 @@ class StreamOuterOwnerReader(unittest.TestCase):
         for case in (*owner.FACTORY_PRIVATE_CASES, *owner.FACTORY_PUBLIC_CASES, 'unknown::case'):
             with self.assertRaises(ValueError):
                 owner.io_operation_result(b'', case)
+        import json
+        self.assertEqual((len(owner.IO_GRAPH_CASES), len(owner.IO_GRAPH_NEW_CASES)), (8, 7))
+        self.assertEqual(owner.IO_GRAPH_CASES[-1], owner.IO_CASES[-1])
+        self.assertEqual(owner.IO_GRAPH_CHECK_ARGS, (
+            'check', '--locked', '--tests', '--all-features',
+            '-p', 'latent-http', '-p', 'latent-blobs', '-p', 'latent-streams',
+            '-p', 'latent-wasmtime', '-p', 'latentd', '--message-format=json'))
+        for index, case in enumerate(owner.IO_GRAPH_CASES):
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            with self.subTest(io_graph_case=case):
+                value = owner.io_graph_result(raw, case)
+                self.assertEqual((value['passed'], value['ignored']), (1, 0))
+                self.assertEqual(value['scope'], 'exact-layout-provider-future-backing-instrument-control'
+                    if index < 2 else 'allocation-free-provider-refusal-control' if index == 2
+                    else 'legacy-Phase1-IO-reference' if index == 7
+                    else 'original-Phase3-broker-owned-graph-control')
+                for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'),
+                    raw.replace(case.encode(), b'wrong::case')):
+                    with self.assertRaises(ValueError):
+                        owner.io_graph_result(changed, case)
+        for case in (*owner.IO_NEW_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.io_graph_result(b'', case)
+        records = []
+        for manifest, target, source in owner.IO_GRAPH_CHECK_TARGETS:
+            path = (owner.ROOT / manifest).resolve()
+            records.append({'reason': 'compiler-artifact', 'manifest_path': str(path),
+                'target': {'kind': ['lib'], 'name': target,
+                    'src_path': str(path.parent / source)},
+                'profile': {'test': True}, 'executable': None, 'features': []})
+        finished = {'reason': 'build-finished', 'success': True}
+        def raw_inventory(rows):
+            return b''.join((json.dumps(row) + '\n').encode() for row in rows)
+        observed = owner.io_graph_check_result(raw_inventory([*records, finished]))
+        self.assertEqual([row['target'] for row in observed],
+            [row[1] for row in owner.IO_GRAPH_CHECK_TARGETS])
+        self.assertTrue(all(row['libtestTypechecked'] for row in observed))
+        for rows in (records, [*records[:-1], finished], [*records, records[0], finished],
+            [*records, {'reason': 'build-finished', 'success': False}],
+            [*records, finished, records[0]]):
+            with self.assertRaises(ValueError):
+                owner.io_graph_check_result(raw_inventory(rows))
+        for field, value in (('executable', '/tmp/unowned-test'),
+            ('target', {'kind': ['lib'], 'name': 'counterfeit', 'src_path': '/tmp/x'}),
+            ('profile', {'test': False})):
+            changed = [{**records[0], field: value}, *records[1:], finished]
+            with self.assertRaises(ValueError):
+                owner.io_graph_check_result(raw_inventory(changed))
 
     def test_private_fixture_identity_is_bounded_and_changes_are_observed(self):
         with tempfile.TemporaryDirectory() as temporary:
