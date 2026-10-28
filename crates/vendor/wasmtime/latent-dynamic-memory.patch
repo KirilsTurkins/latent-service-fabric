@@ -1,8 +1,6 @@
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -1514,9 +1514,9 @@
- 
- [[package]]
+@@ -1516,5 +1516,5 @@
  name = "tokio"
 -version = "1.51.1"
 -source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11,20 +9,12 @@
 +source = "registry+https://github.com/rust-lang/crates.io-index"
 +checksum = "a13e32eacd0222f9658be2ccbd83b718bfd9bfb0d54b5921913c184cb86124a5"
  dependencies = [
-  "pin-project-lite",
-  "tokio-macros",
-@@ -1865,8 +1865,6 @@
- [[package]]
- name = "wasmtime-internal-cache"
+@@ -1867,4 +1867,2 @@
  version = "48.0.7"
 -source = "registry+https://github.com/rust-lang/crates.io-index"
 -checksum = "b11ca8945aa341f944558622db59845dffa1435971f318d5fce2f2d9765a69b0"
  dependencies = [
-  "base64",
-  "directories-next",
-@@ -2338,27 +2336,27 @@
- 
- [[package]]
+@@ -2340,5 +2338,5 @@
  name = "zstd"
 -version = "0.13.0"
 -source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -33,10 +23,7 @@
 +source = "registry+https://github.com/rust-lang/crates.io-index"
 +checksum = "db3ae9bf90af6e40197bef767eeefc46ad6397420fe873830bd85e5fbbfb3c70"
  dependencies = [
-  "zstd-safe",
- ]
- 
- [[package]]
+@@ -2349,5 +2347,5 @@
  name = "zstd-safe"
 -version = "7.0.0"
 -source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -45,10 +32,7 @@
 +source = "registry+https://github.com/rust-lang/crates.io-index"
 +checksum = "ded520f16b29e1a9b771c722221b2b0a0398c2316d9bb3c42b458a5414d7434b"
  dependencies = [
-  "zstd-sys",
- ]
- 
- [[package]]
+@@ -2358,5 +2356,5 @@
  name = "zstd-sys"
 -version = "2.0.9+zstd.1.5.5"
 -source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -57,60 +41,38 @@
 +source = "registry+https://github.com/rust-lang/crates.io-index"
 +checksum = "481ada9c543b2323cbb7bbdbb5249177fbf0188ed959ed2c15e4b22421c84ed3"
  dependencies = [
-  "cc",
-  "pkg-config",
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -373,6 +373,7 @@
- 
- [dependencies.wasmtime-cache]
+@@ -375,2 +375,3 @@
  version = "=48.0.7"
 +path = "../wasmtime-cache"
  optional = true
- package = "wasmtime-internal-cache"
- 
 --- a/src/runtime.rs
 +++ b/src/runtime.rs
-@@ -53,6 +53,7 @@
- pub(crate) mod module;
- #[cfg(feature = "debug-builtins")]
+@@ -55,2 +55,3 @@
  pub(crate) mod native_debug;
 +pub(crate) mod native_memory;
  pub(crate) mod resources;
- pub(crate) mod store;
- pub(crate) mod trampoline;
 --- a/src/runtime/component/concurrent.rs
 +++ b/src/runtime/component/concurrent.rs
-@@ -51,6 +51,7 @@
- //! in host functions.
- 
+@@ -53,2 +53,4 @@
  use self::error_contexts::GlobalErrorContextRefCount;
++use self::host_futures::call_result_channel as oneshot;
 +use self::work_queue::{Queue, Slot as QueueSlot};
  use crate::bail_bug;
- use crate::component::func::{Func, call_post_return};
- use crate::component::{
-@@ -69,8 +70,7 @@
- use crate::{
-     AsContext, AsContextMut, FuncType, Result, StoreContext, StoreContextMut, ValRaw, ValType, bail,
+@@ -71,4 +73,3 @@
  };
 -use alloc::borrow::ToOwned;
 -use alloc::collections::{BTreeMap, BTreeSet, VecDeque};
 +use alloc::collections::{BTreeMap, BTreeSet};
  use core::any::Any;
- use core::cell::UnsafeCell;
- use core::fmt;
-@@ -83,7 +83,7 @@
- use core::ptr::{self, NonNull};
+@@ -84,4 +85,3 @@
  use core::task::{Context, Poll, Waker};
- use futures::channel::oneshot;
+-use futures::channel::oneshot;
 -use futures::stream::{FuturesUnordered, StreamExt};
 +use futures::stream::StreamExt;
  use futures_and_streams::{FlatAbi, ReturnCode, TransmitHandle, TransmitIndex};
- use table::{TableDebug, TableId};
- use wasmtime_environ::component::{
-@@ -107,14 +107,23 @@
-     StreamProducer, StreamReader, StreamResult, VecBuffer, WriteBuffer,
- };
+@@ -109,4 +109,8 @@
  pub(crate) use futures_and_streams::{ResourcePair, lower_error_context_to_index};
 +pub(crate) use host_futures::HostFutureSet;
 +use host_futures::TaskSlot;
@@ -119,8 +81,7 @@
  mod abort;
 +mod call_future;
  mod error_contexts;
- mod func;
- mod future_stream_any;
+@@ -115,4 +119,9 @@
  mod futures_and_streams;
 +mod host_futures;
 +mod pending_future;
@@ -130,11 +91,7 @@
 +mod work_queue;
 +mod worker_function;
  
- /// Constant defined in the Component Model spec to indicate that the async
- /// intrinsic (e.g. `future.write`) has not yet completed.
-@@ -633,17 +642,42 @@
-     fn run(self, accessor: &Accessor<T, D>) -> impl Future<Output = Result<()>> + Send;
- }
+@@ -635,2 +644,27 @@
  
 +enum CallParameters {
 +    Legacy(Vec<ValRaw>),
@@ -162,24 +119,17 @@
 +}
 +
  /// Represents parameter and result metadata for the caller side of a
- /// guest->guest call orchestrated by a fused adapter.
- enum CallerInfo {
-     /// Metadata for a call to an async-lowered import
+@@ -640,3 +674,3 @@
      Async {
 -        params: Vec<ValRaw>,
 +        params: CallParameters,
          has_result: bool,
-     },
-     /// Metadata for a call to an sync-lowered import
+@@ -645,3 +679,3 @@
      Sync {
 -        params: Vec<ValRaw>,
 +        params: CallParameters,
          result_count: u32,
-     },
- }
-@@ -651,10 +685,10 @@
- /// Indicates how a guest task is waiting on a waitable set.
- enum WaitMode {
+@@ -653,6 +687,6 @@
      /// The guest task is waiting using `task.wait`
 -    Fiber(StoreFiber<'static>),
 +    Fiber(StoreFiber<'static>, QueueSlot<WorkItem>),
@@ -188,44 +138,27 @@
 -    Callback(Instance),
 +    Callback(Instance, QueueSlot<WorkItem>),
  }
- 
- /// Represents the reason a fiber is suspending itself.
-@@ -778,14 +812,14 @@
- /// Job to be run on a worker fiber.
- enum WorkerItem {
+@@ -780,3 +814,3 @@
      GuestCall(GuestCall),
 -    Function(AlwaysMut<Box<dyn FnOnce(&mut dyn VMStore) -> Result<()> + Send>>),
 +    Function(AlwaysMut<worker_function::WorkerFunction>),
  }
- 
- /// Represents a pending work item to be handled by the event loop for a given
- /// component instance.
- enum WorkItem {
+@@ -787,3 +821,3 @@
      /// A host task to be pushed to `ConcurrentState::futures`.
 -    PushFuture(AlwaysMut<HostTaskFuture>),
 +    PushFuture(AlwaysMut<HostTaskFuture>, TaskSlot),
      /// A fiber to resume.
-     ResumeFiber(StoreFiber<'static>),
-     /// A thread to resume.
-@@ -793,13 +827,13 @@
-     /// A pending call into guest code for a given guest task.
-     GuestCall(RuntimeComponentInstanceIndex, GuestCall),
+@@ -795,3 +829,3 @@
      /// A job to run on a worker fiber.
 -    WorkerFunction(AlwaysMut<Box<dyn FnOnce(&mut dyn VMStore) -> Result<()> + Send>>),
 +    WorkerFunction(AlwaysMut<worker_function::WorkerFunction>),
  }
- 
- impl fmt::Debug for WorkItem {
-     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+@@ -801,3 +835,3 @@
          match self {
 -            Self::PushFuture(_) => f.debug_tuple("PushFuture").finish(),
 +            Self::PushFuture(..) => f.debug_tuple("PushFuture").finish(),
              Self::ResumeFiber(_) => f.debug_tuple("ResumeFiber").finish(),
-             Self::ResumeThread(instance, thread) => f
-                 .debug_tuple("ResumeThread")
-@@ -814,6 +848,13 @@
-             Self::WorkerFunction(_) => f.debug_tuple("WorkerFunction").finish(),
-         }
+@@ -816,2 +850,9 @@
      }
 +}
 +
@@ -235,11 +168,7 @@
 +    queue: QueueSlot<WorkItem>,
 +    task: TaskSlot,
  }
- 
- /// Whether a suspension intrinsic was cancelled or completed
-@@ -840,32 +881,66 @@
-     // Wrap the future in a closure which will take care of stashing the result
-     // in `GuestTask::result` and resuming this fiber when the host task
+@@ -842,21 +883,57 @@
      // completes.
 -    let mut future = Box::pin(async move {
 -        let result = future.await?;
@@ -316,56 +245,35 @@
 +        (queue_slot, prepared.finish())
 +    };
      // Finally, poll the future.  We can use a dummy `Waker` here because we'll
-     // add the future to `ConcurrentState::futures` and poll it automatically
-     // from the event loop if it doesn't complete immediately here.
+@@ -865,5 +942,3 @@
      let poll = tls::set(store, || {
 -        future
 -            .as_mut()
 -            .poll(&mut Context::from_waker(&Waker::noop()))
 +        Pin::new(&mut future).poll(&mut Context::from_waker(&Waker::noop()))
      });
- 
-     let caller = match host_task {
-@@ -883,7 +958,7 @@
-         // complete, suspending the current fiber until it does so.
-         Poll::Pending => {
+@@ -885,3 +960,3 @@
              let state = store.concurrent_state_mut()?;
 -            state.push_future(future);
 +            state.push_host_future(queue_slot, future);
  
-             let set = state.get_mut(caller.thread)?.sync_call_set;
-             Waitable::Host(task).join(state, Some(set))?;
-@@ -904,8 +979,8 @@
-     // Retrieve and return the result.
-     let host_state = &mut store.concurrent_state_mut()?.get_mut(task)?.state;
+@@ -906,4 +981,4 @@
      match mem::replace(host_state, HostTaskState::CalleeDone { cancelled: false }) {
 -        HostTaskState::CalleeFinished(result) => Ok(match result.downcast() {
 -            Ok(result) => *result,
 +        HostTaskState::CalleeFinished(result) => Ok(match result.into_value::<R>() {
 +            Ok(result) => result,
              Err(_) => bail_bug!("host task finished with wrong type of result"),
-         }),
-         _ => bail_bug!("unexpected host task state after completion"),
-@@ -918,6 +993,8 @@
-     while let Some(call) = next.take() {
-         match call.kind {
+@@ -920,2 +995,4 @@
              GuestCallKind::DeliverEvent { instance, set } => {
 +                // The callback can perform I/O before returning WAIT/YIELD.
 +                let wake_slot = store.concurrent_state_mut()?.prepare_queue_slot()?;
                  let (event, waitable) =
-                     match instance.get_event(store, call.thread.task, set, true)? {
-                         Some(pair) => pair,
-@@ -966,6 +1043,7 @@
-                     call.thread,
-                     runtime_instance.index,
+@@ -968,2 +1045,3 @@
                      code,
 +                    wake_slot,
                  )?;
- 
-                 log::trace!(
-@@ -1090,13 +1168,25 @@
-         T: 'static,
-         D: HasData + ?Sized,
+@@ -1092,9 +1170,21 @@
      {
 -        // Create an "abortable future" here where internally the future will
 -        // hook calls to poll and possibly spawn more background tasks on each
@@ -394,39 +302,23 @@
 +            state.push_host_future(queue_slot, prepared.finish());
 +        }
          Ok(handle)
-     }
- 
-@@ -1263,7 +1353,7 @@
-     {
-         struct Reset<'a, T: 'static> {
+@@ -1265,3 +1355,3 @@
              store: StoreContextMut<'a, T>,
 -            futures: Option<FuturesUnordered<HostTaskFuture>>,
 +            futures: Option<HostFutureSet>,
          }
- 
-         impl<'a, T> Drop for Reset<'a, T> {
-@@ -1279,6 +1369,9 @@
-             }
-         }
+@@ -1281,2 +1371,5 @@
  
 +        // Lazy paid stub/ready headers precede even the argument's first poll.
 +        // The removed set and all escaped tasks carry no factory Memory Arc.
 +        self.0.concurrent_state_mut()?.ensure_futures_ready()?;
          loop {
-             // Take `ConcurrentState::futures` out of the store so we can poll
-             // it while also safely giving any of the futures inside access to
-@@ -1296,7 +1389,7 @@
-             enum PollResult<R> {
-                 Complete(R),
+@@ -1298,3 +1391,3 @@
                  ProcessWork {
 -                    ready: Vec<WorkItem>,
 +                    ready: Option<(QueueSlot<WorkItem>, WorkItem)>,
                      low_priority: bool,
-                 },
-             }
-@@ -1323,22 +1416,18 @@
-                     Poll::Pending => Poll::Pending,
-                 };
+@@ -1325,14 +1418,10 @@
  
 -                // Next, collect the next batch of work items to process, if
 -                // any.  This will be either all of the high-priority work
@@ -446,25 +338,17 @@
 -                        ready.push(item);
 +                        ready = Some(item);
                          low_priority = true;
-                     }
+@@ -1340,3 +1429,3 @@
                  }
 -                if !ready.is_empty() {
 +                if ready.is_some() {
                      return Poll::Ready(Ok(PollResult::ProcessWork {
-                         ready,
-                         low_priority,
-@@ -1356,7 +1445,7 @@
-                         // the outer loop in case there is another one
-                         // ready to complete.
+@@ -1358,3 +1447,3 @@
                          Poll::Ready(Ok(PollResult::ProcessWork {
 -                            ready: Vec::new(),
 +                            ready: None,
                              low_priority: false,
-                         }))
-                     }
-@@ -1410,17 +1499,21 @@
-                     ready,
-                     low_priority,
+@@ -1412,3 +1501,7 @@
                  } => {
 -                    struct Dispose<'a, T: 'static, I: Iterator<Item = WorkItem>> {
 +                    struct Dispose<
@@ -473,8 +357,7 @@
 +                        I: Iterator<Item = (QueueSlot<WorkItem>, WorkItem)>,
 +                    > {
                          store: StoreContextMut<'a, T>,
-                         ready: I,
-                     }
+@@ -1417,8 +1510,8 @@
  
 -                    impl<'a, T, I: Iterator<Item = WorkItem>> Drop for Dispose<'a, T, I> {
 +                    impl<'a, T, I: Iterator<Item = (QueueSlot<WorkItem>, WorkItem)>> Drop for Dispose<'a, T, I> {
@@ -486,37 +369,27 @@
 -                                    WorkItem::PushFuture(future) => {
 +                                    WorkItem::PushFuture(future, _task_slot) => {
                                          tls::set(self.store.0, move || drop(future))
-                                     }
-                                     _ => {}
-@@ -1459,11 +1552,11 @@
-                         dispose.store.0.yield_now().await
-                     }
+@@ -1461,3 +1554,3 @@
  
 -                    while let Some(item) = dispose.ready.next() {
 +                    while let Some((slot, item)) = dispose.ready.next() {
                          dispose
-                             .store
+@@ -1465,3 +1558,3 @@
                              .as_context_mut()
 -                            .handle_work_item(item)
 +                            .handle_work_item(slot, item)
                              .await?;
-                     }
-                 }
-@@ -1472,34 +1565,35 @@
-     }
- 
+@@ -1474,3 +1567,3 @@
      /// Handle the specified work item, possibly resuming a fiber if applicable.
 -    async fn handle_work_item(self, item: WorkItem) -> Result<()>
 +    async fn handle_work_item(self, slot: QueueSlot<WorkItem>, item: WorkItem) -> Result<()>
      where
-         T: Send,
-     {
-         log::trace!("handle work item {item:?}");
+@@ -1480,3 +1573,3 @@
          match item {
 -            WorkItem::PushFuture(future) => {
 +            WorkItem::PushFuture(future, task_slot) => {
                  self.0
-                     .concurrent_state_mut()?
+@@ -1484,6 +1577,6 @@
                      .futures_mut()?
 -                    .push(future.into_inner());
 +                    .push_prepared(task_slot, future.into_inner());
@@ -525,77 +398,47 @@
 -                self.0.resume_fiber(fiber).await?;
 +                self.0.resume_fiber(fiber, slot).await?;
              }
-             WorkItem::ResumeThread(_, thread) => {
-                 if let GuestThreadState::Ready { fiber, .. } = mem::replace(
-                     &mut self.0.concurrent_state_mut()?.get_mut(thread.thread)?.state,
-                     GuestThreadState::Running,
+@@ -1494,3 +1587,3 @@
                  ) {
 -                    self.0.resume_fiber(fiber).await?;
 +                    self.0.resume_fiber(fiber, slot).await?;
                  } else {
-                     bail_bug!("cannot resume non-pending thread {thread:?}");
-                 }
-             }
-             WorkItem::GuestCall(_, call) => {
+@@ -1501,3 +1594,4 @@
                  if call.is_ready(self.0)? {
 -                    self.run_on_worker(WorkerItem::GuestCall(call)).await?;
 +                    self.run_on_worker(slot, WorkerItem::GuestCall(call))
 +                        .await?;
                  } else {
-                     let state = self.0.concurrent_state_mut()?;
-                     let task = state.get_mut(call.thread.task)?;
-@@ -1520,11 +1614,11 @@
-                         .instance_state(instance)
-                         .concurrent_state()
+@@ -1522,3 +1616,3 @@
                          .pending
 -                        .insert(call.thread, call.kind);
 +                        .insert(call.thread, (call.kind, slot));
                  }
-             }
+@@ -1526,3 +1620,3 @@
              WorkItem::WorkerFunction(fun) => {
 -                self.run_on_worker(WorkerItem::Function(fun)).await?;
 +                self.run_on_worker(slot, WorkerItem::Function(fun)).await?;
              }
-         }
- 
-@@ -1532,7 +1626,7 @@
-     }
- 
+@@ -1534,3 +1628,3 @@
      /// Execute the specified guest call on a worker fiber.
 -    async fn run_on_worker(self, item: WorkerItem) -> Result<()>
 +    async fn run_on_worker(self, wake_slot: QueueSlot<WorkItem>, item: WorkerItem) -> Result<()>
      where
-         T: Send,
-     {
-@@ -1546,7 +1640,7 @@
-                     };
-                     match item {
+@@ -1548,3 +1642,3 @@
                          WorkerItem::GuestCall(call) => handle_guest_call(store, call)?,
 -                        WorkerItem::Function(fun) => fun.into_inner()(store)?,
 +                        WorkerItem::Function(fun) => fun.into_inner().invoke(store)?,
                      }
- 
-                     store.suspend(SuspendReason::NeedWork)?;
-@@ -1558,7 +1652,7 @@
-         assert!(worker_item.is_none());
-         *worker_item = Some(item);
+@@ -1560,3 +1654,3 @@
  
 -        self.0.resume_fiber(worker).await
 +        self.0.resume_fiber(worker, wake_slot).await
      }
- 
-     /// Wrap the specified host function in a future which will call it, passing
-@@ -1755,6 +1849,7 @@
-         }
- 
+@@ -1757,2 +1851,3 @@
          let thread = self.current_thread()?;
 +        let native_memory = self.native_memory();
          let state = self.concurrent_state_mut()?;
-         let instance = if let Some(task) = thread.guest_task() {
-             Some(state.get_mut(task)?.instance)
-@@ -1766,9 +1861,15 @@
-         }
-         let guest_thread = GuestTask::new(
+@@ -1768,5 +1863,11 @@
              state,
 -            Box::new(move |_, _| bail_bug!("cannot lower params in sync call")),
 +            RawLower::new(
@@ -609,33 +452,22 @@
 +                    &native_memory,
 +                )?,
                  ty: TypeTupleIndex::reserved_value(),
-                 memory: None,
-                 string_encoding: StringEncoding::Utf8,
-@@ -2056,18 +2157,18 @@
-     ///
-     /// See `GuestCall::is_ready` for details.
+@@ -2058,3 +2159,3 @@
      fn partition_pending(&mut self, instance: RuntimeInstance) -> Result<()> {
 -        for (thread, kind) in
 +        for (thread, (kind, slot)) in
              mem::take(&mut self.instance_state(instance).concurrent_state().pending).into_iter()
-         {
-             let call = GuestCall { thread, kind };
-             if call.is_ready(self)? {
+@@ -2064,3 +2165,3 @@
                  self.concurrent_state_mut()?
 -                    .push_high_priority(WorkItem::GuestCall(instance.index, call));
 +                    .push_high_priority(slot, WorkItem::GuestCall(instance.index, call));
              } else {
-                 self.instance_state(instance)
-                     .concurrent_state()
+@@ -2069,3 +2170,3 @@
                      .pending
 -                    .insert(call.thread, call.kind);
 +                    .insert(call.thread, (call.kind, slot));
              }
-         }
- 
-@@ -2104,7 +2205,11 @@
- 
-     /// Resume the specified fiber, giving it exclusive access to the specified
+@@ -2106,3 +2207,7 @@
      /// store.
 -    async fn resume_fiber(&mut self, fiber: StoreFiber<'static>) -> Result<()> {
 +    async fn resume_fiber(
@@ -644,30 +476,19 @@
 +        wake_slot: QueueSlot<WorkItem>,
 +    ) -> Result<()> {
          struct Dispose<'a> {
-             store: &'a mut StoreOpaque,
-             fiber: Option<StoreFiber<'static>>,
-@@ -2122,6 +2227,10 @@
-             store: self,
-             fiber: Some(fiber),
+@@ -2124,2 +2229,6 @@
          };
 +
 +        // A yield/wait may follow arbitrary guest or host effects. Retain the
 +        // SAME node removed from the queue across execution; no new admission
 +        // or allocation is allowed after resuming this fiber.
  
-         let old_thread = dispose.store.current_thread()?;
-         log::trace!("resume_fiber: save current thread {old_thread:?}");
-@@ -2163,17 +2272,17 @@
-                         cancellable,
-                     };
+@@ -2165,3 +2274,3 @@
                      let instance = state.get_mut(thread.task)?.instance.index;
 -                    state.push_low_priority(WorkItem::ResumeThread(instance, thread));
 +                    state.push_low_priority(wake_slot, WorkItem::ResumeThread(instance, thread));
                  }
-                 SuspendReason::ExplicitlySuspending { thread, .. } => {
-                     state.get_mut(thread.thread)?.state =
-                         GuestThreadState::Suspended(dispose.fiber.take().unwrap());
-                 }
+@@ -2172,6 +2281,6 @@
                  SuspendReason::Waiting { set, thread, .. } => {
 -                    let old = state
 -                        .get_mut(set)?
@@ -678,37 +499,21 @@
 +                        WaitMode::Fiber(dispose.fiber.take().unwrap(), wake_slot),
 +                    );
                      assert!(old.is_none());
-                 }
-             };
-@@ -2398,7 +2507,7 @@
-                 _ => false,
-             };
+@@ -2400,3 +2509,3 @@
  
 -            let remove = |queue: &mut VecDeque<WorkItem>| {
 +            let remove = |queue: &mut Queue<WorkItem>| {
                  let count = queue.len();
-                 queue.retain(|item| !matches(item));
-                 count != queue.len()
-@@ -2499,6 +2608,7 @@
-         guest_thread: QualifiedThreadId,
-         runtime_instance: RuntimeComponentInstanceIndex,
+@@ -2501,2 +2610,3 @@
          code: u32,
 +        wake_slot: QueueSlot<WorkItem>,
      ) -> Result<Option<GuestCall>> {
-         let (code, set) = unpack_callback_code(code);
- 
-@@ -2549,7 +2659,7 @@
-                 if state.may_block(guest_thread.task)? {
-                     // Push this thread onto the "low priority" queue so it runs
+@@ -2551,3 +2661,3 @@
                      // after any other threads have had a chance to run.
 -                    state.push_low_priority(WorkItem::GuestCall(runtime_instance, call));
 +                    state.push_low_priority(wake_slot, WorkItem::GuestCall(runtime_instance, call));
                      None
-                 } else {
-                     // Yielding in a non-blocking context is defined as a no-op
-@@ -2570,16 +2680,19 @@
-                     || !state.get_mut(set)?.ready.is_empty()
-                 {
+@@ -2572,12 +2682,15 @@
                      // An event is immediately available; deliver it ASAP.
 -                    state.push_high_priority(WorkItem::GuestCall(
 -                        runtime_instance,
@@ -733,45 +538,25 @@
 +                        ),
 +                    );
                  } else {
-                     // No event is immediately available.
-                     //
-@@ -2598,7 +2711,7 @@
-                     let old = state
-                         .get_mut(set)?
+@@ -2600,3 +2713,3 @@
                          .waiting
 -                        .insert(guest_thread, WaitMode::Callback(self));
 +                        .insert(guest_thread, WaitMode::Callback(self, wake_slot));
                      if !old.is_none() {
-                         bail_bug!("set's waiting set already had this thread registered");
-                     }
-@@ -2626,6 +2739,7 @@
-         callback: Option<SendSyncPtr<VMFuncRef>>,
-         post_return: Option<SendSyncPtr<VMFuncRef>>,
+@@ -2628,2 +2741,3 @@
      ) -> Result<()> {
 +        let queue_slot = store.0.concurrent_state_mut()?.prepare_queue_slot()?;
          /// Return a closure which will call the specified function in the scope
-         /// of the specified task.
-         ///
-@@ -2662,7 +2776,7 @@
-                     None => bail_bug!("lower_params missing"),
-                 };
+@@ -2664,3 +2778,3 @@
  
 -                lower(store, &mut storage[..param_count])?;
 +                lower.call(store, &mut storage[..param_count])?;
  
-                 let mut store = token.as_context_mut(store);
- 
-@@ -2705,6 +2819,7 @@
- 
-         let fun = if callback.is_some() {
+@@ -2707,2 +2821,3 @@
              assert!(async_);
 +            let wake_slot = store.0.concurrent_state_mut()?.prepare_queue_slot()?;
  
-             Box::new(move |store: &mut dyn VMStore| {
-                 self.add_guest_thread_to_instance_table(
-@@ -2740,7 +2855,13 @@
-                 // function returns a `i32` result.
-                 let code = unsafe { storage[0].assume_init() }.get_i32() as u32;
+@@ -2742,3 +2857,9 @@
  
 -                self.handle_callback_code(store, guest_thread, callee_instance.index, code)
 +                self.handle_callback_code(
@@ -782,20 +567,12 @@
 +                    wake_slot,
 +                )
              })
-                 as Box<dyn FnOnce(&mut dyn VMStore) -> Result<Option<GuestCall>> + Send + Sync>
-         } else {
-@@ -2794,7 +2915,7 @@
- 
-                     // SAFETY: `result_count` represents the number of core Wasm
+@@ -2796,3 +2917,3 @@
                      // results returned, per `wasmparser`.
 -                    let result = (lift.lift)(store, unsafe {
 +                    let result = lift.lift.call(store, unsafe {
                          mem::transmute::<&[MaybeUninit<ValRaw>], &[ValRaw]>(
-                             &storage[..result_count],
-                         )
-@@ -2833,16 +2954,16 @@
-             })
-         };
+@@ -2835,6 +2956,5 @@
  
 -        store
 -            .0
@@ -805,27 +582,17 @@
 +            queue_slot,
 +            WorkItem::GuestCall(
                  callee_instance.index,
-                 GuestCall {
-                     thread: guest_thread,
-                     kind: GuestCallKind::StartImplicit(fun),
+@@ -2844,3 +2964,4 @@
                  },
 -            ));
 +            ),
 +        );
  
-         Ok(())
-     }
-@@ -2920,6 +3041,7 @@
-         let return_ = SendSyncPtr::new(return_);
-         let token = StoreToken::new(store.as_context_mut());
+@@ -2922,2 +3043,3 @@
          let old_thread = store.0.current_guest_thread()?;
 +        let native_memory = store.0.native_memory();
          let state = store.0.concurrent_state_mut()?;
- 
-         debug_assert_eq!(
-@@ -2929,110 +3051,117 @@
- 
-         let guest_thread = GuestTask::new(
+@@ -2931,77 +3053,34 @@
              state,
 -            Box::new(move |store, dst| {
 -                let mut store = token.as_context_mut(store);
@@ -933,7 +700,7 @@
 +                    // for details) we know it takes count parameters and returns
 +                    // `dst.len()` results.
                      unsafe {
-                         crate::Func::call_unchecked_raw(
+@@ -3009,28 +3088,78 @@
                              &mut store,
 -                            return_.as_non_null(),
 -                            my_src.as_mut_slice().into(),
@@ -1035,16 +802,11 @@
 +                    &native_memory,
 +                )?,
                  ty: task_return_type,
-                 memory: NonNull::new(memory).map(SendSyncPtr::new),
-                 string_encoding,
-@@ -3273,32 +3402,111 @@
-     ) -> Result<u32> {
-         let token = StoreToken::new(store.as_context_mut());
+@@ -3275,2 +3404,3 @@
          let task = store.0.current_host_thread()?;
 +        let memory = store.0.native_memory();
          let state = store.0.concurrent_state_mut()?;
- 
-         // Create an abortable future which hooks calls to poll and manages call
+@@ -3279,3 +3409,78 @@
          // context state for the future.
 -        let (join_handle, future) = JoinHandle::run(future);
 +        let (join_handle, future) = JoinHandle::run_with_memory(future, memory.clone())?;
@@ -1124,26 +886,19 @@
 +        // It must exist even if the first poll later completes immediately.
 +        let future_task_slot = state.prepare_future_task_slot()?;
          {
-             let state = &mut state.get_mut(task)?.state;
-             assert!(matches!(state, HostTaskState::CalleeStarted));
-             *state = HostTaskState::CalleeRunning(join_handle);
+@@ -3285,4 +3490,2 @@
          }
 -
 -        let mut future = Box::pin(future);
  
-         // Finally, poll the future.  We can use a dummy `Waker` here because
-         // we'll add the future to `ConcurrentState::futures` and poll it
-         // automatically from the event loop if it doesn't complete immediately
-         // here.
+@@ -3293,5 +3496,3 @@
          let poll = tls::set(store.0, || {
 -            future
 -                .as_mut()
 -                .poll(&mut Context::from_waker(&Waker::noop()))
 +            Pin::new(&mut prepared.args_mut().0).poll(&mut Context::from_waker(&Waker::noop()))
          });
- 
-         match poll {
-             // It finished immediately; lower the result and delete the task.
+@@ -3301,2 +3502,9 @@
              Poll::Ready(result) => {
 +                // Keep the inner Box alive through direct lowering as before,
 +                // but refund the unused continuation reservation first.
@@ -1153,11 +908,7 @@
 +                drop(future_task_slot);
 +                let (lower, _token, _task) = worker.into_context();
                  let result = result.transpose()?;
-                 lower(store.as_context_mut(), result, true)?;
-                 return Ok(Status::Returned.pack(None));
-@@ -3315,53 +3523,7 @@
-         // Wrap the future in a closure responsible for lowering the result into
-         // the guest's stack and memory, as well as notifying any waiters that
+@@ -3317,49 +3525,3 @@
          // the task returned.
 -        let future = Box::pin(async move {
 -            let result = match future.await {
@@ -1208,11 +959,7 @@
 -        });
 +        let future = prepared.finish();
  
-         // Make this task visible to the guest and then record what it
-         // was made visible as.
-@@ -3370,7 +3532,13 @@
-             None => bail_bug!("host task wasn't created but should have been"),
-         };
+@@ -3372,3 +3534,9 @@
          let state = store.0.concurrent_state_mut()?;
 -        state.push_future(future);
 +        state.push_host_future(
@@ -1223,20 +970,12 @@
 +            future,
 +        );
          let instance = state.get_mut(caller.task)?.instance;
-         let (state, counter) = store.0.instance_state_and_handle_counter(instance);
-         let handle = state
-@@ -3435,7 +3603,7 @@
- 
-         log::trace!("task.return for {guest_thread:?}");
+@@ -3437,3 +3605,3 @@
  
 -        let result = (lift.lift)(store, storage)?;
 +        let result = lift.lift.call(store, storage)?;
          self.task_complete(store, guest_thread.task, result, Status::Returned)
-     }
- 
-@@ -3791,6 +3959,14 @@
-             GuestThread::from_instance(self.id().get_mut(store), runtime_instance, thread_idx)?;
-         let state = store.concurrent_state_mut()?;
+@@ -3793,2 +3961,10 @@
          let guest_thread = QualifiedThreadId::qualify(state, thread_id)?;
 +        let queue_slot = if matches!(
 +            &state.get_mut(guest_thread.thread)?.state,
@@ -1247,11 +986,7 @@
 +            None // Ready promotes its SAME existing node, without admission.
 +        };
          let thread = state.get_mut(guest_thread.thread)?;
- 
-         match mem::replace(&mut thread.state, GuestThreadState::Running) {
-@@ -3805,15 +3981,19 @@
-                         })),
-                     },
+@@ -3807,5 +3983,7 @@
                  );
 -                store
 -                    .concurrent_state_mut()?
@@ -1262,7 +997,7 @@
 +                    high_priority,
 +                );
              }
-             GuestThreadState::Suspended(fiber) => {
+@@ -3813,5 +3991,7 @@
                  log::trace!("resuming thread {thread_id:?} that was suspended");
 -                store
 -                    .concurrent_state_mut()?
@@ -1273,11 +1008,7 @@
 +                    high_priority,
 +                );
              }
-             GuestThreadState::Ready { fiber, cancellable } if allow_ready => {
-                 log::trace!("resuming thread {thread_id:?} that was ready");
-@@ -4104,21 +4284,27 @@
-                     let thread_mut = concurrent_state.get_mut(thread.thread)?;
-                     if let Some(set) = thread_mut.wake_on_cancel.take() {
+@@ -4106,17 +4286,23 @@
                          // The thread is in a cancellable wait, so wake it up:
 -                        let item = match concurrent_state.get_mut(set)?.waiting.remove(&thread) {
 -                            Some(WaitMode::Fiber(fiber)) => WorkItem::ResumeFiber(fiber),
@@ -1316,11 +1047,7 @@
 +                            };
 +                        concurrent_state.push_high_priority(slot, item);
  
-                         let caller = store.current_guest_thread()?;
-                         store.suspend(SuspendReason::Yielding {
-@@ -4378,7 +4564,10 @@
-         // SAFETY: The `wasmtime_cranelift`-generated code that calls
-         // this method will have ensured that `storage` is a valid
+@@ -4380,3 +4566,6 @@
          // pointer containing at least `storage_len` items.
 -        let params = unsafe { core::slice::from_raw_parts(storage, storage_len) }.to_vec();
 +        let params = call_parameters(
@@ -1328,29 +1055,17 @@
 +            self.native_memory(),
 +        )?;
  
-         unsafe {
-             instance.prepare_call(
-@@ -4668,7 +4857,7 @@
-     }
- }
+@@ -4670,3 +4859,3 @@
  
 -type HostTaskFuture = Pin<Box<dyn Future<Output = Result<()>> + Send + 'static>>;
 +type BoxedHostTaskFuture = Pin<Box<dyn Future<Output = Result<()>> + Send + 'static>>;
  
- /// Represents the state of a pending host task.
- ///
-@@ -4707,7 +4896,7 @@
-     /// Terminal state used for tasks in `poll_and_block` to store the result of
-     /// their computation. Note that this state is not used for tasks in
+@@ -4709,3 +4898,3 @@
      /// `first_poll`.
 -    CalleeFinished(LiftedResult),
 +    CalleeFinished(sync_result::SyncResult),
  
-     /// Terminal state for host tasks meaning that the task was cancelled or the
-     /// result was taken.
-@@ -4761,6 +4950,155 @@
-     ty: TypeTupleIndex,
-     memory: Option<SendSyncPtr<VMMemoryDefinition>>,
+@@ -4763,2 +4952,151 @@
      string_encoding: StringEncoding,
 +}
 +
@@ -1502,11 +1217,7 @@
 +        );
 +    }
  }
- 
- /// The table ID for a guest thread, qualified by the task to which it belongs.
-@@ -5186,20 +5524,23 @@
-                 let wake_on_cancel = state.get_mut(thread.thread)?.wake_on_cancel.take();
-                 assert!(wake_on_cancel.is_none() || wake_on_cancel == Some(set));
+@@ -5188,16 +5526,19 @@
  
 -                let item = match mode {
 -                    WaitMode::Fiber(fiber) => WorkItem::ResumeFiber(fiber),
@@ -1537,11 +1248,7 @@
 -                state.push_high_priority(item);
 +                state.push_high_priority(slot, item);
              }
-         }
-         Ok(())
-@@ -5261,14 +5602,235 @@
-     }
- }
+@@ -5263,10 +5604,231 @@
  
 +// Keep erased call carriers at the original two-pointer size. Accounted
 +// closure metadata is IN its one paid Box, not added to the GuestTask Box.
@@ -1778,33 +1485,21 @@
 +    }
 +}
  
- /// Type erased result of a guest task which may be downcast to the expected
- /// type by a host caller (or simply ignored in the case of a guest caller; see
-@@ -5288,7 +5850,7 @@
-     do_not_enter: bool,
-     /// Pending calls for this instance which require `Self::backpressure` to be
+@@ -5290,3 +5852,3 @@
      /// `true` and/or `Self::do_not_enter` to be false before they can proceed.
 -    pending: BTreeMap<QualifiedThreadId, GuestCallKind>,
 +    pending: BTreeMap<QualifiedThreadId, (GuestCallKind, QueueSlot<WorkItem>)>,
  }
- 
- impl ConcurrentInstanceState {
-@@ -5354,6 +5916,7 @@
- 
- /// Represents the Component Model Async state of a store.
+@@ -5356,2 +5918,3 @@
  pub struct ConcurrentState {
 +    queue_memory: crate::runtime::native_memory::Memory,
      /// The currently running thread, if any.
-     ///
-     /// Note that we lazily materialize threads on-demand and this field is not
-@@ -5365,13 +5928,13 @@
-     ///
-     /// See `ComponentInstance::poll_until` for where we temporarily take this
+@@ -5367,3 +5930,3 @@
      /// out, poll it, then put it back to avoid any mutable aliasing hazards.
 -    futures: AlwaysMut<Option<FuturesUnordered<HostTaskFuture>>>,
 +    futures: AlwaysMut<Option<HostFutureSet>>,
      /// The table of waitables, waitable sets, etc.
-     table: AlwaysMut<ResourceTable>,
+@@ -5371,5 +5934,5 @@
      /// The "high priority" work queue for this store's event loop.
 -    high_priority: VecDeque<WorkItem>,
 +    high_priority: Queue<WorkItem>,
@@ -1812,11 +1507,7 @@
 -    low_priority: VecDeque<WorkItem>,
 +    low_priority: Queue<WorkItem>,
      /// A place to stash the reason a fiber is suspending so that the code which
-     /// resumed it will know under what conditions the fiber should be resumed
-     /// again.
-@@ -5426,12 +5989,21 @@
- 
- impl Default for ConcurrentState {
+@@ -5428,8 +5991,17 @@
      fn default() -> Self {
 +        Self::new(None)
 +    }
@@ -1838,65 +1529,41 @@
 +            table: AlwaysMut::new(table),
 +            futures: AlwaysMut::new(Some(HostFutureSet::new(paid))),
              suspend_reason: None,
-             worker: None,
-             worker_item: None,
-@@ -5463,12 +6035,12 @@
-     pub(crate) fn take_fibers_and_futures(
-         &mut self,
+@@ -5465,3 +6037,3 @@
          fibers: &mut Vec<StoreFiber<'static>>,
 -        futures: &mut Vec<FuturesUnordered<HostTaskFuture>>,
 +        futures: &mut Vec<HostFutureSet>,
      ) {
-         for entry in self.table.get_mut().iter_mut() {
-             if let Some(set) = entry.downcast_mut::<WaitableSet>() {
+@@ -5470,3 +6042,3 @@
                  for mode in mem::take(&mut set.waiting).into_values() {
 -                    if let WaitMode::Fiber(fiber) = mode {
 +                    if let WaitMode::Fiber(fiber, _slot) = mode {
                          fibers.push(fiber);
-                     }
-                 }
-@@ -5489,12 +6061,12 @@
-             WorkItem::ResumeFiber(fiber) => {
-                 fibers.push(fiber);
+@@ -5491,3 +6063,3 @@
              }
 -            WorkItem::PushFuture(future) => {
 +            WorkItem::PushFuture(future, task_slot) => {
                  self.futures
-                     .get_mut()
-                     .as_mut()
+@@ -5496,3 +6068,3 @@
                      .unwrap()
 -                    .push(future.into_inner());
 +                    .push_prepared(task_slot, future.into_inner());
              }
-             WorkItem::ResumeThread(..) | WorkItem::GuestCall(..) | WorkItem::WorkerFunction(..) => {
-             }
-@@ -5538,12 +6110,13 @@
-             interesting_tasks: _,
-             interesting_tasks_empty_waker: _,
+@@ -5540,2 +6112,3 @@
              ready_for_concurrent_call_waker: _,
 +            queue_memory: _,
          } = self;
- 
-         for entry in table.get_mut().iter_mut() {
-             if let Some(set) = entry.downcast_mut::<WaitableSet>() {
+@@ -5545,3 +6118,3 @@
                  for mode in set.waiting.values_mut() {
 -                    if let WaitMode::Fiber(fiber) = mode {
 +                    if let WaitMode::Fiber(fiber, _slot) = mode {
                          fiber.trace_gc_roots(modules, unwind, gc_roots_list);
-                     }
-                 }
-@@ -5564,7 +6137,7 @@
-             WorkItem::ResumeFiber(fiber) => {
-                 fiber.trace_gc_roots(modules, unwind, gc_roots_list);
+@@ -5566,3 +6139,3 @@
              }
 -            WorkItem::PushFuture(_future) => {
 +            WorkItem::PushFuture(_future, _task_slot) => {
                  // TODO(cm-gc): once futures can contain GC roots, we will need
-                 // to trace them.
-             }
-@@ -5572,12 +6145,8 @@
-             }
-         };
+@@ -5574,8 +6147,4 @@
  
 -        for item in high_priority {
 -            handle_item(item);
@@ -1907,11 +1574,7 @@
 +        high_priority.for_each_mut(&mut handle_item);
 +        low_priority.for_each_mut(&mut handle_item);
      }
- 
-     fn push<V: Send + Sync + 'static>(
-@@ -5615,31 +6184,65 @@
-         self.table.get_mut().delete(Resource::from(id))
-     }
+@@ -5617,3 +6186,34 @@
  
 -    fn push_future(&mut self, future: HostTaskFuture) {
 +    fn prepare_queue_slot(&self) -> Result<QueueSlot<WorkItem>> {
@@ -1947,10 +1610,7 @@
 +
 +    fn push_host_future(&mut self, slot: FutureWorkSlot, future: HostTaskFuture) {
          // Note that we can't directly push to `ConcurrentState::futures` here
-         // since this may be called from a future that's being polled inside
-         // `Self::poll_until`, which temporarily removes the `FuturesUnordered`
-         // so it has exclusive access while polling it.  Therefore, we push a
-         // work item to the "high priority" queue, which will actually push to
+@@ -5624,20 +6224,23 @@
          // `ConcurrentState::futures` later.
 -        self.push_high_priority(WorkItem::PushFuture(AlwaysMut::new(future)));
 -    }
@@ -1988,16 +1648,12 @@
 -            self.push_low_priority(item);
 +            self.push_low_priority(slot, item);
          }
-     }
- 
-@@ -5672,13 +6275,16 @@
-         // we don't need to promote anything, but we return true to indicate that
-         // work is pending for the current instance.
+@@ -5674,3 +6277,3 @@
          if self.high_priority.iter().any(&mut predicate) {
 -            true
 +            return true;
          }
-         // Otherwise, look for a low-priority work item that matches the current
+@@ -5678,5 +6281,8 @@
          // instance and promote it to high-priority.
 -        else if let Some(idx) = self.low_priority.iter().position(&mut predicate) {
 -            let item = self.low_priority.remove(idx).unwrap();
@@ -2009,27 +1665,16 @@
 +            let (slot, item) = self.low_priority.remove(idx).unwrap();
 +            self.push_high_priority(slot, item);
              true
-         } else {
-             false
-@@ -5714,7 +6320,7 @@
-         }
-     }
+@@ -5716,3 +6322,3 @@
  
 -    fn futures_mut(&mut self) -> Result<&mut FuturesUnordered<HostTaskFuture>> {
 +    fn futures_mut(&mut self) -> Result<&mut HostFutureSet> {
          match self.futures.get_mut().as_mut() {
-             Some(f) => Ok(f),
-             None => bail_bug!("futures field of concurrent state is currently taken"),
-@@ -5863,16 +6469,20 @@
-     /// can be resumed by other tasks for this component, so we mark the future
-     /// as dropped and delete the task when all threads are done.
+@@ -5865,2 +6471,3 @@
      pub(crate) fn host_future_dropped(&self, store: &mut StoreOpaque) -> Result<()> {
 +        let native_memory = store.native_memory();
          let task = store.concurrent_state_mut()?.get_mut(self.task)?;
-         if !task.already_lowered_parameters() {
-             // TODO: avoid leaking the task and trapping in this case, e.g. by
-             // allowing the replacement callback to return a value that tells
-             // the event loop "nevermind, the host gave up on this call; just
+@@ -5871,6 +6478,9 @@
              // skip it, clean up the task, and carry on with other work".
 -            task.lower_params = Some(Box::new(|store, _| {
 -                store.set_trapped();
@@ -2043,19 +1688,15 @@
 +                &native_memory,
 +            )?);
          } else {
-             task.host_future_state = HostFutureState::Dropped;
-             if task.ready_to_delete() {
-@@ -5922,6 +6532,7 @@
-     let string_encoding = options.string_encoding;
-     let token = StoreToken::new(store.as_context_mut());
+@@ -5924,5 +6534,6 @@
      let caller = store.0.current_thread()?;
 +    let native_memory = store.0.native_memory();
      let state = store.0.concurrent_state_mut()?;
  
-     let (tx, rx) = oneshot::channel();
-@@ -5929,13 +6540,17 @@
-     let instance = handle.instance().runtime_instance(component_instance);
-     let thread = GuestTask::new(
+-    let (tx, rx) = oneshot::channel();
++    let (tx, rx) = oneshot::channel(&native_memory)?;
+ 
+@@ -5931,9 +6542,13 @@
          state,
 -        Box::new(for_any_lower(move |store, params| {
 -            lower_params(handle, token.as_context_mut(store), params)
@@ -2075,11 +1716,7 @@
 +                &native_memory,
 +            )?,
              ty: task_return_type,
-             memory,
-             string_encoding,
-@@ -6068,3 +6683,323 @@
-         )
-     }
+@@ -6070 +6685,321 @@
  }
 +
 +#[cfg(test)]
@@ -2403,7 +2040,7 @@
 +}
 --- a/src/runtime/component/concurrent/abort.rs
 +++ b/src/runtime/component/concurrent/abort.rs
-@@ -1,7 +1,12 @@
+@@ -1,5 +1,10 @@
 -use crate::try_mutex::TryMutex;
 +use crate::runtime::native_memory::{self, Memory};
 +use crate::try_mutex::{TryMutex, TryMutexGuard};
@@ -2415,11 +2052,7 @@
  use core::pin::Pin;
 +use core::sync::atomic::AtomicUsize;
  use core::task::{Context, Poll, Waker};
- 
- /// Handle to a task which may be used to join on the result of executing it.
-@@ -19,7 +24,125 @@
-     // a situation where this lock can be contended. Everything's bound to the
-     // store and this is largely just used to satisfy compiler bounds. Hence,
+@@ -21,3 +26,121 @@
      // lock operations in this module all unwrap.
 -    state: Arc<TryMutex<JoinState>>,
 +    state: JoinStateHandle,
@@ -2542,11 +2175,7 @@
 +        }
 +    }
  }
- 
- enum JoinState {
-@@ -44,6 +167,15 @@
-     /// The running task has completed, so no need to abort it and nothing else
-     /// needs to wait.
+@@ -46,2 +169,11 @@
      Complete,
 +}
 +
@@ -2558,16 +2187,11 @@
 +        }
 +    }
  }
- 
- impl JoinHandle {
-@@ -86,19 +218,37 @@
-     /// Wraps the `future` provided in a new future which is "abortable" where
-     /// if the returned `JoinHandle` is flagged then the future will resolve
+@@ -88,2 +220,3 @@
      /// ASAP with `None` and drop the provided `future`.
 +    #[cfg(test)]
      pub(crate) fn run<F>(future: F) -> (JoinHandle, impl Future<Output = Option<F::Output>>)
-     where
-         F: Future,
+@@ -92,11 +225,28 @@
      {
 -        let handle = JoinHandle {
 -            state: Arc::new(TryMutex::new(JoinState::Running {
@@ -2603,20 +2227,12 @@
 -            state: handle.state.clone(),
 +            state: handle.state.clone_private(),
          };
-         (handle, future)
-     }
-@@ -134,7 +284,7 @@
- 
- struct JoinHandleFuture<F> {
+@@ -136,3 +286,3 @@
      future: ManuallyDrop<F>,
 -    state: Arc<TryMutex<JoinState>>,
 +    state: JoinStateHandle,
  }
- 
- impl<F> Future for JoinHandleFuture<F>
-@@ -208,8 +358,14 @@
- }
- 
+@@ -210,4 +360,10 @@
  #[cfg(test)]
 +pub(super) fn accounted_layout_witness() -> usize {
 +    AccountedJoinState::layout().unwrap().size()
@@ -2627,11 +2243,7 @@
      use super::JoinHandle;
 +    use alloc::{boxed::Box, string::ToString};
      use std::pin::{Pin, pin};
-     use std::task::{Context, Poll, Waker};
-     use tokio::sync::oneshot;
-@@ -291,4 +447,291 @@
-         handle.await;
-         task.await.unwrap();
+@@ -293,2 +449,289 @@
      }
 -}
 +
@@ -3191,31 +2803,20 @@
 +}
 --- a/src/runtime/component/concurrent/func.rs
 +++ b/src/runtime/component/concurrent/func.rs
-@@ -1,10 +1,12 @@
- use crate::component::concurrent::TaskId;
+@@ -2,2 +2,3 @@
  use crate::component::concurrent::{self, GuestTaskId, PreparedCall};
 +use crate::component::dynamic_memory::{self, DynamicValueMemory, DynamicValues};
  use crate::component::func::LowerContext;
- use crate::component::{AsAccessor, ComponentNamedList, Func, Lift, Lower, TypedFunc, Val};
- use crate::prelude::*;
- use crate::runtime::vm::SendSyncPtr;
+@@ -7,2 +8,3 @@
  use crate::{AsContextMut, StoreContextMut, ValRaw};
 +use alloc::sync::Arc;
  use core::marker;
- use core::mem::MaybeUninit;
- use core::ptr::NonNull;
-@@ -13,7 +15,7 @@
- /// Returned from [`Func::start_call_concurrent`] to represent a
- /// pending-but-not-yet-resolved call into wasm.
+@@ -15,3 +17,3 @@
  pub struct FuncCallConcurrent<'a, T> {
 -    call: concurrent::QueuedCall<Vec<Val>>,
 +    call: concurrent::QueuedCall<DynamicValues>,
      results: &'a mut [Val],
-     _marker: marker::PhantomData<fn(T)>,
- }
-@@ -134,8 +136,19 @@
-         params: &'a [Val],
-         results: &'a mut [Val],
+@@ -136,4 +138,15 @@
      ) -> Result<FuncCallConcurrent<'a, T>> {
 +        self.start_call_concurrent_with_memory(store, params, results, None)
 +    }
@@ -3232,11 +2833,7 @@
 +        let params = DynamicValues::clone_params(params, memory.clone())?;
 +        let prepared = self.prepare_call_dynamic(store.as_context_mut(), params, memory)?;
          let call = concurrent::QueuedCall::new(store.as_context_mut(), prepared)?;
-         Ok(FuncCallConcurrent {
-             call,
-@@ -156,9 +169,19 @@
-         let _ = accessor;
-         let FuncCallConcurrent { call, results, .. } = call;
+@@ -158,5 +171,15 @@
          let run_results = call.await?;
 -        assert_eq!(run_results.len(), results.len());
 -        for (result, slot) in run_results.into_iter().zip(results) {
@@ -3254,11 +2851,7 @@
 +                    + dynamic_memory::allocation_bytes::<DynamicValues>(1)?,
 +            );
          }
-         Ok(())
-     }
-@@ -168,8 +191,9 @@
-     fn prepare_call_dynamic<'a, T: Send + 'static>(
-         self,
+@@ -170,4 +193,5 @@
          mut store: StoreContextMut<'a, T>,
 -        params: Vec<Val>,
 -    ) -> Result<PreparedCall<Vec<Val>>> {
@@ -3266,20 +2859,12 @@
 +        memory: Option<Arc<dyn DynamicValueMemory>>,
 +    ) -> Result<PreparedCall<DynamicValues>> {
          let store = store.as_context_mut();
- 
-         concurrent::prepare_call(
-@@ -179,7 +203,7 @@
-             false,
-             move |func, store, params_out| {
+@@ -181,3 +205,3 @@
                  func.with_lower_context(store, |cx, ty| {
 -                    Self::lower_args(cx, &params, ty, params_out)
 +                    Self::lower_args(cx, params.as_slice(), ty, params_out)
                  })
-             },
-             move |func, store, results| {
-@@ -188,10 +212,36 @@
-                 } else {
-                     MAX_FLAT_RESULTS
+@@ -190,2 +214,25 @@
                  };
 +                if let Some(memory) = memory {
 +                    let values = func.with_lift_context(store, |cx, ty| {
@@ -3305,7 +2890,7 @@
 +                    return Ok(dynamic_memory::boxed(Some(&memory), values)?);
 +                }
                  let results = func.with_lift_context(store, |cx, ty| {
-                     Self::lift_results(cx, ty, results, max_flat)?.collect::<Result<Vec<_>>>()
+@@ -193,3 +240,6 @@
                  })?;
 -                Ok(Box::new(results))
 +                Ok(Box::new(DynamicValues {
@@ -3313,28 +2898,18 @@
 +                    memory: None,
 +                }))
              },
-         )
-     }
 --- a/src/runtime/component/concurrent/futures_and_streams.rs
 +++ b/src/runtime/component/concurrent/futures_and_streams.rs
-@@ -1,3 +1,4 @@
+@@ -1 +1,2 @@
 +use super::pending_future::PreparedFuture;
  use super::table::{TableDebug, TableId};
- use super::{Event, GlobalErrorContextRefCount, Waitable, WaitableCommon};
- use crate::component::concurrent::{ConcurrentState, QualifiedThreadId, WorkItem, tls};
-@@ -42,6 +43,9 @@
- 
- mod buffers;
+@@ -44,2 +45,5 @@
  
 +#[cfg(test)]
 +mod stream_outer_tests;
 +
  /// Enum for distinguishing between a stream or future in functions that handle
- /// both.
- #[derive(Copy, Clone, Debug)]
-@@ -1331,10 +1335,19 @@
-             }
-         }
+@@ -1333,2 +1337,11 @@
  
 +        // This exact local adapter inherits StreamProducer::try_into's
 +        // literal Err(me), with no user conversion callback or owning escape.
@@ -3346,25 +2921,17 @@
 +        }
 +
          Ok(Self::new_(
-             store
+@@ -1336,3 +1349,3 @@
                  .as_context_mut()
 -                .new_transmit(TransmitKind::Future, Producer(producer))?,
 +                .new_future_transmit(Producer(producer))?,
          ))
-     }
- 
-@@ -1771,7 +1784,7 @@
-         let state = store.0.concurrent_state_mut_already_forced_current_thread();
-         let id = state.get_mut(self.id).unwrap().state;
+@@ -1773,3 +1786,3 @@
          if let WriteState::HostReady { try_into, .. } = &state.get_mut(id).unwrap().write {
 -            match try_into(TypeId::of::<V>()) {
 +            match try_into.invoke_conversion(TypeId::of::<V>()) {
                  Some(result) => {
-                     self.close(store).unwrap();
-                     Ok(*result.downcast::<V>().unwrap())
-@@ -2255,6 +2268,84 @@
-             TransmitIndex::Stream(ty) => TransmitOrigin::GuestStream(id, ty),
-         }
+@@ -2257,2 +2270,80 @@
      }
 +}
 +
@@ -3445,53 +3012,32 @@
 +
 +    future.await
  }
- 
- type PollStream = Box<
-@@ -2280,8 +2371,8 @@
-     },
-     /// The write end is owned by the host, which is ready to produce items.
+@@ -2282,4 +2373,4 @@
      HostReady {
 -        produce: PollStream,
 -        try_into: TryInto,
 +        produce: ProducerPollFactory,
 +        try_into: ProducerConversionFactory,
          guest_offset: ItemCount,
-         cancel: bool,
-         cancel_waker: Option<Waker>,
-@@ -2418,6 +2509,7 @@
- impl StoreOpaque {
-     fn pipe_from_guest(
+@@ -2420,2 +2511,3 @@
          &mut self,
 +        queue_slot: super::FutureWorkSlot,
          kind: TransmitKind,
-         id: TableId<TransmitState>,
-         future: Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>,
-@@ -2439,11 +2531,12 @@
-         };
- 
+@@ -2441,3 +2533,3 @@
          self.concurrent_state_mut_already_forced_current_thread()
 -            .push_future(future.boxed());
 +            .push_future(queue_slot, future.boxed());
      }
- 
-     fn pipe_to_guest(
+@@ -2446,2 +2538,3 @@
          &mut self,
 +        queue_slot: super::FutureWorkSlot,
          kind: TransmitKind,
-         id: TableId<TransmitState>,
-         future: Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>,
-@@ -2465,7 +2558,7 @@
-         };
- 
+@@ -2467,3 +2560,3 @@
          self.concurrent_state_mut_already_forced_current_thread()
 -            .push_future(future.boxed());
 +            .push_future(queue_slot, future.boxed());
      }
- 
-     /// Drop the read end of a stream or future read from the host.
-@@ -2664,17 +2757,63 @@
-     {
-         let token = StoreToken::new(self.as_context_mut());
+@@ -2666,2 +2759,41 @@
          let state = self.0.concurrent_state_mut()?;
 +        // Preserve the original single current-thread force before storage
 +        // selection. Neither helper forces it again or keeps a factory Memory.
@@ -3533,16 +3079,12 @@
 +    {
 +        let state = self.0.concurrent_state_mut_already_forced_current_thread();
          let (_, read) = state.new_transmit(TransmitOrigin::Host {
-             typecheck: types::typecheck_payload::<P::Item>,
-         })?;
-         let producer = Arc::new(LockedState::new((Box::pin(producer), P::Buffer::default())));
-         let id = state.get_mut(read)?.state;
+@@ -2672,3 +2804,3 @@
          let mut dropped = false;
 -        let produce = Box::new({
 +        let produce = ProducerPollFactory::legacy(Box::new({
              let producer = producer.clone();
-             move || {
-                 let producer = producer.clone();
+@@ -2677,2 +2809,9 @@
                  async move {
 +                    // Any later guest realloc work is scheduled only with this
 +                    // pre-funded node, reserved before the producer is polled.
@@ -3552,40 +3094,24 @@
 +                        None
 +                    };
                      let mut state = producer.take()?;
-                     let (mine, buffer) = &mut *state;
- 
-@@ -2807,7 +2946,7 @@
-                     drop(state);
- 
+@@ -2809,3 +2948,3 @@
                      if write_buffer {
 -                        write(token, id, producer.clone(), kind).await?;
 +                        write::<T, Pin<Box<P>>, P::Item, P::Buffer, _>(token, id, producer.clone(), kind, worker_slot).await?;
                      }
- 
-                     Ok(if dropped {
-@@ -2822,8 +2961,8 @@
-                 }
-                 .boxed()
+@@ -2824,4 +2963,4 @@
              }
 -        });
 -        let try_into = Box::new(move |ty| {
 +        }));
 +        let try_into = ProducerConversionFactory::legacy(Box::new(move |ty| {
              let (mine, buffer) = producer.try_lock().ok()?.take()?;
-             match P::try_into(mine, ty) {
-                 Ok(value) => Some(value),
-@@ -2832,7 +2971,7 @@
-                     None
-                 }
+@@ -2834,3 +2973,3 @@
              }
 -        });
 +        }));
          state.get_mut(id)?.write = WriteState::HostReady {
-             produce,
-             try_into,
-@@ -2843,6 +2982,205 @@
-         Ok(read)
-     }
+@@ -2845,2 +2984,201 @@
  
 +    fn new_transmit_accounted<P, Policy>(
 +        mut self,
@@ -3787,11 +3313,7 @@
 +    }
 +
      fn set_consumer<C: StreamConsumer<T>>(
-         mut self,
-         id: TableId<TransmitHandle>,
-@@ -2851,9 +3189,71 @@
-     ) -> Result<()> {
-         let token = StoreToken::new(self.as_context_mut());
+@@ -2853,5 +3191,67 @@
          let state = self.0.concurrent_state_mut()?;
 +        // Force the original current thread exactly once, at its original point.
 +        // No user code/effect intervenes before the nonfallible helper reborrow.
@@ -3860,11 +3382,7 @@
 -        let consumer = Arc::new(LockedState::new(Box::pin(consumer)));
 +        let consumer = Storage::create(consumer_backing, consumer);
          let consume_with_buffer = {
-             let consumer = consumer.clone();
-             async move |mut host_buffer: Option<&mut dyn WriteBuffer<C::Item>>| {
-@@ -2979,16 +3379,30 @@
-                     cancel: false,
-                     cancel_waker: None,
+@@ -2981,3 +3381,17 @@
                  };
 -                self.0.pipe_from_guest(kind, id, future);
 +                if let Some(mut prepared) = paid_from_guest {
@@ -3883,9 +3401,7 @@
 +                    );
 +                }
              }
-             WriteState::HostReady { .. } => {
-                 let WriteState::HostReady { produce, .. } = mem::replace(
-                     &mut transmit.write,
+@@ -2987,6 +3401,6 @@
                      WriteState::HostReady {
 -                        produce: Box::new(|| {
 +                        produce: ProducerPollFactory::legacy(Box::new(|| {
@@ -3895,11 +3411,7 @@
 +                        })),
 +                        try_into: ProducerConversionFactory::legacy(Box::new(|_| None)),
                          guest_offset: ItemCount::ZERO,
-                         cancel: false,
-                         cancel_waker: None,
-@@ -3006,33 +3420,44 @@
-                     limit: 0,
-                 };
+@@ -3008,29 +3422,40 @@
  
 -                let future = async move {
 -                    loop {
@@ -3964,11 +3476,7 @@
 -
 -                state.push_future(Box::pin(future));
              }
-             WriteState::Dropped => {
-                 let reader = transmit.read_handle;
-@@ -3043,11 +3468,18 @@
-     }
- }
+@@ -3045,7 +3470,14 @@
  
 -async fn write<D: 'static, P: Send + 'static, T: func::Lower + 'static, B: WriteBuffer<T>>(
 +async fn write<
@@ -3985,11 +3493,7 @@
      kind: TransmitKind,
 +    worker_slot: Option<super::QueueSlot<WorkItem>>,
  ) -> Result<()> {
-     let (read, guest_offset) = tls::get(|store| {
-         let transmit = store.concurrent_state_mut()?.get_mut(id)?;
-@@ -3115,14 +3547,17 @@
-                     // host embedder frames on the stack is unsound.
-                     let (tx, rx) = oneshot::channel();
+@@ -3117,10 +3549,13 @@
                      tls::get(move |store| {
 -                        store
 -                            .concurrent_state_mut()?
@@ -4011,45 +3515,29 @@
 +                            )),
 +                        );
                          crate::error::Ok(())
-                     })?;
-                     match rx.await {
-@@ -3221,6 +3656,7 @@
-         guest_offset: ItemCount,
-         cancel: bool,
+@@ -3223,2 +3658,3 @@
      ) -> Result<ReturnCode> {
 +        let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
          let mut future = consume();
-         store.concurrent_state_mut()?.get_mut(transmit_id)?.read = ReadState::HostReady {
-             consume,
-@@ -3242,7 +3678,7 @@
-                 code
-             }
+@@ -3244,3 +3680,3 @@
              Poll::Pending => {
 -                store.pipe_from_guest(kind, transmit_id, future);
 +                store.pipe_from_guest(queue_slot, kind, transmit_id, future);
                  ReturnCode::Blocked
-             }
-         })
-@@ -3255,12 +3691,13 @@
-         store: &mut dyn VMStore,
-         kind: TransmitKind,
+@@ -3257,4 +3693,4 @@
          transmit_id: TableId<TransmitState>,
 -        produce: PollStream,
 -        try_into: TryInto,
 +        produce: ProducerPollFactory,
 +        try_into: ProducerConversionFactory,
          guest_offset: ItemCount,
-         cancel: bool,
+@@ -3262,3 +3698,4 @@
      ) -> Result<ReturnCode> {
 -        let mut future = produce();
 +        let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
 +        let mut future = produce.invoke_producer();
          store.concurrent_state_mut()?.get_mut(transmit_id)?.write = WriteState::HostReady {
-             produce,
-             try_into,
-@@ -3282,7 +3719,113 @@
-                 code
-             }
+@@ -3284,3 +3721,109 @@
              Poll::Pending => {
 -                store.pipe_to_guest(kind, transmit_id, future);
 +                store.pipe_to_guest(queue_slot, kind, transmit_id, future);
@@ -4160,11 +3648,7 @@
 +                    .concurrent_state_mut_already_forced_current_thread()
 +                    .push_host_future(queue_slot, prepared.finish());
                  ReturnCode::Blocked
-             }
-         })
-@@ -3574,6 +4117,73 @@
- 
-         let address = usize::try_from(address)?;
+@@ -3576,2 +4119,69 @@
          self.check_bounds(store.0, options, ty, address, count.as_usize())?;
 +        // Some-only staging before Busy, mem::replace or GuestReady publication.
 +        // None retains the original helper and its allocation/poll order below.
@@ -4234,11 +3718,7 @@
 +        };
 +
          let (rep, state) = self.id().get_mut(store.0).get_mut_by_index(ty, handle)?;
-         let TransmitLocalState::Write { done } = *state else {
-             bail!(Trap::ConcurrentFutureStreamOp);
-@@ -3759,14 +4369,27 @@
-                 }
- 
+@@ -3761,10 +4371,23 @@
                  set_guest_ready(concurrent_state)?;
 -                self.consume(
 -                    store.0,
@@ -4270,11 +3750,7 @@
 +                    )?
 +                }
              }
- 
-             ReadState::HostToHost { .. } => bail_bug!("unexpected HostToHost"),
-@@ -3826,6 +4449,74 @@
- 
-         let address = usize::try_from(address)?;
+@@ -3828,2 +4451,70 @@
          self.check_bounds(store.0, options, ty, address, count.as_usize())?;
 +        // Some-only staging before Busy, mem::replace or GuestReady publication.
 +        // None retains the original helper and its allocation/poll order below.
@@ -4345,11 +3821,7 @@
 +        };
 +
          let (rep, state) = self.id().get_mut(store.0).get_mut_by_index(ty, handle)?;
-         let TransmitLocalState::Read { done } = *state else {
-             bail!(Trap::ConcurrentFutureStreamOp);
-@@ -3992,15 +4683,29 @@
- 
-                 set_guest_ready(concurrent_state)?;
+@@ -3994,11 +4685,25 @@
  
 -                let code = self.produce(
 -                    store.0,
@@ -4384,11 +3856,7 @@
 +                    )?
 +                };
  
-                 if let (TransmitIndex::Future(_), ReturnCode::Completed(_)) = (ty, code) {
-                     store.0.concurrent_state_mut()?.get_mut(transmit_id)?.done = true;
-@@ -5007,6 +5712,611 @@
-     )
- }
+@@ -5009,2 +5714,607 @@
  
 +// The producer factory allocations are distinct from their returned futures and
 +// transitive captures. Only their concrete closure backing is owned here.
@@ -4996,8 +4464,6 @@
 +}
 +
  /// Helper structure to manage moving a `T` in/out of an interior `Mutex` which
- /// contains an
- /// `Option<T>`
 --- a/src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs
 +++ b/src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs
 @@ -0,0 +1,1364 @@
@@ -6614,9 +6080,9 @@
 +    let _bomb = DoublePanic;
 +    panic!("{}", s);
 +}
---- a/src/runtime/component/concurrent/host_futures/mod.rs
+--- /dev/null
 +++ b/src/runtime/component/concurrent/host_futures/mod.rs
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,88 @@
 +//! Host future backing selected without retaining a native-memory factory.
 +//!
 +//! None preserves the original upstream set. Paid initialization and individual
@@ -6631,6 +6097,7 @@
 +use futures::stream::{FuturesUnordered, Stream};
 +
 +mod abort;
++pub(super) mod call_result_channel;
 +mod paid;
 +mod paid_arc;
 +#[cfg(test)]
@@ -10491,9 +9958,7 @@
 +}
 --- a/src/runtime/component/func.rs
 +++ b/src/runtime/component/func.rs
-@@ -280,6 +280,32 @@
-             .await?
-     }
+@@ -282,2 +282,28 @@
  
 +    /// Dynamic call with explicit original-owner allocation admission.
 +    /// The supplied scope must be retained until every returned Val is destroyed.
@@ -10522,11 +9987,7 @@
 +    }
 +
      pub(crate) fn check_params_results<T>(
-         &self,
-         store: StoreContextMut<T>,
-@@ -311,6 +337,16 @@
-         mut store: impl AsContextMut,
-         params: &[Val],
+@@ -313,2 +339,12 @@
          results: &mut [Val],
 +    ) -> Result<()> {
 +        self.call_impl_with_memory(store, params, results, None)
@@ -10539,11 +10000,7 @@
 +        results: &mut [Val],
 +        memory: Option<alloc::sync::Arc<dyn crate::component::DynamicValueMemory>>,
      ) -> Result<()> {
-         let mut store = store.as_context_mut();
- 
-@@ -351,6 +387,12 @@
-                 },
-                 |cx, results_ty, src: &[ValRaw; MAX_FLAT_RESULTS]| {
+@@ -353,2 +389,8 @@
                      let max_flat = MAX_FLAT_RESULTS;
 +                    if let Some(memory) = memory {
 +                        cx.dynamic_memory = Some(memory);
@@ -10552,11 +10009,7 @@
 +                        );
 +                    }
                      for (result, slot) in
-                         Self::lift_results(cx, results_ty, src, max_flat)?.zip(results)
-                     {
-@@ -632,6 +674,34 @@
-         }
-     }
+@@ -634,2 +676,30 @@
  
 +    pub(crate) fn lift_results_into_accounted(
 +        cx: &mut LiftContext<'_>,
@@ -10587,13 +10040,9 @@
 +    }
 +
      fn load_results<'a, 'b>(
-         cx: &'a mut LiftContext<'b>,
-         results_ty: &'a TypeTuple,
 --- a/src/runtime/component/func/host.rs
 +++ b/src/runtime/component/func/host.rs
-@@ -59,10 +59,113 @@
-     }
- }
+@@ -61,2 +61,46 @@
  
 +/// An affine owner for a typed host reply's original native backing.
 +///
@@ -10640,7 +10089,7 @@
 +}
 +
  enum HostResult<T> {
-     Done(Result<T>),
+@@ -64,3 +108,62 @@
      #[cfg(feature = "component-model-async")]
 -    Future(Pin<Box<dyn Future<Output = Result<T>> + Send>>),
 +    Future(HostFuture<T>),
@@ -10704,11 +10153,7 @@
 +        self.get_mut().future.as_mut().poll(cx)
 +    }
  }
- 
- impl HostFunc {
-@@ -128,6 +231,33 @@
-         )
-     }
+@@ -130,2 +233,29 @@
  
 +    /// Equivalent for `LinkerInstance::func_wrap_async_owned`.
 +    #[cfg(feature = "async")]
@@ -10738,11 +10183,7 @@
 +    }
 +
      /// Equivalent for `Linker::func_wrap_concurrent`
-     #[cfg(feature = "component-model-async")]
-     pub(crate) fn func_wrap_concurrent<T, F, P, R>(func: F) -> Result<Arc<HostFunc>>
-@@ -145,9 +275,11 @@
-             Asyncness::Yes,
-             StaticHostFn::<_, true>::new(move |store, params| {
+@@ -147,5 +277,7 @@
                  let func = func.clone();
 -                HostResult::Future(Box::pin(
 +                let memory = store.0.native_memory();
@@ -10752,11 +10193,7 @@
 -                ))
 +                )
              }),
-         )
-     }
-@@ -226,13 +358,18 @@
-             DynamicHostFn::<_, true>::new(
-                 move |store, ty, mut params_and_results, result_start| {
+@@ -228,9 +360,14 @@
                      let func = func.clone();
 -                    HostResult::Future(Box::pin(store.wrap_call(move |accessor| {
 -                        Box::pin(async move {
@@ -10778,11 +10215,7 @@
 +                        }),
 +                    )
                  },
-             ),
-         )
-@@ -616,13 +753,7 @@
-     const ASYNC: bool = ASYNC;
- 
+@@ -618,9 +755,3 @@
      fn typecheck(ty: TypeFuncIndex, types: &InstanceType<'_>) -> Result<()> {
 -        let ty = &types.types[ty];
 -        typecheck_async(ASYNC, ty.async_)?;
@@ -10793,11 +10226,7 @@
 -        Ok(())
 +        typed_typecheck::<P, R>(ASYNC, ty, types)
      }
- 
-     fn run(&self, store: StoreContextMut<'_, T>, params: P) -> HostResult<R> {
-@@ -630,20 +761,7 @@
-     }
- 
+@@ -632,16 +763,3 @@
      fn lift_params(cx: &mut LiftContext<'_>, ty: TypeFuncIndex, src: Source<'_>) -> Result<P> {
 -        let ty = InterfaceType::Tuple(cx.types[ty].params);
 -        match src {
@@ -10815,11 +10244,7 @@
 -        }
 +        typed_lift_params::<P>(cx, ty, src)
      }
- 
-     fn lower_result(
-@@ -652,18 +770,109 @@
-         ret: R,
-         dst: Destination<'_>,
+@@ -654,14 +772,105 @@
      ) -> Result<()> {
 -        let fty = &cx.types[ty];
 -        let ty = InterfaceType::Tuple(fty.results);
@@ -10937,33 +10362,21 @@
 +        }
 +        Destination::Memory(ptr) => ret.linear_lower_to_memory(cx, ty, ptr),
      }
- }
- 
 --- a/src/runtime/component/func/options.rs
 +++ b/src/runtime/component/func/options.rs
-@@ -335,6 +335,8 @@
- /// operations (or loading from memory).
- #[doc(hidden)]
+@@ -337,2 +337,4 @@
  pub struct LiftContext<'a> {
 +    pub(crate) dynamic_depth: usize,
 +    pub(crate) dynamic_memory: Option<alloc::sync::Arc<dyn crate::component::DynamicValueMemory>>,
      store_id: StoreId,
-     current_scope_id: Option<u32>,
-     /// Like lowering, lifting always has options configured.
-@@ -386,6 +388,8 @@
-         let (component, instance) = instance.component_and_self();
- 
+@@ -388,2 +390,4 @@
          Ok(LiftContext {
 +            dynamic_depth: 0,
 +            dynamic_memory: None,
              store_id,
-             current_scope_id,
-             memory,
 --- a/src/runtime/component/func/typed.rs
 +++ b/src/runtime/component/func/typed.rs
-@@ -1573,6 +1573,33 @@
-         self.to_str_from_memory(encoding, memory)
-     }
+@@ -1575,2 +1575,29 @@
  
 +    /// Borrow a validated view which can encode this string into prepaid storage.
 +    ///
@@ -10993,11 +10406,7 @@
 +    }
 +
      pub(crate) fn to_str_from_memory<'a>(
-         &self,
-         encoding: StringEncoding,
-@@ -1591,6 +1618,32 @@
-         }
-     }
+@@ -1593,2 +1620,28 @@
  
 +    pub(crate) fn to_string_accounted(&self, cx: &LiftContext<'_>) -> Result<String> {
 +        use crate::component::dynamic_memory::{decoded_text, text};
@@ -11026,11 +10435,7 @@
 +    }
 +
      fn decode_utf8<'a>(&self, memory: &'a [u8]) -> Result<Cow<'a, str>> {
-         // Note that bounds-checking already happen in construction of `WasmStr`
-         // so this is never expected to panic. This could theoretically be
-@@ -1614,6 +1667,122 @@
-         Ok(encoding_rs::mem::decode_latin1(
-             &memory[self.ptr..][..self.len],
+@@ -1616,2 +1669,118 @@
          ))
 +    }
 +}
@@ -11149,11 +10554,7 @@
 +        }
 +        Ok(())
      }
- }
- 
-@@ -3118,3 +3287,81 @@
-     // a tradeoff of propagating a lot of unsafety, so it may not be worth it.
-     panic!("bad type information detected");
+@@ -3120 +3289,79 @@
  }
 +
 +#[cfg(test)]
@@ -11235,25 +10636,16 @@
 +}
 --- a/src/runtime/component/instance.rs
 +++ b/src/runtime/component/instance.rs
-@@ -1,5 +1,6 @@
- use crate::component::func::HostFunc;
+@@ -2,2 +2,3 @@
  use crate::component::matching::InstanceType;
 +use crate::component::resource_types::ResourceTypes;
  use crate::component::store::{ComponentInstanceId, StoreComponentInstanceId};
- use crate::component::{
-     Component, ComponentExportIndex, ComponentNamedList, Func, Lift, Lower, ResourceType,
-@@ -687,8 +688,6 @@
-     },
- }
+@@ -689,4 +690,2 @@
  
 -pub type ImportedResources = TryPrimaryMap<ResourceIndex, ResourceType>;
 -
  impl<'a> Instantiator<'a> {
-     fn new(
-         component: &'a Component,
-@@ -698,13 +697,18 @@
-         let env_component = component.env_component();
-         let (modules, engine, breakpoints) = store.modules_and_engine_and_breakpoints_mut();
+@@ -700,4 +699,9 @@
          modules.register_component(component, engine, breakpoints)?;
 -        let imported_resources: ImportedResources =
 -            TryPrimaryMap::with_capacity(env_component.imported_resources.len())?;
@@ -11265,17 +10657,12 @@
 +        };
 +        let imported_resources = ResourceTypes::with_capacity(capacity, memory)?;
  
-         let instance = ComponentInstance::new(
-             store.store_data().components.next_component_instance_id(),
+@@ -706,3 +710,3 @@
              component,
 -            try_new::<Arc<_>>(imported_resources)?,
 +            imported_resources,
              imports,
-             store.traitobj(),
-         )?;
-@@ -1037,16 +1041,11 @@
-         store.store_data_mut().component_instance_mut(self.id)
-     }
+@@ -1039,12 +1043,7 @@
  
 -    // NB: This method is only intended to be called during the instantiation
 -    // process because the `Arc::get_mut` here is fallible and won't generally
@@ -11293,48 +10680,28 @@
 +    fn instance_resource_types_mut<'b>(&self, store: &'b mut StoreOpaque) -> &'b mut ResourceTypes {
 +        self.instance_mut(store).resource_types_mut()
      }
- }
- 
-@@ -1061,7 +1060,7 @@
- pub struct InstancePre<T: 'static> {
-     component: Component,
+@@ -1063,3 +1062,3 @@
      imports: Arc<PrimaryMap<RuntimeImportIndex, RuntimeImport>>,
 -    resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
 +    resource_types: ResourceTypes,
      asyncness: Asyncness,
-     _marker: marker::PhantomData<fn() -> T>,
- }
-@@ -1089,7 +1088,7 @@
-     pub(crate) unsafe fn new_unchecked(
-         component: Component,
+@@ -1091,3 +1090,3 @@
          imports: Arc<PrimaryMap<RuntimeImportIndex, RuntimeImport>>,
 -        resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
 +        resource_types: ResourceTypes,
      ) -> InstancePre<T> {
-         let mut asyncness = Asyncness::No;
-         for (_, import) in imports.iter() {
 --- a/src/runtime/component/linker.rs
 +++ b/src/runtime/component/linker.rs
-@@ -3,6 +3,7 @@
- use crate::component::func::HostFunc;
- use crate::component::instance::RuntimeImport;
+@@ -5,2 +5,3 @@
  use crate::component::matching::{InstanceType, TypeChecker};
 +use crate::component::resource_types::ResourceTypes;
  use crate::component::types;
- use crate::component::{
-     Component, ComponentNamedList, Instance, InstancePre, Lift, Lower, ResourceType, Val,
-@@ -169,7 +170,7 @@
-             engine: &self.engine,
-             types: component.types(),
+@@ -171,3 +172,3 @@
              strings: &self.strings,
 -            imported_resources: try_new::<Arc<_>>(TryPrimaryMap::new())?,
 +            imported_resources: ResourceTypes::new()?,
          };
- 
-         // Walk over the component's list of import names and use that to lookup
-@@ -558,6 +559,30 @@
-         Ok(())
-     }
+@@ -560,2 +561,26 @@
  
 +    /// Define the ordinary async-Rust/sync-WIT callback with an affine reply
 +    /// owner retained through actual lowering and reply destruction.
@@ -11361,20 +10728,13 @@
 +    }
 +
      /// Defines a new host-provided async function into this [`LinkerInstance`].
-     ///
-     /// This function defines a host function available to call from
 --- a/src/runtime/component/matching.rs
 +++ b/src/runtime/component/matching.rs
-@@ -2,24 +2,23 @@
- use crate::component::ResourceType;
- use crate::component::func::HostFunc;
+@@ -4,2 +4,3 @@
  use crate::component::linker::Definition;
 +use crate::component::resource_types::ResourceTypes;
  use crate::component::types::{FutureType, StreamType};
- use crate::runtime::vm::component::ComponentInstance;
- use crate::types::matching;
- use crate::{Engine, prelude::*};
- use alloc::sync::Arc;
+@@ -10,7 +11,5 @@
  use wasmtime_environ::component::{
 -    ComponentTypes, NameMap, ResourceIndex, TypeComponentInstance, TypeDef, TypeFuncIndex,
 -    TypeFutureTableIndex, TypeModule, TypeResourceTable, TypeResourceTableIndex,
@@ -11384,59 +10744,36 @@
  };
 -use wasmtime_environ::prelude::TryPrimaryMap;
  use wasmtime_environ::{Atom, StringPool};
- 
- pub struct TypeChecker<'a> {
-     pub engine: &'a Engine,
-     pub types: &'a Arc<ComponentTypes>,
+@@ -21,3 +20,3 @@
      pub strings: &'a StringPool,
 -    pub imported_resources: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
 +    pub imported_resources: ResourceTypes,
  }
- 
- #[derive(Copy, Clone)]
-@@ -32,7 +31,7 @@
-     /// If this isn't present then resource types are considered "abstract" and
-     /// un-intantiated. This doesn't refer to a concrete instantiated component,
+@@ -34,3 +33,3 @@
      /// but rather an abstract component type.
 -    pub resources: Option<&'a Arc<TryPrimaryMap<ResourceIndex, ResourceType>>>,
 +    pub resources: Option<&'a ResourceTypes>,
  }
- 
- impl TypeChecker<'_> {
-@@ -95,8 +94,7 @@
-                     // succeed since `imported_resources` has not yet been
-                     // cloned.
+@@ -97,4 +96,3 @@
                      None => {
 -                        let resources = Arc::get_mut(&mut self.imported_resources).unwrap();
 -                        let id = resources.push(*actual)?;
 +                        let id = self.imported_resources.push(*actual)?;
                          assert_eq!(id, i);
-                     }
- 
 --- a/src/runtime/component/mod.rs
 +++ b/src/runtime/component/mod.rs
-@@ -111,6 +111,8 @@
- mod linker;
- mod matching;
+@@ -113,2 +113,4 @@
  mod resource_table;
 +mod resource_types;
 +pub(crate) use self::resource_types::ResourceTypes;
  mod resources;
- mod storage;
- pub(crate) mod store;
-@@ -126,7 +128,8 @@
-     VMComponentAsyncStore, VecBuffer, WriteBuffer,
- };
+@@ -128,3 +130,4 @@
  pub use self::func::{
 -    ComponentNamedList, ComponentType, Func, Lift, Lower, TypedFunc, WasmList, WasmStr,
 +    ComponentNamedList, ComponentType, Func, HostOutput, Lift, Lower, TypedFunc, WasmList, WasmStr,
 +    WasmStrUtf8,
  };
- pub use self::has_data::*;
- pub use self::instance::{Instance, InstancePre};
-@@ -810,3 +813,9 @@
- 
- #[cfg(not(feature = "component-model-async"))]
+@@ -812 +815,7 @@
  pub(crate) use concurrent_disabled as concurrent;
 +
 +mod dynamic_memory;
@@ -11589,33 +10926,20 @@
 +}
 --- a/src/runtime/component/store.rs
 +++ b/src/runtime/component/store.rs
-@@ -1,5 +1,6 @@
- use crate::prelude::*;
+@@ -2,2 +2,3 @@
  use crate::runtime::component::{HostResourceData, Instance};
 +use crate::runtime::native_memory::{Memory as NativeMemory, NativeMap};
  use crate::runtime::vm;
- use crate::runtime::vm::component::{
-     CallContext, ComponentInstance, HandleCounter, HandleTable, OwnedComponentInstance,
-@@ -8,7 +9,6 @@
- use crate::{AsContext, AsContextMut, Engine, Store, StoreContextMut};
- use core::pin::Pin;
+@@ -10,3 +11,2 @@
  use wasmtime_environ::component::RuntimeComponentInstanceIndex;
 -use wasmtime_environ::prelude::TryPrimaryMap;
  
- #[cfg(feature = "component-model-async")]
- use crate::{
-@@ -37,7 +37,7 @@
- pub struct ComponentStoreData {
-     /// All component instances, in a similar manner to how core wasm instances
+@@ -39,3 +39,3 @@
      /// are managed.
 -    instances: TryPrimaryMap<ComponentInstanceId, Option<OwnedComponentInstance>>,
 +    instances: NativeMap<ComponentInstanceId, Option<OwnedComponentInstance>>,
  
-     /// Whether an instance belonging to this store has trapped.
-     trapped: bool,
-@@ -92,9 +92,9 @@
- }
- 
+@@ -94,5 +94,5 @@
  impl ComponentStoreData {
 -    pub fn new(engine: &Engine) -> ComponentStoreData {
 +    pub fn new(engine: &Engine, memory: NativeMemory) -> ComponentStoreData {
@@ -11623,84 +10947,50 @@
 -            instances: Default::default(),
 +            instances: NativeMap::new(memory.clone()),
              trapped: false,
-             num_component_instances: 0,
-             component_host_table: Default::default(),
-@@ -103,7 +103,7 @@
-             task_state: if engine.tunables().concurrency_support {
-                 #[cfg(feature = "component-model-async")]
+@@ -105,3 +105,3 @@
                  {
 -                    ComponentTaskState::Concurrent(Default::default())
 +                    ComponentTaskState::Concurrent(ConcurrentState::new(memory))
                  }
-                 #[cfg(not(feature = "component-model-async"))]
-                 {
-@@ -289,7 +289,7 @@
-     pub(crate) fn push_component_instance(
-         &mut self,
+@@ -291,3 +291,3 @@
          data: OwnedComponentInstance,
 -    ) -> Result<ComponentInstanceId, OutOfMemory> {
 +    ) -> Result<ComponentInstanceId> {
          let expected = data.get().id();
-         let ret = self.components.instances.push(Some(data))?;
-         assert_eq!(expected, ret);
 --- a/src/runtime/component/types.rs
 +++ b/src/runtime/component/types.rs
-@@ -3,6 +3,7 @@
- #[cfg(feature = "component-model-async")]
- use crate::component::ComponentType;
+@@ -5,2 +5,3 @@
  use crate::component::matching::InstanceType;
 +use crate::component::resource_types::ResourceTypes;
  use crate::{Engine, ExternType, FuncType, prelude::*};
- use alloc::sync::Arc;
- use core::fmt;
-@@ -42,7 +43,7 @@
- struct Handle<T> {
-     index: T,
+@@ -44,3 +45,3 @@
      types: Arc<ComponentTypes>,
 -    resources: Option<Arc<TryPrimaryMap<ResourceIndex, ResourceType>>>,
 +    resources: Option<ResourceTypes>,
  }
- 
- impl<T> Handle<T> {
-@@ -72,7 +73,7 @@
-         (self.index == other.index
-             && Arc::ptr_eq(&self.types, &other.types)
+@@ -74,3 +75,3 @@
              && match (&self.resources, &other.resources) {
 -                (Some(a), Some(b)) => Arc::ptr_eq(a, b),
 +                (Some(a), Some(b)) => ResourceTypes::ptr_eq(a, b),
                  (None, None) => true,
-                 _ => false,
-             })
 --- a/src/runtime/component/values.rs
 +++ b/src/runtime/component/values.rs
-@@ -1,3 +1,4 @@
+@@ -1 +1,2 @@
 +mod accounted;
  use crate::ValRaw;
- use crate::component::ResourceAny;
- use crate::component::concurrent::{self, ErrorContext, FutureAny, StreamAny};
-@@ -103,6 +104,9 @@
-         ty: InterfaceType,
-         src: &mut Iter<'_, ValRaw>,
+@@ -105,2 +106,5 @@
      ) -> Result<Val> {
 +        if cx.dynamic_memory.is_some() {
 +            return accounted::lift(cx, ty, src);
 +        }
          Ok(match ty {
-             InterfaceType::Bool => Val::Bool(bool::linear_lift_from_flat(cx, ty, next(src))?),
-             InterfaceType::S8 => Val::S8(i8::linear_lift_from_flat(cx, ty, next(src))?),
-@@ -241,6 +245,9 @@
- 
-     /// Deserialize a value of this type from the heap.
+@@ -243,2 +247,5 @@
      pub(crate) fn load(cx: &mut LiftContext<'_>, ty: InterfaceType, bytes: &[u8]) -> Result<Val> {
 +        if cx.dynamic_memory.is_some() {
 +            return accounted::load(cx, ty, bytes);
 +        }
          Ok(match ty {
-             InterfaceType::Bool => Val::Bool(bool::linear_lift_from_memory(cx, ty, bytes)?),
-             InterfaceType::S8 => Val::S8(i8::linear_lift_from_memory(cx, ty, bytes)?),
-@@ -1121,11 +1128,10 @@
-             let payload_offset = usize::try_from(info.payload_offset32).unwrap();
-             let case_abi = cx.types.canonical_abi(&case_ty);
+@@ -1123,7 +1130,6 @@
              let case_size = usize::try_from(case_abi.size32).unwrap();
 -            Some(Box::new(Val::load(
 -                cx,
@@ -11712,11 +11002,7 @@
 +                crate::component::dynamic_memory::boxed(cx.dynamic_memory.as_ref(), value)?
 +            })
          }
-         None => None,
-     };
-@@ -1147,7 +1153,10 @@
-         Some(ty) => {
-             cx.consume_fuel(size_of::<Val>())?;
+@@ -1149,3 +1155,6 @@
              (
 -                Some(Box::new(Val::lift(cx, ty, src)?)),
 +                Some({
@@ -11724,11 +11010,7 @@
 +                    crate::component::dynamic_memory::boxed(cx.dynamic_memory.as_ref(), value)?
 +                }),
                  cx.types.canonical_abi(&ty).flat_count(usize::MAX).unwrap(),
-             )
-         }
-@@ -1218,11 +1227,39 @@
-     mut offset: u32,
-     mut bits: u32,
+@@ -1220,2 +1229,26 @@
  ) -> Result<()> {
 +    if let Some(memory) = &cx.dynamic_memory {
 +        let remaining = ty.names.len().saturating_sub(offset as usize).min(32);
@@ -11755,8 +11037,7 @@
 +        }
 +    }
      while bits > 0 && usize::try_from(offset).unwrap() < ty.names.len() {
-         if bits & 1 != 0 {
-             let name = &ty.names[offset as usize];
+@@ -1224,3 +1257,7 @@
              cx.consume_fuel(name.len())?;
 -            flags.push(name.clone());
 +            flags.push(if cx.dynamic_memory.is_some() {
@@ -11765,8 +11046,6 @@
 +                name.clone()
 +            });
          }
-         bits >>= 1;
-         offset += 1;
 --- a/src/runtime/component/values/accounted.rs
 +++ b/src/runtime/component/values/accounted.rs
 @@ -0,0 +1,403 @@
@@ -12175,28 +11454,18 @@
 +}
 --- a/src/runtime/func.rs
 +++ b/src/runtime/func.rs
-@@ -376,7 +376,8 @@
-         ty: FuncType,
-         func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<()> + Send + Sync + 'static,
+@@ -378,3 +378,4 @@
      ) -> Self {
 -        Self::try_new_(store, ty, func).panic_on_oom()
 +        Self::try_new_(store, ty, func)
 +            .expect("host function allocation or admission failed; use Func::try_new")
      }
- 
-     /// Same as [`Func::new`] but returns an error instead of panicking on
-@@ -399,7 +400,7 @@
-         mut store: impl AsContextMut<Data = T>,
-         ty: FuncType,
+@@ -401,3 +402,3 @@
          func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<()> + Send + Sync + 'static,
 -    ) -> Result<Self, OutOfMemory> {
 +    ) -> Result<Self> {
          let store = store.as_context_mut().0;
-         let host = HostFunc::new(store.engine(), ty, func)?;
- 
-@@ -449,7 +450,10 @@
- 
-         // SAFETY: the `T` used by `func` matches the `T` of the store we're
+@@ -451,3 +452,6 @@
          // inserting into via this function's type signature.
 -        unsafe { host.into_func(store).panic_on_oom() }
 +        unsafe {
@@ -12204,11 +11473,7 @@
 +                .expect("host function allocation or admission failed")
 +        }
      }
- 
-     /// Creates a new host-defined WebAssembly function which, when called,
-@@ -540,7 +544,10 @@
- 
-         // SAFETY: the `T` used by `func` matches the `T` of the store we're
+@@ -542,3 +546,6 @@
          // inserting into via this function's type signature.
 -        unsafe { host.into_func(store).panic_on_oom() }
 +        unsafe {
@@ -12216,11 +11481,7 @@
 +                .expect("host function allocation or admission failed")
 +        }
      }
- 
-     /// Creates a new `Func` from a store and a funcref within that store.
-@@ -861,7 +868,10 @@
- 
-         // SAFETY: The `T` the closure takes is the same as the `T` of the store
+@@ -863,3 +870,6 @@
          // we're inserting into via the type signature above.
 -        unsafe { host.into_func(store).panic_on_oom() }
 +        unsafe {
@@ -12228,31 +11489,19 @@
 +                .expect("host function allocation or admission failed")
 +        }
      }
- 
-     /// Returns the underlying wasm type that this `Func` has.
-@@ -2688,7 +2698,7 @@
-     ///
-     /// Can only be inserted into stores with a matching `T` relative to when
+@@ -2690,3 +2700,3 @@
      /// this `HostFunc` was first created.
 -    pub unsafe fn to_func(self: &Arc<Self>, store: &mut StoreOpaque) -> Result<Func, OutOfMemory> {
 +    pub unsafe fn to_func(self: &Arc<Self>, store: &mut StoreOpaque) -> Result<Func> {
          self.validate_store(store);
-         let (funcrefs, modules) = store.func_refs_and_modules();
-         let funcref = funcrefs.push_arc_host(self.clone(), modules)?;
-@@ -2748,7 +2758,7 @@
-     }
- 
+@@ -2750,3 +2760,3 @@
      /// Same as [`HostFunc::to_func`], different ownership.
 -    unsafe fn into_func(self, store: &mut StoreOpaque) -> Result<Func, OutOfMemory> {
 +    unsafe fn into_func(self, store: &mut StoreOpaque) -> Result<Func> {
          self.validate_store(store);
- 
-         // This function could be called by a guest at any time, and it requires
 --- a/src/runtime/instance.rs
 +++ b/src/runtime/instance.rs
-@@ -984,14 +984,9 @@
-         // will insert a function into the store automatically as part of
-         // instantiation, so reserve space here to make insertion more efficient
+@@ -986,10 +986,5 @@
          // as it won't have to realloc during the instantiation.
 -        funcrefs.reserve_storage(host_funcs)?;
 -
@@ -12266,19 +11515,13 @@
 +        // Legacy callers retain their original host_funcs reservation.
 +        funcrefs.push_instance_pre(items.clone(), func_refs.clone(), host_funcs)?;
      }
- 
-     store.set_async_required(asyncness);
 --- a/src/runtime/limits.rs
 +++ b/src/runtime/limits.rs
-@@ -1,4 +1,5 @@
+@@ -1,2 +1,3 @@
  use crate::prelude::*;
 +use alloc::sync::Arc;
  
- /// Value returned by [`ResourceLimiter::instances`] default method
- pub const DEFAULT_INSTANCE_LIMIT: usize = 10000;
-@@ -6,6 +7,91 @@
- pub const DEFAULT_TABLE_LIMIT: usize = 10000;
- /// Value returned by [`ResourceLimiter::memories`] default method
+@@ -8,2 +9,87 @@
  pub const DEFAULT_MEMORY_LIMIT: usize = 10000;
 +
 +/// Owned admission for one actual native backing allocation.
@@ -12366,11 +11609,7 @@
 +    }
 +}
  
- /// Used by hosts to limit resource consumption of instances.
- ///
-@@ -73,6 +159,17 @@
-         maximum: Option<usize>,
-     ) -> Result<bool>;
+@@ -75,2 +161,13 @@
  
 +    /// Confirms that a permitted initial linear-memory allocation or growth
 +    /// succeeded. Called after the actual accessible bytes exist, before later
@@ -12384,11 +11623,7 @@
 +    fn memory_allocation_failed(&mut self) {}
 +
      /// Notifies the resource limiter that growing a linear memory, permitted by
-     /// the `memory_growing` method, has failed.
-     ///
-@@ -123,6 +220,16 @@
-     fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
-         log::debug!("ignoring table growth failure error: {error:?}");
+@@ -125,2 +222,12 @@
          Ok(())
 +    }
 +
@@ -12401,11 +11636,7 @@
 +    fn table_allocating(&mut self, _bytes: usize) -> Result<Option<Box<dyn TableAllocation>>> {
 +        Ok(None)
      }
- 
-     /// The maximum number of instances that can be created for a `Store`.
-@@ -179,6 +286,12 @@
-         maximum: Option<usize>,
-     ) -> Result<bool>;
+@@ -181,2 +288,8 @@
  
 +    /// Identical to [`ResourceLimiter::memory_allocated`].
 +    fn memory_allocated(&mut self) {}
@@ -12414,11 +11645,7 @@
 +    fn memory_allocation_failed(&mut self) {}
 +
      /// Identical to [`ResourceLimiter::memory_grow_failed`]
-     fn memory_grow_failed(&mut self, error: crate::Error) -> Result<()> {
-         log::debug!("ignoring memory growth failure error: {error:?}");
-@@ -197,6 +310,16 @@
-     fn table_grow_failed(&mut self, error: crate::Error) -> Result<()> {
-         log::debug!("ignoring table growth failure error: {error:?}");
+@@ -199,2 +312,12 @@
          Ok(())
 +    }
 +
@@ -12431,13 +11658,9 @@
 +    fn table_allocating(&mut self, _bytes: usize) -> Result<Option<Box<dyn TableAllocation>>> {
 +        Ok(None)
      }
- 
-     /// Identical to [`ResourceLimiter::instances`]`
 --- a/src/runtime/linker.rs
 +++ b/src/runtime/linker.rs
-@@ -1241,7 +1241,10 @@
-                 &self.pool[key.module],
-                 &self.pool[key.name],
+@@ -1243,3 +1243,6 @@
                  // Should be safe since `T` is connecting the linker and store
 -                unsafe { item.to_extern(store.0).panic_on_oom() },
 +                unsafe {
@@ -12445,20 +11668,12 @@
 +                        .expect("host function allocation or admission failed")
 +                },
              )
-         })
-     }
-@@ -1305,7 +1308,7 @@
-         T: 'static,
-     {
+@@ -1307,3 +1310,3 @@
          self.try_get_by_import(store, import)
 -            .expect("out of memory")
 +            .expect("host function allocation or admission failed")
      }
- 
-     /// Same as [`Linker::get_by_import`] but returns an error instead of
-@@ -1359,39 +1362,24 @@
-     where
-         T: 'static,
+@@ -1361,9 +1364,9 @@
      {
 -        if let Some(external) = self.get(&mut store, module, "").map(Some).or_else(|e| {
 -            if e.is::<OutOfMemory>() {
@@ -12475,7 +11690,7 @@
 +            }
 +            let external = self.get(&mut store, module, name)?;
              if let Extern::Func(func) = external {
-                 return Ok(func);
+@@ -1371,19 +1374,4 @@
              }
 -            bail!("default export in '{module}' is not a function");
 -        }
@@ -12497,35 +11712,24 @@
 +            if name.is_empty() {
 +                bail!("default export in '{module}' is not a function");
              }
-             bail!("`_start` in '{module}' is not a function");
-         }
+@@ -1392,4 +1380,4 @@
  
 -        // Otherwise return a no-op function.
 -        Ok(Func::wrap(store, || {}))
 +        // Otherwise return a no-op function, retaining fallible admission.
 +        Func::try_wrap(store, || {})
      }
- }
- 
-@@ -1434,7 +1422,7 @@
-     /// Note the unsafety here is due to calling `HostFunc::to_func`. The
-     /// requirement here is that the `T` that was originally used to create the
+@@ -1436,3 +1424,3 @@
      /// `HostFunc` matches the `T` on the store.
 -    pub(crate) unsafe fn to_extern(&self, store: &mut StoreOpaque) -> Result<Extern, OutOfMemory> {
 +    pub(crate) unsafe fn to_extern(&self, store: &mut StoreOpaque) -> Result<Extern> {
          match self {
-             Definition::Extern { item, .. } => Ok(item.clone()),
-             // SAFETY: the contract of this function is the same as what's
 --- a/src/runtime/module.rs
 +++ b/src/runtime/module.rs
-@@ -22,6 +22,7 @@
-     CompiledFunctionsTable, CompiledModuleInfo, EntityIndex, FuncKey, HostPtr, ModuleTypes,
-     ObjectKind, StaticModuleIndex, TypeTrace, VMOffsets, VMSharedTypeIndex, WasmChecksum,
+@@ -24,2 +24,3 @@
  };
 +mod native_registry;
  mod registry;
- 
- pub use registry::*;
 --- a/src/runtime/module/native_registry.rs
 +++ b/src/runtime/module/native_registry.rs
 @@ -0,0 +1,242 @@
@@ -12773,33 +11977,25 @@
 +}
 --- a/src/runtime/module/registry.rs
 +++ b/src/runtime/module/registry.rs
-@@ -1,8 +1,10 @@
- //! Implements a registry of modules for a store.
+@@ -2,2 +2,3 @@
  
 +use super::native_registry::{RegistryIndices, RegistryMap};
  use crate::code::{EngineCode, EngineCodePC, ModuleWithCode, StoreCode, StoreCodePC};
- #[cfg(feature = "component-model")]
+@@ -5,2 +6,3 @@
  use crate::component::Component;
 +use crate::runtime::native_memory::Memory;
  use crate::runtime::vm::VMWasmCallFunction;
- use crate::sync::{OnceLock, RwLock};
- use crate::vm::CompiledModuleId;
-@@ -64,18 +66,21 @@
-     /// then take the last element of the range. That picks the
-     /// highest start address <= the query, and we can check whether
+@@ -66,3 +68,3 @@
      /// it contains the address.
 -    loaded_code: TryBTreeMap<StoreCodePC, LoadedCode>,
 +    loaded_code: RegistryMap<StoreCodePC, LoadedCode>,
  
-     /// Map from EngineCodePC start to StoreCodePC start. We use this
-     /// to memoize the store-code creation process: each EngineCode is
+@@ -71,3 +73,3 @@
      /// instantiated to a StoreCode only once per store.
 -    store_code: TryBTreeMap<EngineCodePC, StoreCodePC>,
 +    store_code: RegistryMap<EngineCodePC, StoreCodePC>,
  
-     /// Modules instantiated in this registry.
-     ///
-     /// Every module is placed in this map, but not every module will
+@@ -77,3 +79,6 @@
      /// be in a LoadedCode entry, because the module may have no text.
 -    modules: TryBTreeMap<RegisteredModuleId, Module>,
 +    modules: RegistryMap<RegisteredModuleId, Module>,
@@ -12807,29 +12003,17 @@
 +    // Retain the factory after every registry buffer and its affine owner.
 +    memory: Memory,
  }
- 
- struct LoadedCode {
-@@ -94,7 +99,7 @@
-     ///
-     /// This is lazily populated as modules are registered and instantiated from
+@@ -96,3 +101,3 @@
      /// a component.
 -    modules: TrySecondaryMap<StaticModuleIndex, Option<RegisteredModuleId>>,
 +    modules: RegistryIndices,
  }
- 
- /// An identifier of a module that has previously been inserted into a
-@@ -106,7 +111,7 @@
- pub struct RegisteredModuleId(CompiledModuleId);
- 
+@@ -108,3 +113,3 @@
  fn assert_no_overlap(
 -    loaded_code: &TryBTreeMap<StoreCodePC, LoadedCode>,
 +    loaded_code: &RegistryMap<StoreCodePC, LoadedCode>,
      range: Range<StoreCodePC>,
- ) {
-     if let Some((start, _)) = loaded_code.range(range.start..).next() {
-@@ -150,6 +155,15 @@
- }
- 
+@@ -152,2 +157,11 @@
  impl ModuleRegistry {
 +    pub(crate) fn new(memory: Memory) -> Result<Self> {
 +        Ok(Self {
@@ -12841,55 +12025,35 @@
 +    }
 +
      /// Get a previously-registered module by id.
-     pub fn module_by_id(&self, id: RegisteredModuleId) -> Option<&Module> {
-         self.modules.get(id)
-@@ -275,6 +289,9 @@
-             Engine::same(engine, module_or_component.engine()),
-             "cross-`Engine` usage is not supported"
+@@ -277,2 +291,5 @@
          );
 +        if self.memory.is_some() {
 +            return self.register_accounted(module_or_component, engine, breakpoint_state);
 +        }
          let compiled_id = match module_or_component {
-             ModuleOrComponent::Module(module) => module.id(),
-             #[cfg(feature = "component-model")]
-@@ -289,7 +306,9 @@
-         let id = match module_or_component {
-             ModuleOrComponent::Module(module) => {
+@@ -291,3 +308,5 @@
                  let id = RegisteredModuleId(compiled_id);
 -                self.modules.entry(id).or_insert_with(|| module.clone())?;
 +                self.modules
 +                    .legacy_entry(id)
 +                    .or_insert_with(|| module.clone())?;
                  Some(id)
-             }
-             #[cfg(feature = "component-model")]
-@@ -297,7 +316,7 @@
-         };
- 
+@@ -299,3 +318,3 @@
          // Create a StoreCode if one does not already exist.
 -        let store_code_pc = match self.store_code.entry(code.text_range().start) {
 +        let store_code_pc = match self.store_code.legacy_entry(code.text_range().start) {
              Entry::Vacant(v) => {
-                 let store_code = StoreCode::new(engine, code)?;
-                 let store_code_pc = store_code.text_range().start;
-@@ -307,7 +326,7 @@
-                     #[cfg(feature = "component-model")]
-                     ModuleOrComponent::Component(component) => component.index(),
+@@ -309,3 +328,3 @@
                  };
 -                self.loaded_code.insert(
 +                self.loaded_code.insert_prepared(
                      store_code_pc,
-                     LoadedCode {
-                         code: store_code,
-@@ -328,10 +347,109 @@
-                 .expect("loaded_code must have entry for StoreCodePC");
-             loaded_code
+@@ -330,3 +349,3 @@
                  .modules
 -                .insert(module.env_module().module_index, Some(id))?;
 +                .insert_prepared(module.env_module().module_index, Some(id))?;
              breakpoint_state.update(&mut loaded_code.code, module)?;
-         }
+@@ -334,2 +353,101 @@
  
 +        Ok(id)
 +    }
@@ -12991,8 +12155,6 @@
 +            breakpoint_state.update(&mut loaded.code, module)?;
 +        }
          Ok(id)
-     }
- 
 --- a/src/runtime/native_memory.rs
 +++ b/src/runtime/native_memory.rs
 @@ -0,0 +1,386 @@
@@ -13384,9 +12546,7 @@
 +}
 --- a/src/runtime/store.rs
 +++ b/src/runtime/store.rs
-@@ -34,11 +34,10 @@
- //!
- //! Next comes the internal structure of the `Store<T>` itself. This looks like:
+@@ -36,7 +36,6 @@
  //!
 -//! * `Store<T>` - this type is just a pointer large. It's primarily just
 -//!   intended to be consumed by the outside world. Note that the "just a
@@ -13398,30 +12558,18 @@
 +//!   stable address of StoreInner, rather than the wrapper's size, enables its
 +//!   self trait-object pointer to remain unchanged when the wrapper moves.
  //!
- //! * `StoreInner<T>` - the first layer of the contents of a `Store<T>`, what's
- //!   stored inside the `Box`. This is the general Rust pattern when one struct
-@@ -95,6 +94,7 @@
- use crate::{BreakpointState, DebugHandler, FrameDataCache};
- use crate::{Engine, Module, Val, ValRaw, module::ModuleRegistry};
+@@ -97,2 +96,3 @@
  use crate::{Global, Instance, Table};
 +use alloc::sync::Arc;
  use core::convert::Infallible;
- use core::fmt;
- #[cfg(any(feature = "async", feature = "gc"))]
-@@ -196,6 +196,10 @@
- pub struct Store<T: 'static> {
-     // for comments about `ManuallyDrop`, see `Store::into_data`
+@@ -198,2 +198,6 @@
      inner: ManuallyDrop<Box<StoreInner<T>>>,
 +    // Outside the Box: release only after its actual deallocation, even when T
 +    // has already destroyed the resource limiter. Leak conservatively on panic.
 +    allocation: ManuallyDrop<Option<Box<dyn crate::NativeAllocation>>>,
 +    native_memory: ManuallyDrop<crate::runtime::native_memory::MemorySource>,
  }
- 
- #[derive(Copy, Clone, Debug)]
-@@ -337,6 +341,22 @@
-         }
-     }
+@@ -339,2 +343,18 @@
  
 +    pub(crate) fn memory_allocated(&mut self) {
 +        match self {
@@ -13440,11 +12588,7 @@
 +    }
 +
      pub(crate) fn memory_grow_failed(&mut self, error: crate::Error) -> Result<()> {
-         match self {
-             Self::Sync(s) => s.memory_grow_failed(error),
-@@ -355,6 +375,17 @@
-             Self::Sync(s) => s.table_growing(current, desired, maximum),
-             #[cfg(feature = "async")]
+@@ -357,2 +377,13 @@
              Self::Async(s) => s.table_growing(current, desired, maximum).await,
 +        }
 +    }
@@ -13458,28 +12602,16 @@
 +            #[cfg(feature = "async")]
 +            Self::Async(s) => s.table_allocating(bytes),
          }
-     }
- 
-@@ -437,6 +468,7 @@
- /// necessary, allowing code to be monomorphic and compiled into the `wasmtime`
- /// crate itself.
+@@ -439,2 +470,3 @@
  pub struct StoreOpaque {
 +    native_memory: crate::runtime::native_memory::Memory,
      // This `StoreOpaque` structure has references to itself. These aren't
-     // immediately evident, however, so we need to tell the compiler that it
-     // contains self-references. This notably suppresses `noalias` annotations
-@@ -468,7 +500,7 @@
-     #[cfg(feature = "stack-switching")]
-     continuations: Vec<Box<VMContRef>>,
+@@ -470,3 +502,3 @@
  
 -    instances: TryPrimaryMap<InstanceId, StoreInstance>,
 +    instances: crate::runtime::native_memory::NativeMap<InstanceId, StoreInstance>,
  
-     signal_handler: Option<SignalHandler>,
-     modules: ModuleRegistry,
-@@ -719,24 +751,74 @@
-     /// memory allocation fails. See the `OutOfMemory` type's documentation for
-     /// details on Wasmtime's out-of-memory handling.
+@@ -721,3 +753,52 @@
      pub fn try_new(engine: &Engine, data: T) -> Result<Self> {
 -        let store_data = StoreData::new(engine);
 +        Self::try_new_impl(
@@ -13533,41 +12665,28 @@
 +        }
 +        let store_data = StoreData::new(engine, memory.clone());
          log::trace!("creating new store {:?}", store_data.id());
- 
-         let pkey = engine.allocator().next_available_pkey();
- 
+@@ -727,2 +808,3 @@
          let inner = StoreOpaque {
 +            native_memory: memory.clone(),
              _marker: marker::PhantomPinned,
-             engine: engine.clone(),
-             vm_store_context: Default::default(),
-             #[cfg(feature = "stack-switching")]
+@@ -732,3 +814,3 @@
              continuations: Vec::new(),
 -            instances: TryPrimaryMap::new(),
 +            instances: crate::runtime::native_memory::NativeMap::with_capacity(0, memory.clone())?,
              signal_handler: None,
-             gc_store: None,
-             #[cfg(feature = "gc")]
+@@ -737,4 +819,4 @@
              gc_data: Default::default(),
 -            modules: ModuleRegistry::default(),
 -            func_refs: FuncRefs::default(),
 +            modules: ModuleRegistry::new(memory.clone())?,
 +            func_refs: FuncRefs::new(memory)?,
              host_globals: TryPrimaryMap::new(),
-             instance_count: 0,
-             instance_limit: crate::DEFAULT_INSTANCE_LIMIT,
-@@ -760,7 +842,7 @@
-             #[cfg(feature = "debug")]
-             frame_data_cache: FrameDataCache::new(),
+@@ -762,3 +844,3 @@
          };
 -        let mut inner = try_new::<Box<_>>(StoreInner {
 +        boxed.write(StoreInner {
              inner,
-             limiter: None,
-             call_hook: None,
-@@ -769,13 +851,21 @@
-             data_no_provenance: ManuallyDrop::new(data),
-             #[cfg(feature = "debug")]
+@@ -771,3 +853,11 @@
              debug_handler: None,
 -        })?;
 +        });
@@ -13580,38 +12699,24 @@
 +        };
 +        let inner = &mut *store.inner;
  
-         let store_data =
-             <NonNull<ManuallyDrop<T>>>::from(&mut inner.data_no_provenance).cast::<()>();
-         inner.inner.vm_store_context.store_data = store_data.into();
+@@ -777,3 +867,3 @@
  
 -        inner.traitobj = StorePtr(Some(NonNull::from(&mut *inner)));
 +        inner.traitobj = StorePtr(Some(NonNull::from(&mut **inner)));
  
-         // Wasmtime uses the callee argument to host functions to learn about
-         // the original pointer to the `Store` itself, allowing it to
-@@ -806,7 +896,7 @@
-             let id = match result {
-                 Ok(id) => id,
+@@ -808,3 +898,3 @@
                  Err(e) => {
 -                    if e.is::<OutOfMemory>() {
 +                    if inner.native_memory.is_some() || e.is::<OutOfMemory>() {
                          return Err(e);
-                     }
-                     panic!("instance allocator failed to allocate default callee")
-@@ -816,9 +906,7 @@
-             inner.default_caller_vmctx = default_caller_vmctx.into();
-         }
+@@ -818,5 +908,3 @@
  
 -        Ok(Self {
 -            inner: ManuallyDrop::new(inner),
 -        })
 +        Ok(store)
      }
- 
-     /// Access the underlying `T` data owned by this `Store`.
-@@ -871,8 +959,14 @@
-         // there is a comment indicating this as well.
-         unsafe {
+@@ -873,4 +961,10 @@
              let mut inner = ManuallyDrop::take(&mut self.inner);
 +            let mut allocation = ManuallyDrop::new(ManuallyDrop::take(&mut self.allocation));
 +            let mut native_memory = ManuallyDrop::new(ManuallyDrop::take(&mut self.native_memory));
@@ -13623,33 +12728,21 @@
 +            ManuallyDrop::drop(&mut allocation);
 +            data
          }
-     }
- 
-@@ -2145,6 +2239,10 @@
-         Ok(ptr)
-     }
+@@ -2147,2 +2241,6 @@
  
 +    pub(crate) fn native_memory(&self) -> crate::runtime::native_memory::Memory {
 +        self.native_memory.clone()
 +    }
 +
      /// Constructs and executes an `InstanceAllocationRequest` and pushes the
-     /// returned instance into the store.
-     ///
-@@ -2427,6 +2525,8 @@
-         unsafe {
-             ManuallyDrop::drop(&mut self.inner.data_no_provenance);
+@@ -2429,2 +2527,4 @@
              ManuallyDrop::drop(&mut self.inner);
 +            ManuallyDrop::drop(&mut self.native_memory);
 +            ManuallyDrop::drop(&mut self.allocation);
          }
-     }
- }
 --- a/src/runtime/store/data.rs
 +++ b/src/runtime/store/data.rs
-@@ -21,13 +21,13 @@
- }
- 
+@@ -23,5 +23,5 @@
  impl StoreData {
 -    pub fn new(engine: &Engine) -> StoreData {
 +    pub fn new(engine: &Engine, memory: crate::runtime::native_memory::Memory) -> StoreData {
@@ -13657,18 +12750,14 @@
 -        let _ = engine;
 +        let _ = (engine, memory);
          StoreData {
-             id: StoreId::allocate(),
+@@ -29,3 +29,3 @@
              #[cfg(feature = "component-model")]
 -            components: crate::component::ComponentStoreData::new(engine),
 +            components: crate::component::ComponentStoreData::new(engine, memory),
          }
-     }
- 
 --- a/src/runtime/store/func_refs.rs
 +++ b/src/runtime/store/func_refs.rs
-@@ -10,13 +10,106 @@
- use core::mem::size_of;
- use core::ptr::NonNull;
+@@ -12,2 +12,95 @@
  
 +mod native;
 +use crate::runtime::native_memory::Memory;
@@ -13764,25 +12853,16 @@
 +}
 +
  /// An arena of `VMFuncRef`s.
- ///
- /// Allows a store to pin and own funcrefs so that it can patch in trampolines
- /// for `VMFuncRef`s that are missing a `wasm_call` trampoline and
- /// need Wasm to supply it.
+@@ -18,3 +111,3 @@
  #[derive(Default)]
 -pub struct FuncRefs {
 +struct LegacyFuncRefs {
      /// A bump allocation arena where we allocate `VMFuncRef`s such
-     /// that they are pinned and owned.
-     bump: AlwaysMut<bumpalo::Bump>,
-@@ -78,7 +171,7 @@
-     },
- }
+@@ -80,3 +173,3 @@
  
 -impl FuncRefs {
 +impl LegacyFuncRefs {
      /// Push the given `VMFuncRef` into this arena, returning a
-     /// pinned pointer to it.
-     ///
 --- a/src/runtime/store/func_refs/native.rs
 +++ b/src/runtime/store/func_refs/native.rs
 @@ -0,0 +1,112 @@
@@ -13900,51 +12980,36 @@
 +}
 --- a/src/runtime/vm/component.rs
 +++ b/src/runtime/vm/component.rs
-@@ -7,11 +7,12 @@
- //! cranelift-compiled adapters, will use this `VMComponentContext` as well.
- 
+@@ -9,3 +9,3 @@
  use crate::Result;
 -use crate::component::{Component, Instance, InstancePre, ResourceType, RuntimeImport};
 +use crate::component::{Component, Instance, InstancePre, ResourceTypes, RuntimeImport};
  use crate::module::ModuleRegistry;
- #[cfg(feature = "component-model-async")]
- use crate::runtime::component::concurrent::ConcurrentInstanceState;
+@@ -14,2 +14,3 @@
  use crate::runtime::component::{ComponentInstanceId, RuntimeInstance};
 +use crate::runtime::native_memory::NativeMap;
  use crate::runtime::vm::instance::{InstanceLayout, OwnedInstance, OwnedVMContext};
- use crate::runtime::vm::vmcontext::VMFunctionBody;
- use crate::runtime::vm::{
-@@ -28,8 +29,6 @@
- use core::pin::Pin;
- use core::ptr::NonNull;
+@@ -30,4 +31,2 @@
  use wasmtime_environ::component::*;
 -use wasmtime_environ::error::OutOfMemory;
 -use wasmtime_environ::prelude::TryPrimaryMap;
  use wasmtime_environ::{HostPtr, PrimaryMap, VMSharedTypeIndex};
- 
- #[allow(
-@@ -130,15 +129,15 @@
- 
-     /// Contains state specific to each (sub-)component instance within this
+@@ -132,3 +131,3 @@
      /// top-level instance.
 -    instance_states: TryPrimaryMap<RuntimeComponentInstanceIndex, InstanceState>,
 +    instance_states: NativeMap<RuntimeComponentInstanceIndex, InstanceState>,
  
-     /// What all compile-time-identified core instances are mapped to within the
+@@ -136,3 +135,3 @@
      /// `Store` that this component belongs to.
 -    instances: TryPrimaryMap<RuntimeInstanceIndex, InstanceId>,
 +    instances: NativeMap<RuntimeInstanceIndex, InstanceId>,
  
-     /// Storage for the type information about resources within this component
+@@ -140,3 +139,3 @@
      /// instance.
 -    resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
 +    resource_types: ResourceTypes,
  
-     /// Arguments that this instance used to be instantiated.
-     ///
-@@ -319,38 +318,51 @@
-     pub(crate) fn new(
-         id: ComponentInstanceId,
+@@ -321,9 +320,12 @@
          component: &Component,
 -        resource_types: Arc<TryPrimaryMap<ResourceIndex, ResourceType>>,
 +        resource_types: ResourceTypes,
@@ -13960,15 +13025,12 @@
 +        let mut instance_states =
 +            NativeMap::with_capacity(num_instances.try_into().unwrap(), memory.clone())?;
          for _ in 0..num_instances {
-             instance_states.push(InstanceState::default())?;
-         }
+@@ -332,3 +334,3 @@
  
 -        let instances = TryPrimaryMap::with_capacity(
 +        let instances = NativeMap::with_capacity(
              component
-                 .env_component()
-                 .num_runtime_instances
-                 .try_into()
+@@ -338,17 +340,27 @@
                  .unwrap(),
 +            memory.clone(),
          )?;
@@ -14007,37 +13069,24 @@
 +                core::ptr::from_ref(ret.get()),
 +            );
          }
-         Ok(ret)
-     }
-@@ -826,14 +838,12 @@
-     }
- 
+@@ -828,3 +840,3 @@
      /// Returns a reference to the resource type information.
 -    pub fn resource_types(&self) -> &Arc<TryPrimaryMap<ResourceIndex, ResourceType>> {
 +    pub fn resource_types(&self) -> &ResourceTypes {
          &self.resource_types
-     }
- 
+@@ -833,5 +845,3 @@
      /// Returns a mutable reference to the resource type information.
 -    pub fn resource_types_mut(
 -        self: Pin<&mut Self>,
 -    ) -> &mut Arc<TryPrimaryMap<ResourceIndex, ResourceType>> {
 +    pub fn resource_types_mut(self: Pin<&mut Self>) -> &mut ResourceTypes {
          // SAFETY: we've chosen the `Pin` guarantee of `Self` to not apply to
-         // the map returned.
-         unsafe { &mut self.get_unchecked_mut().resource_types }
-@@ -863,7 +873,7 @@
-     pub fn instance_states(
-         self: Pin<&mut Self>,
+@@ -865,3 +875,3 @@
      ) -> (
 -        &mut TryPrimaryMap<RuntimeComponentInstanceIndex, InstanceState>,
 +        &mut NativeMap<RuntimeComponentInstanceIndex, InstanceState>,
          &ComponentTypes,
-     ) {
-         // safety: we've chosen the `pin` guarantee of `self` to not apply to
-@@ -909,10 +919,7 @@
- 
-     /// Pushes a new runtime instance that's been created into
+@@ -911,6 +921,3 @@
      /// `self.instances`.
 -    pub fn push_instance_id(
 -        self: Pin<&mut Self>,
@@ -14045,20 +13094,12 @@
 -    ) -> Result<RuntimeInstanceIndex, OutOfMemory> {
 +    pub fn push_instance_id(self: Pin<&mut Self>, id: InstanceId) -> Result<RuntimeInstanceIndex> {
          self.instances_mut().push(id)
-     }
- 
-@@ -926,7 +933,7 @@
-         self.instances[idx]
-     }
+@@ -928,3 +935,3 @@
  
 -    fn instances_mut(self: Pin<&mut Self>) -> &mut TryPrimaryMap<RuntimeInstanceIndex, InstanceId> {
 +    fn instances_mut(self: Pin<&mut Self>) -> &mut NativeMap<RuntimeInstanceIndex, InstanceId> {
          // SAFETY: we've chosen the `Pin` guarantee of `Self` to not apply to
-         // the map returned.
-         unsafe { &mut self.get_unchecked_mut().instances }
-@@ -1010,11 +1017,9 @@
-     /// Moves the `self` pointer backwards to the `ComponentInstance` pointer
-     /// that this `VMComponentContext` trails.
+@@ -1012,7 +1019,5 @@
      pub fn instance(&self) -> *mut ComponentInstance {
 -        unsafe {
 -            (self as *const Self as *mut u8)
@@ -14069,74 +13110,43 @@
 +        // same complete-layout inverse as host entry and vmctx_instance_id.
 +        unsafe { ComponentInstance::from_vmctx(NonNull::from(self)).as_ptr() }
      }
- 
-     /// Helper function to cast between context types using a debug assertion to
 --- a/src/runtime/vm/component/resources.rs
 +++ b/src/runtime/vm/component/resources.rs
-@@ -24,13 +24,13 @@
- use crate::bail_bug;
- use crate::component::store::ComponentTaskState;
+@@ -26,2 +26,3 @@
  use crate::prelude::*;
 +use crate::runtime::native_memory::NativeMap;
  use core::error::Error;
- use core::fmt;
- use core::mem;
- use wasmtime_environ::component::{
-     ComponentTypes, RuntimeComponentInstanceIndex, TypeResourceTableIndex,
+@@ -32,3 +33,2 @@
  };
 -use wasmtime_environ::prelude::TryPrimaryMap;
  
- /// Contextual state necessary to perform resource-related operations.
- ///
-@@ -56,7 +56,7 @@
-     /// `ResourceAny::resource_drop` which won't consult this table as it's
-     /// only operating over the host table.
+@@ -58,3 +58,3 @@
      pub guest: Option<(
 -        &'a mut TryPrimaryMap<RuntimeComponentInstanceIndex, InstanceState>,
 +        &'a mut NativeMap<RuntimeComponentInstanceIndex, InstanceState>,
          &'a ComponentTypes,
-     )>,
- 
 --- a/src/runtime/vm/instance.rs
 +++ b/src/runtime/vm/instance.rs
-@@ -5,6 +5,7 @@
- use crate::code::ModuleWithCode;
- use crate::module::ModuleRegistry;
+@@ -7,2 +7,3 @@
  use crate::prelude::*;
 +use crate::runtime::native_memory::{Memory as NativeMemory, NativeMap, NativeVec};
  use crate::runtime::vm::export::{Export, ExportMemory};
- use crate::runtime::vm::memory::{Memory, RuntimeMemoryCreator};
- use crate::runtime::vm::table::{Table, TableElementType};
-@@ -113,7 +114,7 @@
-     /// The `MemoryAllocationIndex` was given from our `InstanceAllocator` and
-     /// must be given back to the instance allocator when deallocating each
+@@ -115,3 +116,3 @@
      /// memory.
 -    memories: TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
 +    memories: NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
  
-     /// WebAssembly table data.
-     ///
-@@ -123,7 +124,7 @@
-     /// The `TableAllocationIndex` was given from our `InstanceAllocator` and
-     /// must be given back to the instance allocator when deallocating each
+@@ -125,3 +126,3 @@
      /// table.
 -    tables: TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
 +    tables: NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
  
-     /// Evaluated passive element segments.
-     ///
-@@ -131,7 +132,7 @@
-     //
-     // TODO(#12621): This should be a `TrySecondaryMap<PassiveElemIndex, _>`
+@@ -133,3 +134,3 @@
      // but that type is currently footgun-y / isn't actually OOM-safe yet.
 -    passive_elements: TryVec<PassiveElementSegment>,
 +    passive_elements: NativeVec<PassiveElementSegment>,
  
-     // TODO: add support for multiple memories; `wmemcheck_state` corresponds to
-     // memory 0.
-@@ -167,12 +168,14 @@
-     /// and `tables` must have been allocated for `req.store`.
-     unsafe fn new(
+@@ -169,8 +170,10 @@
          req: InstanceAllocationRequest,
 -        memories: &mut TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
 -        tables: &mut TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
@@ -14151,20 +13161,12 @@
 +        let mut passive_elements =
 +            NativeVec::with_capacity(module.passive_elements.len(), memory.clone())?;
  
-         #[cfg(feature = "wmemcheck")]
-         let wmemcheck_state = if req.store.engine().config().wmemcheck {
-@@ -192,7 +195,7 @@
- 
-         for (_, (ty, len)) in req.runtime_info.env_module().passive_elements.iter() {
+@@ -194,3 +197,3 @@
              let len = usize::try_from(*len).unwrap();
 -            passive_elements.push(PassiveElementSegment::new(*ty, len)?)?;
 +            passive_elements.push(PassiveElementSegment::new(*ty, len, memory.clone())?)?;
          }
- 
-         // Allocate the instance and its `VMContext` with empty memory and table
-@@ -200,17 +203,20 @@
-         // after it succeeds do we transfer ownership of the pool-allocated
-         // `memories`/`tables` into the instance (below), so that a failure here
+@@ -202,13 +205,16 @@
          // leaves them in the caller's deallocation guard to be freed.
 -        let mut ret = OwnedInstance::new(Instance {
 -            id: req.id,
@@ -14192,89 +13194,55 @@
 +            memory,
 +        )?;
  
-         // Can't fail any more, so transfer ownership of `memories` and `tables`
-         // to this instance.
-@@ -1009,7 +1015,9 @@
-         self.passive_elements_mut()[passive.index()].elements_mut()
-     }
+@@ -1011,3 +1017,5 @@
  
 -    pub(crate) fn passive_elements_mut(self: Pin<&mut Self>) -> &mut TryVec<PassiveElementSegment> {
 +    pub(crate) fn passive_elements_mut(
 +        self: Pin<&mut Self>,
 +    ) -> &mut NativeVec<PassiveElementSegment> {
          // SAFETY: Not moving data out of `self`.
-         &mut unsafe { self.get_unchecked_mut() }.passive_elements
-     }
-@@ -1517,14 +1525,14 @@
- 
-     fn memories_mut(
+@@ -1519,3 +1527,3 @@
          self: Pin<&mut Self>,
 -    ) -> &mut TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)> {
 +    ) -> &mut NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)> {
          // SAFETY: see `store_mut` above.
-         unsafe { &mut self.get_unchecked_mut().memories }
-     }
- 
-     pub(crate) fn tables_mut(
+@@ -1526,3 +1534,3 @@
          self: Pin<&mut Self>,
 -    ) -> &mut TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)> {
 +    ) -> &mut NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)> {
          // SAFETY: see `store_mut` above.
-         unsafe { &mut self.get_unchecked_mut().tables }
-     }
-@@ -1639,6 +1647,9 @@
-     /// seems not too bad.
-     vmctx_self_reference: SendSyncPtr<T>,
+@@ -1641,2 +1649,5 @@
  
 +    // Kept in the real allocation header, preserving the transparent handle.
 +    allocation: Option<Box<dyn crate::NativeAllocation>>,
 +
      /// This field ensures that going from `Pin<&mut T>` to `&mut T` is not a
-     /// safe operation.
-     _marker: core::marker::PhantomPinned,
-@@ -1649,6 +1660,7 @@
-     pub fn new() -> OwnedVMContext<T> {
-         OwnedVMContext {
+@@ -1651,2 +1662,3 @@
              vmctx_self_reference: SendSyncPtr::new(NonNull::dangling()),
 +            allocation: None,
              _marker: core::marker::PhantomPinned,
-         }
-     }
-@@ -1783,8 +1795,9 @@
-     /// Allocates a new `OwnedInstance` and places `instance` inside of it.
-     ///
+@@ -1785,4 +1797,5 @@
      /// This will `instance`
 -    pub(super) fn new(mut instance: T) -> Result<OwnedInstance<T>, OutOfMemory> {
 +    pub(super) fn new(mut instance: T, memory: NativeMemory) -> Result<OwnedInstance<T>> {
          let layout = instance.layout();
 +        let allocation = crate::runtime::native_memory::reserve(&memory, layout.size())?;
          debug_assert!(layout.size() >= size_of_val(&instance));
-         debug_assert!(layout.align() >= align_of_val(&instance));
- 
-@@ -1799,13 +1812,14 @@
-             }
-         };
+@@ -1801,3 +1814,3 @@
          let Some(instance_ptr) = NonNull::new(ptr.cast::<T>()) else {
 -            return Err(OutOfMemory::new(layout.size()));
 +            return Err(OutOfMemory::new(layout.size()).into());
          };
- 
-         // SAFETY: it's part of the unsafe contract of `InstanceLayout` that the
-         // `add` here is appropriate for the layout allocated.
-         let vmctx_self_reference = unsafe { instance_ptr.add(1).cast() };
+@@ -1808,2 +1821,3 @@
          instance.owned_vmctx_mut().vmctx_self_reference = vmctx_self_reference.into();
 +        instance.owned_vmctx_mut().allocation = allocation;
  
-         // SAFETY: we allocated above and it's an unsafe contract of
-         // `InstanceLayout` that the layout is suitable for writing the
-@@ -1814,10 +1828,18 @@
-             instance_ptr.write(instance);
-         }
+@@ -1816,3 +1830,3 @@
  
 -        let ret = OwnedInstance {
 +        let mut ret = OwnedInstance {
              instance: SendSyncPtr::new(instance_ptr),
-             _marker: marker::PhantomData,
+@@ -1820,2 +1834,10 @@
          };
 +
 +        if let Some(allocation) = unsafe { ret.get_mut().get_unchecked_mut() }
@@ -14285,11 +13253,7 @@
 +            allocation.allocated();
 +        }
  
-         // Double-check various vmctx calculations are correct.
-         debug_assert_eq!(
-@@ -1854,8 +1876,18 @@
-     fn drop(&mut self) {
-         unsafe {
+@@ -1856,4 +1878,14 @@
              let layout = self.get().layout();
 +            let mut allocation = mem::ManuallyDrop::new(
 +                self.get_mut()
@@ -14304,36 +13268,25 @@
 +            // allocation rather than refunding before its physical free.
 +            mem::ManuallyDrop::drop(&mut allocation);
          }
-     }
- }
-@@ -1863,13 +1895,13 @@
- #[derive(Debug)]
- pub(crate) struct PassiveElementSegment {
+@@ -1865,3 +1897,3 @@
      needs_gc_rooting: bool,
 -    elements: TryVec<ValRaw>,
 +    elements: NativeVec<ValRaw>,
  }
- 
- impl PassiveElementSegment {
+@@ -1870,4 +1902,4 @@
      /// Create a new passive element segment with the given capacity.
 -    pub(crate) fn new(ty: WasmRefType, capacity: usize) -> Result<Self, OutOfMemory> {
 -        let mut elements = TryVec::with_capacity(capacity)?;
 +    pub(crate) fn new(ty: WasmRefType, capacity: usize, memory: NativeMemory) -> Result<Self> {
 +        let mut elements = NativeVec::with_capacity(capacity, memory)?;
          elements.resize_with(capacity, || ValRaw::null())?;
-         Ok(Self {
-             needs_gc_rooting: ty.is_vmgcref_type_and_not_i31(),
 --- a/src/runtime/vm/instance/allocator.rs
 +++ b/src/runtime/vm/instance/allocator.rs
-@@ -1,4 +1,5 @@
+@@ -1,2 +1,3 @@
  use crate::prelude::*;
 +use crate::runtime::native_memory::NativeMap;
  use crate::runtime::vm::imports::Imports;
- use crate::runtime::vm::instance::{Instance, InstanceHandle};
- use crate::runtime::vm::memory::Memory;
-@@ -325,8 +326,9 @@
-         let num_defined_memories = module.num_defined_memories();
-         let num_defined_tables = module.num_defined_tables();
+@@ -327,4 +328,5 @@
  
 -        let memories = TryPrimaryMap::with_capacity(num_defined_memories)?;
 -        let tables = TryPrimaryMap::with_capacity(num_defined_tables)?;
@@ -14341,60 +13294,36 @@
 +        let memories = NativeMap::with_capacity(num_defined_memories, memory.clone())?;
 +        let tables = NativeMap::with_capacity(num_defined_tables, memory)?;
  
-         // Note that incrementing the instance count here must be done just
-         // before creation of `DeallocateOnDrop`. This is required to ensure
-@@ -356,8 +358,8 @@
- 
-         struct DeallocateOnDrop<'a> {
+@@ -358,4 +360,4 @@
              run_deallocate: bool,
 -            memories: TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
 -            tables: TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
 +            memories: NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
 +            tables: NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
              allocator: &'a (dyn InstanceAllocator + 'a),
-         }
- 
-@@ -403,7 +405,7 @@
-     async fn allocate_memories(
-         &self,
+@@ -405,3 +407,3 @@
          request: &mut InstanceAllocationRequest<'_, '_>,
 -        memories: &mut TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
 +        memories: &mut NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
      ) -> Result<()> {
-         let module = request.runtime_info.env_module();
- 
-@@ -434,7 +436,7 @@
-     /// `Self::allocate_memories`.
-     unsafe fn deallocate_memories(
+@@ -436,3 +438,3 @@
          &self,
 -        memories: &mut TryPrimaryMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
 +        memories: &mut NativeMap<DefinedMemoryIndex, (MemoryAllocationIndex, Memory)>,
      ) {
-         for (memory_index, (allocation_index, memory)) in mem::take(memories) {
-             // Because deallocating memory is infallible, we don't need to worry
-@@ -456,7 +458,7 @@
-     async fn allocate_tables(
-         &self,
+@@ -458,3 +460,3 @@
          request: &mut InstanceAllocationRequest<'_, '_>,
 -        tables: &mut TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
 +        tables: &mut NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
      ) -> Result<()> {
-         let module = request.runtime_info.env_module();
- 
-@@ -485,7 +487,7 @@
-     /// `Self::allocate_tables`.
-     unsafe fn deallocate_tables(
+@@ -487,3 +489,3 @@
          &self,
 -        tables: &mut TryPrimaryMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
 +        tables: &mut NativeMap<DefinedTableIndex, (TableAllocationIndex, Table)>,
      ) {
-         for (table_index, (allocation_index, table)) in mem::take(tables) {
-             // SAFETY: the tables here were allocated from this allocator per
 --- a/src/runtime/vm/instance/allocator/pooling/table_pool.rs
 +++ b/src/runtime/vm/instance/allocator/pooling/table_pool.rs
-@@ -147,12 +147,36 @@
-             pool: self,
-             allocation_index,
+@@ -149,8 +149,32 @@
              active: true,
 +            allocation: None,
          };
@@ -14428,11 +13357,7 @@
 +        if let Some(owner) = &mut guard.allocation {
 +            owner.allocated();
          }
- 
-         let ptr = NonNull::new(std::ptr::slice_from_raw_parts_mut(base.cast(), data_size)).unwrap();
-@@ -161,9 +185,9 @@
-                 ty,
-                 tunables,
+@@ -163,5 +187,5 @@
                  SendSyncPtr::new(ptr),
 -                request.limiter.as_deref_mut(),
 -            )
@@ -14441,33 +13366,21 @@
 +                &mut guard.allocation,
 +            )?
          };
-         guard.active = false;
-         return Ok((allocation_index, table));
-@@ -172,6 +196,8 @@
-             pool: &'a TablePool,
-             allocation_index: TableAllocationIndex,
+@@ -174,2 +198,4 @@
              active: bool,
 +            // Drop runs the slot return below before this field refunds it.
 +            allocation: Option<Box<dyn crate::TableAllocation>>,
          }
- 
-         impl Drop for DeallocateIndexGuard<'_> {
-@@ -179,6 +205,10 @@
-                 if !self.active {
-                     return;
+@@ -181,2 +207,6 @@
                  }
 +                // No application table was published or could write the slot.
 +                // Original pool clear/commit invariants therefore allow this
 +                // abort return. Admission remains live until this transfer to
 +                // the node pool completes; fields only drop after this body.
                  self.pool
-                     .index_allocator
-                     .free(SlotId(self.allocation_index.0), 0);
 --- a/src/runtime/vm/memory.rs
 +++ b/src/runtime/vm/memory.rs
-@@ -243,13 +243,28 @@
-         engine: &Engine,
-         creator: &dyn RuntimeMemoryCreator,
+@@ -245,9 +245,24 @@
          memory_image: Option<&Arc<MemoryImage>>,
 -        limiter: Option<&mut StoreResourceLimiter<'_>>,
 +        mut limiter: Option<&mut StoreResourceLimiter<'_>>,
@@ -14495,11 +13408,7 @@
 +            limiter.memory_allocated();
 +        }
  
-         let memory = LocalMemory::new(ty, &memory_tunables, allocation, memory_image)?;
-         Ok(if ty.shared {
-@@ -267,10 +282,24 @@
-         base: MemoryBase,
-         base_capacity: usize,
+@@ -269,6 +284,20 @@
          memory_image: MemoryImageSlot,
 -        limiter: Option<&mut StoreResourceLimiter<'_>>,
 +        mut limiter: Option<&mut StoreResourceLimiter<'_>>,
@@ -14523,23 +13432,15 @@
 +            limiter.memory_allocated();
 +        }
          let allocation = try_new::<Box<_>>(pooled_memory)?;
- 
-         // Configure some defaults a bit differently for this memory within the
-@@ -706,6 +735,9 @@
- 
-         match result {
+@@ -708,2 +737,5 @@
              Ok(()) => {
 +                if let Some(limiter) = limiter {
 +                    limiter.memory_allocated();
 +                }
                  // On successful growth double-check that the base pointer
-                 // didn't move if it shouldn't have.
-                 if required_to_not_move_memory {
 --- a/src/runtime/vm/table.rs
 +++ b/src/runtime/vm/table.rs
-@@ -25,6 +25,14 @@
- }
- 
+@@ -27,2 +27,10 @@
  impl TableElementType {
 +    fn allocation_layout(&self, len: usize) -> Result<Layout> {
 +        Ok(match self {
@@ -14550,65 +13451,37 @@
 +    }
 +
      /// Returns the size required to actually store an element of this particular type
-     pub fn element_size(&self) -> usize {
-         match self {
-@@ -136,6 +144,8 @@
-     /// Where data for this table is stored. The length of this list is the
-     /// maximum size of the table.
+@@ -138,2 +146,4 @@
      data: SendSyncPtr<[FuncTableElem]>,
 +    // Pooled Tables keep this owner through their existing reset/decommit queue.
 +    _allocation: Option<Box<dyn crate::TableAllocation>>,
      /// The current size of the table.
-     size: usize,
-     /// Whether elements of this table are initialized lazily.
-@@ -146,6 +156,8 @@
-     /// Where data for this table is stored. The length of this list is the
-     /// maximum size of the table.
+@@ -148,2 +158,4 @@
      data: SendSyncPtr<[Option<VMGcRef>]>,
 +    // Pooled Tables keep this owner through their existing reset/decommit queue.
 +    _allocation: Option<Box<dyn crate::TableAllocation>>,
      /// The current size of the table.
-     size: usize,
- }
-@@ -154,6 +166,8 @@
-     /// Where data for this table is stored. The length of this list is the
-     /// maximum size of the table.
+@@ -156,2 +168,4 @@
      data: SendSyncPtr<[ContTableElem]>,
 +    // Pooled Tables keep this owner through their existing reset/decommit queue.
 +    _allocation: Option<Box<dyn crate::TableAllocation>>,
      /// The current size of the table.
-     size: usize,
- }
-@@ -186,6 +200,8 @@
-     /// Dynamically managed storage space for this table. The length of this
-     /// vector is the current size of the table.
+@@ -188,2 +202,4 @@
      elements: TryVec<FuncTableElem>,
 +    // Field order destroys actual backing before refunding its original owner.
 +    allocation: Option<Box<dyn crate::TableAllocation>>,
      /// Maximum size that `elements` can grow to.
-     maximum: Option<usize>,
-     /// Whether elements of this table are initialized lazily.
-@@ -196,6 +212,8 @@
-     /// Dynamically managed storage space for this table. The length of this
-     /// vector is the current size of the table.
+@@ -198,2 +214,4 @@
      elements: TryVec<Option<VMGcRef>>,
 +    // Field order destroys actual backing before refunding its original owner.
 +    allocation: Option<Box<dyn crate::TableAllocation>>,
      /// Maximum size that `elements` can grow to.
-     maximum: Option<usize>,
- }
-@@ -204,6 +222,8 @@
-     /// Dynamically managed storage space for this table. The length of this
-     /// vector is the current size of the table.
+@@ -206,2 +224,4 @@
      elements: TryVec<ContTableElem>,
 +    // Field order destroys actual backing before refunding its original owner.
 +    allocation: Option<Box<dyn crate::TableAllocation>>,
      /// Maximum size that `elements` can grow to.
-     maximum: Option<usize>,
- }
-@@ -281,49 +301,89 @@
-     }
- }
+@@ -283,7 +303,3 @@
  
 -/// Allocate dynamic table elements of the given length.
 -///
@@ -14617,7 +13490,7 @@
 -/// allocator and avoid manual zero-initialization.
 +/// Allocate exact dynamic table backing for the original Func/Gc zero-niche types.
  ///
- /// # Safety
+@@ -291,37 +307,81 @@
  ///
 -/// Should only ever be called with a `T` that is a table element type and where
 -/// `Option<T>`'s `None` variant is represented with zero.
@@ -14731,11 +13604,7 @@
 +    drop(old_owner);
 +    Ok(())
  }
- 
- impl Table {
-@@ -331,35 +391,57 @@
-     pub async fn new_dynamic(
-         ty: &wasmtime_environ::Table,
+@@ -333,21 +393,40 @@
          tunables: &Tunables,
 -        limiter: Option<&mut StoreResourceLimiter<'_>>,
 +        mut limiter: Option<&mut StoreResourceLimiter<'_>>,
@@ -14789,12 +13658,12 @@
 +        }
 +        Ok(table)
      }
- 
+@@ -355,3 +434,3 @@
      /// Create a new static (immovable) table instance for the specified table plan.
 -    pub async unsafe fn new_static(
 +    pub unsafe fn new_static(
          ty: &wasmtime_environ::Table,
-         tunables: &Tunables,
+@@ -359,5 +438,8 @@
          data: SendSyncPtr<[u8]>,
 -        limiter: Option<&mut StoreResourceLimiter<'_>>,
 +        limits: (usize, Option<usize>),
@@ -14805,19 +13674,11 @@
 +        // page-aligned retained slot before committing any of those pages.
 +        let (minimum, maximum) = limits;
          let size = minimum;
-         let max = maximum.unwrap_or(usize::MAX);
- 
-@@ -386,6 +468,7 @@
-                 ));
-                 Ok(Self::from(StaticFuncTable {
+@@ -388,2 +470,3 @@
                      data,
 +                    _allocation: allocation.take(),
                      size,
-                     lazy_init: tunables.table_lazy_init,
-                 }))
-@@ -410,7 +493,11 @@
-                     data.as_non_null().cast::<Option<VMGcRef>>(),
-                     cmp::min(len, max),
+@@ -412,3 +495,7 @@
                  ));
 -                Ok(Self::from(StaticGcRefTable { data, size }))
 +                Ok(Self::from(StaticGcRefTable {
@@ -14826,11 +13687,7 @@
 +                    size,
 +                }))
              }
-             TableElementType::Cont => {
-                 let len = {
-@@ -432,7 +519,11 @@
-                     data.as_non_null().cast::<ContTableElem>(),
-                     cmp::min(len, max),
+@@ -434,3 +521,7 @@
                  ));
 -                Ok(Self::from(StaticContTable { data, size }))
 +                Ok(Self::from(StaticContTable {
@@ -14839,36 +13696,22 @@
 +                    size,
 +                }))
              }
-         }
-     }
-@@ -440,7 +531,7 @@
-     // Calls the `store`'s limiter to optionally prevent the table from being created.
-     //
+@@ -442,3 +533,3 @@
      // Returns the minimum and maximum size of the table if the table can be created.
 -    async fn limit_new(
 +    pub(crate) async fn limit_new(
          ty: &wasmtime_environ::Table,
-         limiter: Option<&mut StoreResourceLimiter<'_>>,
-     ) -> Result<(usize, Option<usize>)> {
-@@ -674,13 +765,13 @@
-                 }
-                 *size = new_size;
+@@ -676,3 +767,3 @@
              }
 -            Table::Static(StaticTable::GcRef(StaticGcRefTable { data, size })) => {
 +            Table::Static(StaticTable::GcRef(StaticGcRefTable { data, size, .. })) => {
                  unsafe {
-                     debug_assert!(data.as_ref()[*size..new_size].iter().all(|x| x.is_none()));
-                 }
-                 *size = new_size;
+@@ -682,3 +773,3 @@
              }
 -            Table::Static(StaticTable::Cont(StaticContTable { data, size })) => {
 +            Table::Static(StaticTable::Cont(StaticContTable { data, size, .. })) => {
                  unsafe {
-                     debug_assert!(data.as_ref()[*size..new_size].iter().all(|x| x.is_none()));
-                 }
-@@ -694,14 +785,44 @@
-             // loading the base address. However, in that case the above checks
-             // that delta is non-zero and the new size doesn't exceed the
+@@ -696,10 +787,40 @@
              // maximum mean we can't get here.
 -            Table::Dynamic(DynamicTable::Func(DynamicFuncTable { elements, .. })) => {
 -                elements.resize_with(new_size, || None)?;
@@ -14917,18 +13760,12 @@
 +                    alloc_dynamic_cont_table_elements,
 +                )?;
              }
-         }
- 
-@@ -794,16 +915,18 @@
-                     current_elements: *size,
-                 }
+@@ -796,3 +917,3 @@
              }
 -            Table::Static(StaticTable::GcRef(StaticGcRefTable { data, size })) => {
 +            Table::Static(StaticTable::GcRef(StaticGcRefTable { data, size, .. })) => {
                  VMTableDefinition {
-                     base: data.cast().into(),
-                     current_elements: *size,
-                 }
+@@ -802,6 +923,8 @@
              }
 -            Table::Static(StaticTable::Cont(StaticContTable { data, size })) => VMTableDefinition {
 -                base: data.cast().into(),
@@ -14941,94 +13778,54 @@
 +                }
 +            }
              Table::Dynamic(DynamicTable::Func(DynamicFuncTable { elements, .. })) => {
-                 VMTableDefinition {
-                     base: NonNull::new(elements.as_mut_ptr()).unwrap().cast().into(),
-@@ -840,6 +963,7 @@
-                 data,
-                 size,
+@@ -842,2 +965,3 @@
                  lazy_init,
 +                ..
              })) => (
-                 unsafe { slice::from_raw_parts(data.as_ptr().cast(), *size) },
-                 *lazy_init,
-@@ -863,6 +987,7 @@
-                 data,
-                 size,
+@@ -865,2 +989,3 @@
                  lazy_init,
 +                ..
              })) => (
-                 unsafe { slice::from_raw_parts_mut(data.as_ptr().cast(), *size) },
-                 *lazy_init,
-@@ -875,7 +1000,7 @@
-         assert_eq!(self.element_type(), TableElementType::GcRef);
-         match self {
+@@ -877,3 +1002,3 @@
              Self::Dynamic(DynamicTable::GcRef(DynamicGcRefTable { elements, .. })) => elements,
 -            Self::Static(StaticTable::GcRef(StaticGcRefTable { data, size })) => unsafe {
 +            Self::Static(StaticTable::GcRef(StaticGcRefTable { data, size, .. })) => unsafe {
                  &data.as_non_null().as_ref()[..*size]
-             },
-             _ => unreachable!(),
-@@ -888,7 +1013,7 @@
-             Self::Dynamic(DynamicTable::Cont(DynamicContTable { elements, .. })) => unsafe {
-                 slice::from_raw_parts(elements.as_ptr().cast(), elements.len())
+@@ -890,3 +1015,3 @@
              },
 -            Self::Static(StaticTable::Cont(StaticContTable { data, size })) => unsafe {
 +            Self::Static(StaticTable::Cont(StaticContTable { data, size, .. })) => unsafe {
                  slice::from_raw_parts(data.as_ptr().cast(), *size)
-             },
-             _ => unreachable!(),
-@@ -901,7 +1026,7 @@
-             Self::Dynamic(DynamicTable::Cont(DynamicContTable { elements, .. })) => unsafe {
-                 slice::from_raw_parts_mut(elements.as_mut_ptr().cast(), elements.len())
+@@ -903,3 +1028,3 @@
              },
 -            Self::Static(StaticTable::Cont(StaticContTable { data, size })) => unsafe {
 +            Self::Static(StaticTable::Cont(StaticContTable { data, size, .. })) => unsafe {
                  slice::from_raw_parts_mut(data.as_ptr().cast(), *size)
-             },
-             _ => unreachable!(),
-@@ -915,7 +1040,7 @@
-         assert_eq!(self.element_type(), TableElementType::GcRef);
-         match self {
+@@ -917,3 +1042,3 @@
              Self::Dynamic(DynamicTable::GcRef(DynamicGcRefTable { elements, .. })) => elements,
 -            Self::Static(StaticTable::GcRef(StaticGcRefTable { data, size })) => unsafe {
 +            Self::Static(StaticTable::GcRef(StaticGcRefTable { data, size, .. })) => unsafe {
                  &mut data.as_non_null().as_mut()[..*size]
-             },
-             _ => unreachable!(),
-@@ -968,6 +1093,7 @@
-     fn default() -> Self {
-         Self::from(StaticFuncTable {
+@@ -970,2 +1095,3 @@
              data: SendSyncPtr::new(NonNull::from(&mut [])),
 +            _allocation: None,
              size: 0,
-             lazy_init: false,
-         })
 --- a/src/runtime/component/resource_table.rs
 +++ b/src/runtime/component/resource_table.rs
-@@ -1,9 +1,11 @@
- use super::Resource;
+@@ -2,2 +2,3 @@
  use crate::prelude::*;
 +use crate::runtime::native_memory::{self, Memory, NativeVec};
  use alloc::collections::{BTreeMap, BTreeSet};
- use core::any::Any;
- use core::fmt;
+@@ -6,2 +7,3 @@
  use core::mem;
 +use core::ops::{Deref, DerefMut};
  
- #[derive(Debug)]
- /// Errors returned by operations on `ResourceTable`
-@@ -17,6 +19,8 @@
-     /// Resource cannot be deleted because child resources exist in the table. Consult wit docs for
-     /// the particular resource to see which methods may return child resources.
+@@ -19,2 +21,4 @@
      HasChildren,
 +    /// The original native allocation factory refused backing before allocation.
 +    Allocation(Error),
  }
- 
- impl fmt::Display for ResourceTableError {
-@@ -26,17 +30,208 @@
-             Self::NotPresent => write!(f, "resource not present"),
-             Self::WrongType => write!(f, "resource is of another type"),
+@@ -28,7 +32,15 @@
              Self::HasChildren => write!(f, "resource has children"),
 -        }
 -    }
@@ -15049,7 +13846,7 @@
 +    }
 +}
  
- /// The `ResourceTable` type maps a `Resource<T>` to its `T`.
+@@ -36,5 +48,188 @@
  pub struct ResourceTable {
 -    entries: Vec<Entry>,
 +    entries: EntryStorage,
@@ -15239,26 +14036,22 @@
 +        }
 +    }
  }
- 
- #[derive(Debug)]
-@@ -83,24 +278,25 @@
- #[derive(Debug)]
- struct TableEntry {
+@@ -85,3 +280,3 @@
      /// The entry in the table, as a boxed dynamically-typed object
 -    entry: Box<dyn Any + Send>,
 +    entry: ResourceValue,
      /// The index of the parent of this entry, if it has one.
-     parent: Option<u32>,
+@@ -89,3 +284,3 @@
      /// The indices of any children of this entry.
 -    children: BTreeSet<u32>,
 +    children: Children,
  }
- 
+@@ -93,3 +288,3 @@
  impl TableEntry {
 -    fn new(entry: Box<dyn Any + Send>, parent: Option<u32>) -> Self {
 +    fn new(entry: ResourceValue, parent: Option<u32>, memory: Memory) -> Self {
          Self {
-             entry,
+@@ -97,8 +292,9 @@
              parent,
 -            children: BTreeSet::new(),
 -        }
@@ -15274,11 +14067,7 @@
 +        self.children.insert_prepared(prepared, child);
 +        Ok(())
      }
-     fn remove_child(&mut self, child: u32) {
-         let was_removed = self.children.remove(&child);
-@@ -144,7 +340,25 @@
-     /// Create an empty table with at least the specified capacity.
-     pub fn with_capacity(capacity: usize) -> Self {
+@@ -146,3 +342,21 @@
          ResourceTable {
 -            entries: Vec::with_capacity(capacity),
 +            entries: EntryStorage::Legacy(Vec::with_capacity(capacity)),
@@ -15301,21 +14090,13 @@
 +            ),
 +            memory,
              free_head: None,
-             max_capacity: DEFAULT_MAX_CAPACITY,
-         }
-@@ -156,7 +370,8 @@
-     where
-         T: Send + 'static,
+@@ -158,3 +372,4 @@
      {
 -        let idx = self.push_(TableEntry::new(Box::new(entry), None))?;
 +        let value = ResourceValue::new(entry, &self.memory)?;
 +        let idx = self.push_(TableEntry::new(value, None, self.memory.clone()))?;
          Ok(Resource::new_own(idx))
-     }
- 
-@@ -184,9 +399,12 @@
-                 &mut self.entries[ix],
-                 Entry::Occupied {
+@@ -186,5 +401,8 @@
                      entry: TableEntry {
 -                        entry: Box::new(Tombstone),
 +                        entry: ResourceValue {
@@ -15326,20 +14107,12 @@
 -                        children: BTreeSet::new(),
 +                        children: Children::new(self.memory.clone()),
                      },
-                 },
-             ) {
-@@ -225,7 +443,7 @@
-                 .len()
-                 .try_into()
+@@ -227,3 +445,3 @@
                  .map_err(|_| ResourceTableError::Full)?;
 -            self.entries.push(Entry::Occupied { entry: e });
 +            self.entries.push(Entry::Occupied { entry: e })?;
              Ok(ix)
-         }
-     }
-@@ -270,8 +488,14 @@
-     {
-         let parent = parent.rep();
+@@ -272,4 +490,10 @@
          self.occupied(parent)?;
 -        let child = self.push_(TableEntry::new(Box::new(entry), Some(parent)))?;
 -        self.occupied_mut(parent)?.add_child(child);
@@ -15352,11 +14125,7 @@
 +            .children
 +            .insert_prepared(prepared, child);
          Ok(Resource::new_own(child))
-     }
- 
-@@ -281,10 +505,19 @@
-         child: Resource<T>,
-         parent: Resource<U>,
+@@ -283,6 +507,15 @@
      ) -> Result<(), ResourceTableError> {
 -        let entry = self.occupied_mut(child.rep())?;
 -        assert!(entry.parent.is_none());
@@ -15376,11 +14145,7 @@
 +                .insert_prepared(prepared, child.rep());
 +        }
          Ok(())
-     }
- 
-@@ -351,10 +584,7 @@
-     {
-         debug_assert!(resource.owned());
+@@ -353,6 +586,3 @@
          let entry = self.delete_entry(resource.rep(), debug)?;
 -        match entry.entry.downcast() {
 -            Ok(t) => Ok(*t),
@@ -15388,20 +14153,12 @@
 -        }
 +        entry.entry.into_typed()
      }
- 
-     fn delete_entry(&mut self, key: u32, debug: bool) -> Result<TableEntry, ResourceTableError> {
-@@ -383,7 +613,7 @@
-         map.into_iter().map(move |(k, v)| {
-             let item = self
+@@ -385,3 +615,3 @@
                  .occupied_mut(k)
 -                .map(|e| Box::as_mut(&mut e.entry))
 +                .map(|e| e.entry.as_mut())
                  // Safety: extending the lifetime of the mutable reference.
-                 .map(|item| unsafe { &mut *(item as *mut dyn Any) });
-             (item, v)
-@@ -500,3 +730,251 @@
- 
-     table.push(()).unwrap();
+@@ -502 +732,249 @@
  }
 +
 +#[cfg(all(test, feature = "std", feature = "cranelift"))]
@@ -15649,5 +14406,464 @@
 +        let zst = legacy.push(()).unwrap();
 +        assert_eq!(legacy.delete(zst).unwrap(), ());
 +        assert_eq!(state.active.load(Ordering::SeqCst), 0);
++    }
++}
+--- /dev/null
++++ b/src/runtime/component/concurrent/host_futures/call_result_channel.rs
+@@ -0,0 +1,456 @@
++//! Original-Store admission for the single physical call-result channel header.
++//!
++//! Synchronization and the active send/receive/drop bodies below are maintained
++//! from futures-channel 0.3.34 (MIT OR Apache-2.0). The complete original source
++//! hashes and exact selected-body inverse are retained in the source review.
++//! The sibling LICENSE-MIT and LICENSE-APACHE apply to the copied portions.
++//! None delegates to the original channel. Paid headers use our declared typed
++//! Arc layout; no standard-library Arc layout or post-birth adoption is assumed.
++//! Message payloads, cloned task Wakers and callback bodies retain their own
++//! original owners; this module claims only the channel's concrete backing.
++
++use super::paid_arc;
++use crate::runtime::native_memory::Memory;
++use core::future::Future;
++use core::pin::Pin;
++use core::sync::atomic::AtomicBool;
++use core::sync::atomic::Ordering::SeqCst;
++use core::task::{Context, Poll, Waker};
++use futures::channel::oneshot as legacy;
++pub(in crate::runtime::component::concurrent) use legacy::Canceled;
++
++pub(in crate::runtime::component::concurrent) enum Sender<T> {
++    Legacy(legacy::Sender<T>),
++    Paid(PaidSender<T>),
++}
++pub(in crate::runtime::component::concurrent) enum Receiver<T> {
++    Legacy(legacy::Receiver<T>),
++    Paid(PaidReceiver<T>),
++}
++pub(in crate::runtime::component::concurrent) struct PaidSender<T> {
++    inner: paid_arc::Arc<Inner<T>>,
++}
++pub(in crate::runtime::component::concurrent) struct PaidReceiver<T> {
++    inner: paid_arc::Arc<Inner<T>>,
++}
++impl<T> Unpin for Receiver<T> {}
++
++pub(in crate::runtime::component::concurrent) fn channel<T>(
++    memory: &Memory,
++) -> crate::Result<(Sender<T>, Receiver<T>)> {
++    if memory.is_none() {
++        let (tx, rx) = legacy::channel();
++        return Ok((Sender::Legacy(tx), Receiver::Legacy(rx)));
++    }
++    let inner = paid_arc::Arc::new(memory, Inner::new())?;
++    let rx = PaidReceiver {
++        inner: inner.clone(),
++    };
++    let tx = PaidSender { inner };
++    Ok((Sender::Paid(tx), Receiver::Paid(rx)))
++}
++
++impl<T> Sender<T> {
++    pub(in crate::runtime::component::concurrent) fn send(self, value: T) -> Result<(), T> {
++        match self {
++            Self::Legacy(tx) => tx.send(value),
++            Self::Paid(tx) => tx.inner.send(value),
++        }
++    }
++}
++impl<T> Future for Receiver<T> {
++    type Output = Result<T, Canceled>;
++    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
++        match self.get_mut() {
++            Self::Legacy(rx) => Pin::new(rx).poll(cx),
++            Self::Paid(rx) => rx.inner.recv(cx),
++        }
++    }
++}
++impl<T> Drop for PaidSender<T> {
++    fn drop(&mut self) {
++        self.inner.drop_tx()
++    }
++}
++impl<T> Drop for PaidReceiver<T> {
++    fn drop(&mut self) {
++        self.inner.drop_rx()
++    }
++}
++
++impl<T> core::fmt::Debug for Sender<T> {
++    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
++        match self {
++            Self::Legacy(tx) => core::fmt::Debug::fmt(tx, f),
++            Self::Paid(tx) => f
++                .debug_struct("Sender")
++                .field("complete", &tx.inner.complete)
++                .finish(),
++        }
++    }
++}
++impl<T> core::fmt::Debug for Receiver<T> {
++    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
++        match self {
++            Self::Legacy(rx) => core::fmt::Debug::fmt(rx, f),
++            Self::Paid(rx) => f
++                .debug_struct("Receiver")
++                .field("complete", &rx.inner.complete)
++                .finish(),
++        }
++    }
++}
++
++// Preserve the upstream SeqCst complete/data/task protocol and nonblocking locks.
++// Receiver rechecks complete after installing its task, preventing lost wakeups.
++struct Inner<T> {
++    complete: AtomicBool,
++
++    data: Lock<Option<T>>,
++
++    rx_task: Lock<Option<Waker>>,
++
++    tx_task: Lock<Option<Waker>>,
++}
++
++impl<T> Inner<T> {
++    fn new() -> Self {
++        Self {
++            complete: AtomicBool::new(false),
++            data: Lock::new(None),
++            rx_task: Lock::new(None),
++            tx_task: Lock::new(None),
++        }
++    }
++
++    fn send(&self, t: T) -> Result<(), T> {
++        if self.complete.load(SeqCst) {
++            return Err(t);
++        }
++
++        if let Some(mut slot) = self.data.try_lock() {
++            assert!(slot.is_none());
++            *slot = Some(t);
++            drop(slot);
++
++            if self.complete.load(SeqCst) {
++                if let Some(mut slot) = self.data.try_lock() {
++                    if let Some(t) = slot.take() {
++                        return Err(t);
++                    }
++                }
++            }
++            Ok(())
++        } else {
++            Err(t)
++        }
++    }
++
++    fn drop_tx(&self) {
++        self.complete.store(true, SeqCst);
++
++        if let Some(mut slot) = self.rx_task.try_lock() {
++            if let Some(task) = slot.take() {
++                drop(slot);
++                task.wake();
++            }
++        }
++
++        if let Some(mut slot) = self.tx_task.try_lock() {
++            drop(slot.take());
++        }
++    }
++
++    fn recv(&self, cx: &mut Context<'_>) -> Poll<Result<T, Canceled>> {
++        let done = if self.complete.load(SeqCst) {
++            true
++        } else {
++            let task = cx.waker().clone();
++            match self.rx_task.try_lock() {
++                Some(mut slot) => {
++                    *slot = Some(task);
++                    false
++                }
++                None => true,
++            }
++        };
++
++        if done || self.complete.load(SeqCst) {
++            if let Some(mut slot) = self.data.try_lock() {
++                if let Some(data) = slot.take() {
++                    return Poll::Ready(Ok(data));
++                }
++            }
++            Poll::Ready(Err(Canceled))
++        } else {
++            Poll::Pending
++        }
++    }
++
++    fn drop_rx(&self) {
++        self.complete.store(true, SeqCst);
++
++        if let Some(mut slot) = self.rx_task.try_lock() {
++            let task = slot.take();
++            drop(slot);
++            drop(task);
++        }
++
++        if let Some(mut handle) = self.tx_task.try_lock() {
++            if let Some(task) = handle.take() {
++                drop(handle);
++                task.wake()
++            }
++        }
++    }
++}
++
++mod lock {
++    use core::cell::UnsafeCell;
++    use core::ops::{Deref, DerefMut};
++    use core::sync::atomic::AtomicBool;
++    use core::sync::atomic::Ordering::SeqCst;
++
++    #[derive(Debug)]
++    pub(crate) struct Lock<T> {
++        locked: AtomicBool,
++        data: UnsafeCell<T>,
++    }
++
++    pub(crate) struct TryLock<'a, T> {
++        __ptr: &'a Lock<T>,
++    }
++
++    // SAFETY: the unique try-lock guard serializes T; both traits require T: Send.
++    unsafe impl<T: Send> Send for Lock<T> {}
++    unsafe impl<T: Send> Sync for Lock<T> {}
++
++    impl<T> Lock<T> {
++        pub(crate) fn new(t: T) -> Self {
++            Self {
++                locked: AtomicBool::new(false),
++                data: UnsafeCell::new(t),
++            }
++        }
++
++        pub(crate) fn try_lock(&self) -> Option<TryLock<'_, T>> {
++            if !self.locked.swap(true, SeqCst) {
++                Some(TryLock { __ptr: self })
++            } else {
++                None
++            }
++        }
++    }
++
++    impl<T> Deref for TryLock<'_, T> {
++        type Target = T;
++        fn deref(&self) -> &T {
++            // SAFETY: this live TryLock guard owns access until its SeqCst unlock.
++            unsafe { &*self.__ptr.data.get() }
++        }
++    }
++
++    impl<T> DerefMut for TryLock<'_, T> {
++        fn deref_mut(&mut self) -> &mut T {
++            // SAFETY: only this unique TryLock guard can form mutable data access.
++            unsafe { &mut *self.__ptr.data.get() }
++        }
++    }
++
++    impl<T> Drop for TryLock<'_, T> {
++        fn drop(&mut self) {
++            self.__ptr.locked.store(false, SeqCst);
++        }
++    }
++}
++use lock::Lock;
++
++#[cfg(all(test, feature = "std", feature = "cranelift"))]
++mod native_memory_tests {
++    use super::*;
++    use crate::{AsContextMut, Engine, NativeAllocation, NativeMemory, Store};
++    use alloc::boxed::Box;
++    use alloc::sync::Arc;
++    use alloc::vec::Vec;
++    use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
++    use std::panic::{AssertUnwindSafe, catch_unwind};
++    use std::sync::Mutex;
++    use std::task::Wake;
++
++    #[derive(Default)]
++    struct State {
++        requests: Mutex<Vec<usize>>,
++        active: AtomicUsize,
++        confirmations: AtomicUsize,
++        deny: AtomicBool,
++        confirmation_panic: AtomicBool,
++        wakes: AtomicUsize,
++        values_dropped: AtomicUsize,
++    }
++    struct MemoryFactory(Arc<State>);
++    struct Allocation(Arc<State>);
++    impl NativeAllocation for Allocation {
++        fn allocated(&mut self) {
++            self.0.confirmations.fetch_add(1, Ordering::SeqCst);
++            assert!(
++                !self.0.confirmation_panic.load(Ordering::SeqCst),
++                "call-result-confirmation-unwind"
++            );
++        }
++    }
++    impl Drop for Allocation {
++        fn drop(&mut self) {
++            self.0.active.fetch_sub(1, Ordering::SeqCst);
++        }
++    }
++    #[derive(Debug)]
++    struct Denied;
++    impl core::fmt::Display for Denied {
++        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
++            f.write_str("call-result-original-admission")
++        }
++    }
++    impl std::error::Error for Denied {}
++    impl NativeMemory for MemoryFactory {
++        fn reserve(&self, bytes: usize) -> crate::Result<Box<dyn NativeAllocation>> {
++            self.0.requests.lock().unwrap().push(bytes);
++            if self.0.deny.load(Ordering::SeqCst) {
++                return Err(crate::Error::new(Denied));
++            }
++            self.0.active.fetch_add(1, Ordering::SeqCst);
++            Ok(Box::new(Allocation(self.0.clone())))
++        }
++    }
++    impl Wake for State {
++        fn wake(self: Arc<Self>) {
++            self.wakes.fetch_add(1, Ordering::SeqCst);
++        }
++    }
++    fn original() -> (Store<()>, Memory, Arc<State>) {
++        let state = Arc::new(State::default());
++        let mut store = Store::try_new_with_memory(
++            &Engine::default(),
++            (),
++            Arc::new(MemoryFactory(state.clone())),
++        )
++        .unwrap();
++        let memory = store.as_context_mut().0.native_memory();
++        state.requests.lock().unwrap().clear();
++        (store, memory, state)
++    }
++    #[test]
++    fn original_store_refuses_exact_header_before_any_channel_publication() {
++        let (store, memory, state) = original();
++        let baseline = state.active.load(Ordering::SeqCst);
++        let confirmations = state.confirmations.load(Ordering::SeqCst);
++        state.deny.store(true, Ordering::SeqCst);
++        let error = channel::<u64>(&memory).unwrap_err();
++        assert!(error.downcast_ref::<Denied>().is_some());
++        assert_eq!(
++            *state.requests.lock().unwrap(),
++            [paid_arc::Arc::<Inner<u64>>::layout().size()]
++        );
++        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
++        assert_eq!(state.confirmations.load(Ordering::SeqCst), confirmations);
++        state.deny.store(false, Ordering::SeqCst);
++        let (tx, rx) = channel::<u64>(&memory).unwrap();
++        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
++        drop(store);
++        assert_eq!(state.active.load(Ordering::SeqCst), 1);
++        drop(tx);
++        assert_eq!(state.active.load(Ordering::SeqCst), 1);
++        drop(rx);
++        assert_eq!(state.active.load(Ordering::SeqCst), 0);
++    }
++    #[test]
++    fn send_wakes_parked_receiver_and_header_retires_after_last_half() {
++        let (store, memory, state) = original();
++        let baseline = state.active.load(Ordering::SeqCst);
++        let (tx, mut rx) = channel::<u64>(&memory).unwrap();
++        let waker = Waker::from(state.clone());
++        let mut cx = Context::from_waker(&waker);
++        assert!(Pin::new(&mut rx).poll(&mut cx).is_pending());
++        assert_eq!(state.wakes.load(Ordering::SeqCst), 0);
++        std::thread::scope(|scope| scope.spawn(move || tx.send(42).unwrap()).join().unwrap());
++        assert_eq!(state.wakes.load(Ordering::SeqCst), 1);
++        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
++        assert!(matches!(
++            Pin::new(&mut rx).poll(&mut cx),
++            Poll::Ready(Ok(42))
++        ));
++        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
++        drop(rx);
++        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
++        drop(store);
++        assert_eq!(state.active.load(Ordering::SeqCst), 0);
++    }
++    #[test]
++    fn cancelled_halves_and_legacy_channels_preserve_value_and_wake_semantics() {
++        let (store, memory, state) = original();
++        let baseline = state.active.load(Ordering::SeqCst);
++        let (tx, rx) = channel::<u64>(&memory).unwrap();
++        drop(rx);
++        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
++        assert_eq!(tx.send(31), Err(31));
++        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
++        let (tx, mut rx) = channel::<()>(&memory).unwrap();
++        let waker = Waker::from(state.clone());
++        let mut cx = Context::from_waker(&waker);
++        assert!(Pin::new(&mut rx).poll(&mut cx).is_pending());
++        let wakes = state.wakes.load(Ordering::SeqCst);
++        drop(tx);
++        assert_eq!(state.wakes.load(Ordering::SeqCst), wakes + 1);
++        assert!(matches!(
++            Pin::new(&mut rx).poll(&mut cx),
++            Poll::Ready(Err(Canceled))
++        ));
++        drop(rx);
++        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
++        let requests = state.requests.lock().unwrap().len();
++        let (tx, mut rx) = channel::<u64>(&None).unwrap();
++        assert!(matches!(rx, Receiver::Legacy(_)));
++        tx.send(53).unwrap();
++        assert!(matches!(
++            Pin::new(&mut rx).poll(&mut cx),
++            Poll::Ready(Ok(53))
++        ));
++        drop(rx);
++        assert_eq!(state.requests.lock().unwrap().len(), requests);
++        drop(store);
++        assert_eq!(state.active.load(Ordering::SeqCst), 0);
++    }
++    struct Value(Arc<State>);
++    impl Drop for Value {
++        fn drop(&mut self) {
++            assert!(
++                self.0.active.load(Ordering::SeqCst) > 0,
++                "channel header retired before its retained payload destructor"
++            );
++            self.0.values_dropped.fetch_add(1, Ordering::SeqCst);
++            panic!("call-result-payload-unwind");
++        }
++    }
++    #[test]
++    fn confirmation_refunds_but_payload_unwind_retains_original_header_charge() {
++        let (store, memory, state) = original();
++        let baseline = state.active.load(Ordering::SeqCst);
++        state.confirmation_panic.store(true, Ordering::SeqCst);
++        assert!(catch_unwind(AssertUnwindSafe(|| channel::<u64>(&memory))).is_err());
++        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
++        state.confirmation_panic.store(false, Ordering::SeqCst);
++        let (tx, rx) = channel::<Value>(&memory).unwrap();
++        assert!(tx.send(Value(state.clone())).is_ok());
++        drop(store);
++        assert_eq!(state.active.load(Ordering::SeqCst), 1);
++        assert!(catch_unwind(AssertUnwindSafe(|| drop(rx))).is_err());
++        assert_eq!(state.values_dropped.load(Ordering::SeqCst), 1);
++        // The existing owned Arc deliberately retains the implicit weak,
++        // physical header and SAME ticket after a payload destructor unwinds.
++        // No final-free, recovery or zero-owner claim is made for this path.
++        assert_eq!(state.active.load(Ordering::SeqCst), 1);
++        let (tx, rx) = channel::<u64>(&memory).unwrap();
++        tx.send(7).unwrap();
++        drop(rx);
++        assert_eq!(state.active.load(Ordering::SeqCst), 1);
 +    }
 +}
