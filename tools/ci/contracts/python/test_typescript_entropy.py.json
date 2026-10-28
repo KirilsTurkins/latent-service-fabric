@@ -1,21 +1,30 @@
-{"cases":["TypeScriptEntropy.test_capture_metadata_cannot_inject_or_override_the_backend","TypeScriptEntropy.test_compiler_banner_does_not_retain_the_deterministic_original_fallback","TypeScriptEntropy.test_exact_generated_random_contract_selects_only_its_declared_profile","TypeScriptEntropy.test_high_53_bits_are_exact_and_every_call_draws_without_a_seed_or_cache","TypeScriptEntropy.test_host_error_identity_is_preserved_and_no_retry_or_plausible_result_is_returned","TypeScriptEntropy.test_installation_is_lazy_and_leaves_compiler_math_and_other_intrinsics_unchanged","TypeScriptEntropy.test_real_bundle_banner_is_application_scoped_and_rejects_snapshot_random","TypeScriptEntropy.test_snapshot_and_undeclared_calls_refuse_without_using_original_or_host_source","TypeScriptEntropy.test_wrong_width_error_order_async_kind_and_version_refuse_exact_contract"],"guards":{"TypeScriptEntropy.test_capture_metadata_cannot_inject_or_override_the_backend":
-  "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb"
-,"TypeScriptEntropy.test_compiler_banner_does_not_retain_the_deterministic_original_fallback":
-  "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb"
-,"TypeScriptEntropy.test_exact_generated_random_contract_selects_only_its_declared_profile":
-  "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb"
-,"TypeScriptEntropy.test_high_53_bits_are_exact_and_every_call_draws_without_a_seed_or_cache":
-  "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb"
-,"TypeScriptEntropy.test_host_error_identity_is_preserved_and_no_retry_or_plausible_result_is_returned":
-  "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb"
-,"TypeScriptEntropy.test_installation_is_lazy_and_leaves_compiler_math_and_other_intrinsics_unchanged":
-  "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb"
-,"TypeScriptEntropy.test_real_bundle_banner_is_application_scoped_and_rejects_snapshot_random":
-  "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb"
-,"TypeScriptEntropy.test_snapshot_and_undeclared_calls_refuse_without_using_original_or_host_source":
-  "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb"
-,"TypeScriptEntropy.test_wrong_width_error_order_async_kind_and_version_refuse_exact_contract":
-  "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb"
-},"kind":"python","module":"tools/tests/test_typescript_entropy.py","reviewReason":"Review explicit exact-RANDOM Math.random lowering and concrete undeclared/snapshot refusal; additive actual34-outcome same-products programme and original native15 controls, original75min/allrequired commands unchanged.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d8ee7a6748be1a401aee23401915323f2f6747b810695d5e5a0c85758087150b","class:setup-sha256:e75197c56ad98d531bd52c9a2bdeaaf1f6cdfd342f820f381bc10eb1a8970227"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "TypeScriptEntropy.test_capture_metadata_cannot_inject_or_override_the_backend":
+      "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb",
+    "TypeScriptEntropy.test_compiler_banner_does_not_retain_the_deterministic_original_fallback":
+      "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb",
+    "TypeScriptEntropy.test_exact_generated_random_contract_selects_only_its_declared_profile":
+      "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb",
+    "TypeScriptEntropy.test_high_53_bits_are_exact_and_every_call_draws_without_a_seed_or_cache":
+      "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb",
+    "TypeScriptEntropy.test_host_error_identity_is_preserved_and_no_retry_or_plausible_result_is_returned":
+      "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb",
+    "TypeScriptEntropy.test_installation_is_lazy_and_leaves_compiler_math_and_other_intrinsics_unchanged":
+      "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb",
+    "TypeScriptEntropy.test_real_bundle_banner_is_application_scoped_and_rejects_snapshot_random":
+      "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb",
+    "TypeScriptEntropy.test_snapshot_and_undeclared_calls_refuse_without_using_original_or_host_source":
+      "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb",
+    "TypeScriptEntropy.test_wrong_width_error_order_async_kind_and_version_refuse_exact_contract":
+      "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_typescript_entropy.py",
+  "reviewReason":"Review explicit exact-RANDOM Math.random lowering and concrete undeclared/snapshot refusal; additive actual34-outcome same-products programme and original native15 controls, original75min/allrequired commands unchanged.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "5a153357453cb459da9f60883bc585400340a7e9c8d60fea4843645cdf3566eb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d8ee7a6748be1a401aee23401915323f2f6747b810695d5e5a0c85758087150b","class:setup-sha256:e75197c56ad98d531bd52c9a2bdeaaf1f6cdfd342f820f381bc10eb1a8970227"],"skipSites":[]}
+  }
+}

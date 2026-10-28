@@ -11,7 +11,8 @@
         "branches": [
           "feat/sdk-736-http-ip-format-20261027",
           "feat/sdk-745-lift-result-memory-20261028",
-          "test/sdk-738-node-bootstrap-custody-20261028"
+          "test/sdk-738-node-bootstrap-custody-20261028",
+          "feat/sdk-736-call-parameter-closure-memory-20261028"
         ],
         "paths": [
           ".github/workflows/canonical-stream-outers.yml",
@@ -40,7 +41,7 @@
   "requiredJobs": [
     "stream-outers"
   ],
-  "reviewReason": "Append only the closed Node custody branch; preserve LeafR3 and IP routing, pinned actions, permissions and existing per-branch deadlines.",
+  "reviewReason": "Add only the closed original-Store call-parameter and concrete lower/lift closure ownership mode: one exact vendor library, four private native controls, all21 Git/tool/build/library/list/test roots share1320 seconds with j2 and one five-second cleanup reserve. Legacy None/nonzero and ZST, typed-layout refusal, cancellation, callback/destructor/confirmation unwind are covered. Full ActivationBudget/RSS/stack/transitive costs and whole736/745 remain unqualified; no old programme replay.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

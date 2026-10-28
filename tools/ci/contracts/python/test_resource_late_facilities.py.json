@@ -1,19 +1,28 @@
-{"cases":["ResourceLateFacilities.test_default_managed_library_and_opted_late_source_keep_original_resources_and_limits","ResourceLateFacilities.test_exact_late_and_fresh_results_require_one_linked_completion_record","ResourceLateFacilities.test_first_rejected_outcome_and_bounded_cli_streams_are_retained","ResourceLateFacilities.test_log_identity_is_bounded_ascii_and_message_is_one_closed_marker","ResourceLateFacilities.test_original_budgets_zero_other_effects_and_canonical_counts_remain_mandatory","ResourceLateFacilities.test_retirement_uses_real_list_shape_and_all_eighteen_unsigned_counters","ResourceLateFacilities.test_terminal_result_revision_and_process_cannot_be_substituted","ResourceLateFacilities.test_truthy_non_boolean_selectors_refuse_before_capture_or_project_creation"],"guards":{"ResourceLateFacilities.test_default_managed_library_and_opted_late_source_keep_original_resources_and_limits":
-  "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc"
-,"ResourceLateFacilities.test_exact_late_and_fresh_results_require_one_linked_completion_record":
-  "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc"
-,"ResourceLateFacilities.test_first_rejected_outcome_and_bounded_cli_streams_are_retained":
-  "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc"
-,"ResourceLateFacilities.test_log_identity_is_bounded_ascii_and_message_is_one_closed_marker":
-  "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc"
-,"ResourceLateFacilities.test_original_budgets_zero_other_effects_and_canonical_counts_remain_mandatory":
-  "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc"
-,"ResourceLateFacilities.test_retirement_uses_real_list_shape_and_all_eighteen_unsigned_counters":
-  "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc"
-,"ResourceLateFacilities.test_terminal_result_revision_and_process_cannot_be_substituted":
-  "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc"
-,"ResourceLateFacilities.test_truthy_non_boolean_selectors_refuse_before_capture_or_project_creation":
-  "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc"
-},"kind":"python","module":"tools/tests/test_resource_late_facilities.py","reviewReason":"Two explicit default-false accepted late-facility lanes; original jobs restore byte-exact after only selector/job/guard removal; same original limits, immutable 6fd native, two denials plus four ordinary late/fresh calls, no old programme or post-Store credit.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:0566622e24521d908a6d69ec25feb641e55a8091c0ec39ca89d5f7075d6e7736","class:setup-sha256:1f052c38fe64a6c2fbeedff027ce51159acc29ba8bf01d4f6c845824dff313b4"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "ResourceLateFacilities.test_default_managed_library_and_opted_late_source_keep_original_resources_and_limits":
+      "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc",
+    "ResourceLateFacilities.test_exact_late_and_fresh_results_require_one_linked_completion_record":
+      "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc",
+    "ResourceLateFacilities.test_first_rejected_outcome_and_bounded_cli_streams_are_retained":
+      "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc",
+    "ResourceLateFacilities.test_log_identity_is_bounded_ascii_and_message_is_one_closed_marker":
+      "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc",
+    "ResourceLateFacilities.test_original_budgets_zero_other_effects_and_canonical_counts_remain_mandatory":
+      "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc",
+    "ResourceLateFacilities.test_retirement_uses_real_list_shape_and_all_eighteen_unsigned_counters":
+      "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc",
+    "ResourceLateFacilities.test_terminal_result_revision_and_process_cannot_be_substituted":
+      "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc",
+    "ResourceLateFacilities.test_truthy_non_boolean_selectors_refuse_before_capture_or_project_creation":
+      "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_resource_late_facilities.py",
+  "reviewReason":"Two explicit default-false accepted late-facility lanes; original jobs restore byte-exact after only selector/job/guard removal; same original limits, immutable 6fd native, two denials plus four ordinary late/fresh calls, no old programme or post-Store credit.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "61f4dab7f8018ffeb44c7cad283d8ed69203729d6a888acd99e3cd92ebbe7fcc":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:0566622e24521d908a6d69ec25feb641e55a8091c0ec39ca89d5f7075d6e7736","class:setup-sha256:1f052c38fe64a6c2fbeedff027ce51159acc29ba8bf01d4f6c845824dff313b4"],"skipSites":[]}
+  }
+}

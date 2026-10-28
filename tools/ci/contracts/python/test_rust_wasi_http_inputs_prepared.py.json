@@ -1,25 +1,33 @@
-{"cases":["InstallerPlatformBoundary.test_consumer_only_change_is_bound_by_guest_recipe_not_adapter_producer","InstallerPlatformBoundary.test_exact_compiler_commit_and_recognized_versions_are_required","InstallerPlatformBoundary.test_non_linux_refuses_before_creating_output_or_running_tools","InstallerPlatformBoundary.test_selected_source_closure_captures_runtime_shared_owners_and_producer","PreparedArtifactFences.test_altered_receipt_after_selection_and_failed_install_remain_refused","PreparedArtifactFences.test_changed_component_or_selected_tool_is_rejected","PreparedArtifactFences.test_prepared_material_is_the_original_receipt_and_never_authority","PreparedArtifactFences.test_rehashed_altered_core_cannot_borrow_the_original_core_receipt","PreparedArtifactFences.test_rehashed_wrong_flags_commands_or_receipt_fields_do_not_qualify","PreparedArtifactFences.test_source_or_wit_inspection_swap_is_rejected"],"guards":{"InstallerPlatformBoundary.test_consumer_only_change_is_bound_by_guest_recipe_not_adapter_producer":
-  "9b0898dca410138768fe0287424f9d576f4f0615395a12d64c1e71085c60a946"
-,"InstallerPlatformBoundary.test_exact_compiler_commit_and_recognized_versions_are_required":
-  "9b0898dca410138768fe0287424f9d576f4f0615395a12d64c1e71085c60a946"
-,"InstallerPlatformBoundary.test_non_linux_refuses_before_creating_output_or_running_tools":
-  "9b0898dca410138768fe0287424f9d576f4f0615395a12d64c1e71085c60a946"
-,"InstallerPlatformBoundary.test_selected_source_closure_captures_runtime_shared_owners_and_producer":
-  "9b0898dca410138768fe0287424f9d576f4f0615395a12d64c1e71085c60a946"
-,"PreparedArtifactFences.test_altered_receipt_after_selection_and_failed_install_remain_refused":
-  "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7"
-,"PreparedArtifactFences.test_changed_component_or_selected_tool_is_rejected":
-  "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7"
-,"PreparedArtifactFences.test_prepared_material_is_the_original_receipt_and_never_authority":
-  "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7"
-,"PreparedArtifactFences.test_rehashed_altered_core_cannot_borrow_the_original_core_receipt":
-  "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7"
-,"PreparedArtifactFences.test_rehashed_wrong_flags_commands_or_receipt_fields_do_not_qualify":
-  "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7"
-,"PreparedArtifactFences.test_source_or_wit_inspection_swap_is_rejected":
-  "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7"
-},"kind":"python","module":"tools/tests/test_rust_wasi_http_inputs_prepared.py","reviewReason":"Ten new adapter Prepared receipt, exact version, producer/consumer closure and mutation fences; prior cases and guards unchanged, no compiled or signed runtime qualification.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "9b0898dca410138768fe0287424f9d576f4f0615395a12d64c1e71085c60a946"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ffdfcc250f8eb74511aed8e733c426021bf5568c4c956ce99472d53d78878829","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-  "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ffdfcc250f8eb74511aed8e733c426021bf5568c4c956ce99472d53d78878829","class:setup-sha256:b284356a4a048444f97b3a249379edde43f5aba3f5d44bb36a3f6c1318615e3f"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "InstallerPlatformBoundary.test_consumer_only_change_is_bound_by_guest_recipe_not_adapter_producer":
+      "9b0898dca410138768fe0287424f9d576f4f0615395a12d64c1e71085c60a946",
+    "InstallerPlatformBoundary.test_exact_compiler_commit_and_recognized_versions_are_required":
+      "9b0898dca410138768fe0287424f9d576f4f0615395a12d64c1e71085c60a946",
+    "InstallerPlatformBoundary.test_non_linux_refuses_before_creating_output_or_running_tools":
+      "9b0898dca410138768fe0287424f9d576f4f0615395a12d64c1e71085c60a946",
+    "InstallerPlatformBoundary.test_selected_source_closure_captures_runtime_shared_owners_and_producer":
+      "9b0898dca410138768fe0287424f9d576f4f0615395a12d64c1e71085c60a946",
+    "PreparedArtifactFences.test_altered_receipt_after_selection_and_failed_install_remain_refused":
+      "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7",
+    "PreparedArtifactFences.test_changed_component_or_selected_tool_is_rejected":
+      "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7",
+    "PreparedArtifactFences.test_prepared_material_is_the_original_receipt_and_never_authority":
+      "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7",
+    "PreparedArtifactFences.test_rehashed_altered_core_cannot_borrow_the_original_core_receipt":
+      "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7",
+    "PreparedArtifactFences.test_rehashed_wrong_flags_commands_or_receipt_fields_do_not_qualify":
+      "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7",
+    "PreparedArtifactFences.test_source_or_wit_inspection_swap_is_rejected":
+      "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_rust_wasi_http_inputs_prepared.py",
+  "reviewReason":"Ten new adapter Prepared receipt, exact version, producer/consumer closure and mutation fences; prior cases and guards unchanged, no compiled or signed runtime qualification.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "9b0898dca410138768fe0287424f9d576f4f0615395a12d64c1e71085c60a946":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ffdfcc250f8eb74511aed8e733c426021bf5568c4c956ce99472d53d78878829","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
+    "3d6094cff1bf37324e989dc9b0c0aef1db556f1a263c4723faed61542533bdb7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ffdfcc250f8eb74511aed8e733c426021bf5568c4c956ce99472d53d78878829","class:setup-sha256:b284356a4a048444f97b3a249379edde43f5aba3f5d44bb36a3f6c1318615e3f"],"skipSites":[]}
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "cases":["BothActualOutputs.test_real_qualifier_signs_and_executes_both_initial_outputs_plus_update_and_remove","OfflineRebuild.test_changed_recipe_binding_lock_tool_or_offline_policy_never_uses_byte_variance_exception","OfflineRebuild.test_distinct_real_receipt_outputs_preserve_inputs_and_require_both_signed_executions","OfflineRebuild.test_stale_component_or_runtime_receipt_refuses_before_signing","OwnedProxyAuthority.test_actual_netrc_producer_matches_exact_pinned_go_authority_without_cross_port_credentials","OwnedProxyAuthority.test_proxy_userinfo_still_refuses_before_owned_config_or_credential_lookup"],
+  "storageCases":"guard-keys",
   "guards":{
     "BothActualOutputs.test_real_qualifier_signs_and_executes_both_initial_outputs_plus_update_and_remove":
       "70a2c3982052b3116b7a7e49839bd466734dd5c44a30e6ef268443b5bbe5fab0",
