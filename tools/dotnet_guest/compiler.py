@@ -581,6 +581,9 @@ class Compiler:
             ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen),
             *((runtime.ADAPTERS[name][0].removeprefix("dotnet-"), path)
               for name, path in self.runtimes.items()), ('component-composer', self.wac))]
+        if self.development_managed_stage:
+            after.extend((file_identity(self.tools/'MANAGED-STAGE-INSTALL.json','private-managed-stage-installation',64*1024**2),
+                file_identity(self.tools/'managed-stage-source-inputs.json','private-managed-stage-source-map',64*1024**2)))
         after.append(http_errors.verify_installed(self.sdk, self.tools))
         if after != self.materials:
             raise ValueError(".NET compiler or runtime adapter changed during build")
