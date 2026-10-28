@@ -205,5 +205,89 @@ class NormalJavaCompilerProfile(unittest.TestCase):
                 compiler.assert_not_called()
 
 
+class RetainedJavaCompilerCustody(unittest.TestCase):
+    def test_complete_outer_inventory_refuses_unknown_duplicate_link_and_changed_bytes(self):
+        import stat
+        import time
+        import zipfile
+        from tools.java_guest import compiler_profile_distribution as delivery
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            expected = {'first.json': profile.identity(b'first'), 'second.zip': profile.identity(b'second')}
+
+            def archive(name, entries):
+                path = root / name
+                with zipfile.ZipFile(path, 'x') as package:
+                    for label, raw, mode in entries:
+                        entry = zipfile.ZipInfo(label)
+                        entry.external_attr = mode << 16
+                        package.writestr(entry, raw)
+                return path
+
+            good = [('first.json', b'first', stat.S_IFREG | 0o600),
+                    ('second.zip', b'second', stat.S_IFREG | 0o600)]
+            source = archive('good.zip', good)
+            delivery._custody_outer(source, root / 'accepted', expected, time.monotonic() + 5)
+            self.assertEqual({p.name: p.read_bytes() for p in (root / 'accepted').iterdir()},
+                             {'first.json': b'first', 'second.zip': b'second'})
+            variants = [good + [('foreign', b'x', stat.S_IFREG)],
+                        [good[0], good[0]],
+                        [('first.json', b'first', stat.S_IFLNK), good[1]],
+                        [('first.json', b'other', stat.S_IFREG), good[1]]]
+            for index, entries in enumerate(variants):
+                with self.subTest(index=index), self.assertRaisesRegex(ValueError, 'custody-member'):
+                    delivery._custody_outer(archive(str(index) + '.zip', entries), root / str(index),
+                                            expected, time.monotonic() + 5)
+
+    def test_original_producer_receipt_and_linked_profile_are_required_after_managed_admission(self):
+        import time
+        from tools.java_guest import compiler_profile_distribution as delivery
+        from tools.java_guest.llvm_private_store_distribution import MANIFEST
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            value = NormalJavaCompilerProfile().fixture(root / 'linked', root / 'managed')
+            provenance = root / 'provenance'
+            provenance.mkdir()
+            bodies = {name: name.encode() for name in profile.NOTICES}
+            bodies.update({'result.json': b'fixture producer', 'public-compiler.json': b'fixture public',
+                           MANIFEST: b'fixture manifest', 'source.json': b'{}', 'commands.json': b'[]',
+                           'units.xml': b'<testsuite/>', 'lit.xml': b'<testsuite/>'})
+            for name, raw in bodies.items():
+                (provenance / name).write_bytes(raw)
+            with mock.patch.object(profile, 'read', return_value=profile.encoded(value)):
+                managed = profile.admit(root / 'managed')
+                self.assertIsNotNone(managed)
+                original = json.loads(managed[1])
+                original.update(representation='linked', compilerInventory=value['inventories']['linked'])
+                (provenance / 'normal-compiler-profile.json').write_bytes(profile.encoded(original))
+                delivery._custody_provenance(provenance, managed[1], value, time.monotonic() + 5)
+                (provenance / 'result.json').write_bytes(b'changed producer')
+                with self.assertRaisesRegex(ValueError, 'custody-provenance-digest|file-bound'):
+                    delivery._custody_provenance(provenance, managed[1], value, time.monotonic() + 5)
+                (provenance / 'result.json').write_bytes(b'fixture producer')
+                original['producer']['head'] = 'f' * 40
+                (provenance / 'normal-compiler-profile.json').write_bytes(profile.encoded(original))
+                with self.assertRaisesRegex(ValueError, 'custody-original-profile'):
+                    delivery._custody_provenance(provenance, managed[1], value, time.monotonic() + 5)
+
+    def test_recovery_refuses_unqualified_or_nonfresh_roots_before_network_or_output(self):
+        from tools.java_guest import compiler_profile_distribution as delivery
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            with mock.patch.object(profile, '_source_pin', return_value=None), \
+                    mock.patch.object(delivery, '_custody_download') as download:
+                with self.assertRaisesRegex(ValueError, 'unqualified-custody'):
+                    delivery.recover_custody(root, root / 'result', 'not-used')
+                download.assert_not_called()
+                self.assertFalse((root / 'result').exists())
+            (root / 'sentinel').write_bytes(b'preserved')
+            with mock.patch.object(delivery, '_custody_download') as download:
+                with self.assertRaisesRegex(ValueError, 'custody-fresh-root'):
+                    delivery.recover_custody(root, root / 'result', 'not-used')
+                download.assert_not_called()
+                self.assertEqual((root / 'sentinel').read_bytes(), b'preserved')
+                self.assertFalse((root / 'result').exists())
+
+
 if __name__ == '__main__':
     unittest.main()

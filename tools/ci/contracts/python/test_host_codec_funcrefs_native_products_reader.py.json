@@ -1,9 +1,18 @@
-{"cases":["HostCodecFuncRefsProductsReaderControls.test_literal_v4_contract_requires_twenty_groups_all_ninety_two_and_original_prefix","HostCodecFuncRefsProductsReaderControls.test_old_defaults_and_shared_fixed_member_acquisition_remain_exact","HostCodecFuncRefsProductsReaderControls.test_v4_full_model_refuses_old_profiles_partial_or_reordered_commands_and_forged_success"],"guards":{"HostCodecFuncRefsProductsReaderControls.test_literal_v4_contract_requires_twenty_groups_all_ninety_two_and_original_prefix":
-  "9d2b6f33330745dbe013640858a820f007531d4d27bc9096347edfcd70819cce"
-,"HostCodecFuncRefsProductsReaderControls.test_old_defaults_and_shared_fixed_member_acquisition_remain_exact":
-  "9d2b6f33330745dbe013640858a820f007531d4d27bc9096347edfcd70819cce"
-,"HostCodecFuncRefsProductsReaderControls.test_v4_full_model_refuses_old_profiles_partial_or_reordered_commands_and_forged_success":
-  "9d2b6f33330745dbe013640858a820f007531d4d27bc9096347edfcd70819cce"
-},"kind":"python","module":"tools/tests/test_host_codec_funcrefs_native_products_reader.py","reviewReason":"Review literal frozen v4 20-group 92-control schema and refusal models, preserving exact v1/v2 defaults and shared acquisition; no product result or tuple is inferred.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "9d2b6f33330745dbe013640858a820f007531d4d27bc9096347edfcd70819cce"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:907b44e3d87d50158b6ccc0e9e82a964f3c8584bcb58489d180092b780591d98","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "HostCodecFuncRefsProductsReaderControls.test_literal_v4_contract_requires_twenty_groups_all_ninety_two_and_original_prefix":
+      "9d2b6f33330745dbe013640858a820f007531d4d27bc9096347edfcd70819cce",
+    "HostCodecFuncRefsProductsReaderControls.test_old_defaults_and_shared_fixed_member_acquisition_remain_exact":
+      "9d2b6f33330745dbe013640858a820f007531d4d27bc9096347edfcd70819cce",
+    "HostCodecFuncRefsProductsReaderControls.test_v4_full_model_refuses_old_profiles_partial_or_reordered_commands_and_forged_success":
+      "9d2b6f33330745dbe013640858a820f007531d4d27bc9096347edfcd70819cce"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_host_codec_funcrefs_native_products_reader.py",
+  "reviewReason":"Review literal frozen v4 20-group 92-control schema and refusal models, preserving exact v1/v2 defaults and shared acquisition; no product result or tuple is inferred.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "9d2b6f33330745dbe013640858a820f007531d4d27bc9096347edfcd70819cce":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:907b44e3d87d50158b6ccc0e9e82a964f3c8584bcb58489d180092b780591d98","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

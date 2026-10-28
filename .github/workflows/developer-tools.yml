@@ -141,6 +141,10 @@ on:
         description: Verify only the sealed Java compiler product using existing pack and installer
         type: boolean
         default: false
+      java_compiler_custody:
+        description: With java_compiler_product, recover the fixed sealed compiler product without executing it
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -864,11 +868,13 @@ jobs:
         run: printf 'LSF_DEV_COMPILER_CACHE=%s\n' "$RUNNER_TEMP/compiler-archives" >> "$GITHUB_ENV"
       - name: Restore untrusted source-pinned Java prepared inputs
         id: java-compiler-cache
+        if: ${{ !inputs.java_compiler_custody }}
         uses: KirilsTurkins/lsf-cache/restore@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
       - name: Verify fixed compiler inputs, existing pack and installer, and normal admission
+        if: ${{ !inputs.java_compiler_custody }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -881,14 +887,39 @@ jobs:
               --root "$root" \
               --output target/java-compiler-product/result.json
       - name: Save only reverified Java prepared input bytes
-        if: steps.java-compiler-cache.outputs.cache-hit != 'true'
+        if: ${{ !inputs.java_compiler_custody && steps.java-compiler-cache.outputs.cache-hit != 'true' }}
         uses: KirilsTurkins/lsf-cache/save@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: ${{ steps.java-compiler-cache.outputs.cache-primary-key }}
-      - uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+      - if: ${{ !inputs.java_compiler_custody }}
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-compiler-product-${{ github.sha }}
           path: target/java-compiler-product/result.json
           if-no-files-found: error
           retention-days: 7
+      - name: Recover the fixed retained compiler product as data only
+        if: inputs.java_compiler_custody
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          root=$(mktemp -d /tmp/latent-java-custody.XXXXXXXX)
+          trap 'timeout --signal=TERM --kill-after=1 5 rm -rf -- "$root"' EXIT
+          mkdir -p target
+          timeout --signal=TERM --kill-after=5 1195 \
+            python -B tools/java_guest/compiler_profile_distribution.py recover-custody \
+              --root "$root" \
+              --output target/java-compiler-custody
+      - if: inputs.java_compiler_custody
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: java-compiler-custody-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            target/java-compiler-custody/managed.zip
+            target/java-compiler-custody/managed-inputs.json
+            target/java-compiler-custody/source-managed-inputs.json
+            target/java-compiler-custody/custody.json
+          if-no-files-found: error
+          retention-days: 90

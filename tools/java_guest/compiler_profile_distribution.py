@@ -311,6 +311,199 @@ def product(source: Path, directory: Path, output: Path, *, _deadline: float | N
     return installed / 'wasi-sdk'
 
 
+# This transport is a later custody copy, never the original compiler producer.
+CUSTODY = {
+    'artifact': 12843145732, 'run': 40742132105,
+    'head': '98c738c05ac151ff78d8c5184c31b2a12e6f0844',
+    'checkout': 'eae8be71d4ccad106e31eeac35bf849339e0cfe6',
+    'name': 'developer-java-tools-candidate-eae8be71d4ccad106e31eeac35bf849339e0cfe6',
+    'archive': {'bytes': 584657440, 'sha256': 'fff94e888e4221a970c33b2ba88db7659c2e325cb0473cc498e823fb113d56c0'},
+    'members': {
+        'SHA256SUMS': {'bytes': 193, 'sha256': 'ead298fc9f16b1cc99cf0105da0a1899aff979c19eb17f608611f811da7a9b0c'},
+        'developer-bundle.json': {'bytes': 364614, 'sha256': '6cb299b4554e304b5726320891d4d1dd1fc8fd37e5652f42b811c6e4119ff485'},
+        'latent-dev-linux-x86_64-java-tools.zip': {'bytes': 585143108, 'sha256': 'd3fb4ab586ba618aa2aecc55a699491c6b47f34f02bd747eea2b3d1d47992431'},
+    },
+    'managed': {
+        'managed.zip': {'bytes': 560473194, 'sha256': '1ea3652b38ebf64c20217005bca0b440758fce87673560e0db9d38a07de0f952'},
+        'managed-inputs.json': {'bytes': 2252810, 'sha256': 'cb6ccafdee8286dc059926c6a61b63288e300103595622b6d8c2281126b190bd'},
+    },
+    'compilerInventory': 'sha256:ad126dc217c67196e0f87be875254bab853374524ba770e250e1b0db0cb09f52',
+}
+
+
+def _custody_download(root: Path, token: str, deadline: float) -> Path:
+    from tools.java_guest import llvm_private_store_inputs as inputs
+    profile.need(type(token) is str and 0 < len(token) <= 4096, 'custody-token')
+    base = ('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/artifacts/'
+            + str(CUSTODY['artifact']))
+    headers = {'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json',
+               'Cache-Control': 'no-cache'}
+    metadata = json.loads(inputs._response(urllib.request.Request(base, headers=headers), deadline,
+                                          maximum=4 * 1024 ** 2))
+    profile.need(metadata.get('id') == CUSTODY['artifact'] and metadata.get('name') == CUSTODY['name']
+                 and metadata.get('expired') is False
+                 and metadata.get('size_in_bytes') == CUSTODY['archive']['bytes']
+                 and metadata.get('digest') == 'sha256:' + CUSTODY['archive']['sha256']
+                 and metadata.get('workflow_run', {}).get('head_sha') == CUSTODY['head']
+                 and metadata.get('workflow_run', {}).get('id') == CUSTODY['run'], 'custody-origin')
+    try:
+        response = urllib.request.build_opener(inputs.NoRedirect).open(
+            urllib.request.Request(base + '/zip', headers=headers),
+            timeout=min(30, deadline - time.monotonic()))
+    except urllib.error.HTTPError as error:
+        try:
+            profile.need(error.code == 302, 'custody-redirect')
+            location = error.headers['Location']
+        finally:
+            error.close()
+    else:
+        response.close()
+        raise ValueError('Java compiler profile custody-redirect-required')
+    parsed = urllib.parse.urlsplit(location)
+    profile.need(parsed.scheme == 'https' and parsed.username is None and parsed.password is None
+                 and parsed.port in (None, 443) and parsed.hostname is not None
+                 and (parsed.hostname.endswith('.blob.core.windows.net')
+                      or parsed.hostname.endswith('.githubusercontent.com')), 'custody-blob-origin')
+    target = root / 'candidate.zip'
+    count, checksum = 0, hashlib.sha256()
+    with urllib.request.urlopen(location, timeout=min(30, deadline - time.monotonic())) as incoming, \
+            target.open('xb') as output:
+        while block := incoming.read1(65536):
+            profile.need(time.monotonic() < deadline, 'custody-deadline')
+            count += len(block)
+            profile.need(count <= CUSTODY['archive']['bytes'], 'custody-byte-limit')
+            checksum.update(block)
+            output.write(block)
+    profile.need({'bytes': count, 'sha256': checksum.hexdigest()} == CUSTODY['archive'], 'custody-digest')
+    target.chmod(0o600)
+    return target
+
+
+def _custody_outer(archive: Path, destination: Path, expected: dict, deadline: float) -> None:
+    import stat
+    profile.need(not destination.exists() and not destination.is_symlink(), 'custody-fresh-outer')
+    with zipfile.ZipFile(archive) as source:
+        entries = source.infolist()
+        profile.need(len(entries) == len(expected) and {entry.filename for entry in entries} == set(expected),
+                     'custody-member-set')
+        for entry in entries:
+            profile.need(entry.file_size == expected[entry.filename]['bytes'] and not entry.is_dir()
+                         and not entry.flag_bits & 1
+                         and stat.S_IFMT(entry.external_attr >> 16) in (0, stat.S_IFREG), 'custody-member-type')
+        destination.mkdir(mode=0o700)
+        for entry in entries:
+            count, checksum = 0, hashlib.sha256()
+            with source.open(entry) as incoming, (destination / entry.filename).open('xb') as output:
+                while block := incoming.read(65536):
+                    profile.need(time.monotonic() < deadline, 'custody-deadline')
+                    count += len(block)
+                    profile.need(count <= expected[entry.filename]['bytes'], 'custody-member-bound')
+                    checksum.update(block)
+                    output.write(block)
+            profile.need({'bytes': count, 'sha256': checksum.hexdigest()} == expected[entry.filename],
+                         'custody-member-digest')
+            (destination / entry.filename).chmod(0o600)
+
+
+def _custody_provenance(root: Path, admitted: bytes, value: dict, deadline: float) -> None:
+    from tools.java_guest.llvm_private_store_distribution import file_identity, MANIFEST
+    expected_names = profile.NOTICES | {'result.json', 'source.json', 'commands.json', 'units.xml', 'lit.xml',
+                                       MANIFEST, 'public-compiler.json', 'normal-compiler-profile.json'}
+    profile.need({path.name for path in root.iterdir()} == expected_names, 'custody-provenance-set')
+    for name, expected in {**value['notices'], 'result.json': value['qualification']['producerReceipt'],
+                           'public-compiler.json': value['qualification']['publicReceipt'],
+                           MANIFEST: value['manifest']}.items():
+        profile.need(file_identity(root, name, expected['bytes'], deadline) == expected, 'custody-provenance-digest')
+    record = json.loads(admitted)
+    record.update(representation='linked', compilerInventory=value['inventories']['linked'])
+    raw = (root / 'normal-compiler-profile.json').read_bytes()
+    profile.need(len(raw) <= profile.MAXIMUM and json.loads(raw) == record, 'custody-original-profile')
+
+
+def recover_custody(root: Path, output: Path, token: str) -> None:
+    """Rehouse one authenticated installed product; never execute its recipe or tools."""
+    from tools import dev_managed_distribution as distribution, dev_managed_tools as installer
+    from tools.dev_workflow import bundle
+    from tools.dev_workflow.common import decode, digest, encode
+    from tools.java_guest.llvm_private_store_distribution import file_identity
+    from tools.rust_capsule_project import read_file
+    deadline = time.monotonic() + 1195
+
+    def check():
+        profile.need(time.monotonic() < deadline, 'custody-deadline')
+
+    source_profile = profile.read()
+    value = profile._source_pin(source_profile)
+    profile.need(value is not None, 'unqualified-custody')
+    source_names = ('tools/java_guest/compiler_profile_distribution.py', '.github/workflows/developer-tools.yml')
+    recovery_source = {name: file_identity(profile.ROOT, name, 4 * 1024 ** 2, deadline) for name in source_names}
+    profile.need(root.is_dir() and not root.is_symlink() and not root.is_junction()
+                 and not any(root.iterdir()) and not output.exists() and not output.is_symlink(), 'custody-fresh-root')
+    archive = _custody_download(root, token, deadline)
+    profile.need(file_identity(root, archive.name, bundle.MAX_BUNDLE, deadline) == CUSTODY['archive'], 'custody-archive')
+    outer = root / 'outer'
+    _custody_outer(archive, outer, CUSTODY['members'], deadline)
+    manifest_raw = read_file(outer / 'developer-bundle.json', bundle.MAX_MANIFEST)
+    selected = decode(manifest_raw, bundle.MAX_MANIFEST)
+    bundle.manifest(selected, target='linux-x86_64', version=selected.get('version'), commit=CUSTODY['checkout'])
+    profile.need(selected['archive'] == {'name': 'latent-dev-linux-x86_64-java-tools.zip',
+                 'size': CUSTODY['members']['latent-dev-linux-x86_64-java-tools.zip']['bytes'],
+                 'sha256': 'sha256:' + CUSTODY['members']['latent-dev-linux-x86_64-java-tools.zip']['sha256']},
+                 'custody-bundle-archive')
+    expected_sums = {selected['archive']['name']: selected['archive']['sha256'][7:],
+                     'developer-bundle.json': digest(manifest_raw)[7:]}
+    profile.need(read_file(outer / 'SHA256SUMS', 8192) == ''.join(
+        f'{checksum}  {name}\n' for name, checksum in sorted(expected_sums.items())).encode(), 'custody-checksums')
+    payload = root / 'candidate'
+    bundle.extract(outer, selected, payload, check=check)  # Verify ALL files, not just the compiler subset.
+    for name, expected in CUSTODY['managed'].items():
+        profile.need(file_identity(payload / 'sdk', name, installer.MAX_BYTES, deadline) == expected,
+                     'custody-managed-identity')
+    original_manifest = read_file(payload / 'sdk/managed-inputs.json', installer.MAX_DOCUMENT)
+    original = installer.manifest(decode(original_manifest, installer.MAX_DOCUMENT,
+                                          maximum_items=installer.MAX_FILES * 5 + 8))
+    installed = installer.unpack(payload / 'sdk', root / 'installed', check)  # Validate ALL managed entries.
+    admitted = profile.admit(installed / 'wasi-sdk')
+    profile.need(admitted is not None and json.loads(admitted[1])['representation'] == 'managed',
+                 'custody-sdk-admission')
+    provenance = installed / 'java-compiler-provenance'
+    _custody_provenance(provenance, admitted[1], value, deadline)
+    output.mkdir(mode=0o700, parents=True)
+    filtered = {'schemaVersion': original['schemaVersion'], 'files': [entry for entry in original['files']
+        if entry['path'].startswith(('wasi-sdk/', 'java-compiler-provenance/'))]}
+    filtered['identity'] = digest(encode(filtered))
+    profile.need(filtered['identity'] == CUSTODY['compilerInventory'], 'custody-compiler-inventory')
+    check()
+    measured = distribution.pack({'wasi-sdk': installed / 'wasi-sdk',
+                                  'java-compiler-provenance': provenance}, output)
+    check()
+    profile.need(measured == filtered, 'custody-derived-inventory')
+    derived = installer.unpack(output, root / 'reinstalled', check)
+    readmitted = profile.admit(derived / 'wasi-sdk')
+    profile.need(readmitted == admitted, 'custody-derived-admission')
+    _custody_provenance(derived / 'java-compiler-provenance', readmitted[1], value, deadline)
+    _copy_fixed(payload / 'sdk', 'managed-inputs.json', output / 'source-managed-inputs.json',
+                CUSTODY['managed']['managed-inputs.json'], deadline)
+    profile.need(profile.read() == source_profile, 'custody-profile-drift')
+    profile.need({name: file_identity(profile.ROOT, name, 4 * 1024 ** 2, deadline) for name in source_names}
+                 == recovery_source, 'custody-recovery-source-drift')
+    receipt = {'schemaVersion': 'latent.java.compiler-custody.v1',
+        'origin': {'producer': value['producer'], 'qualification': value['qualification'],
+                   'originalBuildInput': value['buildInput'], 'sourceProfile': profile.identity(source_profile)},
+        'sourceCustody': CUSTODY, 'recoverySource': recovery_source, 'installed': json.loads(readmitted[1]),
+        'managedArchive': file_identity(output, 'managed.zip', installer.MAX_BYTES, deadline),
+        'managedInputs': file_identity(output, 'managed-inputs.json', installer.MAX_DOCUMENT, deadline),
+        'sourceManagedInputs': CUSTODY['managed']['managed-inputs.json'],
+        'compilerOnlyInventory': measured['identity'],
+        'compilerExecuted': False, 'runtimeQualified': False, 'compilerRebuilt': False,
+        'originalPreparedZipReconstructed': False, 'releasePublished': False}
+    raw = profile.encoded(receipt)
+    profile.need(len(raw) <= profile.MAXIMUM, 'custody-receipt-bound')
+    with (output / 'custody.json').open('xb') as target:
+        target.write(raw)
+    check()
+
+
 def main() -> int:
     """Builder/CI input preparation, never a second installation frontend."""
     import argparse
@@ -325,12 +518,17 @@ def main() -> int:
     stage = commands.add_parser('stage')
     stage.add_argument('--root', type=Path, required=True)
     stage.add_argument('--output', type=Path, required=True)
+    recovery = commands.add_parser('recover-custody')
+    recovery.add_argument('--root', type=Path, required=True)
+    recovery.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     if args.operation == 'acquire':
         acquire(args.output, os.environ.get('GH_TOKEN', ''))
     elif args.operation == 'product':
         installed = product(args.input, args.work, args.output)
         print(installed)
+    elif args.operation == 'recover-custody':
+        recover_custody(args.root, args.output, os.environ.get('GH_TOKEN', ''))
     else:
         profile.need(args.root.is_dir() and not any(args.root.iterdir())
                      and not args.root.is_symlink() and not args.root.is_junction(), 'fresh-stage-root')
