@@ -138,9 +138,19 @@ async fn warm_call(
     (before, before + 1)
 }
 
-fn warm_rows(rows: &[AllocationRow], before: usize) -> &[AllocationRow] {
+fn warm_rows(rows: &[AllocationRow], before: usize, pending: bool) -> &[AllocationRow] {
     let call = &rows[before..];
-    assert_eq!(call.len(), WARM_REQUESTS);
+    assert_eq!(call.len(), WARM_REQUESTS + usize::from(pending));
+    if pending {
+        // poll_and_block joins the HostTask to its original sync WaitableSet.
+        // Its first child index is a separately paid NativeVec<u32> capacity1.
+        let child = &call[WARM_REQUESTS];
+        assert_eq!(
+            child.bytes,
+            std::alloc::Layout::array::<u32>(1).unwrap().size()
+        );
+        assert!(child.confirmed && !child.released);
+    }
     assert!(call.iter().all(|r| r.bytes > 0 && r.admitted));
     // These two actual WorkItem carriers have the same QueueNode layout.
     assert_eq!(call[GUEST_CALL].bytes, call[PUSH].bytes);
@@ -175,7 +185,7 @@ async fn actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while
             .is_pending());
         assert!(gate.polls.load(Ordering::SeqCst) > 0);
         let allocated = allocation_rows(&observed);
-        let pending = warm_rows(&allocated, before);
+        let pending = warm_rows(&allocated, before, true);
         assert_eq!(pending[TASK].bytes, allocated[stub].bytes);
         for (index, row) in pending.iter().enumerate() {
             assert_eq!(row.released, matches!(index, LOWER | PUSH));
@@ -307,8 +317,8 @@ async fn actual_host_future_cancellation_cannot_credit_another_live_store() {
     let allocated_b = requests(&observed_b);
     let rows_a = allocation_rows(&observed_a);
     let rows_b = allocation_rows(&observed_b);
-    let task_a = warm_rows(&rows_a, before_a)[TASK].bytes;
-    let task_b = warm_rows(&rows_b, before_b)[TASK].bytes;
+    let task_a = warm_rows(&rows_a, before_a, true)[TASK].bytes;
+    let task_b = warm_rows(&rows_b, before_b, true)[TASK].bytes;
     let escaped_a = task_a as u64 + rows_a[ready_a].bytes as u64 + 2 * OWNER;
     let escaped_b = task_b as u64 + rows_b[ready_b].bytes as u64 + 2 * OWNER;
     let live_b = b.host_memory_bytes();
@@ -374,7 +384,7 @@ async fn actual_host_future_callback_error_is_unchanged_and_its_box_retires() {
         assert!(format!("{error:#}").contains("native-host-future-original-callback-error"));
         assert!(gate.polls.load(Ordering::SeqCst) > 0);
         let allocated = allocation_rows(&observed);
-        let call = warm_rows(&allocated, before);
+        let call = warm_rows(&allocated, before, false);
         let result_bytes = if dynamic {
             std::alloc::Layout::new::<Vec<Val>>().size()
         } else {
