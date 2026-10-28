@@ -21,6 +21,7 @@ from tools.application_dependency_approval import request as execution_request, 
 from tools.build_snapshot import canonical
 
 BUILD_TYPE = "https://latent.dev/build/dotnet-capsule/v1"
+MANAGED_STAGE_BUILD_TYPE = "https://latent.dev/build/dotnet-managed-stage-diagnostic/v1"
 RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dotnet_guest/build.py",
     "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/runtime.py", "tools/dotnet_guest/composer.py",
     "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/entropy.py", "tools/dotnet_guest/outputs.py",
@@ -260,7 +261,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("compiler observation deadline or clock invalid")
-            write_json(output / "build-observation.json", {"formatVersion": 1, "buildType": BUILD_TYPE,
+            write_json(output / "build-observation.json", {"formatVersion": 1, "buildType": MANAGED_STAGE_BUILD_TYPE if _development_managed_stage else BUILD_TYPE,
                 "source": {"repository": repository, "revision": digest(source_inputs)[7:], "snapshotDigest": digest(source_inputs),
                            "repositoryTrust": "operator-asserted", "capture": "explicit-input-files"},
                 "componentDigest": digest(component), "componentSize": len(component), "materials": sorted(materials, key=lambda row: row["name"]),

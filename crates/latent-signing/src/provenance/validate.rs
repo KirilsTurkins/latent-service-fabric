@@ -1,7 +1,8 @@
 use super::{
     BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE, DOTNET_CAPSULE_BUILD_TYPE,
-    GO_CAPSULE_BUILD_TYPE, JAVA_CAPSULE_BUILD_TYPE, PROVENANCE_BUILD_TYPE, RUST_CAPSULE_BUILD_TYPE,
-    RUST_GUEST_BUILD_TYPE, TYPESCRIPT_CAPSULE_BUILD_TYPE,
+    DOTNET_MANAGED_STAGE_DIAGNOSTIC_BUILD_TYPE, GO_CAPSULE_BUILD_TYPE, JAVA_CAPSULE_BUILD_TYPE,
+    PROVENANCE_BUILD_TYPE, RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE,
+    TYPESCRIPT_CAPSULE_BUILD_TYPE,
 };
 use crate::{SignatureFailure, SignatureResult};
 use std::collections::BTreeSet;
@@ -189,6 +190,21 @@ pub(crate) fn validate_observation(
             "packager",
             "package-inputs",
         ],
+        DOTNET_MANAGED_STAGE_DIAGNOSTIC_BUILD_TYPE => &[
+            "dotnet",
+            "wit-bindgen",
+            "managed-activation-runtime",
+            "noncrypto-entropy",
+            "wall-clock-runtime",
+            "private-managed-stage-installation",
+            "private-managed-stage-source-map",
+            "managed-stage-derived-corelib",
+            "compiler-inputs",
+            "dependency-lock",
+            "contracts-tool",
+            "packager",
+            "package-inputs",
+        ],
         JAVA_CAPSULE_BUILD_TYPE => &[
             "java",
             "gradle",
@@ -281,6 +297,15 @@ fn validate_recipe(build_type: &str, parameters: &BuildRecipe) -> SignatureResul
                 && !p.ambient_wasi
         }
         (DOTNET_CAPSULE_BUILD_TYPE, BuildRecipe::DotnetCapsule(p)) => {
+            p.compiler == "native-aot-llvm"
+                && p.bindings == "wit-bindgen-csharp"
+                && p.language == "csharp"
+                && p.target == "wasi-wasm"
+                && p.runtime == "native-aot"
+                && p.locked
+                && !p.ambient_wasi
+        }
+        (DOTNET_MANAGED_STAGE_DIAGNOSTIC_BUILD_TYPE, BuildRecipe::DotnetCapsule(p)) => {
             p.compiler == "native-aot-llvm"
                 && p.bindings == "wit-bindgen-csharp"
                 && p.language == "csharp"

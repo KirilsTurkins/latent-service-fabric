@@ -28,6 +28,12 @@ Verification returns a checked proof under captured trust/time state. A later ca
 
 PublisherVerifier has bounded synchronous cryptography and no network lookup or positive verification cache. Its in-process time high-water mark is not a durable restart floor. A builder assertion is different from observing a local compiler, and an SBOM reference is an exact content association rather than a security endorsement.
 
+The .NET managed-stage diagnostic build type records its private runtime subset
+and requires the actual adapters, installation/source maps and derived CoreLib.
+It needs its own exact builder-policy requirement. The ordinary .NET profile
+still requires `closed-runtime`; verifying diagnostic provenance does not qualify
+or authorize guest execution.
+
 ## Dependencies and build
 
 Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-artifacts](../latent-artifacts/README.md).

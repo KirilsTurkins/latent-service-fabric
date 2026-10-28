@@ -32,6 +32,8 @@ pub const C_GUEST_BUILD_TYPE: &str = "https://latent.dev/build/c-guest/v1";
 pub const TYPESCRIPT_CAPSULE_BUILD_TYPE: &str = "https://latent.dev/build/typescript-capsule/v1";
 pub const GO_CAPSULE_BUILD_TYPE: &str = "https://latent.dev/build/go-capsule/v1";
 pub const DOTNET_CAPSULE_BUILD_TYPE: &str = "https://latent.dev/build/dotnet-capsule/v1";
+pub const DOTNET_MANAGED_STAGE_DIAGNOSTIC_BUILD_TYPE: &str =
+    "https://latent.dev/build/dotnet-managed-stage-diagnostic/v1";
 pub const JAVA_CAPSULE_BUILD_TYPE: &str = "https://latent.dev/build/java-capsule/v1";
 pub(crate) fn supported_build_type(value: &str) -> bool {
     matches!(
@@ -43,6 +45,7 @@ pub(crate) fn supported_build_type(value: &str) -> bool {
             | TYPESCRIPT_CAPSULE_BUILD_TYPE
             | GO_CAPSULE_BUILD_TYPE
             | DOTNET_CAPSULE_BUILD_TYPE
+            | DOTNET_MANAGED_STAGE_DIAGNOSTIC_BUILD_TYPE
             | JAVA_CAPSULE_BUILD_TYPE
     )
 }

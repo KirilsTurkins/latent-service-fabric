@@ -1,5 +1,5 @@
 {
-  "cases":["Phase2CliSchemas.test_challenge_network_profile_is_closed_versioned_and_bounded","Phase2CliSchemas.test_challenge_profile_allows_separate_static_token_resolution","Phase2CliSchemas.test_credential_modes_are_closed_and_disjoint","Phase2CliSchemas.test_evidence_requires_exact_subject_and_closed_portable_selection","Phase2CliSchemas.test_registry_profile_rejects_inline_secrets_null_and_unbounded_sets"],
+  "storageCases":"guard-keys",
   "guards":{
     "Phase2CliSchemas.test_challenge_network_profile_is_closed_versioned_and_bounded":
       "a9f2527a186408ed7fbc14cdd910a454df3dbb3cb78ce1054dad15fa2ec75ef5",

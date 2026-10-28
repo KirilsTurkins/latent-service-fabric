@@ -614,6 +614,27 @@ async fn dotnet_managed_stage_diagnostic_preserves_failed_root_return_boundary()
         use latent_core::{ContractId, FunctionId, ServiceId};
         use latent_manifest::ManifestCodec;
         let name = "dotnet-root-return-managed-stage";
+        let observation = join_cause_package::observation(name);
+        assert_eq!(
+            observation.build_type,
+            latent_signing::DOTNET_MANAGED_STAGE_DIAGNOSTIC_BUILD_TYPE
+        );
+        assert!(!observation
+            .materials
+            .iter()
+            .any(|row| row.name == "closed-runtime"));
+        // The truthful private adapter subset must not satisfy the ordinary recipe.
+        let mut ordinary = observation.clone();
+        ordinary.build_type = latent_signing::DOTNET_CAPSULE_BUILD_TYPE.into();
+        let error = latent_signing::decode_build_observation(
+            &serde_json::to_vec(&ordinary).unwrap(),
+            latent_signing::ProvenanceLimits::default(),
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.reason(),
+            latent_signing::SignatureFailure::MalformedProvenance
+        );
         assert_eq!(
             std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(),
             Ok("dotnet")
@@ -665,7 +686,6 @@ async fn dotnet_managed_stage_diagnostic_preserves_failed_root_return_boundary()
         assert_eq!(error.message, "private-stage-component-mismatch");
         let bundle =
             join_cause_package::managed_stage_bundle(&join_cause_package::input(name), component);
-        let observation = join_cause_package::observation(name);
         let release = packages::release(&bundle);
         assert_eq!(supplied, release.0);
         assert_eq!(
@@ -688,7 +708,7 @@ async fn dotnet_managed_stage_diagnostic_preserves_failed_root_return_boundary()
         assert_eq!(ceiling.wall_time_limit_millis, Some(120_000));
         assert_eq!(ceiling.child_calls, 0);
         let signers = join_cause_package::Signers::for_tenant(
-            latent_signing::DOTNET_CAPSULE_BUILD_TYPE,
+            latent_signing::DOTNET_MANAGED_STAGE_DIAGNOSTIC_BUILD_TYPE,
             &tenant,
         );
         let directory = tempfile::tempdir().unwrap();
