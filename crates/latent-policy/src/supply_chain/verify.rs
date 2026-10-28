@@ -25,6 +25,10 @@ pub(super) fn verify(
     upload: PackageAdmissionUpload,
 ) -> Result<VerifiedAdmission, PlatformError> {
     with_preparation(authority, tenant, upload, |upload| {
+        #[cfg(feature = "development-test-host")]
+        if let Some(private) = authority.inner.development_managed_stage_component {
+            return prepare_selected(upload, authority.inner.manifest_profile, Some(private));
+        }
         prepare_with_profile(upload, authority.inner.manifest_profile)
     })
 }
@@ -75,10 +79,27 @@ pub(super) fn prepare_with_profile(
     upload: PackageAdmissionUpload,
     manifest_profile: latent_manifest::ManifestValidationProfile,
 ) -> Result<Prepared, PlatformError> {
+    prepare_selected(upload, manifest_profile, None)
+}
+fn prepare_selected(
+    upload: PackageAdmissionUpload,
+    manifest_profile: latent_manifest::ManifestValidationProfile,
+    private: Option<[u8; 32]>,
+) -> Result<Prepared, PlatformError> {
     let limits = PackagingLimits {
         manifest_profile,
         ..Default::default()
     };
+    #[cfg(feature = "development-test-host")]
+    let limits = {
+        let mut selected = limits;
+        selected.semantics.development_managed_stage_component = private;
+        selected
+    };
+    #[cfg(not(feature = "development-test-host"))]
+    if private.is_some() {
+        return Err(invalid("private-stage-unavailable"));
+    }
     let component_limit = usize::try_from(limits.package.max_layer_bytes)
         .map_err(|_| invalid("admission-component-limit"))?;
     AdmissionStorageLimits::default().check_upload(&upload, component_limit)?;

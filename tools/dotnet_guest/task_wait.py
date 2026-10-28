@@ -146,7 +146,7 @@ class Port:
         if any(file_identity(path, 'task-wait-derived-corelib', MAX_ASSEMBLY) != self.identity for path in (self.assembly, self.retained)):
             raise ValueError('task-wait-derived-CoreLib-changed')
 
-    def finish(self, project: Path, evidence: Path, *, corelib_port=None) -> dict:
+    def finish(self, project: Path, evidence: Path, *, corelib_port=None, stage_port=None) -> dict:
         self.recheck()
         selected = self.assembly
         if corelib_port is not None:
@@ -154,6 +154,11 @@ class Port:
             if type(corelib_port) is not ClosedFilesystemPort:
                 raise ValueError('task-wait-authenticated-final-corelib-required')
             selected = corelib_port.final_for(self)
+        if stage_port is not None:
+            from tools.dotnet_guest.managed_work import StagePort
+            if type(stage_port) is not StagePort or corelib_port is None:
+                raise ValueError('task-wait-authenticated-stage-required')
+            selected = stage_port.final_for(corelib_port)
         references = read_file(self.references, http_errors.MAX_RECEIPT).decode('utf-8-sig').splitlines()
         if (not 1 <= len(references) <= 512 or references.count(str(self.assembly)) != 1
                 or any(Path(path).name == 'System.Private.CoreLib.dll' and path != str(self.assembly) for path in references)):
@@ -181,6 +186,8 @@ class Port:
             result['nativeAotReferenceBinding']['finalCoreLibDerivation'] = {
                 'profile': corelib_port.evidence['profile'], 'intermediateDigest': self.identity['digest'],
                 'selectedDigest': corelib_port.identity['digest']}
+        if stage_port is not None:
+            result['nativeAotReferenceBinding']['diagnosticFinalCoreLibDigest'] = stage_port.identity['digest']
         write_json(evidence / 'task-wait-port.json', result)
         return result
 

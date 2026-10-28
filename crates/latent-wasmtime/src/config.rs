@@ -108,6 +108,9 @@ pub struct WasmtimeConfig {
     /// Test-host-only factory-time numeric trap capture, fixed at sixteen frames.
     #[cfg(feature = "development-test-host")]
     pub development_numeric_trap_observation: bool,
+    /// Opt-in private diagnostic; exact content digest, never a capability grant.
+    #[cfg(feature = "development-test-host")]
+    pub development_managed_stage_component: Option<[u8; 32]>,
     /// Explicit installation of the closed Angular profile. Ordinary defaults
     /// never imply support for a JavaScript runtime or an ambient host surface.
     pub angular_renderer: bool,
@@ -207,6 +210,8 @@ impl Default for WasmtimeConfig {
             development_local_service_refusals: false,
             #[cfg(feature = "development-test-host")]
             development_numeric_trap_observation: false,
+            #[cfg(feature = "development-test-host")]
+            development_managed_stage_component: None,
             angular_renderer: false,
             java_guest: false,
             transactional_state: false,

@@ -83,6 +83,17 @@ impl WasmtimeConfig {
                 wasmtime::component::DYNAMIC_VALUE_MEMORY_COHORT.to_owned(),
             ),
         ]);
+        #[cfg(feature = "development-test-host")]
+        if let Some(digest) = self.development_managed_stage_component {
+            fields.insert(
+                "development-private-profile".into(),
+                "dotnet-managed-stage-diagnostic-v1".into(),
+            );
+            fields.insert(
+                "development-private-component".into(),
+                format!("sha256:{:x}", latent_core::digest::HexDigest(digest)),
+            );
+        }
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);
         #[cfg(feature = "development-test-host")]

@@ -143,6 +143,44 @@ impl PreparationContext {
                 )
             })?;
         }
+        #[cfg(feature = "development-test-host")]
+        if self.config.development_managed_stage_component.is_some() {
+            linker
+                .instance(crate::development_trap_observer::MANAGED_STAGE_INTERFACE)
+                .and_then(|mut interface| {
+                    interface.func_wrap::<_, (u32, u32), ()>(
+                        "emit",
+                        |mut caller, (stage, guard)| {
+                            let fuel = caller.get_fuel()?;
+                            if fuel == 0 {
+                                return Err(wasmtime::Trap::OutOfFuel.into());
+                            }
+                            if caller
+                                .data()
+                                .runtime_stop
+                                .as_ref()
+                                .is_some_and(|stop| stop.observe().is_some())
+                            {
+                                return Err(wasmtime::Trap::Interrupt.into());
+                            }
+                            // Propagate the original accounting failure, never diagnostic success.
+                            caller.data_mut().development_stage_budget(fuel)?;
+                            caller
+                                .data()
+                                .capabilities
+                                .emit_development_managed_stage(stage, guard);
+                            Ok(())
+                        },
+                    )
+                })
+                .map_err(|_| {
+                    platform_error(
+                        PlatformErrorCode::IncompatibleContract,
+                        "private managed stage binding unavailable",
+                        false,
+                    )
+                })?;
+        }
         self.install_transaction_imports(&mut linker)?;
         if let Some(invoker) = self.local_services() {
             crate::host::service::install(&mut linker, invoker).map_err(|error| {

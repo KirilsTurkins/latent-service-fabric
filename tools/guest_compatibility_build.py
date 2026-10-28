@@ -322,3 +322,31 @@ def _failure_report(output: Path, language: str, stage: str, files: dict[str, by
     value = compatibility.report(language, digest(read_file(source_path)),
         digest(component) if component is not None else None, host["id"], [], findings)
     retain_report(output, value, kind="failure")
+
+
+def inspect_managed_stage(commands, wasm: Path, output: Path, declared: dict) -> dict:
+    """Private diagnostic admission; the ordinary ABI's unknown import stays reported."""
+    from tools.dotnet_guest.managed_work import STAGE_IDENTITY, STAGE_PROFILE, stage_private_interface
+    host = host_manifest(DEFAULT_PROFILE)
+    raw = commands.run('managed-stage-compatibility-wit', wasm, 'component', 'wit', output/'component.wasm', '--json')
+    graph = decode(raw, 4*1024*1024)
+    require(stage_private_interface(graph, 'imports'), 'managed-stage-exact-private-callable-shape')
+    names = interface_names(graph, host_interfaces={row['interface'] for row in host['interfaces']})
+    require(names['imports'].count(STAGE_IDENTITY) == 1 and STAGE_IDENTITY not in declared['imports'],
+        'managed-stage-explicit-private-import')
+    findings = compatibility.import_findings(names['imports'], list(declared['imports']), host)
+    expected = compatibility.finding('unknown-import', 'link', 'final-component', operation=STAGE_IDENTITY)
+    ordinary_findings = [compatibility.finding('surface-mismatch', 'link', 'final-component'), expected,
+        compatibility.finding('unresolved-behavior', 'invocation', 'not-evaluated')]
+    require(findings == ordinary_findings and set(names['exports']) == set(declared['exports']),
+        'managed-stage-additional-compatibility-refusal')
+    component = digest(read_file(output/'component.wasm',64*1024*1024))
+    result = {'componentDigest': component, 'hostAbiDigest': digest(encode(host)),
+        'imports': names['imports'], 'findings': findings}
+    if names['typeImports']:
+        result['typeImports'] = names['typeImports']
+    write_json(output/'compatibility-inspection.json', result)
+    write_json(output/'managed-stage-admission.json', {'profile': STAGE_PROFILE, 'componentDigest': component,
+        'privateImport': STAGE_IDENTITY, 'privateFunction': 'emit(u32,u32)',
+        'ordinaryHostAbiCompatible': False, 'authority': 'none', 'qualification': 'diagnostic-only'})
+    return result

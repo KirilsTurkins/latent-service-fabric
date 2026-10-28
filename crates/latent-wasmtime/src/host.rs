@@ -356,6 +356,11 @@ impl HostState {
         }
     }
 
+    #[cfg(feature = "development-test-host")]
+    pub(crate) fn development_stage_budget(&mut self, fuel: u64) -> wasmtime::Result<()> {
+        self.remaining_budget_snapshot(fuel).map(|_| ())
+    }
+
     fn remaining_budget_snapshot(
         &mut self,
         fuel: u64,

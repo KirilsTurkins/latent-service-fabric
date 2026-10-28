@@ -267,9 +267,11 @@ def install(generated: Path, output: Path, receipt: dict, *, check: bool = False
 
 
 def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: str,
-             *, check: bool = False, development_root_join_cause: bool = False) -> dict:
+             *, check: bool = False, development_root_join_cause: bool = False, development_managed_stage: bool = False) -> dict:
     if type(development_root_join_cause) is not bool:
         raise BindingError("invalid-development-join-cause-selector")
+    if type(development_managed_stage) is not bool or (development_managed_stage and not development_root_join_cause):
+        raise BindingError('managed-stage-requires-auxiliary-profile')
     source = source.resolve(strict=True)
     if output.is_symlink():
         raise BindingError("unowned-binding-output")
@@ -334,6 +336,16 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
                 if root_source.exists():
                     raise BindingError('reserved-managed-root-source')
                 root_source.write_text(managed_root, encoding='utf-8', newline='\n')
+        stage_support = None
+        if development_managed_stage:
+            selected_path = Path(__file__).resolve().parent / 'dotnet_guest/managed_work.py'
+            read_bytes(selected_path)
+            spec = importlib.util.spec_from_file_location('_latent_managed_stage', selected_path)
+            if spec is None or spec.loader is None:
+                raise BindingError('missing-captured-managed-stage-support')
+            stage_support = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(stage_support)
+            stage_support.stage_raw_generation(generated, output, check=check)
         join_cause = None
         if development_root_join_cause:
             if not expected_exports or observed_exports != 1 or managed_root is None:
@@ -343,6 +355,19 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
                 raise BindingError('dotnet-join-cause-missing-normal-helper')
             selected, join_cause = support.diagnostic_join_cause(candidate.name, read_bytes(candidate).decode('utf-8'))
             candidate.write_text(selected, encoding='utf-8', newline='\n')
+        stage_receipt = None
+        if development_managed_stage:
+            # The isolated sibling was captured BEFORE either projection guard.
+            if stage_support.STAGE_IDENTITY not in original:
+                raise BindingError('managed-stage-private-interface-missing')
+            candidate = generated / support.JOIN_CAUSE_FILE
+            selected, stage_receipt = stage_support.stage_export_helper(candidate.name, read_bytes(candidate).decode('utf-8'))
+            candidate.write_text(selected, encoding='utf-8', newline='\n')
+            root_path = generated / 'LsfManagedWorkRoot.g.cs'
+            selected, root_receipt = stage_support.stage_root_bridge(read_bytes(root_path).decode('utf-8'),
+                {p.name: read_bytes(p).decode('utf-8') for p in generated.glob('*.cs')})
+            root_path.write_text(selected, encoding='utf-8', newline='\n')
+            stage_receipt['rootBridge'] = root_receipt
         metadata = list(generated.glob("*_component_type.wit"))
         if len(metadata) != 1:
             raise BindingError("missing-unique-component-type")
@@ -372,6 +397,8 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
                                            'managedTaskSchedulingQualified': False}
         if join_cause is not None:
             receipt['developmentJoinCause'] = join_cause
+        if stage_receipt is not None:
+            receipt['developmentManagedStage'] = stage_receipt
         install(generated, output, receipt, check=check)
         return receipt
 
@@ -387,12 +414,14 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="regenerate and fail on drift without editing output")
     parser.add_argument("--development-root-join-cause", action="store_true",
                         help="closed auxiliary Join-cause fixture; never retirement qualification")
+    parser.add_argument('--development-managed-stage', action='store_true', help='closed private two-u32 diagnostic only')
     args = parser.parse_args()
     try:
         generate(args.wit, args.out_dir, args.world,
                  os.environ.get("LSF_WIT_BINDGEN", "wit-bindgen"),
                  os.environ.get("LSF_WASM_TOOLS", "wasm-tools"), check=args.check,
-                 development_root_join_cause=args.development_root_join_cause)
+                 development_root_join_cause=args.development_root_join_cause,
+                 development_managed_stage=args.development_managed_stage)
         return 0
     except (ValueError, OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
         parser.exit(1, f".NET guest bindings failed: {error}\n")

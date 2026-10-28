@@ -102,6 +102,15 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
 
 
 if __name__ == '__main__':
+    if '--managed-stage' in sys.argv[1:]:
+        parser = argparse.ArgumentParser(description='Closed two-call private managed-stage diagnostic')
+        parser.add_argument('--managed-stage', action='store_true', required=True)
+        parser.add_argument('--output', type=Path, required=True)
+        parser.add_argument('--source-commit', required=True)
+        arguments = parser.parse_args()
+        from tools.dotnet_root_return import qualify_managed_stage
+        print(json.dumps(qualify_managed_stage(arguments.output.resolve(), arguments.source_commit)))
+        raise SystemExit(0)
     if '--join-cause-replay' in sys.argv[1:]:
         parser = argparse.ArgumentParser(description='Closed retained-component Join-cause replay')
         parser.add_argument('--join-cause-replay', action='store_true', required=True)

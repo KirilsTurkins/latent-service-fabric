@@ -91,9 +91,21 @@ class Compiler:
     compiler_methods = False
 
     def __init__(self, tools: Path, commands, vendor: Path, *, offline: bool = False, captured: bool = False,
-                 compiler_methods: bool = False):
+                 compiler_methods: bool = False, _development_managed_stage: bool = False, _managed_stage_validator=None):
         if type(compiler_methods) is not bool:
             raise ValueError('dotnet compiler method observations require an explicit boolean')
+        if type(_development_managed_stage) is not bool:
+            raise ValueError('managed-stage-explicit-private-selector')
+        private_marker = tools/'MANAGED-STAGE-INSTALL.json'
+        if private_marker.exists() and not _development_managed_stage:
+            raise ValueError('private-managed-stage-tools-rejected-by-default-compiler')
+        self.development_managed_stage = _development_managed_stage
+        self.stage_port, self.stage_manifest, self.stage_manifest_bytes = None, None, None
+        if _development_managed_stage:
+            if not callable(_managed_stage_validator):
+                raise ValueError('managed-stage-explicit-validator-required')
+            self.stage_manifest = _managed_stage_validator(tools, vendor, deadline=commands.original_deadline)
+            self.stage_manifest_bytes = read_file(private_marker,64*1024**2)
         self.compiler_methods, self.reachability_observation = compiler_methods, None
         if sys.platform != "linux" or platform.machine() not in {"x86_64", "AMD64"}:
             raise ValueError("the pinned NativeAOT LLVM compiler is qualified only on Linux x86-64")
@@ -145,7 +157,8 @@ class Compiler:
                 "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
             raise ValueError("WASI SDK compiler version drift")
         self.roots["wasi-sdk"] = self.wasi_sdk
-        self.runtimes = {name: tools / filename for name, (_example, filename) in runtime.ADAPTERS.items()}
+        self.runtimes = {name: tools / filename for name, (_example, filename) in runtime.ADAPTERS.items()
+            if not _development_managed_stage or name in ('runtime-managed', 'entropy', 'wall')}
         if read_file(tools / "runtime-inputs.json") != runtime_inputs(vendor):
             raise ValueError("installed runtime source capture differs from the project SDK")
         from tools.dotnet_guest.composer import observed as observed_composer, selection as composer_selection
@@ -158,11 +171,14 @@ class Compiler:
             'selected': file_identity(self.wac, 'component-composer'), 'selection': composer_selection(self.sdk)}]
         if commands.run('component-composer-version', self.wac, '--version').strip() != b'wac-cli 0.10.1':
             raise ValueError('unreviewed component composer version')
-        self.runtime = self.runtimes["closed"]
+        self.runtime = self.runtimes["runtime-managed" if _development_managed_stage else "closed"]
         self.materials = [file_identity(path, name) for name, path in (
             ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen),
             *((runtime.ADAPTERS[name][0].removeprefix("dotnet-"), path)
               for name, path in self.runtimes.items()), ('component-composer', self.wac))]
+        if _development_managed_stage:
+            self.materials.extend((file_identity(private_marker,'private-managed-stage-installation',64*1024**2),
+                file_identity(tools/'managed-stage-source-inputs.json','private-managed-stage-source-map',64*1024**2)))
         self.materials.append(http_error_tool)
         self.before = tree_identity(self.roots)
         if captured:
@@ -213,12 +229,20 @@ class Compiler:
                 'original':file_identity(output/'retirement-port/original.wit', 'original-retirement-wit', retirement.MAX_TEXT),
                 'selected':file_identity(binding_source, 'private-retirement-wit', retirement.MAX_TEXT),
                 'selection':retirement_port})
+        if self.development_managed_stage:
+            if not managed:
+                raise ValueError('managed-stage-original-managed-port-required')
+            binding_source, self.stage_wit = managed_work.stage_binding_source(self, binding_source, world, output/'managed-stage-wit')
         generated = output / "generated"
         binding = work / "vendor/lsf/tools/dotnet_guest_bindings.py"
         join_cause = getattr(self, 'development_root_join_cause', False)
         if type(join_cause) is not bool or (join_cause and not managed):
             raise ValueError('dotnet-join-cause-requires-managed-root')
+        if self.development_managed_stage and not join_cause:
+            raise ValueError('managed-stage-auxiliary-helper-required')
         diagnostic_arguments = ('--development-root-join-cause',) if join_cause else ()
+        if self.development_managed_stage:
+            diagnostic_arguments += ('--development-managed-stage',)
         self.run("bindings", self.python, "-I", "-B", binding, "c-sharp", binding_source, "--world", world,
             "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated, *diagnostic_arguments)
         self.run("bindings-drift", self.python, "-I", "-B", binding, "c-sharp", binding_source, "--world", world,
@@ -282,6 +306,8 @@ class Compiler:
         self.filesystem_port = closed_filesystem.prepare(self.sdk, self.http_error_tools, self.package_cache, self.dotnet,
             project, output, command.output, self.run, task_wait_port=self.task_wait_port,
             protect_inputs=self.isolation.protect_inputs if self.isolation else None)
+        if self.development_managed_stage:
+            self.stage_port = managed_work.stage_prepare(self, project, output)
         self.http_error_port = None
         if {runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION} <= set(declared):
             self.http_error_port = http_errors.prepare(self.sdk, self.http_error_tools, self.dotnet, declared, project,
@@ -334,6 +360,8 @@ class Compiler:
                 # Both independent generation and the actual MSBuild call use
                 # the same closed selector; default wrapper bytes are unchanged.
                 script = script.removesuffix('\n') + ' --development-root-join-cause\n'
+            if self.development_managed_stage:
+                script = script.removesuffix('\n') + ' --development-managed-stage\n'
             if len(script.encode()) > 16384:
                 raise ValueError("binding wrapper path limit exceeded")
             wrapper.write_text(script, encoding="utf-8")
@@ -412,7 +440,7 @@ class Compiler:
             self.generated_materials.extend((self.http_error_port.identity,
                 file_identity(command.output / "http-error-port.json", "dotnet-http-error-port", http_errors.MAX_RECEIPT)))
         if self.task_wait_port is not None:
-            port = self.task_wait_port.finish(project, command.output, corelib_port=self.filesystem_port)
+            port = self.task_wait_port.finish(project, command.output, corelib_port=self.filesystem_port, stage_port=self.stage_port)
             self.compiler_patches.append({'name': task_wait.PROFILE, 'profile': task_wait.PROFILE,
                 'original': port['frameworkInput'], 'selected': port['derived'],
                 'selection': {key: port[key] for key in ('sourceCaptureDigest', 'targetsDigest', 'method',
@@ -433,7 +461,7 @@ class Compiler:
                         'managedAcceptedWork': port['managedAcceptedWork']}})
             self.generated_materials.extend((self.task_wait_port.identity,
                 file_identity(command.output / 'task-wait-port.json', 'dotnet-task-wait-port', http_errors.MAX_RECEIPT)))
-        filesystem = self.filesystem_port.finish(project, command.output)
+        filesystem = self.filesystem_port.finish(project, command.output, stage_port=self.stage_port)
         self.compiler_patches.append({'name': closed_filesystem.PROFILE, 'profile': closed_filesystem.PROFILE,
             'original': filesystem['frameworkInput'], 'selected': filesystem['derived'],
             'selection': {key: filesystem[key] for key in ('sourceCaptureDigest', 'targetsDigest', 'base',
@@ -442,7 +470,17 @@ class Compiler:
                 'nativeAotReferenceBinding')}})
         self.generated_materials.extend((self.filesystem_port.identity,
             file_identity(command.output / 'closed-filesystem-port.json', 'dotnet-closed-filesystem-port', http_errors.MAX_RECEIPT)))
-        profile = runtime.select(declared, actual, managed_work=managed)
+        if self.development_managed_stage:
+            if self.stage_port is None:
+                raise ValueError('managed-stage-corelib-chain-missing')
+            stage_record = self.stage_port.finish(project, command.output)
+            self.compiler_patches.append({'name': managed_work.STAGE_PROFILE, 'profile': managed_work.STAGE_PROFILE,
+                'original': self.filesystem_port.identity, 'selected': self.stage_port.identity, 'selection': stage_record})
+            self.generated_materials.append(self.stage_port.identity)
+            actual_graph = json.loads(self.run('managed-stage-raw-shape', self.wasm, 'component', 'wit', raw, '--json'))
+            if not managed_work.stage_private_interface(actual_graph, 'imports') or actual.count(managed_work.STAGE_IDENTITY) != 1:
+                raise ValueError('managed-stage-private-emitted-shape')
+        profile = runtime.select(declared, actual, managed_work=managed, development_managed_stage=self.development_managed_stage)
         adapter = self.runtimes[profile]
         from tools.dotnet_guest.internal_io import PROFILE as IO_PROFILE, prepare as prepare_internal_io
         from tools.dotnet_guest import closed_io
@@ -463,7 +501,7 @@ class Compiler:
                 'original': io_original, 'selected': file_identity(raw, 'internal-io-component', 64 * 1024 * 1024),
                 'selection': io_port})
             self.generated_materials.append(file_identity(command.output / 'internal-io-port.json', 'dotnet-internal-io-port'))
-        additional = [(name, self.runtimes[name]) for name in runtime.additional(declared, actual)]
+        additional = [(name, self.runtimes[name]) for name in runtime.additional(declared, actual, development_managed_stage=self.development_managed_stage)]
         selection = {"schemaVersion": "latent.dotnet.runtime.v1", "profile": profile,
             "declaredImports": declared, "emittedImports": actual,
             "rawComponent": file_identity(raw, "raw-native-aot-component", 64 * 1024 * 1024),
@@ -498,7 +536,16 @@ class Compiler:
             raise ValueError('compiler-private-retirement-import-escaped-composition')
         if managed_work.IDENTITY in final_interfaces['exports'] or managed_work.IDENTITY in final:
             raise ValueError('compiler-private-managed-work-edge-escaped-composition')
-        if not set(final) <= set(declared):
+        if self.development_managed_stage:
+            if final.count(managed_work.STAGE_IDENTITY) != 1:
+                raise ValueError('managed-stage-private-import-dropped')
+            stage_graph = json.loads(self.run('managed-stage-final-shape', self.wasm, 'component', 'wit', component, '--json'))
+            if not managed_work.stage_private_interface(stage_graph, 'imports'):
+                raise ValueError('managed-stage-private-final-shape')
+            allowed_final = {*declared, managed_work.STAGE_IDENTITY}
+        else:
+            allowed_final = set(declared)
+        if not set(final) <= allowed_final:
             raise ValueError("runtime adapter introduced undeclared authority:" +
                              ",".join(sorted(set(final) - set(declared))))
         surface = self.run("surface", self.wasm, "component", "wit", component).decode()
@@ -516,6 +563,10 @@ class Compiler:
         return component, generated_receipt
 
     def check_unchanged(self):
+        if self.development_managed_stage and read_file(self.tools/'MANAGED-STAGE-INSTALL.json',64*1024**2) != self.stage_manifest_bytes:
+            raise ValueError('managed-stage-private-installation-manifest-mutated')
+        if self.stage_port is not None:
+            self.stage_port.recheck()
         if getattr(self, "filesystem_port", None) is not None:
             self.filesystem_port.recheck()
         if getattr(self, "managed_entropy_port", None) is not None:

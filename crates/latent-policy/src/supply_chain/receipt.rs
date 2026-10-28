@@ -100,6 +100,28 @@ impl Receipt {
         upload: PackageAdmissionUpload,
         manifest_profile: latent_manifest::ManifestValidationProfile,
     ) -> Result<Retained, PlatformError> {
+        Self::validate_retained_selected(binding, upload, manifest_profile, None)
+    }
+    pub(super) fn validate_retained_selected(
+        binding: &AdmissionBinding,
+        upload: PackageAdmissionUpload,
+        manifest_profile: latent_manifest::ManifestValidationProfile,
+        private: Option<[u8; 32]>,
+    ) -> Result<Retained, PlatformError> {
+        let limits = PackagingLimits {
+            manifest_profile,
+            ..Default::default()
+        };
+        #[cfg(feature = "development-test-host")]
+        let limits = {
+            let mut selected = limits;
+            selected.semantics.development_managed_stage_component = private;
+            selected
+        };
+        #[cfg(not(feature = "development-test-host"))]
+        if private.is_some() {
+            return Err(corrupt());
+        }
         let old = Self::validate_history(binding)?;
         AdmissionStorageLimits::default().check_upload(&upload, 64 * 1024 * 1024)?;
         if upload.signatures.len() != 1 || upload.provenance.len() != 1 {
@@ -119,10 +141,7 @@ impl Receipt {
                 configuration,
                 layers,
             },
-            PackagingLimits {
-                manifest_profile,
-                ..Default::default()
-            },
+            limits,
         )
         .map_err(retained_error)?;
         let subject = PackageSigningSubject::from_package(

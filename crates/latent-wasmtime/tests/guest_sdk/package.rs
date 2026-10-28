@@ -383,3 +383,55 @@ pub fn catalog(
         .unwrap(),
     )
 }
+
+#[cfg(feature = "development-test-host")]
+pub fn managed_stage_bundle(path: &Path, component: [u8; 32]) -> PackageBundle {
+    let mut limits = PackagingLimits::default();
+    limits.semantics.development_managed_stage_component = Some(component);
+    let source = latent_packaging::decode_package_source(
+        &read(&path.join("package-source.json"), 65536),
+        limits,
+    )
+    .unwrap();
+    let input = latent_packaging::read_package_input(path, &source, limits).unwrap();
+    let inventory = sbom::inventory(&input);
+    latent_packaging::build_package_with_sbom(input, inventory, limits).unwrap()
+}
+
+#[cfg(feature = "development-test-host")]
+pub fn managed_stage_catalog(
+    root: &Path,
+    policy: SupplyChainPolicy,
+    memory_ceiling: Option<u64>,
+    component: [u8; 32],
+) -> (Arc<DirectoryArtifactRepository>, Arc<SupplyChainAuthority>) {
+    let clock = Arc::new(FixtureClock(SystemSupplyChainClock.now().unwrap()));
+    let mut runtime = super::support::config();
+    if let Some(memory_ceiling) = memory_ceiling {
+        // Match the separately configured service fixture's explicit ceiling.
+        // In particular, a NativeAOT caller reserves 256 MiB to fund a child;
+        // ordinary SDK packages retain their original 128 MiB profile.
+        runtime.maximum_memory_bytes = memory_ceiling;
+    }
+    let authority = Arc::new(
+        SupplyChainAuthority::open_with_runtime_and_managed_stage(
+            &root.join("trust"),
+            policy,
+            clock,
+            5,
+            Arc::new(runtime.detected_runtime_profile().unwrap()),
+            component,
+        )
+        .unwrap(),
+    );
+    let catalog = Arc::new(
+        DirectoryArtifactRepository::open_enforced(
+            root.join("catalog"),
+            latent_artifacts::DirectoryArtifactRepositoryConfig::default(),
+            latent_artifacts::AdmissionStorageLimits::default(),
+            authority.clone(),
+        )
+        .unwrap(),
+    );
+    (catalog, authority)
+}

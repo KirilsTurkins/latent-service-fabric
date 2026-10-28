@@ -7,6 +7,10 @@ license.workspace = true
 authors.workspace = true
 description = "Deterministic bounded packaging and inspection of supplied component and asset bytes."
 
+[features]
+# Absent by default; every private reader still requires an explicit selector.
+development-test-host = []
+
 [lints]
 workspace = true
 

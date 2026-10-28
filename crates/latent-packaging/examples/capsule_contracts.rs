@@ -30,6 +30,23 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args_os().skip(1).collect();
+    #[cfg(feature = "development-test-host")]
+    let (args, private) = if args
+        .last()
+        .is_some_and(|value| value == "--development-managed-stage")
+    {
+        (args[..args.len() - 1].to_vec(), true)
+    } else {
+        (args, false)
+    };
+    #[cfg(feature = "development-test-host")]
+    if private
+        && args
+            .first()
+            .is_some_and(|value| value == "--c-thread-derive-v1" || value == "--c-thread-bind-v1")
+    {
+        return Err("private managed stage is a source-only WIT selector".into());
+    }
     if args
         .first()
         .is_some_and(|value| value == "--c-thread-derive-v1")
@@ -86,6 +103,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             return Err("duplicate WIT source path".into());
         }
     }
+    #[cfg(feature = "development-test-host")]
+    let derived = if private {
+        latent_packaging::derive_managed_stage_contracts(&input.world, &files, limits)
+    } else {
+        derive_capsule_contracts(&input.world, &files, limits)
+    }
+    .map_err(|error| error.message)?;
+    #[cfg(not(feature = "development-test-host"))]
     let derived =
         derive_capsule_contracts(&input.world, &files, limits).map_err(|error| error.message)?;
     let lock = encode_wit_lock(derived.wit_lock(), PackageLimits::default())

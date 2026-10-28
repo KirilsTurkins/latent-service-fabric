@@ -1,5 +1,5 @@
 {
-  "cases":["CleanupTests.test_absent_namespace_and_empty_runtime_allow_only_canonical_run_data_removal","CleanupTests.test_altered_remote_path_never_reaches_shell","CleanupTests.test_failed_diagnostic_download_keeps_remote_output_for_recovery","CleanupTests.test_live_or_unrecognized_runtime_owner_prevents_removal","CleanupTests.test_private_directory_extra_file_is_retained_and_reported","CleanupTests.test_replaced_namespace_blocks_every_destructive_api_and_worker_action","CleanupTests.test_unfinished_output_is_copied_after_quiescence_before_remote_removal"],
+  "storageCases":"guard-keys",
   "guards":{
     "CleanupTests.test_absent_namespace_and_empty_runtime_allow_only_canonical_run_data_removal":
       "6c612c5bf2ff8f72a8bf6d57f3e767372f26e7ca7d1f5ada93e8d92bbe9e4990",

@@ -161,6 +161,10 @@ impl SharedRuntime {
                 slot, edge.wire_name(), operation.wire_name(), code.wire_code(), session_closed);
         }
     }
+    #[cfg(feature = "development-test-host")]
+    pub(crate) fn development_managed_stage_live(&self, slot: usize) -> bool {
+        self.development_join_cause.managed_stage_live(slot)
+    }
     pub(crate) fn native_aot_snapshot(
         &self,
     ) -> Result<Option<crate::NativeAotSnapshot>, PlatformError> {
@@ -327,6 +331,36 @@ impl WasmtimeBackend {
             .arm_task_return(activation, component, contract, export)
     }
 
+    /// Separate private diagnostic arming; never enables TaskReturn acceptance.
+    #[cfg(feature = "development-test-host")]
+    pub fn arm_development_managed_stage(
+        &self,
+        activation: &str,
+        component: &str,
+    ) -> Result<crate::DevelopmentJoinCauseGuard<'_>, PlatformError> {
+        if self
+            .shared
+            .preparation_context
+            .config
+            .development_managed_stage_component
+            != crate::development_trap_observer::join_cause_digest(component)
+            || self
+                .shared
+                .preparation_context
+                .config
+                .development_managed_stage_component
+                .is_none()
+        {
+            return Err(platform_error(
+                PlatformErrorCode::StateConflict,
+                "private managed stage component unavailable",
+                false,
+            ));
+        }
+        self.shared
+            .development_join_cause
+            .arm_managed_stage(activation, component)
+    }
     /// Bounded stage observations that do not retain a runtime owner.
     #[must_use]
     pub fn preparation_observer(&self) -> PreparationObserver {
@@ -698,6 +732,43 @@ impl WasmtimeBackend {
                 );
             }
         }
+        #[cfg(feature = "development-test-host")]
+        if self
+            .shared
+            .preparation_context
+            .config
+            .development_managed_stage_component
+            .is_some()
+            && self
+                .shared
+                .preparation_context
+                .config
+                .development_managed_stage_component
+                == runtime
+                    .descriptor
+                    .metadata
+                    .get("component-digest")
+                    .and_then(|value| crate::development_trap_observer::join_cause_digest(value))
+        {
+            if let Some(slot) = self.shared.development_join_cause.claim_managed_stage(
+                &request.activation.activation_id.0,
+                runtime
+                    .descriptor
+                    .metadata
+                    .get("component-digest")
+                    .map(String::as_str),
+                &request.activation.target.contract.0,
+                &request.activation.target.function.0,
+            ) {
+                output.attach_development_managed_stage(
+                    Arc::clone(&self.shared),
+                    slot,
+                    capabilities
+                        .as_ref()
+                        .map(latent_capabilities::broker::CapabilitySession::observer),
+                );
+            }
+        }
         let mut store = AccountedStore::new(self.invocation_store(
             request,
             &stop,
@@ -775,6 +846,8 @@ impl WasmtimeBackend {
                 _ => {}
             }
         }
+        #[cfg(feature = "development-test-host")]
+        output.finish_development_managed_stage();
         #[cfg(feature = "development-test-host")]
         self.shared.development_join_cause.capture(
             development_join_claim,

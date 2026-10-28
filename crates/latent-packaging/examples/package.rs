@@ -27,6 +27,32 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         )
         .map_err(|_| "unsupported transaction packaging profile")?;
     }
+    #[cfg(feature = "development-test-host")]
+    if args.len() >= 2 && args[args.len() - 2] == "--development-managed-stage-component" {
+        let raw = args
+            .last()
+            .unwrap()
+            .strip_prefix("sha256:")
+            .ok_or("private component requires sha256 prefix")?
+            .as_bytes();
+        if raw.len() != 64 {
+            return Err("private component requires exactly32 bytes".into());
+        }
+        let mut digest = [0u8; 32];
+        for (index, pair) in raw.chunks_exact(2).enumerate() {
+            let digit = |byte| match byte {
+                b'0'..=b'9' => Ok(byte - b'0'),
+                b'a'..=b'f' => Ok(byte - b'a' + 10),
+                _ => Err("private component requires lowercase hexadecimal"),
+            };
+            digest[index] = (digit(pair[0])? << 4) | digit(pair[1])?;
+        }
+        limits.semantics.development_managed_stage_component = Some(digest);
+        args.truncate(args.len() - 2);
+        if limits.manifest_profile != latent_manifest::ManifestValidationProfile::default() {
+            return Err("private managed stage cannot select another host profile".into());
+        }
+    }
     match args.as_slice() {
         [command, recipe, root, output] if command == "build" => {
             build(recipe, root, output, None, &limits)?;

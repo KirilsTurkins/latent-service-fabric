@@ -216,7 +216,7 @@ def fixture(output):
     return project
 
 
-def stage_probe_sources(compiled, output, binding, *, compiler_returned):
+def stage_probe_sources(compiled, output, binding, *, compiler_returned, expected_sources=PROBE_SOURCES, retain_actual=False):
     """Bounded diagnostic FIRST; retain valid known inputs before strict closure."""
     outputs = binding['outputs']
     names = sorted(name for name in outputs if name.endswith('.cs'))
@@ -228,7 +228,7 @@ def stage_probe_sources(compiled, output, binding, *, compiler_returned):
         details.append({'name': name[:256], 'bytes': size, 'safeFlatName': safe})
     write_json(output/'probe-capture-inventory.json', {'formatVersion': 1,
         'outputCount': len(outputs), 'csharpCount': len(names), 'reported': details,
-        'reportTruncated': len(names) > 64, 'expectedSources': PROBE_SOURCES,
+        'reportTruncated': len(names) > 64, 'expectedSources': expected_sources,
         'compilerReturned': compiler_returned, 'captureComplete': False})
     # Compiler.compile's pinned successful return is compiled/component.wasm.
     # This is retained before any capture closure/shape check can lose it.
@@ -238,7 +238,17 @@ def stage_probe_sources(compiled, output, binding, *, compiler_returned):
     write_json(output/'probe-generated-bindings.json', binding)
     destination = output/'probe-inputs'; destination.mkdir()
     total, records = 0, {}
-    for name in PROBE_SOURCES:
+    selected_names = expected_sources
+    if retain_actual:
+        raw_directory=output/'probe-raw-inputs'
+        raw_sources=list(raw_directory.glob('*.cs')) if raw_directory.is_dir() else []
+        require(len(raw_sources)<=64,'managed-stage-raw-final-source-count')
+        total=sum(len(read_file(p,1024**2)) for p in raw_sources)
+        require(total<=4*1024**2,'managed-stage-raw-final-source-bytes')
+        require(len(names)<=64 and all(len(n)<=256 and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_.-]*\.cs',n) is not None for n in names),
+            'managed-stage-actual-generated-name-bound')
+        selected_names = names
+    for name in selected_names:
         if name not in outputs:
             continue
         raw = read_file(compiled/'generated'/name, 1024**2); total += len(raw)
@@ -246,14 +256,15 @@ def stage_probe_sources(compiled, output, binding, *, compiler_returned):
             'root-return-generated-source-identity')
         (destination/name).write_bytes(raw)
         records[name] = file_identity(destination/name, 1024**2)
-    require(tuple(names) == PROBE_SOURCES, 'root-return-generated-source-shape')
+    require(tuple(names) == expected_sources, 'root-return-generated-source-shape')
     return names, records
 
 
-def retain_probe_inputs(compiled, output, binding, compiler, *, _join_cause=False):
+def retain_probe_inputs(compiled, output, binding, compiler, *, _join_cause=False, _stage=False):
     """Data-only capture inside original build owner, BEFORE its cleanup."""
     outputs = binding['outputs']
-    names, records = stage_probe_sources(compiled, output, binding, compiler_returned=True)
+    expected = MANAGED_STAGE_SOURCES if _stage else PROBE_SOURCES
+    names, records = stage_probe_sources(compiled, output, binding, compiler_returned=True, expected_sources=expected, retain_actual=_stage)
     actual = list((compiled/'project/obj').rglob('bindings.json'))
     require(len(actual) == 1 and read_json(actual[0])['outputs'] == outputs, 'root-return-actual-bindings')
     destination = output/'probe-inputs'
@@ -287,6 +298,9 @@ def retain_probe_inputs(compiled, output, binding, compiler, *, _join_cause=Fals
     selected = {'application.dll': roots.pop(), 'original-System.Private.CoreLib.dll': compiler.task_wait_port.original}
     selected['task-System.Private.CoreLib.dll'] = compiler.task_wait_port.assembly
     selected['final-System.Private.CoreLib.dll'] = compiler.filesystem_port.final_for(compiler.task_wait_port)
+    if _stage:
+        require(compiler.stage_port is not None, 'managed-stage-selected-corelib-required')
+        selected['managed-stage-System.Private.CoreLib.dll'] = compiler.stage_port.final_for(compiler.filesystem_port)
     total = 0
     for name, path in selected.items():
         raw = read_file(path, 8*1024**2); total += len(raw)
@@ -1331,3 +1345,351 @@ def join_task_return_observations(raw, components):
             require(row['taskReturnWitness'] is None and row['postCallObservation'] is None
                 and row['rejection'] is None, 'task-return-normal-unarmed')
     return rows
+
+
+# New programme: diagnostic-only guest checkpoints. Historical modes stay selected separately.
+MANAGED_STAGE_BRANCH = 'test/sdk-dotnet-managed-stage-20261028'
+MANAGED_STAGE_SOURCES = tuple(sorted((*PROBE_SOURCES,
+    'ServiceWorld.wit.Imports.latent.developmentDotnetStage.IStageImports.cs',
+    'ServiceWorld.wit.Imports.latent.developmentDotnetStage.StageImportsInterop.cs')))
+MANAGED_STAGE_DATED = {'originalPair': JOIN_REPLAY, 'normalComponent': JOIN_REPLAY_COMPONENTS[0],
+    'auxiliaryComponent': JOIN_REPLAY_COMPONENTS[1], 'notInvokedAgain': True, 'notRebuiltAgain': True,
+    'failedWitnessHead': '26e968e398e1530d63a0fef9f950768ab7668c2c',
+    'failedWitnessRun': 40603456909, 'failedWitnessArtifact': 12780256386,
+    'failedWitnessArtifactSHA256': '6aa9f627d86f4b30e2cc093f9fe423c55eec7199d41eefd429dd9d9f30935247'}
+
+
+def managed_stage_fixture(output, source_inputs, deadline):
+    from tools.dotnet_guest.managed_work import stage_library
+    project = fixture(output)
+    vendor = project/'vendor/lsf'
+    for name, row in source_inputs.items():
+        require(time.monotonic() < deadline-5, 'managed-stage-fixture-original-clock')
+        raw = read_file(ROOT/name,4*1024**2)
+        require(digest(raw) == row['digest'] and len(raw) == row['size'], 'managed-stage-current-source-copy')
+        path = vendor/name; path.parent.mkdir(parents=True,exist_ok=True); path.write_bytes(raw)
+    lock = read_json(project/'sdk-lock.json'); lock['sdk'] = json.loads(inventory(snapshot(vendor)))
+    (project/'sdk-lock.json').write_bytes(json.dumps(lock,indent=2).encode()+b'\n')
+    original = read_file(project/'src/RootReturn.cs',16384)
+    selected, receipt = stage_library(original.decode())
+    (project/'src/RootReturn.cs').write_text(selected,encoding='utf-8',newline='\n')
+    captured = snapshot(project)
+    require(len(captured) <= 4096 and sum(map(len,captured.values())) <= 32*1024**2
+        and all(len(b) <= 4*1024**2 for b in captured.values()), 'managed-stage-original-project-source-caps')
+    return project, receipt
+
+
+def retain_managed_stage_inputs(compiled, output, binding, compiler):
+    from tools.dotnet_guest.managed_work import STAGE_PROFILE
+    retain_managed_stage_raw(compiled,output)
+    require(binding.get('developmentManagedStage',{}).get('profile') == STAGE_PROFILE
+        and binding['developmentManagedStage']['originalAuxiliaryInverseExact'] is True,
+        'managed-stage-actual-generated-profile')
+    retain_probe_inputs(compiled,output,binding,compiler,_join_cause=True,_stage=True)
+    # Retain the exact response contents and selected CoreLib chain, not only hashes.
+    destination=output/'probe-inputs'
+    total=0
+    for index,path in enumerate(sorted((compiled/'project/obj').rglob('*.rsp'))):
+        require(index < 64,'managed-stage-retained-response-count')
+        raw=read_file(path,1024**2);total+=len(raw)
+        require(total<=4*1024**2,'managed-stage-retained-response-total')
+        (destination/f'actual-{index:02d}.rsp').write_bytes(raw)
+    for name in ('RootReturn.cs','Main.cs'):
+        (destination/('application-'+name)).write_bytes(read_file(compiled/'project/src'/name,1024**2))
+    for name in ('Capsule.csproj','global.json','packages.lock.json','nuget.config','component.wit'):
+        (destination/('actual-'+name)).write_bytes(read_file(compiled/'project'/name,1024**2))
+    canonical=read_json(output/'managed-stage-overlay-inputs/canonical-corelib-inputs.json')
+    for row in canonical.values():
+        if type(row) is dict:
+            from tools.build_observation import file_identity as material_identity
+            require(material_identity(output/row['retainedPath'],row['identity']['name'],8*1024**2)==row['identity'],
+                'managed-stage-canonical-full-corelib-inputs')
+    write_json(output/'managed-stage-generated.json', {'profile':STAGE_PROFILE,
+        'bindings':binding['developmentManagedStage'], 'completeSources':MANAGED_STAGE_SOURCES,
+        'actualAotSucceeded':True, 'originalSixCallsQualified':False, 'originalCauseQualified':False})
+
+
+def retain_managed_stage_failure(compiled, output):
+    retain_managed_stage_raw(compiled,output)
+    path=compiled/'generated/bindings.json'
+    if not path.is_file(): return
+    binding=read_json(path,4*1024**2)
+    names,records=stage_probe_sources(compiled,output,binding,compiler_returned=False,
+        expected_sources=MANAGED_STAGE_SOURCES,retain_actual=True)
+    write_json(output/'probe-inputs.json',{'formatVersion':1,'files':records,'completeActualGeneratedSources':names,
+        'compilerSucceeded':False,'actualAotBindingConfirmed':False,'diagnosticOnly':True})
+
+
+def managed_stage_acquire(output, commands, native_tools, deadline):
+    from tools import install_guest_bindgen
+    from tools.dotnet_capsule import _managed_stage_tar_visit, _managed_stage_file_identity
+    from tools.dotnet_guest import composer
+    acquisition=fresh(output/'acquisition'); acquisitions={}
+    urls=(('wasi-sdk.tar.gz','https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz',
+        256*1024**2,'87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171'),
+        ('wit-bindgen.tar.gz',install_guest_bindgen.URL,install_guest_bindgen.MAX_ARCHIVE,install_guest_bindgen.ARCHIVE_SHA256),
+        ('wac',composer.URL,composer.SIZE,composer.DIGEST.removeprefix('sha256:')))
+    for name,url,bound,expected in urls:
+        path=acquisition/name
+        commands.command_seconds=180
+        commands.run('download-'+name,'curl','--fail','--location','--max-time','180','--max-filesize',str(bound),url,'--output',path)
+        observed=_managed_stage_file_identity(path,name,bound,deadline)
+        row={'bytes':observed['size'],'sha256':observed['digest']}
+        require(row['sha256']=='sha256:'+expected and (name!='wac' or row['bytes']==composer.SIZE),
+            'managed-stage-fixed-tool-acquisition')
+        acquisitions[name]={'url':url,**row}
+    pin={'kind':'wasi-sdk','url':urls[0][1],'hashAlgorithm':'sha256','digest':urls[0][3],
+        'size':acquisitions['wasi-sdk.tar.gz']['bytes'],'expectedTopDirectory':'wasi-sdk-29.0-x86_64-linux'}
+    plan,_=_managed_stage_tar_visit(acquisition/'wasi-sdk.tar.gz',pin,deadline=deadline)
+    unpacked=acquisition/'wasi-owned'
+    _managed_stage_tar_visit(acquisition/'wasi-sdk.tar.gz',pin,deadline=deadline,destination=unpacked,expected=plan)
+    binary=install_guest_bindgen.binary(read_file(acquisition/'wit-bindgen.tar.gz',install_guest_bindgen.MAX_ARCHIVE))
+    bindgen=acquisition/'wit-bindgen';bindgen.write_bytes(binary);bindgen.chmod(0o755)
+    (acquisition/'wac').chmod(0o755)
+    tools={name:native_tools[name] for name in ('dotnet','wasm-tools','cargo','rustc')}
+    tools['wit-bindgen']=bindgen
+    write_json(output/'tool-acquisitions.json',{'inputs':acquisitions,'extractionFiles':plan['entryCount'],'extractionBytes':plan['expandedBytes'],
+        'originalDeadline':deadline,'newDeadlineCreated':False})
+    return unpacked/'wasi-sdk-29.0-x86_64-linux',acquisition/'wac',tools
+
+
+def managed_stage_observations(stdout, stderr, component):
+    """Diagnostic transport completion is not original-fault or retirement evidence."""
+    require(type(stdout) is bytes and type(stderr) is bytes and len(stdout)+len(stderr)<=4*1024**2,
+        'managed-stage-output-bound')
+    records=[json.loads(line.removeprefix('DOTNET_MANAGED_STAGE_CALL ')) for line in stdout.decode().splitlines()
+        if line.startswith('DOTNET_MANAGED_STAGE_CALL ')]
+    require(len(records)==2,'managed-stage-exact-two-diagnostic-calls')
+    for row,mode,outcome in zip(records,(3,9),('succeeded','guest-trap'),strict=True):
+        require(set(row)=={'profile','component','mode','terminalOutcome','claims','originalCauseQualified',
+            'originalSixCallsQualified','fullAc7Qualified','physicalRetirementQualified','nativeAccountingQualified'}
+            and row['profile']=='dotnet-managed-stage-diagnostic-v1' and row['component']==component
+            and type(row['mode']) is int and row['mode']==mode and row['terminalOutcome']==outcome
+            and type(row['claims']) is int and row['claims']==1
+            and all(row[key] is False for key in ('originalCauseQualified','originalSixCallsQualified',
+                'fullAc7Qualified','physicalRetirementQualified','nativeAccountingQualified')), 'managed-stage-closed-call-row')
+    events={0:[],1:[]};summary={};overflow=set()
+    for line in stderr.decode().splitlines():
+        if line.startswith(('DOTNET_MANAGED_STAGE ', 'DOTNET_MANAGED_STAGE_OVERFLOW ', 'DOTNET_MANAGED_STAGE_SUMMARY ')):
+            require(len(line.encode())+1<=256,'managed-stage-native-line-bound')
+        if line.startswith('DOTNET_MANAGED_STAGE '):
+            row=json.loads(line.removeprefix('DOTNET_MANAGED_STAGE '))
+            require(set(row)=={'slot','sequence','stage','guard'} and all(type(v) is int for v in row.values()),
+                'managed-stage-closed-event')
+            slot=row['slot'];require(slot in events and slot not in summary and len(events[slot])<16,
+                'managed-stage-event-slot-count')
+            require(row['sequence']==len(events[slot])+1 and 1<=row['stage']<=18
+                and row['guard']==(row['stage'] if 10<=row['stage']<=16 else 0),'managed-stage-event-sequence-kind')
+            events[slot].append(row)
+        elif line.startswith('DOTNET_MANAGED_STAGE_OVERFLOW '):
+            row=json.loads(line.removeprefix('DOTNET_MANAGED_STAGE_OVERFLOW '))
+            require(set(row)=={'slot'} and type(row['slot']) is int and row['slot'] in events
+                and row['slot'] not in overflow,'managed-stage-overflow-once');overflow.add(row['slot'])
+        elif line.startswith('DOTNET_MANAGED_STAGE_SUMMARY '):
+            row=json.loads(line.removeprefix('DOTNET_MANAGED_STAGE_SUMMARY '));slot=row.get('slot')
+            require(set(row)=={'slot','attempts','overflow','transportFailed','inconclusive'} and type(slot) is int
+                and slot in events and slot not in summary and type(row['attempts']) is int
+                and all(type(row[k]) is bool for k in ('overflow','transportFailed','inconclusive')),
+                'managed-stage-closed-summary')
+            summary[slot]=row
+    require(set(summary)=={0,1},'managed-stage-two-final-summaries')
+    for slot,row in summary.items():
+        require(0<=row['attempts']<=17 and row['overflow'] is (slot in overflow)
+            and (row['attempts']==17 if row['overflow'] else row['attempts']==len(events[slot])),
+            'managed-stage-summary-count')
+        require(row['attempts']>0 and not row['overflow'] and not row['transportFailed'] and not row['inconclusive'],
+            'managed-stage-missing-overflow-or-gap-inconclusive')
+        require(events[slot][0]['stage']==1,'managed-stage-selected-promise-first')
+    return {'calls':records,'events':events,'summary':summary,'diagnosticOnly':True,
+        'originalCauseQualified':False,'originalSixCallsQualified':False,'fullAC7Qualified':False}
+
+
+def managed_stage_public(output, deadline):
+    """Fixed fresh evidence only; old component pair is referenced, never reexported."""
+    public=output/'public';public.mkdir();rows=[];total=0;assembly_total=0;csharp_total=0
+    paths=list(output.glob('*.json'))+list((output/'commands/logs').glob('*.txt'))
+    folder=output/'dotnet-root-return-managed-stage'
+    paths+=list(folder.glob('*.json'))+list((folder/'logs').glob('*.txt'))
+    paths+=list((folder/'probe-inputs').glob('*'))+list((folder/'probe-raw-inputs').glob('*'))+list((folder/'managed-stage-overlay-inputs').glob('*'))
+    for relative in ('package','wit'):
+        for path in (folder/relative).rglob('*'):
+            require(not path.is_symlink(),'managed-stage-public-no-links')
+            if path.is_dir():continue
+            require(path.is_file(),'managed-stage-public-regular-input')
+            paths.append(path);require(len(paths)<=4095,'managed-stage-public-count')
+    paths+=list(folder.glob('*.wasm'))+list(folder.glob('*.wac'))
+    require(len(paths)==len(set(paths))<=4095,'managed-stage-public-count')
+    for path in sorted(paths):
+        require(time.monotonic()<deadline and path.is_file() and not path.is_symlink(),'managed-stage-public-clock-kind')
+        identity=file_identity(path,64*1024**2);total+=identity['bytes'];require(total<=PUBLIC_BYTES,'managed-stage-public-union')
+        if path.suffix.lower()=='.cs':
+            csharp_total+=identity['bytes']
+            require(identity['bytes']<=1024**2 and csharp_total<=4*1024**2,'managed-stage-all-retained-csharp-caps')
+        if path.suffix.lower()=='.dll':
+            assembly_total+=identity['bytes']
+            require(identity['bytes']<=8*1024**2 and assembly_total<=32*1024**2,'managed-stage-all-retained-assembly-caps')
+        name=path.relative_to(output).as_posix();target=public/name;target.parent.mkdir(parents=True,exist_ok=True)
+        raw=read_file(path,64*1024**2);require(digest(raw)==identity['sha256'],'managed-stage-public-source-fence')
+        with target.open('xb') as stream:stream.write(raw)
+        rows.append({'path':name,**identity})
+    write_json(public/'ADMISSION.json',{'formatVersion':1,'files':rows,'bytes':total,
+        'maximumBytes':PUBLIC_BYTES,'productExecutionPermission':False})
+
+
+def qualify_managed_stage(output, source_commit):
+    from tools import ci_rust_artifacts as artifacts
+    from tools.dotnet_capsule import (managed_stage_source_inputs, install_managed_stage_diagnostic,
+        verify_managed_stage_tools, acquire_managed_stage_tools)
+    from tools.dotnet_guest.managed_work import STAGE_CASE, STAGE_PROFILE
+    from tools import host_codec_wasmtime
+    require(os.environ.get('GITHUB_EVENT_NAME')=='push' and os.environ.get('GITHUB_REF')=='refs/heads/'+MANAGED_STAGE_BRANCH,
+        'managed-stage-closed-qualification-only-branch')
+    require(sys.platform=='linux' and sys.version_info>=(3,13),'managed-stage-linux-python313')
+    require(output!=ROOT and ROOT not in output.parents and output not in ROOT.parents,'managed-stage-output-owned')
+    output=fresh(output);deadline=float(os.environ['LSF_ROOT_RETURN_DEADLINE'])
+    require(math.isfinite(deadline) and time.monotonic()<deadline<=time.monotonic()+1320,'managed-stage-one-original-deadline')
+    shared={'bytes':0,'records':[]};environment=build_environment(output)
+    environment.update(CARGO_TARGET_DIR=str(ROOT/'target'),CARGO_INCREMENTAL='0',CARGO_BUILD_JOBS='2',
+        CARGO_PROFILE_DEV_DEBUG='0',CARGO_PROFILE_TEST_DEBUG='0',CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true',
+        CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true',RUSTUP_TOOLCHAIN='1.97.1',RUSTUP_AUTO_INSTALL='0')
+    commands=JoinCauseCommands(ROOT,fresh(output/'commands'),environment,shared,deadline)
+    record={'profile':STAGE_PROFILE,'status':'in-progress','plannedSignedCalls':2,'freshAuxiliaryAotBuilds':1,
+        'normalAotBuilds':0,'oldEvidence':MANAGED_STAGE_DATED,'ownerCaps':OWNER_CAPS,
+        'nativeCacheRestored':False,'nativeColdBuildCommandCapSeconds':600,
+        'originalSixCallsQualified':False,'originalCauseQualified':False,'fullAC7Qualified':False,
+        'nativeAccountingQualified':False,'physicalRetirementQualified':False}
+    try:
+        require(re.fullmatch('[0-9a-f]{40}',source_commit) and subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=15).decode().strip()==source_commit
+            and not subprocess.check_output(['git','-c','core.fsmonitor=false','status','--porcelain'],cwd=ROOT,timeout=15),'managed-stage-clean-source')
+        before=source_map();write_json(output/'current-git-inputs.json',before)
+        closure=managed_stage_source_inputs(ROOT,deadline=deadline)
+        write_json(output/'acquisition-source-inputs.json',closure)
+        # Fixed official archives and four authenticated component installers share this owner.
+        curl=Path(shutil.which('curl',path=environment['PATH']) or 'missing-curl').resolve(strict=True)
+        bash=Path(shutil.which('bash',path=environment['PATH']) or 'missing-bash').resolve(strict=True)
+        fixed=acquire_managed_stage_tools(output/'fixed-tools',commands,deadline=deadline,curl=curl,sh=bash)
+        native_tools=fixed['tools']
+        environment['RUSTC']=str(native_tools['rustc'])
+        environment['PATH']=os.pathsep.join(dict.fromkeys([*(str(p.parent) for p in native_tools.values()),environment['PATH']]))
+        environment['DOTNET_ROOT']=str(native_tools['dotnet'].parent)
+        for key,name in (('receipt','fixed-tool-acquisition.json'),('sourcePins','fixed-tool-pins.json')):
+            (output/name).write_bytes(read_file(fixed[key],64*1024**2))
+        wasi,composer,tool_paths=managed_stage_acquire(output,commands,native_tools,deadline)
+        commands.command_seconds=600
+        tools=install_managed_stage_diagnostic(output/'private-tools',wasi,commands,deadline=deadline,
+            source_inputs=closure,composer_source=composer,tool_paths=tool_paths)
+        # Native host and packaging frontends are current-source development targets, not old Native5.
+        record['nativeCohort']=host_codec_wasmtime.verify(ROOT)
+        native_raw=commands.run('build-managed-stage-frontends',native_tools['cargo'],'--config','.cargo/managed-guest.toml',
+            'build','--locked','-p','latent-packaging','--features','development-test-host',
+            '--example','capsule_contracts','--example','package','--message-format=json')
+        native=join_native_examples(native_raw,ROOT/'target')
+        inventory_index=len(commands.records)
+        commands.run('build-managed-stage-host',native_tools['cargo'],'--config','.cargo/managed-guest.toml',
+            'test','--locked','-p','latent-wasmtime','--features','development-test-host','--lib','--test','local_service','--no-run','--message-format=json')
+        native_inventory=commands.output/'logs'/f'{inventory_index:02d}-build-managed-stage-host.stdout.txt'
+        suites=(artifacts.Suite('crates/latent-wasmtime/Cargo.toml','latent_wasmtime','src/lib.rs',JOIN_UNIT_PREFIX,
+            frozenset(JOIN_UNIT_CASES),False,kind='lib'),artifacts.Suite('crates/latent-wasmtime/Cargo.toml','local_service',
+            'tests/local_service.rs',STAGE_CASE,frozenset({STAGE_CASE}),True,kind='test'))
+        owners=[artifacts.read_inventory(native_inventory,ROOT,s,target=ROOT/'target') for s in suites]
+        products={str(p):file_identity(p,512*1024**2) for p in (*native.values(),*(o.executable for o in owners))}
+        project,selection=managed_stage_fixture(output/'private-project',closure,deadline)
+        record['selection']=selection;captured=inventory(snapshot(project));(output/'project-inputs.json').write_bytes(captured)
+        def command_owner(root,folder,env):
+            env['PATH']=os.pathsep.join(dict.fromkeys([*(str(p.parent) for p in tool_paths.values()),env['PATH']]))
+            env['DOTNET_ROOT']=str(tool_paths['dotnet'].parent)
+            return JoinCauseCommands(root,folder,env,shared,deadline)
+        artifact=build(project,output/'dotnet-root-return-managed-stage',native['examples/capsule_contracts'],native['examples/package'],
+            'https://github.com/KirilsTurkins/latent-service-fabric',tools=tools,offline=True,_deadline=deadline,
+            _root_return_capture=(retain_managed_stage_inputs,retain_managed_stage_failure),_root_join_cause=True,
+            _root_return_commands=command_owner,_development_managed_stage=True,_managed_stage_validator=verify_managed_stage_tools)
+        require(read_file(artifact/'source-inputs.json')==captured,'managed-stage-actual-project-inputs')
+        component=file_identity(artifact/'component.wasm',64*1024**2)['sha256'];record['component']=component
+        def library_probe(argv,*,cwd,env,timeout,maximum):
+            require(argv==['rustc','--print','target-libdir'] and cwd==ROOT and timeout==30 and maximum==4096,
+                'managed-stage-native-library-probe')
+            commands.command_seconds=25;commands.environment=env
+            raw=commands.run('rust-library-path',native_tools['rustc'],*argv[1:]);require(len(raw)<=maximum,'managed-stage-native-library-path')
+            return 0,raw
+        for ordinal,(suite,owner) in enumerate(zip(suites,owners,strict=True)):
+            commands.environment=artifacts.cargo_environment(ROOT,owner,environment,target=ROOT/'target',execute=library_probe)
+            commands.command_seconds=25
+            args=[suite.filter]+(['--exact','--ignored'] if ordinal else [])
+            listing=commands.run('list-managed-stage-'+str(ordinal),owner.executable,*args,'--list')
+            require(len(listing)<=65536,'managed-stage-native-list-bound');artifacts.validate_listing(listing,suite)
+            commands.command_seconds=300 if ordinal else 30
+            if ordinal:
+                commands.environment.update(LSF_GUEST_SDK_LANGUAGE='dotnet',LSF_GUEST_CAPSULES=str(output),
+                    LSF_DOTNET_MANAGED_STAGE_COMPONENT=component)
+            raw=commands.run('execute-managed-stage-'+str(ordinal),owner.executable,*args,'--show-output','--test-threads=1')
+            count=1 if ordinal else 3
+            require(re.search(r'^test result: ok\. '+str(count)+r' passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out; finished in [0-9.]+s$',raw.decode(),re.M),
+                'managed-stage-current-native-result')
+            if ordinal:
+                stderr=read_file(commands.output/'logs'/f'{len(commands.records)-1:02d}-execute-managed-stage-1.stderr.txt',4*1024**2)
+                record['observations']=managed_stage_observations(raw,stderr,component)
+        require(source_map()==before and inventory(snapshot(project))==captured
+            and closure==managed_stage_source_inputs(ROOT,deadline=deadline)
+            and all(file_identity(Path(path),512*1024**2)==row for path,row in products.items())
+            and file_identity(artifact/'component.wasm',64*1024**2)['sha256']==component,'managed-stage-source-products-after')
+        remaining=deadline-5-time.monotonic();require(remaining>0,'managed-stage-final-source-clock')
+        require(not subprocess.check_output(['git','-c','core.fsmonitor=false','status','--porcelain'],cwd=ROOT,
+            timeout=min(15,remaining)),'managed-stage-final-clean-source')
+        record.update(status='diagnostic-completed',executedSignedCalls=2,sourceCommit=source_commit,
+            commandCount=len(shared['records']),diagnosticBytes=shared['bytes'])
+        write_json(output/'qualified.json',record);return record
+    except BaseException as error:
+        record.update(status='failed',errorCategory=type(error).__name__);write_json(output/'FAILED.json',record);raise
+    finally:
+        write_json(output/'commands.json',shared['records'])
+        for name in ('MANAGED-STAGE-INSTALL.json','managed-stage-source-inputs.json','runtime-inputs.json','wasi-sdk.json'):
+            path=output/'private-tools'/name
+            if path.is_file():(output/('private-'+name)).write_bytes(read_file(path,64*1024**2))
+        managed_stage_public(output,deadline)
+
+
+def retain_managed_stage_raw(compiled, output):
+    """Failure-safe raw generated evidence, including before bindings.json exists."""
+    component=compiled/'component.wasm'
+    if component.is_file():
+        (output/'component.wasm').write_bytes(read_file(component,64*1024**2))
+    roots=[]
+    independent=compiled/'generated-managed-stage-raw'
+    if independent.exists():roots.append(independent)
+    obj=compiled/'project/obj'
+    if obj.is_dir():
+        for path in obj.rglob('*-managed-stage-raw'):
+            require(len(roots)<4,'managed-stage-raw-origin-count');roots.append(path)
+    if not roots:return
+    destination=output/'probe-raw-inputs';destination.mkdir()
+    canonical=None;origins=[]
+    for root in sorted(roots):
+        require(not root.is_symlink() and root.is_dir(),'managed-stage-raw-origin-kind')
+        raw=read_file(root/'raw-inventory.json',128*1024);manifest=json.loads(raw)
+        require(type(manifest) is dict and set(manifest)=={'profile','phase','actualNames','totalBytes','files',
+            'expectedFinalNames','expectedFinalNamesAreNotRawCount'}
+            and manifest['profile']=='dotnet-managed-stage-diagnostic-v1'
+            and manifest['phase']=='before-auxiliary-stage-projection','managed-stage-raw-origin-manifest')
+        names=manifest['actualNames']
+        require(type(names) is list and len(names)<=64 and names==sorted(set(names))
+            and len({n.casefold() for n in names})==len(names)
+            and all(type(n) is str and len(n)<=256 and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_.-]*\.cs',n) is not None for n in names)
+            and set(manifest['files'])==set(names)
+            and {p.name for p in root.iterdir()}=={*names,'raw-inventory.json'},'managed-stage-raw-origin-closed-names')
+        require(canonical is None or canonical==manifest,'managed-stage-raw-independent-actual-drift')
+        total=0
+        for name in names:
+            body=read_file(root/name,1024**2);total+=len(body)
+            require(total<=4*1024**2 and manifest['files'][name]=={'bytes':len(body),'sha256':hashlib.sha256(body).hexdigest()},
+                'managed-stage-raw-origin-body')
+            if canonical is None:
+                with (destination/name).open('xb') as stream:stream.write(body)
+        require(type(manifest['totalBytes']) is int and manifest['totalBytes']==total,'managed-stage-raw-origin-total')
+        origins.append({'path':root.relative_to(compiled).as_posix(),'manifestDigest':digest(raw),'sourceBytes':total,
+            'sameCompleteSourceSet':True})
+        if canonical is None:
+            canonical=manifest;(destination/'raw-inventory.json').write_bytes(raw)
+    write_json(output/'managed-stage-raw-origins.json',{'origins':origins,'completeActualRawSources':canonical['actualNames'],
+        'phase':'before-auxiliary-stage-projection','actualAotBindingConfirmed':False,
+        'successRequiresSeparateActualBindingReceipt':True,'originalCauseQualified':False})

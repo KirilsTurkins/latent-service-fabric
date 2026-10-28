@@ -53,6 +53,23 @@ pub fn derive_capsule_contracts(
     files: &BTreeMap<String, &[u8]>,
     bounds: SemanticLimits,
 ) -> Result<CapsuleContractInputs, PlatformError> {
+    derive_selected(world, files, bounds, false)
+}
+/// Source-only private WIT derivation. It cannot validate a compiled component.
+#[cfg(feature = "development-test-host")]
+pub fn derive_managed_stage_contracts(
+    world: &str,
+    files: &BTreeMap<String, &[u8]>,
+    bounds: SemanticLimits,
+) -> Result<CapsuleContractInputs, PlatformError> {
+    derive_selected(world, files, bounds, true)
+}
+fn derive_selected(
+    world: &str,
+    files: &BTreeMap<String, &[u8]>,
+    bounds: SemanticLimits,
+    private: bool,
+) -> Result<CapsuleContractInputs, PlatformError> {
     bounds.validate()?;
     limits::name(world, bounds)?;
     if files.is_empty() || files.len() > bounds.max_wit_packages {
@@ -109,8 +126,20 @@ pub fn derive_capsule_contracts(
     let surface = compare::surface(&resolve, selected, bounds)?;
     // Self-comparison traverses the complete export type graph, including the
     // definitions behind named records, before the legacy projection is made.
-    compare::worlds(&resolve, &surface, &resolve, &surface, bounds)?;
-    host::validate(&resolve, &surface.imports, bounds)?;
+    if private {
+        compare::worlds_selected(&resolve, &surface, &resolve, &surface, bounds, true)?;
+    } else {
+        compare::worlds(&resolve, &surface, &resolve, &surface, bounds)?;
+    }
+    if private {
+        host::validate_selected(&resolve, &surface.imports, bounds, true)?;
+    } else {
+        host::validate(&resolve, &surface.imports, bounds)?;
+    }
+    #[cfg(feature = "development-test-host")]
+    if private && !surface.imports.contains_key(host::MANAGED_STAGE_INTERFACE) {
+        return Err(super::incompatible("private-stage-interface-missing"));
+    }
     let descriptors = projection::generate(&resolve, selected, bounds)?;
     let contracts = encode_contract_metadata(&descriptors, ContractMetadataLimits::default())?;
     if contracts.len() > bounds.max_summary_bytes {
@@ -123,7 +152,7 @@ pub fn derive_capsule_contracts(
         imports: surface
             .imports
             .into_keys()
-            .filter(|name| host::recognizes(name))
+            .filter(|name| host::selected_specification(name, private).is_some())
             .collect(),
         exports: surface.exports.into_keys().collect(),
     })

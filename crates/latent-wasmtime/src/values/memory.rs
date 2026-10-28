@@ -194,6 +194,7 @@ impl OwnedValues {
             shared,
             slot,
             session,
+            managed_stage: None,
         });
         memory
             .task_return_enabled
@@ -207,8 +208,43 @@ impl OwnedValues {
                 memory
                     .task_return_enabled
                     .load(std::sync::atomic::Ordering::Acquire)
+                    || memory
+                        .managed_stage_enabled
+                        .load(std::sync::atomic::Ordering::Acquire)
             })
             .map(Arc::clone)
+    }
+    #[cfg(feature = "development-test-host")]
+    pub(crate) fn attach_development_managed_stage(
+        &self,
+        shared: Arc<crate::backend::SharedRuntime>,
+        slot: usize,
+        session: Option<latent_capabilities::broker::CapabilitySessionObserver>,
+    ) {
+        let (Some(memory), Some(session)) = (&self.lift_memory, session) else {
+            return;
+        };
+        let Ok(mut sink) = memory.task_return.lock() else {
+            return;
+        };
+        if sink.is_some() || session.is_closed() || !shared.development_managed_stage_live(slot) {
+            return;
+        }
+        *sink = Some(TaskReturnSink {
+            shared,
+            slot,
+            session,
+            managed_stage: Some(ManagedStageState::default()),
+        });
+        memory
+            .managed_stage_enabled
+            .store(true, std::sync::atomic::Ordering::Release);
+    }
+    #[cfg(feature = "development-test-host")]
+    pub(crate) fn finish_development_managed_stage(&self) {
+        if let Some(memory) = &self.lift_memory {
+            memory.finish_managed_stage();
+        }
     }
     pub(crate) fn begin_lift(&mut self) {
         self.memory.conservative_on_drop = self.lift_memory.is_none();
@@ -352,6 +388,35 @@ struct TaskReturnSink {
     shared: Arc<crate::backend::SharedRuntime>,
     slot: usize,
     session: latent_capabilities::broker::CapabilitySessionObserver,
+    managed_stage: Option<ManagedStageState>,
+}
+#[cfg(feature = "development-test-host")]
+#[derive(Default)]
+struct ManagedStageState {
+    attempts: u8,
+    overflow: bool,
+    transport_failed: bool,
+    inconclusive: bool,
+    finished: bool,
+}
+#[cfg(feature = "development-test-host")]
+impl ManagedStageState {
+    fn accept(&mut self, stage: u32, guard: u32) -> bool {
+        if self.finished || self.overflow || self.inconclusive {
+            return false;
+        }
+        self.attempts = self.attempts.saturating_add(1);
+        if self.attempts > 16 {
+            self.overflow = true;
+            return false;
+        }
+        let known = (guard == 0 && matches!(stage, 1..=9 | 17 | 18))
+            || (stage == guard && matches!(guard, 10..=16));
+        if !known {
+            self.inconclusive = true;
+        }
+        known
+    }
 }
 pub(crate) struct LiftMemory {
     // These original-call references retire before the original scope refund.
@@ -359,10 +424,112 @@ pub(crate) struct LiftMemory {
     task_return: Mutex<Option<TaskReturnSink>>,
     #[cfg(feature = "development-test-host")]
     task_return_enabled: std::sync::atomic::AtomicBool,
+    #[cfg(feature = "development-test-host")]
+    managed_stage_enabled: std::sync::atomic::AtomicBool,
     memory: Mutex<Escrow>,
     budget: ActivationBudget,
 }
 impl LiftMemory {
+    #[cfg(all(test, feature = "development-test-host"))]
+    pub(crate) fn development_stage_counter_control() {
+        let mut counter = ManagedStageState::default();
+        for _ in 0..16 {
+            assert!(counter.accept(2, 0));
+        }
+        assert_eq!(counter.attempts, 16);
+        assert!(!counter.accept(2, 0));
+        assert!(counter.overflow);
+        for _ in 0..100 {
+            assert!(!counter.accept(2, 0));
+        }
+        assert_eq!(counter.attempts, 17);
+        for (stage, guard) in [
+            (0, 0),
+            (19, 0),
+            (1, 10),
+            (10, 0),
+            (16, 15),
+            (u32::MAX, u32::MAX),
+        ] {
+            let mut counter = ManagedStageState::default();
+            assert!(!counter.accept(stage, guard));
+            assert!(counter.inconclusive);
+            assert!(!counter.accept(1, 0));
+        }
+        for stage in 10..=16 {
+            assert!(ManagedStageState::default().accept(stage, stage));
+        }
+        for stage in [1, 9, 17, 18] {
+            assert!(ManagedStageState::default().accept(stage, 0));
+        }
+        let mut finished = ManagedStageState {
+            finished: true,
+            ..Default::default()
+        };
+        assert!(!finished.accept(1, 0));
+        assert_eq!(finished.attempts, 0);
+    }
+    #[cfg(feature = "development-test-host")]
+    pub(crate) fn managed_stage(
+        &self,
+        actual: &latent_capabilities::broker::CapabilitySession,
+        stage: u32,
+        guard: u32,
+    ) {
+        use std::io::Write;
+        let Ok(mut holder) = self.task_return.lock() else {
+            return;
+        };
+        let Some(sink) = holder.as_mut() else { return };
+        let Some(state) = sink.managed_stage.as_mut() else {
+            return;
+        };
+        if !actual.is_observed_by(&sink.session)
+            || sink.session.is_closed()
+            || !sink.shared.development_managed_stage_live(sink.slot)
+        {
+            state.inconclusive = true;
+            return;
+        }
+        let prior_overflow = state.overflow;
+        if state.accept(stage, guard) {
+            state.transport_failed |=
+                writeln!(&mut std::io::stderr().lock(),
+                "DOTNET_MANAGED_STAGE {{\"slot\":{},\"sequence\":{},\"stage\":{},\"guard\":{}}}",
+                sink.slot, state.attempts, stage, guard)
+                .is_err();
+        } else if !prior_overflow && state.overflow {
+            state.transport_failed |= writeln!(
+                &mut std::io::stderr().lock(),
+                "DOTNET_MANAGED_STAGE_OVERFLOW {{\"slot\":{}}}",
+                sink.slot
+            )
+            .is_err();
+        }
+    }
+    #[cfg(feature = "development-test-host")]
+    fn finish_managed_stage(&self) {
+        use std::io::Write;
+        let Ok(mut holder) = self.task_return.lock() else {
+            return;
+        };
+        let Some(sink) = holder.as_mut() else { return };
+        let Some(state) = sink.managed_stage.as_mut() else {
+            return;
+        };
+        if state.finished {
+            return;
+        }
+        state.finished = true;
+        state.inconclusive |=
+            sink.session.is_closed() || !sink.shared.development_managed_stage_live(sink.slot);
+        // A failed final write is necessarily a missing-summary/inconclusive capture.
+        let _ = writeln!(&mut std::io::stderr().lock(),
+            "DOTNET_MANAGED_STAGE_SUMMARY {{\"slot\":{},\"attempts\":{},\"overflow\":{},\"transportFailed\":{},\"inconclusive\":{}}}",
+            sink.slot, state.attempts, state.overflow, state.transport_failed, state.inconclusive);
+        self.managed_stage_enabled
+            .store(false, std::sync::atomic::Ordering::Release);
+    }
     #[cfg(feature = "development-test-host")]
     pub(crate) fn host_admission_refusal(
         &self,
@@ -395,6 +562,8 @@ impl LiftMemory {
             task_return: Mutex::new(None),
             #[cfg(feature = "development-test-host")]
             task_return_enabled: std::sync::atomic::AtomicBool::new(false),
+            #[cfg(feature = "development-test-host")]
+            managed_stage_enabled: std::sync::atomic::AtomicBool::new(false),
             memory: Mutex::new(memory),
             budget: budget.clone(),
         });

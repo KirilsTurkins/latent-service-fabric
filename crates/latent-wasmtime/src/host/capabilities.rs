@@ -23,6 +23,15 @@ pub(crate) struct HostCapabilities {
     pub(super) session: Option<CapabilitySession>,
 }
 impl HostCapabilities {
+    #[cfg(feature = "development-test-host")]
+    pub(crate) fn emit_development_managed_stage(&self, stage: u32, guard: u32) {
+        if let (Some(scope), Some(session)) =
+            (&self.development_host_admission_scope, &self.session)
+        {
+            scope.managed_stage(session, stage, guard);
+        }
+    }
+
     pub(super) async fn clock(
         &mut self,
         clock: latent_capabilities::broker::HostClock,

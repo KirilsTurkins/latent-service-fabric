@@ -78,8 +78,14 @@ class Port:
         self.recheck()
         return self.assembly
 
-    def finish(self, project: Path, evidence: Path) -> dict:
+    def finish(self, project: Path, evidence: Path, *, stage_port=None) -> dict:
         self.recheck()
+        selected = self.assembly
+        if stage_port is not None:
+            from tools.dotnet_guest.managed_work import StagePort
+            if type(stage_port) is not StagePort:
+                raise ValueError('closed-filesystem-authenticated-stage-required')
+            selected = stage_port.final_for(self)
         references = read_file(self.references, http_errors.MAX_RECEIPT).decode('utf-8-sig').splitlines()
         if (not 1 <= len(references) <= 512 or references.count(str(self.assembly)) != 1
                 or any(Path(path).name == 'System.Private.CoreLib.dll' and path != str(self.assembly) for path in references)):
@@ -96,14 +102,15 @@ class Port:
             found = [line[3:] for line in body.decode('utf-8-sig').splitlines()
                 if line.startswith('-r:') and Path(line[3:].strip('"')).name == 'System.Private.CoreLib.dll']
             if found:
-                if found != [str(self.assembly)]:
+                if found != [str(selected)]:
                     raise ValueError('closed-filesystem-native-aot-reference-drift')
                 matched.append({'digest': digest(body), 'size': len(body)})
         if len(matched) != 1:
             raise ValueError('closed-filesystem-native-aot-reference-not-observed')
         result = {**self.evidence, 'nativeAotReferenceBinding': {
             'referenceListDigest': digest(read_file(self.references, http_errors.MAX_RECEIPT)),
-            'responseFiles': matched, 'selectedCoreLibDigest': self.identity['digest']}}
+            'responseFiles': matched, 'selectedCoreLibDigest': self.identity['digest'],
+            **({'diagnosticFinalCoreLibDigest': stage_port.identity['digest']} if stage_port is not None else {})}}
         write_json(evidence / 'closed-filesystem-port.json', result)
         return result
 

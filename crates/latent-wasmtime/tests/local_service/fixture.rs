@@ -274,6 +274,40 @@ impl Fixture {
         )
         .await
     }
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub async fn with_managed_stage_runtime(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        identities: RuntimeIdentities,
+        component: [u8; 32],
+    ) -> Self {
+        Self::try_with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            Some(identities),
+            Some((limits, 120_000, None)),
+            None,
+            None,
+            None,
+            false,
+            false,
+            Some(component),
+        )
+        .await
+        .unwrap()
+    }
     pub async fn with_named_activation_runtime(
         cells: u32,
         provided: (
@@ -363,6 +397,7 @@ impl Fixture {
             None,
             false,
             false,
+            None,
         )
         .await
         .unwrap()
@@ -391,6 +426,7 @@ impl Fixture {
             None,
             false,
             false,
+            None,
         )
         .await
     }
@@ -475,6 +511,7 @@ impl Fixture {
             Some(Box::new(configuration)),
             true,
             false,
+            None,
         )
         .await
         .unwrap()
@@ -525,6 +562,7 @@ impl Fixture {
             None,
             true,
             true,
+            None,
         )
         .await
         .unwrap()
@@ -569,6 +607,7 @@ impl Fixture {
             outbound_streams,
             false,
             false,
+            None,
         )
         .await
         .unwrap()
@@ -602,6 +641,7 @@ impl Fixture {
         >,
         numeric_capture: bool,
         go_stack_ceiling: bool,
+        managed_stage_component: Option<[u8; 32]>,
     ) -> Result<Self, PlatformError> {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         let stream_enabled = outbound_streams.is_some();
@@ -692,10 +732,19 @@ impl Fixture {
         #[cfg(feature = "development-test-host")]
         {
             config.development_numeric_trap_observation = numeric_capture;
+            config.development_managed_stage_component = managed_stage_component;
+            if let Some(digest) = managed_stage_component {
+                assert_eq!(
+                    packages::release(&caller).0,
+                    format!("sha256:{:x}", latent_core::digest::HexDigest(digest))
+                );
+                assert_eq!(packages::release(&callee), packages::release(&caller));
+                assert!(activation_runtime.is_some() && !numeric_capture && !go_stack_ceiling);
+            }
         }
         #[cfg(not(feature = "development-test-host"))]
         assert!(
-            !numeric_capture && !go_stack_ceiling,
+            !numeric_capture && !go_stack_ceiling && managed_stage_component.is_none(),
             "numeric observation requires the test-host feature"
         );
         if owned_native_threads {

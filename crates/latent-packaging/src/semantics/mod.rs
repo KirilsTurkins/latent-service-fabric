@@ -1,6 +1,8 @@
 //! Bounded semantic checks for supplied artifacts; no compilation, execution or trust.
 mod arena;
 mod authoring;
+#[cfg(feature = "development-test-host")]
+pub use authoring::derive_managed_stage_contracts;
 pub use authoring::{derive_capsule_contracts, CapsuleContractInputs};
 mod compare;
 mod compatibility;
@@ -53,9 +55,17 @@ pub struct CheckedSurface {
     source_packages: Box<[(Box<str>, ArtifactBlobDigest)]>,
     counts: SurfaceCounts,
     phase_type_owner: bool,
+    #[cfg(feature = "development-test-host")]
+    development_managed_stage: bool,
 }
 
 impl CheckedSurface {
+    /// Separate immutable private identity; no ordinary HostAbi or grant changes.
+    #[cfg(feature = "development-test-host")]
+    pub fn development_managed_stage_profile(&self) -> Option<(&'static str, &ArtifactBlobDigest)> {
+        self.development_managed_stage
+            .then_some(("dotnet-managed-stage-diagnostic-v1", &self.component_digest))
+    }
     #[must_use]
     pub fn component_digest(&self) -> &ArtifactBlobDigest {
         &self.component_digest
@@ -155,6 +165,17 @@ pub fn validate_capsule_with_profile(
     if manifest.component_digest.0 != digest.as_str() {
         return Err(incompatible("capsule-component-digest-mismatch"));
     }
+    #[cfg(feature = "development-test-host")]
+    let private = if let Some(expected) = limits.development_managed_stage_component {
+        if digest.as_str() != format!("sha256:{:x}", latent_core::digest::HexDigest(expected)) {
+            return Err(incompatible("private-stage-component-mismatch"));
+        }
+        true
+    } else {
+        false
+    };
+    #[cfg(not(feature = "development-test-host"))]
+    let private = false;
     let (source, world) = sources::resolve(lock, sources, limits)?;
     let declared = compare::surface(&source, world, limits)?;
     let decoded = wit_parser::decoding::decode(component)
@@ -164,9 +185,28 @@ pub fn validate_capsule_with_profile(
     };
     arena::resolved(&actual, limits)?;
     let compiled = compare::surface(&actual, actual_world, limits)?;
-    compare_manifest(manifest, &declared)?;
-    let type_nodes = compare::worlds(&source, &declared, &actual, &compiled, limits)?;
-    host::validate(&source, &declared.imports, limits)?;
+    if private {
+        compare_manifest_selected(manifest, &declared, true)?;
+    } else {
+        compare_manifest(manifest, &declared)?;
+    }
+    let type_nodes = if private {
+        compare::worlds_selected(&source, &declared, &actual, &compiled, limits, true)?
+    } else {
+        compare::worlds(&source, &declared, &actual, &compiled, limits)?
+    };
+    if private {
+        host::validate_selected(&source, &declared.imports, limits, true)?;
+    } else {
+        host::validate(&source, &declared.imports, limits)?;
+    }
+    #[cfg(feature = "development-test-host")]
+    if private
+        && (!declared.imports.contains_key(host::MANAGED_STAGE_INTERFACE)
+            || !compiled.imports.contains_key(host::MANAGED_STAGE_INTERFACE))
+    {
+        return Err(incompatible("private-stage-interface-missing"));
+    }
     let phase_type_owner = host::phase_type_owner(&source, &declared.imports);
     projection::validate(&source, world, contracts, limits)?;
     let functions = declared
@@ -213,12 +253,21 @@ pub fn validate_capsule_with_profile(
             .collect(),
         counts,
         phase_type_owner,
+        #[cfg(feature = "development-test-host")]
+        development_managed_stage: private,
     })
 }
 
 fn compare_manifest(
     manifest: &CapsuleManifest,
     declared: &compare::WorldSurface,
+) -> Result<(), PlatformError> {
+    compare_manifest_selected(manifest, declared, false)
+}
+fn compare_manifest_selected(
+    manifest: &CapsuleManifest,
+    declared: &compare::WorldSurface,
+    private: bool,
 ) -> Result<(), PlatformError> {
     let exports: BTreeSet<_> = manifest
         .exports
@@ -233,7 +282,7 @@ fn compare_manifest(
         return Err(incompatible("capsule-export-set-mismatch"));
     }
     for import in &manifest.imports {
-        if !host::recognizes(&import.contract.0) {
+        if host::selected_specification(&import.contract.0, private).is_none() {
             return Err(incompatible("unsupported-host-import"));
         }
         if !import.optional && !declared.imports.contains_key(&import.contract.0) {
@@ -241,7 +290,7 @@ fn compare_manifest(
         }
     }
     if declared.imports.keys().any(|name| {
-        host::recognizes(name)
+        host::selected_specification(name, private).is_some()
             && !manifest
                 .imports
                 .iter()

@@ -1,21 +1,30 @@
-{"cases":["FinalImportControl.test_counts_only_outer_declarations_and_not_nested_instance_types","FinalImportControl.test_counts_type_aliases_import_bounds_and_type_exports_in_one_outer_index_space","FinalImportControl.test_extended_names_value_types_bad_aliases_and_trailing_import_bytes_refuse","FinalImportControl.test_integer_bounds_refuse_bool_negative_and_overflow","FinalImportControl.test_multi_byte_type_index_does_not_rewrite_any_original_byte","FinalImportControl.test_preserves_all_original_sections_and_changes_only_the_appended_type_index","FinalImportControl.test_truncated_oversized_or_unknown_outer_sections_refuse","FinalImportControl.test_unrelated_core_modules_and_components_are_opaque_and_never_run","FinalImportControl.test_wrong_template_import_count_name_kind_index_or_extra_sections_refuse"],"guards":{"FinalImportControl.test_counts_only_outer_declarations_and_not_nested_instance_types":
-  "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21"
-,"FinalImportControl.test_counts_type_aliases_import_bounds_and_type_exports_in_one_outer_index_space":
-  "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21"
-,"FinalImportControl.test_extended_names_value_types_bad_aliases_and_trailing_import_bytes_refuse":
-  "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21"
-,"FinalImportControl.test_integer_bounds_refuse_bool_negative_and_overflow":
-  "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21"
-,"FinalImportControl.test_multi_byte_type_index_does_not_rewrite_any_original_byte":
-  "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21"
-,"FinalImportControl.test_preserves_all_original_sections_and_changes_only_the_appended_type_index":
-  "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21"
-,"FinalImportControl.test_truncated_oversized_or_unknown_outer_sections_refuse":
-  "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21"
-,"FinalImportControl.test_unrelated_core_modules_and_components_are_opaque_and_never_run":
-  "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21"
-,"FinalImportControl.test_wrong_template_import_count_name_kind_index_or_extra_sections_refuse":
-  "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21"
-},"kind":"python","module":"tools/tests/test_guest_final_import_control.py","reviewReason":"Add nine finite binary controls for exact-prefix six-language unknown final import inspection; preserve the normal inspector and all existing cases and guards.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:46410cb75e146c561ed70f15fd40854bc02cb3d5f9bff51dc759858e02be1088","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "FinalImportControl.test_counts_only_outer_declarations_and_not_nested_instance_types":
+      "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21",
+    "FinalImportControl.test_counts_type_aliases_import_bounds_and_type_exports_in_one_outer_index_space":
+      "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21",
+    "FinalImportControl.test_extended_names_value_types_bad_aliases_and_trailing_import_bytes_refuse":
+      "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21",
+    "FinalImportControl.test_integer_bounds_refuse_bool_negative_and_overflow":
+      "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21",
+    "FinalImportControl.test_multi_byte_type_index_does_not_rewrite_any_original_byte":
+      "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21",
+    "FinalImportControl.test_preserves_all_original_sections_and_changes_only_the_appended_type_index":
+      "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21",
+    "FinalImportControl.test_truncated_oversized_or_unknown_outer_sections_refuse":
+      "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21",
+    "FinalImportControl.test_unrelated_core_modules_and_components_are_opaque_and_never_run":
+      "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21",
+    "FinalImportControl.test_wrong_template_import_count_name_kind_index_or_extra_sections_refuse":
+      "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_guest_final_import_control.py",
+  "reviewReason":"Add nine finite binary controls for exact-prefix six-language unknown final import inspection; preserve the normal inspector and all existing cases and guards.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "b40dfd5226dc1536150279abda5bbf949d77bbd2094d4c545aa12e465dad6b21":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:46410cb75e146c561ed70f15fd40854bc02cb3d5f9bff51dc759858e02be1088","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

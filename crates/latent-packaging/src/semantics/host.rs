@@ -3,6 +3,27 @@ use latent_core::{HostInterfaceSpec, PlatformError, PHASE3_HOST_ABI_CURRENT, PHA
 use std::collections::{BTreeMap, BTreeSet};
 use wit_parser::{InterfaceId, Resolve};
 
+#[cfg(feature = "development-test-host")]
+pub(super) const MANAGED_STAGE_INTERFACE: &str = "latent:development-dotnet-stage/stage@0.1.0";
+#[cfg(feature = "development-test-host")]
+const MANAGED_STAGE: HostInterfaceSpec = HostInterfaceSpec {
+    interface: MANAGED_STAGE_INTERFACE,
+    package: "latent:development-dotnet-stage@0.1.0",
+    binding: latent_core::HostInterfaceBinding::BuiltIn,
+    wit: "package latent:development-dotnet-stage@0.1.0; interface stage { emit: func(stage: u32, guard: u32); }",
+    asynchronous: false,
+};
+pub(super) fn selected_specification(
+    name: &str,
+    private: bool,
+) -> Option<&'static HostInterfaceSpec> {
+    #[cfg(feature = "development-test-host")]
+    if private && name == MANAGED_STAGE_INTERFACE {
+        return Some(&MANAGED_STAGE);
+    }
+    let _ = private;
+    specification(name)
+}
 pub(super) fn recognizes(name: &str) -> bool {
     specification(name).is_some()
 }
@@ -33,6 +54,14 @@ pub(super) fn validate(
     imports: &BTreeMap<String, InterfaceId>,
     limits: SemanticLimits,
 ) -> Result<(), PlatformError> {
+    validate_selected(resolve, imports, limits, false)
+}
+pub(super) fn validate_selected(
+    resolve: &Resolve,
+    imports: &BTreeMap<String, InterfaceId>,
+    limits: SemanticLimits,
+    private: bool,
+) -> Result<(), PlatformError> {
     let mut trusted = Resolve::default();
     let mut loaded = BTreeSet::new();
     // One shared structural work allowance for non-callable type interfaces.
@@ -40,7 +69,7 @@ pub(super) fn validate(
     // no provider binding or capability is created by these value definitions.
     let mut values = Comparison::new(resolve, resolve, limits);
     for (name, id) in imports {
-        let Some(specification) = specification(name) else {
+        let Some(specification) = selected_specification(name, private) else {
             if !resolve.interfaces[*id].functions.is_empty() {
                 return Err(incompatible("unsupported-host-import"));
             }
@@ -94,7 +123,7 @@ pub(super) fn validate(
     // visits. A caller cannot reset the comparison budget by adding interfaces.
     let mut comparison = Comparison::new(resolve, &trusted, limits);
     for (name, id) in imports {
-        let Some(specification) = specification(name) else {
+        let Some(specification) = selected_specification(name, private) else {
             continue;
         };
         let interface = trusted

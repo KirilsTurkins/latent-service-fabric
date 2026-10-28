@@ -1,5 +1,5 @@
 {
-  "cases":["FoldedBoundsTests.test_default_and_explicit_legacy_compression_bytes_match","FoldedBoundsTests.test_larger_stream_is_lossless_and_rejected_by_legacy_default","FoldedBoundsTests.test_only_explicit_finite_caps_are_accepted_before_io","FoldedBoundsTests.test_profile_extraction_passes_the_same_bound_to_both_streams","FoldedBoundsTests.test_rehashed_compressed_stream_cannot_exceed_declared_cap","FoldedBoundsTests.test_suite_cap_erasure_or_change_rejects_before_build_access","FoldedBoundsTests.test_whole_and_selected_replay_receive_the_declared_limit"],
+  "storageCases":"guard-keys",
   "guards":{
     "FoldedBoundsTests.test_default_and_explicit_legacy_compression_bytes_match":
       "61b058d493da87fbca6450b196a877d56e2bafe3301b2e8c1836f8c5b2bf0527",

@@ -4,6 +4,9 @@ use latent_core::PlatformError;
 /// Counts bound parser inputs and examined structures, not exact process RSS.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SemanticLimits {
+    /// Trusted private diagnostic selection, never decoded from supplied assets.
+    #[cfg(feature = "development-test-host")]
+    pub development_managed_stage_component: Option<[u8; 32]>,
     pub max_component_bytes: usize,
     pub max_component_depth: usize,
     pub max_sections: usize,
@@ -38,6 +41,8 @@ pub struct SemanticLimits {
 impl Default for SemanticLimits {
     fn default() -> Self {
         Self {
+            #[cfg(feature = "development-test-host")]
+            development_managed_stage_component: None,
             max_component_bytes: 64 * 1024 * 1024,
             max_component_depth: 16,
             max_sections: 8192,

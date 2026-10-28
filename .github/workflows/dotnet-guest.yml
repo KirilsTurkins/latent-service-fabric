@@ -2,7 +2,7 @@ name: .NET guest qualification
 
 on:
   push:
-    branches: [test/sdk-dotnet-root-return-20261027, test/sdk-dotnet-join-cause-20261027]
+    branches: [test/sdk-dotnet-root-return-20261027, test/sdk-dotnet-join-cause-20261027, test/sdk-dotnet-managed-stage-20261028]
   pull_request:
     paths:
       - 'sdk/dotnet-guest/**'
@@ -99,7 +99,7 @@ env:
 
 jobs:
   toolchain:
-    if: github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' && github.head_ref != 'test/sdk-dotnet-root-return-20261027' && github.ref != 'refs/heads/test/sdk-dotnet-join-cause-20261027' && github.head_ref != 'test/sdk-dotnet-join-cause-20261027'
+    if: github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' && github.head_ref != 'test/sdk-dotnet-root-return-20261027' && github.ref != 'refs/heads/test/sdk-dotnet-join-cause-20261027' && github.head_ref != 'test/sdk-dotnet-join-cause-20261027' && github.ref != 'refs/heads/test/sdk-dotnet-managed-stage-20261028' && github.head_ref != 'test/sdk-dotnet-managed-stage-20261028'
     name: NativeAOT component qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -876,6 +876,43 @@ jobs:
         uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-root-return-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-root-return/public/**
+          if-no-files-found: warn
+          retention-days: 7
+
+
+  managed-stage:
+    name: Private managed checkpoint transport, no original-fault qualification
+    if: github.event_name == 'push' && github.ref == 'refs/heads/test/sdk-dotnet-managed-stage-20261028'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          python-version: 3.13.5
+      - name: One clock for fixed tool acquisition, subset build, one AUX and two diagnostic calls
+        timeout-minutes: 23
+        shell: bash
+        run: |
+          export LSF_ROOT_RETURN_DEADLINE="$(python3 -c 'import time; print(time.monotonic()+1320)')"
+          python3 -B tools/qualify_dotnet_task_runtime.py --managed-stage \
+            --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/dotnet-root-return"
+      - name: Retain only bounded admitted private diagnostic evidence including failure
+        if: always()
+        timeout-minutes: 2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: dotnet-managed-stage-${{ github.sha }}
           path: ${{ runner.temp }}/dotnet-root-return/public/**
           if-no-files-found: warn
           retention-days: 7

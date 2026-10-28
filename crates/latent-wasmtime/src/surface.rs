@@ -332,6 +332,40 @@ fn validate_imports(
                 "host capabilities and structural types must be imported interfaces",
             ));
         };
+        #[cfg(feature = "development-test-host")]
+        if name == crate::development_trap_observer::MANAGED_STAGE_INTERFACE {
+            if config.development_managed_stage_component.is_none()
+                || config.development_managed_stage_component
+                    != crate::development_trap_observer::join_cause_digest(
+                        &artifact.manifest.component_digest.0,
+                    )
+            {
+                return Err(incompatible(
+                    "private managed stage component is unavailable",
+                ));
+            }
+            let mut count = 0;
+            for (operation, item) in interface.exports(engine) {
+                take_name(operation, config, remaining)?;
+                let ComponentItem::ComponentFunc(function) = item.ty else {
+                    return Err(incompatible("unsupported private managed stage item"));
+                };
+                let (params, results) = signature(&function, false, config, remaining)?;
+                if operation != "emit"
+                    || !matches!(params.as_slice(), [Type::U32, Type::U32])
+                    || !results.is_empty()
+                {
+                    return Err(incompatible("unsupported private managed stage signature"));
+                }
+                count += 1;
+            }
+            if count != 1 {
+                return Err(incompatible("private managed stage operation missing"));
+            }
+            retain(256 + name.len(), retained_bytes, config)?;
+            imports.insert(name.to_owned());
+            continue;
+        }
         let Some(specification) = preparation_interface(profile, name, transactional) else {
             validate_type_interface(&interface, engine, config, remaining)?;
             retain(256 + name.len(), retained_bytes, config)?;

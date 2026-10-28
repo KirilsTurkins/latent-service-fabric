@@ -1,5 +1,5 @@
 {
-  "cases":["ClusterCleanupEvidence.test_changed_original_setup_bytes_do_not_rebind_the_relative_credential","ClusterCleanupEvidence.test_linux_credential_absence_is_required_even_with_rehashed_sidecar","ClusterCleanupEvidence.test_original_emitted_cleanup_replays_after_all_private_copies_are_gone","ClusterCleanupEvidence.test_original_windows_credential_and_retained_helper_are_mandatory","ClusterCleanupEvidence.test_rehashed_foreign_network_or_crossed_node_is_rejected","ClusterCleanupEvidence.test_volume_deletion_or_missing_absence_cannot_be_relabelled_as_valid","ClusterCleanupEvidence.test_windows_relative_identity_still_requires_safe_bounded_original_scope"],
+  "storageCases":"guard-keys",
   "guards":{
     "ClusterCleanupEvidence.test_changed_original_setup_bytes_do_not_rebind_the_relative_credential":
       "4a0b60620909316c5ed8c371493483a2d31af11d0b6bfa767ca861ee3b2a64d3",

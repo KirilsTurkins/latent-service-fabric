@@ -59,6 +59,16 @@ pub(super) fn worlds(
     compiled: &WorldSurface,
     limits: SemanticLimits,
 ) -> Result<usize, PlatformError> {
+    worlds_selected(source, declared, actual, compiled, limits, false)
+}
+pub(super) fn worlds_selected(
+    source: &Resolve,
+    declared: &WorldSurface,
+    actual: &Resolve,
+    compiled: &WorldSurface,
+    limits: SemanticLimits,
+    private: bool,
+) -> Result<usize, PlatformError> {
     if !declared.exports.keys().eq(compiled.exports.keys()) {
         return Err(incompatible("component-world-identity-mismatch"));
     }
@@ -70,7 +80,7 @@ pub(super) fn worlds(
             .imports
             .get(name)
             .ok_or_else(|| incompatible("component-world-identity-mismatch"))?;
-        if let Some(profile) = super::host::specification(name) {
+        if let Some(profile) = super::host::selected_specification(name, private) {
             compare.asynchronous = profile.asynchronous;
             compare.resources = profile.resource_types();
         } else if !source.interfaces[*expected].functions.is_empty()

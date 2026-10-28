@@ -1,5 +1,5 @@
 {
-  "cases":["BootstrapBindings.test_engine_initialization_failure_retains_attempt_and_original_failure_body","BootstrapBindings.test_resume_requires_actual_original_bytes_and_exact_owner_fields","BootstrapBindings.test_wrong_kubeconfig_is_rejected_before_any_engine_call","ClusterCleanup.test_failed_stop_retains_credentials_and_original_error_receipt","ClusterCleanup.test_foreign_member_wrong_alias_or_crossed_node_prevents_all_mutation","ClusterCleanup.test_only_recorded_nodes_are_removed_then_hash_matched_credentials"],
+  "storageCases":"guard-keys",
   "guards":{
     "BootstrapBindings.test_engine_initialization_failure_retains_attempt_and_original_failure_body":
       "8b2f5a68cba5bdfe846d398abb62dea5333bdfd73a908a452e2b6ab11e03885a",

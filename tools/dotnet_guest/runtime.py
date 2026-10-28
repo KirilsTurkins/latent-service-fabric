@@ -38,7 +38,7 @@ WASI_IMPORTS = frozenset(
         "filesystem/preopens", "filesystem/types", "random/random")) | WASI_HTTP_IMPORTS | WASI_INSECURE_IMPORTS
 
 
-def select(declared: list[str], emitted: list[str], *, managed_work: bool = False) -> str:
+def select(declared: list[str], emitted: list[str], *, managed_work: bool = False, development_managed_stage: bool = False) -> str:
     """An emitted WASI dependency is never a grant of LSF network authority.
 
     The caller extracts these identities from bounded authoritative wasm-tools
@@ -47,6 +47,11 @@ def select(declared: list[str], emitted: list[str], *, managed_work: bool = Fals
     """
     if type(managed_work) is not bool:
         raise ValueError('dotnet-managed-work-selection')
+    if type(development_managed_stage) is not bool:
+        raise ValueError('managed-stage-runtime-selector')
+    private = 'latent:development-dotnet-stage/stage@0.1.0'
+    if private in declared or (private in emitted and not development_managed_stage):
+        raise ValueError('managed-stage-import-not-ordinary-runtime-authority')
     declarations, actual = set(declared), set(emitted)
     if len(declarations) != len(declared) or len(actual) != len(emitted):
         raise ValueError("dotnet-runtime-duplicate-import")
@@ -58,7 +63,7 @@ def select(declared: list[str], emitted: list[str], *, managed_work: bool = Fals
         if name.startswith("wasi:"):
             if name not in WASI_IMPORTS:
                 raise ValueError("dotnet-runtime-unsupported-wasi-import:" + name)
-        elif name not in declarations:
+        elif name not in declarations and not (development_managed_stage and name == private):
             raise ValueError("dotnet-runtime-undeclared-emitted-import:" + name)
     for name in sorted(declarations):
         if name.startswith("latent:runtime/activation@") and name != ACTIVATION:
@@ -90,13 +95,13 @@ def select(declared: list[str], emitted: list[str], *, managed_work: bool = Fals
     return profile + "-logging" if LOG in declarations and WASI_STDIO & actual else profile
 
 
-def additional(declared: list[str], emitted: list[str]) -> tuple[str, ...]:
+def additional(declared: list[str], emitted: list[str], *, development_managed_stage: bool = False) -> tuple[str, ...]:
     """Only explicit declarations can enable the separate runtime facets.
 
     Secure WASI random is deliberately still supplied by the selected primary
     adapter's denial. This module never creates a provider or an entropy grant.
     """
-    select(declared, emitted)
+    select(declared, emitted, development_managed_stage=development_managed_stage)
     actual = set(emitted)
     result = ("entropy",) if WASI_INSECURE_IMPORTS & actual else ()
     if WALL in declared and WASI_WALL in actual:

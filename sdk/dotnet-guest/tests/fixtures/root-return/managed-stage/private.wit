@@ -1,0 +1,5 @@
+package latent:development-dotnet-stage@0.1.0 {
+  interface stage {
+    emit: func(stage: u32, guard: u32);
+  }
+}

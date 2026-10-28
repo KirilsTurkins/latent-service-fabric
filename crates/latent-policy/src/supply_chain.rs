@@ -46,6 +46,8 @@ struct Inner {
     clock: Arc<dyn SupplyChainClock>,
     runtime: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
     manifest_profile: latent_manifest::ManifestValidationProfile,
+    #[cfg(feature = "development-test-host")]
+    development_managed_stage_component: Option<[u8; 32]>,
     clock_metadata: clock::Metadata,
     state: RwLock<State>,
     // Immutable readers do not exclude final publication. The separate fence
@@ -209,6 +211,50 @@ impl SupplyChainAuthority {
         runtime: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
         manifest_profile: latent_manifest::ManifestValidationProfile,
     ) -> Result<Self, PlatformError> {
+        Self::open_inner_selected(
+            root,
+            policy,
+            clock,
+            lease_seconds,
+            runtime,
+            manifest_profile,
+            None,
+        )
+    }
+    /// Explicit private test-host compatibility, fixed before admission/recovery.
+    /// This supplies no publisher, builder, namespace or execution authority.
+    #[cfg(feature = "development-test-host")]
+    pub fn open_with_runtime_and_managed_stage(
+        root: &Path,
+        policy: SupplyChainPolicy,
+        clock: Arc<dyn SupplyChainClock>,
+        lease_seconds: u64,
+        runtime: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+        component: [u8; 32],
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner_selected(
+            root,
+            policy,
+            clock,
+            lease_seconds,
+            Some(runtime),
+            latent_manifest::ManifestValidationProfile::default(),
+            Some(component),
+        )
+    }
+    fn open_inner_selected(
+        root: &Path,
+        policy: SupplyChainPolicy,
+        clock: Arc<dyn SupplyChainClock>,
+        lease_seconds: u64,
+        runtime: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
+        manifest_profile: latent_manifest::ManifestValidationProfile,
+        development_managed_stage_component: Option<[u8; 32]>,
+    ) -> Result<Self, PlatformError> {
+        #[cfg(not(feature = "development-test-host"))]
+        if development_managed_stage_component.is_some() {
+            return Err(invalid("private-stage-unavailable"));
+        }
         if !(1..=5).contains(&lease_seconds) {
             return Err(invalid("admission-clock-lease-limit"));
         }
@@ -253,6 +299,8 @@ impl SupplyChainAuthority {
                 clock,
                 runtime,
                 manifest_profile,
+                #[cfg(feature = "development-test-host")]
+                development_managed_stage_component,
                 retired: AtomicBool::new(false),
                 verifying: AtomicBool::new(false),
                 ledger: Mutex::new(ledger),
@@ -531,11 +579,24 @@ impl AdmissionAuthority for SupplyChainAuthority {
         // Structural history is checked under the single verification owner,
         // outside the currentness fence, before any policy/clock denial that may
         // retain non-authorizing historical metadata (as for web recovery).
-        let retained = receipt::Receipt::validate_retained_with_profile(
-            binding,
-            upload,
-            self.inner.manifest_profile,
-        )?;
+        #[cfg(feature = "development-test-host")]
+        let private = self.inner.development_managed_stage_component;
+        #[cfg(not(feature = "development-test-host"))]
+        let private: Option<[u8; 32]> = None;
+        let retained = if let Some(private) = private {
+            receipt::Receipt::validate_retained_selected(
+                binding,
+                upload,
+                self.inner.manifest_profile,
+                Some(private),
+            )?
+        } else {
+            receipt::Receipt::validate_retained_with_profile(
+                binding,
+                upload,
+                self.inner.manifest_profile,
+            )?
+        };
         let prepared = verify::prepare_retained(retained);
         let ledger = self
             .inner

@@ -1,3 +1,1 @@
-{"kind":"owner","path":"tools/dotnet_capsule.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review explicit default-false compiler observations, bounded conservative unknown results and exact passive metadata source; preserve all prior cases and guards.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "9e6a5538db52c41503d9141b2ac03a7429545223ab9fdf23e0ce691c3a042301"
-}
+{"kind":"owner","path":"tools/dotnet_capsule.py","reviewBoundary":"committed-fingerprint","reviewReason":"Select the closed private managed-stage diagnostic only; preserve ordinary/default modes and all original bounds.","schemaVersion":"latent.ci.contracts.v1","sha256":"12af5e98c2f071ac127c83c72c2cad232f9dec48c8b9c06198082bc59dbdb6e6"}

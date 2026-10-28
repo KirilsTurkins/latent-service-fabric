@@ -1,15 +1,24 @@
-{"cases":["NodeStartupObservation.test_actual_process_startup_exit_keeps_error_and_attaches_closed_report","NodeStartupObservation.test_closed_native_report_is_distinct_from_legacy_single_line_and_has_no_success_credit","NodeStartupObservation.test_duplicate_reports_keys_partial_truncated_and_excessive_reports_are_not_evidence","NodeStartupObservation.test_go_failed_programme_retains_closed_startup_report_and_original_failure","NodeStartupObservation.test_ordinary_stderr_does_not_enter_the_closed_observation","NodeStartupObservation.test_unknown_private_extra_and_wrong_numeric_or_owner_fields_fail_closed"],"guards":{"NodeStartupObservation.test_actual_process_startup_exit_keeps_error_and_attaches_closed_report":
-  "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c"
-,"NodeStartupObservation.test_closed_native_report_is_distinct_from_legacy_single_line_and_has_no_success_credit":
-  "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c"
-,"NodeStartupObservation.test_duplicate_reports_keys_partial_truncated_and_excessive_reports_are_not_evidence":
-  "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c"
-,"NodeStartupObservation.test_go_failed_programme_retains_closed_startup_report_and_original_failure":
-  "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c"
-,"NodeStartupObservation.test_ordinary_stderr_does_not_enter_the_closed_observation":
-  "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c"
-,"NodeStartupObservation.test_unknown_private_extra_and_wrong_numeric_or_owner_fields_fail_closed":
-  "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c"
-},"kind":"python","module":"tools/tests/test_node_startup_observation.py","reviewReason":"Retain only the existing bounded producer-owned startup-failure enum report on the original node exit; reject unknown, extra, duplicate or private fields. Keep failure/cleanup/startup deadlines and timer readiness unchanged; execute six focused redaction and reader controls.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c3fb094bdaa0681292937b45f7544b34672bd72a87504b59d9ff58fd98d266fd","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "NodeStartupObservation.test_actual_process_startup_exit_keeps_error_and_attaches_closed_report":
+      "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c",
+    "NodeStartupObservation.test_closed_native_report_is_distinct_from_legacy_single_line_and_has_no_success_credit":
+      "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c",
+    "NodeStartupObservation.test_duplicate_reports_keys_partial_truncated_and_excessive_reports_are_not_evidence":
+      "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c",
+    "NodeStartupObservation.test_go_failed_programme_retains_closed_startup_report_and_original_failure":
+      "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c",
+    "NodeStartupObservation.test_ordinary_stderr_does_not_enter_the_closed_observation":
+      "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c",
+    "NodeStartupObservation.test_unknown_private_extra_and_wrong_numeric_or_owner_fields_fail_closed":
+      "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_node_startup_observation.py",
+  "reviewReason":"Retain only the existing bounded producer-owned startup-failure enum report on the original node exit; reject unknown, extra, duplicate or private fields. Keep failure/cleanup/startup deadlines and timer readiness unchanged; execute six focused redaction and reader controls.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "0b9e9a61bb86ea374d48c9ec9f91f5f3beb88aa2720da73ca7622e5d2d204f6c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c3fb094bdaa0681292937b45f7544b34672bd72a87504b59d9ff58fd98d266fd","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

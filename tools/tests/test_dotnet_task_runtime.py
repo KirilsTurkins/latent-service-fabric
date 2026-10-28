@@ -295,5 +295,75 @@ class RootReturnSupplementalControls(unittest.TestCase):
             selected.join_task_return_observations(encoded(bad), selected.JOIN_REPLAY_COMPONENTS)
 
 
+class TaskStageDiagnosticControls(unittest.TestCase):
+    def test_private_mode_refuses_default_cache_and_unpaired_generator_before_tools(self):
+        from tools.dotnet_guest.compiler import Compiler
+        from tools import dotnet_guest_bindings as bindings
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);(directory/'MANAGED-STAGE-INSTALL.json').write_text('{}')
+            with self.assertRaisesRegex(ValueError,'private-managed-stage-tools-rejected-by-default-compiler'):
+                Compiler(directory,Mock(),directory)
+            with self.assertRaisesRegex(bindings.BindingError,'managed-stage-requires-auxiliary-profile'):
+                bindings.generate(directory/'missing.wit',directory/'missing-output','service','never-bindgen','never-wasm',
+                    development_managed_stage=True)
+            self.assertFalse((directory/'missing-output').exists())
+
+    def test_selected_actual_task_source_has_whole_original_inverse(self):
+        from tools.dotnet_guest import managed_work as selected
+        from tools.rust_capsule_project import ROOT
+        original=(ROOT/'sdk/dotnet-guest/tests/fixtures/root-return/Library.cs').read_text()
+        output,receipt=selected.stage_library(original)
+        self.assertEqual(receipt['originalSHA256'],selected.STAGE_LIBRARY_SHA)
+        self.assertTrue(receipt['originalSourceInverseExact'])
+        self.assertFalse(receipt['readsTaskException'])
+        self.assertFalse(receipt['applicationRootJoinAdded'])
+        # A source drift outside the selected insertions must refuse, not inherit the reviewed identity.
+        with self.assertRaisesRegex(ValueError,'managed-stage-library-preimage'):
+            selected.stage_library(original+'\n')
+        self.assertNotEqual(output,original)
+        # Complete raw bodies survive a refusal BEFORE bindings.json exists;
+        # a drift check must refuse without replacing the first raw evidence.
+        from tools.dotnet_root_return import retain_managed_stage_failure
+        with tempfile.TemporaryDirectory() as temporary:
+            compiled=Path(temporary)/'compiled';generated=compiled/'generated';generated.mkdir(parents=True)
+            (generated/'ActualExtra.cs').write_bytes(b'// actual raw source\n')
+            raw=selected.stage_raw_generation(generated,generated,check=False)
+            self.assertEqual(raw['actualNames'],['ActualExtra.cs'])
+            self.assertEqual(selected.stage_raw_generation(generated,generated,check=True),raw)
+            (generated/'ActualExtra.cs').write_bytes(b'// changed raw source\n')
+            with self.assertRaisesRegex(ValueError,'managed-stage-raw-drift'):
+                selected.stage_raw_generation(generated,generated,check=True)
+            evidence=Path(temporary)/'evidence';evidence.mkdir()
+            retain_managed_stage_failure(compiled,evidence)
+            self.assertEqual((evidence/'probe-raw-inputs/ActualExtra.cs').read_bytes(),b'// actual raw source\n')
+            self.assertFalse((evidence/'probe-inputs.json').exists())
+
+    def test_event_parser_rejects_gap_duplicate_summary_overflow_and_cause_credit(self):
+        import json
+        from tools.dotnet_root_return import managed_stage_observations
+        from tools.phase2_operator_process import WorkflowError
+        component='sha256:'+'a'*64
+        rows=[{'profile':'dotnet-managed-stage-diagnostic-v1','component':component,'mode':mode,
+            'terminalOutcome':outcome,'claims':1,'originalCauseQualified':False,'originalSixCallsQualified':False,
+            'fullAc7Qualified':False,'physicalRetirementQualified':False,'nativeAccountingQualified':False}
+            for mode,outcome in ((3,'succeeded'),(9,'guest-trap'))]
+        stdout=''.join('DOTNET_MANAGED_STAGE_CALL '+json.dumps(row)+'\n' for row in rows).encode()
+        events=[]
+        for slot in (0,1):
+            events += [('DOTNET_MANAGED_STAGE ',{'slot':slot,'sequence':1,'stage':1,'guard':0}),
+                ('DOTNET_MANAGED_STAGE_SUMMARY ',{'slot':slot,'attempts':1,'overflow':False,
+                    'transportFailed':False,'inconclusive':False})]
+        def encode(records):return ''.join(prefix+json.dumps(row)+'\n' for prefix,row in records).encode()
+        actual=managed_stage_observations(stdout,encode(events),component)
+        self.assertFalse(actual['originalCauseQualified'])
+        for changed in (events[:-1],events+[events[-1]],
+                [(prefix,dict(row,sequence=2) if prefix=='DOTNET_MANAGED_STAGE ' else row) for prefix,row in events],
+                [(prefix,dict(row,overflow=True,attempts=17,inconclusive=True) if prefix.endswith('SUMMARY ') else row) for prefix,row in events]):
+            with self.assertRaises(WorkflowError):managed_stage_observations(stdout,encode(changed),component)
+        rows[1]['originalCauseQualified']=True
+        bad=''.join('DOTNET_MANAGED_STAGE_CALL '+json.dumps(row)+'\n' for row in rows).encode()
+        with self.assertRaises(WorkflowError):managed_stage_observations(bad,encode(events),component)
+
+
 if __name__ == '__main__':
     unittest.main()

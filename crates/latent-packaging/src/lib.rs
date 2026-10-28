@@ -29,6 +29,8 @@ pub use sbom::{
     SbomPolicyEvaluation, SbomPresence, SbomRoleCounts, CYCLONEDX_JSON_MEDIA_TYPE,
     CYCLONEDX_SPEC_VERSION, SBOM_PATH,
 };
+#[cfg(feature = "development-test-host")]
+pub use semantics::derive_managed_stage_contracts;
 pub use semantics::{
     check_invocation_target, compare_packages, compile_host_binding, compile_local_binding,
     derive_capsule_contracts, inspect_web_bundle, validate_capsule, validate_capsule_with_profile,

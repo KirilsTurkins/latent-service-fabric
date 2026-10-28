@@ -831,5 +831,254 @@ class PeerObservationRetentionTests(unittest.TestCase):
         self.assertEqual(result, {})
 
 
+
+class TaskStageAcquisitionControls(unittest.TestCase):
+    """Pure fixture/reader controls; never execute an SDK tool or subprocess."""
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="lsf-managed-stage-reader-")
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.deadline = time.monotonic() + 60
+
+    def test_default_installer_inverse_and_exact_private_runtime_argv(self):
+        import hashlib
+        import inspect
+        from tools import dotnet_capsule as capsule
+        self.assertEqual(hashlib.sha256(inspect.getsource(capsule.install).encode()).hexdigest(),
+            "c5f7a1bcdc8466b859150aa167f83581105484f5bda9b7c87b0ad8980691d1aa")
+        self.assertEqual(len(runtime.ADAPTERS), 12)
+        argv = list(map(str, capsule._managed_stage_runtime_argv(self.root, self.root, "cargo-pinned")))
+        self.assertEqual(argv, ["cargo-pinned", "build", "--quiet", "--locked", "-j", "2", "--manifest-path",
+            str(self.root / "tools/toolchain-smoke/Cargo.toml"), "-p", "latent-toolchain-smoke",
+            "--example", "dotnet-managed-activation-runtime", "--example", "dotnet-noncrypto-entropy",
+            "--example", "dotnet-wall-clock-runtime", "--target", "wasm32-unknown-unknown", "--release",
+            "--target-dir", str(self.root / "runtime-target")])
+        stages = capsule._managed_stage_command_stages()
+        self.assertEqual(len(stages), 20)
+        self.assertEqual(stages.count("managed-stage-nuget-content-hash"), 7)
+        self.assertEqual(stages[-4:], ["managed-stage-runtime-managed-component", "managed-stage-entropy-component",
+            "managed-stage-wall-component", "managed-stage-composer-version"])
+
+    def test_produced_metadata_above_source_limit_and_refusal_before_open(self):
+        from tools import dotnet_capsule as capsule
+        from tools.rust_capsule_project import read_json
+        self.assertEqual(capsule.MANAGED_STAGE_METADATA_MAX, 64 * 1024**2)
+        value = {"retained": "m" * (4 * 1024**2 + 1)}
+        target = self.root / "produced.json"
+        capsule._write_managed_stage_metadata(target, value, deadline=self.deadline)
+        self.assertGreater(target.stat().st_size, 4 * 1024**2)
+        self.assertEqual(read_json(target, capsule.MANAGED_STAGE_METADATA_MAX), value)
+        refused = self.root / "not-written.json"
+        with patch.object(capsule, "MANAGED_STAGE_METADATA_MAX", 64), self.assertRaisesRegex(
+                ValueError, "^managed-stage-produced-metadata-bound$"):
+            capsule._write_managed_stage_metadata(refused, {"retained": "x" * 65}, deadline=self.deadline)
+        self.assertFalse(refused.exists())
+
+    def cache(self):
+        from tools import dotnet_capsule as capsule
+        from tools.build_observation import file_identity
+        directory = self.root / "private-cache"
+        directory.mkdir()
+        sources = {"source.cs": {"digest": "sha256:" + "1" * 64, "size": 17}}
+        tool_inputs = {}
+        for name in ("dotnet", "wasm-tools", "rustc", "cargo", "wit-bindgen"):
+            path = self.root / (name + "-pinned")
+            path.write_bytes(name.encode())
+            tool_inputs[name] = {"path": str(path), "identity": file_identity(path, name)}
+        inputs = {"fullRetainedInventory": "i" * (4 * 1024**2 + 1)}
+        data = {"formatVersion": 1, "profile": capsule.MANAGED_STAGE_PROFILE,
+            "selectedProfiles": list(capsule.MANAGED_STAGE_PROFILES), "standardSdkComplete": False,
+            "inputs": inputs, "tools": tool_inputs,
+            "commands": [{"stage": stage, "exitCode": 0} for stage in capsule._managed_stage_command_stages()]}
+        capsule._write_managed_stage_metadata(directory / "managed-stage-source-inputs.json", sources,
+            deadline=self.deadline)
+        capsule._write_managed_stage_metadata(directory / capsule.MANAGED_STAGE_MANIFEST, data,
+            deadline=self.deadline)
+        return directory, sources, inputs, data
+
+    def test_private_cache_full_metadata_and_source_profile_tool_refusals(self):
+        from tools import dotnet_capsule as capsule
+        directory, sources, inputs, original = self.cache()
+        # Only heavyweight installed package inventory is substituted. Real cache
+        # JSON/file readers and actual pinned-tool byte identities stay active.
+        with patch.object(capsule, "managed_stage_source_inputs", return_value=sources), patch.object(
+                capsule, "_managed_stage_installed_identity", return_value=inputs):
+            result = capsule.verify_managed_stage_tools(directory, self.root, deadline=self.deadline)
+            self.assertEqual(result["profile"], capsule.MANAGED_STAGE_PROFILE)
+            target = directory / capsule.MANAGED_STAGE_MANIFEST
+            for mutation in (dict(original, profile="standard"), dict(original, standardSdkComplete=True),
+                    dict(original, selectedProfiles=["closed", "entropy", "wall"]),
+                    dict(original, commands=original["commands"][:-1])):
+                target.write_bytes(json.dumps(mutation).encode())
+                with self.assertRaises(ValueError):
+                    capsule.verify_managed_stage_tools(directory, self.root, deadline=self.deadline)
+            target.write_bytes(json.dumps(original).encode())
+            captured = directory / "managed-stage-source-inputs.json"
+            captured.write_bytes(b'{}')
+            with self.assertRaisesRegex(ValueError, "^managed-stage-private-cache-source$"):
+                capsule.verify_managed_stage_tools(directory, self.root, deadline=self.deadline)
+            captured.write_bytes(json.dumps(sources).encode())
+            Path(original["tools"]["cargo"]["path"]).write_bytes(b"altered-tool")
+            with self.assertRaisesRegex(ValueError, "^managed-stage-private-cache-tool-drift$"):
+                capsule.verify_managed_stage_tools(directory, self.root, deadline=self.deadline)
+
+    def test_real_private_runtime_cache_rejects_missing_extra_and_standard(self):
+        from tools import dotnet_capsule as capsule
+        directory = self.root / "adapters"
+        directory.mkdir()
+        source = b'{"whole-original-runtime-source-map":{}}'
+        (directory / "runtime-inputs.json").write_bytes(source)
+        for name in capsule.MANAGED_STAGE_PROFILES:
+            (directory / runtime.ADAPTERS[name][1]).write_bytes(name.encode())
+        with patch.object(capsule, "runtime_inputs", return_value=source):
+            observed = capsule._managed_stage_runtime_cache(directory, self.root, deadline=self.deadline)
+            self.assertEqual(tuple(observed), capsule.MANAGED_STAGE_PROFILES)
+            missing = directory / runtime.ADAPTERS["wall"][1]
+            missing.unlink()
+            with self.assertRaisesRegex(ValueError, "^managed-stage-exact-three-runtime-binaries$"):
+                capsule._managed_stage_runtime_cache(directory, self.root, deadline=self.deadline)
+            missing.write_bytes(b"wall")
+            extra = directory / runtime.ADAPTERS["closed"][1]
+            extra.write_bytes(b"standard-extra")
+            with self.assertRaisesRegex(ValueError, "^managed-stage-exact-three-runtime-binaries$"):
+                capsule._managed_stage_runtime_cache(directory, self.root, deadline=self.deadline)
+            extra.unlink()
+            (directory / "INSTALL-COMPLETE.json").write_bytes(b'{}')
+            with self.assertRaisesRegex(ValueError, "^managed-stage-cache-is-not-standard-sdk$"):
+                capsule._managed_stage_runtime_cache(directory, self.root, deadline=self.deadline)
+
+    def test_inventory_deadline_checked_during_real_hash_not_renewed(self):
+        from tools import dotnet_capsule as capsule
+        path = self.root / "two-chunks.bin"
+        path.write_bytes(b"b" * 131072)
+        with patch("time.monotonic", side_effect=[0.0, 0.0, 100.0]) as clock:
+            with self.assertRaisesRegex(ValueError, "^managed-stage-original-deadline$"):
+                capsule._managed_stage_file_identity(path, "actual", 131072, 70.0)
+        self.assertEqual(clock.call_count, 3)
+
+
+
+class TaskStageToolAcquisitionControls(unittest.TestCase):
+    """Tiny local archives only; no download, installer or compiler execution."""
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="lsf-fixed-tool-archive-")
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.deadline = time.monotonic() + 60
+        self.serial = 0
+
+    def bundle(self, members):
+        import hashlib
+        import tarfile
+        self.serial += 1
+        path = self.root / (str(self.serial) + ".tar.gz")
+        with tarfile.open(path, "w:gz", format=tarfile.USTAR_FORMAT) as archive:
+            for kind, name, value in members:
+                row = tarfile.TarInfo(name)
+                row.mode = 0o755 if kind == "directory" else 0o644
+                if kind == "directory":
+                    row.type = tarfile.DIRTYPE
+                elif kind == "symlink":
+                    row.type, row.linkname = tarfile.SYMTYPE, value
+                elif kind == "hardlink":
+                    row.type, row.linkname = tarfile.LNKTYPE, value
+                elif kind == "fifo":
+                    row.type = tarfile.FIFOTYPE
+                else:
+                    row.size = len(value)
+                archive.addfile(row, io.BytesIO(value) if kind == "file" else None)
+        raw = path.read_bytes()
+        return path, {"url": "https://invalid.example/closed.tar.gz", "size": len(raw),
+            "hashAlgorithm": "sha256", "digest": hashlib.sha256(raw).hexdigest(), "expectedTopDirectory": "tool"}
+
+    def test_valid_full_preflight_copy_and_unsafe_shapes_refuse_before_destination(self):
+        from tools import dotnet_capsule as capsule
+        good, pin = self.bundle([("directory", "tool", None), ("file", "tool/bin/tool", b"actual-input")])
+        plan, _ = capsule._managed_stage_tar_visit(good, pin, deadline=self.deadline)
+        self.assertEqual(plan["expandedBytes"], 12)
+        target = self.root / "valid-copy"
+        capsule._managed_stage_tar_visit(good, pin, deadline=self.deadline, destination=target, expected=plan)
+        self.assertEqual((target / "tool/bin/tool").read_bytes(), b"actual-input")
+        bad = [
+            [("file", "../escape", b"x")],
+            [("file", "tool/file", b"x"), ("file", "tool/file", b"y")],
+            [("symlink", "tool/link", "../../escape")],
+            [("hardlink", "tool/link", "../../escape")],
+            [("fifo", "tool/pipe", None)],
+            [("file", "tool", b"x"), ("file", "tool/child", b"y")],
+            [("symlink", "tool/link", "."), ("file", "tool/link/child", b"x")],
+            [("symlink", "tool/a", "b"), ("symlink", "tool/b", "a")],
+        ]
+        for index, members in enumerate(bad):
+            path, bad_pin = self.bundle(members)
+            refused = self.root / ("refused-" + str(index))
+            with self.subTest(index=index), self.assertRaises(ValueError):
+                capsule._managed_stage_tar_visit(path, bad_pin, deadline=self.deadline, destination=refused)
+            self.assertFalse(refused.exists())
+
+    def test_digest_change_and_expired_clock_refuse_before_tar_or_destination(self):
+        from tools import dotnet_capsule as capsule
+        path, pin = self.bundle([("file", "tool/value", b"source")])
+        wrong = dict(pin, digest="0" * 64)
+        refused = self.root / "no-parse"
+        with patch("tarfile.open", side_effect=AssertionError("must verify first")) as parser:
+            with self.assertRaisesRegex(ValueError, "^managed-stage-archive-digest$"):
+                capsule._managed_stage_tar_visit(path, wrong, deadline=self.deadline, destination=refused)
+        parser.assert_not_called()
+        self.assertFalse(refused.exists())
+        with patch("time.monotonic", return_value=2.0), patch("tarfile.open") as parser:
+            with self.assertRaisesRegex(ValueError, "^managed-stage-original-deadline$"):
+                capsule._managed_stage_tar_visit(path, pin, deadline=1.0, destination=refused)
+        parser.assert_not_called()
+        self.assertFalse(refused.exists())
+        plan, _ = capsule._managed_stage_tar_visit(path, pin, deadline=self.deadline)
+        path.write_bytes(b"changed archive")
+        with self.assertRaisesRegex(ValueError, "^managed-stage-archive-size$"):
+            capsule._managed_stage_tar_visit(path, pin, deadline=self.deadline, destination=refused, expected=plan)
+        self.assertFalse(refused.exists())
+
+    def test_declared_file_and_extended_header_bounds_precede_payload_allocation(self):
+        import gzip
+        import hashlib
+        import tarfile
+        from tools import dotnet_capsule as capsule
+        for index, (kind, size, reason) in enumerate((
+                (tarfile.REGTYPE, 512 * 1024**2 + 1, "managed-stage-tar-member-bound"),
+                (tarfile.XHDTYPE, 1024**2 + 512, "managed-stage-tar-stream-bound"))):
+            member = tarfile.TarInfo("tool/oversized")
+            member.type, member.size = kind, size
+            raw = gzip.compress(member.tobuf(format=tarfile.USTAR_FORMAT) + b"\0" * 1024)
+            path = self.root / ("oversized-" + str(index) + ".tar.gz")
+            path.write_bytes(raw)
+            pin = {"url": "https://invalid.example/closed.tar.gz", "size": len(raw),
+                "hashAlgorithm": "sha256", "digest": hashlib.sha256(raw).hexdigest(), "expectedTopDirectory": "tool"}
+            target = self.root / ("no-allocation-" + str(index))
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, "^" + reason + "$"):
+                capsule._managed_stage_tar_visit(path, pin, deadline=self.deadline, destination=target)
+            self.assertFalse(target.exists())
+
+    def test_generated_installer_normalization_is_closed_and_preserves_option_grammar(self):
+        import hashlib
+        from tools import dotnet_capsule as capsule
+        self.assertEqual(capsule.MANAGED_STAGE_RUST_TEMPLATE_SHA256,
+            "a7e58d6671dcf7aa3593dcecbf96b49d006b9ef5cce1440d2d6709ea443c1e1d")
+        variables = {"PRODUCT_NAME": b"'Rust'", "REL_MANIFEST_DIR": b"rustlib",
+            "SUCCESS_MESSAGE": b"'Ready.'", "LEGACY_MANIFEST_DIRS": b"''", "RUST_INSTALLER_VERSION": b"'3'"}
+        body = b"".join(b"TEMPLATE_" + key.encode() + b"=" + value + b"\n" for key, value in variables.items())
+        grammar = (b'valopt prefix "/usr/local" "set installation prefix"\n'
+                   b'opt ldconfig 1 "run ldconfig after installation (Linux only)"\n')
+        template = b"".join(b"TEMPLATE_" + key.encode() + b"=%%TEMPLATE_" + key.encode() + b"%%\n" for key in variables) + grammar
+        body += grammar
+        # A small synthetic template exercises only normalization/refusal. It is
+        # never presented as the actual archive script or production pin.
+        with patch.object(capsule, "MANAGED_STAGE_RUST_TEMPLATE_SHA256", hashlib.sha256(template).hexdigest()):
+            result = capsule._managed_stage_rust_grammar(body, "rustc")
+            self.assertEqual(result["argv"], ["--prefix=<one-owned-rust-prefix>", "--disable-ldconfig"])
+            for changed in (body.replace(b"rustlib\n", b"../../outside\n"),
+                    body.replace(b"valopt prefix", b"valopt other"), body + b"echo changed\n"):
+                with self.assertRaises(ValueError):
+                    capsule._managed_stage_rust_grammar(changed, "rustc")
+
+
 if __name__ == "__main__":
     unittest.main()

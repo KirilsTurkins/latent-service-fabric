@@ -419,6 +419,13 @@ impl DevelopmentHostOperation {
     }
 }
 
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+enum JoinMode {
+    #[default]
+    Join,
+    TaskReturn,
+    ManagedStage,
+}
 #[derive(Clone, Copy, Default)]
 struct JoinCauseSlot {
     armed_once: bool,
@@ -426,7 +433,7 @@ struct JoinCauseSlot {
     component: [u8; 32],
     observation: DevelopmentJoinCauseSnapshot,
     rejection: Option<DevelopmentJoinRejectReason>,
-    task_return_enabled: bool,
+    mode: JoinMode,
     task_return: DevelopmentJoinCauseSnapshot,
 }
 
@@ -459,6 +466,8 @@ const _: () = {
         task_return_enabled: bool,
         task_return: DevelopmentJoinCauseSnapshot,
     }
+    assert!(size_of::<JoinMode>() == size_of::<bool>());
+    assert!(align_of::<JoinMode>() == align_of::<bool>());
     assert!(size_of::<DevelopmentJoinRejectReason>() == size_of::<OriginalReject>());
     assert!(align_of::<DevelopmentJoinRejectReason>() == align_of::<OriginalReject>());
     assert!(
@@ -507,7 +516,7 @@ fn join_cause_slot(activation: &str) -> Option<usize> {
     }
 }
 
-fn join_cause_digest(value: &str) -> Option<[u8; 32]> {
+pub(crate) fn join_cause_digest(value: &str) -> Option<[u8; 32]> {
     let raw = value.strip_prefix("sha256:")?.as_bytes();
     if raw.len() != 64 {
         return None;
@@ -559,6 +568,16 @@ impl DevelopmentJoinCauseObserver {
         contract: &str,
         export: &str,
     ) -> Option<usize> {
+        self.claim_mode(activation, component, contract, export, false)
+    }
+    fn claim_mode(
+        &self,
+        activation: &str,
+        component: Option<&str>,
+        contract: &str,
+        export: &str,
+        stage: bool,
+    ) -> Option<usize> {
         if !self.enabled.load(Ordering::Acquire) {
             return None;
         }
@@ -567,7 +586,7 @@ impl DevelopmentJoinCauseObserver {
             return None;
         };
         let selected = &mut slots[slot];
-        if !selected.enabled {
+        if !selected.enabled || stage != (selected.mode == JoinMode::ManagedStage) {
             return None;
         }
         selected.observation.claims = selected.observation.claims.saturating_add(1);
@@ -588,7 +607,7 @@ impl DevelopmentJoinCauseObserver {
                     DevelopmentJoinRejectReason::ExportMismatch
                 });
             selected.observation.invalid = true;
-            if selected.task_return_enabled {
+            if selected.mode == JoinMode::TaskReturn {
                 selected.task_return.invalid = true;
             }
             return None;
@@ -682,8 +701,8 @@ impl DevelopmentJoinCauseObserver {
         export: &str,
     ) -> Result<DevelopmentTaskReturnGuard<'_>, PlatformError> {
         let original = self.arm(activation, component, contract, export)?;
-        self.slots.lock().map_err(|_| join_cause_refused())?[original.slot].task_return_enabled =
-            true;
+        self.slots.lock().map_err(|_| join_cause_refused())?[original.slot].mode =
+            JoinMode::TaskReturn;
         Ok(DevelopmentTaskReturnGuard { original })
     }
 
@@ -694,7 +713,7 @@ impl DevelopmentJoinCauseObserver {
                 return false;
             };
             selected.enabled
-                && selected.task_return_enabled
+                && selected.mode == JoinMode::TaskReturn
                 && selected.observation.claims == 1
                 && !selected.observation.invalid
         })
@@ -708,7 +727,7 @@ impl DevelopmentJoinCauseObserver {
             return false;
         };
         if !selected.enabled
-            || !selected.task_return_enabled
+            || selected.mode != JoinMode::TaskReturn
             || selected.observation.claims != 1
             || selected.observation.invalid
             || selected.observation.cause.is_some()
@@ -727,7 +746,7 @@ impl DevelopmentJoinCauseObserver {
         let Some(selected) = slots.get_mut(slot) else {
             return;
         };
-        if selected.enabled && selected.task_return_enabled {
+        if selected.enabled && selected.mode == JoinMode::TaskReturn {
             selected.rejection.get_or_insert(reason);
             selected.task_return.invalid = true;
         }
@@ -759,7 +778,7 @@ impl DevelopmentJoinCauseObserver {
         let Some(selected) = slots.get_mut(slot) else {
             return;
         };
-        if !selected.enabled || !selected.task_return_enabled {
+        if !selected.enabled || selected.mode != JoinMode::TaskReturn {
             return;
         }
         selected.task_return.claims = selected.task_return.claims.saturating_add(1);
@@ -942,10 +961,103 @@ mod join_cause_tests {
             guard.rejection().unwrap(),
             Some(DevelopmentJoinRejectReason::ClaimRepeated)
         );
+        let ordinary = DevelopmentJoinCauseObserver::default();
+        let old = ordinary.arm(ID, DIGEST, CONTRACT, "probe").unwrap();
+        assert!(ordinary
+            .claim_managed_stage(
+                "dotnet-managed-stage-unobserved",
+                Some(DIGEST),
+                CONTRACT,
+                "probe"
+            )
+            .is_none());
+        assert_eq!(old.snapshot().unwrap().claims, 0);
+        drop(old);
+        let stage = DevelopmentJoinCauseObserver::default();
+        let selected = stage
+            .arm_managed_stage("dotnet-managed-stage-unobserved", DIGEST)
+            .unwrap();
+        assert!(stage.claim(ID, Some(DIGEST), CONTRACT, "probe").is_none());
+        let claim = stage
+            .claim_managed_stage(
+                "dotnet-managed-stage-unobserved",
+                Some(DIGEST),
+                CONTRACT,
+                "probe",
+            )
+            .unwrap();
+        assert!(stage.managed_stage_live(claim));
+        assert!(!stage.task_return_enabled(Some(claim)));
+        assert!(stage
+            .claim_managed_stage(
+                "dotnet-managed-stage-unobserved",
+                Some(DIGEST),
+                CONTRACT,
+                "probe"
+            )
+            .is_none());
+        assert!(!stage.managed_stage_live(claim));
+        drop(selected);
+        assert!(stage
+            .arm_managed_stage("dotnet-managed-stage-unobserved", DIGEST)
+            .is_err());
     }
 
     #[test]
     fn failed_call_lift_wrong_digest_shape_and_nonword_are_never_causes() {
+        crate::values::LiftMemory::development_stage_counter_control();
+        // Real bounded WIT parser/comparison: enabling the Cargo feature alone
+        // never makes the ordinary source authoring API accept this import.
+        let stage = "package latent:development-dotnet-stage@0.1.0; interface stage { emit: func(stage: u32, guard: u32); }";
+        let app = "package example:stage-control@1.0.0; interface api { run: func() -> u32; } world service { import latent:development-dotnet-stage/stage@0.1.0; export api; }";
+        let derive = |stage: &str, app: &str, private: bool| {
+            let files = std::collections::BTreeMap::from([
+                ("wit/stage.wit".to_owned(), stage.as_bytes()),
+                ("wit/app.wit".to_owned(), app.as_bytes()),
+            ]);
+            if private {
+                latent_packaging::derive_managed_stage_contracts(
+                    "example:stage-control/service@1.0.0",
+                    &files,
+                    Default::default(),
+                )
+            } else {
+                latent_packaging::derive_capsule_contracts(
+                    "example:stage-control/service@1.0.0",
+                    &files,
+                    Default::default(),
+                )
+            }
+        };
+        assert!(derive(stage, app, false).is_err());
+        let selected = derive(stage, app, true).unwrap();
+        assert_eq!(selected.imports(), &[MANAGED_STAGE_INTERFACE]);
+        for changed in [
+            stage.replace("emit:", "other:"),
+            stage.replace("guard: u32", "guard: u64"),
+            stage.replace(
+                "func(stage: u32, guard: u32)",
+                "func(stage: u32, guard: u32) -> u32",
+            ),
+        ] {
+            assert!(derive(&changed, app, true).is_err());
+        }
+        assert!(derive(
+            &stage.replace("@0.1.0", "@0.2.0"),
+            &app.replace("@0.1.0", "@0.2.0"),
+            true
+        )
+        .is_err());
+
+        let stage = DevelopmentJoinCauseObserver::default();
+        let guard = stage
+            .arm_managed_stage("dotnet-managed-stage-handled", DIGEST)
+            .unwrap();
+        assert!(stage
+            .claim_managed_stage("dotnet-managed-stage-handled", None, CONTRACT, "probe")
+            .is_none());
+        assert!(guard.snapshot().unwrap().invalid);
+        assert!(!stage.managed_stage_live(0));
         for variant in 0..6 {
             let observer = DevelopmentJoinCauseObserver::default();
             let guard = observer.arm(ID, DIGEST, CONTRACT, "probe").unwrap();
@@ -1040,6 +1152,19 @@ mod join_cause_tests {
 
     #[test]
     fn three_words_have_distinct_causes_without_any_frame_or_result_owner() {
+        let default = crate::WasmtimeConfig::default();
+        let original = default.configuration_digest(crate::config::DispatchMode::Generic);
+        let mut private = default.clone();
+        private.development_managed_stage_component = Some([1; 32]);
+        assert_ne!(
+            private.configuration_digest(crate::config::DispatchMode::Generic),
+            original
+        );
+        private.development_managed_stage_component = None;
+        assert_eq!(
+            private.configuration_digest(crate::config::DispatchMode::Generic),
+            original
+        );
         for (word, cause) in [
             (0x4A43_0001, DevelopmentJoinCause::Quiescence),
             (0x4A43_0002, DevelopmentJoinCause::OriginalFault),
@@ -1094,5 +1219,68 @@ mod join_cause_tests {
                 Some(DevelopmentJoinRejectReason::NativeDuplicateReturn)
             );
         }
+    }
+}
+
+// Private diagnostic labels share the original irreversible three-slot bank.
+// No new slot, acceptance word or authority is created.
+pub(crate) const MANAGED_STAGE_INTERFACE: &str = "latent:development-dotnet-stage/stage@0.1.0";
+fn managed_stage_origin(activation: &str) -> Option<&'static str> {
+    match activation {
+        "dotnet-managed-stage-handled" => Some("dotnet-ac7-diag-quiescence"),
+        "dotnet-managed-stage-unobserved" => Some("dotnet-ac7-diag-original-fault"),
+        _ => None,
+    }
+}
+impl DevelopmentJoinCauseObserver {
+    pub(crate) fn arm_managed_stage(
+        &self,
+        activation: &str,
+        component: &str,
+    ) -> Result<DevelopmentJoinCauseGuard<'_>, PlatformError> {
+        let slot =
+            join_cause_slot(managed_stage_origin(activation).ok_or_else(join_cause_refused)?)
+                .ok_or_else(join_cause_refused)?;
+        let component = join_cause_digest(component).ok_or_else(join_cause_refused)?;
+        let mut slots = self.slots.lock().map_err(|_| join_cause_refused())?;
+        if slots[slot].armed_once {
+            return Err(join_cause_refused());
+        }
+        slots[slot].armed_once = true;
+        slots[slot].enabled = true;
+        slots[slot].component = component;
+        slots[slot].mode = JoinMode::ManagedStage;
+        self.enabled.store(true, Ordering::Release);
+        Ok(DevelopmentJoinCauseGuard {
+            observer: self,
+            slot,
+        })
+    }
+    pub(crate) fn claim_managed_stage(
+        &self,
+        activation: &str,
+        component: Option<&str>,
+        contract: &str,
+        export: &str,
+    ) -> Option<usize> {
+        self.claim_mode(
+            managed_stage_origin(activation)?,
+            component,
+            contract,
+            export,
+            true,
+        )
+    }
+    pub(crate) fn managed_stage_live(&self, slot: usize) -> bool {
+        self.slots.lock().is_ok_and(|slots| {
+            slots.get(slot).is_some_and(|selected| {
+                selected.enabled
+                    && selected.mode == JoinMode::ManagedStage
+                    && selected.observation.claims == 1
+                    && !selected.observation.invalid
+                    && selected.observation.cause.is_none()
+                    && selected.rejection.is_none()
+            })
+        })
     }
 }

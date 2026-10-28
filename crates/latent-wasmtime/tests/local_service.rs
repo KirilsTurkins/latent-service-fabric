@@ -599,3 +599,192 @@ async fn dotnet_join_cause_canonical_task_return_witness_preserves_original_fail
         panic!("requires the reviewed development-test-host Linux x86_64 fixture");
     }
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "Requires the separately signed private managed-stage diagnostic owner"]
+async fn dotnet_managed_stage_diagnostic_preserves_failed_root_return_boundary() {
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    {
+        use latent_activation::ActivationOutcome;
+        use latent_artifacts::{AdmissionAuthority, ArtifactRepository};
+        use latent_core::{ContractId, FunctionId, ServiceId};
+        use latent_manifest::ManifestCodec;
+        let name = "dotnet-root-return-managed-stage";
+        assert_eq!(
+            std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(),
+            Ok("dotnet")
+        );
+        let supplied = std::env::var("LSF_DOTNET_MANAGED_STAGE_COMPONENT")
+            .expect("operator exact component digest");
+        let encoded = supplied.strip_prefix("sha256:").expect("prefixed digest");
+        assert_eq!(encoded.len(), 64);
+        let mut component = [0u8; 32];
+        for (index, pair) in encoded.as_bytes().chunks_exact(2).enumerate() {
+            let digit = |byte| match byte {
+                b'0'..=b'9' => byte - b'0',
+                b'a'..=b'f' => byte - b'a' + 10,
+                _ => panic!("lowercase hexadecimal component digest required"),
+            };
+            component[index] = (digit(pair[0]) << 4) | digit(pair[1]);
+        }
+        let limits = latent_packaging::PackagingLimits::default();
+        use std::io::Read;
+        let mut source = Vec::new();
+        std::fs::File::open(join_cause_package::input(name).join("package-source.json"))
+            .unwrap()
+            .take(65537)
+            .read_to_end(&mut source)
+            .unwrap();
+        assert!(source.len() <= 65536);
+        let source = latent_packaging::decode_package_source(&source, limits).unwrap();
+        // SAME real compiled bytes: defaults cannot accept this private import.
+        let input =
+            latent_packaging::read_package_input(&join_cause_package::input(name), &source, limits)
+                .unwrap();
+        let error = latent_packaging::build_package(input, limits).unwrap_err();
+        assert_eq!(
+            error.code,
+            latent_core::PlatformErrorCode::IncompatibleContract
+        );
+        assert_eq!(error.message, "unsupported-host-import");
+        let mut wrong_limits = limits;
+        let mut wrong = component;
+        wrong[0] ^= 1;
+        wrong_limits.semantics.development_managed_stage_component = Some(wrong);
+        let input = latent_packaging::read_package_input(
+            &join_cause_package::input(name),
+            &source,
+            wrong_limits,
+        )
+        .unwrap();
+        let error = latent_packaging::build_package(input, wrong_limits).unwrap_err();
+        assert_eq!(error.message, "private-stage-component-mismatch");
+        let bundle =
+            join_cause_package::managed_stage_bundle(&join_cause_package::input(name), component);
+        let observation = join_cause_package::observation(name);
+        let release = packages::release(&bundle);
+        assert_eq!(supplied, release.0);
+        assert_eq!(
+            bundle
+                .surface()
+                .unwrap()
+                .development_managed_stage_profile()
+                .unwrap()
+                .0,
+            "dotnet-managed-stage-diagnostic-v1"
+        );
+        let capsule = latent_manifest::JsonManifestCodec::default()
+            .decode_capsule(bundle.blob("capsule.json").unwrap())
+            .unwrap();
+        let tenant = capsule.metadata.tenant.expect("captured tenant");
+        let service = ServiceId(capsule.metadata.name);
+        let ceiling = capsule.execution.resource_budget_ceiling;
+        assert_eq!(ceiling.cpu_fuel, 1_000_000_000);
+        assert_eq!(ceiling.memory_bytes, 128 * 1024 * 1024);
+        assert_eq!(ceiling.wall_time_limit_millis, Some(120_000));
+        assert_eq!(ceiling.child_calls, 0);
+        let signers = join_cause_package::Signers::for_tenant(
+            latent_signing::DOTNET_CAPSULE_BUILD_TYPE,
+            &tenant,
+        );
+        let directory = tempfile::tempdir().unwrap();
+        let upload = signers.upload_for_tenant(&bundle, &observation, &tenant);
+        let replay = signers.upload_for_tenant(&bundle, &observation, &tenant);
+        let (catalog, authority) = join_cause_package::managed_stage_catalog(
+            directory.path(),
+            signers.policy,
+            Some(128 * 1024 * 1024),
+            component,
+        );
+        // Real publisher/builder/SBOM verification first creates the retained binding.
+        // Recovery repeats exact profile+digest and all historical/evidence checks.
+        let checked = authority.verify(&tenant, replay).unwrap();
+        let binding = checked.grant.binding().clone();
+        let recovered = authority.recover(&binding, checked.upload).unwrap();
+        assert_eq!(recovered.grant.binding().release, release);
+        drop(recovered);
+        catalog
+            .admit_package(&tenant, upload, &mut |_| Ok(()))
+            .await
+            .unwrap();
+        let callee =
+            join_cause_package::managed_stage_bundle(&join_cause_package::input(name), component);
+        assert_eq!(callee.layout().digest(), bundle.layout().digest());
+        let f = fixture::Fixture::with_managed_stage_runtime(
+            (catalog, bundle, callee),
+            latent_core::activation_runtime::RuntimeLimits {
+                tasks: 8,
+                executors: 2,
+                queued_work: 8,
+                waits: 16,
+                timers: 8,
+                results: 8,
+                native_owners: 8,
+            },
+            fixture::RuntimeIdentities {
+                tenant,
+                caller: service.clone(),
+                callee: service,
+            },
+            component,
+        )
+        .await;
+        for (mode, id) in [
+            (3, "dotnet-managed-stage-handled"),
+            (9, "dotnet-managed-stage-unobserved"),
+        ] {
+            let mut request = f.request(id, mode);
+            request.target.contract = ContractId("examples:greeting/api@1.0.0".into());
+            request.target.function = FunctionId("probe".into());
+            request.budget = ceiling.clone();
+            let guard = f
+                .backend
+                .arm_development_managed_stage(id, &release.0)
+                .unwrap();
+            let receipt = f.manager.start(request).unwrap().await;
+            assert_eq!(receipt.resolved_revision.as_ref().unwrap().release, release);
+            let terminal = match &receipt.outcome {
+                ActivationOutcome::Succeeded(success) if mode == 3 => {
+                    assert_eq!(
+                        serde_json::from_slice::<Vec<u32>>(&success.output).unwrap(),
+                        [0xAC70_0003]
+                    );
+                    "succeeded"
+                }
+                ActivationOutcome::Failed { error, .. } if mode == 9 => {
+                    assert_eq!(error.code, latent_core::PlatformErrorCode::GuestTrap);
+                    "guest-trap"
+                }
+                _ => panic!("private diagnostic changed the original terminal boundary"),
+            };
+            let snapshot = guard.snapshot().unwrap();
+            assert_eq!(snapshot.claims, 1);
+            assert!(!snapshot.invalid);
+            assert!(snapshot.cause.is_none());
+            assert!(guard.rejection().unwrap().is_none());
+            println!(
+                "DOTNET_MANAGED_STAGE_CALL {}",
+                serde_json::json!({
+                    "profile":"dotnet-managed-stage-diagnostic-v1", "component":release.0,
+                    "mode":mode, "terminalOutcome":terminal, "claims":snapshot.claims,
+                    "originalCauseQualified":false, "originalSixCallsQualified":false,
+                    "fullAc7Qualified":false, "physicalRetirementQualified":false, "nativeAccountingQualified":false
+                })
+            );
+            drop(guard);
+            f.idle().await;
+        }
+    }
+    #[cfg(not(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    )))]
+    {
+        panic!("requires the reviewed development-test-host Linux x86_64 fixture");
+    }
+}

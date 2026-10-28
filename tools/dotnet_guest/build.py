@@ -47,12 +47,16 @@ RECIPE += guest_dependency_inputs.RECIPE
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
           *, tools: Path, offline: bool = False, executable_approval: str | None = None,
-          compiler_methods: bool = False, _deadline: float | None = None, _root_return_capture: tuple | None = None, _root_join_cause: bool = False, _root_return_commands=None):
+          compiler_methods: bool = False, _deadline: float | None = None, _root_return_capture: tuple | None = None, _root_join_cause: bool = False, _root_return_commands=None, _development_managed_stage: bool = False, _managed_stage_validator=None):
     if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
                                  or _deadline <= time.monotonic() + 5):
         raise ValueError('dotnet-build-original-owner-deadline')
     if type(_root_join_cause) is not bool or (_root_join_cause and _root_return_capture is None):
         raise ValueError('root-join-cause-requires-explicit-capture')
+    if type(_development_managed_stage) is not bool or (_development_managed_stage and (not _root_join_cause or _root_return_capture is None)):
+        raise ValueError('managed-stage-requires-explicit-auxiliary-capture')
+    if (_development_managed_stage and not callable(_managed_stage_validator)) or (not _development_managed_stage and _managed_stage_validator is not None):
+        raise ValueError('managed-stage-private-validator-only')
     if _root_return_commands is not None and (_root_return_capture is None or not callable(_root_return_commands)):
         raise ValueError('root-return-command-owner-requires-explicit-capture')
     if _root_return_capture is not None and (type(_root_return_capture) is not tuple
@@ -80,6 +84,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
         if _root_return_capture is not None:
             recipe_files["tools/dotnet_root_return.py"] = read_file(ROOT / "tools/dotnet_root_return.py")
+        if _development_managed_stage:
+            from tools.dotnet_guest.managed_work import STAGE_DATA
+            for name in ('ManagedStageOverlay.cs', 'private.wit'):
+                path = STAGE_DATA+'/'+name
+                recipe_files[path] = read_file(ROOT/path,64*1024)
         recipe = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe)
@@ -115,7 +124,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "compiler-inputs"
             verified = verify_inputs(observed.dependency_root, 'dotnet')
             compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline, captured=verified is not None,
-                compiler_methods=True)
+                compiler_methods=True, _development_managed_stage=_development_managed_stage,
+                _managed_stage_validator=_managed_stage_validator)
             if _root_join_cause:
                 compiler.development_root_join_cause = True
             write_json(output / "compiler-inputs.json", compiler.before)
@@ -165,13 +175,26 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             (output / "component.wasm").write_bytes(component)
             write_json(output / "bindings.json", generated)
             stage = "compatibility"
-            guest_compatibility_build.inspect(commands, compiler.wasm, output, surface,
-                host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
-            package_inputs(output, project, surface, files, component)
+            if _development_managed_stage:
+                guest_compatibility_build.inspect_managed_stage(commands, compiler.wasm, output, surface)
+            else:
+                guest_compatibility_build.inspect(commands, compiler.wasm, output, surface,
+                    host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
+            if _development_managed_stage:
+                from tools.dotnet_guest.managed_work import stage_package_selection
+                package_files, package_surface = stage_package_selection(commands, paths['contracts-tool'], project, output, files, surface)
+                package_inputs(output, project, package_surface, package_files, component, additional_assets=(
+                    ('managed-stage-admission.json', 'asset', 'application/vnd.latent.development-managed-stage.v1+json'),
+                    ('managed-stage-contract.json', 'asset', 'application/vnd.latent.development-managed-stage-contract.v1+json')))
+            else:
+                package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
-                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
-                commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
+                private_arguments = ('--development-managed-stage-component', digest(component)) if _development_managed_stage else ()
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files), *private_arguments)
+                commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files), *private_arguments)
+                if _development_managed_stage and read_file(output/'component.wasm',64*1024*1024) != component:
+                    raise ValueError('managed-stage-component-changed-during-packaging')
             stage = "recheck"
             observed.check_unchanged()
             if snapshot(work, exclude=('dependencies', 'application-vendor') if closure else ()) != files:
