@@ -10,7 +10,8 @@ use latent_core::{
 };
 use latent_executor::ExecutionCancellation;
 use std::future::Future;
-use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 use std::time::Instant;
 use wasmtime::component::{Component, Instance, Linker};
@@ -306,51 +307,79 @@ async fn actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_
     let function = instance
         .get_typed_func::<(), (String,)>(&mut first, "activation-id")
         .unwrap();
-    let before = super::native_store_tests::requests(&observed).len();
     assert_eq!(
         function.call_async(&mut first, ()).await.unwrap().0,
         "context-owned"
     );
-    // The cold call observes GuestCall followed by lazy stub/ready headers.
-    // Those two shared headers are STILL in the same Store's baseline below;
-    // only the first (actual GuestCall) allocation repeats before owned R.
-    // Legacy block_on does not allocate a HostFuture or unordered task header.
-    let warmed = super::native_store_tests::requests(&observed);
-    let cold = &warmed[before..];
-    assert_eq!(cold.len(), 3);
-    assert!(cold.iter().all(|bytes| *bytes > 0));
-    let queues = &cold[..1];
-    let queue_charge = queues
+    // Warm ONLY real shared headers/resource table capacity under the SAME grant.
+    // WARM source: channel, RawLower, RawLift, GuestTask, WaitableSet,
+    // GuestThread, GuestCall queue, HostTask. Legacy block_on still creates no
+    // HostFuture/outer scheduler Task. This second call binds exact layouts.
+    let baseline = original.host_memory_bytes();
+    let before = super::native_store_tests::allocation_rows(&observed).len();
+    assert_eq!(
+        function.call_async(&mut first, ()).await.unwrap().0,
+        "context-owned"
+    );
+    let warmed = super::native_store_tests::allocation_rows(&observed);
+    let call = &warmed[before..];
+    assert_eq!(call.len(), 8);
+    assert!(call
         .iter()
-        .map(|bytes| *bytes as u64 + crate::native_tables::OWNER_ESCROW as u64)
-        .sum::<u64>();
+        .all(|r| r.bytes > 0 && r.admitted && r.confirmed && r.released));
+    assert_eq!(original.host_memory_bytes(), baseline);
+    let expected: Vec<_> = call.iter().map(|r| r.bytes).collect();
+    let host_task_bytes = call[7].bytes;
+    let next = warmed.len();
     let reply = super::policy::reply_string_charge("context-owned").unwrap() as u64
         + crate::native_tables::OWNER_ESCROW as u64;
     let linear = first.data().limiter.peak_memory_bytes();
-    let consumed = original.host_memory_bytes() + linear + queue_charge;
-    let bytes = MIB - consumed - reply + 1 - crate::native_tables::OWNER_ESCROW as u64;
-    let mut owner = crate::native_tables::reserve(&original, bytes as usize)
-        .unwrap()
-        .unwrap();
-    let allocation = vec![0u8; bytes as usize];
-    assert_eq!(allocation.capacity(), bytes as usize);
-    owner.allocated();
-    let padding = Padding {
-        _bytes: allocation,
-        _owner: owner,
-    };
-    let consumed = original.host_memory_bytes() + linear + queue_charge;
-    assert_eq!(consumed + reply, MIB + 1);
+    let padding = Arc::new(Mutex::new(None::<Padding>));
+    let consumed = Arc::new(AtomicU64::new(0));
+    let kept = padding.clone();
+    let kept_consumed = consumed.clone();
+    let invocation = original.clone();
+    // Actual HostTask is the LAST Wasmtime allocation before owned_reply.
+    // RawLower has physically retired before core guest entry (make_call).
+    // Including this real HostTask request avoids denying an earlier owner.
+    observed.before_request(next + 8, move |bytes| {
+        assert_eq!(bytes, host_task_bytes);
+        let task = bytes as u64 + crate::native_tables::OWNER_ESCROW as u64;
+        let bytes = MIB - invocation.host_memory_bytes() - linear - task - reply + 1
+            - crate::native_tables::OWNER_ESCROW as u64;
+        let mut owner = crate::native_tables::reserve(&invocation, bytes as usize)
+            .unwrap()
+            .unwrap();
+        let allocation = vec![0u8; bytes as usize];
+        assert_eq!(allocation.capacity(), bytes as usize);
+        owner.allocated();
+        *kept.lock().unwrap() = Some(Padding {
+            _bytes: allocation,
+            _owner: owner,
+        });
+        kept_consumed.store(
+            invocation.host_memory_bytes() + linear + task,
+            Ordering::SeqCst,
+        );
+    });
     let error = function.call_async(&mut first, ()).await.unwrap_err();
-    denial(&error, MIB, consumed, reply);
+    let actual_consumed = consumed.load(Ordering::SeqCst);
+    assert_eq!(actual_consumed + reply, MIB + 1);
+    denial(&error, MIB, actual_consumed, reply);
     assert_eq!(
-        &super::native_store_tests::requests(&observed)[warmed.len()..],
-        queues
+        &super::native_store_tests::requests(&observed)[next..],
+        expected
     );
+    let actual = super::native_store_tests::allocation_rows(&observed);
+    assert!(actual[next..].iter().all(|r| r.admitted && r.confirmed));
     drop(error);
-    drop(padding);
+    drop(padding.lock().unwrap().take());
     drop(first);
+    assert!(super::native_store_tests::allocation_rows(&observed)
+        .iter()
+        .all(|r| r.released));
     assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
     let mut fresh = store(&engine, &original, false);
     let fresh_instance = instantiate(&engine, &mut fresh).await;
     assert_eq!(id(fresh_instance, &mut fresh).await, "context-owned");

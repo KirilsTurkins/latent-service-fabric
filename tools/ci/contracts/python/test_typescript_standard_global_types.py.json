@@ -1,20 +1,20 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "StandardGlobalTypes.test_default_bytes_and_standalone_iterable_contract_are_unchanged":
+"storageCases":"guard-keys",
+"guards":{
+"StandardGlobalTypes.test_default_bytes_and_standalone_iterable_contract_are_unchanged":
       "26e351c1a272a96dc3fa86d925eebb84267654809996b6bde28275a2903d03bc",
-    "StandardGlobalTypes.test_normal_retention_rejects_forgery_and_distributed_recipe_contains_helper":
+"StandardGlobalTypes.test_normal_retention_rejects_forgery_and_distributed_recipe_contains_helper":
       "26e351c1a272a96dc3fa86d925eebb84267654809996b6bde28275a2903d03bc",
-    "StandardGlobalTypes.test_partial_multiple_mutated_and_unreviewed_shapes_fail_explicitly":
+"StandardGlobalTypes.test_partial_multiple_mutated_and_unreviewed_shapes_fail_explicitly":
       "26e351c1a272a96dc3fa86d925eebb84267654809996b6bde28275a2903d03bc",
-    "StandardGlobalTypes.test_published_provider_composes_source_bound_types_without_runtime_changes":
+"StandardGlobalTypes.test_published_provider_composes_source_bound_types_without_runtime_changes":
       "26e351c1a272a96dc3fa86d925eebb84267654809996b6bde28275a2903d03bc"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_typescript_standard_global_types.py",
-  "reviewReason":"Add original published declaration/default-byte/real capture/retention and distributed recipe controls without compiler execution",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "26e351c1a272a96dc3fa86d925eebb84267654809996b6bde28275a2903d03bc":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c6d767cb62d0379f469597c30f2dd9cc7ce87ae7d7ac96336266e6c91579fdcb","class:setup-sha256:e5abb27954c3898b82d7362d2d3bb870692fe72c57648cc45b23769a5a6f30bd"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_standard_global_types.py",
+"reviewReason":"Add original published declaration/default-byte/real capture/retention and distributed recipe controls without compiler execution",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"26e351c1a272a96dc3fa86d925eebb84267654809996b6bde28275a2903d03bc":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c6d767cb62d0379f469597c30f2dd9cc7ce87ae7d7ac96336266e6c91579fdcb","class:setup-sha256:e5abb27954c3898b82d7362d2d3bb870692fe72c57648cc45b23769a5a6f30bd"],"skipSites":[]}
+}
 }

@@ -1,5 +1,5 @@
 {
-"cases":["UnorderedOwnerReader.test_compiled_owned_header_witnesses_cannot_be_omitted_or_weakened","UnorderedOwnerReader.test_scoped_actual_sequences_refuse_old_epochs_wrong_owners_and_extra_rows"],
+"storageCases":"guard-keys",
 "guards":{
 "UnorderedOwnerReader.test_compiled_owned_header_witnesses_cannot_be_omitted_or_weakened":
       "6135ef56c744af6b4c4d490721afc111fbec8478d78961634d06da54c1338659",

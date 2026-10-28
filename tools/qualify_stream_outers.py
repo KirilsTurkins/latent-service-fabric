@@ -2943,11 +2943,11 @@ CALL_MEMORY_STAGES = ('source-head', 'source-clean', 'source-input-paths',
     'source-input-paths-after', 'source-clean-after', 'source-head-after')
 
 
-def call_memory_result(raw, case, *, _resource_table=False, _call_result_channel=False, _callback_memory=False):
+def call_memory_result(raw, case, *, _resource_table=False, _call_result_channel=False, _callback_memory=False, _host_baseline=False):
     require(type(_resource_table) is bool and type(_call_result_channel) is bool
-        and type(_callback_memory) is bool
-        and sum((_resource_table, _call_result_channel, _callback_memory)) <= 1, 'store-memory-closed-result-profile')
-    cases = CALLBACK_CASES if _callback_memory else CALL_RESULT_CHANNEL_CASES if _call_result_channel else RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
+        and type(_callback_memory) is bool and type(_host_baseline) is bool
+        and sum((_resource_table, _call_result_channel, _callback_memory, _host_baseline)) <= 1, 'store-memory-closed-result-profile')
+    cases = HOST_BASELINE_CASES if _host_baseline else CALLBACK_CASES if _callback_memory else CALL_RESULT_CHANNEL_CASES if _call_result_channel else RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
     require(case in cases and len(raw) <= artifacts.MAX_OUTPUT_BYTES,
         'call-memory-case-bound')
     require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
@@ -2958,22 +2958,24 @@ def call_memory_result(raw, case, *, _resource_table=False, _call_result_channel
         and int(summaries[0][4]) <= 10000, 'call-memory-one-executed-no-skip')
     return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0,
         'ignored': 0, 'filteredOut': int(summaries[0][4]),
-        'scope': 'original-Store-borrowed-callback-counter-owner' if _callback_memory
+        'scope': 'source-bound-original-host-memory-lifetime-regressions' if _host_baseline
+            else 'original-Store-borrowed-callback-counter-owner' if _callback_memory
             else 'original-Store-call-result-header-counter-owner-with-explicit-payload-unwind-retention' if _call_result_channel
             else 'original-Store-resource-box-table-and-child-index-counter-owner' if _resource_table
             else 'original-Store-parameter-and-typed-closure-counter-owner'}
 
 
-def qualify_call_memory(output, revision, *, _resource_table=False, _call_result_channel=False, _callback_memory=False):
+def qualify_call_memory(output, revision, *, _resource_table=False, _call_result_channel=False, _callback_memory=False, _host_baseline=False):
     import shutil
     require(type(_resource_table) is bool and type(_call_result_channel) is bool
-        and type(_callback_memory) is bool
-        and sum((_resource_table, _call_result_channel, _callback_memory)) <= 1, 'store-memory-closed-profile')
-    branch = CALLBACK_BRANCH if _callback_memory else CALL_RESULT_CHANNEL_BRANCH if _call_result_channel else RESOURCE_TABLE_BRANCH if _resource_table else CALL_MEMORY_BRANCH
-    cases = CALLBACK_CASES if _callback_memory else CALL_RESULT_CHANNEL_CASES if _call_result_channel else RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
-    prefix = CALLBACK_PREFIX if _callback_memory else CALL_RESULT_CHANNEL_PREFIX if _call_result_channel else RESOURCE_TABLE_PREFIX if _resource_table else CALL_MEMORY_PREFIX
-    schema = 'lsf.callback-memory.v1' if _callback_memory else 'lsf.call-result-channel-memory.v1' if _call_result_channel else 'lsf.resource-table-memory.v1' if _resource_table else 'lsf.call-parameter-closure-memory.v1'
-    scope = ('four exact private native original-Store borrowed callback header refusal, repeated/error calls, cancellation and unwind controls; actual dispatcher owns the carrier across call; no guest, full ActivationBudget, transitive capture cost or RSS qualification'
+        and type(_callback_memory) is bool and type(_host_baseline) is bool
+        and sum((_resource_table, _call_result_channel, _callback_memory, _host_baseline)) <= 1, 'store-memory-closed-profile')
+    branch = HOST_BASELINE_BRANCH if _host_baseline else CALLBACK_BRANCH if _callback_memory else CALL_RESULT_CHANNEL_BRANCH if _call_result_channel else RESOURCE_TABLE_BRANCH if _resource_table else CALL_MEMORY_BRANCH
+    cases = HOST_BASELINE_CASES if _host_baseline else CALLBACK_CASES if _callback_memory else CALL_RESULT_CHANNEL_CASES if _call_result_channel else RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
+    prefix = 'host::' if _host_baseline else CALLBACK_PREFIX if _callback_memory else CALL_RESULT_CHANNEL_PREFIX if _call_result_channel else RESOURCE_TABLE_PREFIX if _resource_table else CALL_MEMORY_PREFIX
+    schema = 'lsf.host-memory-baseline.v1' if _host_baseline else 'lsf.callback-memory.v1' if _callback_memory else 'lsf.call-result-channel-memory.v1' if _call_result_channel else 'lsf.resource-table-memory.v1' if _resource_table else 'lsf.call-parameter-closure-memory.v1'
+    scope = ('eleven exact existing native host memory regression controls using real embedded components and unchanged original grants; no full runtime/cost-model qualification'
+        if _host_baseline else 'four exact private native original-Store borrowed callback header refusal, repeated/error calls, cancellation and unwind controls; actual dispatcher owns the carrier across call; no guest, full ActivationBudget, transitive capture cost or RSS qualification'
         if _callback_memory else 'four exact private native original-Store call-result header admission, wake, cancellation and explicit payload-unwind retention controls; no guest, full ActivationBudget, transitive cost or RSS qualification'
         if _call_result_channel else 'four exact private native original-Store resource Box, table and child-index backing controls; no guest, full ActivationBudget, transitive cost or RSS qualification'
         if _resource_table else 'four exact private native original-Store factory and typed closure ownership/refusal/unwind controls; no guest, full ActivationBudget, transitive cost or RSS qualification')
@@ -3005,10 +3007,10 @@ def qualify_call_memory(output, revision, *, _resource_table=False, _call_result
         'cargoBuildMayRunHostBuildScripts': True,
         'limits': {'overallSeconds': 1320, 'buildProcessSeconds': 1200,
             'listProcessSeconds': 30, 'caseProcessSeconds': 60, 'cleanupSeconds': 5,
-            'buildJobs': 2, 'maximumRootCommands': 21,
+            'buildJobs': 2, 'maximumRootCommands': 25 if _host_baseline else 21,
             'maximumCommandOutputBytes': 4 * 1024**2, 'maximumTotalLogsBytes': 16 * 1024**2,
             'maximumPublicFiles': 64, 'maximumPublicBytes': 128 * 1024**2},
-        'commandBoundary': 'ALL21 Git/tool/build/library/list/test roots under one owner;42 raw channels',
+        'commandBoundary': 'ALL25 roots, including one exact eleven-name list and eleven executions;50 raw channels' if _host_baseline else 'ALL21 Git/tool/build/library/list/test roots under one owner;42 raw channels',
         'scope': scope}
     if _call_result_channel:
         receipt.update(payloadUnwindRetainsSameOriginalCharge=True,
@@ -3016,9 +3018,10 @@ def qualify_call_memory(output, revision, *, _resource_table=False, _call_result
     if _callback_memory:
         receipt.update(callbackCallBorrowsCarrier=True,
             actualDispatcherOwnsLocalCarrierAcrossCall=True, wholeCaptureGraphQualified=False)
+    stages = HOST_BASELINE_STAGES if _host_baseline else CALL_MEMORY_STAGES
     def owned(stage, seconds, *argv, env=None):
-        require(len(commands.records) < len(CALL_MEMORY_STAGES)
-            and stage == CALL_MEMORY_STAGES[len(commands.records)], 'call-memory-fixed-command-order')
+        require(len(commands.records) < len(stages)
+            and stage == stages[len(commands.records)], 'call-memory-fixed-command-order')
         require(time.monotonic() < commands.deadline, 'call-memory-original-deadline')
         commands.environment = environment if env is None else env
         require_io_copy_environment(commands.environment)
@@ -3027,7 +3030,13 @@ def qualify_call_memory(output, revision, *, _resource_table=False, _call_result
         receipt.setdefault('expandedCommands', []).append({'stage': stage,
             'argv': [str(arg) for arg in argv], 'cwd': str(ROOT), 'commandSeconds': seconds})
         commands.command_seconds = seconds; receipt['stage'] = stage
-        return commands.run(stage, *argv)
+        raw = commands.run(stage, *argv)
+        if _host_baseline:
+            paths = tuple(logs.rglob('*.txt'))
+            require(all(p.is_file() and not p.is_symlink() for p in paths)
+                and sum(p.stat().st_size for p in paths) <= 16 * 1024**2,
+                'host-baseline-total-log-bound')
+        return raw
     def metadata(stage, *args):
         return owned(stage, 25, 'git', '-c', 'core.fsmonitor=false', *args)
     def head(stage):
@@ -3074,12 +3083,17 @@ def qualify_call_memory(output, revision, *, _resource_table=False, _call_result
             raw.decode('utf-8')), 'call-memory-wasm-tool-version')
         pins = [file_identity(tools[n], n) for n in sorted(tools)]; receipt['tools'] = pins
         environment['RUSTC'] = str(tools['rustc'])
-        suite = artifacts.Suite('crates/vendor/wasmtime/Cargo.toml', 'wasmtime',
+        suite = artifacts.Suite('crates/latent-wasmtime/Cargo.toml' if _host_baseline else 'crates/vendor/wasmtime/Cargo.toml',
+            'latent_wasmtime' if _host_baseline else 'wasmtime',
             'src/lib.rs', prefix, frozenset(cases), True)
         ordinal = len(commands.records)
-        owned('build-private', 1195, tools['cargo'], 'test', '--manifest-path', suite.manifest,
-            '--locked', '--lib', '--no-default-features', '--features', FEATURES,
-            '--no-run', '--message-format=json')
+        if _host_baseline:
+            owned('build-private', 1195, tools['cargo'], 'test', '--manifest-path', suite.manifest,
+                '--locked', '--lib', '--no-run', '--message-format=json')
+        else:
+            owned('build-private', 1195, tools['cargo'], 'test', '--manifest-path', suite.manifest,
+                '--locked', '--lib', '--no-default-features', '--features', FEATURES,
+                '--no-run', '--message-format=json')
         artifact = artifacts.read_inventory(logs / f'logs/{ordinal:02d}-build-private.stdout.txt',
             ROOT, suite, target=ROOT / 'target')
         executable = file_identity(artifact.executable, 'call-memory-controls', 512 * 1024**2)
@@ -3091,22 +3105,29 @@ def qualify_call_memory(output, revision, *, _resource_table=False, _call_result
             require(len(raw) <= maximum, 'call-memory-library-output-bound'); return 0, raw
         run_env = io_copy_environment(artifacts.cargo_environment(ROOT, artifact, environment,
             target=ROOT / 'target', execute=probe))
-        for index, case in enumerate(cases):
-            listed = owned(f'private-list-{index}', 25, artifact.executable, case,
+        if _host_baseline:
+            listed = owned('host-baseline-list', 25, artifact.executable, *cases,
                 '--exact', '--list', env=run_env)
             require(len(listed) <= artifacts.MAX_LIST_BYTES, 'call-memory-list-bound')
-            artifacts.validate_listing(listed, artifacts.Suite(suite.manifest, suite.target,
-                suite.source, case, frozenset((case,)), True))
+            artifacts.validate_listing(listed, suite)
+        for index, case in enumerate(cases):
+            if not _host_baseline:
+                listed = owned(f'private-list-{index}', 25, artifact.executable, case,
+                    '--exact', '--list', env=run_env)
+                require(len(listed) <= artifacts.MAX_LIST_BYTES, 'call-memory-list-bound')
+                artifacts.validate_listing(listed, artifacts.Suite(suite.manifest, suite.target,
+                    suite.source, case, frozenset((case,)), True))
             receipt['casesStarted'].append(case)
             raw = owned(f'private-case-{index}', 55, artifact.executable, case,
                 '--exact', '--show-output', '--test-threads=1', env=run_env)
             receipt['observations'].append(call_memory_result(raw, case, _resource_table=_resource_table,
-                _call_result_channel=_call_result_channel, _callback_memory=_callback_memory)); receipt['casesPassed'].append(case)
+                _call_result_channel=_call_result_channel, _callback_memory=_callback_memory,
+                _host_baseline=_host_baseline)); receipt['casesPassed'].append(case)
         require(inputs('source-input-paths-after') == before and source.verify() == checked,
             'call-memory-final-source')
         metadata('source-clean-after', 'diff', '--no-ext-diff', '--exit-code', 'HEAD', '--')
         head('source-head-after')
-        require(len(commands.records) == 21 and receipt['casesPassed'] == list(cases),
+        require(len(commands.records) == (25 if _host_baseline else 21) and receipt['casesPassed'] == list(cases),
             'call-memory-four-controls-all21-roots')
         require(file_identity(artifact.executable, 'call-memory-controls', 512 * 1024**2)
             == executable, 'call-memory-final-executable')
@@ -3115,6 +3136,12 @@ def qualify_call_memory(output, revision, *, _resource_table=False, _call_result
         receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True,
             executed=list(cases), ignored=[])
         write_json(output / 'receipt.json', receipt)
+        if _host_baseline:
+            command_bytes = len(json.dumps(commands.records, indent=2, ensure_ascii=False).encode() + b'\n')
+            retained = tuple(p for p in output.rglob('*') if p.is_file())
+            require(len(retained) + 1 <= 64 and not any(p.is_symlink() for p in output.rglob('*'))
+                and sum(p.stat().st_size for p in retained) + command_bytes <= 128 * 1024**2,
+                'host-baseline-public-artifact-bound')
     except BaseException:
         receipt['status'] = 'failed'; write_json(output / 'FAILED.json', receipt); raise
     finally:
@@ -3173,6 +3200,28 @@ def qualify_callback_memory(output, revision):
     return qualify_call_memory(output, revision, _callback_memory=True)
 
 
+
+HOST_BASELINE_BRANCH = 'test/sdk-736-host-memory-baseline-20261029'
+HOST_BASELINE_CASES = (
+    'host::native_context_reply_tests::actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_grant',
+    'host::native_host_future_tests::actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while_pending',
+    'host::native_host_future_tests::actual_host_future_cancellation_cannot_credit_another_live_store',
+    'host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires',
+    'host::native_host_future_tests::actual_sync_lower_result_box_refuses_before_poll_and_fresh_budget_reuses',
+    'host::native_host_future_tests::actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse',
+    'host::native_resource_types_tests::actual_resource_types_both_admission_refusals_preserve_prior_instance_and_retry',
+    'host::native_store_tests::actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_live_store',
+    'host::native_stream_outer_tests::actual_producer_stream_conversion_reuses_budget_and_preserves_owning_escape',
+    'host::native_stream_outer_tests::actual_producer_future_any_roundtrip_and_pending_completion_preserve_custody',
+    'host::native_stream_outer_tests::actual_producer_factory_conversion_and_pending_lifetime_preserve_budget',
+)
+HOST_BASELINE_STAGES = (CALL_MEMORY_STAGES[:10] + ('host-baseline-list',)
+    + tuple(f'private-case-{i}' for i in range(11)) + CALL_MEMORY_STAGES[-3:])
+
+
+def qualify_host_memory_baseline(output, revision):
+    return qualify_call_memory(output, revision, _host_baseline=True)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -3196,8 +3245,11 @@ if __name__ == '__main__':
     modes.add_argument('--resource-table-memory', action='store_true')
     modes.add_argument('--call-result-channel-memory', action='store_true')
     modes.add_argument('--callback-memory', action='store_true')
+    modes.add_argument('--host-memory-baseline', action='store_true')
     args = parser.parse_args()
-    if args.callback_memory:
+    if args.host_memory_baseline:
+        qualify_host_memory_baseline(args.output.resolve(), args.source_commit)
+    elif args.callback_memory:
         qualify_callback_memory(args.output.resolve(), args.source_commit)
     elif args.call_result_channel_memory:
         qualify_call_result_channel_memory(args.output.resolve(), args.source_commit)

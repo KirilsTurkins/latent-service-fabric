@@ -1,18 +1,18 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "CCanonicalReceiptTests.test_only_real_completed_return_gets_elapsed_and_descendant_fields":
+"storageCases":"guard-keys",
+"guards":{
+"CCanonicalReceiptTests.test_only_real_completed_return_gets_elapsed_and_descendant_fields":
       "7592673fba4a9fce9734358c888d15ad047d2b2ec1ab9da044d48c6d3678ce03",
-    "CCanonicalReceiptTests.test_secondary_fence_failure_cannot_mask_original_timeout":
+"CCanonicalReceiptTests.test_secondary_fence_failure_cannot_mask_original_timeout":
       "7592673fba4a9fce9734358c888d15ad047d2b2ec1ab9da044d48c6d3678ce03",
-    "CCanonicalReceiptTests.test_timeout_keeps_attempted_stage_without_completed_or_cleanup_claim":
+"CCanonicalReceiptTests.test_timeout_keeps_attempted_stage_without_completed_or_cleanup_claim":
       "7592673fba4a9fce9734358c888d15ad047d2b2ec1ab9da044d48c6d3678ce03"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_c_canonical_abi.py",
-  "reviewReason":"Three source-only negative receipt controls preserve original timeout/output failures and prohibit fabricated completion/cleanup; no compiler or runtime executes.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "7592673fba4a9fce9734358c888d15ad047d2b2ec1ab9da044d48c6d3678ce03":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c1a6729ba4647cfd4c92be06c7c78d90de2ef5acd5ac8d0d06a7c2846199c4fd","class:setup-sha256:2aabfa67d827e3032d46f70cdeb50194bd2b5664af26ddd58491a6375a658b4f"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_c_canonical_abi.py",
+"reviewReason":"Three source-only negative receipt controls preserve original timeout/output failures and prohibit fabricated completion/cleanup; no compiler or runtime executes.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"7592673fba4a9fce9734358c888d15ad047d2b2ec1ab9da044d48c6d3678ce03":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c1a6729ba4647cfd4c92be06c7c78d90de2ef5acd5ac8d0d06a7c2846199c4fd","class:setup-sha256:2aabfa67d827e3032d46f70cdeb50194bd2b5664af26ddd58491a6375a658b4f"],"skipSites":[]}
+}
 }

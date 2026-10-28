@@ -1,6 +1,8 @@
 //! Planned actual-engine controls for only the concrete host callback-future Box.
 //! Callback-owned boxes, typed values and scheduler frames remain outside scope.
-use super::native_store_tests::{requests, store, Data, Observations, MIB, OWNER};
+use super::native_store_tests::{
+    allocation_rows, requests, store, AllocationRow, Data, Observations, MIB, OWNER,
+};
 use super::native_table_tests::{budget, denial};
 use std::future::{poll_fn, Future};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
@@ -102,6 +104,56 @@ async fn instance(
     (instance, function)
 }
 
+// Source-bound WARM call order: prepare_call channel/RawLower/RawLift;
+// ResourceValue GuestTask/WaitableSet/GuestThread; GuestCall queue; HostTask;
+// original callback Box/result reservation/outer Box/PushFuture queue/Task.
+// Warm ONLY real shared headers/table capacity, under the unchanged grant.
+const LOWER: usize = 1;
+const GUEST_CALL: usize = 6;
+const CALLBACK: usize = 8;
+const RESULT: usize = 9;
+const PUSH: usize = 11;
+const TASK: usize = 12;
+const WARM_REQUESTS: usize = 13;
+
+async fn warm_call(
+    store: &mut Store<Data>,
+    function: &TypedFunc<(), (u32,)>,
+    gate: &Arc<Gate>,
+    observed: &Arc<Observations>,
+) -> (usize, usize) {
+    let before = allocation_rows(observed).len();
+    store.run_concurrent(async |_| ()).await.unwrap();
+    let headers = allocation_rows(observed);
+    // Same paid FuturesUnordered stub and ready queue, not a new allowance.
+    assert_eq!(headers.len(), before + 2);
+    assert!(headers[before..]
+        .iter()
+        .all(|r| r.bytes > 0 && r.admitted && r.confirmed && !r.released));
+    gate.finish();
+    assert_eq!(function.call_async(&mut *store, ()).await.unwrap(), (42,));
+    gate.ready.store(false, Ordering::SeqCst);
+    gate.polls.store(0, Ordering::SeqCst);
+    assert!(gate.waker.lock().unwrap().is_none());
+    (before, before + 1)
+}
+
+fn warm_rows(rows: &[AllocationRow], before: usize) -> &[AllocationRow] {
+    let call = &rows[before..];
+    assert_eq!(call.len(), WARM_REQUESTS);
+    assert!(call.iter().all(|r| r.bytes > 0 && r.admitted));
+    // These two actual WorkItem carriers have the same QueueNode layout.
+    assert_eq!(call[GUEST_CALL].bytes, call[PUSH].bytes);
+    call
+}
+
+fn live_charge(rows: &[AllocationRow]) -> u64 {
+    rows.iter()
+        .filter(|r| r.admitted && !r.released)
+        .map(|r| r.bytes as u64 + OWNER)
+        .sum()
+}
+
 #[tokio::test]
 async fn actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while_pending() {
     let engine = engine();
@@ -113,38 +165,33 @@ async fn actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while
         let gate = Arc::new(Gate::default());
         let linker = linker(&engine, &gate, dynamic);
         let (_, function) = instance(&linker, &component, &mut store).await;
+        let (stub, _) = warm_call(&mut store, &function, &gate, &observed).await;
         let retained = original.host_memory_bytes();
-        let before = requests(&observed).len();
+        let before = allocation_rows(&observed).len();
         let mut call = Box::pin(function.call_async(&mut store, ()));
         assert!(call
             .as_mut()
             .poll(&mut Context::from_waker(Waker::noop()))
             .is_pending());
         assert!(gate.polls.load(Ordering::SeqCst) > 0);
-        let allocated = requests(&observed);
-        // SOURCE-DERIVED v16 cold callbackless order, to be exercised here:
-        // GuestCall, stub, ready, ORIGINAL callback Box, result reservation,
-        // concrete outer Box, PushFuture, prepared unordered Task.
-        // Publication retires entry7, not result/outer/call/task/header owners.
-        assert_eq!(allocated.len(), before + 8);
-        assert!(allocated[before..].iter().all(|bytes| *bytes > 0));
-        assert_eq!(allocated[before], allocated[before + 6]);
-        assert_eq!(allocated[before + 1], allocated[before + 7]);
-        let live_call = [0, 1, 2, 3, 4, 5, 7]
-            .iter()
-            .map(|index| allocated[before + index] as u64 + OWNER)
-            .sum::<u64>();
-        let shared_headers = allocated[before + 1..before + 3]
-            .iter()
-            .map(|bytes| *bytes as u64 + OWNER)
-            .sum::<u64>();
-        assert_eq!(original.host_memory_bytes(), retained + live_call);
+        let allocated = allocation_rows(&observed);
+        let pending = warm_rows(&allocated, before);
+        assert_eq!(pending[TASK].bytes, allocated[stub].bytes);
+        for (index, row) in pending.iter().enumerate() {
+            assert_eq!(row.released, matches!(index, LOWER | PUSH));
+            assert_eq!(row.confirmed, index != RESULT);
+        }
+        // Explicit source-known owners, not every historical request: lower
+        // and published PushFuture retired; all other call owners remain live.
+        assert_eq!(
+            original.host_memory_bytes(),
+            retained + live_charge(pending)
+        );
         gate.finish();
-        // This concurrent typed API performs result lifting/post-return itself.
         assert_eq!(call.await.unwrap(), (42,));
-        // Completed Task and both call entries are gone. The SAME set's stub
-        // and ready headers intentionally survive until actual Store teardown.
-        assert_eq!(original.host_memory_bytes(), retained + shared_headers);
+        let completed = allocation_rows(&observed);
+        assert!(completed[before..].iter().all(|r| r.released));
+        assert_eq!(original.host_memory_bytes(), retained);
         assert!(store.get_fuel().unwrap() < 1_000_000_000);
         drop(store);
         assert_eq!(observed.factory_drops.load(Ordering::SeqCst), 1);
@@ -169,6 +216,7 @@ async fn actual_host_future_refusal_preserves_original_error_and_fresh_budget_re
         let gate = Arc::new(Gate::default());
         let linker = linker(&engine, &gate, dynamic);
         let (_, function) = instance(&linker, &component, &mut first).await;
+        warm_call(&mut first, &function, &gate, &observed).await;
         let before = requests(&observed).len();
         let padding = Arc::new(Mutex::new(None::<Padding>));
         let consumed = Arc::new(AtomicU64::new(0));
@@ -177,13 +225,10 @@ async fn actual_host_future_refusal_preserves_original_error_and_fresh_budget_re
         let kept_consumed = consumed.clone();
         let kept_requested = requested.clone();
         let invocation = original.clone();
-        // Cold requests1..3 fund GuestCall and lazy stub/ready headers. The
-        // FOURTH is the ORIGINAL concrete callback Box, before PushFuture/Task.
-        // Source order, never byte size, identifies that original owner.
-        // Real padding plus its
-        // existing owner makes the original admission exceed MIB by one byte.
-        // No fake error, summed historic prefix or increased grant is used.
-        observed.before_request(before + 4, move |bytes| {
+        // WARM source position CALLBACK follows all3 prepared owners,
+        // all4 resource-value boxes and the original GuestCall queue.
+        // Padding competes at that ORIGINAL Box reservation, before polling.
+        observed.before_request(before + CALLBACK + 1, move |bytes| {
             let request = bytes as u64 + OWNER;
             let bytes = MIB - invocation.host_memory_bytes() - request + 1 - OWNER;
             let mut owner = crate::native_tables::reserve(&invocation, bytes as usize)
@@ -207,7 +252,7 @@ async fn actual_host_future_refusal_preserves_original_error_and_fresh_budget_re
             requested.load(Ordering::SeqCst),
         );
         assert_eq!(gate.polls.load(Ordering::SeqCst), 0);
-        assert_eq!(requests(&observed).len(), before + 4);
+        assert_eq!(requests(&observed).len(), before + CALLBACK + 1);
         assert_eq!(
             consumed.load(Ordering::SeqCst) + requested.load(Ordering::SeqCst),
             MIB + 1
@@ -245,10 +290,12 @@ async fn actual_host_future_cancellation_cannot_credit_another_live_store() {
     let linker_b = linker(&engine, &gate_b, false);
     let (_, first_func) = instance(&linker_a, &component, &mut first).await;
     let (_, second_func) = instance(&linker_b, &component, &mut second).await;
+    let (_, ready_a) = warm_call(&mut first, &first_func, &gate_a, &observed_a).await;
+    let (_, ready_b) = warm_call(&mut second, &second_func, &gate_b, &observed_b).await;
     let baseline_a = a.host_memory_bytes();
     let baseline_b = b.host_memory_bytes();
-    let before_a = requests(&observed_a).len();
-    let before_b = requests(&observed_b).len();
+    let before_a = allocation_rows(&observed_a).len();
+    let before_b = allocation_rows(&observed_b).len();
     let mut first_call = Box::pin(first_func.call_async(&mut first, ()));
     let mut second_call = Box::pin(second_func.call_async(&mut second, ()));
     let mut context = Context::from_waker(Waker::noop());
@@ -258,56 +305,53 @@ async fn actual_host_future_cancellation_cannot_credit_another_live_store() {
     assert!(b.host_memory_bytes() > baseline_b);
     let allocated_a = requests(&observed_a);
     let allocated_b = requests(&observed_b);
-    let cold_a = &allocated_a[before_a..];
-    let cold_b = &allocated_b[before_b..];
-    for cold in [cold_a, cold_b] {
-        // SOURCE-DERIVED v16 cold eight-request sequence as above:
-        // GuestCall, stub, ready, callback Box, result, outer, PushFuture, Task.
-        assert_eq!(cold.len(), 8);
-        assert!(cold.iter().all(|bytes| *bytes > 0));
-        assert_eq!(cold[0], cold[6]);
-        assert_eq!(cold[1], cold[7]);
-    }
-    let escaped_a = cold_a[7] as u64 + cold_a[2] as u64 + 2 * OWNER;
-    let escaped_b = cold_b[7] as u64 + cold_b[2] as u64 + 2 * OWNER;
+    let rows_a = allocation_rows(&observed_a);
+    let rows_b = allocation_rows(&observed_b);
+    let task_a = warm_rows(&rows_a, before_a)[TASK].bytes;
+    let task_b = warm_rows(&rows_b, before_b)[TASK].bytes;
+    let escaped_a = task_a as u64 + rows_a[ready_a].bytes as u64 + 2 * OWNER;
+    let escaped_b = task_b as u64 + rows_b[ready_b].bytes as u64 + 2 * OWNER;
     let live_b = b.host_memory_bytes();
     let live_b_reservations = b.outstanding_reservations();
     drop(first_call);
-    // Physical cancellation may already destroy the first callback. Do not
-    // demand artificial retention after the actual Future allocation dies.
     assert!(a.host_memory_bytes() >= baseline_a);
     drop(first);
-    // The test Gate deliberately escaped a real Task waker. Its Task and weak
-    // ready-queue backing remain paid after Store destruction, not refunded.
+    // The escaped real Waker retains ONLY its actual Task and weak ready header.
     assert_eq!(a.host_memory_bytes(), escaped_a);
+    let escaped_rows = allocation_rows(&observed_a);
+    for (index, row) in escaped_rows.iter().enumerate() {
+        assert_eq!(!row.released, index == ready_a || index == before_a + TASK);
+    }
+    assert_eq!(allocation_rows(&observed_b), rows_b);
     assert_eq!(b.host_memory_bytes(), live_b);
     assert_eq!(b.outstanding_reservations(), live_b_reservations);
-    gate_a.finish(); // Real late wake consumes that SAME escaped waker.
+    gate_a.finish();
     assert_eq!(a.host_memory_bytes(), 0);
     assert_eq!(a.outstanding_reservations(), 0);
+    assert!(allocation_rows(&observed_a).iter().all(|r| r.released));
+    assert_eq!(allocation_rows(&observed_b), rows_b);
     assert_eq!(b.host_memory_bytes(), live_b);
     assert_eq!(b.outstanding_reservations(), live_b_reservations);
     assert_eq!(requests(&observed_a), allocated_a);
     assert_eq!(requests(&observed_b), allocated_b);
-    println!(
-        "LSF_CANCELLED_HOST_FUTURE_ESCAPED_V1 store=a task-bytes={} ready-bytes={} owner-escrow={} retained={} late-wake-admissions=0 foreign-unchanged=true",
-        cold_a[7], cold_a[2], OWNER, escaped_a
-    );
+    println!("LSF_CANCELLED_HOST_FUTURE_ESCAPED_V1 store=a task-bytes={} ready-bytes={} owner-escrow={} retained={} late-wake-admissions=0 foreign-unchanged=true", task_a, rows_a[ready_a].bytes, OWNER, escaped_a);
     drop(second_call);
     drop(second);
     assert_eq!(b.host_memory_bytes(), escaped_b);
     assert_eq!(a.host_memory_bytes(), 0);
+    let escaped_rows = allocation_rows(&observed_b);
+    for (index, row) in escaped_rows.iter().enumerate() {
+        assert_eq!(!row.released, index == ready_b || index == before_b + TASK);
+    }
     gate_b.finish();
     assert_eq!(b.host_memory_bytes(), 0);
     assert_eq!(a.host_memory_bytes(), 0);
     assert_eq!(a.outstanding_reservations(), 0);
     assert_eq!(b.outstanding_reservations(), 0);
+    assert!(allocation_rows(&observed_b).iter().all(|r| r.released));
     assert_eq!(requests(&observed_a), allocated_a);
     assert_eq!(requests(&observed_b), allocated_b);
-    println!(
-        "LSF_CANCELLED_HOST_FUTURE_ESCAPED_V1 store=b task-bytes={} ready-bytes={} owner-escrow={} retained={} late-wake-admissions=0 foreign-unchanged=true",
-        cold_b[7], cold_b[2], OWNER, escaped_b
-    );
+    println!("LSF_CANCELLED_HOST_FUTURE_ESCAPED_V1 store=b task-bytes={} ready-bytes={} owner-escrow={} retained={} late-wake-admissions=0 foreign-unchanged=true", task_b, rows_b[ready_b].bytes, OWNER, escaped_b);
 }
 
 #[tokio::test]
@@ -319,33 +363,35 @@ async fn actual_host_future_callback_error_is_unchanged_and_its_box_retires() {
         let observed = Arc::new(Observations::default());
         let mut store = store(&engine, &original, &observed).unwrap();
         let gate = Arc::new(Gate::default());
-        gate.fail.store(true, Ordering::SeqCst);
-        gate.finish();
         let linker = linker(&engine, &gate, dynamic);
         let (_, function) = instance(&linker, &component, &mut store).await;
+        warm_call(&mut store, &function, &gate, &observed).await;
+        gate.fail.store(true, Ordering::SeqCst);
+        gate.finish();
         let retained = original.host_memory_bytes();
-        let before = requests(&observed).len();
+        let before = allocation_rows(&observed).len();
         let error = function.call_async(&mut store, ()).await.unwrap_err();
         assert!(format!("{error:#}").contains("native-host-future-original-callback-error"));
         assert!(gate.polls.load(Ordering::SeqCst) > 0);
-        let allocated = requests(&observed);
-        // Immediate callback error still follows all eight pre-poll admissions;
-        // the unused result reservation has no Box to confirm on input Err.
-        assert_eq!(allocated.len(), before + 8);
-        assert!(allocated[before..].iter().all(|bytes| *bytes > 0));
+        let allocated = allocation_rows(&observed);
+        let call = warm_rows(&allocated, before);
         let result_bytes = if dynamic {
             std::alloc::Layout::new::<Vec<Val>>().size()
         } else {
             std::alloc::Layout::new::<(u32,)>().size()
         };
-        assert_eq!(allocated[before + 4], result_bytes);
-        let live_call = allocated[before..]
+        assert_eq!(call[RESULT].bytes, result_bytes);
+        assert!(call[CALLBACK].confirmed);
+        assert!(!call[RESULT].confirmed);
+        // Source overlap before PushFuture publication: RawLower already died;
+        // result backing is still unconfirmed but its real OWNER exists.
+        let physical_call = call
             .iter()
-            .map(|bytes| *bytes as u64 + OWNER)
-            .sum::<u64>();
-        // On input Err, result backing was never allocated/confirmed. Its
-        // real boxed owner's OWNER escrow DID exist and stays in this sum.
-        let physical_call = live_call - result_bytes as u64;
+            .enumerate()
+            .filter(|(i, _)| *i != LOWER)
+            .map(|(_, r)| r.bytes as u64 + OWNER)
+            .sum::<u64>()
+            - result_bytes as u64;
         assert!(
             original
                 .snapshot_at(std::time::Instant::now())
@@ -354,6 +400,7 @@ async fn actual_host_future_callback_error_is_unchanged_and_its_box_retires() {
         );
         drop(error);
         drop(store);
+        assert!(allocation_rows(&observed).iter().all(|r| r.released));
         assert_eq!(original.host_memory_bytes(), 0);
         assert_eq!(original.outstanding_reservations(), 0);
     }
@@ -526,6 +573,7 @@ async fn actual_sync_lower_result_box_refuses_before_poll_and_fresh_budget_reuse
     // Existing component's typed wait returns (u32,), not ABI ValRaw storage.
     let linker = linker(&engine, &gate, false);
     let (_, function) = instance(&linker, &component, &mut first).await;
+    warm_call(&mut first, &function, &gate, &observed).await;
     let before = requests(&observed).len();
     let padding = Arc::new(Mutex::new(None::<Padding>));
     let consumed = Arc::new(AtomicU64::new(0));
@@ -534,9 +582,9 @@ async fn actual_sync_lower_result_box_refuses_before_poll_and_fresh_budget_reuse
     let kept_consumed = consumed.clone();
     let kept_requested = requested.clone();
     let invocation = original.clone();
-    // SOURCE-DERIVED cold prefix: queue1, stub2, ready3, original Box4,
-    // result reservation5. Layout equality is an assertion, never type authority.
-    observed.before_request(before + 5, move |bytes| {
+    // WARM source position RESULT follows the admitted original callback Box.
+    // Layout equality asserts the exact R target; it does not select by size.
+    observed.before_request(before + RESULT + 1, move |bytes| {
         assert_eq!(bytes, std::alloc::Layout::new::<(u32,)>().size());
         assert!(bytes > 0);
         let request = bytes as u64 + OWNER;
@@ -561,9 +609,9 @@ async fn actual_sync_lower_result_box_refuses_before_poll_and_fresh_budget_reuse
         consumed.load(Ordering::SeqCst),
         requested.load(Ordering::SeqCst),
     );
-    assert_eq!(requests(&observed).len(), before + 5);
+    assert_eq!(requests(&observed).len(), before + RESULT + 1);
     assert_eq!(
-        requests(&observed)[before + 4],
+        requests(&observed)[before + RESULT],
         std::alloc::Layout::new::<(u32,)>().size()
     );
     assert_eq!(gate.polls.load(Ordering::SeqCst), 0);
