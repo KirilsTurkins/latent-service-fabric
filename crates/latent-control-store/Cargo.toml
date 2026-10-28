@@ -13,6 +13,7 @@ workspace = true
 [features]
 default = []
 catalog-observation = []
+development-test-host = ["latent-packaging/development-test-host"]
 
 [dependencies]
 latent-core = { path = "../latent-core" }

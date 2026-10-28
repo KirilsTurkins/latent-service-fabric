@@ -319,16 +319,24 @@ async fn bundle(
     }
     let package = source.package().clone();
     let (manifest, configuration, layers) = source.into_parts();
+    let limits = latent_packaging::PackagingLimits {
+        manifest_profile: owner.manifest_profile,
+        ..Default::default()
+    };
+    #[cfg(feature = "development-test-host")]
+    let limits = {
+        let mut selected = limits;
+        selected.semantics.development_managed_stage_component =
+            owner.development_managed_stage_component;
+        selected
+    };
     let bundle = latent_packaging::inspect_bundle(
         latent_packaging::BundleInput {
             manifest,
             configuration,
             layers,
         },
-        latent_packaging::PackagingLimits {
-            manifest_profile: owner.manifest_profile,
-            ..Default::default()
-        },
+        limits,
     )?;
     if bundle.layout().digest() != &package
         || bundle

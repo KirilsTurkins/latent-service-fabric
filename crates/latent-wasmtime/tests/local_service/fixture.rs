@@ -771,7 +771,11 @@ impl Fixture {
             DirectoryDeploymentRepository::open_with_catalog(
                 root.path().join("routes"),
                 catalog.clone(),
-                latent_control_store::DirectoryDeploymentRepositoryConfig::default(),
+                latent_control_store::DirectoryDeploymentRepositoryConfig {
+                    #[cfg(feature = "development-test-host")]
+                    development_managed_stage_component: managed_stage_component,
+                    ..Default::default()
+                },
                 catalog.lifecycle_authority(),
                 Arc::new(config.detected_runtime_profile().unwrap()),
             )

@@ -77,6 +77,9 @@ impl latent_routing::ActivationCatalogSource for DirectoryDeploymentRepository {
 pub struct DirectoryDeploymentRepositoryConfig {
     /// Trusted host selection; current runtime and publication checks still apply.
     pub manifest_profile: latent_manifest::ManifestValidationProfile,
+    /// Trusted node-only diagnostic selection; package metadata supplies no authority.
+    #[cfg(feature = "development-test-host")]
+    pub development_managed_stage_component: Option<[u8; 32]>,
     pub max_deployments: usize,
     pub max_state_bytes: usize,
     pub max_route_entries: usize,
@@ -90,6 +93,8 @@ impl Default for DirectoryDeploymentRepositoryConfig {
     fn default() -> Self {
         Self {
             manifest_profile: latent_manifest::ManifestValidationProfile::default(),
+            #[cfg(feature = "development-test-host")]
+            development_managed_stage_component: None,
             max_deployments: 100_000,
             max_state_bytes: 64 * 1024 * 1024,
             max_route_entries: 1_000_000,

@@ -13,7 +13,7 @@ aot-test-timings = []
 development-clock-fixture = []
 # Explicit disposable local-service observation; absent from ordinary builds.
 development-local-service-fixture = []
-development-test-host = ["latent-packaging/development-test-host", "latent-artifacts/development-test-host", "latent-policy/development-test-host", "development-clock-fixture", "wasmtime/development-task-return-observation"]
+development-test-host = ["latent-control-store/development-test-host", "latent-packaging/development-test-host", "latent-artifacts/development-test-host", "latent-policy/development-test-host", "development-clock-fixture", "wasmtime/development-task-return-observation"]
 
 # Retains the standalone compiler diagnostic; node installation is separately explicit.
 java-guest-diagnostic = []

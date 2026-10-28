@@ -29,6 +29,11 @@ It is a local standalone catalog, not a replicated cluster control plane. The ca
 
 Data-only binding plans are not fused code. Permanently inactive desired rows must not acquire execution capability. HTTP, static web and transaction selections use the same catalog publication owner with different target semantics. `catalog-observation` is optional bounded instrumentation; observations are not allocator/RSS qualification or authorization evidence.
 
+With `development-test-host`, a trusted repository constructor may select one
+managed-stage component digest for binding reinspection and retained-definition
+startup. The default is `None`; package metadata cannot select it. This preserves
+exact component checks and creates no provider, grant or production support.
+
 ## Dependencies and build
 
 Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-ingress](../latent-ingress/README.md), [latent-manifest](../latent-manifest/README.md), [latent-routing](../latent-routing/README.md), [latent-node](../latent-node/README.md), [latent-state](../latent-state/README.md), [latent-artifacts](../latent-artifacts/README.md), [latent-policy](../latent-policy/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-audit](../latent-audit/README.md), [latent-contracts](../latent-contracts/README.md), [latent-packaging](../latent-packaging/README.md), [latent-telemetry](../latent-telemetry/README.md).
@@ -41,6 +46,7 @@ Cargo features (the manifest owns their exact expansion):
 | --- | --- |
 | `default` | No additional feature dependency. |
 | `catalog-observation` | No additional feature dependency. |
+| `development-test-host` | Exact operator-selected diagnostic component inspection. |
 
 Use [Cargo.toml](Cargo.toml) for external dependencies, target gates and test/build edges; [the workspace manifest](../../Cargo.toml) and [the toolchain guide](../../docs/development/toolchain.md) own current pins. Dependency presence does not install a runtime service.
 

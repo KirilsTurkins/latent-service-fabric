@@ -21,7 +21,26 @@ pub(super) struct CompilerOwner {
     current: Weak<RwLock<PublishedCatalog>>,
     limits: BindingLimits,
     manifest_profile: latent_manifest::ManifestValidationProfile,
+    #[cfg(feature = "development-test-host")]
+    development_managed_stage_component: Option<[u8; 32]>,
 }
+// Pinned Rust1.97.1 ArcInner is repr(C): strong/weak AtomicUsize then T.
+// Include actual data alignment and final allocation padding in the old charge.
+const _: () = {
+    let header_size = std::mem::size_of::<[std::sync::atomic::AtomicUsize; 2]>();
+    let header_align = std::mem::align_of::<[std::sync::atomic::AtomicUsize; 2]>();
+    let data_align = std::mem::align_of::<CompilerOwner>();
+    let data_offset = (header_size + data_align - 1) & !(data_align - 1);
+    let allocation_align = if header_align > data_align {
+        header_align
+    } else {
+        data_align
+    };
+    let allocation_size = (data_offset + std::mem::size_of::<CompilerOwner>() + allocation_align
+        - 1)
+        & !(allocation_align - 1);
+    assert!(allocation_size <= 256);
+};
 impl CompilerOwner {
     fn retained_bytes(&self) -> usize {
         256 + self

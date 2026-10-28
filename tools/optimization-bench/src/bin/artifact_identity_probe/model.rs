@@ -46,7 +46,6 @@ pub(super) fn artifact_config() -> DirectoryArtifactRepositoryConfig {
 
 pub(super) fn deployment_config() -> DirectoryDeploymentRepositoryConfig {
     DirectoryDeploymentRepositoryConfig {
-        manifest_profile: latent_manifest::ManifestValidationProfile::default(),
         max_deployments: 4,
         max_state_bytes: 4 * 1024 * 1024,
         max_route_entries: 64,
@@ -54,6 +53,7 @@ pub(super) fn deployment_config() -> DirectoryDeploymentRepositoryConfig {
         max_routing_key_bytes: 512,
         max_page_size: 4,
         max_page_bytes: MAX_DOCUMENT,
+        ..DirectoryDeploymentRepositoryConfig::default()
     }
 }
 

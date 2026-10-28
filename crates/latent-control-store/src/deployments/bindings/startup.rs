@@ -79,6 +79,8 @@ impl DirectoryDeploymentRepository {
             current: Arc::downgrade(&self.current),
             limits,
             manifest_profile: self.config.manifest_profile,
+            #[cfg(feature = "development-test-host")]
+            development_managed_stage_component: self.config.development_managed_stage_component,
         });
         let mut next = compiler::compile_catalog_for_bindings(
             previous.routes.deployments.clone(),
