@@ -560,7 +560,7 @@ fn prepare_wait(
             };
         }
     };
-    let result = (|| {
+    let result: Result<WaitingTimer, PlatformError> = (|| {
         let wait = state.currentness_read_wait.clone().ok_or_else(|| {
             failure(
                 PlatformErrorCode::Unavailable,
