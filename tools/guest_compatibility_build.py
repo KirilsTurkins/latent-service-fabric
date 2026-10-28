@@ -327,7 +327,8 @@ def _failure_report(output: Path, language: str, stage: str, files: dict[str, by
 def inspect_managed_stage(commands, wasm: Path, output: Path, declared: dict) -> dict:
     """Private diagnostic admission; the ordinary ABI's unknown import stays reported."""
     from tools.dotnet_guest.managed_work import STAGE_IDENTITY, STAGE_PROFILE, stage_private_interface
-    host = host_manifest(DEFAULT_PROFILE)
+    profile = declared_host_abi(declared)
+    host = host_manifest(profile)
     raw = commands.run('managed-stage-compatibility-wit', wasm, 'component', 'wit', output/'component.wasm', '--json')
     graph = decode(raw, 4*1024*1024)
     require(stage_private_interface(graph, 'imports'), 'managed-stage-exact-private-callable-shape')
@@ -345,6 +346,8 @@ def inspect_managed_stage(commands, wasm: Path, output: Path, declared: dict) ->
         'imports': names['imports'], 'findings': findings}
     if names['typeImports']:
         result['typeImports'] = names['typeImports']
+    if profile != DEFAULT_PROFILE:
+        result['hostAbiProfile'] = profile
     write_json(output/'compatibility-inspection.json', result)
     write_json(output/'managed-stage-admission.json', {'profile': STAGE_PROFILE, 'componentDigest': component,
         'privateImport': STAGE_IDENTITY, 'privateFunction': 'emit(u32,u32)',
