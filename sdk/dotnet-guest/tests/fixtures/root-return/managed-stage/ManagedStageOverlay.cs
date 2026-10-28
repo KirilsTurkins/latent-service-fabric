@@ -171,7 +171,7 @@ internal static class ManagedStageOverlay
         Insert(completed, finishCall, false, Emit(emit, Instruction.Create(OpCodes.Ldloc, Local(completed, record)), 9));
         var finish = M("Finish");
         var branch = finish.Body.Instructions.Single(i => i.Offset == 8);
-        Need(branch.OpCode == OpCodes.Brfalse_S && branch.Operand is Instruction target && target.Offset == 81);
+        Need(branch.OpCode == OpCodes.Brfalse_S && branch.Operand is Instruction branchTarget && branchTarget.Offset == 81);
         OldOpcodes.Add(branch, branch.OpCode); branch.OpCode = OpCodes.Brfalse;
         var reserve = Call(finish, "Reserve");
         Insert(finish, reserve, true, Emit(emit, Instruction.Create(OpCodes.Dup), 5));
