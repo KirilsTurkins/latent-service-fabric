@@ -1,5 +1,5 @@
 {
-  "cases":["BorrowSignedInputTests.test_archive_duplicates_and_traversal_refuse_before_receipt_parsing","BorrowSignedInputTests.test_canonical_digest_is_preserved_and_bare_or_bool_identity_refuses","BorrowSignedInputTests.test_failed_or_wrong_scope_prerequisite_cannot_be_promoted","BorrowSignedInputTests.test_unpinned_success_material_refuses_before_api_or_output"],
+  "storageCases":"guard-keys",
   "guards":{
     "BorrowSignedInputTests.test_archive_duplicates_and_traversal_refuse_before_receipt_parsing":
       "37c9529d64e57b56c907de37ee88aba6378e5dc6cbfa1783495ffcab69c13367",

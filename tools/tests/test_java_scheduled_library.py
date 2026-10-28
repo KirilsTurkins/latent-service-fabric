@@ -174,7 +174,7 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
         supplemental = set(owner.observed.EXTRA_SOURCES) | {owner.workers.WORKFLOW, owner.WORKFLOW,
             'sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java'}
         calls, changed = [], {}
-        allowed = {*native, *supplemental}
+        allowed = {*native, *supplemental, owner.observed.WORKFLOW}
         def command(stage, *argv):
             calls.append((stage, argv))
             self.assertEqual((stage, argv), ('source-paths', ('git', 'ls-files', '-z', '--', *owner.SOURCE_ALLOWLIST)))
@@ -187,13 +187,20 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
             if len(value) > maximum: raise ValueError('file-bound')
             return value
         commands = SimpleNamespace(command_seconds=0, deadline=1000, run=command)
-        with patch.object(owner.time, 'monotonic', return_value=100), patch.object(owner, 'read_file', side_effect=read):
+        with patch.object(owner.time, 'monotonic', return_value=100), patch.object(owner.observed, 'read_file', side_effect=read):
             before = owner.shutdown_sources(commands)
             self.assertEqual(set(before['native']), set(native))
             self.assertEqual(set(before['supplementary']), supplemental)
             self.assertEqual((len(before['native']), len(before['supplementary']), len(calls)), (8992, 17, 1))
             self.assertEqual(owner.shutdown_sources(commands, before['native']), before)
             self.assertEqual(len(calls), 1)
+            for capture, workflow in ((owner.workers.sources, owner.workers.WORKFLOW),
+                    (owner.observed.source_inputs, owner.observed.WORKFLOW), (owner.sources, owner.WORKFLOW)):
+                actual = capture(commands)
+                self.assertEqual(actual['native'], before['native'])
+                expected = supplemental if workflow == owner.WORKFLOW else set(owner.observed.EXTRA_SOURCES) | {workflow}
+                self.assertEqual(set(actual['supplementary']), expected)
+                self.assertEqual(capture(commands, before['native']), actual)
             changed[native[0]] = b'changed-native'
             after = owner.shutdown_sources(commands, before['native'])
             self.assertNotEqual(after['native'], before['native'])
@@ -220,3 +227,67 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
             changed.clear(); commands.deadline = 100
             with self.assertRaisesRegex(ValueError, 'source-deadline'):
                 owner.shutdown_sources(commands, before['native'])
+
+
+class TaskStandardFutureQueueOwnership(unittest.TestCase):
+    def test_four_signed_future_modes_refuse_missing_duplicate_old_and_nonidle_rows(self):
+        actual = [{**dict.fromkeys(owner.observed.ZERO_FIELDS, 0),
+            'activationId': f'java-future-queue-0-{mode}', 'iteration': 0, 'mode': mode, 'value': 42,
+            'cpuFuel': 123, 'reportedPeakMemoryBytes': 4096, 'storesBefore': mode,
+            'storesCreated': mode + 1} for mode in range(4)]
+        def encoded(values):
+            return ('\n'.join(['test ' + owner.FUTURE_CASE + ' ... ok',
+                'teavm-activation-fibers-v1 signed-preparation-setup-micros=1 stores-created=0 guest-activations=0',
+                *['LSF_JAVA_RETAINED=' + json.dumps(row) for row in values],
+                'test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 59 filtered out;']) + '\n').encode()
+        self.assertEqual(owner.future_observations(encoded(actual), 59)['calls'], actual)
+        for values in (actual[:-1], actual + [actual[0]], rows()):
+            with self.assertRaises(ValueError): owner.future_observations(encoded(values), 59)
+        for field, value in (('activationId', actual[0]['activationId']), ('mode', 2), ('value', 41),
+                ('brokerResults', 1), ('storesBefore', 0), ('cpuFuel', True),
+                ('cpuFuel', 10_000_000_001), ('reportedPeakMemoryBytes', 64 * 1024**2 + 1)):
+            bad = copy.deepcopy(actual); bad[-1][field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError): owner.future_observations(encoded(bad), 59)
+        with self.assertRaises(ValueError): owner.future_observations(encoded(actual), 58)
+
+    def test_normal_future_preparation_keeps_reference_capacity_distinct_and_source_controls_before_component(self):
+        class BeforeComponent(Exception): pass
+        calls = []
+        class Compiler:
+            def __init__(self, directory, sdk, **options):
+                self.sdk, self.paths = sdk, {'java': Path('not-executed-java')}; calls.append(('compiler', options))
+            def run(self, stage, *argv):
+                calls.append((stage, argv)); return '41 42 42 42' if stage == 'reference-jdk-0' else ''
+            def compile(self, *args, **kwargs):
+                calls.append(('component', kwargs)); raise BeforeComponent()
+        def control(*args): calls.append(('future-source', ())); return {'status': 'source-control-fixture'}
+        with tempfile.TemporaryDirectory() as temporary, patch('time.monotonic', return_value=100), \
+                patch.object(preparation, 'Compiler', Compiler), patch.object(preparation, 'recipe_inputs', return_value={}), \
+                patch.object(preparation, 'future_queue_source_control', side_effect=control), \
+                patch.object(preparation, 'completable_source_control', side_effect=AssertionError('old campaign repeated')), \
+                patch.object(preparation, 'scheduled_model_control', side_effect=AssertionError('after component')):
+            path = Path(temporary) / 'prepared'
+            with self.assertRaises(BeforeComponent):
+                preparation.prepare(path, owner.ROOT / 'sdk/java-guest', fixture='future-queue', _deadline=1000)
+            self.assertEqual([stage for stage, _ in calls], ['compiler', 'reference-jdk-compile', 'reference-jdk-0', 'future-source', 'component'])
+            self.assertEqual(calls[0][1]['_deadline'], 1000)
+            self.assertEqual(calls[-1][1], {'activation_profile': True})
+            report = json.loads((path / 'FIBERS-COMPILE.json').read_bytes())
+            self.assertEqual(report['reference'][0]['results'], [41, 42, 42, 42])
+            self.assertEqual(report['status'], 'failed')
+            self.assertEqual((path / 'src/Capsule.java').read_bytes(),
+                (owner.ROOT / 'sdk/java-guest/fibers/conformance/future-queue/Capsule.java').read_bytes())
+
+    def test_future_branch_cannot_reuse_shutdown_selector_or_an_ambient_fixture(self):
+        revision = 'a' * 40
+        environment = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': owner.identities.REPOSITORY,
+            'GITHUB_REF_NAME': owner.FUTURE_BRANCH, 'GITHUB_EVENT_NAME': 'push',
+            'GITHUB_SHA': revision, 'GITHUB_WORKFLOW_SHA': revision, 'GITHUB_WORKSPACE': str(owner.ROOT),
+            'GITHUB_WORKFLOW_REF': owner.identities.REPOSITORY + '/' + owner.WORKFLOW + '@refs/heads/' + owner.FUTURE_BRANCH}
+        with patch.dict(os.environ, environment, clear=True), patch.object(owner.sys, 'platform', 'linux'), \
+                patch.object(owner, 'fresh', side_effect=AssertionError('output opened')):
+            with self.assertRaisesRegex(ValueError, 'fixed-hosted-push'):
+                owner.qualify_shutdown(Path('absent'), revision)
+            with patch.dict(os.environ, {'LSF_JAVA_FUTURE_QUEUE_FIXTURE': 'old'}):
+                with self.assertRaisesRegex(ValueError, 'exclusive-fixture-selector'):
+                    owner.qualify_shutdown(Path('absent'), revision, future_queue=True)

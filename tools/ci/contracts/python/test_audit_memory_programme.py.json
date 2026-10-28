@@ -1,11 +1,20 @@
-{"cases":["AuditMemoryProgrammeTests.test_prebuild_admission_failure_is_retained_without_launching_cargo","AuditMemoryProgrammeTests.test_result_guards_reject_missing_extra_failed_or_ignored_controls","AuditMemoryProgrammeTests.test_selected_commands_bind_only_owned_packages_and_exact_new_wide_filter_cases","AuditMemoryProgrammeTests.test_twenty_five_actual_new_cases_are_closed_registered_and_not_ignored"],"guards":{"AuditMemoryProgrammeTests.test_prebuild_admission_failure_is_retained_without_launching_cargo":
-  "7a8f23d1e7c44e1c156ec2ed06c78ec41484ed15116d999d0ae4ec1b24453bb7"
-,"AuditMemoryProgrammeTests.test_result_guards_reject_missing_extra_failed_or_ignored_controls":
-  "7a8f23d1e7c44e1c156ec2ed06c78ec41484ed15116d999d0ae4ec1b24453bb7"
-,"AuditMemoryProgrammeTests.test_selected_commands_bind_only_owned_packages_and_exact_new_wide_filter_cases":
-  "7a8f23d1e7c44e1c156ec2ed06c78ec41484ed15116d999d0ae4ec1b24453bb7"
-,"AuditMemoryProgrammeTests.test_twenty_five_actual_new_cases_are_closed_registered_and_not_ignored":
-  "7a8f23d1e7c44e1c156ec2ed06c78ec41484ed15116d999d0ae4ec1b24453bb7"
-},"kind":"python","module":"tools/tests/test_audit_memory_programme.py","reviewReason":"Four controls reject altered registration/ignored or failed results/foreign package selectors and preserve prebuild failures without Cargo execution.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "7a8f23d1e7c44e1c156ec2ed06c78ec41484ed15116d999d0ae4ec1b24453bb7"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7143f7519e5f6d2f006b24d7b1dd147ceb554ebc0c5af822541a13ba7795a406","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "AuditMemoryProgrammeTests.test_prebuild_admission_failure_is_retained_without_launching_cargo":
+      "7a8f23d1e7c44e1c156ec2ed06c78ec41484ed15116d999d0ae4ec1b24453bb7",
+    "AuditMemoryProgrammeTests.test_result_guards_reject_missing_extra_failed_or_ignored_controls":
+      "7a8f23d1e7c44e1c156ec2ed06c78ec41484ed15116d999d0ae4ec1b24453bb7",
+    "AuditMemoryProgrammeTests.test_selected_commands_bind_only_owned_packages_and_exact_new_wide_filter_cases":
+      "7a8f23d1e7c44e1c156ec2ed06c78ec41484ed15116d999d0ae4ec1b24453bb7",
+    "AuditMemoryProgrammeTests.test_twenty_five_actual_new_cases_are_closed_registered_and_not_ignored":
+      "7a8f23d1e7c44e1c156ec2ed06c78ec41484ed15116d999d0ae4ec1b24453bb7"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_audit_memory_programme.py",
+  "reviewReason":"Four controls reject altered registration/ignored or failed results/foreign package selectors and preserve prebuild failures without Cargo execution.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "7a8f23d1e7c44e1c156ec2ed06c78ec41484ed15116d999d0ae4ec1b24453bb7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7143f7519e5f6d2f006b24d7b1dd147ceb554ebc0c5af822541a13ba7795a406","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

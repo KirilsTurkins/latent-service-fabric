@@ -28,8 +28,9 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         final Runnable command;
         final Activation.Lease queued;
         final boolean actionAccepted;
-        Item(Runnable command, Activation.Lease queued, boolean actionAccepted) {
-            this.command = command; this.queued = queued; this.actionAccepted = actionAccepted;
+        final boolean futureAccepted;
+        Item(Runnable command, Activation.Lease queued, boolean actionAccepted, boolean futureAccepted) {
+            this.command = command; this.queued = queued; this.actionAccepted = actionAccepted; this.futureAccepted = futureAccepted;
         }
     }
 
@@ -62,9 +63,9 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
                 throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
             queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
-            if (future != null) acceptedResult = future.accept();
+            if (future != null) acceptedResult = future.acceptQueueCopy();
             acceptedAction = CompletableFuture.acceptedByQueue(command);
-            item = new Item(command, queued, acceptedAction);
+            item = new Item(command, queued, acceptedAction, acceptedResult);
             queue.addLast(item);
             pendingWork++;
             installed = true;
@@ -74,7 +75,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             if (!installed || queue.remove(item)) {
                 if (installed) pendingWork--;
                 if (queued != null) queued.close();
-                if (acceptedResult) future.rejectAcceptance();
+                if (acceptedResult) future.removeQueueCopy(true);
                 CompletableFuture.removedFromQueue(command, acceptedAction, true);
                 CompletableFuture.rejectedBeforeAcceptance(command, this);
             }
@@ -114,8 +115,12 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                 if (!interrupting) Thread.interrupted();
                 try { item.command.run(); }
                 finally {
-                    try { CompletableFuture.removedFromQueue(item.command, item.actionAccepted, false); }
-                    finally { synchronized (this) { running--; pendingWork--; notifyAll(); } }
+                    try {
+                        if (item.futureAccepted) ((FutureTask<?>)item.command).removeQueueCopy(false);
+                    } finally {
+                        try { CompletableFuture.removedFromQueue(item.command, item.actionAccepted, false); }
+                        finally { synchronized (this) { running--; pendingWork--; notifyAll(); } }
+                    }
                 }
                 Activation.checkpoint();
             }
@@ -153,13 +158,11 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         List<Runnable> pending = new ArrayList<>(queue.size());
         while (!queue.isEmpty()) {
             Item item = queue.removeFirst(); pendingWork--; pending.add(item.command); item.queued.close();
+            if (item.futureAccepted) ((FutureTask<?>)item.command).removeQueueCopy(true);
             CompletableFuture.removedFromQueue(item.command, item.actionAccepted, true);
         }
         // Standard shutdownNow returns queued tasks without cancelling them.
         // They no longer own an accepted pending execution in this activation.
-        for (Runnable command : pending) {
-            if (command instanceof FutureTask<?>) ((FutureTask<?>)command).rejectAcceptance();
-        }
         for (Thread worker : workers) worker.interrupt();
         notifyAll();
         settleIfTerminated();
