@@ -205,6 +205,20 @@ NODE_TARGETS = ('net/factory.o',)
 NODE_STAGES = tuple('node-bootstrap-objects' if s=='msi-descriptor-objects' else s for s in MSI_DESCRIPTOR_STAGES)
 
 
+# Allocating-TU operands; no Node funding, fit or execution authority.
+GEOMETRY_BRANCH = 'test/sdk-738-node-irq-geometry-20261028'
+GEOMETRY_MODULE = 'research/standard-outbound/linux-6.12-lineage/node-irq-geometry/projector.py'
+GEOMETRY_PINS = {'research/standard-outbound/linux-6.12-lineage/node-irq-geometry/geometry.c': (5046, '9f620fcd26c7ab155ab18feb01bd7e179d7e370b6453ade354cd63d5667c3115'), 'research/standard-outbound/linux-6.12-lineage/node-irq-geometry/geometry.h': (666, '15c93f612b8b12ff43fd063e490b2225577c79bd1fb7cc80285120229a4a2abf'), 'research/standard-outbound/linux-6.12-lineage/node-irq-geometry/projector.py': (3894, '6e7793c5dce43d15ec1ec294b95b74634eb07cd7f23bab1cc84c0533242b36d8')}
+GEOMETRY_NATIVE_PINS = {'kernel/irq/matrix.c': (13742, '8e3a5f1c2dbfc39cc258f3f9fee9b65c13b494c0a26c7f056c726d338f8a549b'), 'lib/maple_tree.c': (196713, 'd11eba94051ba43ebcf908e10165ba1724681a6e2803db9dc9d931f342feaa3c'), 'mm/percpu.c': (103541, 'b74279d0cd0d8a3b31f26f0892a1bbb718f32812ee8ffb44f3f71199584964e0'), 'mm/percpu-vm.c': (11969, '220a0772b528a11a42de9a1417f43eeb91293435156f69ee7664153949a3645d'), 'mm/percpu-internal.h': (7895, '8c0b90d893cc890832f1846a449121450ec5ba0ccd907905a0161b9cd672a02d'), 'kernel/irq/irqdesc.c': (25422, '3ebc03602452076511e54fd3e0e84a692bcc479fd0c426186ff1900659f89079')}
+GEOMETRY_PHYSICAL_SHA = '624f840ab2ef9adc46832e21241f2a763c76412c9730b61369932f6dc4447a7d'
+GEOMETRY_PHYSICAL_BYTES = 1018112
+GEOMETRY_LOGICAL_SHA = 'fe2e9be5ec853ef7ac64c7bfe28c2a871d2ca369e5512a17a7c89f877f9bd3d0'
+GEOMETRY_TARGETS = ('kernel/irq/matrix.o','lib/maple_tree.o','mm/percpu.o',
+    'arch/x86/kernel/apic/vector.o','kernel/irq/irqdesc.o','kernel/irq/irqdomain.o')
+GEOMETRY_STAGES = tuple('node-irq-geometry-objects' if s=='node-bootstrap-objects' else s for s in NODE_STAGES)
+GEOMETRY_FIELDS = {1: ('matrix.bytes', 'matrix.alignment', 'cpumap.bytes', 'cpumap.alignment', 'vectors', 'bitmap.longs', 'long.bytes', 'matrix.request', 'cpumap.request'), 2: ('node.bytes', 'node.alignment', 'allocation.bytes', 'allocation.alignment', 'cache.alignment', 'bulk.slots'), 3: ('chunk.bytes', 'chunk.alignment', 'block.bytes', 'block.alignment', 'extension.bytes', 'extension.alignment', 'vm.bytes', 'vm.alignment', 'vmap.bytes', 'vmap.alignment', 'minimum.bytes', 'block.bytes.coverage', 'page.bytes', 'page.pointer.bytes'), 4: ('apic.bytes', 'apic.alignment', 'cleanup.bytes', 'cleanup.alignment', 'vector.map.bytes.per.cpu', 'vectors', 'external.first', 'system.first', 'configured.cpu.ceiling', 'offstack.enabled'), 5: ('descriptor.bytes', 'descriptor.alignment', 'statistic.bytes', 'statistic.alignment', 'action.bytes', 'action.alignment', 'mask.type.bytes', 'offstack.enabled', 'effective.mask.enabled', 'pending.mask.enabled'), 6: ('domain.bytes', 'domain.alignment', 'data.bytes', 'data.alignment', 'firmware.bytes', 'firmware.alignment', 'revmap.element.bytes', 'revmap.offset')}
+
+
 def require(value, code):
     if not value:
         raise ValueError('stream-object-'+code)
@@ -242,11 +256,11 @@ def deadline(started, now=None):
     return end
 
 
-def mode_targets(classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False):
+def mode_targets(classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False, node_geometry=False):
     require(all(type(value) is bool for value in
-        (classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap)) and
-        sum((classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap))<=1,'closed-classdir-mode')
-    return NODE_TARGETS if node_bootstrap else MSI_DESCRIPTOR_TARGETS if msi_descriptor else Q35_TARGETS if q35 else MSI_TARGETS if msi_context else VP_TARGETS if vp_transport else CONSTRUCTOR_MMIO_TARGETS if constructor_mmio else POST_INIT_TARGETS if netdev_post_init else LAYOUT_TARGETS if netdev_layout else DIRECTORY_TARGETS if netdev_directory else REGISTRATION_TARGETS if classdir_kernfs else CLASSDIR_TARGETS if classdir else TARGETS
+        (classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry)) and
+        sum((classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry))<=1,'closed-classdir-mode')
+    return GEOMETRY_TARGETS if node_geometry else NODE_TARGETS if node_bootstrap else MSI_DESCRIPTOR_TARGETS if msi_descriptor else Q35_TARGETS if q35 else MSI_TARGETS if msi_context else VP_TARGETS if vp_transport else CONSTRUCTOR_MMIO_TARGETS if constructor_mmio else POST_INIT_TARGETS if netdev_post_init else LAYOUT_TARGETS if netdev_layout else DIRECTORY_TARGETS if netdev_directory else REGISTRATION_TARGETS if classdir_kernfs else CLASSDIR_TARGETS if classdir else TARGETS
 
 
 def selected_sources(root, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False):
@@ -805,6 +819,103 @@ def node_compose(values):
     return result,record
 
 
+def geometry_capture(root):
+    base, physical, captured = node_capture(root)
+    for name, (length, sha) in GEOMETRY_PINS.items():
+        require(name not in physical, 'geometry-new-physical')
+        raw = read(root/name, length)
+        require(identity(raw) == {'bytes': length, 'sha256': sha}, 'geometry-source-identity')
+        physical[name] = identity(raw); captured[name] = raw
+    require(len(physical) == 88 and sum(r['bytes'] for r in physical.values()) == GEOMETRY_PHYSICAL_BYTES
+        and hashlib.sha256(canonical(physical)).hexdigest() == GEOMETRY_PHYSICAL_SHA, 'geometry-88-physical')
+    return base, physical, captured
+
+
+def geometry_materials(root):
+    base = node_materials(root)
+    _, physical, _ = geometry_capture(root)
+    logical = dict(base['logicalIdentities']); origins = dict(base['logicalOrigins'])
+    for name in GEOMETRY_PINS:
+        require(name not in logical, 'geometry-new-logical')
+        logical[name] = physical[name]; origins[name] = {'kind': 'physical-file', 'path': name}
+    require(len(logical) == len(origins) == 119 and
+        hashlib.sha256(canonical(logical)).hexdigest() == GEOMETRY_LOGICAL_SHA, 'geometry-119-logical')
+    return dict(base, physicalInputs=physical, logicalIdentities=logical, logicalOrigins=origins,
+        prior85Physical=base['physicalInputs'], prior116Logical=base['logicalIdentities'], projectionOutputCount=463)
+
+
+def geometry_stage(root, native):
+    require(set(native) == set(GEOMETRY_NATIVE_PINS), 'geometry-native-set')
+    for name, (length, sha) in GEOMETRY_NATIVE_PINS.items():
+        require(type(native[name]) is bytes and identity(native[name]) == {'bytes': length, 'sha256': sha},
+            'geometry-native-identity')
+    _, _, captured = geometry_capture(root) # ALL88 and native6 verified before this loader.
+    import importlib.abc
+    import importlib.util
+    path = str((root/GEOMETRY_MODULE).resolve()); code = captured[GEOMETRY_MODULE]
+    class Captured(importlib.abc.SourceLoader):
+        def get_filename(self, fullname):
+            require(fullname == '_lsf_node_irq_geometry_projector', 'geometry-fixed-module'); return path
+        def get_data(self, name):
+            require(name == path, 'geometry-no-alternate-source'); return code
+        def path_stats(self, name):
+            raise OSError('geometry-no-bytecode')
+    spec = importlib.util.spec_from_file_location('_lsf_node_irq_geometry_projector', path, loader=Captured())
+    require(spec is not None and spec.loader is not None, 'geometry-source-spec')
+    stage = importlib.util.module_from_spec(spec); spec.loader.exec_module(stage)
+    require(Path(stage.__file__).resolve() == Path(path) and stage.ROOT == root.resolve()
+        and stage.PRIMARY == GEOMETRY_NATIVE_PINS and stage.INPUT_SHA == NODE_DERIVED_SHA,
+        'geometry-fixed-origin')
+    return stage, {n: captured[str(Path(GEOMETRY_MODULE).parent/n)] for n in ('geometry.c','geometry.h')}
+
+
+def geometry_compose(values, tree, capture):
+    native = {n: read(tree/n, pin[0]) for n, pin in GEOMETRY_NATIVE_PINS.items()}
+    stage, materials = geometry_stage(ROOT, native)
+    capture.mkdir(mode=0o700)
+    for name, raw in native.items():
+        q=capture/name; q.parent.mkdir(parents=True,exist_ok=True); q.write_bytes(raw)
+    result, record = stage.transform(values, native, materials)
+    require(len(result) == 463 and all(stage.inverse(result[n], role) ==
+        (values[n] if n in values else native[n]) for n, role in stage.ROLES.items()),
+        'geometry-six-whole-body-inverses')
+    return result, record
+
+
+def geometry_decode(raw, role):
+    require(type(raw) is bytes and 64 <= len(raw) <= MAX_OBJECT and
+        raw[:7] == b'\x7fELF\x02\x01\x01' and struct.unpack_from('<HHI',raw,16) == (1,62,1), 'geometry-elf')
+    offset=struct.unpack_from('<Q',raw,40)[0]
+    width,count,names=struct.unpack_from('<HHH',raw,58)
+    require(width == 64 and 0 < count <= 8192 and 0 < names < count and
+        offset >= 64 and offset+width*count <= len(raw), 'geometry-sections')
+    sections=[struct.unpack_from('<IIQQQQIIQQ',raw,offset+i*width) for i in range(count)]
+    table=sections[names]
+    require(table[1] == 3 and table[4]+table[5] <= len(raw), 'geometry-section-names')
+    strings=raw[table[4]:table[4]+table[5]]; found=[]
+    for index, section in enumerate(sections):
+        require(section[0] < len(strings), 'geometry-name-offset')
+        end=strings.find(b'\0',section[0]); require(end >= 0, 'geometry-name-end')
+        if strings[section[0]:end] == b'.lsf_node_geometry': found.append((index,section))
+    require(len(found) == 1 and role in GEOMETRY_FIELDS, 'geometry-exact-section-role')
+    index, section=found[0]
+    require(section[1] == 1 and section[2]&2 and not section[2]&5 and section[5] == 224 and
+        section[4]+224 <= len(raw), 'geometry-readonly-data')
+    require(all(s[7] != index or s[5] == 0 for s in sections if s[1] in (4,9)), 'geometry-no-relocations')
+    data=raw[section[4]:section[4]+224]; cells=struct.unpack('<28Q',data); fields=GEOMETRY_FIELDS[role]
+    require(cells[:4] == (0x314f45474e46534c,1,role,len(fields)) and
+        all(v == 0 for v in cells[4+len(fields):]), 'geometry-data-shape')
+    values=dict(zip(fields,cells[4:4+len(fields)]))
+    require(all(v <= 16*1024**2 for v in values.values()), 'geometry-value-bound')
+    for name, value in values.items():
+        if name.endswith('.alignment'):
+            require(value > 0 and value&(value-1) == 0, 'geometry-alignment')
+        elif name.endswith('.enabled'):
+            require(value in (0,1), 'geometry-boolean')
+    return {'role':role,'fields':values,'object':identity(raw),'section':identity(data),
+        'objectExecuted':False,'dynamicTopologyObserved':False,'fundingOrFitQualified':False}
+
+
 def object_identity(path):
     raw=read(path,MAX_OBJECT)
     require(len(raw)>=64 and raw[:7]==b'\x7fELF\x02\x01\x01' and
@@ -816,18 +927,18 @@ def object_identity(path):
     return identity(raw)
 
 
-def public_allowed(name, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False):
-    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap)
+def public_allowed(name, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False, node_geometry=False):
+    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry)
     if name in DOCUMENTS:return DOCUMENTS[name]
     if netdev_layout and name=='layout.json':return 64*1024
     if name in {'objects/'+n for n in targets}:return MAX_OBJECT
     match=re.fullmatch(r'logs/([0-9]{2})-([a-z0-9-]+)\.(stdout|stderr)\.txt',name)
-    if match and int(match[1])<MAX_COMMANDS and match[2] in (NODE_STAGES if node_bootstrap else MSI_DESCRIPTOR_STAGES if msi_descriptor else Q35_STAGES if q35 else MSI_STAGES if msi_context else VP_STAGES if vp_transport else CONSTRUCTOR_MMIO_STAGES if constructor_mmio else POST_INIT_STAGES if netdev_post_init else LAYOUT_STAGES if netdev_layout else DIRECTORY_STAGES if netdev_directory else REGISTRATION_STAGES if classdir_kernfs else STAGES):return 4*1024**2
+    if match and int(match[1])<MAX_COMMANDS and match[2] in (GEOMETRY_STAGES if node_geometry else NODE_STAGES if node_bootstrap else MSI_DESCRIPTOR_STAGES if msi_descriptor else Q35_STAGES if q35 else MSI_STAGES if msi_context else VP_STAGES if vp_transport else CONSTRUCTOR_MMIO_STAGES if constructor_mmio else POST_INIT_STAGES if netdev_post_init else LAYOUT_STAGES if netdev_layout else DIRECTORY_STAGES if netdev_directory else REGISTRATION_STAGES if classdir_kernfs else STAGES):return 4*1024**2
     return None
 
 
-def admit(output, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False):
-    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap)
+def admit(output, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False, node_geometry=False):
+    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry)
     require(not output.is_symlink() and output.is_dir(),'public-output-directory')
     rows={};total=logs=0
     for q in sorted(output.rglob('*')):
@@ -835,7 +946,7 @@ def admit(output, *, classdir=False, classdir_kernfs=False, netdev_directory=Fal
         if q.is_dir():continue
         name=q.relative_to(output).as_posix()
         if name=='ADMISSION.json':continue
-        maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap);require(maximum is not None,'public-member')
+        maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap,node_geometry=node_geometry);require(maximum is not None,'public-member')
         raw=read(q,maximum);total+=len(raw)
         if name.startswith('logs/'):logs+=len(raw)
         require(total<=MAX_PUBLIC-MAX_DOCUMENT and logs<=16*1024**2,'public-union-bound')
@@ -852,18 +963,18 @@ def _copy_public(source, output, name, maximum):
     raw=read(source,maximum);q=output/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
 
 
-def run(output, revision, started, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False):
-    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap)
+def run(output, revision, started, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False, node_geometry=False):
+    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry)
     end=deadline(started) # Before imports, filesystem mutation or tool probes.
     require(sys.platform=='linux' and os.environ.get('GITHUB_ACTIONS')=='true' and
         os.environ.get('GITHUB_REPOSITORY')=='KirilsTurkins/latent-service-fabric' and
-        os.environ.get('GITHUB_REF_NAME')==(NODE_BRANCH if node_bootstrap else MSI_DESCRIPTOR_BRANCH if msi_descriptor else Q35_BRANCH if q35 else MSI_BRANCH if msi_context else VP_BRANCH if vp_transport else CONSTRUCTOR_MMIO_BRANCH if constructor_mmio else POST_INIT_BRANCH if netdev_post_init else LAYOUT_BRANCH if netdev_layout else DIRECTORY_BRANCH if netdev_directory else REGISTRATION_BRANCH if classdir_kernfs else CLASSDIR_BRANCH if classdir else BRANCH) and os.environ.get('GITHUB_EVENT_NAME')=='push',
+        os.environ.get('GITHUB_REF_NAME')==(GEOMETRY_BRANCH if node_geometry else NODE_BRANCH if node_bootstrap else MSI_DESCRIPTOR_BRANCH if msi_descriptor else Q35_BRANCH if q35 else MSI_BRANCH if msi_context else VP_BRANCH if vp_transport else CONSTRUCTOR_MMIO_BRANCH if constructor_mmio else POST_INIT_BRANCH if netdev_post_init else LAYOUT_BRANCH if netdev_layout else DIRECTORY_BRANCH if netdev_directory else REGISTRATION_BRANCH if classdir_kernfs else CLASSDIR_BRANCH if classdir else BRANCH) and os.environ.get('GITHUB_EVENT_NAME')=='push',
         'fixed-hosted-origin')
     require(type(revision) is str and re.fullmatch('[0-9a-f]{40}',revision),'source-revision')
-    before=node_materials(ROOT)['physicalInputs'] if node_bootstrap else msi_descriptor_materials(ROOT)['physicalInputs'] if msi_descriptor else q35_materials(ROOT)['physicalInputs'] if q35 else msi_selected_sources(ROOT) if msi_context else vp_selected_sources(ROOT) if vp_transport else selected_sources(ROOT,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio)
+    before=geometry_materials(ROOT)['physicalInputs'] if node_geometry else node_materials(ROOT)['physicalInputs'] if node_bootstrap else msi_descriptor_materials(ROOT)['physicalInputs'] if msi_descriptor else q35_materials(ROOT)['physicalInputs'] if q35 else msi_selected_sources(ROOT) if msi_context else vp_selected_sources(ROOT) if vp_transport else selected_sources(ROOT,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio)
     constructor_before=constructor_materials(ROOT) if constructor_mmio else None
     vp_before=vp_materials(ROOT) if vp_transport else None
-    msi_before=(node_materials(ROOT) if node_bootstrap else msi_descriptor_materials(ROOT) if msi_descriptor else q35_materials(ROOT) if q35 else msi_materials(ROOT)) if msi_context or q35 or msi_descriptor or node_bootstrap else None
+    msi_before=(geometry_materials(ROOT) if node_geometry else node_materials(ROOT) if node_bootstrap else msi_descriptor_materials(ROOT) if msi_descriptor else q35_materials(ROOT) if q35 else msi_materials(ROOT)) if msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry else None
     output=output.resolve()
     require(output!=ROOT and ROOT not in output.parents and output not in ROOT.parents and
         not output.exists(),'fresh-public-outside-source')
@@ -877,13 +988,13 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
     environment.update(PYTHONDONTWRITEBYTECODE='1',LC_ALL='C',LANG='C',TMPDIR=str(scratch/'tmp'),
         KBUILD_BUILD_USER='lsf-object-check',KBUILD_BUILD_HOST='isolated-ci',
         KBUILD_BUILD_TIMESTAMP='2026-10-23 00:00:00 UTC',KCONFIG_NOTIMESTAMP='1')
-    if classdir_kernfs or netdev_directory or netdev_layout or netdev_post_init or constructor_mmio or vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap:
+    if classdir_kernfs or netdev_directory or netdev_layout or netdev_post_init or constructor_mmio or vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry:
         environment.update(GIT_NO_LAZY_FETCH='1',GIT_TERMINAL_PROMPT='0')
-    if vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap:
+    if vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry:
         environment.update(RUSTUP_TOOLCHAIN='1.97.1',RUSTUP_AUTO_INSTALL='0')
     commands=objects.Commands(ROOT,scratch/'commands',environment,deadline_seconds=end-time.monotonic(),command_seconds=1200)
     commands.deadline=end-5.0 # ONE reserve; run_owned itself includes cleanup.
-    receipt={'schemaVersion':'lsf.node-bootstrap-objects.v1' if node_bootstrap else 'lsf.stream-msi-descriptor-objects.v1' if msi_descriptor else 'lsf.stream-q35-msi-domain-objects.v1' if q35 else 'lsf.stream-msi-context-objects.v1' if msi_context else 'lsf.stream-vp-transport-objects.v1' if vp_transport else 'lsf.stream-constructor-mmio-objects.v1' if constructor_mmio else 'lsf.stream-netdev-post-init-objects.v1' if netdev_post_init else 'lsf.stream-netdev-layout-objects.v1' if netdev_layout else 'lsf.stream-netdev-directory-objects.v1' if netdev_directory else 'lsf.stream-classdir-kernfs-objects.v1' if classdir_kernfs else 'lsf.stream-classdir-objects.v1' if classdir else 'lsf.stream-normal-objects.v1','status':'in-progress','stage':'preflight',
+    receipt={'schemaVersion':'lsf.node-irq-geometry-objects.v1' if node_geometry else 'lsf.node-bootstrap-objects.v1' if node_bootstrap else 'lsf.stream-msi-descriptor-objects.v1' if msi_descriptor else 'lsf.stream-q35-msi-domain-objects.v1' if q35 else 'lsf.stream-msi-context-objects.v1' if msi_context else 'lsf.stream-vp-transport-objects.v1' if vp_transport else 'lsf.stream-constructor-mmio-objects.v1' if constructor_mmio else 'lsf.stream-netdev-post-init-objects.v1' if netdev_post_init else 'lsf.stream-netdev-layout-objects.v1' if netdev_layout else 'lsf.stream-netdev-directory-objects.v1' if netdev_directory else 'lsf.stream-classdir-kernfs-objects.v1' if classdir_kernfs else 'lsf.stream-classdir-objects.v1' if classdir else 'lsf.stream-normal-objects.v1','status':'in-progress','stage':'preflight',
         'sourceRevision':revision,'checkpoint':CHECKPOINT,'baselineRecipeRevision':BASELINE,
         'baselineRecipeTree':BASELINE_TREE,'sourceBefore':before,'sourceAfter':None,'checkpoint45SourceDigest':CHECKPOINT45_SHA,
         'objectTargets':list(targets),'products':{},'compiledObjectsOnly':True,'kernelLinked':False,
@@ -892,13 +1003,13 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
         'whole738Complete':False,'hermetic':False,'compilerImplicitInputsAttested':False,
         'originalStartedMonotonic':started,'originalDeadlineMonotonic':end,'maximumOwnerSeconds':1320,
         'maximumCompileSeconds':1200,'privateScratchRetained':True}
-    if node_bootstrap:
+    if node_bootstrap or node_geometry:
         receipt.update(nodeFundingQualified=False,nodeRetirementQualified=False,
             trustedInstalledProfileIssuerImplemented=False,compiledInitialGeometryWitness=False,
             originalNodeEscrowBytes=1048576,bankBytes=524288,tailBytes=196608,records=256,owners=64)
     error=None;tools={};public_sources={}
     def command(stage,*argv,cap=120,root=None):
-        require(stage in (NODE_STAGES if node_bootstrap else MSI_DESCRIPTOR_STAGES if msi_descriptor else Q35_STAGES if q35 else MSI_STAGES if msi_context else VP_STAGES if vp_transport else CONSTRUCTOR_MMIO_STAGES if constructor_mmio else POST_INIT_STAGES if netdev_post_init else LAYOUT_STAGES if netdev_layout else DIRECTORY_STAGES if netdev_directory else REGISTRATION_STAGES if classdir_kernfs else STAGES) and len(commands.records)<MAX_COMMANDS,'fixed-command-count')
+        require(stage in (GEOMETRY_STAGES if node_geometry else NODE_STAGES if node_bootstrap else MSI_DESCRIPTOR_STAGES if msi_descriptor else Q35_STAGES if q35 else MSI_STAGES if msi_context else VP_STAGES if vp_transport else CONSTRUCTOR_MMIO_STAGES if constructor_mmio else POST_INIT_STAGES if netdev_post_init else LAYOUT_STAGES if netdev_layout else DIRECTORY_STAGES if netdev_directory else REGISTRATION_STAGES if classdir_kernfs else STAGES) and len(commands.records)<MAX_COMMANDS,'fixed-command-count')
         require(time.monotonic()<commands.deadline,'original-deadline')
         commands.root=ROOT if root is None else root
         commands.command_seconds=min(cap,1200)
@@ -907,21 +1018,21 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
     try:
         current_inputs=input_files(ROOT)
         source_record={'currentBefore':current_inputs,'currentAfter':None,
-            ('current85Physical' if node_bootstrap else 'current83Physical' if msi_descriptor else 'current78Physical' if q35 else 'current69Physical' if msi_context else 'current67Physical' if vp_transport else 'current65Physical' if constructor_mmio else 'current62' if netdev_post_init else 'current59' if netdev_layout else 'current55' if netdev_directory else 'current52' if classdir_kernfs else 'current50' if classdir else 'current47'):before,'currentSourceRevision':revision,'originalBaselineSourceRevision':BASELINE}
-        if msi_context or q35 or msi_descriptor or node_bootstrap:
+            ('current88Physical' if node_geometry else 'current85Physical' if node_bootstrap else 'current83Physical' if msi_descriptor else 'current78Physical' if q35 else 'current69Physical' if msi_context else 'current67Physical' if vp_transport else 'current65Physical' if constructor_mmio else 'current62' if netdev_post_init else 'current59' if netdev_layout else 'current55' if netdev_directory else 'current52' if classdir_kernfs else 'current50' if classdir else 'current47'):before,'currentSourceRevision':revision,'originalBaselineSourceRevision':BASELINE}
+        if msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry:
             require(msi_before['physicalInputs']==before,'msi-initial-materials')
-            source_record.update(**{('current116Logical' if node_bootstrap else 'current114Logical' if msi_descriptor else 'current109Logical' if q35 else 'current100Logical'):msi_before['logicalIdentities']},
+            source_record.update(**{('current119Logical' if node_geometry else 'current116Logical' if node_bootstrap else 'current114Logical' if msi_descriptor else 'current109Logical' if q35 else 'current100Logical'):msi_before['logicalIdentities']},
                 logicalOrigins=msi_before['logicalOrigins'],prior67PhysicalBefore=msi_before['prior67Physical'],
                 prior94LogicalBefore=msi_before['prior94Logical'],prior67PhysicalAfter=None,
                 prior94LogicalAfter=None,logicalOriginsAfter=None,
-                **{('current85PhysicalAfter' if node_bootstrap else 'current83PhysicalAfter' if msi_descriptor else 'current78PhysicalAfter' if q35 else 'current69PhysicalAfter'):None,
-                   ('current116LogicalAfter' if node_bootstrap else 'current114LogicalAfter' if msi_descriptor else 'current109LogicalAfter' if q35 else 'current100LogicalAfter'):None})
-            receipt.update(currentPhysicalSourceCount=85 if node_bootstrap else 83 if msi_descriptor else 78 if q35 else 69,currentLogicalSourceCount=116 if node_bootstrap else 114 if msi_descriptor else 109 if q35 else 100,
-                sourceStorage='captured-node-bootstrap-plus-prior-materials' if node_bootstrap else 'captured-msi-descriptor-research-plus-prior-bundles' if msi_descriptor else 'pinned-q35-research-plus-prior-bundles' if q35 else 'closed-msi-vp-and-constructor-utf8-bundles',msiProjectionStages=None)
+                **{('current88PhysicalAfter' if node_geometry else 'current85PhysicalAfter' if node_bootstrap else 'current83PhysicalAfter' if msi_descriptor else 'current78PhysicalAfter' if q35 else 'current69PhysicalAfter'):None,
+                   ('current119LogicalAfter' if node_geometry else 'current116LogicalAfter' if node_bootstrap else 'current114LogicalAfter' if msi_descriptor else 'current109LogicalAfter' if q35 else 'current100LogicalAfter'):None})
+            receipt.update(currentPhysicalSourceCount=88 if node_geometry else 85 if node_bootstrap else 83 if msi_descriptor else 78 if q35 else 69,currentLogicalSourceCount=119 if node_geometry else 116 if node_bootstrap else 114 if msi_descriptor else 109 if q35 else 100,
+                sourceStorage='captured-node-irq-geometry-plus-original85' if node_geometry else 'captured-node-bootstrap-plus-prior-materials' if node_bootstrap else 'captured-msi-descriptor-research-plus-prior-bundles' if msi_descriptor else 'pinned-q35-research-plus-prior-bundles' if q35 else 'closed-msi-vp-and-constructor-utf8-bundles',msiProjectionStages=None)
             if q35:
                 source_record.update(current109Logical=msi_before['logicalIdentities'],
                     prior69PhysicalBefore=msi_before['prior69Physical'],prior100LogicalBefore=msi_before['prior100Logical'])
-            elif msi_descriptor or node_bootstrap:
+            elif msi_descriptor or node_bootstrap or node_geometry:
                 source_record.update(prior78PhysicalBefore=msi_before['prior78Physical'],
                     prior109LogicalBefore=msi_before['prior109Logical'],
                     prior69PhysicalBefore=msi_before['prior69Physical'],prior100LogicalBefore=msi_before['prior100Logical'])
@@ -947,7 +1058,7 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
         require(command('source-head',git,'rev-parse','HEAD',cap=15).decode().strip()==revision,'actual-checkout')
         tree_before=command('source-tree',git,'ls-tree','-rz','--full-tree','HEAD',cap=30)
         command('source-clean',git,'diff','--no-ext-diff','--exit-code','HEAD','--',cap=30)
-        if classdir_kernfs or netdev_directory or netdev_layout or netdev_post_init or constructor_mmio or vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap:
+        if classdir_kernfs or netdev_directory or netdev_layout or netdev_post_init or constructor_mmio or vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry:
             # ONE exact shallow acquisition, never history search/lazy fallback.
             # A growing current branch is not baseline authority. Same owner,
             # original absolute1320s deadline and single5s reserve apply.
@@ -1015,43 +1126,55 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
         command('baseline-clean-after',git,'diff','--no-ext-diff','--exit-code','HEAD','--',cap=30,root=recipe)
         require(command('baseline-tree-after',git,'rev-parse','HEAD^{tree}',cap=15,root=recipe).decode().strip()==BASELINE_TREE,'baseline-tree-after')
         values=current_compose(derived_read(baseline_output/'derived',baseline['derived']),tree,
-            classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init or constructor_mmio or vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap)
-        if constructor_mmio or vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap:
+            classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init or constructor_mmio or vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry)
+        if constructor_mmio or vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry:
             values,actual_stages=constructor_compose(values,tree)
-            if vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap:
+            if vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry:
                 values,vp_stage=vp_compose(values)
-                if msi_context or q35 or msi_descriptor or node_bootstrap:
+                if msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry:
                     values,msi_stage=msi_compose(values,tree)
                     receipt['msiProjectionStages']=[*actual_stages,vp_stage,msi_stage]
-                    if q35 or msi_descriptor or node_bootstrap:
+                    if q35 or msi_descriptor or node_bootstrap or node_geometry:
                         values,q35_stage=q35_compose(values,tree)
                         receipt['msiProjectionStages'].append(q35_stage)
-                        if msi_descriptor or node_bootstrap:
+                        if msi_descriptor or node_bootstrap or node_geometry:
                             values,descriptor_stage=msi_descriptor_compose(values,tree,scratch/'msi-native-preimages')
                             receipt['msiProjectionStages'].append(descriptor_stage)
                 else:
                     receipt['vpProjectionStages']=[*actual_stages,vp_stage]
             else:
                 receipt['constructorProjectionStages']=actual_stages
-        if node_bootstrap:
+        if node_bootstrap or node_geometry:
             values,node_stage_record=node_compose(values)
             receipt['nodeBootstrapStage']=node_stage_record
             source_record.update(prior83PhysicalBefore=msi_before['prior83Physical'],
                 prior114LogicalBefore=msi_before['prior114Logical'])
+        if node_geometry:
+            values,geometry_record=geometry_compose(values,tree,scratch/'geometry-native-preimages')
+            receipt['nodeIrqGeometryStage']=geometry_record
+            source_record.update(prior85PhysicalBefore=msi_before['prior85Physical'],
+                prior116LogicalBefore=msi_before['prior116Logical'])
         rows=derived_write(scratch/'current-derived',values)
         for name,raw in values.items():
             q=tree/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
         write_json(scratch/'derived-inputs.json',rows,4*MAX_DOCUMENT);public_sources['derived-inputs.json']=scratch/'derived-inputs.json'
-        command('node-bootstrap-objects' if node_bootstrap else 'msi-descriptor-objects' if msi_descriptor else 'q35-msi-domain-objects' if q35 else 'msi-context-objects' if msi_context else 'vp-transport-objects' if vp_transport else 'constructor-mmio-objects' if constructor_mmio else 'netdev-post-init-objects' if netdev_post_init else 'netdev-layout-objects' if netdev_layout else 'netdev-directory-objects' if netdev_directory else 'classdir-kernfs-objects' if classdir_kernfs else 'classdir-objects' if classdir else 'eighteen-objects',
-            *common,*(['-k'] if constructor_mmio or vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap else []),'-j2',*targets,root=tree,cap=1200)
+        command('node-irq-geometry-objects' if node_geometry else 'node-bootstrap-objects' if node_bootstrap else 'msi-descriptor-objects' if msi_descriptor else 'q35-msi-domain-objects' if q35 else 'msi-context-objects' if msi_context else 'vp-transport-objects' if vp_transport else 'constructor-mmio-objects' if constructor_mmio else 'netdev-post-init-objects' if netdev_post_init else 'netdev-layout-objects' if netdev_layout else 'netdev-directory-objects' if netdev_directory else 'classdir-kernfs-objects' if classdir_kernfs else 'classdir-objects' if classdir else 'eighteen-objects',
+            *common,*(['-k'] if constructor_mmio or vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry else []),'-j2',*targets,root=tree,cap=1200)
         require(read(build/'.config',MAX_DOCUMENT)==selected,'actual-config-mutated')
         autoconf=read(build/'include/generated/autoconf.h',MAX_DOCUMENT)
         require(b'#define CONFIG_LSF_STREAM_FACTORY 1\n' in autoconf and b'#define CONFIG_RUST ' not in autoconf,
             'actual-selected-autoconf')
         (scratch/'generated-autoconf.h').write_bytes(autoconf);public_sources['generated-autoconf.h']=scratch/'generated-autoconf.h'
         receipt['products']={name:object_identity(build/name) for name in targets}
-        require(len(receipt['products'])==len(targets),'one-node-bootstrap-exact-product' if node_bootstrap else 'six-msi-descriptor-exact-products' if msi_descriptor else 'seven-q35-exact-products' if q35 else 'six-msi-exact-products' if msi_context else 'twenty-two-vp-exact-products' if vp_transport else 'twenty-two-constructor-exact-products' if constructor_mmio else 'eight-post-init-exact-products' if netdev_post_init else 'eleven-layout-exact-products' if netdev_layout else 'nine-directory-exact-products' if netdev_directory else 'nine-exact-products' if classdir_kernfs else 'four-exact-products' if classdir else 'eighteen-exact-products')
+        require(len(receipt['products'])==len(targets),'six-node-geometry-exact-products' if node_geometry else 'one-node-bootstrap-exact-product' if node_bootstrap else 'six-msi-descriptor-exact-products' if msi_descriptor else 'seven-q35-exact-products' if q35 else 'six-msi-exact-products' if msi_context else 'twenty-two-vp-exact-products' if vp_transport else 'twenty-two-constructor-exact-products' if constructor_mmio else 'eight-post-init-exact-products' if netdev_post_init else 'eleven-layout-exact-products' if netdev_layout else 'nine-directory-exact-products' if netdev_directory else 'nine-exact-products' if classdir_kernfs else 'four-exact-products' if classdir else 'eighteen-exact-products')
         for name in targets:public_sources['objects/'+name]=build/name
+        if node_geometry:
+            receipt['stage']='readonly-irq-geometry'
+            require(time.monotonic()<commands.deadline,'geometry-parent-deadline')
+            receipt['compiledIrqGeometry']={name:geometry_decode(read(build/name,MAX_OBJECT),role)
+                for role,name in enumerate(GEOMETRY_TARGETS,1)}
+            receipt.update(dynamicTopologyObserved=False,sharedBootstrapFundingQualified=False)
+            require(time.monotonic()<commands.deadline,'geometry-parent-deadline')
         if netdev_layout:
             receipt['stage']='readonly-layout'
             require(time.monotonic()<commands.deadline,'layout-parent-deadline')
@@ -1073,21 +1196,21 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
         command('source-clean-after',git,'diff','--no-ext-diff','--exit-code','HEAD','--',cap=30)
         require(command('source-tree-after',git,'ls-tree','-rz','--full-tree','HEAD',cap=30)==tree_before,'source-tree-mutated')
         require(command('source-head-after',git,'rev-parse','HEAD',cap=15).decode().strip()==revision,'source-head-mutated')
-        receipt['sourceAfter']=node_materials(ROOT)['physicalInputs'] if node_bootstrap else msi_descriptor_materials(ROOT)['physicalInputs'] if msi_descriptor else q35_materials(ROOT)['physicalInputs'] if q35 else msi_selected_sources(ROOT) if msi_context else vp_selected_sources(ROOT) if vp_transport else selected_sources(ROOT,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio)
+        receipt['sourceAfter']=geometry_materials(ROOT)['physicalInputs'] if node_geometry else node_materials(ROOT)['physicalInputs'] if node_bootstrap else msi_descriptor_materials(ROOT)['physicalInputs'] if msi_descriptor else q35_materials(ROOT)['physicalInputs'] if q35 else msi_selected_sources(ROOT) if msi_context else vp_selected_sources(ROOT) if vp_transport else selected_sources(ROOT,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio)
         require(receipt['sourceAfter']==before and input_files(ROOT)==current_inputs,'current-source-mutated')
         require(time.monotonic()<commands.deadline,'original-deadline')
-        if msi_context or q35 or msi_descriptor or node_bootstrap:
-            msi_after=node_materials(ROOT) if node_bootstrap else msi_descriptor_materials(ROOT) if msi_descriptor else q35_materials(ROOT) if q35 else msi_materials(ROOT)
+        if msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry:
+            msi_after=geometry_materials(ROOT) if node_geometry else node_materials(ROOT) if node_bootstrap else msi_descriptor_materials(ROOT) if msi_descriptor else q35_materials(ROOT) if q35 else msi_materials(ROOT)
             require(msi_after==msi_before,'msi-materials-mutated')
-            source_record.update(**{('current85PhysicalAfter' if node_bootstrap else 'current83PhysicalAfter' if msi_descriptor else 'current78PhysicalAfter' if q35 else 'current69PhysicalAfter'):msi_after['physicalInputs'],
-                ('current116LogicalAfter' if node_bootstrap else 'current114LogicalAfter' if msi_descriptor else 'current109LogicalAfter' if q35 else 'current100LogicalAfter'):msi_after['logicalIdentities']},
+            source_record.update(**{('current88PhysicalAfter' if node_geometry else 'current85PhysicalAfter' if node_bootstrap else 'current83PhysicalAfter' if msi_descriptor else 'current78PhysicalAfter' if q35 else 'current69PhysicalAfter'):msi_after['physicalInputs'],
+                ('current119LogicalAfter' if node_geometry else 'current116LogicalAfter' if node_bootstrap else 'current114LogicalAfter' if msi_descriptor else 'current109LogicalAfter' if q35 else 'current100LogicalAfter'):msi_after['logicalIdentities']},
                 prior67PhysicalAfter=msi_after['prior67Physical'],prior94LogicalAfter=msi_after['prior94Logical'],
                 logicalOriginsAfter=msi_after['logicalOrigins'])
             if q35:
                 source_record.update(current78PhysicalAfter=msi_after['physicalInputs'],
                     current109LogicalAfter=msi_after['logicalIdentities'],
                     prior69PhysicalAfter=msi_after['prior69Physical'],prior100LogicalAfter=msi_after['prior100Logical'])
-            elif msi_descriptor or node_bootstrap:
+            elif msi_descriptor or node_bootstrap or node_geometry:
                 source_record.update(prior78PhysicalAfter=msi_after['prior78Physical'],
                     prior109LogicalAfter=msi_after['prior109Logical'],
                     prior69PhysicalAfter=msi_after['prior69Physical'],prior100LogicalAfter=msi_after['prior100Logical'],
@@ -1105,11 +1228,21 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
             source_record.update(current65PhysicalAfter=constructor_after['physicalInputs'],
                 current90LogicalAfter=constructor_after['logicalIdentities'],
                 logicalOriginsAfter=constructor_after['logicalOrigins'])
-        if node_bootstrap:
+        if node_bootstrap or node_geometry:
             source_record.update(prior83PhysicalAfter=msi_after['prior83Physical'],
                 prior114LogicalAfter=msi_after['prior114Logical'])
             require({n:identity(read(tree/n,MAX_FILE)) for n in values}==
                 {n:identity(raw) for n,raw in values.items()},'node-457-actual-inputs-mutated')
+        if node_geometry:
+            retained={n:identity(read(scratch/'geometry-native-preimages'/n,pin[0]))
+                for n,pin in GEOMETRY_NATIVE_PINS.items()}
+            require(retained==geometry_record['nativePrimaryBefore'],'geometry-native-retention')
+            projected={n:identity(read(tree/n,MAX_FILE)) for n in GEOMETRY_NATIVE_PINS}
+            require(projected=={n:identity(values[n]) if n in values else retained[n]
+                for n in GEOMETRY_NATIVE_PINS},'geometry-actual-native-after')
+            geometry_record.update(nativePrimaryAfter=projected,capturedNativeBeforeAfter=retained)
+            source_record.update(prior85PhysicalAfter=msi_after['prior85Physical'],
+                prior116LogicalAfter=msi_after['prior116Logical'])
         source_record.update(currentAfter=current_inputs,currentGitTreeInventory=identity(tree_before))
         write_json(scratch/'source-inputs.json',source_record)
         public_sources['source-inputs.json']=scratch/'source-inputs.json'
@@ -1125,12 +1258,12 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
             write_json(output/'receipt.json',receipt,MAX_DOCUMENT)
             write_json(output/'commands.json',commands.records,MAX_DOCUMENT)
             for name,q in public_sources.items():
-                maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap);require(maximum is not None,'public-source')
+                maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap,node_geometry=node_geometry);require(maximum is not None,'public-source')
                 _copy_public(q,output,name,maximum)
             for q in sorted((scratch/'commands/logs').iterdir()):
-                name='logs/'+q.name;maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap);require(maximum is not None,'public-command-channel')
+                name='logs/'+q.name;maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap,node_geometry=node_geometry);require(maximum is not None,'public-command-channel')
                 _copy_public(q,output,name,maximum)
-            admit(output,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap)
+            admit(output,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap,node_geometry=node_geometry)
         except BaseException as retention:
             receipt['status']='failed';receipt['retentionFailure']='bounded-public-admission-failed'
             raw=canonical(receipt)
@@ -1158,15 +1291,16 @@ def main():
     parser.add_argument('--q35-msi-domain',dest='q35',action='store_true',help='fixed seven direct-vector domain/table objects; IRQ gate closed')
     parser.add_argument('--msi-descriptor',action='store_true',help='fixed six descriptor/XArray objects only; IRQ gate closed')
     parser.add_argument('--node-bootstrap',action='store_true',help='one uninstalled Node custody object; funding/retirement/IRQ closed')
+    parser.add_argument('--node-geometry',action='store_true',help='six actual native IRQ geometry objects; no funding or runtime claim')
     parser.add_argument('--baseline-worker',action='store_true')
     parser.add_argument('--recipe',type=Path);parser.add_argument('--kernel-tree',type=Path);parser.add_argument('--config',type=Path)
     args=parser.parse_args()
-    mode_targets(args.classdir,args.classdir_kernfs,args.netdev_directory,args.netdev_layout,args.netdev_post_init,args.constructor_mmio,args.vp_transport,args.msi_context,args.q35,args.msi_descriptor,args.node_bootstrap)
-    require(not ((args.classdir or args.classdir_kernfs or args.netdev_directory or args.netdev_layout or args.netdev_post_init or args.constructor_mmio or args.vp_transport or args.msi_context or args.q35 or args.msi_descriptor or args.node_bootstrap) and args.baseline_worker),'one-private-mode')
+    mode_targets(args.classdir,args.classdir_kernfs,args.netdev_directory,args.netdev_layout,args.netdev_post_init,args.constructor_mmio,args.vp_transport,args.msi_context,args.q35,args.msi_descriptor,args.node_bootstrap,args.node_geometry)
+    require(not ((args.classdir or args.classdir_kernfs or args.netdev_directory or args.netdev_layout or args.netdev_post_init or args.constructor_mmio or args.vp_transport or args.msi_context or args.q35 or args.msi_descriptor or args.node_bootstrap or args.node_geometry) and args.baseline_worker),'one-private-mode')
     if args.admit:
         require(not args.baseline_worker,'one-private-mode')
         try:
-            admit(args.output,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs,netdev_directory=args.netdev_directory,netdev_layout=args.netdev_layout,netdev_post_init=args.netdev_post_init,constructor_mmio=args.constructor_mmio,vp_transport=args.vp_transport,msi_context=args.msi_context,q35=args.q35,msi_descriptor=args.msi_descriptor,node_bootstrap=args.node_bootstrap)
+            admit(args.output,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs,netdev_directory=args.netdev_directory,netdev_layout=args.netdev_layout,netdev_post_init=args.netdev_post_init,constructor_mmio=args.constructor_mmio,vp_transport=args.vp_transport,msi_context=args.msi_context,q35=args.q35,msi_descriptor=args.msi_descriptor,node_bootstrap=args.node_bootstrap,node_geometry=args.node_geometry)
         except BaseException:
             # Fixed fallback only; never upload any rejected directory/glob.
             require(not args.output.is_symlink(),'fallback-output-symlink')
@@ -1193,7 +1327,7 @@ def main():
     elif args.baseline_worker:
         require(args.recipe and args.kernel_tree and args.config,'worker-fixed-inputs')
         baseline_worker(args.recipe,args.kernel_tree,args.config,args.output)
-    else:run(args.output,args.source_commit,args.started,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs,netdev_directory=args.netdev_directory,netdev_layout=args.netdev_layout,netdev_post_init=args.netdev_post_init,constructor_mmio=args.constructor_mmio,vp_transport=args.vp_transport,msi_context=args.msi_context,q35=args.q35,msi_descriptor=args.msi_descriptor,node_bootstrap=args.node_bootstrap)
+    else:run(args.output,args.source_commit,args.started,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs,netdev_directory=args.netdev_directory,netdev_layout=args.netdev_layout,netdev_post_init=args.netdev_post_init,constructor_mmio=args.constructor_mmio,vp_transport=args.vp_transport,msi_context=args.msi_context,q35=args.q35,msi_descriptor=args.msi_descriptor,node_bootstrap=args.node_bootstrap,node_geometry=args.node_geometry)
 
 
 if __name__=='__main__':
