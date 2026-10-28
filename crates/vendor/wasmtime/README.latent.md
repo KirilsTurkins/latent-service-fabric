@@ -631,3 +631,21 @@ free, recovery, quarantine completion or full ActivationBudget/RSS claim follows
 from that control. Tests remain source-only until their finite owning run.
 
 The cumulative patch uses one context line; all source postimages and 250 original source identities remain authenticated.
+
+## Original Store borrowed callback backing
+
+The two actual callback constructors now admit their complete typed Header<F>
+through the same Store NativeMemory before the sole Box. Private Fn vtables
+borrow that header for repeated calls; errors and callback-body unwind do not
+consume the carrier. The event dispatcher first takes the owned callback out of
+the task, calls it through a shared borrow, and reinserts only after success.
+That local owner keeps backing and its original charge alive through reentry.
+
+Final cancellation/drop reuses the qualified physical-Box-first typed helper:
+move the header out of its Box, then drop F while its original ticket remains an
+outer local. Confirmation keeps its ticket outside the unpublished header too.
+None and ZST closures retain the original Box path and two-word/Option shape.
+Four new native controls cover exact layout/refusal, repeated/error calls,
+other-Store-independent cancellation and confirmation/body/destructor unwind.
+They remain source-only until the bounded owning run; transitive captures, full
+ActivationBudget/RSS and whole736/745 are not qualified.
