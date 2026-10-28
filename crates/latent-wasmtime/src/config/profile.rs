@@ -87,7 +87,7 @@ impl WasmtimeConfig {
         if let Some(digest) = self.development_managed_stage_component {
             fields.insert(
                 "development-private-profile".into(),
-                "dotnet-managed-stage-diagnostic-v3".into(),
+                "dotnet-managed-stage-diagnostic-v4".into(),
             );
             fields.insert(
                 "development-private-component".into(),

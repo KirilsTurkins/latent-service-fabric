@@ -228,8 +228,8 @@ def validate_abort_rewrite(value: dict) -> None:
 
 
 # Qualification-only two-scalar port. No default compiler selection uses it.
-STAGE_PROFILE = 'dotnet-managed-stage-diagnostic-v3'
-STAGE_IDENTITY = 'latent:development-dotnet-stage/stage@0.3.0'
+STAGE_PROFILE = 'dotnet-managed-stage-diagnostic-v4'
+STAGE_IDENTITY = 'latent:development-dotnet-stage/stage@0.4.0'
 STAGE_DATA = 'sdk/dotnet-guest/tests/fixtures/root-return/managed-stage'
 STAGE_BASE_CORELIB = 'sha256:bc449bac32313b547de63b4b852f1ff619ca91b22a24cc36f3526fa09df7e348'
 STAGE_LIBRARY_SHA = '406c1c6e0ffe1fc0d271be11c608bb6a39615144311e20fcae41c590de2c4106'
@@ -290,9 +290,9 @@ def stage_private_interface(graph: dict, direction: str) -> bool:
 
 
 def stage_without_private(text: str) -> str:
-    package = re.compile(r'(?m)^package latent:development-dotnet-stage@0\.3\.0 \{\s*'
+    package = re.compile(r'(?m)^package latent:development-dotnet-stage@0\.4\.0 \{\s*'
         r'interface stage \{\s*emit: func\(stage: u32, guard: u32\);\s*\}\s*\}\s*')
-    imported = re.compile(r'(?m)^[ \t]+import latent:development-dotnet-stage/stage@0\.3\.0;\n')
+    imported = re.compile(r'(?m)^[ \t]+import latent:development-dotnet-stage/stage@0\.4\.0;\n')
     if len(package.findall(text)) != 1 or len(imported.findall(text)) != 1:
         raise ValueError('managed-stage-private-source-shape')
     result = package.sub('', imported.sub('', text))
@@ -387,7 +387,7 @@ def stage_binding_source(compiler, source, world, output):
     output.mkdir()
     selected = output/'selected.wit'
     package = read_file(compiler.vendor/STAGE_DATA/'private.wit', 4096).decode()
-    if package != 'package latent:development-dotnet-stage@0.3.0 {\n  interface stage {\n    emit: func(stage: u32, guard: u32);\n  }\n}\n':
+    if package != 'package latent:development-dotnet-stage@0.4.0 {\n  interface stage {\n    emit: func(stage: u32, guard: u32);\n  }\n}\n':
         raise ValueError('managed-stage-private-wit-bytes')
     offset = opening[0].end()
     selected.write_text(original[:offset]+'\n  import '+STAGE_IDENTITY+';'+original[offset:]+'\n'+package, encoding='utf-8', newline='\n')
@@ -498,7 +498,7 @@ def stage_prepare(compiler, project, output):
             or record.get('outputDigest') != identity['digest'] or record.get('cecilDigest') != http_errors.CECIL_DIGEST
             or record.get('originalInstructionsAndHandlersInverseExact') is not True
             or record.get('newAssemblyReferences') != 0 or record.get('newFields') != 3 or record.get('newMethods') != 7
-            or len(record.get('modifiedMethods',{})) != 10 or record.get('maxEvents') != 16
+            or len(record.get('modifiedMethods',{})) != 11 or record.get('maxEvents') != 16
             or record.get('actualWrittenBodiesVerified') is not True
             or record.get('branchNormalization') != {'method':'Finish','originalOffset':8,'originalTargetOffset':81,
                 'originalOpcode':'brfalse.s','selectedOpcode':'brfalse','selectedMethodBytes':155,
@@ -547,7 +547,7 @@ def stage_package_selection(commands, contracts_tool, project, output, files, or
     if selected.replace(insertion,b'',1)!=original:
         raise ValueError('managed-stage-package-world-inverse')
     private_group=read_file(__import__('pathlib').Path(__file__).resolve().parents[2]/STAGE_DATA/'private.wit',4096)
-    package=b'package latent:development-dotnet-stage@0.3.0'
+    package=b'package latent:development-dotnet-stage@0.4.0'
     opening=package+b' {\n'
     if not private_group.startswith(opening) or not private_group.endswith(b'}\n'):
         raise ValueError('managed-stage-package-private-preimage')

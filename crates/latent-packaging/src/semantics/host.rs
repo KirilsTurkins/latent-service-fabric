@@ -4,13 +4,13 @@ use std::collections::{BTreeMap, BTreeSet};
 use wit_parser::{InterfaceId, Resolve};
 
 #[cfg(feature = "development-test-host")]
-pub(super) const MANAGED_STAGE_INTERFACE: &str = "latent:development-dotnet-stage/stage@0.3.0";
+pub(super) const MANAGED_STAGE_INTERFACE: &str = "latent:development-dotnet-stage/stage@0.4.0";
 #[cfg(feature = "development-test-host")]
 const MANAGED_STAGE: HostInterfaceSpec = HostInterfaceSpec {
     interface: MANAGED_STAGE_INTERFACE,
-    package: "latent:development-dotnet-stage@0.3.0",
+    package: "latent:development-dotnet-stage@0.4.0",
     binding: latent_core::HostInterfaceBinding::BuiltIn,
-    wit: "package latent:development-dotnet-stage@0.3.0; interface stage { emit: func(stage: u32, guard: u32); }",
+    wit: "package latent:development-dotnet-stage@0.4.0; interface stage { emit: func(stage: u32, guard: u32); }",
     asynchronous: false,
 };
 pub(super) fn selected_specification(

@@ -199,6 +199,17 @@ internal static class ManagedStageOverlay
             Instruction.Create(OpCodes.Ldc_I4, 0), Instruction.Create(OpCodes.Call, emitGuard));
         Insert(join, close, false, Instruction.Create(OpCodes.Ldc_I4, 24),
             Instruction.Create(OpCodes.Ldc_I4, 0), Instruction.Create(OpCodes.Call, emitGuard));
+        // Preserve the original ReadySource bool beneath the post-call diagnostic arguments.
+        var ready = M("ReadySource");
+        Need(ready.IsStatic && ready.Parameters.Count == 0 && ready.ReturnType.MetadataType == MetadataType.Boolean &&
+            ready.Body.Instructions.Count == 2 && ready.Body.Instructions[1].OpCode == OpCodes.Ret);
+        var readyCall = ready.Body.Instructions[0];
+        Need(readyCall.OpCode == OpCodes.Call && readyCall.Operand is MethodReference readyTarget &&
+            readyTarget.DeclaringType.FullName == "System.Threading.WasiEventLoop" && readyTarget.Name == "LsfManagedWorkReady");
+        Insert(ready, readyCall, true, Instruction.Create(OpCodes.Ldc_I4, 25),
+            Instruction.Create(OpCodes.Ldc_I4, 0), Instruction.Create(OpCodes.Call, emitGuard));
+        Insert(ready, readyCall, false, Instruction.Create(OpCodes.Ldc_I4, 26),
+            Instruction.Create(OpCodes.Ldc_I4, 0), Instruction.Create(OpCodes.Call, emitGuard));
         // Failure-only guards remain visible even when the actual failed owner is null/foreign.
         Guard(M("Enter"), "managed-work-execution-parent", emitGuard, 10);
         Guard(M("BindContext"), "managed-work-context-owner", emitGuard, 11);
@@ -243,7 +254,7 @@ internal static class ManagedStageOverlay
         Need(references.SequenceEqual(module.AssemblyReferences.Select(r => r.FullName)));
         var changed = methods.Where(m => Body(m) != before[m]).ToDictionary(m => m.FullName,
             m => new { before = before[m], after = Body(m), insertedInstructions = Added[m].Count });
-        Need(changed.Count == 10 && NewMethods.Count == 7 && NewFields.Count == 3);
+        Need(changed.Count == 11 && NewMethods.Count == 7 && NewFields.Count == 3);
         var shortBranchesChecked = CheckShortBranches();
         module.Write(args[1]); var selectedHash = Hash(Read(args[1], MaxAssembly));
         // Bind the ACTUAL serialized image, including writer-computed MaxStack.
@@ -258,6 +269,8 @@ internal static class ManagedStageOverlay
         var selectedFinishBytes = writtenMethods[finishName].Body.CodeSize; Need(selectedFinishBytes == 155);
         var joinName = MethodKey(methods.Single(m => m.Name == "JoinAcceptedWork" && m.DeclaringType.FullName == Registry));
         Need(writtenMethods[joinName].Body.CodeSize == 496);
+        var readyName = MethodKey(methods.Single(m => m.Name == "ReadySource" && m.DeclaringType.FullName == Registry));
+        Need(writtenMethods[readyName].Body.CodeSize == 36);
         Need(writtenMethods.Count == plannedMethods.Length && references.SequenceEqual(written.AssemblyReferences.Select(r => r.FullName)));
         var actualBodies = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (var planned in plannedMethods)
@@ -290,7 +303,7 @@ internal static class ManagedStageOverlay
         foreach (var f in NewFields) f.DeclaringType.Fields.Remove(f);
         Need(methods.All(m => Body(m) == before[m]) && fields.SequenceEqual(module.GetTypes().SelectMany(t => t.Fields).Select(f => (f.FullName, f.Attributes, f.Constant))));
         Need(references.SequenceEqual(module.AssemblyReferences.Select(r => r.FullName)));
-        var receipt = JsonSerializer.SerializeToUtf8Bytes(new { profile = "dotnet-managed-stage-diagnostic-v3",
+        var receipt = JsonSerializer.SerializeToUtf8Bytes(new { profile = "dotnet-managed-stage-diagnostic-v4",
             originalDigest = "sha256:" + BaseSha, outputDigest = "sha256:" + selectedHash, cecilDigest = "sha256:" + CecilSha,
             modifiedMethods = actualChanged, actualSerializedBodySetDigest = "sha256:" + actualBodySetDigest,
             actualSerializedMethods = actualBodies.Count, actualWrittenBodiesVerified = true, originalMethodCount = methods.Length, originalInstructionsAndHandlersInverseExact = true,

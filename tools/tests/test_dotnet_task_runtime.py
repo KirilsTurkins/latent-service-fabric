@@ -323,13 +323,13 @@ class TaskStageDiagnosticControls(unittest.TestCase):
         self.assertNotEqual(output,original)
         # Use the actual selected private WIT, not a second mirrored shape.
         private=(ROOT/selected.STAGE_DATA/'private.wit').read_text()
-        self.assertTrue(private.startswith('package latent:development-dotnet-stage@0.3.0 {\n'))
-        self.assertEqual(selected.STAGE_IDENTITY,'latent:development-dotnet-stage/stage@0.3.0')
+        self.assertTrue(private.startswith('package latent:development-dotnet-stage@0.4.0 {\n'))
+        self.assertEqual(selected.STAGE_IDENTITY,'latent:development-dotnet-stage/stage@0.4.0')
         public='package application:fixture;\n\nworld fixture {\n}\n\n'
         full=public.replace('world fixture {\n','world fixture {\n  import '+selected.STAGE_IDENTITY+';\n')+private
         self.assertEqual(selected.stage_without_private(full),public)
         with self.assertRaisesRegex(ValueError,'managed-stage-private-source-shape'):
-            selected.stage_without_private(full.replace('@0.3.0','@0.2.0'))
+            selected.stage_without_private(full.replace('@0.4.0','@0.3.0'))
         # Complete raw bodies survive a refusal BEFORE bindings.json exists;
         # a drift check must refuse without replacing the first raw evidence.
         from tools.dotnet_root_return import retain_managed_stage_failure
@@ -352,7 +352,7 @@ class TaskStageDiagnosticControls(unittest.TestCase):
         from tools.dotnet_root_return import managed_stage_observations
         from tools.phase2_operator_process import WorkflowError
         component='sha256:'+'a'*64
-        rows=[{'profile':'dotnet-managed-stage-diagnostic-v3','component':component,'mode':mode,
+        rows=[{'profile':'dotnet-managed-stage-diagnostic-v4','component':component,'mode':mode,
             'terminalOutcome':outcome,'claims':1,'originalCauseQualified':False,'originalSixCallsQualified':False,
             'fullAc7Qualified':False,'physicalRetirementQualified':False,'nativeAccountingQualified':False}
             for mode,outcome in ((3,'succeeded'),(9,'guest-trap'))]
@@ -363,7 +363,9 @@ class TaskStageDiagnosticControls(unittest.TestCase):
                 ('DOTNET_MANAGED_STAGE ',{'slot':slot,'sequence':2,'stage':22,'guard':0}),
                 ('DOTNET_MANAGED_STAGE ',{'slot':slot,'sequence':3,'stage':23,'guard':0}),
                 ('DOTNET_MANAGED_STAGE ',{'slot':slot,'sequence':4,'stage':24,'guard':0}),
-                ('DOTNET_MANAGED_STAGE_SUMMARY ',{'slot':slot,'attempts':4,'overflow':False,
+                ('DOTNET_MANAGED_STAGE ',{'slot':slot,'sequence':5,'stage':25,'guard':0}),
+                ('DOTNET_MANAGED_STAGE ',{'slot':slot,'sequence':6,'stage':26,'guard':0}),
+                ('DOTNET_MANAGED_STAGE_SUMMARY ',{'slot':slot,'attempts':6,'overflow':False,
                     'transportFailed':False,'inconclusive':False})]
         def encode(records):return ''.join(prefix+json.dumps(row)+'\n' for prefix,row in records).encode()
         actual=managed_stage_observations(stdout,encode(events),component)
@@ -380,15 +382,18 @@ class TaskStageDiagnosticControls(unittest.TestCase):
                 result += [('DOTNET_MANAGED_STAGE_SUMMARY ',{'slot':slot,'attempts':len(stages),
                     'overflow':False,'transportFailed':False,'inconclusive':False})]
             return encode(result)
-        for stages in ((1,22,23,24,19),(1,22,23,24,20),(1,22,23,24,21)):
+        for stages in ((1,22,23,24,25,26,19),(1,22,23,24,25,26,20),(1,22,23,24,25,26,21),
+                (1,22,23,24,25,26,25,26)):
             self.assertFalse(managed_stage_observations(stdout,stream(stages),component)['originalCauseQualified'])
         for stages in ((1,),(1,19,22),(1,22,22),(1,22,23),(1,22,24,23),
                 (1,23,22,24),(1,22,23,23,24),(1,22,23,24,24),(1,22,23,24,25),
-                (1,22,23,24,19,20),(1,22,23,24,20,20),(1,22,23,24,21,19)):
+                (1,22,23,24,19,20),(1,22,23,24,20,20),(1,22,23,24,21,19),
+                (1,22,23,24),(1,22,23,24,26),(1,22,23,24,25,25),(1,22,23,24,25,26,26),
+                (1,22,23,24,25,26,25),(1,22,23,25,26,24),(1,22,23,24,25,26,27)):
             with self.assertRaises(WorkflowError):
                 managed_stage_observations(stdout,stream(stages),component)
         with self.assertRaises(WorkflowError):
-            managed_stage_observations(stdout.replace(b'diagnostic-v3',b'diagnostic-v1'),encode(events),component)
+            managed_stage_observations(stdout.replace(b'diagnostic-v4',b'diagnostic-v1'),encode(events),component)
         rows[1]['originalCauseQualified']=True
         bad=''.join('DOTNET_MANAGED_STAGE_CALL '+json.dumps(row)+'\n' for row in rows).encode()
         with self.assertRaises(WorkflowError):managed_stage_observations(bad,encode(events),component)

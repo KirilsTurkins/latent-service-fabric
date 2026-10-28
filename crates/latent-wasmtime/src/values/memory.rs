@@ -410,7 +410,7 @@ impl ManagedStageState {
             self.overflow = true;
             return false;
         }
-        let known = (guard == 0 && matches!(stage, 1..=9 | 17..=24))
+        let known = (guard == 0 && matches!(stage, 1..=9 | 17..=26))
             || (stage == guard && matches!(guard, 10..=16));
         if !known {
             self.inconclusive = true;
@@ -445,7 +445,7 @@ impl LiftMemory {
         assert_eq!(counter.attempts, 17);
         for (stage, guard) in [
             (0, 0),
-            (25, 0),
+            (27, 0),
             (1, 10),
             (10, 0),
             (16, 15),
@@ -459,7 +459,7 @@ impl LiftMemory {
         for stage in 10..=16 {
             assert!(ManagedStageState::default().accept(stage, stage));
         }
-        for stage in [1, 9, 17, 18, 19, 20, 21, 22, 23, 24] {
+        for stage in [1, 9, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26] {
             assert!(ManagedStageState::default().accept(stage, 0));
         }
         let mut finished = ManagedStageState {

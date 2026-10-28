@@ -78,7 +78,7 @@ def install(directory: Path, wasi_sdk: Path):
 
 # Qualification-only acquisition. The ordinary twelve-adapter installer above
 # remains the standard SDK path; this marker is never INSTALL-COMPLETE.json.
-MANAGED_STAGE_PROFILE = "dotnet-managed-stage-diagnostic-v3"
+MANAGED_STAGE_PROFILE = "dotnet-managed-stage-diagnostic-v4"
 MANAGED_STAGE_PROFILES = ("runtime-managed", "entropy", "wall")
 MANAGED_STAGE_MANIFEST = "MANAGED-STAGE-INSTALL.json"
 MANAGED_STAGE_SOURCE_ROOTS = (
