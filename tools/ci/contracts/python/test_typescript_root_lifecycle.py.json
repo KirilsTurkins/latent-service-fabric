@@ -1,18 +1,18 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "RootLifecycleTests.test_callback_failure_requires_accepted_logging_known_reaped_execution_and_the_required_terminal":
+"storageCases":"guard-keys",
+"guards":{
+"RootLifecycleTests.test_callback_failure_requires_accepted_logging_known_reaped_execution_and_the_required_terminal":
       "8de3c34cab8d333f09d420d41a229145d2beaaca4441515685eadfc75cd256e9",
-    "RootLifecycleTests.test_compiler_failure_cannot_reach_signing_or_claim_execution":
+"RootLifecycleTests.test_compiler_failure_cannot_reach_signing_or_claim_execution":
       "8de3c34cab8d333f09d420d41a229145d2beaaca4441515685eadfc75cd256e9",
-    "RootLifecycleTests.test_source_bound_profile_only_adds_the_declared_log_api_and_narrow_log_budget":
+"RootLifecycleTests.test_source_bound_profile_only_adds_the_declared_log_api_and_narrow_log_budget":
       "8de3c34cab8d333f09d420d41a229145d2beaaca4441515685eadfc75cd256e9"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_typescript_root_lifecycle.py",
-  "reviewReason":"Separate ordinary TypeScript root/accepted-work signed programme: explicit bounded LOG capability, original owner budgets, known reaped results and physical cleanup/fresh state. Three refusal/source controls; all existing workflows/test cases unchanged. No actual signed or whole-ticket claim yet.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "8de3c34cab8d333f09d420d41a229145d2beaaca4441515685eadfc75cd256e9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e7ebe490fdcad4c68d16e590ca46280440eea4050621f1027cdcd05b3b9ab304","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_root_lifecycle.py",
+"reviewReason":"Separate ordinary TypeScript root/accepted-work signed programme: explicit bounded LOG capability, original owner budgets, known reaped results and physical cleanup/fresh state. Three refusal/source controls; all existing workflows/test cases unchanged. No actual signed or whole-ticket claim yet.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"8de3c34cab8d333f09d420d41a229145d2beaaca4441515685eadfc75cd256e9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e7ebe490fdcad4c68d16e590ca46280440eea4050621f1027cdcd05b3b9ab304","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }

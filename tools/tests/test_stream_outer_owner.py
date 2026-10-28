@@ -483,5 +483,39 @@ class TaskZBorrowedCallbackOwner(unittest.TestCase):
             owner.call_memory_result(b'', owner.CALLBACK_CASES[0], _callback_memory='yes')
 
 
+class TaskZZHostMemoryBaselineOwner(unittest.TestCase):
+    def test_exact_eleven_names_and_results_refuse_missing_duplicate_skipped_or_cross_profile(self):
+        cases = owner.HOST_BASELINE_CASES
+        self.assertEqual((len(cases), len(set(cases))), (11, 11))
+        self.assertEqual((len(owner.HOST_BASELINE_STAGES), len(set(owner.HOST_BASELINE_STAGES))), (25, 25))
+        self.assertEqual(owner.HOST_BASELINE_STAGES[10], 'host-baseline-list')
+        self.assertEqual(owner.HOST_BASELINE_STAGES[11:22], tuple(f'private-case-{i}' for i in range(11)))
+        suite = owner.artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'latent_wasmtime',
+            'src/lib.rs', 'host::', frozenset(cases), True)
+        listing = ''.join(f'{case}: test\n' for case in cases).encode() + b'\n11 tests, 0 benchmarks\n'
+        owner.artifacts.validate_listing(listing, suite)
+        for changed in (listing.replace((cases[0] + ': test\n').encode(), b''),
+                listing.replace(cases[0].encode(), cases[1].encode()),
+                listing.replace(cases[0].encode(), b'host::unselected'),
+                listing.replace(b'11 tests', b'12 tests')):
+            with self.assertRaises(owner.artifacts.ArtifactError):
+                owner.artifacts.validate_listing(changed, suite)
+        for case in cases:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.call_memory_result(raw, case, _host_baseline=True)['passed'], 1)
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(b'0 measured', b'1 measured')):
+                with self.assertRaises(ValueError):
+                    owner.call_memory_result(changed, case, _host_baseline=True)
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(raw, case)
+        for flags in ({'_callback_memory': True}, {'_resource_table': True}, {'_call_result_channel': True}):
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(b'', cases[0], _host_baseline=True, **flags)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', cases[0], _host_baseline='yes')
+
+
 if __name__ == '__main__':
     unittest.main()

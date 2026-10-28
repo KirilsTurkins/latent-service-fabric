@@ -1,5 +1,5 @@
 {
-"cases":["RetainedJavaFibersTests.test_exact_public_archive_and_corruption_refusal","RetainedJavaFibersTests.test_origin_allows_unselected_skips_but_requires_the_actual_backend","RetainedJavaFibersTests.test_twelve_real_rows_bind_ids_fresh_stores_budgets_and_retirement"],
+"storageCases":"guard-keys",
 "guards":{
 "RetainedJavaFibersTests.test_exact_public_archive_and_corruption_refusal":
       "6e0910b3852133bcd9de728f01be2efd574fb362e39372aacfa3a907de986242",

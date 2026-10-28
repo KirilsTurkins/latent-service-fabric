@@ -14,12 +14,44 @@ const COMPONENT: &[u8] = include_bytes!("native-store-component.wasm");
 #[derive(Default)]
 pub(super) struct Observations {
     requests: Mutex<Vec<usize>>,
+    allocations: Mutex<Vec<AllocationRow>>,
     before_request: Mutex<Option<(usize, Box<dyn FnOnce(usize) + Send>)>>,
     data_drops: AtomicUsize,
     pub(super) factory_drops: AtomicUsize,
     pub(super) data_charge: AtomicU64,
     factory_charge: AtomicU64,
 }
+// This test-controller record observes the ORIGINAL admission and ticket;
+// it neither changes the byte request nor supplies another payer/credit ledger.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) struct AllocationRow {
+    pub(super) bytes: usize,
+    pub(super) admitted: bool,
+    pub(super) confirmed: bool,
+    pub(super) released: bool,
+}
+struct ObservedAllocation {
+    allocation: Option<Box<dyn wasmtime::NativeAllocation>>,
+    observations: Arc<Observations>,
+    ordinal: usize,
+}
+impl wasmtime::NativeAllocation for ObservedAllocation {
+    fn allocated(&mut self) {
+        self.allocation.as_mut().unwrap().allocated();
+        self.observations.allocations.lock().unwrap()[self.ordinal].confirmed = true;
+    }
+}
+impl Drop for ObservedAllocation {
+    fn drop(&mut self) {
+        // Observe release AFTER the real original ticket has actually dropped.
+        drop(self.allocation.take());
+        self.observations.allocations.lock().unwrap()[self.ordinal].released = true;
+    }
+}
+pub(super) fn allocation_rows(observations: &Observations) -> Vec<AllocationRow> {
+    observations.allocations.lock().unwrap().clone()
+}
+
 impl Observations {
     // Test-controller seam: run once immediately before an actual native
     // reservation. The callback cannot replace or fabricate the admission.
@@ -42,6 +74,16 @@ impl wasmtime::NativeMemory for Factory {
     fn reserve(&self, bytes: usize) -> wasmtime::Result<Box<dyn wasmtime::NativeAllocation>> {
         let ordinal = {
             let mut requests = self.observations.requests.lock().unwrap();
+            self.observations
+                .allocations
+                .lock()
+                .unwrap()
+                .push(AllocationRow {
+                    bytes,
+                    admitted: false,
+                    confirmed: false,
+                    released: false,
+                });
             requests.push(bytes);
             requests.len()
         };
@@ -59,7 +101,13 @@ impl wasmtime::NativeMemory for Factory {
         if let Some((_, callback)) = callback {
             callback(bytes);
         }
-        Ok(crate::native_tables::reserve(&self.budget, bytes)?.unwrap())
+        let allocation = crate::native_tables::reserve(&self.budget, bytes)?.unwrap();
+        self.observations.allocations.lock().unwrap()[ordinal - 1].admitted = true;
+        Ok(Box::new(ObservedAllocation {
+            allocation: Some(allocation),
+            observations: self.observations.clone(),
+            ordinal: ordinal - 1,
+        }))
     }
 }
 impl Drop for Factory {
@@ -416,7 +464,16 @@ async fn actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_
         "LSF_CANCELLED_LIFT_SHARED_BASELINE_V1 headers=2 bytes={} fuel-unchanged=true",
         shared_bytes
     );
+    // Instantiation already left three free table slots with retained paid backing.
     let store_bytes = budget.host_memory_bytes();
+    let before_call = allocation_rows(&observed);
+    let live_bytes = |rows: &[AllocationRow]| {
+        rows.iter()
+            .filter(|row| row.admitted && !row.released)
+            .map(|row| row.bytes as u64 + OWNER)
+            .sum::<u64>()
+    };
+    assert_eq!(store_bytes, factory_bytes() + live_bytes(&before_call));
     let json = serde_json::to_vec(&vec!["x".repeat(8192)]).unwrap();
     let input = crate::values::decode_params_accounted(
         &[wasmtime::component::Type::String],
@@ -450,13 +507,54 @@ async fn actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_
     ));
     drop(input);
     drop(output);
-    assert_eq!(budget.host_memory_bytes(), store_bytes);
+    // The legal post-return is still suspended: GuestTask/GuestThread and
+    // ResourceTable's exact entry backing remain owned by this Store. Their
+    // previously unpaid Boxes are now charged. Temporary call headers retire;
+    // cancellation does not pretend the guest completed or delete its owners.
+    let cancelled = allocation_rows(&observed);
+    assert_eq!(&cancelled[..before_call.len()], before_call.as_slice());
+    let call_rows = &cancelled[before_call.len()..];
+    // prepare_call reserves channel/lower/lift, then GuestTask::new pushes
+    // GuestTask/WaitableSet/GuestThread into the THREE already-free table slots.
+    // queue_call adds its queue owner afterwards. The exact fixture has no
+    // callback/import call: at suspended post-return, lower/lift were consumed,
+    // but task_complete (and its sender send) has NOT run. These four owners,
+    // and ONLY these owners, therefore remain with the original Store.
+    let retained_roles = [
+        (0, "call-result channel sender"),
+        (3, "GuestTask"),
+        (4, "implicit sync WaitableSet"),
+        (5, "GuestThread"),
+    ];
+    assert!(
+        call_rows.len() >= 7,
+        "three prepare, three resources, then queue"
+    );
+    for (index, row) in call_rows.iter().enumerate() {
+        let retained = retained_roles.iter().any(|(slot, _)| *slot == index);
+        assert!(row.admitted && (row.confirmed || row.released));
+        assert_eq!(row.released, !retained, "source call admission {index}");
+    }
+    assert!(call_rows[1].confirmed && call_rows[2].confirmed);
+    let retained_bytes = retained_roles
+        .iter()
+        .map(|(slot, _)| call_rows[*slot].bytes as u64 + OWNER)
+        .sum::<u64>();
+    let cancelled_store_bytes = store_bytes + retained_bytes;
+    assert_eq!(budget.host_memory_bytes(), cancelled_store_bytes);
+    assert!(cancelled_store_bytes > store_bytes);
     let second = store(&engine, &budget, &observed).unwrap();
     let both = budget.host_memory_bytes();
-    assert!(both > store_bytes);
+    assert!(both > cancelled_store_bytes);
     drop(first);
-    assert_eq!(budget.host_memory_bytes(), both - store_bytes);
+    assert!(allocation_rows(&observed)[..cancelled.len()]
+        .iter()
+        .all(|row| !row.admitted || row.released));
+    assert_eq!(budget.host_memory_bytes(), both - cancelled_store_bytes);
     drop(second);
+    assert!(allocation_rows(&observed)
+        .iter()
+        .all(|row| !row.admitted || row.released));
     assert_eq!(budget.host_memory_bytes(), 0);
     assert_eq!(budget.outstanding_reservations(), 0);
 }

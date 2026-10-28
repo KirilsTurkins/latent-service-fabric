@@ -1,18 +1,18 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "RuntimeSemanticsTests.test_compiler_failure_cannot_reach_signing_or_claim_execution":
+"storageCases":"guard-keys",
+"guards":{
+"RuntimeSemanticsTests.test_compiler_failure_cannot_reach_signing_or_claim_execution":
       "4145acb77ff559f4fdb64105086522d519879d6aeb9c452b81867e666489f4ba",
-    "RuntimeSemanticsTests.test_negative_requires_real_known_reaped_execution_and_exact_fuel":
+"RuntimeSemanticsTests.test_negative_requires_real_known_reaped_execution_and_exact_fuel":
       "4145acb77ff559f4fdb64105086522d519879d6aeb9c452b81867e666489f4ba",
-    "RuntimeSemanticsTests.test_project_preserves_normal_profile_and_sdk_while_binding_exact_probe":
+"RuntimeSemanticsTests.test_project_preserves_normal_profile_and_sdk_while_binding_exact_probe":
       "4145acb77ff559f4fdb64105086522d519879d6aeb9c452b81867e666489f4ba"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_typescript_runtime_semantics.py",
-  "reviewReason":"Add a separate additive normal-compiler signed programme for ordinary thenable/microtask/rejection/finally/interval/timer ordering, bounded failure attempts and exact caller fuel containment under original16/16/64 owner limits. Three controls reject false success, guard normal profile/source, and forbid compiler failures from reaching execution; seven unchanged-source fresh Node references and strict TypeScript pass, but actual signed results remain pending and generic traps do not prove callback cause. Preserve all existing programmes and no runtime patch or native rebuild.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "4145acb77ff559f4fdb64105086522d519879d6aeb9c452b81867e666489f4ba":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:0e108d1a460b0b33d55884bcd971c9770f5ff794dde8ab4015fd3ffc04a475ad","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_runtime_semantics.py",
+"reviewReason":"Add a separate additive normal-compiler signed programme for ordinary thenable/microtask/rejection/finally/interval/timer ordering, bounded failure attempts and exact caller fuel containment under original16/16/64 owner limits. Three controls reject false success, guard normal profile/source, and forbid compiler failures from reaching execution; seven unchanged-source fresh Node references and strict TypeScript pass, but actual signed results remain pending and generic traps do not prove callback cause. Preserve all existing programmes and no runtime patch or native rebuild.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"4145acb77ff559f4fdb64105086522d519879d6aeb9c452b81867e666489f4ba":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:0e108d1a460b0b33d55884bcd971c9770f5ff794dde8ab4015fd3ffc04a475ad","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }
