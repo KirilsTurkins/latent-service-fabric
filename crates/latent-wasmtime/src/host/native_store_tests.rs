@@ -464,7 +464,7 @@ async fn actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_
         "LSF_CANCELLED_LIFT_SHARED_BASELINE_V1 headers=2 bytes={} fuel-unchanged=true",
         shared_bytes
     );
-    super::native_stream_outer_tests::warm_transmit_storage(&mut first, &budget, &observed);
+    // Instantiation already left three free table slots with retained paid backing.
     let store_bytes = budget.host_memory_bytes();
     let before_call = allocation_rows(&observed);
     let live_bytes = |rows: &[AllocationRow]| {
