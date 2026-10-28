@@ -1,20 +1,20 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "PinnedArrayTypeWorklistTests.test_exact_source_adds_only_array_graph_seed_and_refuses_unreviewed_preimages":
+"storageCases":"guard-keys",
+"guards":{
+"PinnedArrayTypeWorklistTests.test_exact_source_adds_only_array_graph_seed_and_refuses_unreviewed_preimages":
       "52896579b7d0a4a51581bab3db655fd41a390c2b3064d2c3ff317e4326b2556f",
-    "PinnedArrayTypeWorklistTests.test_missing_type_class_or_control_refuses_before_private_jar_publication":
+"PinnedArrayTypeWorklistTests.test_missing_type_class_or_control_refuses_before_private_jar_publication":
       "52896579b7d0a4a51581bab3db655fd41a390c2b3064d2c3ff317e4326b2556f",
-    "PinnedArrayTypeWorklistTests.test_real_ir_requires_old_scalar_root_and_new_nested_types_with_reference_roots":
+"PinnedArrayTypeWorklistTests.test_real_ir_requires_old_scalar_root_and_new_nested_types_with_reference_roots":
       "52896579b7d0a4a51581bab3db655fd41a390c2b3064d2c3ff317e4326b2556f",
-    "PinnedArrayTypeWorklistTests.test_real_restored_array_control_uses_exact_erased_fiber_return_before_primitive_load":
+"PinnedArrayTypeWorklistTests.test_real_restored_array_control_uses_exact_erased_fiber_return_before_primitive_load":
       "52896579b7d0a4a51581bab3db655fd41a390c2b3064d2c3ff317e4326b2556f"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_java_array_gc_roots.py",
-  "reviewReason":"Retain the three reviewed cases/guards and add the exact erased Fiber.popObject primitive-load regression source/closure control after actual663 IR pass and TimeZone clang refusal.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "52896579b7d0a4a51581bab3db655fd41a390c2b3064d2c3ff317e4326b2556f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:571f17c63d8cff6b1dd187feb7a81d2eb83e1622ebded0b0faa55ec04edcc521","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_java_array_gc_roots.py",
+"reviewReason":"Retain the three reviewed cases/guards and add the exact erased Fiber.popObject primitive-load regression source/closure control after actual663 IR pass and TimeZone clang refusal.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"52896579b7d0a4a51581bab3db655fd41a390c2b3064d2c3ff317e4326b2556f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:571f17c63d8cff6b1dd187feb7a81d2eb83e1622ebded0b0faa55ec04edcc521","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }

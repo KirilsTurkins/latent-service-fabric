@@ -1,28 +1,28 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "RetainedEntropy.test_changed_original_component_package_input_and_native_binary_are_refused":
+"storageCases":"guard-keys",
+"guards":{
+"RetainedEntropy.test_changed_original_component_package_input_and_native_binary_are_refused":
       "df2490c01dc11527a52124ac4483e700f1022c2548de458d8e3f9d24a3047d80",
-    "RetainedEntropy.test_extra_public_greeting_does_not_widen_default_artifact_scope_or_request_limit":
+"RetainedEntropy.test_extra_public_greeting_does_not_widen_default_artifact_scope_or_request_limit":
       "df2490c01dc11527a52124ac4483e700f1022c2548de458d8e3f9d24a3047d80",
-    "RetainedEntropy.test_historical_normal_proof_checks_all_five_packages_and_never_becomes_current":
+"RetainedEntropy.test_historical_normal_proof_checks_all_five_packages_and_never_becomes_current":
       "df2490c01dc11527a52124ac4483e700f1022c2548de458d8e3f9d24a3047d80",
-    "RetainedEntropy.test_manual_cpu_scalar_and_entropy_jobs_are_independent_and_original_deadline_is_unchanged":
+"RetainedEntropy.test_manual_cpu_scalar_and_entropy_jobs_are_independent_and_original_deadline_is_unchanged":
       "df2490c01dc11527a52124ac4483e700f1022c2548de458d8e3f9d24a3047d80",
-    "RetainedEntropy.test_new_host_requires_actual_success_single_default_product_and_stable_source":
+"RetainedEntropy.test_new_host_requires_actual_success_single_default_product_and_stable_source":
       "df2490c01dc11527a52124ac4483e700f1022c2548de458d8e3f9d24a3047d80",
-    "RetainedEntropy.test_sanitized_native_build_restores_debug_zero_and_original_correctness_settings":
+"RetainedEntropy.test_sanitized_native_build_restores_debug_zero_and_original_correctness_settings":
       "df2490c01dc11527a52124ac4483e700f1022c2548de458d8e3f9d24a3047d80",
-    "RetainedEntropy.test_unselected_native_probe_metadata_does_not_expand_the_exact_selected_five":
+"RetainedEntropy.test_unselected_native_probe_metadata_does_not_expand_the_exact_selected_five":
       "df2490c01dc11527a52124ac4483e700f1022c2548de458d8e3f9d24a3047d80",
-    "RetainedEntropy.test_wrong_acquisition_identity_or_missing_normal_greeting_refuses_before_inputs":
+"RetainedEntropy.test_wrong_acquisition_identity_or_missing_normal_greeting_refuses_before_inputs":
       "df2490c01dc11527a52124ac4483e700f1022c2548de458d8e3f9d24a3047d80"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_go_entropy_retained.py",
-  "reviewReason":"Restore explicit debug-zero/nonincremental native correctness profile after sanitized environment; preserve binary and execution bounds, add real command-environment regression and reject changed compiler profile.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "df2490c01dc11527a52124ac4483e700f1022c2548de458d8e3f9d24a3047d80":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:45e5d22c5c667159cdd7f94ea17c9b2f5703f24da3737af16388f791743cb35a","class:setup-sha256:19a5f22b43d800135af95982ef7ce5a14324779a071f6a2df4e9421aab371e26"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_go_entropy_retained.py",
+"reviewReason":"Restore explicit debug-zero/nonincremental native correctness profile after sanitized environment; preserve binary and execution bounds, add real command-environment regression and reject changed compiler profile.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"df2490c01dc11527a52124ac4483e700f1022c2548de458d8e3f9d24a3047d80":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:45e5d22c5c667159cdd7f94ea17c9b2f5703f24da3737af16388f791743cb35a","class:setup-sha256:19a5f22b43d800135af95982ef7ce5a14324779a071f6a2df4e9421aab371e26"],"skipSites":[]}
+}
 }

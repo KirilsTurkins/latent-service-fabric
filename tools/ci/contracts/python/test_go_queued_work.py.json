@@ -1,32 +1,32 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "QueuedWork.test_admission_precedes_publication_and_rolls_back_only_unpublished_task":
+"storageCases":"guard-keys",
+"guards":{
+"QueuedWork.test_admission_precedes_publication_and_rolls_back_only_unpublished_task":
       "e9652d95fc77f2f8f542e695ed18dea64b4abfa6d6bc7e0f49e1b4b2181f32a3",
-    "QueuedWork.test_capture_binds_selected_v6_profile_before_compilation_and_preserves_v5_default":
+"QueuedWork.test_capture_binds_selected_v6_profile_before_compilation_and_preserves_v5_default":
       "e9652d95fc77f2f8f542e695ed18dea64b4abfa6d6bc7e0f49e1b4b2181f32a3",
-    "QueuedWork.test_gc_capacity_is_prepaid_and_retirement_keeps_the_resume_fence":
+"QueuedWork.test_gc_capacity_is_prepaid_and_retirement_keeps_the_resume_fence":
       "e9652d95fc77f2f8f542e695ed18dea64b4abfa6d6bc7e0f49e1b4b2181f32a3",
-    "QueuedWork.test_incomplete_overlay_refuses_before_output":
+"QueuedWork.test_incomplete_overlay_refuses_before_output":
       "e9652d95fc77f2f8f542e695ed18dea64b4abfa6d6bc7e0f49e1b4b2181f32a3",
-    "QueuedWork.test_missing_or_duplicate_hooks_refuse_instead_of_silently_dropping_accounting":
+"QueuedWork.test_missing_or_duplicate_hooks_refuse_instead_of_silently_dropping_accounting":
       "e9652d95fc77f2f8f542e695ed18dea64b4abfa6d6bc7e0f49e1b4b2181f32a3",
-    "QueuedWork.test_normal_project_capture_and_selection_is_explicit":
+"QueuedWork.test_normal_project_capture_and_selection_is_explicit":
       "e9652d95fc77f2f8f542e695ed18dea64b4abfa6d6bc7e0f49e1b4b2181f32a3",
-    "QueuedWork.test_queue_case_oracle_rejects_preentry_failures_wrong_revision_and_early_success":
+"QueuedWork.test_queue_case_oracle_rejects_preentry_failures_wrong_revision_and_early_success":
       "e9652d95fc77f2f8f542e695ed18dea64b4abfa6d6bc7e0f49e1b4b2181f32a3",
-    "QueuedWork.test_queue_identity_survives_park_wake_and_precedes_task_retirement":
+"QueuedWork.test_queue_identity_survives_park_wake_and_precedes_task_retirement":
       "e9652d95fc77f2f8f542e695ed18dea64b4abfa6d6bc7e0f49e1b4b2181f32a3",
-    "QueuedWork.test_queue_only_profile_keeps_other_original_limits_and_rejects_open_selector":
+"QueuedWork.test_queue_only_profile_keeps_other_original_limits_and_rejects_open_selector":
       "e9652d95fc77f2f8f542e695ed18dea64b4abfa6d6bc7e0f49e1b4b2181f32a3",
-    "QueuedWork.test_queue_reports_retain_each_invocation_before_validation_and_retirement":
+"QueuedWork.test_queue_reports_retain_each_invocation_before_validation_and_retirement":
       "e9652d95fc77f2f8f542e695ed18dea64b4abfa6d6bc7e0f49e1b4b2181f32a3"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_go_queued_work.py",
-  "reviewReason":"Add genuine exclusive-create invocation and retirement evidence regression; preserve every prior case and guard",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "e9652d95fc77f2f8f542e695ed18dea64b4abfa6d6bc7e0f49e1b4b2181f32a3":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b72deea1438eabe1735b4331ec87c754d3d6be2c2a6ffd39ec4fd760469b499c","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_go_queued_work.py",
+"reviewReason":"Add genuine exclusive-create invocation and retirement evidence regression; preserve every prior case and guard",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"e9652d95fc77f2f8f542e695ed18dea64b4abfa6d6bc7e0f49e1b4b2181f32a3":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b72deea1438eabe1735b4331ec87c754d3d6be2c2a6ffd39ec4fd760469b499c","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }

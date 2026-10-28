@@ -1,24 +1,24 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "GoNodeStopV7.test_actual_programme_is_only_selected_after_fresh_build_and_explicit_positive_flag":
+"storageCases":"guard-keys",
+"guards":{
+"GoNodeStopV7.test_actual_programme_is_only_selected_after_fresh_build_and_explicit_positive_flag":
       "dd87a0b68c731fa8011938c08b5cc4360e3c65a4ee359735de46aad92c5d074f",
-    "GoNodeStopV7.test_failed_producer_integrity_cannot_reach_compiler_signer_or_node":
+"GoNodeStopV7.test_failed_producer_integrity_cannot_reach_compiler_signer_or_node":
       "dd87a0b68c731fa8011938c08b5cc4360e3c65a4ee359735de46aad92c5d074f",
-    "GoNodeStopV7.test_post_execution_source_drift_retains_failure_instead_of_successful_qualification":
+"GoNodeStopV7.test_post_execution_source_drift_retains_failure_instead_of_successful_qualification":
       "dd87a0b68c731fa8011938c08b5cc4360e3c65a4ee359735de46aad92c5d074f",
-    "GoNodeStopV7.test_production_or_test_native_drift_and_auxiliary_drift_are_not_silently_aliased":
+"GoNodeStopV7.test_production_or_test_native_drift_and_auxiliary_drift_are_not_silently_aliased":
       "dd87a0b68c731fa8011938c08b5cc4360e3c65a4ee359735de46aad92c5d074f",
-    "GoNodeStopV7.test_selection_requires_current_native_and_full_compile_trees_but_not_producer_recipe_equality":
+"GoNodeStopV7.test_selection_requires_current_native_and_full_compile_trees_but_not_producer_recipe_equality":
       "dd87a0b68c731fa8011938c08b5cc4360e3c65a4ee359735de46aad92c5d074f",
-    "GoNodeStopV7.test_unfrozen_actual_producer_pins_refuse_without_network_or_component_build":
+"GoNodeStopV7.test_unfrozen_actual_producer_pins_refuse_without_network_or_component_build":
       "dd87a0b68c731fa8011938c08b5cc4360e3c65a4ee359735de46aad92c5d074f"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_go_node_stop_v7.py",
-  "reviewReason":"Add six controls for unfrozen producer refusal, distinct producer/consumer recipes, exact native and full compile-tree identity, no compilation/signing/node before integrity, explicit positive programme selection and post-run drift failure. These are source controls, not signed execution evidence.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "dd87a0b68c731fa8011938c08b5cc4360e3c65a4ee359735de46aad92c5d074f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:14ad3f590afe82f06e5991175b01bd086c807e14a6c0bd65d9023e6d9be635fa","class:setup-sha256:6cc356f54c8b03c2e94dd7cc919ab416741b2ee4f206219d45776b6d9004ab77"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_go_node_stop_v7.py",
+"reviewReason":"Add six controls for unfrozen producer refusal, distinct producer/consumer recipes, exact native and full compile-tree identity, no compilation/signing/node before integrity, explicit positive programme selection and post-run drift failure. These are source controls, not signed execution evidence.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"dd87a0b68c731fa8011938c08b5cc4360e3c65a4ee359735de46aad92c5d074f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:14ad3f590afe82f06e5991175b01bd086c807e14a6c0bd65d9023e6d9be635fa","class:setup-sha256:6cc356f54c8b03c2e94dd7cc919ab416741b2ee4f206219d45776b6d9004ab77"],"skipSites":[]}
+}
 }

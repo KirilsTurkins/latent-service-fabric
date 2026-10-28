@@ -65,13 +65,56 @@
     }
   },
   "buildInput": {
-    "kind": "prepared-compiler-inputs",
-    "artifactId": 12612367767,
-    "archive": {
-      "bytes": 167429041,
-      "sha256": "593006fad3362dc340959e57392e1379a79bfc2bd8e36c33cbe950d4fed1cc46"
+    "kind": "managed-compiler-custody-v1",
+    "origin": {
+      "originalBuildInput": {
+        "kind": "prepared-compiler-inputs",
+        "artifactId": 12612367767,
+        "archive": {
+          "bytes": 167429041,
+          "sha256": "593006fad3362dc340959e57392e1379a79bfc2bd8e36c33cbe950d4fed1cc46"
+        },
+        "expiresAt": "2026-10-28T20:03:43Z"
+      },
+      "sourceProfile": {
+        "bytes": 3105,
+        "sha256": "0f1d3c02be04e55599ae176156b7859c02d7f0cfa1ded6944b574ef5e86f7900"
+      },
+      "admission": {
+        "bytes": 2544,
+        "sha256": "6035488ccf603c0a75f20e1b099f0e0b1238e34d930b9d7e1625ead1d55f1876"
+      }
     },
-    "expiresAt": "2026-10-28T20:03:43Z"
+    "transport": {
+      "artifactId": 12849964747,
+      "name": "java-compiler-custody-85bd5679c0ff76d72069a4c8d7a7b6a2e37d7e7d-1",
+      "run": 40767047281,
+      "head": "85bd5679c0ff76d72069a4c8d7a7b6a2e37d7e7d",
+      "archive": {
+        "bytes": 256360718,
+        "sha256": "c763d6424fdba1859b415834b0be591d5d583340b6ede6bb2b9d1d29babfe046"
+      },
+      "expiresAt": "2027-01-26T20:51:59Z"
+    },
+    "files": {
+      "managed.zip": {
+        "bytes": 258614047,
+        "sha256": "5d44ceeee596e4452ad91896d9db3832ca328671f2231363678c2bb1ffb934da"
+      },
+      "managed-inputs.json": {
+        "bytes": 2108552,
+        "sha256": "0f836458399c6c13956c19cd48cb926b0cdd545a26d3515d94e16f3ffa6611e3"
+      },
+      "source-managed-inputs.json": {
+        "bytes": 2252810,
+        "sha256": "cb6ccafdee8286dc059926c6a61b63288e300103595622b6d8c2281126b190bd"
+      },
+      "custody.json": {
+        "bytes": 5896,
+        "sha256": "7891e97e1098c5759cb43885d134c04066795a015a43fa40713d2a2cae3a30bd"
+      }
+    },
+    "compilerOnlyInventory": "sha256:ad126dc217c67196e0f87be875254bab853374524ba770e250e1b0db0cb09f52"
   },
   "notices": {
     "NOTICE": {

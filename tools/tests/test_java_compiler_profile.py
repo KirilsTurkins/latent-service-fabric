@@ -289,5 +289,134 @@ class RetainedJavaCompilerCustody(unittest.TestCase):
                 self.assertFalse((root / 'result').exists())
 
 
+class SelectedJavaCompilerCustody(unittest.TestCase):
+    def fixture(self, root):
+        import copy
+        from tools.java_guest import compiler_profile_distribution as delivery
+        from tools.java_guest.llvm_private_store_distribution import MANIFEST
+        value = NormalJavaCompilerProfile().fixture(root/'linked', root/'managed')
+        old = profile.encoded(value)
+        provenance = root/'provenance'; provenance.mkdir()
+        bodies = {name: name.encode() for name in profile.NOTICES}
+        bodies.update({'result.json': b'fixture producer', 'public-compiler.json': b'fixture public',
+            MANIFEST: b'fixture manifest', 'source.json': b'{}', 'commands.json': b'[]',
+            'units.xml': b'<testsuite/>', 'lit.xml': b'<testsuite/>'})
+        with mock.patch.object(profile, 'read', return_value=old):
+            linked = profile.admit(root/'linked')[1]
+            admitted = json.loads(profile.admit(root/'managed')[1])
+        bodies['normal-compiler-profile.json'] = linked
+        for name, raw in bodies.items(): (provenance/name).write_bytes(raw)
+        original = root/'original'; original.mkdir()
+        extra = root/'jdk'; extra.mkdir(); (extra/'extra').write_bytes(b'fully recorded extra tool')
+        distribution.pack({'wasi-sdk': root/'managed', 'java-compiler-provenance': provenance, 'jdk': extra}, original)
+        selected = root/'input'; selected.mkdir()
+        inventory = distribution.pack({'wasi-sdk': root/'managed', 'java-compiler-provenance': provenance}, selected)
+        full = (original/'managed-inputs.json').read_bytes()
+        (selected/'source-managed-inputs.json').write_bytes(full)
+        custody = copy.deepcopy(delivery.CUSTODY)
+        custody['managed']['managed-inputs.json'] = profile.identity(full)
+        custody['compilerInventory'] = inventory['identity']
+        receipt = {'schemaVersion': 'latent.java.compiler-custody.v1',
+            'origin': {'producer': value['producer'], 'qualification': value['qualification'],
+                'originalBuildInput': value['buildInput'], 'sourceProfile': profile.identity(old)},
+            'sourceCustody': custody, 'recoverySource': {name: profile.identity(b'fixture source') for name in (
+                'tools/java_guest/compiler_profile_distribution.py', '.github/workflows/developer-tools.yml')},
+            'installed': admitted, 'managedArchive': profile.identity((selected/'managed.zip').read_bytes()),
+            'managedInputs': profile.identity((selected/'managed-inputs.json').read_bytes()),
+            'sourceManagedInputs': profile.identity(full), 'compilerOnlyInventory': inventory['identity'],
+            **{name: False for name in ('compilerExecuted', 'runtimeQualified', 'compilerRebuilt',
+                                      'originalPreparedZipReconstructed', 'releasePublished')}}
+        (selected/'custody.json').write_bytes(profile.encoded(receipt))
+        files = {name: profile.identity((selected/name).read_bytes()) for name in (
+            'managed.zip', 'managed-inputs.json', 'source-managed-inputs.json', 'custody.json')}
+        value['buildInput'] = {'kind': 'managed-compiler-custody-v1',
+            'origin': {'originalBuildInput': value['buildInput'], 'sourceProfile': profile.identity(old),
+                       'admission': profile.identity(linked)},
+            'transport': {'artifactId': 7, 'name': 'java-compiler-custody-'+'d'*40+'-1', 'run': 8,
+                'head': 'd'*40, 'archive': profile.identity(b'fixture transport'),
+                'expiresAt': '2027-01-26T20:51:59Z'},
+            'files': files, 'compilerOnlyInventory': inventory['identity']}
+        return value, selected, custody, linked
+
+    def test_new_transport_requires_complete_pins_and_the_exact_original_producer(self):
+        import copy
+        with tempfile.TemporaryDirectory() as folder:
+            value, _source, _custody, _linked = self.fixture(Path(folder))
+            self.assertEqual(profile._source_pin(profile.encoded(value)), value)
+            variants = []
+            wrong = copy.deepcopy(value); wrong['buildInput']['origin']['originalBuildInput']['artifactId'] = 99
+            variants.append(wrong)
+            wrong = copy.deepcopy(value); del wrong['buildInput']['files']['custody.json']; variants.append(wrong)
+            wrong = copy.deepcopy(value); wrong['buildInput']['transport']['head'] = 'e'*40; variants.append(wrong)
+            wrong = copy.deepcopy(value); wrong['buildInput']['unexpected'] = True; variants.append(wrong)
+            for variant in variants:
+                with self.assertRaisesRegex(ValueError, 'managed-custody'):
+                    profile._source_pin(profile.encoded(variant))
+
+    def test_selected_four_file_cache_refuses_tampering_and_never_falls_back_to_old_origin(self):
+        import os
+        from tools.java_guest import compiler_profile_distribution as delivery, llvm_private_store_inputs as inputs
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder); value, source, _custody, _linked = self.fixture(root)
+            cache = root/'cache'
+            with mock.patch.object(profile, 'read', return_value=profile.encoded(value)), \
+                    mock.patch.dict(os.environ, {'LSF_DEV_COMPILER_CACHE': str(cache),
+                        'LSF_DEV_JAVA_COMPILER_INPUT': str(source)}), mock.patch.object(inputs, '_response') as api:
+                delivery.acquire(root/'first', '')
+                self.assertEqual({p.name for p in (root/'first').iterdir()}, set(value['buildInput']['files']))
+                os.environ['LSF_DEV_JAVA_COMPILER_INPUT'] = ''
+                delivery.acquire(root/'warm', '')
+                api.assert_not_called()
+                records = list(value['buildInput']['files'].values())
+                corrupt = cache/'java-prepared'/(records[0]['sha256']+'.archive')
+                corrupt.write_bytes(b'wrong')
+                with self.assertRaisesRegex(ValueError, 'prepared-cache-digest'):
+                    delivery.acquire(root/'tampered', '')
+                corrupt.unlink()
+                with self.assertRaisesRegex(ValueError, 'custody-token'):
+                    delivery.acquire(root/'partial', '')
+                api.assert_not_called()
+
+    def test_managed_decode_keeps_the_old_origin_bytes_separate_from_current_admission(self):
+        import time
+        from tools.java_guest import compiler_profile_distribution as delivery
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder); value, source, custody, linked = self.fixture(root)
+            decoded = root/'decoded'; decoded.mkdir()
+            with mock.patch.object(profile, 'read', return_value=profile.encoded(value)), \
+                    mock.patch.object(delivery, 'CUSTODY', custody):
+                sdk, provenance = delivery.extract(source, decoded, _deadline=time.monotonic()+30)
+                self.assertEqual((provenance/'normal-compiler-profile.json').read_bytes(), linked)
+                current = profile.admit(sdk)[1]
+                self.assertEqual(json.loads(current)['representation'], 'managed')
+                self.assertNotEqual(json.loads(current)['sourceProfile'], json.loads(linked)['sourceProfile'])
+                self.assertEqual(json.loads(current)['producer'], json.loads(linked)['producer'])
+                original = json.loads(linked); original['producer']['head'] = 'e'*40
+                (provenance/'normal-compiler-profile.json').write_bytes(profile.encoded(original))
+                with self.assertRaisesRegex(ValueError, 'custody-original-profile-digest'):
+                    delivery._custody_provenance(provenance, current, value, time.monotonic()+5)
+
+    def test_fixed_transport_metadata_and_original_deadline_dominate_blob_access(self):
+        import time
+        from tools.java_guest import compiler_profile_distribution as delivery, llvm_private_store_inputs as inputs
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder); value, _source, _custody, _linked = self.fixture(root)
+            transport = value['buildInput']['transport']
+            selected = {'artifact': transport['artifactId'], 'name': transport['name'], 'run': transport['run'],
+                'head': transport['head'], 'archive': transport['archive'], 'expiresAt': transport['expiresAt']}
+            metadata = {'id': selected['artifact'], 'name': selected['name'], 'expired': False,
+                'size_in_bytes': selected['archive']['bytes'], 'digest': 'sha256:'+selected['archive']['sha256'],
+                'expires_at': selected['expiresAt'], 'workflow_run': {'head_sha': selected['head'], 'id': 99}}
+            with mock.patch.object(inputs, '_response', return_value=profile.encoded(metadata)), \
+                    mock.patch.object(delivery.urllib.request, 'build_opener') as blob:
+                with self.assertRaisesRegex(ValueError, 'custody-origin'):
+                    delivery._custody_download(root, 'fixture token', time.monotonic()+5, selected=selected)
+                blob.assert_not_called()
+            with mock.patch.object(inputs, '_response') as api:
+                with self.assertRaisesRegex(ValueError, 'custody-deadline'):
+                    delivery._custody_download(root, 'fixture token', time.monotonic()-1, selected=selected)
+                api.assert_not_called()
+
+
 if __name__ == '__main__':
     unittest.main()

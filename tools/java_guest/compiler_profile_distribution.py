@@ -66,7 +66,7 @@ def acquire(output: Path, token: str, *, _deadline: float | None = None) -> None
     output.mkdir(mode=0o700)
     deadline = min(time.monotonic() + 180, _deadline or float('inf'))
     producer, qualification = value['producer'], value['qualification']
-    records = (('producer.zip', producer['archive']), ('public-compiler.json', qualification['publicReceipt']))
+    records = _input_records(value)
     cache_root = os.environ.get('LSF_DEV_COMPILER_CACHE', '')
     cache = Path(cache_root) / 'java-prepared' if cache_root else None
     if cache is not None:
@@ -96,6 +96,10 @@ def acquire(output: Path, token: str, *, _deadline: float | None = None) -> None
             for name, expected in records:
                 _copy_fixed(cache, expected['sha256'] + '.archive', output / name, expected, deadline)
             return
+    if _managed_input(value):
+        _acquire_managed_input(output, token, value, deadline)
+        _save_cache(output, cache, records, deadline)
+        return
     # No cache is an availability guarantee. A cold build needs either the
     # exact archived prepared-input pair or a still-available original origin.
     profile.need(type(token) is str and 0 < len(token) <= 4096,
@@ -166,6 +170,13 @@ def _check_input(source: Path, deadline: float) -> dict:
     from tools.java_guest import llvm_private_store_distribution as carrier
     from tools.rust_capsule_project import read_file
     profile.need(source.is_dir() and not source.is_symlink() and not source.is_junction(), 'prepared-input-root')
+    if _managed_input(value):
+        profile.need({path.name for path in source.iterdir()} == {name for name, _ in _input_records(value)},
+                     'managed-input-file-set')
+        for name, expected in _input_records(value):
+            profile.need(carrier.file_identity(source, name, expected['bytes'], deadline) == expected,
+                         'managed-input-file-digest')
+        return value
     profile.need(carrier.file_identity(source, 'producer.zip', carrier.UPLOAD_BYTES, deadline)
                  == value['producer']['archive'], 'prepared-producer-archive')
     profile.need(profile.identity(read_file(source / 'public-compiler.json', 8 * 1024 ** 2))
@@ -184,6 +195,8 @@ def extract(source: Path, directory: Path, *, _deadline: float | None = None) ->
         raise ValueError('java-prepared-extract-parent-deadline')
     deadline = min(time.monotonic() + 600, _deadline or float('inf'))
     value = _check_input(source, deadline)
+    if _managed_input(value):
+        return _extract_managed_input(source, directory, value, deadline)
     from tools.java_guest import llvm_private_store_inputs as inputs
     from tools.java_guest import llvm_private_store_distribution as carrier
     from tools.rust_capsule_project import read_file
@@ -244,8 +257,13 @@ def product(source: Path, directory: Path, output: Path, *, _deadline: float | N
     sdk, provenance = extract(source, decoded, **extract_options)
     value = profile.pin()
     profile.need(value is not None, 'unqualified-product')
-    linked = profile.admit(sdk)
-    profile.need(linked is not None and json.loads(linked[1])['representation'] == 'linked', 'linked-product')
+    input_admission = profile.admit(sdk)
+    if _managed_input(value):
+        profile.need(input_admission is not None and json.loads(input_admission[1])['representation'] == 'managed',
+                     'managed-input-product')
+    else:
+        linked = input_admission
+        profile.need(linked is not None and json.loads(linked[1])['representation'] == 'linked', 'linked-product')
     payload = directory / 'payload'
     (payload / 'sdk').mkdir(mode=0o700, parents=True)
     check()
@@ -280,7 +298,10 @@ def product(source: Path, directory: Path, output: Path, *, _deadline: float | N
     profile.need(smoke.returncode == 0 and not smoke.stderr, 'installed-recipe-admission')
     profile.need(json.loads(smoke.stdout) == {'version': version, 'admission': admitted},
                  'installed-recipe-admission-identity')
-    public = json.loads(read_file(source / 'public-compiler.json', 8 * 1024 ** 2))
+    if _managed_input(value):
+        public = json.loads(read_file(provenance / 'public-compiler.json', 8 * 1024 ** 2))
+    else:
+        public = json.loads(read_file(source / 'public-compiler.json', 8 * 1024 ** 2))
     profile.need(public['componentDigest'] == 'sha256:' + value['qualification']['publicComponent']['sha256'],
                  'public-product-component')
     # Match the *actual command-construction AST* to the qualified source pin.
@@ -294,9 +315,22 @@ def product(source: Path, directory: Path, output: Path, *, _deadline: float | N
     command_shape = profile.identity(ast.dump(clang_calls[0], include_attributes=False).encode())
     profile.need(command_shape == value['qualification']['normalCommandShape'], 'normal-clang-shape')
     profile.recheck(compiler.wasi_compiler_profile)
+    if _managed_input(value):
+        profile.need(inventory == json.loads(read_file(source / 'managed-inputs.json', installer.MAX_DOCUMENT)),
+                     'managed-product-inventory')
+        _custody_provenance(installed / 'java-compiler-provenance', compiler.wasi_compiler_profile, value, deadline)
+        profile.need(value == _check_input(source, deadline), 'managed-product-input-drift')
     check()
-    result = {'schemaVersion': 'latent.java.prepared-compiler-product.v1',
-        'sourceProfile': profile.identity(profile.read()), 'linked': json.loads(linked[1]),
+    if _managed_input(value):
+        result = {'schemaVersion': 'latent.java.managed-compiler-product.v1',
+            'sourceProfile': profile.identity(profile.read()), 'inputAdmission': json.loads(input_admission[1]),
+            'originAdmission': json.loads(read_file(provenance / 'normal-compiler-profile.json', profile.MAXIMUM)),
+            'custody': {'transport': value['buildInput']['transport'], 'files': value['buildInput']['files'],
+                       'receipt': json.loads(read_file(source / 'custody.json', profile.MAXIMUM))}}
+    else:
+        result = {'schemaVersion': 'latent.java.prepared-compiler-product.v1',
+            'sourceProfile': profile.identity(profile.read()), 'linked': json.loads(linked[1])}
+    result.update({
         'installed': admitted, 'normalCompilerVersion': version, 'driver': driver,
         'driverIdentity': file_identity(compiler.wasi_sdk, driver, 128 * 1024 ** 2, deadline),
         'normalCommandShape': command_shape, 'managedInventory': inventory,
@@ -305,7 +339,7 @@ def product(source: Path, directory: Path, output: Path, *, _deadline: float | N
         'managedArchive': file_identity(payload / 'sdk', 'managed.zip', installer.MAX_BYTES, deadline),
         'managedInputs': profile.identity(read_file(payload / 'sdk/managed-inputs.json', installer.MAX_DOCUMENT)),
         'scope': 'existing compiler pack/unpack and normal admission; compiler subproduct only',
-        'compilerExecuted': False, 'runtimeQualified': False, 'releasePublished': False}
+        'compilerExecuted': False, 'runtimeQualified': False, 'releasePublished': False})
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(profile.encoded(result))
     return installed / 'wasi-sdk'
@@ -331,21 +365,120 @@ CUSTODY = {
 }
 
 
-def _custody_download(root: Path, token: str, deadline: float) -> Path:
+def _managed_input(value: dict) -> bool:
+    return value['buildInput']['kind'] == 'managed-compiler-custody-v1'
+
+
+def _input_records(value: dict) -> tuple:
+    if _managed_input(value):
+        return tuple((name, value['buildInput']['files'][name]) for name in (
+            'managed.zip', 'managed-inputs.json', 'source-managed-inputs.json', 'custody.json'))
+    return (('producer.zip', value['producer']['archive']),
+            ('public-compiler.json', value['qualification']['publicReceipt']))
+
+
+def _origin_admission(admitted: bytes, value: dict) -> dict:
+    record = json.loads(admitted)
+    record.update(representation='linked', compilerInventory=value['inventories']['linked'])
+    if _managed_input(value):
+        origin = value['buildInput']['origin']
+        record.update(buildInput=origin['originalBuildInput'], sourceProfile=origin['sourceProfile'])
+    return record
+
+
+def _acquire_managed_input(output: Path, token: str, value: dict, deadline: float) -> None:
+    import tempfile
+    transport = value['buildInput']['transport']
+    selected = {'artifact': transport['artifactId'], 'name': transport['name'],
+                'run': transport['run'], 'head': transport['head'], 'archive': transport['archive'],
+                'expiresAt': transport['expiresAt']}
+    with tempfile.TemporaryDirectory(prefix='latent-java-custody-input-', dir=output.parent) as temporary:
+        root = Path(temporary)
+        archive = _custody_download(root, token, deadline, selected=selected)
+        _custody_outer(archive, root / 'verified', dict(_input_records(value)), deadline)
+        for name, expected in _input_records(value):
+            _copy_fixed(root / 'verified', name, output / name, expected, deadline)
+
+
+def _extract_managed_input(source: Path, directory: Path, value: dict, deadline: float) -> tuple[Path, Path]:
+    from tools import dev_managed_tools as installer
+    from tools.dev_workflow.common import decode, digest, encode
+    from tools.rust_capsule_project import read_file
+
+    def check():
+        profile.need(time.monotonic() < deadline, 'managed-input-deadline')
+
+    profile.need(directory.is_dir() and not directory.is_symlink() and not directory.is_junction()
+                 and not any(directory.iterdir()), 'managed-input-fresh-decode')
+    supplied = value['buildInput']
+    policy = profile.read()
+    profile.need(profile._source_pin(policy) == value, 'managed-input-policy')
+    original_raw = read_file(source / 'source-managed-inputs.json', installer.MAX_DOCUMENT)
+    profile.need(profile.identity(original_raw) == CUSTODY['managed']['managed-inputs.json'],
+                 'managed-input-original-manifest')
+    original = installer.manifest(decode(original_raw, installer.MAX_DOCUMENT,
+                                          maximum_items=installer.MAX_FILES * 5 + 8))
+    filtered = {'schemaVersion': original['schemaVersion'], 'files': [row for row in original['files']
+        if row['path'].startswith(('wasi-sdk/', 'java-compiler-provenance/'))]}
+    filtered['identity'] = digest(encode(filtered))
+    selected = installer.manifest(decode(read_file(source / 'managed-inputs.json', installer.MAX_DOCUMENT),
+        installer.MAX_DOCUMENT, maximum_items=installer.MAX_FILES * 5 + 8))
+    profile.need(selected == filtered and selected['identity'] == supplied['compilerOnlyInventory']
+                 == CUSTODY['compilerInventory'], 'managed-input-complete-inventory')
+    installed = installer.unpack(source, directory / 'managed', check)
+    sdk, provenance = installed / 'wasi-sdk', installed / 'java-compiler-provenance'
+    admitted = profile.admit(sdk)
+    profile.need(admitted is not None and json.loads(admitted[1])['representation'] == 'managed',
+                 'managed-input-sdk-admission')
+    _custody_provenance(provenance, admitted[1], value, deadline)
+    receipt = decode(read_file(source / 'custody.json', profile.MAXIMUM), profile.MAXIMUM)
+    profile.need(set(receipt) == {'schemaVersion', 'origin', 'sourceCustody', 'recoverySource', 'installed',
+        'managedArchive', 'managedInputs', 'sourceManagedInputs', 'compilerOnlyInventory',
+        'compilerExecuted', 'runtimeQualified', 'compilerRebuilt', 'originalPreparedZipReconstructed',
+        'releasePublished'} and receipt['schemaVersion'] == 'latent.java.compiler-custody.v1',
+        'managed-input-custody-schema')
+    recovery_source = receipt['recoverySource']
+    profile.need(type(recovery_source) is dict and set(recovery_source) == {
+        'tools/java_guest/compiler_profile_distribution.py', '.github/workflows/developer-tools.yml'},
+        'managed-input-recovery-source')
+    for identity in recovery_source.values():
+        profile.digest_row(identity, 4 * 1024 ** 2)
+    expected = _origin_admission(admitted[1], value)
+    expected.update(representation='managed', compilerInventory=value['inventories']['managed'])
+    profile.need(receipt['origin'] == {'producer': value['producer'], 'qualification': value['qualification'],
+        'originalBuildInput': supplied['origin']['originalBuildInput'],
+        'sourceProfile': supplied['origin']['sourceProfile']}
+        and receipt['installed'] == expected and receipt['sourceCustody'] == CUSTODY
+        and receipt['managedArchive'] == supplied['files']['managed.zip']
+        and receipt['managedInputs'] == supplied['files']['managed-inputs.json']
+        and receipt['sourceManagedInputs'] == supplied['files']['source-managed-inputs.json']
+        and receipt['compilerOnlyInventory'] == supplied['compilerOnlyInventory']
+        and all(receipt[name] is False for name in ('compilerExecuted', 'runtimeQualified', 'compilerRebuilt',
+            'originalPreparedZipReconstructed', 'releasePublished')), 'managed-input-custody-origin')
+    profile.need(profile.read() == policy and value == _check_input(source, deadline),
+                 'managed-input-policy-drift')
+    check()
+    return sdk, provenance
+
+
+def _custody_download(root: Path, token: str, deadline: float, *, selected: dict | None = None) -> Path:
+    selected = CUSTODY if selected is None else selected
+    profile.need(time.monotonic() < deadline, 'custody-deadline')
     from tools.java_guest import llvm_private_store_inputs as inputs
     profile.need(type(token) is str and 0 < len(token) <= 4096, 'custody-token')
     base = ('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/artifacts/'
-            + str(CUSTODY['artifact']))
+            + str(selected['artifact']))
     headers = {'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json',
                'Cache-Control': 'no-cache'}
     metadata = json.loads(inputs._response(urllib.request.Request(base, headers=headers), deadline,
                                           maximum=4 * 1024 ** 2))
-    profile.need(metadata.get('id') == CUSTODY['artifact'] and metadata.get('name') == CUSTODY['name']
+    profile.need(metadata.get('id') == selected['artifact'] and metadata.get('name') == selected['name']
                  and metadata.get('expired') is False
-                 and metadata.get('size_in_bytes') == CUSTODY['archive']['bytes']
-                 and metadata.get('digest') == 'sha256:' + CUSTODY['archive']['sha256']
-                 and metadata.get('workflow_run', {}).get('head_sha') == CUSTODY['head']
-                 and metadata.get('workflow_run', {}).get('id') == CUSTODY['run'], 'custody-origin')
+                 and metadata.get('size_in_bytes') == selected['archive']['bytes']
+                 and metadata.get('digest') == 'sha256:' + selected['archive']['sha256']
+                 and metadata.get('workflow_run', {}).get('head_sha') == selected['head']
+                 and metadata.get('workflow_run', {}).get('id') == selected['run']
+                 and ('expiresAt' not in selected or metadata.get('expires_at') == selected['expiresAt']), 'custody-origin')
     try:
         response = urllib.request.build_opener(inputs.NoRedirect).open(
             urllib.request.Request(base + '/zip', headers=headers),
@@ -371,10 +504,10 @@ def _custody_download(root: Path, token: str, deadline: float) -> Path:
         while block := incoming.read1(65536):
             profile.need(time.monotonic() < deadline, 'custody-deadline')
             count += len(block)
-            profile.need(count <= CUSTODY['archive']['bytes'], 'custody-byte-limit')
+            profile.need(count <= selected['archive']['bytes'], 'custody-byte-limit')
             checksum.update(block)
             output.write(block)
-    profile.need({'bytes': count, 'sha256': checksum.hexdigest()} == CUSTODY['archive'], 'custody-digest')
+    profile.need({'bytes': count, 'sha256': checksum.hexdigest()} == selected['archive'], 'custody-digest')
     target.chmod(0o600)
     return target
 
@@ -414,8 +547,11 @@ def _custody_provenance(root: Path, admitted: bytes, value: dict, deadline: floa
                            'public-compiler.json': value['qualification']['publicReceipt'],
                            MANIFEST: value['manifest']}.items():
         profile.need(file_identity(root, name, expected['bytes'], deadline) == expected, 'custody-provenance-digest')
-    record = json.loads(admitted)
-    record.update(representation='linked', compilerInventory=value['inventories']['linked'])
+    record = _origin_admission(admitted, value)
+    if _managed_input(value):
+        expected = value['buildInput']['origin']['admission']
+        profile.need(file_identity(root, 'normal-compiler-profile.json', profile.MAXIMUM, deadline) == expected,
+                     'custody-original-profile-digest')
     raw = (root / 'normal-compiler-profile.json').read_bytes()
     profile.need(len(raw) <= profile.MAXIMUM and json.loads(raw) == record, 'custody-original-profile')
 
@@ -487,9 +623,13 @@ def recover_custody(root: Path, output: Path, token: str) -> None:
     profile.need(profile.read() == source_profile, 'custody-profile-drift')
     profile.need({name: file_identity(profile.ROOT, name, 4 * 1024 ** 2, deadline) for name in source_names}
                  == recovery_source, 'custody-recovery-source-drift')
+    original_input, original_source = value['buildInput'], profile.identity(source_profile)
+    if _managed_input(value):
+        original_input = value['buildInput']['origin']['originalBuildInput']
+        original_source = value['buildInput']['origin']['sourceProfile']
     receipt = {'schemaVersion': 'latent.java.compiler-custody.v1',
         'origin': {'producer': value['producer'], 'qualification': value['qualification'],
-                   'originalBuildInput': value['buildInput'], 'sourceProfile': profile.identity(source_profile)},
+                   'originalBuildInput': original_input, 'sourceProfile': original_source},
         'sourceCustody': CUSTODY, 'recoverySource': recovery_source, 'installed': json.loads(readmitted[1]),
         'managedArchive': file_identity(output, 'managed.zip', installer.MAX_BYTES, deadline),
         'managedInputs': file_identity(output, 'managed-inputs.json', installer.MAX_DOCUMENT, deadline),

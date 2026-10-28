@@ -1,59 +1,59 @@
 {
-  "storageCases":"guard-keys",
-  "guardDefinitions":{
-    "aebf67e9e2719dc9a57bd3fa26e61be5ede46514c378a447d214886e1c837eac":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c0a6e432772866801663371fc14c6d8a001128945664157d2cc14b38f73841ff","class:setup-sha256:ac3c115cabcdcbc9cb39db27fd64363ab2f19a27a7e2e86e77c4f2c17088228b"],"skipSites":[]},
-    "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c0a6e432772866801663371fc14c6d8a001128945664157d2cc14b38f73841ff","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  },
-  "guards":{
-    "Phase2ResourceTests.test_approximate_kernel_high_water_rss_can_fall_one_page_without_rewriting":
+"storageCases":"guard-keys",
+"guardDefinitions":{
+"aebf67e9e2719dc9a57bd3fa26e61be5ede46514c378a447d214886e1c837eac":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c0a6e432772866801663371fc14c6d8a001128945664157d2cc14b38f73841ff","class:setup-sha256:ac3c115cabcdcbc9cb39db27fd64363ab2f19a27a7e2e86e77c4f2c17088228b"],"skipSites":[]},
+"bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c0a6e432772866801663371fc14c6d8a001128945664157d2cc14b38f73841ff","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+},
+"guards":{
+"Phase2ResourceTests.test_approximate_kernel_high_water_rss_can_fall_one_page_without_rewriting":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_audit_capacity_row_preserves_unknown_liveness_and_frozen_limits":
+"Phase2ResourceTests.test_audit_capacity_row_preserves_unknown_liveness_and_frozen_limits":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_audit_topology_addition_does_not_admit_duplicate_or_arbitrary_rows":
+"Phase2ResourceTests.test_audit_topology_addition_does_not_admit_duplicate_or_arbitrary_rows":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_consistently_missing_fixed_owner_rows_cannot_fake_complete_topology":
+"Phase2ResourceTests.test_consistently_missing_fixed_owner_rows_cannot_fake_complete_topology":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_duplicate_or_reordered_os_observations_and_counter_regression_fail":
+"Phase2ResourceTests.test_duplicate_or_reordered_os_observations_and_counter_regression_fail":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_exact_profile_is_frozen_and_retained_config_excludes_token":
+"Phase2ResourceTests.test_exact_profile_is_frozen_and_retained_config_excludes_token":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_fixed_load_sampler_is_recorded_without_hiding_other_descriptor_growth":
+"Phase2ResourceTests.test_fixed_load_sampler_is_recorded_without_hiding_other_descriptor_growth":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_fixture_inventory_is_bounded_and_compares_exact_bytes":
+"Phase2ResourceTests.test_fixture_inventory_is_bounded_and_compares_exact_bytes":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_missing_sample_wrong_phase_and_wrong_component_fail":
+"Phase2ResourceTests.test_missing_sample_wrong_phase_and_wrong_component_fail":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_only_stable_read_only_exact_psi_descriptor_is_identified":
+"Phase2ResourceTests.test_only_stable_read_only_exact_psi_descriptor_is_identified":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_os_growth_process_replacement_and_extra_compilation_fail":
+"Phase2ResourceTests.test_os_growth_process_replacement_and_extra_compilation_fail":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_own_observer_slot_is_bounded_and_no_capacity_change_allowed":
+"Phase2ResourceTests.test_own_observer_slot_is_bounded_and_no_capacity_change_allowed":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_phase_counts_require_real_warm_and_cohort_progress":
+"Phase2ResourceTests.test_phase_counts_require_real_warm_and_cohort_progress":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_receipt_requires_build_identity_and_bounded_counter_shape":
+"Phase2ResourceTests.test_receipt_requires_build_identity_and_bounded_counter_shape":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_request_reservation_precedes_shared_process_call":
+"Phase2ResourceTests.test_request_reservation_precedes_shared_process_call":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_rss_growth_is_reported_but_active_ownership_fails":
+"Phase2ResourceTests.test_rss_growth_is_reported_but_active_ownership_fails":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_runtime_stack_rows_require_exact_prepaid_thread_envelopes":
+"Phase2ResourceTests.test_runtime_stack_rows_require_exact_prepaid_thread_envelopes":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_signal_or_exit_without_actual_reap_is_not_cleanup":
+"Phase2ResourceTests.test_signal_or_exit_without_actual_reap_is_not_cleanup":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_stack_mapping_envelope_is_bound_to_the_original_worker_source":
+"Phase2ResourceTests.test_stack_mapping_envelope_is_bound_to_the_original_worker_source":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "Phase2ResourceTests.test_unavailable_or_missing_observation_never_becomes_zero":
+"Phase2ResourceTests.test_unavailable_or_missing_observation_never_becomes_zero":
       "bbdce6459790e87df314d937df737ffe344b907684f536b8bcd1bc518f67555b",
-    "ResourceReceiptPublicationTests.test_cancellation_during_final_validation_retains_only_failed_receipt":
+"ResourceReceiptPublicationTests.test_cancellation_during_final_validation_retains_only_failed_receipt":
       "aebf67e9e2719dc9a57bd3fa26e61be5ede46514c378a447d214886e1c837eac",
-    "ResourceReceiptPublicationTests.test_successful_publication_includes_final_validation_elapsed_time":
+"ResourceReceiptPublicationTests.test_successful_publication_includes_final_validation_elapsed_time":
       "aebf67e9e2719dc9a57bd3fa26e61be5ede46514c378a447d214886e1c837eac",
-    "ResourceReceiptPublicationTests.test_validation_overrun_uses_existing_final_deadline_and_retains_failure":
+"ResourceReceiptPublicationTests.test_validation_overrun_uses_existing_final_deadline_and_retains_failure":
       "aebf67e9e2719dc9a57bd3fa26e61be5ede46514c378a447d214886e1c837eac"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_phase2_gate_resource.py",
-  "reviewReason":"Explicit fixture review: add the actual audit-capacity-v1 row to complete_inventory with the unchanged 512-record, 8 MiB, 8-queue, 2-query profile. Preserve every prior case, decorator, skip condition and execution guard. Add unconditional controls for unknown liveness, frozen limits and missing, duplicate or arbitrary rows.",
-  "schemaVersion":"latent.ci.contracts.v2"
+},
+"kind":"python",
+"module":"tools/tests/test_phase2_gate_resource.py",
+"reviewReason":"Explicit fixture review: add the actual audit-capacity-v1 row to complete_inventory with the unchanged 512-record, 8 MiB, 8-queue, 2-query profile. Preserve every prior case, decorator, skip condition and execution guard. Add unconditional controls for unknown liveness, frozen limits and missing, duplicate or arbitrary rows.",
+"schemaVersion":"latent.ci.contracts.v2"
 }

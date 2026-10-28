@@ -1,91 +1,91 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "TypeScriptAbortSourceTests.test_abort_recipe_and_native_sources_are_closed_compiler_inputs":
+"storageCases":"guard-keys",
+"guards":{
+"TypeScriptAbortSourceTests.test_abort_recipe_and_native_sources_are_closed_compiler_inputs":
       "b7c9c194b023a5b8083de8c2eb6a44fb37ffb417e32feb3b25327e342a22d6f6",
-    "TypeScriptAbortSourceTests.test_pinned_abort_reason_event_algorithms_and_other_methods_are_preserved":
+"TypeScriptAbortSourceTests.test_pinned_abort_reason_event_algorithms_and_other_methods_are_preserved":
       "b7c9c194b023a5b8083de8c2eb6a44fb37ffb417e32feb3b25327e342a22d6f6",
-    "TypeScriptAbortSourceTests.test_pinned_abort_source_change_is_rejected_before_derivation":
+"TypeScriptAbortSourceTests.test_pinned_abort_source_change_is_rejected_before_derivation":
       "b7c9c194b023a5b8083de8c2eb6a44fb37ffb417e32feb3b25327e342a22d6f6",
-    "TypeScriptAbortSourceTests.test_pinned_timeout_conversion_precedes_signal_graph_allocation":
+"TypeScriptAbortSourceTests.test_pinned_timeout_conversion_precedes_signal_graph_allocation":
       "b7c9c194b023a5b8083de8c2eb6a44fb37ffb417e32feb3b25327e342a22d6f6",
-    "TypeScriptAbortSourceTests.test_unrepresentable_timeout_is_explicit_and_never_promotes_qualification":
+"TypeScriptAbortSourceTests.test_unrepresentable_timeout_is_explicit_and_never_promotes_qualification":
       "b7c9c194b023a5b8083de8c2eb6a44fb37ffb417e32feb3b25327e342a22d6f6",
-    "TypeScriptClockCompiledGraphTests.test_actual_clock_component_accepts_only_exact_reviewed_envelope_and_readiness_pruning":
+"TypeScriptClockCompiledGraphTests.test_actual_clock_component_accepts_only_exact_reviewed_envelope_and_readiness_pruning":
       "b553278f66bc2c8b2f3e99fbbf5fc3b7a3a90798248a7dfe72150feebcef1598",
-    "TypeScriptClockCompiledGraphTests.test_clock_pruning_preserves_all_eight_functions_three_types_clocks_exports_and_omitted_ABI":
+"TypeScriptClockCompiledGraphTests.test_clock_pruning_preserves_all_eight_functions_three_types_clocks_exports_and_omitted_ABI":
       "b553278f66bc2c8b2f3e99fbbf5fc3b7a3a90798248a7dfe72150feebcef1598",
-    "TypeScriptClockCompiledGraphTests.test_clock_pruning_refuses_any_engine_receipt_change_including_core_source_and_version":
+"TypeScriptClockCompiledGraphTests.test_clock_pruning_refuses_any_engine_receipt_change_including_core_source_and_version":
       "b553278f66bc2c8b2f3e99fbbf5fc3b7a3a90798248a7dfe72150feebcef1598",
-    "TypeScriptCompiledGraphTests.test_actual_compiled_graph_accepts_only_source_bound_import_profile_pruning":
+"TypeScriptCompiledGraphTests.test_actual_compiled_graph_accepts_only_source_bound_import_profile_pruning":
       "c5abc0a9ee54841cc723b4c52588896776b484875d4643064bb2bb64cb07872d",
-    "TypeScriptCompiledGraphTests.test_complete_activation_surface_keeps_original_strict_graph_comparison":
+"TypeScriptCompiledGraphTests.test_complete_activation_surface_keeps_original_strict_graph_comparison":
       "c5abc0a9ee54841cc723b4c52588896776b484875d4643064bb2bb64cb07872d",
-    "TypeScriptCompiledGraphTests.test_private_pruning_never_ignores_http_ownership_clock_export_or_extra_import":
+"TypeScriptCompiledGraphTests.test_private_pruning_never_ignores_http_ownership_clock_export_or_extra_import":
       "c5abc0a9ee54841cc723b4c52588896776b484875d4643064bb2bb64cb07872d",
-    "TypeScriptCompiledGraphTests.test_pruned_activation_keeps_all_eight_signatures_and_three_types_mandatory":
+"TypeScriptCompiledGraphTests.test_pruned_activation_keeps_all_eight_signatures_and_three_types_mandatory":
       "c5abc0a9ee54841cc723b4c52588896776b484875d4643064bb2bb64cb07872d",
-    "TypeScriptRuntimeProfileTests.test_actual_borrow_void_graph_preserves_omitted_result_without_hiding_type_drift":
+"TypeScriptRuntimeProfileTests.test_actual_borrow_void_graph_preserves_omitted_result_without_hiding_type_drift":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_actual_component_synthetic_root_keeps_versioned_interfaces_and_types":
+"TypeScriptRuntimeProfileTests.test_actual_component_synthetic_root_keeps_versioned_interfaces_and_types":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_actual_parser_nested_record_change_rejected":
+"TypeScriptRuntimeProfileTests.test_actual_parser_nested_record_change_rejected":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_actual_parser_relocation_preserves_full_public_contract":
+"TypeScriptRuntimeProfileTests.test_actual_parser_relocation_preserves_full_public_contract":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_candidate_project_captures_native_source_without_changing_application_or_limits":
+"TypeScriptRuntimeProfileTests.test_candidate_project_captures_native_source_without_changing_application_or_limits":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_cli_forwards_exact_candidate_engine_inputs":
+"TypeScriptRuntimeProfileTests.test_cli_forwards_exact_candidate_engine_inputs":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_default_ordinary_selection_is_sync":
+"TypeScriptRuntimeProfileTests.test_default_ordinary_selection_is_sync":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_engine_declaration_cannot_promote_qualification":
+"TypeScriptRuntimeProfileTests.test_engine_declaration_cannot_promote_qualification":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_engine_envelope_binds_actual_bytes_and_keeps_unknown":
+"TypeScriptRuntimeProfileTests.test_engine_envelope_binds_actual_bytes_and_keeps_unknown":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_engine_replaced_bytes_rejected":
+"TypeScriptRuntimeProfileTests.test_engine_replaced_bytes_rejected":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_engine_stale_runtime_interface_rejected":
+"TypeScriptRuntimeProfileTests.test_engine_stale_runtime_interface_rejected":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_engine_stale_sdk_source_rejected":
+"TypeScriptRuntimeProfileTests.test_engine_stale_sdk_source_rejected":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_exact_activation_async_kind_required":
+"TypeScriptRuntimeProfileTests.test_exact_activation_async_kind_required":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_explicit_candidate_does_not_certify_api":
+"TypeScriptRuntimeProfileTests.test_explicit_candidate_does_not_certify_api":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_explicit_null_is_not_an_absent_selection":
+"TypeScriptRuntimeProfileTests.test_explicit_null_is_not_an_absent_selection":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_native_activation_is_not_synthesized_as_a_second_js_application_import":
+"TypeScriptRuntimeProfileTests.test_native_activation_is_not_synthesized_as_a_second_js_application_import":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_npm_explicit_candidate_preserves_conditions_without_promoting_api":
+"TypeScriptRuntimeProfileTests.test_npm_explicit_candidate_preserves_conditions_without_promoting_api":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_original_async_import_kind_change_rejected":
+"TypeScriptRuntimeProfileTests.test_original_async_import_kind_change_rejected":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_project_and_captured_profile_must_match":
+"TypeScriptRuntimeProfileTests.test_project_and_captured_profile_must_match":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_selected_surface_preserves_exports_and_declares_activation_for_admission":
+"TypeScriptRuntimeProfileTests.test_selected_surface_preserves_exports_and_declares_activation_for_admission":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_undeclared_import_cannot_survive_derivation":
+"TypeScriptRuntimeProfileTests.test_undeclared_import_cannot_survive_derivation":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_unknown_captured_runtime_cannot_be_selected":
+"TypeScriptRuntimeProfileTests.test_unknown_captured_runtime_cannot_be_selected":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_unknown_runtime_cannot_be_selected":
+"TypeScriptRuntimeProfileTests.test_unknown_runtime_cannot_be_selected":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_unknown_type_kind_is_not_name_only_success":
+"TypeScriptRuntimeProfileTests.test_unknown_type_kind_is_not_name_only_success":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_unversioned_app_world_and_noncanonical_component_root_still_fail_closed":
+"TypeScriptRuntimeProfileTests.test_unversioned_app_world_and_noncanonical_component_root_still_fail_closed":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f",
-    "TypeScriptRuntimeProfileTests.test_wrong_original_sysroot_is_rejected":
+"TypeScriptRuntimeProfileTests.test_wrong_original_sysroot_is_rejected":
       "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_typescript_runtime_profile.py",
-  "reviewReason":"Add one regression from actual failed pinned-parser WIT stdout: omitted void result equals explicit None while nonvoid drift and invalid type references still fail; all prior cases and live frozen-clock guards remain intact.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "b7c9c194b023a5b8083de8c2eb6a44fb37ffb417e32feb3b25327e342a22d6f6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-    "b553278f66bc2c8b2f3e99fbbf5fc3b7a3a90798248a7dfe72150feebcef1598":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1","class:setup-sha256:90131676533858c46f35d957ed670e70b97d54e1f42e5cdc797384b1b34a2a68"],"skipSites":[]},
-    "c5abc0a9ee54841cc723b4c52588896776b484875d4643064bb2bb64cb07872d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1","class:setup-sha256:ca85bd3439a6b39962009e3916cada959f00790c8f45cd01602f5cea5951bdf5"],"skipSites":[]},
-    "9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1","class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_runtime_profile.py",
+"reviewReason":"Add one regression from actual failed pinned-parser WIT stdout: omitted void result equals explicit None while nonvoid drift and invalid type references still fail; all prior cases and live frozen-clock guards remain intact.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"b7c9c194b023a5b8083de8c2eb6a44fb37ffb417e32feb3b25327e342a22d6f6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
+"b553278f66bc2c8b2f3e99fbbf5fc3b7a3a90798248a7dfe72150feebcef1598":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1","class:setup-sha256:90131676533858c46f35d957ed670e70b97d54e1f42e5cdc797384b1b34a2a68"],"skipSites":[]},
+"c5abc0a9ee54841cc723b4c52588896776b484875d4643064bb2bb64cb07872d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1","class:setup-sha256:ca85bd3439a6b39962009e3916cada959f00790c8f45cd01602f5cea5951bdf5"],"skipSites":[]},
+"9bc9d65e97fcded94bc1931bde82cf8964c51f357dd06c728acbff9b81ec9c5f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1","class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"],"skipSites":[]}
+}
 }

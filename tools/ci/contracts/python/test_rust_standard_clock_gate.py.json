@@ -1,24 +1,24 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "ClockGateInputs.test_current_successful_exact_target_is_selected_without_globbing_stale_tests":
+"storageCases":"guard-keys",
+"guards":{
+"ClockGateInputs.test_current_successful_exact_target_is_selected_without_globbing_stale_tests":
       "d01a1d9835c3384f508b392e0d79d45d18d288d935e2a7d20f52fb142f073be0",
-    "ClockGateInputs.test_failed_incomplete_duplicate_and_postterminal_inventories_reject":
+"ClockGateInputs.test_failed_incomplete_duplicate_and_postterminal_inventories_reject":
       "d01a1d9835c3384f508b392e0d79d45d18d288d935e2a7d20f52fb142f073be0",
-    "ClockGateInputs.test_source_download_bound_and_authenticated_bytes_preserve_existing_outputs":
+"ClockGateInputs.test_source_download_bound_and_authenticated_bytes_preserve_existing_outputs":
       "d01a1d9835c3384f508b392e0d79d45d18d288d935e2a7d20f52fb142f073be0",
-    "ClockGateInputs.test_source_download_identity_rejects_before_any_archive_is_written":
+"ClockGateInputs.test_source_download_identity_rejects_before_any_archive_is_written":
       "d01a1d9835c3384f508b392e0d79d45d18d288d935e2a7d20f52fb142f073be0",
-    "ClockGateInputs.test_unsupported_clock_kind_rejects_before_compiler_source_or_output_access":
+"ClockGateInputs.test_unsupported_clock_kind_rejects_before_compiler_source_or_output_access":
       "d01a1d9835c3384f508b392e0d79d45d18d288d935e2a7d20f52fb142f073be0",
-    "ClockGateInputs.test_wrong_manifest_kind_profile_and_outside_executables_cannot_be_selected":
+"ClockGateInputs.test_wrong_manifest_kind_profile_and_outside_executables_cannot_be_selected":
       "d01a1d9835c3384f508b392e0d79d45d18d288d935e2a7d20f52fb142f073be0"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_rust_standard_clock_gate.py",
-  "reviewReason":"Add authenticated rebuilt ordinary SystemTime/Instant signed grant, two fresh Store, revocation and owner-retirement gate; preserve existing authoring commands, source controls, jobs, limits, cache policy and historical CI obligations.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "d01a1d9835c3384f508b392e0d79d45d18d288d935e2a7d20f52fb142f073be0":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:114f84984d2aedf55c7684d1c15980a870e3beb5ece0c7705e63de325f64455d","class:setup-sha256:9f7a06d441775cc45051f421ef86073e8948843cec5b39438d22e9574f0c805f"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_rust_standard_clock_gate.py",
+"reviewReason":"Add authenticated rebuilt ordinary SystemTime/Instant signed grant, two fresh Store, revocation and owner-retirement gate; preserve existing authoring commands, source controls, jobs, limits, cache policy and historical CI obligations.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"d01a1d9835c3384f508b392e0d79d45d18d288d935e2a7d20f52fb142f073be0":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:114f84984d2aedf55c7684d1c15980a870e3beb5ece0c7705e63de325f64455d","class:setup-sha256:9f7a06d441775cc45051f421ef86073e8948843cec5b39438d22e9574f0c805f"],"skipSites":[]}
+}
 }

@@ -83,22 +83,27 @@
         "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --call-result-channel-memory --output \"$RUNNER_TEMP/canonical-stream-outers\""
       },
       {
+        "if": "github.ref_name == 'feat/sdk-736-callback-memory-20261028'",
+        "name": "Build one exact vendor lib and execute four borrowed callback controls",
+        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --callback-memory --output \"$RUNNER_TEMP/canonical-stream-outers\""
+      },
+      {
         "if": "always()",
         "name": "Retain four source-bound canonical IP outcomes",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "if-no-files-found": "warn",
-          "name": "${{ github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028' && 'call-result-channel-memory' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' && 'resource-table-memory' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' && 'call-parameter-closure-memory' || github.ref_name == 'test/sdk-738-node-bootstrap-custody-20261028' && 'node-bootstrap-custody' || github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 'canonical-lift-result' || 'canonical-ip-format' }}-${{ github.sha }}",
+          "name": "${{ github.ref_name == 'feat/sdk-736-callback-memory-20261028' && 'callback-memory' || github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028' && 'call-result-channel-memory' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' && 'resource-table-memory' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' && 'call-parameter-closure-memory' || github.ref_name == 'test/sdk-738-node-bootstrap-custody-20261028' && 'node-bootstrap-custody' || github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 'canonical-lift-result' || 'canonical-ip-format' }}-${{ github.sha }}",
           "path": "${{ runner.temp }}/canonical-stream-outers/receipt.json\n${{ runner.temp }}/canonical-stream-outers/FAILED.json\n${{ runner.temp }}/canonical-stream-outers/source-inputs.json\n${{ runner.temp }}/canonical-stream-outers/commands.json\n${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt\n",
           "retention-days": 3
         }
       }
     ],
-    "timeout-minutes": "${{ (github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' || github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028') && 25 || 45 }}"
+    "timeout-minutes": "${{ (github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' || github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028' || github.ref_name == 'feat/sdk-736-callback-memory-20261028') && 25 || 45 }}"
   },
   "jobId": "stream-outers",
   "kind": "job",
-  "reviewReason": "Add only the closed call-result channel profile to the existing21-root vendor owner: four exact original-Store typed-header/refusal/wake/cancel/confirmation and honest payload-unwind retention controls, with the same1320 seconds/j2/five-second cleanup/42 raw channels. Prior call-parameter and resource-table profile routes and bodies retain declared literal inverses; no old native programme replay. Existing paidArc intentionally retains the same header charge after payload destructor unwind; no final-free/quarantine-completion/full ActivationBudget/RSS claim. One pure cross-profile reader case appends after all prior cases.",
+  "reviewReason": "Append only the closed borrowed-callback profile to the same21-root vendor owner: four exact original-Store Header<F> refusal/repeated-error/cancel/confirmation-body-destructor-unwind controls. Actual dispatcher takes an owned carrier before a borrowed call and reinserts only after success; no extra outer Box or ledger. All previous profiles preserve declared literal inverses, case names and budgets; no old native programme replay. One new pure cross-profile parser control appends after prior cases. Full capture graph/ActivationBudget/RSS and whole736/745 remain unqualified.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/canonical-stream-outers.yml"
 }

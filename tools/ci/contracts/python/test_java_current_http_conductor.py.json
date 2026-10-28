@@ -1,54 +1,54 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "CurrentHttpConductor.test_active_runtime_selects_one_exact_publication_and_copies_original_operations":
+"storageCases":"guard-keys",
+"guards":{
+"CurrentHttpConductor.test_active_runtime_selects_one_exact_publication_and_copies_original_operations":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_ambiguous_crash_restart_reaps_then_waits_original_lease_before_one_start":
+"CurrentHttpConductor.test_ambiguous_crash_restart_reaps_then_waits_original_lease_before_one_start":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_crash_lease_or_start_failure_cannot_retry_start_or_claim_recovery":
+"CurrentHttpConductor.test_crash_lease_or_start_failure_cannot_retry_start_or_claim_recovery":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_current_endpoint_cannot_select_historical_or_unpaired_capsules":
+"CurrentHttpConductor.test_current_endpoint_cannot_select_historical_or_unpaired_capsules":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_current_proposals_bind_native_state_staging_and_exact_http_dispatch_grants":
+"CurrentHttpConductor.test_current_proposals_bind_native_state_staging_and_exact_http_dispatch_grants":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_current_session_program_requires_explicit_profile_order_and_single_runtime":
+"CurrentHttpConductor.test_current_session_program_requires_explicit_profile_order_and_single_runtime":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_current_transition_retires_before_metadata_and_never_starts_after_uncertain_mutation":
+"CurrentHttpConductor.test_current_transition_retires_before_metadata_and_never_starts_after_uncertain_mutation":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_endpoint_file_is_closed_and_retains_original_twenty_seven_byte_ceiling":
+"CurrentHttpConductor.test_endpoint_file_is_closed_and_retains_original_twenty_seven_byte_ceiling":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_fault_staging_framing_uses_exact_operation_without_changing_historical_accounting":
+"CurrentHttpConductor.test_fault_staging_framing_uses_exact_operation_without_changing_historical_accounting":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_host_inspection_retires_original_clock_interval_before_returning_profiles":
+"CurrentHttpConductor.test_host_inspection_retires_original_clock_interval_before_returning_profiles":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_installation_keeps_exact_declared_ca_reference_and_body_limits":
+"CurrentHttpConductor.test_installation_keeps_exact_declared_ca_reference_and_body_limits":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_observed_current_operation_requires_explicit_selection_and_all_publications_match":
+"CurrentHttpConductor.test_observed_current_operation_requires_explicit_selection_and_all_publications_match":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_offline_migration_requires_actual_wide_value_commit_and_effect_before_snapshot":
+"CurrentHttpConductor.test_offline_migration_requires_actual_wide_value_commit_and_effect_before_snapshot":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_original_crash_lease_wait_preserves_cutoff_and_checks_cancellation":
+"CurrentHttpConductor.test_original_crash_lease_wait_preserves_cutoff_and_checks_cancellation":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_restore_checks_native_activation_retirement_before_starting_runtime":
+"CurrentHttpConductor.test_restore_checks_native_activation_retirement_before_starting_runtime":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_restored_activation_refuses_old_receipts_replay_and_changed_physical_or_history_witnesses":
+"CurrentHttpConductor.test_restored_activation_refuses_old_receipts_replay_and_changed_physical_or_history_witnesses":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_restored_migration_request_keeps_exact_snapshot_window_and_original_operation":
+"CurrentHttpConductor.test_restored_migration_request_keeps_exact_snapshot_window_and_original_operation":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_retained_decoders_have_four_distinct_explicit_signed_sources_without_generic_alias":
+"CurrentHttpConductor.test_retained_decoders_have_four_distinct_explicit_signed_sources_without_generic_alias":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_return_to_legacy_records_both_deployments_without_reusing_measured_case":
+"CurrentHttpConductor.test_return_to_legacy_records_both_deployments_without_reusing_measured_case":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_signed_service_integration_is_explicit_and_only_marks_deferred_update_rows":
+"CurrentHttpConductor.test_signed_service_integration_is_explicit_and_only_marks_deferred_update_rows":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539",
-    "CurrentHttpConductor.test_uncertain_trigger_metadata_cannot_capture_or_start_runtime_or_refresh_precondition":
+"CurrentHttpConductor.test_uncertain_trigger_metadata_cannot_capture_or_start_runtime_or_refresh_precondition":
       "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_java_current_http_conductor.py",
-  "reviewReason":"Add crash/reap lease ordering and cutoff/cancellation refusal controls while preserving every existing case and execution guard",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_java_current_http_conductor.py",
+"reviewReason":"Add crash/reap lease ordering and cutoff/cancellation refusal controls while preserving every existing case and execution guard",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"d1f514e89709e57ff0a3c7e9be00168152d60f342f35f9dd14474a67d1aca539":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }

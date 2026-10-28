@@ -1,24 +1,24 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "GoClosedNetworkTests.test_any_source_or_declaration_drift_is_refused_not_partially_rewritten":
+"storageCases":"guard-keys",
+"guards":{
+"GoClosedNetworkTests.test_any_source_or_declaration_drift_is_refused_not_partially_rewritten":
       "206b644ea86118495a0e32e65e1ee9453f24c59edfe48b08232a231aedc227a1",
-    "GoClosedNetworkTests.test_bad_or_missing_fake_source_fails_before_overlay_creation":
+"GoClosedNetworkTests.test_bad_or_missing_fake_source_fails_before_overlay_creation":
       "206b644ea86118495a0e32e65e1ee9453f24c59edfe48b08232a231aedc227a1",
-    "GoClosedNetworkTests.test_only_exact_upstream_fake_socket_body_is_replaced_before_allocation":
+"GoClosedNetworkTests.test_only_exact_upstream_fake_socket_body_is_replaced_before_allocation":
       "206b644ea86118495a0e32e65e1ee9453f24c59edfe48b08232a231aedc227a1",
-    "GoClosedNetworkTests.test_real_default_overlay_refuses_fake_sockets_and_keeps_upstream_comparison_unchanged":
+"GoClosedNetworkTests.test_real_default_overlay_refuses_fake_sockets_and_keeps_upstream_comparison_unchanged":
       "206b644ea86118495a0e32e65e1ee9453f24c59edfe48b08232a231aedc227a1",
-    "GoClosedNetworkTests.test_reference_requires_both_original_false_successes_and_both_standard_refusals":
+"GoClosedNetworkTests.test_reference_requires_both_original_false_successes_and_both_standard_refusals":
       "206b644ea86118495a0e32e65e1ee9453f24c59edfe48b08232a231aedc227a1",
-    "GoClosedNetworkTests.test_refusal_is_unconditional_before_any_optional_runtime_selection":
+"GoClosedNetworkTests.test_refusal_is_unconditional_before_any_optional_runtime_selection":
       "206b644ea86118495a0e32e65e1ee9453f24c59edfe48b08232a231aedc227a1"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_go_closed_network.py",
-  "reviewReason":"Exact full upstream pin, default-overlay old-source refusal, drift and strict two-profile reference outcomes.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "206b644ea86118495a0e32e65e1ee9453f24c59edfe48b08232a231aedc227a1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:dfcf45b54c5dbca28ba8ac5329f84a78f4e73d203fd992c0540f48a99cf9ae31","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_go_closed_network.py",
+"reviewReason":"Exact full upstream pin, default-overlay old-source refusal, drift and strict two-profile reference outcomes.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"206b644ea86118495a0e32e65e1ee9453f24c59edfe48b08232a231aedc227a1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:dfcf45b54c5dbca28ba8ac5329f84a78f4e73d203fd992c0540f48a99cf9ae31","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }

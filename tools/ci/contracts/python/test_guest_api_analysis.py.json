@@ -1,30 +1,30 @@
 {
-  "schemaVersion":"latent.ci.contracts.v2",
-  "kind":"python",
-  "reviewReason":"Reviewed ONE fixed public Go selected-body diagnostic only, no node/sign/reached/init or qualified matrix row; exact unchanged CIL initializer-source alternative and finite six original fixture mappings preserve unknown execution and implementation scope. Original cases/decorators/skips remain; reviewed helper additions extend fixture guards only.",
-  "module":"tools/tests/test_guest_api_analysis.py",
-  "cases":["DefaultApiAnalysis.test_actual_source_component_recipe_and_root_file_mutations_cannot_reuse_old_api_report","DefaultApiAnalysis.test_default_existing_presentation_loads_fixed_sidecar_and_json_report_stays_v1","DefaultApiAnalysis.test_identified_materials_are_still_unqualified_and_rehashed_behavior_upgrade_refuses","DefaultApiAnalysis.test_missing_passive_input_has_closed_unavailable_result_without_new_build_gate","DefaultApiAnalysis.test_rehashing_context_and_api_cannot_replace_original_owner_selected_materials","DefaultApiAnalysis.test_shared_normal_finish_emits_all_six_without_changing_original_report_or_package_eligibility","DefaultApiAnalysis.test_unknown_package_rename_changes_source_binding_without_changing_api_verdict","FiniteImplementationFixtureMapping.test_exact_standard_materials_profiles_and_owners_only_select_finite_fixture","FiniteImplementationFixtureMapping.test_rehashed_fixture_claim_and_legacy_downgrade_cannot_replace_current_owner_projection"],
-  "guards":{
-    "DefaultApiAnalysis.test_rehashing_context_and_api_cannot_replace_original_owner_selected_materials":
+"schemaVersion":"latent.ci.contracts.v2",
+"kind":"python",
+"reviewReason":"Reviewed ONE fixed public Go selected-body diagnostic only, no node/sign/reached/init or qualified matrix row; exact unchanged CIL initializer-source alternative and finite six original fixture mappings preserve unknown execution and implementation scope. Original cases/decorators/skips remain; reviewed helper additions extend fixture guards only.",
+"module":"tools/tests/test_guest_api_analysis.py",
+"cases":["DefaultApiAnalysis.test_actual_source_component_recipe_and_root_file_mutations_cannot_reuse_old_api_report","DefaultApiAnalysis.test_default_existing_presentation_loads_fixed_sidecar_and_json_report_stays_v1","DefaultApiAnalysis.test_identified_materials_are_still_unqualified_and_rehashed_behavior_upgrade_refuses","DefaultApiAnalysis.test_missing_passive_input_has_closed_unavailable_result_without_new_build_gate","DefaultApiAnalysis.test_rehashing_context_and_api_cannot_replace_original_owner_selected_materials","DefaultApiAnalysis.test_shared_normal_finish_emits_all_six_without_changing_original_report_or_package_eligibility","DefaultApiAnalysis.test_unknown_package_rename_changes_source_binding_without_changing_api_verdict","FiniteImplementationFixtureMapping.test_exact_standard_materials_profiles_and_owners_only_select_finite_fixture","FiniteImplementationFixtureMapping.test_rehashed_fixture_claim_and_legacy_downgrade_cannot_replace_current_owner_projection"],
+"guards":{
+"DefaultApiAnalysis.test_rehashing_context_and_api_cannot_replace_original_owner_selected_materials":
       "585b605cc99146da1c61f449f261d39b288f32b8f78019d0706d12df79ef4048",
-    "DefaultApiAnalysis.test_shared_normal_finish_emits_all_six_without_changing_original_report_or_package_eligibility":
+"DefaultApiAnalysis.test_shared_normal_finish_emits_all_six_without_changing_original_report_or_package_eligibility":
       "585b605cc99146da1c61f449f261d39b288f32b8f78019d0706d12df79ef4048",
-    "DefaultApiAnalysis.test_unknown_package_rename_changes_source_binding_without_changing_api_verdict":
+"DefaultApiAnalysis.test_unknown_package_rename_changes_source_binding_without_changing_api_verdict":
       "585b605cc99146da1c61f449f261d39b288f32b8f78019d0706d12df79ef4048",
-    "DefaultApiAnalysis.test_identified_materials_are_still_unqualified_and_rehashed_behavior_upgrade_refuses":
+"DefaultApiAnalysis.test_identified_materials_are_still_unqualified_and_rehashed_behavior_upgrade_refuses":
       "585b605cc99146da1c61f449f261d39b288f32b8f78019d0706d12df79ef4048",
-    "DefaultApiAnalysis.test_actual_source_component_recipe_and_root_file_mutations_cannot_reuse_old_api_report":
+"DefaultApiAnalysis.test_actual_source_component_recipe_and_root_file_mutations_cannot_reuse_old_api_report":
       "585b605cc99146da1c61f449f261d39b288f32b8f78019d0706d12df79ef4048",
-    "DefaultApiAnalysis.test_default_existing_presentation_loads_fixed_sidecar_and_json_report_stays_v1":
+"DefaultApiAnalysis.test_default_existing_presentation_loads_fixed_sidecar_and_json_report_stays_v1":
       "585b605cc99146da1c61f449f261d39b288f32b8f78019d0706d12df79ef4048",
-    "DefaultApiAnalysis.test_missing_passive_input_has_closed_unavailable_result_without_new_build_gate":
+"DefaultApiAnalysis.test_missing_passive_input_has_closed_unavailable_result_without_new_build_gate":
       "585b605cc99146da1c61f449f261d39b288f32b8f78019d0706d12df79ef4048",
-    "FiniteImplementationFixtureMapping.test_exact_standard_materials_profiles_and_owners_only_select_finite_fixture":
+"FiniteImplementationFixtureMapping.test_exact_standard_materials_profiles_and_owners_only_select_finite_fixture":
       "585b605cc99146da1c61f449f261d39b288f32b8f78019d0706d12df79ef4048",
-    "FiniteImplementationFixtureMapping.test_rehashed_fixture_claim_and_legacy_downgrade_cannot_replace_current_owner_projection":
+"FiniteImplementationFixtureMapping.test_rehashed_fixture_claim_and_legacy_downgrade_cannot_replace_current_owner_projection":
       "585b605cc99146da1c61f449f261d39b288f32b8f78019d0706d12df79ef4048"
-  },
-  "guardDefinitions":{
-    "585b605cc99146da1c61f449f261d39b288f32b8f78019d0706d12df79ef4048":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:68b73279deeacc9b960bbaa76e7fed0ac2c5d295c79756057931b99326ead927","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
-  }
+},
+"guardDefinitions":{
+"585b605cc99146da1c61f449f261d39b288f32b8f78019d0706d12df79ef4048":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:68b73279deeacc9b960bbaa76e7fed0ac2c5d295c79756057931b99326ead927","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+}
 }

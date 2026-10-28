@@ -1,24 +1,24 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "JavaClosedFilesystem.test_actual_locked_backend_and_classlib_publish_no_filesystem_authority":
+"storageCases":"guard-keys",
+"guards":{
+"JavaClosedFilesystem.test_actual_locked_backend_and_classlib_publish_no_filesystem_authority":
       "2149582d2c9642a41f61a016fc425f0f24387ddae7d2637876afa0ab6f1ee9f4",
-    "JavaClosedFilesystem.test_named_argument_errors_are_separate_from_three_unsupported_calls_and_all_retire":
+"JavaClosedFilesystem.test_named_argument_errors_are_separate_from_three_unsupported_calls_and_all_retire":
       "2149582d2c9642a41f61a016fc425f0f24387ddae7d2637876afa0ab6f1ee9f4",
-    "JavaClosedFilesystem.test_profile_is_bound_to_the_actual_captured_sdk_owner_not_repository_fallback":
+"JavaClosedFilesystem.test_profile_is_bound_to_the_actual_captured_sdk_owner_not_repository_fallback":
       "2149582d2c9642a41f61a016fc425f0f24387ddae7d2637876afa0ab6f1ee9f4",
-    "JavaClosedFilesystem.test_source_recipe_and_captured_sdk_keep_owned_transformer_and_service":
+"JavaClosedFilesystem.test_source_recipe_and_captured_sdk_keep_owned_transformer_and_service":
       "2149582d2c9642a41f61a016fc425f0f24387ddae7d2637876afa0ab6f1ee9f4",
-    "JavaClosedFilesystem.test_unsupported_trap_unknown_or_unreaped_is_not_original_argument_validation":
+"JavaClosedFilesystem.test_unsupported_trap_unknown_or_unreaped_is_not_original_argument_validation":
       "2149582d2c9642a41f61a016fc425f0f24387ddae7d2637876afa0ab6f1ee9f4",
-    "JavaClosedFilesystem.test_wrong_revision_digest_size_and_duplicate_preimage_fail_before_profile_publication":
+"JavaClosedFilesystem.test_wrong_revision_digest_size_and_duplicate_preimage_fail_before_profile_publication":
       "2149582d2c9642a41f61a016fc425f0f24387ddae7d2637876afa0ab6f1ee9f4"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_java_closed_filesystem.py",
-  "reviewReason":"Authenticate the closed TeaVM filesystem owner; retain existing services and add exact Java argument/refusal controls without authority changes.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "2149582d2c9642a41f61a016fc425f0f24387ddae7d2637876afa0ab6f1ee9f4":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a7b956c34ad4b154910d76fc9706efc355502089daf1e886c2de678bfa09e286","class:setup-sha256:bce0464d50c8633c5980ceabcf5687ec3c6e5dfe61a82bd8c6ba03952968d0c7"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_java_closed_filesystem.py",
+"reviewReason":"Authenticate the closed TeaVM filesystem owner; retain existing services and add exact Java argument/refusal controls without authority changes.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"2149582d2c9642a41f61a016fc425f0f24387ddae7d2637876afa0ab6f1ee9f4":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a7b956c34ad4b154910d76fc9706efc355502089daf1e886c2de678bfa09e286","class:setup-sha256:bce0464d50c8633c5980ceabcf5687ec3c6e5dfe61a82bd8c6ba03952968d0c7"],"skipSites":[]}
+}
 }
