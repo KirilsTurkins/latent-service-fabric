@@ -1,19 +1,28 @@
-{"cases":["GoWriteProgressTests.test_close_guard_is_inside_each_fragment_and_has_a_pinned_actual_counterexample","GoWriteProgressTests.test_current_requires_all_eight_successes_and_no_skipped_duplicate_or_unknown_cases","GoWriteProgressTests.test_direct_help_works_outside_repo_without_import_path_environment","GoWriteProgressTests.test_exact_production_method_is_projected_without_rewriting_its_body","GoWriteProgressTests.test_old_source_is_authenticated_and_genuinely_has_the_single_chunk_counterexample","GoWriteProgressTests.test_original_counterexample_requires_exact_failed_case_not_a_compile_or_setup_failure","GoWriteProgressTests.test_protocol_doubles_and_go_cases_are_explicit_and_do_not_claim_guest_or_provider_evidence","GoWriteProgressTests.test_write_preserves_one_owner_actual_prefix_and_original_absolute_deadline"],"guards":{"GoWriteProgressTests.test_close_guard_is_inside_each_fragment_and_has_a_pinned_actual_counterexample":
-  "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f"
-,"GoWriteProgressTests.test_current_requires_all_eight_successes_and_no_skipped_duplicate_or_unknown_cases":
-  "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f"
-,"GoWriteProgressTests.test_direct_help_works_outside_repo_without_import_path_environment":
-  "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f"
-,"GoWriteProgressTests.test_exact_production_method_is_projected_without_rewriting_its_body":
-  "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f"
-,"GoWriteProgressTests.test_old_source_is_authenticated_and_genuinely_has_the_single_chunk_counterexample":
-  "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f"
-,"GoWriteProgressTests.test_original_counterexample_requires_exact_failed_case_not_a_compile_or_setup_failure":
-  "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f"
-,"GoWriteProgressTests.test_protocol_doubles_and_go_cases_are_explicit_and_do_not_claim_guest_or_provider_evidence":
-  "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f"
-,"GoWriteProgressTests.test_write_preserves_one_owner_actual_prefix_and_original_absolute_deadline":
-  "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f"
-},"kind":"python","module":"tools/tests/test_go_write_progress.py","reviewReason":"Retain original eight progress controls and add exact prior-source close-between-fragments RED plus ninth closed-prefix control; preserve original caps, one direction owner and deadline.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d73ea89662f120ea49a3bb188231044838aaddfe9287365f4b6ae1c4ed46cd8f","class:setup-sha256:1c61759fddb49344e13a1d8af695042a91bf36b5f6b6e328054c9217b99d6a8a"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "GoWriteProgressTests.test_close_guard_is_inside_each_fragment_and_has_a_pinned_actual_counterexample":
+      "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f",
+    "GoWriteProgressTests.test_current_requires_all_eight_successes_and_no_skipped_duplicate_or_unknown_cases":
+      "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f",
+    "GoWriteProgressTests.test_direct_help_works_outside_repo_without_import_path_environment":
+      "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f",
+    "GoWriteProgressTests.test_exact_production_method_is_projected_without_rewriting_its_body":
+      "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f",
+    "GoWriteProgressTests.test_old_source_is_authenticated_and_genuinely_has_the_single_chunk_counterexample":
+      "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f",
+    "GoWriteProgressTests.test_original_counterexample_requires_exact_failed_case_not_a_compile_or_setup_failure":
+      "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f",
+    "GoWriteProgressTests.test_protocol_doubles_and_go_cases_are_explicit_and_do_not_claim_guest_or_provider_evidence":
+      "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f",
+    "GoWriteProgressTests.test_write_preserves_one_owner_actual_prefix_and_original_absolute_deadline":
+      "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_go_write_progress.py",
+  "reviewReason":"Retain original eight progress controls and add exact prior-source close-between-fragments RED plus ninth closed-prefix control; preserve original caps, one direction owner and deadline.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "becd0092c5acea1971542b19ca0f35a3087174362572094d9386f222ab59a59f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d73ea89662f120ea49a3bb188231044838aaddfe9287365f4b6ae1c4ed46cd8f","class:setup-sha256:1c61759fddb49344e13a1d8af695042a91bf36b5f6b6e328054c9217b99d6a8a"],"skipSites":[]}
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "cases":["CampaignOracle.test_clean_boolean_does_not_replace_actual_retired_owners","CampaignOracle.test_current_rpc_result_bytes_must_equal_original_http_payload","CampaignOracle.test_current_state_retirement_requires_both_physical_witnesses_and_every_zero_owner","CampaignOracle.test_evidence_path_and_byte_limits_refuse_before_publication","CampaignOracle.test_generic_platform_refusal_is_distinct_from_durable_abort_json","CampaignOracle.test_original_evidence_is_exclusive_and_never_overwritten","CampaignOracle.test_original_result_cannot_adopt_current_publication_or_another_caller_key","CampaignOracle.test_refusal_observation_uses_the_actual_early_or_ordinary_service"],
+  "storageCases":"guard-keys",
   "guards":{
     "CampaignOracle.test_clean_boolean_does_not_replace_actual_retired_owners":
       "d44a9ae84384a6c059dd7a4e61715ba91c03f9170b7df359a5e5bafd99992a2b",

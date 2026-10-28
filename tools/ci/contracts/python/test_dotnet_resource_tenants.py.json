@@ -1,21 +1,30 @@
-{"cases":["DotnetResourceTenants.test_all_six_original_document_preimages_are_mandatory","DotnetResourceTenants.test_component_recovery_requires_exact_adapter_entropy_materials_and_three_children","DotnetResourceTenants.test_new_metadata_observation_preserves_old_records_and_carries_explicit_ancestry_assets","DotnetResourceTenants.test_new_observation_refuses_missing_derivation_witnesses_before_mutation","DotnetResourceTenants.test_original_archive_identity_is_closed_for_both_distinct_producers","DotnetResourceTenants.test_original_public_project_and_seed_bytes_are_complete_and_source_bound","DotnetResourceTenants.test_public_source_fetch_refuses_unselected_paths_before_network","DotnetResourceTenants.test_real_command_runner_creates_owned_parent_before_codec_selection","DotnetResourceTenants.test_rehashed_foreign_component_and_package_material_still_fail_the_binding"],"guards":{"DotnetResourceTenants.test_all_six_original_document_preimages_are_mandatory":
-  "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076"
-,"DotnetResourceTenants.test_component_recovery_requires_exact_adapter_entropy_materials_and_three_children":
-  "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076"
-,"DotnetResourceTenants.test_new_metadata_observation_preserves_old_records_and_carries_explicit_ancestry_assets":
-  "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076"
-,"DotnetResourceTenants.test_new_observation_refuses_missing_derivation_witnesses_before_mutation":
-  "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076"
-,"DotnetResourceTenants.test_original_archive_identity_is_closed_for_both_distinct_producers":
-  "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076"
-,"DotnetResourceTenants.test_original_public_project_and_seed_bytes_are_complete_and_source_bound":
-  "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076"
-,"DotnetResourceTenants.test_public_source_fetch_refuses_unselected_paths_before_network":
-  "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076"
-,"DotnetResourceTenants.test_real_command_runner_creates_owned_parent_before_codec_selection":
-  "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076"
-,"DotnetResourceTenants.test_rehashed_foreign_component_and_package_material_still_fail_the_binding":
-  "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076"
-},"kind":"python","module":"tools/tests/test_dotnet_resource_tenants.py","reviewReason":"Add real command-runner parent directory regression after exact hosted setup failure; preserve previous eight source controls.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:1978cc5d5dc73496b1976d58d7cb0c80282694a4c28cf8a2ee68d9e4a635e684","class:setup-sha256:0abce0021c0f376a2e87eddf5cb457f8967c1d17c969a7bd4c331de655cef90a"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "DotnetResourceTenants.test_all_six_original_document_preimages_are_mandatory":
+      "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076",
+    "DotnetResourceTenants.test_component_recovery_requires_exact_adapter_entropy_materials_and_three_children":
+      "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076",
+    "DotnetResourceTenants.test_new_metadata_observation_preserves_old_records_and_carries_explicit_ancestry_assets":
+      "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076",
+    "DotnetResourceTenants.test_new_observation_refuses_missing_derivation_witnesses_before_mutation":
+      "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076",
+    "DotnetResourceTenants.test_original_archive_identity_is_closed_for_both_distinct_producers":
+      "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076",
+    "DotnetResourceTenants.test_original_public_project_and_seed_bytes_are_complete_and_source_bound":
+      "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076",
+    "DotnetResourceTenants.test_public_source_fetch_refuses_unselected_paths_before_network":
+      "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076",
+    "DotnetResourceTenants.test_real_command_runner_creates_owned_parent_before_codec_selection":
+      "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076",
+    "DotnetResourceTenants.test_rehashed_foreign_component_and_package_material_still_fail_the_binding":
+      "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_dotnet_resource_tenants.py",
+  "reviewReason":"Add real command-runner parent directory regression after exact hosted setup failure; preserve previous eight source controls.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "32b0d237c2f0475605733f87115d8eba866923bee1bcc82d5076483c215c4076":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:1978cc5d5dc73496b1976d58d7cb0c80282694a4c28cf8a2ee68d9e4a635e684","class:setup-sha256:0abce0021c0f376a2e87eddf5cb457f8967c1d17c969a7bd4c331de655cef90a"],"skipSites":[]}
+  }
+}

@@ -562,3 +562,29 @@ exact final capacity/value order, scoped retirement and empty/legacy shapes;
 private counter owners do not qualify the original activation grant. Parameters,
 closure Boxes, returned result Boxes and other transitive costs remain separate.
 This does not complete #745 AC5 or native/full-cost accounting.
+
+## Original Store call-parameter and closure backing
+
+The selected fused prepare-call parameter copy now uses the Store's existing
+NativeMemory factory and exact NativeVec final backing before any value copy.
+CallerInfo owns it through lowering or cancellation. NativeMemory=None keeps
+the literal original Vec copy. No second allocation ledger is introduced.
+
+RawLower and RawLift retain their original two-pointer inline shape. An
+accounted nonzero closure reserves the complete concrete Header<F> layout
+before its single Box, including its original allocation-owner slot. That
+owner stays outside the header until confirmation returns; callback unwind
+retires the physical header before the pending ticket. Calls and cancellation
+move the typed header out of its sole Box, retiring backing before invoking or
+dropping F while its original ticket remains an outer local. Ordinary errors,
+unrelated unwind, capture-destructor panic and confirmation panic therefore
+retire exactly once without leaked tickets. None and zero-sized closures use
+the original Box<F> path. Private typed vtables preserve callback signatures,
+thread switches and cleanup; they add no host ABI or authority.
+
+Four new private native controls are source only until the bounded owning run
+passes. They exercise the actual Store-selected factory with instrumented
+original owners, exact typed layouts, refusal, cancellation and unwind. They
+do not qualify full ActivationBudget/RSS/stack costs or every async path.
+ResourceTable/oneshot/callback/result and other transitive backing remain
+separate accounting obligations; existing signed receipts stay source-dated.

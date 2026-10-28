@@ -2,7 +2,8 @@
   "cases": [
     "StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows",
     "StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed",
-    "TaskNodeBootstrapOwner.test_four_exact_results_and_all_source_tool_process_roots_are_closed"
+    "TaskNodeBootstrapOwner.test_four_exact_results_and_all_source_tool_process_roots_are_closed",
+    "TaskStoreCallMemoryOwner.test_four_exact_results_and_all21_roots_reject_skips_duplicates_and_other_cases"
   ],
   "guards": {
     "StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows": {
@@ -40,10 +41,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "TaskStoreCallMemoryOwner.test_four_exact_results_and_all21_roots_reject_skips_duplicates_and_other_cases": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_stream_outer_owner.py",
-  "reviewReason": "Append one pure exact-result and23-owned-command Node reader control; all previous cases, LeafR3 additions, bodies and guards remain exact.",
+  "reviewReason": "Add only the closed original-Store call-parameter and concrete lower/lift closure ownership mode: one exact vendor library, four private native controls, all21 Git/tool/build/library/list/test roots share1320 seconds with j2 and one five-second cleanup reserve. Legacy None/nonzero and ZST, typed-layout refusal, cancellation, callback/destructor/confirmation unwind are covered. Full ActivationBudget/RSS/stack/transitive costs and whole736/745 remain unqualified; no old programme replay.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

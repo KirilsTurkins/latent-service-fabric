@@ -2928,6 +2928,175 @@ def qualify_node_bootstrap(output, revision):
 
 
 
+CALL_MEMORY_BRANCH = 'feat/sdk-736-call-parameter-closure-memory-20261028'
+CALL_MEMORY_PREFIX = 'runtime::component::concurrent::call_parameter_closure_memory_tests::'
+CALL_MEMORY_CASES = tuple(CALL_MEMORY_PREFIX + name for name in (
+    'original_store_parameter_refusal_and_fresh_empty_legacy_shapes',
+    'exact_typed_closure_layout_refusal_preserves_two_pointer_carriers',
+    'closures_hold_original_owner_through_calls_errors_and_cancelled_drop',
+    'unwind_and_capture_destructor_panic_retire_without_ticket_leaks'))
+CALL_MEMORY_STAGES = ('source-head', 'source-clean', 'source-input-paths',
+    'resolve-cargo', 'cargo-version', 'resolve-rustc', 'rustc-version', 'wasm-tools-version',
+    'build-private', 'private-rust-library-path',
+    'private-list-0', 'private-case-0', 'private-list-1', 'private-case-1',
+    'private-list-2', 'private-case-2', 'private-list-3', 'private-case-3',
+    'source-input-paths-after', 'source-clean-after', 'source-head-after')
+
+
+def call_memory_result(raw, case):
+    require(case in CALL_MEMORY_CASES and len(raw) <= artifacts.MAX_OUTPUT_BYTES,
+        'call-memory-case-bound')
+    require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
+        == [case.encode()], 'call-memory-one-exact-success')
+    summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
+        rb'(\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    require(len(summaries) == 1 and summaries[0][:4] == (b'1', b'0', b'0', b'0')
+        and int(summaries[0][4]) <= 10000, 'call-memory-one-executed-no-skip')
+    return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0,
+        'ignored': 0, 'filteredOut': int(summaries[0][4]),
+        'scope': 'original-Store-parameter-and-typed-closure-counter-owner'}
+
+
+def qualify_call_memory(output, revision):
+    import shutil
+    require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
+        and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
+        and os.environ.get('GITHUB_REF_NAME') == CALL_MEMORY_BRANCH
+        and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'call-memory-one-exact-hosted-push')
+    require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'call-memory-source-revision')
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
+        'call-memory-owned-output')
+    output = fresh(output)
+    environment = io_copy_environment(build_environment(output))
+    environment.update(CARGO_TARGET_DIR=str(ROOT / 'target'), CARGO_INCREMENTAL='0',
+        RUSTUP_TOOLCHAIN='1.97.1', RUSTUP_AUTO_INSTALL='0', CARGO_BUILD_JOBS='2',
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+        CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+    logs = output / 'commands'; logs.mkdir()
+    # Single five-second process cleanup reserve inside the original 1320 seconds.
+    commands = Commands(ROOT, logs, environment, deadline_seconds=1315, command_seconds=1195)
+    receipt = {'schemaVersion': 'lsf.call-parameter-closure-memory.v1', 'status': 'in-progress',
+        'sourceRevision': revision, 'selectedCases': list(CALL_MEMORY_CASES),
+        'casesStarted': [], 'casesPassed': [], 'observations': [],
+        'fullCostModelQualified': False, 'fullRuntimeSuiteExecuted': False,
+        'fullVendorSuiteExecuted': False, 'signedGuestExecuted': False,
+        'originalActivationBudgetQualified': False, 'rssOrStackQualified': False,
+        'whole736Complete': False, 'whole745Complete': False, 'hermetic': False,
+        'compilerImplicitInputsAttested': False, 'oldProgrammesExecuted': False,
+        'cargoBuildMayRunHostBuildScripts': True,
+        'limits': {'overallSeconds': 1320, 'buildProcessSeconds': 1200,
+            'listProcessSeconds': 30, 'caseProcessSeconds': 60, 'cleanupSeconds': 5,
+            'buildJobs': 2, 'maximumRootCommands': 21,
+            'maximumCommandOutputBytes': 4 * 1024**2, 'maximumTotalLogsBytes': 16 * 1024**2,
+            'maximumPublicFiles': 64, 'maximumPublicBytes': 128 * 1024**2},
+        'commandBoundary': 'ALL21 Git/tool/build/library/list/test roots under one owner;42 raw channels',
+        'scope': 'four exact private native original-Store factory and typed closure ownership/refusal/unwind controls; no guest, full ActivationBudget, transitive cost or RSS qualification'}
+    def owned(stage, seconds, *argv, env=None):
+        require(len(commands.records) < len(CALL_MEMORY_STAGES)
+            and stage == CALL_MEMORY_STAGES[len(commands.records)], 'call-memory-fixed-command-order')
+        require(time.monotonic() < commands.deadline, 'call-memory-original-deadline')
+        commands.environment = environment if env is None else env
+        require_io_copy_environment(commands.environment)
+        require(len(argv) <= 64 and all(len(str(arg).encode()) <= 4096 for arg in argv)
+            and sum(len(str(arg).encode()) for arg in argv) <= 16 * 1024, 'call-memory-fixed-argv-bound')
+        receipt.setdefault('expandedCommands', []).append({'stage': stage,
+            'argv': [str(arg) for arg in argv], 'cwd': str(ROOT), 'commandSeconds': seconds})
+        commands.command_seconds = seconds; receipt['stage'] = stage
+        return commands.run(stage, *argv)
+    def metadata(stage, *args):
+        return owned(stage, 25, 'git', '-c', 'core.fsmonitor=false', *args)
+    def head(stage):
+        raw = metadata(stage, '-c', 'gc.auto=0', 'rev-parse', '--verify', 'HEAD')
+        require(len(raw) <= 256 and raw.strip().decode('ascii') == revision, 'call-memory-source-head')
+    def inputs(stage):
+        raw = metadata(stage, 'ls-files', '-z', '--', *SOURCE_ALLOWLIST)
+        require(len(raw) <= 2 * 1024**2, 'call-memory-source-path-bound')
+        names = [n for n in raw.decode('utf-8').split('\0') if n]
+        limits = SnapshotLimits(); require(100 <= len(names) <= limits.max_entries, 'call-memory-source-count')
+        result, total = {}, 0
+        for name in names:
+            require(time.monotonic() < commands.deadline, 'call-memory-source-inventory-deadline')
+            data = read_file(ROOT / name, limits.max_file_bytes); total += len(data)
+            result[name] = identity(data)
+        require(total <= limits.max_total_bytes, 'call-memory-source-total-checkout-bytes')
+        result[WORKFLOW] = identity(read_file(ROOT / WORKFLOW, 128 * 1024))
+        return dict(sorted(result.items()))
+    try:
+        head('source-head')
+        metadata('source-clean', 'diff', '--no-ext-diff', '--exit-code', 'HEAD', '--')
+        before = inputs('source-input-paths'); receipt['sourceBefore'] = before
+        write_json(output / 'source-inputs.json', before)
+        checked = source.verify(); receipt['wasmtimeSource'] = checked
+        toolchain = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml', 128 * 1024).decode())
+        require(toolchain['rust']['toolchain'] == '1.97.1'
+            and toolchain['contracts']['wasm-tools'] == '1.254.0', 'call-memory-normal-tool-pins')
+        rustup = shutil.which('rustup', path=environment.get('PATH'))
+        wasm = shutil.which('wasm-tools', path=environment.get('PATH'))
+        require(rustup and wasm, 'call-memory-required-installed-tools')
+        tools = {'rustup': Path(rustup).resolve(strict=True)}
+        for name in ('cargo', 'rustc'):
+            raw = owned('resolve-' + name, 25, rustup, 'which', '--toolchain', '1.97.1', name)
+            require(len(raw) <= 16 * 1024, 'call-memory-tool-resolution-bound')
+            path = Path(raw.decode('utf-8').strip())
+            require(path.is_absolute() and path.is_file(), 'call-memory-direct-tool-path')
+            tools[name] = path.resolve(strict=True)
+            raw = owned(name + '-version', 25, tools[name], '--version')
+            require(len(raw) <= 16 * 1024 and re.match(
+                rf'{name} 1\.97\.1(?:\s|$)', raw.decode('utf-8')), 'call-memory-tool-version')
+        tools['wasm-tools'] = Path(wasm).resolve(strict=True)
+        raw = owned('wasm-tools-version', 25, tools['wasm-tools'], '--version')
+        require(len(raw) <= 16 * 1024 and re.match(r'wasm-tools 1\.254\.0(?:\s|$)',
+            raw.decode('utf-8')), 'call-memory-wasm-tool-version')
+        pins = [file_identity(tools[n], n) for n in sorted(tools)]; receipt['tools'] = pins
+        environment['RUSTC'] = str(tools['rustc'])
+        suite = artifacts.Suite('crates/vendor/wasmtime/Cargo.toml', 'wasmtime',
+            'src/lib.rs', CALL_MEMORY_PREFIX, frozenset(CALL_MEMORY_CASES), True)
+        ordinal = len(commands.records)
+        owned('build-private', 1195, tools['cargo'], 'test', '--manifest-path', suite.manifest,
+            '--locked', '--lib', '--no-default-features', '--features', FEATURES,
+            '--no-run', '--message-format=json')
+        artifact = artifacts.read_inventory(logs / f'logs/{ordinal:02d}-build-private.stdout.txt',
+            ROOT, suite, target=ROOT / 'target')
+        executable = file_identity(artifact.executable, 'call-memory-controls', 512 * 1024**2)
+        receipt['privateExecutable'] = executable
+        def probe(argv, *, cwd, env, timeout, maximum):
+            require(argv == ['rustc', '--print', 'target-libdir'] and cwd == ROOT
+                and timeout == 30 and maximum == 4096, 'call-memory-exact-library-probe')
+            raw = owned('private-rust-library-path', 25, tools['rustc'], *argv[1:], env=env)
+            require(len(raw) <= maximum, 'call-memory-library-output-bound'); return 0, raw
+        run_env = io_copy_environment(artifacts.cargo_environment(ROOT, artifact, environment,
+            target=ROOT / 'target', execute=probe))
+        for index, case in enumerate(CALL_MEMORY_CASES):
+            listed = owned(f'private-list-{index}', 25, artifact.executable, case,
+                '--exact', '--list', env=run_env)
+            require(len(listed) <= artifacts.MAX_LIST_BYTES, 'call-memory-list-bound')
+            artifacts.validate_listing(listed, artifacts.Suite(suite.manifest, suite.target,
+                suite.source, case, frozenset((case,)), True))
+            receipt['casesStarted'].append(case)
+            raw = owned(f'private-case-{index}', 55, artifact.executable, case,
+                '--exact', '--show-output', '--test-threads=1', env=run_env)
+            receipt['observations'].append(call_memory_result(raw, case)); receipt['casesPassed'].append(case)
+        require(inputs('source-input-paths-after') == before and source.verify() == checked,
+            'call-memory-final-source')
+        metadata('source-clean-after', 'diff', '--no-ext-diff', '--exit-code', 'HEAD', '--')
+        head('source-head-after')
+        require(len(commands.records) == 21 and receipt['casesPassed'] == list(CALL_MEMORY_CASES),
+            'call-memory-four-controls-all21-roots')
+        require(file_identity(artifact.executable, 'call-memory-controls', 512 * 1024**2)
+            == executable, 'call-memory-final-executable')
+        require([file_identity(tools[n], n) for n in sorted(tools)] == pins, 'call-memory-final-tools')
+        require(time.monotonic() < commands.deadline, 'call-memory-final-deadline')
+        receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True,
+            executed=list(CALL_MEMORY_CASES), ignored=[])
+        write_json(output / 'receipt.json', receipt)
+    except BaseException:
+        receipt['status'] = 'failed'; write_json(output / 'FAILED.json', receipt); raise
+    finally:
+        write_json(output / 'commands.json', commands.records)
+
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -2947,8 +3116,11 @@ if __name__ == '__main__':
     modes.add_argument('--http-ip-format', action='store_true')
     modes.add_argument('--lift-result-memory', action='store_true')
     modes.add_argument('--node-bootstrap', action='store_true')
+    modes.add_argument('--call-parameter-closure-memory', action='store_true')
     args = parser.parse_args()
-    if args.node_bootstrap:
+    if args.call_parameter_closure_memory:
+        qualify_call_memory(args.output.resolve(), args.source_commit)
+    elif args.node_bootstrap:
         qualify_node_bootstrap(args.output.resolve(), args.source_commit)
     elif args.lift_result_memory:
         qualify_lift_result_memory(args.output.resolve(), args.source_commit)

@@ -370,5 +370,36 @@ class TaskNodeBootstrapOwner(unittest.TestCase):
             owner.node_bootstrap_result(b'', 'unregistered::node')
 
 
+class TaskStoreCallMemoryOwner(unittest.TestCase):
+    def test_four_exact_results_and_all21_roots_reject_skips_duplicates_and_other_cases(self):
+        self.assertEqual(len(owner.CALL_MEMORY_CASES), 4)
+        self.assertEqual(len(set(owner.CALL_MEMORY_CASES)), 4)
+        self.assertEqual(len(owner.CALL_MEMORY_STAGES), 21)
+        self.assertEqual(len(set(owner.CALL_MEMORY_STAGES)), 21)
+        self.assertEqual(owner.CALL_MEMORY_STAGES[:3],
+            ('source-head', 'source-clean', 'source-input-paths'))
+        self.assertEqual(owner.CALL_MEMORY_STAGES[-3:],
+            ('source-input-paths-after', 'source-clean-after', 'source-head-after'))
+        self.assertEqual(owner.CALL_MEMORY_STAGES[8:10],
+            ('build-private', 'private-rust-library-path'))
+        for index, case in enumerate(owner.CALL_MEMORY_CASES):
+            self.assertEqual(owner.CALL_MEMORY_STAGES[10 + index * 2:12 + index * 2],
+                (f'private-list-{index}', f'private-case-{index}'))
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            observed = owner.call_memory_result(raw, case)
+            self.assertEqual((observed['passed'], observed['ignored']), (1, 0))
+            self.assertEqual(observed['scope'],
+                'original-Store-parameter-and-typed-closure-counter-owner')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case'),
+                    raw.replace(b'0 measured', b'1 measured'), b''):
+                with self.assertRaises(ValueError):
+                    owner.call_memory_result(changed, case)
+        for other in (*owner.LIFT_RESULT_CASES, *owner.NODE_BOOTSTRAP_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(b'', other)
+
+
 if __name__ == '__main__':
     unittest.main()

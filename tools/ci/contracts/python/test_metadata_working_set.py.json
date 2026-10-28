@@ -1,5 +1,5 @@
 {
-  "cases":["ObservationTests.test_duplicate_json_keys_are_rejected","ObservationTests.test_exact_complete_observations","ObservationTests.test_missing_duplicate_reordered_and_small_substitute_fail","ObservationTests.test_missing_scenario_or_incomplete_publication_fails","ObservationTests.test_zero_missing_negative_or_malformed_memory_is_never_a_measurement","SuiteTests.test_inherited_child_modes_faults_and_unsupported_host_never_run","SuiteTests.test_inventory_declares_exact_linux_physical_owner","SuiteTests.test_one_ignored_execution_preserves_observations_and_full_deadline","SuiteTests.test_real_process_output_cap_and_deadline_still_fail_closed","SuiteTests.test_success_without_observations_or_missing_ignored_test_is_rejected"],
+  "storageCases":"guard-keys",
   "guards":{
     "ObservationTests.test_duplicate_json_keys_are_rejected":
       "1d9bb143cb0452b5b8d8b31882a872790152e2831d5b6d8e18ac08f8dc5b4f7d",
