@@ -1,24 +1,7 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"BufferCompatibility.test_bound_module_renders_both_aliases_and_stays_unqualified":
-      "9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008",
-"BufferCompatibility.test_bound_receipt_and_strict_json_types_cannot_drift":
-      "9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008",
-"BufferCompatibility.test_complete_module_and_recipe_survive_existing_material_cap":
-      "9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008",
-"BufferCompatibility.test_outcome_reader_rechecks_files_and_freshly_rehashed_context":
-      "9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008",
-"BufferCompatibility.test_recipe_backend_and_captured_declaration_must_match":
-      "9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008",
-"BufferCompatibility.test_unselected_legacy_capture_keeps_generic_output_without_declarations":
-      "9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008"
-},
-"kind":"python",
-"module":"tools/tests/test_guest_compatibility_buffer.py",
-"reviewReason":"New unpublished six-case source module: real owner receipt fixture replaces provisional source-only setup; no existing committed cases or guards change.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ee75c598b176543d73cab69e3f11106be8d64b2608d9b0ab5ec22b80a78a1e5b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"BufferCompatibility.test_bound_module_renders_both_aliases_and_stays_unqualified":
+      "9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008","BufferCompatibility.test_bound_receipt_and_strict_json_types_cannot_drift":
+      "9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008","BufferCompatibility.test_complete_module_and_recipe_survive_existing_material_cap":
+      "9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008","BufferCompatibility.test_outcome_reader_rechecks_files_and_freshly_rehashed_context":
+      "9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008","BufferCompatibility.test_recipe_backend_and_captured_declaration_must_match":
+      "9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008","BufferCompatibility.test_unselected_legacy_capture_keeps_generic_output_without_declarations":
+      "9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008"},"kind":"python","module":"tools/tests/test_guest_compatibility_buffer.py","reviewReason":"New unpublished six-case source module: real owner receipt fixture replaces provisional source-only setup; no existing committed cases or guards change.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"9dbfd643c392d559a74041ae69a5eed1fa4e2fa5402e4402f726a4121ec0d008":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ee75c598b176543d73cab69e3f11106be8d64b2608d9b0ab5ec22b80a78a1e5b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

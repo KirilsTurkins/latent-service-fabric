@@ -1,54 +1,22 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"RestoredMinimumRefusalControls.test_200_403_409_other_gateway_codes_and_noninteger_status_do_not_qualify":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_actual_restore_callsite_uses_existing_left_query_and_keeps_legacy_refusal_and_native_actions":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_changed_ready_generation_scope_or_epochs_after_refusal_cannot_claim_stability":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_current_history_or_its_future_generation_minimum_cannot_be_the_old_history_case":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_each_minimum_native_and_ready_token_requires_exact_writer_scope":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_each_original_transport_error_propagates_without_retry_or_passed_case":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_even_matching_foreign_or_old_schema_tokens_do_not_replace_writer_companion":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_first_resume_must_advance_exactly_once_without_generation_overflow":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_fresh_ready_generation_cannot_precede_actual_native_resume":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_malformed_minimum_native_tokens_and_nonquery_original_are_fatal":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_original_409_guard_is_red_and_restore_specific_refusal_uses_real_query_parser":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_other_service_and_generic_refusal_keep_original_403_409_contract":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_real_bounded_http_normal_return_omits_loss_flag_and_closes_all_three_connections":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_retained_writer_companion_changed_or_missing_is_fatal":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_schema_epoch_mismatch_at_each_boundary_is_not_this_restore":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_terminal_pending_and_early_collector_identities_bind_new_helper_bytes":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_three_queries_keep_alice_original_minimum_and_no_command_or_body":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_unchanged_regressed_or_inconsistent_recovery_epoch_never_sends_stale_minimum":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_wrong_caller_cannot_supply_the_left_healthy_query":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_wrong_count_or_unhealthy_query_on_either_side_is_not_masked_by_refusal":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631",
-"RestoredMinimumRefusalControls.test_wrong_missing_or_application_body_and_every_malformed_loss_flag_are_fatal":
-      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631"
-},
-"kind":"python",
-"module":"tools/tests/test_java_restored_minimum_refusal.py",
-"reviewReason":"Add restore-specific stale-minimum controls with exact retained writer association, native recovery transition, original Alice request, strict redacted refusal and healthy unchanged-view bracket; preserve legacy/generic refusal and every earlier Python control, and bind the new helper in terminal/pending/early collector identities. Synthetic controls do not qualify native execution.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94","class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"RestoredMinimumRefusalControls.test_200_403_409_other_gateway_codes_and_noninteger_status_do_not_qualify":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_actual_restore_callsite_uses_existing_left_query_and_keeps_legacy_refusal_and_native_actions":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_changed_ready_generation_scope_or_epochs_after_refusal_cannot_claim_stability":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_current_history_or_its_future_generation_minimum_cannot_be_the_old_history_case":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_each_minimum_native_and_ready_token_requires_exact_writer_scope":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_each_original_transport_error_propagates_without_retry_or_passed_case":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_even_matching_foreign_or_old_schema_tokens_do_not_replace_writer_companion":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_first_resume_must_advance_exactly_once_without_generation_overflow":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_fresh_ready_generation_cannot_precede_actual_native_resume":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_malformed_minimum_native_tokens_and_nonquery_original_are_fatal":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_original_409_guard_is_red_and_restore_specific_refusal_uses_real_query_parser":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_other_service_and_generic_refusal_keep_original_403_409_contract":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_real_bounded_http_normal_return_omits_loss_flag_and_closes_all_three_connections":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_retained_writer_companion_changed_or_missing_is_fatal":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_schema_epoch_mismatch_at_each_boundary_is_not_this_restore":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_terminal_pending_and_early_collector_identities_bind_new_helper_bytes":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_three_queries_keep_alice_original_minimum_and_no_command_or_body":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_unchanged_regressed_or_inconsistent_recovery_epoch_never_sends_stale_minimum":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_wrong_caller_cannot_supply_the_left_healthy_query":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_wrong_count_or_unhealthy_query_on_either_side_is_not_masked_by_refusal":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631","RestoredMinimumRefusalControls.test_wrong_missing_or_application_body_and_every_malformed_loss_flag_are_fatal":
+      "271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631"},"kind":"python","module":"tools/tests/test_java_restored_minimum_refusal.py","reviewReason":"Add restore-specific stale-minimum controls with exact retained writer association, native recovery transition, original Alice request, strict redacted refusal and healthy unchanged-view bracket; preserve legacy/generic refusal and every earlier Python control, and bind the new helper in terminal/pending/early collector identities. Synthetic controls do not qualify native execution.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"271bbc329e1340af4d3630d445922475d7783ef75af715fe88fedfe605527631":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94","class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"],"skipSites":[]}}}

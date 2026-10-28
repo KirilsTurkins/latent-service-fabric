@@ -1,44 +1,17 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"NamespaceReadBackpressureControls.test_busy_at_cutoff_and_sleep_crossing_cutoff_cannot_make_another_read":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_busy_then_success_keeps_one_original_cutoff_and_identical_request":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_eight_busy_reads_fail_without_a_namespace_or_a_ninth_attempt":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_expired_and_late_success_cutoffs_never_supply_namespace_proof":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_global_deadline_is_not_renewed_by_a_busy_read":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_invalid_publication_is_refused_before_any_read":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_malformed_busy_envelopes_never_authorize_another_read":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_namespace_classifier_does_not_expand_original_allowlist_or_mutation_authority":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_original_256_call_limit_still_blocks_the_next_busy_observation":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_original_cancellation_before_first_or_next_read_never_spawns_after_refusal":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_other_errors_are_fatal_without_another_read":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_process_failure_is_not_caught_or_retried":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_real_campaign_still_compares_final_successful_count_after_all_four_refusals":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_real_recording_client_retains_busy_bytes_and_reaps_same_request":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_single_real_success_keeps_original_namespace_and_operator_request":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07",
-"NamespaceReadBackpressureControls.test_success_requires_known_result_and_original_namespace_count":
-      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07"
-},
-"kind":"python",
-"module":"tools/tests/test_java_namespace_read_backpressure.py",
-"reviewReason":"Review sixteen namespace-only read controls: exact closed ResourceExhausted observations share the original 25-second cutoff and eight-read bound, preserve current caller/publication/namespace and all existing read/mutation guards, and require real final namespace/count equality.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828","class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"NamespaceReadBackpressureControls.test_busy_at_cutoff_and_sleep_crossing_cutoff_cannot_make_another_read":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_busy_then_success_keeps_one_original_cutoff_and_identical_request":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_eight_busy_reads_fail_without_a_namespace_or_a_ninth_attempt":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_expired_and_late_success_cutoffs_never_supply_namespace_proof":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_global_deadline_is_not_renewed_by_a_busy_read":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_invalid_publication_is_refused_before_any_read":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_malformed_busy_envelopes_never_authorize_another_read":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_namespace_classifier_does_not_expand_original_allowlist_or_mutation_authority":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_original_256_call_limit_still_blocks_the_next_busy_observation":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_original_cancellation_before_first_or_next_read_never_spawns_after_refusal":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_other_errors_are_fatal_without_another_read":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_process_failure_is_not_caught_or_retried":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_real_campaign_still_compares_final_successful_count_after_all_four_refusals":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_real_recording_client_retains_busy_bytes_and_reaps_same_request":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_single_real_success_keeps_original_namespace_and_operator_request":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07","NamespaceReadBackpressureControls.test_success_requires_known_result_and_original_namespace_count":
+      "10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07"},"kind":"python","module":"tools/tests/test_java_namespace_read_backpressure.py","reviewReason":"Review sixteen namespace-only read controls: exact closed ResourceExhausted observations share the original 25-second cutoff and eight-read bound, preserve current caller/publication/namespace and all existing read/mutation guards, and require real final namespace/count equality.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"10962f0a947a8901f25437a7a20460a258a092482341447951b2b37b8ca92e07":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828","class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"],"skipSites":[]}}}

@@ -1,60 +1,25 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"TypeScriptFetchTests.test_abort_rejects_before_contact_and_retains_capacity_until_actual_completion":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_application_metadata_cannot_install_or_override_backend":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_completed_exchange_releases_capacity_before_its_consumer_admits_successor":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_default_fetch_urlencoded_upload_preserves_exact_typed_metadata_chunks_and_ownership":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_failed_get_head_construction_preserves_inherited_body":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_fetch_iterable_headers_use_the_typed_boundary_once_and_refuse_before_contact":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_fetch_replacement_body_uses_normal_typed_adapter_once":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_header_iterators_are_cached_and_closed_at_structural_and_profile_bounds":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_headers_accept_iterable_pairs_and_capture_independent_values":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_headers_reject_primitive_initializers_and_malformed_pairs":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_only_exact_async_import_runtime_with_declared_typed_http_selects_backend":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_partial_response_failure_and_oversize_drop_actual_resource_owners":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_pending_typed_exchange_http_errors_chunk_retirement_and_no_replay":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_redirects_reauthorize_strip_headers_and_mutation_is_never_replayed":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_rejected_exchange_releases_capacity_before_rejection_consumer":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_replacement_body_does_not_consume_or_reuse_inherited_bytes":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_response_error_factory_preserves_null_body_immutable_headers_and_clone":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_response_redirect_factory_matches_reference_location_status_and_clone":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_response_redirect_preserves_conversion_errors_and_finite_url_profile":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_standard_headers_buffered_body_clone_and_one_shot_request":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_synthetic_responses_do_not_contact_provider_or_convert_fetch_failure":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_urlencoded_bodies_match_reference_bytes_media_type_and_construction_snapshot":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_urlencoded_body_uses_native_brand_and_serializer_without_user_stringification":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8",
-"TypeScriptFetchTests.test_urlencoded_size_limit_applies_to_encoded_bytes_before_provider_contact":
-      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8"
-},
-"kind":"python",
-"module":"tools/tests/test_typescript_fetch.py",
-"reviewReason":"Union current development and signed Fetch source; preserve every parent case, guard, workflow setting and required command",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ec93b6bffe725c5d80c76b5c16d6e12b6ca44812eb2f213ded39161c87534508","class:setup-sha256:610c214015d02f5f50fd8e11048c34fc2f1a1dbac0f3392001c6965bc9111a77","class:skip:self.skipTest('requires Node')"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"TypeScriptFetchTests.test_abort_rejects_before_contact_and_retains_capacity_until_actual_completion":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_application_metadata_cannot_install_or_override_backend":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_completed_exchange_releases_capacity_before_its_consumer_admits_successor":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_default_fetch_urlencoded_upload_preserves_exact_typed_metadata_chunks_and_ownership":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_failed_get_head_construction_preserves_inherited_body":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_fetch_iterable_headers_use_the_typed_boundary_once_and_refuse_before_contact":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_fetch_replacement_body_uses_normal_typed_adapter_once":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_header_iterators_are_cached_and_closed_at_structural_and_profile_bounds":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_headers_accept_iterable_pairs_and_capture_independent_values":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_headers_reject_primitive_initializers_and_malformed_pairs":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_only_exact_async_import_runtime_with_declared_typed_http_selects_backend":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_partial_response_failure_and_oversize_drop_actual_resource_owners":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_pending_typed_exchange_http_errors_chunk_retirement_and_no_replay":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_redirects_reauthorize_strip_headers_and_mutation_is_never_replayed":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_rejected_exchange_releases_capacity_before_rejection_consumer":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_replacement_body_does_not_consume_or_reuse_inherited_bytes":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_response_error_factory_preserves_null_body_immutable_headers_and_clone":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_response_redirect_factory_matches_reference_location_status_and_clone":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_response_redirect_preserves_conversion_errors_and_finite_url_profile":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_standard_headers_buffered_body_clone_and_one_shot_request":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_synthetic_responses_do_not_contact_provider_or_convert_fetch_failure":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_urlencoded_bodies_match_reference_bytes_media_type_and_construction_snapshot":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_urlencoded_body_uses_native_brand_and_serializer_without_user_stringification":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8","TypeScriptFetchTests.test_urlencoded_size_limit_applies_to_encoded_bytes_before_provider_contact":
+      "8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8"},"kind":"python","module":"tools/tests/test_typescript_fetch.py","reviewReason":"Union current development and signed Fetch source; preserve every parent case, guard, workflow setting and required command","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"8799d783eaf4e2001b812206873d0e3807b07f7dc84e881b868bff44cb4523e8":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ec93b6bffe725c5d80c76b5c16d6e12b6ca44812eb2f213ded39161c87534508","class:setup-sha256:610c214015d02f5f50fd8e11048c34fc2f1a1dbac0f3392001c6965bc9111a77","class:skip:self.skipTest('requires Node')"],"skipSites":[]}}}

@@ -1,36 +1,13 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"AuditLifecycleHelperTests.test_cancellation_is_observed_without_deleting_stopped_history":
-      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905",
-"AuditLifecycleHelperTests.test_command_limit_is_checked_before_spawning_or_dispatch":
-      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905",
-"AuditLifecycleHelperTests.test_expiry_requires_exact_native_reason_and_never_replays_or_serves_bytes":
-      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905",
-"AuditLifecycleHelperTests.test_failed_renewal_observes_original_record_without_replaying":
-      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905",
-"AuditLifecycleHelperTests.test_generic_or_unknown_exhaustion_is_not_qualified_as_affirmative_rejection":
-      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905",
-"AuditLifecycleHelperTests.test_missing_corrupt_oversized_and_linked_records_are_never_repaired":
-      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905",
-"AuditLifecycleHelperTests.test_record_count_refuses_one_more_than_the_actual_fixture_capacity":
-      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905",
-"AuditLifecycleHelperTests.test_renewal_uses_current_generation_and_native_operation_surface":
-      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905",
-"AuditLifecycleHelperTests.test_separate_receipt_is_lossless_private_and_keeps_parent_within_original_bound":
-      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905",
-"AuditLifecycleHelperTests.test_separate_receipt_never_overwrites_existing_or_linked_evidence":
-      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905",
-"AuditLifecycleHelperTests.test_separate_receipt_refuses_oversize_and_unqualified_reports_before_creation":
-      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905",
-"AuditLifecycleHelperTests.test_stopped_record_scan_is_read_only_bounded_and_exact":
-      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905"
-},
-"kind":"python",
-"module":"tools/tests/test_static_audit_lifecycle.py",
-"reviewReason":"Preserve every live-campaign helper assertion and execution guard; add unconditional lossless evidence split, original byte bounds, unknown outcome preservation and no-overwrite regressions.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:afd1ac1071fc91b58ed58039dc75ee440019830b5ff0f0bcddcfb2eb006b2e4c","class:setup-sha256:c51f0f3023e7191abbffecfb5fe9f9398996cc216535c5d94cb4618e6ffe1d62"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"AuditLifecycleHelperTests.test_cancellation_is_observed_without_deleting_stopped_history":
+      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905","AuditLifecycleHelperTests.test_command_limit_is_checked_before_spawning_or_dispatch":
+      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905","AuditLifecycleHelperTests.test_expiry_requires_exact_native_reason_and_never_replays_or_serves_bytes":
+      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905","AuditLifecycleHelperTests.test_failed_renewal_observes_original_record_without_replaying":
+      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905","AuditLifecycleHelperTests.test_generic_or_unknown_exhaustion_is_not_qualified_as_affirmative_rejection":
+      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905","AuditLifecycleHelperTests.test_missing_corrupt_oversized_and_linked_records_are_never_repaired":
+      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905","AuditLifecycleHelperTests.test_record_count_refuses_one_more_than_the_actual_fixture_capacity":
+      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905","AuditLifecycleHelperTests.test_renewal_uses_current_generation_and_native_operation_surface":
+      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905","AuditLifecycleHelperTests.test_separate_receipt_is_lossless_private_and_keeps_parent_within_original_bound":
+      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905","AuditLifecycleHelperTests.test_separate_receipt_never_overwrites_existing_or_linked_evidence":
+      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905","AuditLifecycleHelperTests.test_separate_receipt_refuses_oversize_and_unqualified_reports_before_creation":
+      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905","AuditLifecycleHelperTests.test_stopped_record_scan_is_read_only_bounded_and_exact":
+      "dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905"},"kind":"python","module":"tools/tests/test_static_audit_lifecycle.py","reviewReason":"Preserve every live-campaign helper assertion and execution guard; add unconditional lossless evidence split, original byte bounds, unknown outcome preservation and no-overwrite regressions.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"dfbada8b8212e175798540910bcb6bccb7e90329bd3537a8ed8e36083ad40905":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:afd1ac1071fc91b58ed58039dc75ee440019830b5ff0f0bcddcfb2eb006b2e4c","class:setup-sha256:c51f0f3023e7191abbffecfb5fe9f9398996cc216535c5d94cb4618e6ffe1d62"],"skipSites":[]}}}

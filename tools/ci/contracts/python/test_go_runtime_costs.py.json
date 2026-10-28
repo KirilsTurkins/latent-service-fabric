@@ -1,50 +1,20 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"GoRuntimeCosts.test_actual_programme_grants_activation_only_to_the_explicit_v5_component":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_actual_stats_parser_keeps_source_data_separate_from_physical_qualification":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_compiler_reference_requires_actual_function_local_stack_address_and_bounded_frame":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_consumption_cannot_accept_boolean_negative_private_or_unbounded_integer_fields":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_failed_tuple_cannot_build_or_run_and_failed_build_cannot_write_success":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_fixture_has_no_initializer_workers_explicit_yield_or_new_application_runtime_facade":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_idle_requires_actual_complete_rows_cells_and_original_quota_retirement":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_invalid_finite_counters_and_stale_or_fabricated_growth_are_not_cost_evidence":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_live_stack_and_heap_bytes_survive_real_gc_and_suspension_before_checksum_and_release":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_original_profile_programmes_keep_real_baselines_and_fresh_calls_after_each_live_gc_case":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_private_unknown_duplicate_reordered_or_foreign_mode_observations_are_rejected":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_recursive_reference_uses_the_identical_complete_owned_function_without_execution":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_reference_module_is_beneath_the_go_temporary_root_that_ignores_root_go_mod":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_retained_pinned_wasm_diagnostics_prove_the_real_array_initialization_and_checksum_copy":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_same_ordinary_source_has_explicit_default_and_v5_profiles_with_original_sdk_and_budgets":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_small_generic_stack_growth_cannot_be_mistaken_for_two_recursive_live_stacks":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_success_requires_real_reaped_known_result_revision_original_budget_and_zero_effects":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_unknown_profile_refuses_before_creating_an_application":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083",
-"GoRuntimeCosts.test_wasm_reference_rejects_wrong_initialization_copy_source_line_and_other_function":
-      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083"
-},
-"kind":"python",
-"module":"tools/tests/test_go_runtime_costs.py",
-"reviewReason":"One additive actual programme-path default/v5 grant control, oldsource RED capability-not-imported/current19PASS; original18cases and fixture/decorator/skip context unchanged. No actualcost pass claim.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"GoRuntimeCosts.test_actual_programme_grants_activation_only_to_the_explicit_v5_component":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_actual_stats_parser_keeps_source_data_separate_from_physical_qualification":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_compiler_reference_requires_actual_function_local_stack_address_and_bounded_frame":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_consumption_cannot_accept_boolean_negative_private_or_unbounded_integer_fields":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_failed_tuple_cannot_build_or_run_and_failed_build_cannot_write_success":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_fixture_has_no_initializer_workers_explicit_yield_or_new_application_runtime_facade":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_idle_requires_actual_complete_rows_cells_and_original_quota_retirement":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_invalid_finite_counters_and_stale_or_fabricated_growth_are_not_cost_evidence":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_live_stack_and_heap_bytes_survive_real_gc_and_suspension_before_checksum_and_release":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_original_profile_programmes_keep_real_baselines_and_fresh_calls_after_each_live_gc_case":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_private_unknown_duplicate_reordered_or_foreign_mode_observations_are_rejected":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_recursive_reference_uses_the_identical_complete_owned_function_without_execution":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_reference_module_is_beneath_the_go_temporary_root_that_ignores_root_go_mod":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_retained_pinned_wasm_diagnostics_prove_the_real_array_initialization_and_checksum_copy":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_same_ordinary_source_has_explicit_default_and_v5_profiles_with_original_sdk_and_budgets":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_small_generic_stack_growth_cannot_be_mistaken_for_two_recursive_live_stacks":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_success_requires_real_reaped_known_result_revision_original_budget_and_zero_effects":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_unknown_profile_refuses_before_creating_an_application":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083","GoRuntimeCosts.test_wasm_reference_rejects_wrong_initialization_copy_source_line_and_other_function":
+      "d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083"},"kind":"python","module":"tools/tests/test_go_runtime_costs.py","reviewReason":"One additive actual programme-path default/v5 grant control, oldsource RED capability-not-imported/current19PASS; original18cases and fixture/decorator/skip context unchanged. No actualcost pass claim.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"d8296b7f84dc2fef84df29419e9062e2f44132bf71ee80786974f26c9b537083":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9dc4419f037aaf2e1e5770ed7fa8e811bcab4e5b62cc6a16299fe4a2270b2ea5","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

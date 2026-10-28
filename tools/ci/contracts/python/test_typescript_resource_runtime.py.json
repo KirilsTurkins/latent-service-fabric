@@ -1,40 +1,15 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"ResourceRuntimeBoundaries.test_activation_identity_keeps_the_native_installation_scope_distinct_from_clocks":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_compiler_metadata_refuses_foreign_run_digest_and_native_input_kind":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_completed_or_dispatched_audit_never_substitutes_for_actual_accepted_timer_wait":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_completed_process_is_not_a_pending_witness_and_never_triggers_cancellation":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_configuration_retains_original_cell_budgets_and_explicit_per_tenant_aliases":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_known_loss_requires_native_token_success_and_preserves_zero_loss_refusal":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_only_exact_optional_audit_refusal_retains_native_and_physical_barriers":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_pending_read_budget_is_applied_to_real_cli_deadline_and_restored_on_failure":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_pending_rejects_unavailable_incomplete_duplicate_and_malformed_observations":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_pending_requires_later_real_timer_wait_and_positive_physical_provider_owners":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_prior_native_pair_before_this_invocation_is_never_a_pending_witness":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_real_normal_derived_world_preserves_original_export_component_and_namespace":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_self_rehashed_compiler_member_cannot_replace_the_pinned_archive":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac",
-"ResourceRuntimeBoundaries.test_unknown_optional_duplicate_or_undeclared_runtime_import_is_refused":
-      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac"
-},
-"kind":"python",
-"module":"tools/tests/test_typescript_resource_runtime.py",
-"reviewReason":"Require recorded positive audit loss for unmatched labels while preserving exact native-token and physical/provider/process witnesses; reject zero-loss missing labels and native records emitted before the current invocation.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:0c04bc6d4e56bdd7db230f255f9b14207006a491453fff512479800f56065e10","class:setup-sha256:bd3ae93806c85055f8708c49779f5800a5dd99cae7d55157d249141b0a118365"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"ResourceRuntimeBoundaries.test_activation_identity_keeps_the_native_installation_scope_distinct_from_clocks":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_compiler_metadata_refuses_foreign_run_digest_and_native_input_kind":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_completed_or_dispatched_audit_never_substitutes_for_actual_accepted_timer_wait":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_completed_process_is_not_a_pending_witness_and_never_triggers_cancellation":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_configuration_retains_original_cell_budgets_and_explicit_per_tenant_aliases":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_known_loss_requires_native_token_success_and_preserves_zero_loss_refusal":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_only_exact_optional_audit_refusal_retains_native_and_physical_barriers":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_pending_read_budget_is_applied_to_real_cli_deadline_and_restored_on_failure":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_pending_rejects_unavailable_incomplete_duplicate_and_malformed_observations":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_pending_requires_later_real_timer_wait_and_positive_physical_provider_owners":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_prior_native_pair_before_this_invocation_is_never_a_pending_witness":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_real_normal_derived_world_preserves_original_export_component_and_namespace":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_self_rehashed_compiler_member_cannot_replace_the_pinned_archive":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac","ResourceRuntimeBoundaries.test_unknown_optional_duplicate_or_undeclared_runtime_import_is_refused":
+      "360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac"},"kind":"python","module":"tools/tests/test_typescript_resource_runtime.py","reviewReason":"Require recorded positive audit loss for unmatched labels while preserving exact native-token and physical/provider/process witnesses; reject zero-loss missing labels and native records emitted before the current invocation.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"360075946707c1232e807acde1b554cfc02150cc5f3edd125b4d1fb8934a3aac":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:0c04bc6d4e56bdd7db230f255f9b14207006a491453fff512479800f56065e10","class:setup-sha256:bd3ae93806c85055f8708c49779f5800a5dd99cae7d55157d249141b0a118365"],"skipSites":[]}}}

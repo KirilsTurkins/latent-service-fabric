@@ -1,24 +1,7 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"AngularT1FailureTests.test_currentness_vocabulary_matches_original_producer_owned_codes":
-      "c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62",
-"AngularT1FailureTests.test_duplicate_oversized_or_invalid_error_projection_stays_unclassified":
-      "c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62",
-"AngularT1FailureTests.test_failed_cli_observation_happens_after_original_process_close_without_replay":
-      "c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62",
-"AngularT1FailureTests.test_group_retirement_does_not_fabricate_clean_shutdown_or_durable_outcome":
-      "c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62",
-"AngularT1FailureTests.test_main_emits_failed_observation_and_preserves_original_failure":
-      "c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62",
-"AngularT1FailureTests.test_only_exact_typed_currentness_reason_is_retained_without_error_strings":
-      "c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62"
-},
-"kind":"python",
-"module":"tools/tests/test_angular_t1_failure.py",
-"reviewReason":"Retain all six Angular failure observation, hostile projection, process retirement and original error preservation controls with their original fixture guards.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:0e796f841e87ed8cd2524a39fcc0ce475ad762f6eac982c1f367543d4caa2b07","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"AngularT1FailureTests.test_currentness_vocabulary_matches_original_producer_owned_codes":
+      "c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62","AngularT1FailureTests.test_duplicate_oversized_or_invalid_error_projection_stays_unclassified":
+      "c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62","AngularT1FailureTests.test_failed_cli_observation_happens_after_original_process_close_without_replay":
+      "c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62","AngularT1FailureTests.test_group_retirement_does_not_fabricate_clean_shutdown_or_durable_outcome":
+      "c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62","AngularT1FailureTests.test_main_emits_failed_observation_and_preserves_original_failure":
+      "c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62","AngularT1FailureTests.test_only_exact_typed_currentness_reason_is_retained_without_error_strings":
+      "c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62"},"kind":"python","module":"tools/tests/test_angular_t1_failure.py","reviewReason":"Retain all six Angular failure observation, hostile projection, process retirement and original error preservation controls with their original fixture guards.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"c5aa43d526d8dd03a488f7dd7c355b9877cdef246b352845f73fed1a662c6d62":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:0e796f841e87ed8cd2524a39fcc0ce475ad762f6eac982c1f367543d4caa2b07","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
