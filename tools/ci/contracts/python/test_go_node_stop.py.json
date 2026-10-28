@@ -1,66 +1,28 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"GoNodeStop.test_actual_88ae_audit_pages_parse_but_prior_fresh_records_cannot_prove_pending_work":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_barrier_requires_actual_live_store_and_host_completed_body_timers_not_just_a_wait":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_component_build_failure_cannot_run_a_node_or_write_successful_qualification":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_configuration_updates_the_actual_already_created_owned_file_with_original_limits":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_durable_audit_identity_uses_exact_native_hex_epoch_and_positive_u64_sequence":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_exact_java_helper_extension_is_unused_and_does_not_relabel_retained_products":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_exact_successful_producer_artifact_cannot_be_substituted_with_other_head_job_or_failure":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_exact_test_only_inventory_is_distinct_from_current_native_execution":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_failed_tuple_integrity_never_reaches_a_new_component_or_signer":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_fixture_uses_original_greeting_with_explicit_v5_and_unchanged_sdk_wit_and_budgets":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_fresh_after_restart_binds_actual_resolved_revision_and_original_consumption":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_historical_normal_tuple_allows_only_exact_unused_dotnet_extension_and_keeps_default_strict":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_initializer_only_or_other_activation_cannot_stand_in_for_accepted_body_work":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_live_barrier_read_failure_restores_the_original_deadline_and_never_signals_node":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_missing_dropped_duplicate_or_partial_audit_is_not_a_live_work_barrier":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_named_timer_events_require_real_retained_provider_calls_with_the_store":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_only_the_exact_known_read_only_audit_refusal_is_a_nonwitness":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_optional_global_loss_does_not_replace_or_erase_the_required_named_positive_witnesses":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_original_limits_are_go_limits_and_readiness_does_not_raise_any_capacity":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_owned_fixture_uses_only_the_granted_standard_timer_path_including_initializer":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_refused_audit_page_retains_its_actual_bytes_and_context_without_fake_page_success":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_refused_observation_then_complete_original_witnesses_stays_inside_original_poll_envelope":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_returned_root_requires_actual_close_and_timer_next_after_checked_start_results":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_shutdown_requires_each_original_physical_owner_zero_and_real_joined_reaped_report":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_sixteen_refused_reads_never_authorize_stop_or_extend_original_deadline":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_timer_witness_sequences_from_distinct_epochs_cannot_be_combined":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74",
-"GoNodeStop.test_uncertain_transport_is_retained_without_inventing_cancellation_or_retirement":
-      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74"
-},
-"kind":"python",
-"module":"tools/tests/test_go_node_stop.py",
-"reviewReason":"Measured native88ae/run39394141753 failure before SIGTERM: durable codec requires exactly32 lowercase hex epoch, nonzero canonicalu64 sequence; no integer epoch fallback. Update only event fixture epoch literal1 to32hex and stale-order negative from impossible sequence0 to valid unique start6/next5. All other23 old bodies plus class/decorator/skip context AST-exact; three additive nativecodec/actual3pages/cross-epoch controls. Actual earlier-fresh audit pages parse but do not establish pending work; original16attempt/10s/positive timer+provider+Store/shutdown obligations unchanged. Full live-stop remains unqualified.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c3a64ca4f2ed10a095fc8c4a43c15ef923479982356834b74439df9160d7fbca","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"GoNodeStop.test_actual_88ae_audit_pages_parse_but_prior_fresh_records_cannot_prove_pending_work":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_barrier_requires_actual_live_store_and_host_completed_body_timers_not_just_a_wait":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_component_build_failure_cannot_run_a_node_or_write_successful_qualification":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_configuration_updates_the_actual_already_created_owned_file_with_original_limits":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_durable_audit_identity_uses_exact_native_hex_epoch_and_positive_u64_sequence":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_exact_java_helper_extension_is_unused_and_does_not_relabel_retained_products":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_exact_successful_producer_artifact_cannot_be_substituted_with_other_head_job_or_failure":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_exact_test_only_inventory_is_distinct_from_current_native_execution":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_failed_tuple_integrity_never_reaches_a_new_component_or_signer":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_fixture_uses_original_greeting_with_explicit_v5_and_unchanged_sdk_wit_and_budgets":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_fresh_after_restart_binds_actual_resolved_revision_and_original_consumption":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_historical_normal_tuple_allows_only_exact_unused_dotnet_extension_and_keeps_default_strict":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_initializer_only_or_other_activation_cannot_stand_in_for_accepted_body_work":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_live_barrier_read_failure_restores_the_original_deadline_and_never_signals_node":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_missing_dropped_duplicate_or_partial_audit_is_not_a_live_work_barrier":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_named_timer_events_require_real_retained_provider_calls_with_the_store":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_only_the_exact_known_read_only_audit_refusal_is_a_nonwitness":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_optional_global_loss_does_not_replace_or_erase_the_required_named_positive_witnesses":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_original_limits_are_go_limits_and_readiness_does_not_raise_any_capacity":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_owned_fixture_uses_only_the_granted_standard_timer_path_including_initializer":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_refused_audit_page_retains_its_actual_bytes_and_context_without_fake_page_success":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_refused_observation_then_complete_original_witnesses_stays_inside_original_poll_envelope":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_returned_root_requires_actual_close_and_timer_next_after_checked_start_results":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_shutdown_requires_each_original_physical_owner_zero_and_real_joined_reaped_report":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_sixteen_refused_reads_never_authorize_stop_or_extend_original_deadline":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_timer_witness_sequences_from_distinct_epochs_cannot_be_combined":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74","GoNodeStop.test_uncertain_transport_is_retained_without_inventing_cancellation_or_retirement":
+      "26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74"},"kind":"python","module":"tools/tests/test_go_node_stop.py","reviewReason":"Measured native88ae/run39394141753 failure before SIGTERM: durable codec requires exactly32 lowercase hex epoch, nonzero canonicalu64 sequence; no integer epoch fallback. Update only event fixture epoch literal1 to32hex and stale-order negative from impossible sequence0 to valid unique start6/next5. All other23 old bodies plus class/decorator/skip context AST-exact; three additive nativecodec/actual3pages/cross-epoch controls. Actual earlier-fresh audit pages parse but do not establish pending work; original16attempt/10s/positive timer+provider+Store/shutdown obligations unchanged. Full live-stop remains unqualified.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"26d03ddae031e10c06fa6aeddb130a09af08fe3edba444f24de9539118e02b74":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c3a64ca4f2ed10a095fc8c4a43c15ef923479982356834b74439df9160d7fbca","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

@@ -1,30 +1,10 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"StreamRotation.test_checked_private_candidate_uses_selected_binary_once_without_exposing_process_output":
-      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f",
-"StreamRotation.test_closed_record_and_original_limit_deadline_bounds_cannot_change_other_fields":
-      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f",
-"StreamRotation.test_epochs_require_strict_positive_u64_and_monotonic_new_value":
-      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f",
-"StreamRotation.test_exact_provider_and_supplied_base_epoch_cannot_be_substituted":
-      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f",
-"StreamRotation.test_only_two_reload_fields_change_and_original_credentials_bindings_and_inputs_stay_exact":
-      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f",
-"StreamRotation.test_protected_rotation_input_and_explicit_opt_in_are_required_before_any_candidate_or_process":
-      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f",
-"StreamRotation.test_public_cli_dispatches_rotation_and_rejects_initial_installation_arguments":
-      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f",
-"StreamRotation.test_refusal_or_unknown_check_retains_candidate_without_fallback_or_live_input_replacement":
-      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f",
-"StreamRotation.test_rotation_schema_is_the_canonical_resource_in_the_existing_helper_package":
-      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f"
-},
-"kind":"python",
-"module":"tools/tests/test_outbound_stream_rotation.py",
-"reviewReason":"Nine focused protected rotation candidate controls preserve exact provider/file epoch and immutable fields, strict original limits, selected once-only bounded check ownership, static private failure retention, public CLI separation and canonical packaged schema bytes.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:8b832df4498ae94a6a60701399f5bddaf983bd8396e9ac08cdac8f45bfcbb377","class:setup-sha256:81a62aeb4fda5e4e461d7bf9a07d69fe13c96169b138aeaeae6fcdef20a25cf3"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"StreamRotation.test_checked_private_candidate_uses_selected_binary_once_without_exposing_process_output":
+      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f","StreamRotation.test_closed_record_and_original_limit_deadline_bounds_cannot_change_other_fields":
+      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f","StreamRotation.test_epochs_require_strict_positive_u64_and_monotonic_new_value":
+      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f","StreamRotation.test_exact_provider_and_supplied_base_epoch_cannot_be_substituted":
+      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f","StreamRotation.test_only_two_reload_fields_change_and_original_credentials_bindings_and_inputs_stay_exact":
+      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f","StreamRotation.test_protected_rotation_input_and_explicit_opt_in_are_required_before_any_candidate_or_process":
+      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f","StreamRotation.test_public_cli_dispatches_rotation_and_rejects_initial_installation_arguments":
+      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f","StreamRotation.test_refusal_or_unknown_check_retains_candidate_without_fallback_or_live_input_replacement":
+      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f","StreamRotation.test_rotation_schema_is_the_canonical_resource_in_the_existing_helper_package":
+      "a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f"},"kind":"python","module":"tools/tests/test_outbound_stream_rotation.py","reviewReason":"Nine focused protected rotation candidate controls preserve exact provider/file epoch and immutable fields, strict original limits, selected once-only bounded check ownership, static private failure retention, public CLI separation and canonical packaged schema bytes.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"a50f3582745da5dbee62b50f1a4385b276eb753401bb1f76a7bbbf6b89a8803f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:8b832df4498ae94a6a60701399f5bddaf983bd8396e9ac08cdac8f45bfcbb377","class:setup-sha256:81a62aeb4fda5e4e461d7bf9a07d69fe13c96169b138aeaeae6fcdef20a25cf3"],"skipSites":[]}}}

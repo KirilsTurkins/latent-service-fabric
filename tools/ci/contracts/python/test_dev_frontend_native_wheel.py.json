@@ -1,20 +1,5 @@
-{
-  "storageCases":"guard-keys",
-  "guards":{
-    "NativeWheelOwner.test_changed_package_version_missing_license_and_ambiguous_record_refuse":
-      "da7736db1e53a4b38f728faba6c0da13a7d4fe0263ff3a6f07f5941c81894524",
-    "NativeWheelOwner.test_exact_existing_inventory_record_attributes_original_native_bytes_and_version":
-      "da7736db1e53a4b38f728faba6c0da13a7d4fe0263ff3a6f07f5941c81894524",
-    "NativeWheelOwner.test_missing_changed_size_or_wrong_digest_record_refuses_without_general_fallback":
-      "da7736db1e53a4b38f728faba6c0da13a7d4fe0263ff3a6f07f5941c81894524",
-    "NativeWheelOwner.test_unknown_native_file_and_foreign_record_never_gain_directory_based_ownership":
-      "da7736db1e53a4b38f728faba6c0da13a7d4fe0263ff3a6f07f5941c81894524"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_dev_frontend_native_wheel.py",
-  "reviewReason":"Four additive exact pinned-wheel native attribution controls cover original RECORD hash/size/version, unknown paths, missing/mismatched records, license presence and ambiguous owners; no general site-packages or native-library fallback.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "da7736db1e53a4b38f728faba6c0da13a7d4fe0263ff3a6f07f5941c81894524":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:fca6e12dd2e4417954f3cb452dfdc6d2d21f2d33406d533af94f679b630014e3","class:setup-sha256:7ec4035430ba4ce71a5aa59576a5855941ce3b876e0260c1366da9a840b3fea7"],"skipSites":[]}
-  }
-}
+{"storageCases":"guard-keys","guards":{"NativeWheelOwner.test_changed_package_version_missing_license_and_ambiguous_record_refuse":
+      "da7736db1e53a4b38f728faba6c0da13a7d4fe0263ff3a6f07f5941c81894524","NativeWheelOwner.test_exact_existing_inventory_record_attributes_original_native_bytes_and_version":
+      "da7736db1e53a4b38f728faba6c0da13a7d4fe0263ff3a6f07f5941c81894524","NativeWheelOwner.test_missing_changed_size_or_wrong_digest_record_refuses_without_general_fallback":
+      "da7736db1e53a4b38f728faba6c0da13a7d4fe0263ff3a6f07f5941c81894524","NativeWheelOwner.test_unknown_native_file_and_foreign_record_never_gain_directory_based_ownership":
+      "da7736db1e53a4b38f728faba6c0da13a7d4fe0263ff3a6f07f5941c81894524"},"kind":"python","module":"tools/tests/test_dev_frontend_native_wheel.py","reviewReason":"Four additive exact pinned-wheel native attribution controls cover original RECORD hash/size/version, unknown paths, missing/mismatched records, license presence and ambiguous owners; no general site-packages or native-library fallback.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"da7736db1e53a4b38f728faba6c0da13a7d4fe0263ff3a6f07f5941c81894524":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:fca6e12dd2e4417954f3cb452dfdc6d2d21f2d33406d533af94f679b630014e3","class:setup-sha256:7ec4035430ba4ce71a5aa59576a5855941ce3b876e0260c1366da9a840b3fea7"],"skipSites":[]}}}

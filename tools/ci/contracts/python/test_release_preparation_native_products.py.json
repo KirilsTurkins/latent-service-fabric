@@ -1,20 +1,5 @@
-{
-  "storageCases":"guard-keys",
-  "guards":{
-    "ReleasePreparationNativeProducts.test_direct_cli_bootstraps_without_pythonpath_or_output":
-      "f751e5e2fba5dd79a0957d8a4f06325be0d7821aedbe53b2bb5c62229a2b048e",
-    "ReleasePreparationNativeProducts.test_frozen_tuple_agrees_with_independently_verified_public_evidence":
-      "f751e5e2fba5dd79a0957d8a4f06325be0d7821aedbe53b2bb5c62229a2b048e",
-    "ReleasePreparationNativeProducts.test_original_successful_producer_and_failed_consumer_are_not_relabelled":
-      "f751e5e2fba5dd79a0957d8a4f06325be0d7821aedbe53b2bb5c62229a2b048e",
-    "ReleasePreparationNativeProducts.test_protocol_selection_and_twenty_stages_do_not_change_historical_tuple":
-      "f751e5e2fba5dd79a0957d8a4f06325be0d7821aedbe53b2bb5c62229a2b048e"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_release_preparation_native_products.py",
-  "reviewReason":"Restore original21b wrapper/publicevidence/three originalcontrol bodies byteexact. Replace consumer acquisition/import with separatelyversioned6fd wrapper byteexact to actual successful4771 helper; same entiretuple/authalgorithm/134fences, no new12replay. Add3versionedcontrols separately, preserve originalunitcommand/defaultalljobs. Correct only stale human21b label to6fd; originalrawreceipt remains unchanged. Ownershipmoves onlyfrom nowundelegated21b CLI to exactversionedCLI.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "f751e5e2fba5dd79a0957d8a4f06325be0d7821aedbe53b2bb5c62229a2b048e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:59ac100dfa257cc86ab9a0513ff4e2d6133dda0b6c8e777c25f40bc4568a04fa","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"storageCases":"guard-keys","guards":{"ReleasePreparationNativeProducts.test_direct_cli_bootstraps_without_pythonpath_or_output":
+      "f751e5e2fba5dd79a0957d8a4f06325be0d7821aedbe53b2bb5c62229a2b048e","ReleasePreparationNativeProducts.test_frozen_tuple_agrees_with_independently_verified_public_evidence":
+      "f751e5e2fba5dd79a0957d8a4f06325be0d7821aedbe53b2bb5c62229a2b048e","ReleasePreparationNativeProducts.test_original_successful_producer_and_failed_consumer_are_not_relabelled":
+      "f751e5e2fba5dd79a0957d8a4f06325be0d7821aedbe53b2bb5c62229a2b048e","ReleasePreparationNativeProducts.test_protocol_selection_and_twenty_stages_do_not_change_historical_tuple":
+      "f751e5e2fba5dd79a0957d8a4f06325be0d7821aedbe53b2bb5c62229a2b048e"},"kind":"python","module":"tools/tests/test_release_preparation_native_products.py","reviewReason":"Restore original21b wrapper/publicevidence/three originalcontrol bodies byteexact. Replace consumer acquisition/import with separatelyversioned6fd wrapper byteexact to actual successful4771 helper; same entiretuple/authalgorithm/134fences, no new12replay. Add3versionedcontrols separately, preserve originalunitcommand/defaultalljobs. Correct only stale human21b label to6fd; originalrawreceipt remains unchanged. Ownershipmoves onlyfrom nowundelegated21b CLI to exactversionedCLI.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"f751e5e2fba5dd79a0957d8a4f06325be0d7821aedbe53b2bb5c62229a2b048e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:59ac100dfa257cc86ab9a0513ff4e2d6133dda0b6c8e777c25f40bc4568a04fa","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

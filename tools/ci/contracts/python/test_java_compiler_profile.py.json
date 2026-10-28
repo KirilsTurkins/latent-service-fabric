@@ -1,40 +1,14 @@
-{
-  "storageCases":"guard-keys",
-  "guards":{
-    "NormalJavaCompilerProfile.test_expired_origin_uses_only_exact_archived_prepared_cache":
-      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced",
-    "NormalJavaCompilerProfile.test_foreign_artifact_redirect_never_receives_a_blob_request":
-      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced",
-    "NormalJavaCompilerProfile.test_only_two_complete_source_owned_inventories_admit_and_retain_identity":
-      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced",
-    "NormalJavaCompilerProfile.test_partial_or_unreviewed_source_cannot_change_normal_default":
-      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced",
-    "NormalJavaCompilerProfile.test_unfilled_source_preserves_official_default_and_refuses_new_sdk_before_inventory":
-      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced",
-    "NormalJavaCompilerProfile.test_unqualified_builder_refuses_before_reading_any_candidate_archive":
-      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced",
-    "RetainedJavaCompilerCustody.test_complete_outer_inventory_refuses_unknown_duplicate_link_and_changed_bytes":
-      "8988febf0727c53af50e4eb56d6bca61ef63d0e310e5053dc64d5307587ec54c",
-    "RetainedJavaCompilerCustody.test_original_producer_receipt_and_linked_profile_are_required_after_managed_admission":
-      "8988febf0727c53af50e4eb56d6bca61ef63d0e310e5053dc64d5307587ec54c",
-    "RetainedJavaCompilerCustody.test_recovery_refuses_unqualified_or_nonfresh_roots_before_network_or_output":
-      "8988febf0727c53af50e4eb56d6bca61ef63d0e310e5053dc64d5307587ec54c",
-    "SelectedJavaCompilerCustody.test_fixed_transport_metadata_and_original_deadline_dominate_blob_access":
-      "e08c9bc3591873e522efd61ead99bfc3b31285a3aa3918e1bdd6a7f3dd2677fb",
-    "SelectedJavaCompilerCustody.test_managed_decode_keeps_the_old_origin_bytes_separate_from_current_admission":
-      "e08c9bc3591873e522efd61ead99bfc3b31285a3aa3918e1bdd6a7f3dd2677fb",
-    "SelectedJavaCompilerCustody.test_new_transport_requires_complete_pins_and_the_exact_original_producer":
-      "e08c9bc3591873e522efd61ead99bfc3b31285a3aa3918e1bdd6a7f3dd2677fb",
-    "SelectedJavaCompilerCustody.test_selected_four_file_cache_refuses_tampering_and_never_falls_back_to_old_origin":
-      "e08c9bc3591873e522efd61ead99bfc3b31285a3aa3918e1bdd6a7f3dd2677fb"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_java_compiler_profile.py",
-  "reviewReason":"Add one real-filesystem expired-origin prepared-cache hit, tamper, cold-miss and expired-origin refusal control; preserve all prior five case guards. Append three bounded retained-product inventory, original-provenance and nonfresh-input controls; no compiler execution. Append four selected measured-custody policy/cache/origin/deadline controls; preserve all original nine case bodies and guards.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:88a6facd35ce17d7876a10d929e8c24545d360d0506a7001b6440fbb2d9e2569","class:setup-sha256:f184076f2562c96f619c11dab218a49c27dd3267d7786fae4ab7e60f8ce08ef6"],"skipSites":[]},
-    "8988febf0727c53af50e4eb56d6bca61ef63d0e310e5053dc64d5307587ec54c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:88a6facd35ce17d7876a10d929e8c24545d360d0506a7001b6440fbb2d9e2569","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
-    "e08c9bc3591873e522efd61ead99bfc3b31285a3aa3918e1bdd6a7f3dd2677fb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:88a6facd35ce17d7876a10d929e8c24545d360d0506a7001b6440fbb2d9e2569","class:setup-sha256:af0a444a64615a0f767c118418ef49588bfb0c7bb9b500ea94fa1e172e8e5040"]}
-  }
-}
+{"storageCases":"guard-keys","guards":{"NormalJavaCompilerProfile.test_expired_origin_uses_only_exact_archived_prepared_cache":
+      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced","NormalJavaCompilerProfile.test_foreign_artifact_redirect_never_receives_a_blob_request":
+      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced","NormalJavaCompilerProfile.test_only_two_complete_source_owned_inventories_admit_and_retain_identity":
+      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced","NormalJavaCompilerProfile.test_partial_or_unreviewed_source_cannot_change_normal_default":
+      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced","NormalJavaCompilerProfile.test_unfilled_source_preserves_official_default_and_refuses_new_sdk_before_inventory":
+      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced","NormalJavaCompilerProfile.test_unqualified_builder_refuses_before_reading_any_candidate_archive":
+      "64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced","RetainedJavaCompilerCustody.test_complete_outer_inventory_refuses_unknown_duplicate_link_and_changed_bytes":
+      "8988febf0727c53af50e4eb56d6bca61ef63d0e310e5053dc64d5307587ec54c","RetainedJavaCompilerCustody.test_original_producer_receipt_and_linked_profile_are_required_after_managed_admission":
+      "8988febf0727c53af50e4eb56d6bca61ef63d0e310e5053dc64d5307587ec54c","RetainedJavaCompilerCustody.test_recovery_refuses_unqualified_or_nonfresh_roots_before_network_or_output":
+      "8988febf0727c53af50e4eb56d6bca61ef63d0e310e5053dc64d5307587ec54c","SelectedJavaCompilerCustody.test_fixed_transport_metadata_and_original_deadline_dominate_blob_access":
+      "e08c9bc3591873e522efd61ead99bfc3b31285a3aa3918e1bdd6a7f3dd2677fb","SelectedJavaCompilerCustody.test_managed_decode_keeps_the_old_origin_bytes_separate_from_current_admission":
+      "e08c9bc3591873e522efd61ead99bfc3b31285a3aa3918e1bdd6a7f3dd2677fb","SelectedJavaCompilerCustody.test_new_transport_requires_complete_pins_and_the_exact_original_producer":
+      "e08c9bc3591873e522efd61ead99bfc3b31285a3aa3918e1bdd6a7f3dd2677fb","SelectedJavaCompilerCustody.test_selected_four_file_cache_refuses_tampering_and_never_falls_back_to_old_origin":
+      "e08c9bc3591873e522efd61ead99bfc3b31285a3aa3918e1bdd6a7f3dd2677fb"},"kind":"python","module":"tools/tests/test_java_compiler_profile.py","reviewReason":"Add one real-filesystem expired-origin prepared-cache hit, tamper, cold-miss and expired-origin refusal control; preserve all prior five case guards. Append three bounded retained-product inventory, original-provenance and nonfresh-input controls; no compiler execution. Append four selected measured-custody policy/cache/origin/deadline controls; preserve all original nine case bodies and guards.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"64e7613ba8bba1748c91c7b36af0c4b4f31b8a0c7c1f11fe6eedb93c544c7ced":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:88a6facd35ce17d7876a10d929e8c24545d360d0506a7001b6440fbb2d9e2569","class:setup-sha256:f184076f2562c96f619c11dab218a49c27dd3267d7786fae4ab7e60f8ce08ef6"],"skipSites":[]},"8988febf0727c53af50e4eb56d6bca61ef63d0e310e5053dc64d5307587ec54c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:88a6facd35ce17d7876a10d929e8c24545d360d0506a7001b6440fbb2d9e2569","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},"e08c9bc3591873e522efd61ead99bfc3b31285a3aa3918e1bdd6a7f3dd2677fb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:88a6facd35ce17d7876a10d929e8c24545d360d0506a7001b6440fbb2d9e2569","class:setup-sha256:af0a444a64615a0f767c118418ef49588bfb0c7bb9b500ea94fa1e172e8e5040"]}}}

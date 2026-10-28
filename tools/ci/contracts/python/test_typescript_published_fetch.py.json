@@ -1,38 +1,14 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"PublishedFetchTests.test_artifact_run_head_is_distinct_from_exact_compiled_pull_request_merge":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214",
-"PublishedFetchTests.test_caller_uses_original_global_clients_and_original_world_limits":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214",
-"PublishedFetchTests.test_default_error_helper_unsupported_is_never_claimed_as_http_error_qualification":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214",
-"PublishedFetchTests.test_failed_client_is_recorded_as_failure_and_never_relabelled_success":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214",
-"PublishedFetchTests.test_fixed_archive_members_reject_duplicate_unsafe_and_missing_inputs":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214",
-"PublishedFetchTests.test_named_client_profile_preserves_native_request_and_all_other_settings":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214",
-"PublishedFetchTests.test_native_inputs_reject_fabricated_current_receipts_before_using_binaries":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214",
-"PublishedFetchTests.test_outside_identity_cannot_escape_its_owned_directory":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214",
-"PublishedFetchTests.test_owner_dimension_probes_change_only_their_named_original_ceiling":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214",
-"PublishedFetchTests.test_owner_probe_is_separate_bounded_and_preserves_every_other_node_setting":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214",
-"PublishedFetchTests.test_peer_requires_all_six_exact_authorized_contacts":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214",
-"PublishedFetchTests.test_private_source_is_transitive_ordinary_fetch_client_and_variants_differ":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214",
-"PublishedFetchTests.test_reader_probes_and_closed_diagnostics_cannot_replace_client_success":
-      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214"
-},
-"kind":"python",
-"module":"tools/tests/test_typescript_published_fetch.py",
-"reviewReason":"Retain actual64/64/64 failure (Wretch passes; Ky traps), then select the uniformly applied bounded64/64/256 profile already observed on the same real clients. Original smaller defaults/failed receipts remain unchanged; full normal both-identity outcomes and original physical/authority checks still required.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:772fd4daed1f49becb985b30af9f785d351926ca7217b3482ace64612b485c9a","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"PublishedFetchTests.test_artifact_run_head_is_distinct_from_exact_compiled_pull_request_merge":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214","PublishedFetchTests.test_caller_uses_original_global_clients_and_original_world_limits":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214","PublishedFetchTests.test_default_error_helper_unsupported_is_never_claimed_as_http_error_qualification":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214","PublishedFetchTests.test_failed_client_is_recorded_as_failure_and_never_relabelled_success":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214","PublishedFetchTests.test_fixed_archive_members_reject_duplicate_unsafe_and_missing_inputs":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214","PublishedFetchTests.test_named_client_profile_preserves_native_request_and_all_other_settings":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214","PublishedFetchTests.test_native_inputs_reject_fabricated_current_receipts_before_using_binaries":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214","PublishedFetchTests.test_outside_identity_cannot_escape_its_owned_directory":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214","PublishedFetchTests.test_owner_dimension_probes_change_only_their_named_original_ceiling":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214","PublishedFetchTests.test_owner_probe_is_separate_bounded_and_preserves_every_other_node_setting":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214","PublishedFetchTests.test_peer_requires_all_six_exact_authorized_contacts":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214","PublishedFetchTests.test_private_source_is_transitive_ordinary_fetch_client_and_variants_differ":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214","PublishedFetchTests.test_reader_probes_and_closed_diagnostics_cannot_replace_client_success":
+      "a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214"},"kind":"python","module":"tools/tests/test_typescript_published_fetch.py","reviewReason":"Retain actual64/64/64 failure (Wretch passes; Ky traps), then select the uniformly applied bounded64/64/256 profile already observed on the same real clients. Original smaller defaults/failed receipts remain unchanged; full normal both-identity outcomes and original physical/authority checks still required.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"a62cea364d554e65ddd18abf4a699aaf7a0cef40e7900dde0f8b46128f9c5214":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:772fd4daed1f49becb985b30af9f785d351926ca7217b3482ace64612b485c9a","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

@@ -1,28 +1,9 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"StreamPreparation.test_changed_prepared_input_and_interrupted_check_never_become_accepted":
-      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690",
-"StreamPreparation.test_cli_prepare_requires_separate_explicit_arguments_and_redacts_process_output":
-      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690",
-"StreamPreparation.test_existing_output_and_missing_opt_in_refuse_before_subprocess_or_write":
-      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690",
-"StreamPreparation.test_linked_and_malformed_private_inputs_fail_before_output_creation":
-      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690",
-"StreamPreparation.test_missing_packaged_schema_refuses_without_checkout_fallback_or_process_dispatch":
-      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690",
-"StreamPreparation.test_packaged_frontend_route_uses_canonical_schemas_outside_checkout_without_state":
-      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690",
-"StreamPreparation.test_preparation_preserves_protected_inputs_and_invokes_only_check_config_once":
-      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690",
-"StreamPreparation.test_rejected_real_node_check_retains_input_without_fallback_or_output_disclosure":
-      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690"
-},
-"kind":"python",
-"module":"tools/tests/test_outbound_stream_preparation.py",
-"reviewReason":"Eight additive protected preparation and isolated frontend source-archive controls bind original inputs, node identity, exact check-config dispatch, refusal retention, no overwrite/fallback, replacement detection, malformed/link rejection, canonical packaged schemas and redacted outcomes; original cases and skip guards unchanged.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:85116a31fd51c4de4f41335eb442496b66aadc4797f09f89497af0cfc7445cf3","class:setup-sha256:5adcb8947b08079ed0e2e5f5f28d0a086aada335df741c4a064cfd62e1c0dfc3"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"StreamPreparation.test_changed_prepared_input_and_interrupted_check_never_become_accepted":
+      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690","StreamPreparation.test_cli_prepare_requires_separate_explicit_arguments_and_redacts_process_output":
+      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690","StreamPreparation.test_existing_output_and_missing_opt_in_refuse_before_subprocess_or_write":
+      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690","StreamPreparation.test_linked_and_malformed_private_inputs_fail_before_output_creation":
+      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690","StreamPreparation.test_missing_packaged_schema_refuses_without_checkout_fallback_or_process_dispatch":
+      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690","StreamPreparation.test_packaged_frontend_route_uses_canonical_schemas_outside_checkout_without_state":
+      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690","StreamPreparation.test_preparation_preserves_protected_inputs_and_invokes_only_check_config_once":
+      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690","StreamPreparation.test_rejected_real_node_check_retains_input_without_fallback_or_output_disclosure":
+      "70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690"},"kind":"python","module":"tools/tests/test_outbound_stream_preparation.py","reviewReason":"Eight additive protected preparation and isolated frontend source-archive controls bind original inputs, node identity, exact check-config dispatch, refusal retention, no overwrite/fallback, replacement detection, malformed/link rejection, canonical packaged schemas and redacted outcomes; original cases and skip guards unchanged.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"70bae5331c74a50983617b227d4f812d92f526bb7088e76ce5d5a905576a0690":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:85116a31fd51c4de4f41335eb442496b66aadc4797f09f89497af0cfc7445cf3","class:setup-sha256:5adcb8947b08079ed0e2e5f5f28d0a086aada335df741c4a064cfd62e1c0dfc3"],"skipSites":[]}}}

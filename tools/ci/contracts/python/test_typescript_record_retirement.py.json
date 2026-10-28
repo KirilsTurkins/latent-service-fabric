@@ -1,30 +1,10 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"RecordRetirementTests.test_cancelled_job_destroys_callable_root_before_refund":
-      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156",
-"RecordRetirementTests.test_cancelled_job_retains_partial_ack_without_replaying_callback":
-      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156",
-"RecordRetirementTests.test_completed_job_destroys_callable_root_before_refund":
-      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156",
-"RecordRetirementTests.test_completed_job_retains_partial_ack_without_replaying_frame":
-      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156",
-"RecordRetirementTests.test_failed_job_destroys_callable_root_before_refund":
-      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156",
-"RecordRetirementTests.test_promise_refused_ack_retains_exact_owner_without_allocation":
-      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156",
-"RecordRetirementTests.test_promise_tracking_allocation_dies_before_refund":
-      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156",
-"RecordRetirementTests.test_reaction_partial_ack_cannot_double_refund_job_owners":
-      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156",
-"RecordRetirementTests.test_reaction_tracking_allocation_dies_before_refund":
-      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156"
-},
-"kind":"python",
-"module":"tools/tests/test_typescript_record_retirement.py",
-"reviewReason":"Compile the actual Promise/reaction/job tracking classes with explicit serialized JS lifetime doubles. Verify deletion and callable-root destruction before exact owner refunds, partial acknowledgements retained without allocation or double refunds, and once-only completion/cancellation callbacks. No engine, GC, signed component or full accounting qualification is inferred; all existing cases and guards are unchanged.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:75db307ca57a57e514733e6629056f27f5530e28f6789ff1ea36b3089039e1ff","class:raise:raise unittest.SkipTest('Set LSF_TYPESCRIPT_RECORD_CXX for the finite C++ reference')","class:setup-sha256:def4d8b83f2687b3d7ed67d1f0ebbad272aff16e06dc3fac4535f23bcfff5052","class:skip:unittest.SkipTest('Set LSF_TYPESCRIPT_RECORD_CXX for the finite C++ reference')"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"RecordRetirementTests.test_cancelled_job_destroys_callable_root_before_refund":
+      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156","RecordRetirementTests.test_cancelled_job_retains_partial_ack_without_replaying_callback":
+      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156","RecordRetirementTests.test_completed_job_destroys_callable_root_before_refund":
+      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156","RecordRetirementTests.test_completed_job_retains_partial_ack_without_replaying_frame":
+      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156","RecordRetirementTests.test_failed_job_destroys_callable_root_before_refund":
+      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156","RecordRetirementTests.test_promise_refused_ack_retains_exact_owner_without_allocation":
+      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156","RecordRetirementTests.test_promise_tracking_allocation_dies_before_refund":
+      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156","RecordRetirementTests.test_reaction_partial_ack_cannot_double_refund_job_owners":
+      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156","RecordRetirementTests.test_reaction_tracking_allocation_dies_before_refund":
+      "caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156"},"kind":"python","module":"tools/tests/test_typescript_record_retirement.py","reviewReason":"Compile the actual Promise/reaction/job tracking classes with explicit serialized JS lifetime doubles. Verify deletion and callable-root destruction before exact owner refunds, partial acknowledgements retained without allocation or double refunds, and once-only completion/cancellation callbacks. No engine, GC, signed component or full accounting qualification is inferred; all existing cases and guards are unchanged.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"caf7db669a9023a9587db477f8aec0534e10590cbf2e91437c0b73ee6fe43156":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:75db307ca57a57e514733e6629056f27f5530e28f6789ff1ea36b3089039e1ff","class:raise:raise unittest.SkipTest('Set LSF_TYPESCRIPT_RECORD_CXX for the finite C++ reference')","class:setup-sha256:def4d8b83f2687b3d7ed67d1f0ebbad272aff16e06dc3fac4535f23bcfff5052","class:skip:unittest.SkipTest('Set LSF_TYPESCRIPT_RECORD_CXX for the finite C++ reference')"],"skipSites":[]}}}

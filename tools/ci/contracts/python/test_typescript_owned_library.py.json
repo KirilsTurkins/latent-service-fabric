@@ -1,24 +1,7 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"TypeScriptOwnedLibraryTests.test_archive_reader_accepts_only_identical_original_duplicate_members":
-      "3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7",
-"TypeScriptOwnedLibraryTests.test_extracted_validator_preserves_every_original_normal_check":
-      "3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7",
-"TypeScriptOwnedLibraryTests.test_library_paths_refuse_escape_and_unrelated_material":
-      "3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7",
-"TypeScriptOwnedLibraryTests.test_normal_builder_calls_the_same_upfront_validator_before_acquisition":
-      "3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7",
-"TypeScriptOwnedLibraryTests.test_own_reconstruction_calls_normal_validation_and_has_no_mach_fallback":
-      "3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7",
-"TypeScriptOwnedLibraryTests.test_shared_validator_refuses_non_completed_library_receipts":
-      "3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7"
-},
-"kind":"python",
-"module":"tools/tests/test_typescript_owned_library.py",
-"reviewReason":"Reviewed normal low-level library reconstruction source controls preserve the exact original shared validator, refuse non-completed or drifting input and verify bounded real AR duplicate-member authentication; no library build or SDK acquisition is run.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7897a9369088c55312363146087458123bf2f5889a9f1e1fe073be2a2811d53d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"TypeScriptOwnedLibraryTests.test_archive_reader_accepts_only_identical_original_duplicate_members":
+      "3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7","TypeScriptOwnedLibraryTests.test_extracted_validator_preserves_every_original_normal_check":
+      "3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7","TypeScriptOwnedLibraryTests.test_library_paths_refuse_escape_and_unrelated_material":
+      "3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7","TypeScriptOwnedLibraryTests.test_normal_builder_calls_the_same_upfront_validator_before_acquisition":
+      "3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7","TypeScriptOwnedLibraryTests.test_own_reconstruction_calls_normal_validation_and_has_no_mach_fallback":
+      "3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7","TypeScriptOwnedLibraryTests.test_shared_validator_refuses_non_completed_library_receipts":
+      "3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7"},"kind":"python","module":"tools/tests/test_typescript_owned_library.py","reviewReason":"Reviewed normal low-level library reconstruction source controls preserve the exact original shared validator, refuse non-completed or drifting input and verify bounded real AR duplicate-member authentication; no library build or SDK acquisition is run.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"3dfda86d00cbd37f171d9fe12a444151adc4e89c9a4706216d815d6299fe33b7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7897a9369088c55312363146087458123bf2f5889a9f1e1fe073be2a2811d53d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

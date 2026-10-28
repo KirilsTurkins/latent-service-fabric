@@ -1,24 +1,7 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"FetchTenantTests.test_changed_cell_capacity_refuses_before_any_tenant_configuration_is_returned":
-      "54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9",
-"FetchTenantTests.test_configuration_retains_original_limits_and_independent_http_scopes_and_credentials":
-      "54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9",
-"FetchTenantTests.test_foreign_grants_bind_only_original_foreign_descriptors_and_destination":
-      "54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9",
-"FetchTenantTests.test_neutral_packaging_keeps_original_component_world_exports_and_no_inherited_grants":
-      "54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9",
-"FetchTenantTests.test_owned_cleanup_preserves_original_failure_and_reports_standalone_cleanup_failure":
-      "54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9",
-"FetchTenantTests.test_signing_ancestry_preserves_original_compiler_materials_and_names_packaging_derivation":
-      "54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9"
-},
-"kind":"python",
-"module":"tools/tests/test_typescript_fetch_tenants.py",
-"reviewReason":"Retain four tenant controls and add primary-failure cleanup plus original compiler/signing ancestry controls.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f9606fb94f81e3bc6697ac920246c660c9c8b8a362d8280fb91f50469e123c01","class:setup-sha256:f9dd13ec901f2babdfe93dc7dd1040d875bed81fb55dfacff9a81a0b93df904f"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"FetchTenantTests.test_changed_cell_capacity_refuses_before_any_tenant_configuration_is_returned":
+      "54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9","FetchTenantTests.test_configuration_retains_original_limits_and_independent_http_scopes_and_credentials":
+      "54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9","FetchTenantTests.test_foreign_grants_bind_only_original_foreign_descriptors_and_destination":
+      "54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9","FetchTenantTests.test_neutral_packaging_keeps_original_component_world_exports_and_no_inherited_grants":
+      "54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9","FetchTenantTests.test_owned_cleanup_preserves_original_failure_and_reports_standalone_cleanup_failure":
+      "54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9","FetchTenantTests.test_signing_ancestry_preserves_original_compiler_materials_and_names_packaging_derivation":
+      "54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9"},"kind":"python","module":"tools/tests/test_typescript_fetch_tenants.py","reviewReason":"Retain four tenant controls and add primary-failure cleanup plus original compiler/signing ancestry controls.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"54ecef1a94270f495f6dfa42ddd4274df77eca1d2c404e83325e71a10ee4e7d9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f9606fb94f81e3bc6697ac920246c660c9c8b8a362d8280fb91f50469e123c01","class:setup-sha256:f9dd13ec901f2babdfe93dc7dd1040d875bed81fb55dfacff9a81a0b93df904f"],"skipSites":[]}}}
