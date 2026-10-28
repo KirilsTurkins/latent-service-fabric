@@ -1216,8 +1216,7 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
             '--max-time','175','--output',archive,manifest['archive']['url'],cap=180)
         require(commands.deadline-time.monotonic()>=180,'source-auth-parent-reserve')
         originals=objects.maintained.authenticate_archive(archive,manifest,
-            tuple(sorted(({'net/Kconfig','net/Makefile'}|set(objects.packet_source.fixture()['source'])|
-                    (set(CAPACITY_REVIEW['primary']) if node_capacity else set()))-set(manifest['source']))))
+            tuple(sorted(({'net/Kconfig','net/Makefile'}|set(objects.packet_source.fixture()['source']))-set(manifest['source']))))
         require(time.monotonic()<commands.deadline,'source-auth-deadline')
         receipt['originalArchive']=identity(read(archive,objects.maintained.MAX_ARCHIVE))
         extract=scratch/'kernel';extract.mkdir()
