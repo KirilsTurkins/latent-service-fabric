@@ -1,9 +1,11 @@
 //! Explicit node-owned HTTP/1.1 transport and identity profiles.
 mod browser;
+mod cross_origin;
 mod navigation;
 use super::{invalid, CredentialRole, NodeConfig};
 use crate::standalone::http::tls;
 pub use browser::BrowserOrigin;
+pub use cross_origin::{CrossOriginAssetGrant, CrossOriginCredentials};
 use latent_core::{InvocationPrincipal, Metadata, PlatformError, PrincipalKind, TenantId};
 use latent_ingress::http::{
     cache::PublicCachePolicy, CanonicalTarget, Scheme, EXCHANGE_RESERVATION_BYTES,
@@ -36,6 +38,8 @@ pub struct HttpIngressConfig {
     pub browser_origins: Vec<BrowserOrigin>,
     #[serde(default)]
     pub public_document_navigation: Vec<PublicDocumentNavigation>,
+    #[serde(default)]
+    pub cross_origin_assets: Vec<CrossOriginAssetGrant>,
     #[serde(default)]
     pub allow_static_style_hashes: bool,
 }
@@ -122,6 +126,7 @@ pub(crate) struct HttpSettings {
     pub response_cache: Vec<PublicCachePolicy>,
     pub browser_origins: Vec<BrowserOrigin>,
     pub public_document_navigation: Vec<PublicDocumentNavigation>,
+    pub cross_origin_assets: Vec<CrossOriginAssetGrant>,
     pub allow_static_style_hashes: bool,
 }
 pub(super) fn present<'de, D: Deserializer<'de>>(
@@ -228,6 +233,7 @@ pub(super) fn derive(
     };
     let browser_origins = browser::derive(config, http, scheme, &authentication)?;
     navigation::validate(http, scheme, &authentication)?;
+    cross_origin::validate(http, scheme, &authentication)?;
     Ok(Some(HttpSettings {
         bind: http.bind,
         tls,
@@ -239,6 +245,7 @@ pub(super) fn derive(
         response_cache: http.response_cache.clone(),
         browser_origins,
         public_document_navigation: http.public_document_navigation.clone(),
+        cross_origin_assets: http.cross_origin_assets.clone(),
         allow_static_style_hashes: http.allow_static_style_hashes,
     }))
 }

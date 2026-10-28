@@ -127,6 +127,20 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
     if used - end > head.content_length {
         return Err(400);
     }
+    if head.cross_origin.is_some() {
+        if used != end {
+            return Err(400);
+        }
+        return super::assets::cross_origin::exchange(
+            socket,
+            shared,
+            head,
+            &mut buffer[..end],
+            deadline,
+            close,
+        )
+        .await;
+    }
     let path = head.collector.target().path();
     if path == "/_lsf/assets" || path.starts_with(latent_artifacts::web::IMMUTABLE_ASSET_PREFIX) {
         if head.public_document {

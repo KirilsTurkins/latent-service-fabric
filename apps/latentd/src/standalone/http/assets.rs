@@ -3,6 +3,7 @@
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod browser;
 mod cache;
+pub(super) mod cross_origin;
 mod csp;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod fixture;

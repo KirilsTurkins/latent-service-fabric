@@ -104,7 +104,7 @@ impl Request {
     }
 }
 
-fn locator(target: &str, tenant: &TenantId) -> Result<(PublicationRef, String), u16> {
+pub(super) fn locator(target: &str, tenant: &TenantId) -> Result<(PublicationRef, String), u16> {
     let suffix = target.strip_prefix(IMMUTABLE_ASSET_PREFIX).ok_or(400u16)?;
     let (id, path) = suffix.split_once('/').ok_or(400u16)?;
     let id = id.parse().map_err(|_| 400u16)?;
