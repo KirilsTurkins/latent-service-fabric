@@ -49,7 +49,7 @@ def select(declared: list[str], emitted: list[str], *, managed_work: bool = Fals
         raise ValueError('dotnet-managed-work-selection')
     if type(development_managed_stage) is not bool:
         raise ValueError('managed-stage-runtime-selector')
-    private = 'latent:development-dotnet-stage/stage@0.1.0'
+    private = 'latent:development-dotnet-stage/stage@0.2.0'
     if private in declared or (private in emitted and not development_managed_stage):
         raise ValueError('managed-stage-import-not-ordinary-runtime-authority')
     declarations, actual = set(declared), set(emitted)

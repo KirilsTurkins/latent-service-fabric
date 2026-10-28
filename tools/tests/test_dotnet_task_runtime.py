@@ -343,7 +343,7 @@ class TaskStageDiagnosticControls(unittest.TestCase):
         from tools.dotnet_root_return import managed_stage_observations
         from tools.phase2_operator_process import WorkflowError
         component='sha256:'+'a'*64
-        rows=[{'profile':'dotnet-managed-stage-diagnostic-v1','component':component,'mode':mode,
+        rows=[{'profile':'dotnet-managed-stage-diagnostic-v2','component':component,'mode':mode,
             'terminalOutcome':outcome,'claims':1,'originalCauseQualified':False,'originalSixCallsQualified':False,
             'fullAc7Qualified':False,'physicalRetirementQualified':False,'nativeAccountingQualified':False}
             for mode,outcome in ((3,'succeeded'),(9,'guest-trap'))]
@@ -351,7 +351,8 @@ class TaskStageDiagnosticControls(unittest.TestCase):
         events=[]
         for slot in (0,1):
             events += [('DOTNET_MANAGED_STAGE ',{'slot':slot,'sequence':1,'stage':1,'guard':0}),
-                ('DOTNET_MANAGED_STAGE_SUMMARY ',{'slot':slot,'attempts':1,'overflow':False,
+                ('DOTNET_MANAGED_STAGE ',{'slot':slot,'sequence':2,'stage':22,'guard':0}),
+                ('DOTNET_MANAGED_STAGE_SUMMARY ',{'slot':slot,'attempts':2,'overflow':False,
                     'transportFailed':False,'inconclusive':False})]
         def encode(records):return ''.join(prefix+json.dumps(row)+'\n' for prefix,row in records).encode()
         actual=managed_stage_observations(stdout,encode(events),component)
@@ -360,6 +361,21 @@ class TaskStageDiagnosticControls(unittest.TestCase):
                 [(prefix,dict(row,sequence=2) if prefix=='DOTNET_MANAGED_STAGE ' else row) for prefix,row in events],
                 [(prefix,dict(row,overflow=True,attempts=17,inconclusive=True) if prefix.endswith('SUMMARY ') else row) for prefix,row in events]):
             with self.assertRaises(WorkflowError):managed_stage_observations(stdout,encode(changed),component)
+        def stream(stages):
+            result=[]
+            for slot in (0,1):
+                result += [('DOTNET_MANAGED_STAGE ',{'slot':slot,'sequence':i+1,'stage':stage,'guard':0})
+                    for i,stage in enumerate(stages)]
+                result += [('DOTNET_MANAGED_STAGE_SUMMARY ',{'slot':slot,'attempts':len(stages),
+                    'overflow':False,'transportFailed':False,'inconclusive':False})]
+            return encode(result)
+        for stages in ((1,22,19),(1,22,20),(1,22,21)):
+            self.assertFalse(managed_stage_observations(stdout,stream(stages),component)['originalCauseQualified'])
+        for stages in ((1,),(1,19,22),(1,22,22),(1,22,19,20),(1,22,20,20),(1,22,21,19),(1,22,23)):
+            with self.assertRaises(WorkflowError):
+                managed_stage_observations(stdout,stream(stages),component)
+        with self.assertRaises(WorkflowError):
+            managed_stage_observations(stdout.replace(b'diagnostic-v2',b'diagnostic-v1'),encode(events),component)
         rows[1]['originalCauseQualified']=True
         bad=''.join('DOTNET_MANAGED_STAGE_CALL '+json.dumps(row)+'\n' for row in rows).encode()
         with self.assertRaises(WorkflowError):managed_stage_observations(bad,encode(events),component)

@@ -64,7 +64,7 @@ impl CheckedSurface {
     #[cfg(feature = "development-test-host")]
     pub fn development_managed_stage_profile(&self) -> Option<(&'static str, &ArtifactBlobDigest)> {
         self.development_managed_stage
-            .then_some(("dotnet-managed-stage-diagnostic-v1", &self.component_digest))
+            .then_some(("dotnet-managed-stage-diagnostic-v2", &self.component_digest))
     }
     #[must_use]
     pub fn component_digest(&self) -> &ArtifactBlobDigest {

@@ -1070,8 +1070,8 @@ mod join_cause_tests {
         crate::values::LiftMemory::development_stage_counter_control();
         // Real bounded WIT parser/comparison: enabling the Cargo feature alone
         // never makes the ordinary source authoring API accept this import.
-        let stage = "package latent:development-dotnet-stage@0.1.0; interface stage { emit: func(stage: u32, guard: u32); }";
-        let app = "package example:stage-control@1.0.0; interface api { run: func() -> u32; } world service { import latent:development-dotnet-stage/stage@0.1.0; export api; }";
+        let stage = "package latent:development-dotnet-stage@0.2.0; interface stage { emit: func(stage: u32, guard: u32); }";
+        let app = "package example:stage-control@1.0.0; interface api { run: func() -> u32; } world service { import latent:development-dotnet-stage/stage@0.2.0; export api; }";
         let derive = |stage: &str, app: &str, private: bool| {
             let files = std::collections::BTreeMap::from([
                 ("wit/stage.wit".to_owned(), stage.as_bytes()),
@@ -1105,8 +1105,8 @@ mod join_cause_tests {
             assert!(derive(&changed, app, true).is_err());
         }
         assert!(derive(
-            &stage.replace("@0.1.0", "@0.2.0"),
-            &app.replace("@0.1.0", "@0.2.0"),
+            &stage.replace("@0.2.0", "@0.1.0"),
+            &app.replace("@0.2.0", "@0.1.0"),
             true
         )
         .is_err());
@@ -1286,7 +1286,7 @@ mod join_cause_tests {
 
 // Private diagnostic labels share the original irreversible three-slot bank.
 // No new slot, acceptance word or authority is created.
-pub(crate) const MANAGED_STAGE_INTERFACE: &str = "latent:development-dotnet-stage/stage@0.1.0";
+pub(crate) const MANAGED_STAGE_INTERFACE: &str = "latent:development-dotnet-stage/stage@0.2.0";
 fn managed_stage_origin(activation: &str) -> Option<&'static str> {
     match activation {
         "dotnet-managed-stage-handled" => Some("dotnet-ac7-diag-quiescence"),

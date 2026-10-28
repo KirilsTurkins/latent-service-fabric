@@ -1463,12 +1463,13 @@ def managed_stage_observations(stdout, stderr, component):
     for row,mode,outcome in zip(records,(3,9),('succeeded','guest-trap'),strict=True):
         require(set(row)=={'profile','component','mode','terminalOutcome','claims','originalCauseQualified',
             'originalSixCallsQualified','fullAc7Qualified','physicalRetirementQualified','nativeAccountingQualified'}
-            and row['profile']=='dotnet-managed-stage-diagnostic-v1' and row['component']==component
+            and row['profile']=='dotnet-managed-stage-diagnostic-v2' and row['component']==component
             and type(row['mode']) is int and row['mode']==mode and row['terminalOutcome']==outcome
             and type(row['claims']) is int and row['claims']==1
             and all(row[key] is False for key in ('originalCauseQualified','originalSixCallsQualified',
                 'fullAc7Qualified','physicalRetirementQualified','nativeAccountingQualified')), 'managed-stage-closed-call-row')
-    events={0:[],1:[]};summary={};overflow=set()
+    events={0:[],1:[]};summary={};overflow=set();seen={0:0,1:0}
+    catch_mask=sum(1<<stage for stage in (19,20,21))
     for line in stderr.decode().splitlines():
         if line.startswith(('DOTNET_MANAGED_STAGE ', 'DOTNET_MANAGED_STAGE_OVERFLOW ', 'DOTNET_MANAGED_STAGE_SUMMARY ')):
             require(len(line.encode())+1<=256,'managed-stage-native-line-bound')
@@ -1478,8 +1479,15 @@ def managed_stage_observations(stdout, stderr, component):
                 'managed-stage-closed-event')
             slot=row['slot'];require(slot in events and slot not in summary and len(events[slot])<16,
                 'managed-stage-event-slot-count')
-            require(row['sequence']==len(events[slot])+1 and 1<=row['stage']<=18
+            require(row['sequence']==len(events[slot])+1 and 1<=row['stage']<=22
                 and row['guard']==(row['stage'] if 10<=row['stage']<=16 else 0),'managed-stage-event-sequence-kind')
+            stage=row['stage']
+            if stage==22:
+                require(not seen[slot]&(1<<22),'managed-stage-callback-return-once')
+            elif 19<=stage<=21:
+                require(seen[slot]&(1<<22) and not seen[slot]&catch_mask,
+                    'managed-stage-one-catch-after-callback-return')
+            seen[slot]|=1<<stage
             events[slot].append(row)
         elif line.startswith('DOTNET_MANAGED_STAGE_OVERFLOW '):
             row=json.loads(line.removeprefix('DOTNET_MANAGED_STAGE_OVERFLOW '))
@@ -1500,6 +1508,7 @@ def managed_stage_observations(stdout, stderr, component):
         require(row['attempts']>0 and not row['overflow'] and not row['transportFailed'] and not row['inconclusive'],
             'managed-stage-missing-overflow-or-gap-inconclusive')
         require(events[slot][0]['stage']==1,'managed-stage-selected-promise-first')
+        require(seen[slot]&(1<<22),'managed-stage-callback-return-required')
     return {'calls':records,'events':events,'summary':summary,'diagnosticOnly':True,
         'originalCauseQualified':False,'originalSixCallsQualified':False,'fullAC7Qualified':False}
 
@@ -1669,7 +1678,7 @@ def retain_managed_stage_raw(compiled, output):
         raw=read_file(root/'raw-inventory.json',128*1024);manifest=json.loads(raw)
         require(type(manifest) is dict and set(manifest)=={'profile','phase','actualNames','totalBytes','files',
             'expectedFinalNames','expectedFinalNamesAreNotRawCount'}
-            and manifest['profile']=='dotnet-managed-stage-diagnostic-v1'
+            and manifest['profile']=='dotnet-managed-stage-diagnostic-v2'
             and manifest['phase']=='before-auxiliary-stage-projection','managed-stage-raw-origin-manifest')
         names=manifest['actualNames']
         require(type(names) is list and len(names)<=64 and names==sorted(set(names))

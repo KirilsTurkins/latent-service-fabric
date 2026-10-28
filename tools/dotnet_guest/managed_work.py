@@ -228,8 +228,8 @@ def validate_abort_rewrite(value: dict) -> None:
 
 
 # Qualification-only two-scalar port. No default compiler selection uses it.
-STAGE_PROFILE = 'dotnet-managed-stage-diagnostic-v1'
-STAGE_IDENTITY = 'latent:development-dotnet-stage/stage@0.1.0'
+STAGE_PROFILE = 'dotnet-managed-stage-diagnostic-v2'
+STAGE_IDENTITY = 'latent:development-dotnet-stage/stage@0.2.0'
 STAGE_DATA = 'sdk/dotnet-guest/tests/fixtures/root-return/managed-stage'
 STAGE_BASE_CORELIB = 'sha256:bc449bac32313b547de63b4b852f1ff619ca91b22a24cc36f3526fa09df7e348'
 STAGE_LIBRARY_SHA = '406c1c6e0ffe1fc0d271be11c608bb6a39615144311e20fcae41c590de2c4106'
@@ -290,9 +290,9 @@ def stage_private_interface(graph: dict, direction: str) -> bool:
 
 
 def stage_without_private(text: str) -> str:
-    package = re.compile(r'(?m)^package latent:development-dotnet-stage@0\.1\.0 \{\s*'
+    package = re.compile(r'(?m)^package latent:development-dotnet-stage@0\.2\.0 \{\s*'
         r'interface stage \{\s*emit: func\(stage: u32, guard: u32\);\s*\}\s*\}\s*')
-    imported = re.compile(r'(?m)^[ \t]+import latent:development-dotnet-stage/stage@0\.1\.0;\n')
+    imported = re.compile(r'(?m)^[ \t]+import latent:development-dotnet-stage/stage@0\.2\.0;\n')
     if len(package.findall(text)) != 1 or len(imported.findall(text)) != 1:
         raise ValueError('managed-stage-private-source-shape')
     result = package.sub('', imported.sub('', text))
@@ -310,7 +310,17 @@ def stage_export_helper(name: str, text: str) -> tuple[str, dict]:
          '            global::LsfManagedWorkRoot.Initialize();\n            global::LsfManagedStageRoot.Install();\n'),
         ('            var ret = ApiExportsImpl.Probe((unchecked((uint)(p0))));\n',
          '            var ret = ApiExportsImpl.Probe((unchecked((uint)(p0))));\n'
-         '            global::LsfManagedStageRoot.Select(global::OutsideRootDrain.Library.ManagedStageTask);\n'),
+         '            global::LsfManagedStageRoot.Select(global::OutsideRootDrain.Library.ManagedStageTask);\n'
+         '            global::LsfManagedStageRoot.Emit(22u, 0u);\n'),
+        ('                ProbeTaskReturn(unchecked((int)0x4A430001u));\n',
+         '                global::LsfManagedStageRoot.Emit(19u, 0u);\n'
+         '                ProbeTaskReturn(unchecked((int)0x4A430001u));\n'),
+        ('                ProbeTaskReturn(unchecked((int)0x4A430002u));\n',
+         '                global::LsfManagedStageRoot.Emit(20u, 0u);\n'
+         '                ProbeTaskReturn(unchecked((int)0x4A430002u));\n'),
+        ('                ProbeTaskReturn(unchecked((int)0x4A430003u));\n',
+         '                global::LsfManagedStageRoot.Emit(21u, 0u);\n'
+         '                ProbeTaskReturn(unchecked((int)0x4A430003u));\n'),
     )
     selected = text
     for old, new in edits:
@@ -348,6 +358,7 @@ internal static class LsfManagedStageRoot
     [global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.StaticMethod, Name = "LsfManagedStageSelect")]
     private static extern void SelectCore(global::System.Threading.Tasks.Task? type, global::System.Threading.Tasks.Task selected);
     internal static void Install() => InstallCore(null, global::@IMPORT@.IStageImports.Emit);
+    internal static void Emit(uint stage, uint guard) => global::@IMPORT@.IStageImports.Emit(stage, guard);
     internal static void Select(global::System.Threading.Tasks.Task? selected)
     {
         if (selected is not null) SelectCore(null, selected);
@@ -376,7 +387,7 @@ def stage_binding_source(compiler, source, world, output):
     output.mkdir()
     selected = output/'selected.wit'
     package = read_file(compiler.vendor/STAGE_DATA/'private.wit', 4096).decode()
-    if package != 'package latent:development-dotnet-stage@0.1.0 {\n  interface stage {\n    emit: func(stage: u32, guard: u32);\n  }\n}\n':
+    if package != 'package latent:development-dotnet-stage@0.2.0 {\n  interface stage {\n    emit: func(stage: u32, guard: u32);\n  }\n}\n':
         raise ValueError('managed-stage-private-wit-bytes')
     offset = opening[0].end()
     selected.write_text(original[:offset]+'\n  import '+STAGE_IDENTITY+';'+original[offset:]+'\n'+package, encoding='utf-8', newline='\n')
@@ -536,7 +547,7 @@ def stage_package_selection(commands, contracts_tool, project, output, files, or
     if selected.replace(insertion,b'',1)!=original:
         raise ValueError('managed-stage-package-world-inverse')
     private_group=read_file(__import__('pathlib').Path(__file__).resolve().parents[2]/STAGE_DATA/'private.wit',4096)
-    package=b'package latent:development-dotnet-stage@0.1.0'
+    package=b'package latent:development-dotnet-stage@0.2.0'
     opening=package+b' {\n'
     if not private_group.startswith(opening) or not private_group.endswith(b'}\n'):
         raise ValueError('managed-stage-package-private-preimage')

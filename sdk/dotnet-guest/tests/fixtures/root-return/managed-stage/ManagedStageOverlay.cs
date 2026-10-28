@@ -277,7 +277,7 @@ internal static class ManagedStageOverlay
         foreach (var f in NewFields) f.DeclaringType.Fields.Remove(f);
         Need(methods.All(m => Body(m) == before[m]) && fields.SequenceEqual(module.GetTypes().SelectMany(t => t.Fields).Select(f => (f.FullName, f.Attributes, f.Constant))));
         Need(references.SequenceEqual(module.AssemblyReferences.Select(r => r.FullName)));
-        var receipt = JsonSerializer.SerializeToUtf8Bytes(new { profile = "dotnet-managed-stage-diagnostic-v1",
+        var receipt = JsonSerializer.SerializeToUtf8Bytes(new { profile = "dotnet-managed-stage-diagnostic-v2",
             originalDigest = "sha256:" + BaseSha, outputDigest = "sha256:" + selectedHash, cecilDigest = "sha256:" + CecilSha,
             modifiedMethods = actualChanged, actualSerializedBodySetDigest = "sha256:" + actualBodySetDigest,
             actualSerializedMethods = actualBodies.Count, actualWrittenBodiesVerified = true, originalMethodCount = methods.Length, originalInstructionsAndHandlersInverseExact = true,
