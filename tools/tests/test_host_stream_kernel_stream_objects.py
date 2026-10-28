@@ -1027,4 +1027,66 @@ class ZNodeBootstrapObjectOwner(unittest.TestCase):
         self.assertNotIn('msi-descriptor-objects', owner.NODE_STAGES)
 
 
+class ZNodeIrqGeometryOwner(unittest.TestCase):
+    def test_complete_capture_and_closed_six_object_scope(self):
+        source=owner.geometry_materials(owner.ROOT)
+        self.assertEqual((len(source['physicalInputs']),len(source['logicalIdentities'])),(88,119))
+        self.assertEqual((len(source['prior85Physical']),len(source['prior116Logical'])),(85,116))
+        self.assertEqual(sum(r['bytes'] for r in source['physicalInputs'].values()),1018112)
+        self.assertEqual(owner.mode_targets(node_geometry=True),owner.GEOMETRY_TARGETS)
+        self.assertEqual(len(owner.GEOMETRY_TARGETS),6)
+        for old in ('node_bootstrap','msi_descriptor','q35','msi_context','classdir'):
+            with self.assertRaises(ValueError):owner.mode_targets(node_geometry=True,**{old:True})
+        with self.assertRaises(ValueError):owner.mode_targets(node_geometry=1)
+        for target in owner.GEOMETRY_TARGETS:
+            self.assertEqual(owner.public_allowed('objects/'+target,node_geometry=True),owner.MAX_OBJECT)
+        self.assertIsNone(owner.public_allowed('objects/net/factory.o',node_geometry=True))
+        self.assertIsNone(owner.public_allowed('logs/00-node-bootstrap-objects.stdout.txt',node_geometry=True))
+        self.assertEqual(owner.public_allowed('logs/00-node-irq-geometry-objects.stdout.txt',node_geometry=True),4*1024**2)
+        self.assertEqual(owner.mode_targets(node_bootstrap=True),('net/factory.o',))
+
+    @staticmethod
+    def _elf(role=1,flags=2,relocation=False):
+        import struct
+        fields=owner.GEOMETRY_FIELDS[role]
+        values=[8]*len(fields)
+        for i,name in enumerate(fields):
+            if name.endswith('.enabled'):values[i]=0
+        data=struct.pack('<28Q',0x314f45474e46534c,1,role,len(fields),*values,*([0]*(24-len(fields))))
+        strings=b'\0.shstrtab\0.lsf_node_geometry\0'
+        raw=bytearray(64);raw[:7]=b'\x7fELF\x02\x01\x01'
+        struct.pack_into('<HHI',raw,16,1,62,1)
+        raw.extend(strings);data_offset=len(raw);raw.extend(data)
+        table=len(raw);rows=[(0,0,0,0,0,0,0,0,0,0),
+            (1,3,0,0,64,len(strings),0,0,1,0),
+            (11,1,flags,0,data_offset,len(data),0,0,8,0)]
+        if relocation:rows.append((0,4,0,0,data_offset,24,0,2,8,24))
+        for row in rows:raw.extend(struct.pack('<IIQQQQIIQQ',*row))
+        struct.pack_into('<Q',raw,40,table);struct.pack_into('<HHH',raw,58,64,len(rows),1)
+        return bytes(raw)
+
+    def test_passive_geometry_rejects_wrong_role_write_relocations_and_truncation(self):
+        good=self._elf()
+        decoded=owner.geometry_decode(good,1)
+        self.assertFalse(decoded['objectExecuted']);self.assertFalse(decoded['fundingOrFitQualified'])
+        for bad,role in [(good,2),(good[:-1],1),(self._elf(flags=3),1),
+                (self._elf(flags=6),1),(self._elf(relocation=True),1),(b'not ELF',1)]:
+            with self.subTest(role=role,length=len(bad)),self.assertRaises(ValueError):
+                owner.geometry_decode(bad,role)
+        for role in owner.GEOMETRY_FIELDS:self.assertEqual(owner.geometry_decode(self._elf(role),role)['role'],role)
+
+    def test_native_operands_preserve_unfunded_dynamic_and_shared_boundaries(self):
+        root=owner.ROOT/'research/standard-outbound/linux-6.12-lineage/node-irq-geometry'
+        body=(root/'geometry.c').read_text()
+        self.assertIn('num_possible_cpus() != 1 || !cpu_possible(0) || nr_cpu_ids != 1',body)
+        self.assertIn('pcpu_chunk_struct_size',body);self.assertIn('need_pcpuobj_ext()',body)
+        self.assertIn('pcpu_group_sizes[group]',body);self.assertIn('check_mul_overflow',body)
+        self.assertIn('asynchronous balance work',body)
+        for birth in ('kmalloc(', 'kzalloc(', 'alloc_pages(', 'alloc_percpu(', 'request_irq(', 'NodeFunding'):
+            self.assertNotIn(birth,body)
+        self.assertEqual(len(owner.GEOMETRY_NATIVE_PINS),6)
+        self.assertEqual(set(owner.GEOMETRY_NATIVE_PINS),{'kernel/irq/matrix.c','lib/maple_tree.c',
+            'mm/percpu.c','mm/percpu-vm.c','mm/percpu-internal.h','kernel/irq/irqdesc.c'})
+
+
 if __name__=='__main__':unittest.main()

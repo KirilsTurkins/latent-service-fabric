@@ -3,7 +3,7 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-msi-context-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-q35-msi-domain-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-msi-descriptor-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-node-bootstrap-custody-20261028'",
+    "if": "github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-msi-context-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-q35-msi-domain-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-msi-descriptor-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-node-bootstrap-custody-20261028' || github.ref == 'refs/heads/test/sdk-738-node-irq-geometry-20261028'",
     "name": "Changed class-directory translation units without image or boot",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -133,6 +133,16 @@
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --node-bootstrap --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
+        "if": "github.ref == 'refs/heads/test/sdk-738-node-irq-geometry-20261028'",
+        "name": "Check only new native-geometry capture and passive ELF controls",
+        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_stream_objects.ZNodeIrqGeometryOwner.test_complete_capture_and_closed_six_object_scope tools.tests.test_host_stream_kernel_stream_objects.ZNodeIrqGeometryOwner.test_passive_geometry_rejects_wrong_role_write_relocations_and_truncation tools.tests.test_host_stream_kernel_stream_objects.ZNodeIrqGeometryOwner.test_native_operands_preserve_unfunded_dynamic_and_shared_boundaries -v"
+      },
+      {
+        "if": "github.ref == 'refs/heads/test/sdk-738-node-irq-geometry-20261028'",
+        "name": "Compile six actual IRQ allocating translation units and read geometry without execution",
+        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --node-geometry --source-commit \"${{ github.sha }}\" --started \"$STREAM_OBJECT_STARTED\" --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+      },
+      {
         "id": "admission",
         "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' }}",
         "name": "Admit the fixed bounded public union before any upload",
@@ -199,7 +209,13 @@
         "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --node-bootstrap --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
       },
       {
-        "if": "${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true' || steps.layout_admission.outputs.admitted == 'true' || steps.post_init_admission.outputs.admitted == 'true' || steps.constructor_mmio_admission.outputs.admitted == 'true' || steps.vp_admission.outputs.admitted == 'true' || steps.msi_admission.outputs.admitted == 'true' || steps.q35_admission.outputs.admitted == 'true' || steps.msi_descriptor_admission.outputs.admitted == 'true' || steps.node_bootstrap_admission.outputs.admitted == 'true') }}",
+        "id": "node_geometry_admission",
+        "if": "${{ always() && github.ref == 'refs/heads/test/sdk-738-node-irq-geometry-20261028' }}",
+        "name": "Admit only six native-geometry objects and bounded receipt data",
+        "run": "python3 -B tools/qualify_host_stream_kernel_stream_objects.py --node-geometry --admit --output \"$RUNNER_TEMP/stream-provider-classdir-objects\""
+      },
+      {
+        "if": "${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true' || steps.layout_admission.outputs.admitted == 'true' || steps.post_init_admission.outputs.admitted == 'true' || steps.constructor_mmio_admission.outputs.admitted == 'true' || steps.vp_admission.outputs.admitted == 'true' || steps.msi_admission.outputs.admitted == 'true' || steps.q35_admission.outputs.admitted == 'true' || steps.msi_descriptor_admission.outputs.admitted == 'true' || steps.node_bootstrap_admission.outputs.admitted == 'true' || steps.node_geometry_admission.outputs.admitted == 'true') }}",
         "name": "Retain only admitted object evidence",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
@@ -210,7 +226,7 @@
         }
       },
       {
-        "if": "${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true' || steps.layout_admission.outputs.fallback == 'true' || steps.post_init_admission.outputs.fallback == 'true' || steps.constructor_mmio_admission.outputs.fallback == 'true' || steps.vp_admission.outputs.fallback == 'true' || steps.msi_admission.outputs.fallback == 'true' || steps.q35_admission.outputs.fallback == 'true' || steps.msi_descriptor_admission.outputs.fallback == 'true' || steps.node_bootstrap_admission.outputs.fallback == 'true') }}",
+        "if": "${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true' || steps.layout_admission.outputs.fallback == 'true' || steps.post_init_admission.outputs.fallback == 'true' || steps.constructor_mmio_admission.outputs.fallback == 'true' || steps.vp_admission.outputs.fallback == 'true' || steps.msi_admission.outputs.fallback == 'true' || steps.q35_admission.outputs.fallback == 'true' || steps.msi_descriptor_admission.outputs.fallback == 'true' || steps.node_bootstrap_admission.outputs.fallback == 'true' || steps.node_geometry_admission.outputs.fallback == 'true') }}",
         "name": "Retain only the bounded admission-failure receipt",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
@@ -225,7 +241,7 @@
   },
   "jobId": "classdir-objects",
   "kind": "job",
-  "reviewReason": "Add exactly one conditional Node object compile and its bounded one-object admission; preserve all existing actions, commands, before/coverage relationships and gates.",
+  "reviewReason": "Append only the closed six-object native IRQ geometry producer/data-reader mode; preserve85/116/457 before88/119/463, all old routes and bounds; no funding, dynamic-topology, fit or runtime credit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }
