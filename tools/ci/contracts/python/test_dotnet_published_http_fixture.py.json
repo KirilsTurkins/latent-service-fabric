@@ -1,5 +1,5 @@
 {
-  "cases":["PublishedHttpCapture.test_malformed_analyzer_approval_refuses_before_staging_or_compiler_access","PublishedHttpCapture.test_normal_project_retains_original_sdk_limits_and_authoritative_wit","PublishedHttpCapture.test_private_archive_rejects_unsafe_coordinate_or_unbounded_material","PublishedHttpCapture.test_private_coordinate_variation_preserves_exact_compiled_bytes","PublishedHttpCapture.test_real_peer_oracle_requires_all_contacts_and_actual_uncertain_mutation"],
+  "storageCases":"guard-keys",
   "guards":{
     "PublishedHttpCapture.test_malformed_analyzer_approval_refuses_before_staging_or_compiler_access":
       "f153b2b97fe40a2ca8d2265054cc497b5fee1f5a6c9c1dfbe414907b14650e46",

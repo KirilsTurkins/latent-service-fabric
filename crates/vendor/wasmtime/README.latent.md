@@ -588,3 +588,27 @@ original owners, exact typed layouts, refusal, cancellation and unwind. They
 do not qualify full ActivationBudget/RSS/stack costs or every async path.
 ResourceTable/oneshot/callback/result and other transitive backing remain
 separate accounting obligations; existing signed receipts stay source-dated.
+
+## Original Store resource table backing
+
+The internal ConcurrentState table now receives its original Store-selected
+NativeMemory at empty construction; no existing table is adopted. Each resource
+reserves the actual Layout<T> before its single Box. Its separate ticket stays
+outside until confirmation returns, then follows the physical Box through
+lookup, cancellation and destruction. Typed deletion moves T out of the sole
+Box and frees that backing before returning the ticket. The ordinary typed T
+may still outlive its table and Store; this does not manufacture a detached Box.
+
+The complete Entry array uses NativeVec for admitted replacement, retaining old
+and new backing during growth. Paid parent-child indices use a sorted NativeVec
+with replacement admitted before relationship mutation or child publication;
+this closes the previously unhookable BTreeSet node allocations. NativeMemory
+None retains the original Vec/BTreeSet/Box behavior. Public user-created legacy
+tables remain unbound rather than being retroactively attached to a Store.
+
+Four new private native controls are source-only until their bounded owning
+programme passes: original Store box/entry refusal and fresh use, typed and
+wrong-type deletion, atomic parent-child growth and sorted reused indices, and
+confirmation/destructor unwind with real last-owner retirement. They do not
+qualify full ActivationBudget/RSS/stack/transitive resource payloads, oneshot,
+other host callbacks, or whole736/745. Earlier receipts retain dated sources.

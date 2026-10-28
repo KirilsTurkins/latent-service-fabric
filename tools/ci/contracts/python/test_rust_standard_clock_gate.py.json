@@ -1,5 +1,5 @@
 {
-  "cases":["ClockGateInputs.test_current_successful_exact_target_is_selected_without_globbing_stale_tests","ClockGateInputs.test_failed_incomplete_duplicate_and_postterminal_inventories_reject","ClockGateInputs.test_source_download_bound_and_authenticated_bytes_preserve_existing_outputs","ClockGateInputs.test_source_download_identity_rejects_before_any_archive_is_written","ClockGateInputs.test_unsupported_clock_kind_rejects_before_compiler_source_or_output_access","ClockGateInputs.test_wrong_manifest_kind_profile_and_outside_executables_cannot_be_selected"],
+  "storageCases":"guard-keys",
   "guards":{
     "ClockGateInputs.test_current_successful_exact_target_is_selected_without_globbing_stale_tests":
       "d01a1d9835c3384f508b392e0d79d45d18d288d935e2a7d20f52fb142f073be0",

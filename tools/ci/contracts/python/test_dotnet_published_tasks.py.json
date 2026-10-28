@@ -1,5 +1,5 @@
 {
-  "cases":["PublishedManagedTasks.test_every_published_result_requires_original_limits_reaping_and_retirement","PublishedManagedTasks.test_failed_guest_result_is_retained_before_assertion_without_retry_or_success","PublishedManagedTasks.test_invalid_or_combined_selector_fails_before_materials_or_execution","PublishedManagedTasks.test_normal_authoring_keeps_sdk_limits_and_declares_only_reviewed_runtime_authority","PublishedManagedTasks.test_reviewed_primary_and_transitive_graph_never_accepts_drift_or_build_tools"],
+  "storageCases":"guard-keys",
   "guards":{
     "PublishedManagedTasks.test_every_published_result_requires_original_limits_reaping_and_retirement":
       "87e085fe04ef15c713043e02c0fe99f3050ec3b33c6b8b80333ff61224dce48d",
