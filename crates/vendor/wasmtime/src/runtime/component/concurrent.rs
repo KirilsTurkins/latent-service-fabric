@@ -5996,12 +5996,13 @@ impl Default for ConcurrentState {
 impl ConcurrentState {
     pub(super) fn new(queue_memory: crate::runtime::native_memory::Memory) -> Self {
         let paid = queue_memory.is_some();
+        let table = ResourceTable::with_native_memory(queue_memory.clone());
         Self {
             high_priority: Queue::new(queue_memory.is_some()),
             low_priority: Queue::new(queue_memory.is_some()),
             queue_memory,
             unforced_current_thread: CurrentThread::None,
-            table: AlwaysMut::new(ResourceTable::new()),
+            table: AlwaysMut::new(table),
             futures: AlwaysMut::new(Some(HostFutureSet::new(paid))),
             suspend_reason: None,
             worker: None,

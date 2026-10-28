@@ -1,5 +1,5 @@
 {
-  "cases":["NodeHttpIngressSchema.test_browser_bindings_are_bounded_closed_and_not_credentials","NodeHttpIngressSchema.test_closed_profiles_do_not_infer_proxy_trust_or_public_authority","NodeHttpIngressSchema.test_documented_tls_configuration_and_public_adapter","NodeHttpIngressSchema.test_individual_resource_bounds","NodeHttpIngressSchema.test_public_document_navigation_requires_bounded_public_scope"],
+  "storageCases":"guard-keys",
   "guards":{
     "NodeHttpIngressSchema.test_browser_bindings_are_bounded_closed_and_not_credentials":
       "0c20cca5ad251acf10d9db83d78b695a4fad3bb75a335fd6aa4f640f4c31ece3",

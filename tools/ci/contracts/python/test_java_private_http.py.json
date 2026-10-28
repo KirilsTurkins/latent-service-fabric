@@ -1,5 +1,5 @@
 {
-  "cases":["JavaPrivateHttpTests.test_both_actual_local_closures_survive_original_directory_removal_and_tamper_refusal","JavaPrivateHttpTests.test_explicit_source_compilation_never_runs_library_startup","JavaPrivateHttpTests.test_forged_case_list_or_nonretired_or_replayed_provider_record_refuses","JavaPrivateHttpTests.test_nonlinux_refusal_precedes_directory_or_tool_access","JavaPrivateHttpTests.test_unknown_or_duplicate_fixture_identity_refuses_before_project_creation"],
+  "storageCases":"guard-keys",
   "guards":{
     "JavaPrivateHttpTests.test_both_actual_local_closures_survive_original_directory_removal_and_tamper_refusal":
       "41c36d987ebf7acf74a36b006466a2ad4611b0ccb04822c177f6d244e55c219e",

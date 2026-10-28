@@ -401,5 +401,29 @@ class TaskStoreCallMemoryOwner(unittest.TestCase):
                 owner.call_memory_result(b'', other)
 
 
+class TaskTableMemoryOwner(unittest.TestCase):
+    def test_exact_resource_cases_share21_roots_and_reject_other_profiles(self):
+        self.assertEqual(len(owner.RESOURCE_TABLE_CASES), 4)
+        self.assertEqual(len(set(owner.RESOURCE_TABLE_CASES)), 4)
+        self.assertEqual(len(owner.CALL_MEMORY_STAGES), 21)
+        for case in owner.RESOURCE_TABLE_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.resource_table_result(raw, case)['scope'],
+                'original-Store-resource-box-table-and-child-index-counter-owner')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case'),
+                    raw.replace(b'0 measured', b'1 measured'), b''):
+                with self.assertRaises(ValueError):
+                    owner.resource_table_result(changed, case)
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(raw, case)
+        for case in (*owner.CALL_MEMORY_CASES, *owner.LIFT_RESULT_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.resource_table_result(b'', case)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', owner.CALL_MEMORY_CASES[0], _resource_table='yes')
+
+
 if __name__ == '__main__':
     unittest.main()

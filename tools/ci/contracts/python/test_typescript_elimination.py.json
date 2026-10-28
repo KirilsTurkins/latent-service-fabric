@@ -1,5 +1,5 @@
 {
-  "cases":["TypeScriptEliminationTests.test_both_finite_witnesses_keep_arbitrary_api_unknown","TypeScriptEliminationTests.test_foreign_source_duplicate_input_or_runtime_profile_is_rejected","TypeScriptEliminationTests.test_raw_return_requires_the_selected_branch_refusal_flag","TypeScriptEliminationTests.test_retained_module_cannot_be_relabelled_eliminated_or_reverse","TypeScriptEliminationTests.test_uncaught_failure_and_success_are_never_interchangeable"],
+  "storageCases":"guard-keys",
   "guards":{
     "TypeScriptEliminationTests.test_both_finite_witnesses_keep_arbitrary_api_unknown":
       "ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750",

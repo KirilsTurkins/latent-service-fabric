@@ -2943,8 +2943,10 @@ CALL_MEMORY_STAGES = ('source-head', 'source-clean', 'source-input-paths',
     'source-input-paths-after', 'source-clean-after', 'source-head-after')
 
 
-def call_memory_result(raw, case):
-    require(case in CALL_MEMORY_CASES and len(raw) <= artifacts.MAX_OUTPUT_BYTES,
+def call_memory_result(raw, case, *, _resource_table=False):
+    require(type(_resource_table) is bool, 'store-memory-closed-result-profile')
+    cases = RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
+    require(case in cases and len(raw) <= artifacts.MAX_OUTPUT_BYTES,
         'call-memory-case-bound')
     require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
         == [case.encode()], 'call-memory-one-exact-success')
@@ -2954,14 +2956,22 @@ def call_memory_result(raw, case):
         and int(summaries[0][4]) <= 10000, 'call-memory-one-executed-no-skip')
     return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0,
         'ignored': 0, 'filteredOut': int(summaries[0][4]),
-        'scope': 'original-Store-parameter-and-typed-closure-counter-owner'}
+        'scope': 'original-Store-resource-box-table-and-child-index-counter-owner' if _resource_table
+            else 'original-Store-parameter-and-typed-closure-counter-owner'}
 
 
-def qualify_call_memory(output, revision):
+def qualify_call_memory(output, revision, *, _resource_table=False):
     import shutil
+    require(type(_resource_table) is bool, 'store-memory-closed-profile')
+    branch = RESOURCE_TABLE_BRANCH if _resource_table else CALL_MEMORY_BRANCH
+    cases = RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
+    prefix = RESOURCE_TABLE_PREFIX if _resource_table else CALL_MEMORY_PREFIX
+    schema = 'lsf.resource-table-memory.v1' if _resource_table else 'lsf.call-parameter-closure-memory.v1'
+    scope = ('four exact private native original-Store resource Box, table and child-index backing controls; no guest, full ActivationBudget, transitive cost or RSS qualification'
+        if _resource_table else 'four exact private native original-Store factory and typed closure ownership/refusal/unwind controls; no guest, full ActivationBudget, transitive cost or RSS qualification')
     require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
-        and os.environ.get('GITHUB_REF_NAME') == CALL_MEMORY_BRANCH
+        and os.environ.get('GITHUB_REF_NAME') == branch
         and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'call-memory-one-exact-hosted-push')
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'call-memory-source-revision')
     require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
@@ -2976,8 +2986,8 @@ def qualify_call_memory(output, revision):
     logs = output / 'commands'; logs.mkdir()
     # Single five-second process cleanup reserve inside the original 1320 seconds.
     commands = Commands(ROOT, logs, environment, deadline_seconds=1315, command_seconds=1195)
-    receipt = {'schemaVersion': 'lsf.call-parameter-closure-memory.v1', 'status': 'in-progress',
-        'sourceRevision': revision, 'selectedCases': list(CALL_MEMORY_CASES),
+    receipt = {'schemaVersion': schema, 'status': 'in-progress',
+        'sourceRevision': revision, 'selectedCases': list(cases),
         'casesStarted': [], 'casesPassed': [], 'observations': [],
         'fullCostModelQualified': False, 'fullRuntimeSuiteExecuted': False,
         'fullVendorSuiteExecuted': False, 'signedGuestExecuted': False,
@@ -2991,7 +3001,7 @@ def qualify_call_memory(output, revision):
             'maximumCommandOutputBytes': 4 * 1024**2, 'maximumTotalLogsBytes': 16 * 1024**2,
             'maximumPublicFiles': 64, 'maximumPublicBytes': 128 * 1024**2},
         'commandBoundary': 'ALL21 Git/tool/build/library/list/test roots under one owner;42 raw channels',
-        'scope': 'four exact private native original-Store factory and typed closure ownership/refusal/unwind controls; no guest, full ActivationBudget, transitive cost or RSS qualification'}
+        'scope': scope}
     def owned(stage, seconds, *argv, env=None):
         require(len(commands.records) < len(CALL_MEMORY_STAGES)
             and stage == CALL_MEMORY_STAGES[len(commands.records)], 'call-memory-fixed-command-order')
@@ -3051,7 +3061,7 @@ def qualify_call_memory(output, revision):
         pins = [file_identity(tools[n], n) for n in sorted(tools)]; receipt['tools'] = pins
         environment['RUSTC'] = str(tools['rustc'])
         suite = artifacts.Suite('crates/vendor/wasmtime/Cargo.toml', 'wasmtime',
-            'src/lib.rs', CALL_MEMORY_PREFIX, frozenset(CALL_MEMORY_CASES), True)
+            'src/lib.rs', prefix, frozenset(cases), True)
         ordinal = len(commands.records)
         owned('build-private', 1195, tools['cargo'], 'test', '--manifest-path', suite.manifest,
             '--locked', '--lib', '--no-default-features', '--features', FEATURES,
@@ -3067,7 +3077,7 @@ def qualify_call_memory(output, revision):
             require(len(raw) <= maximum, 'call-memory-library-output-bound'); return 0, raw
         run_env = io_copy_environment(artifacts.cargo_environment(ROOT, artifact, environment,
             target=ROOT / 'target', execute=probe))
-        for index, case in enumerate(CALL_MEMORY_CASES):
+        for index, case in enumerate(cases):
             listed = owned(f'private-list-{index}', 25, artifact.executable, case,
                 '--exact', '--list', env=run_env)
             require(len(listed) <= artifacts.MAX_LIST_BYTES, 'call-memory-list-bound')
@@ -3076,25 +3086,42 @@ def qualify_call_memory(output, revision):
             receipt['casesStarted'].append(case)
             raw = owned(f'private-case-{index}', 55, artifact.executable, case,
                 '--exact', '--show-output', '--test-threads=1', env=run_env)
-            receipt['observations'].append(call_memory_result(raw, case)); receipt['casesPassed'].append(case)
+            receipt['observations'].append(call_memory_result(raw, case, _resource_table=_resource_table)); receipt['casesPassed'].append(case)
         require(inputs('source-input-paths-after') == before and source.verify() == checked,
             'call-memory-final-source')
         metadata('source-clean-after', 'diff', '--no-ext-diff', '--exit-code', 'HEAD', '--')
         head('source-head-after')
-        require(len(commands.records) == 21 and receipt['casesPassed'] == list(CALL_MEMORY_CASES),
+        require(len(commands.records) == 21 and receipt['casesPassed'] == list(cases),
             'call-memory-four-controls-all21-roots')
         require(file_identity(artifact.executable, 'call-memory-controls', 512 * 1024**2)
             == executable, 'call-memory-final-executable')
         require([file_identity(tools[n], n) for n in sorted(tools)] == pins, 'call-memory-final-tools')
         require(time.monotonic() < commands.deadline, 'call-memory-final-deadline')
         receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True,
-            executed=list(CALL_MEMORY_CASES), ignored=[])
+            executed=list(cases), ignored=[])
         write_json(output / 'receipt.json', receipt)
     except BaseException:
         receipt['status'] = 'failed'; write_json(output / 'FAILED.json', receipt); raise
     finally:
         write_json(output / 'commands.json', commands.records)
 
+
+
+RESOURCE_TABLE_BRANCH = 'feat/sdk-736-resource-table-memory-20261028'
+RESOURCE_TABLE_PREFIX = 'runtime::component::resource_table::native_memory_tests::'
+RESOURCE_TABLE_CASES = tuple(RESOURCE_TABLE_PREFIX + name for name in (
+    'original_store_box_and_entry_refusals_leave_no_published_resource',
+    'typed_and_wrong_type_delete_retire_only_physical_boxes',
+    'child_capacity_refusal_is_atomic_and_reused_indices_stay_sorted',
+    'confirmation_and_destructor_unwind_keep_original_owner_until_physical_drop'))
+
+
+def resource_table_result(raw, case):
+    return call_memory_result(raw, case, _resource_table=True)
+
+
+def qualify_resource_table_memory(output, revision):
+    return qualify_call_memory(output, revision, _resource_table=True)
 
 
 if __name__ == '__main__':
@@ -3117,8 +3144,11 @@ if __name__ == '__main__':
     modes.add_argument('--lift-result-memory', action='store_true')
     modes.add_argument('--node-bootstrap', action='store_true')
     modes.add_argument('--call-parameter-closure-memory', action='store_true')
+    modes.add_argument('--resource-table-memory', action='store_true')
     args = parser.parse_args()
-    if args.call_parameter_closure_memory:
+    if args.resource_table_memory:
+        qualify_resource_table_memory(args.output.resolve(), args.source_commit)
+    elif args.call_parameter_closure_memory:
         qualify_call_memory(args.output.resolve(), args.source_commit)
     elif args.node_bootstrap:
         qualify_node_bootstrap(args.output.resolve(), args.source_commit)
