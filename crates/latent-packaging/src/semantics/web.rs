@@ -116,6 +116,8 @@ pub fn validate_web_renderer_with_backend(
         source_packages: source_packages.into_boxed_slice(),
         counts,
         phase_type_owner: false,
+        #[cfg(feature = "development-test-host")]
+        development_managed_stage: false,
     })
 }
 
