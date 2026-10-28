@@ -4,12 +4,16 @@ use super::metadata::Candidate;
 use crate::standalone::http::{head::Head, Shared};
 use latent_artifacts::{web::WebSelection, PublicationRef};
 use latent_control_store::http_routes::{AcceptedHttpRoute, AcceptedHttpTarget};
+use latent_core::PlatformErrorCode;
 use latent_ingress::http::MAX_HEADERS;
 use latent_wire::invocation::{LocalPrincipalPolicy, PrincipalPolicy};
 
 pub(super) enum Selection {
     Routed(AcceptedHttpRoute),
-    Immutable { selection: WebSelection, path: String },
+    Immutable {
+        selection: WebSelection,
+        path: String,
+    },
 }
 
 impl Selection {
@@ -27,7 +31,10 @@ impl Selection {
             .authorize_target(&head.principal, &tenant.0)
             .map_err(|error| super::super::status(&error))?;
         let target = head.collector.target();
-        if target.path().starts_with(latent_artifacts::web::IMMUTABLE_ASSET_PREFIX) {
+        if target
+            .path()
+            .starts_with(latent_artifacts::web::IMMUTABLE_ASSET_PREFIX)
+        {
             let mut fields = [httparse::EMPTY_HEADER; MAX_HEADERS];
             let mut message = httparse::Request::new(&mut fields);
             if !matches!(message.parse(raw), Ok(httparse::Status::Complete(n)) if n == raw.len()) {
@@ -50,7 +57,15 @@ impl Selection {
             .services
             .deployments
             .select_http(target, candidate.method)
-            .map_err(|error| denial(super::super::status(&error)))?;
+            .map_err(|error| {
+                // No eligible route is a policy denial, not a transient outage.
+                // Keep genuine capacity/storage failures distinguishable as 503.
+                if error.code == PlatformErrorCode::RouteUnavailable {
+                    403
+                } else {
+                    denial(super::super::status(&error))
+                }
+            })?;
         let AcceptedHttpTarget::StaticWeb { publication, .. } = route.target() else {
             return Err(403);
         };
@@ -63,7 +78,10 @@ impl Selection {
 
     pub(super) fn web(&self) -> &WebSelection {
         match self {
-            Self::Routed(route) => route.target().web_selection().expect("static-only selection"),
+            Self::Routed(route) => route
+                .target()
+                .web_selection()
+                .expect("static-only selection"),
             Self::Immutable { selection, .. } => selection,
         }
     }
@@ -89,7 +107,12 @@ impl Selection {
                 };
                 // Respect signed exact-route precedence, but never directory
                 // indexes, SPA fallback, error documents or renderer routes.
-                match layout.manifest().routes.iter().find(|route| route.path == *site_path) {
+                match layout
+                    .manifest()
+                    .routes
+                    .iter()
+                    .find(|route| route.path == *site_path)
+                {
                     Some(route) => {
                         if route.mode == latent_artifacts::web::WebRenderMode::Server {
                             return Err(403);
@@ -101,7 +124,10 @@ impl Selection {
             }
         };
         let asset = layout.asset(path).ok_or(404u16)?;
-        if matches!(asset.media_type.as_str(), "text/html" | "application/xhtml+xml") {
+        if matches!(
+            asset.media_type.as_str(),
+            "text/html" | "application/xhtml+xml"
+        ) {
             return Err(403);
         }
         Ok(asset.path.clone())
@@ -109,7 +135,12 @@ impl Selection {
 
     pub(super) fn request(&self, raw: &[u8], path: String) -> Result<Request, u16> {
         let reference = self.reference();
-        Request::parse_routed(raw, reference.scope.tenant().ok_or(403u16)?, reference.clone(), path)
+        Request::parse_routed(
+            raw,
+            reference.scope.tenant().ok_or(403u16)?,
+            reference.clone(),
+            path,
+        )
     }
 
     pub(super) fn retain(self, mut request: Request) -> Request {
