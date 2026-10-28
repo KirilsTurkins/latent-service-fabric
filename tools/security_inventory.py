@@ -210,10 +210,11 @@ def reviewed_npm_libraries(repo: Path, entry: dict, manifest: dict, lock: dict) 
         require(digest(read_file(repo, path).replace(b"\r\n", b"\n")) == profile[field],
                 "npm-library-derivation-input-drift")
     rows = profile["libraries"]
-    require(isinstance(rows, dict) and set(rows) == {"braces", "http-cache-semantics"},
+    require(isinstance(rows, dict) and set(rows) == {"braces", "http-cache-semantics", "deepmerge"},
             "incomplete-npm-library-derivation")
     versions = {"braces": ("3.0.3", "braces-3.0.3-lsf-depth-v1"),
-                "http-cache-semantics": ("4.3.0", "http-cache-semantics-4.3.0-lsf-cache-v1")}
+                "http-cache-semantics": ("4.3.0", "http-cache-semantics-4.3.0-lsf-cache-v1"),
+                "deepmerge": ("4.3.1", "deepmerge-4.3.1-lsf-prototype-v1")}
     relative = "../" if entry["path"] == "website/package.json" else "../../"
     result = {}
     for name, row in rows.items():

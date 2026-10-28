@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "source_sha256": "cad35b45a94738effd1b5e5a61078607f4ae8a30b1b7ee4f0822d6a76345dad5",
-  "builder_sha256": "c190296798f4c1c6e7a7477991b1ee79a64e319e13eedd5c76ba53a69dd5d123",
+  "source_sha256": "42da38ca0597fc243b088e95259519a886a520b8f4fb84b70d901c6ebebabfc3",
+  "builder_sha256": "ddf866923b7202a85d73182a13bbd8046b99ab6a36add475cb8cde6bfeb0094f",
   "repairs": {
     "braces": {
       "version": "3.0.3",
@@ -21,6 +21,18 @@
       "repair_sha256": "c903c8ad20a3c0f21bf217163550cd9c5989384ea1970626688b6cab30d0245a",
       "integrity": "sha512-QoxZXkxpoKP9VMMA6OnDx1Ps0lIb4tBzw3DDVuH4MgHLaesYSqFBXdRJ0v7jpv2YzhtJ1qI/UzrrEerE9O/K9Q==",
       "advisories": []
+    },
+    "deepmerge": {
+      "version": "4.3.1",
+      "profile": "deepmerge-4.3.1-lsf-prototype-v1",
+      "repair_sha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+      "integrity": "sha512-w9M3UphEGYK/Zn9kkYnPVw7NnQyxE3T7gIcqBv3m4/Fe+LAhnAPZBwgYCqj0/orv2GagYhPGa2OMjqdzp7G0Lg==",
+      "advisories": [
+        {
+          "id": "GHSA-gcqx-w48m-w2h4",
+          "modified": "2026-10-27T21:45:04.256048Z"
+        }
+      ]
     }
   }
 }
