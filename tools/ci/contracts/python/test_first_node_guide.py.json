@@ -1,5 +1,5 @@
 {
-  "cases":["ArtifactPaths.test_linked_artifacts_are_rejected_before_run","ArtifactPaths.test_only_absolute_regular_files_are_accepted","Inputs.test_changed_component_is_not_a_placeholder_publication","Inputs.test_changed_deployment_digest_or_tenant_is_rejected","Inputs.test_config_explicit_profile_and_independent_random_credentials","Inputs.test_exact_five_public_inputs_not_extra_credential_files","Inputs.test_existing_outputs_never_overwritten","Inputs.test_missing_empty_oversized_and_nonregular_inputs_rejected","Inputs.test_symlinked_root_and_file_rejected","Payloads.test_exact_source_required","Payloads.test_exact_success","Payloads.test_failed_run_redacts_exception_and_never_emits_pass","Payloads.test_invalid_payload_formats_sizes_and_values","Payloads.test_uncertain_and_wrong_activation_never_pass","Sequencing.test_complete_synthetic_sequence_reuses_owners_and_does_not_republish","Sequencing.test_failure_is_not_retried_or_reported_as_success"],
+  "storageCases":"guard-keys",
   "guards":{
     "ArtifactPaths.test_linked_artifacts_are_rejected_before_run":
       "aaeccc9f24a905b8d5362c0d2076c7dd1f37eaf57ae8aa639daeb0585d21d4bd",

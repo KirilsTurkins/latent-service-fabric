@@ -1,3 +1,1 @@
-{"kind":"owner","path":"tools/qualify_java_scheduled_library.py","reviewBoundary":"committed-fingerprint","reviewReason":"Require exactly four controls and one terminal unittest OK; refuse actual skipped summaries without rejecting a passing test name.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "369257aa5b788ea10b2ebc5ccdca20e78ab7dd6e643de56c451b73aa8df234ca"
-}
+{"kind":"owner","path":"tools/qualify_java_scheduled_library.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve old scheduled route; capture complete native, fixed seventeen supplemental and Java source maps separately in the shutdownNow route.","schemaVersion":"latent.ci.contracts.v1","sha256":"f320331db5c00b949cdf0a77b487819d68a71702690060281de051e1166dd7dc"}
