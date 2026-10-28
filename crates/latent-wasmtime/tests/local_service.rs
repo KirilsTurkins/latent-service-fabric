@@ -695,7 +695,7 @@ async fn dotnet_managed_stage_diagnostic_preserves_failed_root_return_boundary()
                 .development_managed_stage_profile()
                 .unwrap()
                 .0,
-            "dotnet-managed-stage-diagnostic-v2"
+            "dotnet-managed-stage-diagnostic-v3"
         );
         let capsule = latent_manifest::JsonManifestCodec::default()
             .decode_capsule(bundle.blob("capsule.json").unwrap())
@@ -831,7 +831,7 @@ async fn dotnet_managed_stage_diagnostic_preserves_failed_root_return_boundary()
             println!(
                 "DOTNET_MANAGED_STAGE_CALL {}",
                 serde_json::json!({
-                    "profile":"dotnet-managed-stage-diagnostic-v2", "component":release.0,
+                    "profile":"dotnet-managed-stage-diagnostic-v3", "component":release.0,
                     "mode":mode, "terminalOutcome":terminal, "claims":snapshot.claims,
                     "originalCauseQualified":false, "originalSixCallsQualified":false,
                     "fullAc7Qualified":false, "physicalRetirementQualified":false, "nativeAccountingQualified":false

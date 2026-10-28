@@ -108,7 +108,7 @@ internal static class ManagedStageOverlay
     private static readonly Dictionary<Instruction, OpCode> OldOpcodes = new();
     private static int CheckShortBranches()
     {
-        var count = 0; var enqueueCount = 0;
+        var count = 0; var enqueueCount = 0; var joinCount = 0;
         foreach (var method in Added.Keys)
         {
             var offsets = new Dictionary<Instruction, int>(); var offset = 0;
@@ -117,10 +117,11 @@ internal static class ManagedStageOverlay
             {
                 var displacement = offsets[(Instruction)instruction.Operand] - offsets[instruction] - instruction.GetSize();
                 Need(displacement is >= -128 and <= 127);
-                if (method.Name == "Enqueue") enqueueCount++; else count++;
+                if (method.Name == "Enqueue") enqueueCount++;
+                else if (method.Name == "JoinAcceptedWork") joinCount++; else count++;
             }
         }
-        Need(count == 42 && enqueueCount == 24); return count + enqueueCount;
+        Need(count == 42 && enqueueCount == 24 && joinCount == 37); return count + enqueueCount + joinCount;
     }
     private static void Apply(ModuleDefinition module)
     {
@@ -188,6 +189,16 @@ internal static class ManagedStageOverlay
         Insert(finish, settle, false, Emit(emit, Instruction.Create(OpCodes.Ldarg_0), 7));
         var result = finish.Body.Instructions.Single(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference f && f.Name == "Result");
         Insert(finish, result, false, Emit(emit, Instruction.Create(OpCodes.Ldarg_0), 8));
+        // Bracket only the original close delegate; do not replace its call or exception behavior.
+        var join = M("JoinAcceptedWork");
+        var close = join.Body.Instructions.Single(i => i.OpCode == OpCodes.Callvirt &&
+            i.Operand is MethodReference r && r.Name == "Invoke" && r.DeclaringType.FullName == "System.Action");
+        Need(close.Offset == 36 && close.Previous.OpCode == OpCodes.Ldsfld &&
+            close.Previous.Operand is FieldReference closeField && closeField.Name == "close");
+        Insert(join, close, true, Instruction.Create(OpCodes.Ldc_I4, 23),
+            Instruction.Create(OpCodes.Ldc_I4, 0), Instruction.Create(OpCodes.Call, emitGuard));
+        Insert(join, close, false, Instruction.Create(OpCodes.Ldc_I4, 24),
+            Instruction.Create(OpCodes.Ldc_I4, 0), Instruction.Create(OpCodes.Call, emitGuard));
         // Failure-only guards remain visible even when the actual failed owner is null/foreign.
         Guard(M("Enter"), "managed-work-execution-parent", emitGuard, 10);
         Guard(M("BindContext"), "managed-work-context-owner", emitGuard, 11);
@@ -232,7 +243,7 @@ internal static class ManagedStageOverlay
         Need(references.SequenceEqual(module.AssemblyReferences.Select(r => r.FullName)));
         var changed = methods.Where(m => Body(m) != before[m]).ToDictionary(m => m.FullName,
             m => new { before = before[m], after = Body(m), insertedInstructions = Added[m].Count });
-        Need(changed.Count == 9 && NewMethods.Count == 7 && NewFields.Count == 3);
+        Need(changed.Count == 10 && NewMethods.Count == 7 && NewFields.Count == 3);
         var shortBranchesChecked = CheckShortBranches();
         module.Write(args[1]); var selectedHash = Hash(Read(args[1], MaxAssembly));
         // Bind the ACTUAL serialized image, including writer-computed MaxStack.
@@ -245,6 +256,8 @@ internal static class ManagedStageOverlay
         var plannedMethods = module.GetTypes().SelectMany(t => t.Methods).ToArray();
         var finishName = MethodKey(methods.Single(m => m.Name == "Finish" && m.DeclaringType.FullName == Registry));
         var selectedFinishBytes = writtenMethods[finishName].Body.CodeSize; Need(selectedFinishBytes == 155);
+        var joinName = MethodKey(methods.Single(m => m.Name == "JoinAcceptedWork" && m.DeclaringType.FullName == Registry));
+        Need(writtenMethods[joinName].Body.CodeSize == 496);
         Need(writtenMethods.Count == plannedMethods.Length && references.SequenceEqual(written.AssemblyReferences.Select(r => r.FullName)));
         var actualBodies = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (var planned in plannedMethods)
@@ -277,7 +290,7 @@ internal static class ManagedStageOverlay
         foreach (var f in NewFields) f.DeclaringType.Fields.Remove(f);
         Need(methods.All(m => Body(m) == before[m]) && fields.SequenceEqual(module.GetTypes().SelectMany(t => t.Fields).Select(f => (f.FullName, f.Attributes, f.Constant))));
         Need(references.SequenceEqual(module.AssemblyReferences.Select(r => r.FullName)));
-        var receipt = JsonSerializer.SerializeToUtf8Bytes(new { profile = "dotnet-managed-stage-diagnostic-v2",
+        var receipt = JsonSerializer.SerializeToUtf8Bytes(new { profile = "dotnet-managed-stage-diagnostic-v3",
             originalDigest = "sha256:" + BaseSha, outputDigest = "sha256:" + selectedHash, cecilDigest = "sha256:" + CecilSha,
             modifiedMethods = actualChanged, actualSerializedBodySetDigest = "sha256:" + actualBodySetDigest,
             actualSerializedMethods = actualBodies.Count, actualWrittenBodiesVerified = true, originalMethodCount = methods.Length, originalInstructionsAndHandlersInverseExact = true,
