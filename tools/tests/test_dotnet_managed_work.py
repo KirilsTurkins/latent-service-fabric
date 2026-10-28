@@ -106,6 +106,29 @@ class ManagedWorkContractTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(ValueError):
                 task_wait.validate_receipt(changed, finite=True, managed=True)
 
+        # Old receipts remain historical identities; only the new exact patch
+        # may claim the additional original-slot accessor and generated method.
+        old = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-v2-controlled.json').read_text())
+        task_wait.validate_receipt(old, finite=True, managed=True, aggregate=True)
+        current = copy.deepcopy(old)
+        current['managedAcceptedWork'] = copy.deepcopy(work.PREFETCH_REWRITE_RECEIPT)
+        current['generatedHelperCount'] = 96
+        task_wait.validate_current_receipt(current, finite=True, managed=True, aggregate=True)
+        with self.assertRaisesRegex(ValueError, 'current-managed-readiness-required'):
+            task_wait.validate_current_receipt(old, finite=True, managed=True, aggregate=True)
+        for field, replacement in (('generatedHelperCount', 95), ('generatedHelperCount', 97)):
+            changed = copy.deepcopy(current); changed[field] = replacement
+            with self.subTest(field=field, replacement=replacement), self.assertRaises(ValueError):
+                task_wait.validate_receipt(changed, finite=True, managed=True, aggregate=True)
+        for field in ('readiness', 'readinessControls'):
+            changed = copy.deepcopy(current); changed['managedAcceptedWork'][field] = 'unproved'
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                task_wait.validate_receipt(changed, finite=True, managed=True, aggregate=True)
+        changed = copy.deepcopy(current)
+        changed['managedAcceptedWork']['patch'] = work.TIMER_REWRITE_RECEIPT['patch']
+        with self.assertRaises(ValueError):
+            task_wait.validate_receipt(changed, finite=True, managed=True, aggregate=True)
+
     def test_no_missing_or_cross_selected_old_receipt_claims_managed_support(self):
         value = json.loads(FIXTURE.read_text())
         for finite, managed in ((False, True), (True, False), (True, 1)):
@@ -121,11 +144,13 @@ class ManagedWorkContractTests(unittest.TestCase):
             self.assertEqual(arguments[2], '--aggregate-task-wait')
             arguments[-2].write_bytes(b'explicit-managed-tool-control')
             value = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-v2-controlled.json').read_text())
+            value['managedAcceptedWork'] = copy.deepcopy(work.PREFETCH_REWRITE_RECEIPT)
+            value['generatedHelperCount'] = 96
             value['outputDigest'] = digest(b'explicit-managed-tool-control')
             write_json(arguments[-1], value)
         control.run_tool = run
         port = control.prepare(managed=True); control.references(port)
-        self.assertEqual(port.validated_helper_count(),95)
+        self.assertEqual(port.validated_helper_count(),96)
         self.assertEqual(port.finish(control.project,control.evidence)['selection']['requiredDeclarations'],sorted(DECLARED))
 
     def test_required_content_task_keeps_original_transport_error_channel(self):
