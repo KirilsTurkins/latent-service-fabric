@@ -24,6 +24,12 @@ internal static class ManagedStageOverlay
         Need(info.Exists && info.LinkTarget is null && info.Length > 0 && info.Length <= bound);
         return File.ReadAllBytes(path);
     }
+    // Display names can collide across distinct generic overloads. Preserve every method.
+    private static string MethodKey(MethodDefinition method)
+    {
+        var ordinal = method.DeclaringType.Methods.IndexOf(method); Need(ordinal >= 0);
+        return method.DeclaringType.FullName + "#" + ordinal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
     private static string Body(MethodDefinition method)
     {
         if (!method.HasBody) return "no-body";
@@ -229,16 +235,20 @@ internal static class ManagedStageOverlay
         module.Write(args[1]); var selectedHash = Hash(Read(args[1], MaxAssembly));
         // Bind the ACTUAL serialized image, including writer-computed MaxStack.
         using var written = ModuleDefinition.ReadModule(args[1], new ReaderParameters { ReadWrite = false, ReadSymbols = false });
-        var writtenMethods = written.GetTypes().SelectMany(t => t.Methods).ToDictionary(m => m.FullName);
+        var plannedTypes = module.GetTypes().ToArray(); var writtenTypes = written.GetTypes().ToArray();
+        Need(plannedTypes.Select(t => t.FullName).SequenceEqual(writtenTypes.Select(t => t.FullName)));
+        foreach (var pair in plannedTypes.Zip(writtenTypes))
+            Need(pair.First.Methods.Select(m => m.FullName).SequenceEqual(pair.Second.Methods.Select(m => m.FullName)));
+        var writtenMethods = writtenTypes.SelectMany(t => t.Methods).ToDictionary(MethodKey);
         var plannedMethods = module.GetTypes().SelectMany(t => t.Methods).ToArray();
-        var finishName = methods.Single(m => m.Name == "Finish" && m.DeclaringType.FullName == Registry).FullName;
+        var finishName = MethodKey(methods.Single(m => m.Name == "Finish" && m.DeclaringType.FullName == Registry));
         var selectedFinishBytes = writtenMethods[finishName].Body.CodeSize; Need(selectedFinishBytes == 155);
         Need(writtenMethods.Count == plannedMethods.Length && references.SequenceEqual(written.AssemblyReferences.Select(r => r.FullName)));
         var actualBodies = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (var planned in plannedMethods)
         {
-            Need(writtenMethods.TryGetValue(planned.FullName, out var actual));
-            var actualBody = Body(actual!); actualBodies.Add(planned.FullName, actualBody);
+            Need(writtenMethods.TryGetValue(MethodKey(planned), out var actual));
+            var actualBody = Body(actual!); actualBodies.Add(MethodKey(planned), actualBody);
             if (actual!.HasBody)
             {
                 var serializedMaxStack = actual.Body.MaxStackSize;
@@ -251,9 +261,9 @@ internal static class ManagedStageOverlay
         Need(module.GetTypes().SelectMany(t => t.Fields).Select(f => (f.FullName, f.Attributes, f.Constant))
             .SequenceEqual(written.GetTypes().SelectMany(t => t.Fields).Select(f => (f.FullName, f.Attributes, f.Constant))));
         var actualChanged = methods.Where(m => changed.ContainsKey(m.FullName)).ToDictionary(m => m.FullName,
-            m => new { before = before[m], after = actualBodies[m.FullName], insertedInstructions = Added[m].Count,
-                serializedMaxStack = writtenMethods[m.FullName].Body.MaxStackSize });
-        Need(methods.Where(m => !changed.ContainsKey(m.FullName)).All(m => actualBodies[m.FullName] == before[m]));
+            m => new { before = before[m], after = actualBodies[MethodKey(m)], insertedInstructions = Added[m].Count,
+                serializedMaxStack = writtenMethods[MethodKey(m)].Body.MaxStackSize });
+        Need(methods.Where(m => !changed.ContainsKey(m.FullName)).All(m => actualBodies[MethodKey(m)] == before[m]));
         var actualBodySetDigest = Hash(System.Text.Encoding.UTF8.GetBytes(string.Join("\n", actualBodies.Select(p => p.Key + "=" + p.Value))));
         foreach (var pair in Added) foreach (var i in pair.Value) pair.Key.Body.Instructions.Remove(i);
         foreach (var pair in OldOperands) pair.Key.Operand = pair.Value;
