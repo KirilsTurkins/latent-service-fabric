@@ -2,7 +2,7 @@ name: Actual stream operator node configuration checks
 
 on:
   push:
-    branches: ['feat/stream-operator-node-refusal-20261023']
+    branches: ['feat/stream-operator-node-refusal-20261023', 'feat/stream-operator-unavailable-inspect-20261028']
     paths:
       - '.github/workflows/stream-operator-node-check.yml'
       - 'tools/qualify_stream_operator_node.py'
@@ -22,7 +22,7 @@ jobs:
   node-check:
     name: Actual frozen operator and native277 configuration checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: ${{ github.ref_name == 'feat/stream-operator-unavailable-inspect-20261028' && 25 || 10 }}
     steps:
       - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
         with:
@@ -31,18 +31,60 @@ jobs:
         with:
           python-version: 3.13.5
       - name: Fetch only the immutable compiled source closures
+        if: github.ref_name != 'feat/stream-operator-unavailable-inspect-20261028'
         run: git fetch --depth=1 origin 277c8104499d414053573bce066b5e9091e74a20 380c7df8f26ec3f0f6e54d616e8d08b80cb5cc73
       - name: Exercise four new origin and refusal-classification controls
+        if: github.ref_name != 'feat/stream-operator-unavailable-inspect-20261028'
         run: python -S -B -m unittest tools.tests.test_stream_operator_node
       - name: Reuse authenticated products and observe actual configuration-only refusals
+        if: github.ref_name != 'feat/stream-operator-unavailable-inspect-20261028'
         env:
           GH_TOKEN: ${{ github.token }}
         run: python -S -B tools/qualify_stream_operator_node.py --output target/stream-operator-node-check
       - name: Retain only redacted public configuration outcomes
-        if: always()
+        if: always() && github.ref_name != 'feat/stream-operator-unavailable-inspect-20261028'
         uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-operator-node-check-${{ github.sha }}
           path: target/stream-operator-node-check/result.json
+          if-no-files-found: error
+          retention-days: 7
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        if: github.ref_name == 'feat/stream-operator-unavailable-inspect-20261028'
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        if: github.ref_name == 'feat/stream-operator-unavailable-inspect-20261028'
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Install only the exact hashed frontend and schema-validator inputs
+        if: github.ref_name == 'feat/stream-operator-unavailable-inspect-20261028'
+        run: python -m pip install --require-hashes -r tools/dev-frontend-linux.lock
+      - name: Exercise only two new closed public-result parser controls
+        if: github.ref_name == 'feat/stream-operator-unavailable-inspect-20261028'
+        run: python -B -m unittest tools.tests.test_stream_operator_node.UnavailableInspection
+      - name: Build current products once and execute eight actual unavailable-inspection cells
+        if: github.ref_name == 'feat/stream-operator-unavailable-inspect-20261028'
+        run: >-
+          python -B tools/qualify_stream_operator_node.py --inspect
+          --source-commit "${{ github.sha }}"
+          --output target/stream-operator-unavailable-inspect
+      - name: Retain finite public observations and fresh signed test fixture evidence
+        if: always() && github.ref_name == 'feat/stream-operator-unavailable-inspect-20261028'
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: stream-operator-unavailable-inspect-${{ github.sha }}
+          path: |
+            target/stream-operator-unavailable-inspect/*.json
+            target/stream-operator-unavailable-inspect/logs/
+            target/stream-operator-unavailable-inspect/signed-fixture/
+            target/stream-operator-inspect-frontend/build.json
+            target/stream-operator-inspect-frontend/python-inventory.json
           if-no-files-found: error
           retention-days: 7

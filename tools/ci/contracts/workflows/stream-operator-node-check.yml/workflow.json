@@ -1,1 +1,35 @@
-{"kind":"workflow","policy":{"concurrency":{"cancel-in-progress":true,"group":"stream-operator-node-check-${{ github.ref }}"},"name":"Actual stream operator node configuration checks","on":{"push":{"branches":["feat/stream-operator-node-refusal-20261023"],"paths":[".github/workflows/stream-operator-node-check.yml","tools/qualify_stream_operator_node.py","tools/stream_operator_frontend_products.py","tools/tests/test_stream_operator_node.py"]},"workflow_dispatch":null},"permissions":{"actions":"read","contents":"read"}},"requiredJobs":["node-check"],"reviewReason":"Trigger one feature-owned configuration campaign for its actual controller, frontend reader and focusedcontrols as well as workflow changes; evidence-only documentation does not repeat it.","schemaVersion":"latent.ci.contracts.v1","workflow":".github/workflows/stream-operator-node-check.yml"}
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "stream-operator-node-check-${{ github.ref }}"
+    },
+    "name": "Actual stream operator node configuration checks",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/stream-operator-node-refusal-20261023",
+          "feat/stream-operator-unavailable-inspect-20261028"
+        ],
+        "paths": [
+          ".github/workflows/stream-operator-node-check.yml",
+          "tools/qualify_stream_operator_node.py",
+          "tools/stream_operator_frontend_products.py",
+          "tools/tests/test_stream_operator_node.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "node-check"
+  ],
+  "reviewReason": "Add one exact owning branch for unavailable read-only inspection, keeping the same job identity and all original triggers/routes; private branch selects new programme, original branch/manual routes remain configuration-only.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/stream-operator-node-check.yml"
+}
