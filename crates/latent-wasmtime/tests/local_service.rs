@@ -753,6 +753,7 @@ async fn dotnet_managed_stage_diagnostic_preserves_failed_root_return_boundary()
             component,
         )
         .await;
+        let mut programme_failed = false;
         for (mode, id) in [
             (3, "dotnet-managed-stage-handled"),
             (9, "dotnet-managed-stage-unobserved"),
@@ -810,8 +811,15 @@ async fn dotnet_managed_stage_diagnostic_preserves_failed_root_return_boundary()
                         }
                         Some((kind.wire_name(), phase))
                     })();
-                    panic!("private diagnostic changed the original terminal boundary: platform={} trap={:?}",
-                        error.code.wire_code(), classified);
+                    if mode == 3 && error.code == latent_core::PlatformErrorCode::GuestTrap {
+                        programme_failed = true;
+                        eprintln!("private diagnostic changed the original terminal boundary: platform={} trap={:?}",
+                            error.code.wire_code(), classified);
+                        "guest-trap"
+                    } else {
+                        panic!("private diagnostic changed the original terminal boundary: platform={} trap={:?}",
+                            error.code.wire_code(), classified);
+                    }
                 }
                 _ => panic!("private diagnostic changed the original terminal boundary"),
             };
@@ -832,6 +840,10 @@ async fn dotnet_managed_stage_diagnostic_preserves_failed_root_return_boundary()
             drop(guard);
             f.idle().await;
         }
+        assert!(
+            !programme_failed,
+            "private diagnostic changed the original terminal boundary"
+        );
     }
     #[cfg(not(all(
         feature = "development-test-host",
