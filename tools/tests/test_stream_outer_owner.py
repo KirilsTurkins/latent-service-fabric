@@ -349,5 +349,26 @@ class StreamOuterOwnerReader(unittest.TestCase):
             self.assertNotEqual(owner.fixture_identity(path), first)
 
 
+class TaskNodeBootstrapOwner(unittest.TestCase):
+    def test_four_exact_results_and_all_source_tool_process_roots_are_closed(self):
+        self.assertEqual(len(owner.NODE_BOOTSTRAP_CASES), 4)
+        self.assertEqual(len(owner.NODE_BOOTSTRAP_STAGES), 23)
+        self.assertEqual(len(set(owner.NODE_BOOTSTRAP_STAGES)), 23)
+        self.assertEqual(owner.NODE_BOOTSTRAP_STAGES[:3], ('source-head', 'source-clean', 'source-input-paths'))
+        self.assertEqual(owner.NODE_BOOTSTRAP_STAGES[-3:], ('source-input-paths-after', 'source-clean-after', 'source-head-after'))
+        for case in owner.NODE_BOOTSTRAP_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            observed = owner.node_bootstrap_result(raw, case)
+            self.assertEqual((observed['passed'], observed['ignored']), (1, 0))
+            self.assertIn('scope', observed)
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case')):
+                with self.assertRaises(ValueError):
+                    owner.node_bootstrap_result(changed, case)
+        with self.assertRaises(ValueError):
+            owner.node_bootstrap_result(b'', 'unregistered::node')
+
+
 if __name__ == '__main__':
     unittest.main()

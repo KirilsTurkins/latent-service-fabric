@@ -1,41 +1,49 @@
-{"cases":["NativeWindowsLauncherTests.test_invalid_explicit_python_never_falls_back","NativeWindowsLauncherTests.test_real_cmd_help_with_no_bash_make_or_path_python","NativeWindowsLauncherTests.test_real_cmd_propagates_child_failure","NativeWindowsLauncherTests.test_real_powershell_terminal_launcher_remains_usable","NativeWindowsLauncherTests.test_real_unified_python_config_runs_without_shell_bootstrap","NativeWindowsLauncherTests.test_real_venv_selection_without_path_python","WindowsTaskTests.test_bootstrap_discovery_supports_program_files_and_explicit_override","WindowsTaskTests.test_full_website_validation_preserves_make_order","WindowsTaskTests.test_help_has_no_subprocess_or_tool_discovery","WindowsTaskTests.test_linux_tasks_fail_before_creating_state_or_starting_processes","WindowsTaskTests.test_missing_preparation_has_actionable_error","WindowsTaskTests.test_preparation_stops_at_each_failed_stage_and_keeps_exit_status","WindowsTaskTests.test_prepare_reuses_verified_owners_and_only_locked_installs","WindowsTaskTests.test_prepared_package_manager_precedes_global_path","WindowsTaskTests.test_website_tasks_never_bootstrap_or_install_implicitly","WindowsTaskTests.test_windows_dispatch_does_not_reach_make","WindowsTaskTests.test_windows_tasks_use_the_same_python_configurations","WindowsTaskTests.test_wrong_node_fails_before_preparation"],"guards":{"NativeWindowsLauncherTests.test_invalid_explicit_python_never_falls_back":
-  "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d"
-,"NativeWindowsLauncherTests.test_real_cmd_help_with_no_bash_make_or_path_python":
-  "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d"
-,"NativeWindowsLauncherTests.test_real_cmd_propagates_child_failure":
-  "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d"
-,"NativeWindowsLauncherTests.test_real_powershell_terminal_launcher_remains_usable":
-  "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d"
-,"NativeWindowsLauncherTests.test_real_unified_python_config_runs_without_shell_bootstrap":
-  "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d"
-,"NativeWindowsLauncherTests.test_real_venv_selection_without_path_python":
-  "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d"
-,"WindowsTaskTests.test_bootstrap_discovery_supports_program_files_and_explicit_override":
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-,"WindowsTaskTests.test_full_website_validation_preserves_make_order":
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-,"WindowsTaskTests.test_help_has_no_subprocess_or_tool_discovery":
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-,"WindowsTaskTests.test_linux_tasks_fail_before_creating_state_or_starting_processes":
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-,"WindowsTaskTests.test_missing_preparation_has_actionable_error":
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-,"WindowsTaskTests.test_preparation_stops_at_each_failed_stage_and_keeps_exit_status":
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-,"WindowsTaskTests.test_prepare_reuses_verified_owners_and_only_locked_installs":
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-,"WindowsTaskTests.test_prepared_package_manager_precedes_global_path":
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-,"WindowsTaskTests.test_website_tasks_never_bootstrap_or_install_implicitly":
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-,"WindowsTaskTests.test_windows_dispatch_does_not_reach_make":
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-,"WindowsTaskTests.test_windows_tasks_use_the_same_python_configurations":
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-,"WindowsTaskTests.test_wrong_node_fails_before_preparation":
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-},"kind":"python","module":"tools/tests/test_intellij_windows.py","reviewReason":"Consolidate shell/platform duplicates into Python module-SDK tasks; explicitly rename four superseded configuration tests, retain terminal-wrapper coverage and every existing execution guard, and add direct interpreter/platform/migration regressions.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d"
-:{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(sys.platform == 'win32', 'real cmd.exe/PowerShell execution is qualified by the Windows CI matrix entry')"],"decorators":[],"fixtureGuards":["module:setup-sha256:992bbcc68e2edb722d38614c0c970b4836a1a46e1e27aaae268f44fbea1c79b8","class:setup-sha256:ac94b2ecec1de947b39f39087855a3651d49071aaa5226f280b5f5f2cf7aeae5"],"skipSites":[]},
-  "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:992bbcc68e2edb722d38614c0c970b4836a1a46e1e27aaae268f44fbea1c79b8","class:setup-sha256:ef7f52e1830e5c2fc3a8e7499670c2a24fd0ebf8a4dbc83808728eb05209d612"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "NativeWindowsLauncherTests.test_invalid_explicit_python_never_falls_back":
+      "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d",
+    "NativeWindowsLauncherTests.test_real_cmd_help_with_no_bash_make_or_path_python":
+      "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d",
+    "NativeWindowsLauncherTests.test_real_cmd_propagates_child_failure":
+      "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d",
+    "NativeWindowsLauncherTests.test_real_powershell_terminal_launcher_remains_usable":
+      "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d",
+    "NativeWindowsLauncherTests.test_real_unified_python_config_runs_without_shell_bootstrap":
+      "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d",
+    "NativeWindowsLauncherTests.test_real_venv_selection_without_path_python":
+      "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d",
+    "WindowsTaskTests.test_bootstrap_discovery_supports_program_files_and_explicit_override":
+      "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6",
+    "WindowsTaskTests.test_full_website_validation_preserves_make_order":
+      "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6",
+    "WindowsTaskTests.test_help_has_no_subprocess_or_tool_discovery":
+      "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6",
+    "WindowsTaskTests.test_linux_tasks_fail_before_creating_state_or_starting_processes":
+      "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6",
+    "WindowsTaskTests.test_missing_preparation_has_actionable_error":
+      "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6",
+    "WindowsTaskTests.test_preparation_stops_at_each_failed_stage_and_keeps_exit_status":
+      "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6",
+    "WindowsTaskTests.test_prepare_reuses_verified_owners_and_only_locked_installs":
+      "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6",
+    "WindowsTaskTests.test_prepared_package_manager_precedes_global_path":
+      "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6",
+    "WindowsTaskTests.test_website_tasks_never_bootstrap_or_install_implicitly":
+      "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6",
+    "WindowsTaskTests.test_windows_dispatch_does_not_reach_make":
+      "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6",
+    "WindowsTaskTests.test_windows_tasks_use_the_same_python_configurations":
+      "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6",
+    "WindowsTaskTests.test_wrong_node_fails_before_preparation":
+      "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_intellij_windows.py",
+  "reviewReason":"Consolidate shell/platform duplicates into Python module-SDK tasks; explicitly rename four superseded configuration tests, retain terminal-wrapper coverage and every existing execution guard, and add direct interpreter/platform/migration regressions.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "ede2fd0f49efa5c0013641dfc153f8d1e14cedcfbd04d9de2fbd0606af07ee9d":{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(sys.platform == 'win32', 'real cmd.exe/PowerShell execution is qualified by the Windows CI matrix entry')"],"decorators":[],"fixtureGuards":["module:setup-sha256:992bbcc68e2edb722d38614c0c970b4836a1a46e1e27aaae268f44fbea1c79b8","class:setup-sha256:ac94b2ecec1de947b39f39087855a3651d49071aaa5226f280b5f5f2cf7aeae5"],"skipSites":[]},
+    "0fb630bd1cc963fcece0c6efde786a83c644e3e03e86f1cbedfb9988d03430b6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:992bbcc68e2edb722d38614c0c970b4836a1a46e1e27aaae268f44fbea1c79b8","class:setup-sha256:ef7f52e1830e5c2fc3a8e7499670c2a24fd0ebf8a4dbc83808728eb05209d612"],"skipSites":[]}
+  }
+}

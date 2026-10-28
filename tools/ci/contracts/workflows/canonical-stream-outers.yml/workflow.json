@@ -1,1 +1,46 @@
-{"kind":"workflow","policy":{"name":"Focused canonical IP formatting","on":{"push":{"branches":["feat/sdk-736-http-ip-format-20261027","feat/sdk-745-lift-result-memory-20261028"],"paths":[".github/workflows/canonical-stream-outers.yml","crates/latent-capabilities/**","crates/latent-http/**","crates/latent-policy/**","crates/latent-blobs/**","crates/latent-streams/**","crates/latent-wasmtime/**","crates/vendor/wasmtime/**","apps/latentd/**","Cargo.toml","Cargo.lock","rust-toolchain.toml","tools/toolchain.toml","tools/qualify_stream_outers.py","tools/host_codec_wasmtime.py","tools/ci/suites.json"]}},"permissions":{"contents":"read"},"concurrency":{"group":"canonical-stream-outers-${{ github.ref }}","cancel-in-progress":false}},"requiredJobs":["stream-outers"],"reviewReason":"Reviewed #745 paid fused LiftResult temporary buffer: four private source controls, original Store payer, source-matched locked vendor lib only; closed new branch1320/1200/25m/j2/5s; all prior IP mode routes and required jobs preserved.","schemaVersion":"latent.ci.contracts.v1","workflow":".github/workflows/canonical-stream-outers.yml"}
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "canonical-stream-outers-${{ github.ref }}"
+    },
+    "name": "Focused canonical IP formatting",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/sdk-736-http-ip-format-20261027",
+          "feat/sdk-745-lift-result-memory-20261028",
+          "test/sdk-738-node-bootstrap-custody-20261028"
+        ],
+        "paths": [
+          ".github/workflows/canonical-stream-outers.yml",
+          "crates/latent-capabilities/**",
+          "crates/latent-http/**",
+          "crates/latent-policy/**",
+          "crates/latent-blobs/**",
+          "crates/latent-streams/**",
+          "crates/latent-wasmtime/**",
+          "crates/vendor/wasmtime/**",
+          "apps/latentd/**",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml",
+          "tools/toolchain.toml",
+          "tools/qualify_stream_outers.py",
+          "tools/host_codec_wasmtime.py",
+          "tools/ci/suites.json"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "stream-outers"
+  ],
+  "reviewReason": "Append only the closed Node custody branch; preserve LeafR3 and IP routing, pinned actions, permissions and existing per-branch deadlines.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/canonical-stream-outers.yml"
+}

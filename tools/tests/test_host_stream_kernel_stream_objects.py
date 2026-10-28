@@ -1006,4 +1006,25 @@ class MsiDescriptorOwner(unittest.TestCase):
             with self.assertRaises(ValueError):owner.admit(out,msi_descriptor=True)
 
 
+class ZNodeBootstrapObjectOwner(unittest.TestCase):
+    def test_one_target_and_complete_capture_do_not_open_historical_modes(self):
+        self.assertEqual(owner.mode_targets(node_bootstrap=True), ('net/factory.o',))
+        for other in ('classdir', 'msi_context', 'q35', 'msi_descriptor'):
+            with self.assertRaises(ValueError):
+                owner.mode_targets(node_bootstrap=True, **{other: True})
+        with self.assertRaises(ValueError):
+            owner.mode_targets(node_bootstrap=1)
+        self.assertEqual(len(owner.NODE_PINS), 2)
+        self.assertEqual(owner.NODE_PHYSICAL_BYTES, 1008470)
+        self.assertEqual(owner.NODE_MODULE, 'research/standard-outbound/linux-6.12-lineage/node-bootstrap/projector.py')
+        self.assertEqual(owner.public_allowed('objects/net/factory.o', node_bootstrap=True), owner.MAX_OBJECT)
+        for wrong in ('objects/net/socket.o', 'objects/lib/xarray.o', 'layout.json', 'logs/00-msi-descriptor-objects.stdout.txt'):
+            self.assertIsNone(owner.public_allowed(wrong, node_bootstrap=True))
+        self.assertEqual(owner.public_allowed('logs/00-node-bootstrap-objects.stdout.txt', node_bootstrap=True), 4*1024**2)
+        self.assertIsNone(owner.public_allowed('logs/32-node-bootstrap-objects.stdout.txt', node_bootstrap=True))
+        self.assertEqual(len(owner.NODE_STAGES), len(owner.MSI_DESCRIPTOR_STAGES))
+        self.assertEqual(owner.NODE_STAGES.count('node-bootstrap-objects'), 1)
+        self.assertNotIn('msi-descriptor-objects', owner.NODE_STAGES)
+
+
 if __name__=='__main__':unittest.main()

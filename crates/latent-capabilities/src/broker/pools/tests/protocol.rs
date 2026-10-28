@@ -489,3 +489,54 @@ async fn kernel_backing_uses_existing_fixed_metadata_ceiling() {
     assert_eq!(setup.pools.snapshot().unwrap().metadata_bytes, before);
     clean(&setup.pools).await;
 }
+
+#[tokio::test]
+async fn node_bootstrap_original_budget_and_foreign_epoch_refuse_without_extra_charge() {
+    let limited = kernel_setup(ProviderPoolLimits {
+        maximum_metadata_bytes: 1024 * 1024,
+        maximum_configuration_bytes: 4096,
+        ..ProviderPoolLimits::default()
+    });
+    let before = limited.pools.snapshot().unwrap().metadata_bytes;
+    assert!(limited
+        .pools
+        .reserve_stream_kernel_node_backing(&limited.provider)
+        .is_err());
+    assert_eq!(limited.pools.snapshot().unwrap().metadata_bytes, before);
+    clean(&limited.pools).await;
+
+    let setup = kernel_setup(ProviderPoolLimits::default());
+    let foreign = kernel_setup(ProviderPoolLimits::default());
+    let before = setup.pools.snapshot().unwrap().metadata_bytes;
+    assert!(setup
+        .pools
+        .reserve_stream_kernel_node_backing(&foreign.provider)
+        .is_err());
+    assert_eq!(setup.pools.snapshot().unwrap().metadata_bytes, before);
+    let original = setup
+        .pools
+        .reserve_stream_kernel_node_backing(&setup.provider)
+        .unwrap();
+    assert_eq!(
+        setup.pools.snapshot().unwrap().metadata_bytes,
+        before + 1024 * 1024
+    );
+    assert!(original
+        .checkpoint(&foreign.pools, &foreign.provider)
+        .is_err());
+    assert!(original
+        .checkpoint(&setup.pools, &foreign.provider)
+        .is_err());
+    assert!(original.checkpoint(&setup.pools, &setup.provider).is_ok());
+    setup.provider.retire();
+    assert!(original.checkpoint(&setup.pools, &setup.provider).is_err());
+    assert_eq!(
+        setup.pools.snapshot().unwrap().metadata_bytes,
+        before + 1024 * 1024
+    );
+    // This preparation NEVER entered a kernel. Only this unused owner refunds.
+    drop(original);
+    assert_eq!(setup.pools.snapshot().unwrap().metadata_bytes, before);
+    clean(&setup.pools).await;
+    clean(&foreign.pools).await;
+}

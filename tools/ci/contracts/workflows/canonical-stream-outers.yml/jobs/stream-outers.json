@@ -1,1 +1,89 @@
-{"baselineRevision":"50f003dd006e0786494936c49e55dc683cf26fd6","before":{},"coverage":{},"definition":{"name":"Four canonical IP formatting controls","runs-on":"ubuntu-24.04","timeout-minutes":"${{ github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 25 || 45 }}","env":{"CARGO_BUILD_JOBS":"2","CARGO_INCREMENTAL":"0","CARGO_PROFILE_DEV_DEBUG":"0","CARGO_PROFILE_TEST_DEBUG":"0","CARGO_PROFILE_DEV_DEBUG_ASSERTIONS":"true","CARGO_PROFILE_TEST_DEBUG_ASSERTIONS":"true","CARGO_PROFILE_DEV_OVERFLOW_CHECKS":"true","CARGO_PROFILE_TEST_OVERFLOW_CHECKS":"true"},"steps":[{"uses":"KirilsTurkins/lsf-checkout","with":{"persist-credentials":false}},{"uses":"KirilsTurkins/lsf-setup-python","with":{"python-version":"3.13.5"}},{"uses":"dtolnay/rust-toolchain"},{"uses":"KirilsTurkins/lsf-rust-cache","with":{"prefix-key":"lsf-ci-dependencies-v3-contract-profiles","shared-key":"host-contracts","key":"ubuntu-24.04","cache-targets":false,"cache-directories":"target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n","cache-bin":false,"cache-workspace-crates":false,"cache-all-crates":false,"cache-on-failure":false,"save-if":false}},{"uses":"KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup","with":{"version":"1.254.0"}},{"name":"Build two exact lib targets and execute four canonical IP controls","if":"github.ref_name == 'feat/sdk-736-http-ip-format-20261027'","run":"python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --http-ip-format --output \"$RUNNER_TEMP/canonical-stream-outers\""},{"name":"Build one exact vendor lib and execute four LiftResult controls","if":"github.ref_name == 'feat/sdk-745-lift-result-memory-20261028'","run":"python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --lift-result-memory --output \"$RUNNER_TEMP/canonical-stream-outers\""},{"name":"Retain four source-bound canonical IP outcomes","if":"always()","uses":"KirilsTurkins/lsf-upload-artifact","with":{"name":"${{ github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 'canonical-lift-result' || 'canonical-ip-format' }}-${{ github.sha }}","path":"${{ runner.temp }}/canonical-stream-outers/receipt.json\n${{ runner.temp }}/canonical-stream-outers/FAILED.json\n${{ runner.temp }}/canonical-stream-outers/source-inputs.json\n${{ runner.temp }}/canonical-stream-outers/commands.json\n${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt\n","if-no-files-found":"warn","retention-days":3}}]},"jobId":"stream-outers","kind":"job","reviewReason":"Reviewed #745 paid fused LiftResult temporary buffer: four private source controls, original Store payer, source-matched locked vendor lib only; closed new branch1320/1200/25m/j2/5s; all prior IP mode routes and required jobs preserved.","schemaVersion":"latent.ci.contracts.v1","workflow":".github/workflows/canonical-stream-outers.yml"}
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "Four canonical IP formatting controls",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
+          "cache-on-failure": false,
+          "cache-targets": false,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
+          "save-if": false,
+          "shared-key": "host-contracts"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "if": "github.ref_name == 'feat/sdk-736-http-ip-format-20261027'",
+        "name": "Build two exact lib targets and execute four canonical IP controls",
+        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --http-ip-format --output \"$RUNNER_TEMP/canonical-stream-outers\""
+      },
+      {
+        "if": "github.ref_name == 'feat/sdk-745-lift-result-memory-20261028'",
+        "name": "Build one exact vendor lib and execute four LiftResult controls",
+        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --lift-result-memory --output \"$RUNNER_TEMP/canonical-stream-outers\""
+      },
+      {
+        "if": "github.ref_name == 'test/sdk-738-node-bootstrap-custody-20261028'",
+        "name": "Build two exact lib targets and execute four Node custody controls",
+        "run": "python3 -B tools/qualify_stream_outers.py --source-commit \"${{ github.sha }}\" --node-bootstrap --output \"$RUNNER_TEMP/canonical-stream-outers\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain four source-bound canonical IP outcomes",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "${{ github.ref_name == 'test/sdk-738-node-bootstrap-custody-20261028' && 'node-bootstrap-custody' || github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 'canonical-lift-result' || 'canonical-ip-format' }}-${{ github.sha }}",
+          "path": "${{ runner.temp }}/canonical-stream-outers/receipt.json\n${{ runner.temp }}/canonical-stream-outers/FAILED.json\n${{ runner.temp }}/canonical-stream-outers/source-inputs.json\n${{ runner.temp }}/canonical-stream-outers/commands.json\n${{ runner.temp }}/canonical-stream-outers/commands/logs/*.txt\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": "${{ github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 25 || 45 }}"
+  },
+  "jobId": "stream-outers",
+  "kind": "job",
+  "reviewReason": "Add one conditionally selected four-control Node custody owner step and distinct artifact label; preserve every existing command, before/coverage relationship, action pin and deadline.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/canonical-stream-outers.yml"
+}

@@ -2744,6 +2744,190 @@ def qualify_lift_result_memory(output, revision):
         write_json(output / 'commands.json', commands.records)
 
 
+NODE_BOOTSTRAP_BRANCH = 'test/sdk-738-node-bootstrap-custody-20261028'
+NODE_BOOTSTRAP_CAP_CASES = (
+    'broker::pools::tests::protocol::node_bootstrap_original_budget_and_foreign_epoch_refuse_without_extra_charge',)
+NODE_BOOTSTRAP_STREAM_CASES = tuple('kernel::native::node_bootstrap::controls::' + name for name in (
+    'node_wire_refuses_old_ack_foreign_generation_and_funding_bits',
+    'node_postopen_refusal_retains_original_whole_escrow',
+    'node_abandoned_waiter_keeps_custody_after_real_worker_returns'))
+NODE_BOOTSTRAP_CASES = (*NODE_BOOTSTRAP_CAP_CASES, *NODE_BOOTSTRAP_STREAM_CASES)
+NODE_BOOTSTRAP_RESEARCH = (
+    'research/standard-outbound/linux-6.12-lineage/node-bootstrap/projector.py',
+    'research/standard-outbound/linux-6.12-lineage/node-bootstrap/factory-node-bootstrap.c')
+NODE_BOOTSTRAP_STAGES = (
+    'source-head', 'source-clean', 'source-input-paths',
+    'resolve-cargo', 'cargo-version', 'resolve-rustc', 'rustc-version', 'wasm-tools-version',
+    'build-capabilities', 'capabilities-rust-library-path', 'capabilities-list-0', 'capabilities-case-0',
+    'build-streams', 'streams-rust-library-path',
+    'streams-list-0', 'streams-case-0', 'streams-list-1', 'streams-case-1',
+    'streams-list-2', 'streams-case-2', 'source-input-paths-after', 'source-clean-after', 'source-head-after')
+
+
+def node_bootstrap_result(raw, case):
+    require(case in NODE_BOOTSTRAP_CASES and len(raw) <= artifacts.MAX_OUTPUT_BYTES,
+        'node-case-bound')
+    require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
+        == [case.encode()], 'node-one-exact-success')
+    summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
+        rb'(\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    require(len(summaries) == 1 and summaries[0][:4] == (b'1', b'0', b'0', b'0')
+        and int(summaries[0][4]) <= 10000, 'node-one-executed-no-skip')
+    return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0, 'ignored': 0,
+        'filteredOut': int(summaries[0][4]),
+        'scope': 'original-provider-metadata-epoch-refusal' if case in NODE_BOOTSTRAP_CAP_CASES
+            else 'uninstalled-node-wire-and-real-blocking-custody-instrumentation'}
+
+
+def qualify_node_bootstrap(output, revision):
+    import shutil
+    require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
+        and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
+        and os.environ.get('GITHUB_REF_NAME') == NODE_BOOTSTRAP_BRANCH
+        and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'node-one-exact-hosted-push')
+    require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'node-source-revision')
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
+        'node-owned-output')
+    output = fresh(output)
+    environment = io_copy_environment(build_environment(output))
+    environment.update(CARGO_TARGET_DIR=str(ROOT / 'target'), CARGO_INCREMENTAL='0',
+        RUSTUP_TOOLCHAIN='1.97.1', RUSTUP_AUTO_INSTALL='0', CARGO_BUILD_JOBS='2',
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+        CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+    logs = output / 'commands'; logs.mkdir()
+    commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895)
+    receipt = {'schemaVersion': 'lsf.node-bootstrap-rust-custody.v1', 'status': 'in-progress',
+        'sourceRevision': revision, 'selectedCases': list(NODE_BOOTSTRAP_CASES),
+        'casesStarted': [], 'casesPassed': [], 'observations': [],
+        'nodeFundingQualified': False, 'nodeRetirementQualified': False,
+        'trustedInstalledProfileIssuerImplemented': False, 'consumerInstalled': False,
+        'irqEnableQualified': False, 'usefulFitQualified': False, 'kernelExecuted': False,
+        'booted': False, 'guestExecuted': False, 'whole738Complete': False,
+        'activationBudgetOrRssQualification': False, 'syntheticReplyIsNativeGeometry': False,
+        'originalNodeEscrowBytes': 1024 * 1024, 'bankBytes': 512 * 1024,
+        'tailBytes': 192 * 1024, 'records': 256, 'owners': 64,
+        'limits': {'overallSeconds': 2400, 'buildProcessSeconds': 900, 'listProcessSeconds': 30,
+            'caseProcessSeconds': 60, 'cleanupSeconds': 5, 'buildJobs': 2,
+            'maximumRootCommands': 23, 'maximumCommandOutputBytes': 4 * 1024**2,
+            'maximumTotalLogsBytes': 16 * 1024**2},
+        'commandBoundary': 'ALL23 source Git/tool/build/library/list/test roots under one original owner;46 raw channels',
+        'scope': 'four exact original-provider metadata/epoch, uninstalled framing and real blocking-worker custody controls; no complete node/native geometry or retirement approval',
+        'cargoBuildMayRunHostBuildScripts': True, 'hermetic': False,
+        'compilerImplicitInputsAttested': False, 'oldProgrammesExecuted': False}
+    def owned(stage, seconds, *argv, env=None):
+        require(len(commands.records) < len(NODE_BOOTSTRAP_STAGES)
+            and stage == NODE_BOOTSTRAP_STAGES[len(commands.records)], 'node-fixed-command-order')
+        require(time.monotonic() < commands.deadline, 'node-original-deadline')
+        commands.environment = environment if env is None else env
+        require_io_copy_environment(commands.environment)
+        require(len(argv) <= 64 and all(len(str(arg).encode()) <= 4096 for arg in argv)
+            and sum(len(str(arg).encode()) for arg in argv) <= 16 * 1024, 'node-fixed-argv-bound')
+        receipt.setdefault('expandedCommands', []).append({'stage': stage,
+            'argv': [str(arg) for arg in argv], 'cwd': str(ROOT), 'commandSeconds': seconds})
+        commands.command_seconds = seconds; receipt['stage'] = stage
+        return commands.run(stage, *argv)
+    def metadata(stage, *args):
+        return owned(stage, 25, 'git', '-c', 'core.fsmonitor=false', *args)
+    def head(stage):
+        raw = metadata(stage, '-c', 'gc.auto=0', 'rev-parse', '--verify', 'HEAD')
+        require(len(raw) <= 256 and raw.strip().decode('ascii') == revision, 'node-source-head')
+    def inputs(stage):
+        raw = metadata(stage, 'ls-files', '-z', '--', *SOURCE_ALLOWLIST)
+        require(len(raw) <= 2 * 1024**2, 'node-source-path-bound')
+        names = [n for n in raw.decode('utf-8').split('\0') if n]
+        limits = SnapshotLimits(); require(100 <= len(names) <= limits.max_entries, 'node-source-count')
+        result, total = {}, 0
+        for name in names:
+            require(time.monotonic() < commands.deadline, 'node-source-inventory-deadline')
+            data = read_file(ROOT / name, limits.max_file_bytes); total += len(data)
+            result[name] = identity(data)
+        require(total <= limits.max_total_bytes, 'node-source-total-checkout-bytes')
+        for name in (WORKFLOW, *NODE_BOOTSTRAP_RESEARCH):
+            result[name] = identity(read_file(ROOT / name, limits.max_file_bytes))
+        return dict(sorted(result.items()))
+    try:
+        head('source-head')
+        metadata('source-clean', 'diff', '--no-ext-diff', '--exit-code', 'HEAD', '--')
+        before = inputs('source-input-paths'); receipt['sourceBefore'] = before
+        write_json(output / 'source-inputs.json', before)
+        toolchain = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml', 128 * 1024).decode())
+        require(toolchain['rust']['toolchain'] == '1.97.1'
+            and toolchain['contracts']['wasm-tools'] == '1.254.0', 'node-normal-tool-pins')
+        rustup = shutil.which('rustup', path=environment.get('PATH'))
+        wasm = shutil.which('wasm-tools', path=environment.get('PATH'))
+        require(rustup and wasm, 'node-required-installed-tools')
+        tools = {'rustup': Path(rustup).resolve(strict=True)}
+        for name in ('cargo', 'rustc'):
+            raw = owned('resolve-' + name, 25, rustup, 'which', '--toolchain', '1.97.1', name)
+            require(len(raw) <= 16 * 1024, 'node-tool-resolution-bound')
+            path = Path(raw.decode('utf-8').strip())
+            require(path.is_absolute() and path.is_file(), 'node-direct-tool-path')
+            tools[name] = path.resolve(strict=True)
+            raw = owned(name + '-version', 25, tools[name], '--version')
+            require(len(raw) <= 16 * 1024 and re.match(
+                rf'{name} 1\.97\.1(?:\s|$)', raw.decode('utf-8')), 'node-tool-version')
+        tools['wasm-tools'] = Path(wasm).resolve(strict=True)
+        raw = owned('wasm-tools-version', 25, tools['wasm-tools'], '--version')
+        require(len(raw) <= 16 * 1024 and re.match(r'wasm-tools 1\.254\.0(?:\s|$)',
+            raw.decode('utf-8')), 'node-wasm-tool-version')
+        pins = [file_identity(tools[n], n) for n in sorted(tools)]; receipt['tools'] = pins
+        environment['RUSTC'] = str(tools['rustc']); executables = []
+        targets = (
+            ('capabilities', 'latent-capabilities', 'latent_capabilities', NODE_BOOTSTRAP_CAP_CASES,
+                'broker::pools::tests::protocol::'),
+            ('streams', 'latent-streams', 'latent_streams', NODE_BOOTSTRAP_STREAM_CASES,
+                'kernel::native::node_bootstrap::controls::'))
+        for label, package, target, cases, prefix in targets:
+            suite = artifacts.Suite('crates/' + package + '/Cargo.toml', target,
+                'src/lib.rs', prefix, frozenset(cases), True)
+            contract, = [r for r in registry.load()['suites'] if r['id'] == package + '.lib.' + package]
+            require(contract['minimumCases'] == (229 if label == 'capabilities' else 47)
+                and set(cases) <= set(contract['expectedCases'])
+                and not set(cases) & set(contract['expectedIgnored']), 'node-existing-target-catalogue')
+            ordinal = len(commands.records)
+            owned('build-' + label, 895, tools['cargo'], 'test', '-p', package, '--locked',
+                '--lib', '--all-features', '--no-run', '--message-format=json')
+            artifact = artifacts.read_inventory(logs / f'logs/{ordinal:02d}-build-{label}.stdout.txt',
+                ROOT, suite, target=ROOT / 'target')
+            bound = file_identity(artifact.executable, label + '-node-custody-controls', 512 * 1024**2)
+            executables.append((artifact.executable, bound, label + '-node-custody-controls'))
+            receipt[label + 'Executable'] = bound
+            def probe(argv, *, cwd, env, timeout, maximum):
+                require(argv == ['rustc', '--print', 'target-libdir'] and cwd == ROOT
+                    and timeout == 30 and maximum == 4096, 'node-exact-library-probe')
+                raw = owned(label + '-rust-library-path', 25, tools['rustc'], *argv[1:], env=env)
+                require(len(raw) <= maximum, 'node-library-output-bound'); return 0, raw
+            run_env = io_copy_environment(artifacts.cargo_environment(ROOT, artifact, environment,
+                target=ROOT / 'target', execute=probe))
+            for index, case in enumerate(cases):
+                listed = owned(f'{label}-list-{index}', 25, artifact.executable, case, '--exact', '--list', env=run_env)
+                require(len(listed) <= artifacts.MAX_LIST_BYTES, 'node-list-bound')
+                artifacts.validate_listing(listed, artifacts.Suite(suite.manifest, suite.target,
+                    suite.source, case, frozenset((case,)), True))
+                receipt['casesStarted'].append(case)
+                raw = owned(f'{label}-case-{index}', 55, artifact.executable, case,
+                    '--exact', '--show-output', '--test-threads=1', env=run_env)
+                receipt['observations'].append(node_bootstrap_result(raw, case)); receipt['casesPassed'].append(case)
+        require(inputs('source-input-paths-after') == before, 'node-final-source')
+        metadata('source-clean-after', 'diff', '--no-ext-diff', '--exit-code', 'HEAD', '--')
+        head('source-head-after')
+        require(len(commands.records) == 23 and receipt['casesPassed'] == list(NODE_BOOTSTRAP_CASES),
+            'node-exact-four-controls-and-all23-roots')
+        require(all(file_identity(path, label, 512 * 1024**2) == bound
+            for path, bound, label in executables), 'node-final-executables')
+        require([file_identity(tools[n], n) for n in sorted(tools)] == pins, 'node-final-tools')
+        require(time.monotonic() < commands.deadline, 'node-final-deadline')
+        receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True,
+            executed=list(NODE_BOOTSTRAP_CASES), ignored=[])
+        write_json(output / 'receipt.json', receipt)
+    except BaseException:
+        receipt['status'] = 'failed'; write_json(output / 'FAILED.json', receipt); raise
+    finally:
+        write_json(output / 'commands.json', commands.records)
+
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -2762,8 +2946,11 @@ if __name__ == '__main__':
     modes.add_argument('--http-metadata', action='store_true')
     modes.add_argument('--http-ip-format', action='store_true')
     modes.add_argument('--lift-result-memory', action='store_true')
+    modes.add_argument('--node-bootstrap', action='store_true')
     args = parser.parse_args()
-    if args.lift_result_memory:
+    if args.node_bootstrap:
+        qualify_node_bootstrap(args.output.resolve(), args.source_commit)
+    elif args.lift_result_memory:
         qualify_lift_result_memory(args.output.resolve(), args.source_commit)
     elif args.http_ip_format:
         qualify_http_ip_format(args.output.resolve(), args.source_commit)

@@ -19,7 +19,8 @@
           "test/sdk-738-vp-transport-objects-20261027",
           "test/sdk-738-msi-context-objects-20261027",
           "test/sdk-738-q35-msi-domain-objects-20261027",
-          "test/sdk-738-msi-descriptor-objects-20261027"
+          "test/sdk-738-msi-descriptor-objects-20261027",
+          "test/sdk-738-node-bootstrap-custody-20261028"
         ]
       }
     },
@@ -31,7 +32,7 @@
     "classdir-objects",
     "normal-objects"
   ],
-  "reviewReason": "Add only the closed MSI descriptor push branch; preserve all historical branches, permissions, concurrency, pinned actions and deadlines.",
+  "reviewReason": "Append only the closed Node custody branch; preserve all historical branches and jobs.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-provider-objects.yml"
 }

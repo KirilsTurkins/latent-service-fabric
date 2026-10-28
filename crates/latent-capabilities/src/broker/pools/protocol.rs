@@ -40,6 +40,69 @@ impl StreamKernelBacking {
     }
 }
 
+/// One original node/bootstrap escrow, acquired BEFORE its native entry. This
+/// owns the same one-MiB charge as the old backing route, never an additional
+/// node allowance. No bank-only partition or refund API is exposed here.
+///
+/// Preparation can be dropped before entry. The trusted native adapter must
+/// move this whole value into its existing physical owner before possible entry
+/// and retain it in bounded quarantine until a complete node fence exists.
+pub struct StreamKernelNodeBacking {
+    original: StreamKernelBacking,
+    epoch: Arc<super::Epoch>,
+}
+
+impl StreamKernelNodeBacking {
+    /// A factory share is only this call-local borrow of the original owner;
+    /// it cannot escape into a caller stack or become a separately refundable
+    /// charge. Equality of configuration words cannot replace either identity.
+    pub fn checkpoint(
+        &self,
+        pools: &ProviderPools,
+        installed: &super::InstalledProvider,
+    ) -> Result<(), PlatformError> {
+        pools.inner.check()?;
+        if !Arc::ptr_eq(&self.original._pools, &pools.inner)
+            || !Arc::ptr_eq(&self.epoch, &installed.epoch)
+            || installed.is_retired()
+        {
+            return Err(super::denied());
+        }
+        Ok(())
+    }
+}
+
+impl ProviderPools {
+    /// Prepare the original whole envelope before any node state, actor-ref
+    /// storage, native open or child work. This is custody, NOT a compiled node
+    /// geometry/fit result, kernel identity or permission to enable IRQs.
+    pub fn reserve_stream_kernel_node_backing(
+        &self,
+        installed: &super::InstalledProvider,
+    ) -> Result<StreamKernelNodeBacking, PlatformError> {
+        self.inner.check()?;
+        {
+            let state = self.inner.state.try_lock().map_err(|_| super::busy())?;
+            let reference = installed.reference();
+            if installed.is_retired()
+                || reference.capability() != crate::broker::network::STREAM_CAPABILITY
+                || reference.profile() != crate::broker::network::STREAM_PROFILE
+                || !state
+                    .epochs
+                    .iter()
+                    .any(|epoch| Arc::ptr_eq(epoch, &installed.epoch))
+            {
+                return Err(super::denied());
+            }
+        }
+        let owner = StreamKernelNodeBacking {
+            original: self.reserve_stream_kernel_backing()?,
+            epoch: Arc::clone(&installed.epoch),
+        };
+        owner.checkpoint(self, installed)?;
+        Ok(owner)
+    }
+}
 /// Original accepted work retained by a private kernel factory owner. This is
 /// not a kernel identity, retirement certificate or provider-install permission.
 /// There is no constructor from strings, scope words, serialized claims or an

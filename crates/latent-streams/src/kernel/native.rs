@@ -497,5 +497,532 @@ async fn start_real(
     .await
 }
 
+
+/// Additive, uninstalled node-bootstrap ABI. The old factory path above is
+/// unchanged. There is deliberately no production issuer for InstalledProfile:
+/// trusted exact running-image/source/configuration authentication is still
+/// required BEFORE a caller can reach this separate compiled native entry.
+pub(crate) mod node_bootstrap {
+    use super::{deadline_error, error, File, Instant, StreamError, StreamErrorCode};
+    use latent_capabilities::broker::pools::{
+        ConnectionReservation, InstalledProvider, PooledConnection, ProviderPools,
+        StreamKernelCloseJob, StreamKernelCloseObservation, StreamKernelNodeBacking,
+    };
+    use std::{
+        io::{Read, Write},
+        sync::Arc,
+    };
+
+    const MAGIC: u32 = 0x4c53_4e42;
+    const VERSION: u32 = 1;
+    const ATTACH: u32 = 1;
+    const CLOSE_RETAIN: u32 = 2;
+    const REQUEST_BYTES: usize = 32;
+    const REPLY_BYTES: usize = 64;
+    const ABI: &str = "lsf-q35-node-bootstrap-v1";
+
+    /// Sealed installed-image evidence, NOT an operator profile/string/boolean.
+    /// No production constructor exists in this source slice, and an InstalledProvider
+    /// alone cannot create it. A future trusted image loader must bind the
+    /// actual running image, source/configuration and new compiled fops first.
+    pub(crate) struct InstalledProfile {
+        abi: &'static str,
+        image: [u8; 32],
+        source: [u8; 32],
+        configuration: [u8; 32],
+    }
+
+    impl InstalledProfile {
+        fn check(&self) -> Result<(), StreamError> {
+            if self.abi != ABI
+                || self.image == [0; 32]
+                || self.source == [0; 32]
+                || self.configuration == [0; 32]
+            {
+                return Err(error(StreamErrorCode::Unsupported));
+            }
+            Ok(())
+        }
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    enum Phase {
+        Entering,
+        AttachedUnqualified,
+        ClosedRetained,
+        Retained,
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    struct Attachment {
+        expiry: u64,
+        generation: u64,
+        // Exact initial native header facts, NOT the full IRQ/node geometry.
+        native_bytes: u64,
+        alignment: u64,
+        view_bytes: u64,
+    }
+
+    fn frame(operation: u32, expiry: u64, generation: u64) -> [u8; REQUEST_BYTES] {
+        let mut wire = [0; REQUEST_BYTES];
+        for (offset, value) in [(0, MAGIC), (4, VERSION), (8, operation)] {
+            wire[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+        }
+        wire[16..24].copy_from_slice(&expiry.to_le_bytes());
+        wire[24..32].copy_from_slice(&generation.to_le_bytes());
+        wire
+    }
+
+    fn reply(
+        bytes: &[u8],
+        expiry: u64,
+        expected: Option<Attachment>,
+    ) -> Result<(Phase, Attachment), StreamError> {
+        let refused = || error(StreamErrorCode::Unsupported);
+        if bytes.len() != REPLY_BYTES {
+            return Err(refused());
+        }
+        let word = |at| u32::from_le_bytes(bytes[at..at + 4].try_into().expect("fixed word"));
+        let wide = |at| u64::from_le_bytes(bytes[at..at + 8].try_into().expect("fixed scalar"));
+        let phase = match word(8) {
+            2 if expected.is_none() => Phase::AttachedUnqualified,
+            3 if expected.is_some() => Phase::ClosedRetained,
+            4 if expected.is_some() => Phase::Retained,
+            _ => return Err(refused()),
+        };
+        let attached = Attachment {
+            expiry: wide(16),
+            generation: wide(24),
+            native_bytes: wide(32),
+            alignment: wide(40),
+            view_bytes: wide(48),
+        };
+        if word(0) != MAGIC || word(4) != VERSION || word(12) != 0
+            || attached.expiry != expiry || attached.generation == 0
+            || attached.native_bytes == 0 || attached.native_bytes > 196_608
+            || !attached.alignment.is_power_of_two() || attached.alignment > 64
+            || attached.view_bytes != attached.native_bytes.checked_add(63)
+                .map(|n| n & !63).ok_or_else(refused)?
+            || attached.view_bytes > 196_608
+            || wide(56) != 0 // No funding/fit/retirement approval bit is defined.
+            || expected.is_some_and(|original| original != attached)
+        {
+            return Err(refused());
+        }
+        Ok((phase, attached))
+    }
+
+    fn expiry(deadline: Instant) -> Result<u64, StreamError> {
+        let now = rustix::time::clock_gettime(rustix::time::ClockId::Monotonic);
+        let remaining = deadline
+            .checked_duration_since(Instant::now())
+            .ok_or_else(deadline_error)?;
+        u64::try_from(now.tv_sec)
+            .ok()
+            .and_then(|n| n.checked_mul(1_000_000_000))
+            .and_then(|n| n.checked_add(u64::try_from(now.tv_nsec).ok()?))
+            .and_then(|n| n.checked_add(u64::try_from(remaining.as_nanos()).ok()?))
+            .ok_or_else(|| error(StreamErrorCode::Unsupported))
+    }
+
+    fn attach(file: &mut File, deadline: Instant) -> Result<Attachment, StreamError> {
+        let expiry = expiry(deadline)?;
+        // No retry, fallback to constructor-v2, write_all or renewed deadline.
+        if file
+            .write(&frame(ATTACH, expiry, 0))
+            .map_err(|_| error(StreamErrorCode::Unsupported))?
+            != REQUEST_BYTES
+        {
+            return Err(error(StreamErrorCode::Unsupported));
+        }
+        let mut bytes = [0; REPLY_BYTES];
+        if file
+            .read(&mut bytes)
+            .map_err(|_| error(StreamErrorCode::Unsupported))?
+            != REPLY_BYTES
+        {
+            return Err(error(StreamErrorCode::Unsupported));
+        }
+        let (_, attachment) = reply(&bytes, expiry, None)?;
+        if Instant::now() >= deadline {
+            return Err(deadline_error());
+        }
+        Ok(attachment)
+    }
+
+    struct NodeResource {
+        // Descriptor cleanup precedes the actual escrow and original epoch.
+        descriptor: Option<File>,
+        attachment: Option<Attachment>,
+        phase: Phase,
+        backing: StreamKernelNodeBacking,
+        installed: InstalledProvider,
+        _profile: InstalledProfile,
+    }
+
+    struct Attempt {
+        reservation: Option<ConnectionReservation<NodeResource>>,
+        resource: Option<NodeResource>,
+        entered: bool,
+    }
+
+    impl Drop for Attempt {
+        fn drop(&mut self) {
+            if self.entered {
+                let mut value = self.resource.take().expect("original node custody");
+                value.phase = Phase::Retained;
+                drop(value.descriptor.take());
+                self.reservation
+                    .take()
+                    .expect("original reservation")
+                    .quarantine(value);
+            }
+        }
+    }
+
+    /// No bare resource or independently refundable factory share is exposed.
+    /// All factory access is a call-local borrow inside this physical custody.
+    pub(crate) struct Owner {
+        connection: Option<PooledConnection<NodeResource>>,
+        pools: Arc<ProviderPools>,
+    }
+
+    impl Owner {
+        fn begin_close(&mut self) -> Result<StreamKernelCloseJob, StreamError> {
+            let connection = self
+                .connection
+                .take()
+                .ok_or_else(|| error(StreamErrorCode::Unsupported))?;
+            match self
+                .pools
+                .cleanup_stream_kernel_blocking_quarantined(connection, close_retained)
+            {
+                Ok(job) => Ok(job),
+                Err((failure, connection)) => {
+                    connection.quarantine();
+                    Err(failure.into())
+                }
+            }
+        }
+    }
+
+    impl Drop for Owner {
+        fn drop(&mut self) {
+            if self.connection.is_some() {
+                drop(self.begin_close());
+            }
+        }
+    }
+
+    fn close_retained(value: &mut NodeResource) -> StreamKernelCloseObservation {
+        let mut observed = StreamKernelCloseObservation::Uncertain;
+        if let (Some(file), Some(original)) = (value.descriptor.as_mut(), value.attachment) {
+            if matches!(
+                file.write(&frame(CLOSE_RETAIN, original.expiry, original.generation)),
+                Ok(REQUEST_BYTES)
+            ) {
+                let mut bytes = [0; REPLY_BYTES];
+                if matches!(file.read(&mut bytes), Ok(REPLY_BYTES))
+                    && reply(&bytes, original.expiry, Some(original)).is_ok()
+                {
+                    observed = StreamKernelCloseObservation::RequestAccepted;
+                }
+            }
+        }
+        value.phase = Phase::Retained;
+        drop(value.descriptor.take());
+        // NEVER KernelRootReturned. The complete escrow and actual original
+        // epoch stay in the existing bounded quarantine after even a valid ACK.
+        observed
+    }
+
+    async fn enter_with<O, I>(
+        pools: Arc<ProviderPools>,
+        installed: InstalledProvider,
+        backing: StreamKernelNodeBacking,
+        profile: InstalledProfile,
+        deadline: Instant,
+        open: O,
+        initialize: I,
+    ) -> Result<Owner, StreamError>
+    where
+        O: FnOnce() -> Result<File, StreamError> + Send + 'static,
+        I: FnOnce(&mut File, Instant) -> Result<Attachment, StreamError> + Send + 'static,
+    {
+        profile.check()?;
+        backing.checkpoint(&pools, &installed)?;
+        if Instant::now() >= deadline {
+            return Err(deadline_error());
+        }
+        // The caller's SINGLE original escrow moves here; no old start helper
+        // and no second one-MiB acquisition occurs.
+        let client = pools.client::<NodeResource>(&installed, u16::MAX)?;
+        let maintenance = pools.maintenance(&client, deadline, 1)?;
+        let request = maintenance.begin_request()?;
+        let reservation = client.reserve_maintenance_connection(&request)?;
+        let mut attempt = Attempt {
+            reservation: Some(reservation),
+            resource: Some(NodeResource {
+                descriptor: None,
+                attachment: None,
+                phase: Phase::Entering,
+                backing,
+                installed,
+                _profile: profile,
+            }),
+            entered: false,
+        };
+        let physical_pools = Arc::clone(&pools);
+        let job = pools
+            .control_blocking_before(deadline, move || {
+                request.checkpoint()?;
+                if Instant::now() >= deadline {
+                    return Err(deadline_error());
+                }
+                let value = attempt.resource.as_mut().expect("original node resource");
+                value
+                    .backing
+                    .checkpoint(&physical_pools, &value.installed)?;
+                attempt.entered = true; // BEFORE open, including failed open/panic.
+                value.descriptor = Some(open()?);
+                value.attachment = Some(initialize(
+                    value.descriptor.as_mut().expect("actual fd"),
+                    deadline,
+                )?);
+                value.phase = Phase::AttachedUnqualified;
+                request.checkpoint()?;
+                value
+                    .backing
+                    .checkpoint(&physical_pools, &value.installed)?;
+                let value = attempt.resource.take().expect("original node resource");
+                let reservation = attempt.reservation.take().expect("original reservation");
+                attempt.entered = false;
+                drop(attempt);
+                let connection = match reservation.connected_retaining_on_error(value) {
+                    Ok(connection) => connection,
+                    Err((failure, reservation, mut value)) => {
+                        value.phase = Phase::Retained;
+                        drop(value.descriptor.take());
+                        reservation.quarantine(value);
+                        return Err(failure.into());
+                    }
+                };
+                Ok(Owner {
+                    connection: Some(connection),
+                    pools: physical_pools,
+                })
+            })
+            .await?;
+        tokio::select! {
+            biased;
+            () = tokio::time::sleep_until(deadline.into()) => Err(deadline_error()),
+            result = job.wait() => {
+                let owner = result??;
+                if Instant::now() >= deadline {
+                    drop(owner);
+                    Err(deadline_error())
+                } else { Ok(owner) }
+            }
+        }
+    }
+
+    /// A valid installed-image permit is required BEFORE reserving/entering.
+    /// No production caller can obtain one yet, and no running-image check is
+    /// inferred from ABI strings or a reply obtained after open.
+    #[expect(
+        dead_code,
+        reason = "dormant uninstalled Node ABI has no production profile issuer"
+    )]
+    pub(crate) async fn start(
+        pools: Arc<ProviderPools>,
+        installed: &InstalledProvider,
+        profile: InstalledProfile,
+        deadline: Instant,
+    ) -> Result<Owner, StreamError> {
+        profile.check()?;
+        let backing = pools.reserve_stream_kernel_node_backing(installed)?;
+        enter_with(
+            pools,
+            installed.clone(),
+            backing,
+            profile,
+            deadline,
+            || {
+                rustix::fs::open(
+                    c"/dev/lsf-stream-factory",
+                    rustix::fs::OFlags::RDWR
+                        | rustix::fs::OFlags::CLOEXEC
+                        | rustix::fs::OFlags::NOFOLLOW
+                        | rustix::fs::OFlags::NONBLOCK,
+                    rustix::fs::Mode::empty(),
+                )
+                .map(File::from)
+                .map_err(|_| error(StreamErrorCode::Unsupported))
+            },
+            attach,
+        )
+        .await
+    }
+
+    #[cfg(test)]
+    mod controls {
+        use super::*;
+        use crate::tests::{config, fixture::Fixture};
+        use std::time::Duration;
+
+        fn instrument_profile() -> InstalledProfile {
+            // Test-only custody framing; never installed-image qualification.
+            InstalledProfile {
+                abi: ABI,
+                image: [1; 32],
+                source: [2; 32],
+                configuration: [3; 32],
+            }
+        }
+
+        fn observed(state: u32) -> [u8; REPLY_BYTES] {
+            let mut bytes = [0; REPLY_BYTES];
+            for (at, value) in [(0, MAGIC), (4, VERSION), (8, state)] {
+                bytes[at..at + 4].copy_from_slice(&value.to_le_bytes());
+            }
+            // Synthetic framing geometry only; no native-layout/fit credit.
+            for (at, value) in [(16, 123u64), (24, 7), (32, 80), (40, 8), (48, 128)] {
+                bytes[at..at + 8].copy_from_slice(&value.to_le_bytes());
+            }
+            bytes
+        }
+
+        #[test]
+        fn node_wire_refuses_old_ack_foreign_generation_and_funding_bits() {
+            let good = observed(2);
+            let (phase, original) = reply(&good, 123, None).unwrap();
+            assert_eq!(phase, Phase::AttachedUnqualified);
+            assert!(reply(&super::super::frame(super::super::CLOSED, 123), 123, None).is_err());
+            assert!(reply(&observed(3), 123, None).is_err());
+            assert_eq!(
+                reply(&observed(3), 123, Some(original)).unwrap().0,
+                Phase::ClosedRetained
+            );
+            assert!(reply(&observed(2), 123, Some(original)).is_err());
+            for at in [0, 4, 12, 16, 24, 32, 40, 48, 56] {
+                let mut changed = observed(3);
+                changed[at] ^= 1;
+                assert!(reply(&changed, 123, Some(original)).is_err(), "offset {at}");
+            }
+            let mut funded = good;
+            funded[56] = 1;
+            assert!(reply(&funded, 123, None).is_err());
+            assert!(reply(&good[..REPLY_BYTES - 1], 123, None).is_err());
+        }
+
+        async fn snapshot(
+            pools: &ProviderPools,
+        ) -> latent_capabilities::broker::pools::ProviderPoolSnapshot {
+            tokio::time::timeout(Duration::from_secs(5), async {
+                loop {
+                    if let Ok(value) = pools.snapshot() {
+                        return value;
+                    }
+                    tokio::task::yield_now().await;
+                }
+            })
+            .await
+            .expect("original bounded provider snapshot")
+        }
+
+        async fn retained(
+            pools: &ProviderPools,
+        ) -> latent_capabilities::broker::pools::ProviderPoolSnapshot {
+            tokio::time::timeout(Duration::from_secs(5), async {
+                loop {
+                    let value = snapshot(pools).await;
+                    if value.failed_cleanup != 0 {
+                        return value;
+                    }
+                    tokio::task::yield_now().await;
+                }
+            })
+            .await
+            .expect("actual owner returned to original bounded quarantine")
+        }
+
+        #[tokio::test]
+        async fn node_postopen_refusal_retains_original_whole_escrow() {
+            let fixture = Fixture::new(config());
+            let before = snapshot(&fixture.pools).await;
+            let prepared = fixture
+                .pools
+                .reserve_stream_kernel_node_backing(&fixture.provider.inner.installed)
+                .unwrap();
+            let directory = tempfile::tempdir().unwrap();
+            let path = directory.path().join("node-refusal");
+            let result = enter_with(
+                Arc::clone(&fixture.pools),
+                fixture.provider.inner.installed.clone(),
+                prepared,
+                instrument_profile(),
+                Instant::now() + Duration::from_secs(5),
+                move || File::create(path).map_err(|_| error(StreamErrorCode::IoFailed)),
+                |_, _| Err(error(StreamErrorCode::Unsupported)),
+            )
+            .await;
+            assert!(result.is_err());
+            let held = retained(&fixture.pools).await;
+            assert!(held.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
+            assert_eq!(held.connections, before.connections + 1);
+        }
+
+        #[tokio::test]
+        async fn node_abandoned_waiter_keeps_custody_after_real_worker_returns() {
+            let fixture = Fixture::new(config());
+            let before = snapshot(&fixture.pools).await;
+            let prepared = fixture
+                .pools
+                .reserve_stream_kernel_node_backing(&fixture.provider.inner.installed)
+                .unwrap();
+            let directory = tempfile::tempdir().unwrap();
+            let path = directory.path().join("node-cancelled-observer");
+            let (entered_send, entered_receive) = tokio::sync::oneshot::channel();
+            let (release_send, release_receive) = std::sync::mpsc::channel();
+            let pools = Arc::clone(&fixture.pools);
+            let installed = fixture.provider.inner.installed.clone();
+            let observer = tokio::spawn(async move {
+                enter_with(
+                    pools,
+                    installed,
+                    prepared,
+                    instrument_profile(),
+                    Instant::now() + Duration::from_secs(5),
+                    move || {
+                        let file =
+                            File::create(path).map_err(|_| error(StreamErrorCode::IoFailed))?;
+                        entered_send.send(()).unwrap();
+                        release_receive
+                            .recv_timeout(Duration::from_secs(5))
+                            .unwrap();
+                        Ok(file)
+                    },
+                    |_, _| {
+                        // Instrument the custody handoff, not native readiness.
+                        Ok(reply(&observed(2), 123, None).unwrap().1)
+                    },
+                )
+                .await
+            });
+            tokio::time::timeout(Duration::from_secs(5), entered_receive)
+                .await
+                .unwrap()
+                .unwrap();
+            observer.abort();
+            assert!(matches!(observer.await, Err(failure) if failure.is_cancelled()));
+            release_send.send(()).unwrap();
+            let held = retained(&fixture.pools).await;
+            assert!(held.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
+            assert_eq!(held.connections, before.connections + 1);
+        }
+    }
+
+    // No NodeFunding or NodeRetired type/constructor exists in this module.
+}
 #[cfg(test)]
 mod tests;

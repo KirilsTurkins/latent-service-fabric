@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_stream_objects.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review the closed six-object MSI descriptor/device-XArray mode: capture83 physical and114 logical inputs plus two native preimages before loading, preserve old78/109/451, and retain all original gates and bounds.",
+  "reviewReason": "Add only the closed one-object Node custody mode with85 captured physical inputs before loader,116 logical identities and457 projected outputs; preserve prior83/114/456 and native2 plus all existing bounds and gates.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "07e6ddecc4405c19b3b60630f76ab70ce21ecdc39773a5104a1cf6f431e111ee"
+  "sha256": "f5540735402083cd89eb1feb8e161731c246a0952634d2af0544f3cc583df605"
 }

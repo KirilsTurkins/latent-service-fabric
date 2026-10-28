@@ -1,21 +1,30 @@
-{"cases":["ManagedGoHttpPendingControls.test_actual_v5_wait_for_then_context_start_shape_cannot_be_replaced_by_invented_second_start","ManagedGoHttpPendingControls.test_exact_owning_workflow_reuses_products_and_selects_actual_managed_guest_without_native_build","ManagedGoHttpPendingControls.test_live_pipe_partial_record_cannot_be_a_positive_witness_and_full_two_mode_sequence_is_retained","ManagedGoHttpPendingControls.test_owned_deadline_derivation_refuses_unknown_or_repeated_preimages","ManagedGoHttpPendingControls.test_post_retirement_or_non_http_broker_work_cannot_replace_live_owned_http","ManagedGoHttpPendingControls.test_real_peer_retains_unreleased_header_gate_without_response_for_both_clients","ManagedGoHttpPendingControls.test_successful_next_requires_second_owned_timer_and_application_beyond_eight_maintenance_tasks","ManagedGoHttpPendingControls.test_three_cases_use_both_original_client_deadlines_and_fresh_cross_tenant_state","ManagedGoHttpPendingControls.test_unknown_private_extra_overflow_missing_duplicate_and_out_of_profile_records_refuse"],"guards":{"ManagedGoHttpPendingControls.test_actual_v5_wait_for_then_context_start_shape_cannot_be_replaced_by_invented_second_start":
-  "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4"
-,"ManagedGoHttpPendingControls.test_exact_owning_workflow_reuses_products_and_selects_actual_managed_guest_without_native_build":
-  "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4"
-,"ManagedGoHttpPendingControls.test_live_pipe_partial_record_cannot_be_a_positive_witness_and_full_two_mode_sequence_is_retained":
-  "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4"
-,"ManagedGoHttpPendingControls.test_owned_deadline_derivation_refuses_unknown_or_repeated_preimages":
-  "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4"
-,"ManagedGoHttpPendingControls.test_post_retirement_or_non_http_broker_work_cannot_replace_live_owned_http":
-  "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4"
-,"ManagedGoHttpPendingControls.test_real_peer_retains_unreleased_header_gate_without_response_for_both_clients":
-  "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4"
-,"ManagedGoHttpPendingControls.test_successful_next_requires_second_owned_timer_and_application_beyond_eight_maintenance_tasks":
-  "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4"
-,"ManagedGoHttpPendingControls.test_three_cases_use_both_original_client_deadlines_and_fresh_cross_tenant_state":
-  "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4"
-,"ManagedGoHttpPendingControls.test_unknown_private_extra_overflow_missing_duplicate_and_out_of_profile_records_refuse":
-  "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4"
-},"kind":"python","module":"tools/tests/test_go_http_managed_pending.py","reviewReason":"Measured v5 wait-for then context timer-start/next reader correction; retain all old tests/limits and replay exact authenticated original successful build without recompilation; failed original qualification retained. Only closed actual-record fixture setup digest changes; all existing skips/decorators/classes retained.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e6c42db487f42171ce006bf1bb3def1c86b15c2bb9422b99ead576d17c80bd6b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "ManagedGoHttpPendingControls.test_actual_v5_wait_for_then_context_start_shape_cannot_be_replaced_by_invented_second_start":
+      "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4",
+    "ManagedGoHttpPendingControls.test_exact_owning_workflow_reuses_products_and_selects_actual_managed_guest_without_native_build":
+      "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4",
+    "ManagedGoHttpPendingControls.test_live_pipe_partial_record_cannot_be_a_positive_witness_and_full_two_mode_sequence_is_retained":
+      "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4",
+    "ManagedGoHttpPendingControls.test_owned_deadline_derivation_refuses_unknown_or_repeated_preimages":
+      "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4",
+    "ManagedGoHttpPendingControls.test_post_retirement_or_non_http_broker_work_cannot_replace_live_owned_http":
+      "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4",
+    "ManagedGoHttpPendingControls.test_real_peer_retains_unreleased_header_gate_without_response_for_both_clients":
+      "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4",
+    "ManagedGoHttpPendingControls.test_successful_next_requires_second_owned_timer_and_application_beyond_eight_maintenance_tasks":
+      "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4",
+    "ManagedGoHttpPendingControls.test_three_cases_use_both_original_client_deadlines_and_fresh_cross_tenant_state":
+      "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4",
+    "ManagedGoHttpPendingControls.test_unknown_private_extra_overflow_missing_duplicate_and_out_of_profile_records_refuse":
+      "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_go_http_managed_pending.py",
+  "reviewReason":"Measured v5 wait-for then context timer-start/next reader correction; retain all old tests/limits and replay exact authenticated original successful build without recompilation; failed original qualification retained. Only closed actual-record fixture setup digest changes; all existing skips/decorators/classes retained.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "275725720d1d163c93eafe010114b54e9bc8793a803788e7818ab93507f0b7b4":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e6c42db487f42171ce006bf1bb3def1c86b15c2bb9422b99ead576d17c80bd6b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}
