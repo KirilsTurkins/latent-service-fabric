@@ -347,6 +347,8 @@ pub(crate) enum DevelopmentHostAdmissionEdge {
     Bind,
     ClockAdmission,
     RuntimeSynchronous,
+    RuntimeWaitPreparation,
+    RuntimeWaitCompletion,
 }
 impl DevelopmentHostAdmissionEdge {
     pub(crate) fn wire_name(self) -> &'static str {
@@ -354,6 +356,8 @@ impl DevelopmentHostAdmissionEdge {
             Self::Bind => "bind",
             Self::ClockAdmission => "clock-admission",
             Self::RuntimeSynchronous => "runtime-synchronous",
+            Self::RuntimeWaitPreparation => "runtime-wait-preparation",
+            Self::RuntimeWaitCompletion => "runtime-wait-completion",
         }
     }
 }
@@ -739,6 +743,26 @@ impl DevelopmentJoinCauseObserver {
         true
     }
 
+    pub(crate) fn first_managed_stage_host_admission_refusal(&self, slot: usize) -> bool {
+        let Ok(mut slots) = self.slots.lock() else {
+            return false;
+        };
+        let Some(selected) = slots.get_mut(slot) else {
+            return false;
+        };
+        if !selected.enabled
+            || selected.mode != JoinMode::ManagedStage
+            || selected.observation.claims != 1
+            || selected.observation.invalid
+            || selected.observation.cause.is_some()
+            || selected.rejection.is_some()
+        {
+            return false;
+        }
+        selected.rejection = Some(DevelopmentJoinRejectReason::HostAdmissionRefusal);
+        true
+    }
+
     pub(crate) fn reject_task_return(&self, slot: usize, reason: DevelopmentJoinRejectReason) {
         let Ok(mut slots) = self.slots.lock() else {
             return;
@@ -918,6 +942,7 @@ mod join_cause_tests {
             .arm_task_return(ID, DIGEST, CONTRACT, "probe")
             .unwrap();
         assert!(!admission.first_host_admission_refusal(1));
+        assert!(!admission.first_managed_stage_host_admission_refusal(0));
         let claim = admission.claim(ID, Some(DIGEST), CONTRACT, "probe");
         assert!(admission.first_host_admission_refusal(claim.unwrap()));
         assert!(!admission.first_host_admission_refusal(claim.unwrap()));
@@ -1001,6 +1026,43 @@ mod join_cause_tests {
         assert!(stage
             .arm_managed_stage("dotnet-managed-stage-unobserved", DIGEST)
             .is_err());
+
+        let refusal = DevelopmentJoinCauseObserver::default();
+        assert!(!refusal.first_managed_stage_host_admission_refusal(0));
+        let selected = refusal
+            .arm_managed_stage("dotnet-managed-stage-handled", DIGEST)
+            .unwrap();
+        assert!(!refusal.first_managed_stage_host_admission_refusal(0));
+        let claim = refusal
+            .claim_managed_stage(
+                "dotnet-managed-stage-handled",
+                Some(DIGEST),
+                CONTRACT,
+                "probe",
+            )
+            .unwrap();
+        assert!(!refusal.task_return_enabled(Some(claim)));
+        assert!(!refusal.first_host_admission_refusal(claim));
+        assert!(refusal.first_managed_stage_host_admission_refusal(claim));
+        assert!(!refusal.first_managed_stage_host_admission_refusal(claim));
+        let snapshot = selected.snapshot().unwrap();
+        assert_eq!(snapshot.claims, 1);
+        assert!(!snapshot.invalid);
+        assert!(snapshot.cause.is_none());
+        assert_eq!(
+            selected.rejection().unwrap(),
+            Some(DevelopmentJoinRejectReason::HostAdmissionRefusal)
+        );
+        drop(selected);
+        assert!(!refusal.first_managed_stage_host_admission_refusal(claim));
+        assert_eq!(
+            DevelopmentHostAdmissionEdge::RuntimeWaitPreparation.wire_name(),
+            "runtime-wait-preparation"
+        );
+        assert_eq!(
+            DevelopmentHostAdmissionEdge::RuntimeWaitCompletion.wire_name(),
+            "runtime-wait-completion"
+        );
     }
 
     #[test]

@@ -255,6 +255,18 @@ fn observe_synchronous_refusal(state: &HostState, operation: &str, error: &Platf
     }
 }
 
+#[cfg(feature = "development-test-host")]
+fn observe_managed_stage_wait_refusal(
+    state: &HostState,
+    edge: crate::development_trap_observer::DevelopmentHostAdmissionEdge,
+    operation: &str,
+    code: PlatformErrorCode,
+) {
+    state
+        .capabilities
+        .observe_managed_stage_host_refusal(edge, CAPABILITY, operation, code);
+}
+
 pub(super) fn observe_runtime_refusal(state: &HostState, error: &PlatformError) {
     if let Some(session) = &state.capabilities.session {
         session.observe_runtime_refusal(error);
@@ -474,6 +486,15 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
                     let (result, call) = match prepared {
                         Ok(mut wait) => {
                             let result = wait.run().await;
+                            #[cfg(feature = "development-test-host")]
+                            if let Err(error) = &result {
+                                access.with(|mut access| {
+                                    let store = access.as_context_mut();
+                                    observe_managed_stage_wait_refusal(store.data(),
+                                        crate::development_trap_observer::DevelopmentHostAdmissionEdge::RuntimeWaitCompletion,
+                                        operation, error.code);
+                                });
+                            }
                             let _ = wait
                                 .call
                                 .record_provider_outcome(AuditProviderOutcome::HostCompleted);
@@ -529,6 +550,10 @@ fn prepare_wait(
     let mut call = match authorize(state, operation) {
         Ok(call) => Some(call),
         Err(error) => {
+            #[cfg(feature = "development-test-host")]
+            observe_managed_stage_wait_refusal(state,
+                crate::development_trap_observer::DevelopmentHostAdmissionEdge::RuntimeWaitPreparation,
+                operation, error.code);
             return PreparedWait {
                 result: Err(error),
                 failed_call: None,
@@ -581,6 +606,13 @@ fn prepare_wait(
     // A failed timer preparation has no pending producer, but its accepted
     // call still owns the fixed error result through actual canonical lowering.
     if let Err(error) = &result {
+        #[cfg(feature = "development-test-host")]
+        observe_managed_stage_wait_refusal(
+            state,
+            crate::development_trap_observer::DevelopmentHostAdmissionEdge::RuntimeWaitPreparation,
+            operation,
+            error.code,
+        );
         observe_runtime_refusal(state, error);
     }
     PreparedWait {

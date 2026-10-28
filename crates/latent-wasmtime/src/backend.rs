@@ -153,6 +153,9 @@ impl SharedRuntime {
         if self
             .development_join_cause
             .first_host_admission_refusal(slot)
+            || self
+                .development_join_cause
+                .first_managed_stage_host_admission_refusal(slot)
         {
             use std::io::Write;
             // Closed borrowed scalars only; no JSON graph, error or message is retained.

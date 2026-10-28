@@ -157,6 +157,27 @@ impl HostCapabilities {
             );
         }
     }
+    #[cfg(feature = "development-test-host")]
+    pub(super) fn observe_managed_stage_host_refusal(
+        &self,
+        edge: crate::development_trap_observer::DevelopmentHostAdmissionEdge,
+        capability: &str,
+        operation: &str,
+        code: latent_core::PlatformErrorCode,
+    ) {
+        if let (Some(scope), Some(session)) =
+            (&self.development_host_admission_scope, &self.session)
+        {
+            scope.managed_stage_host_admission_refusal(
+                session,
+                edge,
+                crate::development_trap_observer::DevelopmentHostOperation::from_import(
+                    capability, operation,
+                ),
+                code,
+            );
+        }
+    }
     pub(super) fn local_tenant(&self) -> Result<latent_core::TenantId, PlatformError> {
         self.session
             .as_ref()

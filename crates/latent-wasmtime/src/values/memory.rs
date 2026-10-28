@@ -544,6 +544,16 @@ impl LiftMemory {
         let Some(sink) = &*sink else {
             return;
         };
+        if sink.managed_stage.as_ref().is_some_and(|state| {
+            state.finished
+                || sink.session.is_closed()
+                || !self
+                    .managed_stage_enabled
+                    .load(std::sync::atomic::Ordering::Acquire)
+                || !sink.shared.development_managed_stage_live(sink.slot)
+        }) {
+            return;
+        }
         if actual.is_observed_by(&sink.session) {
             sink.shared.capture_development_host_admission_refusal(
                 sink.slot,
@@ -552,6 +562,21 @@ impl LiftMemory {
                 code,
                 sink.session.is_closed(),
             );
+        }
+    }
+    #[cfg(feature = "development-test-host")]
+    pub(crate) fn managed_stage_host_admission_refusal(
+        &self,
+        actual: &latent_capabilities::broker::CapabilitySession,
+        edge: crate::development_trap_observer::DevelopmentHostAdmissionEdge,
+        operation: crate::development_trap_observer::DevelopmentHostOperation,
+        code: latent_core::PlatformErrorCode,
+    ) {
+        if self
+            .managed_stage_enabled
+            .load(std::sync::atomic::Ordering::Acquire)
+        {
+            self.host_admission_refusal(actual, edge, operation, code);
         }
     }
     fn new(budget: &ActivationBudget) -> Result<Arc<Self>, PlatformError> {
