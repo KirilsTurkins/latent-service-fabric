@@ -1,3 +1,1 @@
-{"kind":"owner","path":"tools/qualify_java_fibers.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve original modes and strict cache/model gates; verify actual public/SDK generated callback identities and declared private helpers against the pinned LambdaMetafactory.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "f2325469d0f26e752340c4330c337bf74906a4871f23b1bebee1d707eb12d97b"
-}
+{"kind":"owner","path":"tools/qualify_java_fibers.py","reviewBoundary":"committed-fingerprint","reviewReason":"Qualify shutdownNow removed callback ownership under the existing normal Java profile, preserving old routes and limits.","schemaVersion":"latent.ci.contracts.v1","sha256":"e4cd9acb64d1f7b9a5a8f2668861b39f37d2c75710218d3b774ba94bcccd4508"}

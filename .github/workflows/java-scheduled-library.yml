@@ -1,7 +1,7 @@
 name: Unchanged published Java scheduled semaphore through the normal signed node
 on:
   push:
-    branches: ['feat/java-scheduled-executor-20261026']
+    branches: ['feat/java-scheduled-executor-20261026', 'feat/java-cf-shutdown-now-20261028']
     paths:
       - '.github/workflows/java-scheduled-library.yml'
       - 'tools/qualify_java_scheduled_library.py'
@@ -26,7 +26,7 @@ jobs:
   scheduled-library:
     name: One ordinary scheduled component and sixteen signed calls
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: ${{ github.ref_name == 'feat/java-cf-shutdown-now-20261028' && 25 || 45 }}
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -77,11 +77,20 @@ jobs:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
       - name: Capture and compile the ordinary semaphore then run only sixteen signed calls
+        if: github.ref_name != 'feat/java-cf-shutdown-now-20261028'
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           python3 -B tools/qualify_java_scheduled_library.py
           --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/java-scheduled-library"
+      - name: Qualify ordinary shutdownNow ownership with four signed calls
+        if: github.ref_name == 'feat/java-cf-shutdown-now-20261028'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/qualify_java_scheduled_library.py
+          --shutdown-now --source-commit "${{ github.sha }}"
           --output "$RUNNER_TEMP/java-scheduled-library"
       - name: Retain only bounded public observations and source identities
         if: always()

@@ -199,6 +199,17 @@ async fn signed_java_standard_timers_recur_cancel_and_drain_owned_workers() {
     .await;
 }
 
+#[tokio::test]
+#[ignore = "requires the pinned ordinary shutdownNow CompletableFuture component"]
+async fn signed_java_shutdown_now_withdraws_only_unstarted_callbacks() {
+    signed_java_fiber_fixture(
+        "LSF_JAVA_SHUTDOWN_NOW_FIXTURE",
+        include_bytes!("../../../../sdk/java-guest/fibers/conformance/shutdown-now/Capsule.java"),
+        "java-shutdown-now",
+    )
+    .await;
+}
+
 async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name: &str) {
     assert_eq!(
         std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(),
@@ -207,7 +218,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     let prepared = std::path::PathBuf::from(
         std::env::var_os(variable).expect("prepare the pinned Java fiber fixture"),
     );
-    if name == "java-scheduled-libraries" {
+    if matches!(name, "java-scheduled-libraries" | "java-shutdown-now") {
         assert!(prepared.is_absolute());
         for (path, maximum) in [
             ("src/Capsule.java", expected_source.len() as u64),
@@ -293,6 +304,28 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         );
         assert_eq!(record["scheduledModel"]["actualGuestBindingsUsed"], false);
     }
+    let shutdown_now = name == "java-shutdown-now";
+    if shutdown_now {
+        assert_eq!(record["fixture"], "shutdown-now");
+        assert_eq!(record["status"], "component-built-unqualified");
+        assert_eq!(
+            record["shutdownNowSource"]["status"],
+            "SDK-source-controls-passed"
+        );
+        assert_eq!(record["shutdownNowSource"]["ownershipChecks"], 53);
+        assert_eq!(
+            record["shutdownNowSource"]["componentExecutionPerformed"],
+            false
+        );
+        assert_eq!(
+            record["shutdownNowSource"]["actualGuestBindingsUsed"],
+            false
+        );
+        assert_eq!(
+            record["completableModel"]["status"],
+            "actual-locked-classlib-model-passed"
+        );
+    }
     let bytes = std::fs::read(prepared.join("build/component.wasm")).unwrap();
     assert_eq!(
         record["componentDigest"],
@@ -305,7 +338,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     let scheduled = name == "java-scheduled-libraries";
     assert_eq!(
         record["reference"].as_array().unwrap().len(),
-        if scheduled { 1 } else { 3 }
+        if scheduled || shutdown_now { 1 } else { 3 }
     );
     for control in record["reference"].as_array().unwrap() {
         if scheduled {
@@ -323,6 +356,10 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         }
     }
     let mut provenance_source = source.clone();
+    if shutdown_now {
+        provenance_source
+            .extend_from_slice(&std::fs::read(prepared.join("FIBERS-COMPILE.json")).unwrap());
+    }
     if name == "java-worker-libraries" || scheduled {
         assert_eq!(record["libraries"]["sourceModified"], false);
         assert_eq!(record["libraries"]["externalExecutorInjected"], false);
@@ -402,7 +439,13 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         "{profile} signed-preparation-setup-micros={} stores-created=0 guest-activations=0",
         preparation_started.elapsed().as_micros()
     );
-    for iteration in 0..if scheduled { 2 } else { 3 } {
+    for iteration in 0..if shutdown_now {
+        1
+    } else if scheduled {
+        2
+    } else {
+        3
+    } {
         for mode in 0..if scheduled { 8 } else { 4 } {
             let requested_id = format!("{name}-{iteration}-{mode}");
             let stores_before = f.backend.resource_snapshot().stores_created;
@@ -413,7 +456,10 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 .await;
             if matches!(
                 name,
-                "java-fibers" | "java-worker-libraries" | "java-scheduled-libraries"
+                "java-fibers"
+                    | "java-worker-libraries"
+                    | "java-scheduled-libraries"
+                    | "java-shutdown-now"
             ) {
                 assert_eq!(actual.activation_id.0, requested_id);
             }
@@ -431,7 +477,10 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
             f.idle().await;
             if matches!(
                 name,
-                "java-fibers" | "java-worker-libraries" | "java-scheduled-libraries"
+                "java-fibers"
+                    | "java-worker-libraries"
+                    | "java-scheduled-libraries"
+                    | "java-shutdown-now"
             ) {
                 let runtime = f.backend.resource_snapshot();
                 let broker = f.broker.snapshot();

@@ -1,3 +1,1 @@
-{"kind":"owner","path":"tools/qualify_java_scheduled_library.py","reviewBoundary":"committed-fingerprint","reviewReason":"Require exactly four controls and one terminal unittest OK; refuse actual skipped summaries without rejecting a passing test name.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "369257aa5b788ea10b2ebc5ccdca20e78ab7dd6e643de56c451b73aa8df234ca"
-}
+{"kind":"owner","path":"tools/qualify_java_scheduled_library.py","reviewBoundary":"committed-fingerprint","reviewReason":"Qualify shutdownNow removed callback ownership under the existing normal Java profile, preserving old routes and limits.","schemaVersion":"latent.ci.contracts.v1","sha256":"b29956ac54edd8396a0cc1cde9f956b91f83e57434493014f45250b27e577532"}
