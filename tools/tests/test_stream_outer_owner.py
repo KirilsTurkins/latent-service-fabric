@@ -425,5 +425,34 @@ class TaskTableMemoryOwner(unittest.TestCase):
             owner.call_memory_result(b'', owner.CALL_MEMORY_CASES[0], _resource_table='yes')
 
 
+class TaskWireCallResultOwner(unittest.TestCase):
+    def test_four_channel_results_keep21_roots_and_exclude_other_profiles(self):
+        self.assertEqual(len(owner.CALL_RESULT_CHANNEL_CASES), 4)
+        self.assertEqual(len(set(owner.CALL_RESULT_CHANNEL_CASES)), 4)
+        self.assertEqual(len(owner.CALL_MEMORY_STAGES), 21)
+        for case in owner.CALL_RESULT_CHANNEL_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.call_result_channel_result(raw, case)['scope'],
+                'original-Store-call-result-header-counter-owner-with-explicit-payload-unwind-retention')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case'),
+                    raw.replace(b'0 measured', b'1 measured'), b''):
+                with self.assertRaises(ValueError):
+                    owner.call_result_channel_result(changed, case)
+            with self.assertRaises(ValueError):
+                owner.resource_table_result(raw, case)
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(raw, case)
+        for case in (*owner.RESOURCE_TABLE_CASES, *owner.CALL_MEMORY_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.call_result_channel_result(b'', case)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', owner.CALL_RESULT_CHANNEL_CASES[0],
+                _resource_table=True, _call_result_channel=True)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', owner.CALL_RESULT_CHANNEL_CASES[0], _call_result_channel='yes')
+
+
 if __name__ == '__main__':
     unittest.main()

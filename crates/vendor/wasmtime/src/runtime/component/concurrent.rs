@@ -51,6 +51,7 @@
 //! in host functions.
 
 use self::error_contexts::GlobalErrorContextRefCount;
+use self::host_futures::call_result_channel as oneshot;
 use self::work_queue::{Queue, Slot as QueueSlot};
 use crate::bail_bug;
 use crate::component::func::{Func, call_post_return};
@@ -82,7 +83,6 @@ use core::ops::DerefMut;
 use core::pin::{Pin, pin};
 use core::ptr::{self, NonNull};
 use core::task::{Context, Poll, Waker};
-use futures::channel::oneshot;
 use futures::stream::StreamExt;
 use futures_and_streams::{FlatAbi, ReturnCode, TransmitHandle, TransmitIndex};
 use table::{TableDebug, TableId};
@@ -6535,7 +6535,7 @@ pub(crate) fn prepare_call<T, R>(
     let native_memory = store.0.native_memory();
     let state = store.0.concurrent_state_mut()?;
 
-    let (tx, rx) = oneshot::channel();
+    let (tx, rx) = oneshot::channel(&native_memory)?;
 
     let instance = handle.instance().runtime_instance(component_instance);
     let thread = GuestTask::new(

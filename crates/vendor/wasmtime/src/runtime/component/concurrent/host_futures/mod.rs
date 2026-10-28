@@ -12,6 +12,7 @@ use core::task::{Context, Poll};
 use futures::stream::{FuturesUnordered, Stream};
 
 mod abort;
+pub(super) mod call_result_channel;
 mod paid;
 mod paid_arc;
 #[cfg(test)]

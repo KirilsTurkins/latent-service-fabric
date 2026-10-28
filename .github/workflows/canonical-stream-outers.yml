@@ -1,7 +1,7 @@
 name: Focused canonical IP formatting
 on:
   push:
-    branches: ['feat/sdk-736-http-ip-format-20261027', 'feat/sdk-745-lift-result-memory-20261028', 'test/sdk-738-node-bootstrap-custody-20261028', 'feat/sdk-736-call-parameter-closure-memory-20261028', 'feat/sdk-736-resource-table-memory-20261028']
+    branches: ['feat/sdk-736-http-ip-format-20261027', 'feat/sdk-745-lift-result-memory-20261028', 'test/sdk-738-node-bootstrap-custody-20261028', 'feat/sdk-736-call-parameter-closure-memory-20261028', 'feat/sdk-736-resource-table-memory-20261028', 'feat/sdk-736-call-result-channel-memory-20261028']
     paths:
       - '.github/workflows/canonical-stream-outers.yml'
       - 'crates/latent-capabilities/**'
@@ -28,7 +28,7 @@ jobs:
   stream-outers:
     name: Four canonical IP formatting controls
     runs-on: ubuntu-24.04
-    timeout-minutes: ${{ (github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028') && 25 || 45 }}
+    timeout-minutes: ${{ (github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' || github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028') && 25 || 45 }}
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -100,11 +100,18 @@ jobs:
           --source-commit "${{ github.sha }}"
           --resource-table-memory
           --output "$RUNNER_TEMP/canonical-stream-outers"
+      - name: Build one exact vendor lib and execute four call-result header controls
+        if: github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028'
+        run: >-
+          python3 -B tools/qualify_stream_outers.py
+          --source-commit "${{ github.sha }}"
+          --call-result-channel-memory
+          --output "$RUNNER_TEMP/canonical-stream-outers"
       - name: Retain four source-bound canonical IP outcomes
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
-          name: ${{ github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' && 'resource-table-memory' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' && 'call-parameter-closure-memory' || github.ref_name == 'test/sdk-738-node-bootstrap-custody-20261028' && 'node-bootstrap-custody' || github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 'canonical-lift-result' || 'canonical-ip-format' }}-${{ github.sha }}
+          name: ${{ github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028' && 'call-result-channel-memory' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' && 'resource-table-memory' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' && 'call-parameter-closure-memory' || github.ref_name == 'test/sdk-738-node-bootstrap-custody-20261028' && 'node-bootstrap-custody' || github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 'canonical-lift-result' || 'canonical-ip-format' }}-${{ github.sha }}
           path: |
             ${{ runner.temp }}/canonical-stream-outers/receipt.json
             ${{ runner.temp }}/canonical-stream-outers/FAILED.json

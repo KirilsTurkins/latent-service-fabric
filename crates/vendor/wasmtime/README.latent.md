@@ -612,3 +612,22 @@ wrong-type deletion, atomic parent-child growth and sorted reused indices, and
 confirmation/destructor unwind with real last-owner retirement. They do not
 qualify full ActivationBudget/RSS/stack/transitive resource payloads, oneshot,
 other host callbacks, or whole736/745. Earlier receipts retain dated sources.
+
+## Original Store call-result channel backing
+
+The selected call-result channel now reserves the full declared owned Arc header
+before any allocation, using the same Store NativeMemory. It privately maintains
+the futures-channel 0.3.34 Inner/Lock protocol and original send, receive and drop
+bodies; dependency checksum, source identities and shared dual licenses are
+explicit in UPSTREAM.latent.json. None delegates the original dependency. No
+standard Arc layout is estimated or adopted. Payloads and cloned Wakers retain
+their separate original owners and transitive costs.
+
+The four new private native controls cover exact-layout original Store refusal,
+wake/send and last-half cleanup, cancelled/legacy channels, and confirmation
+unwind plus honest payload-destructor retention. Existing paid_arc semantics
+retain the same physical header/charge if payload destruction panics; no final
+free, recovery, quarantine completion or full ActivationBudget/RSS claim follows
+from that control. Tests remain source-only until their finite owning run.
+
+The cumulative patch uses one context line; all source postimages and 250 original source identities remain authenticated.

@@ -2943,9 +2943,10 @@ CALL_MEMORY_STAGES = ('source-head', 'source-clean', 'source-input-paths',
     'source-input-paths-after', 'source-clean-after', 'source-head-after')
 
 
-def call_memory_result(raw, case, *, _resource_table=False):
-    require(type(_resource_table) is bool, 'store-memory-closed-result-profile')
-    cases = RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
+def call_memory_result(raw, case, *, _resource_table=False, _call_result_channel=False):
+    require(type(_resource_table) is bool and type(_call_result_channel) is bool
+        and not (_resource_table and _call_result_channel), 'store-memory-closed-result-profile')
+    cases = CALL_RESULT_CHANNEL_CASES if _call_result_channel else RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
     require(case in cases and len(raw) <= artifacts.MAX_OUTPUT_BYTES,
         'call-memory-case-bound')
     require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
@@ -2956,18 +2957,21 @@ def call_memory_result(raw, case, *, _resource_table=False):
         and int(summaries[0][4]) <= 10000, 'call-memory-one-executed-no-skip')
     return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0,
         'ignored': 0, 'filteredOut': int(summaries[0][4]),
-        'scope': 'original-Store-resource-box-table-and-child-index-counter-owner' if _resource_table
+        'scope': 'original-Store-call-result-header-counter-owner-with-explicit-payload-unwind-retention' if _call_result_channel
+            else 'original-Store-resource-box-table-and-child-index-counter-owner' if _resource_table
             else 'original-Store-parameter-and-typed-closure-counter-owner'}
 
 
-def qualify_call_memory(output, revision, *, _resource_table=False):
+def qualify_call_memory(output, revision, *, _resource_table=False, _call_result_channel=False):
     import shutil
-    require(type(_resource_table) is bool, 'store-memory-closed-profile')
-    branch = RESOURCE_TABLE_BRANCH if _resource_table else CALL_MEMORY_BRANCH
-    cases = RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
-    prefix = RESOURCE_TABLE_PREFIX if _resource_table else CALL_MEMORY_PREFIX
-    schema = 'lsf.resource-table-memory.v1' if _resource_table else 'lsf.call-parameter-closure-memory.v1'
-    scope = ('four exact private native original-Store resource Box, table and child-index backing controls; no guest, full ActivationBudget, transitive cost or RSS qualification'
+    require(type(_resource_table) is bool and type(_call_result_channel) is bool
+        and not (_resource_table and _call_result_channel), 'store-memory-closed-profile')
+    branch = CALL_RESULT_CHANNEL_BRANCH if _call_result_channel else RESOURCE_TABLE_BRANCH if _resource_table else CALL_MEMORY_BRANCH
+    cases = CALL_RESULT_CHANNEL_CASES if _call_result_channel else RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
+    prefix = CALL_RESULT_CHANNEL_PREFIX if _call_result_channel else RESOURCE_TABLE_PREFIX if _resource_table else CALL_MEMORY_PREFIX
+    schema = 'lsf.call-result-channel-memory.v1' if _call_result_channel else 'lsf.resource-table-memory.v1' if _resource_table else 'lsf.call-parameter-closure-memory.v1'
+    scope = ('four exact private native original-Store call-result header admission, wake, cancellation and explicit payload-unwind retention controls; no guest, full ActivationBudget, transitive cost or RSS qualification'
+        if _call_result_channel else 'four exact private native original-Store resource Box, table and child-index backing controls; no guest, full ActivationBudget, transitive cost or RSS qualification'
         if _resource_table else 'four exact private native original-Store factory and typed closure ownership/refusal/unwind controls; no guest, full ActivationBudget, transitive cost or RSS qualification')
     require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
@@ -3002,6 +3006,9 @@ def qualify_call_memory(output, revision, *, _resource_table=False):
             'maximumPublicFiles': 64, 'maximumPublicBytes': 128 * 1024**2},
         'commandBoundary': 'ALL21 Git/tool/build/library/list/test roots under one owner;42 raw channels',
         'scope': scope}
+    if _call_result_channel:
+        receipt.update(payloadUnwindRetainsSameOriginalCharge=True,
+            payloadUnwindPhysicalRetirementQualified=False, quarantineCompletionQualified=False)
     def owned(stage, seconds, *argv, env=None):
         require(len(commands.records) < len(CALL_MEMORY_STAGES)
             and stage == CALL_MEMORY_STAGES[len(commands.records)], 'call-memory-fixed-command-order')
@@ -3086,7 +3093,8 @@ def qualify_call_memory(output, revision, *, _resource_table=False):
             receipt['casesStarted'].append(case)
             raw = owned(f'private-case-{index}', 55, artifact.executable, case,
                 '--exact', '--show-output', '--test-threads=1', env=run_env)
-            receipt['observations'].append(call_memory_result(raw, case, _resource_table=_resource_table)); receipt['casesPassed'].append(case)
+            receipt['observations'].append(call_memory_result(raw, case, _resource_table=_resource_table,
+                _call_result_channel=_call_result_channel)); receipt['casesPassed'].append(case)
         require(inputs('source-input-paths-after') == before and source.verify() == checked,
             'call-memory-final-source')
         metadata('source-clean-after', 'diff', '--no-ext-diff', '--exit-code', 'HEAD', '--')
@@ -3124,6 +3132,23 @@ def qualify_resource_table_memory(output, revision):
     return qualify_call_memory(output, revision, _resource_table=True)
 
 
+CALL_RESULT_CHANNEL_BRANCH = 'feat/sdk-736-call-result-channel-memory-20261028'
+CALL_RESULT_CHANNEL_PREFIX = 'runtime::component::concurrent::host_futures::call_result_channel::native_memory_tests::'
+CALL_RESULT_CHANNEL_CASES = tuple(CALL_RESULT_CHANNEL_PREFIX + name for name in (
+    'original_store_refuses_exact_header_before_any_channel_publication',
+    'send_wakes_parked_receiver_and_header_retires_after_last_half',
+    'cancelled_halves_and_legacy_channels_preserve_value_and_wake_semantics',
+    'confirmation_refunds_but_payload_unwind_retains_original_header_charge'))
+
+
+def call_result_channel_result(raw, case):
+    return call_memory_result(raw, case, _call_result_channel=True)
+
+
+def qualify_call_result_channel_memory(output, revision):
+    return qualify_call_memory(output, revision, _call_result_channel=True)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -3145,8 +3170,11 @@ if __name__ == '__main__':
     modes.add_argument('--node-bootstrap', action='store_true')
     modes.add_argument('--call-parameter-closure-memory', action='store_true')
     modes.add_argument('--resource-table-memory', action='store_true')
+    modes.add_argument('--call-result-channel-memory', action='store_true')
     args = parser.parse_args()
-    if args.resource_table_memory:
+    if args.call_result_channel_memory:
+        qualify_call_result_channel_memory(args.output.resolve(), args.source_commit)
+    elif args.resource_table_memory:
         qualify_resource_table_memory(args.output.resolve(), args.source_commit)
     elif args.call_parameter_closure_memory:
         qualify_call_memory(args.output.resolve(), args.source_commit)
