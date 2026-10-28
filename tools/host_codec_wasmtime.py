@@ -12,8 +12,8 @@ from tools.rust_capsule_project import ROOT, read_file
 PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
-COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v21-cache-repair"
-RECORD_SHA256 = "d79a0738a97b1cef89cc24c721c63fa95460d923f7b16af5e8b8df353f58f440"
+COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v22-lift-result-memory-cache-repair"
+RECORD_SHA256 = "b67f9b277af4fc8a8e4efefa8237c739e640ff75b11a3ce0f70a3c4a07c2022f"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
@@ -58,8 +58,8 @@ POSTIMAGES = {
         "bytes": 106434
     },
     "src/runtime/component/concurrent.rs": {
-        "sha256": "e2e776c92875ea95b1a04e46afa3b51117d868bb85e9aa0cd439a60af1a9f85c",
-        "bytes": 242539
+        "sha256": "8b601bc079dea80f20e957a81ad216c1b8a4b04f6e854bbb7367db38138c1758",
+        "bytes": 248115
     },
     "src/runtime/component/dynamic_memory.rs": {
         "sha256": "70ab7ecf2fba9a29be46f4750e28ef404acc991d36d708939b022bce1872d57d",
@@ -242,12 +242,12 @@ POSTIMAGES = {
         "bytes": 9353
     },
     "README.latent.md": {
-        "sha256": "dd383671cd2ef5a0c40999c1c0dc68b46afd4f9d23acc67d42fa7c446a1d8362",
-        "bytes": 37483
+        "sha256": "0e82888db205683fb37bb4d42a1e8a6484632b32eac09a0ea14bf28ab6fbc395",
+        "bytes": 38262
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "a311a5aea6a2e9e6da4b42c3a81c76e1b4d6aaceff9f8d98f4708240ed607a27",
-        "bytes": 539716
+        "sha256": "825eef371c02370e5c473a2bf2fb1a36115632532728f06d4e00bdf46ca7c5b2",
+        "bytes": 546930
     }
 }
 DEPENDENCY = {"path": PROVIDER, "version": "=48.0.7", "default-features": False,

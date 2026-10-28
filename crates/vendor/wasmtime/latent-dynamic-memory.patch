@@ -89,16 +89,17 @@
  use crate::bail_bug;
  use crate::component::func::{Func, call_post_return};
  use crate::component::{
-@@ -70,7 +71,7 @@
+@@ -69,8 +70,7 @@
+ use crate::{
      AsContext, AsContextMut, FuncType, Result, StoreContext, StoreContextMut, ValRaw, ValType, bail,
  };
- use alloc::borrow::ToOwned;
+-use alloc::borrow::ToOwned;
 -use alloc::collections::{BTreeMap, BTreeSet, VecDeque};
 +use alloc::collections::{BTreeMap, BTreeSet};
  use core::any::Any;
  use core::cell::UnsafeCell;
  use core::fmt;
-@@ -83,7 +84,7 @@
+@@ -83,7 +83,7 @@
  use core::ptr::{self, NonNull};
  use core::task::{Context, Poll, Waker};
  use futures::channel::oneshot;
@@ -107,7 +108,7 @@
  use futures_and_streams::{FlatAbi, ReturnCode, TransmitHandle, TransmitIndex};
  use table::{TableDebug, TableId};
  use wasmtime_environ::component::{
-@@ -107,14 +108,23 @@
+@@ -107,14 +107,23 @@
      StreamProducer, StreamReader, StreamResult, VecBuffer, WriteBuffer,
  };
  pub(crate) use futures_and_streams::{ResourcePair, lower_error_context_to_index};
@@ -131,7 +132,7 @@
  
  /// Constant defined in the Component Model spec to indicate that the async
  /// intrinsic (e.g. `future.write`) has not yet completed.
-@@ -651,10 +661,10 @@
+@@ -651,10 +660,10 @@
  /// Indicates how a guest task is waiting on a waitable set.
  enum WaitMode {
      /// The guest task is waiting using `task.wait`
@@ -144,7 +145,7 @@
  }
  
  /// Represents the reason a fiber is suspending itself.
-@@ -778,14 +788,14 @@
+@@ -778,14 +787,14 @@
  /// Job to be run on a worker fiber.
  enum WorkerItem {
      GuestCall(GuestCall),
@@ -161,7 +162,7 @@
      /// A fiber to resume.
      ResumeFiber(StoreFiber<'static>),
      /// A thread to resume.
-@@ -793,13 +803,13 @@
+@@ -793,13 +802,13 @@
      /// A pending call into guest code for a given guest task.
      GuestCall(RuntimeComponentInstanceIndex, GuestCall),
      /// A job to run on a worker fiber.
@@ -177,7 +178,7 @@
              Self::ResumeFiber(_) => f.debug_tuple("ResumeFiber").finish(),
              Self::ResumeThread(instance, thread) => f
                  .debug_tuple("ResumeThread")
-@@ -814,6 +824,13 @@
+@@ -814,6 +823,13 @@
              Self::WorkerFunction(_) => f.debug_tuple("WorkerFunction").finish(),
          }
      }
@@ -191,7 +192,7 @@
  }
  
  /// Whether a suspension intrinsic was cancelled or completed
-@@ -840,32 +857,66 @@
+@@ -840,32 +856,66 @@
      // Wrap the future in a closure which will take care of stashing the result
      // in `GuestTask::result` and resuming this fiber when the host task
      // completes.
@@ -280,7 +281,7 @@
      });
  
      let caller = match host_task {
-@@ -883,7 +934,7 @@
+@@ -883,7 +933,7 @@
          // complete, suspending the current fiber until it does so.
          Poll::Pending => {
              let state = store.concurrent_state_mut()?;
@@ -289,7 +290,7 @@
  
              let set = state.get_mut(caller.thread)?.sync_call_set;
              Waitable::Host(task).join(state, Some(set))?;
-@@ -904,8 +955,8 @@
+@@ -904,8 +954,8 @@
      // Retrieve and return the result.
      let host_state = &mut store.concurrent_state_mut()?.get_mut(task)?.state;
      match mem::replace(host_state, HostTaskState::CalleeDone { cancelled: false }) {
@@ -300,7 +301,7 @@
              Err(_) => bail_bug!("host task finished with wrong type of result"),
          }),
          _ => bail_bug!("unexpected host task state after completion"),
-@@ -918,6 +969,8 @@
+@@ -918,6 +968,8 @@
      while let Some(call) = next.take() {
          match call.kind {
              GuestCallKind::DeliverEvent { instance, set } => {
@@ -309,7 +310,7 @@
                  let (event, waitable) =
                      match instance.get_event(store, call.thread.task, set, true)? {
                          Some(pair) => pair,
-@@ -966,6 +1019,7 @@
+@@ -966,6 +1018,7 @@
                      call.thread,
                      runtime_instance.index,
                      code,
@@ -317,7 +318,7 @@
                  )?;
  
                  log::trace!(
-@@ -1090,13 +1144,25 @@
+@@ -1090,13 +1143,25 @@
          T: 'static,
          D: HasData + ?Sized,
      {
@@ -350,7 +351,7 @@
          Ok(handle)
      }
  
-@@ -1263,7 +1329,7 @@
+@@ -1263,7 +1328,7 @@
      {
          struct Reset<'a, T: 'static> {
              store: StoreContextMut<'a, T>,
@@ -359,7 +360,7 @@
          }
  
          impl<'a, T> Drop for Reset<'a, T> {
-@@ -1279,6 +1345,9 @@
+@@ -1279,6 +1344,9 @@
              }
          }
  
@@ -369,7 +370,7 @@
          loop {
              // Take `ConcurrentState::futures` out of the store so we can poll
              // it while also safely giving any of the futures inside access to
-@@ -1296,7 +1365,7 @@
+@@ -1296,7 +1364,7 @@
              enum PollResult<R> {
                  Complete(R),
                  ProcessWork {
@@ -378,7 +379,7 @@
                      low_priority: bool,
                  },
              }
-@@ -1323,22 +1392,18 @@
+@@ -1323,22 +1391,18 @@
                      Poll::Pending => Poll::Pending,
                  };
  
@@ -407,7 +408,7 @@
                      return Poll::Ready(Ok(PollResult::ProcessWork {
                          ready,
                          low_priority,
-@@ -1356,7 +1421,7 @@
+@@ -1356,7 +1420,7 @@
                          // the outer loop in case there is another one
                          // ready to complete.
                          Poll::Ready(Ok(PollResult::ProcessWork {
@@ -416,7 +417,7 @@
                              low_priority: false,
                          }))
                      }
-@@ -1410,17 +1475,21 @@
+@@ -1410,17 +1474,21 @@
                      ready,
                      low_priority,
                  } => {
@@ -442,7 +443,7 @@
                                          tls::set(self.store.0, move || drop(future))
                                      }
                                      _ => {}
-@@ -1459,11 +1528,11 @@
+@@ -1459,11 +1527,11 @@
                          dispose.store.0.yield_now().await
                      }
  
@@ -456,7 +457,7 @@
                              .await?;
                      }
                  }
-@@ -1472,34 +1541,35 @@
+@@ -1472,34 +1540,35 @@
      }
  
      /// Handle the specified work item, possibly resuming a fiber if applicable.
@@ -498,7 +499,7 @@
                  } else {
                      let state = self.0.concurrent_state_mut()?;
                      let task = state.get_mut(call.thread.task)?;
-@@ -1520,11 +1590,11 @@
+@@ -1520,11 +1589,11 @@
                          .instance_state(instance)
                          .concurrent_state()
                          .pending
@@ -512,7 +513,7 @@
              }
          }
  
-@@ -1532,7 +1602,7 @@
+@@ -1532,7 +1601,7 @@
      }
  
      /// Execute the specified guest call on a worker fiber.
@@ -521,7 +522,7 @@
      where
          T: Send,
      {
-@@ -1546,7 +1616,7 @@
+@@ -1546,7 +1615,7 @@
                      };
                      match item {
                          WorkerItem::GuestCall(call) => handle_guest_call(store, call)?,
@@ -530,7 +531,7 @@
                      }
  
                      store.suspend(SuspendReason::NeedWork)?;
-@@ -1558,7 +1628,7 @@
+@@ -1558,7 +1627,7 @@
          assert!(worker_item.is_none());
          *worker_item = Some(item);
  
@@ -539,7 +540,7 @@
      }
  
      /// Wrap the specified host function in a future which will call it, passing
-@@ -2056,18 +2126,18 @@
+@@ -2056,18 +2125,18 @@
      ///
      /// See `GuestCall::is_ready` for details.
      fn partition_pending(&mut self, instance: RuntimeInstance) -> Result<()> {
@@ -561,7 +562,7 @@
              }
          }
  
-@@ -2104,7 +2174,11 @@
+@@ -2104,7 +2173,11 @@
  
      /// Resume the specified fiber, giving it exclusive access to the specified
      /// store.
@@ -574,7 +575,7 @@
          struct Dispose<'a> {
              store: &'a mut StoreOpaque,
              fiber: Option<StoreFiber<'static>>,
-@@ -2122,6 +2196,10 @@
+@@ -2122,6 +2195,10 @@
              store: self,
              fiber: Some(fiber),
          };
@@ -585,7 +586,7 @@
  
          let old_thread = dispose.store.current_thread()?;
          log::trace!("resume_fiber: save current thread {old_thread:?}");
-@@ -2163,17 +2241,17 @@
+@@ -2163,17 +2240,17 @@
                          cancellable,
                      };
                      let instance = state.get_mut(thread.task)?.instance.index;
@@ -608,7 +609,7 @@
                      assert!(old.is_none());
                  }
              };
-@@ -2398,7 +2476,7 @@
+@@ -2398,7 +2475,7 @@
                  _ => false,
              };
  
@@ -617,7 +618,7 @@
                  let count = queue.len();
                  queue.retain(|item| !matches(item));
                  count != queue.len()
-@@ -2499,6 +2577,7 @@
+@@ -2499,6 +2576,7 @@
          guest_thread: QualifiedThreadId,
          runtime_instance: RuntimeComponentInstanceIndex,
          code: u32,
@@ -625,7 +626,7 @@
      ) -> Result<Option<GuestCall>> {
          let (code, set) = unpack_callback_code(code);
  
-@@ -2549,7 +2628,7 @@
+@@ -2549,7 +2627,7 @@
                  if state.may_block(guest_thread.task)? {
                      // Push this thread onto the "low priority" queue so it runs
                      // after any other threads have had a chance to run.
@@ -634,7 +635,7 @@
                      None
                  } else {
                      // Yielding in a non-blocking context is defined as a no-op
-@@ -2570,16 +2649,19 @@
+@@ -2570,16 +2648,19 @@
                      || !state.get_mut(set)?.ready.is_empty()
                  {
                      // An event is immediately available; deliver it ASAP.
@@ -663,7 +664,7 @@
                  } else {
                      // No event is immediately available.
                      //
-@@ -2598,7 +2680,7 @@
+@@ -2598,7 +2679,7 @@
                      let old = state
                          .get_mut(set)?
                          .waiting
@@ -672,7 +673,7 @@
                      if !old.is_none() {
                          bail_bug!("set's waiting set already had this thread registered");
                      }
-@@ -2626,6 +2708,7 @@
+@@ -2626,6 +2707,7 @@
          callback: Option<SendSyncPtr<VMFuncRef>>,
          post_return: Option<SendSyncPtr<VMFuncRef>>,
      ) -> Result<()> {
@@ -680,7 +681,7 @@
          /// Return a closure which will call the specified function in the scope
          /// of the specified task.
          ///
-@@ -2705,6 +2788,7 @@
+@@ -2705,6 +2787,7 @@
  
          let fun = if callback.is_some() {
              assert!(async_);
@@ -688,7 +689,7 @@
  
              Box::new(move |store: &mut dyn VMStore| {
                  self.add_guest_thread_to_instance_table(
-@@ -2740,7 +2824,13 @@
+@@ -2740,7 +2823,13 @@
                  // function returns a `i32` result.
                  let code = unsafe { storage[0].assume_init() }.get_i32() as u32;
  
@@ -703,7 +704,7 @@
              })
                  as Box<dyn FnOnce(&mut dyn VMStore) -> Result<Option<GuestCall>> + Send + Sync>
          } else {
-@@ -2833,16 +2923,16 @@
+@@ -2833,16 +2922,16 @@
              })
          };
  
@@ -725,6 +726,31 @@
  
          Ok(())
      }
+@@ -2986,10 +3075,11 @@
+                     // SAFETY: See comment in closure passed as `lower_params`
+                     // parameter above.
+                     let mut store = token.as_context_mut(store);
+-                    let mut my_src = src.to_owned(); // TODO: use stack to avoid allocation?
+-                    if let ResultInfo::Heap { results } = &result_info {
+-                        my_src.push(ValRaw::u32(*results));
+-                    }
++                    let retptr = match &result_info {
++                        ResultInfo::Heap { results } => Some(*results),
++                        ResultInfo::Stack { .. } => None,
++                    };
++                    let mut my_src = lift_result_values(src, retptr, store.0.native_memory())?;
+ 
+                     // Execute the `return_` hook, generated by Wasmtime's FACT
+                     // compiler, in the context of the old thread. The old
+@@ -3008,7 +3098,7 @@
+                         crate::Func::call_unchecked_raw(
+                             &mut store,
+                             return_.as_non_null(),
+-                            my_src.as_mut_slice().into(),
++                            (&mut my_src[..]).into(),
+                         )?;
+                     }
+ 
 @@ -3273,32 +3363,111 @@
      ) -> Result<u32> {
          let token = StoreToken::new(store.as_context_mut());
@@ -1015,7 +1041,163 @@
  
      /// Terminal state for host tasks meaning that the task was cancelled or the
      /// result was taken.
-@@ -5186,20 +5333,23 @@
+@@ -4761,6 +4908,155 @@
+     ty: TypeTupleIndex,
+     memory: Option<SendSyncPtr<VMMemoryDefinition>>,
+     string_encoding: StringEncoding,
++}
++
++// The Store factory retains its original activation payer independently of the
++// current guest thread. Admit the complete final buffer before copying any value.
++fn lift_result_values(
++    src: &[ValRaw],
++    retptr: Option<u32>,
++    memory: crate::runtime::native_memory::Memory,
++) -> Result<crate::runtime::native_memory::NativeVec<ValRaw>> {
++    let capacity = src
++        .len()
++        .checked_add(usize::from(retptr.is_some()))
++        .ok_or_else(|| OutOfMemory::new(usize::MAX))?;
++    let mut values = crate::runtime::native_memory::NativeVec::with_capacity(capacity, memory)?;
++    for value in src {
++        values.push(*value)?;
++    }
++    if let Some(retptr) = retptr {
++        values.push(ValRaw::u32(retptr))?;
++    }
++    Ok(values)
++}
++
++#[cfg(test)]
++mod lift_result_memory_tests {
++    use super::lift_result_values;
++    use crate::{NativeAllocation, NativeMemory, ValRaw};
++    use alloc::{boxed::Box, sync::Arc, vec::Vec};
++    use core::alloc::Layout;
++    use std::sync::Mutex;
++
++    #[derive(Default)]
++    struct State {
++        requested: Vec<usize>,
++        confirmed: usize,
++        retired: usize,
++        deny: bool,
++    }
++    struct Memory(Arc<Mutex<State>>);
++    struct Allocation(Arc<Mutex<State>>);
++    impl NativeAllocation for Allocation {
++        fn allocated(&mut self) {
++            self.0.lock().unwrap().confirmed += 1;
++        }
++    }
++    impl Drop for Allocation {
++        fn drop(&mut self) {
++            self.0.lock().unwrap().retired += 1;
++        }
++    }
++    #[derive(Debug)]
++    struct Denied;
++    impl core::fmt::Display for Denied {
++        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
++            f.write_str("lift-result-original-admission")
++        }
++    }
++    impl std::error::Error for Denied {}
++    impl NativeMemory for Memory {
++        fn reserve(&self, bytes: usize) -> crate::Result<Box<dyn NativeAllocation>> {
++            let mut state = self.0.lock().unwrap();
++            state.requested.push(bytes);
++            if state.deny {
++                return Err(crate::Error::new(Denied));
++            }
++            drop(state);
++            Ok(Box::new(Allocation(self.0.clone())))
++        }
++    }
++    fn memory(state: &Arc<Mutex<State>>) -> crate::runtime::native_memory::Memory {
++        Some(Arc::new(Memory(state.clone())))
++    }
++
++    #[test]
++    fn exact_layout_preserves_sixteen_values_and_caller_retptr_without_growth() {
++        let state = Arc::new(Mutex::new(State::default()));
++        let src = core::array::from_fn::<_, 16, _>(|i| ValRaw::u32(i as u32));
++        let values = lift_result_values(&src, Some(99), memory(&state)).unwrap();
++        assert_eq!(values.len(), 17);
++        for (i, value) in values[..16].iter().enumerate() {
++            assert_eq!(value.get_u32(), i as u32);
++        }
++        assert_eq!(values[16].get_u32(), 99);
++        let probe = state.lock().unwrap();
++        assert_eq!(
++            probe.requested,
++            [Layout::array::<ValRaw>(17).unwrap().size()]
++        );
++        assert_eq!((probe.confirmed, probe.retired), (1, 0));
++        drop(probe);
++        drop(values);
++        assert_eq!(state.lock().unwrap().retired, 1);
++    }
++
++    #[test]
++    fn original_refusal_returns_before_confirmation_and_preserves_source() {
++        let state = Arc::new(Mutex::new(State {
++            deny: true,
++            ..State::default()
++        }));
++        let src = [ValRaw::u32(42)];
++        let error = lift_result_values(&src, Some(99), memory(&state)).unwrap_err();
++        assert!(error.downcast_ref::<Denied>().is_some());
++        assert_eq!(src[0].get_u32(), 42);
++        let probe = state.lock().unwrap();
++        assert_eq!(
++            probe.requested,
++            [Layout::array::<ValRaw>(2).unwrap().size()]
++        );
++        assert_eq!((probe.confirmed, probe.retired), (0, 0));
++    }
++
++    #[test]
++    fn backing_owner_retires_on_return_error_and_unwind() {
++        let state = Arc::new(Mutex::new(State::default()));
++        let error: crate::Result<()> = (|| {
++            let _values = lift_result_values(&[ValRaw::u32(42)], None, memory(&state))?;
++            assert_eq!(state.lock().unwrap().retired, 0);
++            Err(crate::Error::new(Denied))
++        })();
++        assert!(error.unwrap_err().downcast_ref::<Denied>().is_some());
++        assert_eq!(state.lock().unwrap().retired, 1);
++        let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++            let _values = lift_result_values(&[ValRaw::u32(43)], None, memory(&state)).unwrap();
++            assert_eq!(state.lock().unwrap().retired, 1);
++            panic!("original-return-hook-panic");
++        }));
++        assert!(panic.is_err());
++        let probe = state.lock().unwrap();
++        assert_eq!((probe.confirmed, probe.retired), (2, 2));
++    }
++
++    #[test]
++    fn empty_and_unaccounted_callers_preserve_value_shapes() {
++        let state = Arc::new(Mutex::new(State::default()));
++        let empty = lift_result_values(&[], None, memory(&state)).unwrap();
++        assert!(empty.is_empty());
++        assert!(state.lock().unwrap().requested.is_empty());
++        let values = lift_result_values(&[ValRaw::u32(42)], None, None).unwrap();
++        assert_eq!(values.len(), 1);
++        assert_eq!(values[0].get_u32(), 42);
++        let pointer_only = lift_result_values(&[], Some(99), memory(&state)).unwrap();
++        assert_eq!(pointer_only.len(), 1);
++        assert_eq!(pointer_only[0].get_u32(), 99);
++        assert_eq!(
++            state.lock().unwrap().requested,
++            [Layout::array::<ValRaw>(1).unwrap().size()]
++        );
++    }
+ }
+ 
+ /// The table ID for a guest thread, qualified by the task to which it belongs.
+@@ -5186,20 +5482,23 @@
                  let wake_on_cancel = state.get_mut(thread.thread)?.wake_on_cancel.take();
                  assert!(wake_on_cancel.is_none() || wake_on_cancel == Some(set));
  
@@ -1050,7 +1232,7 @@
              }
          }
          Ok(())
-@@ -5288,7 +5438,7 @@
+@@ -5288,7 +5587,7 @@
      do_not_enter: bool,
      /// Pending calls for this instance which require `Self::backpressure` to be
      /// `true` and/or `Self::do_not_enter` to be false before they can proceed.
@@ -1059,7 +1241,7 @@
  }
  
  impl ConcurrentInstanceState {
-@@ -5354,6 +5504,7 @@
+@@ -5354,6 +5653,7 @@
  
  /// Represents the Component Model Async state of a store.
  pub struct ConcurrentState {
@@ -1067,7 +1249,7 @@
      /// The currently running thread, if any.
      ///
      /// Note that we lazily materialize threads on-demand and this field is not
-@@ -5365,13 +5516,13 @@
+@@ -5365,13 +5665,13 @@
      ///
      /// See `ComponentInstance::poll_until` for where we temporarily take this
      /// out, poll it, then put it back to avoid any mutable aliasing hazards.
@@ -1084,7 +1266,7 @@
      /// A place to stash the reason a fiber is suspending so that the code which
      /// resumed it will know under what conditions the fiber should be resumed
      /// again.
-@@ -5426,12 +5577,20 @@
+@@ -5426,12 +5726,20 @@
  
  impl Default for ConcurrentState {
      fn default() -> Self {
@@ -1108,7 +1290,7 @@
              suspend_reason: None,
              worker: None,
              worker_item: None,
-@@ -5463,12 +5622,12 @@
+@@ -5463,12 +5771,12 @@
      pub(crate) fn take_fibers_and_futures(
          &mut self,
          fibers: &mut Vec<StoreFiber<'static>>,
@@ -1123,7 +1305,7 @@
                          fibers.push(fiber);
                      }
                  }
-@@ -5489,12 +5648,12 @@
+@@ -5489,12 +5797,12 @@
              WorkItem::ResumeFiber(fiber) => {
                  fibers.push(fiber);
              }
@@ -1138,7 +1320,7 @@
              }
              WorkItem::ResumeThread(..) | WorkItem::GuestCall(..) | WorkItem::WorkerFunction(..) => {
              }
-@@ -5538,12 +5697,13 @@
+@@ -5538,12 +5846,13 @@
              interesting_tasks: _,
              interesting_tasks_empty_waker: _,
              ready_for_concurrent_call_waker: _,
@@ -1153,7 +1335,7 @@
                          fiber.trace_gc_roots(modules, unwind, gc_roots_list);
                      }
                  }
-@@ -5564,7 +5724,7 @@
+@@ -5564,7 +5873,7 @@
              WorkItem::ResumeFiber(fiber) => {
                  fiber.trace_gc_roots(modules, unwind, gc_roots_list);
              }
@@ -1162,7 +1344,7 @@
                  // TODO(cm-gc): once futures can contain GC roots, we will need
                  // to trace them.
              }
-@@ -5572,12 +5732,8 @@
+@@ -5572,12 +5881,8 @@
              }
          };
  
@@ -1177,7 +1359,7 @@
      }
  
      fn push<V: Send + Sync + 'static>(
-@@ -5615,31 +5771,65 @@
+@@ -5615,31 +5920,65 @@
          self.table.get_mut().delete(Resource::from(id))
      }
  
@@ -1258,7 +1440,7 @@
          }
      }
  
-@@ -5672,13 +5862,16 @@
+@@ -5672,13 +6011,16 @@
          // we don't need to promote anything, but we return true to indicate that
          // work is pending for the current instance.
          if self.high_priority.iter().any(&mut predicate) {
@@ -1279,7 +1461,7 @@
              true
          } else {
              false
-@@ -5714,7 +5907,7 @@
+@@ -5714,7 +6056,7 @@
          }
      }
  

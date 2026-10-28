@@ -323,6 +323,18 @@ class StreamOuterOwnerReader(unittest.TestCase):
             with self.assertRaises(ValueError):
                 owner.http_ip_format_result(b'', case)
 
+        for case in owner.LIFT_RESULT_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.lift_result_result(raw, case)['passed'], 1)
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case'),
+                raw.replace(b'0 measured', b'1 measured'), b''):
+                with self.assertRaises(ValueError):
+                    owner.lift_result_result(changed, case)
+        with self.assertRaises(ValueError):
+            owner.lift_result_result(b'', 'unknown::case')
+
     def test_private_fixture_identity_is_bounded_and_changes_are_observed(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / 'fixture.wasm'
