@@ -487,11 +487,11 @@ def stage_prepare(compiler, project, output):
             or record.get('outputDigest') != identity['digest'] or record.get('cecilDigest') != http_errors.CECIL_DIGEST
             or record.get('originalInstructionsAndHandlersInverseExact') is not True
             or record.get('newAssemblyReferences') != 0 or record.get('newFields') != 3 or record.get('newMethods') != 7
-            or len(record.get('modifiedMethods',{})) != 8 or record.get('maxEvents') != 16
+            or len(record.get('modifiedMethods',{})) != 9 or record.get('maxEvents') != 16
             or record.get('actualWrittenBodiesVerified') is not True
             or record.get('branchNormalization') != {'method':'Finish','originalOffset':8,'originalTargetOffset':81,
                 'originalOpcode':'brfalse.s','selectedOpcode':'brfalse','selectedMethodBytes':155,
-                'shortBranchesChecked':42,'originalOpcodeRestoredByInverse':True}):
+                'shortBranchesChecked':66,'originalOpcodeRestoredByInverse':True}):
         raise ValueError('managed-stage-overlay-receipt')
     targets=owned/'ManagedStage.targets'; references=owned/'actual-reference.txt'
     target=XML.Element('Project'); entry=XML.SubElement(target,'Target',Name='LsfBindManagedStage',

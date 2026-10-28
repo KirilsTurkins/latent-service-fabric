@@ -108,7 +108,7 @@ internal static class ManagedStageOverlay
     private static readonly Dictionary<Instruction, OpCode> OldOpcodes = new();
     private static int CheckShortBranches()
     {
-        var count = 0;
+        var count = 0; var enqueueCount = 0;
         foreach (var method in Added.Keys)
         {
             var offsets = new Dictionary<Instruction, int>(); var offset = 0;
@@ -116,10 +116,11 @@ internal static class ManagedStageOverlay
             foreach (var instruction in method.Body.Instructions.Where(i => i.OpCode.OperandType == OperandType.ShortInlineBrTarget))
             {
                 var displacement = offsets[(Instruction)instruction.Operand] - offsets[instruction] - instruction.GetSize();
-                Need(displacement is >= -128 and <= 127); count++;
+                Need(displacement is >= -128 and <= 127);
+                if (method.Name == "Enqueue") enqueueCount++; else count++;
             }
         }
-        Need(count == 42); return count;
+        Need(count == 42 && enqueueCount == 24); return count + enqueueCount;
     }
     private static void Apply(ModuleDefinition module)
     {
@@ -196,6 +197,7 @@ internal static class ManagedStageOverlay
         var parent = M("Parent");
         Guard(parent, "managed-work-parent-retired", emitGuard, 15);
         Guard(parent, "managed-work-independent-admission-closed", emitGuard, 16);
+        Guard(M("Enqueue"), "managed-work-independent-admission-closed", emitGuard, 16);
         // Alias skip markers are emitted only when the original Completed guard will return.
         var alias = New(registry, "StageAliasSkip", module.TypeSystem.Void, task); il = alias.Body.GetILProcessor(); done = Instruction.Create(OpCodes.Ret);
         var outer = Instruction.Create(OpCodes.Ldsfld, selected); var emitOuter = Instruction.Create(OpCodes.Ldsfld, selected);
@@ -230,7 +232,7 @@ internal static class ManagedStageOverlay
         Need(references.SequenceEqual(module.AssemblyReferences.Select(r => r.FullName)));
         var changed = methods.Where(m => Body(m) != before[m]).ToDictionary(m => m.FullName,
             m => new { before = before[m], after = Body(m), insertedInstructions = Added[m].Count });
-        Need(changed.Count == 8 && NewMethods.Count == 7 && NewFields.Count == 3);
+        Need(changed.Count == 9 && NewMethods.Count == 7 && NewFields.Count == 3);
         var shortBranchesChecked = CheckShortBranches();
         module.Write(args[1]); var selectedHash = Hash(Read(args[1], MaxAssembly));
         // Bind the ACTUAL serialized image, including writer-computed MaxStack.
