@@ -1,17 +1,24 @@
-{"cases":["JavaHttpLate.test_actual_fixture_compiles_against_observe_record_and_public_http_signatures","JavaHttpLate.test_app_uses_only_readonly_sdk_observation_and_original_public_default_constructors","JavaHttpLate.test_cancelled_result_cannot_be_replaced_by_late_success_or_foreign_revision","JavaHttpLate.test_marker_requires_real_matching_post_after_the_held_body_event","JavaHttpLate.test_real_jdk_late_running_task_cannot_overwrite_cancelled_future"],"guards":{"JavaHttpLate.test_actual_fixture_compiles_against_observe_record_and_public_http_signatures":
-  "80db5a6bb51469cd9b2c1af0067b298b88202a1b7b980c73819f6bc6994f6b96"
-,"JavaHttpLate.test_app_uses_only_readonly_sdk_observation_and_original_public_default_constructors":
-  "871a1d18d4a327cc7f34ac4fd66b06471df838b3106e5d7bc83ca5f382852fca"
-,"JavaHttpLate.test_cancelled_result_cannot_be_replaced_by_late_success_or_foreign_revision":
-  "871a1d18d4a327cc7f34ac4fd66b06471df838b3106e5d7bc83ca5f382852fca"
-,"JavaHttpLate.test_marker_requires_real_matching_post_after_the_held_body_event":
-  "871a1d18d4a327cc7f34ac4fd66b06471df838b3106e5d7bc83ca5f382852fca"
-,"JavaHttpLate.test_real_jdk_late_running_task_cannot_overwrite_cancelled_future":
-  "0378b5e090ec5b1ff060a875d3d96c07e19359c6895c2fdb0f840f03e3639a7c"
-},"kind":"python","module":"tools/tests/test_java_http_late.py","reviewReason":"Five exact marker/result/default-source/signature controls and real JDK late-return cancellation references","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "80db5a6bb51469cd9b2c1af0067b298b88202a1b7b980c73819f6bc6994f6b96"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(shutil.which('javac'), 'Installed JDK required for checked source signatures')"],"fixtureGuards":["module:setup-sha256:54b8ddb241472d75b9f8af4dced41096c94b1b8374efeef228ee9000af36b116","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["skip-control-sha256:edda398627e777b2cb6481605619ed64ee13d029006e76fa64db3e89af33b576","unittest.skipUnless(shutil.which('javac'), 'Installed JDK required for checked source signatures')"]},
-  "871a1d18d4a327cc7f34ac4fd66b06471df838b3106e5d7bc83ca5f382852fca"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:54b8ddb241472d75b9f8af4dced41096c94b1b8374efeef228ee9000af36b116","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-  "0378b5e090ec5b1ff060a875d3d96c07e19359c6895c2fdb0f840f03e3639a7c"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(shutil.which('javac') and shutil.which('java'), 'Installed JDK required for reference controls')"],"fixtureGuards":["module:setup-sha256:54b8ddb241472d75b9f8af4dced41096c94b1b8374efeef228ee9000af36b116","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["skip-control-sha256:f8ba6904d39fab925de0fdf0892c5d19e801a1972cbc9da19c9a6daa54e87710","unittest.skipUnless(shutil.which('javac') and shutil.which('java'), 'Installed JDK required for reference controls')"]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "JavaHttpLate.test_actual_fixture_compiles_against_observe_record_and_public_http_signatures":
+      "80db5a6bb51469cd9b2c1af0067b298b88202a1b7b980c73819f6bc6994f6b96",
+    "JavaHttpLate.test_app_uses_only_readonly_sdk_observation_and_original_public_default_constructors":
+      "871a1d18d4a327cc7f34ac4fd66b06471df838b3106e5d7bc83ca5f382852fca",
+    "JavaHttpLate.test_cancelled_result_cannot_be_replaced_by_late_success_or_foreign_revision":
+      "871a1d18d4a327cc7f34ac4fd66b06471df838b3106e5d7bc83ca5f382852fca",
+    "JavaHttpLate.test_marker_requires_real_matching_post_after_the_held_body_event":
+      "871a1d18d4a327cc7f34ac4fd66b06471df838b3106e5d7bc83ca5f382852fca",
+    "JavaHttpLate.test_real_jdk_late_running_task_cannot_overwrite_cancelled_future":
+      "0378b5e090ec5b1ff060a875d3d96c07e19359c6895c2fdb0f840f03e3639a7c"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_java_http_late.py",
+  "reviewReason":"Five exact marker/result/default-source/signature controls and real JDK late-return cancellation references",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "80db5a6bb51469cd9b2c1af0067b298b88202a1b7b980c73819f6bc6994f6b96":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(shutil.which('javac'), 'Installed JDK required for checked source signatures')"],"fixtureGuards":["module:setup-sha256:54b8ddb241472d75b9f8af4dced41096c94b1b8374efeef228ee9000af36b116","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["skip-control-sha256:edda398627e777b2cb6481605619ed64ee13d029006e76fa64db3e89af33b576","unittest.skipUnless(shutil.which('javac'), 'Installed JDK required for checked source signatures')"]},
+    "871a1d18d4a327cc7f34ac4fd66b06471df838b3106e5d7bc83ca5f382852fca":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:54b8ddb241472d75b9f8af4dced41096c94b1b8374efeef228ee9000af36b116","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
+    "0378b5e090ec5b1ff060a875d3d96c07e19359c6895c2fdb0f840f03e3639a7c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(shutil.which('javac') and shutil.which('java'), 'Installed JDK required for reference controls')"],"fixtureGuards":["module:setup-sha256:54b8ddb241472d75b9f8af4dced41096c94b1b8374efeef228ee9000af36b116","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["skip-control-sha256:f8ba6904d39fab925de0fdf0892c5d19e801a1972cbc9da19c9a6daa54e87710","unittest.skipUnless(shutil.which('javac') and shutil.which('java'), 'Installed JDK required for reference controls')"]}
+  }
+}

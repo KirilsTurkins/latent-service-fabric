@@ -779,6 +779,40 @@ async fn dotnet_managed_stage_diagnostic_preserves_failed_root_return_boundary()
                     assert_eq!(error.code, latent_core::PlatformErrorCode::GuestTrap);
                     "guest-trap"
                 }
+                ActivationOutcome::Failed { error, .. } => {
+                    // Project only validated closed categories, never error text or frames.
+                    let classified = (|| {
+                        use latent_core::error::GuestTrapKind;
+                        let mut rows = error
+                            .details
+                            .iter()
+                            .filter(|row| row.kind == "activation.guest-trap-kind");
+                        let row = rows.next()?;
+                        if rows.next().is_some() {
+                            return None;
+                        }
+                        let kind = GuestTrapKind::from_wire_name(row.fields.get("kind")?)?;
+                        let phase = match (kind, row.fields.get("phase").map(String::as_str)) {
+                            (_, None) => None,
+                            (GuestTrapKind::RuntimeError, Some("instantiate")) => {
+                                Some("instantiate")
+                            }
+                            (GuestTrapKind::RuntimeError, Some("export-lookup")) => {
+                                Some("export-lookup")
+                            }
+                            (GuestTrapKind::RuntimeError, Some("call-and-postreturn")) => {
+                                Some("call-and-postreturn")
+                            }
+                            _ => return None,
+                        };
+                        if row.fields.len() != 1 + usize::from(phase.is_some()) {
+                            return None;
+                        }
+                        Some((kind.wire_name(), phase))
+                    })();
+                    panic!("private diagnostic changed the original terminal boundary: platform={} trap={:?}",
+                        error.code.wire_code(), classified);
+                }
                 _ => panic!("private diagnostic changed the original terminal boundary"),
             };
             let snapshot = guard.snapshot().unwrap();
