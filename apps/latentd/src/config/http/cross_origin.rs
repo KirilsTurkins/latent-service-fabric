@@ -126,7 +126,10 @@ fn canonical_origin(origin: &str) -> bool {
         || last.strip_prefix("0x").is_some_and(|suffix| {
             suffix.is_empty() || suffix.bytes().all(|byte| byte.is_ascii_hexdigit())
         });
-    !numeric || host.parse::<Ipv4Addr>().is_ok_and(|ip| ip.to_string() == host)
+    !numeric
+        || host
+            .parse::<Ipv4Addr>()
+            .is_ok_and(|ip| ip.to_string() == host)
 }
 
 struct ConfigurationBytes(usize);

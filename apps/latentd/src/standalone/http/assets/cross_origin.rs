@@ -86,7 +86,11 @@ fn plan(shared: &Shared, head: &Head, raw: &[u8]) -> Result<Plan, u16> {
     selection.current()?;
     let policy = Policy {
         origin: grant
-            .caller(head.collector.target().authority(), &tenant.0, &candidate.origin)
+            .caller(
+                head.collector.target().authority(),
+                &tenant.0,
+                &candidate.origin,
+            )
             .ok_or(403u16)?
             .to_owned(),
         credentials: grant.credentials == CrossOriginCredentials::Include,
@@ -106,7 +110,11 @@ fn plan(shared: &Shared, head: &Head, raw: &[u8]) -> Result<Plan, u16> {
         Err(404) => Work::Error(404),
         Err(code) => return Err(code),
     };
-    Ok(Plan { selection, policy, work })
+    Ok(Plan {
+        selection,
+        policy,
+        work,
+    })
 }
 
 async fn execute<S: AsyncRead + AsyncWrite + Unpin>(
@@ -116,7 +124,11 @@ async fn execute<S: AsyncRead + AsyncWrite + Unpin>(
     deadline: IncomingDeadline,
     close: bool,
 ) -> Result<bool, u16> {
-    let Plan { selection, policy, work } = plan;
+    let Plan {
+        selection,
+        policy,
+        work,
+    } = plan;
     match work {
         Work::Asset(request) => {
             let request = selection.retain(request);
@@ -134,8 +146,12 @@ async fn execute<S: AsyncRead + AsyncWrite + Unpin>(
             let result = timeout_at(
                 until,
                 response::empty(
-                    socket, code, shared.settings.scheme, close,
-                    Some(&policy), Some(selection.web()),
+                    socket,
+                    code,
+                    shared.settings.scheme,
+                    close,
+                    Some(&policy),
+                    Some(selection.web()),
                 ),
             )
             .await;
@@ -169,7 +185,10 @@ async fn serve<S: AsyncRead + AsyncWrite + Unpin>(
     let tenant = reference.scope.tenant().ok_or(403u16)?;
     prepared.accept(tenant)?;
     if prepared.request.redirect.is_some()
-        || matches!(prepared.media.as_str(), "text/html" | "application/xhtml+xml")
+        || matches!(
+            prepared.media.as_str(),
+            "text/html" | "application/xhtml+xml"
+        )
     {
         return Err(403);
     }
@@ -225,17 +244,35 @@ async fn scoped_error<W: AsyncWrite + Unpin>(
     // current authorized client read bounded 412/502/503 errors without treating
     // a failed/cached read as authority. Admission failure stays a generic denial.
     let store = shared.handle.0.assets.get().ok_or(503u16)?;
-    let selection = store.repository.select_web_publication(reference).map_err(|error| {
-        let code = super::status(&error);
-        if matches!(code, 400 | 401 | 403 | 404) { 403 } else { code }
-    })?;
-    selection.with_current(reference.scope.tenant().ok_or(403u16)?, &mut |current| current.check())
+    let selection = store
+        .repository
+        .select_web_publication(reference)
+        .map_err(|error| {
+            let code = super::status(&error);
+            if matches!(code, 400 | 401 | 403 | 404) {
+                403
+            } else {
+                code
+            }
+        })?;
+    selection
+        .with_current(reference.scope.tenant().ok_or(403u16)?, &mut |current| {
+            current.check()
+        })
         .map_err(|error| super::status(&error))?;
     let until = write_deadline(shared, deadline);
     let result = timeout_at(
         until,
-        response::empty(socket, code, shared.settings.scheme, true, Some(policy), Some(&selection)),
-    ).await;
+        response::empty(
+            socket,
+            code,
+            shared.settings.scheme,
+            true,
+            Some(policy),
+            Some(&selection),
+        ),
+    )
+    .await;
     let _ = timeout_at(until, socket.shutdown()).await;
     drop(selection);
     result.map_err(|_| 0u16)?.map_err(|_| 0u16)?;

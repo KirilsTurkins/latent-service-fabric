@@ -15,10 +15,10 @@ assert.match(assets, /^https:\/\/assets\.lsf\.localhost:[0-9]+$/);
 assert.match(foreign, /^https:\/\/foreign\.lsf\.localhost:[0-9]+$/);
 const {chromium} = createRequire(path.join(path.resolve(toolchain), 'package.json'))('playwright-core');
 const tls = {key: await readFile(path.join(work, 'tls/key.pem')), cert: await readFile(path.join(work, 'tls/server.pem'))};
-const deadline = Date.now() + 300000, sockets = new Set(), pending = new Set(), observations = [], cases = [];
-let browser, failure, stage = 'startup', etag;
+const deadline = Date.now() + 300000, sockets = new Set(), pending = new Set(), observations = [], wireObservations = [], cases = [];
+let browser, failure, stage = 'startup', currentCase = 'startup', etag;
 const report = {schemaVersion: 'latent.cross-origin.native-browser.v1', passed: false,
-  nativeRuntimeQualified: false, productionTlsQualified: false, testIdentityOnly: true, cases, observations};
+  nativeRuntimeQualified: false, productionTlsQualified: false, testIdentityOnly: true, cases, observations, wireObservations};
 const peer = https.createServer({...tls, maxHeaderSize: 8192}, (req, res) => {
   req.resume();
   res.writeHead(200, {'content-type': 'text/html', 'cache-control': 'no-store',
@@ -65,14 +65,26 @@ async function fetchResult(page, target = '/app.js', init = {}) {
     } catch (error) { return {error: error.name}; }
   }, {url: target.startsWith('https://') ? target : assets + target, init});
 }
+function policyHeaders(headers) {
+  return Object.fromEntries(Object.entries(headers).filter(([key]) =>
+    key.startsWith('access-control-') || ['cache-control', 'vary', 'etag', 'cross-origin-resource-policy', 'x-content-type-options'].includes(key)));
+}
 async function wire(method, target, headers = {}) {
+  assert.ok(wireObservations.length < 64, 'wire-observation-bound');
+  const row = {transport: 'explicit-https-wire-client', stage, case: currentCase,
+    method, path: target, origin: headers.Origin ?? null,
+    cookiePresent: Boolean(headers.Cookie)};
+  wireObservations.push(row);
   return new Promise((resolve, reject) => {
     const request = https.request({hostname: '127.0.0.1', port: new URL(assets).port, servername: 'localhost',
       ca: tls.cert, method, path: target, agent: false, maxHeaderSize: 8192,
       headers: {Host: new URL(assets).host, Connection: 'close', ...headers}}, response => {
       let bytes = 0;
       response.on('data', chunk => { bytes += chunk.length; if (bytes > 131072) response.destroy(new Error('wire-body-bound')); });
-      response.on('end', () => resolve({status: response.statusCode, headers: response.headers, bytes}));
+      response.on('end', () => {
+        Object.assign(row, {status: response.statusCode, headers: policyHeaders(response.headers), bytes});
+        resolve({status: response.statusCode, headers: response.headers, bytes});
+      });
       response.on('error', reject);
     });
     request.setTimeout(5000, () => request.destroy(new Error('wire-deadline')));
@@ -102,7 +114,7 @@ try {
   context.on('request', request => {
     if (![assets, foreign].includes(new URL(request.url()).origin)) return;
     if (observations.length >= 256) { failure ??= new Error('network-observation-bound'); return; }
-    const row = {stage, method: request.method(), path: new URL(request.url()).pathname};
+    const row = {transport: 'chromium', stage, case: currentCase, method: request.method(), path: new URL(request.url()).pathname};
     observations.push(row); requests.set(request, row);
     observe(request.allHeaders().then(headers => Object.assign(row, {
       origin: headers.origin ?? null, site: headers['sec-fetch-site'] ?? null,
@@ -114,8 +126,7 @@ try {
     if (!row) return;
     row.status = response.status();
     observe(response.allHeaders().then(headers => {
-      row.headers = Object.fromEntries(Object.entries(headers).filter(([key]) =>
-        key.startsWith('access-control-') || ['cache-control', 'vary', 'etag', 'cross-origin-resource-policy', 'x-content-type-options'].includes(key)));
+      row.headers = policyHeaders(headers);
     }));
   });
   const page = await context.newPage();
@@ -123,7 +134,7 @@ try {
   await save('browser-ready.json', {approved, crossSite, unrelated});
   const common = {Origin: approved, 'Sec-Fetch-Site': 'same-site', 'Sec-Fetch-Mode': 'cors', 'Sec-Fetch-Dest': 'empty'};
   const conditional = {'If-None-Match': '*'};
-  async function check(name, action) { await action(); await flush(); cases.push({stage, name}); }
+  async function check(name, action) { currentCase = name; await action(); await flush(); cases.push({stage, name}); }
   async function unavailable() {
     for (const init of [{}, {method: 'HEAD'}, {headers: conditional}]) {
       assert.equal((await fetchResult(page, '/app.js', {...init, credentials: 'omit'})).error, 'TypeError');
@@ -223,7 +234,10 @@ try {
           frame.srcdoc = '<!doctype html><title>Opaque origin</title>'; document.body.append(frame);
         });
         const frame = page.frames().find(value => value !== page.mainFrame()); assert.ok(frame);
+        const previous = observations.length;
         assert.equal((await fetchResult(frame, '/app.js', {credentials: 'omit'})).error, 'TypeError');
+        await flush();
+        assert.ok(observations.slice(previous).some(row => row.origin === 'null'), 'actual-browser-null-origin-required');
         await fetchResult(page, '/app.js', {mode: 'no-cors', credentials: 'omit'});
         assert.equal((await fetchResult(page, '/index.html', {credentials: 'omit'})).error, 'TypeError');
         denied(await wire('GET', '/app.js', {...common, 'Sec-Fetch-Mode': 'no-cors'}));

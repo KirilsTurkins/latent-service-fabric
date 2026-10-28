@@ -1,8 +1,8 @@
 mod lifecycle;
 mod support;
 
-use support::*;
 use serde_json::json;
+use support::*;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn cross_origin_native_static_get_head_304_and_errors_share_exact_current_authority() {
@@ -23,25 +23,39 @@ async fn cross_origin_native_static_get_head_304_and_errors_share_exact_current_
         assert_eq!(status, 200);
         assert!(body.is_empty());
         assert_eq!(field(&head, "etag"), Some(tag));
-        assert_eq!(field(&head, "content-length"), field(&headers, "content-length"));
+        assert_eq!(
+            field(&head, "content-length"),
+            field(&headers, "content-length")
+        );
         authorized(&head, false, false);
         for method in ["GET", "HEAD"] {
             let (status, headers, body) = call(
-                &h, method, &path, &format!("{metadata}If-None-Match: {tag}\r\n"),
-            ).await;
+                &h,
+                method,
+                &path,
+                &format!("{metadata}If-None-Match: {tag}\r\n"),
+            )
+            .await;
             assert_eq!(status, 304);
             assert!(body.is_empty());
             assert!(field(&headers, "content-length").is_none());
             authorized(&headers, false, false);
         }
-        for condition in ["If-None-Match: invalid\r\n", "Accept-Encoding: identity;q=0\r\n"] {
-            let (status, headers, body) = call(&h, "GET", &path, &format!("{metadata}{condition}")).await;
+        for condition in [
+            "If-None-Match: invalid\r\n",
+            "Accept-Encoding: identity;q=0\r\n",
+        ] {
+            let (status, headers, body) =
+                call(&h, "GET", &path, &format!("{metadata}{condition}")).await;
             assert!(matches!(status, 400 | 406));
             assert!(body.is_empty());
             authorized(&headers, false, true);
         }
     }
-    for path in ["/missing.js".to_owned(), immutable(&reference, "/missing.js")] {
+    for path in [
+        "/missing.js".to_owned(),
+        immutable(&reference, "/missing.js"),
+    ] {
         for method in ["GET", "HEAD"] {
             let (status, headers, body) = call(&h, method, &path, &metadata).await;
             assert_eq!(status, 404);
@@ -67,22 +81,57 @@ async fn cross_origin_native_preflight_selects_exact_method_and_never_html_or_fa
     assert!(body.is_empty());
     authorized(&headers, false, false);
     assert_eq!(field(&headers, "access-control-max-age"), Some("0"));
-    assert_eq!(field(&headers, "access-control-allow-methods"), Some("GET, HEAD"));
-    assert_eq!(field(&headers, "access-control-allow-headers"), Some("if-none-match, if-modified-since"));
+    assert_eq!(
+        field(&headers, "access-control-allow-methods"),
+        Some("GET, HEAD")
+    );
+    assert_eq!(
+        field(&headers, "access-control-allow-headers"),
+        Some("if-none-match, if-modified-since")
+    );
     assert!(field(&headers, "content-length").is_none());
     // A missing HEAD route is not silently routed through GET.
-    let (status, headers, _) = call(&h, "OPTIONS", "/app.js", &requested.replace(": GET\r\n", ": HEAD\r\n")).await;
+    let (status, headers, _) = call(
+        &h,
+        "OPTIONS",
+        "/app.js",
+        &requested.replace(": GET\r\n", ": HEAD\r\n"),
+    )
+    .await;
     assert_eq!(status, 403);
     denied(&headers);
     apply(&h, &reference, "HEAD", 0);
-    assert_eq!(call(&h, "OPTIONS", "/app.js", &requested.replace(": GET\r\n", ": HEAD\r\n")).await.0, 204);
-    for path in ["/", "/index.html", "/exact.html", "/guide", "/guide/", "/orders/42"] {
+    assert_eq!(
+        call(
+            &h,
+            "OPTIONS",
+            "/app.js",
+            &requested.replace(": GET\r\n", ": HEAD\r\n")
+        )
+        .await
+        .0,
+        204
+    );
+    for path in [
+        "/",
+        "/index.html",
+        "/exact.html",
+        "/guide",
+        "/guide/",
+        "/orders/42",
+    ] {
         for method in ["GET", "HEAD", "OPTIONS"] {
-            let fields = if method == "OPTIONS" { &requested } else { &metadata };
+            let fields = if method == "OPTIONS" {
+                &requested
+            } else {
+                &metadata
+            };
             let (status, headers, body) = call(&h, method, path, fields).await;
             assert!(matches!(status, 403 | 404), "{method} {path}: {status}");
             assert!(body.is_empty());
-            if status == 403 { denied(&headers); }
+            if status == 403 {
+                denied(&headers);
+            }
         }
     }
     for extra in [
@@ -91,7 +140,8 @@ async fn cross_origin_native_preflight_selects_exact_method_and_never_html_or_fa
         "Access-Control-Request-Method: GET\r\nAccess-Control-Request-Headers: x-tenant\r\n",
         "Access-Control-Request-Method: GET\r\nCookie: __Host-lsf_demo=test-only\r\n",
     ] {
-        let (status, headers, _) = call(&h, "OPTIONS", "/app.js", &format!("{metadata}{extra}")).await;
+        let (status, headers, _) =
+            call(&h, "OPTIONS", "/app.js", &format!("{metadata}{extra}")).await;
         assert_eq!(status, 403);
         denied(&headers);
     }
@@ -114,7 +164,11 @@ async fn cross_origin_native_credentials_origin_variants_and_strict_defaults_do_
         authorized(&headers, mode == "include", false);
         let (status, headers, _) = call(&h, "GET", &path, &format!("{metadata}{COOKIE}")).await;
         assert_eq!(status, if mode == "include" { 200 } else { 403 });
-        if mode == "include" { authorized(&headers, true, false); } else { denied(&headers); }
+        if mode == "include" {
+            authorized(&headers, true, false);
+        } else {
+            denied(&headers);
+        }
         for fields in [
             metadata.replace(ORIGIN, "null"),
             metadata.replace(ORIGIN, "https://unrelated.example.test"),
@@ -134,7 +188,10 @@ async fn cross_origin_native_credentials_origin_variants_and_strict_defaults_do_
         let (status, headers, _) = call(&h, "GET", &path, same).await;
         assert_eq!(status, 200);
         assert!(field(&headers, "access-control-allow-origin").is_none());
-        assert_eq!(field(&headers, "cross-origin-resource-policy"), Some("same-origin"));
+        assert_eq!(
+            field(&headers, "cross-origin-resource-policy"),
+            Some("same-origin")
+        );
     }
     no_execution(&h);
     h.finish().await;

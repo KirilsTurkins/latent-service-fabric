@@ -19,6 +19,21 @@ class NativeCrossOriginWorkflow(unittest.TestCase):
         self.assertEqual(CAMPAIGN.STAGES, ('default', 'allowed', 'removed', 'restored',
             'new-ungranted', 'new-opted-in', 'expiring', 'expired', 'renewed', 'revoked', 'restart-revoked'))
 
+    def test_http_exchanges_fit_the_unchanged_node_reservation_budget(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixture, node = root / 'fixture', root / 'node'
+            fixture.mkdir(); node.mkdir()
+            (fixture / 'policy.json').write_text('{}')
+            config = json.loads(CAMPAIGN.configure_node(node, fixture, 'tests').read_bytes())
+            limits = CAMPAIGN.ingress_configuration(fixture, 'assets.lsf.localhost:8443',
+                'foreign.lsf.localhost:8443', 8443)['limits']
+            reservations = sum(cell['capacity'] + cell['queueCapacity'] for cell in config['cells'])
+            self.assertEqual(reservations, 3)
+            self.assertEqual(limits['maximumExchanges'], 2)
+            self.assertLessEqual(limits['maximumExchanges'], reservations)
+            self.assertEqual(limits['maximumConnections'], 16)
+
     def test_messages_are_complete_private_and_exclusive(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / 'request.json'

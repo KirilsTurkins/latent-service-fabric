@@ -37,16 +37,24 @@ pub(in crate::standalone::http) fn admit(
         .find_map(|grant| grant.caller(target.authority(), tenant, origin))
         .ok_or(403u16)?;
     if singleton(headers, "sec-fetch-mode")? != Some(b"cors")
-        || !matches!(singleton(headers, "sec-fetch-site")?, Some(b"same-site" | b"cross-site"))
+        || !matches!(
+            singleton(headers, "sec-fetch-site")?,
+            Some(b"same-site" | b"cross-site")
+        )
         || !matches!(
             singleton(headers, "sec-fetch-dest")?,
             Some(b"empty" | b"script" | b"style" | b"font" | b"image" | b"manifest")
         )
         || singleton(headers, "sec-fetch-user")?.is_some()
         || headers.iter().any(|header| {
-            ["authorization", "proxy-authorization", "x-tenant", "x-lsf-tenant"]
-                .iter()
-                .any(|name| header.name.eq_ignore_ascii_case(name))
+            [
+                "authorization",
+                "proxy-authorization",
+                "x-tenant",
+                "x-lsf-tenant",
+            ]
+            .iter()
+            .any(|name| header.name.eq_ignore_ascii_case(name))
         })
     {
         return Err(403);
@@ -134,7 +142,9 @@ fn conditional_headers(value: Option<&[u8]>) -> Result<String, u16> {
 }
 
 fn singleton<'a>(headers: &[HeaderView<'a>], name: &str) -> Result<Option<&'a [u8]>, u16> {
-    let mut values = headers.iter().filter(|header| header.name.eq_ignore_ascii_case(name));
+    let mut values = headers
+        .iter()
+        .filter(|header| header.name.eq_ignore_ascii_case(name));
     let result = values.next().map(|header| header.value);
     if values.next().is_some() {
         return Err(400);

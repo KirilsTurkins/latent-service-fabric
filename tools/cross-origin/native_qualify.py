@@ -90,6 +90,20 @@ def apply(client, publication, authority, method):
     return receipt
 
 
+def ingress_configuration(work, authority, foreign, port):
+    """Keep the HTTP owner inside the existing three-reservation node budget."""
+    return {
+        'formatVersion': 1, 'bind': f'127.0.0.1:{port}',
+        'transport': {'mode': 'tls', 'certificateFile': str(work / 'tls/server.pem'),
+                      'privateKeyFile': str(work / 'tls/key.pem')},
+        'authentication': {'mode': 'public-origins', 'origins': [
+            {'authority': authority, 'subject': 'asset-reader', 'tenant': 'tests'},
+            {'authority': foreign, 'subject': 'foreign-reader', 'tenant': 'foreign'}]},
+        'limits': {'maximumConnections': 16, 'maximumExchanges': 2,
+                   'maximumBufferBytes': 48 * 1024 * 1024, 'maximumRequestsPerConnection': 16,
+                   'idleTimeoutMillis': 1000, 'headerTimeoutMillis': 1000}}
+
+
 def run(args, directory, receipt):
     work, node_root, client_root = (directory / name for name in ('fixture', 'node', 'client'))
     for parent in (node_root, client_root):
@@ -113,15 +127,7 @@ def run(args, directory, receipt):
             settings['audit'].update(records=1024, diskBytes=16 * 1024 * 1024)
             settings['credentials'].append({'token': FOREIGN_TOKEN, 'subject': 'foreign-operator',
                                            'tenant': 'foreign', 'role': 'operator'})
-            settings['httpIngress'] = {'formatVersion': 1, 'bind': f'127.0.0.1:{port}',
-                'transport': {'mode': 'tls', 'certificateFile': str(work / 'tls/server.pem'),
-                              'privateKeyFile': str(work / 'tls/key.pem')},
-                'authentication': {'mode': 'public-origins', 'origins': [
-                    {'authority': authority, 'subject': 'asset-reader', 'tenant': 'tests'},
-                    {'authority': foreign, 'subject': 'foreign-reader', 'tenant': 'foreign'}]},
-                'limits': {'maximumConnections': 16, 'maximumExchanges': 8,
-                           'maximumBufferBytes': 48 * 1024 * 1024, 'maximumRequestsPerConnection': 16,
-                           'idleTimeoutMillis': 1000, 'headerTimeoutMillis': 1000}}
+            settings['httpIngress'] = ingress_configuration(work, authority, foreign, port)
             replace_config(config, settings)
             node = connect(client, args.node, node_root, config, 'tests', 1)
             require(node.startup_record['httpEndpoint'] == f'127.0.0.1:{port}', 'native-cors-tls-endpoint')
@@ -281,11 +287,18 @@ def main():
         run(args, directory, receipt)
         status = 0
     except Exception as error:
+        receipt.update(passed=False, nativeRuntimeQualified=False)
         receipt['failure'] = {'kind': type(error).__name__, 'message': str(error)[:500]}
     finally:
-        require(directory.parent == Path(tempfile.gettempdir()).resolve()
-                and directory.name.startswith('lsf-cross-origin-'), 'native-cors-cleanup-root')
-        shutil.rmtree(directory)
+        try:
+            require(directory.parent == Path(tempfile.gettempdir()).resolve()
+                    and directory.name.startswith('lsf-cross-origin-'), 'native-cors-cleanup-root')
+            shutil.rmtree(directory)
+            receipt['cleanup'] = 'owned-processes-closed-and-fixture-removed'
+        except Exception as error:
+            status = 1
+            receipt.update(passed=False, nativeRuntimeQualified=False, cleanup='failed')
+            receipt['cleanupFailure'] = {'kind': type(error).__name__, 'message': str(error)[:500]}
         (args.output / 'qualification.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
     print(json.dumps({'passed': receipt['passed'], 'failure': receipt.get('failure'), 'stage': receipt.get('stage')}))
     return status

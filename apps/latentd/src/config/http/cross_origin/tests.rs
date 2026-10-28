@@ -48,8 +48,16 @@ fn cross_origin_configuration_is_closed_default_empty_and_https_public_only() {
     assert!(valid(json!([grant()])));
     let configured: HttpIngressConfig = serde_json::from_value(config(json!([grant()]))).unwrap();
     assert!(validate(&configured, Scheme::Http, &owners()).is_err());
-    assert!(validate(&configured, Scheme::Https, &Authentication::Bearer(Vec::new())).is_err());
-    assert_eq!(configured.cross_origin_assets[0].credentials, CrossOriginCredentials::Omit);
+    assert!(validate(
+        &configured,
+        Scheme::Https,
+        &Authentication::Bearer(Vec::new())
+    )
+    .is_err());
+    assert_eq!(
+        configured.cross_origin_assets[0].credentials,
+        CrossOriginCredentials::Omit
+    );
     for invalid in [Value::Null, json!({}), json!([null])] {
         assert!(!valid(invalid));
     }
@@ -106,18 +114,34 @@ fn cross_origin_origins_require_exact_ascii_https_serialization() {
         assert!(canonical_origin(origin), "{origin}");
     }
     for origin in [
-        "", "null", "*", "https://*.example.test", "http://portal.example.test",
-        "HTTPS://portal.example.test", "https://PORTAL.example.test",
-        "https://portal.example.test:443", "https://portal.example.test:08443",
-        "https://portal.example.test/", "https://portal.example.test/path",
-        "https://portal.example.test?x=1", "https://portal.example.test#x",
-        "https://user@portal.example.test", " https://portal.example.test",
-        "https://portal.example.test ", "https://portal.example.test.",
+        "",
+        "null",
+        "*",
+        "https://*.example.test",
+        "http://portal.example.test",
+        "HTTPS://portal.example.test",
+        "https://PORTAL.example.test",
+        "https://portal.example.test:443",
+        "https://portal.example.test:08443",
+        "https://portal.example.test/",
+        "https://portal.example.test/path",
+        "https://portal.example.test?x=1",
+        "https://portal.example.test#x",
+        "https://user@portal.example.test",
+        " https://portal.example.test",
+        "https://portal.example.test ",
+        "https://portal.example.test.",
         "https://portal.example.test,https://other.example.test",
-        "https://portal.example.test https://other.example.test", "https://bücher.example",
-        "https://0x7f000001", "https://0177.0.0.1", "https://127.1",
-        "https://2130706433", "https://example.123", "https://[0:0:0:0:0:0:0:1]",
-        "https://[::1]:443", "https://[::ffff:127.0.0.1]",
+        "https://portal.example.test https://other.example.test",
+        "https://bücher.example",
+        "https://0x7f000001",
+        "https://0177.0.0.1",
+        "https://127.1",
+        "https://2130706433",
+        "https://example.123",
+        "https://[0:0:0:0:0:0:0:1]",
+        "https://[::1]:443",
+        "https://[::ffff:127.0.0.1]",
     ] {
         assert!(!canonical_origin(origin), "{origin}");
     }
@@ -141,16 +165,24 @@ fn cross_origin_configuration_enforces_all_three_independent_bounds() {
     assert!(!valid(json!(too_many)));
     let mut row = grant();
     row["origins"] = json!((0..MAX_ORIGINS)
-        .map(|index| format!("https://portal{index}.example.test")).collect::<Vec<_>>());
+        .map(|index| format!("https://portal{index}.example.test"))
+        .collect::<Vec<_>>());
     assert!(valid(json!([row.clone()])));
-    row["origins"].as_array_mut().unwrap().push(json!("https://extra.example.test"));
+    row["origins"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!("https://extra.example.test"));
     assert!(!valid(json!([row])));
     let mut large = rows;
     for row in &mut large {
-        row["origins"] = json!((0..MAX_ORIGINS).map(|index| format!(
-            "https://{}.{}.{}.portal{index}.example.test",
-            "a".repeat(60), "b".repeat(60), "c".repeat(60),
-        )).collect::<Vec<_>>());
+        row["origins"] = json!((0..MAX_ORIGINS)
+            .map(|index| format!(
+                "https://{}.{}.{}.portal{index}.example.test",
+                "a".repeat(60),
+                "b".repeat(60),
+                "c".repeat(60),
+            ))
+            .collect::<Vec<_>>());
     }
     assert!(serde_json::to_vec(&large).unwrap().len() > MAX_CONFIGURATION_BYTES);
     assert!(!valid(json!(large)));

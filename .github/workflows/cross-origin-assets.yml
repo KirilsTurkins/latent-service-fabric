@@ -93,13 +93,17 @@ jobs:
           cargo test -p latentd --lib --locked cross_origin -- --nocapture --test-threads=1 2>&1 | tee target/cross-origin-native/native-tests.log
       - name: Build actual node and package CLI
         run: cargo build --locked --bin latent --bin latentd
+      - name: Retain exact native qualification products
+        run: |
+          mkdir -p target/cross-origin-bin
+          objcopy --strip-debug target/debug/latent target/cross-origin-bin/latent
+          objcopy --strip-debug target/debug/latentd target/cross-origin-bin/latentd
+          tar -C target/cross-origin-bin -czf target/cross-origin-native/native-products.tar.gz latent latentd
+          sha256sum target/cross-origin-bin/latent target/cross-origin-bin/latentd > target/cross-origin-native/native-products.sha256
       - name: Qualify signed native TLS publications with real Chromium
         timeout-minutes: 9
         run: |
           npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund
-          mkdir -p target/cross-origin-bin
-          objcopy --strip-debug target/debug/latent target/cross-origin-bin/latent
-          objcopy --strip-debug target/debug/latentd target/cross-origin-bin/latentd
           python3 tools/cross-origin/native_qualify.py --cli target/cross-origin-bin/latent --node target/cross-origin-bin/latentd --toolchain examples/renderer-profile --chrome "$(command -v google-chrome)" --font examples/renderer-profile/node_modules/primeicons/fonts/primeicons.woff2 --output target/cross-origin-native
       - name: Check maintained formatting and strict native lint
         run: |

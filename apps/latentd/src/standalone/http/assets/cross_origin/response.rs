@@ -28,13 +28,18 @@ pub(super) async fn asset<W: AsyncWrite + Unpin>(
         .or(response.selection.as_ref())
         .ok_or(io::ErrorKind::PermissionDenied)?;
     let mut head = common(response.code, scheme, close, Some(policy));
-    write!(&mut head, "ETag: {}\r\nAccept-Ranges: none\r\n", response.etag)
-        .map_err(|_| io::ErrorKind::InvalidData)?;
+    write!(
+        &mut head,
+        "ETag: {}\r\nAccept-Ranges: none\r\n",
+        response.etag
+    )
+    .map_err(|_| io::ErrorKind::InvalidData)?;
     if response.code != 304 {
         write!(
             &mut head,
             "Content-Length: {}\r\nContent-Type: {}\r\n",
-            response.buffer.bytes.len(), response.media,
+            response.buffer.bytes.len(),
+            response.media,
         )
         .map_err(|_| io::ErrorKind::InvalidData)?;
     }
@@ -72,8 +77,13 @@ pub(super) async fn empty<W: AsyncWrite + Unpin>(
 }
 
 fn common(code: u16, scheme: Scheme, close: bool, policy: Option<&Policy>) -> String {
-    let cache = if code >= 400 || policy.is_none() { "no-store" } else { "private, no-cache" };
-    let mut head = format!("HTTP/1.1 {code} Response\r\nCache-Control: {cache}\r\nVary: {VARY}\r\n");
+    let cache = if code >= 400 || policy.is_none() {
+        "no-store"
+    } else {
+        "private, no-cache"
+    };
+    let mut head =
+        format!("HTTP/1.1 {code} Response\r\nCache-Control: {cache}\r\nVary: {VARY}\r\n");
     if close {
         head.push_str("Connection: close\r\n");
     }
@@ -95,7 +105,9 @@ fn common(code: u16, scheme: Scheme, close: bool, policy: Option<&Policy>) -> St
         }
         if code == 204 {
             if let Some(headers) = &policy.preflight {
-                head.push_str("Access-Control-Allow-Methods: GET, HEAD\r\nAccess-Control-Max-Age: 0\r\n");
+                head.push_str(
+                    "Access-Control-Allow-Methods: GET, HEAD\r\nAccess-Control-Max-Age: 0\r\n",
+                );
                 if !headers.is_empty() {
                     head.push_str("Access-Control-Allow-Headers: ");
                     head.push_str(headers);
@@ -130,7 +142,11 @@ async fn current<T>(
     selection: &WebSelection,
     future: impl Future<Output = io::Result<T>>,
 ) -> io::Result<T> {
-    let tenant = selection.publication().scope.tenant().ok_or(io::ErrorKind::PermissionDenied)?;
+    let tenant = selection
+        .publication()
+        .scope
+        .tenant()
+        .ok_or(io::ErrorKind::PermissionDenied)?;
     tokio::pin!(future);
     std::future::poll_fn(|context| {
         let mut poll = None;
@@ -165,7 +181,10 @@ mod tests {
                 assert!(text.contains("Cross-Origin-Resource-Policy: cross-origin\r\n"));
                 assert!(!text.contains("cross-origin-resource-policy: same-origin"));
                 assert!(text.contains("Access-Control-Expose-Headers: ETag\r\n"));
-                assert_eq!(text.contains("Access-Control-Allow-Credentials: true"), credentials);
+                assert_eq!(
+                    text.contains("Access-Control-Allow-Credentials: true"),
+                    credentials
+                );
                 assert!(text.contains(&format!("Vary: {VARY}\r\n")));
                 assert!(text.contains(if code >= 400 {
                     "Cache-Control: no-store\r\n"

@@ -131,7 +131,13 @@ pub(super) fn parse(
         // which binds the grant to the exact current selected publication.
         browser::Admission::SameOrigin
     } else {
-        admit_browser(shared, collector.target(), &principal, method, &headers[..count])?
+        admit_browser(
+            shared,
+            collector.target(),
+            &principal,
+            method,
+            &headers[..count],
+        )?
     };
     Ok(Head {
         collector,
