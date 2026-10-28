@@ -535,7 +535,14 @@ def stage_package_selection(commands, contracts_tool, project, output, files, or
     selected=original.replace(marker,marker+insertion,1)
     if selected.replace(insertion,b'',1)!=original:
         raise ValueError('managed-stage-package-world-inverse')
-    private=read_file(__import__('pathlib').Path(__file__).resolve().parents[2]/STAGE_DATA/'private.wit',4096)
+    private_group=read_file(__import__('pathlib').Path(__file__).resolve().parents[2]/STAGE_DATA/'private.wit',4096)
+    package=b'package latent:development-dotnet-stage@0.1.0'
+    opening=package+b' {\n'
+    if not private_group.startswith(opening) or not private_group.endswith(b'}\n'):
+        raise ValueError('managed-stage-package-private-preimage')
+    private=package+b';\n'+private_group[len(opening):-2]
+    if private.replace(package+b';\n',opening,1)+b'}\n'!=private_group:
+        raise ValueError('managed-stage-package-private-inverse')
     package_files={**files,'wit/world.wit':selected,
         'wit/deps/development-dotnet-stage/package.wit':private}
     sources=[{'path':name,'content':raw.decode()} for name,raw in package_files.items()
@@ -553,7 +560,8 @@ def stage_package_selection(commands, contracts_tool, project, output, files, or
         (output/name).write_bytes(read_file(derived/name,4*1024**2))
     write_json(output/'managed-stage-package-projection.json',{'profile':STAGE_PROFILE,
         'originalWorld':project['world'],'selectedWorld':project['world'],'originalWorldSourceDigest':digest(original),
-        'selectedWorldSourceDigest':digest(selected),'privateSourceDigest':digest(private),
+        'selectedWorldSourceDigest':digest(selected),'privateSourceDigest':digest(private_group),'selectedPrivateSourceDigest':digest(private),
+        'privateSourceInverseExact':True,
         'originalApplicationSourceInverseExact':True,'originalPublicExportsUnchanged':True,
         'originalApplicationInputInventory':digest(inventory(files)),
         'selectedPackagingInputInventory':digest(inventory(package_files)),
