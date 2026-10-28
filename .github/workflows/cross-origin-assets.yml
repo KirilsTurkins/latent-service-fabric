@@ -1,0 +1,80 @@
+name: Cross-origin static assets
+
+on:
+  pull_request:
+    branches: [development]
+    paths:
+      - '.github/workflows/cross-origin-assets.yml'
+      - 'apps/latentd/**'
+      - 'crates/latent-artifacts/**'
+      - 'crates/latent-control-store/**'
+      - 'crates/latent-ingress/**'
+      - 'schemas/node-http-ingress.schema.json'
+      - 'tools/cross-origin/**'
+      - 'tools/tests/test_cross_origin_native_schema.py'
+      - 'Cargo.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cross-origin-assets-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: Native publication-scoped CORS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt, clippy
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140
+        with:
+          python-version: '3.13.5'
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477
+        with:
+          prefix-key: lsf-cross-origin-assets-v1
+          cache-workspace-crates: false
+          save-if: ${{ github.ref == 'refs/heads/development' }}
+      - name: Retain source and formatting diagnostics
+        run: |
+          mkdir -p target/cross-origin-native
+          git rev-parse HEAD > target/cross-origin-native/source-commit.txt
+          git archive --format=tar.gz HEAD apps/latentd crates/latent-ingress crates/latent-artifacts crates/latent-control-store tools schemas adr .github Cargo.toml Cargo.lock rust-toolchain.toml .cargo sdk > target/cross-origin-native/source.tar.gz
+          cargo fmt --all -- --check > target/cross-origin-native/format.log 2>&1 || true
+          cargo fmt --all
+          git diff --binary > target/cross-origin-native/format.patch
+          git diff --name-only -z | tar --null -T - -czf target/cross-origin-native/formatted-files.tar.gz
+          git restore --worktree .
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - name: Validate native configuration schema
+        run: |
+          python -m pip install --requirement tools/requirements.lock
+          python -m unittest tools.tests.test_cross_origin_native_schema -v
+      - name: Execute native policy and ownership controls
+        run: |
+          set -o pipefail
+          cargo test -p latentd --lib --locked cross_origin -- --nocapture --test-threads=1 2>&1 | tee target/cross-origin-native/native-tests.log
+      - name: Retain native diagnostics
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9
+        with:
+          name: cross-origin-native-${{ github.sha }}
+          path: target/cross-origin-native/
+          if-no-files-found: error
+          retention-days: 7
