@@ -15,7 +15,7 @@ INPUT_SHA = "93c9663fd6ded622c4745b01b387f6506dd687bd86443ef97f71dfb6aeeef5a4"
 FACTORY_PIN = (38360, "558f4740e3c17286c1b23beb08ae80781cd11a87cf90e630b0ac62370f682ec4")
 MATERIAL_PATH = "research/standard-outbound/linux-6.12-lineage/node-bootstrap/factory-node-bootstrap.c"
 MATERIAL_NAME = "net/factory-node-bootstrap.c"
-MATERIAL_PIN = (12610, "815b3f0eec0d6b54d0c2c93860e9deaeb3958ae0982a5eac6ccb9ea22797093b")
+MATERIAL_PIN = (12646, "31b7cdcdc6e1b3167eb800703c2396c4c8e55ac4a40cac0e9b87480b63a76cb3")
 COMPILED_ABI = "lsf-q35-node-bootstrap-v1"
 PREFIX = b"#define LSF_STREAM_NODE_BOOTSTRAP_IMAGE 1\n"
 ANCHOR = b"static struct miscdevice lsf_factory_device = {\n"

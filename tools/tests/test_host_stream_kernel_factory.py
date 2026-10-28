@@ -188,7 +188,7 @@ class NodeBootstrapSource(unittest.TestCase):
         import importlib.util
         source = OWNED / "node-bootstrap/projector.py"
         raw = source.read_bytes()
-        if hashlib.sha256(raw).hexdigest() != "ff23bd22fd6043e9b46df14f0105a3cc6af55e59a140bb6851faf5256118354b":
+        if hashlib.sha256(raw).hexdigest() != "87cacbf53b33d24e616fae4010fce80f7415a8a5a2cdb6490ee0b5eaa78959a7":
             raise AssertionError("node-projector-captured-identity")
         path = str(source)
         class Captured(importlib.abc.SourceLoader):

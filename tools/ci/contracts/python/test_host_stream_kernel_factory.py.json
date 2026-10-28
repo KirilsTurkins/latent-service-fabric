@@ -32,16 +32,16 @@
     "HostStreamKernelFactory.test_failed_owner_command_retains_both_bounded_streams_and_original_failure":
       "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2",
     "NodeBootstrapSource.test_material_reader_bounds_and_wrong_length_hash_short_circuit":
-      "dcd666312232cd1262bba1c68ba78f8c84b22e2c0ffd72c52bfc2901231e52cc",
+      "76e26f97e746da7c27497b3b3c2f02d4292d536899663267a4dbf830eb38c104",
     "NodeBootstrapSource.test_compiled_fops_choice_has_exact_ordinary_inverse_and_no_runtime_selector":
-      "dcd666312232cd1262bba1c68ba78f8c84b22e2c0ffd72c52bfc2901231e52cc",
+      "76e26f97e746da7c27497b3b3c2f02d4292d536899663267a4dbf830eb38c104",
     "NodeBootstrapSource.test_actual_initial_header_precharge_and_unqualified_release_cuts":
-      "dcd666312232cd1262bba1c68ba78f8c84b22e2c0ffd72c52bfc2901231e52cc",
+      "76e26f97e746da7c27497b3b3c2f02d4292d536899663267a4dbf830eb38c104",
     "NodeBootstrapSource.test_actual_rust_entry_moves_one_escrow_and_old_ack_never_refunds_node":
-      "dcd666312232cd1262bba1c68ba78f8c84b22e2c0ffd72c52bfc2901231e52cc"
+      "76e26f97e746da7c27497b3b3c2f02d4292d536899663267a4dbf830eb38c104"
   },
   "guardDefinitions":{
     "c7ec218c1a4c64f9f658d87396fd2d1fd811f75e241123670be68ec4ef5c74a2":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:6b688054dcd3d3b6ade0ccf3f21d9df32d10eefa911cd2dadff2ebf47ccd4136","class:setup-sha256:ea4f02310bd99a9f10ce61b028b0ccda043be60736d711534917041d35a3e956"]},
-    "dcd666312232cd1262bba1c68ba78f8c84b22e2c0ffd72c52bfc2901231e52cc":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:6b688054dcd3d3b6ade0ccf3f21d9df32d10eefa911cd2dadff2ebf47ccd4136","class:setup-sha256:328934682389a948e18550e892c4319753b74310f5f18be033d9ec70c6d702cc"]}
+    "76e26f97e746da7c27497b3b3c2f02d4292d536899663267a4dbf830eb38c104":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:6b688054dcd3d3b6ade0ccf3f21d9df32d10eefa911cd2dadff2ebf47ccd4136","class:setup-sha256:6c1075ebb0c6a3bbd698b1980cea2f33de95ffd830092ab498f72eff87d9c951"]}
   }
 }

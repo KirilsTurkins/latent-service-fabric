@@ -497,7 +497,6 @@ async fn start_real(
     .await
 }
 
-
 /// Additive, uninstalled node-bootstrap ABI. The old factory path above is
 /// unchanged. There is deliberately no production issuer for InstalledProfile:
 /// trusted exact running-image/source/configuration authentication is still

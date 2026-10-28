@@ -189,7 +189,7 @@ out:
     return error;
 }
 
-static ssize_t lsf_node_write(struct file *file, const char __user *buffer, size_t count)
+static ssize_t lsf_node_write(struct file *file, const char __user *buffer, size_t count, loff_t *position)
 {
     struct lsf_node_request request;
     struct lsf_node_parent *node;
@@ -250,7 +250,7 @@ out:
     return error;
 }
 
-static ssize_t lsf_node_read(struct file *file, char __user *buffer, size_t count)
+static ssize_t lsf_node_read(struct file *file, char __user *buffer, size_t count, loff_t *position)
 {
     struct lsf_node_reply reply;
     struct lsf_node_parent *node;

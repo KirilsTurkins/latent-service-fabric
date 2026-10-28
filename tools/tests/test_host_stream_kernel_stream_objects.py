@@ -1015,7 +1015,7 @@ class ZNodeBootstrapObjectOwner(unittest.TestCase):
         with self.assertRaises(ValueError):
             owner.mode_targets(node_bootstrap=1)
         self.assertEqual(len(owner.NODE_PINS), 2)
-        self.assertEqual(owner.NODE_PHYSICAL_BYTES, 1008470)
+        self.assertEqual(owner.NODE_PHYSICAL_BYTES, 1008506)
         self.assertEqual(owner.NODE_MODULE, 'research/standard-outbound/linux-6.12-lineage/node-bootstrap/projector.py')
         self.assertEqual(owner.public_allowed('objects/net/factory.o', node_bootstrap=True), owner.MAX_OBJECT)
         for wrong in ('objects/net/socket.o', 'objects/lib/xarray.o', 'layout.json', 'logs/00-msi-descriptor-objects.stdout.txt'):

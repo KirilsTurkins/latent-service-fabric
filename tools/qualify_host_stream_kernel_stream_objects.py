@@ -196,11 +196,11 @@ MSI_DESCRIPTOR_STAGES = tuple('msi-descriptor-objects' if s=='q35-msi-domain-obj
 NODE_BRANCH = 'test/sdk-738-node-bootstrap-custody-20261028'
 NODE_MODULE = 'research/standard-outbound/linux-6.12-lineage/node-bootstrap/projector.py'
 NODE_MATERIAL = 'research/standard-outbound/linux-6.12-lineage/node-bootstrap/factory-node-bootstrap.c'
-NODE_PINS = {'research/standard-outbound/linux-6.12-lineage/node-bootstrap/factory-node-bootstrap.c': (12610, '815b3f0eec0d6b54d0c2c93860e9deaeb3958ae0982a5eac6ccb9ea22797093b'), 'research/standard-outbound/linux-6.12-lineage/node-bootstrap/projector.py': (6098, 'ff23bd22fd6043e9b46df14f0105a3cc6af55e59a140bb6851faf5256118354b')}
-NODE_PHYSICAL_SHA = 'c8c23d3c5331feb6d4490a0761b252503dc11c4b0ce9d9fd7820790da3191530'
-NODE_PHYSICAL_BYTES = 1008470
-NODE_LOGICAL_SHA = 'cee400062a1d405f3c2d8a682b5e5b7ba27e91550a12ac03734a9d5b9b844fb7'
-NODE_DERIVED_SHA = '1fbda2781075a5465e15e9f844824e1535e03167f2de0d66e6042d59c4de0142'
+NODE_PINS = {'research/standard-outbound/linux-6.12-lineage/node-bootstrap/factory-node-bootstrap.c': (12646, '31b7cdcdc6e1b3167eb800703c2396c4c8e55ac4a40cac0e9b87480b63a76cb3'), 'research/standard-outbound/linux-6.12-lineage/node-bootstrap/projector.py': (6098, '87cacbf53b33d24e616fae4010fce80f7415a8a5a2cdb6490ee0b5eaa78959a7')}
+NODE_PHYSICAL_SHA = '955fd3398ace56dd3a46e70550ec30b7a89a8ec3960c37b59f120ae4bd321c52'
+NODE_PHYSICAL_BYTES = 1008506
+NODE_LOGICAL_SHA = '37170c3ad9cadab9f58c7bae9c1c768dfe7788831dd17116f072199ae9771c28'
+NODE_DERIVED_SHA = 'd7847246937f8b0385d19ab1de9b74550791f3551b2cc1b6b1c792b45c0fbcb6'
 NODE_TARGETS = ('net/factory.o',)
 NODE_STAGES = tuple('node-bootstrap-objects' if s=='msi-descriptor-objects' else s for s in MSI_DESCRIPTOR_STAGES)
 
