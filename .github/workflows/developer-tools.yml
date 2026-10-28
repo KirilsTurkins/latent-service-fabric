@@ -911,7 +911,7 @@ jobs:
           timeout --signal=TERM --kill-after=5 1195 \
             python -B tools/java_guest/compiler_profile_distribution.py recover-custody \
               --root "$root" \
-              --output target/java-compiler-custody
+              --output "$GITHUB_WORKSPACE/target/java-compiler-custody"
       - if: inputs.java_compiler_custody
         uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
