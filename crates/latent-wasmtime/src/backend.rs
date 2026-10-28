@@ -977,7 +977,23 @@ impl WasmtimeBackend {
                 false,
             ));
         }
-        Self::validate_bound_imports(&request.imports, &runtime.surface.imports)?;
+        if runtime
+            .surface
+            .imports
+            .iter()
+            .any(|name| runtime.surface.private_diagnostic_import(name))
+        {
+            Self::validate_bound_imports_iter(
+                &request.imports,
+                runtime
+                    .surface
+                    .imports
+                    .iter()
+                    .filter(|name| !runtime.surface.private_diagnostic_import(name)),
+            )?;
+        } else {
+            Self::validate_bound_imports(&request.imports, &runtime.surface.imports)?;
+        }
         self.validate_invocation_budget(&request.budget, &runtime.declared_budget)?;
         let function = runtime
             .surface
@@ -1125,11 +1141,18 @@ impl WasmtimeBackend {
         imports: &[latent_executor::BoundImport],
         required: &BTreeSet<String>,
     ) -> Result<(), PlatformError> {
+        Self::validate_bound_imports_iter(imports, required)
+    }
+
+    fn validate_bound_imports_iter<'a>(
+        imports: &[latent_executor::BoundImport],
+        required: impl IntoIterator<Item = &'a String> + Clone,
+    ) -> Result<(), PlatformError> {
         // Validated component surfaces admit at most the four known host
         // interfaces. Count each required contract exactly once without a
         // temporary allocated set, preserving arbitrary binding order.
-        if imports.len() != required.len()
-            || !required.iter().all(|name| {
+        if imports.len() != required.clone().into_iter().count()
+            || !required.into_iter().all(|name| {
                 imports
                     .iter()
                     .filter(|import| import.contract == *name)

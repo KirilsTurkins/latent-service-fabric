@@ -39,6 +39,19 @@ pub(crate) struct Surface {
 }
 
 impl Surface {
+    /// Only this digest/shape-validated builtin has no provider binding.
+    pub(crate) fn private_diagnostic_import(&self, name: &str) -> bool {
+        #[cfg(feature = "development-test-host")]
+        {
+            name == crate::development_trap_observer::MANAGED_STAGE_INTERFACE
+                && self.imports.contains(name)
+        }
+        #[cfg(not(feature = "development-test-host"))]
+        {
+            let _ = (self, name);
+            false
+        }
+    }
     pub(crate) fn inspection_exports(
         &self,
     ) -> Result<Vec<(latent_core::ContractId, latent_core::FunctionId)>, PlatformError> {

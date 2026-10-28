@@ -290,9 +290,10 @@ impl super::super::PreparationContext {
             .imports
             .iter()
             .filter(|import| {
-                !surface.phase_type_owner
+                (!surface.phase_type_owner
                     || import.contract.0
-                        != latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY
+                        != latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
+                    && !surface.private_diagnostic_import(&import.contract.0)
             })
             .map(|import| import.contract.clone())
             .collect();
