@@ -1,3 +1,8 @@
-{"kind":"owner","path":"tools/qualify_stream_outers.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reviewed #745 paid fused LiftResult temporary buffer: four private source controls, original Store payer, source-matched locked vendor lib only; closed new branch1320/1200/25m/j2/5s; all prior IP mode routes and required jobs preserved.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "e763e828076a568c0819307b01628eeee53cb05ba8dda1a1399525acf3e27508"
+{
+  "kind": "owner",
+  "path": "tools/qualify_stream_outers.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add only the closed Node custody mode: all23 Git/tool/build/library/list/test roots share the original deadline, four exact controls and two actual lib targets; prior modes and LeafR3 source remain exact.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "36a3e76cebbeabf537854e12ef38dd035677847c24039261958ee46bf91f3310"
 }

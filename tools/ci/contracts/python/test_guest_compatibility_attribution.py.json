@@ -1,25 +1,34 @@
-{"cases":["CompatibilityAttribution.test_actual_generated_transform_material_is_visible_without_changing_the_bound_context","CompatibilityAttribution.test_all_six_build_contexts_bind_exact_captured_package_version_and_both_identities","CompatibilityAttribution.test_dependency_omissions_preserve_existing_material_floor_and_explicit_count","CompatibilityAttribution.test_native_replacement_uses_selected_version_and_local_source_keeps_version_unknown","CompatibilityAttribution.test_partial_owner_graph_omits_unknown_attribution_without_becoming_a_build_gate","CompatibilityAttribution.test_private_metadata_and_invalid_labels_are_omitted_without_version_guessing","CompatibilityAttribution.test_selected_runtime_and_patch_present_original_result_and_transform_separately","CompatibilityAttribution.test_text_retains_bounded_package_source_symbol_and_location_without_raw_symbol_leak","CompatibilityAttribution.test_unchanged_source_inventory_cannot_borrow_a_different_dependency_graph","CompatibilityAttribution.test_untransformed_generated_tool_material_does_not_claim_an_original_or_transformation","CompatibilityAttribution.test_version_tokens_cannot_attach_to_an_unrelated_runtime_material"],"guards":{"CompatibilityAttribution.test_actual_generated_transform_material_is_visible_without_changing_the_bound_context":
-  "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
-,"CompatibilityAttribution.test_all_six_build_contexts_bind_exact_captured_package_version_and_both_identities":
-  "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
-,"CompatibilityAttribution.test_dependency_omissions_preserve_existing_material_floor_and_explicit_count":
-  "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
-,"CompatibilityAttribution.test_native_replacement_uses_selected_version_and_local_source_keeps_version_unknown":
-  "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
-,"CompatibilityAttribution.test_partial_owner_graph_omits_unknown_attribution_without_becoming_a_build_gate":
-  "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
-,"CompatibilityAttribution.test_private_metadata_and_invalid_labels_are_omitted_without_version_guessing":
-  "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
-,"CompatibilityAttribution.test_selected_runtime_and_patch_present_original_result_and_transform_separately":
-  "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
-,"CompatibilityAttribution.test_text_retains_bounded_package_source_symbol_and_location_without_raw_symbol_leak":
-  "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
-,"CompatibilityAttribution.test_unchanged_source_inventory_cannot_borrow_a_different_dependency_graph":
-  "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
-,"CompatibilityAttribution.test_untransformed_generated_tool_material_does_not_claim_an_original_or_transformation":
-  "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
-,"CompatibilityAttribution.test_version_tokens_cannot_attach_to_an_unrelated_runtime_material":
-  "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
-},"kind":"python","module":"tools/tests/test_guest_compatibility_attribution.py","reviewReason":"Preserve all nine original attribution cases and guards; add exact generated original/selected/transformation presentation and refusal to imply transforms from incomplete generated inputs.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ea35b4fd7b2c0a75b9201ab5fd00376daf729e09ab2c553663bd77a4400f1526","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "CompatibilityAttribution.test_actual_generated_transform_material_is_visible_without_changing_the_bound_context":
+      "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb",
+    "CompatibilityAttribution.test_all_six_build_contexts_bind_exact_captured_package_version_and_both_identities":
+      "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb",
+    "CompatibilityAttribution.test_dependency_omissions_preserve_existing_material_floor_and_explicit_count":
+      "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb",
+    "CompatibilityAttribution.test_native_replacement_uses_selected_version_and_local_source_keeps_version_unknown":
+      "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb",
+    "CompatibilityAttribution.test_partial_owner_graph_omits_unknown_attribution_without_becoming_a_build_gate":
+      "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb",
+    "CompatibilityAttribution.test_private_metadata_and_invalid_labels_are_omitted_without_version_guessing":
+      "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb",
+    "CompatibilityAttribution.test_selected_runtime_and_patch_present_original_result_and_transform_separately":
+      "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb",
+    "CompatibilityAttribution.test_text_retains_bounded_package_source_symbol_and_location_without_raw_symbol_leak":
+      "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb",
+    "CompatibilityAttribution.test_unchanged_source_inventory_cannot_borrow_a_different_dependency_graph":
+      "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb",
+    "CompatibilityAttribution.test_untransformed_generated_tool_material_does_not_claim_an_original_or_transformation":
+      "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb",
+    "CompatibilityAttribution.test_version_tokens_cannot_attach_to_an_unrelated_runtime_material":
+      "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_guest_compatibility_attribution.py",
+  "reviewReason":"Preserve all nine original attribution cases and guards; add exact generated original/selected/transformation presentation and refusal to imply transforms from incomplete generated inputs.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "8d73d384becc1c6108f4ac497faccb17c91a345f64afd2edb475fc38f99441bb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ea35b4fd7b2c0a75b9201ab5fd00376daf729e09ab2c553663bd77a4400f1526","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}
