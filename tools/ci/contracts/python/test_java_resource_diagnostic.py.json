@@ -1,9 +1,18 @@
-{"cases":["JavaResourceDiagnostic.test_closed_cases_preserve_same_original_public_ids_and_no_pending_claim","JavaResourceDiagnostic.test_exact_value_and_real_trap_remain_distinct_nonqualifying_observations","JavaResourceDiagnostic.test_unknown_foreign_unreaped_effectful_or_overbudget_results_refuse"],"guards":{"JavaResourceDiagnostic.test_closed_cases_preserve_same_original_public_ids_and_no_pending_claim":
-  "ad3a23a1c3fee3c573bd1df261a3749d1dc69b9c18143597864e38ca682e2e78"
-,"JavaResourceDiagnostic.test_exact_value_and_real_trap_remain_distinct_nonqualifying_observations":
-  "ad3a23a1c3fee3c573bd1df261a3749d1dc69b9c18143597864e38ca682e2e78"
-,"JavaResourceDiagnostic.test_unknown_foreign_unreaped_effectful_or_overbudget_results_refuse":
-  "ad3a23a1c3fee3c573bd1df261a3749d1dc69b9c18143597864e38ca682e2e78"
-},"kind":"python","module":"tools/tests/test_java_resource_diagnostic.py","reviewReason":"Explicit defaultfalse retained209 Java diagnostic after realparalleltrap; preserved originalnamed full13 replay and unchangednormal30/full13/grants/caps; newclosed3 observations neveracceptance","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "ad3a23a1c3fee3c573bd1df261a3749d1dc69b9c18143597864e38ca682e2e78"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e0f26b3c9dbaa9516980865e6ddf18ffdeb850485e5b5a1097ff56531348aeac","class:setup-sha256:e18359deeae352981765c19f7ecb2ce51eb8f06d719aa73a4de2c70828c1aa97"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "JavaResourceDiagnostic.test_closed_cases_preserve_same_original_public_ids_and_no_pending_claim":
+      "ad3a23a1c3fee3c573bd1df261a3749d1dc69b9c18143597864e38ca682e2e78",
+    "JavaResourceDiagnostic.test_exact_value_and_real_trap_remain_distinct_nonqualifying_observations":
+      "ad3a23a1c3fee3c573bd1df261a3749d1dc69b9c18143597864e38ca682e2e78",
+    "JavaResourceDiagnostic.test_unknown_foreign_unreaped_effectful_or_overbudget_results_refuse":
+      "ad3a23a1c3fee3c573bd1df261a3749d1dc69b9c18143597864e38ca682e2e78"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_java_resource_diagnostic.py",
+  "reviewReason":"Explicit defaultfalse retained209 Java diagnostic after realparalleltrap; preserved originalnamed full13 replay and unchangednormal30/full13/grants/caps; newclosed3 observations neveracceptance",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "ad3a23a1c3fee3c573bd1df261a3749d1dc69b9c18143597864e38ca682e2e78":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e0f26b3c9dbaa9516980865e6ddf18ffdeb850485e5b5a1097ff56531348aeac","class:setup-sha256:e18359deeae352981765c19f7ecb2ce51eb8f06d719aa73a4de2c70828c1aa97"],"skipSites":[]}
+  }
+}

@@ -1,11 +1,20 @@
-{"cases":["ManagedTimerObserver.test_empty_unbounded_and_marker_capacity_are_closed","ManagedTimerObserver.test_managed_profile_accepts_its_exact_counts_without_changing_original_go_reader","ManagedTimerObserver.test_real_wait_for_pending_label_is_explicit_and_old_reader_refuses_it","ManagedTimerObserver.test_unknown_malformed_duplicate_overflow_and_foreign_counts_refuse"],"guards":{"ManagedTimerObserver.test_empty_unbounded_and_marker_capacity_are_closed":
-  "165917a435a15e3bd740cd45ead505c5506286dbfc68df3afe0bf6ec0b26630c"
-,"ManagedTimerObserver.test_managed_profile_accepts_its_exact_counts_without_changing_original_go_reader":
-  "165917a435a15e3bd740cd45ead505c5506286dbfc68df3afe0bf6ec0b26630c"
-,"ManagedTimerObserver.test_real_wait_for_pending_label_is_explicit_and_old_reader_refuses_it":
-  "165917a435a15e3bd740cd45ead505c5506286dbfc68df3afe0bf6ec0b26630c"
-,"ManagedTimerObserver.test_unknown_malformed_duplicate_overflow_and_foreign_counts_refuse":
-  "165917a435a15e3bd740cd45ead505c5506286dbfc68df3afe0bf6ec0b26630c"
-},"kind":"python","module":"tools/tests/test_dotnet_resource_timer_observer.py","reviewReason":"Add explicit actual wait-for Pending label refusal by unchanged original timer reader; preserve old3 controls","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "165917a435a15e3bd740cd45ead505c5506286dbfc68df3afe0bf6ec0b26630c"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b4eba9f84b8e78958e200541502d15e245b9241c599b1f0cc221aedb38189315","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "ManagedTimerObserver.test_empty_unbounded_and_marker_capacity_are_closed":
+      "165917a435a15e3bd740cd45ead505c5506286dbfc68df3afe0bf6ec0b26630c",
+    "ManagedTimerObserver.test_managed_profile_accepts_its_exact_counts_without_changing_original_go_reader":
+      "165917a435a15e3bd740cd45ead505c5506286dbfc68df3afe0bf6ec0b26630c",
+    "ManagedTimerObserver.test_real_wait_for_pending_label_is_explicit_and_old_reader_refuses_it":
+      "165917a435a15e3bd740cd45ead505c5506286dbfc68df3afe0bf6ec0b26630c",
+    "ManagedTimerObserver.test_unknown_malformed_duplicate_overflow_and_foreign_counts_refuse":
+      "165917a435a15e3bd740cd45ead505c5506286dbfc68df3afe0bf6ec0b26630c"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_dotnet_resource_timer_observer.py",
+  "reviewReason":"Add explicit actual wait-for Pending label refusal by unchanged original timer reader; preserve old3 controls",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "165917a435a15e3bd740cd45ead505c5506286dbfc68df3afe0bf6ec0b26630c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b4eba9f84b8e78958e200541502d15e245b9241c599b1f0cc221aedb38189315","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

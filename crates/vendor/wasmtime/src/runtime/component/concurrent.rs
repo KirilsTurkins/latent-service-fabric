@@ -1027,7 +1027,7 @@ fn handle_guest_call(store: &mut dyn VMStore, call: GuestCall) -> Result<()> {
                     bail_bug!("guest task callback field not present")
                 };
 
-                let code = callback(store, event, handle)?;
+                let code = callback.call(store, event, handle)?;
 
                 store
                     .concurrent_state_mut()?
@@ -3237,6 +3237,7 @@ impl Instance {
         let token = StoreToken::new(store.as_context_mut());
         let async_caller = storage.is_none();
         let guest_thread = store.0.current_guest_thread()?;
+        let callback_memory = store.0.native_memory();
         let state = store.0.concurrent_state_mut()?;
         let callee_async = state.get_mut(guest_thread.task)?.async_function;
         let callee = SendSyncPtr::new(callee);
@@ -3251,10 +3252,13 @@ impl Instance {
             // the callback and related context as part of the task so we can
             // call it later when needed.
             let callback = SendSyncPtr::new(callback);
-            task.callback = Some(Box::new(move |store, event, handle| {
-                let store = token.as_context_mut(store);
-                unsafe { self.call_callback::<T>(store, callback, event, handle) }
-            }));
+            task.callback = Some(CallbackFn::new(
+                move |store: &mut dyn VMStore, event, handle| {
+                    let store = token.as_context_mut(store);
+                    unsafe { self.call_callback::<T>(store, callback, event, handle) }
+                },
+                &callback_memory,
+            )?);
         }
 
         let Caller::Guest { thread: caller } = &task.caller else {
@@ -4920,7 +4924,13 @@ impl TableDebug for HostTask {
     }
 }
 
-type CallbackFn = Box<dyn Fn(&mut dyn VMStore, Event, u32) -> Result<u32> + Send + Sync + 'static>;
+type CallbackFn = ErasedClosure<CallbackVtable>;
+const _: () = {
+    assert!(core::mem::size_of::<CallbackFn>() == 2 * core::mem::size_of::<usize>());
+    assert!(core::mem::align_of::<CallbackFn>() == core::mem::align_of::<usize>());
+    assert!(core::mem::size_of::<Option<CallbackFn>>() == 2 * core::mem::size_of::<usize>());
+    assert!(core::mem::align_of::<Option<CallbackFn>>() == core::mem::align_of::<usize>());
+};
 
 /// Represents the caller of a given guest task.
 enum Caller {
@@ -5613,6 +5623,16 @@ trait ClosureVtable: Sync {
     fn dropper(&self) -> unsafe fn(NonNull<()>);
 }
 
+struct CallbackVtable {
+    call: unsafe fn(NonNull<()>, &mut dyn VMStore, Event, u32) -> Result<u32>,
+    drop: unsafe fn(NonNull<()>),
+}
+impl ClosureVtable for CallbackVtable {
+    fn dropper(&self) -> unsafe fn(NonNull<()>) {
+        self.drop
+    }
+}
+
 struct LowerVtable {
     call: unsafe fn(NonNull<()>, &mut dyn VMStore, &mut [MaybeUninit<ValRaw>]) -> Result<()>,
     drop: unsafe fn(NonNull<()>),
@@ -5681,6 +5701,70 @@ unsafe fn drop_accounted_closure<F>(value: NonNull<()>) {
     // finishes before this outer owner is destroyed. No retained/leaked ticket.
     drop(value);
     drop(allocation);
+}
+
+struct CallbackTable<F>(PhantomData<fn() -> F>);
+impl<F> CallbackTable<F>
+where
+    F: Fn(&mut dyn VMStore, Event, u32) -> Result<u32> + Send + Sync + 'static,
+{
+    const LEGACY: CallbackVtable = CallbackVtable {
+        call: Self::legacy,
+        drop: drop_legacy_closure::<F>,
+    };
+    const ACCOUNTED: CallbackVtable = CallbackVtable {
+        call: Self::accounted,
+        drop: drop_accounted_closure::<F>,
+    };
+    unsafe fn legacy(
+        value: NonNull<()>,
+        store: &mut dyn VMStore,
+        event: Event,
+        handle: u32,
+    ) -> Result<u32> {
+        // SAFETY: matching original Box<F>, borrowed until carrier Drop.
+        (unsafe { value.cast::<F>().as_ref() })(store, event, handle)
+    }
+    unsafe fn accounted(
+        value: NonNull<()>,
+        store: &mut dyn VMStore,
+        event: Event,
+        handle: u32,
+    ) -> Result<u32> {
+        // SAFETY: matching paid Header, never consumed by a repeated call.
+        (unsafe { &value.cast::<ClosureHeader<F>>().as_ref().value })(store, event, handle)
+    }
+}
+impl CallbackFn {
+    fn new<F>(value: F, memory: &crate::runtime::native_memory::Memory) -> Result<Self>
+    where
+        F: Fn(&mut dyn VMStore, Event, u32) -> Result<u32> + Send + Sync + 'static,
+    {
+        let (value, mut allocation) = allocate_closure(value, memory)?;
+        let result = Self {
+            value: Some(value),
+            vtable: if allocation.is_some() {
+                &CallbackTable::<F>::ACCOUNTED
+            } else {
+                &CallbackTable::<F>::LEGACY
+            },
+        };
+        if let Some(owner) = allocation.as_mut() {
+            // Unpublished result drops its Box/F before the outer ticket if confirmation unwinds.
+            owner.allocated();
+            // SAFETY: sole typed Header pointer, no publication or live alias.
+            unsafe {
+                (*value.as_non_null().cast::<ClosureHeader<F>>().as_ptr()).allocation =
+                    allocation.take()
+            };
+        }
+        Ok(result)
+    }
+    fn call(&self, store: &mut dyn VMStore, event: Event, handle: u32) -> Result<u32> {
+        let value = self.value.as_ref().expect("live callback closure");
+        // SAFETY: constructor fixed the pointer/vtable; shared borrow retains backing through return.
+        unsafe { (self.vtable.call)(value.as_non_null(), store, event, handle) }
+    }
 }
 
 /// Type-erased closure to lower the parameters for a guest task.
@@ -6560,16 +6644,21 @@ pub(crate) fn prepare_call<T, R>(
             host_future_present,
             caller,
         },
-        callback.map(|callback| {
-            let callback = SendSyncPtr::new(callback);
-            let instance = handle.instance();
-            Box::new(move |store: &mut dyn VMStore, event, handle| {
-                let store = token.as_context_mut(store);
-                // SAFETY: Per the contract of `prepare_call`, the callback
-                // will remain valid at least as long is this task exists.
-                unsafe { instance.call_callback(store, callback, event, handle) }
-            }) as CallbackFn
-        }),
+        callback
+            .map(|callback| {
+                let callback = SendSyncPtr::new(callback);
+                let instance = handle.instance();
+                CallbackFn::new(
+                    move |store: &mut dyn VMStore, event, handle| {
+                        let store = token.as_context_mut(store);
+                        // SAFETY: Per the contract of `prepare_call`, the callback
+                        // will remain valid at least as long is this task exists.
+                        unsafe { instance.call_callback(store, callback, event, handle) }
+                    },
+                    &native_memory,
+                )
+            })
+            .transpose()?,
         instance,
         async_function,
     )?;
@@ -6686,7 +6775,10 @@ fn queue_call0<T: 'static>(
 
 #[cfg(test)]
 mod call_parameter_closure_memory_tests {
-    use super::{CallParameters, ClosureHeader, DummyResult, RawLift, RawLower, call_parameters};
+    use super::{
+        CallParameters, CallbackFn, ClosureHeader, DummyResult, Event, RawLift, RawLower,
+        call_parameters,
+    };
     use crate::{AsContextMut, Engine, NativeAllocation, NativeMemory, Store, ValRaw};
     use alloc::{boxed::Box, sync::Arc, vec::Vec};
     use core::alloc::Layout;
@@ -6998,6 +7090,220 @@ mod call_parameter_closure_memory_tests {
         assert_eq!(state.active.load(Ordering::SeqCst), baseline);
         state.confirmation_panic.store(false, Ordering::SeqCst);
         assert_eq!(state.capture_drops.load(Ordering::SeqCst), 4);
+        drop(original_memory);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn callbacks_reserve_exact_original_store_layout_and_keep_legacy_shapes() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let confirmed = state.confirmations.load(Ordering::SeqCst);
+        type Legacy = Box<
+            dyn Fn(&mut dyn crate::vm::VMStore, Event, u32) -> crate::Result<u32> + Send + Sync,
+        >;
+        assert_eq!(size_of::<CallbackFn>(), size_of::<Legacy>());
+        assert_eq!(
+            core::mem::align_of::<CallbackFn>(),
+            core::mem::align_of::<Legacy>()
+        );
+        assert_eq!(size_of::<Option<CallbackFn>>(), size_of::<Option<Legacy>>());
+        assert_eq!(
+            core::mem::align_of::<Option<CallbackFn>>(),
+            core::mem::align_of::<Option<Legacy>>()
+        );
+        let input = capture(&state, baseline, false, false);
+        let callback = move |_: &mut dyn crate::vm::VMStore, _: Event, handle: u32| {
+            let _keep = &input;
+            Ok(handle)
+        };
+        let layout = header_size(&callback);
+        state.deny.store(true, Ordering::SeqCst);
+        let error = match CallbackFn::new(callback, &memory(&mut store)) {
+            Err(error) => error,
+            Ok(_) => panic!("callback admission was bypassed"),
+        };
+        assert!(error.downcast_ref::<Denied>().is_some());
+        assert_eq!(state.requests.lock().unwrap().last().copied(), Some(layout));
+        assert_eq!(state.confirmations.load(Ordering::SeqCst), confirmed);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 1);
+        let requests = state.requests.lock().unwrap().len();
+        let zst = |_: &mut dyn crate::vm::VMStore, _: Event, handle: u32| Ok(handle);
+        assert_eq!(core::mem::size_of_val(&zst), 0);
+        let zst = CallbackFn::new(zst, &memory(&mut store)).unwrap();
+        assert_eq!(
+            zst.call(store.as_context_mut().0, Event::None, 42).unwrap(),
+            42
+        );
+        drop(zst);
+        let input = capture(&state, baseline, false, false);
+        let legacy = move |_: &mut dyn crate::vm::VMStore, _: Event, handle: u32| {
+            let _keep = &input;
+            Ok(handle)
+        };
+        assert!(core::mem::size_of_val(&legacy) > 0);
+        let legacy = CallbackFn::new(legacy, &None).unwrap();
+        assert_eq!(
+            legacy
+                .call(store.as_context_mut().0, Event::None, 42)
+                .unwrap(),
+            42
+        );
+        drop(legacy);
+        assert_eq!(state.requests.lock().unwrap().len(), requests);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 2);
+        state.deny.store(false, Ordering::SeqCst);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn callbacks_borrow_repeatedly_and_keep_original_owner_after_error() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let retired = state.retirements.load(Ordering::SeqCst);
+        let input = capture(&state, baseline, true, false);
+        let calls = Arc::new(AtomicUsize::new(0));
+        let observed = calls.clone();
+        let callback = CallbackFn::new(
+            move |_: &mut dyn crate::vm::VMStore, event: Event, handle: u32| {
+                let _keep = &input;
+                observed.fetch_add(1, Ordering::SeqCst);
+                if handle == 99 {
+                    return Err(crate::Error::new(Denied));
+                }
+                Ok(event.parts().0 + handle)
+            },
+            &memory(&mut store),
+        )
+        .unwrap();
+        assert_eq!(
+            callback
+                .call(store.as_context_mut().0, Event::None, 40)
+                .unwrap(),
+            40
+        );
+        assert_eq!(
+            callback
+                .call(store.as_context_mut().0, Event::Cancelled, 36)
+                .unwrap(),
+            42
+        );
+        let error = callback
+            .call(store.as_context_mut().0, Event::None, 99)
+            .unwrap_err();
+        assert!(error.downcast_ref::<Denied>().is_some());
+        assert_eq!(
+            callback
+                .call(store.as_context_mut().0, Event::None, 42)
+                .unwrap(),
+            42
+        );
+        assert_eq!(calls.load(Ordering::SeqCst), 4);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 0);
+        drop(callback);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.retirements.load(Ordering::SeqCst), retired + 1);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 1);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn cancelled_callbacks_can_outlive_their_store_without_rebinding_payer() {
+        let (mut store, state) = original_store();
+        let original_memory = memory(&mut store);
+        let input = capture(&state, 0, true, false);
+        let cancelled = CallbackFn::new(
+            move |_: &mut dyn crate::vm::VMStore, _: Event, _: u32| -> crate::Result<u32> {
+                let _keep = &input;
+                panic!("cancelled callback must not run")
+            },
+            &original_memory,
+        )
+        .unwrap();
+        let baseline = state.active.load(Ordering::SeqCst) - 1;
+        drop(cancelled);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        let input = capture(&state, 0, true, false);
+        let orphan = CallbackFn::new(
+            move |_: &mut dyn crate::vm::VMStore, _: Event, _: u32| -> crate::Result<u32> {
+                let _keep = &input;
+                panic!("orphan callback must not run")
+            },
+            &original_memory,
+        )
+        .unwrap();
+        let (other_store, other) = original_store();
+        drop(original_memory);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 1);
+        drop(other_store);
+        assert_eq!(other.active.load(Ordering::SeqCst), 0);
+        assert_eq!(state.active.load(Ordering::SeqCst), 1);
+        drop(orphan);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 2);
+    }
+
+    #[test]
+    fn callback_confirmation_and_destructor_panics_preserve_physical_retirement() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let retired = state.retirements.load(Ordering::SeqCst);
+        let original_memory = memory(&mut store);
+        let input = capture(&state, baseline, true, false);
+        let callback = CallbackFn::new(
+            move |_: &mut dyn crate::vm::VMStore, _: Event, _: u32| -> crate::Result<u32> {
+                let _keep = &input;
+                panic!("callback-unwind-control")
+            },
+            &original_memory,
+        )
+        .unwrap();
+        let called = catch_unwind(AssertUnwindSafe(|| {
+            callback.call(store.as_context_mut().0, Event::None, 0)
+        }));
+        assert!(called.is_err());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 0);
+        drop(callback);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        state.confirmation_panic.store(true, Ordering::SeqCst);
+        let confirmation = catch_unwind(AssertUnwindSafe(|| {
+            let input = capture(&state, baseline, true, false);
+            let _callback = CallbackFn::new(
+                move |_: &mut dyn crate::vm::VMStore, _: Event, handle: u32| {
+                    let _keep = &input;
+                    Ok(handle)
+                },
+                &original_memory,
+            )
+            .unwrap();
+        }));
+        assert!(confirmation.is_err());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        state.confirmation_panic.store(false, Ordering::SeqCst);
+        let destructor = catch_unwind(AssertUnwindSafe(|| {
+            let input = capture(&state, baseline, true, true);
+            let callback = CallbackFn::new(
+                move |_: &mut dyn crate::vm::VMStore, _: Event, handle: u32| {
+                    let _keep = &input;
+                    Ok(handle)
+                },
+                &original_memory,
+            )
+            .unwrap();
+            drop(callback);
+        }));
+        assert!(destructor.is_err());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.retirements.load(Ordering::SeqCst), retired + 3);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 3);
         drop(original_memory);
         drop(store);
         assert_eq!(state.active.load(Ordering::SeqCst), 0);

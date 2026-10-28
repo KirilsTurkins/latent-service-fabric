@@ -1,9 +1,18 @@
-{"cases":["JavaTeavmFailureTrace.test_default_command_is_exact_and_public_fixture_adds_only_stacktrace","JavaTeavmFailureTrace.test_original_failure_is_preserved_without_another_compile_attempt","JavaTeavmFailureTrace.test_unknown_or_mutable_selection_refuses_before_any_command"],"guards":{"JavaTeavmFailureTrace.test_default_command_is_exact_and_public_fixture_adds_only_stacktrace":
-  "f23bbde34b22409d1051fa61b6f0694e8e23c68ca3a75adba672a6e96c42e375"
-,"JavaTeavmFailureTrace.test_original_failure_is_preserved_without_another_compile_attempt":
-  "f23bbde34b22409d1051fa61b6f0694e8e23c68ca3a75adba672a6e96c42e375"
-,"JavaTeavmFailureTrace.test_unknown_or_mutable_selection_refuses_before_any_command":
-  "f23bbde34b22409d1051fa61b6f0694e8e23c68ca3a75adba672a6e96c42e375"
-},"kind":"python","module":"tools/tests/test_java_teavm_failure_trace.py","reviewReason":"Add bounded stacktrace only to the existing explicit public fixture diagnostic selection; preserve default compiler argument vectors, original failure/single attempt, all log/process limits, and every prior owning workflow command/guard.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "f23bbde34b22409d1051fa61b6f0694e8e23c68ca3a75adba672a6e96c42e375"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ffb385be17a843f9c8c6d06459ed2e1c05201294fe81e1f0c396ced5d11bd589","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "JavaTeavmFailureTrace.test_default_command_is_exact_and_public_fixture_adds_only_stacktrace":
+      "f23bbde34b22409d1051fa61b6f0694e8e23c68ca3a75adba672a6e96c42e375",
+    "JavaTeavmFailureTrace.test_original_failure_is_preserved_without_another_compile_attempt":
+      "f23bbde34b22409d1051fa61b6f0694e8e23c68ca3a75adba672a6e96c42e375",
+    "JavaTeavmFailureTrace.test_unknown_or_mutable_selection_refuses_before_any_command":
+      "f23bbde34b22409d1051fa61b6f0694e8e23c68ca3a75adba672a6e96c42e375"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_java_teavm_failure_trace.py",
+  "reviewReason":"Add bounded stacktrace only to the existing explicit public fixture diagnostic selection; preserve default compiler argument vectors, original failure/single attempt, all log/process limits, and every prior owning workflow command/guard.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "f23bbde34b22409d1051fa61b6f0694e8e23c68ca3a75adba672a6e96c42e375":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ffb385be17a843f9c8c6d06459ed2e1c05201294fe81e1f0c396ced5d11bd589","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

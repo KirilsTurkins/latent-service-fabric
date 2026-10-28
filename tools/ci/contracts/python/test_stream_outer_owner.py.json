@@ -5,7 +5,8 @@
     "TaskNodeBootstrapOwner.test_four_exact_results_and_all_source_tool_process_roots_are_closed",
     "TaskStoreCallMemoryOwner.test_four_exact_results_and_all21_roots_reject_skips_duplicates_and_other_cases",
     "TaskTableMemoryOwner.test_exact_resource_cases_share21_roots_and_reject_other_profiles",
-    "TaskWireCallResultOwner.test_four_channel_results_keep21_roots_and_exclude_other_profiles"
+    "TaskWireCallResultOwner.test_four_channel_results_keep21_roots_and_exclude_other_profiles",
+    "TaskZBorrowedCallbackOwner.test_four_callback_results_reject_skips_duplicates_and_other_profiles"
   ],
   "guards": {
     "StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows": {
@@ -79,10 +80,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "TaskZBorrowedCallbackOwner.test_four_callback_results_reject_skips_duplicates_and_other_profiles": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_stream_outer_owner.py",
-  "reviewReason": "Add only the closed call-result channel profile to the existing21-root vendor owner: four exact original-Store typed-header/refusal/wake/cancel/confirmation and honest payload-unwind retention controls, with the same1320 seconds/j2/five-second cleanup/42 raw channels. Prior call-parameter and resource-table profile routes and bodies retain declared literal inverses; no old native programme replay. Existing paidArc intentionally retains the same header charge after payload destructor unwind; no final-free/quarantine-completion/full ActivationBudget/RSS claim. One pure cross-profile reader case appends after all prior cases.",
+  "reviewReason": "Append only the closed borrowed-callback profile to the same21-root vendor owner: four exact original-Store Header<F> refusal/repeated-error/cancel/confirmation-body-destructor-unwind controls. Actual dispatcher takes an owned carrier before a borrowed call and reinserts only after success; no extra outer Box or ledger. All previous profiles preserve declared literal inverses, case names and budgets; no old native programme replay. One new pure cross-profile parser control appends after prior cases. Full capture graph/ActivationBudget/RSS and whole736/745 remain unqualified.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

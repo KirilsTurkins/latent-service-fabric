@@ -1,9 +1,18 @@
-{"cases":["KernelRootPhysicalObservation.test_exact_unique_kernel_marker_preserves_the_raw_observation_identity","KernelRootPhysicalObservation.test_missing_duplicate_forged_prefix_early_late_and_bad_child_observations_refuse","KernelRootPhysicalObservation.test_only_original_kernel_return_emits_marker_and_pid1_cannot_self_certify"],"guards":{"KernelRootPhysicalObservation.test_exact_unique_kernel_marker_preserves_the_raw_observation_identity":
-  "6b56299af04cf779573d0716a6ca98f4421271f23941b3405c0e1ba295990191"
-,"KernelRootPhysicalObservation.test_missing_duplicate_forged_prefix_early_late_and_bad_child_observations_refuse":
-  "6b56299af04cf779573d0716a6ca98f4421271f23941b3405c0e1ba295990191"
-,"KernelRootPhysicalObservation.test_only_original_kernel_return_emits_marker_and_pid1_cannot_self_certify":
-  "6b56299af04cf779573d0716a6ca98f4421271f23941b3405c0e1ba295990191"
-},"kind":"python","module":"tools/tests/test_kernel_root_final_free_vm.py","reviewReason":"Require one exact post-physical-return kernel marker after the retained child snapshot, preserving raw identity and finite timestamp bounds; refuse missing/early/duplicate proof.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "6b56299af04cf779573d0716a6ca98f4421271f23941b3405c0e1ba295990191"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9cba5e1bb2d025acb74de7b761d4721c1b3bf7aeeb0fd2c2a422b565d648bfa2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "KernelRootPhysicalObservation.test_exact_unique_kernel_marker_preserves_the_raw_observation_identity":
+      "6b56299af04cf779573d0716a6ca98f4421271f23941b3405c0e1ba295990191",
+    "KernelRootPhysicalObservation.test_missing_duplicate_forged_prefix_early_late_and_bad_child_observations_refuse":
+      "6b56299af04cf779573d0716a6ca98f4421271f23941b3405c0e1ba295990191",
+    "KernelRootPhysicalObservation.test_only_original_kernel_return_emits_marker_and_pid1_cannot_self_certify":
+      "6b56299af04cf779573d0716a6ca98f4421271f23941b3405c0e1ba295990191"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_kernel_root_final_free_vm.py",
+  "reviewReason":"Require one exact post-physical-return kernel marker after the retained child snapshot, preserving raw identity and finite timestamp bounds; refuse missing/early/duplicate proof.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "6b56299af04cf779573d0716a6ca98f4421271f23941b3405c0e1ba295990191":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9cba5e1bb2d025acb74de7b761d4721c1b3bf7aeeb0fd2c2a422b565d648bfa2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

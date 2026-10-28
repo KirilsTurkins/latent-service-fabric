@@ -1,5 +1,5 @@
 {
-  "cases":["NodeIsolatedAotSchema.test_every_numeric_ceiling","NodeIsolatedAotSchema.test_exact_digest_and_paths","NodeIsolatedAotSchema.test_published_operator_example_matches_closed_member","NodeIsolatedAotSchema.test_schema_and_closed_minimum","NodeIsolatedAotSchema.test_unknown_null_and_secret_fields"],
+  "storageCases":"guard-keys",
   "guards":{
     "NodeIsolatedAotSchema.test_every_numeric_ceiling":
       "5ad7f357ce2e0d7409365d25f1641499099dc128c8e87cdcf1d2bcd277cbbe0c",
