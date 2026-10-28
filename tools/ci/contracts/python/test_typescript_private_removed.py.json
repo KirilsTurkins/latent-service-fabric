@@ -1,32 +1,32 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "PrivateRemovedInputs.test_archive_preflight_rejects_duplicate_wrong_size_and_symlink":
+"storageCases":"guard-keys",
+"guards":{
+"PrivateRemovedInputs.test_archive_preflight_rejects_duplicate_wrong_size_and_symlink":
       "fd8c0fcda4503db4d604d064f9f4186f5697787d66f8d6e4eb04236bb74cdb88",
-    "PrivateRemovedInputs.test_fixed_members_keep_cancelled_guest_and_separate_host_origins":
+"PrivateRemovedInputs.test_fixed_members_keep_cancelled_guest_and_separate_host_origins":
       "fd8c0fcda4503db4d604d064f9f4186f5697787d66f8d6e4eb04236bb74cdb88",
-    "PrivateRemovedInputs.test_forbidden_and_unclassified_service_unavailable_never_retry":
+"PrivateRemovedInputs.test_forbidden_and_unclassified_service_unavailable_never_retry":
       "fd8c0fcda4503db4d604d064f9f4186f5697787d66f8d6e4eb04236bb74cdb88",
-    "PrivateRemovedInputs.test_historical_nodes_require_original_host_and_clean_physical_retirement":
+"PrivateRemovedInputs.test_historical_nodes_require_original_host_and_clean_physical_retirement":
       "fd8c0fcda4503db4d604d064f9f4186f5697787d66f8d6e4eb04236bb74cdb88",
-    "PrivateRemovedInputs.test_origin_requires_original_cancelled_job_not_manufactured_success":
+"PrivateRemovedInputs.test_origin_requires_original_cancelled_job_not_manufactured_success":
       "fd8c0fcda4503db4d604d064f9f4186f5697787d66f8d6e4eb04236bb74cdb88",
-    "PrivateRemovedInputs.test_original_static_layer_recovery_preserves_package_hash":
+"PrivateRemovedInputs.test_original_static_layer_recovery_preserves_package_hash":
       "fd8c0fcda4503db4d604d064f9f4186f5697787d66f8d6e4eb04236bb74cdb88",
-    "PrivateRemovedInputs.test_remaining_outcome_requires_removed_nonce_cases_and_real_shutdown":
+"PrivateRemovedInputs.test_remaining_outcome_requires_removed_nonce_cases_and_real_shutdown":
       "fd8c0fcda4503db4d604d064f9f4186f5697787d66f8d6e4eb04236bb74cdb88",
-    "PrivateRemovedInputs.test_server_busy_retries_same_range_with_failed_attempts_still_charged":
+"PrivateRemovedInputs.test_server_busy_retries_same_range_with_failed_attempts_still_charged":
       "fd8c0fcda4503db4d604d064f9f4186f5697787d66f8d6e4eb04236bb74cdb88",
-    "PrivateRemovedInputs.test_server_busy_retry_refuses_before_caps_or_original_deadline":
+"PrivateRemovedInputs.test_server_busy_retry_refuses_before_caps_or_original_deadline":
       "fd8c0fcda4503db4d604d064f9f4186f5697787d66f8d6e4eb04236bb74cdb88",
-    "PrivateRemovedInputs.test_transfer_limits_refuse_before_request_and_preserve_last_allowed_read":
+"PrivateRemovedInputs.test_transfer_limits_refuse_before_request_and_preserve_last_allowed_read":
       "fd8c0fcda4503db4d604d064f9f4186f5697787d66f8d6e4eb04236bb74cdb88"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_typescript_private_removed.py",
-  "reviewReason":"Continue only the unfinished private npm removal with original completed a8 guest packages and a separately authenticated 193-control native host. Preserve original cancelled producer and three prior runtime origins; no compiler/SDK rebuild or retest, no fabricated normal qualification. Ten additive provenance/archive/static-layer/retirement controls; exact fixed member hashes and conservative production scope.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "fd8c0fcda4503db4d604d064f9f4186f5697787d66f8d6e4eb04236bb74cdb88":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ff293e08acc83f7e6585277e362946647fc759f5f3274ec9751b0c51d22fcd2a","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_private_removed.py",
+"reviewReason":"Continue only the unfinished private npm removal with original completed a8 guest packages and a separately authenticated 193-control native host. Preserve original cancelled producer and three prior runtime origins; no compiler/SDK rebuild or retest, no fabricated normal qualification. Ten additive provenance/archive/static-layer/retirement controls; exact fixed member hashes and conservative production scope.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"fd8c0fcda4503db4d604d064f9f4186f5697787d66f8d6e4eb04236bb74cdb88":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ff293e08acc83f7e6585277e362946647fc759f5f3274ec9751b0c51d22fcd2a","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }

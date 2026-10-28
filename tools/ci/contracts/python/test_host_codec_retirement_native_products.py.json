@@ -1,11 +1,20 @@
-{"cases":["HostCodecRetirementNativeProducts.test_complete177_model_keeps_tail_command_stream_time_and_schema_guards","HostCodecRetirementNativeProducts.test_full_frozen_producer_digest_refuses_any_case_recipe_or_stage_rewrite","HostCodecRetirementNativeProducts.test_literal77_is_the_only_extension_and_preserves_all_historical_defaults","HostCodecRetirementNativeProducts.test_official_origin_keeps_exact_source_run_job_branch_event_and_artifact_pins"],"guards":{"HostCodecRetirementNativeProducts.test_complete177_model_keeps_tail_command_stream_time_and_schema_guards":
-  "7c6ea43d77eee903bdd87e16839d35e87f795a780b653a0a76786708151403a0"
-,"HostCodecRetirementNativeProducts.test_full_frozen_producer_digest_refuses_any_case_recipe_or_stage_rewrite":
-  "7c6ea43d77eee903bdd87e16839d35e87f795a780b653a0a76786708151403a0"
-,"HostCodecRetirementNativeProducts.test_literal77_is_the_only_extension_and_preserves_all_historical_defaults":
-  "7c6ea43d77eee903bdd87e16839d35e87f795a780b653a0a76786708151403a0"
-,"HostCodecRetirementNativeProducts.test_official_origin_keeps_exact_source_run_job_branch_event_and_artifact_pins":
-  "7c6ea43d77eee903bdd87e16839d35e87f795a780b653a0a76786708151403a0"
-},"kind":"python","module":"tools/tests/test_host_codec_retirement_native_products.py","reviewReason":"Consume actual verified native177 products while retaining all original C36 cases, bounds, historical readers and fixed-source controls.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "7c6ea43d77eee903bdd87e16839d35e87f795a780b653a0a76786708151403a0"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:368d0d46c732c5d65b3746ad4f19acf4b7792028c1fdebe830c0bd7b99840914","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "HostCodecRetirementNativeProducts.test_complete177_model_keeps_tail_command_stream_time_and_schema_guards":
+      "7c6ea43d77eee903bdd87e16839d35e87f795a780b653a0a76786708151403a0",
+    "HostCodecRetirementNativeProducts.test_full_frozen_producer_digest_refuses_any_case_recipe_or_stage_rewrite":
+      "7c6ea43d77eee903bdd87e16839d35e87f795a780b653a0a76786708151403a0",
+    "HostCodecRetirementNativeProducts.test_literal77_is_the_only_extension_and_preserves_all_historical_defaults":
+      "7c6ea43d77eee903bdd87e16839d35e87f795a780b653a0a76786708151403a0",
+    "HostCodecRetirementNativeProducts.test_official_origin_keeps_exact_source_run_job_branch_event_and_artifact_pins":
+      "7c6ea43d77eee903bdd87e16839d35e87f795a780b653a0a76786708151403a0"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_host_codec_retirement_native_products.py",
+  "reviewReason":"Consume actual verified native177 products while retaining all original C36 cases, bounds, historical readers and fixed-source controls.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "7c6ea43d77eee903bdd87e16839d35e87f795a780b653a0a76786708151403a0":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:368d0d46c732c5d65b3746ad4f19acf4b7792028c1fdebe830c0bd7b99840914","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

@@ -1,22 +1,22 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "PublishedCommonJsBufferControls.test_executor_preserves_eight_case_default_and_refuses_unknown_programmes_before_io":
+"storageCases":"guard-keys",
+"guards":{
+"PublishedCommonJsBufferControls.test_executor_preserves_eight_case_default_and_refuses_unknown_programmes_before_io":
       "870f3ec9b5d9813ceb6ece8e6a45be8f84bf959ae5673b10c6c87d25d5901df1",
-    "PublishedCommonJsBufferControls.test_normal_build_failure_cannot_reach_signing_or_invocation":
+"PublishedCommonJsBufferControls.test_normal_build_failure_cannot_reach_signing_or_invocation":
       "870f3ec9b5d9813ceb6ece8e6a45be8f84bf959ae5673b10c6c87d25d5901df1",
-    "PublishedCommonJsBufferControls.test_normal_project_captures_unchanged_lock_and_keeps_original_limits":
+"PublishedCommonJsBufferControls.test_normal_project_captures_unchanged_lock_and_keeps_original_limits":
       "870f3ec9b5d9813ceb6ece8e6a45be8f84bf959ae5673b10c6c87d25d5901df1",
-    "PublishedCommonJsBufferControls.test_real_normal_capture_projection_binds_versions_integrity_edges_and_profile":
+"PublishedCommonJsBufferControls.test_real_normal_capture_projection_binds_versions_integrity_edges_and_profile":
       "870f3ec9b5d9813ceb6ece8e6a45be8f84bf959ae5673b10c6c87d25d5901df1",
-    "PublishedCommonJsBufferControls.test_retained_build_documents_reject_changed_closure_source_and_bundle_inputs":
+"PublishedCommonJsBufferControls.test_retained_build_documents_reject_changed_closure_source_and_bundle_inputs":
       "870f3ec9b5d9813ceb6ece8e6a45be8f84bf959ae5673b10c6c87d25d5901df1"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_typescript_buffer_commonjs.py",
-  "reviewReason":"Preserve closed executor defaults and verify real captured published graph, build material bindings and failure-before-signing",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "870f3ec9b5d9813ceb6ece8e6a45be8f84bf959ae5673b10c6c87d25d5901df1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f76f30ba8729a9d7d4ffef3bd88c9e0fa351003275f0337ea9835f67982f447f","class:setup-sha256:526e86ff63c954940f440a2b77ca493941b4d5be00e2fa0a9a3ec7b6b8276f92"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_buffer_commonjs.py",
+"reviewReason":"Preserve closed executor defaults and verify real captured published graph, build material bindings and failure-before-signing",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"870f3ec9b5d9813ceb6ece8e6a45be8f84bf959ae5673b10c6c87d25d5901df1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f76f30ba8729a9d7d4ffef3bd88c9e0fa351003275f0337ea9835f67982f447f","class:setup-sha256:526e86ff63c954940f440a2b77ca493941b4d5be00e2fa0a9a3ec7b6b8276f92"],"skipSites":[]}
+}
 }

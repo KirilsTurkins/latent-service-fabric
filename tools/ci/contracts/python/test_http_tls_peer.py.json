@@ -1,34 +1,34 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "HttpTlsPeerTests.test_channel_windows_refuse_before_any_tls_call":
+"storageCases":"guard-keys",
+"guards":{
+"HttpTlsPeerTests.test_channel_windows_refuse_before_any_tls_call":
       "ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5",
-    "HttpTlsPeerTests.test_decrypted_buffered_readiness_is_driven_but_explicit_gate_stays_held":
+"HttpTlsPeerTests.test_decrypted_buffered_readiness_is_driven_but_explicit_gate_stays_held":
       "ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5",
-    "HttpTlsPeerTests.test_handshake_requires_matching_readiness_and_exact_alpn_before_http":
+"HttpTlsPeerTests.test_handshake_requires_matching_readiness_and_exact_alpn_before_http":
       "ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5",
-    "HttpTlsPeerTests.test_pending_write_resumes_write_on_readable_socket":
+"HttpTlsPeerTests.test_pending_write_resumes_write_on_readable_socket":
       "ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5",
-    "HttpTlsPeerTests.test_public_origins_are_tls_and_keys_or_credentials_never_enter_receipts":
+"HttpTlsPeerTests.test_public_origins_are_tls_and_keys_or_credentials_never_enter_receipts":
       "ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5",
-    "HttpTlsPeerTests.test_reference_cli_help_bootstraps_outside_checkout_without_network_or_artifacts":
+"HttpTlsPeerTests.test_reference_cli_help_bootstraps_outside_checkout_without_network_or_artifacts":
       "ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5",
-    "HttpTlsPeerTests.test_tls_process_refuses_missing_or_unbounded_inputs_before_acquiring_peer":
+"HttpTlsPeerTests.test_tls_process_refuses_missing_or_unbounded_inputs_before_acquiring_peer":
       "ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5",
-    "HttpTlsPeerTests.test_tls_read_can_require_write_readiness_without_losing_the_read":
+"HttpTlsPeerTests.test_tls_read_can_require_write_readiness_without_losing_the_read":
       "ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5",
-    "HttpTlsPeerTests.test_tls_receipt_does_not_accept_plain_transport_or_provider_qualification":
+"HttpTlsPeerTests.test_tls_receipt_does_not_accept_plain_transport_or_provider_qualification":
       "ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5",
-    "HttpTlsPeerTests.test_tls_write_retries_retain_exact_buffer_and_require_original_operation":
+"HttpTlsPeerTests.test_tls_write_retries_retain_exact_buffer_and_require_original_operation":
       "ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5",
-    "HttpTlsPeerTests.test_unqualified_alpn_closes_before_request_parsing":
+"HttpTlsPeerTests.test_unqualified_alpn_closes_before_request_parsing":
       "ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_http_tls_peer.py",
-  "reviewReason":"Preserve six original TLS controls and existing commands; add bounded TLS subprocess input refusal and actual process TLS12/TLS13/domain/name-refusal/reap controls without native or guest compilation.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9df698ef8cb352282942e8b708602883b8cd7e336646673047cd08af2dcdab4c","class:setup-sha256:bbee17779c3c80e13f7230d2f6b8bd04de1513cf6a76948f7ca2c7c03cf21228"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_http_tls_peer.py",
+"reviewReason":"Preserve six original TLS controls and existing commands; add bounded TLS subprocess input refusal and actual process TLS12/TLS13/domain/name-refusal/reap controls without native or guest compilation.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"ba83aca706092b08eafc5b8c72aac9cca0ecd33d049270234b5c7c6b8d3174b5":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9df698ef8cb352282942e8b708602883b8cd7e336646673047cd08af2dcdab4c","class:setup-sha256:bbee17779c3c80e13f7230d2f6b8bd04de1513cf6a76948f7ca2c7c03cf21228"],"skipSites":[]}
+}
 }

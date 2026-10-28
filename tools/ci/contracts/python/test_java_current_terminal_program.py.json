@@ -1,32 +1,32 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "CurrentHttpTerminalProgram.test_all_default_programs_keep_their_original_bounds_and_metadata":
+"storageCases":"guard-keys",
+"guards":{
+"CurrentHttpTerminalProgram.test_all_default_programs_keep_their_original_bounds_and_metadata":
       "f1c7ea3f778453bb5aeec301d3b5892981fd33179ab77d575bb6d2a315197d15",
-    "CurrentHttpTerminalProgram.test_environment_preview_or_original_lease_failure_cannot_return_selected_node":
+"CurrentHttpTerminalProgram.test_environment_preview_or_original_lease_failure_cannot_return_selected_node":
       "f1c7ea3f778453bb5aeec301d3b5892981fd33179ab77d575bb6d2a315197d15",
-    "CurrentHttpTerminalProgram.test_explicit_selection_is_prestart_one_shot_and_adds_only_four_slots":
+"CurrentHttpTerminalProgram.test_explicit_selection_is_prestart_one_shot_and_adds_only_four_slots":
       "f1c7ea3f778453bb5aeec301d3b5892981fd33179ab77d575bb6d2a315197d15",
-    "CurrentHttpTerminalProgram.test_legacy_early_and_pending_cannot_select_terminal_extension":
+"CurrentHttpTerminalProgram.test_legacy_early_and_pending_cannot_select_terminal_extension":
       "f1c7ea3f778453bb5aeec301d3b5892981fd33179ab77d575bb6d2a315197d15",
-    "CurrentHttpTerminalProgram.test_live_started_restoring_and_replaced_programs_refuse_selection":
+"CurrentHttpTerminalProgram.test_live_started_restoring_and_replaced_programs_refuse_selection":
       "f1c7ea3f778453bb5aeec301d3b5892981fd33179ab77d575bb6d2a315197d15",
-    "CurrentHttpTerminalProgram.test_real_environment_selects_extension_only_for_current_http_terminal":
+"CurrentHttpTerminalProgram.test_real_environment_selects_extension_only_for_current_http_terminal":
       "f1c7ea3f778453bb5aeec301d3b5892981fd33179ab77d575bb6d2a315197d15",
-    "CurrentHttpTerminalProgram.test_real_legacy_environment_keeps_default_without_current_selection":
+"CurrentHttpTerminalProgram.test_real_legacy_environment_keeps_default_without_current_selection":
       "f1c7ea3f778453bb5aeec301d3b5892981fd33179ab77d575bb6d2a315197d15",
-    "CurrentHttpTerminalProgram.test_selected_program_keeps_restore_authority_at_its_single_final_boundary":
+"CurrentHttpTerminalProgram.test_selected_program_keeps_restore_authority_at_its_single_final_boundary":
       "f1c7ea3f778453bb5aeec301d3b5892981fd33179ab77d575bb6d2a315197d15",
-    "CurrentHttpTerminalProgram.test_selector_has_no_untyped_or_external_program_argument":
+"CurrentHttpTerminalProgram.test_selector_has_no_untyped_or_external_program_argument":
       "f1c7ea3f778453bb5aeec301d3b5892981fd33179ab77d575bb6d2a315197d15",
-    "CurrentHttpTerminalProgram.test_unselected_default_refuses_cancellation_and_keeps_writer_slot":
+"CurrentHttpTerminalProgram.test_unselected_default_refuses_cancellation_and_keeps_writer_slot":
       "f1c7ea3f778453bb5aeec301d3b5892981fd33179ab77d575bb6d2a315197d15"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_java_current_terminal_program.py",
-  "reviewReason":"Preserve the original terminal14 early4 pending6 isolation and require finite prestart current HTTP terminal18 selection",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "f1c7ea3f778453bb5aeec301d3b5892981fd33179ab77d575bb6d2a315197d15":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:72a2defe9bef397eb59ff6d20106a45dfc61bf72059d81e22b28c7bfb7bbbb4b","class:setup-sha256:697396e8c4d1cdc0fe4b3e1006f2c22ca0da4325a1dea4b07a045bc7e1c0afc9"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_java_current_terminal_program.py",
+"reviewReason":"Preserve the original terminal14 early4 pending6 isolation and require finite prestart current HTTP terminal18 selection",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"f1c7ea3f778453bb5aeec301d3b5892981fd33179ab77d575bb6d2a315197d15":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:72a2defe9bef397eb59ff6d20106a45dfc61bf72059d81e22b28c7bfb7bbbb4b","class:setup-sha256:697396e8c4d1cdc0fe4b3e1006f2c22ca0da4325a1dea4b07a045bc7e1c0afc9"],"skipSites":[]}
+}
 }

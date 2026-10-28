@@ -1,11 +1,20 @@
-{"cases":["HostCodecSessionNativeProducts.test_complete172_model_keeps_tail_command_stream_time_and_schema_guards","HostCodecSessionNativeProducts.test_full_frozen_producer_digest_refuses_any_case_recipe_or_stage_rewrite","HostCodecSessionNativeProducts.test_literal75_is_the_only_extension_and_preserves_all_historical_defaults","HostCodecSessionNativeProducts.test_official_origin_keeps_exact_source_run_job_branch_event_and_artifact_pins"],"guards":{"HostCodecSessionNativeProducts.test_complete172_model_keeps_tail_command_stream_time_and_schema_guards":
-  "632a1fdd3970878febe784e136b33db0495869d1fac760427c4b5bff2ff7161b"
-,"HostCodecSessionNativeProducts.test_full_frozen_producer_digest_refuses_any_case_recipe_or_stage_rewrite":
-  "632a1fdd3970878febe784e136b33db0495869d1fac760427c4b5bff2ff7161b"
-,"HostCodecSessionNativeProducts.test_literal75_is_the_only_extension_and_preserves_all_historical_defaults":
-  "632a1fdd3970878febe784e136b33db0495869d1fac760427c4b5bff2ff7161b"
-,"HostCodecSessionNativeProducts.test_official_origin_keeps_exact_source_run_job_branch_event_and_artifact_pins":
-  "632a1fdd3970878febe784e136b33db0495869d1fac760427c4b5bff2ff7161b"
-},"kind":"python","module":"tools/tests/test_host_codec_session_native_products.py","reviewReason":"Use actual verified native172 SessionCore and C canonical System stack products; preserve all original C36 outcomes, bounds, and frozen inputs.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "632a1fdd3970878febe784e136b33db0495869d1fac760427c4b5bff2ff7161b"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b7f6635bc3b270f0a8006fdf675f62d142ae49a1d28e889d138fad0bcee0ec80","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "HostCodecSessionNativeProducts.test_complete172_model_keeps_tail_command_stream_time_and_schema_guards":
+      "632a1fdd3970878febe784e136b33db0495869d1fac760427c4b5bff2ff7161b",
+    "HostCodecSessionNativeProducts.test_full_frozen_producer_digest_refuses_any_case_recipe_or_stage_rewrite":
+      "632a1fdd3970878febe784e136b33db0495869d1fac760427c4b5bff2ff7161b",
+    "HostCodecSessionNativeProducts.test_literal75_is_the_only_extension_and_preserves_all_historical_defaults":
+      "632a1fdd3970878febe784e136b33db0495869d1fac760427c4b5bff2ff7161b",
+    "HostCodecSessionNativeProducts.test_official_origin_keeps_exact_source_run_job_branch_event_and_artifact_pins":
+      "632a1fdd3970878febe784e136b33db0495869d1fac760427c4b5bff2ff7161b"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_host_codec_session_native_products.py",
+  "reviewReason":"Use actual verified native172 SessionCore and C canonical System stack products; preserve all original C36 outcomes, bounds, and frozen inputs.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "632a1fdd3970878febe784e136b33db0495869d1fac760427c4b5bff2ff7161b":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b7f6635bc3b270f0a8006fdf675f62d142ae49a1d28e889d138fad0bcee0ec80","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

@@ -1,25 +1,25 @@
 {
-  "schemaVersion":"latent.ci.contracts.v2",
-  "kind":"python",
-  "reviewReason":"Append two pure closed-public-result parser controls; retain all four original cases, whole class bodies, fixture/skip/decorator guards and discovery entrypoint. No node or product qualification from pure payload models.",
-  "module":"tools/tests/test_stream_operator_node.py",
-  "cases":["StreamOperatorNode.test_actual_node_refusal_parser_rejects_uncertainty_foreign_fields_and_success","StreamOperatorNode.test_authentic_frontend_receipt_and_fixed_origin_do_not_relabel_process_double_as_node","StreamOperatorNode.test_closed_frontend_index_requires_exact_members_sizes_compression_and_regular_files","StreamOperatorNode.test_complete_original_baseline_is_preserved_while_stream_addition_is_explicit","UnavailableInspection.test_frozen_frontend_projection_keeps_failed_scope_and_publication_outcomes_closed","UnavailableInspection.test_unavailable_inspection_requires_exact_publication_and_never_invents_usage_or_authority"],
-  "guards":{
-    "StreamOperatorNode.test_authentic_frontend_receipt_and_fixed_origin_do_not_relabel_process_double_as_node":
+"schemaVersion":"latent.ci.contracts.v2",
+"kind":"python",
+"reviewReason":"Append two pure closed-public-result parser controls; retain all four original cases, whole class bodies, fixture/skip/decorator guards and discovery entrypoint. No node or product qualification from pure payload models.",
+"module":"tools/tests/test_stream_operator_node.py",
+"cases":["StreamOperatorNode.test_actual_node_refusal_parser_rejects_uncertainty_foreign_fields_and_success","StreamOperatorNode.test_authentic_frontend_receipt_and_fixed_origin_do_not_relabel_process_double_as_node","StreamOperatorNode.test_closed_frontend_index_requires_exact_members_sizes_compression_and_regular_files","StreamOperatorNode.test_complete_original_baseline_is_preserved_while_stream_addition_is_explicit","UnavailableInspection.test_frozen_frontend_projection_keeps_failed_scope_and_publication_outcomes_closed","UnavailableInspection.test_unavailable_inspection_requires_exact_publication_and_never_invents_usage_or_authority"],
+"guards":{
+"StreamOperatorNode.test_authentic_frontend_receipt_and_fixed_origin_do_not_relabel_process_double_as_node":
       "82bdd01c77e054c93aef0f0b54fd105adde9b2fe9f178b8f0482e2ed70bd4002",
-    "StreamOperatorNode.test_closed_frontend_index_requires_exact_members_sizes_compression_and_regular_files":
+"StreamOperatorNode.test_closed_frontend_index_requires_exact_members_sizes_compression_and_regular_files":
       "82bdd01c77e054c93aef0f0b54fd105adde9b2fe9f178b8f0482e2ed70bd4002",
-    "StreamOperatorNode.test_actual_node_refusal_parser_rejects_uncertainty_foreign_fields_and_success":
+"StreamOperatorNode.test_actual_node_refusal_parser_rejects_uncertainty_foreign_fields_and_success":
       "82bdd01c77e054c93aef0f0b54fd105adde9b2fe9f178b8f0482e2ed70bd4002",
-    "StreamOperatorNode.test_complete_original_baseline_is_preserved_while_stream_addition_is_explicit":
+"StreamOperatorNode.test_complete_original_baseline_is_preserved_while_stream_addition_is_explicit":
       "82bdd01c77e054c93aef0f0b54fd105adde9b2fe9f178b8f0482e2ed70bd4002",
-    "UnavailableInspection.test_unavailable_inspection_requires_exact_publication_and_never_invents_usage_or_authority":
+"UnavailableInspection.test_unavailable_inspection_requires_exact_publication_and_never_invents_usage_or_authority":
       "5cf472e487b2e27cfc937bf3befaa0e7182447fb999726c27ebaac3c2a2797d9",
-    "UnavailableInspection.test_frozen_frontend_projection_keeps_failed_scope_and_publication_outcomes_closed":
+"UnavailableInspection.test_frozen_frontend_projection_keeps_failed_scope_and_publication_outcomes_closed":
       "5cf472e487b2e27cfc937bf3befaa0e7182447fb999726c27ebaac3c2a2797d9"
-  },
-  "guardDefinitions":{
-    "82bdd01c77e054c93aef0f0b54fd105adde9b2fe9f178b8f0482e2ed70bd4002":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:39feab13e113214f3828697fe8a2465422fce511d2ab6649b57dba9697208ec7","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
-    "5cf472e487b2e27cfc937bf3befaa0e7182447fb999726c27ebaac3c2a2797d9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:39feab13e113214f3828697fe8a2465422fce511d2ab6649b57dba9697208ec7","class:setup-sha256:6a46aab488c4fbbd8ef2ced14a6ec6ff9c241c71444294768c9af37bc2e8d5e8"]}
-  }
+},
+"guardDefinitions":{
+"82bdd01c77e054c93aef0f0b54fd105adde9b2fe9f178b8f0482e2ed70bd4002":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:39feab13e113214f3828697fe8a2465422fce511d2ab6649b57dba9697208ec7","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
+"5cf472e487b2e27cfc937bf3befaa0e7182447fb999726c27ebaac3c2a2797d9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:39feab13e113214f3828697fe8a2465422fce511d2ab6649b57dba9697208ec7","class:setup-sha256:6a46aab488c4fbbd8ef2ced14a6ec6ff9c241c71444294768c9af37bc2e8d5e8"]}
+}
 }

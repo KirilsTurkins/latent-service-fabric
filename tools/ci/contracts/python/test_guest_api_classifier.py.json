@@ -1,22 +1,22 @@
 {
-  "schemaVersion":"latent.ci.contracts.v2",
-  "kind":"python",
-  "reviewReason":"Reviewed ONE fixed public Go selected-body diagnostic only, no node/sign/reached/init or qualified matrix row; exact unchanged CIL initializer-source alternative and finite six original fixture mappings preserve unknown execution and implementation scope. Original cases/decorators/skips remain; reviewed helper additions extend fixture guards only.",
-  "module":"tools/tests/test_guest_api_classifier.py",
-  "cases":["ApiRootClassifier.test_actual_callee_dgml_join_distinguishes_virtual_operand_and_selected_implementation","ApiRootClassifier.test_api_pair_refuses_changed_library_body_and_scanner_codegen_disagreement","ApiRootClassifier.test_complete_local_edge_absence_and_emitted_root_do_not_certify_global_api_elimination","ApiRootClassifier.test_exact_emitted_roots_preserve_init_callbacks_dynamic_and_ambiguous_names","ApiRootClassifier.test_original_initializer_operand_does_not_infer_execution_from_missing_standalone_nodes"],
-  "guards":{
-    "ApiRootClassifier.test_exact_emitted_roots_preserve_init_callbacks_dynamic_and_ambiguous_names":
+"schemaVersion":"latent.ci.contracts.v2",
+"kind":"python",
+"reviewReason":"Reviewed ONE fixed public Go selected-body diagnostic only, no node/sign/reached/init or qualified matrix row; exact unchanged CIL initializer-source alternative and finite six original fixture mappings preserve unknown execution and implementation scope. Original cases/decorators/skips remain; reviewed helper additions extend fixture guards only.",
+"module":"tools/tests/test_guest_api_classifier.py",
+"cases":["ApiRootClassifier.test_actual_callee_dgml_join_distinguishes_virtual_operand_and_selected_implementation","ApiRootClassifier.test_api_pair_refuses_changed_library_body_and_scanner_codegen_disagreement","ApiRootClassifier.test_complete_local_edge_absence_and_emitted_root_do_not_certify_global_api_elimination","ApiRootClassifier.test_exact_emitted_roots_preserve_init_callbacks_dynamic_and_ambiguous_names","ApiRootClassifier.test_original_initializer_operand_does_not_infer_execution_from_missing_standalone_nodes"],
+"guards":{
+"ApiRootClassifier.test_exact_emitted_roots_preserve_init_callbacks_dynamic_and_ambiguous_names":
       "63278829e33e775bd8f669acde8baac6b5cfa36d1ba2396b771a25feca47e953",
-    "ApiRootClassifier.test_complete_local_edge_absence_and_emitted_root_do_not_certify_global_api_elimination":
+"ApiRootClassifier.test_complete_local_edge_absence_and_emitted_root_do_not_certify_global_api_elimination":
       "63278829e33e775bd8f669acde8baac6b5cfa36d1ba2396b771a25feca47e953",
-    "ApiRootClassifier.test_actual_callee_dgml_join_distinguishes_virtual_operand_and_selected_implementation":
+"ApiRootClassifier.test_actual_callee_dgml_join_distinguishes_virtual_operand_and_selected_implementation":
       "63278829e33e775bd8f669acde8baac6b5cfa36d1ba2396b771a25feca47e953",
-    "ApiRootClassifier.test_original_initializer_operand_does_not_infer_execution_from_missing_standalone_nodes":
+"ApiRootClassifier.test_original_initializer_operand_does_not_infer_execution_from_missing_standalone_nodes":
       "63278829e33e775bd8f669acde8baac6b5cfa36d1ba2396b771a25feca47e953",
-    "ApiRootClassifier.test_api_pair_refuses_changed_library_body_and_scanner_codegen_disagreement":
+"ApiRootClassifier.test_api_pair_refuses_changed_library_body_and_scanner_codegen_disagreement":
       "63278829e33e775bd8f669acde8baac6b5cfa36d1ba2396b771a25feca47e953"
-  },
-  "guardDefinitions":{
-    "63278829e33e775bd8f669acde8baac6b5cfa36d1ba2396b771a25feca47e953":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:02c3d8b5371dd672876f9a8a94fe78760ea5c281e578ab0aeac90a4d3f0e1b5d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
-  }
+},
+"guardDefinitions":{
+"63278829e33e775bd8f669acde8baac6b5cfa36d1ba2396b771a25feca47e953":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:02c3d8b5371dd672876f9a8a94fe78760ea5c281e578ab0aeac90a4d3f0e1b5d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+}
 }

@@ -1,22 +1,22 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "CTimedRuntime.test_clock_bindings_do_not_expand_original_cell_limits_or_default_authority":
+"storageCases":"guard-keys",
+"guards":{
+"CTimedRuntime.test_clock_bindings_do_not_expand_original_cell_limits_or_default_authority":
       "24c4bd133533475b936573cabc552f2130181aadef4c45853a3b98abf47cb871",
-    "CTimedRuntime.test_clock_inputs_are_frozen_before_observation_and_cannot_be_replaced_after_snapshot":
+"CTimedRuntime.test_clock_inputs_are_frozen_before_observation_and_cannot_be_replaced_after_snapshot":
       "24c4bd133533475b936573cabc552f2130181aadef4c45853a3b98abf47cb871",
-    "CTimedRuntime.test_exact_original_twenty_prefix_and_independent_five_authorities_precede_fresh_timer":
+"CTimedRuntime.test_exact_original_twenty_prefix_and_independent_five_authorities_precede_fresh_timer":
       "24c4bd133533475b936573cabc552f2130181aadef4c45853a3b98abf47cb871",
-    "CTimedRuntime.test_real_fixture_keeps_original_envelope_and_one_c_translation_unit_with_explicit_clock_profile":
+"CTimedRuntime.test_real_fixture_keeps_original_envelope_and_one_c_translation_unit_with_explicit_clock_profile":
       "24c4bd133533475b936573cabc552f2130181aadef4c45853a3b98abf47cb871",
-    "CTimedRuntime.test_timer_result_requires_same_closed_mode_real_positive_owner_counts_and_canonical_numbers":
+"CTimedRuntime.test_timer_result_requires_same_closed_mode_real_positive_owner_counts_and_canonical_numbers":
       "24c4bd133533475b936573cabc552f2130181aadef4c45853a3b98abf47cb871"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_c_timed_runtime.py",
-  "reviewReason":"Preserve original twenty controls and bounded teardown; reject altered mode/owner witnesses, missing independent authorities and clock material drift before build observation",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "24c4bd133533475b936573cabc552f2130181aadef4c45853a3b98abf47cb871":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d2319245d136c561340d445b4bfb8d49c8a45ee502e7b2b86238b9a5f1c95b60","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_c_timed_runtime.py",
+"reviewReason":"Preserve original twenty controls and bounded teardown; reject altered mode/owner witnesses, missing independent authorities and clock material drift before build observation",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"24c4bd133533475b936573cabc552f2130181aadef4c45853a3b98abf47cb871":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d2319245d136c561340d445b4bfb8d49c8a45ee502e7b2b86238b9a5f1c95b60","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }

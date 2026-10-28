@@ -1,9 +1,18 @@
-{"cases":["HostCodecProductsReaderControls.test_full_model_rejects_partial_foreign_failed_or_relabelled_producer_records","HostCodecProductsReaderControls.test_literal_frozen_contract_requires_full_recipe_and_all_sixty_one_names","HostCodecProductsReaderControls.test_original_factory_defaults_and_fixed_member_algorithm_remain_selected"],"guards":{"HostCodecProductsReaderControls.test_full_model_rejects_partial_foreign_failed_or_relabelled_producer_records":
-  "26ac5f5682942a8d043ccff5d755341ec2fe189da36f37223b8e071411a1b4eb"
-,"HostCodecProductsReaderControls.test_literal_frozen_contract_requires_full_recipe_and_all_sixty_one_names":
-  "26ac5f5682942a8d043ccff5d755341ec2fe189da36f37223b8e071411a1b4eb"
-,"HostCodecProductsReaderControls.test_original_factory_defaults_and_fixed_member_algorithm_remain_selected":
-  "26ac5f5682942a8d043ccff5d755341ec2fe189da36f37223b8e071411a1b4eb"
-},"kind":"python","module":"tools/tests/test_host_codec_native_products_reader.py","reviewReason":"Add three strict frozen host-codec schema/origin controls; preserve every original SDK reader algorithm/default and old tuple. Authenticate immutable successful7b source/31commands/61controls/fiveproducts, with no signed C guest claim.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "26ac5f5682942a8d043ccff5d755341ec2fe189da36f37223b8e071411a1b4eb"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d95ec20cef1313ab6ecfb02fee730b37a06d45b82707601284f5b760efeefb64","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "HostCodecProductsReaderControls.test_full_model_rejects_partial_foreign_failed_or_relabelled_producer_records":
+      "26ac5f5682942a8d043ccff5d755341ec2fe189da36f37223b8e071411a1b4eb",
+    "HostCodecProductsReaderControls.test_literal_frozen_contract_requires_full_recipe_and_all_sixty_one_names":
+      "26ac5f5682942a8d043ccff5d755341ec2fe189da36f37223b8e071411a1b4eb",
+    "HostCodecProductsReaderControls.test_original_factory_defaults_and_fixed_member_algorithm_remain_selected":
+      "26ac5f5682942a8d043ccff5d755341ec2fe189da36f37223b8e071411a1b4eb"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_host_codec_native_products_reader.py",
+  "reviewReason":"Add three strict frozen host-codec schema/origin controls; preserve every original SDK reader algorithm/default and old tuple. Authenticate immutable successful7b source/31commands/61controls/fiveproducts, with no signed C guest claim.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "26ac5f5682942a8d043ccff5d755341ec2fe189da36f37223b8e071411a1b4eb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d95ec20cef1313ab6ecfb02fee730b37a06d45b82707601284f5b760efeefb64","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

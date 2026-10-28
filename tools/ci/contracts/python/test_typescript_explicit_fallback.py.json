@@ -1,23 +1,23 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "TypeScriptExplicitFallback.test_actual_application_clock_guard_and_library_control_flow_in_native_reference":
+"storageCases":"guard-keys",
+"guards":{
+"TypeScriptExplicitFallback.test_actual_application_clock_guard_and_library_control_flow_in_native_reference":
       "9d7cfb4687e59ef1a9d8137d8e3e89825457603c41206d818c8d451a297e0898",
-    "TypeScriptExplicitFallback.test_material_closure_is_finite_and_keeps_existing_helpers":
+"TypeScriptExplicitFallback.test_material_closure_is_finite_and_keeps_existing_helpers":
       "abc011388ae728be43ac8de9a7cfe9b39814935b22392a04c11f220fd8aa9ba0",
-    "TypeScriptExplicitFallback.test_success_requires_exact_alternate_native_marker_and_fresh_state":
+"TypeScriptExplicitFallback.test_success_requires_exact_alternate_native_marker_and_fresh_state":
       "abc011388ae728be43ac8de9a7cfe9b39814935b22392a04c11f220fd8aa9ba0",
-    "TypeScriptExplicitFallback.test_transitive_default_constructor_and_callback_preserve_the_native_refusal":
+"TypeScriptExplicitFallback.test_transitive_default_constructor_and_callback_preserve_the_native_refusal":
       "abc011388ae728be43ac8de9a7cfe9b39814935b22392a04c11f220fd8aa9ba0",
-    "TypeScriptExplicitFallback.test_uncaught_error_is_terminal_and_never_timeout_or_cancellation":
+"TypeScriptExplicitFallback.test_uncaught_error_is_terminal_and_never_timeout_or_cancellation":
       "abc011388ae728be43ac8de9a7cfe9b39814935b22392a04c11f220fd8aa9ba0"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_typescript_explicit_fallback.py",
-  "reviewReason":"Five new source and adverse reader controls with separately labelled actual application guard native reference; no component execution claim.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "9d7cfb4687e59ef1a9d8137d8e3e89825457603c41206d818c8d451a297e0898":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:397107eaae5f945c1d1cf137aecae2721a60564882baffa2e2f90cd81b189fa6","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["self.skipTest('Node is required for the separately labelled native reference')","skip-control-sha256:b3e4f4fbc27a3052dc4be1967f0debff910345f487b031bf1f5ee30b097a4b80"]},
-    "abc011388ae728be43ac8de9a7cfe9b39814935b22392a04c11f220fd8aa9ba0":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:397107eaae5f945c1d1cf137aecae2721a60564882baffa2e2f90cd81b189fa6","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_explicit_fallback.py",
+"reviewReason":"Five new source and adverse reader controls with separately labelled actual application guard native reference; no component execution claim.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"9d7cfb4687e59ef1a9d8137d8e3e89825457603c41206d818c8d451a297e0898":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:397107eaae5f945c1d1cf137aecae2721a60564882baffa2e2f90cd81b189fa6","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["self.skipTest('Node is required for the separately labelled native reference')","skip-control-sha256:b3e4f4fbc27a3052dc4be1967f0debff910345f487b031bf1f5ee30b097a4b80"]},
+"abc011388ae728be43ac8de9a7cfe9b39814935b22392a04c11f220fd8aa9ba0":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:397107eaae5f945c1d1cf137aecae2721a60564882baffa2e2f90cd81b189fa6","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }
