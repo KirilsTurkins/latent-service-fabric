@@ -2593,6 +2593,157 @@ def qualify_http_ip_format(output, revision):
         write_json(output / 'commands.json', commands.records)
 
 
+LIFT_RESULT_BRANCH = 'feat/sdk-745-lift-result-memory-20261028'
+LIFT_RESULT_PREFIX = 'runtime::component::concurrent::lift_result_memory_tests::'
+LIFT_RESULT_CASES = tuple(LIFT_RESULT_PREFIX + name for name in (
+    'exact_layout_preserves_sixteen_values_and_caller_retptr_without_growth',
+    'original_refusal_returns_before_confirmation_and_preserves_source',
+    'backing_owner_retires_on_return_error_and_unwind',
+    'empty_and_unaccounted_callers_preserve_value_shapes'))
+
+
+def lift_result_result(raw, case):
+    require(case in LIFT_RESULT_CASES and len(raw) <= artifacts.MAX_OUTPUT_BYTES,
+        'lift-result-case-bound')
+    require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
+        == [case.encode()], 'lift-result-one-exact-success')
+    summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
+        rb'(\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    require(len(summaries) == 1 and summaries[0][:4] == (b'1', b'0', b'0', b'0')
+        and int(summaries[0][4]) <= 10000, 'lift-result-one-executed-no-skip')
+    return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0,
+        'ignored': 0, 'filteredOut': int(summaries[0][4]),
+        'scope': 'private-typed-buffer-counter-owner'}
+
+
+def qualify_lift_result_memory(output, revision):
+    require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
+        and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
+        and os.environ.get('GITHUB_REF_NAME') == LIFT_RESULT_BRANCH
+        and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'lift-result-one-exact-hosted-push')
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
+        'lift-result-owned-output')
+    output = fresh(output)
+    environment = build_environment(output)
+    environment.pop(FIXTURE_ENV, None)
+    environment.update(CARGO_TARGET_DIR=str(ROOT / 'target'), CARGO_INCREMENTAL='0',
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+        CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+    logs = output / 'commands'
+    logs.mkdir()
+    # One original five-second cleanup reserve, inside the 1320-second owner.
+    commands = Commands(ROOT, logs, environment, deadline_seconds=1315, command_seconds=1195)
+    receipt = {'schemaVersion': 'lsf.lift-result-memory.v1', 'status': 'in-progress',
+        'sourceRevision': revision, 'privateCases': list(LIFT_RESULT_CASES),
+        'casesStarted': [], 'casesPassed': [], 'observations': [],
+        'fullCostModelQualified': False, 'fullRuntimeSuiteExecuted': False,
+        'fullVendorSuiteExecuted': False, 'signedGuestExecuted': False,
+        'originalActivationBudgetQualified': False, 'wholeAc5Qualified': False,
+        'paramsAndClosureQualified': False, 'hermetic': False,
+        'compilerImplicitInputsAttested': False,
+        'limits': {'overallSeconds': 1320, 'buildCommandSeconds': 1200,
+            'caseProcessSeconds': 60, 'listProcessSeconds': 30, 'cleanupReserveSeconds': 5},
+        'scope': 'only fused LiftResult typed buffer; private counter controls, not original grant/RSS/full cost',
+        'commandLedgerBoundary': 'fourteen supervised Git/build/library/list/test commands; five normal pinned-tool resolver probes retain their existing owner and share the same absolute deadline'}
+    def metadata(stage, *argv):
+        old_seconds, old_environment = commands.command_seconds, commands.environment
+        try:
+            commands.command_seconds = 25
+            commands.environment = environment
+            return commands.run(stage, 'git', '-c', 'core.fsmonitor=false', *argv)
+        finally:
+            commands.command_seconds, commands.environment = old_seconds, old_environment
+    def current_revision(stage):
+        require(re.fullmatch(r'[0-9a-fA-F]{40}|[0-9a-fA-F]{64}', revision) is not None,
+            'lift-result-missing-source-commit')
+        raw = metadata(stage, '-c', 'gc.auto=0', 'rev-parse', '--verify', 'HEAD')
+        require(len(raw) <= 256 and raw.strip().decode('ascii') == revision.lower(),
+            'lift-result-source-checkout-mismatch')
+    def current_inputs(stage):
+        raw = metadata(stage, 'ls-files', '-z', '--', *SOURCE_ALLOWLIST)
+        require(len(raw) <= 2 * 1024**2, 'source-path-bound')
+        names = [name for name in raw.decode().split('\0') if name]
+        limits = SnapshotLimits()
+        require(100 <= len(names) <= limits.max_entries, 'source-count')
+        result, total = {}, 0
+        for name in names:
+            require(time.monotonic() < commands.deadline, 'lift-result-source-hash-deadline')
+            data = read_file(ROOT / name, limits.max_file_bytes)
+            total += len(data)
+            result[name] = identity(data)
+        require(total <= limits.max_total_bytes, 'source-total')
+        result[WORKFLOW] = identity(read_file(ROOT / WORKFLOW, 128 * 1024))
+        return dict(sorted(result.items()))
+    try:
+        current_revision('source-revision-before')
+        before = current_inputs('source-paths-before')
+        receipt['sourceBefore'] = before
+        write_json(output / 'source-inputs.json', before)
+        checked = source.verify()
+        receipt['wasmtimeSource'] = checked
+        toolchain = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml', 128 * 1024).decode())
+        require(toolchain['rust']['toolchain'] == '1.97.1'
+            and toolchain['contracts']['wasm-tools'] == '1.254.0', 'lift-result-normal-tool-pins')
+        tools, pins = resolve_tools(toolchain, ROOT, environment, _deadline=commands.deadline)
+        receipt['observedTools'] = pins
+        environment.update(RUSTC=str(tools['rustc']), RUSTUP_TOOLCHAIN=toolchain['rust']['toolchain'])
+        suite = artifacts.Suite('crates/vendor/wasmtime/Cargo.toml', 'wasmtime',
+            'src/lib.rs', LIFT_RESULT_PREFIX, frozenset(LIFT_RESULT_CASES), True)
+        receipt['stage'] = 'build-private'
+        ordinal = len(commands.records)
+        commands.run('build-private', tools['cargo'], 'test', '--manifest-path',
+            suite.manifest, '--locked', '--lib', '--no-default-features', '--features',
+            FEATURES, '--no-run', '--message-format=json')
+        artifact = artifacts.read_inventory(logs / f'logs/{ordinal:02d}-build-private.stdout.txt',
+            ROOT, suite, target=ROOT / 'target')
+        executable = file_identity(artifact.executable, 'lift-result-controls', 512 * 1024**2)
+        receipt['privateExecutable'] = executable
+        def probe(argv, *, cwd, env, timeout, maximum):
+            require(argv == ['rustc', '--print', 'target-libdir'] and cwd == ROOT
+                and timeout == 30 and maximum == 4096, 'lift-result-normal-library-probe')
+            commands.command_seconds = 25
+            commands.environment = env
+            raw = commands.run('private-rust-library-path', tools['rustc'], *argv[1:])
+            require(len(raw) <= maximum, 'lift-result-rust-library-bound')
+            return 0, raw
+        commands.environment = artifacts.cargo_environment(ROOT, artifact, environment,
+            target=ROOT / 'target', execute=probe)
+        for index, case in enumerate(LIFT_RESULT_CASES):
+            receipt['stage'] = case
+            commands.command_seconds = 25
+            listed = commands.run(f'private-list-{index}', artifact.executable, case, '--exact', '--list')
+            require(len(listed) <= artifacts.MAX_LIST_BYTES, 'lift-result-list-bound')
+            artifacts.validate_listing(listed, artifacts.Suite(suite.manifest, suite.target,
+                suite.source, case, frozenset((case,)), True))
+            commands.command_seconds = 55
+            receipt['casesStarted'].append(case)
+            raw = commands.run(f'private-case-{index}', artifact.executable, case,
+                '--exact', '--show-output', '--test-threads=1')
+            receipt['observations'].append(lift_result_result(raw, case))
+            receipt['casesPassed'].append(case)
+        require(len(receipt['observations']) == 4, 'lift-result-four-exact-cases')
+        require(time.monotonic() < commands.deadline, 'lift-result-overall-deadline')
+        require(current_inputs('source-paths-after') == before and source.verify() == checked,
+            'lift-result-final-source')
+        require(file_identity(artifact.executable, 'lift-result-controls', 512 * 1024**2)
+            == executable, 'lift-result-final-executable')
+        require([file_identity(tools[name], name) for name in sorted(tools)] == pins,
+            'lift-result-final-tools')
+        current_revision('source-revision-after')
+        require(len(commands.records) == 14, 'lift-result-four-git-one-build-one-library-eight-cases')
+        require(time.monotonic() < commands.deadline, 'lift-result-final-deadline')
+        receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True,
+            executed=list(LIFT_RESULT_CASES), ignored=[])
+        write_json(output / 'receipt.json', receipt)
+    except BaseException:
+        receipt['status'] = 'failed'
+        write_json(output / 'FAILED.json', receipt)
+        raise
+    finally:
+        write_json(output / 'commands.json', commands.records)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -2610,8 +2761,11 @@ if __name__ == '__main__':
     modes.add_argument('--http-input', action='store_true')
     modes.add_argument('--http-metadata', action='store_true')
     modes.add_argument('--http-ip-format', action='store_true')
+    modes.add_argument('--lift-result-memory', action='store_true')
     args = parser.parse_args()
-    if args.http_ip_format:
+    if args.lift_result_memory:
+        qualify_lift_result_memory(args.output.resolve(), args.source_commit)
+    elif args.http_ip_format:
         qualify_http_ip_format(args.output.resolve(), args.source_commit)
     elif args.http_metadata:
         qualify_http_metadata(args.output.resolve(), args.source_commit)

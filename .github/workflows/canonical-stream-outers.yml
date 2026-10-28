@@ -1,7 +1,7 @@
 name: Focused canonical IP formatting
 on:
   push:
-    branches: ['feat/sdk-736-http-ip-format-20261027']
+    branches: ['feat/sdk-736-http-ip-format-20261027', 'feat/sdk-745-lift-result-memory-20261028']
     paths:
       - '.github/workflows/canonical-stream-outers.yml'
       - 'crates/latent-capabilities/**'
@@ -10,6 +10,7 @@ on:
       - 'crates/latent-blobs/**'
       - 'crates/latent-streams/**'
       - 'crates/latent-wasmtime/**'
+      - 'crates/vendor/wasmtime/**'
       - 'apps/latentd/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -27,7 +28,7 @@ jobs:
   stream-outers:
     name: Four canonical IP formatting controls
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: ${{ github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 25 || 45 }}
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -65,16 +66,24 @@ jobs:
         with:
           version: 1.254.0
       - name: Build two exact lib targets and execute four canonical IP controls
+        if: github.ref_name == 'feat/sdk-736-http-ip-format-20261027'
         run: >-
           python3 -B tools/qualify_stream_outers.py
           --source-commit "${{ github.sha }}"
           --http-ip-format
           --output "$RUNNER_TEMP/canonical-stream-outers"
+      - name: Build one exact vendor lib and execute four LiftResult controls
+        if: github.ref_name == 'feat/sdk-745-lift-result-memory-20261028'
+        run: >-
+          python3 -B tools/qualify_stream_outers.py
+          --source-commit "${{ github.sha }}"
+          --lift-result-memory
+          --output "$RUNNER_TEMP/canonical-stream-outers"
       - name: Retain four source-bound canonical IP outcomes
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
-          name: canonical-ip-format-${{ github.sha }}
+          name: ${{ github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 'canonical-lift-result' || 'canonical-ip-format' }}-${{ github.sha }}
           path: |
             ${{ runner.temp }}/canonical-stream-outers/receipt.json
             ${{ runner.temp }}/canonical-stream-outers/FAILED.json

@@ -551,3 +551,14 @@ TLS, Bytes/control and other transitive allocations remain explicit gaps. The
 250-file registry inventory, 275 maintained files and strict 14-file isolated
 cache authentication remain the same finite sets. Earlier v20 and other dated
 receipts retain their original source and execution identities.
+
+The v22 source stage prepays only the fused guest-to-guest LiftResult temporary
+value vector through the original Store NativeMemory factory. Its full final
+ValRaw layout, including an optional original caller return pointer, is admitted
+before copy or allocation. The same NativeVec owns its buffer until actual
+destruction before refund; thread switching and return/error order are unchanged.
+Four private controls are SOURCE ONLY and UNEXECUTED. They cover typed refusal,
+exact final capacity/value order, scoped retirement and empty/legacy shapes;
+private counter owners do not qualify the original activation grant. Parameters,
+closure Boxes, returned result Boxes and other transitive costs remain separate.
+This does not complete #745 AC5 or native/full-cost accounting.

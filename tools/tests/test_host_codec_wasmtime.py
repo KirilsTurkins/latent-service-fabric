@@ -179,7 +179,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                 registry.workspace(root)
 
     def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
-        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v21-cache-repair')
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v22-lift-result-memory-cache-repair')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
@@ -200,7 +200,8 @@ class PinnedWasmtimeSource(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
-            for name in ('src/runtime/native_memory.rs', 'src/runtime/vm/instance.rs',
+            for name in ('src/runtime/component/concurrent.rs',
+                         'src/runtime/native_memory.rs', 'src/runtime/vm/instance.rs',
                          'src/runtime/vm/component.rs', 'src/runtime/component/store.rs',
                          'src/runtime/store/data.rs', 'src/runtime/vm/component/resources.rs',
                          'src/runtime/vm/instance/allocator.rs', 'src/runtime.rs', 'src/runtime/module.rs',
