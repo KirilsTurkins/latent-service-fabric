@@ -1,11 +1,20 @@
-{"cases":["CompatibilityApiFixture.test_actual_normal_project_creators_preserve_sdk_wit_limits_and_same_pair_library_bytes","CompatibilityApiFixture.test_future_capture_uses_only_existing_normal_owner_steps_and_exact_candidate_review","CompatibilityApiFixture.test_only_one_fixed_root_edge_changes_and_original_transitive_api_sources_remain_identical","CompatibilityApiFixture.test_source_drift_refuses_before_any_normal_owner_command"],"guards":{"CompatibilityApiFixture.test_actual_normal_project_creators_preserve_sdk_wit_limits_and_same_pair_library_bytes":
-  "8f147643ab4db5a013d3daedcc154e4586fd5e0485bb799da73285956af71a9e"
-,"CompatibilityApiFixture.test_future_capture_uses_only_existing_normal_owner_steps_and_exact_candidate_review":
-  "8f147643ab4db5a013d3daedcc154e4586fd5e0485bb799da73285956af71a9e"
-,"CompatibilityApiFixture.test_only_one_fixed_root_edge_changes_and_original_transitive_api_sources_remain_identical":
-  "8f147643ab4db5a013d3daedcc154e4586fd5e0485bb799da73285956af71a9e"
-,"CompatibilityApiFixture.test_source_drift_refuses_before_any_normal_owner_command":
-  "8f147643ab4db5a013d3daedcc154e4586fd5e0485bb799da73285956af71a9e"
-},"kind":"python","module":"tools/tests/test_compatibility_api_fixture.py","reviewReason":"Reviewed actual failed-cell corrections and exact-three cc8b original execution authentication plus separately current passive diagnostics; all eight cells remain mandatory with original source/profile, owner boundaries and limits.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "8f147643ab4db5a013d3daedcc154e4586fd5e0485bb799da73285956af71a9e"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:eac4a6eafd0a0d128b065d9630cd6f837ee338376dd9c72e5b0407fa58cfe207","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "CompatibilityApiFixture.test_actual_normal_project_creators_preserve_sdk_wit_limits_and_same_pair_library_bytes":
+      "8f147643ab4db5a013d3daedcc154e4586fd5e0485bb799da73285956af71a9e",
+    "CompatibilityApiFixture.test_future_capture_uses_only_existing_normal_owner_steps_and_exact_candidate_review":
+      "8f147643ab4db5a013d3daedcc154e4586fd5e0485bb799da73285956af71a9e",
+    "CompatibilityApiFixture.test_only_one_fixed_root_edge_changes_and_original_transitive_api_sources_remain_identical":
+      "8f147643ab4db5a013d3daedcc154e4586fd5e0485bb799da73285956af71a9e",
+    "CompatibilityApiFixture.test_source_drift_refuses_before_any_normal_owner_command":
+      "8f147643ab4db5a013d3daedcc154e4586fd5e0485bb799da73285956af71a9e"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_compatibility_api_fixture.py",
+  "reviewReason":"Reviewed actual failed-cell corrections and exact-three cc8b original execution authentication plus separately current passive diagnostics; all eight cells remain mandatory with original source/profile, owner boundaries and limits.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "8f147643ab4db5a013d3daedcc154e4586fd5e0485bb799da73285956af71a9e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:eac4a6eafd0a0d128b065d9630cd6f837ee338376dd9c72e5b0407fa58cfe207","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

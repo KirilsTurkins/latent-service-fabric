@@ -41,20 +41,61 @@ def need(value, reason):
         raise ValueError('java-retained-runtime-' + reason)
 
 
-def source_inputs():
-    raw = subprocess.check_output(['git', 'ls-files', '-z', '--', *SOURCE_ALLOWLIST],
-        cwd=ROOT, timeout=30)
-    need(len(raw) <= 2 * 1024**2, 'source-path-bound')
-    names = set(raw.decode().strip('\0').split('\0')) | set(EXTRA_SOURCES) | {WORKFLOW}
+def source_domains(commands, selection, names=None):
+    """Complete native capture; fixed supplementary evidence has its own cap."""
+    domains = {
+        'retained': set(EXTRA_SOURCES) | {WORKFLOW},
+        'workers': set(EXTRA_SOURCES) | {'.github/workflows/java-published-workers.yml'},
+        'scheduled': set(EXTRA_SOURCES) | {'.github/workflows/java-published-workers.yml',
+            '.github/workflows/java-scheduled-library.yml',
+            'sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java'},
+    }
+    need(selection in domains, 'source-domain')
+    if names is None:
+        commands.command_seconds = 25
+        raw = commands.run('source-paths', 'git', 'ls-files', '-z', '--', *SOURCE_ALLOWLIST)
+        need(len(raw) <= 2 * 1024**2 and raw.endswith(b'\0'), 'source-path-bound')
+        paths = raw[:-1].decode('utf-8').split('\0')
+        need(len(paths) == len(set(paths)), 'source-path-duplicates')
+        names = set(paths)
+    else:
+        names = set(names)
     limits = SnapshotLimits()
-    need(100 <= len(names) <= limits.max_entries, 'source-count')
-    result = {name: inputs.identity(read_file(ROOT / name, limits.max_file_bytes))
-              for name in sorted(names)}
-    need(sum(row['bytes'] for row in result.values()) <= limits.max_total_bytes, 'source-total')
-    return result
+    need(100 <= len(names) <= limits.max_entries and all(
+        any(name == root or name.startswith(root + '/') for root in SOURCE_ALLOWLIST)
+        for name in names), 'native-source-count-or-root')
+    supplemental = domains[selection]
+    need(len(supplemental) == (17 if selection == 'scheduled' else 15)
+        and not names.intersection(supplemental), 'fixed-supplement')
+    def capture(selected, maximum, label):
+        result, total = {}, 0
+        for name in sorted(selected):
+            need(time.monotonic() < commands.deadline, 'source-deadline')
+            data = read_file(ROOT / name, limits.max_file_bytes)
+            total += len(data)
+            need(total <= maximum, label)
+            result[name] = inputs.identity(data)
+        need(time.monotonic() < commands.deadline, 'source-deadline')
+        return result
+    return {'native': capture(names, limits.max_total_bytes, 'native-source-total'),
+        'supplementary': capture(supplemental, 16 * 1024**2, 'supplement-total')}
 
 
-def observations(raw, *, worker=False):
+def source_inputs(commands, names=None):
+    return source_domains(commands, 'retained', names)
+
+
+def require_source(commands, revision, stage):
+    if re.fullmatch(r'[0-9a-fA-F]{40}|[0-9a-fA-F]{64}', revision) is None:
+        raise artifacts.ArtifactError('missing-source-commit')
+    commands.command_seconds = 25
+    raw = commands.run(stage, 'git', '-c', 'core.fsmonitor=false', '-c', 'gc.auto=0',
+        'rev-parse', '--verify', 'HEAD')
+    if raw.strip() != revision.lower().encode():
+        raise artifacts.ArtifactError('inventory-source-checkout-mismatch')
+
+
+def observations(raw, *, worker=False, filtered=51):
     need(type(worker) is bool, 'closed-observation-selection')
     case = WORKER_CASE if worker else CASE
     fixture = 'java-worker-libraries' if worker else 'java-fibers'
@@ -63,7 +104,7 @@ def observations(raw, *, worker=False):
     need(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M) == [case.encode()], 'exact-case')
     summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
         rb'(\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
-    need(summaries == [(b'1', b'0', b'0', b'0', b'51')], 'one-executed-no-skip')
+    need(summaries == [(b'1', b'0', b'0', b'0', str(filtered).encode())], 'one-executed-no-skip')
     setup = re.findall(rb'^' + profile + rb' signed-preparation-setup-micros=(\d+) '
         rb'stores-created=0 guest-activations=0$', raw, re.M)
     need(len(setup) == 1, 'normal-preparation')
@@ -85,7 +126,7 @@ def observations(raw, *, worker=False):
         need(row['storesBefore'] == created and row['storesCreated'] > created, 'fresh-stores')
         need(all(row[field] == 0 for field in ZERO_FIELDS), 'actual-idle-counters')
         created = row['storesCreated']
-    return {'case': case, 'passed': 1, 'failed': 0, 'ignored': 0, 'filteredOut': 51,
+    return {'case': case, 'passed': 1, 'failed': 0, 'ignored': 0, 'filteredOut': filtered,
             'setupMicroseconds': int(setup[0]), 'calls': rows, 'stdout': inputs.identity(raw)}
 
 
@@ -123,9 +164,9 @@ def qualify(output, revision):
             'tasks': 5, 'executors': 3, 'queuedWork': 8, 'waits': 8, 'timers': 2,
             'results': 8, 'nativeOwners': 2}}
     try:
-        artifacts.require_source(ROOT, revision, environment)
-        before = source_inputs()
-        receipt['sourceBefore'] = before
+        require_source(commands, revision, 'source-head-before')
+        before = source_inputs(commands)
+        receipt.update(sourceBefore=before['native'], supplementarySourceBefore=before['supplementary'])
         write_json(output / 'source-inputs.json', before)
         receipt['stage'] = 'authenticate-retained-component'
         prepared = fresh(output / 'private-inputs')
@@ -134,9 +175,10 @@ def qualify(output, revision):
         receipt['stage'] = 'three-pure-input-controls'
         commands.command_seconds = 25
         commands.environment = {**environment, 'LSF_JAVA_RETAINED_ARCHIVE': str(prepared / 'public-component.zip')}
+        control_index = len(commands.records)
         commands.run('input-controls', sys.executable, '-B', '-m', 'unittest', '-v',
             'tools.tests.test_java_retained_fibers')
-        control_output = read_file(logs / 'logs/00-input-controls.stderr.txt', 128 * 1024)
+        control_output = read_file(logs / f'logs/{control_index:02d}-input-controls.stderr.txt', 128 * 1024)
         need(re.search(rb'^Ran 3 tests in [0-9.]+s\r?$', control_output, re.M)
             and re.search(rb'^OK\r?$', control_output, re.M)
             and b'skipped' not in control_output, 'three-controls-no-skip')
@@ -150,16 +192,17 @@ def qualify(output, revision):
         receipt['stage'] = 'build-source-matched-harness'
         commands.environment = environment
         commands.command_seconds = 895
+        build_index = len(commands.records)
         commands.run('build-harness', tools['cargo'], '--config', '.cargo/managed-guest.toml',
             'test', '--locked', '-p', 'latent-wasmtime', '--test', 'local_service',
             '--no-run', '--message-format=json')
         contract, = [row for row in registry.load()['suites']
             if row['id'] == 'latent-wasmtime.test.local-service']
-        need(contract['minimumCases'] == 52 and CASE in contract['expectedCases']
+        need(contract['minimumCases'] == len(contract['expectedCases']) and CASE in contract['expectedCases']
             and CASE in contract['expectedIgnored'], 'existing-case-contract')
         suite = artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'local_service',
             'tests/local_service.rs', CASE, frozenset({CASE}), True, kind='test')
-        artifact = artifacts.read_inventory(logs / 'logs/01-build-harness.stdout.txt', ROOT, suite, target=target)
+        artifact = artifacts.read_inventory(logs / f'logs/{build_index:02d}-build-harness.stdout.txt', ROOT, suite, target=target)
         receipt.update(nativeHarnessBuilt=True, executable=file_identity(artifact.executable,
             'local-service-java-retained', 512 * 1024**2))
 
@@ -182,15 +225,16 @@ def qualify(output, revision):
         commands.command_seconds = 1795
         raw = commands.run('execute-exact-case', artifact.executable, CASE, '--exact', '--ignored',
             '--show-output', '--test-threads=1')
-        receipt['observation'] = observations(raw)
+        receipt['observation'] = observations(raw, filtered=len(contract['expectedCases']) - 1)
         inputs.recheck(prepared)
-        need(source_inputs() == before, 'final-source')
+        need(source_inputs(commands) == before, 'final-source')
         need(file_identity(artifact.executable, 'local-service-java-retained', 512 * 1024**2)
             == receipt['executable'], 'final-executable')
         need([file_identity(tools[name], name) for name in sorted(tools)] == pins, 'final-tools')
-        artifacts.require_source(ROOT, revision, environment)
+        require_source(commands, revision, 'source-head-after')
         need(time.monotonic() < commands.deadline, 'final-deadline')
-        receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True)
+        receipt.update(status='passed', sourceAfter=before['native'],
+            supplementarySourceAfter=before['supplementary'], sourceUnchanged=True)
         write_json(output / 'receipt.json', receipt)
     except BaseException:
         receipt['status'] = 'failed'
