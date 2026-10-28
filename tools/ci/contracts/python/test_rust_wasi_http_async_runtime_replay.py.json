@@ -1,20 +1,20 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "RustHttpAsyncRuntimeReplay.test_exact_one_reader_pair_never_allows_an_unknown_compiler_or_helper_change":
+"storageCases":"guard-keys",
+"guards":{
+"RustHttpAsyncRuntimeReplay.test_exact_one_reader_pair_never_allows_an_unknown_compiler_or_helper_change":
       "72e01f31376f2ff8c9af233daf5a5b22fc824b3ec34c8633e90f9e7cd52631b9",
-    "RustHttpAsyncRuntimeReplay.test_only_exact_failed_original_origin_is_accepted":
+"RustHttpAsyncRuntimeReplay.test_only_exact_failed_original_origin_is_accepted":
       "72e01f31376f2ff8c9af233daf5a5b22fc824b3ec34c8633e90f9e7cd52631b9",
-    "RustHttpAsyncRuntimeReplay.test_restored_public_bytes_must_match_both_original_source_and_original_packaging":
+"RustHttpAsyncRuntimeReplay.test_restored_public_bytes_must_match_both_original_source_and_original_packaging":
       "72e01f31376f2ff8c9af233daf5a5b22fc824b3ec34c8633e90f9e7cd52631b9",
-    "RustHttpAsyncRuntimeReplay.test_reused_backend_requires_actual_success_of_only_the_exact_original_step":
+"RustHttpAsyncRuntimeReplay.test_reused_backend_requires_actual_success_of_only_the_exact_original_step":
       "72e01f31376f2ff8c9af233daf5a5b22fc824b3ec34c8633e90f9e7cd52631b9"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_rust_wasi_http_async_runtime_replay.py",
-  "reviewReason":"Reviewed exact streaming POST fixture correction and reuse of original successful110 backend; preserve all old cases/fixture guards and add actual chunked peer data control plus original-step success/failure adverses.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "72e01f31376f2ff8c9af233daf5a5b22fc824b3ec34c8633e90f9e7cd52631b9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:84d52d0934fe3c83065a3ade199b5568c215127f942d787212d90255e47e8532","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_rust_wasi_http_async_runtime_replay.py",
+"reviewReason":"Reviewed exact streaming POST fixture correction and reuse of original successful110 backend; preserve all old cases/fixture guards and add actual chunked peer data control plus original-step success/failure adverses.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"72e01f31376f2ff8c9af233daf5a5b22fc824b3ec34c8633e90f9e7cd52631b9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:84d52d0934fe3c83065a3ade199b5568c215127f942d787212d90255e47e8532","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }

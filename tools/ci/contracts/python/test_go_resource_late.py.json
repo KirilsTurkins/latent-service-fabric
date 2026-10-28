@@ -1,1 +1,16 @@
-{"cases":["GoResourceLate.test_foreign_unknown_unreaped_unexecuted_and_overbudget_results_are_refused","GoResourceLate.test_source_is_a_single_closed_ordinary_library_extension"],"guards":{"GoResourceLate.test_foreign_unknown_unreaped_unexecuted_and_overbudget_results_are_refused":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e3217809999c4469ad537546b3f4b32b029ab0866d75ef4fe4ed4b41f7fed6d2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},"GoResourceLate.test_source_is_a_single_closed_ordinary_library_extension":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e3217809999c4469ad537546b3f4b32b029ab0866d75ef4fe4ed4b41f7fed6d2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}},"kind":"python","module":"tools/tests/test_go_resource_late.py","reviewReason":"One normal captured TypeScript component and six signed late/fresh facility outcomes using original native products and source-bound compiler inputs; preserve original Go/TypeScript baselines, ceilings and all positive pending/retirement oracles.","schemaVersion":"latent.ci.contracts.v1"}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "GoResourceLate.test_foreign_unknown_unreaped_unexecuted_and_overbudget_results_are_refused":
+      "1fe92b60d0fe4601a063d59b988c7dd879796ea16271bad5aa834641d8e22eab",
+    "GoResourceLate.test_source_is_a_single_closed_ordinary_library_extension":
+      "1fe92b60d0fe4601a063d59b988c7dd879796ea16271bad5aa834641d8e22eab"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_go_resource_late.py",
+  "reviewReason":"One normal captured TypeScript component and six signed late/fresh facility outcomes using original native products and source-bound compiler inputs; preserve original Go/TypeScript baselines, ceilings and all positive pending/retirement oracles.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "1fe92b60d0fe4601a063d59b988c7dd879796ea16271bad5aa834641d8e22eab":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e3217809999c4469ad537546b3f4b32b029ab0866d75ef4fe4ed4b41f7fed6d2","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

@@ -927,18 +927,18 @@ def object_identity(path):
     return identity(raw)
 
 
-def public_allowed(name, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False, node_geometry=False):
-    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry)
+def public_allowed(name, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False, node_geometry=False, node_capacity=False):
+    targets=capacity_targets(node_capacity,classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry)
     if name in DOCUMENTS:return DOCUMENTS[name]
     if netdev_layout and name=='layout.json':return 64*1024
     if name in {'objects/'+n for n in targets}:return MAX_OBJECT
     match=re.fullmatch(r'logs/([0-9]{2})-([a-z0-9-]+)\.(stdout|stderr)\.txt',name)
-    if match and int(match[1])<MAX_COMMANDS and match[2] in (GEOMETRY_STAGES if node_geometry else NODE_STAGES if node_bootstrap else MSI_DESCRIPTOR_STAGES if msi_descriptor else Q35_STAGES if q35 else MSI_STAGES if msi_context else VP_STAGES if vp_transport else CONSTRUCTOR_MMIO_STAGES if constructor_mmio else POST_INIT_STAGES if netdev_post_init else LAYOUT_STAGES if netdev_layout else DIRECTORY_STAGES if netdev_directory else REGISTRATION_STAGES if classdir_kernfs else STAGES):return 4*1024**2
+    if match and int(match[1])<MAX_COMMANDS and match[2] in (CAPACITY_STAGES if node_capacity else GEOMETRY_STAGES if node_geometry else NODE_STAGES if node_bootstrap else MSI_DESCRIPTOR_STAGES if msi_descriptor else Q35_STAGES if q35 else MSI_STAGES if msi_context else VP_STAGES if vp_transport else CONSTRUCTOR_MMIO_STAGES if constructor_mmio else POST_INIT_STAGES if netdev_post_init else LAYOUT_STAGES if netdev_layout else DIRECTORY_STAGES if netdev_directory else REGISTRATION_STAGES if classdir_kernfs else STAGES):return 4*1024**2
     return None
 
 
-def admit(output, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False, node_geometry=False):
-    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry)
+def admit(output, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False, node_geometry=False, node_capacity=False):
+    targets=capacity_targets(node_capacity,classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry)
     require(not output.is_symlink() and output.is_dir(),'public-output-directory')
     rows={};total=logs=0
     for q in sorted(output.rglob('*')):
@@ -946,7 +946,7 @@ def admit(output, *, classdir=False, classdir_kernfs=False, netdev_directory=Fal
         if q.is_dir():continue
         name=q.relative_to(output).as_posix()
         if name=='ADMISSION.json':continue
-        maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap,node_geometry=node_geometry);require(maximum is not None,'public-member')
+        maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap,node_geometry=node_geometry,node_capacity=node_capacity);require(maximum is not None,'public-member')
         raw=read(q,maximum);total+=len(raw)
         if name.startswith('logs/'):logs+=len(raw)
         require(total<=MAX_PUBLIC-MAX_DOCUMENT and logs<=16*1024**2,'public-union-bound')
@@ -963,18 +963,131 @@ def _copy_public(source, output, name, maximum):
     raw=read(source,maximum);q=output/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
 
 
-def run(output, revision, started, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False, node_geometry=False):
-    targets=mode_targets(classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry)
+
+# Closed source-only route. Coordinator fills this reviewed literal only after
+# the packed-page/radix source freeze; absence MUST refuse before any loader.
+CAPACITY_BRANCH = 'test/sdk-738-node-native-capacity-20261028'
+CAPACITY_MODULE = 'research/standard-outbound/linux-6.12-lineage/node-capacity/projector.py'
+CAPACITY_PREFIX = 'research/standard-outbound/linux-6.12-lineage/node-capacity/'
+CAPACITY_RESEARCH = {CAPACITY_PREFIX+n:p for n,p in {n:{'bytes':s,'sha256':h} for n,(s,h) in {'factory-node-capacity.c': (66778, 'bb37daf080f8408981a8fd1ad54a11a1bd70227d7046988ff06fd1642dfd7e3e'), 'factory-node-irq-action-pool.c': (3258, '9dc240a95dd463ef7c6d8777d201449eb4da46e4b3b3ed797aa3662205d86f32'), 'factory-node-irq-loan.c': (29283, '8f3c4c3400123f15e45f7a350bbf19d2d9db75dde3640d1375aff14c05c58633'), 'factory-node-irq-proc-pool.c': (5102, 'cd59d886d9300c8029da6d5d8bcf45e7a37bad943f15afee9760263cffc2711f'), 'factory-node-parent-vector.c': (15886, 'd5e288adf3256539eb8530ce97a62592501af816bcf0bcfed0b9998c8635d3bf'), 'factory-node-radix.c': (11478, 'dab28b1451761064f9a2d38fc3ddbe636d2a66a6e0bfe21d9aea793cad6171aa'), 'factory-node-small-objects.c': (5297, '2f9f3f3a475658e6950ec25aba0f2d43af01751c64b945ddf314ebba8d61ff58'), 'lsf-node-capacity-private.h': (16076, 'd50f5a232c871d13270c55c63424dad7529982b0958ecb623f68d5f68620c02a'), 'lsf-node-irq-action.c': (2560, '1a0fc8e6755d7a3ba431a535d04530c3a12fc8960ac6d0bda55ef4bc47cd8b91'), 'lsf-node-irq-proc.c': (7717, 'c0f6fccb7c741721b5942d1461ee99deceeb6cc989200b63cbce7dcbcb121748'), 'lsf-node-irq-revmap.c': (5606, '8dc28e02cf46a677b2e87d4b2d6cf35d740fd2d448cf647c04e55f3e877b3132'), 'lsf-node-irq.c': (10332, '8fe59c4f4839e22e9e54ae68e322496bb9d89067f9f1896518bba17b48f50058'), 'lsf-node-irqdomain.c': (2886, '7657bb5e1c2c539dd6c54dfcf3c55d4985263eef68069311b8a32a1dd732fd4e'), 'lsf-node-kobject.c': (1842, '177a7278be396e554bd5b10535b25ce6b8813b9bbfe2235edc359366bfa68200'), 'lsf-node-maple.c': (5351, 'e223df5d2ec76c72d07d37634ef8f8b83ca3182315727246519a75123554d073'), 'lsf-node-matrix.c': (1656, '0923693deae23971caa29bdc709e17961f6f4d77465e74c69bccac497298632b'), 'lsf-node-pcpu.c': (11632, '3ce20ca155ee460ad66fca0f97c3b64ba2ee4072d3468af5f3b581fd17138f58'), 'lsf-node-radix.c': (10274, 'cb6831a081d972be68003a1e2bebbd586a15ebd8f80bb09791b1fbf15cf7826d'), 'lsf-node-vector.c': (7724, '24f0aeac7c1e2921bb204b18866d289e7872b1c4f8d1ea4ee322e537b09da783'), 'lsf-node-vmalloc.c': (22509, '50eb867ea457e3fdd2bfa70454fcecb3db93eac73c1415a1fe9c2226aec3cc2a'), 'native-irq-manage.c': (80223, '4842b22569bb8791f8c7df4dfc3bd75c94198ac75fce011d929ee885522df743'), 'native-irq-proc.c': (16482, '09baa1e040fb467cda929b9caf8ed86a07dfa60e010eabf7b9684acdcbf20b7f'), 'native-proc-generic.c': (20918, '7fe9637cf5b8ae6d98977fba1f5d0cdbb6563157063a2d2b7eca8a9ef01f6997'), 'native-proc-inode.c': (17537, '5c8ce2883bfe35810bab0b192b2b9f8e49d0a836e975dfe4bbc88607e28831b1'), 'native-vp-transport.c': (17738, 'a8195766c4a95f682329a30a466b1989606820a7b375b476d30338440b631474'), 'projector.py': (39050, '37b0c8727b4dd9cebbf7c5324e82eaf2b79b925e8df6886a7b079e8f6962780b')}.items()}.items()}
+CAPACITY_PRIMARY = {n:{'bytes':s,'sha256':h} for n,(s,h) in {'mm/percpu.c': (103541, 'b74279d0cd0d8a3b31f26f0892a1bbb718f32812ee8ffb44f3f71199584964e0'), 'mm/percpu-vm.c': (11969, '220a0772b528a11a42de9a1417f43eeb91293435156f69ee7664153949a3645d'), 'mm/percpu-internal.h': (7895, '8c0b90d893cc890832f1846a449121450ec5ba0ccd907905a0161b9cd672a02d'), 'lib/maple_tree.c': (196713, 'd11eba94051ba43ebcf908e10165ba1724681a6e2803db9dc9d931f342feaa3c'), 'mm/vmalloc.c': (139333, '351e940965d3b2d0b0c44a970f596787613cb87dace7c6790e9c948c51246188'), 'mm/memory.c': (196705, '134b138551e90a3ce3a4d9f79391d11fdec7d2d79dd34a9eca2739a2eea8c64f'), 'include/linux/mm.h': (132024, 'a15410bd33802e92e80b973a33dfeb480ddbb36f0fc0f357f9a73d14524ddadb'), 'include/asm-generic/pgalloc.h': (6160, '08c4b5d8812e8fd5258e40c1a50cf9f413283718e686224f2353ea940339bf57'), 'arch/x86/include/asm/pgalloc.h': (5317, '4aab1f7de117aed2aadb1886f5b9f37b96818518dbb418763fe4afa4de9b2035'), 'mm/pgalloc-track.h': (1298, '497e7d1f41803446f5d94f11a63836a8c6b6a5d9e4124108fd6a6c1796fb86c1'), 'kernel/irq/irqdesc.c': (25422, '3ebc03602452076511e54fd3e0e84a692bcc479fd0c426186ff1900659f89079'), 'kernel/irq/irqdomain.c': (59948, '0715731e7132f88d8d7b9969ce2aa6d5c0a44deba9114f7cd2d5ef7a543ae066'), 'kernel/irq/matrix.c': (13742, '8e3a5f1c2dbfc39cc258f3f9fee9b65c13b494c0a26c7f056c726d338f8a549b'), 'arch/x86/kernel/apic/vector.c': (37921, '58f24baf4e401325e04da562a2a8d2378011df2754baf6b378d9edb0fee59c97'), 'lib/kobject.c': (28433, '0161a3faaa770cf7a724f94773104a5ab33c5dbafe525729276360cd8120d4ab'), 'kernel/irq/manage.c': (79503, '764415dc7e1732033e3b6dce8227190287546055a75c4fd5122293e0c710e96a'), 'kernel/irq/proc.c': (13328, '90e5826537275a5cc183460be6b593c68dee0f823a3ae46de4b5a84838189b6a'), 'lib/radix-tree.c': (44109, '71b4e536fcdc6bc52857bdb255f06d4b303e9e5e9c3d63f621ef1e91d103421e')}.items()}
+CAPACITY_REVIEW = {'research':CAPACITY_RESEARCH,'primary':{**CAPACITY_PRIMARY,**{n:{'bytes':s,'sha256':h} for n,(s,h) in {'fs/proc/generic.c': (19809, 'aed7c375f9b5fa0caa326beaa420514dfcddc3ffc78de8402c346444343bca64'), 'fs/proc/inode.c': (17061, 'a25586d83a5c01dba5e11c0b2d59d7ea977e11cb3cd5fc83892f8dd7e94985e6'), 'fs/proc/internal.h': (11133, 'f3fc4d9e1a2ca2e0b6ef68b659915aacc225aeb230d895517fcc4ad6328f97ff'), 'drivers/virtio/virtio_pci_common.c': (21355, '4a4d4c097c63faf4182d34d1fa30feb24a0b3a550d346df0474d58f5ece267f3')}.items()}},
+    'projectorPrimary':CAPACITY_PRIMARY,'outputCount':485}
+CAPACITY_TARGETS = ('net/factory.o','mm/percpu.o','mm/vmalloc.o','mm/memory.o','lib/maple_tree.o',
+    'kernel/irq/irqdesc.o','kernel/irq/irqdomain.o','kernel/irq/matrix.o',
+    'kernel/irq/manage.o','kernel/irq/proc.o','arch/x86/kernel/apic/vector.o',
+    'lib/kobject.o','drivers/base/core.o','fs/proc/generic.o','fs/proc/inode.o',
+    'drivers/virtio/virtio_pci_common.o','lib/radix-tree.o','lib/idr.o')
+CAPACITY_STAGES = tuple('node-capacity-objects' if s == 'node-irq-geometry-objects' else s
+    for s in GEOMETRY_STAGES)
+
+
+def capacity_targets(selected, *prior):
+    require(type(selected) is bool and not (selected and any(prior)), 'closed-node-capacity-mode')
+    original = mode_targets(*prior)
+    return CAPACITY_TARGETS if selected else original
+
+
+def capacity_capture(root):
+    review = CAPACITY_REVIEW
+    require(type(review) is dict and set(review) == {'research', 'primary', 'projectorPrimary',
+        'outputCount'}, 'node-capacity-source-not-frozen')
+    require(type(review['outputCount']) is int and 463 < review['outputCount'] <= MAX_ENTRIES,
+        'node-capacity-output-count')
+    _, physical, captured = geometry_capture(root)
+    prefix = str(PurePosixPath(CAPACITY_MODULE).parent) + '/'
+    require(type(review['research']) is dict and CAPACITY_MODULE in review['research'] and
+        all(type(n) is str and n.startswith(prefix) and '/' not in n[len(prefix):]
+            for n in review['research']), 'node-capacity-research-set')
+    require(len(physical) + len(review['research']) <= MAX_ENTRIES and
+        sum(r['bytes'] for r in physical.values()) + sum(r['bytes'] for r in review['research'].values()) <= MAX_SOURCE,
+        'node-capacity-research-preflight-bound')
+    actual = {p.relative_to(root).as_posix() for p in (root/prefix).iterdir()}
+    require(actual == set(review['research']), 'node-capacity-complete-research-directory')
+    for name, pin in review['research'].items():
+        safe_name(name); require(name not in physical, 'node-capacity-new-source')
+        raw = read(root/name, MAX_FILE); require(identity(raw) == pin, 'node-capacity-source-pin')
+        physical[name] = pin; captured[name] = raw
+    require(len(captured) <= MAX_ENTRIES and sum(map(len, captured.values())) <= MAX_SOURCE,
+        'node-capacity-capture-bounds')
+    require(type(review['primary']) is dict and type(review['projectorPrimary']) is dict and
+        set(review['projectorPrimary']) <= set(review['primary']) and
+        {'fs/proc/generic.c','fs/proc/inode.c','fs/proc/internal.h',
+            'drivers/virtio/virtio_pci_common.c'} <= set(review['primary']), 'node-capacity-primary-set')
+    require(len(review['primary']) <= MAX_ENTRIES and
+        sum(p['bytes'] for p in review['primary'].values()) <= MAX_SOURCE, 'node-capacity-primary-bound')
+    for name, pin in review['primary'].items():
+        safe_name(name)
+        require(type(pin) is dict and set(pin) == {'bytes','sha256'} and
+            type(pin['bytes']) is int and 0 < pin['bytes'] <= MAX_FILE and
+            type(pin['sha256']) is str and re.fullmatch('[0-9a-f]{64}',pin['sha256']),
+            'node-capacity-primary-pin')
+    return physical, captured
+
+
+def capacity_native_capture(tree, output):
+    # Full authenticated Linux checkout supplies ALL headers. This extra map
+    # preserves every original clone body before any selected SourceLoader.
+    require(CAPACITY_REVIEW is not None, 'node-capacity-source-not-frozen')
+    output.mkdir(mode=0o700)
+    values = {}
+    for name, pin in CAPACITY_REVIEW['primary'].items():
+        raw = read(tree/name, MAX_FILE); require(identity(raw) == pin, 'node-capacity-native-pin')
+        values[name] = raw
+    derived_write(output/'native', values)
+    return values
+
+
+def capacity_compose(values, captured, native):
+    require(len(values) == 463 and len(captured) <= MAX_ENTRIES and
+        set(native) == set(CAPACITY_REVIEW['primary']), 'node-capacity-stage-inputs')
+    for name, pin in CAPACITY_REVIEW['primary'].items():
+        require(identity(native[name]) == pin, 'node-capacity-native-before-loader')
+    import importlib.abc
+    import importlib.util
+    path = str((ROOT/CAPACITY_MODULE).resolve()); code = captured[CAPACITY_MODULE]
+    class Captured(importlib.abc.SourceLoader):
+        def get_filename(self, fullname):
+            require(fullname == '_lsf_node_native_capacity_projector', 'node-capacity-module'); return path
+        def get_data(self, name):
+            require(name == path, 'node-capacity-no-alternate-source'); return code
+        def path_stats(self, name):
+            raise OSError('node-capacity-no-bytecode')
+    spec = importlib.util.spec_from_file_location('_lsf_node_native_capacity_projector', path, loader=Captured())
+    require(spec is not None and spec.loader is not None, 'node-capacity-spec')
+    stage = importlib.util.module_from_spec(spec); spec.loader.exec_module(stage)
+    require(Path(stage.__file__).resolve() == Path(path) and stage.ROOT == ROOT.resolve() and
+        stage.COMPILED_ABI == 'lsf-q35-node-capacity-v1' and
+        stage.PRIMARY_PINS == CAPACITY_REVIEW['projectorPrimary'], 'node-capacity-origin')
+    prefix = str(PurePosixPath(CAPACITY_MODULE).parent) + '/'
+    materials = {n[len(prefix):]: raw for n,raw in captured.items()
+        if n.startswith(prefix) and n != CAPACITY_MODULE}
+    require(stage.MATERIAL_PINS == {n:identity(raw) for n,raw in materials.items()},
+        'node-capacity-all-material-pins')
+    result, record = stage.transform(values, {n:native[n] for n in stage.PRIMARY_PINS}, materials)
+    require(len(result) == CAPACITY_REVIEW['outputCount'] and record['sourceInverseExact'] is True and
+        all(record[k] is False for k in ('nodeFundingIssued','irqEnabled','nodeRetired',
+            'physicalRefund','runtimeFitQualified','sharedBootstrapOwnershipQualified')),
+        'node-capacity-no-qualification')
+    require(b'lsf_factory_selected_consumer(void)\n{\n    return NULL;\n}' in
+        result['net/factory-private.h'], 'node-capacity-consumer-closed')
+    return result, record
+
+
+def run(output, revision, started, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False, node_geometry=False, node_capacity=False):
+    targets=capacity_targets(node_capacity,classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry)
+    node_geometry = node_geometry or node_capacity
     end=deadline(started) # Before imports, filesystem mutation or tool probes.
     require(sys.platform=='linux' and os.environ.get('GITHUB_ACTIONS')=='true' and
         os.environ.get('GITHUB_REPOSITORY')=='KirilsTurkins/latent-service-fabric' and
-        os.environ.get('GITHUB_REF_NAME')==(GEOMETRY_BRANCH if node_geometry else NODE_BRANCH if node_bootstrap else MSI_DESCRIPTOR_BRANCH if msi_descriptor else Q35_BRANCH if q35 else MSI_BRANCH if msi_context else VP_BRANCH if vp_transport else CONSTRUCTOR_MMIO_BRANCH if constructor_mmio else POST_INIT_BRANCH if netdev_post_init else LAYOUT_BRANCH if netdev_layout else DIRECTORY_BRANCH if netdev_directory else REGISTRATION_BRANCH if classdir_kernfs else CLASSDIR_BRANCH if classdir else BRANCH) and os.environ.get('GITHUB_EVENT_NAME')=='push',
+        os.environ.get('GITHUB_REF_NAME')==(CAPACITY_BRANCH if node_capacity else GEOMETRY_BRANCH if node_geometry else NODE_BRANCH if node_bootstrap else MSI_DESCRIPTOR_BRANCH if msi_descriptor else Q35_BRANCH if q35 else MSI_BRANCH if msi_context else VP_BRANCH if vp_transport else CONSTRUCTOR_MMIO_BRANCH if constructor_mmio else POST_INIT_BRANCH if netdev_post_init else LAYOUT_BRANCH if netdev_layout else DIRECTORY_BRANCH if netdev_directory else REGISTRATION_BRANCH if classdir_kernfs else CLASSDIR_BRANCH if classdir else BRANCH) and os.environ.get('GITHUB_EVENT_NAME')=='push',
         'fixed-hosted-origin')
     require(type(revision) is str and re.fullmatch('[0-9a-f]{40}',revision),'source-revision')
     before=geometry_materials(ROOT)['physicalInputs'] if node_geometry else node_materials(ROOT)['physicalInputs'] if node_bootstrap else msi_descriptor_materials(ROOT)['physicalInputs'] if msi_descriptor else q35_materials(ROOT)['physicalInputs'] if q35 else msi_selected_sources(ROOT) if msi_context else vp_selected_sources(ROOT) if vp_transport else selected_sources(ROOT,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio)
     constructor_before=constructor_materials(ROOT) if constructor_mmio else None
     vp_before=vp_materials(ROOT) if vp_transport else None
     msi_before=(geometry_materials(ROOT) if node_geometry else node_materials(ROOT) if node_bootstrap else msi_descriptor_materials(ROOT) if msi_descriptor else q35_materials(ROOT) if q35 else msi_materials(ROOT)) if msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry else None
+    capacity_before, capacity_raw = capacity_capture(ROOT) if node_capacity else (None, None)
     output=output.resolve()
     require(output!=ROOT and ROOT not in output.parents and output not in ROOT.parents and
         not output.exists(),'fresh-public-outside-source')
@@ -1007,9 +1120,12 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
         receipt.update(nodeFundingQualified=False,nodeRetirementQualified=False,
             trustedInstalledProfileIssuerImplemented=False,compiledInitialGeometryWitness=False,
             originalNodeEscrowBytes=1048576,bankBytes=524288,tailBytes=196608,records=256,owners=64)
+    if node_capacity:
+        receipt.update(schemaVersion='lsf.node-native-capacity-objects.v1',
+            irqGateOpened=False, nativeRuntimeQualified=False, nodeWholeFitQualified=False)
     error=None;tools={};public_sources={}
     def command(stage,*argv,cap=120,root=None):
-        require(stage in (GEOMETRY_STAGES if node_geometry else NODE_STAGES if node_bootstrap else MSI_DESCRIPTOR_STAGES if msi_descriptor else Q35_STAGES if q35 else MSI_STAGES if msi_context else VP_STAGES if vp_transport else CONSTRUCTOR_MMIO_STAGES if constructor_mmio else POST_INIT_STAGES if netdev_post_init else LAYOUT_STAGES if netdev_layout else DIRECTORY_STAGES if netdev_directory else REGISTRATION_STAGES if classdir_kernfs else STAGES) and len(commands.records)<MAX_COMMANDS,'fixed-command-count')
+        require(stage in (CAPACITY_STAGES if node_capacity else GEOMETRY_STAGES if node_geometry else NODE_STAGES if node_bootstrap else MSI_DESCRIPTOR_STAGES if msi_descriptor else Q35_STAGES if q35 else MSI_STAGES if msi_context else VP_STAGES if vp_transport else CONSTRUCTOR_MMIO_STAGES if constructor_mmio else POST_INIT_STAGES if netdev_post_init else LAYOUT_STAGES if netdev_layout else DIRECTORY_STAGES if netdev_directory else REGISTRATION_STAGES if classdir_kernfs else STAGES) and len(commands.records)<MAX_COMMANDS,'fixed-command-count')
         require(time.monotonic()<commands.deadline,'original-deadline')
         commands.root=ROOT if root is None else root
         commands.command_seconds=min(cap,1200)
@@ -1052,7 +1168,15 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
                 current90LogicalAfter=None,logicalOriginsAfter=None)
             receipt.update(currentPhysicalSourceCount=65,currentLogicalSourceCount=90,
                 sourceStorage='closed-utf8-new-fragments-only',constructorProjectionStages=None)
-        write_json(scratch/'source-inputs.json',source_record)
+        if node_capacity:
+            source_record['nodeCapacity'] = {'physicalBefore':capacity_before,'physicalAfter':None,
+                'capturedResearchUtf8':{n:b.decode('utf8','strict') for n,b in capacity_raw.items()}}
+            receipt.update(currentPhysicalSourceCount=len(capacity_before),
+                currentLogicalSourceCount=len(msi_before['logicalIdentities'])+len(CAPACITY_RESEARCH),
+                sourceStorage='captured-node-capacity-plus-original-geometry')
+            for name in ('current88Physical','current119Logical','current88PhysicalAfter','current119LogicalAfter'):
+                source_record['priorGeometry'+name[7:]]=source_record.pop(name)
+        write_json(scratch/'source-inputs.json',source_record,16*MAX_DOCUMENT) if node_capacity else write_json(scratch/'source-inputs.json',source_record)
         public_sources['source-inputs.json']=scratch/'source-inputs.json'
         git=shutil.which('git');require(git,'git-tool')
         require(command('source-head',git,'rev-parse','HEAD',cap=15).decode().strip()==revision,'actual-checkout')
@@ -1114,6 +1238,11 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
         selected=read(build/'.config',MAX_DOCUMENT);require(identity(selected)==CONFIG,'actual-config-byte-drift')
         (scratch/'selected.config').write_bytes(selected);public_sources['selected.config']=scratch/'selected.config'
         receipt['actualConfiguration']=identity(selected)
+        if node_capacity:
+            capacity_native = capacity_native_capture(tree, scratch/'capacity-originals')
+            source_record['nodeCapacity'].update(nativePrimaryBefore={n:identity(b) for n,b in capacity_native.items()},
+                capturedNativeUtf8={n:b.decode('utf8','strict') for n,b in capacity_native.items()})
+            write_json(scratch/'source-inputs.json',source_record,16*MAX_DOCUMENT) if node_capacity else write_json(scratch/'source-inputs.json',source_record)
         baseline_output=scratch/'baseline';baseline_output.mkdir()
         command('pure-baseline',sys.executable,'-B',Path(__file__).resolve(),'--baseline-worker',
             '--recipe',recipe,'--kernel-tree',tree,'--config',scratch/'selected.config','--output',baseline_output,cap=180)
@@ -1154,11 +1283,14 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
             receipt['nodeIrqGeometryStage']=geometry_record
             source_record.update(prior85PhysicalBefore=msi_before['prior85Physical'],
                 prior116LogicalBefore=msi_before['prior116Logical'])
+        if node_capacity:
+            values, capacity_record = capacity_compose(values, capacity_raw, capacity_native)
+            receipt['nodeCapacityStage'] = capacity_record
         rows=derived_write(scratch/'current-derived',values)
         for name,raw in values.items():
             q=tree/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
         write_json(scratch/'derived-inputs.json',rows,4*MAX_DOCUMENT);public_sources['derived-inputs.json']=scratch/'derived-inputs.json'
-        command('node-irq-geometry-objects' if node_geometry else 'node-bootstrap-objects' if node_bootstrap else 'msi-descriptor-objects' if msi_descriptor else 'q35-msi-domain-objects' if q35 else 'msi-context-objects' if msi_context else 'vp-transport-objects' if vp_transport else 'constructor-mmio-objects' if constructor_mmio else 'netdev-post-init-objects' if netdev_post_init else 'netdev-layout-objects' if netdev_layout else 'netdev-directory-objects' if netdev_directory else 'classdir-kernfs-objects' if classdir_kernfs else 'classdir-objects' if classdir else 'eighteen-objects',
+        command('node-capacity-objects' if node_capacity else 'node-irq-geometry-objects' if node_geometry else 'node-bootstrap-objects' if node_bootstrap else 'msi-descriptor-objects' if msi_descriptor else 'q35-msi-domain-objects' if q35 else 'msi-context-objects' if msi_context else 'vp-transport-objects' if vp_transport else 'constructor-mmio-objects' if constructor_mmio else 'netdev-post-init-objects' if netdev_post_init else 'netdev-layout-objects' if netdev_layout else 'netdev-directory-objects' if netdev_directory else 'classdir-kernfs-objects' if classdir_kernfs else 'classdir-objects' if classdir else 'eighteen-objects',
             *common,*(['-k'] if constructor_mmio or vp_transport or msi_context or q35 or msi_descriptor or node_bootstrap or node_geometry else []),'-j2',*targets,root=tree,cap=1200)
         require(read(build/'.config',MAX_DOCUMENT)==selected,'actual-config-mutated')
         autoconf=read(build/'include/generated/autoconf.h',MAX_DOCUMENT)
@@ -1166,9 +1298,9 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
             'actual-selected-autoconf')
         (scratch/'generated-autoconf.h').write_bytes(autoconf);public_sources['generated-autoconf.h']=scratch/'generated-autoconf.h'
         receipt['products']={name:object_identity(build/name) for name in targets}
-        require(len(receipt['products'])==len(targets),'six-node-geometry-exact-products' if node_geometry else 'one-node-bootstrap-exact-product' if node_bootstrap else 'six-msi-descriptor-exact-products' if msi_descriptor else 'seven-q35-exact-products' if q35 else 'six-msi-exact-products' if msi_context else 'twenty-two-vp-exact-products' if vp_transport else 'twenty-two-constructor-exact-products' if constructor_mmio else 'eight-post-init-exact-products' if netdev_post_init else 'eleven-layout-exact-products' if netdev_layout else 'nine-directory-exact-products' if netdev_directory else 'nine-exact-products' if classdir_kernfs else 'four-exact-products' if classdir else 'eighteen-exact-products')
+        require(len(receipt['products'])==len(targets),'eighteen-node-capacity-exact-products' if node_capacity else 'six-node-geometry-exact-products' if node_geometry else 'one-node-bootstrap-exact-product' if node_bootstrap else 'six-msi-descriptor-exact-products' if msi_descriptor else 'seven-q35-exact-products' if q35 else 'six-msi-exact-products' if msi_context else 'twenty-two-vp-exact-products' if vp_transport else 'twenty-two-constructor-exact-products' if constructor_mmio else 'eight-post-init-exact-products' if netdev_post_init else 'eleven-layout-exact-products' if netdev_layout else 'nine-directory-exact-products' if netdev_directory else 'nine-exact-products' if classdir_kernfs else 'four-exact-products' if classdir else 'eighteen-exact-products')
         for name in targets:public_sources['objects/'+name]=build/name
-        if node_geometry:
+        if node_geometry and not node_capacity:
             receipt['stage']='readonly-irq-geometry'
             require(time.monotonic()<commands.deadline,'geometry-parent-deadline')
             receipt['compiledIrqGeometry']={name:geometry_decode(read(build/name,MAX_OBJECT),role)
@@ -1243,8 +1375,19 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
             geometry_record.update(nativePrimaryAfter=projected,capturedNativeBeforeAfter=retained)
             source_record.update(prior85PhysicalAfter=msi_after['prior85Physical'],
                 prior116LogicalAfter=msi_after['prior116Logical'])
+        if node_capacity:
+            capacity_after, _ = capacity_capture(ROOT)
+            require(capacity_after == capacity_before, 'node-capacity-source-drift')
+            require(all(identity(read(scratch/'capacity-originals/native'/n,MAX_FILE)) == identity(b)
+                for n,b in capacity_native.items()), 'node-capacity-originals-drift')
+            source_record['nodeCapacity'].update(physicalAfter=capacity_after,
+                nativePrimaryAfter={n:identity(read(tree/n,MAX_FILE)) for n in capacity_native},
+                finalProjectedCount=len(values))
+        if node_capacity:
+            for name in ('current88PhysicalAfter','current119LogicalAfter'):
+                source_record['priorGeometry'+name[7:]]=source_record.pop(name)
         source_record.update(currentAfter=current_inputs,currentGitTreeInventory=identity(tree_before))
-        write_json(scratch/'source-inputs.json',source_record)
+        write_json(scratch/'source-inputs.json',source_record,16*MAX_DOCUMENT) if node_capacity else write_json(scratch/'source-inputs.json',source_record)
         public_sources['source-inputs.json']=scratch/'source-inputs.json'
         receipt['status']='passed';receipt['stage']='complete'
     except BaseException as failure:
@@ -1258,12 +1401,12 @@ def run(output, revision, started, *, classdir=False, classdir_kernfs=False, net
             write_json(output/'receipt.json',receipt,MAX_DOCUMENT)
             write_json(output/'commands.json',commands.records,MAX_DOCUMENT)
             for name,q in public_sources.items():
-                maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap,node_geometry=node_geometry);require(maximum is not None,'public-source')
+                maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap,node_geometry=node_geometry and not node_capacity,node_capacity=node_capacity);require(maximum is not None,'public-source')
                 _copy_public(q,output,name,maximum)
             for q in sorted((scratch/'commands/logs').iterdir()):
-                name='logs/'+q.name;maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap,node_geometry=node_geometry);require(maximum is not None,'public-command-channel')
+                name='logs/'+q.name;maximum=public_allowed(name,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap,node_geometry=node_geometry and not node_capacity,node_capacity=node_capacity);require(maximum is not None,'public-command-channel')
                 _copy_public(q,output,name,maximum)
-            admit(output,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap,node_geometry=node_geometry)
+            admit(output,classdir=classdir,classdir_kernfs=classdir_kernfs,netdev_directory=netdev_directory,netdev_layout=netdev_layout,netdev_post_init=netdev_post_init,constructor_mmio=constructor_mmio,vp_transport=vp_transport,msi_context=msi_context,q35=q35,msi_descriptor=msi_descriptor,node_bootstrap=node_bootstrap,node_geometry=node_geometry and not node_capacity,node_capacity=node_capacity)
         except BaseException as retention:
             receipt['status']='failed';receipt['retentionFailure']='bounded-public-admission-failed'
             raw=canonical(receipt)
@@ -1291,16 +1434,17 @@ def main():
     parser.add_argument('--q35-msi-domain',dest='q35',action='store_true',help='fixed seven direct-vector domain/table objects; IRQ gate closed')
     parser.add_argument('--msi-descriptor',action='store_true',help='fixed six descriptor/XArray objects only; IRQ gate closed')
     parser.add_argument('--node-bootstrap',action='store_true',help='one uninstalled Node custody object; funding/retirement/IRQ closed')
+    parser.add_argument('--node-capacity',action='store_true',help='one current native capacity object build; all funding/IRQ/runtime gates closed')
     parser.add_argument('--node-geometry',action='store_true',help='six actual native IRQ geometry objects; no funding or runtime claim')
     parser.add_argument('--baseline-worker',action='store_true')
     parser.add_argument('--recipe',type=Path);parser.add_argument('--kernel-tree',type=Path);parser.add_argument('--config',type=Path)
     args=parser.parse_args()
-    mode_targets(args.classdir,args.classdir_kernfs,args.netdev_directory,args.netdev_layout,args.netdev_post_init,args.constructor_mmio,args.vp_transport,args.msi_context,args.q35,args.msi_descriptor,args.node_bootstrap,args.node_geometry)
-    require(not ((args.classdir or args.classdir_kernfs or args.netdev_directory or args.netdev_layout or args.netdev_post_init or args.constructor_mmio or args.vp_transport or args.msi_context or args.q35 or args.msi_descriptor or args.node_bootstrap or args.node_geometry) and args.baseline_worker),'one-private-mode')
+    capacity_targets(args.node_capacity,args.classdir,args.classdir_kernfs,args.netdev_directory,args.netdev_layout,args.netdev_post_init,args.constructor_mmio,args.vp_transport,args.msi_context,args.q35,args.msi_descriptor,args.node_bootstrap,args.node_geometry)
+    require(not ((args.node_capacity or args.classdir or args.classdir_kernfs or args.netdev_directory or args.netdev_layout or args.netdev_post_init or args.constructor_mmio or args.vp_transport or args.msi_context or args.q35 or args.msi_descriptor or args.node_bootstrap or args.node_geometry) and args.baseline_worker),'one-private-mode')
     if args.admit:
         require(not args.baseline_worker,'one-private-mode')
         try:
-            admit(args.output,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs,netdev_directory=args.netdev_directory,netdev_layout=args.netdev_layout,netdev_post_init=args.netdev_post_init,constructor_mmio=args.constructor_mmio,vp_transport=args.vp_transport,msi_context=args.msi_context,q35=args.q35,msi_descriptor=args.msi_descriptor,node_bootstrap=args.node_bootstrap,node_geometry=args.node_geometry)
+            admit(args.output,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs,netdev_directory=args.netdev_directory,netdev_layout=args.netdev_layout,netdev_post_init=args.netdev_post_init,constructor_mmio=args.constructor_mmio,vp_transport=args.vp_transport,msi_context=args.msi_context,q35=args.q35,msi_descriptor=args.msi_descriptor,node_bootstrap=args.node_bootstrap,node_geometry=args.node_geometry,node_capacity=args.node_capacity)
         except BaseException:
             # Fixed fallback only; never upload any rejected directory/glob.
             require(not args.output.is_symlink(),'fallback-output-symlink')
@@ -1327,7 +1471,7 @@ def main():
     elif args.baseline_worker:
         require(args.recipe and args.kernel_tree and args.config,'worker-fixed-inputs')
         baseline_worker(args.recipe,args.kernel_tree,args.config,args.output)
-    else:run(args.output,args.source_commit,args.started,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs,netdev_directory=args.netdev_directory,netdev_layout=args.netdev_layout,netdev_post_init=args.netdev_post_init,constructor_mmio=args.constructor_mmio,vp_transport=args.vp_transport,msi_context=args.msi_context,q35=args.q35,msi_descriptor=args.msi_descriptor,node_bootstrap=args.node_bootstrap,node_geometry=args.node_geometry)
+    else:run(args.output,args.source_commit,args.started,classdir=args.classdir,classdir_kernfs=args.classdir_kernfs,netdev_directory=args.netdev_directory,netdev_layout=args.netdev_layout,netdev_post_init=args.netdev_post_init,constructor_mmio=args.constructor_mmio,vp_transport=args.vp_transport,msi_context=args.msi_context,q35=args.q35,msi_descriptor=args.msi_descriptor,node_bootstrap=args.node_bootstrap,node_geometry=args.node_geometry,node_capacity=args.node_capacity)
 
 
 if __name__=='__main__':

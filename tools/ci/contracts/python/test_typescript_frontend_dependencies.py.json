@@ -1,5 +1,5 @@
 {
-"cases":["TypeScriptFrontendDependencies.test_inner_capture_cannot_bypass_outer_approval","TypeScriptFrontendDependencies.test_outer_reviewed_capture_materializes_before_compiler_without_original_source","TypeScriptFrontendDependencies.test_tampered_outer_cas_is_rejected_before_language_compiler"],
+"storageCases":"guard-keys",
 "guards":{
 "TypeScriptFrontendDependencies.test_inner_capture_cannot_bypass_outer_approval":
       "3b02340ce14b6d130e6bace974a83bcc2688aafe5406a12479ff4bd2fbad62dc",

@@ -1,20 +1,20 @@
 {
-  "storageCases":"guard-keys",
-  "guards":{
-    "BorrowRetryTests.test_changed_archive_or_receipts_refuse_before_output_creation":
+"storageCases":"guard-keys",
+"guards":{
+"BorrowRetryTests.test_changed_archive_or_receipts_refuse_before_output_creation":
       "b4ed91a72e9d5725d208140a130da092fc25334cdbbe8d645c4e239e5a379beb",
-    "BorrowRetryTests.test_compile_and_link_share_one_deadline_and_failed_phase_is_retained":
+"BorrowRetryTests.test_compile_and_link_share_one_deadline_and_failed_phase_is_retained":
       "b4ed91a72e9d5725d208140a130da092fc25334cdbbe8d645c4e239e5a379beb",
-    "BorrowRetryTests.test_failed_producer_is_preserved_and_foreign_or_success_metadata_refuses":
+"BorrowRetryTests.test_failed_producer_is_preserved_and_foreign_or_success_metadata_refuses":
       "b4ed91a72e9d5725d208140a130da092fc25334cdbbe8d645c4e239e5a379beb",
-    "BorrowRetryTests.test_unsafe_carrier_member_refuses_before_receipt_parse":
+"BorrowRetryTests.test_unsafe_carrier_member_refuses_before_receipt_parse":
       "b4ed91a72e9d5725d208140a130da092fc25334cdbbe8d645c4e239e5a379beb"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_typescript_borrow_retry_inputs.py",
-  "reviewReason":"Four additive frozen-producer refusal and shared diagnostic-deadline controls; no native or signed replay",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "b4ed91a72e9d5725d208140a130da092fc25334cdbbe8d645c4e239e5a379beb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b3f16e04fba370ab5b6a98c706a9b43a7b354eb56932184564f42d76bc0f6cba","class:setup-sha256:63ba5c52251e64122374e30c66218e5c91473a4c153d67d3fe120db3382208ed"],"skipSites":[]}
-  }
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_borrow_retry_inputs.py",
+"reviewReason":"Four additive frozen-producer refusal and shared diagnostic-deadline controls; no native or signed replay",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"b4ed91a72e9d5725d208140a130da092fc25334cdbbe8d645c4e239e5a379beb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b3f16e04fba370ab5b6a98c706a9b43a7b354eb56932184564f42d76bc0f6cba","class:setup-sha256:63ba5c52251e64122374e30c66218e5c91473a4c153d67d3fe120db3382208ed"],"skipSites":[]}
+}
 }

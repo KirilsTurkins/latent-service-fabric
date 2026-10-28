@@ -1,5 +1,5 @@
 {
-"cases":["ClosedOperationObservation.test_all_current_public_reasons_retain_retryability_without_settling_the_original","ClosedOperationObservation.test_known_terminal_result_does_not_create_an_uncertainty_observation","ClosedOperationObservation.test_unknown_ambiguous_or_private_detail_shapes_are_not_retained"],
+"storageCases":"guard-keys",
 "guards":{
 "ClosedOperationObservation.test_all_current_public_reasons_retain_retryability_without_settling_the_original":
       "6d8e0100d0fa484aa7d4980b0558b993f97bc27e81ec37e121df99d5d6e1982c",

@@ -1,5 +1,5 @@
 {
-"cases":["ScratchReplay.test_changed_original_products_or_incomplete_refusal_never_publish_replay_pass","ScratchReplay.test_exact_historical_tools_are_checked_before_and_after_three_refusals","ScratchReplay.test_manual_only_job_cannot_trigger_original_language_jobs_or_build_a_host"],
+"storageCases":"guard-keys",
 "guards":{
 "ScratchReplay.test_changed_original_products_or_incomplete_refusal_never_publish_replay_pass":
       "408f3f31dcff2057f7084319776a26ac261d5f2e355f6c5699e2513b48378ad7",
