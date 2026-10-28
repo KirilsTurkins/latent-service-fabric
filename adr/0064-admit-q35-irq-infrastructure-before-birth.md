@@ -1,20 +1,21 @@
 # ADR-0064: Admit q35 IRQ infrastructure before birth
 
 - Date: 2026-10-27
-- Status: Proposed; owner decision required. No implementation or runtime qualification.
+- Status: Accepted design on 2026-10-28; implementation and runtime qualification remain gated.
+- Decision: [recorded architecture/security owner acceptance](https://github.com/KirilsTurkins/latent-service-fabric/pull/1555#issuecomment-6468526796).
 - Decision owner: [provider #738](https://github.com/KirilsTurkins/latent-service-fabric/issues/738).
 - Contract: [#737](https://github.com/KirilsTurkins/latent-service-fabric/issues/737),
   [ADR-0061](0061-bound-standard-outbound-streams.md) and its
   [recorded owner acceptance](../docs/runtime/outbound-stream-acceptance-2026-10-16.md#accepted-scope).
 
-## Decision requested
+## Decision
 
-Approve an original node-lifetime reservation for the bounded shared IRQ
+Admit an original node-lifetime reservation for the bounded shared IRQ
 capacity introduced by the selected q35 provider, admitted through existing
 accounting **before its covered kernel allocations or publication**. Keep
 tenant/operation Roots and fresh connection leases separate. Select the initial
-qualification topology below. This is a proposed ownership bridge, not an
-existing admission API, an accepted amendment or permission to enable IRQs.
+qualification topology below. This is an accepted ownership contract for
+implementation, not an existing admission API or permission to enable IRQs.
 
 The existing userspace provider admission reserves 1 MiB before protected
 factory entry; neither it nor the separate accepted-operation owner supplies
@@ -27,7 +28,7 @@ checks its covered factory/bootstrap footprint against
 of 1 MiB. Neither fact establishes an existing node-lifetime parent or a
 combined node/operation admission API; that lifecycle attachment is missing.
 
-The requested decision includes creating and attaching that original parent
+The accepted decision requires creating and attaching that original parent
 before covered births, with node and factory shares partitioning the SAME
 1 MiB covered envelope, never an additional node allowance alongside the full
 factory reservation. Its genuine charge must participate in existing configured
@@ -35,7 +36,7 @@ provider accounting alongside operation/tenant charges, without duplication or
 reparenting already-born state. The combined admission/partition proof must be
 implemented; it cannot be inferred from either current ceiling or `NodeFixed`.
 The 512 KiB private backing, 192 KiB infrastructure tail, 256 records and
-64 owners remain unchanged within their existing constraints. The proposal
+64 owners remain unchanged within their existing constraints. This decision
 creates no second ledger, cap increase, cursor reuse or physical refund.
 There is no evidence that the complete IRQ graph fits these bounds or that
 192 KiB remains available. If a complete peak cannot fit, selection must fail
@@ -50,8 +51,8 @@ requires original budgets and existing cleanup owners; its
 [gate 1](0061-bound-standard-outbound-streams.md#exact-gates-and-partial-delivery)
 requires explicit acceptance of the selected profile and resource bounds.
 The October 16 acceptance did not select this new node admission bridge or
-CPU topology. This draft requests that additional scoped decision, leaving
-the accepted authority, TCP/TLS operations and all downstream gates intact.
+CPU topology. The October 28 owner acceptance selects that additional scope,
+leaving the accepted authority, TCP/TLS operations and all downstream gates intact.
 
 Preserve the [existing OS/provider boundary](../research/standard-outbound/linux-6.12-lineage/cleanup-provider-boundary-r1.md#contract-scope).
 Original Linux bootstrap objects are references to an existing provider;
@@ -64,12 +65,12 @@ without that admission, a later lookup or size measurement cannot repair its
 provenance. The protected bootstrap integration must establish the boundary
 before the covered births, or refuse this profile.
 
-## Proposed initial platform identity
+## Accepted initial platform identity
 
 Use the selected QEMU 11.1.2 `pc-q35-11.1` machine, KVM, virtio-net-pci and
 pinned Linux 6.12.113 source
 `7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e`, without a virtual IOMMU or interrupt
-remapping device. Propose exactly one vCPU with `maxcpus=1`, no CPU hotplug,
+remapping device. Select exactly one vCPU with `maxcpus=1`, no CPU hotplug,
 and a verified one-CPU possible mask. QEMU arguments alone do not prove the
 kernel possible mask; any needed protected boot parameter must be separately
 bound before use. Keep the existing kernel configuration, including its
@@ -112,9 +113,9 @@ The [existing final-stack/IRQ relay obligations](../research/standard-outbound/l
 remain. Earlier GRO/NAPI, native writer/race, RX/virtqueue/DMA, task and full
 TCP/useful-fit gaps also remain; IRQ accounting cannot certify them.
 
-## Alternatives and approval boundary
+## Alternatives and implementation boundary
 
-1. **Recommended: original shared admission plus complete device closure.**
+1. **Selected: original shared admission plus complete device closure.**
    Preserves native shared state and its true lifetime. Requires a protected
    bootstrap bridge, complete incremental peak proof and evidence of the
    existing platform providers' finite capacity; none is implemented here.
@@ -127,8 +128,8 @@ TCP/useful-fit gaps also remain; IRQ accounting cannot certify them.
    lifetime or unchanged-bound fit cannot be established. Another paid prefix,
    post-birth adoption or cap increase cannot substitute for closure.
 
-Owner approval would select the first ownership approach and the proposed
-one-vCPU qualification identity for implementation and review. It would not
+The recorded owner acceptance selects the first ownership approach and the
+one-vCPU qualification identity for implementation and review. It does not
 qualify any allocation, physical retirement, real TCP exchange or production
 installation. Until complete source, compiled geometry, peak admission and
 focused actual platform evidence pass review, all IRQ/funding/runtime/fit
