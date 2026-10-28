@@ -254,6 +254,39 @@ SHUTDOWN_BRANCH = 'feat/java-cf-shutdown-now-20261028'
 SHUTDOWN_CASE = 'runtime::signed_java_shutdown_now_withdraws_only_unstarted_callbacks'
 
 
+
+def shutdown_sources(commands, names=None):
+    """Native source cap and fixed supplemental evidence are separate domains."""
+    if names is None:
+        commands.command_seconds = 25
+        raw = commands.run('source-paths', 'git', 'ls-files', '-z', '--', *SOURCE_ALLOWLIST)
+        need(len(raw) <= 2 * 1024**2 and raw.endswith(b'\0'), 'shutdown-source-path-bound')
+        paths = raw[:-1].decode('utf-8').split('\0')
+        need(len(paths) == len(set(paths)), 'shutdown-source-path-duplicates')
+        names = set(paths)
+    else:
+        names = set(names)
+    limits = SnapshotLimits()
+    need(100 <= len(names) <= limits.max_entries and all(
+        any(name == root or name.startswith(root + '/') for root in SOURCE_ALLOWLIST)
+        for name in names), 'shutdown-native-source-count-or-root')
+    supplemental = set(observed.EXTRA_SOURCES) | {workers.WORKFLOW, WORKFLOW,
+        'sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java'}
+    need(len(supplemental) == 17 and not names.intersection(supplemental),
+        'shutdown-fixed-supplement')
+    def capture(selected, maximum, label):
+        result, total = {}, 0
+        for name in sorted(selected):
+            need(time.monotonic() < commands.deadline, 'shutdown-source-deadline')
+            data = read_file(ROOT / name, limits.max_file_bytes)
+            total += len(data)
+            need(total <= maximum, label)
+            result[name] = identities.identity(data)
+        need(time.monotonic() < commands.deadline, 'shutdown-source-deadline')
+        return result
+    return {'native': capture(names, limits.max_total_bytes, 'shutdown-native-source-total'),
+        'supplementary': capture(supplemental, 16 * 1024**2, 'shutdown-supplement-total')}
+
 def shutdown_observations(raw, filtered):
     """Read only the four current normal signed activations, never source-ledger credit."""
     need(type(filtered) is int and filtered >= 0, 'shutdown-registry-count')
@@ -332,9 +365,10 @@ def qualify_shutdown(output, revision):
             'rev-parse', '--verify', 'HEAD').strip() == revision.encode(), 'shutdown-current-source')
     try:
         current_source('source-head-before')
-        before, java_before = sources(commands), java_sources()
-        receipt.update(sourceBefore=before, javaSourceBefore=java_before)
-        write_json(output / 'source-inputs.json', {'native': before, 'java': java_before})
+        before, java_before = shutdown_sources(commands), java_sources()
+        receipt.update(sourceBefore=before['native'], supplementarySourceBefore=before['supplementary'],
+            javaSourceBefore=java_before)
+        write_json(output / 'source-inputs.json', {**before, 'java': java_before})
         private = Path(tempfile.mkdtemp(prefix='latent-java-shutdown.', dir='/tmp')); private.chmod(0o700)
         with files.directory(private, owners={0, os.geteuid()}): pass
         receipt['stage'] = 'normal-pinned-tools'
@@ -396,12 +430,13 @@ def qualify_shutdown(output, revision):
         commands.command_seconds = 480
         raw = commands.run('execute-exact-case', artifact.executable, SHUTDOWN_CASE, '--exact', '--ignored', '--show-output', '--test-threads=1')
         receipt['observation'] = shutdown_observations(raw, len(contract['expectedCases']) - 1)
-        need(sources(commands, before) == before and java_sources() == java_before, 'final-source')
+        need(shutdown_sources(commands, before['native']) == before and java_sources() == java_before, 'final-source')
         need(file_identity(artifact.executable, 'local-service-java-shutdown-now', 512 * 1024**2) == receipt['executable'], 'final-executable')
         need([file_identity(tools[name], name) for name in sorted(tools)] == pins, 'final-tools')
         current_source('source-head-after')
         need(time.monotonic() < commands.deadline, 'shutdown-final-deadline')
-        receipt.update(status='passed', sourceAfter=before, javaSourceAfter=java_before, sourceUnchanged=True)
+        receipt.update(status='passed', sourceAfter=before['native'],
+            supplementarySourceAfter=before['supplementary'], javaSourceAfter=java_before, sourceUnchanged=True)
     except BaseException:
         receipt['status'] = 'failed'
         raise

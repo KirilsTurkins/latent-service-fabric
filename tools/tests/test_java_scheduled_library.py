@@ -165,3 +165,58 @@ class TaskShutdownNowOwnership(unittest.TestCase):
                 patch.object(owner, 'fresh', side_effect=AssertionError('output opened')):
             with self.assertRaisesRegex(ValueError, 'exclusive-fixture-selector'):
                 owner.qualify_shutdown(Path('absent'), revision)
+
+
+class TaskShutdownNowSourceCapture(unittest.TestCase):
+    def test_full_native_snapshot_and_fixed_supplement_keep_limits_and_detect_drift(self):
+        from types import SimpleNamespace
+        native = [f'tools/capture-{index:04d}.py' for index in range(8992)]
+        supplemental = set(owner.observed.EXTRA_SOURCES) | {owner.workers.WORKFLOW, owner.WORKFLOW,
+            'sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java'}
+        calls, changed = [], {}
+        allowed = {*native, *supplemental}
+        def command(stage, *argv):
+            calls.append((stage, argv))
+            self.assertEqual((stage, argv), ('source-paths', ('git', 'ls-files', '-z', '--', *owner.SOURCE_ALLOWLIST)))
+            return ('\0'.join(native) + '\0').encode()
+        def read(path, maximum):
+            self.assertEqual(maximum, 4 * 1024**2)
+            name = path.relative_to(owner.ROOT).as_posix()
+            self.assertIn(name, allowed)
+            value = changed.get(name, b'x')
+            if len(value) > maximum: raise ValueError('file-bound')
+            return value
+        commands = SimpleNamespace(command_seconds=0, deadline=1000, run=command)
+        with patch.object(owner.time, 'monotonic', return_value=100), patch.object(owner, 'read_file', side_effect=read):
+            before = owner.shutdown_sources(commands)
+            self.assertEqual(set(before['native']), set(native))
+            self.assertEqual(set(before['supplementary']), supplemental)
+            self.assertEqual((len(before['native']), len(before['supplementary']), len(calls)), (8992, 17, 1))
+            self.assertEqual(owner.shutdown_sources(commands, before['native']), before)
+            self.assertEqual(len(calls), 1)
+            changed[native[0]] = b'changed-native'
+            after = owner.shutdown_sources(commands, before['native'])
+            self.assertNotEqual(after['native'], before['native'])
+            self.assertEqual(after['supplementary'], before['supplementary'])
+            changed.clear(); changed[min(supplemental)] = b'changed-supplement'
+            after = owner.shutdown_sources(commands, before['native'])
+            self.assertEqual(after['native'], before['native'])
+            self.assertNotEqual(after['supplementary'], before['supplementary'])
+            changed.clear(); native.append('tools/overflow.py')
+            with self.assertRaisesRegex(ValueError, 'native-source-count'):
+                owner.shutdown_sources(commands)
+            native.pop()
+            changed[native[0]] = b'x' * (4 * 1024**2 + 1)
+            with self.assertRaisesRegex(ValueError, 'file-bound'):
+                owner.shutdown_sources(commands, before['native'])
+            changed.clear()
+            full = b'x' * (4 * 1024**2)
+            changed.update(dict.fromkeys(native[:19], full))
+            with self.assertRaisesRegex(ValueError, 'native-source-total'):
+                owner.shutdown_sources(commands, before['native'])
+            changed.clear(); changed.update(dict.fromkeys(sorted(supplemental)[:5], full))
+            with self.assertRaisesRegex(ValueError, 'supplement-total'):
+                owner.shutdown_sources(commands, before['native'])
+            changed.clear(); commands.deadline = 100
+            with self.assertRaisesRegex(ValueError, 'source-deadline'):
+                owner.shutdown_sources(commands, before['native'])
