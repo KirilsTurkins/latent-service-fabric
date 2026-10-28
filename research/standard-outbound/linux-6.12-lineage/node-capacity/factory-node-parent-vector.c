@@ -400,3 +400,38 @@ int lsf_node_irq_aux_retire(const void *address, enum lsf_node_capacity_role rol
         return lsf_node_capacity_native_free(address, role);
     return selected;
 }
+
+int lsf_node_vector_prepared_slot(struct lsf_node_capacity *owner,
+    struct irq_matrix *matrix, unsigned int index, struct lsf_node_vector_slot *out)
+{
+    struct lsf_node_parent *node;
+    struct lsf_node_capacity *actual;
+    struct lsf_prepaid_view *record;
+    struct lsf_node_vector_slot *slot;
+    unsigned long flags;
+    unsigned int found;
+    int error = -EIO;
+
+    if (!out || index >= LSF_NODE_CAPACITY_VECTORS)
+        return error;
+    spin_lock_irqsave(&pool_lock, flags);
+    node = lsf_node_capacity_parent_locked(owner);
+    if (!lsf_node_capacity_open_locked(node) || !owner->pcpu_prepared ||
+        !owner->irq_aux_prepared || owner->irq_apic_claimed || owner->irq_parent_claimed)
+        goto out;
+    if (lsf_node_irq_aux_index_locked(owner->irq_apic[index], LSF_NODE_IRQ_APIC,
+            &actual, &found, &record) != 1 || actual != owner || found != index ||
+        record->deferred != LSF_PREPAID_PRIVATE)
+        goto out;
+    slot = &owner->vector_slots[index];
+    if (slot->phase != LSF_NODE_VECTOR_HELD || slot->matrix != matrix ||
+        slot->desc.slot || slot->desc.role || slot->desc.generation ||
+        slot->desc.bytes || slot->desc.alignment ||
+        !lsf_node_irq_aux_ticket_locked(&slot->apic, record, LSF_NODE_IRQ_APIC))
+        goto out;
+    *out = *slot;
+    error = 0;
+out:
+    spin_unlock_irqrestore(&pool_lock, flags);
+    return error;
+}

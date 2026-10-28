@@ -2783,7 +2783,7 @@ def qualify_node_bootstrap(output, revision):
     import shutil
     require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
-        and os.environ.get('GITHUB_REF_NAME') == NODE_BOOTSTRAP_BRANCH
+        and os.environ.get('GITHUB_REF_NAME') in (NODE_BOOTSTRAP_BRANCH, 'test/sdk-738-node-capacity-facts-20261029')
         and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'node-one-exact-hosted-push')
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'node-source-revision')
     require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,

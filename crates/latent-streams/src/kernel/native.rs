@@ -544,6 +544,231 @@ pub(crate) mod node_bootstrap {
         }
     }
 
+    const CAPACITY_ABI: &str = "lsf-q35-node-capacity-v2";
+    const CAPACITY_VERSION: u32 = 3;
+    const CAPACITY_PREPARE: u32 = 3;
+    const CAPACITY_REPLY_BYTES: usize = 384;
+
+    /// Sealed capacity-image proof; no production issuer.
+    pub(crate) struct InstalledCapacityProfile {
+        abi: &'static str,
+        image: [u8; 32],
+        source: [u8; 32],
+        configuration: [u8; 32],
+    }
+
+    enum SelectedProfile {
+        Bootstrap(InstalledProfile),
+        Capacity(InstalledCapacityProfile),
+    }
+
+    impl SelectedProfile {
+        fn check(&self) -> Result<(), StreamError> {
+            match self {
+                Self::Bootstrap(value) => value.check(),
+                Self::Capacity(value) => {
+                    if value.abi != CAPACITY_ABI
+                        || value.image == [0; 32]
+                        || value.source == [0; 32]
+                        || value.configuration == [0; 32]
+                    {
+                        return Err(error(StreamErrorCode::Unsupported));
+                    }
+                    Ok(())
+                }
+            }
+        }
+
+        fn wire_version(&self) -> u32 {
+            match self {
+                Self::Bootstrap(_) => VERSION,
+                Self::Capacity(_) => CAPACITY_VERSION,
+            }
+        }
+    }
+
+    /// PREPARE data, never funding, retirement or IRQ authority.
+    pub(crate) struct CapacityPreparedUnqualified {
+        attachment: Attachment,
+        words: [u64; 40],
+    }
+
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "uninstalled capacity observations have no production consumer"
+        )
+    )]
+    impl CapacityPreparedUnqualified {
+        pub(crate) fn node_layout(&self) -> [u64; 6] {
+            [
+                self.attachment.native_bytes,
+                self.attachment.alignment,
+                self.attachment.view_bytes,
+                self.words[2],
+                self.words[3],
+                self.words[4],
+            ]
+        }
+
+        pub(crate) fn cpu_geometry(&self) -> [u64; 9] {
+            self.words[5..14].try_into().expect("fixed geometry")
+        }
+
+        pub(crate) fn accounting(&self) -> [u64; 8] {
+            self.words[14..22].try_into().expect("fixed accounting")
+        }
+
+        pub(crate) fn vectors(&self) -> [u16; 8] {
+            std::array::from_fn(|i| (self.words[24 + i / 4] >> (16 * (i % 4))) as u16)
+        }
+    }
+
+    fn capacity_reply(
+        bytes: &[u8],
+        original: Attachment,
+    ) -> Result<CapacityPreparedUnqualified, StreamError> {
+        let refused = || error(StreamErrorCode::Unsupported);
+        if bytes.len() != CAPACITY_REPLY_BYTES {
+            return Err(refused());
+        }
+        let (phase, attachment) = reply_version(
+            &bytes[..REPLY_BYTES],
+            original.expiry,
+            None,
+            CAPACITY_VERSION,
+        )?;
+        if phase != Phase::AttachedUnqualified || attachment != original {
+            return Err(refused());
+        }
+        let words: [u64; 40] = std::array::from_fn(|i| {
+            let at = REPLY_BYTES + 8 * i;
+            u64::from_le_bytes(bytes[at..at + 8].try_into().expect("fixed fact scalar"))
+        });
+        if words[0] != 1
+            || words[1] != 1
+            || words[5..8] != [1, 1, 1]
+            || words[22..24] != [8, 1]
+            || words[26..32] != [1, 1, 7, 1048576, 524288, 196608]
+            || words[32..].iter().any(|word| *word != 0)
+            || words[2]
+                .checked_add(attachment.view_bytes)
+                .is_none_or(|end| end > 524288)
+            || words[3]
+                .checked_add(words[4])
+                .is_none_or(|end| end > attachment.native_bytes)
+            || words[4] == 0
+            || words[8] == 0
+            || words[9] == 0
+            || words[8]
+                .checked_mul(words[9])
+                .and_then(|n| n.checked_mul(8))
+                .is_none_or(|bytes| bytes > 1048576)
+            || !words[10].is_power_of_two()
+            || words[10] < 4096
+            || words[11] % 4096 != 0
+            || words[12] == 0
+            || words[12] % 4096 != 0
+            || words[13] % 4096 != 0
+            || words[13] < words[11]
+            || words[13] - words[11] >= words[12]
+            || words[14] < 524288
+            || words[15] > words[16]
+            || words[14]
+                .checked_add(words[16])
+                .is_none_or(|bytes| bytes > 1048576)
+            || words[17] < attachment.view_bytes
+            || words[17] > 196608
+            || !(1..=256).contains(&words[18])
+            || words[19] > words[18]
+            || !(1..=64).contains(&words[20])
+            || words[21] <= original.generation
+            || words[21] == u64::MAX
+        {
+            return Err(refused());
+        }
+        let fact = CapacityPreparedUnqualified { attachment, words };
+        let vectors = fact.vectors();
+        for (i, vector) in vectors.iter().enumerate() {
+            if !(1..256).contains(vector) || vectors[..i].contains(vector) {
+                return Err(refused());
+            }
+        }
+        Ok(fact)
+    }
+
+    fn prepare_capacity(
+        file: &mut File,
+        original: Attachment,
+        deadline: Instant,
+    ) -> Result<CapacityPreparedUnqualified, StreamError> {
+        if Instant::now() >= deadline {
+            return Err(deadline_error());
+        }
+        if file
+            .write(&frame_version(
+                CAPACITY_VERSION,
+                CAPACITY_PREPARE,
+                original.expiry,
+                original.generation,
+            ))
+            .map_err(|_| error(StreamErrorCode::Unsupported))?
+            != REQUEST_BYTES
+        {
+            return Err(error(StreamErrorCode::Unsupported));
+        }
+        let mut bytes = [0; CAPACITY_REPLY_BYTES];
+        if file
+            .read(&mut bytes)
+            .map_err(|_| error(StreamErrorCode::Unsupported))?
+            != CAPACITY_REPLY_BYTES
+        {
+            return Err(error(StreamErrorCode::Unsupported));
+        }
+        let fact = capacity_reply(&bytes, original)?;
+        if Instant::now() >= deadline {
+            return Err(deadline_error());
+        }
+        Ok(fact)
+    }
+
+    #[expect(
+        dead_code,
+        reason = "dormant capacity ABI has no production installed-image issuer"
+    )]
+    pub(crate) async fn start_capacity(
+        pools: Arc<ProviderPools>,
+        installed: &InstalledProvider,
+        profile: InstalledCapacityProfile,
+        deadline: Instant,
+    ) -> Result<Owner, StreamError> {
+        let profile = SelectedProfile::Capacity(profile);
+        profile.check()?;
+        let backing = pools.reserve_stream_kernel_node_backing(installed)?;
+        enter_selected_with(
+            pools,
+            installed.clone(),
+            backing,
+            profile,
+            deadline,
+            || {
+                rustix::fs::open(
+                    c"/dev/lsf-stream-factory",
+                    rustix::fs::OFlags::RDWR
+                        | rustix::fs::OFlags::CLOEXEC
+                        | rustix::fs::OFlags::NOFOLLOW
+                        | rustix::fs::OFlags::NONBLOCK,
+                    rustix::fs::Mode::empty(),
+                )
+                .map(File::from)
+                .map_err(|_| error(StreamErrorCode::Unsupported))
+            },
+            |file, deadline| attach_version(file, deadline, CAPACITY_VERSION),
+        )
+        .await
+    }
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     enum Phase {
         Entering,
@@ -563,8 +788,17 @@ pub(crate) mod node_bootstrap {
     }
 
     fn frame(operation: u32, expiry: u64, generation: u64) -> [u8; REQUEST_BYTES] {
+        frame_version(VERSION, operation, expiry, generation)
+    }
+
+    fn frame_version(
+        version: u32,
+        operation: u32,
+        expiry: u64,
+        generation: u64,
+    ) -> [u8; REQUEST_BYTES] {
         let mut wire = [0; REQUEST_BYTES];
-        for (offset, value) in [(0, MAGIC), (4, VERSION), (8, operation)] {
+        for (offset, value) in [(0, MAGIC), (4, version), (8, operation)] {
             wire[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
         }
         wire[16..24].copy_from_slice(&expiry.to_le_bytes());
@@ -576,6 +810,15 @@ pub(crate) mod node_bootstrap {
         bytes: &[u8],
         expiry: u64,
         expected: Option<Attachment>,
+    ) -> Result<(Phase, Attachment), StreamError> {
+        reply_version(bytes, expiry, expected, VERSION)
+    }
+
+    fn reply_version(
+        bytes: &[u8],
+        expiry: u64,
+        expected: Option<Attachment>,
+        version: u32,
     ) -> Result<(Phase, Attachment), StreamError> {
         let refused = || error(StreamErrorCode::Unsupported);
         if bytes.len() != REPLY_BYTES {
@@ -596,7 +839,7 @@ pub(crate) mod node_bootstrap {
             alignment: wide(40),
             view_bytes: wide(48),
         };
-        if word(0) != MAGIC || word(4) != VERSION || word(12) != 0
+        if word(0) != MAGIC || word(4) != version || word(12) != 0
             || attached.expiry != expiry || attached.generation == 0
             || attached.native_bytes == 0 || attached.native_bytes > 196_608
             || !attached.alignment.is_power_of_two() || attached.alignment > 64
@@ -625,10 +868,23 @@ pub(crate) mod node_bootstrap {
     }
 
     fn attach(file: &mut File, deadline: Instant) -> Result<Attachment, StreamError> {
+        attach_version(file, deadline, VERSION)
+    }
+
+    fn attach_version(
+        file: &mut File,
+        deadline: Instant,
+        version: u32,
+    ) -> Result<Attachment, StreamError> {
         let expiry = expiry(deadline)?;
+        let request = if version == VERSION {
+            frame(ATTACH, expiry, 0)
+        } else {
+            frame_version(version, ATTACH, expiry, 0)
+        };
         // No retry, fallback to constructor-v2, write_all or renewed deadline.
         if file
-            .write(&frame(ATTACH, expiry, 0))
+            .write(&request)
             .map_err(|_| error(StreamErrorCode::Unsupported))?
             != REQUEST_BYTES
         {
@@ -642,7 +898,11 @@ pub(crate) mod node_bootstrap {
         {
             return Err(error(StreamErrorCode::Unsupported));
         }
-        let (_, attachment) = reply(&bytes, expiry, None)?;
+        let (_, attachment) = if version == VERSION {
+            reply(&bytes, expiry, None)?
+        } else {
+            reply_version(&bytes, expiry, None, version)?
+        };
         if Instant::now() >= deadline {
             return Err(deadline_error());
         }
@@ -656,7 +916,7 @@ pub(crate) mod node_bootstrap {
         phase: Phase,
         backing: StreamKernelNodeBacking,
         installed: InstalledProvider,
-        _profile: InstalledProfile,
+        _profile: SelectedProfile,
     }
 
     struct Attempt {
@@ -684,9 +944,19 @@ pub(crate) mod node_bootstrap {
     pub(crate) struct Owner {
         connection: Option<PooledConnection<NodeResource>>,
         pools: Arc<ProviderPools>,
+        prepared: Option<CapacityPreparedUnqualified>,
     }
+    const _: () = assert!(std::mem::size_of::<Owner>() <= 4096);
 
     impl Owner {
+        #[expect(
+            dead_code,
+            reason = "no production capacity profile issuer or consumer yet"
+        )]
+        pub(crate) fn capacity_prepared(&self) -> Option<&CapacityPreparedUnqualified> {
+            self.prepared.as_ref()
+        }
+
         fn begin_close(&mut self) -> Result<StreamKernelCloseJob, StreamError> {
             let connection = self
                 .connection
@@ -714,15 +984,23 @@ pub(crate) mod node_bootstrap {
     }
 
     fn close_retained(value: &mut NodeResource) -> StreamKernelCloseObservation {
+        let version = value._profile.wire_version();
         let mut observed = StreamKernelCloseObservation::Uncertain;
         if let (Some(file), Some(original)) = (value.descriptor.as_mut(), value.attachment) {
-            if matches!(
-                file.write(&frame(CLOSE_RETAIN, original.expiry, original.generation)),
-                Ok(REQUEST_BYTES)
-            ) {
+            let request = if version == VERSION {
+                frame(CLOSE_RETAIN, original.expiry, original.generation)
+            } else {
+                frame_version(version, CLOSE_RETAIN, original.expiry, original.generation)
+            };
+            if matches!(file.write(&request), Ok(REQUEST_BYTES)) {
                 let mut bytes = [0; REPLY_BYTES];
                 if matches!(file.read(&mut bytes), Ok(REPLY_BYTES))
-                    && reply(&bytes, original.expiry, Some(original)).is_ok()
+                    && (if version == VERSION {
+                        reply(&bytes, original.expiry, Some(original))
+                    } else {
+                        reply_version(&bytes, original.expiry, Some(original), version)
+                    })
+                    .is_ok()
                 {
                     observed = StreamKernelCloseObservation::RequestAccepted;
                 }
@@ -740,6 +1018,31 @@ pub(crate) mod node_bootstrap {
         installed: InstalledProvider,
         backing: StreamKernelNodeBacking,
         profile: InstalledProfile,
+        deadline: Instant,
+        open: O,
+        initialize: I,
+    ) -> Result<Owner, StreamError>
+    where
+        O: FnOnce() -> Result<File, StreamError> + Send + 'static,
+        I: FnOnce(&mut File, Instant) -> Result<Attachment, StreamError> + Send + 'static,
+    {
+        enter_selected_with(
+            pools,
+            installed,
+            backing,
+            SelectedProfile::Bootstrap(profile),
+            deadline,
+            open,
+            initialize,
+        )
+        .await
+    }
+
+    async fn enter_selected_with<O, I>(
+        pools: Arc<ProviderPools>,
+        installed: InstalledProvider,
+        backing: StreamKernelNodeBacking,
+        profile: SelectedProfile,
         deadline: Instant,
         open: O,
         initialize: I,
@@ -789,6 +1092,15 @@ pub(crate) mod node_bootstrap {
                     deadline,
                 )?);
                 value.phase = Phase::AttachedUnqualified;
+                let prepared = if matches!(&value._profile, SelectedProfile::Capacity(_)) {
+                    Some(prepare_capacity(
+                        value.descriptor.as_mut().expect("actual fd"),
+                        value.attachment.expect("original attachment"),
+                        deadline,
+                    )?)
+                } else {
+                    None
+                };
                 request.checkpoint()?;
                 value
                     .backing
@@ -809,6 +1121,7 @@ pub(crate) mod node_bootstrap {
                 Ok(Owner {
                     connection: Some(connection),
                     pools: physical_pools,
+                    prepared,
                 })
             })
             .await?;
@@ -912,6 +1225,79 @@ pub(crate) mod node_bootstrap {
             funded[56] = 1;
             assert!(reply(&funded, 123, None).is_err());
             assert!(reply(&good[..REPLY_BYTES - 1], 123, None).is_err());
+            // Synthetic framing only; no native evidence.
+            let mut capacity = [0u8; CAPACITY_REPLY_BYTES];
+            capacity[..REPLY_BYTES].copy_from_slice(&good);
+            capacity[4..8].copy_from_slice(&CAPACITY_VERSION.to_le_bytes());
+            let values = [
+                1u64,
+                1,
+                327680,
+                64,
+                16,
+                1,
+                1,
+                1,
+                512,
+                1,
+                2097152,
+                0,
+                2097152,
+                0,
+                600000,
+                4096,
+                4096,
+                128,
+                2,
+                2,
+                1,
+                9,
+                8,
+                1,
+                0x0023_0022_0021_0020,
+                0x0027_0026_0025_0024,
+                1,
+                1,
+                7,
+                1048576,
+                524288,
+                196608,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+            ];
+            for (i, word) in values.iter().enumerate() {
+                capacity[REPLY_BYTES + 8 * i..REPLY_BYTES + 8 * (i + 1)]
+                    .copy_from_slice(&word.to_le_bytes());
+            }
+            let fact = capacity_reply(&capacity, original).unwrap();
+            assert_eq!(fact.node_layout(), [80, 8, 128, 327680, 64, 16]);
+            assert_eq!(
+                fact.cpu_geometry(),
+                [1, 1, 1, 512, 1, 2097152, 0, 2097152, 0]
+            );
+            assert_eq!(fact.accounting(), [600000, 4096, 4096, 128, 2, 2, 1, 9]);
+            assert_eq!(fact.vectors(), [32, 33, 34, 35, 36, 37, 38, 39]);
+            assert!(reply(&capacity[..REPLY_BYTES], 123, None).is_err());
+            assert!(capacity_reply(&capacity[..CAPACITY_REPLY_BYTES - 1], original).is_err());
+            for at in [
+                0, 4, 8, 12, 16, 24, 32, 40, 48, 56, 64, 72, 104, 112, 120, 240, 272, 320,
+            ] {
+                let mut changed = capacity;
+                changed[at] ^= 1;
+                assert!(
+                    capacity_reply(&changed, original).is_err(),
+                    "capacity offset {at}"
+                );
+            }
+            let mut duplicate = capacity;
+            duplicate[64 + 25 * 8..64 + 26 * 8].copy_from_slice(&values[24].to_le_bytes());
+            assert!(capacity_reply(&duplicate, original).is_err());
         }
 
         async fn snapshot(
@@ -969,6 +1355,39 @@ pub(crate) mod node_bootstrap {
             let held = retained(&fixture.pools).await;
             assert!(held.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
             assert_eq!(held.connections, before.connections + 1);
+
+            let fixture = Fixture::new(config());
+            let capacity_before = snapshot(&fixture.pools).await;
+            let backing = fixture
+                .pools
+                .reserve_stream_kernel_node_backing(&fixture.provider.inner.installed)
+                .unwrap();
+            let capacity_path = directory.path().join("capacity-read-refusal");
+            let opened = capacity_path.clone();
+            let profile = InstalledCapacityProfile {
+                abi: CAPACITY_ABI,
+                image: [4; 32],
+                source: [5; 32],
+                configuration: [6; 32],
+            };
+            let result = enter_selected_with(
+                Arc::clone(&fixture.pools),
+                fixture.provider.inner.installed.clone(),
+                backing,
+                SelectedProfile::Capacity(profile),
+                Instant::now() + Duration::from_secs(5),
+                move || File::create(opened).map_err(|_| error(StreamErrorCode::IoFailed)),
+                |_, _| Ok(reply(&observed(2), 123, None).unwrap().1),
+            )
+            .await;
+            assert!(result.is_err());
+            assert_eq!(
+                std::fs::read(capacity_path).unwrap(),
+                frame_version(CAPACITY_VERSION, CAPACITY_PREPARE, 123, 7)
+            );
+            let held = retained(&fixture.pools).await;
+            assert!(held.metadata_bytes >= capacity_before.metadata_bytes + 1024 * 1024);
+            assert_eq!(held.connections, capacity_before.connections + 1);
         }
 
         #[tokio::test]

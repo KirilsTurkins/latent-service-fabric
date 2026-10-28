@@ -1626,3 +1626,105 @@ out:
 #include "factory-node-irq-action-pool.c"
 #include "factory-node-irq-proc-pool.c"
 #include "factory-node-small-objects.c"
+
+struct lsf_node_capacity_reply {
+    struct lsf_node_reply header;
+    __le64 facts[LSF_NODE_FACT_WORDS];
+};
+static_assert(sizeof(struct lsf_node_capacity_reply) == 384);
+
+/* Called only by the distinct capacity image after actual PREPARE succeeded.
+ * The original bank and all native extents remain owned; this fact cannot be
+ * used as NodeFunding, NodeRetired, a child MSI identity or permission to run. */
+static ssize_t lsf_node_capacity_read_fact(struct lsf_node_parent *node,
+    char __user *buffer, size_t count)
+{
+    struct lsf_node_capacity_reply wire = {0};
+    struct lsf_node_capacity_facts facts = {0};
+    struct lsf_prepaid_context *context;
+    struct lsf_prepaid_view *record;
+    unsigned long flags, floor, reserved = 0, committed = 0;
+    unsigned int i, records = 1, live = 0, owners = 0;
+    int error = -EIO;
+
+    lockdep_assert_held(&factory_lock);
+    if (count != sizeof(wire))
+        return -EINVAL;
+    if (lsf_node_pcpu_observe(&node->capacity, &facts) ||
+        lsf_node_vector_observe(&node->capacity, &facts))
+        return error;
+    floor = lsf_node_native_bootstrap_bytes();
+    if (floor > LSF_BOOTSTRAP_CEILING)
+        return error;
+    spin_lock_irqsave(&pool_lock, flags);
+    if (lsf_node_capacity_parent_locked(&node->capacity) != node ||
+        !lsf_node_capacity_open_locked(node) || !node->capacity.pcpu_prepared)
+        goto out;
+    context = &factory.pool.contexts[node->owner.slot];
+    if (factory.pool.records[0].phase != LSF_PREPAID_LIVE ||
+        factory.pool.records[0].bytes != LSF_BACKING_BYTES)
+        goto out;
+    for (i = 1; i < LSF_ALLOCATION_SLOTS; ++i) {
+        record = &factory.pool.records[i];
+        if (record->phase == LSF_PREPAID_EMPTY)
+            continue;
+        if ((record->phase != LSF_PREPAID_LIVE && record->phase != LSF_PREPAID_RETURNED) ||
+            record->owner != node->owner.slot ||
+            record->owner_generation != node->owner.generation || !record->generation)
+            goto out;
+        records++;
+        live += record->phase == LSF_PREPAID_LIVE;
+        if (record->kind <= LSF_NODE_CAPACITY_NATIVE_BASE ||
+            record->kind >= LSF_NODE_CAPACITY_NATIVE_BASE + LSF_NODE_CAPACITY_ROLES)
+            continue;
+        if (record->cache_bucket != node->record.slot ||
+            record->cache_anchor != node->record.generation ||
+            record->bytes > LSF_BOOTSTRAP_CEILING - floor - reserved)
+            goto out;
+        reserved += record->bytes;
+        if (record->offset != LSF_NODE_CAPACITY_UNBOUND)
+            committed += record->bytes;
+    }
+    if (live != context->live || context->cursor > LSF_FACTORY_INFRA_BYTES)
+        goto out;
+    for (i = 0; i < LSF_OWNER_SLOTS; ++i)
+        owners += !!factory.pool.contexts[i].generation;
+    facts.word[LSF_NODE_FACT_FORMAT] = 1;
+    /* Compiled capacity-v2 identity, not observed QEMU/IOMMU qualification. */
+    facts.word[LSF_NODE_FACT_PROFILE] = 1;
+    facts.word[LSF_NODE_FACT_NODE_OFFSET] = LSF_FACTORY_INFRA_OFFSET;
+    facts.word[LSF_NODE_FACT_CAPACITY_OFFSET] = offsetof(struct lsf_node_parent, capacity);
+    facts.word[LSF_NODE_FACT_CAPACITY_BYTES] = sizeof(struct lsf_node_capacity);
+    facts.word[LSF_NODE_FACT_FLOOR_BYTES] = floor;
+    facts.word[LSF_NODE_FACT_COMMITTED_BYTES] = committed;
+    facts.word[LSF_NODE_FACT_RESERVED_BYTES] = reserved;
+    facts.word[LSF_NODE_FACT_CURSOR] = context->cursor;
+    /* Records and owner contexts are never reused/reset by this image.
+     * Nonempty/generation-issued counts are their actual monotonic high water,
+     * not a claim that all logical or physical users have retired. */
+    facts.word[LSF_NODE_FACT_RECORD_HIGH_WATER] = records;
+    facts.word[LSF_NODE_FACT_LIVE_RECORDS] = live;
+    facts.word[LSF_NODE_FACT_OWNER_HIGH_WATER] = owners;
+    facts.word[LSF_NODE_FACT_NEXT_GENERATION] = factory.pool.next_generation;
+    facts.word[LSF_NODE_FACT_BANK_ORDER] = LSF_BACKING_ORDER;
+    facts.word[LSF_NODE_FACT_ENVELOPE_BYTES] = LSF_BOOTSTRAP_CEILING;
+    facts.word[LSF_NODE_FACT_BANK_BYTES] = LSF_BACKING_BYTES;
+    facts.word[LSF_NODE_FACT_TAIL_BYTES] = LSF_FACTORY_INFRA_BYTES;
+    wire.header = (struct lsf_node_reply){
+        cpu_to_le32(LSF_NODE_MAGIC), cpu_to_le32(LSF_NODE_VERSION),
+        cpu_to_le32(node->state), 0, cpu_to_le64(node->expires_ns),
+        cpu_to_le64(node->record.generation), cpu_to_le64(sizeof(*node)),
+        cpu_to_le64(__alignof__(struct lsf_node_parent)),
+        cpu_to_le64(ALIGN(sizeof(*node), 64)), 0
+    };
+    for (i = 0; i < LSF_NODE_FACT_WORDS; ++i)
+        wire.facts[i] = cpu_to_le64(facts.word[i]);
+    error = 0;
+out:
+    spin_unlock_irqrestore(&pool_lock, flags);
+    if (error)
+        return error;
+    if (copy_to_user(buffer, &wire, sizeof(wire)))
+        return -EFAULT;
+    return sizeof(wire);
+}

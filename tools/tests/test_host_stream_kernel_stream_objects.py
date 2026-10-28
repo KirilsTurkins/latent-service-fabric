@@ -1106,6 +1106,13 @@ class ZNodeNativeCapacityOwner(unittest.TestCase):
         self.assertEqual(owner.capacity_targets(False,*old),owner.mode_targets())
         self.assertEqual(owner.capacity_targets(True,*old),owner.CAPACITY_TARGETS)
         self.assertEqual(len(owner.CAPACITY_TARGETS),18)
+        self.assertEqual(owner.capacity_targets(owner.CAPACITY_FACTS,*old),owner.CAPACITY_FACTS_TARGETS)
+        self.assertEqual(len(owner.CAPACITY_FACTS_TARGETS),3)
+        for target in owner.CAPACITY_TARGETS:
+            allowed=owner.public_allowed('objects/'+target,node_capacity=owner.CAPACITY_FACTS)
+            self.assertEqual(allowed,owner.MAX_OBJECT if target in owner.CAPACITY_FACTS_TARGETS else None)
+        with self.assertRaises(ValueError):owner.capacity_targets(owner.CAPACITY_FACTS,True,*old[1:])
+        with self.assertRaises(ValueError):owner.capacity_targets('facts',*old)
         with self.assertRaises(ValueError): owner.capacity_targets(True,True,*old[1:])
         with self.assertRaises(ValueError): owner.capacity_targets(1,*old)
         for name in owner.CAPACITY_TARGETS:
