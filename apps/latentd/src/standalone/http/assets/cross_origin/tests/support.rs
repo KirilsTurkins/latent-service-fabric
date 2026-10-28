@@ -17,8 +17,7 @@ pub(super) const ORIGIN: &str = "https://portal.example.test";
 pub(super) const COOKIE: &str = "Cookie: __Host-lsf_demo=test-only\r\n";
 
 pub(super) fn public_config(value: &mut Value) {
-    value["httpIngress"]["transport"] =
-        json!({"mode": "trusted-proxy", "peers": ["127.0.0.1"]});
+    value["httpIngress"]["transport"] = json!({"mode": "trusted-proxy", "peers": ["127.0.0.1"]});
     value["httpIngress"]["authentication"] = json!({
         "mode": "public-origins", "origins": [{
             "authority": node::AUTHORITY, "subject": "public-web", "tenant": "tests"
@@ -38,8 +37,12 @@ pub(super) fn publish(h: &Harness, operation: &str, script: &[u8]) -> Publicatio
     let upload = fixture::configured_upload(
         &[
             ("/app.js", "text/javascript", script),
+            (
+                "/guide/index.html",
+                "text/html",
+                b"<!doctype html><title>Directory</title>",
+            ),
             ("/index.html", "text/html", document.as_bytes()),
-            ("/guide/index.html", "text/html", b"<!doctype html><title>Directory</title>"),
             ("/style.css", "text/css", b"body{color:rgb(20,50,80)}"),
         ],
         Some(StaticWebRouting {
@@ -108,7 +111,8 @@ pub(super) async fn restart(h: &mut Harness, grants: Value) {
 
 pub(super) fn apply(h: &Harness, reference: &PublicationRef, method: &str, generation: u64) -> u64 {
     let id = format!("cross-origin-{}", method.to_lowercase());
-    let state = h.deployments
+    let state = h
+        .deployments
         .get_trigger(&TenantId("tests".into()), &TriggerId(id.clone()))
         .unwrap()
         .value()
@@ -120,7 +124,8 @@ pub(super) fn apply(h: &Harness, reference: &PublicationRef, method: &str, gener
             "configuration": {"profile": "static-site-v1", "scheme": "https",
                 "host": node::AUTHORITY, "path": "/", "pathMatch": "prefix", "method": method}}
     });
-    let prepared = h.deployments
+    let prepared = h
+        .deployments
         .prepare_trigger_operation(TriggerOperationRequest::Apply {
             context: TriggerOperationContext {
                 tenant: TenantId("tests".into()),
@@ -147,11 +152,17 @@ pub(super) fn immutable(reference: &PublicationRef, path: &str) -> String {
     format!("/_lsf/assets/{}{path}", reference.id.as_str())
 }
 
-pub(super) async fn call(h: &Harness, method: &str, path: &str, extra: &str) -> (u16, String, Vec<u8>) {
+pub(super) async fn call(
+    h: &Harness,
+    method: &str,
+    path: &str,
+    extra: &str,
+) -> (u16, String, Vec<u8>) {
     node::wait(|| {
         let snapshot = h.owner.handle().snapshot();
         snapshot.connections == 0 && snapshot.exchanges == 0
-    }).await;
+    })
+    .await;
     h.call(method, path, extra, "").await
 }
 
@@ -164,10 +175,26 @@ pub(super) fn field<'a>(headers: &'a str, name: &str) -> Option<&'a str> {
 
 pub(super) fn authorized(headers: &str, include: bool, error: bool) {
     assert_eq!(field(headers, "access-control-allow-origin"), Some(ORIGIN));
-    assert_eq!(field(headers, "access-control-allow-credentials"), include.then_some("true"));
-    assert_eq!(field(headers, "cross-origin-resource-policy"), Some("cross-origin"));
-    assert_eq!(field(headers, "access-control-expose-headers"), Some("ETag"));
-    assert_eq!(field(headers, "cache-control"), Some(if error { "no-store" } else { "private, no-cache" }));
+    assert_eq!(
+        field(headers, "access-control-allow-credentials"),
+        include.then_some("true")
+    );
+    assert_eq!(
+        field(headers, "cross-origin-resource-policy"),
+        Some("cross-origin")
+    );
+    assert_eq!(
+        field(headers, "access-control-expose-headers"),
+        Some("ETag")
+    );
+    assert_eq!(
+        field(headers, "cache-control"),
+        Some(if error {
+            "no-store"
+        } else {
+            "private, no-cache"
+        })
+    );
     assert_eq!(field(headers, "vary"), Some(super::super::VARY));
     assert_eq!(field(headers, "x-content-type-options"), Some("nosniff"));
     assert!(field(headers, "set-cookie").is_none());
@@ -175,7 +202,10 @@ pub(super) fn authorized(headers: &str, include: bool, error: bool) {
 
 pub(super) fn denied(headers: &str) {
     assert!(field(headers, "access-control-allow-origin").is_none());
-    assert_eq!(field(headers, "cross-origin-resource-policy"), Some("same-origin"));
+    assert_eq!(
+        field(headers, "cross-origin-resource-policy"),
+        Some("same-origin")
+    );
     assert_eq!(field(headers, "cache-control"), Some("no-store"));
 }
 
