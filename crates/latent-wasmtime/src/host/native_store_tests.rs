@@ -507,9 +507,9 @@ async fn actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_
     ));
     drop(input);
     drop(output);
-    // The legal post-return is still suspended: GuestTask/GuestThread and
-    // ResourceTable's exact entry backing remain owned by this Store. Their
-    // previously unpaid Boxes are now charged. Lower/lift headers retire;
+    // Cancellation disposes the post-return fiber, but GuestTask/GuestThread
+    // metadata and ResourceTable's entry backing remain owned by this Store.
+    // Their previously unpaid Boxes are charged. Lower/lift headers retire;
     // cancellation does not pretend the guest completed or delete its owners.
     let cancelled = allocation_rows(&observed);
     assert_eq!(&cancelled[..before_call.len()], before_call.as_slice());
@@ -519,14 +519,13 @@ async fn actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_
     // queue_call then adds its queue owner and StartImplicit Header<F>.
     // The exact fixture has no callback/import call: at suspended post-return,
     // lower/lift were consumed, but task_complete/sender send has NOT run.
-    // StartImplicit consumed its Box before F, yet its original ticket stays
-    // across that same suspended F. ONLY these five source owners remain.
+    // StartImplicit consumed its Box before F. Fiber disposal exits F and
+    // releases its ticket before SignalOnDrop; ONLY these four owners remain.
     let retained_roles = [
         (0, "call-result channel sender"),
         (3, "GuestTask"),
         (4, "implicit sync WaitableSet"),
         (5, "GuestThread"),
-        (7, "StartImplicit original ticket through post-return"),
     ];
     assert!(
         call_rows.len() >= 8,
