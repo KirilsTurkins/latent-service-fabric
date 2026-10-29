@@ -265,5 +265,5 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": commands.records if commands else []})
-        guest_compatibility_build.failure_report(output, "c", stage)
+        guest_compatibility_build.failure_report(output, "c", stage, cause=error)
         raise

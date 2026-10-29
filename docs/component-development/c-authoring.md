@@ -128,6 +128,11 @@ not exposed. FTP/file schemes, redirects, stat/list/range/conditional options,
 authentication callbacks, proxy configuration and writable FILE streams refuse
 explicitly. Independent sharing of one FILE across threads is not qualified.
 
+The selected C proof limits are 1 MiB for the original core, 32,768 original
+operators, 65,536 operators per derived core and 8,192 per function under its
+48 MiB verification-work reservation; larger shapes refuse. These are compiler
+compatibility bounds, not universal C support.
+
 The ordinary call can suspend its cooperative logical pthread while another
 logical pthread progresses. This does not turn the 32 MiB fixture memory limit
 into an independent thread or FILE allowance. The FILE and its cookie use real
@@ -344,3 +349,11 @@ SDK binding drift means the SDK and generator pins disagree; do not edit the loc
 to bypass it. A denied publication commonly means the policy expired, the exact
 source approval differs, or an evidence file is missing. A denied HTTP call
 requires checking the deployment grant, provider binding and allowed destination.
+
+Concrete captured C dependency refusals retain a bounded origin and static code
+in the compatibility report: unsupported target, native/archive object ABI,
+unqualified object/runtime profile, captured C++ source and unobserved build
+commands. These are pre-compilation input-validation observations, labelled
+`model`; they do not claim guest execution. Unknown compiler failures and guest
+process/syscall assumptions remain unresolved rather than inferred from names.
+This reporting does not qualify general C++, POSIX, sockets or the full C runtime.

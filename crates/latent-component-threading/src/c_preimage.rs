@@ -18,6 +18,16 @@ pub const MAX_C_RECOMPUTED_IMAGE_BYTES: usize = 2 * 1024 * 1024;
 // Original component storage is charged IN ADDITION to this work allowance.
 pub const C_VERIFICATION_WORK_BYTES: usize =
     16 * MAX_C_RECOMPUTED_IMAGE_BYTES + 8 * 1024 * 1024 + 8 * 1024 * 1024;
+// Aggregate work is finite, but aggregate count alone cannot bound a value
+// stack: one permitted scalar call can return32 values. Limit each body BEFORE
+// typed decoding/validation. The pinned validator reuses one operand arena
+// across bodies. At8B/cell, <=4MiB new operand backing may coexist with
+// <=2MiB old backing during growth: <=6MiB transient, plus <=2MiB for
+// bounded numeric metadata/locals/control in the ORIGINAL8MiB envelope.
+// Other scalar/container limits and the separate65,536-edge bound remain.
+const MAX_ORIGINAL_OPERATORS: u64 = 32 * 1024;
+const MAX_DERIVED_OPERATORS: u64 = 64 * 1024;
+const MAX_FUNCTION_OPERATORS: u64 = 8 * 1024;
 const MAGIC: &[u8; 8] = b"LSFCPR01";
 const HEADER_BYTES: usize = 20;
 const MAX_PUBLIC_BYTES: usize = 512;
@@ -309,6 +319,7 @@ fn bounded_core(input: &[u8], original: bool) -> Result<u64, &'static str> {
             }
             Payload::CodeSectionEntry(body) => {
                 let mut depth = 0u32;
+                let mut function_operators = 0u64;
                 let declarations = body
                     .get_locals_reader()
                     .map_err(|_| "c-preimage-finite-locals")?;
@@ -358,8 +369,18 @@ fn bounded_core(input: &[u8], original: bool) -> Result<u64, &'static str> {
                             return Err("c-preimage-finite-branch-table");
                         }
                     }
+                    function_operators += 1;
+                    if function_operators > MAX_FUNCTION_OPERATORS {
+                        return Err("c-preimage-finite-function-operator-count");
+                    }
                     operators += 1;
-                    if operators > if original { 16_384 } else { 32_768 } {
+                    if operators
+                        > if original {
+                            MAX_ORIGINAL_OPERATORS
+                        } else {
+                            MAX_DERIVED_OPERATORS
+                        }
+                    {
                         return Err("c-preimage-finite-operator-count");
                     }
                     match reader.read().map_err(|_| "c-preimage-finite-operator")? {
@@ -877,6 +898,77 @@ mod tests {
             bounded_core(&module.finish(), true).unwrap_err(),
             "c-preimage-finite-offset"
         );
+
+        // Preserve the original48MiB payer. Test both boundaries independently:
+        // many small bodies may use the useful total, never one giant arena.
+        assert_eq!(C_VERIFICATION_WORK_BYTES, 48 * 1024 * 1024);
+        fn operator_core(counts: &[u64]) -> Vec<u8> {
+            let mut module = Module::new();
+            let mut types = TypeSection::new();
+            types.ty().function([], []);
+            module.section(&types);
+            let mut functions = FunctionSection::new();
+            let mut code = CodeSection::new();
+            for &count in counts {
+                assert!(count != 0);
+                functions.function(0);
+                let mut function = Function::new([]);
+                for _ in 1..count {
+                    function.instruction(&Instruction::Nop);
+                }
+                function.instruction(&Instruction::End);
+                code.function(&function);
+            }
+            module.section(&functions);
+            module.section(&code);
+            module.finish()
+        }
+        assert_eq!(
+            bounded_core(&operator_core(&[MAX_FUNCTION_OPERATORS]), true),
+            Ok(MAX_FUNCTION_OPERATORS)
+        );
+        assert_eq!(
+            bounded_core(&operator_core(&[MAX_FUNCTION_OPERATORS + 1]), true),
+            Err("c-preimage-finite-function-operator-count")
+        );
+        for (original, total) in [
+            (true, MAX_ORIGINAL_OPERATORS),
+            (false, MAX_DERIVED_OPERATORS),
+        ] {
+            let mut counts =
+                vec![MAX_FUNCTION_OPERATORS; (total / MAX_FUNCTION_OPERATORS) as usize];
+            assert_eq!(bounded_core(&operator_core(&counts), original), Ok(total));
+            counts.push(1);
+            assert_eq!(
+                bounded_core(&operator_core(&counts), original),
+                Err("c-preimage-finite-operator-count")
+            );
+        }
+        // Worst allowed scalar call width: no unjustified one-value/op model.
+        let mut wide = Module::new();
+        let mut types = TypeSection::new();
+        types.ty().function([], [ValType::I32; 32]);
+        types.ty().function([], []);
+        wide.section(&types);
+        let mut imports = wasm_encoder::ImportSection::new();
+        imports.import("fixed", "wide", wasm_encoder::EntityType::Function(0));
+        wide.section(&imports);
+        let mut functions = FunctionSection::new();
+        functions.function(1);
+        wide.section(&functions);
+        let mut code = CodeSection::new();
+        let mut function = Function::new([]);
+        for _ in 0..MAX_FUNCTION_OPERATORS - 2 {
+            function.instruction(&Instruction::Call(0));
+        }
+        function.instruction(&Instruction::Unreachable);
+        function.instruction(&Instruction::End);
+        code.function(&function);
+        wide.section(&code);
+        let wide = wide.finish();
+        assert_eq!(bounded_core(&wide, true), Ok(MAX_FUNCTION_OPERATORS));
+        // Actual pinned validator allocation path, not execution/instantiation.
+        Validator::new().validate_all(&wide).unwrap();
     }
 
     #[test]

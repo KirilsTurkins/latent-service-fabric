@@ -258,7 +258,7 @@ HTTP_ROUTING_CASES = tuple('component::c::tests::' + name for name in (
     'c_ready_handoff_final_graph_refuses_resume_or_mismatched_target',
     'c_wait_canonical_functions_keep_suspend_and_deferred_resume_distinct',
     'c_wait_final_graph_requires_the_exact_canonical_wake_target',
-))
+)) + ('c_preimage::tests::c_finite_preflight_refuses_expansive_signatures_locals_and_control_before_validator',)
 
 
 def http_routing_result(raw, case):
@@ -277,7 +277,7 @@ def http_routing_controls(commands, pins):
     import re
     import time
     original_deadline, original_seconds = commands.deadline, commands.command_seconds
-    # One shared ceiling across all three real controls, clipped to the same
+    # One shared ceiling across all four real controls, clipped to the same
     # parent-5 deadline; neither a new parent nor a per-case allowance reset.
     commands.deadline = min(original_deadline, time.monotonic() + 120)
     commands.command_seconds = min(original_seconds, 120)
@@ -354,7 +354,7 @@ def qualify_http(args):
                         ('latent', 'latentd', 'package', 'capsule_contracts', 'capsule_authoring')}
         native = ordinary_tuple(receipt, native_paths)
         result['nativeTuple'] = native
-        stage = 'three-exact-c-routing-controls'
+        stage = 'four-exact-c-routing-controls'
         result['routingControls'] = http_routing_controls(commands, pins)
         stage = 'one-c-component'
         sdk_source = inventory(c_capsule_project.sdk_inputs(ROOT, threading=True))
