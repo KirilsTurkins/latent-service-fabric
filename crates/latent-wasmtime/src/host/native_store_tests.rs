@@ -509,26 +509,28 @@ async fn actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_
     drop(output);
     // The legal post-return is still suspended: GuestTask/GuestThread and
     // ResourceTable's exact entry backing remain owned by this Store. Their
-    // previously unpaid Boxes are now charged. Temporary call headers retire;
+    // previously unpaid Boxes are now charged. Lower/lift headers retire;
     // cancellation does not pretend the guest completed or delete its owners.
     let cancelled = allocation_rows(&observed);
     assert_eq!(&cancelled[..before_call.len()], before_call.as_slice());
     let call_rows = &cancelled[before_call.len()..];
     // prepare_call reserves channel/lower/lift, then GuestTask::new pushes
     // GuestTask/WaitableSet/GuestThread into the THREE already-free table slots.
-    // queue_call adds its queue owner afterwards. The exact fixture has no
-    // callback/import call: at suspended post-return, lower/lift were consumed,
-    // but task_complete (and its sender send) has NOT run. These four owners,
-    // and ONLY these owners, therefore remain with the original Store.
+    // queue_call then adds its queue owner and StartImplicit Header<F>.
+    // The exact fixture has no callback/import call: at suspended post-return,
+    // lower/lift were consumed, but task_complete/sender send has NOT run.
+    // StartImplicit consumed its Box before F, yet its original ticket stays
+    // across that same suspended F. ONLY these five source owners remain.
     let retained_roles = [
         (0, "call-result channel sender"),
         (3, "GuestTask"),
         (4, "implicit sync WaitableSet"),
         (5, "GuestThread"),
+        (7, "StartImplicit original ticket through post-return"),
     ];
     assert!(
-        call_rows.len() >= 7,
-        "three prepare, three resources, then queue"
+        call_rows.len() >= 8,
+        "three prepare, three resources, queue, then StartImplicit"
     );
     for (index, row) in call_rows.iter().enumerate() {
         let retained = retained_roles.iter().any(|(slot, _)| *slot == index);

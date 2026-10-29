@@ -12,8 +12,8 @@ from tools.rust_capsule_project import ROOT, read_file
 PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
-COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v26-callback-memory-cache-repair"
-RECORD_SHA256 = "19cedc25e5ca22ff2c6704491f650b7597ced0aebdce741f9e27ee0a4d09f5f0"
+COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v27-guest-start-memory-cache-repair"
+RECORD_SHA256 = "debebdbb61c5f8298adc785f68e8ea6303a9b1e0f3dd409fba9fa164e48427ab"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
@@ -58,8 +58,8 @@ POSTIMAGES = {
         "bytes": 106434
     },
     "src/runtime/component/concurrent.rs": {
-        "sha256": "9167d7cde9347083c8c84c15d602177d7b8caf066a0beb3857885ee808ede6fd",
-        "bytes": 283121
+        "sha256": "04e9382b663c4e7511e3d4bbfea3c88cb1735377a630bcfecde911035ccef911",
+        "bytes": 310096
     },
     "src/runtime/component/dynamic_memory.rs": {
         "sha256": "70ab7ecf2fba9a29be46f4750e28ef404acc991d36d708939b022bce1872d57d",
@@ -242,12 +242,12 @@ POSTIMAGES = {
         "bytes": 9353
     },
     "README.latent.md": {
-        "sha256": "c53cc6357bbdc50b0aab2deca901bd804322aa62ae9f14e564c555509b6a0d25",
-        "bytes": 43720
+        "sha256": "e0d8876322f6cdabc5f31de8357ae8fb9c8dba267a58a4a76ba08d3348dfb00d",
+        "bytes": 45103
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "f930b5f6a1c1741b3582b7ac506cc0ca92722a93377da29fc63d93486e3a1586",
-        "bytes": 593879
+        "sha256": "b98372723c8ea3b6b5056440443f07737963963f107a4c822d31c5e2065430ba",
+        "bytes": 627037
     },
     "src/runtime/component/resource_table.rs": {
         "sha256": "2b08c8101f9cf35c1961f2693ba962329712898e7e4f30b0a5c5b46e43454042",

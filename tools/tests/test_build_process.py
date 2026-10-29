@@ -104,8 +104,8 @@ class BuildProcessTests(unittest.TestCase):
         from tools.build_snapshot import SnapshotLimits
 
         limits = SnapshotLimits()
-        self.assertEqual(limits.max_total_bytes, 75 * 1024 * 1024)
-        self.assertEqual(limits.max_archive_bytes, 82 * 1024 * 1024)
+        self.assertEqual(limits.max_total_bytes, 76 * 1024 * 1024)
+        self.assertEqual(limits.max_archive_bytes, 83 * 1024 * 1024)
         self.assertEqual(build_process.MAX_OUTPUT_BYTES, limits.max_archive_bytes)
         result = self.run_python("import os; os.write(1,b'archive')", maximum=limits.max_archive_bytes)
         self.assertEqual(result.returncode, 0)
