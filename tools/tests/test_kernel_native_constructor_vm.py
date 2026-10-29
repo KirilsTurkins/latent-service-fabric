@@ -166,3 +166,37 @@ class NativeConstructorKernelJoin(unittest.TestCase):
             mutations.extend((raw(row,{'reason':'build-finished','success':False}),raw(row)+raw(row),json.dumps(row).encode()))
             for value in mutations:
                 with self.assertRaises(ValueError):programme.cargo_product(value,root,target)
+
+
+class Q35NodeBootSourceControls(unittest.TestCase):
+    def test_actual_node_facts_are_required_without_funding_or_retirement_credit(self):
+        facts = (b'LSFNODEBOOT1 facts=[1, 2, 3, 4, 5, 6] cpu=[1, 1, 1, 2, 3, 4, 5, 6, 7] '
+            b'accounting=[1, 2, 3, 4, 5, 6, 7, 8] vectors=[32, 33, 34, 35, 36, 37, 38, 39]')
+        raw = b'\n'.join((owner.NODE_BOOT,facts,owner.NODE_HELD,b'LSFNODEBOOT1 childExit=0',owner.NODE_END))+b'\n'
+        observed = owner.node_serial(raw)
+        self.assertTrue(observed['originalEscrowRetained'])
+        for key in ('nodeFunding','nodeRetired','irqEnabled','tcpEnabled'):
+            self.assertIs(observed[key],False)
+        for bad in (raw.replace(b'cpu=[1, 1, 1,',b'cpu=[2, 1, 1,'),
+                raw.replace(b'32, 33, 34, 35, 36, 37, 38, 39',b'32, 32, 34, 35, 36, 37, 38, 39'),
+                raw.replace(b'childExit=0',b'childExit=1'),raw.replace(b'nodeFunding=0',b'nodeFunding=1'),
+                raw.replace(b'originalEscrowRetained=1',b'originalEscrowRetained=0'),
+                raw.replace(b'accounting=[1, 2, 3,',b'accounting=[1, 4, 3,'),
+                raw+owner.NODE_HELD+b'\n',raw+owner.image.PHYSICAL_MARKER+b'\n',
+                raw.replace(b'facts=[1, 2, 3, 4, 5, 6]',b'facts=[1, 2]')):
+            with self.subTest(raw=bad),self.assertRaises(ValueError):owner.node_serial(bad)
+
+    def test_q35_argv_and_captured_loader_cannot_select_tcg_or_alternate_source(self):
+        root = Path(tempfile.gettempdir()).resolve()/'owned'
+        argv = owner.node_boot_argv(*(root/n for n in ('qemu','kernel','cpio','firmware')))
+        self.assertEqual(argv[argv.index('-machine')+1],'pc-q35-11.1')
+        self.assertEqual(argv[argv.index('-accel')+1],'kvm')
+        self.assertEqual(argv[argv.index('-smp')+1],'1,maxcpus=1')
+        self.assertEqual(argv[argv.index('-nic')+1],'none')
+        self.assertIn('vectors=3',argv[argv.index('-device')+1])
+        self.assertFalse(any('iommu' in x or 'tcg' in x for x in argv))
+        captured = {owner.NODE_PROJECTOR:b'ROOT = None\n',
+            **{owner.NODE_ROOT+n:b'' for n in owner.NODE_MATERIALS}}
+        with self.assertRaises(ValueError):owner.node_compose({}, {}, captured)
+        # A forged borrowed/funding marker is not an alternate success profile.
+        with self.assertRaises(ValueError):owner.node_serial(owner.NATIVE_PASS+b'\n')
