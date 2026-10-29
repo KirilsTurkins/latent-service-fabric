@@ -136,10 +136,9 @@ Closing the cookie releases its body/cookie owners; libc then frees the FILE.
 The original Store backing remains charged until its actual cleanup, and host
 HTTP upload, body and chunk owners have separate lifetimes.
 
-The prepared qualification programme covers one libfetch client and five signed
-cells: GET, not-found, denied destination, early close and a held first read with
-a completed sibling. Compilation and those signed invocations are still pending;
-this source integration does not qualify the whole #690 matrix or C cost model.
+The qualification programme covers one libfetch client and five signed cases:
+normal GET, not-found, denied target, early close and a held fread with a completed
+sibling. It does not qualify the whole #690 matrix or C cost model.
 
 ## 2. Build and package the project
 

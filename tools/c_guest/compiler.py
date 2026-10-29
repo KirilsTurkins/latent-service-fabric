@@ -243,6 +243,9 @@ class Compiler:
                    "-Wl,--no-entry", "-Wl,--export-memory", "-Wl,-z,stack-size=65536",
                    f"-Wl,--max-memory={memory_bytes}", "-I", str(generated),
                    "-I", str(self.sdk / "include"), *map(str, sources)]
+        if runtime_profile == standard_facilities.FETCH_PROFILE:
+            # Zig maps this to wasm-ld -s: omit debug/name metadata, not code.
+            command.append('-Wl,--strip-debug')
         thread_flags = []
         if threaded:
             # The post-link template-copy body is deliberately opaque to its
@@ -286,6 +289,16 @@ class Compiler:
             self.isolation.receipt["preprocessorInputs"] = sorted(
                 {row["path"]: row for row in observed}.values(), key=lambda row: row["path"])
         self.run("zig", *command)
+        if runtime_profile == standard_facilities.FETCH_PROFILE and self.commands is not None:
+            from tools.rust_capsule_project import read_file
+            payload = read_file(core, 64 * 1024 * 1024)
+            observation = {'formatVersion': 1, 'size': len(payload), 'digest': digest(payload),
+                           'headerHex': payload[:8].hex(),
+                           'originalEnvelopeBytes': 20 + len(public.encode('utf-8')) + len(payload),
+                           'maximumEnvelopeBytes': 1024 * 1024,
+                           'linkerFlags': ['-Wl,--strip-debug']}
+            (self.commands.output / 'c-original-core.json').write_text(
+                json.dumps(observation, indent=2, sort_keys=True) + '\n', encoding='utf-8')
         encoded_core = core
         if threaded:
             derived = destination / 'c-threading'
