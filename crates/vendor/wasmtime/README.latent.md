@@ -670,3 +670,19 @@ panic is cleanup evidence rather than admission-refusal rollback. Previous
 callback controls are retained. This is not whole #736/#745 accounting, an
 allocator/RSS bound, or transitive payload/stack admission. The cumulative
 patch retains one-line context, all source postimages and all250 originals.
+
+
+The v28 stage retires a host-owned call dropped before its original lower
+callback runs. It uses the original HostFuture/GuestTask cancellation waist,
+without invoking the abandoned borrowed lower/lift closures. The original
+implicit thread, synthetic sync waitable set, queue and unconsumed handoff
+are settled once; eligible sibling work and foreign Stores remain untouched.
+After lowering, existing live-thread cleanup semantics remain unchanged.
+
+Four private native controls use real Engine/Component/Instance/Store calls
+and inline components. Only this closed profile enables the already-locked
+optional wat feature; earlier profile feature strings remain unchanged.
+These controls are not signed SDK execution, full #736 retirement, payload
+or stack admission, or evidence that the existing post-lowering cleanup TODO
+is resolved. The maintained one-line-context patch preserves the other57
+sections and all250 original identities.

@@ -550,5 +550,38 @@ class TaskZZZGuestStartMemoryOwner(unittest.TestCase):
             owner.call_memory_result(b'', owner.GUEST_START_CASES[0], _guest_start='yes')
 
 
+class TaskZZZZUnstartedHostDropOwner(unittest.TestCase):
+    def test_unstarted_drop_results_keep21_roots_and_refuse_skips_duplicates_or_cross_profile(self):
+        self.assertEqual((len(owner.UNSTARTED_HOST_DROP_CASES), len(set(owner.UNSTARTED_HOST_DROP_CASES))), (4, 4))
+        self.assertEqual(len(owner.CALL_MEMORY_STAGES), 21)
+        for case in owner.UNSTARTED_HOST_DROP_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.unstarted_host_drop_result(raw, case)['scope'],
+                'original-Store-unstarted-host-future-drop-lifetime-owner')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(b'0 measured', b'1 measured'),
+                    raw.replace(case.encode(), b'wrong::case'), b''):
+                with self.assertRaises(ValueError):
+                    owner.unstarted_host_drop_result(changed, case)
+            for reader in (owner.call_memory_result, owner.resource_table_result,
+                    owner.call_result_channel_result, owner.callback_result, owner.guest_start_result):
+                with self.assertRaises(ValueError):
+                    reader(raw, case)
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(raw, case, _host_baseline=True)
+        for case in (*owner.CALL_MEMORY_CASES, *owner.RESOURCE_TABLE_CASES,
+                *owner.CALL_RESULT_CHANNEL_CASES, *owner.CALLBACK_CASES,
+                *owner.HOST_BASELINE_CASES, *owner.GUEST_START_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.unstarted_host_drop_result(b'', case)
+        for flags in ({'_resource_table': True}, {'_call_result_channel': True},
+                {'_callback_memory': True}, {'_host_baseline': True}, {'_guest_start': True}):
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(b'', owner.UNSTARTED_HOST_DROP_CASES[0], _unstarted_host_drop=True, **flags)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', owner.UNSTARTED_HOST_DROP_CASES[0], _unstarted_host_drop='yes')
+
+
 if __name__ == '__main__':
     unittest.main()
