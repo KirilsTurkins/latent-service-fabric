@@ -109,3 +109,7 @@ shared-monorepo license donors for exact native dependency versions. Compiler
 and system-image builders retain their separate upstream notices and package
 inventories; static font preparation retains the selected font's license.
 This file is an attribution index, not an exhaustive dependency inventory.
+
+The maintained C libfetch HTTP profile includes the FreeBSD libfetch URL/API
+frontend by Dag-Erling Smorgrav, under BSD-3-Clause. Exact upstream source
+identities and original license notices accompany the maintained source port.

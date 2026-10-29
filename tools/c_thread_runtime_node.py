@@ -502,3 +502,251 @@ def run(artifact: Path, native: dict, output: Path):
                 write_json(output / 'FAILED.json', record)
             except BaseException:
                 pass
+
+
+HTTP = 'latent:http/streaming@0.3.0'
+HTTP_OPS = ['open', 'write', 'finish', 'read', 'chunk-bytes', 'trailers', 'abort-upload', 'abort-body']
+
+
+def configure_http(settings, capsule, peer, credential):
+    imports = capsule.get('imports')
+    require(type(imports) is list and len(imports) == 3
+            and all(type(row) is dict and set(row) == {'contract', 'optional'}
+                    and row['optional'] is False for row in imports)
+            and {row['contract'] for row in imports} == {*IMPORTS, HTTP}, 'c-libfetch-exact-imports')
+    # Only the local validation projection omits HTTP; signed source stays intact.
+    configure(settings, {**capsule, 'imports': [row for row in imports if row['contract'] != HTTP]})
+    providers = settings['providers']
+    del providers['http']
+    providers['bindings'] = [row for row in providers['bindings'] if row['name'] != 'http-binding']
+    providers['httpStreaming'] = {
+        'identity': {'id': 'http-standard', 'tenant': 'examples', 'service': 'http-host', 'epoch': 1},
+        'credentialDirectory': str(credential.parent),
+        'credentials': [{'reference': 'standard-peer', 'file': credential.name,
+                         'destination': 0, 'header': 'authorization'}],
+        'configuration': {'formatVersion': 1, 'destinations': peer.provider_destinations(),
+            'limits': {'maximumRequestBodyBytes': 4096, 'maximumResponseBodyBytes': 32768,
+                'maximumEncodedResponseBytes': 65536, 'maximumHeaderBytes': 4096,
+                'maximumHeaders': 16, 'maximumRedirects': 0}, 'extraRoots': [], 'publicRoots': False},
+        'limits': {'maximumInputBytes': 4096, 'maximumOutputBytes': 32768,
+                   'maximumChunkBytes': 16384, 'maximumOutstandingChunks': 2}}
+    providers['bindings'].append({'name': 'http-standard', 'tenant': 'examples',
+        'consumerService': 'examples/' + SERVICE, 'providerService': 'http-host',
+        'contract': HTTP, 'providerBinding': 'http-installed'})
+    require(len(providers['bindings']) == 3, 'c-libfetch-exact-required-bindings')
+    return settings
+
+
+def install_http(client, node, target, origin):
+    from tools.static_api.node import policy
+    grants = install(client, node, target)
+    rows = [row for row in node.startup_record['providers'] if row['capability'] == HTTP]
+    require(len(rows) == 1 and rows[0]['profile'] == 'bounded-streaming-http-identity-v1'
+            and rows[0]['tenant'] == 'examples' and rows[0]['service'] == 'http-host'
+            and rows[0]['configurationEpoch'] == '1', 'c-libfetch-installed-provider')
+    descriptor = rows[0]
+    policy(client, 'provider-binding', 'http-installed', {'formatVersion': 1, 'tenant': 'examples',
+        'capability': HTTP, 'providerProfile': descriptor['profile'],
+        'configurationDigest': descriptor['configurationDigest'], 'configurationEpoch': 1,
+        'restriction': {'operations': []}})
+    policy(client, 'policy', 'http-allow', {'formatVersion': 1, 'tenant': 'examples', 'rules': [{
+        'id': 'ordinary-libfetch', 'effect': 'allow',
+        'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
+        'services': [target['service']], 'publications': [target['publication']],
+        'capability': HTTP, 'operations': HTTP_OPS,
+        'resources': {'kind': 'http', 'origins': [origin], 'methods': ['GET'],
+                      'paths': [], 'pathPrefixes': ['/conformance/']},
+        'ceiling': {'operations': 64, 'inputBytes': 65536, 'outputBytes': 262144, 'wallTimeMillis': 5000}}]})
+    return grants + [{'capability': HTTP, 'policy': 'http-allow'}]
+
+
+def start_http_call(client, target, text, activation):
+    from tools.phase2_operator_process import Process
+    path, budget = client.directory / (activation + '-input.json'), client.directory / (activation + '-budget.json')
+    write_json(path, [text]); write_json(budget, target['budget'])
+    process = Process([client.executable, '--output', 'json', '--config', str(client.config),
+        '--profile', 'operator', '--rpc-timeout-ms', '5000', 'invoke', '--service', target['service'],
+        '--route', target['name'], '--contract', fixture.HTTP_API, '--function', 'run',
+        '--activation-id', activation, '--input', str(path), '--budget', str(budget), '--budget-profile', 'phase3'],
+        client.directory, client.environment, client.cancellation, maximum=32768)
+    process.authoring_activation = activation
+    process.authoring_started_unix_millis = time.time_ns() // 1_000_000
+    process.authoring_started = time.monotonic_ns()
+    return process
+
+
+def http_cell(client, node, probe, target, peer, output, case):
+    from tools.standard_http.observations import validate, delta, require_zero_contact
+    vectors = {'normal': 'domain-json', 'not-found': 'http-404', 'denied': 'denied-target',
+               'early-close': 'partial-body', 'sibling': 'partial-body'}
+    before, revision = peer.observation(), selected_revision(client, target)
+    validate(before)
+    text = case + '\n' + peer.url(vectors[case])
+    if case == 'sibling':
+        text += '\n' + peer.url('domain-json')
+    activation = 'c-libfetch-' + case
+    process, primary, barrier = start_http_call(client, target, text, activation), False, None
+    deadline = min(client.deadline, time.monotonic() + 8)
+    try:
+        while not process.owner.exited():
+            client.cancellation.check()
+            require(time.monotonic() < deadline, 'c-libfetch-cell-deadline')
+            process.drain()
+            peer.poll(min(0.02, max(0, deadline - time.monotonic())))
+            observed = peer.observation()
+            validate(observed)
+            change = delta(before, observed)
+            if case == 'sibling' and barrier is None and len(change['requests']) >= 3:
+                requests = change['requests']
+                require(len(requests) == 3
+                        and [row.get('vector') for row in requests] == ['partial-body', 'domain-json', 'domain-json']
+                        and requests[0]['state'] == 'held-body'
+                        and requests[1].get('closeReason') == 'response-write-complete',
+                        'c-libfetch-held-A-completed-B-third-contact')
+                gates = peer.gates()
+                require(len(gates) == 1 and gates[0].generation == observed['generation']
+                        and gates[0].request == requests[0]['request'] and gates[0].phase == 'body',
+                        'c-libfetch-original-unreleased-body-gate')
+                physical = sample(client, probe, 'held-' + activation, 1, active=True)
+                providers = usage(client, target, idle=False)
+                counters = providers['nodeUsage']['counters']
+                require(all(integer(counters[name]) >= 1 for name in
+                    ('broker_calls', 'pool_active_connections', 'pool_running_requests'))
+                    and not process.owner.exited(), 'c-libfetch-positive-held-provider-owners')
+                barrier = {'peer': observed, 'physical': physical, 'providerUsage': providers,
+                    'sourceBoundFirstFreadPending': True, 'nativePollPendingObserved': False,
+                    'completedSiblingBeforeGateRelease': True}
+                write_json(output / ('barrier-' + activation + '.json'), barrier)
+                peer.release(gates[0])
+        row = finish_call(client, process)
+        write_json(output / ('invocation-' + activation + '.json'), row)
+        require(row['processReaped'] is True and row['response']['outcomeKnown'] is True
+                and row['response']['requestDispatched'] is True
+                and row['response']['data']['resolvedRevision'] == revision,
+                'c-libfetch-known-current-invocation')
+        fixture.http_result(row, case)
+        require(all(integer(row['response']['data']['consumption'][name]) == 0 for name in
+                    ('stateReadBytes', 'stateWriteBytes', 'blobReadBytes', 'blobWriteBytes',
+                     'logBytes', 'effectCount', 'childCalls')), 'c-libfetch-no-unrelated-authority')
+        # Drive real remote FIN observation after the original provider closes.
+        for _ in range(128):
+            observed = peer.observation()
+            if observed['openConnections'] == 0:
+                break
+            require(time.monotonic() < deadline, 'c-libfetch-peer-retirement-deadline')
+            peer.poll(min(0.02, max(0, deadline - time.monotonic())))
+        change = delta(before, peer.observation())
+        if case == 'denied':
+            require_zero_contact(before, peer.observation())
+        else:
+            expected = ['partial-body', 'domain-json', 'domain-json'] if case == 'sibling' else [vectors[case]]
+            require([item.get('vector') for item in change['requests']] == expected
+                    and all(item['method'] == 'GET' and item['role'] == 'primary'
+                            and item.get('authorizationPresent') is True for item in change['requests'])
+                    and change['rejectedRequests'] == change['connectionBoundRejections'] == 0,
+                    'c-libfetch-exact-authenticated-peer-contacts')
+        if case == 'early-close':
+            events = change['events']
+            require(any(event['kind'] == 'gate-pending' and event['phase'] == 'body' for event in events)
+                    and not any(event['kind'] == 'gate-released' for event in events)
+                    and len(change['requests']) == 1 and change['requests'][0]['state'] == 'closed',
+                    'c-libfetch-close-before-unreleased-body')
+        require(case != 'sibling' or barrier is not None, 'c-libfetch-sibling-barrier-required')
+        require(peer.observation()['openConnections'] == 0, 'c-libfetch-no-peer-owners-left')
+        write_json(output / ('peer-' + activation + '.json'), peer.observation())
+        return {'case': case, 'activation': activation, 'exitCode': row['exitCode'],
+                'barrier': barrier, 'peerDelta': change,
+                'retirement': retire(client, probe, target, output, activation)}
+    except BaseException:
+        primary = True
+        write_json(output / ('peer-failed-' + activation + '.json'), peer.observation())
+        try:
+            retain_partial(process, output, activation)
+        except BaseException:
+            pass
+        raise
+    finally:
+        close_call(process, primary_failure=primary)
+
+
+def run_http(artifact: Path, native: dict, output: Path, *, deadline):
+    import secrets
+    from tools.standard_http.peer import Peer
+    from tools.standard_http.observations import validate
+    output = fresh(output)
+    component = file_identity(artifact / 'component.wasm', 8 * 1024**2)
+    before = {name: file_identity(path) for name, path in native.items()}
+    require(deadline > time.monotonic(), 'c-libfetch-original-parent-deadline')
+    commands = Commands(ROOT, fresh(output / 'commands'), build_environment(output),
+                        deadline_seconds=300, command_seconds=60)
+    commands.deadline = min(commands.deadline, deadline)
+    record = {'schemaVersion': 'latent.c.libfetch.node.v1', 'status': 'incomplete',
+              'component': component, 'native': before, 'full690Qualified': False,
+              'fullCCostModelQualified': False, 'independentClientCount': 1}
+    stage, failed = 'sign', False
+    try:
+        signed = output / 'signed'
+        commands.run('libfetch-sign', native['capsule_authoring'], 'demo-sign', signed, artifact)
+        releases = read_json(signed / 'release-set.json')['releases']
+        require(len(releases) == 1 and releases[0]['componentDigest'] == component['sha256'],
+                'c-libfetch-one-signed-component')
+        with owned_cancellation() as cancellation, tempfile.TemporaryDirectory(prefix='lsf-c-libfetch-') as temporary, \
+                owned_cleanup(record) as cleanup:
+            work = Path(temporary)
+            for name in ('client', 'node', 'credentials'):
+                (work / name).mkdir(mode=0o700)
+            secret = b'Bearer ' + secrets.token_hex(32).encode('ascii')
+            credential = work / 'credentials/peer'
+            credential.write_bytes(secret); credential.chmod(0o600)
+            peer = Peer(secret, maximum_seconds=max(1, min(300, int(commands.deadline - time.monotonic()))))
+            cleanup.callback(peer.close)
+            client = RecordingClient(native['latent'], work / 'client', cancellation,
+                min(commands.deadline, time.monotonic() + 240), evidence=output / 'controls')
+            config, settings = configure_base(work / 'node', signed, peer.origin()['port'], language='c')
+            configure_http(settings, read_json(artifact / 'capsule.json'), peer, credential)
+            config.write_bytes((json.dumps(settings, sort_keys=True, separators=(',', ':')) + '\n').encode())
+            # Private credentials and node configuration are intentionally not public artifacts.
+            stage = 'node'
+            node = connect(client, native['latentd'], work / 'node', config, 'examples', 0)
+            cleanup.callback(node.close)
+            record['startup'] = node.startup_record
+            probe = Probe(node, before['latentd'])
+            source = signed / SERVICE
+            published = client.call('release', 'publish-package', source / 'package',
+                '--evidence', source / 'evidence/index.json', '--operation-id', 'c-libfetch-publish',
+                '--expected-generation', '0')
+            require(published['outcomeKnown'] is True and published['data']['release']['digest'] == component['sha256'],
+                    'c-libfetch-signed-admission')
+            publication = published['data']['operation']['publication']['id']
+            target = deploy(client, source / 'deployment.json', publication)
+            require(target['grants'] == [], 'c-libfetch-no-ambient-grants')
+            grants = install_http(client, node, target, peer.origin())
+            target = deploy(client, source / 'deployment.json', publication,
+                            generation=str(target['generation']), grants=grants)
+            stage = 'five-ordinary-cells'
+            record['cases'] = []
+            for case in fixture.HTTP_CASES:
+                record['cases'].append(http_cell(client, node, probe, target, peer, output, case))
+            require([row['case'] for row in record['cases']] == list(fixture.HTTP_CASES)
+                    and peer.observation()['startedRequests'] == 6, 'c-libfetch-five-cells-six-contacts')
+            delete_all(client, [target['name']])
+            record['afterDeletes'] = sample(client, probe, 'c-libfetch-after-deletes', 0)
+            stop(client, node); record['nodeShutdown'] = stopped_record(node)
+            record['peerShutdown'] = peer.close(); validate(record['peerShutdown'])
+            require(record['peerShutdown']['openConnections'] == record['peerShutdown']['listeningOrigins'] == 0,
+                    'c-libfetch-stopped-peer')
+            cancellation.check()
+        require(component == file_identity(artifact / 'component.wasm', 8 * 1024**2)
+                and before == {name: file_identity(path) for name, path in native.items()}
+                and time.monotonic() < commands.deadline and client.calls <= 384,
+                'c-libfetch-final-original-inputs-and-deadline')
+        record.update(status='passed', cliCalls=client.calls, commands=commands.records)
+        write_json(output / 'qualified.json', record)
+        return record
+    except BaseException:
+        failed = True
+        record.update(status='failed', stage=stage)
+        raise
+    finally:
+        if failed:
+            write_json(output / 'FAILED.json', record)

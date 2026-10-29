@@ -208,6 +208,8 @@ class Compiler:
         if threaded:
             from tools.c_guest import threading
             threading.selected({'threadingProfile': threading_profile})
+        if runtime_profile == standard_facilities.FETCH_PROFILE and not threaded:
+            raise ValueError('c-libfetch-http-requires-cooperative-threading')
         if threaded and ('c-threading-transformer' not in self.paths or static_libraries):
             raise ValueError('c-threading-requires-transformer-and-no-static-archives')
         if embed_directories and (language_standard != 'c23' or len(embed_directories) > 64):
@@ -233,6 +235,7 @@ class Compiler:
                 defines = threading.linked_defines(defines, timed_clock=True)
             else:
                 defines = threading.linked_defines(defines)
+        defines = standard_facilities.compiler_defines(runtime_profile, defines)
         self.validate_static_libraries(static_libraries, destination)
         core, component = destination / "core.wasm", destination / "component.wasm"
         command = ["cc", "-std=" + language_standard, "-target", "wasm32-wasi", "-O2",

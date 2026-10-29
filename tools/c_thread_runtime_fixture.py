@@ -58,3 +58,44 @@ def observation(value: str, children: int, *, synchronized: bool = False) -> dic
             'nativeOwners': native, 'nativeMemoryBytes': memory,
             'positivePoint': 'generated activation.observe in child while original parent join is parked',
             'waitForPollPendingClaimed': False}
+
+
+HTTP_FIXTURE = 'sdk/c-guest/runtime-fixtures/libfetch/'
+HTTP_WORLD = 'tests:libfetch/probe@0.1.0'
+HTTP_API = 'tests:libfetch/api@0.1.0'
+HTTP_CASES = ('normal', 'not-found', 'denied', 'early-close', 'sibling')
+
+
+def prepare_http(directory: Path) -> Path:
+    from tools.c_guest.standard_facilities import FETCH_PROFILE
+    project = c_capsule_project.create(directory, 'greeting', name='c-thread-runtime',
+                                       threading_profile=PROFILE)
+    for target, original in (('src/main.c', 'probe.c'), ('wit/world.wit', 'world.wit')):
+        (project / target).write_bytes(read_file(ROOT / (HTTP_FIXTURE + original)))
+    config = json.loads(read_file(project / 'capsule-project.json'))
+    config.update(world=HTTP_WORLD, runtimeProfile=FETCH_PROFILE)
+    # Three ordinary GETs in the sibling cell; node/provider ceilings are unchanged.
+    config['limits'].update(cpuFuel=1_000_000_000, memoryBytes=32 * 1024 * 1024,
+                            wallTimeLimitMillis=5000, logBytes=0, outboundRequests=3)
+    (project / 'capsule-project.json').write_bytes(
+        (json.dumps(config, sort_keys=True, indent=2) + '\n').encode())
+    c_capsule_project.validate(snapshot(project))
+    return project
+
+
+def http_result(row: dict, case: str) -> None:
+    from tools.standard_http.vectors import DOMAIN, PARTIAL, json_bytes
+    def checksum(data):
+        value = 0
+        for byte in data:
+            value = (value * 33 + byte) & 0xffffffff
+        return str(len(data)) + ':' + str(value)
+    expected = {
+        'normal': (0, [{'ok': checksum(json_bytes(DOMAIN))}]),
+        'not-found': (3, [{'err': 'unavailable'}]),
+        'denied': (3, [{'err': 'permission-denied'}]),
+        'early-close': (0, [{'ok': 'closed'}]),
+        'sibling': (0, [{'ok': checksum(PARTIAL) + ':' + checksum(json_bytes(DOMAIN)) + ':1:1:1'}]),
+    }
+    if type(row.get('exitCode')) is not int or case not in expected or (row['exitCode'], row['decoded']) != expected[case]:
+        raise ValueError('c-libfetch-exact-ordinary-result')

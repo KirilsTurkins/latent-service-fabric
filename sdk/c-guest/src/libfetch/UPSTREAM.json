@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "latent.c.libfetch.source.v1",
+  "upstreamRepository": "https://github.com/freebsd/freebsd-src",
+  "upstreamCommit": "b319c3d6ac7cf408b56fe745f718de6a324ec180",
+  "sourceLicense": "BSD-3-Clause",
+  "originals": [
+    {
+      "path": "src/libfetch/fetch.c",
+      "bytes": 11826,
+      "sha256": "sha256:e161caef3dd62b8ae90748f30ff89fb5e14328e9abf8f56efdc6bc2bc0cbb426",
+      "origin": "https://raw.githubusercontent.com/freebsd/freebsd-src/b319c3d6ac7cf408b56fe745f718de6a324ec180/lib/libfetch/fetch.c"
+    },
+    {
+      "path": "src/libfetch/upstream/fetch.h",
+      "bytes": 4969,
+      "sha256": "sha256:f3bce6b530b4b6f18e93abdb2864605e50e616917d0e0b01f8677e36b6964956",
+      "origin": "https://raw.githubusercontent.com/freebsd/freebsd-src/b319c3d6ac7cf408b56fe745f718de6a324ec180/lib/libfetch/fetch.h"
+    },
+    {
+      "path": "src/libfetch/upstream/common.h",
+      "bytes": 6162,
+      "sha256": "sha256:2ba826d9eefbe788cbd0e1d08a54a46e228eee7842e57a21e9971ed9e1200b43",
+      "origin": "https://raw.githubusercontent.com/freebsd/freebsd-src/b319c3d6ac7cf408b56fe745f718de6a324ec180/lib/libfetch/common.h"
+    }
+  ],
+  "maintainedFiles": [
+    "include/fetch.h",
+    "src/libfetch/common.h",
+    "src/libfetch/http.c"
+  ],
+  "headerDerivation": "Only the ASCII portability prefix before the original include guard is inserted; remove it to reconstruct upstream fetch.h exactly.",
+  "commonDerivation": "Original notice followed by the finite fetch.c error-protocol subset; no socket/TLS/proxy implementation.",
+  "runtimeProfile": "c-libfetch-http-v1",
+  "compiler": "Zig0.16.0 maintained WASI libc",
+  "stdio": [
+    {
+      "path": "lib/libc/include/wasm-wasi-musl/stdio.h",
+      "bytes": 7034,
+      "sha256": "sha256:a7ce495ed82dc11ffb811bcdeec75b4abe743ee88dda78eee4cebfa78ab28244",
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/include/wasm-wasi-musl/stdio.h"
+    },
+    {
+      "path": "lib/libc/include/generic-musl/features.h",
+      "bytes": 864,
+      "sha256": "sha256:2251ca4fa4ba92c741fcc89930c2a69aea70e6336fc7dca19ed347c8429c469f",
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/include/generic-musl/features.h"
+    },
+    {
+      "path": "lib/libc/include/generic-musl/string.h",
+      "bytes": 3012,
+      "sha256": "sha256:f633995c4a5a2fc09eef385f8bc9a370523a6cbebc61c46b6e16d33b4cea814f",
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/include/generic-musl/string.h"
+    },
+    {
+      "path": "lib/libc/musl/src/stdio/fopencookie.c",
+      "bytes": 2841,
+      "sha256": "sha256:ddb2c119cc721d1d3a936b4b42e15fcff86d7d956b50e3c838e62d8ea547e0bd",
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/musl/src/stdio/fopencookie.c"
+    },
+    {
+      "path": "lib/libc/musl/src/stdio/fread.c",
+      "bytes": 694,
+      "sha256": "sha256:d690a3072af0dd833d3cf94569ec0f8ac295b95deb1bfaeb80ca4e693d9c24cc",
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/musl/src/stdio/fread.c"
+    },
+    {
+      "path": "lib/libc/musl/src/stdio/fclose.c",
+      "bytes": 891,
+      "sha256": "sha256:e6988cb0307c03aedfd2748bbdb5a1d734df728e1db8fbb248a9ff6be1b27b98",
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/musl/src/stdio/fclose.c"
+    },
+    {
+      "path": "lib/libc/musl/src/stdio/fflush.c",
+      "bytes": 883,
+      "sha256": "sha256:856ac1841cdeeeb3df3f47bfbea5fae0746b5c9ac67d9113588f8d1375f6eb55",
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/musl/src/stdio/fflush.c"
+    },
+    {
+      "path": "lib/libc/musl/src/stdio/ofl_add.c",
+      "bytes": 172,
+      "sha256": "sha256:9ff596e40eefcd69205be5358e44d9c4e257f5484d9adcc63b67fa3b6f3e2e81",
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/musl/src/stdio/ofl_add.c"
+    },
+    {
+      "path": "lib/libc/musl/src/stdio/__lockfile.c",
+      "bytes": 551,
+      "sha256": "sha256:dc16d32a802123b549bd1e3ed4f473ff3ce8b5e38ad184229c398b3fd2e5cfe9",
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/musl/src/stdio/__lockfile.c"
+    },
+    {
+      "path": "lib/libc/musl/src/stdio/__toread.c",
+      "bytes": 368,
+      "sha256": "sha256:a48c3ea1a42ea1b2836d64ab97807e89a6adf5c5bf22c6094944510c8c17adca",
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/musl/src/stdio/__toread.c"
+    },
+    {
+      "path": "lib/libc/musl/src/internal/stdio_impl.h",
+      "bytes": 3054,
+      "sha256": "sha256:08218110ff564226559854a3caab0209f411e8b3ee01d659d453f6c3c68da28d",
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/musl/src/internal/stdio_impl.h"
+    },
+    {
+      "path": "src/libs/wasi_libc.zig",
+      "bytes": 42038,
+      "sha256": "sha256:728b9be836223ad78ef1e48ec853011e21d708949353346c220f8cf0d7d11b51",
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/src/libs/wasi_libc.zig"
+    }
+  ],
+  "semantics": "No ambient sockets, custom TLS or redirects; guest FILE allocations remain within original Store memory; local free never credits Root memory.",
+  "qualification": "not-established-by-source"
+}

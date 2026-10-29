@@ -24,7 +24,7 @@ on:
       - 'docs/component-development/c-authoring.md'
       - '.github/workflows/c-guest-authoring.yml'
   push:
-    branches: [development]
+    branches: [development, feat/sdk-690-c-libfetch-http-20261029]
     paths:
       - 'sdk/c-guest/**'
       - 'sdk/transaction-contract/**'
@@ -56,7 +56,7 @@ env:
 
 jobs:
   runtime:
-    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}
+    if: ${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}
     name: Admitted C capability ownership
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -192,6 +192,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
+      - name: Start the finite libfetch qualification clock
+        if: github.ref == 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'
+        run: echo "LSF_C_LIBFETCH_STARTED_NS=$(date +%s%N)" >> "$GITHUB_ENV"
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
@@ -228,27 +231,58 @@ jobs:
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Execute the actual captured standard library on current default native products
+        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'
         run: |
           python3 -m unittest tools.tests.test_c_standard_facilities
           python3 tools/qualify_c_standard_facilities.py --build-native --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-facilities"
       - name: Execute ordinary bounded stdio through the same frozen default products
+        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'
         run: |
           python3 -m unittest tools.tests.test_c_standard_logging
           python3 tools/qualify_c_standard_facilities.py --standard-logging --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-logging"
       - name: Execute combined ordinary libc facilities with four explicit grants
+        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'
         run: |
           python3 -m unittest tools.tests.test_c_standard_combined
           python3 tools/qualify_c_standard_facilities.py --combined-profile --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-combined"
       - name: Execute captured C23 raw resources and physical trap retirement
+        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'
         run: |
           python3 -m unittest tools.tests.test_c_compiled_resources
           python3 tools/qualify_c_standard_facilities.py --compiled-resources --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-compiled-resources"
+      - name: Execute one authentic libfetch client with the current signed typed HTTP backend
+        if: github.ref == 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'
+        run: >-
+          python3 tools/qualify_c_standard_facilities.py --libfetch-http --build-native
+          --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)"
+          --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-libfetch-http"
       - name: Retain bounded C standard runtime proof including failures
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: c-standard-facilities-${{ github.run_id }}
           path: |
+            ${{ runner.temp }}/c-libfetch-http/qualified.json
+            ${{ runner.temp }}/c-libfetch-http/FAILED.json
+            ${{ runner.temp }}/c-libfetch-http/logs/**
+            ${{ runner.temp }}/c-libfetch-http/owner-inputs/**
+            ${{ runner.temp }}/c-libfetch-http/project/**
+            ${{ runner.temp }}/c-libfetch-http/native-build/native/native-tuple.json
+            ${{ runner.temp }}/c-libfetch-http/build/**
+            ${{ runner.temp }}/c-libfetch-http/node/signed/release-set.json
+            ${{ runner.temp }}/c-libfetch-http/node/signed/c-thread-runtime/package/**
+            ${{ runner.temp }}/c-libfetch-http/node/signed/c-thread-runtime/evidence/**
+            ${{ runner.temp }}/c-libfetch-http/node/signed/c-thread-runtime/deployment.json
+            ${{ runner.temp }}/c-libfetch-http/node/qualified.json
+            ${{ runner.temp }}/c-libfetch-http/node/FAILED.json
+            ${{ runner.temp }}/c-libfetch-http/node/controls/**
+            ${{ runner.temp }}/c-libfetch-http/node/commands/logs/**
+            ${{ runner.temp }}/c-libfetch-http/node/invocation-*.json
+            ${{ runner.temp }}/c-libfetch-http/node/peer-*.json
+            ${{ runner.temp }}/c-libfetch-http/node/barrier-*.json
+            ${{ runner.temp }}/c-libfetch-http/node/retirement-*.json
+            ${{ runner.temp }}/c-libfetch-http/node/*.stdout
+            ${{ runner.temp }}/c-libfetch-http/node/*.stderr
             ${{ runner.temp }}/c-standard-facilities/qualified.json
             ${{ runner.temp }}/c-standard-facilities/FAILED.json
             ${{ runner.temp }}/c-standard-facilities/logs/**

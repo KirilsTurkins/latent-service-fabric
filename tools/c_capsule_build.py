@@ -109,6 +109,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "application-dependencies"
             closure = prepare(dependency_root, work, output, "c")
             runtime_profile = standard_facilities.selected_profile(project, closure.lock if closure is not None else None)
+            if runtime_profile == standard_facilities.FETCH_PROFILE and not threaded:
+                raise ValueError('c-libfetch-http-requires-cooperative-threading')
             language_standard = language.selected_standard(project, closure.lock if closure is not None else None)
             resources = c_resource_inputs.selected(closure, files)
             write_json(output / 'c-resources.json', resources.observation)

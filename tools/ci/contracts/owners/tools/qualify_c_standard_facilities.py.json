@@ -1,3 +1,1 @@
-{"kind":"owner","path":"tools/qualify_c_standard_facilities.py","reviewBoundary":"committed-fingerprint","reviewReason":"Add explicit C23 captured raw resources and signed trap/fuel retirement while preserving all original C programmes and limits.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "7fe9a686c861b529f44d81890ea94c60cda7db0a374c18a6b867f1e1325273f7"
-}
+{"kind":"owner","path":"tools/qualify_c_standard_facilities.py","reviewBoundary":"committed-fingerprint","reviewReason":"Add explicit C23 captured raw resources and signed trap/fuel retirement while preserving all original C programmes and limits. Add the closed one-client libfetch five-cell typed-HTTP profile, preserving old modes and deadlines.","schemaVersion":"latent.ci.contracts.v1","sha256":"a70fbc33cf38348bb07154f00415fea65b9b09775cfd3ccffcf789ed2ece7477"}
