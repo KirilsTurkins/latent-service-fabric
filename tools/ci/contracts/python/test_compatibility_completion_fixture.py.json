@@ -1,20 +1,5 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"CompletionFixtures.test_actual_managed_project_and_counterfactual_preserve_all_original_sdk_and_library_inputs":
-      "d81a4c5dcc326510f336614335a224b526719a7a862f6a17ee95ce31d5443b8a",
-"CompletionFixtures.test_ordinary_TS_resource_project_preserves_original_profile_grants_limits_and_capture_topology":
-      "d81a4c5dcc326510f336614335a224b526719a7a862f6a17ee95ce31d5443b8a",
-"CompletionFixtures.test_original_capture_project_accepts_exact_two_bounded_source_inputs_without_implicit_compile":
-      "d81a4c5dcc326510f336614335a224b526719a7a862f6a17ee95ce31d5443b8a",
-"CompletionFixtures.test_stack_source_is_fixed_fresh_and_cannot_reuse_an_existing_component_directory":
-      "d81a4c5dcc326510f336614335a224b526719a7a862f6a17ee95ce31d5443b8a"
-},
-"kind":"python",
-"module":"tools/tests/test_compatibility_completion_fixture.py",
-"reviewReason":"Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"d81a4c5dcc326510f336614335a224b526719a7a862f6a17ee95ce31d5443b8a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c6d4ceb8f4930a7e6276dfd32f3853f80ebd426a2d4a61ea29504e443b25336d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"CompletionFixtures.test_actual_managed_project_and_counterfactual_preserve_all_original_sdk_and_library_inputs":
+      "d81a4c5dcc326510f336614335a224b526719a7a862f6a17ee95ce31d5443b8a","CompletionFixtures.test_ordinary_TS_resource_project_preserves_original_profile_grants_limits_and_capture_topology":
+      "d81a4c5dcc326510f336614335a224b526719a7a862f6a17ee95ce31d5443b8a","CompletionFixtures.test_original_capture_project_accepts_exact_two_bounded_source_inputs_without_implicit_compile":
+      "d81a4c5dcc326510f336614335a224b526719a7a862f6a17ee95ce31d5443b8a","CompletionFixtures.test_stack_source_is_fixed_fresh_and_cannot_reuse_an_existing_component_directory":
+      "d81a4c5dcc326510f336614335a224b526719a7a862f6a17ee95ce31d5443b8a"},"kind":"python","module":"tools/tests/test_compatibility_completion_fixture.py","reviewReason":"Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"d81a4c5dcc326510f336614335a224b526719a7a862f6a17ee95ce31d5443b8a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:c6d4ceb8f4930a7e6276dfd32f3853f80ebd426a2d4a61ea29504e443b25336d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

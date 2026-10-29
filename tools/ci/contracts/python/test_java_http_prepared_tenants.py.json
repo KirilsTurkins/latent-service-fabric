@@ -1,20 +1,5 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"JavaHttpPreparedTenantTests.test_current_native_checks_every_physical_protocol_material_before_execution":
-      "6b6c67e424ad0431957391212be245b11cd3f8939d7a80e61e6862a9052cbf66",
-"JavaHttpPreparedTenantTests.test_execution_failure_identity_and_post_execution_source_refusal_never_become_success":
-      "6b6c67e424ad0431957391212be245b11cd3f8939d7a80e61e6862a9052cbf66",
-"JavaHttpPreparedTenantTests.test_foreign_current_native_source_or_tuple_refuses_before_material_use":
-      "6b6c67e424ad0431957391212be245b11cd3f8939d7a80e61e6862a9052cbf66",
-"JavaHttpPreparedTenantTests.test_only_unchanged_twelve_case_prepared_programme_writes_source_attributed_success":
-      "6b6c67e424ad0431957391212be245b11cd3f8939d7a80e61e6862a9052cbf66"
-},
-"kind":"python",
-"module":"tools/tests/test_java_http_prepared_tenants.py",
-"reviewReason":"Add one default-false node-only prepared tenant campaign; all original workflow jobs, inputs, conditions, commands and timeouts deep-equal after removing only this input/job. Reuse authenticated native and component products without compiling.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"6b6c67e424ad0431957391212be245b11cd3f8939d7a80e61e6862a9052cbf66":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:35ef465593688061d2936e6baf260e99b0ea2bbbdbebdfa30542d9f99a0f9e02","class:setup-sha256:e19bc59d8392cbf96cb67d2b4fb850451940a46ecb68aea51992e9ce69fdf65b"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"JavaHttpPreparedTenantTests.test_current_native_checks_every_physical_protocol_material_before_execution":
+      "6b6c67e424ad0431957391212be245b11cd3f8939d7a80e61e6862a9052cbf66","JavaHttpPreparedTenantTests.test_execution_failure_identity_and_post_execution_source_refusal_never_become_success":
+      "6b6c67e424ad0431957391212be245b11cd3f8939d7a80e61e6862a9052cbf66","JavaHttpPreparedTenantTests.test_foreign_current_native_source_or_tuple_refuses_before_material_use":
+      "6b6c67e424ad0431957391212be245b11cd3f8939d7a80e61e6862a9052cbf66","JavaHttpPreparedTenantTests.test_only_unchanged_twelve_case_prepared_programme_writes_source_attributed_success":
+      "6b6c67e424ad0431957391212be245b11cd3f8939d7a80e61e6862a9052cbf66"},"kind":"python","module":"tools/tests/test_java_http_prepared_tenants.py","reviewReason":"Add one default-false node-only prepared tenant campaign; all original workflow jobs, inputs, conditions, commands and timeouts deep-equal after removing only this input/job. Reuse authenticated native and component products without compiling.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"6b6c67e424ad0431957391212be245b11cd3f8939d7a80e61e6862a9052cbf66":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:35ef465593688061d2936e6baf260e99b0ea2bbbdbebdfa30542d9f99a0f9e02","class:setup-sha256:e19bc59d8392cbf96cb67d2b4fb850451940a46ecb68aea51992e9ce69fdf65b"],"skipSites":[]}}}

@@ -1,22 +1,6 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"NpmArchiveRoot.test_actual_published_types_archive_is_sri_bound_and_kept_verbatim":
-      "458ce7cdfde0b1f5a2d32d1ec2dc11f58043c50f7b519b35dd6ab300dd80d804",
-"NpmArchiveRoot.test_arbitrary_single_roots_preserve_payloads_and_package_aliases":
-      "458ce7cdfde0b1f5a2d32d1ec2dc11f58043c50f7b519b35dd6ab300dd80d804",
-"NpmArchiveRoot.test_mixed_empty_and_rootless_archives_are_refused_including_directory_headers":
-      "458ce7cdfde0b1f5a2d32d1ec2dc11f58043c50f7b519b35dd6ab300dd80d804",
-"NpmArchiveRoot.test_original_path_alias_type_count_and_byte_guards_remain_enforced":
-      "458ce7cdfde0b1f5a2d32d1ec2dc11f58043c50f7b519b35dd6ab300dd80d804",
-"NpmArchiveRoot.test_real_package_boundary_requires_manifest_and_every_original_byte":
-      "458ce7cdfde0b1f5a2d32d1ec2dc11f58043c50f7b519b35dd6ab300dd80d804"
-},
-"kind":"python",
-"module":"tools/tests/test_typescript_npm_archive_root.py",
-"reviewReason":"Cover generic single-safe-root npm archives, exact published SRI bytes and preserved path/type/count/byte refusals",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"458ce7cdfde0b1f5a2d32d1ec2dc11f58043c50f7b519b35dd6ab300dd80d804":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a8f9dd9fbde2afb9c5a17ecc5193b6f12dab180d753eef84b67bb456faed3385","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"NpmArchiveRoot.test_actual_published_types_archive_is_sri_bound_and_kept_verbatim":
+      "458ce7cdfde0b1f5a2d32d1ec2dc11f58043c50f7b519b35dd6ab300dd80d804","NpmArchiveRoot.test_arbitrary_single_roots_preserve_payloads_and_package_aliases":
+      "458ce7cdfde0b1f5a2d32d1ec2dc11f58043c50f7b519b35dd6ab300dd80d804","NpmArchiveRoot.test_mixed_empty_and_rootless_archives_are_refused_including_directory_headers":
+      "458ce7cdfde0b1f5a2d32d1ec2dc11f58043c50f7b519b35dd6ab300dd80d804","NpmArchiveRoot.test_original_path_alias_type_count_and_byte_guards_remain_enforced":
+      "458ce7cdfde0b1f5a2d32d1ec2dc11f58043c50f7b519b35dd6ab300dd80d804","NpmArchiveRoot.test_real_package_boundary_requires_manifest_and_every_original_byte":
+      "458ce7cdfde0b1f5a2d32d1ec2dc11f58043c50f7b519b35dd6ab300dd80d804"},"kind":"python","module":"tools/tests/test_typescript_npm_archive_root.py","reviewReason":"Cover generic single-safe-root npm archives, exact published SRI bytes and preserved path/type/count/byte refusals","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"458ce7cdfde0b1f5a2d32d1ec2dc11f58043c50f7b519b35dd6ab300dd80d804":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a8f9dd9fbde2afb9c5a17ecc5193b6f12dab180d753eef84b67bb456faed3385","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

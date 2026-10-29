@@ -1,22 +1,6 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"TypeScriptEliminationTests.test_both_finite_witnesses_keep_arbitrary_api_unknown":
-      "ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750",
-"TypeScriptEliminationTests.test_foreign_source_duplicate_input_or_runtime_profile_is_rejected":
-      "ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750",
-"TypeScriptEliminationTests.test_raw_return_requires_the_selected_branch_refusal_flag":
-      "ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750",
-"TypeScriptEliminationTests.test_retained_module_cannot_be_relabelled_eliminated_or_reverse":
-      "ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750",
-"TypeScriptEliminationTests.test_uncaught_failure_and_success_are_never_interchangeable":
-      "ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750"
-},
-"kind":"python",
-"module":"tools/tests/test_typescript_elimination.py",
-"reviewReason":"Add finite two-build one-root-edge TypeScript compiler/elimination programme; preserve all historical campaigns and guards.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7383edab2654ec032fc0d5718ddf5335616c0fa5bfd8c72fb74a17cfeb30afaa","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"TypeScriptEliminationTests.test_both_finite_witnesses_keep_arbitrary_api_unknown":
+      "ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750","TypeScriptEliminationTests.test_foreign_source_duplicate_input_or_runtime_profile_is_rejected":
+      "ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750","TypeScriptEliminationTests.test_raw_return_requires_the_selected_branch_refusal_flag":
+      "ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750","TypeScriptEliminationTests.test_retained_module_cannot_be_relabelled_eliminated_or_reverse":
+      "ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750","TypeScriptEliminationTests.test_uncaught_failure_and_success_are_never_interchangeable":
+      "ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750"},"kind":"python","module":"tools/tests/test_typescript_elimination.py","reviewReason":"Add finite two-build one-root-edge TypeScript compiler/elimination programme; preserve all historical campaigns and guards.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"ec2c74eb1b1e8a3e31a096030a633296cc10c6f5386847efbab9e74948495750":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7383edab2654ec032fc0d5718ddf5335616c0fa5bfd8c72fb74a17cfeb30afaa","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

@@ -1,22 +1,6 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"BufferGlobalControls.test_actual_context_and_outcome_readers_bind_complete_global_source_group":
-      "87c9a612e56adb0a448f165aaa5616c07fd90924006ade7100d2f3ccc6721988",
-"BufferGlobalControls.test_pinned_bundle_installs_same_real_global_before_transitive_esm_and_commonjs":
-      "87c9a612e56adb0a448f165aaa5616c07fd90924006ade7100d2f3ccc6721988",
-"BufferGlobalControls.test_selected_declaration_reaches_real_strict_tsc_and_leaves_unselected_bytes":
-      "87c9a612e56adb0a448f165aaa5616c07fd90924006ade7100d2f3ccc6721988",
-"BufferGlobalControls.test_selector_distinguishes_real_global_references_from_lexical_bindings":
-      "87c9a612e56adb0a448f165aaa5616c07fd90924006ade7100d2f3ccc6721988",
-"BufferGlobalControls.test_unselected_shadowed_and_erased_bundles_are_byte_identical_to_original":
-      "87c9a612e56adb0a448f165aaa5616c07fd90924006ade7100d2f3ccc6721988"
-},
-"kind":"python",
-"module":"tools/tests/test_typescript_buffer_globals.py",
-"reviewReason":"Preserve all five cases, class/skip/decorator guards; module-only baseline constant binds parity to immutable95b prefeature bytes rather than future featureHEAD.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"87c9a612e56adb0a448f165aaa5616c07fd90924006ade7100d2f3ccc6721988":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:97c2b483f72ab695cc65c7e7e0fac0ba79e6a075a2d42acc87886c55e893ac07","class:setup-sha256:8777e581d7844ddcd0bf4c18bc8698036cdfc5e37fdbb790be4a2ea614ce05ef","class:skip:self.skipTest('explicit pinned TypeScript frontend required; owning qualification refuses skips')"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"BufferGlobalControls.test_actual_context_and_outcome_readers_bind_complete_global_source_group":
+      "87c9a612e56adb0a448f165aaa5616c07fd90924006ade7100d2f3ccc6721988","BufferGlobalControls.test_pinned_bundle_installs_same_real_global_before_transitive_esm_and_commonjs":
+      "87c9a612e56adb0a448f165aaa5616c07fd90924006ade7100d2f3ccc6721988","BufferGlobalControls.test_selected_declaration_reaches_real_strict_tsc_and_leaves_unselected_bytes":
+      "87c9a612e56adb0a448f165aaa5616c07fd90924006ade7100d2f3ccc6721988","BufferGlobalControls.test_selector_distinguishes_real_global_references_from_lexical_bindings":
+      "87c9a612e56adb0a448f165aaa5616c07fd90924006ade7100d2f3ccc6721988","BufferGlobalControls.test_unselected_shadowed_and_erased_bundles_are_byte_identical_to_original":
+      "87c9a612e56adb0a448f165aaa5616c07fd90924006ade7100d2f3ccc6721988"},"kind":"python","module":"tools/tests/test_typescript_buffer_globals.py","reviewReason":"Preserve all five cases, class/skip/decorator guards; module-only baseline constant binds parity to immutable95b prefeature bytes rather than future featureHEAD.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"87c9a612e56adb0a448f165aaa5616c07fd90924006ade7100d2f3ccc6721988":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:97c2b483f72ab695cc65c7e7e0fac0ba79e6a075a2d42acc87886c55e893ac07","class:setup-sha256:8777e581d7844ddcd0bf4c18bc8698036cdfc5e37fdbb790be4a2ea614ce05ef","class:skip:self.skipTest('explicit pinned TypeScript frontend required; owning qualification refuses skips')"],"skipSites":[]}}}

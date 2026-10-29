@@ -1108,6 +1108,18 @@ class ZNodeNativeCapacityOwner(unittest.TestCase):
         self.assertEqual(len(owner.CAPACITY_TARGETS),18)
         self.assertEqual(owner.capacity_targets(owner.CAPACITY_FACTS,*old),owner.CAPACITY_FACTS_TARGETS)
         self.assertEqual(len(owner.CAPACITY_FACTS_TARGETS),3)
+        from tools import host_stream_kernel_stream_operations as operations
+        for selected,targets,expected in ((owner.CAPACITY_FACTS,owner.CAPACITY_FACTS_TARGETS,True),
+                (True,owner.CAPACITY_TARGETS,True),(False,owner.mode_targets(),False)):
+            actual,geometry=owner.capacity_plan(selected,*old)
+            self.assertEqual(actual,targets)
+            self.assertIs(geometry,expected)
+            with patch.object(operations,'transform',side_effect=RuntimeError('passed-mode-guard')):
+                with self.assertRaisesRegex(RuntimeError,'passed-mode-guard'):
+                    owner.current_compose({},Path('.'),netdev_post_init=geometry)
+        self.assertIs(owner.capacity_plan(False,*old[:-1],True)[1],True)
+        for args in ((1,*old),(owner.CAPACITY_FACTS,True,*old[1:]),(False,*old[:-1])):
+            with self.assertRaises(ValueError):owner.capacity_plan(*args)
         for target in owner.CAPACITY_TARGETS:
             allowed=owner.public_allowed('objects/'+target,node_capacity=owner.CAPACITY_FACTS)
             self.assertEqual(allowed,owner.MAX_OBJECT if target in owner.CAPACITY_FACTS_TARGETS else None)

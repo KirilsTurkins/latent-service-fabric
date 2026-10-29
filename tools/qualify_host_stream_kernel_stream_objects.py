@@ -992,6 +992,11 @@ def capacity_targets(selected, *prior):
     return CAPACITY_FACTS_TARGETS if selected == CAPACITY_FACTS else CAPACITY_TARGETS if selected else original
 
 
+def capacity_plan(selected, *prior):
+    require(len(prior) == 12, 'node-capacity-prior-count')
+    return capacity_targets(selected, *prior), prior[-1] or bool(selected)
+
+
 def capacity_capture(root):
     review = CAPACITY_REVIEW
     require(type(review) is dict and set(review) == {'research', 'primary', 'projectorPrimary',
@@ -1079,8 +1084,7 @@ def capacity_compose(values, captured, native):
 
 
 def run(output, revision, started, *, classdir=False, classdir_kernfs=False, netdev_directory=False, netdev_layout=False, netdev_post_init=False, constructor_mmio=False, vp_transport=False, msi_context=False, q35=False, msi_descriptor=False, node_bootstrap=False, node_geometry=False, node_capacity=False):
-    targets=capacity_targets(node_capacity,classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry)
-    node_geometry = node_geometry or node_capacity
+    targets,node_geometry=capacity_plan(node_capacity,classdir,classdir_kernfs,netdev_directory,netdev_layout,netdev_post_init,constructor_mmio,vp_transport,msi_context,q35,msi_descriptor,node_bootstrap,node_geometry)
     end=deadline(started) # Before imports, filesystem mutation or tool probes.
     require(sys.platform=='linux' and os.environ.get('GITHUB_ACTIONS')=='true' and
         os.environ.get('GITHUB_REPOSITORY')=='KirilsTurkins/latent-service-fabric' and

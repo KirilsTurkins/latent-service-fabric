@@ -1,20 +1,5 @@
-{
-"storageCases":"guard-keys",
-"guards":{
-"CurrentParserReferenceLock.test_changed_lock_unknown_local_owner_and_foreign_dependency_are_refused":
-      "dd91465eb83abec1393a95dfe461a47d17eae446cc2835cdf0087199e094289a",
-"CurrentParserReferenceLock.test_current_manifest_is_isolated_and_legacy_template_is_unchanged":
-      "dd91465eb83abec1393a95dfe461a47d17eae446cc2835cdf0087199e094289a",
-"CurrentParserReferenceLock.test_legacy_fetch_and_bad_current_lock_fail_before_any_process_or_output":
-      "dd91465eb83abec1393a95dfe461a47d17eae446cc2835cdf0087199e094289a",
-"CurrentParserReferenceLock.test_real_lock_is_fixed_and_all_registry_inputs_match_the_workspace":
-      "dd91465eb83abec1393a95dfe461a47d17eae446cc2835cdf0087199e094289a"
-},
-"kind":"python",
-"module":"tools/tests/test_host_stream_tls_reference_lock.py",
-"reviewReason":"Require patched verifier in the current exact26-package parser reference closure",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"dd91465eb83abec1393a95dfe461a47d17eae446cc2835cdf0087199e094289a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7cb5358e6a850854c3f834ac95256f785e2137484b13080c59b629e4cf579fb0","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-}
-}
+{"storageCases":"guard-keys","guards":{"CurrentParserReferenceLock.test_changed_lock_unknown_local_owner_and_foreign_dependency_are_refused":
+      "dd91465eb83abec1393a95dfe461a47d17eae446cc2835cdf0087199e094289a","CurrentParserReferenceLock.test_current_manifest_is_isolated_and_legacy_template_is_unchanged":
+      "dd91465eb83abec1393a95dfe461a47d17eae446cc2835cdf0087199e094289a","CurrentParserReferenceLock.test_legacy_fetch_and_bad_current_lock_fail_before_any_process_or_output":
+      "dd91465eb83abec1393a95dfe461a47d17eae446cc2835cdf0087199e094289a","CurrentParserReferenceLock.test_real_lock_is_fixed_and_all_registry_inputs_match_the_workspace":
+      "dd91465eb83abec1393a95dfe461a47d17eae446cc2835cdf0087199e094289a"},"kind":"python","module":"tools/tests/test_host_stream_tls_reference_lock.py","reviewReason":"Require patched verifier in the current exact26-package parser reference closure","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"dd91465eb83abec1393a95dfe461a47d17eae446cc2835cdf0087199e094289a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7cb5358e6a850854c3f834ac95256f785e2137484b13080c59b629e4cf579fb0","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
