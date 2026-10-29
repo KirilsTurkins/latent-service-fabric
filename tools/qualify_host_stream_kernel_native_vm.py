@@ -274,6 +274,70 @@ def node_source_inputs(root,listed):
     return result
 
 
+def node_kvm_access(run, receipt, tool_pins):
+    """Ephemeral owning runner: inspect first, then grant only its UID if needed."""
+    kvm = Path('/dev/kvm')
+    def facts():
+        value = {'uid':os.getuid(),'euid':os.geteuid(),'gid':os.getgid(),
+            'egid':os.getegid(),'groups':sorted(os.getgroups())}
+        try:
+            entry = kvm.lstat()
+        except OSError as error:
+            return {**value,'exists':False,'errno':error.errno}
+        return {**value,'exists':True,'symlink':stat.S_ISLNK(entry.st_mode),
+            'characterDevice':stat.S_ISCHR(entry.st_mode),'mode':entry.st_mode,
+            'device':entry.st_dev,'inode':entry.st_ino,'rdev':entry.st_rdev,
+            'major':os.major(entry.st_rdev),'minor':os.minor(entry.st_rdev),
+            'ownerUid':entry.st_uid,'ownerGid':entry.st_gid,
+            'readWrite':os.access(kvm,os.R_OK|os.W_OK,effective_ids=True)}
+    access = receipt['kvmAccess'] = {'before':facts(),'grantAttempted':False,
+        'lifetime':'ephemeral-hosted-runner-only; ACL discarded with runner'}
+    before = access['before']
+    native.require(before['exists'],'node-KVM-device-missing-no-fallback')
+    native.require(before['characterDevice'] and not before['symlink'],
+        'node-KVM-device-type-no-fallback')
+    for name in ('getfacl','setfacl'):
+        tool = Path('/usr/bin')/name
+        native.require(tool.is_file(),'node-KVM-ACL-tools-required')
+        tool_pins[name] = {'path':str(tool),'target':str(tool.resolve()),
+            **native.identity(read_file(tool.resolve(),256*1024**2))}
+    def acl(label):
+        raw = run(label,'/usr/bin/getfacl','--omit-header','--numeric',
+            '--no-effective','--',kvm,seconds=15)
+        native.require(len(raw) <= 4096,'node-KVM-ACL-document-bound')
+        return [line for line in raw.decode('ascii').splitlines() if line]
+    original = access['aclBefore'] = acl('node-KVM-ACL-before')
+    if not before['readWrite']:
+        # Only the simple native device ACL is eligible. An unknown extended
+        # ACL is refused, never replaced or normalized. Its original group has
+        # no execute bit, so adding mask rw cannot widen its effective rights.
+        base = {}
+        for line in original:
+            match = re.fullmatch(r'(user|group|other)::([r-][w-][x-])',line)
+            native.require(match is not None and match[1] not in base,
+                'node-KVM-original-simple-ACL-required')
+            base[match[1]] = match[2]
+        native.require(set(base) == {'user','group','other'} and
+            base['group'][2] == '-' and before['uid'] == before['euid'] and
+            before['uid'] > 0 and before['uid'] != before['ownerUid'],
+            'node-KVM-scoped-ACL-precondition')
+        uid = str(before['uid'])
+        access['grantAttempted'] = True
+        run('node-KVM-runner-UID-ACL','sudo','-n','/usr/bin/setfacl','--no-mask',
+            '--modify','user:'+uid+':rw-,mask::rw-','--',kvm,seconds=15)
+        changed = access['aclAfter'] = acl('node-KVM-ACL-after')
+        native.require(len(changed) == 5 and set(changed) ==
+            set(original)|{'user:'+uid+':rw-','mask::rw-'},
+            'node-KVM-only-runner-UID-ACL-changed')
+    else:
+        access['aclAfter'] = original
+    after = access['after'] = facts()
+    stable = ('uid','euid','gid','egid','groups','exists','symlink','characterDevice',
+        'device','inode','rdev','major','minor','ownerUid','ownerGid')
+    native.require(all(after.get(key) == before[key] for key in stable) and
+        after['readWrite'],'node-real-KVM-required-no-fallback')
+
+
 def qualify_node(output,revision):
     """One fresh development image; no ordinary constructor/TCG receipt reuse."""
     import math
@@ -345,9 +409,7 @@ def qualify_node(output,revision):
             cPhysicalBefore={**physical,**{n:native.identity(b) for n,b in boot_raw.items()}},
             cPhysicalCount=len(physical)+len(boot_raw))
         write_json(output/'native-source-inputs.json',receipt['sourceBefore'])
-        kvm = Path('/dev/kvm')
-        native.require(stat.S_ISCHR(kvm.stat().st_mode) and os.access(kvm,os.R_OK|os.W_OK),
-            'node-real-KVM-required-no-fallback')
+        node_kvm_access(run,receipt,tool_pins)
         run('source-clean','git','-c','core.fsmonitor=false','diff','--no-ext-diff','--exit-code','HEAD','--',seconds=30)
         run('baseline-fetch','git','-c','core.fsmonitor=false','-c','gc.auto=0','fetch',
             '--no-tags','--no-recurse-submodules','--depth=1',
