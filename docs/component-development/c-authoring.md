@@ -84,6 +84,67 @@ no network access.
 
 Select `transactional-aggregate` for the explicit Phase 4 transaction, fresh-query and deferred-intent recipe. Its [shared authoring guide](transactional-authoring.md) covers generated C owners, callback-frame retirement, the captured profile, schema and binding companion. The host owns commitment, and signed transaction execution has its own qualification matrix. The tutorial below retains its existing stateless profile.
 
+## Ordinary libfetch HTTP profile
+
+The opt-in `c-libfetch-http-v1` profile provides the pinned FreeBSD libfetch
+frontend over `latent:http/streaming@0.3.0`. Create a fresh project with the
+cooperative threading profile:
+
+```sh
+python3 tools/c_capsule.py new "$LSF_C_PROJECTS/my-fetch" --template greeting \
+  --threading-profile c-context144-sync-cooperative-v1
+```
+
+In its `capsule-project.json`, select `"runtimeProfile": "c-libfetch-http-v1"`.
+The finite HTTP fixture uses these existing configuration fields:
+
+```json
+{
+  "runtimeProfile": "c-libfetch-http-v1",
+  "threadingProfile": "c-context144-sync-cooperative-v1",
+  "limits": {
+    "memoryBytes": 33554432,
+    "wallTimeLimitMillis": 5000,
+    "cpuFuel": 1000000000,
+    "logBytes": 0,
+    "outboundRequests": 3
+  }
+}
+```
+
+These are fields within the existing project document, not a replacement for
+its name, world or compiler settings. Keep the captured SDK unchanged. The
+profile derives the HTTP import; admission still requires the actual streaming
+provider, its destination restrictions and explicit deployment grants. No
+ambient socket authority is installed.
+
+Include `<fetch.h>` and use `fetchGetURL(url, "A")`, then ordinary `fread`,
+`ferror` and `fclose` on the returned read-only `FILE *`. The URL parser and
+parsed-URL GET entrypoints are retained; a supplied `url_stat` must be `NULL`.
+`fetchReqHTTP` supports bounded string request bodies for its declared HTTP
+methods. Only the empty flags string or `A` is supported. HTTP/HTTPS transport
+and TLS validation belong to the typed provider; socket and OpenSSL APIs are
+not exposed. FTP/file schemes, redirects, stat/list/range/conditional options,
+authentication callbacks, proxy configuration and writable FILE streams refuse
+explicitly. Independent sharing of one FILE across threads is not qualified.
+
+The selected C proof limits are 1 MiB for the original core, 32,768 original
+operators, 65,536 operators per derived core and 8,192 per function under its
+48 MiB verification-work reservation; larger shapes refuse. These are compiler
+compatibility bounds, not universal C support.
+
+The ordinary call can suspend its cooperative logical pthread while another
+logical pthread progresses. This does not turn the 32 MiB fixture memory limit
+into an independent thread or FILE allowance. The FILE and its cookie use real
+guest libc allocation inside the original Store's linear-memory envelope.
+Closing the cookie releases its body/cookie owners; libc then frees the FILE.
+The original Store backing remains charged until its actual cleanup, and host
+HTTP upload, body and chunk owners have separate lifetimes.
+
+The qualification programme covers one libfetch client and five signed cases:
+normal GET, not-found, denied target, early close and a held fread with a completed
+sibling. It does not qualify the whole #690 matrix or C cost model.
+
 ## 2. Build and package the project
 
 ```bash
@@ -288,3 +349,11 @@ SDK binding drift means the SDK and generator pins disagree; do not edit the loc
 to bypass it. A denied publication commonly means the policy expired, the exact
 source approval differs, or an evidence file is missing. A denied HTTP call
 requires checking the deployment grant, provider binding and allowed destination.
+
+Concrete captured C dependency refusals retain a bounded origin and static code
+in the compatibility report: unsupported target, native/archive object ABI,
+unqualified object/runtime profile, captured C++ source and unobserved build
+commands. These are pre-compilation input-validation observations, labelled
+`model`; they do not claim guest execution. Unknown compiler failures and guest
+process/syscall assumptions remain unresolved rather than inferred from names.
+This reporting does not qualify general C++, POSIX, sockets or the full C runtime.

@@ -28,6 +28,7 @@ SYNC_SYMBOLS = ('pthread_mutex_init', 'pthread_mutex_lock', 'pthread_mutex_trylo
     'pthread_cond_signal', 'pthread_cond_broadcast', 'pthread_cond_timedwait',
     'mtx_init', 'mtx_lock', 'mtx_trylock', 'mtx_unlock', 'mtx_destroy', 'mtx_timedlock',
     'cnd_init', 'cnd_destroy', 'cnd_wait', 'cnd_signal', 'cnd_broadcast', 'cnd_timedwait')
+YIELD_SYMBOLS = ('thrd_yield',)
 TIME_SYMBOLS = ('nanosleep', 'thrd_sleep')
 LIBC = {
     'lib/libc/include/wasm-wasi-musl/pthread.h': '21b1fd90de05919d0718109f16fa1408a0750dcf65f63cc661c506f07e8e1ca1',
@@ -58,7 +59,7 @@ CLOCK_LIBC = {
 def linked_defines(defines, *, timed_clock=False):
     if type(timed_clock) is not bool:
         raise ValueError('c-threading-timed-clock-selection')
-    symbols = (*TLS_SYMBOLS, *SYNC_SYMBOLS, *(TIME_SYMBOLS if timed_clock else ()))
+    symbols = (*TLS_SYMBOLS, *YIELD_SYMBOLS, *SYNC_SYMBOLS, *(TIME_SYMBOLS if timed_clock else ()))
     reserved_symbols = symbols
     reserved = {'LSF_C_LINKED_LIBC', 'LSF_C_TIMED_CLOCK', *reserved_symbols,
                 *('__lsf_c_' + name for name in reserved_symbols)}

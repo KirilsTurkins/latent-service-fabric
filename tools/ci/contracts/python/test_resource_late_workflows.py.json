@@ -1,7 +1,16 @@
-{"schemaVersion":"latent.ci.contracts.v2","kind":"python","reviewReason":"Reviewed exact action identity fingerprint updates only; test cases, selectors, assertions, skips and bounds are retained. New action-graph refusal canaries are added.","module":"tools/tests/test_resource_late_workflows.py","cases":["ResourceLateWorkflows.test_lanes_require_explicit_boolean_and_exact_historical_native_source_before_verification","ResourceLateWorkflows.test_removing_only_reviewed_selector_and_job_restores_both_original_workflows"],"guards":{"ResourceLateWorkflows.test_removing_only_reviewed_selector_and_job_restores_both_original_workflows":
-  "47ce2fd571fb3fde2022f100f0a1a102c196b5d755c8f1d62305c6911285408d"
-,"ResourceLateWorkflows.test_lanes_require_explicit_boolean_and_exact_historical_native_source_before_verification":
-  "47ce2fd571fb3fde2022f100f0a1a102c196b5d755c8f1d62305c6911285408d"
-},"guardDefinitions":{
-  "47ce2fd571fb3fde2022f100f0a1a102c196b5d755c8f1d62305c6911285408d"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a58e8520a805b5f3a30bb7546b0ade7e84e44a55a1cc0f3ed6424bf2b8e308dc","class:setup-sha256:5c759dd8db142767d8b4714d01feefaa4b4ca1ff7be09a179fbe2216e90f73cc"]}}}
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Reviewed exact action identity fingerprint updates only; test cases, selectors, assertions, skips and bounds are retained. New action-graph refusal canaries are added. Authenticate the exact repaired checkout inverse before historical workflow/source hashes; all original case IDs and non-setup guards retained.",
+  "module":"tools/tests/test_resource_late_workflows.py",
+  "cases":["ResourceLateWorkflows.test_lanes_require_explicit_boolean_and_exact_historical_native_source_before_verification","ResourceLateWorkflows.test_removing_only_reviewed_selector_and_job_restores_both_original_workflows"],
+  "guards":{
+    "ResourceLateWorkflows.test_removing_only_reviewed_selector_and_job_restores_both_original_workflows":
+      "98f1700bc9ff250c91209152c9eaeb9c8a840591ac6b6e6b9443c7b60dd83ff7",
+    "ResourceLateWorkflows.test_lanes_require_explicit_boolean_and_exact_historical_native_source_before_verification":
+      "98f1700bc9ff250c91209152c9eaeb9c8a840591ac6b6e6b9443c7b60dd83ff7"
+  },
+  "guardDefinitions":{
+    "98f1700bc9ff250c91209152c9eaeb9c8a840591ac6b6e6b9443c7b60dd83ff7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:d239c6acf7cb09f014524fbcdc6ce9dd7c9c37b3650f8bfd2cc9a28e12749b9d","class:setup-sha256:5c759dd8db142767d8b4714d01feefaa4b4ca1ff7be09a179fbe2216e90f73cc"]}
+  }
+}

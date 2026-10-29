@@ -24,18 +24,18 @@ def object_bytes(features=b"\0"):
 
 
 class CDependencies(unittest.TestCase):
-    def closure(self, sources=None):
+    def closure(self, sources=None, *, cpp=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
         project, library, work, output = (root / name for name in ("project", "outside-library", "work", "output"))
         for path in (project, library, work, output): path.mkdir()
-        (library / "pure.c").write_bytes(b'#include "transitive.h"\nint pure(int x) { return helper(x); }\n')
+        (library / ("pure.cpp" if cpp else "pure.c")).write_bytes(b'#include "transitive.h"\nint pure(int x) { return helper(x); }\n')
         (library / "transitive.h").write_bytes(b"static int helper(int x) { return x * 7; }\n")
         (project / MANIFEST).write_bytes(canonical({"formatVersion": 1, "language": "c", "selection": {"target": "wasm32-wasi"},
             "nativeLocks": [], "artifacts": [{"id": "unknown-library/1", "role": "application", "format": "directory",
                 "mount": "dependencies/unknown", "source": {"path": "../outside-library"}, "dependencies": [],
-                "metadata": {"cSources": sources or ["pure.c"], "includeDirectories": ["."], "defines": {"FEATURE": "1"}, "license": "MIT"}}],
+                "metadata": {"cSources": sources or ["pure.cpp" if cpp else "pure.c"], "includeDirectories": ["."], "defines": {"FEATURE": "1"}, "license": "MIT"}}],
             "transformations": []}))
         (project / LOCK).write_bytes(canonical(capture(project)))
         return root, prepare(project, work, output, "c")
@@ -48,6 +48,11 @@ class CDependencies(unittest.TestCase):
         self.assertEqual(selected_inputs.defines, ("FEATURE=1",))
         self.assertTrue((selected_inputs.includes[0] / "transitive.h").is_file())
         closure.check_unchanged()
+        from tools.c_application_dependencies import CDependencyError
+        closure.lock['selection']['target'] = 'x86_64-linux'
+        with self.assertRaises(CDependencyError) as refused:
+            selected(closure, compiler_digest=digest(b'c'), runtime_digest=digest(b'r'))
+        self.assertEqual(refused.exception.code, 'c-selected-target-not-maintained-profile')
 
     def test_include_or_source_escape_and_uncaptured_source_fail(self):
         root, closure = self.closure()
@@ -58,6 +63,12 @@ class CDependencies(unittest.TestCase):
                 with self.assertRaises(DependencyError):
                     selected(closure, compiler_digest=digest(b"c"), runtime_digest=digest(b"r"))
                 closure.lock["artifacts"][0]["metadata"] = original
+
+        from tools.c_application_dependencies import CDependencyError
+        _root, cpp = self.closure(cpp=True)
+        with self.assertRaises(CDependencyError) as refused:
+            selected(cpp, compiler_digest=digest(b'c'), runtime_digest=digest(b'r'))
+        self.assertEqual(refused.exception.code, 'c-cpp-source-not-maintained-profile')
 
     def test_shell_build_configuration_and_flag_injection_fail(self):
         _root, closure = self.closure()

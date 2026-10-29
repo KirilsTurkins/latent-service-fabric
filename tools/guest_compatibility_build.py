@@ -277,10 +277,11 @@ def package_report(output: Path, files: dict[str, bytes], component: bytes) -> N
     write_json(output / "compatibility-report.json", value)
 
 
-def failure_report(output: Path, language: str, stage: str, *, files: dict[str, bytes] | None = None) -> None:
+def failure_report(output: Path, language: str, stage: str, *, files: dict[str, bytes] | None = None,
+                   cause: BaseException | None = None) -> None:
     """Retain safe known observations when captured inputs exist; never guess errors."""
     try:
-        _failure_report(output, language, stage, files)
+        _failure_report(output, language, stage, files, cause)
     except Exception:
         # Reporting runs while the compiler exception is already propagating.
         # A stale/unreadable report input must never replace that original error.
@@ -304,12 +305,20 @@ def retain_report(output: Path, value: dict, *, kind: str) -> None:
     write_json(target, value)
 
 
-def _failure_report(output: Path, language: str, stage: str, files: dict[str, bytes] | None = None) -> None:
+def _failure_report(output: Path, language: str, stage: str, files: dict[str, bytes] | None = None,
+                    cause: BaseException | None = None) -> None:
     source_path = output / "source-inputs.json"
     if not source_path.exists():
         return  # Source identity is unavailable; do not fabricate a snapshot.
     phase = "link" if stage in {"component", "contracts", "compatibility", "package"} else "compile"
     findings = [compatibility.finding("unresolved-behavior", phase, "not-evaluated")]
+    if language == 'c' and cause is not None:
+        from tools.c_application_dependencies import CDependencyError
+        if (type(cause) is CDependencyError and type(cause.code) is str
+                and cause.code in compatibility.C_DEPENDENCY_REFUSALS):
+            findings.insert(0, compatibility.finding(compatibility.C_DEPENDENCY_REFUSALS[cause.code],
+                phase, 'model', owner_issue=744,
+                diagnostic={'origin': CDependencyError.origin, 'code': cause.code}))
     inspection_path = output / "compatibility-inspection.json"
     inspection = read_json(inspection_path) if inspection_path.exists() else None
     host = inspection_manifest(output, inspection, files)

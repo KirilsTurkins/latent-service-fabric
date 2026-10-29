@@ -11,6 +11,18 @@ from tools.phase3_resource_identity import file_identity
 from tools.tests.test_sdk_scratch_qualification import ordinary, replace_json
 
 
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
+
+
 class RustScratchReplay(unittest.TestCase):
     def test_current_composed_runner_uses_actual_normal_inventory_identity_shape(self):
         observed = gate.current_inputs('rust')['helpers']['run_rust_capsule_workflow.py']
@@ -85,7 +97,7 @@ class RustScratchReplay(unittest.TestCase):
 
     def test_only_explicit_manual_replay_skips_original_nine_complete_jobs(self):
         from tools.ci_lane_inventory import workflow_model
-        model = workflow_model((gate.ROOT/'.github/workflows/rust-capsule-authoring.yml').read_text())
+        model = workflow_model(historical_checkout((gate.ROOT/'.github/workflows/rust-capsule-authoring.yml').read_text()))
         selector = model['on']['workflow_dispatch']['inputs']['replay-scratch-refusals']
         self.assertEqual(selector['type'], 'boolean'); self.assertIs(selector['default'], False)
         expected = {

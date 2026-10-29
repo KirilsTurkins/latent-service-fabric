@@ -7,6 +7,18 @@ from tools import release_preparation_cli_native_products as products
 from tools.rust_capsule_project import ROOT, read_file
 
 
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
+
+
 class ResourceLateWorkflows(unittest.TestCase):
     ORIGINALS = {
         'java': 'dcba5d7051ed5930499f1518c03df1258538e7b1504b784d436ebdcdafecdae3',
@@ -15,7 +27,7 @@ class ResourceLateWorkflows(unittest.TestCase):
 
     def test_removing_only_reviewed_selector_and_job_restores_both_original_workflows(self):
         for language, expected in self.ORIGINALS.items():
-            raw = read_file(ROOT/('.github/workflows/'+language+'-resource-runtime.yml')).decode()
+            raw = historical_checkout(read_file(ROOT/('.github/workflows/'+language+'-resource-runtime.yml'))).decode()
             if language == 'dotnet':
                 raw, replay = raw.split('\n  replay-late-facilities:\n')
                 self.assertTrue(replay.startswith("    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay_late_facilities && !inputs.late_facilities }}\n"))

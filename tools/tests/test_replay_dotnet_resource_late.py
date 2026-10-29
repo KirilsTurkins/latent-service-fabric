@@ -15,6 +15,18 @@ from tools.phase2_operator_process import WorkflowError
 from tools.rust_capsule_project import ROOT, read_file
 
 
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
+
+
 class DotnetResourceLateReplay(unittest.TestCase):
     def origin(self):
         metadata = dict(replay.ARTIFACT, expired=False, workflow_run={'id': replay.RUN, 'head_sha': replay.SOURCE})
@@ -79,7 +91,7 @@ class DotnetResourceLateReplay(unittest.TestCase):
                 with self.assertRaises(WorkflowError): replay.original_materials(original, Path('controlled-build'))
 
     def test_node_only_workflow_has_no_compiler_and_restores_exact_df4_workflow(self):
-        raw = read_file(ROOT/replay.WORKFLOW).decode()
+        raw = historical_checkout(read_file(ROOT/replay.WORKFLOW)).decode()
         original, job = raw.split('\n  replay-late-facilities:\n')
         selector = ('      replay_late_facilities:\n'
             '        description: Reuse the exact completed df4 AOT package after its managed-profile reader repair\n'
