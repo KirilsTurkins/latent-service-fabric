@@ -11,7 +11,7 @@ use latent_wire::invocation::{LocalPrincipalPolicy, PrincipalPolicy};
 pub(super) enum Selection {
     Routed(Box<AcceptedHttpRoute>),
     Immutable {
-        selection: WebSelection,
+        selection: Box<WebSelection>,
         path: String,
     },
 }
@@ -46,7 +46,10 @@ impl Selection {
                 .repository
                 .select_web_publication(&reference)
                 .map_err(|error| denial(super::super::status(&error)))?;
-            return Ok(Self::Immutable { selection, path });
+            return Ok(Self::Immutable {
+                selection: Box::new(selection),
+                path,
+            });
         }
         if target.path() == "/_lsf" || target.path().starts_with("/_lsf/") {
             return Err(403);

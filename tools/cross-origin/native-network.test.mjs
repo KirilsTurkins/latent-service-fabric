@@ -9,7 +9,7 @@ async function fixture(maximum) {
   const recorder = await recordNetwork(session, {origins: ['https://assets.example'], observations,
     scope: () => ({stage: 'allowed', case: 'test'}), fail: error => errors.push(error), maximum});
   const emit = (name, fields, requestId = '1') => session.emit('Network.' + name, {requestId, ...fields});
-  return {emit, observations, errors, recorder};
+  return {emit, observations, errors, recorder, session};
 }
 
 test('raw null Origin and CORS denial survive out-of-order ExtraInfo', async () => {
@@ -69,4 +69,101 @@ test('other origins cannot supply evidence and redirects are rejected', async ()
   emit('requestWillBeSent', {request});
   assert.equal(observations.length, 1);
   assert.equal(errors.length, 1);
+});
+
+
+test('all six ExtraInfo orderings preserve the same complete denied response', async () => {
+  const messages = [
+    ['requestWillBeSent', {request: {url: 'https://assets.example/app.js', method: 'GET'}}],
+    ['requestWillBeSentExtraInfo', {headers: {Origin: 'null', 'Sec-Fetch-Mode': 'cors'}}],
+    ['responseReceivedExtraInfo', {statusCode: 403, headers: {'Cache-Control': 'no-store'}}],
+  ];
+  for (const order of [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]) {
+    const {emit, observations, errors, recorder} = await fixture();
+    for (const index of order) emit(...messages[index]);
+    assert.equal(observations[0].origin, 'null');
+    assert.equal(observations[0].status, 403);
+    assert.equal(observations[0].requestHeadersObserved, true);
+    assert.equal(observations[0].responseHeadersObserved, true);
+    assert.deepEqual(errors, []); recorder.close();
+  }
+});
+
+test('ambiguous raw header spellings and non-scalar policy values cannot become evidence', async () => {
+  for (const headers of [{Origin: 'null', origin: 'https://wrong.example'}, {Origin: ['null']}, {Origin: 1}]) {
+    const {emit, observations, errors, recorder} = await fixture();
+    emit('requestWillBeSent', {request: {url: 'https://assets.example/app.js', method: 'GET'}});
+    emit('requestWillBeSentExtraInfo', {headers});
+    assert.equal(observations[0].requestHeadersObserved, undefined);
+    assert.match(errors[0].message, /ambiguous-wire-header/); recorder.close();
+  }
+});
+
+test('duplicate ExtraInfo cannot overwrite an already captured denial', async () => {
+  const {emit, observations, errors, recorder} = await fixture();
+  emit('requestWillBeSent', {request: {url: 'https://assets.example/app.js', method: 'GET'}});
+  emit('requestWillBeSentExtraInfo', {headers: {Origin: 'null'}});
+  emit('responseReceivedExtraInfo', {statusCode: 403, headers: {'Cache-Control': 'no-store'}});
+  emit('requestWillBeSentExtraInfo', {headers: {Origin: 'https://wrong.example'}});
+  emit('responseReceivedExtraInfo', {statusCode: 200, headers: {'Access-Control-Allow-Origin': '*'}});
+  assert.equal(observations[0].origin, 'null'); assert.equal(observations[0].status, 403);
+  assert.equal(errors.length, 2); recorder.close();
+});
+
+test('a redirect into the observed origin cannot reuse earlier request evidence', async () => {
+  const {emit, observations, errors, recorder} = await fixture();
+  emit('requestWillBeSentExtraInfo', {headers: {Origin: 'https://wrong.example'}});
+  emit('requestWillBeSent', {request: {url: 'https://assets.example/app.js', method: 'GET'}, redirectResponse: {status: 302}});
+  assert.equal(observations.length, 0);
+  assert.match(errors[0].message, /redirect-not-permitted/); recorder.close();
+});
+
+test('invalid response status and oversized selected metadata fail before publication', async () => {
+  const inputs = [
+    ['responseReceivedExtraInfo', {statusCode: 999, headers: {}}],
+    ['responseReceivedExtraInfo', {statusCode: 403, headers: {Vary: 'x'.repeat(8193)}}],
+    ['requestWillBeSentExtraInfo', {headers: {Origin: 'x'.repeat(8193)}}],
+    ['requestWillBeSentExtraInfo', {headers: Object.fromEntries(Array.from({length: 129}, (_, i) => ['header' + i, 'x']))}],
+  ];
+  for (const [event, fields] of inputs) {
+    const {emit, observations, errors, recorder} = await fixture();
+    emit('requestWillBeSent', {request: {url: 'https://assets.example/app.js', method: 'GET'}});
+    emit(event, fields);
+    assert.equal(observations[0].status, undefined);
+    assert.equal(observations[0].origin, undefined);
+    assert.equal(errors.length, 1); recorder.close();
+  }
+});
+
+test('identity and event count are bounded even when no native request is dispatched', async () => {
+  const {emit, observations, errors, recorder, session} = await fixture(1);
+  emit('loadingFailed', {}, 'x'.repeat(129));
+  assert.match(errors[0].message, /request-id-size-bound/);
+  for (let i = 0; i < 17; i++) emit('loadingFailed', {}, 'only-one-id');
+  assert.match(errors.at(-1).message, /event-count-bound/);
+  assert.deepEqual(session.eventNames(), []);
+  assert.deepEqual(observations, []);
+  await assert.rejects(recorder.flush(), /recorder-closed/);
+});
+
+test('invalid observation bounds cannot install listeners', async () => {
+  for (const maximum of [0, -1, 1.5, 257, Infinity, NaN]) {
+    const session = new EventEmitter(); session.send = async () => ({});
+    await assert.rejects(recordNetwork(session, {origins: [], observations: [], scope: () => ({}),
+      fail: assert.fail, maximum}), /observation-limit-bound/);
+    assert.deepEqual(session.eventNames(), []);
+  }
+});
+
+test('failed setup and explicit close release listeners without taking the caller session', async () => {
+  const session = new EventEmitter(); session.send = async () => { throw new Error('setup-failed'); };
+  await assert.rejects(recordNetwork(session, {origins: [], observations: [], scope: () => ({}),
+    fail: assert.fail}), /setup-failed/);
+  assert.deepEqual(session.eventNames(), []);
+  const active = await fixture();
+  active.recorder.close(); active.recorder.close();
+  assert.deepEqual(active.session.eventNames(), []);
+  active.emit('requestWillBeSent', {request: {url: 'https://assets.example/app.js', method: 'GET'}});
+  assert.deepEqual(active.observations, []);
+  await assert.rejects(active.recorder.waitFor(() => true, 'unused'), /recorder-closed/);
 });
