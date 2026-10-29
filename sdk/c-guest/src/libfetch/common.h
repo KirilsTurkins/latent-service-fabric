@@ -36,7 +36,7 @@
 #ifndef LSF_LIBFETCH_COMMON_H
 #define LSF_LIBFETCH_COMMON_H
 #ifndef IPPORT_MAX
-#define IPPORT_MAX 65535u
+#define IPPORT_MAX 65535
 #endif
 struct fetcherr { const int num; const int cat; const char *string; };
 void fetch_seterr(struct fetcherr *, int);
