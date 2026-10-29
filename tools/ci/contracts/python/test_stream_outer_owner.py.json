@@ -1,114 +1,28 @@
 {
-  "cases": [
-    "StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows",
-    "StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed",
-    "TaskNodeBootstrapOwner.test_four_exact_results_and_all_source_tool_process_roots_are_closed",
-    "TaskStoreCallMemoryOwner.test_four_exact_results_and_all21_roots_reject_skips_duplicates_and_other_cases",
-    "TaskTableMemoryOwner.test_exact_resource_cases_share21_roots_and_reject_other_profiles",
-    "TaskWireCallResultOwner.test_four_channel_results_keep21_roots_and_exclude_other_profiles",
-    "TaskZBorrowedCallbackOwner.test_four_callback_results_reject_skips_duplicates_and_other_profiles",
-    "TaskZZHostMemoryBaselineOwner.test_exact_eleven_names_and_results_refuse_missing_duplicate_skipped_or_cross_profile"
-  ],
-  "guards": {
-    "StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ]
-    },
-    "StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ]
-    },
-    "TaskNodeBootstrapOwner.test_four_exact_results_and_all_source_tool_process_roots_are_closed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ]
-    },
-    "TaskStoreCallMemoryOwner.test_four_exact_results_and_all21_roots_reject_skips_duplicates_and_other_cases": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ]
-    },
-    "TaskTableMemoryOwner.test_exact_resource_cases_share21_roots_and_reject_other_profiles": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ]
-    },
-    "TaskWireCallResultOwner.test_four_channel_results_keep21_roots_and_exclude_other_profiles": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ]
-    },
-    "TaskZBorrowedCallbackOwner.test_four_callback_results_reject_skips_duplicates_and_other_profiles": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ]
-    },
-    "TaskZZHostMemoryBaselineOwner.test_exact_eleven_names_and_results_refuse_missing_duplicate_skipped_or_cross_profile": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ]
-    }
+  "storageCases":"guard-keys",
+  "guards":{
+    "StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows":
+      "d17869f126ad1e55fd1933d3974b76bb007c31f6d47e2dffd37c7c114c0efbae",
+    "StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed":
+      "d17869f126ad1e55fd1933d3974b76bb007c31f6d47e2dffd37c7c114c0efbae",
+    "TaskNodeBootstrapOwner.test_four_exact_results_and_all_source_tool_process_roots_are_closed":
+      "d17869f126ad1e55fd1933d3974b76bb007c31f6d47e2dffd37c7c114c0efbae",
+    "TaskStoreCallMemoryOwner.test_four_exact_results_and_all21_roots_reject_skips_duplicates_and_other_cases":
+      "d17869f126ad1e55fd1933d3974b76bb007c31f6d47e2dffd37c7c114c0efbae",
+    "TaskTableMemoryOwner.test_exact_resource_cases_share21_roots_and_reject_other_profiles":
+      "d17869f126ad1e55fd1933d3974b76bb007c31f6d47e2dffd37c7c114c0efbae",
+    "TaskWireCallResultOwner.test_four_channel_results_keep21_roots_and_exclude_other_profiles":
+      "d17869f126ad1e55fd1933d3974b76bb007c31f6d47e2dffd37c7c114c0efbae",
+    "TaskZBorrowedCallbackOwner.test_four_callback_results_reject_skips_duplicates_and_other_profiles":
+      "d17869f126ad1e55fd1933d3974b76bb007c31f6d47e2dffd37c7c114c0efbae",
+    "TaskZZHostMemoryBaselineOwner.test_exact_eleven_names_and_results_refuse_missing_duplicate_skipped_or_cross_profile":
+      "d17869f126ad1e55fd1933d3974b76bb007c31f6d47e2dffd37c7c114c0efbae"
   },
-  "kind": "python",
-  "module": "tools/tests/test_stream_outer_owner.py",
-  "reviewReason": "Append only the closed eleven existing host-memory regression profile: one normal latent-wasmtime lib build, exact eleven-name listing and eleven isolated executions. Same original grants, source capture, 1320-second owner, 1200-second command envelope, j2, five-second cleanup reserve and bounded artifacts. Preserve all old branches/cases/recipes; production and vendor code unchanged. No whole cost-model or milestone completion claim.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_stream_outer_owner.py",
+  "reviewReason":"Append only the closed eleven existing host-memory regression profile: one normal latent-wasmtime lib build, exact eleven-name listing and eleven isolated executions. Same original grants, source capture, 1320-second owner, 1200-second command envelope, j2, five-second cleanup reserve and bounded artifacts. Preserve all old branches/cases/recipes; production and vendor code unchanged. No whole cost-model or milestone completion claim.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "d17869f126ad1e55fd1933d3974b76bb007c31f6d47e2dffd37c7c114c0efbae":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:89ebb492ee2288c75b67747c6fa19eb5167b5ee5cb7b22e0aefd0310b9bfe99b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+  }
 }
