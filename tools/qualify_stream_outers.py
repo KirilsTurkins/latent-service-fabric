@@ -2943,12 +2943,12 @@ CALL_MEMORY_STAGES = ('source-head', 'source-clean', 'source-input-paths',
     'source-input-paths-after', 'source-clean-after', 'source-head-after')
 
 
-def call_memory_result(raw, case, *, _resource_table=False, _call_result_channel=False, _callback_memory=False, _host_baseline=False, _guest_start=False):
+def call_memory_result(raw, case, *, _resource_table=False, _call_result_channel=False, _callback_memory=False, _host_baseline=False, _guest_start=False, _unstarted_host_drop=False):
     require(type(_resource_table) is bool and type(_call_result_channel) is bool
         and type(_callback_memory) is bool and type(_host_baseline) is bool
-        and type(_guest_start) is bool
-        and sum((_resource_table, _call_result_channel, _callback_memory, _host_baseline, _guest_start)) <= 1, 'store-memory-closed-result-profile')
-    cases = GUEST_START_CASES if _guest_start else HOST_BASELINE_CASES if _host_baseline else CALLBACK_CASES if _callback_memory else CALL_RESULT_CHANNEL_CASES if _call_result_channel else RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
+        and type(_guest_start) is bool and type(_unstarted_host_drop) is bool
+        and sum((_resource_table, _call_result_channel, _callback_memory, _host_baseline, _guest_start, _unstarted_host_drop)) <= 1, 'store-memory-closed-result-profile')
+    cases = UNSTARTED_HOST_DROP_CASES if _unstarted_host_drop else GUEST_START_CASES if _guest_start else HOST_BASELINE_CASES if _host_baseline else CALLBACK_CASES if _callback_memory else CALL_RESULT_CHANNEL_CASES if _call_result_channel else RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
     require(case in cases and len(raw) <= artifacts.MAX_OUTPUT_BYTES,
         'call-memory-case-bound')
     require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
@@ -2959,7 +2959,7 @@ def call_memory_result(raw, case, *, _resource_table=False, _call_result_channel
         and int(summaries[0][4]) <= 10000, 'call-memory-one-executed-no-skip')
     return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0,
         'ignored': 0, 'filteredOut': int(summaries[0][4]),
-        'scope': 'original-Store-guest-start-header-transaction-and-lifetime-counter-owner' if _guest_start
+        'scope': 'original-Store-unstarted-host-future-drop-lifetime-owner' if _unstarted_host_drop else 'original-Store-guest-start-header-transaction-and-lifetime-counter-owner' if _guest_start
             else 'source-bound-original-host-memory-lifetime-regressions' if _host_baseline
             else 'original-Store-borrowed-callback-counter-owner' if _callback_memory
             else 'original-Store-call-result-header-counter-owner-with-explicit-payload-unwind-retention' if _call_result_channel
@@ -2967,17 +2967,18 @@ def call_memory_result(raw, case, *, _resource_table=False, _call_result_channel
             else 'original-Store-parameter-and-typed-closure-counter-owner'}
 
 
-def qualify_call_memory(output, revision, *, _resource_table=False, _call_result_channel=False, _callback_memory=False, _host_baseline=False, _guest_start=False):
+def qualify_call_memory(output, revision, *, _resource_table=False, _call_result_channel=False, _callback_memory=False, _host_baseline=False, _guest_start=False, _unstarted_host_drop=False):
     import shutil
     require(type(_resource_table) is bool and type(_call_result_channel) is bool
         and type(_callback_memory) is bool and type(_host_baseline) is bool
-        and type(_guest_start) is bool
-        and sum((_resource_table, _call_result_channel, _callback_memory, _host_baseline, _guest_start)) <= 1, 'store-memory-closed-profile')
-    branch = GUEST_START_BRANCH if _guest_start else HOST_BASELINE_BRANCH if _host_baseline else CALLBACK_BRANCH if _callback_memory else CALL_RESULT_CHANNEL_BRANCH if _call_result_channel else RESOURCE_TABLE_BRANCH if _resource_table else CALL_MEMORY_BRANCH
-    cases = GUEST_START_CASES if _guest_start else HOST_BASELINE_CASES if _host_baseline else CALLBACK_CASES if _callback_memory else CALL_RESULT_CHANNEL_CASES if _call_result_channel else RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
-    prefix = GUEST_START_PREFIX if _guest_start else 'host::' if _host_baseline else CALLBACK_PREFIX if _callback_memory else CALL_RESULT_CHANNEL_PREFIX if _call_result_channel else RESOURCE_TABLE_PREFIX if _resource_table else CALL_MEMORY_PREFIX
-    schema = 'lsf.guest-start-memory.v1' if _guest_start else 'lsf.host-memory-baseline.v1' if _host_baseline else 'lsf.callback-memory.v1' if _callback_memory else 'lsf.call-result-channel-memory.v1' if _call_result_channel else 'lsf.resource-table-memory.v1' if _resource_table else 'lsf.call-parameter-closure-memory.v1'
-    scope = ('four exact private native guest-start header controls using actual pending state and queue/preparation APIs; no full resume_thread/component execution, original ActivationBudget, transitive capture cost or RSS qualification'
+        and type(_guest_start) is bool and type(_unstarted_host_drop) is bool
+        and sum((_resource_table, _call_result_channel, _callback_memory, _host_baseline, _guest_start, _unstarted_host_drop)) <= 1, 'store-memory-closed-profile')
+    branch = UNSTARTED_HOST_DROP_BRANCH if _unstarted_host_drop else GUEST_START_BRANCH if _guest_start else HOST_BASELINE_BRANCH if _host_baseline else CALLBACK_BRANCH if _callback_memory else CALL_RESULT_CHANNEL_BRANCH if _call_result_channel else RESOURCE_TABLE_BRANCH if _resource_table else CALL_MEMORY_BRANCH
+    cases = UNSTARTED_HOST_DROP_CASES if _unstarted_host_drop else GUEST_START_CASES if _guest_start else HOST_BASELINE_CASES if _host_baseline else CALLBACK_CASES if _callback_memory else CALL_RESULT_CHANNEL_CASES if _call_result_channel else RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
+    prefix = UNSTARTED_HOST_DROP_PREFIX if _unstarted_host_drop else GUEST_START_PREFIX if _guest_start else 'host::' if _host_baseline else CALLBACK_PREFIX if _callback_memory else CALL_RESULT_CHANNEL_PREFIX if _call_result_channel else RESOURCE_TABLE_PREFIX if _resource_table else CALL_MEMORY_PREFIX
+    schema = 'lsf.unstarted-host-drop.v1' if _unstarted_host_drop else 'lsf.guest-start-memory.v1' if _guest_start else 'lsf.host-memory-baseline.v1' if _host_baseline else 'lsf.callback-memory.v1' if _callback_memory else 'lsf.call-result-channel-memory.v1' if _call_result_channel else 'lsf.resource-table-memory.v1' if _resource_table else 'lsf.call-parameter-closure-memory.v1'
+    scope = ('four real component/Store controls for original unstarted host-drop, queue refusal, eligible siblings and handoff; post-lowering cleanup remains unchanged'
+        if _unstarted_host_drop else 'four exact private native guest-start header controls using actual pending state and queue/preparation APIs; no full resume_thread/component execution, original ActivationBudget, transitive capture cost or RSS qualification'
         if _guest_start else 'eleven exact existing native host memory regression controls using real embedded components and unchanged original grants; no full runtime/cost-model qualification'
         if _host_baseline else 'four exact private native original-Store borrowed callback header refusal, repeated/error calls, cancellation and unwind controls; actual dispatcher owns the carrier across call; no guest, full ActivationBudget, transitive capture cost or RSS qualification'
         if _callback_memory else 'four exact private native original-Store call-result header admission, wake, cancellation and explicit payload-unwind retention controls; no guest, full ActivationBudget, transitive cost or RSS qualification'
@@ -3067,6 +3068,11 @@ def qualify_call_memory(output, revision, *, _resource_table=False, _call_result
         metadata('source-clean', 'diff', '--no-ext-diff', '--exit-code', 'HEAD', '--')
         before = inputs('source-input-paths'); receipt['sourceBefore'] = before
         write_json(output / 'source-inputs.json', before)
+        if _unstarted_host_drop:
+            receipt['nativeFeatures'] = FEATURES + ',wat'
+            receipt['watFeatureInputs'] = {name: before[name] for name in (
+                'Cargo.toml', 'Cargo.lock', 'crates/vendor/wasmtime/Cargo.toml',
+                'crates/vendor/wasmtime/Cargo.lock')}
         checked = source.verify(); receipt['wasmtimeSource'] = checked
         toolchain = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml', 128 * 1024).decode())
         require(toolchain['rust']['toolchain'] == '1.97.1'
@@ -3099,7 +3105,8 @@ def qualify_call_memory(output, revision, *, _resource_table=False, _call_result
                 '--locked', '--lib', '--no-run', '--message-format=json')
         else:
             owned('build-private', 1195, tools['cargo'], 'test', '--manifest-path', suite.manifest,
-                '--locked', '--lib', '--no-default-features', '--features', FEATURES,
+                '--locked', '--lib', '--no-default-features', '--features',
+                FEATURES + ',wat' if _unstarted_host_drop else FEATURES,
                 '--no-run', '--message-format=json')
         artifact = artifacts.read_inventory(logs / f'logs/{ordinal:02d}-build-private.stdout.txt',
             ROOT, suite, target=ROOT / 'target')
@@ -3129,7 +3136,8 @@ def qualify_call_memory(output, revision, *, _resource_table=False, _call_result
                 '--exact', '--show-output', '--test-threads=1', env=run_env)
             receipt['observations'].append(call_memory_result(raw, case, _resource_table=_resource_table,
                 _call_result_channel=_call_result_channel, _callback_memory=_callback_memory,
-                _host_baseline=_host_baseline, _guest_start=_guest_start)); receipt['casesPassed'].append(case)
+                _host_baseline=_host_baseline, _guest_start=_guest_start,
+                _unstarted_host_drop=_unstarted_host_drop)); receipt['casesPassed'].append(case)
         require(inputs('source-input-paths-after') == before and source.verify() == checked,
             'call-memory-final-source')
         metadata('source-clean-after', 'diff', '--no-ext-diff', '--exit-code', 'HEAD', '--')
@@ -3247,6 +3255,24 @@ HOST_BASELINE_STAGES = (CALL_MEMORY_STAGES[:10] + ('host-baseline-list',)
 def qualify_host_memory_baseline(output, revision):
     return qualify_call_memory(output, revision, _host_baseline=True)
 
+UNSTARTED_HOST_DROP_BRANCH = 'feat/sdk-736-unstarted-host-drop-20261029'
+UNSTARTED_HOST_DROP_PREFIX = CALL_MEMORY_PREFIX + 'unstarted_host_drop_tests::'
+UNSTARTED_HOST_DROP_CASES = tuple(UNSTARTED_HOST_DROP_PREFIX + name for name in (
+    'prepared_and_queue_refused_drop_retires_without_new_admission',
+    'queued_and_backpressured_drop_preserves_eligible_sibling',
+    'unconsumed_worker_handoff_drop_retires_only_original_store',
+    'lowered_host_drop_keeps_live_thread_until_original_cleanup',
+))
+
+
+def unstarted_host_drop_result(raw, case):
+    return call_memory_result(raw, case, _unstarted_host_drop=True)
+
+
+def qualify_unstarted_host_drop(output, revision):
+    return qualify_call_memory(output, revision, _unstarted_host_drop=True)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -3271,9 +3297,12 @@ if __name__ == '__main__':
     modes.add_argument('--call-result-channel-memory', action='store_true')
     modes.add_argument('--callback-memory', action='store_true')
     modes.add_argument('--guest-start-memory', action='store_true')
+    modes.add_argument('--unstarted-host-drop', action='store_true')
     modes.add_argument('--host-memory-baseline', action='store_true')
     args = parser.parse_args()
-    if args.guest_start_memory:
+    if args.unstarted_host_drop:
+        qualify_unstarted_host_drop(args.output.resolve(), args.source_commit)
+    elif args.guest_start_memory:
         qualify_guest_start_memory(args.output.resolve(), args.source_commit)
     elif args.host_memory_baseline:
         qualify_host_memory_baseline(args.output.resolve(), args.source_commit)

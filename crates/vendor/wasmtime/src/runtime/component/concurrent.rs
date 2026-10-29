@@ -2469,6 +2469,19 @@ impl StoreOpaque {
         caller_instance: RuntimeInstance,
         guest_task: TableId<GuestTask>,
     ) -> Result<()> {
+        if !self.cancel_unstarted_guest_task(caller_instance, guest_task)? {
+            bail!(Trap::SubtaskCancelAfterTerminal);
+        }
+        Ok(())
+    }
+
+    // Also used by host-future drop: queue admission can have failed before the
+    // prepared call was published, so that caller permits no queued item.
+    fn cancel_unstarted_guest_task(
+        &mut self,
+        caller_instance: RuntimeInstance,
+        guest_task: TableId<GuestTask>,
+    ) -> Result<bool> {
         let concurrent_state = self.concurrent_state_mut()?;
         let task = concurrent_state.get_mut(guest_task)?;
         assert!(!task.already_lowered_parameters());
@@ -2518,11 +2531,9 @@ impl StoreOpaque {
 
             found |= remove(&mut state.low_priority);
 
-            if !found {
-                bail!(Trap::SubtaskCancelAfterTerminal);
-            }
+            return Ok(found);
         }
-        Ok(())
+        Ok(true)
     }
 
     /// Used by `ResourceTables` to record the scope of a borrow to get undone
@@ -6764,28 +6775,40 @@ impl TaskId {
     ///
     /// If the parameters have not been lowered yet, it is no longer valid to
     /// do so, as the lowering closure would see a dangling pointer. In this
-    /// case the closure is replaced with one that fails, so the call fails if
-    /// it's ever started. This can't fail, since the task can't be deleted
-    /// while its host future is live.
+    /// case remove the unstarted call and its thread metadata before deleting
+    /// the task. The task cannot already be deleted while its host future is
+    /// live; no replacement lowering closure or new allocation is needed.
     ///
     /// Otherwise, there may be running threads, or ones that are suspended and
     /// can be resumed by other tasks for this component, so we mark the future
     /// as dropped and delete the task when all threads are done.
     pub(crate) fn host_future_dropped(&self, store: &mut StoreOpaque) -> Result<()> {
-        let native_memory = store.native_memory();
         let task = store.concurrent_state_mut()?.get_mut(self.task)?;
+        if !matches!(task.host_future_state, HostFutureState::Live)
+            || !matches!(
+                task.caller,
+                Caller::Host {
+                    host_future_present: true,
+                    ..
+                }
+            )
+        {
+            bail_bug!("host future drop without its original live task");
+        }
         if !task.already_lowered_parameters() {
-            // TODO: avoid leaking the task and trapping in this case, e.g. by
-            // allowing the replacement callback to return a value that tells
-            // the event loop "nevermind, the host gave up on this call; just
-            // skip it, clean up the task, and carry on with other work".
-            task.lower_params = Some(RawLower::new(
-                |store, _| {
-                    store.set_trapped();
-                    bail!("the host future for this call was dropped before it started")
-                },
-                &native_memory,
-            )?);
+            let instance = task.instance;
+            task.host_future_state = HostFutureState::Dropped;
+            store.cancel_unstarted_guest_task(instance, self.task)?;
+            let state = store.concurrent_state_mut()?;
+            // A failed worker startup may leave its handoff item unconsumed.
+            // A running call takes lower_params before any guest suspension;
+            // FiberFuture disposal has unwound it before SignalOnDrop runs.
+            if matches!(state.worker_item.as_ref(), Some(WorkerItem::GuestCall(call))
+                if call.thread.task == self.task)
+            {
+                state.worker_item.take();
+            }
+            Waitable::Guest(self.task).delete_from(state)?;
         } else {
             task.host_future_state = HostFutureState::Dropped;
             if task.ready_to_delete() {
@@ -7983,5 +8006,377 @@ mod call_parameter_closure_memory_tests {
         drop(native_memory);
         drop(store);
         assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+
+    #[cfg(feature = "wat")]
+    mod unstarted_host_drop_tests {
+        use super::super::{
+            CleanupTask, HostFutureState, PreparedCall, QueuedCall, WorkerItem, handle_guest_call,
+            prepare_call,
+        };
+        use super::*;
+        use crate::Config;
+        use crate::component::{Component, Func, Linker};
+        use core::future::Future;
+        use core::pin::Pin;
+        use core::task::{Context, Poll, Waker};
+
+        const COMPONENT: &str = r#"
+            (component
+              (core module $m
+                (func (export "run") (result i32) i32.const 42))
+              (core instance $i (instantiate $m))
+              (func (export "run") (result u32)
+                (canon lift (core func $i "run"))))
+        "#;
+
+        fn add_instance(store: &mut Store<()>) -> Func {
+            let component = Component::new(store.engine(), COMPONENT).unwrap();
+            let instance = Linker::<()>::new(store.engine())
+                .instantiate(&mut *store, &component)
+                .unwrap();
+            instance.get_func(store, "run").unwrap()
+        }
+
+        fn instance() -> (Store<()>, Arc<State>, Func) {
+            let mut config = Config::new();
+            config
+                .wasm_component_model_async(true)
+                .concurrency_support(true);
+            let engine = Engine::new(&config).unwrap();
+            let observations = Arc::new(State::default());
+            let mut store =
+                Store::try_new_with_memory(&engine, (), Arc::new(Memory(observations.clone())))
+                    .unwrap();
+            let function = add_instance(&mut store);
+            (store, observations, function)
+        }
+
+        fn prepare(
+            store: &mut Store<()>,
+            state: &Arc<State>,
+            function: Func,
+            invocations: &Arc<AtomicUsize>,
+        ) -> PreparedCall<u32> {
+            let baseline = state.active.load(Ordering::SeqCst);
+            let lower_owner = capture(state, baseline, false, false);
+            let lift_owner = capture(state, baseline, false, false);
+            let invocations = invocations.clone();
+            prepare_call::<_, u32>(
+                store.as_context_mut(),
+                function,
+                0,
+                true,
+                move |_, _, _| {
+                    let _owner = lower_owner;
+                    invocations.fetch_add(1, Ordering::SeqCst);
+                    Ok(())
+                },
+                move |_, _, results| {
+                    let _owner = lift_owner;
+                    Ok(Box::new(results[0].get_u32()) as Box<dyn Any + Send + Sync>)
+                },
+            )
+            .unwrap()
+        }
+
+        fn retired(
+            store: &mut Store<()>,
+            prepared: QualifiedThreadId,
+            set: TableId<super::super::WaitableSet>,
+        ) {
+            let store = store.as_context_mut().0;
+            assert!(!store.trapped());
+            let state = store.concurrent_state_mut().unwrap();
+            assert!(state.get_mut(prepared.task).is_err());
+            assert!(state.get_mut(prepared.thread).is_err());
+            assert!(state.get_mut(set).is_err());
+        }
+
+        fn fresh_result(store: &mut Store<()>, function: Func) {
+            let function = function.typed::<(), (u32,)>(&*store).unwrap();
+            assert_eq!(function.call(&mut *store, ()).unwrap(), (42,));
+            function.post_return(&mut *store).unwrap();
+        }
+
+        #[test]
+        fn prepared_and_queue_refused_drop_retires_without_new_admission() {
+            for refuse_queue in [false, true] {
+                let (mut store, state, function) = instance();
+                let invocations = Arc::new(AtomicUsize::new(0));
+                let prepared = prepare(&mut store, &state, function, &invocations);
+                let thread = prepared.thread;
+                let task = prepared.task_id();
+                let set = store
+                    .as_context_mut()
+                    .0
+                    .concurrent_state_mut()
+                    .unwrap()
+                    .get_mut(thread.thread)
+                    .unwrap()
+                    .sync_call_set;
+                state.deny.store(true, Ordering::SeqCst);
+                if refuse_queue {
+                    // The same SignalOnDrop is already armed when QueuedCall::new fails.
+                    assert!(QueuedCall::new(store.as_context_mut(), prepared).is_err());
+                } else {
+                    drop(prepared);
+                }
+                let requests = state.requests.lock().unwrap().len();
+                task.host_future_dropped(store.as_context_mut().0).unwrap();
+                assert_eq!(state.requests.lock().unwrap().len(), requests);
+                assert_eq!(invocations.load(Ordering::SeqCst), 0);
+                assert_eq!(state.capture_drops.load(Ordering::SeqCst), 2);
+                assert_eq!(
+                    store
+                        .as_context_mut()
+                        .0
+                        .concurrent_state_mut()
+                        .unwrap()
+                        .interesting_tasks,
+                    0
+                );
+                retired(&mut store, thread, set);
+                state.deny.store(false, Ordering::SeqCst);
+                fresh_result(&mut store, function);
+                drop(store);
+                assert_eq!(state.active.load(Ordering::SeqCst), 0);
+            }
+            // The guest intrinsic wrapper still refuses a missing queued item,
+            // after the same metadata mutations as its original implementation.
+            let (mut store, state, function) = instance();
+            let prepared = prepare(&mut store, &state, function, &Arc::new(AtomicUsize::new(0)));
+            let task = prepared.task_id();
+            let instance = store
+                .as_context_mut()
+                .0
+                .concurrent_state_mut()
+                .unwrap()
+                .get_mut(prepared.thread.task)
+                .unwrap()
+                .instance;
+            let error = store
+                .as_context_mut()
+                .0
+                .cancel_guest_subtask_without_lowered_parameters(instance, prepared.thread.task)
+                .unwrap_err();
+            assert!(matches!(
+                error.downcast_ref::<wasmtime_environ::Trap>(),
+                Some(wasmtime_environ::Trap::SubtaskCancelAfterTerminal)
+            ));
+            drop(prepared);
+            task.host_future_dropped(store.as_context_mut().0).unwrap();
+            fresh_result(&mut store, function);
+        }
+
+        #[test]
+        fn queued_and_backpressured_drop_preserves_eligible_sibling() {
+            for location in 0..3 {
+                let (mut store, state, function) = instance();
+                let invocations = Arc::new(AtomicUsize::new(0));
+                let prepared = prepare(&mut store, &state, function, &invocations);
+                let thread = prepared.thread;
+                let task = prepared.task_id();
+                let set = store
+                    .as_context_mut()
+                    .0
+                    .concurrent_state_mut()
+                    .unwrap()
+                    .get_mut(thread.thread)
+                    .unwrap()
+                    .sync_call_set;
+                let cancelled = QueuedCall::new(store.as_context_mut(), prepared).unwrap();
+                if location != 0 {
+                    let opaque = store.as_context_mut().0;
+                    let (slot, item) = opaque
+                        .concurrent_state_mut()
+                        .unwrap()
+                        .high_priority
+                        .pop_back()
+                        .unwrap();
+                    if location == 1 {
+                        opaque
+                            .concurrent_state_mut()
+                            .unwrap()
+                            .push_low_priority(slot, item);
+                    } else {
+                        let WorkItem::GuestCall(_, call) = item else {
+                            panic!("expected real queued call")
+                        };
+                        let instance = opaque
+                            .concurrent_state_mut()
+                            .unwrap()
+                            .get_mut(thread.task)
+                            .unwrap()
+                            .instance;
+                        let instance_state = opaque.instance_state(instance).concurrent_state();
+                        instance_state.backpressure = 1;
+                        instance_state.pending.insert(thread, (call.kind, slot));
+                    }
+                }
+                // A different instance remains eligible even while the cancelled
+                // instance's actual backpressure is still enabled.
+                let sibling_function = add_instance(&mut store);
+                let sibling_invocations = Arc::new(AtomicUsize::new(0));
+                let sibling = prepare(&mut store, &state, sibling_function, &sibling_invocations);
+                let sibling_id = sibling.task_id();
+                let mut sibling = QueuedCall::new(store.as_context_mut(), sibling).unwrap();
+                drop(cancelled);
+                task.host_future_dropped(store.as_context_mut().0).unwrap();
+                retired(&mut store, thread, set);
+                assert_eq!(invocations.load(Ordering::SeqCst), 0);
+                assert_eq!(state.capture_drops.load(Ordering::SeqCst), 2);
+                assert_eq!(
+                    store
+                        .as_context_mut()
+                        .0
+                        .concurrent_state_mut()
+                        .unwrap()
+                        .interesting_tasks,
+                    1
+                );
+                let opaque = store.as_context_mut().0;
+                let (_slot, item) = opaque
+                    .concurrent_state_mut()
+                    .unwrap()
+                    .high_priority
+                    .pop_back()
+                    .unwrap();
+                let WorkItem::GuestCall(_, call) = item else {
+                    panic!("expected eligible sibling")
+                };
+                handle_guest_call(opaque, call).unwrap();
+                let mut cx = Context::from_waker(Waker::noop());
+                assert!(
+                    matches!(Pin::new(&mut sibling.rx).poll(&mut cx), Poll::Ready(Ok(value))
+                    if *value.downcast::<u32>().unwrap() == 42)
+                );
+                assert_eq!(sibling_invocations.load(Ordering::SeqCst), 1);
+                drop(sibling);
+                sibling_id
+                    .host_future_dropped(store.as_context_mut().0)
+                    .unwrap();
+                assert_eq!(
+                    store
+                        .as_context_mut()
+                        .0
+                        .concurrent_state_mut()
+                        .unwrap()
+                        .interesting_tasks,
+                    0
+                );
+                fresh_result(&mut store, sibling_function);
+                drop(store);
+                assert_eq!(state.active.load(Ordering::SeqCst), 0);
+            }
+        }
+
+        #[test]
+        fn unconsumed_worker_handoff_drop_retires_only_original_store() {
+            let (mut store, state, function) = instance();
+            let (foreign_store, foreign, _) = instance();
+            let foreign_active = foreign.active.load(Ordering::SeqCst);
+            let foreign_requests = foreign.requests.lock().unwrap().clone();
+            let invocations = Arc::new(AtomicUsize::new(0));
+            let prepared = prepare(&mut store, &state, function, &invocations);
+            let thread = prepared.thread;
+            let task = prepared.task_id();
+            let set = store
+                .as_context_mut()
+                .0
+                .concurrent_state_mut()
+                .unwrap()
+                .get_mut(thread.thread)
+                .unwrap()
+                .sync_call_set;
+            let queued = QueuedCall::new(store.as_context_mut(), prepared).unwrap();
+            let state_mut = store.as_context_mut().0.concurrent_state_mut().unwrap();
+            let (slot, item) = state_mut.high_priority.pop_back().unwrap();
+            let WorkItem::GuestCall(_, call) = item else {
+                panic!("expected queued handoff")
+            };
+            state_mut.worker_item = Some(WorkerItem::GuestCall(call));
+            drop(slot);
+            drop(queued);
+            state.deny.store(true, Ordering::SeqCst);
+            let requests = state.requests.lock().unwrap().len();
+            task.host_future_dropped(store.as_context_mut().0).unwrap();
+            assert_eq!(state.requests.lock().unwrap().len(), requests);
+            assert!(
+                store
+                    .as_context_mut()
+                    .0
+                    .concurrent_state_mut()
+                    .unwrap()
+                    .worker_item
+                    .is_none()
+            );
+            assert_eq!(state.capture_drops.load(Ordering::SeqCst), 2);
+            assert_eq!(invocations.load(Ordering::SeqCst), 0);
+            retired(&mut store, thread, set);
+            assert_eq!(foreign.active.load(Ordering::SeqCst), foreign_active);
+            assert_eq!(*foreign.requests.lock().unwrap(), foreign_requests);
+            state.deny.store(false, Ordering::SeqCst);
+            fresh_result(&mut store, function);
+            drop(store);
+            assert_eq!(state.active.load(Ordering::SeqCst), 0);
+            assert_eq!(foreign.active.load(Ordering::SeqCst), foreign_active);
+            drop(foreign_store);
+            assert_eq!(foreign.active.load(Ordering::SeqCst), 0);
+        }
+
+        #[test]
+        fn lowered_host_drop_keeps_live_thread_until_original_cleanup() {
+            let (mut store, state, function) = instance();
+            let invocations = Arc::new(AtomicUsize::new(0));
+            let prepared = prepare(&mut store, &state, function, &invocations);
+            let thread = prepared.thread;
+            let task = prepared.task_id();
+            let set = store
+                .as_context_mut()
+                .0
+                .concurrent_state_mut()
+                .unwrap()
+                .get_mut(thread.thread)
+                .unwrap()
+                .sync_call_set;
+            let lower = store
+                .as_context_mut()
+                .0
+                .concurrent_state_mut()
+                .unwrap()
+                .get_mut(thread.task)
+                .unwrap()
+                .lower_params
+                .take()
+                .unwrap();
+            lower.call(store.as_context_mut().0, &mut []).unwrap();
+            drop(prepared);
+            task.host_future_dropped(store.as_context_mut().0).unwrap();
+            let opaque = store.as_context_mut().0;
+            let record = opaque
+                .concurrent_state_mut()
+                .unwrap()
+                .get_mut(thread.task)
+                .unwrap();
+            assert!(matches!(record.host_future_state, HostFutureState::Dropped));
+            assert!(record.lift_result.is_some());
+            assert_eq!(record.threads.len(), 1);
+            assert_eq!(state.capture_drops.load(Ordering::SeqCst), 1);
+            assert_eq!(invocations.load(Ordering::SeqCst), 1);
+            // Only the original terminal cleanup can now release the task.
+            let instance = record.instance;
+            record.lift_result = None;
+            record.exited = true;
+            opaque
+                .cleanup_thread(thread, instance, CleanupTask::Yes)
+                .unwrap();
+            assert_eq!(state.capture_drops.load(Ordering::SeqCst), 2);
+            retired(&mut store, thread, set);
+            fresh_result(&mut store, function);
+            drop(store);
+            assert_eq!(state.active.load(Ordering::SeqCst), 0);
+        }
     }
 }
