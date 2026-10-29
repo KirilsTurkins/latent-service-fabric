@@ -596,7 +596,9 @@ def http_cell(client, node, probe, target, peer, output, case):
             observed = peer.observation()
             validate(observed)
             change = delta(before, observed)
-            if case == 'sibling' and barrier is None and len(change['requests']) >= 3:
+            # TCP acceptance precedes the peer's parsed request/vector observation.
+            if (case == 'sibling' and barrier is None and len(change['requests']) >= 3
+                    and change['startedRequests'] >= 3):
                 requests = change['requests']
                 require(len(requests) == 3
                         and [row.get('vector') for row in requests] == ['partial-body', 'domain-json', 'domain-json']
