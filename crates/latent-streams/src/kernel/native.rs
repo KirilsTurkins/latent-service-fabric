@@ -549,7 +549,7 @@ pub(crate) mod node_bootstrap {
     const CAPACITY_PREPARE: u32 = 3;
     const CAPACITY_REPLY_BYTES: usize = 384;
 
-    /// Sealed capacity-image proof; no production issuer.
+    /// Sealed image proof; no issuer.
     pub(crate) struct InstalledCapacityProfile {
         abi: &'static str,
         image: [u8; 32],
@@ -744,26 +744,14 @@ pub(crate) mod node_bootstrap {
         deadline: Instant,
     ) -> Result<Owner, StreamError> {
         let profile = SelectedProfile::Capacity(profile);
-        profile.check()?;
-        let backing = pools.reserve_stream_kernel_node_backing(installed)?;
+        let backing = reserve_backing(&pools, installed, &profile)?;
         enter_selected_with(
             pools,
             installed.clone(),
             backing,
             profile,
             deadline,
-            || {
-                rustix::fs::open(
-                    c"/dev/lsf-stream-factory",
-                    rustix::fs::OFlags::RDWR
-                        | rustix::fs::OFlags::CLOEXEC
-                        | rustix::fs::OFlags::NOFOLLOW
-                        | rustix::fs::OFlags::NONBLOCK,
-                    rustix::fs::Mode::empty(),
-                )
-                .map(File::from)
-                .map_err(|_| error(StreamErrorCode::Unsupported))
-            },
+            open_factory,
             |file, deadline| attach_version(file, deadline, CAPACITY_VERSION),
         )
         .await
@@ -1013,6 +1001,7 @@ pub(crate) mod node_bootstrap {
         observed
     }
 
+    #[cfg(test)]
     async fn enter_with<O, I>(
         pools: Arc<ProviderPools>,
         installed: InstalledProvider,
@@ -1151,29 +1140,40 @@ pub(crate) mod node_bootstrap {
         profile: InstalledProfile,
         deadline: Instant,
     ) -> Result<Owner, StreamError> {
-        profile.check()?;
-        let backing = pools.reserve_stream_kernel_node_backing(installed)?;
-        enter_with(
+        let profile = SelectedProfile::Bootstrap(profile);
+        let backing = reserve_backing(&pools, installed, &profile)?;
+        enter_selected_with(
             pools,
             installed.clone(),
             backing,
             profile,
             deadline,
-            || {
-                rustix::fs::open(
-                    c"/dev/lsf-stream-factory",
-                    rustix::fs::OFlags::RDWR
-                        | rustix::fs::OFlags::CLOEXEC
-                        | rustix::fs::OFlags::NOFOLLOW
-                        | rustix::fs::OFlags::NONBLOCK,
-                    rustix::fs::Mode::empty(),
-                )
-                .map(File::from)
-                .map_err(|_| error(StreamErrorCode::Unsupported))
-            },
+            open_factory,
             attach,
         )
         .await
+    }
+
+    fn open_factory() -> Result<File, StreamError> {
+        rustix::fs::open(
+            c"/dev/lsf-stream-factory",
+            rustix::fs::OFlags::RDWR
+                | rustix::fs::OFlags::CLOEXEC
+                | rustix::fs::OFlags::NOFOLLOW
+                | rustix::fs::OFlags::NONBLOCK,
+            rustix::fs::Mode::empty(),
+        )
+        .map(File::from)
+        .map_err(|_| error(StreamErrorCode::Unsupported))
+    }
+
+    fn reserve_backing(
+        pools: &ProviderPools,
+        installed: &InstalledProvider,
+        profile: &SelectedProfile,
+    ) -> Result<StreamKernelNodeBacking, StreamError> {
+        profile.check()?;
+        Ok(pools.reserve_stream_kernel_node_backing(installed)?)
     }
 
     #[cfg(test)]
@@ -1225,7 +1225,6 @@ pub(crate) mod node_bootstrap {
             funded[56] = 1;
             assert!(reply(&funded, 123, None).is_err());
             assert!(reply(&good[..REPLY_BYTES - 1], 123, None).is_err());
-            // Synthetic framing only; no native evidence.
             let mut capacity = [0u8; CAPACITY_REPLY_BYTES];
             capacity[..REPLY_BYTES].copy_from_slice(&good);
             capacity[4..8].copy_from_slice(&CAPACITY_VERSION.to_le_bytes());
