@@ -196,6 +196,16 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
         .append(&buffer[end..used])
         .map_err(|e| e.status().unwrap_or(0))?;
     read_body(socket, shared, buffer, &mut head, used - end, deadline).await?;
+    deliver(socket, shared, head, selected, deadline, close).await
+}
+async fn deliver<S: AsyncRead + AsyncWrite + Unpin>(
+    socket: &mut S,
+    shared: &Shared,
+    head: head::Head,
+    selected: latent_control_store::http_routes::AcceptedHttpRoute,
+    deadline: IncomingDeadline,
+    close: bool,
+) -> Result<bool, u16> {
     let delivery = match dispatch::begin(head, selected, shared)? {
         dispatch::Begun::Cached(delivery) => delivery,
         dispatch::Begun::Result(result) => {

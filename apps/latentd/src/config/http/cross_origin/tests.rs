@@ -1,6 +1,7 @@
 use super::*;
 use latent_core::{InvocationPrincipal, Metadata, PrincipalKind};
 use serde_json::{json, Value};
+use std::io::Write as _;
 
 fn grant() -> Value {
     json!({
@@ -11,15 +12,17 @@ fn grant() -> Value {
     })
 }
 fn config(grants: Value) -> Value {
-    json!({
+    let mut value = json!({
         "formatVersion": 1,
         "bind": "127.0.0.1:0",
         "transport": {"mode": "trusted-proxy", "peers": ["127.0.0.1"]},
         "authentication": {"mode": "public-origins", "origins": [
             {"authority": "assets.example.test", "tenant": "tests", "subject": "public"}
         ]},
-        "crossOriginAssets": grants
-    })
+        "crossOriginAssets": []
+    });
+    value["crossOriginAssets"] = grants;
+    value
 }
 fn owners() -> Authentication {
     Authentication::PublicOrigins(vec![(
@@ -186,7 +189,6 @@ fn cross_origin_configuration_enforces_all_three_independent_bounds() {
     }
     assert!(serde_json::to_vec(&large).unwrap().len() > MAX_CONFIGURATION_BYTES);
     assert!(!valid(json!(large)));
-    use std::io::Write as _;
     let mut count = ConfigurationBytes(0);
     assert!(count.write_all(&vec![0; MAX_CONFIGURATION_BYTES]).is_ok());
     assert!(count.write_all(&[0]).is_err());

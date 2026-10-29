@@ -9,7 +9,7 @@ use latent_ingress::http::MAX_HEADERS;
 use latent_wire::invocation::{LocalPrincipalPolicy, PrincipalPolicy};
 
 pub(super) enum Selection {
-    Routed(AcceptedHttpRoute),
+    Routed(Box<AcceptedHttpRoute>),
     Immutable {
         selection: WebSelection,
         path: String,
@@ -73,7 +73,7 @@ impl Selection {
         LocalPrincipalPolicy
             .authorize_target(&head.principal, &selected_tenant.0)
             .map_err(|error| super::super::status(&error))?;
-        Ok(Self::Routed(route))
+        Ok(Self::Routed(Box::new(route)))
     }
 
     pub(super) fn web(&self) -> &WebSelection {
@@ -145,7 +145,7 @@ impl Selection {
 
     pub(super) fn retain(self, mut request: Request) -> Request {
         if let Self::Routed(route) = self {
-            request.route = Some(route);
+            request.route = Some(*route);
         }
         // Immutable reads reselect this exact reference in Store::prepare and
         // recheck it at output. Do not hold two publication read owners at once.

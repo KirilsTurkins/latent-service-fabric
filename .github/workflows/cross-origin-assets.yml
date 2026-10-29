@@ -86,7 +86,7 @@ jobs:
           python -m unittest tools.tests.test_cross_origin_native_schema tools.tests.test_cross_origin_native_workflow -v
           node --check tools/cross-origin/native-fixture.mjs
           node --check tools/cross-origin/native-browser.mjs
-          node --test tools/cross-origin/contract.test.mjs
+          node --test tools/cross-origin/contract.test.mjs tools/cross-origin/native-network.test.mjs
       - name: Execute native policy and ownership controls
         run: |
           set -o pipefail

@@ -6,6 +6,7 @@ import {readFile, writeFile, link, unlink} from 'node:fs/promises';
 import path from 'node:path';
 import https from 'node:https';
 import {setTimeout as delay} from 'node:timers/promises';
+import {recordNetwork, policyHeaders} from './native-network.mjs';
 
 const [toolchain, chrome, work, ...extra] = process.argv.slice(2);
 assert.ok(work && !extra.length, 'native-browser.mjs TOOLCHAIN CHROME WORK');
@@ -15,14 +16,14 @@ assert.match(assets, /^https:\/\/assets\.lsf\.localhost:[0-9]+$/);
 assert.match(foreign, /^https:\/\/foreign\.lsf\.localhost:[0-9]+$/);
 const {chromium} = createRequire(path.join(path.resolve(toolchain), 'package.json'))('playwright-core');
 const tls = {key: await readFile(path.join(work, 'tls/key.pem')), cert: await readFile(path.join(work, 'tls/server.pem'))};
-const deadline = Date.now() + 300000, sockets = new Set(), pending = new Set(), observations = [], wireObservations = [], cases = [];
-let browser, failure, stage = 'startup', currentCase = 'startup', etag;
+const deadline = Date.now() + 300000, sockets = new Set(), observations = [], wireObservations = [], cases = [];
+let browser, network, failure, stage = 'startup', currentCase = 'startup', etag;
 const report = {schemaVersion: 'latent.cross-origin.native-browser.v1', passed: false,
   nativeRuntimeQualified: false, productionTlsQualified: false, testIdentityOnly: true, cases, observations, wireObservations};
 const peer = https.createServer({...tls, maxHeaderSize: 8192}, (req, res) => {
   req.resume();
   res.writeHead(200, {'content-type': 'text/html', 'cache-control': 'no-store',
-    'content-security-policy': `default-src 'none'; script-src 'self' ${assets}; style-src 'self' ${assets}; font-src ${assets}; connect-src ${assets} ${foreign}; frame-src 'self'; base-uri 'none'`});
+    'content-security-policy': `${req.url === '/opaque' ? 'sandbox allow-scripts; ' : ''}default-src 'none'; script-src 'self' ${assets}; style-src 'self' ${assets}; font-src ${assets}; connect-src ${assets} ${foreign}; frame-src 'self'; base-uri 'none'`});
   res.end('<!doctype html><title>Native asset caller</title><div id="sample">Example</div>');
 });
 peer.maxConnections = 16; peer.maxHeadersCount = 32;
@@ -51,11 +52,7 @@ async function wait(name) {
   }
   throw new Error('native-browser-command-deadline');
 }
-function observe(promise) {
-  const owned = promise.catch(error => { failure ??= error; }).finally(() => pending.delete(owned));
-  pending.add(owned);
-}
-async function flush() { await Promise.all([...pending]); if (failure) throw failure; }
+async function flush() { await network.flush(); if (failure) throw failure; }
 const locator = name => '/_lsf/assets/' + publications[name] + '/app.js';
 async function fetchResult(page, target = '/app.js', init = {}) {
   return page.evaluate(async ({url, init}) => {
@@ -64,10 +61,6 @@ async function fetchResult(page, target = '/app.js', init = {}) {
       return {status: response.status, text: await response.text(), etag: response.headers.get('etag')};
     } catch (error) { return {error: error.name}; }
   }, {url: target.startsWith('https://') ? target : assets + target, init});
-}
-function policyHeaders(headers) {
-  return Object.fromEntries(Object.entries(headers).filter(([key]) =>
-    key.startsWith('access-control-') || ['cache-control', 'vary', 'etag', 'cross-origin-resource-policy', 'x-content-type-options'].includes(key)));
 }
 async function wire(method, target, headers = {}) {
   assert.ok(wireObservations.length < 64, 'wire-observation-bound');
@@ -110,26 +103,11 @@ try {
   const context = await browser.newContext({ignoreHTTPSErrors: true});
   await context.addCookies([{name: '__Host-lsf_demo', value: 'test-only', url: assets,
     secure: true, httpOnly: true, sameSite: 'Strict'}]);
-  const requests = new WeakMap();
-  context.on('request', request => {
-    if (![assets, foreign].includes(new URL(request.url()).origin)) return;
-    if (observations.length >= 256) { failure ??= new Error('network-observation-bound'); return; }
-    const row = {transport: 'chromium', stage, case: currentCase, method: request.method(), path: new URL(request.url()).pathname};
-    observations.push(row); requests.set(request, row);
-    observe(request.allHeaders().then(headers => Object.assign(row, {
-      origin: headers.origin ?? null, site: headers['sec-fetch-site'] ?? null,
-      mode: headers['sec-fetch-mode'] ?? null, destination: headers['sec-fetch-dest'] ?? null,
-      cookiePresent: Boolean(headers.cookie)})));
-  });
-  context.on('response', response => {
-    const row = requests.get(response.request());
-    if (!row) return;
-    row.status = response.status();
-    observe(response.allHeaders().then(headers => {
-      row.headers = policyHeaders(headers);
-    }));
-  });
   const page = await context.newPage();
+  network = await recordNetwork(await context.newCDPSession(page), {
+    origins: [assets, foreign], observations, scope: () => ({stage, case: currentCase}),
+    fail: error => { failure ??= error; },
+  });
   await page.goto(approved, {timeout: 10000});
   await save('browser-ready.json', {approved, crossSite, unrelated});
   const common = {Origin: approved, 'Sec-Fetch-Site': 'same-site', 'Sec-Fetch-Mode': 'cors', 'Sec-Fetch-Dest': 'empty'};
@@ -229,15 +207,15 @@ try {
         }
       });
       await check('null-origin-no-cors-and-documents-denied', async () => {
-        await page.evaluate(() => {
-          const frame = document.createElement('iframe'); frame.sandbox = 'allow-scripts';
-          frame.srcdoc = '<!doctype html><title>Opaque origin</title>'; document.body.append(frame);
-        });
-        const frame = page.frames().find(value => value !== page.mainFrame()); assert.ok(frame);
+        // A sandboxed top-level response has an opaque origin, while staying
+        // in the observed CDP target. No supplied/fabricated Origin is used.
+        await page.goto(approved + '/opaque');
         const previous = observations.length;
-        assert.equal((await fetchResult(frame, '/app.js', {credentials: 'omit'})).error, 'TypeError');
-        await flush();
-        assert.ok(observations.slice(previous).some(row => row.origin === 'null'), 'actual-browser-null-origin-required');
+        assert.equal((await fetchResult(page, '/app.js', {credentials: 'omit'})).error, 'TypeError');
+        await network.waitFor(row => observations.indexOf(row) >= previous && row.origin === 'null'
+          && row.status === 403 && row.requestHeadersObserved && row.responseHeadersObserved,
+        'actual-browser-null-origin-and-native-denial-required');
+        await page.goto(approved);
         await fetchResult(page, '/app.js', {mode: 'no-cors', credentials: 'omit'});
         assert.equal((await fetchResult(page, '/index.html', {credentials: 'omit'})).error, 'TypeError');
         denied(await wire('GET', '/app.js', {...common, 'Sec-Fetch-Mode': 'no-cors'}));
@@ -258,6 +236,7 @@ try {
     await save(index + '-result.json', {stage, passed: true, cases: cases.filter(row => row.stage === stage)});
   }
   for (const row of observations.filter(row => row.headers)) {
+    assert.equal(row.requestHeadersObserved, true, 'response-needs-observed-wire-request');
     const fields = row.headers;
     assert.equal(fields['x-content-type-options'], 'nosniff');
     const vary = new Set(fields.vary?.toLowerCase().split(',').map(name => name.trim()));

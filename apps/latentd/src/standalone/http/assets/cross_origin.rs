@@ -29,7 +29,7 @@ struct Plan {
 }
 enum Work {
     Preflight,
-    Asset(Request),
+    Asset(Box<Request>),
     Error(u16),
 }
 
@@ -102,7 +102,7 @@ fn plan(shared: &Shared, head: &Head, raw: &[u8]) -> Result<Plan, u16> {
             Work::Preflight
         }
         Ok(path) => match selection.request(raw, path) {
-            Ok(request) => Work::Asset(request),
+            Ok(request) => Work::Asset(Box::new(request)),
             Err(code) => Work::Error(code),
         },
         // A miss inside an authorized publication is a scoped, empty 404. An
@@ -131,7 +131,7 @@ async fn execute<S: AsyncRead + AsyncWrite + Unpin>(
     } = plan;
     match work {
         Work::Asset(request) => {
-            let request = selection.retain(request);
+            let request = selection.retain(*request);
             serve(socket, shared, request, &policy, deadline, close).await
         }
         Work::Preflight | Work::Error(_) => {
