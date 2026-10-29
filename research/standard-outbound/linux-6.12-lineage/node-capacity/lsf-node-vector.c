@@ -5,6 +5,47 @@
  */
 #include <net/lsf_node_capacity_private.h>
 
+int lsf_node_vector_observe(struct lsf_node_capacity *owner,
+    struct lsf_node_capacity_facts *facts)
+{
+    struct lsf_node_vector_slot slot;
+    unsigned long flags;
+    unsigned int i, j, vectors[LSF_NODE_CAPACITY_VECTORS];
+    int error = -EOPNOTSUPP;
+
+    if (!facts)
+        return error;
+    cpus_read_lock();
+    raw_spin_lock_irqsave(&vector_lock, flags);
+    if (!vector_matrix || !x86_vector_domain || x86_vector_domain->parent ||
+        apic_is_disabled || num_possible_cpus() != 1 || !cpu_possible(0) ||
+        num_online_cpus() != 1 || !cpu_online(0) || nr_cpu_ids != 1)
+        goto out;
+    for (i = 0; i < LSF_NODE_CAPACITY_VECTORS; ++i) {
+        if (lsf_node_vector_prepared_slot(owner, vector_matrix, i, &slot) ||
+            slot.cpu != 0 || !slot.vector || slot.vector >= NR_VECTORS ||
+            !lsf_node_matrix_held(vector_matrix, slot.cpu, slot.vector))
+            goto out;
+        for (j = 0; j < i; ++j)
+            if (vectors[j] == slot.vector)
+                goto out;
+        vectors[i] = slot.vector;
+        facts->word[LSF_NODE_FACT_VECTOR_PACKED0 + i / 4] |=
+            (u64)slot.vector << (16 * (i % 4));
+    }
+    facts->word[LSF_NODE_FACT_VECTOR_COUNT] = LSF_NODE_CAPACITY_VECTORS;
+    facts->word[LSF_NODE_FACT_VECTOR_CPU_MASK] = BIT_ULL(0);
+    /* Closed identities for these exact native providers, never addresses.
+     * No child MSI domain or device publication is asserted by this fact. */
+    facts->word[LSF_NODE_FACT_PARENT_DOMAIN_CLASS] = 1;
+    facts->word[LSF_NODE_FACT_MATRIX_CLASS] = 1;
+    error = 0;
+out:
+    raw_spin_unlock_irqrestore(&vector_lock, flags);
+    cpus_read_unlock();
+    return error;
+}
+
 int lsf_node_vector_layout(struct lsf_node_capacity_extent *out)
 {
     if (!out || sizeof(struct apic_chip_data) > PAGE_SIZE ||

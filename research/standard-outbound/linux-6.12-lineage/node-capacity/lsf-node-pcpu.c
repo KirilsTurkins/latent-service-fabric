@@ -9,6 +9,46 @@
 #include <linux/irqdesc.h>
 #include <linux/overflow.h>
 
+int lsf_node_pcpu_observe(struct lsf_node_capacity *owner,
+    struct lsf_node_capacity_facts *facts)
+{
+    int error = -EOPNOTSUPP;
+
+    if (!facts)
+        return error;
+    cpus_read_lock();
+    mutex_lock(&pcpu_alloc_mutex);
+    if (lsf_node_capacity_checkpoint(owner))
+        goto out;
+    /* The captured units must be the SAME real native geometry used by this
+     * successful preparation, not CONFIG_NR_CPUS or static layout evidence. */
+    if (!owner->pcpu_prepared || pcpu_unit_pages <= 0 || pcpu_nr_units <= 0 ||
+        pcpu_atom_size <= 0 || num_possible_cpus() != 1 || !cpu_possible(0) ||
+        num_online_cpus() != 1 || !cpu_online(0) || nr_cpu_ids != 1 ||
+        pcpu_nr_groups != 1 || !pcpu_group_offsets || !pcpu_group_sizes ||
+        owner->unit_pages != (unsigned long)pcpu_unit_pages ||
+        owner->units != (unsigned long)pcpu_nr_units ||
+        owner->atom_bytes != (unsigned long)pcpu_atom_size ||
+        owner->group_offset != pcpu_group_offsets[0] ||
+        owner->group_bytes != pcpu_group_sizes[0] ||
+        owner->unit_offset != pcpu_unit_offsets[0])
+        goto out;
+    facts->word[LSF_NODE_FACT_POSSIBLE_MASK] = BIT_ULL(0);
+    facts->word[LSF_NODE_FACT_ONLINE_MASK] = BIT_ULL(0);
+    facts->word[LSF_NODE_FACT_NR_CPU_IDS] = nr_cpu_ids;
+    facts->word[LSF_NODE_FACT_UNIT_PAGES] = owner->unit_pages;
+    facts->word[LSF_NODE_FACT_UNITS] = owner->units;
+    facts->word[LSF_NODE_FACT_ATOM_BYTES] = owner->atom_bytes;
+    facts->word[LSF_NODE_FACT_GROUP_OFFSET] = owner->group_offset;
+    facts->word[LSF_NODE_FACT_GROUP_BYTES] = owner->group_bytes;
+    facts->word[LSF_NODE_FACT_UNIT_OFFSET] = owner->unit_offset;
+    error = 0;
+out:
+    mutex_unlock(&pcpu_alloc_mutex);
+    cpus_read_unlock();
+    return error;
+}
+
 int lsf_node_pcpu_layout(struct lsf_node_capacity *owner)
 {
     struct lsf_node_capacity_extent *out;

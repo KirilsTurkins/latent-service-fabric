@@ -30,6 +30,27 @@ struct lsf_node_irq_name {
 };
 
 #define LSF_NODE_CAPACITY_VECTORS 8u
+/* Private versioned observation, never a funding/fit/retirement certificate.
+ * All fields are produced by the actual allocating TUs or original registrar.
+ * No pointer, actor identity or caller-selected scalar crosses the wire. */
+#define LSF_NODE_FACT_WORDS 40u
+enum lsf_node_fact_field {
+    LSF_NODE_FACT_FORMAT, LSF_NODE_FACT_PROFILE, LSF_NODE_FACT_NODE_OFFSET,
+    LSF_NODE_FACT_CAPACITY_OFFSET, LSF_NODE_FACT_CAPACITY_BYTES,
+    LSF_NODE_FACT_POSSIBLE_MASK, LSF_NODE_FACT_ONLINE_MASK, LSF_NODE_FACT_NR_CPU_IDS,
+    LSF_NODE_FACT_UNIT_PAGES, LSF_NODE_FACT_UNITS, LSF_NODE_FACT_ATOM_BYTES,
+    LSF_NODE_FACT_GROUP_OFFSET, LSF_NODE_FACT_GROUP_BYTES, LSF_NODE_FACT_UNIT_OFFSET,
+    LSF_NODE_FACT_FLOOR_BYTES, LSF_NODE_FACT_COMMITTED_BYTES,
+    LSF_NODE_FACT_RESERVED_BYTES, LSF_NODE_FACT_CURSOR,
+    LSF_NODE_FACT_RECORD_HIGH_WATER, LSF_NODE_FACT_LIVE_RECORDS,
+    LSF_NODE_FACT_OWNER_HIGH_WATER, LSF_NODE_FACT_NEXT_GENERATION,
+    LSF_NODE_FACT_VECTOR_COUNT, LSF_NODE_FACT_VECTOR_CPU_MASK,
+    LSF_NODE_FACT_VECTOR_PACKED0, LSF_NODE_FACT_VECTOR_PACKED1,
+    LSF_NODE_FACT_PARENT_DOMAIN_CLASS, LSF_NODE_FACT_MATRIX_CLASS,
+    LSF_NODE_FACT_BANK_ORDER, LSF_NODE_FACT_ENVELOPE_BYTES,
+    LSF_NODE_FACT_BANK_BYTES, LSF_NODE_FACT_TAIL_BYTES, LSF_NODE_FACT_FLAGS
+};
+struct lsf_node_capacity_facts { u64 word[LSF_NODE_FACT_WORDS]; };
 #define LSF_NODE_IRQ_PROC_ENTRIES 9u
 #define LSF_NODE_CAPACITY_KIND_BASE 0xfe00u
 #define LSF_NODE_CAPACITY_NATIVE_BASE 0xfd00u
@@ -335,5 +356,11 @@ int lsf_node_radix_prune_private(struct xarray *root);
 int lsf_node_irq_revmap_prepare(struct irq_domain *domain,
     unsigned int virq, unsigned int nr_irqs);
 int lsf_node_irq_revmap_prune(struct irq_domain *domain);
+int lsf_node_pcpu_observe(struct lsf_node_capacity *owner,
+    struct lsf_node_capacity_facts *facts);
+int lsf_node_vector_observe(struct lsf_node_capacity *owner,
+    struct lsf_node_capacity_facts *facts);
+int lsf_node_vector_prepared_slot(struct lsf_node_capacity *owner,
+    struct irq_matrix *matrix, unsigned int index, struct lsf_node_vector_slot *out);
 
 #endif
