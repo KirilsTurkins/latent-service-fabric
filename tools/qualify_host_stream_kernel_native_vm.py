@@ -519,7 +519,7 @@ def qualify_node(output,revision):
         receipt['bootConfiguration'] = image.check_boot_configuration(config,objects.configuration)
         keep('selected-before.config',selected_file,c.MAX_DOCUMENT)
         keep('boot.config',build/'.config',c.MAX_DOCUMENT)
-        run('fresh-node-kernel-image',*common,'-j2','bzImage','usr/gen_init_cpio',root=tree)
+        run('fresh-node-kernel-image',*common,'-j2','bzImage',root=tree)
         kernel = build/'arch/x86/boot/bzImage'
         kernel_raw = keep('node-bzImage',kernel,image.MAX_KERNEL)
         receipt['kernel'] = image.kernel_image(kernel_raw)
