@@ -26,6 +26,27 @@ pub enum ResourceDisposal {
 }
 
 impl Descriptor {
+    // Static OWN-only result shape. No dynamic traversal or backing is inferred
+    // from a progress mask. Unsupported/overbound shapes keep old quarantine.
+    pub fn partial_slots(&self)->Option<(u32,Vec<(u32,TypeId)>)> {
+        if self.disposal.is_empty() || self.disposal.len()>64 {return None;}
+        let mut slots=Vec::new();
+        let mut key=2166136261u32;
+        let mut word=|n:u32| {for byte in n.to_le_bytes() {
+            key=(key^u32::from(byte)).wrapping_mul(16777619);
+        }};
+        word(2);word(self.result_bytes);word(self.raw_result);word(self.disposal.len() as u32);
+        for item in &self.disposal {
+            let ResourceDisposal::Own{offset,resource,..}=item else {return None};
+            if offset.checked_add(4)? > self.result_bytes {return None;}
+            word(*offset);word(u32::try_from(resource.index()).ok()?);
+            slots.push((*offset,*resource));
+        }
+        // This is only a deterministic private join key. The JS source pass
+        // compares complete plans and disables ALL colliding keys; native
+        // handoff additionally compares the real compiled offset/type getter.
+        Some((key,slots))
+    }
     pub fn bind_resource_drops(&mut self, imports: &std::collections::BTreeMap<TypeId,(String,String)>) {
         fn bind(plan:&mut [ResourceDisposal], imports:&std::collections::BTreeMap<TypeId,(String,String)>) {
             for node in plan {
@@ -331,4 +352,56 @@ mod tests {
             },_=>panic!("original-list-layout-required"),
         }
     }
+    #[test]
+    fn actual_static_own_slots_follow_resolved_layout_and_reject_dynamic_trees() {
+        let source=|result:&str|format!("package tests:imports@1.0.0; interface io {{ resource connection; read: async func()->{result}; }} world guest {{ import io; }}");
+        let value=actual(&source("tuple<connection,connection>"));
+        let (key,slots)=value.partial_slots().unwrap();
+        assert_eq!((value.result_bytes,value.raw_result),(8,5));
+        assert_eq!(slots.len(),2);assert_eq!((slots[0].0,slots[1].0),(0,4));
+        assert_eq!(slots[0].1,slots[1].1);
+        assert_eq!(value.partial_slots().unwrap().0,key);
+        let distinct=actual("package tests:imports@1.0.0; interface io { resource first; resource second; read: async func()->tuple<first,second>; } world guest { import io; }");
+        let (_,distinct_slots)=distinct.partial_slots().unwrap();
+        assert_ne!(distinct_slots[0].1,distinct_slots[1].1);
+        // Actual pinned FunctionBindgen output, not a hand-written claim about
+        // temporary variable names. The owning profile retains this before the
+        // JS AST control consumes it; normal callers create no artifact.
+        let mut resolve=wit_parser::Resolve::default();
+        let package=resolve.push_str(std::path::Path::new("partial-static.wit"),
+            &source("tuple<connection,connection>")).unwrap();
+        let world=resolve.select_world(&[package],Some("guest")).unwrap();
+        let generated=crate::bindgen::componentize_bindgen(&resolve,world,&Vec::new()).unwrap();
+        assert!(generated.js_bindings.contains("lsf-own-plan-v2:"));
+        assert!(generated.js_bindings.len()<=256*1024);
+        let mut zero=wit_parser::Resolve::default();
+        let zero_package=zero.push_str(std::path::Path::new("zero-async.wit"),
+            "package tests:zero@1.0.0; world guest { export greet: func()->u32; }").unwrap();
+        let zero_world=zero.select_world(&[zero_package],Some("guest")).unwrap();
+        let zero_generated=crate::bindgen::componentize_bindgen(&zero,zero_world,&Vec::new()).unwrap();
+        assert!(zero_generated.js_bindings.contains("const __lsfImports = contentGlobal.__lsfAsyncImportBridge;"));
+        assert!(!zero_generated.js_bindings.contains("__lsfAwaitImport"));
+        assert!(zero_generated.js_bindings.len()<=256*1024);
+        if let Some(path)=std::env::var_os("LSF_TYPESCRIPT_PARTIAL_BINDING_CAPTURE") {
+            use std::io::Write;
+            let path=std::path::PathBuf::from(path);
+            std::fs::OpenOptions::new().write(true).create_new(true).open(&path).unwrap()
+                .write_all(generated.js_bindings.as_bytes()).unwrap();
+            std::fs::OpenOptions::new().write(true).create_new(true).open(path.with_extension("zero.js")).unwrap()
+                .write_all(zero_generated.js_bindings.as_bytes()).unwrap();
+        }
+        for result in ["tuple<connection,string>","list<connection>","option<connection>"] {
+            assert!(actual(&source(result)).partial_slots().is_none());
+        }
+        let mut bounded=value.clone();
+        bounded.result_bytes=65*4;
+        bounded.disposal=(0..65).map(|index|ResourceDisposal::Own{offset:index*4,
+            resource:slots[0].1,drop_import:None}).collect();
+        assert!(bounded.partial_slots().is_none());
+        bounded.disposal.pop();
+        assert_eq!(bounded.partial_slots().unwrap().1.len(),64);
+        bounded.result_bytes=1;
+        assert!(bounded.partial_slots().is_none());
+    }
+
 }

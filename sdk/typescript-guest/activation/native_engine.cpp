@@ -8,8 +8,11 @@
 #include "native_timers.h"
 #include "native_objects.h"
 #include "native_imports.h"
+#include "native_import_partial.h"
 #include "extension-api.h"
 #include "js/Prefs.h"
+#include "js/Proxy.h"
+#include "js/Realm.h"
 #include "jsfriendapi.h"
 
 #include <memory>
@@ -36,6 +39,11 @@ BrokerPromiseAccounting::Phase promise_phase(JSContext* cx) {
   }
 }
 
+bool initialization_allowed(JSContext* cx) {
+  auto* engine = api::Engine::get(cx);
+  return engine && engine->state() == api::EngineState::EngineInitializing;
+}
+
 bool compiler_snapshot_allowed(JSContext* cx) {
   return promise_phase(cx) == BrokerPromiseAccounting::Phase::CompilerSnapshot;
 }
@@ -48,6 +56,7 @@ NativeObjectRecords native_objects;
 ReadinessSet readiness(promise_accounting);
 Timers timers(accounting, promise_accounting, readiness);
 Imports imports(accounting, promise_accounting, readiness);
+PartialOwnLifts partial_own(imports, initialization_allowed);
 std::unique_ptr<JobQueue> queue;
 
 bool collect_before_native_allocation(JSContext* cx) {
@@ -130,7 +139,7 @@ bool snapshot_jobs_empty(JSContext* cx) {
   if (!queue || !queue->empty() || queue->isDrainingStopped() ||
       api::Engine::has_pending_async_tasks() || timers.hasPending() || promises.hasPendingPromises() ||
       api::Engine::has_unhandled_promise_rejections() ||
-      native_objects.hasRetained() || imports.hasPending() || readiness.physical() ||
+      native_objects.hasRetained() || imports.hasPending() || partial_own.hasPending() || readiness.physical() ||
       reactions.hasPendingReactions() || !reactions.checkpoint(cx) ||
       !promises.checkpoint(cx)) {
     JS_ReportErrorASCII(cx, "activation-runtime-pending-work-during-snapshot-denied");
@@ -175,7 +184,8 @@ bool has_pending_promises() {
 bool cancel_job_dispatch(JSContext* cx) {
   const bool jobs_retired = queue && queue->cancelQueued(cx);
   const bool timers_retired = timers.cancel(cx);
-  const bool imports_retired = imports.cancelAll(cx);
+  partial_own.cancelAll();
+  const bool imports_retired = imports.cancelAll(cx) && partial_own.collect(cx);
   return jobs_retired && timers_retired && imports_retired && readiness.retire(cx);
 }
 
@@ -199,7 +209,7 @@ bool start_timeout_nanoseconds(JSContext* cx, JS::HandleObject callback,
   }
   return timers.startNanoseconds(cx, callback, arguments, nanos, nullptr, id);
 }
-bool has_pending_timer_work() { return timers.hasPending() || imports.hasPending(); }
+bool has_pending_timer_work() { return timers.hasPending() || imports.hasPending() || partial_own.hasPending(); }
 
 bool run_timer_turn(JSContext* cx) {
   if (JS_IsExceptionPending(cx)) return false;
@@ -207,10 +217,10 @@ bool run_timer_turn(JSContext* cx) {
     JS_ReportErrorASCII(cx, "activation-runtime-timer-pump-with-eligible-jobs-denied");
     return false;
   }
-  if (!imports.turn(cx) || !timers.turn(cx, false, false)) return false;
+  if (!imports.turn(cx) || !partial_own.collect(cx) || !timers.turn(cx, false, false)) return false;
   if (!queue->empty() || imports.hasReady() || timers.callbackDispatched()) return true;
   if (readiness.hasJoined()) return readiness.dispatch(cx, true);
-  if (imports.hasPending() || timers.hasPendingRecords()) {
+  if (imports.hasPending() || partial_own.hasPending() || timers.hasPendingRecords()) {
     JS_ReportErrorASCII(cx, "activation-runtime-import-or-timer-without-readiness");
     return false;
   }
@@ -228,7 +238,7 @@ bool root_work_drained(JSContext* cx) {
     return false;
   }
   if (!queue || !queue->empty() || queue->isDrainingStopped() ||
-      timers.hasPending() || imports.hasPending() || !accounting.rootSettled()) {
+      timers.hasPending() || imports.hasPending() || partial_own.hasPending() || !accounting.rootSettled()) {
     JS_ReportErrorASCII(cx, "activation-runtime-root-or-accepted-jobs-still-live");
     return false;
   }
@@ -276,13 +286,39 @@ bool lift_import(JSContext* cx, uint32_t id, void** result) {
 bool lift_import_value(JSContext* cx, uint32_t id, JS::MutableHandleValue value) {
   return imports.liftValue(cx,id,value);
 }
-bool finish_import(JSContext* cx, uint32_t id) { return imports.liftCompleted(cx, id); }
+bool finish_import(JSContext* cx, uint32_t id) { return partial_own.finish(cx, id); }
+
+bool begin_import_own_plans(JSContext* cx,uint32_t version,uint32_t plans,uint32_t slots) {
+  return partial_own.begin(cx,version,plans,slots);
+}
+bool bind_import_own_slot(JSContext* cx,uint32_t key,uint32_t bytes,uint32_t count,
+    uint32_t index,uint32_t offset,uint32_t resource,JS::HandleObject prototype,JS::HandleId symbol) {
+  auto* engine = api::Engine::get(cx);
+  if (!initialization_allowed(cx) || !engine || !prototype || js::IsProxy(prototype))
+    return partial_own.rejectBinding(cx);
+  auto* expected_realm = JS::GetObjectRealmOrNull(api::Engine::init_script_global());
+  if (!expected_realm || JS::GetObjectRealmOrNull(prototype) != expected_realm)
+    return partial_own.rejectBinding(cx);
+  return partial_own.bind(cx,key,bytes,count,index,offset,resource,prototype,symbol);
+}
+bool seal_import_own_plans(JSContext* cx) { return partial_own.seal(cx); }
+bool prepare_import_own_lift(JSContext* cx,uint32_t id,uint32_t key,uint32_t getter,
+    uint32_t disposer,uint32_t count) {
+  return partial_own.prepare(cx,id,key,
+    reinterpret_cast<uint64_t(*)(uint32_t)>(static_cast<uintptr_t>(getter)),
+    reinterpret_cast<bool(*)(uint32_t,uint32_t,uint32_t)>(static_cast<uintptr_t>(disposer)),count);
+}
+bool attach_import_own(JSContext* cx,uint32_t id,uint32_t slot,JS::MutableHandleObject result) {
+  return partial_own.attach(cx,id,slot,result);
+}
+bool uncertain_import_own(JSContext* cx,uint32_t id) { return partial_own.uncertain(cx,id); }
+
 bool set_import_disposer(JSContext* cx,uint32_t id,uint32_t pointer,uint32_t result_bytes) {
   return imports.setDisposer(cx,id,
       reinterpret_cast<bool(*)(uint32_t)>(static_cast<uintptr_t>(pointer)),result_bytes);
 }
-bool mark_import_delivered(JSContext* cx,uint32_t id) { return imports.delivered(cx,id); }
-bool cancel_import(JSContext* cx, uint32_t id) { return imports.cancel(cx, id); }
+bool mark_import_delivered(JSContext* cx,uint32_t id) { return partial_own.deliveredGuard(cx,id) && imports.delivered(cx,id); }
+bool cancel_import(JSContext* cx, uint32_t id) { partial_own.cancel(id); return imports.cancel(cx, id) && partial_own.collect(cx); }
 bool watch_import_borrow(JSContext* cx, uint32_t id, JS::MutableHandleObject handle) {
   return imports.watchBorrow(cx, id, handle);
 }

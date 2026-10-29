@@ -13,5 +13,6 @@ if __name__=='__main__':
     parser.add_argument('--tools',required=True,type=Path)
     parser.add_argument('--wasm-tools',default='wasm-tools')
     parser.add_argument('--wit-bindgen',default='wit-bindgen')
+    parser.add_argument('--partial-own',action='store_true',help='Closed private ABI2 static partial-OWN prerequisites only')
     args=parser.parse_args()
-    print(json.dumps(build(args.output,args.tools,wasm_tools=args.wasm_tools,bindgen=args.wit_bindgen)))
+    print(json.dumps(build(args.output,args.tools,wasm_tools=args.wasm_tools,bindgen=args.wit_bindgen,partial_own=args.partial_own)))

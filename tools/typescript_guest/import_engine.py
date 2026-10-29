@@ -4,7 +4,7 @@ import hashlib
 from tools.typescript_guest.activation_engine import identity, replace_once
 
 IMPORT_PROFILE = 'spidermonkey-activation-promises-clocks-imports-v1'
-NATIVE_IMPORT_SOURCES = ('native_import_lifecycle.h', 'native_imports.h',
+NATIVE_IMPORT_SOURCES = ('native_import_lifecycle.h', 'native_imports.h', 'native_import_partial.h',
                          'broker_import_accounting.h', 'native_import_bridge.cpp',
                          'native_import_values.h','native_import_globals.cpp',
                          'async_import_descriptor.rs','async_import_splice.rs')
@@ -69,10 +69,18 @@ def extend_native_import_source(base_source: dict[str,bytes], native: dict[str,b
     # SpiderMonkey library is unchanged. No public JS free API is installed.
     result['embedding/embedding.cpp'] = derive_import_backing_embedding(result['embedding/embedding.cpp'])
     result[install]=source
+    engine='StarlingMonkey/runtime/engine.cpp'
+    if engine not in result:
+        raise ValueError('private-own-binding-original-engine-required')
+    result[engine]=replace_once(result[engine],
+        b'  return JS_ExecuteScript(cx, script, &result);\n',
+        b'  if (!JS_ExecuteScript(cx, script, &result)) return false;\n'
+        b'  return lsf::typescript::activation::seal_import_own_plans(cx);\n',
+        'private-own-ABI2-native-initializer-completeness-before-ESM')
     result.update({'lsf/'+name:raw for name,raw in native.items()})
     return result, {'profile':IMPORT_PROFILE,'originalSource':identity(base_source),'derivedSource':identity(result),
         'nativeSource':identity(native),'compilerSourceFilesToAdd':['lsf/native_import_bridge.cpp','lsf/native_import_globals.cpp'],
-        'activationInterfaceChanged':False,'clockAuthorityGranted':False,'qualification':'unknown',
+        'privateImportBindingAbi':2,'activationInterfaceChanged':False,'clockAuthorityGranted':False,'qualification':'unknown',
         'apiSupport':'not-evaluated','signedLSFComponentQualified':False}
 
 

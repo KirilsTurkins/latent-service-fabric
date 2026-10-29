@@ -151,7 +151,7 @@ export function fuseNativeImportAwaits(source, parse) {
     node.id.type === 'Identifier' && node.id.name === '__lsfAwaitImport');
   if (!helpers.length) {
     if (source.includes('__lsfAwaitImport')) fail();
-    return source;
+    return staticOwnBindings(source, parse);
   }
   if (entries.filter(({node}) => node.type === 'Identifier' && node.name === '__lsfAwaitImport').length !== helpers.length * 2) fail();
   const anchor = 'const __lsfImports = contentGlobal.__lsfAsyncImportBridge;';
@@ -279,7 +279,7 @@ export function fuseNativeImportAwaits(source, parse) {
     previous = edit.start;
   }
   parse(source, {ecmaVersion: 'latest', sourceType: 'module'});
-  return source;
+  return staticOwnBindings(source, parse);
 }
 
 // Exact generated task metadata wrapper; preserve all contention and cleanup.
@@ -621,5 +621,171 @@ export function nativeCarrierImports(source, parse) {
     previous = edit.start;
   }
   parse(source, {ecmaVersion: 'latest', sourceType: 'module'});
+  return source;
+}
+
+
+// Compiler-private ABI 2. All source identities below come from the real WIT
+// descriptor and exact explicitResourceOwners class/no-op registry output.
+// The former is not an arbitrary progress declaration supplied by application JS.
+export function staticOwnBindings(source, parse) {
+  const fail = () => { throw new Error('selected-runtime-own-plan-shape-drift'); };
+  const anchor = 'const __lsfImports = contentGlobal.__lsfAsyncImportBridge;';
+  if (!source.includes(anchor)) {
+    if (source.includes('lsf-own-plan-v2:')) fail();
+    return source;
+  }
+  if (source.split(anchor).length !== 2 || source.includes('__lsfImports.beginOwnPlans(')) fail();
+  const comments = [], entries = [];
+  const tree = parse(source, {ecmaVersion:'latest',sourceType:'module',onComment:comments});
+  function walk(node, parents=[]) {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {for (const value of node) walk(value,parents);return;}
+    if (typeof node.type !== 'string') return;
+    entries.push({node,parents});
+    for (const value of Object.values(node)) if (value && typeof value==='object') walk(value,[...parents,node]);
+  }
+  walk(tree);
+  const id = (node,name) => node?.type==='Identifier' && node.name===name;
+  const member = (node,object,name) => node?.type==='MemberExpression' && !node.computed &&
+    id(node.object,object) && id(node.property,name);
+  const literal = (node,value) => node?.type==='Literal' && node.value===value;
+  const u32 = value => Number.isInteger(value) && value>=0 && value<=0xffffffff;
+  const text = node => source.slice(node.start,node.end);
+  const declarators = name => entries.filter(({node})=>node.type==='VariableDeclarator' && id(node.id,name));
+  const keys = (value,names) => value && typeof value==='object' && !Array.isArray(value) &&
+    Object.keys(value).join(',')===names;
+  const functionNode = node=>['FunctionDeclaration','FunctionExpression','ArrowFunctionExpression'].includes(node.type);
+  const topLevel = entry => entry.parents.at(-1)?.type==='VariableDeclaration' &&
+    entry.parents.at(-1).kind==='const' && entry.parents.at(-2)?.type==='Program';
+  const symbol = declarators('symbolRscHandle');
+  const validSymbol = symbol.length===1 && topLevel(symbol[0]) && symbol[0].node.init?.type==='CallExpression' &&
+    id(symbol[0].node.init.callee,'Symbol') && symbol[0].node.init.arguments.length===1 &&
+    literal(symbol[0].node.init.arguments[0],'handle');
+  const candidates=[],usedFunctions=new Set();
+  for (const marker of comments.filter(c=>c.value.trim().startsWith('lsf-own-plan-v2:'))) {
+    let plan;
+    try {plan=JSON.parse(marker.value.trim().slice('lsf-own-plan-v2:'.length));} catch {fail();}
+    if (!keys(plan,'key,bytes,raw,slots') || !u32(plan.key) || !u32(plan.bytes) ||
+        ![1,5].includes(plan.raw) || !Array.isArray(plan.slots) || !plan.slots.length || plan.slots.length>64 ||
+        plan.slots.some(slot=>!keys(slot,'offset,resource,registry,class') || !u32(slot.offset) ||
+          slot.offset+4>plan.bytes || !u32(slot.resource) ||
+          !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(slot.registry) || !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(slot.class)) ||
+        new Set(plan.slots.map(slot=>slot.offset)).size!==plan.slots.length) fail();
+    const functions=entries.filter(({node})=>functionNode(node) && node.start<marker.start && node.end>marker.end);
+    const fn=functions.sort((a,b)=>(a.node.end-a.node.start)-(b.node.end-b.node.start))[0]?.node;
+    if (!fn?.async || fn.body.type!=='BlockStatement' || usedFunctions.has(fn)) fail();
+    usedFunctions.add(fn);
+    const inside=entries.filter(({node})=>node.start>=fn.start && node.end<=fn.end);
+    const carriers=inside.filter(({node})=>node.type==='VariableDeclarator' && node.id.type==='Identifier' &&
+      node.init?.type==='CallExpression' && member(node.init.callee,'__lsfImports','lift') &&
+      node.init.arguments.length===1 && node.init.arguments[0].type==='AwaitExpression');
+    if (carriers.length!==1) fail();
+    const carrier=carriers[0].node.id.name;
+    let supported=validSymbol;
+    for (const slot of plan.slots) {
+      const registries=declarators(slot.registry);
+      const registry=registries[0]?.node.init;
+      const match=/^finalizationRegistry_import\$([A-Za-z0-9_$]+)\$([A-Za-z0-9_]+)$/.exec(slot.registry);
+      if (registries.length!==1 || !topLevel(registries[0]) || registry?.type!=='ObjectExpression' || registry.properties.length!==2 ||
+          registry.properties.some((p,i)=>p.type!=='Property' || p.computed || !p.method ||
+            !id(p.key,['register','unregister'][i]) || p.kind!=='init' ||
+            p.value.type!=='FunctionExpression' || p.value.async || p.value.generator ||
+            p.value.params.length || p.value.body.body.length) || !match) {supported=false;break;}
+      const name='import_'+match[1]+'$'+match[2].replace(/(^|_)([a-z])/g,(_,__,c)=>c.toUpperCase());
+      const drop='$resource_import$'+match[1]+'$drop$'+match[2];
+      const expected=`class ${name} {
+  constructor() { throw new TypeError('host-resource-cannot-be-constructed'); }
+  [symbolDispose]() {
+    const handle = this[symbolRscHandle];
+    if (handle === undefined) return;
+    this[symbolRscHandle] = undefined;
+    ${drop}(handle);
+  }
+}`;
+      const classes=entries.filter(({node})=>node.type==='ClassDeclaration' && id(node.id,slot.class));
+      if (slot.class!==name || classes.length!==1 || classes[0].parents.at(-1)?.type!=='Program' || text(classes[0].node)!==expected) {supported=false;break;}
+    }
+    const created=inside.filter(({node})=>node.type==='VariableDeclarator' && node.id.type==='Identifier' &&
+      node.init?.type==='ConditionalExpression' && node.init.test?.type==='BinaryExpression' &&
+      node.init.test.left?.type==='MetaProperty' && id(node.init.test.left.meta,'new') &&
+      id(node.init.test.left.property,'target'));
+    if (created.length!==plan.slots.length) supported=false;
+    const changes=[];
+    if (supported) for (let index=0;index<plan.slots.length;++index) {
+      const slot=plan.slots[index],entry=created[index],node=entry.node,branch=node.init;
+      const declaration=entry.parents.at(-1),block=entry.parents.at(-2);
+      if (declaration?.type!=='VariableDeclaration' || declaration.declarations.length!==1 ||
+          declaration.kind!=='var' || block?.type!=='BlockStatement') {supported=false;break;}
+      const position=block.body.indexOf(declaration),define=block.body[position+1],register=block.body[position+2];
+      const defineCall=define?.type==='ExpressionStatement'?define.expression:null;
+      const registerCall=register?.type==='ExpressionStatement'?register.expression:null;
+      const create=branch.alternate,property=defineCall?.arguments?.[2];
+      if (branch.test.operator!=='===' || !id(branch.test.right,slot.class) || branch.consequent.type!=='ThisExpression' ||
+          create?.type!=='CallExpression' || !member(create.callee,'Object','create') || create.arguments.length!==1 ||
+          !member(create.arguments[0],slot.class,'prototype') || defineCall?.type!=='CallExpression' ||
+          !member(defineCall.callee,'Object','defineProperty') || defineCall.arguments.length!==3 ||
+          !id(defineCall.arguments[0],node.id.name) || !id(defineCall.arguments[1],'symbolRscHandle') ||
+          property?.type!=='ObjectExpression' || property.properties.length!==2 ||
+          property.properties.some((p,i)=>p.type!=='Property' || p.computed || p.method ||
+            !id(p.key,['writable','value'][i]) || p.kind!=='init') ||
+          !literal(property.properties[0].value,true) || property.properties[1].value.type!=='Identifier' ||
+          registerCall?.type!=='CallExpression' || !member(registerCall.callee,slot.registry,'register') ||
+          registerCall.arguments.length!==3 || !id(registerCall.arguments[0],node.id.name) ||
+          !id(registerCall.arguments[1],property.properties[1].value.name) || !id(registerCall.arguments[2],node.id.name)) {
+        supported=false;break;
+      }
+      const handle=property.properties[1].value.name;
+      const sources=inside.filter(({node:n})=>n.type==='VariableDeclarator' && id(n.id,handle));
+      const load=sources[0]?.node.init;
+      const address=node=>id(node,carrier)?slot.offset===0:
+        node?.type==='BinaryExpression' && node.operator==='+' && id(node.left,carrier) && literal(node.right,slot.offset);
+      const originalLoad=plan.raw===1 ? slot.offset===0 && id(load,carrier) :
+        load?.type==='CallExpression' && load.callee.type==='MemberExpression' && !load.callee.computed &&
+        id(load.callee.property,'getInt32') && load.callee.object.type==='CallExpression' &&
+        id(load.callee.object.callee,'dataView') && load.callee.object.arguments.length===1 &&
+        id(load.callee.object.arguments[0],'$memory') && load.arguments.length===2 &&
+        address(load.arguments[0]) && literal(load.arguments[1],true);
+      if (sources.length!==1 || !originalLoad || sources[0].node.start<carriers[0].node.end ||
+          sources[0].parents.at(-1)!==block.body[position-1] ||
+          sources[0].node.end>declaration.start) {supported=false;break;}
+      // Keep the original constructor-this behavior, but declare uncertainty
+      // BEFORE a Proxy/user callback could attach/escape then throw.
+      changes.push({start:declaration.start,end:register.end,text:
+        `var ${node.id.name};\nif (__lsfOwnLegacy || ${text(branch.test)}) {\n`+
+        `  __lsfOwnLegacy = true;\n  __lsfImports.uncertainOwn(__lsfImportId);\n  ${node.id.name} = ${text(branch)};\n`+
+        text(define)+'\n'+text(register)+`\n} else {\n  ${node.id.name} = __lsfImports.attachOwn(__lsfImportId, ${index});\n}`});
+    }
+    if (inside.some(({node})=>id(node,'__lsfOwnLegacy'))) fail();
+    changes.push({start:fn.body.start+1,end:fn.body.start+1,text:'\nlet __lsfOwnLegacy = false;\n'});
+    candidates.push({plan,changes,supported});
+  }
+  // Hashes are join keys, NOT authority: disable every conflicting complete
+  // plan, rather than using a collision to bind a different resource/layout.
+  const groups=new Map();
+  for (const candidate of candidates) {
+    const group=groups.get(candidate.plan.key)||[];group.push(candidate);groups.set(candidate.plan.key,group);
+  }
+  const plans=[],edits=[];
+  for (const group of groups.values()) {
+    if (plans.length===256 || group.some(c=>!c.supported || JSON.stringify(c.plan)!==JSON.stringify(group[0].plan))) continue;
+    plans.push(group[0].plan);
+    for (const candidate of group) edits.push(...candidate.changes);
+  }
+  edits.sort((a,b)=>b.start-a.start);
+  let previous=source.length;
+  for (const edit of edits) {
+    if (edit.end>previous) fail();
+    source=source.slice(0,edit.start)+edit.text+source.slice(edit.end);previous=edit.start;
+  }
+  // This executes in the original synchronous initialization SCRIPT, after all
+  // exact prototypes/symbols exist, before native sealing and application ESM.
+  let binding=`\n__lsfImports.beginOwnPlans(2, ${plans.length}, ${plans.reduce((n,p)=>n+p.slots.length,0)});\n`;
+  for (const plan of plans) for (let index=0;index<plan.slots.length;++index) {
+    const slot=plan.slots[index];
+    binding+=`__lsfImports.bindOwnSlot(${plan.key}, ${plan.bytes}, ${plan.slots.length}, ${index}, ${slot.offset}, ${slot.resource}, ${slot.class}.prototype, symbolRscHandle);\n`;
+  }
+  source+=binding;
+  parse(source,{ecmaVersion:'latest',sourceType:'module'});
   return source;
 }
