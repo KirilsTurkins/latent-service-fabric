@@ -299,6 +299,7 @@ class Compiler:
                            'linkerFlags': ['-Wl,--strip-debug']}
             (self.commands.output / 'c-original-core.json').write_text(
                 json.dumps(observation, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+            (self.commands.output / 'c-original-core.wasm').write_bytes(payload)
         encoded_core = core
         if threaded:
             derived = destination / 'c-threading'
