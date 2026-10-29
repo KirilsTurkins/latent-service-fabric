@@ -691,6 +691,17 @@ static int partial_main(int argc,char** argv) {
   JS::Prefs::set_use_js_microtask_queue(false);
   if(!JS_Init())return 3;
   JSContext* cx=JS_NewContext(32*1024*1024);if(!cx)return 4;
+  // Failure-only, fixed numeric fixture stages. No exception conversion, JS
+  // call, GC, payload/handle, raw pointer or stack inspection is performed.
+  auto failed = [&](unsigned stage) {
+    if (positive) std::fprintf(stderr,
+      "LSFPARTIALFAIL1 stage=%u counts=%u,%u,%u,%u,%u,%u,%u,%u jsPending=%u drops=%u admissions=%u acks=%u flags=%u\n",
+      stage,counts[0],counts[1],counts[2],counts[3],counts[4],counts[5],counts[6],counts[7],
+      unsigned(JS_IsExceptionPending(cx)),partial_drop_count,native_admissions,native_acknowledgements,
+      unsigned(partial_ack_observed) | unsigned(partial_node_deleted)<<1 |
+        unsigned(partial_record_deleted)<<2 | unsigned(partial_physical_order)<<3);
+    return 10;
+  };
   int result=1;unsigned retained=0;
   // Sweep/finalize hook owners outlive JS_DestroyContext, as in the original
   // diagnostic. Only the per-manager persistent plan roots die before it.
@@ -717,7 +728,7 @@ static int partial_main(int argc,char** argv) {
     JS::RootedValue value(cx),symbol_value(cx);JS::RootedObject prototype(cx),promise(cx),first(cx);
     // A real native object/symbol/prototype, kept in this original Store.
     if(!JS_DefineFunction(cx,global,"partialDispose",partial_dispose,1,0))return 9;
-    if(!evaluate(cx,"const symbolRscHandle=Symbol('handle');const symbolDispose=Symbol.dispose;"
+    if(!evaluate(cx,"const symbolRscHandle=Symbol('handle');const symbolDispose=Symbol.dispose || Symbol.for('dispose');"
         "class ExplicitOwner {constructor(){throw new Error('not called')}"
         "[symbolDispose](){const h=this[symbolRscHandle];if(h===undefined)return;"
         "this[symbolRscHandle]=undefined;partialDispose(h);}};ExplicitOwner.prototype;",&value) ||
@@ -731,15 +742,15 @@ static int partial_main(int argc,char** argv) {
       const auto before_zero=native_admissions;
       {
         PartialOwnLifts zero(imports,partial_init);
-        if(!zero.begin(cx,2,0,0) || !zero.seal(cx) || zero.hasPending() || native_admissions!=before_zero)return 10;
+        if(!zero.begin(cx,2,0,0) || !zero.seal(cx) || zero.hasPending() || native_admissions!=before_zero)return failed(1);
       }
       PartialOwnLifts partial(imports,partial_init);
-      if(!partial_bind(cx,partial,prototype,symbol))return 10;
+      if(!partial_bind(cx,partial,prototype,symbol))return failed(2);
       partial_initializing=false;
       uint32_t id=0;
       if(refusal) {
         if(!imports.reserve(cx,8,0,ImportRawResult::Pointer,JS::HandleValueArray::empty(),id) ||
-            !imports.setDisposer(cx,id,partial_drop_all,8))return 10;
+            !imports.setDisposer(cx,id,partial_drop_all,8))return failed(3);
         const auto admitted=native_admissions;
         limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE];
         const bool denied=!partial.prepare(cx,id,12,partial_getter,partial_drop_frame,2);
@@ -749,42 +760,42 @@ static int partial_main(int argc,char** argv) {
         JS_ClearPendingException(cx);
         // No handoff is assumed after refusal; the original scope stays closed.
       } else {
-        if(!partial_call(cx,imports,partial,id,&promise))return 10;
+        if(!partial_call(cx,imports,partial,id,&promise))return failed(4);
         const Token sidecar=PartialOwnLiftControls::owner(partial,id);
-        if(!partial.attach(cx,id,0,&first))return 10;
+        if(!partial.attach(cx,id,0,&first))return failed(5);
         JS::RootedValue handle(cx);
-        if(!JS_GetPropertyById(cx,first,symbol,&handle)||!handle.isInt32()||static_cast<uint32_t>(handle.toInt32())!=0x8000002au)return 10;
+        if(!JS_GetPropertyById(cx,first,symbol,&handle)||!handle.isInt32()||static_cast<uint32_t>(handle.toInt32())!=0x8000002au)return failed(6);
         if(positive) {
           // The second canonical OWN slot is the ONLY failed-lift remainder.
           if(!partial.finish(cx,id) || partial_drop_count!=1 || partial_dropped[0]!=43 ||
               imports.hasPending() || partial.hasPending() || owners[sidecar.id].live ||
-              counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]!=0)return 10;
-          if(!JS_GetPropertyById(cx,first,symbol,&handle)||static_cast<uint32_t>(handle.toInt32())!=0x8000002au)return 10;
+              counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]!=0)return failed(7);
+          if(!JS_GetPropertyById(cx,first,symbol,&handle)||static_cast<uint32_t>(handle.toInt32())!=0x8000002au)return failed(8);
           // Stale finish cannot destroy or refund the already transferred first.
-          if(!partial.finish(cx,id) || partial_drop_count!=1)return 10;
+          if(!partial.finish(cx,id) || partial_drop_count!=1)return failed(9);
           promise=nullptr;collect(cx);
-          if(!promises.checkpoint(cx)||!reactions.checkpoint(cx))return 10;
+          if(!promises.checkpoint(cx)||!reactions.checkpoint(cx))return failed(10);
           uint32_t fresh=0;
           JS::RootedObject fresh_first(cx),fresh_second(cx);
           if(!partial_call(cx,imports,partial,fresh,&promise) || fresh<=id ||
               !partial.attach(cx,fresh,0,&fresh_first) || !partial.attach(cx,fresh,1,&fresh_second) ||
               !partial.deliveredGuard(cx,fresh) || !imports.delivered(cx,fresh) ||
               !partial.finish(cx,fresh) || imports.hasPending() || partial.hasPending() ||
-              partial_drop_count!=1)return 10;
+              partial_drop_count!=1)return failed(11);
           if(!partial_explicit_dispose(cx,first) || !partial_explicit_dispose(cx,first) ||
               !partial_explicit_dispose(cx,fresh_first) || !partial_explicit_dispose(cx,fresh_second) ||
               partial_drop_count!=4 || partial_dropped[1]!=0x8000002au || partial_dropped[2]!=44 || partial_dropped[3]!=45)
-            return 10;
+            return failed(12);
           first=nullptr;fresh_first=nullptr;fresh_second=nullptr;promise=nullptr;
           collect(cx);
-          if(!promises.checkpoint(cx)||!reactions.checkpoint(cx))return 10;
+          if(!promises.checkpoint(cx)||!reactions.checkpoint(cx))return failed(13);
           // Full positive phases released every original Native/Result owner
           // before this separate, intentionally ambiguous late ACK boundary.
           if(counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE] ||
-              counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT])return 10;
+              counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT])return failed(14);
           uint32_t ambiguous=0;JS::RootedObject retained_wrapper(cx);
           if(!partial_call(cx,imports,partial,ambiguous,&promise) ||
-              !partial.attach(cx,ambiguous,0,&retained_wrapper))return 10;
+              !partial.attach(cx,ambiguous,0,&retained_wrapper))return failed(15);
           const Token original_ack_owner=PartialOwnLiftControls::owner(partial,ambiguous);
           partial_ack_instance=&partial;partial_ack_context=cx;partial_ack_reenter=true;
           const bool refused=!partial.finish(cx,ambiguous);
@@ -795,7 +806,7 @@ static int partial_main(int argc,char** argv) {
               !partial_record_deleted || !partial_physical_order || imports.hasPending() ||
               !partial.hasPending() || !owners[original_ack_owner.id].live ||
               PartialOwnLiftControls::failedOwner(partial).id!=original_ack_owner.id ||
-              partial_drop_count!=5 || partial_dropped[4]!=47 || !partial_handles[46])return 10;
+              partial_drop_count!=5 || partial_dropped[4]!=47 || !partial_handles[46])return failed(16);
           const bool sealed=!partial.begin(cx,2,0,0);
           JS_ClearPendingException(cx);
           result=(host_in_gc||!sealed)?1:0;
@@ -805,12 +816,12 @@ static int partial_main(int argc,char** argv) {
           // malformed duplicate OWN handles must fail BEFORE any wrapper gets
           // either handle; neither the original nor its alias is dropped.
           uint32_t malformed=0;JS::RootedObject malformed_promise(cx),rejected_duplicate(cx);
-          if(!partial_call(cx,imports,partial,malformed,&malformed_promise))return 10;
+          if(!partial_call(cx,imports,partial,malformed,&malformed_promise))return failed(17);
           const Token duplicate_owner=PartialOwnLiftControls::owner(partial,malformed);
           partial_frame[1]=partial_frame[0];
           const bool duplicate_frame=!partial.attach(cx,malformed,0,&rejected_duplicate);
           JS_ClearPendingException(cx);
-          if(!duplicate_frame || rejected_duplicate || partial_drop_count || !owners[duplicate_owner.id].live)return 10;
+          if(!duplicate_frame || rejected_duplicate || partial_drop_count || !owners[duplicate_owner.id].live)return failed(18);
           Imports foreign(jobs,native,readiness);PartialOwnLifts other(foreign,partial_init);
           JS::RootedObject rejected(cx);
           const bool foreign_denied=!other.attach(cx,id,1,&rejected);

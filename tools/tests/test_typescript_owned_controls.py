@@ -164,3 +164,53 @@ class TypeScriptOwnedControlsTests(unittest.TestCase):
                 controls.native_build.library_recipe_equivalence(path,source,identity)
         self.assertIn('tools/typescript_guest/native_build.py',controls.PARTIAL_INPUTS)
 
+
+    def test_z_prepared_fixture_refuses_wrong_origin_prefix_and_compiled_source_drift(self):
+        from copy import deepcopy
+        from tools.typescript_guest import owned_result_library as prepared
+        run={'id':prepared.PREPARED_RUN,'head_sha':prepared.PREPARED_HEAD,
+             'path':'.github/workflows/typescript-owned-results.yml','event':'push',
+             'status':'completed','conclusion':'failure'}
+        job={'id':prepared.PREPARED_JOB,'run_id':prepared.PREPARED_RUN,
+             'head_sha':prepared.PREPARED_HEAD,'status':'completed','conclusion':'failure'}
+        artifact={'id':prepared.PREPARED_ARTIFACT,'expired':False,
+                  'size_in_bytes':prepared.PREPARED_BYTES,'digest':'sha256:'+prepared.PREPARED_SHA,
+                  'workflow_run':{'id':prepared.PREPARED_RUN,'head_sha':prepared.PREPARED_HEAD}}
+        prepared.prepared_metadata(run,job,artifact)
+        for index,key,value in [(0,'head_sha','0'*40),(0,'conclusion','success'),
+                                (1,'run_id',1),(1,'head_sha','0'*40),
+                                (2,'expired',True),(2,'size_in_bytes',1),
+                                (2,'digest','sha256:'+'0'*64)]:
+            rows=deepcopy([run,job,artifact]);rows[index][key]=value
+            with self.assertRaises(ValueError):prepared.prepared_metadata(*rows)
+        origin={'GITHUB_REPOSITORY':'KirilsTurkins/latent-service-fabric',
+                'GITHUB_SHA':prepared.PREPARED_HEAD,'GITHUB_WORKFLOW_SHA':prepared.PREPARED_HEAD,
+                'GITHUB_RUN_ID':str(prepared.PREPARED_RUN),'GITHUB_EVENT_NAME':'push',
+                'GITHUB_REF':prepared.PREPARED_BRANCH}
+        original={'schemaVersion':'latent.typescript.partial-own-prerequisites.v2',
+                  'status':'failed','stage':'actual-native-cases',
+                  'reason':'own-controls-command-failed:'+prepared.PREPARED_FAILED_CASE,
+                  'sourceCommit':prepared.PREPARED_HEAD,'sourceTree':prepared.PREPARED_TREE,
+                  'privateImportBindingAbi':2,'qualification':'unknown','apiSupport':'not-evaluated',
+                  'nativeRows':[],'workflowOrigin':origin,
+                  'commands':[{'label':name,'returncode':0} for name in prepared.PREPARED_PREFIX]+
+                             [{'label':prepared.PREPARED_FAILED_CASE,'returncode':10}]}
+        for key in ('canonicalOwnComponentExecuted','tableReuseQualified','signedExecution',
+                    'physicalProviderQualified','wholeCostQualification'):original[key]=False
+        prepared.prepared_prefix(original)
+        for key,value in [('status','passed'),('stage','fresh-normal-engine'),('sourceTree','0'*40),
+                          ('nativeRows',[{}]),('wholeCostQualification',True)]:
+            changed=deepcopy(original);changed[key]=value
+            with self.assertRaises(ValueError):prepared.prepared_prefix(changed)
+        for index,code in [(0,1),(0,True),(-1,0),(-1,True)]:
+            changed=deepcopy(original);changed['commands'][index]['returncode']=code
+            with self.assertRaises(ValueError):prepared.prepared_prefix(changed)
+        changed=deepcopy(original);changed['commands'].pop()
+        with self.assertRaises(ValueError):prepared.prepared_prefix(changed)
+        # Actual current compiled-source bytes, with no mutation of ROOT.
+        name='tools/typescript_guest/native_build.py'
+        pin=prepared.file_identity(controls.ROOT/name)
+        prepared.prepared_recipe({name:pin},[name])
+        with self.assertRaises(ValueError):prepared.prepared_recipe({name:dict(pin,bytes=1)},[name])
+        with self.assertRaises(ValueError):prepared.prepared_recipe({name:pin,'extra':pin},[name])
+        with self.assertRaises(ValueError):prepared.prepared_recipe({},[name])

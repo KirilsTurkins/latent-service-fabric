@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   native-prerequisites:
-    name: Fresh normal OWN compiler engine and actual native controls
+    name: ${{ github.ref == 'refs/heads/feat/sdk-745-partial-own-20261029' && 'Prepared normal inputs and four fresh OWN native cases' || 'Fresh normal OWN compiler engine and actual native controls' }}
     runs-on: ubuntu-24.04
     # Covers checkout, setup, all commands and artifact retention together.
     timeout-minutes: 90
@@ -48,6 +48,7 @@ jobs:
           node-version: 24.19.0
           package-manager-cache: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        if: github.ref != 'refs/heads/feat/sdk-745-partial-own-20261029'
         with:
           targets: wasm32-wasip1
       - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
@@ -59,18 +60,19 @@ jobs:
         if: github.ref != 'refs/heads/feat/sdk-745-partial-own-20261029'
         run: git fetch --no-tags --depth=1 origin 17b2558bf08f2221657a5d2866b00218fb597d9e
       - name: Install the normal pinned bindings generator
+        if: github.ref != 'refs/heads/feat/sdk-745-partial-own-20261029'
         run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/typescript-own-bindgen"
       - name: Install the normal locked public compiler and parser
+        if: github.ref != 'refs/heads/feat/sdk-745-partial-own-20261029'
         run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-own-tools"
-      - name: Reconstruct normal library and build fresh compiler engine and native controls
+      - name: ${{ github.ref == 'refs/heads/feat/sdk-745-partial-own-20261029' && 'Authenticate prepared inputs and rebuild only the native fixture' || 'Reconstruct normal library and build fresh compiler engine and native controls' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ "$GITHUB_REF" = 'refs/heads/feat/sdk-745-partial-own-20261029' ]; then
             python3 tools/qualify_typescript_owned_results.py \
-              --partial-own \
+              --prepared-native \
               --tools "$RUNNER_TEMP/typescript-own-tools" \
-              --wit-bindgen "$RUNNER_TEMP/typescript-own-bindgen/wit-bindgen" \
               --output "$RUNNER_TEMP/typescript-own-controls"
           else
             python3 tools/qualify_typescript_owned_results.py \
