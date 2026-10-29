@@ -82,7 +82,7 @@ static void *sibling_read(void *unused) {
     return NULL;
 }
 
-bool exports_tests_libfetch_api_run(probe_string_t *input, probe_string_t *result,
+bool exports_examples_libfetch_api_run(probe_string_t *input, probe_string_t *result,
                                     probe_string_t *error) {
     if (!input->len || input->len > 8192 || memchr(input->ptr, 0, input->len)) {
         probe_string_dup(error, "invalid-input"); probe_string_free(input); return false;

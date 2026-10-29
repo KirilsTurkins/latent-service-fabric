@@ -61,8 +61,8 @@ def observation(value: str, children: int, *, synchronized: bool = False) -> dic
 
 
 HTTP_FIXTURE = 'sdk/c-guest/runtime-fixtures/libfetch/'
-HTTP_WORLD = 'tests:libfetch/probe@0.1.0'
-HTTP_API = 'tests:libfetch/api@0.1.0'
+HTTP_WORLD = 'examples:libfetch/probe@0.1.0'
+HTTP_API = 'examples:libfetch/api@0.1.0'
 HTTP_CASES = ('normal', 'not-found', 'denied', 'early-close', 'sibling')
 
 
