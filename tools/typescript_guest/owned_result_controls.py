@@ -144,6 +144,7 @@ PARTIAL_NATIVE_CASES=(
 )
 # Exact selected source, generated fixtures and real bundle module graph; old RECIPE is unchanged.
 PARTIAL_INPUTS=(
+    'tools/typescript_guest/native_build.py',
     'tools/tests/test_typescript_native_carrier_scheduling.py',
     'tools/tests/test_typescript_node_net.py',
     'tools/tests/fixtures/typescript_node_net_generated.json',

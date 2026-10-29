@@ -139,3 +139,28 @@ class TypeScriptOwnedControlsTests(unittest.TestCase):
                             raw.replace(b'0 ignored',b'1 ignored')]:
                 with self.assertRaises(ValueError):controls.partial_rust_case(changed,case)
         with self.assertRaises(ValueError):controls.partial_rust_case(b'',controls.PARTIAL_RUST_CASES[0])
+        # Authenticate the actual current source and full historical inverse;
+        # no producer receipt, current ROOT file or unrelated recipe is changed.
+        name='tools/typescript_guest/activation_engine.py'
+        raw=(controls.ROOT/name).read_bytes()
+        old={'bytes':14962,'sha256':'sha256:5e576fd983990296b18a6ac743a1bca42d22c6a521f89a14c1e2221177a9b7a5'}
+        proof=controls.native_build.library_recipe_equivalence(name,raw,old)
+        self.assertEqual(proof['current'],controls.native_build.file_bytes(raw))
+        self.assertEqual(proof['inverseIdentity'],old)
+        self.assertFalse(proof['historicalReceiptReissued'])
+        before=proof['inverse']['before'].encode();after=proof['inverse']['after'].encode()
+        historical=raw.replace(after,before,1)
+        self.assertEqual(controls.native_build.file_bytes(historical),old)
+        self.assertIsNone(controls.native_build.library_recipe_equivalence(name,historical,old))
+        self.assertIsNone(controls.native_build.library_recipe_equivalence(name,raw,proof['current']))
+        for path,source,identity in [
+                ('tools/typescript_guest/promise_library.py',raw,old),
+                (name,raw+b' ',old),(name,raw.replace(after,before),proof['current']),
+                (name,raw.replace(after,after+after),old),
+                (name,raw.replace(b'FIREFOX_COMMIT',b'FIREFOX_COMMIX',1),old),
+                (name,raw,dict(old,bytes=14963)),
+                (name,raw,dict(old,sha256='sha256:'+'0'*64))]:
+            with self.assertRaisesRegex(ValueError,'typescript-native-library-recipe-drift'):
+                controls.native_build.library_recipe_equivalence(path,source,identity)
+        self.assertIn('tools/typescript_guest/native_build.py',controls.PARTIAL_INPUTS)
+

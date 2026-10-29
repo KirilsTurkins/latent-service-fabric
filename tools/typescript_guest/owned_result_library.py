@@ -199,6 +199,8 @@ def reconstruct(output: Path, run, deadline: float) -> tuple[Path,dict]:
                         'conclusion':'failure; completed normal library only'},
             'producerArchive':file_identity(archive,producer.ARCHIVE_BYTES),'originalLibraryReceipt':file_identity(library/'library-build.json'),
             'originalLibrary':normal[2],'restoredSupportingObjects':objects,'originalMemberSelection':selection,
+            'libraryRecipeEquivalences':{name:proof for name,identity in normal[0]['recipe'].items()
+                if (proof := native_build.library_recipe_equivalence(name,read_file(ROOT/name),identity)) is not None},
             'newFixedAcquisitions':acquisitions,'normalValidatorPassed':True,
             'engineReused':False,'receiptReissued':False,'machBuildCount':0,'firefoxExtracted':False}
     write_json(output/'LIBRARY-RECONSTRUCTION.json',record)
