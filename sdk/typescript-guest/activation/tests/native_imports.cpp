@@ -661,21 +661,22 @@ bool partial_call(JSContext* cx,Imports& imports,PartialOwnLifts& partial,uint32
                   JS::MutableHandleObject promise) {
   if(!imports.reserve(cx,8,0,ImportRawResult::Pointer,JS::HandleValueArray::empty(),id) ||
       !imports.setDisposer(cx,id,partial_drop_all,8) ||
-      !partial.prepare(cx,id,12,partial_getter,partial_drop_frame,2) ||
-      !imports.beginLowering(cx,id))return false;
+      !partial.prepare(cx,id,12,partial_getter,partial_drop_frame,2))return false;
   partial_node_address=PartialOwnLiftControls::node(partial,id);
   partial_record_address=PartialOwnLiftControls::record(partial,id);
   partial_node_owner=PartialOwnLiftControls::owner(partial,id).id;
   partial_record_owner=PartialOwnLiftControls::recordOwner(partial,id).id;
   partial_node_deleted=partial_record_deleted=false;
   partial_frame=static_cast<uint32_t*>(imports.resultBuffer(id));
+  if(!partial_frame)return false; // Reserved-only API; never write a null Wasm address.
   partial_frame[0]=partial_next_handle++;partial_frame[1]=partial_next_handle++;
   if(partial_frame[0]==42)partial_frame[0]|=0x80000000u;
   for(unsigned index=0;index<2;++index) {
     const auto slot=partial_frame[index]&0x7fffffffu;
     partial_handles[slot]=true;partial_handle_identity[slot]=partial_frame[index];
   }
-  if(!imports.started(cx,id,JOBS_SUBTASK_RETURNED,promise) || !imports.turn(cx))return false;
+  if(!imports.beginLowering(cx,id) ||
+      !imports.started(cx,id,JOBS_SUBTASK_RETURNED,promise) || !imports.turn(cx))return false;
   JS::RootedValue raw(cx);
   return imports.liftValue(cx,id,&raw);
 }
