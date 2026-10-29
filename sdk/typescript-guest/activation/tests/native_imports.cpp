@@ -3,10 +3,14 @@
 // fixture does not qualify a real LSF host or signed Component Model guest.
 #include "../native_timers.h"
 #include "../native_imports.h"
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+#include "../native_import_partial.h"
+#endif
 #include "../promise_accounting.h"
 #include "../promise_hooks.h"
 #include "../reaction_records.h"
 #include "js/CompilationAndEvaluation.h"
+#include "js/CallAndConstruct.h"
 #include "js/Conversions.h"
 #include "js/GCAPI.h"
 #include "js/Initialization.h"
@@ -99,6 +103,24 @@ void note_settle(uint64_t id) {
 }
 #endif
 
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+const void* partial_node_address=nullptr;
+const void* partial_record_address=nullptr;
+uint64_t partial_node_owner=0,partial_record_owner=0;
+bool partial_node_deleted=false,partial_record_deleted=false,partial_physical_order=true;
+PartialOwnLifts* partial_ack_instance=nullptr;
+JSContext* partial_ack_context=nullptr;
+bool partial_ack_reenter=false,partial_ack_observed=false;
+void partial_note_deleted(void* pointer) {
+  if(pointer==partial_node_address)partial_node_deleted=true;
+  if(pointer==partial_record_address)partial_record_deleted=true;
+}
+void partial_note_settle(uint64_t id) {
+  if(id==partial_record_owner)partial_physical_order=partial_physical_order&&partial_record_deleted;
+  if(id==partial_node_owner)partial_physical_order=partial_physical_order&&partial_record_deleted&&partial_node_deleted;
+}
+#endif
+
 bool valid(const latent_runtime_activation_token_t* token) {
   return token && token->generation == 1 && token->id < next_owner && owners[token->id].live;
 }
@@ -137,13 +159,18 @@ void ready(jobs_event_t* event) {
 }
 }
 
-#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+#if defined(LSF_TYPESCRIPT_BORROW_CONTROLS) || defined(LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS)
 // Linker-only observation AFTER all members, including persistent roots, have
 // destructed. Forward to the real selected allocator; never substitute free.
 // The diagnostic compiles with -fno-sized-deallocation and --wrap=_ZdlPv.
 extern "C" void __real__ZdlPv(void*) noexcept;
 extern "C" void __wrap__ZdlPv(void* pointer) noexcept {
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
   note_deleted(pointer);
+#endif
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+  partial_note_deleted(pointer);
+#endif
   __real__ZdlPv(pointer);
 }
 #endif
@@ -190,6 +217,17 @@ bool latent_runtime_activation_settle(latent_runtime_activation_token_t* owner,
   note_settle(owner->id);
   if(owner->id==refuse_owner) {
     ++exact_refusals;
+    return failed(error,LATENT_RUNTIME_ACTIVATION_ERROR_UNAVAILABLE);
+  }
+#endif
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+  partial_note_settle(owner->id);
+  if(partial_ack_reenter && owner->id==partial_node_owner) {
+    partial_ack_reenter=false;partial_ack_observed=true;
+    if(!partial_ack_instance || !partial_ack_context || partial_ack_instance->collect(partial_ack_context))
+      __builtin_trap();
+    // Real original payer refuses ACK after nested collection is refused.
+    // No source counter/ticket is reset or fabricated as complete.
     return failed(error,LATENT_RUNTIME_ACTIVATION_ERROR_UNAVAILABLE);
   }
 #endif
@@ -554,7 +592,284 @@ static bool borrow_refusal(JSContext* cx,BrokerAccounting& jobs,BrokerPromiseAcc
 }
 #endif
 
+
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+namespace lsf::typescript::activation {
+struct PartialOwnLiftControls {
+  static const void* node(PartialOwnLifts& p,uint32_t id) {return p.find(id);}
+  static Token owner(PartialOwnLifts& p,uint32_t id) {return p.find(id)->owner.token;}
+  static const void* record(PartialOwnLifts& p,uint32_t id) {return p.imports_.find(id);}
+  static Token recordOwner(PartialOwnLifts& p,uint32_t id) {return p.imports_.find(id)->record_owner.token;}
+  static Token failedOwner(PartialOwnLifts& p) {return p.failed_owner_.token;}
+  static size_t nodeBytes() {return sizeof(PartialOwnLifts::Lift);}
+  static size_t planBytes() {return sizeof(PartialOwnLifts::Plan);}
+  static size_t slotBytes() {return sizeof(PartialOwnLifts::Slot);}
+  static bool inFlight(PartialOwnLifts& p,uint32_t id) {return p.find(id)->attaching!=0;}
+};
+}
+namespace {
+bool partial_initializing=true,partial_refuse_drop=false;
+uint32_t* partial_frame=nullptr;
+uint32_t partial_next_handle=42;
+std::array<bool,256> partial_handles{};
+std::array<uint32_t,256> partial_handle_identity{};
+std::array<uint32_t,5> partial_dropped{};
+unsigned partial_drop_count=0;
+bool partial_init(JSContext*) {return partial_initializing;}
+uint64_t partial_getter(uint32_t slot) {return slot<2 ? (uint64_t(slot*4)<<32)|3 : UINT64_MAX;}
+bool partial_drop_frame(uint32_t address,uint32_t low,uint32_t high) {
+  if(!partial_frame || address!=static_cast<uint32_t>(reinterpret_cast<uintptr_t>(partial_frame)) ||
+      high || (low&~3u))return false;
+  for(unsigned index=0;index<2;++index)if(!(low&(1u<<index))) {
+    if(partial_drop_count>=partial_dropped.size())return false;
+    const auto handle=partial_frame[index];
+    const auto slot=handle&0x7fffffffu;
+    if(slot>=partial_handles.size() || !partial_handles[slot] || partial_handle_identity[slot]!=handle)return false;
+    partial_handles[slot]=false;partial_dropped[partial_drop_count++]=handle;
+    if(partial_refuse_drop)return false; // Ambiguous destructor consumed handle first.
+  }
+  return true;
+}
+bool partial_drop_all(uint32_t address) {return partial_drop_frame(address,0,0);}
+
+bool partial_dispose(JSContext* cx,unsigned argc,JS::Value* vp) {
+  auto args=JS::CallArgsFromVp(argc,vp);
+  if(argc!=1 || !args[0].isInt32())return false;
+  const auto handle=static_cast<uint32_t>(args[0].toInt32());
+  const auto slot=handle&0x7fffffffu;
+  if(slot>=partial_handles.size() || !partial_handles[slot] || partial_handle_identity[slot]!=handle || partial_drop_count>=partial_dropped.size()) {
+    JS_ReportErrorASCII(cx,"fixture-double-drop");return false;
+  }
+  partial_handles[slot]=false;partial_dropped[partial_drop_count++]=handle;
+  args.rval().setUndefined();return true;
+}
+bool partial_explicit_dispose(JSContext* cx,JS::HandleObject wrapper) {
+  JS::RootedValue key(cx),function(cx),receiver(cx,JS::ObjectValue(*wrapper)),ignored(cx);
+  if(!evaluate(cx,"symbolDispose",&key) || !key.isSymbol())return false;
+  JS::RootedId id(cx,JS::PropertyKey::Symbol(key.toSymbol()));
+  return JS_GetPropertyById(cx,wrapper,id,&function) &&
+    JS::Call(cx,receiver,function,JS::HandleValueArray::empty(),&ignored);
+}
+
+// These are fixture canonical-drop doubles; the real emitted Wasm getter/drop
+// is covered separately by compiler controls, not claimed from this C function.
+bool partial_bind(JSContext* cx,PartialOwnLifts& partial,JS::HandleObject prototype,JS::HandleId symbol) {
+  return partial.begin(cx,2,1,2) && partial.bind(cx,12,8,2,0,0,3,prototype,symbol) &&
+    partial.bind(cx,12,8,2,1,4,3,prototype,symbol) && partial.seal(cx);
+}
+bool partial_call(JSContext* cx,Imports& imports,PartialOwnLifts& partial,uint32_t& id,
+                  JS::MutableHandleObject promise) {
+  if(!imports.reserve(cx,8,0,ImportRawResult::Pointer,JS::HandleValueArray::empty(),id) ||
+      !imports.setDisposer(cx,id,partial_drop_all,8) ||
+      !partial.prepare(cx,id,12,partial_getter,partial_drop_frame,2))return false;
+  partial_node_address=PartialOwnLiftControls::node(partial,id);
+  partial_record_address=PartialOwnLiftControls::record(partial,id);
+  partial_node_owner=PartialOwnLiftControls::owner(partial,id).id;
+  partial_record_owner=PartialOwnLiftControls::recordOwner(partial,id).id;
+  partial_node_deleted=partial_record_deleted=false;
+  partial_frame=static_cast<uint32_t*>(imports.resultBuffer(id));
+  if(!partial_frame)return false; // Reserved-only API; never write a null Wasm address.
+  partial_frame[0]=partial_next_handle++;partial_frame[1]=partial_next_handle++;
+  if(partial_frame[0]==42)partial_frame[0]|=0x80000000u;
+  for(unsigned index=0;index<2;++index) {
+    const auto slot=partial_frame[index]&0x7fffffffu;
+    partial_handles[slot]=true;partial_handle_identity[slot]=partial_frame[index];
+  }
+  if(!imports.beginLowering(cx,id) ||
+      !imports.started(cx,id,JOBS_SUBTASK_RETURNED,promise) || !imports.turn(cx))return false;
+  JS::RootedValue raw(cx);
+  return imports.liftValue(cx,id,&raw);
+}
+}
+static int partial_main(int argc,char** argv) {
+  if(argc!=2)return 2;
+  const char* name=argv[1];
+  const bool positive=!std::strcmp(name,"partial-own-transfer-reuse-and-ACK-refusal");
+  const bool refusal=!std::strcmp(name,"partial-own-original-native-refusal");
+  const bool uncertain=!std::strcmp(name,"partial-own-foreign-stale-duplicate-and-cancel");
+  const bool destructor=!std::strcmp(name,"partial-own-destructor-refusal-never-replays");
+  if(!(positive||refusal||uncertain||destructor))return 2;
+  JS::Prefs::set_use_js_microtask_queue(false);
+  if(!JS_Init())return 3;
+  JSContext* cx=JS_NewContext(32*1024*1024);if(!cx)return 4;
+  // Failure-only, fixed numeric fixture stages. No exception conversion, JS
+  // call, GC, payload/handle, raw pointer or stack inspection is performed.
+  auto failed = [&](unsigned stage) {
+    if (positive) std::fprintf(stderr,
+      "LSFPARTIALFAIL1 stage=%u counts=%u,%u,%u,%u,%u,%u,%u,%u jsPending=%u drops=%u admissions=%u acks=%u flags=%u\n",
+      stage,counts[0],counts[1],counts[2],counts[3],counts[4],counts[5],counts[6],counts[7],
+      unsigned(JS_IsExceptionPending(cx)),partial_drop_count,native_admissions,native_acknowledgements,
+      unsigned(partial_ack_observed) | unsigned(partial_node_deleted)<<1 |
+        unsigned(partial_record_deleted)<<2 | unsigned(partial_physical_order)<<3);
+    return 10;
+  };
+  int result=1;unsigned retained=0;
+  // Sweep/finalize hook owners outlive JS_DestroyContext, as in the original
+  // diagnostic. Only the per-manager persistent plan roots die before it.
+  BrokerAccounting jobs(allowed,snapshot_allowed);
+  BrokerPromiseAccounting native(phase,jobs);
+  PromiseRecords promises(native);ReactionRecords reactions(native,jobs);
+  ReadinessSet readiness(native);JobQueue queue(jobs,transfer);
+  promise_records=&promises;reaction_records=&reactions;job_broker=&jobs;
+  {
+    if(!js::UseInternalJobQueues(cx)||!JS::InitSelfHostedCode(cx))return 5;
+    JS::SetJobQueue(cx,&queue);
+    static const JSClass global_class={"LSFPartialOwnControls",JSCLASS_GLOBAL_FLAGS,&JS::DefaultGlobalClassOps};
+    JS::RealmOptions options;
+    JS::RootedObject global(cx,JS_NewGlobalObject(cx,&global_class,nullptr,JS::FireOnNewGlobalHook,options));
+    if(!global)return 6;
+    JSAutoRealm realm(cx,global);
+    if(!JS::InitRealmStandardClasses(cx))return 7;
+    static const JS::ActivationPromiseHooks hooks{
+      before_promise,PromiseRecords::allocationFailed,PromiseRecords::created,settled_promise,
+      before_reaction,ReactionRecords::allocationFailed,ReactionRecords::created,reaction_record,
+      before_reaction,ReactionRecords::allocationFailed,ReactionRecords::created,reaction_record};
+    if(!JS_AddWeakPointerZonesCallback(cx,weak_sweep,nullptr)||
+        !JS_AddFinalizeCallback(cx,collection_end,nullptr)||!JS::SetActivationPromiseHooks(cx,&hooks))return 8;
+    JS::RootedValue value(cx),symbol_value(cx);JS::RootedObject prototype(cx),promise(cx),first(cx);
+    // A real native object/symbol/prototype, kept in this original Store.
+    if(!JS_DefineFunction(cx,global,"partialDispose",partial_dispose,1,0))return 9;
+    if(!evaluate(cx,"const symbolRscHandle=Symbol('handle');const symbolDispose=Symbol.dispose || Symbol.for('dispose');"
+        "class ExplicitOwner {constructor(){throw new Error('not called')}"
+        "[symbolDispose](){const h=this[symbolRscHandle];if(h===undefined)return;"
+        "this[symbolRscHandle]=undefined;partialDispose(h);}};ExplicitOwner.prototype;",&value) ||
+        !value.isObject())return 9;
+    prototype=&value.toObject();
+    if(!evaluate(cx,"symbolRscHandle",&symbol_value) || !symbol_value.isSymbol())return 9;
+    JS::RootedId symbol(cx,JS::PropertyKey::Symbol(symbol_value.toSymbol()));
+    if(!jobs.beginRoot(cx))return 9;
+    {
+      Imports imports(jobs,native,readiness);
+      const auto before_zero=native_admissions;
+      {
+        PartialOwnLifts zero(imports,partial_init);
+        if(!zero.begin(cx,2,0,0) || !zero.seal(cx) || zero.hasPending() || native_admissions!=before_zero)return failed(1);
+      }
+      PartialOwnLifts partial(imports,partial_init);
+      if(!partial_bind(cx,partial,prototype,symbol))return failed(2);
+      partial_initializing=false;
+      uint32_t id=0;
+      if(refusal) {
+        if(!imports.reserve(cx,8,0,ImportRawResult::Pointer,JS::HandleValueArray::empty(),id) ||
+            !imports.setDisposer(cx,id,partial_drop_all,8))return failed(3);
+        const auto admitted=native_admissions;
+        limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE];
+        const bool denied=!partial.prepare(cx,id,12,partial_getter,partial_drop_frame,2);
+        limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=8;
+        result=denied && !PartialOwnLiftControls::node(partial,id) &&
+          native_admissions==admitted && imports.hasPending() && partial_drop_count==0 ? 0:1;
+        JS_ClearPendingException(cx);
+        // No handoff is assumed after refusal; the original scope stays closed.
+      } else {
+        if(!partial_call(cx,imports,partial,id,&promise))return failed(4);
+        const Token sidecar=PartialOwnLiftControls::owner(partial,id);
+        if(!partial.attach(cx,id,0,&first))return failed(5);
+        JS::RootedValue handle(cx);
+        if(!JS_GetPropertyById(cx,first,symbol,&handle)||!handle.isInt32()||static_cast<uint32_t>(handle.toInt32())!=0x8000002au)return failed(6);
+        if(positive) {
+          // The second canonical OWN slot is the ONLY failed-lift remainder.
+          if(!partial.finish(cx,id) || partial_drop_count!=1 || partial_dropped[0]!=43 ||
+              imports.hasPending() || partial.hasPending() || owners[sidecar.id].live ||
+              counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]!=0)return failed(7);
+          if(!JS_GetPropertyById(cx,first,symbol,&handle)||static_cast<uint32_t>(handle.toInt32())!=0x8000002au)return failed(8);
+          // Stale finish cannot destroy or refund the already transferred first.
+          if(!partial.finish(cx,id) || partial_drop_count!=1)return failed(9);
+          promise=nullptr;collect(cx);
+          if(!promises.checkpoint(cx)||!reactions.checkpoint(cx))return failed(10);
+          uint32_t fresh=0;
+          JS::RootedObject fresh_first(cx),fresh_second(cx);
+          if(!partial_call(cx,imports,partial,fresh,&promise) || fresh<=id ||
+              !partial.attach(cx,fresh,0,&fresh_first) || !partial.attach(cx,fresh,1,&fresh_second) ||
+              !partial.deliveredGuard(cx,fresh) || !imports.delivered(cx,fresh) ||
+              !partial.finish(cx,fresh) || imports.hasPending() || partial.hasPending() ||
+              partial_drop_count!=1)return failed(11);
+          if(!partial_explicit_dispose(cx,first) || !partial_explicit_dispose(cx,first) ||
+              !partial_explicit_dispose(cx,fresh_first) || !partial_explicit_dispose(cx,fresh_second) ||
+              partial_drop_count!=4 || partial_dropped[1]!=0x8000002au || partial_dropped[2]!=44 || partial_dropped[3]!=45)
+            return failed(12);
+          first=nullptr;fresh_first=nullptr;fresh_second=nullptr;promise=nullptr;
+          collect(cx);
+          if(!promises.checkpoint(cx)||!reactions.checkpoint(cx))return failed(13);
+          // Full positive phases released every original Native/Result owner
+          // before this separate, intentionally ambiguous late ACK boundary.
+          if(counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE] ||
+              counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT])return failed(14);
+          uint32_t ambiguous=0;JS::RootedObject retained_wrapper(cx);
+          if(!partial_call(cx,imports,partial,ambiguous,&promise) ||
+              !partial.attach(cx,ambiguous,0,&retained_wrapper))return failed(15);
+          const Token original_ack_owner=PartialOwnLiftControls::owner(partial,ambiguous);
+          partial_ack_instance=&partial;partial_ack_context=cx;partial_ack_reenter=true;
+          const bool refused=!partial.finish(cx,ambiguous);
+          JS_ClearPendingException(cx);
+          const bool no_replay=!partial.finish(cx,ambiguous);
+          JS_ClearPendingException(cx);
+          if(!refused || !no_replay || !partial_ack_observed || !partial_node_deleted ||
+              !partial_record_deleted || !partial_physical_order || imports.hasPending() ||
+              !partial.hasPending() || !owners[original_ack_owner.id].live ||
+              PartialOwnLiftControls::failedOwner(partial).id!=original_ack_owner.id ||
+              partial_drop_count!=5 || partial_dropped[4]!=47 || !partial_handles[46])return failed(16);
+          const bool sealed=!partial.begin(cx,2,0,0);
+          JS_ClearPendingException(cx);
+          result=(host_in_gc||!sealed)?1:0;
+          partial_ack_instance=nullptr;partial_ack_context=nullptr;
+        } else if(uncertain) {
+          // A second actual result uses the SAME original payer/grants. Its
+          // malformed duplicate OWN handles must fail BEFORE any wrapper gets
+          // either handle; neither the original nor its alias is dropped.
+          uint32_t malformed=0;JS::RootedObject malformed_promise(cx),rejected_duplicate(cx);
+          if(!partial_call(cx,imports,partial,malformed,&malformed_promise))return failed(17);
+          const Token duplicate_owner=PartialOwnLiftControls::owner(partial,malformed);
+          partial_frame[1]=partial_frame[0];
+          const bool duplicate_frame=!partial.attach(cx,malformed,0,&rejected_duplicate);
+          JS_ClearPendingException(cx);
+          if(!duplicate_frame || rejected_duplicate || partial_drop_count || !owners[duplicate_owner.id].live)return failed(18);
+          Imports foreign(jobs,native,readiness);PartialOwnLifts other(foreign,partial_init);
+          JS::RootedObject rejected(cx);
+          const bool foreign_denied=!other.attach(cx,id,1,&rejected);
+          JS_ClearPendingException(cx);
+          const bool repeated=!partial.attach(cx,id,0,&rejected);
+          JS_ClearPendingException(cx);
+          const bool cannot_bless=!partial.deliveredGuard(cx,id);
+          JS_ClearPendingException(cx);
+          partial.cancel(id);
+          const bool held=!partial.finish(cx,id);
+          JS_ClearPendingException(cx);
+          const bool late=!partial.attach(cx,id,1,&rejected);
+          JS_ClearPendingException(cx);
+          result=duplicate_frame&&foreign_denied&&repeated&&cannot_bless&&held&&late&&imports.hasPending()&&partial.hasPending()&&
+            owners[sidecar.id].live&&owners[duplicate_owner.id].live&&partial_drop_count==0 ? 0:1;
+        } else {
+          partial_refuse_drop=true;
+          const bool failed=!partial.finish(cx,id);
+          JS_ClearPendingException(cx);
+          const auto attempted=partial_drop_count;
+          const bool no_replay=!partial.finish(cx,id);
+          JS_ClearPendingException(cx);
+          result=failed&&no_replay&&attempted==1&&partial_dropped[0]==43&&
+            partial_drop_count==attempted&&owners[sidecar.id].live&&imports.hasPending()&&partial.hasPending()?0:1;
+        }
+      }
+      first=nullptr;promise=nullptr;value.setUndefined();symbol_value.setUndefined();
+      JS_ClearPendingException(cx);collect(cx);
+      if(!promises.checkpoint(cx)||!reactions.checkpoint(cx))return 11;
+      if(!jobs.settleRoot(cx)||!readiness.retire(cx))return 11;
+      for(auto count:counts)retained+=count;
+      if(positive && (retained!=1 || counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]!=1))result=1;
+      if(!positive && !retained)result=1;
+      std::printf("{\"case\":\"%s\",\"status\":%d,\"retainedOwners\":%u,\"canonicalDrops\":%u,"
+        "\"sidecarBytes\":%zu,\"planBytes\":%zu,\"slotBytes\":%zu,\"hostcallInGC\":%s}\n",
+        name,result,retained,partial_drop_count,PartialOwnLiftControls::nodeBytes(),
+        PartialOwnLiftControls::planBytes(),PartialOwnLiftControls::slotBytes(),host_in_gc?"true":"false");
+    } // Metadata roots and exact runtime nodes die BEFORE JSContext destruction.
+  }
+  JS_DestroyContext(cx);JS_ShutDown();return result;
+}
+#endif
+
 int main(int argc, char** argv) {
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+  return partial_main(argc,argv);
+#endif
   if (argc != 2) return 2;
   JS::Prefs::set_use_js_microtask_queue(false);
   if (!JS_Init()) return 3;

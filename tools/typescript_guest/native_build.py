@@ -180,6 +180,30 @@ def materialize_headers(library_root: Path, target: Path, deadline: float) -> di
     return identities
 
 
+def library_recipe_equivalence(name: str, raw: bytes, recorded: dict) -> dict | None:
+    """One full-byte inverse for an unused low-level source-list extension.
+
+    This is evidence for reuse of the historical library, never a new receipt
+    or a claim that its Mach build consumed the current activation module.
+    """
+    current = file_bytes(raw)
+    if current == recorded:
+        return None
+    original = {'bytes':14962,
+        'sha256':'sha256:5e576fd983990296b18a6ac743a1bca42d22c6a521f89a14c1e2221177a9b7a5'}
+    extended = {'bytes':14989,
+        'sha256':'sha256:445603d926010c98662d27fd5d92512ca742685c7634e92a754ecfec1f9cd53f'}
+    before = b'    "native_import_lifecycle.h", "native_imports.h", "broker_import_accounting.h",\n'
+    after = b'    "native_import_lifecycle.h", "native_imports.h", "native_import_partial.h", "broker_import_accounting.h",\n'
+    if (name != 'tools/typescript_guest/activation_engine.py' or recorded != original
+            or current != extended or raw.count(after) != 1
+            or file_bytes(raw.replace(after,before,1)) != original):
+        raise ValueError('typescript-native-library-recipe-drift')
+    return {'kind':'exact-unused-native-source-list-inverse-v1', 'recorded':original,
+        'current':current, 'inverse':{'before':before.decode(), 'after':after.decode()},
+        'inverseIdentity':original, 'historicalReceiptReissued':False}
+
+
 def validated_library(library_root: Path) -> tuple:
     """Original normal library validation shared by build and owning reuse."""
     raw_receipt = read_file(library_root/'library-build.json')
@@ -199,7 +223,7 @@ def validated_library(library_root: Path) -> tuple:
         raise ValueError('typescript-native-library-recipe-inventory')
     for name, identity in library['recipe'].items():
         if file_identity(ROOT/name) != identity:
-            raise ValueError('typescript-native-library-recipe-drift')
+            library_recipe_equivalence(name,read_file(ROOT/name),identity)
     header = ROOT/'sdk/typescript-guest/activation/promise_hooks.h'
     exported = library_root/'obj/dist/include/js/ActivationPromiseHooks.h'
     if promise_library.installed_header_identity(library_root,exported,read_file(header)) != library['exportedHeader']:
@@ -251,6 +275,8 @@ def build(output: Path, library_root: Path, *, bindgen: str = 'wit-bindgen', was
         if source_splicer_build is not None:
             record['sourceSplicer'] = source_splicer(source_splicer_build)
         library, raw_receipt, before, header, exported = validated_library(library_root)
+        record['libraryRecipeEquivalences'] = {name:proof for name,identity in library['recipe'].items()
+            if (proof := library_recipe_equivalence(name,read_file(ROOT/name),identity)) is not None}
         record['libraryInput'] = file_identity(library_root/'library-build.json')
         record['libraryProduct'] = before
         stage = 'source-acquisition'

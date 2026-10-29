@@ -38,7 +38,7 @@ class TypeScriptNativeCarrierSchedulingTests(unittest.TestCase):
 async function execute(source,projected) {
  const pending=[Promise.withResolvers(),Promise.withResolvers()],events=[];let allocation=1024,runtime,next=0;
  const memory=new WebAssembly.Memory({initial:1}),view=new DataView(memory.buffer);
- const bridge={reserve(){return ++next;},delivered(_id,value){return value;},
+ const bridge={beginOwnPlans(...v){assert.deepEqual(v,[2,0,0]);},reserve(){return ++next;},delivered(_id,value){return value;},
   lift(id){events.push(['lift',id]);return 512+id*16;},finish(id){events.push(['finish',id]);}};
  const native=id=>{events.push(['native',id]);return pending[id-1].promise;};
  const context=vm.createContext({$bindings:[memory,(_p,_o,_a,n)=>{const p=allocation;allocation+=n;return p;},native,...Array(10).fill(null)],
@@ -64,7 +64,7 @@ await execute(original,false);await execute(selected,true);
 async function execute(mode) {
  const events=[],pending=Promise.withResolvers(),reason={original:mode};let allocation=1024;
  const memory=new WebAssembly.Memory({initial:1}),view=new DataView(memory.buffer);
- const bridge={reserve(){events.push('reserve');return 7;},delivered(id,value){assert.equal(id,7);events.push('delivered');return value;},
+ const bridge={beginOwnPlans(...v){assert.deepEqual(v,[2,0,0]);},reserve(){events.push('reserve');return 7;},delivered(id,value){assert.equal(id,7);events.push('delivered');return value;},
   lift(id){assert.equal(id,7);events.push('lift');if(mode==='lift-failure')throw reason;return 512;},finish(id){assert.equal(id,7);events.push('finish');}};
  const native=id=>{assert.equal(id,7);events.push('native');if(mode==='start-failure')throw reason;return pending.promise;};
  const context=vm.createContext({$bindings:[memory,(_p,_o,_a,n)=>{const p=allocation;allocation+=n;return p;},native,...Array(10).fill(null)],
@@ -97,7 +97,7 @@ assert.equal((body.match(/__lsfImports.delivered\(/g)||[]).length,2);
 const pending=Promise.withResolvers(),ambient={taskID:999,componentIdx:1};let runtime,allocation=1024;
 const memory=new WebAssembly.Memory({initial:1}),view=new DataView(memory.buffer);
 function unchanged(){assert.equal(runtime.meta(),ambient);assert.equal(runtime.state().isExclusivelyLocked(),true);}
-const bridge={reserve(){return 7;},delivered(_id,value){return value;},lift(){unchanged();return 512;},finish(){unchanged();}};
+const bridge={beginOwnPlans(...v){assert.deepEqual(v,[2,0,0]);},reserve(){return 7;},delivered(_id,value){return value;},lift(){unchanged();return 512;},finish(){unchanged();}};
 const context=vm.createContext({$bindings:[memory,(_p,_o,_a,n)=>{const p=allocation;allocation+=n;return p;},()=>{unchanged();return pending.promise;},...Array(10).fill(null)],
  contentGlobal:{TextEncoder,TextDecoder,Promise,__lsfAsyncImportBridge:bridge},defineBuiltinModule(){},ambient});
 runtime=vm.runInContext(selected+';CURRENT_TASK_META[1]=ambient;getOrCreateAsyncState(1).exclusiveLock();({invoke:import_latent_http_streaming_0_3_0$open,meta:()=>CURRENT_TASK_META[1],state:()=>getOrCreateAsyncState(1)});',context);
