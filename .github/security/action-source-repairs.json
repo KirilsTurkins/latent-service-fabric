@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "profile": "checkout-deepmerge-source-v1",
+  "action": "KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8",
+  "source_role": "development-build-tool",
+  "bindings": {
+    "manifest": {
+      "snapshot": ".github/security/actions/checkout/package.json",
+      "source": "package.json",
+      "role": "development-build-manifest",
+      "bytes": 1961,
+      "sha256": "64f50ca0c2e03efe66a47042c2347978b66d64ce3585d0a9f1f3047ac95e1484",
+      "gitBlob": "607419eb983ddefb5a4490c8c15963df6dfd4426"
+    },
+    "lock": {
+      "snapshot": ".github/security/actions/checkout/package-lock.json",
+      "source": "package-lock.json",
+      "role": "complete-development-build-graph",
+      "bytes": 291709,
+      "sha256": "150804961399dd5d5689b87aaf7d1f7963dbb14dd4993851ee4a34893d860be3",
+      "gitBlob": "bab381e8b2af3ba33106441cff58e9f42984bd46"
+    },
+    "metadata": {
+      "snapshot": ".github/security/actions/checkout/action.yml.snapshot",
+      "source": "action.yml",
+      "role": "executed-action-entrypoint",
+      "bytes": 5026,
+      "sha256": "fc3f945029a3905c34bb8d52a6d2faf4a2bdde2ce7baa57ae648154b0b6f05b5",
+      "gitBlob": "9b2ee83d48d73ce1b0a1ec9b153e6a4380f7de40"
+    }
+  },
+  "assets": {
+    "archive": {
+      "snapshot": ".github/security/actions/checkout-source/deepmerge-4.3.1.repaired.tar",
+      "source": ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
+      "role": "fork-source",
+      "bytes": 51200,
+      "sha256": "c4ca0f4eb3a2464c026bc3dec5d9eaf04544aed24c3fd1d77da95f85e36c369f",
+      "gitBlob": "30e23fad3a82fd30bc3f08e26704a0c0bc84c704"
+    },
+    "repair": {
+      "snapshot": ".github/security/actions/checkout-source/repair.json",
+      "source": ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.repair.json",
+      "role": "fork-source",
+      "bytes": 3064,
+      "sha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+      "gitBlob": "52602f18647aa2f2bd30f046e05bcce2705a761f"
+    },
+    "declaration": {
+      "snapshot": ".github/security/actions/checkout-source/declaration.json",
+      "source": ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.source.json",
+      "role": "fork-source",
+      "bytes": 6925,
+      "sha256": "b4b0b79fa2bc84c6f1e1c61ddcc1ab228df629f9fce4b1067d3ac8b3d1c42892",
+      "gitBlob": "0685ff353f65174eb5a97cfcb385720dd4a5874c"
+    },
+    "verifier": {
+      "snapshot": ".github/security/actions/checkout-source/installed-verifier.mjs.snapshot",
+      "source": ".lsf-source/verify-installed-deepmerge.mjs",
+      "role": "fork-source",
+      "bytes": 1759,
+      "sha256": "029747aa0c01fc578cbaf0f856471353e67d4f851568efd5bb9c6f0f6a8bd45d",
+      "gitBlob": "e2bb8d2ddb4bd951c0592e83637b6369abfbecbb"
+    },
+    "workflow": {
+      "snapshot": ".github/security/actions/checkout-source/build-workflow.yml.snapshot",
+      "source": ".github/workflows/check-dist.yml",
+      "role": "fork-source",
+      "bytes": 4014,
+      "sha256": "93f4275c240600a555fe91e0406efd1328ddabdbead290e74fd6f0b942a8014e",
+      "gitBlob": "05df7c227d6cfd6004ed54a3d4e4991a6506ffed"
+    },
+    "upstream": {
+      "snapshot": ".github/security/actions/checkout-source/deepmerge-4.3.1.original.tgz",
+      "source": "https://registry.npmjs.org/deepmerge/-/deepmerge-4.3.1.tgz",
+      "role": "upstream-original",
+      "bytes": 8452,
+      "sha256": "4003a0a348276a95543fa969f561f6b5968629acbbb59d66018dd23e7b8f1d5c",
+      "gitBlob": "1d1560e971dfc484bbe0cb9e8c86bde9140e45b5"
+    },
+    "build": {
+      "snapshot": ".github/security/actions/checkout-source/fork-build.json",
+      "source": "https://github.com/KirilsTurkins/lsf-checkout/actions/runs/40884108136",
+      "role": "qualified-build-evidence",
+      "bytes": 2917,
+      "sha256": "3049e46615e1913bd1cf0484ad69361ed6a8170b333f2455251854a7cd0af7b0",
+      "gitBlob": "d15991384160a772e96722c0a7fe14a487d04f72"
+    }
+  },
+  "advisories": [
+    {
+      "id": "GHSA-gcqx-w48m-w2h4",
+      "modified": "2026-10-27T21:45:04.256048Z"
+    }
+  ],
+  "runtime_bundle": {
+    "source": "dist/index.js",
+    "bytes": 1465687,
+    "sha256": "116aa6f7b8efa570e95179673c8d067b39069df63915f0b805a413723b798cac",
+    "gitBlob": "8f3d1593c2f1b48addb8c63595f6ea2f1d188b85"
+  }
+}

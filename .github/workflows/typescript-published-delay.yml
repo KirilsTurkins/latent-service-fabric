@@ -28,7 +28,7 @@ jobs:
     steps:
       - name: Start the fixed aggregate setup and programme clock
         run: python3 -c 'import os,time;open(os.environ["GITHUB_ENV"],"a").write("LSF_PUBLISHED_DELAY_STARTED_NS="+str(time.time_ns())+"\n")'
-      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
