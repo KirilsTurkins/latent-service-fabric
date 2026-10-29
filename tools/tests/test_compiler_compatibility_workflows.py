@@ -10,7 +10,7 @@ from tools.rust_capsule_project import ROOT, read_file
 
 
 def original_workflow(test):
-    workflow = lanes.workflow_model(read_file(ROOT/'.github/workflows/compiler-compatibility.yml').decode())
+    workflow = lanes.workflow_model(historical_checkout(read_file(ROOT/'.github/workflows/compiler-compatibility.yml')).decode())
     restored = copy.deepcopy(workflow)
     test.assertEqual(set(restored['jobs']), {'java-diagnostics', 'dotnet-diagnostics', 'closure-required', 'closure-matrix'})
     for name in ('closure-required', 'closure-matrix'): del restored['jobs'][name]
@@ -28,6 +28,28 @@ def original_workflow(test):
     return restored
 
 
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
+
+
+def historical_resource_fixture(value):
+    """Keep the original whole-file fixture hash after its reviewed guard repair."""
+    edits = ((b'\n\ndef historical_checkout(value):\n    """Authenticate the current action before the exact historical pin inverse."""\n    prefix = \'KirilsTurkins/lsf-checkout@\'\n    current = prefix + \'842365d0a25bf5a868311e4cb89c908bdcab4bb8\'\n    previous = prefix + \'c3024dfac542bb46ebccc7829ddf1f95e0be8da9\'\n    if type(value) is bytes:\n        prefix, current, previous = (item.encode(\'ascii\') for item in (prefix, current, previous))\n    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):\n        raise AssertionError(\'historical-workflow-exact-current-checkout-required\')\n    return value.replace(current, previous)\n', b''), (b"historical_checkout(read_file(ROOT/('.github/workflows/'+language+'-resource-runtime.yml')))", b"read_file(ROOT/('.github/workflows/'+language+'-resource-runtime.yml'))"))
+    for current, previous in edits:
+        if value.count(current) != 1:
+            raise AssertionError('historical-resource-fixture-source-inverse-required')
+        value = value.replace(current, previous, 1)
+    return value
+
+
 class CompilerWorkflow(unittest.TestCase):
     def test_new_workflow_is_branch_scoped_and_keeps_old_resource_workflows_and_fixtures_exact(self):
         # Frozen source checkpoint e2f791; no inherited job selectors, commands
@@ -37,7 +59,10 @@ class CompilerWorkflow(unittest.TestCase):
             '.github/workflows/dotnet-resource-runtime.yml': 'ce558e68dcc865806c2175874f3d266678dbd8a64abc6d5d463df1fcfc321c1a',
             'tools/tests/test_resource_late_workflows.py': '822370bbba7a0c27ecf85f8981a54f3914589d0c1ef51da57f1ae0231a9b3b2c',
         }
-        for name, sha in expected.items(): self.assertEqual(hashlib.sha256(read_file(ROOT/name)).hexdigest(), sha, name)
+        for name, sha in expected.items():
+            raw = read_file(ROOT/name)
+            raw = historical_resource_fixture(raw) if name.endswith('.py') else historical_checkout(raw)
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), sha, name)
         workflow = original_workflow(self)
         self.assertEqual(set(workflow['on']), {'push'})
         self.assertEqual(workflow['on']['push']['branches'], ['feat/java-dotnet-diagnostics-679-20261021'])

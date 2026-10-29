@@ -8,6 +8,18 @@ from unittest.mock import patch
 from tools import qualify_host_stream_kernel_objects as candidate
 
 
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
+
+
 class KernelObjectSelection(unittest.TestCase):
     def baseline(self):
         return {**dict.fromkeys(candidate.REQUIRED, 'y'), candidate.SELECTED: 'n', 'CONFIG_MEMCG': 'y'}
@@ -353,7 +365,7 @@ class KernelRouteObjectSelection(unittest.TestCase):
     def test_all_seven_original_job_bodies_remain_exact_except_exclusive_if(self):
         import json,yaml
         expected={'selected-objects': '50fe8df77a665b6a0673553cf8bbd021b776182753b5b102e3e500445eb6a7ea', 'netlabel-objects': 'bfdd31b2d7c7e40fdd35470f98b7058645dff7b827976afede0be993fb0e295f', 'netport-objects': 'f9b966a58808852d962115725ba63ea78a6b592fa59a6d9409ff281e46716c14', 'sidcache-objects': '070f0c4d60889107a93294b83eedfb2bd2493bf57fec39ab34ecaa8842db8eb2', 'avc-objects': 'eb25239e907205154198221bb747da3b0e7e56fe6a6d095de892b5e260400bff', 'audit-objects': 'f29312267d32a37e3f3f453eb2a36cfc043447b52cf35a48047a27356dd8652e', 'bind-objects': '8919f5589d33ec01cd5f378dd8d140b41d5d7d79821eaf2f6f21eac42373eff9'}
-        workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        workflow=yaml.safe_load(historical_checkout((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes()))
         self.assertEqual((set(workflow['jobs'])-{'firmware-objects','registration-objects','recipient-objects'})-{'route-cache-objects','packet-objects','device-objects'},set(expected)|{'route-objects'})
         for name,digest in expected.items():
             body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}
@@ -551,7 +563,7 @@ class KernelRouteCacheObjectSelection(unittest.TestCase):
     def test_all_eight_prior_job_bodies_remain_exact_with_only_closed_cache_exclusion(self):
         import json,yaml
         expected={'selected-objects': '50fe8df77a665b6a0673553cf8bbd021b776182753b5b102e3e500445eb6a7ea', 'netlabel-objects': 'bfdd31b2d7c7e40fdd35470f98b7058645dff7b827976afede0be993fb0e295f', 'netport-objects': 'f9b966a58808852d962115725ba63ea78a6b592fa59a6d9409ff281e46716c14', 'sidcache-objects': '070f0c4d60889107a93294b83eedfb2bd2493bf57fec39ab34ecaa8842db8eb2', 'avc-objects': 'eb25239e907205154198221bb747da3b0e7e56fe6a6d095de892b5e260400bff', 'audit-objects': 'f29312267d32a37e3f3f453eb2a36cfc043447b52cf35a48047a27356dd8652e', 'bind-objects': '8919f5589d33ec01cd5f378dd8d140b41d5d7d79821eaf2f6f21eac42373eff9', 'route-objects': '14a4de0397e26ac85ba229c309ee07abe89df5551cdbc41b99ba1b2d3e908aad'}
-        workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        workflow=yaml.safe_load(historical_checkout((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes()))
         self.assertEqual((set(workflow['jobs'])-{'firmware-objects','registration-objects','recipient-objects'})-{'packet-objects','device-objects'},set(expected)|{'route-cache-objects'})
         for name,digest in expected.items():
             body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}
@@ -623,7 +635,7 @@ class KernelPacketObjectSelection(unittest.TestCase):
             if index:flags[index-1]=True
             actual=hashlib.sha256(json.dumps(candidate.object_selection(*flags),sort_keys=True,separators=(',',':')).encode()).hexdigest()
             self.assertEqual(actual,digest,index)
-        workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        workflow=yaml.safe_load(historical_checkout((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes()))
         self.assertEqual((set(workflow['jobs'])-{'firmware-objects','registration-objects','recipient-objects'})-{'device-objects'},set(expected_jobs)|{'packet-objects'})
         for name,digest in expected_jobs.items():
             body={key:value for key,value in workflow['jobs'][name].items() if key!='if'}
@@ -713,7 +725,7 @@ class KernelDeviceObjectSelection(unittest.TestCase):
             if index:flags[index-1]=True
             actual=hashlib.sha256(json.dumps(candidate.object_selection(*flags),sort_keys=True,separators=(',',':')).encode()).hexdigest()
             self.assertEqual(actual,digest,index)
-        workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        workflow=yaml.safe_load(historical_checkout((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes()))
         self.assertEqual((set(workflow['jobs'])-{'firmware-objects','registration-objects','recipient-objects'})-{'device-objects'},set(expected_jobs))
         for name,digest in expected_jobs.items():
             body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}
@@ -845,7 +857,7 @@ class KernelFirmwareObjectSelection(unittest.TestCase):
             if index:flags[index-1]=True
             value=hashlib.sha256(json.dumps(candidate.object_selection(*flags),sort_keys=True,separators=(',',':')).encode()).hexdigest()
             self.assertEqual(value,digest,index)
-        workflow=yaml.safe_load((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes())
+        workflow=yaml.safe_load(historical_checkout((candidate.ROOT/'.github/workflows/stream-kernel-objects.yml').read_bytes()))
         self.assertEqual(set(workflow['jobs'])-{'firmware-objects','registration-objects','recipient-objects'},set(expected_jobs))
         for name,digest in expected_jobs.items():
             body={k:v for k,v in workflow['jobs'][name].items() if k!='if'}

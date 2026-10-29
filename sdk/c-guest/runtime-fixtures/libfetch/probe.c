@@ -45,6 +45,8 @@ static void *held_read(void *unused) {
 static void *sibling_read(void *unused) {
     (void)unused;
     while (!atomic_load(&entered) && !atomic_load(&returned)) thrd_yield();
+    /* This same cell must exercise real yield while A remains host-pending. */
+    thrd_yield();
     if (atomic_load(&returned)) { sibling.failed = 1; return NULL; }
     FILE *file = fetchGetURL(sibling.url, "A");
     if (!file) { sibling.failed = 1; return NULL; }

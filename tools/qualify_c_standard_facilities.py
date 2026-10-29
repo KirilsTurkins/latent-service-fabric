@@ -254,6 +254,62 @@ def http_build_evidence(artifact, source):
     return {'component': component, 'derivation': derivation, 'compatibilityAssets': assets}
 
 
+HTTP_ROUTING_CASES = tuple('component::c::tests::' + name for name in (
+    'c_ready_handoff_final_graph_refuses_resume_or_mismatched_target',
+    'c_wait_canonical_functions_keep_suspend_and_deferred_resume_distinct',
+    'c_wait_final_graph_requires_the_exact_canonical_wake_target',
+))
+
+
+def http_routing_result(raw, case):
+    import re
+    require(case in HTTP_ROUTING_CASES and type(raw) is bytes, 'c-libfetch-routing-control-input')
+    text = raw.decode('utf-8')
+    rows = re.findall(r'^test (\S+) \.\.\. (ok|FAILED|ignored)\r?$', text, re.MULTILINE)
+    summaries = re.findall(r'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; '
+        r'(\d+) measured; \d+ filtered out; finished in [^\r\n]+\r?$', text, re.MULTILINE)
+    require(rows == [(case, 'ok')] and summaries == [('1', '0', '0', '0')],
+            'c-libfetch-one-exact-routing-control-passed')
+    return {'case': case, 'passed': 1, 'failed': 0, 'ignored': 0}
+
+
+def http_routing_controls(commands, pins):
+    import re
+    import time
+    original_deadline, original_seconds = commands.deadline, commands.command_seconds
+    # One shared ceiling across all three real controls, clipped to the same
+    # parent-5 deadline; neither a new parent nor a per-case allowance reset.
+    commands.deadline = min(original_deadline, time.monotonic() + 120)
+    commands.command_seconds = min(original_seconds, 120)
+    try:
+        # build_native already selected/validated the pinned direct rustc.
+        # Its canonical toolchain bin directory also contains direct cargo;
+        # do not repeat rustup/wasm/compiler probes outside this command owner.
+        rustc = Path(commands.environment.get('RUSTC', ''))
+        require(rustc.is_absolute() and rustc.name == 'rustc' and rustc.is_file()
+                and rustc.resolve(strict=True) == rustc, 'c-libfetch-built-native-rustc')
+        cargo = rustc.with_name('cargo')
+        require(cargo.is_file() and not cargo.is_symlink() and cargo.resolve(strict=True) == cargo,
+                'c-libfetch-direct-toolchain-cargo')
+        cargo_identity = file_identity(cargo, 512 * 1024**2)
+        reported = commands.run('libfetch-routing-cargo-version', cargo, '--version').decode('utf-8').strip()
+        version = str(pins['rust']['toolchain'])
+        require(len(reported) <= 256 and re.fullmatch(
+            r'cargo ' + re.escape(version) + r'(?: \([^\r\n]+\))?', reported) is not None,
+            'c-libfetch-routing-pinned-cargo-version')
+        result = []
+        for index, case in enumerate(HTTP_ROUTING_CASES):
+            raw = commands.run('libfetch-routing-' + str(index), cargo, 'test', '--locked',
+                '-p', 'latent-component-threading', '--lib', case, '--', '--exact', '--test-threads=1')
+            result.append(http_routing_result(raw, case))
+        require(file_identity(cargo, 512 * 1024**2) == cargo_identity
+                and commands.environment.get('RUSTC') == str(rustc)
+                and time.monotonic() < commands.deadline, 'c-libfetch-routing-shared-inputs-and-deadline')
+        return {'cargo': cargo_identity, 'cargoVersion': reported, 'controls': result}
+    finally:
+        commands.deadline, commands.command_seconds = original_deadline, original_seconds
+
+
 def qualify_http(args):
     import time
     from tools import c_thread_runtime_fixture as fixture, c_thread_runtime_node as node
@@ -292,12 +348,14 @@ def qualify_http(args):
         result['source'] = {'head': head[0], 'tree': head[1], 'native': original_source, 'helpers': helpers}
         stage = 'current-native'
         build_root = output / 'native-build'; build_root.mkdir(mode=0o700)
-        directory, receipt = build_native(commands, build_root,
-            tomllib.loads(read_file(ROOT / 'tools/toolchain.toml').decode('utf-8')))
+        pins = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml').decode('utf-8'))
+        directory, receipt = build_native(commands, build_root, pins)
         native_paths = {name: directory / name for name in
                         ('latent', 'latentd', 'package', 'capsule_contracts', 'capsule_authoring')}
         native = ordinary_tuple(receipt, native_paths)
         result['nativeTuple'] = native
+        stage = 'three-exact-c-routing-controls'
+        result['routingControls'] = http_routing_controls(commands, pins)
         stage = 'one-c-component'
         sdk_source = inventory(c_capsule_project.sdk_inputs(ROOT, threading=True))
         project = fixture.prepare_http(output / 'project')

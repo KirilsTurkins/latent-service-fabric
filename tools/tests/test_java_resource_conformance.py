@@ -23,6 +23,18 @@ BEFORE = WALL-1
 AFTER = WALL+1
 
 
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
+
+
 class JavaResourceConformance(unittest.TestCase):
     def test_downloaded_native_modes_validate_then_execute_and_refuse_tamper(self):
         import os
@@ -202,7 +214,7 @@ class JavaResourceConformance(unittest.TestCase):
 
     def test_resource_child_preserves_all_original_jobs_commands_and_deadlines(self):
         path = '.github/workflows/java-guest-feasibility.yml'
-        current = yaml.safe_load(read_file(ROOT/path))
+        current = yaml.safe_load(historical_checkout(read_file(ROOT/path)))
         private = current[True]['workflow_dispatch']['inputs'].pop('public_fiber_private_scalar_llvm')
         self.assertEqual(private['type'], 'boolean');self.assertIs(private['default'], False)
         clause = " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)"
@@ -239,7 +251,7 @@ class JavaResourceConformance(unittest.TestCase):
         flag = current[True]['workflow_dispatch']['inputs'].pop('java_http_spi')
         self.assertEqual(flag['type'], 'boolean'); self.assertIs(flag['default'], False)
         spi = current['jobs'].pop('http-public-spi')
-        focused = yaml.safe_load(read_file(ROOT/'.github/workflows/java-http-fiber-lifecycle.yml'))
+        focused = yaml.safe_load(historical_checkout(read_file(ROOT/'.github/workflows/java-http-fiber-lifecycle.yml')))
         self.assertEqual(spi, focused['jobs']['http-public-spi'])
         parent = original_compiler_parent(self, current['jobs']['compiler-component'])
         current['jobs']['compiler-component'] = parent
