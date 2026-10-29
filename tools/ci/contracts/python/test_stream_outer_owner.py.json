@@ -1,14 +1,5 @@
 {
-  "cases": [
-    "StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows",
-    "StreamOuterOwnerReader.test_private_fixture_identity_is_bounded_and_changes_are_observed",
-    "TaskNodeBootstrapOwner.test_four_exact_results_and_all_source_tool_process_roots_are_closed",
-    "TaskStoreCallMemoryOwner.test_four_exact_results_and_all21_roots_reject_skips_duplicates_and_other_cases",
-    "TaskTableMemoryOwner.test_exact_resource_cases_share21_roots_and_reject_other_profiles",
-    "TaskWireCallResultOwner.test_four_channel_results_keep21_roots_and_exclude_other_profiles",
-    "TaskZBorrowedCallbackOwner.test_four_callback_results_reject_skips_duplicates_and_other_profiles",
-    "TaskZZHostMemoryBaselineOwner.test_exact_eleven_names_and_results_refuse_missing_duplicate_skipped_or_cross_profile"
-  ],
+  "storageCases": "guard-keys",
   "guards": {
     "StreamOuterOwnerReader.test_exact_case_success_cannot_be_replaced_by_ignored_wrong_or_duplicate_rows": {
       "bases": [

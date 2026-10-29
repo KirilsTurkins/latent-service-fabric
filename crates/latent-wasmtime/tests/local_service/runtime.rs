@@ -3,6 +3,7 @@
 use super::{fixture::Fixture, packages};
 use latent_activation::ActivationOutcome;
 use latent_artifacts::ArtifactRepository;
+use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage};
 use latent_core::{activation_runtime::RuntimeLimits, ActivationId, PlatformErrorCode, TenantId};
 use latent_executor::ExecutionBackend;
 use std::{future::Future, pin::Pin, sync::atomic::Ordering, task::Poll, time::Duration};
@@ -780,16 +781,7 @@ async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_adm
         PlatformErrorCode::ResourceExhausted
     );
     f.idle().await;
-    let second = value(
-        f.manager
-            .start(f.request("second-generation", 14))
-            .unwrap()
-            .await,
-    );
-    assert_ne!(first, second);
-    f.idle().await;
-    // These memory observations differ only in runtime work. The activation
-    // and defaulted root IDs are both retained by the original context charge.
+    // Compare the same scalar result with equal-width original context IDs.
     let direct_request = f.request("lazy-no-concurrency", 15);
     let owned_request = f.request("native-runtime-work", 0);
     let mut native_exhausted = f.request("native-runtime-deny", 23);
@@ -797,22 +789,43 @@ async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_adm
         .map(|request| request.activation_id.as_ref().unwrap().0.len());
     assert_eq!(id_widths, [19; 3]);
     let direct = success(f.manager.start(direct_request).unwrap().await);
-    // Compare identical canonical result bytes/capacity: this baseline does
-    // no runtime imports, while mode23 catches its native-memory refusal.
+    // The full-grant mode21 above catches the exact third-native-owner Limit.
     assert_eq!(direct.output.as_ref(), b"[42]");
     f.idle().await;
     let owned = success(f.manager.start(owned_request).unwrap().await);
+    assert_eq!(owned.output.as_ref(), direct.output.as_ref());
     f.idle().await;
+    // Mode15 never calls an import. Its lazy-only ceiling cannot fund the
+    // newly paid native import transport, before a WIT refusal can be caught.
+    // Keep that outer failure distinct from mode21's successful API catch.
     native_exhausted.budget.memory_bytes = direct.consumption.peak_memory_bytes;
-    let exhausted = success(f.manager.start(native_exhausted).unwrap().await);
+    let ActivationOutcome::Failed {
+        error, consumption, ..
+    } = f.manager.start(native_exhausted).unwrap().await.outcome
+    else {
+        panic!("lazy budget must refuse native transport")
+    };
+    assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+    let diagnostic = ActivationDiagnostic::from_error(&error).unwrap();
     assert_eq!(
-        serde_json::from_slice::<Vec<u32>>(&exhausted.output).unwrap(),
-        [42]
+        (diagnostic.stage, diagnostic.reason),
+        (
+            DiagnosticStage::Execution,
+            DiagnosticReason::GuestMemoryExhausted
+        )
     );
     assert_eq!(
-        exhausted.consumption.peak_memory_bytes,
+        consumption.peak_memory_bytes,
         direct.consumption.peak_memory_bytes
     );
+    f.idle().await;
+    let second = value(
+        f.manager
+            .start(f.request("second-generation", 14))
+            .unwrap()
+            .await,
+    );
+    assert_ne!(first, second);
     f.idle().await;
     assert!(owned.consumption.peak_memory_bytes > direct.consumption.peak_memory_bytes);
     assert!(owned.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
