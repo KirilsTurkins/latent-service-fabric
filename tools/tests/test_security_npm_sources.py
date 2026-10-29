@@ -34,11 +34,13 @@ def tarball(files: dict, *, linked: str = "") -> bytes:
 
 class NpmSourceRepairTests(unittest.TestCase):
     def repair_fixture(self, name="braces"):
-        version, profile, names, dependencies = (
-            ("3.0.3", "braces-3.0.3-lsf-depth-v1",
-             ["lib/utils.js", "lib/compile.js", "lib/expand.js", "lib/stringify.js", "lib/parse.js"],
-             {"fill-range": "^7.1.1"}) if name == "braces" else
-            ("4.3.0", "http-cache-semantics-4.3.0-lsf-cache-v1", ["index.js"], {}))
+        version, profile, names, dependencies = {
+            "braces": ("3.0.3", "braces-3.0.3-lsf-depth-v1",
+                ["lib/utils.js", "lib/compile.js", "lib/expand.js", "lib/stringify.js", "lib/parse.js"],
+                {"fill-range": "^7.1.1"}),
+            "http-cache-semantics": ("4.3.0", "http-cache-semantics-4.3.0-lsf-cache-v1", ["index.js"], {}),
+            "deepmerge": ("4.3.1", "deepmerge-4.3.1-lsf-prototype-v1", ["index.js", "dist/cjs.js", "dist/umd.js"], {})
+        }[name]
         files = {"package/package.json": (json.dumps({"name": name, "version": version,
                   "dependencies": dependencies, "license": "MIT"}).encode(), 0o644),
                  "package/LICENSE": (b"original license retained", 0o644),
@@ -54,27 +56,31 @@ class NpmSourceRepairTests(unittest.TestCase):
         return files, pin, repair
 
     def test_repair_preserves_identity_graph_license_unchanged_bytes_and_modes(self):
-        files, pin, repair = self.repair_fixture()
-        fixed = sources.source_repair(files, repair, pin)
-        self.assertEqual(set(fixed), set(files))
-        for name in ("package/package.json", "package/LICENSE", "package/unchanged.js"):
-            self.assertEqual(fixed[name], files[name])
-        self.assertEqual(json.loads(fixed["package/package.json"][0])["version"], "3.0.3")
-        for row in repair["files"]:
-            self.assertEqual(fixed["package/" + row["path"]], (b"after bounded source\n", 0o644))
+        for name in ("braces", "http-cache-semantics", "deepmerge"):
+            with self.subTest(name=name):
+                files, pin, repair = self.repair_fixture(name)
+                fixed = sources.source_repair(files, repair, pin)
+                self.assertEqual(set(fixed), set(files))
+                for name in ("package/package.json", "package/LICENSE", "package/unchanged.js"):
+                    self.assertEqual(fixed[name], files[name])
+                self.assertEqual(json.loads(fixed["package/package.json"][0])["version"], repair["version"])
+                for row in repair["files"]:
+                    self.assertEqual(fixed["package/" + row["path"]], (b"after bounded source\n", 0o644))
 
     def test_repair_rejects_missing_walkers_preimage_postimage_edit_and_upstream_drift(self):
-        files, pin, repair = self.repair_fixture()
-        changes = [lambda value: value["files"].pop(),
-                   lambda value: value["files"][0].update(beforeSha256="0" * 64),
-                   lambda value: value["files"][0].update(afterSha256="0" * 64),
-                   lambda value: value["files"][0]["edits"][0].update(count=2),
-                   lambda value: value.update(upstreamIntegrity="untrusted")]
-        for index, change in enumerate(changes):
-            altered = copy.deepcopy(repair)
-            change(altered)
-            with self.subTest(index=index), self.assertRaises(SecurityError):
-                sources.source_repair(files, altered, pin)
+        for name in ("braces", "http-cache-semantics", "deepmerge"):
+            with self.subTest(name=name):
+                files, pin, repair = self.repair_fixture(name)
+                changes = [lambda value: value["files"].pop(),
+                           lambda value: value["files"][0].update(beforeSha256="0" * 64),
+                           lambda value: value["files"][0].update(afterSha256="0" * 64),
+                           lambda value: value["files"][0]["edits"][0].update(count=2),
+                           lambda value: value.update(upstreamIntegrity="untrusted")]
+                for index, change in enumerate(changes):
+                    altered = copy.deepcopy(repair)
+                    change(altered)
+                    with self.subTest(index=index), self.assertRaises(SecurityError):
+                        sources.source_repair(files, altered, pin)
 
     def test_archive_paths_links_duplicate_members_and_hidden_graphs_fail(self):
         for name in ("package/../escape", "/package/absolute", "package/a\\b", "./package/a"):
@@ -105,6 +111,17 @@ class NpmSourceRepairTests(unittest.TestCase):
         observation[0]["advisories"][0]["modified"] = "changed-advisory"
         self.assertEqual(sources.resolve_findings([known], observation, [receipt]), ([known], []))
         self.assertEqual(sources.resolve_findings([known], observation, []), ([known], []))
+
+        deepmerge = finding("osv", "GHSA-gcqx-w48m-w2h4", "website/package-lock.json", "npm:deepmerge@4.3.1")
+        action = finding("osv", deepmerge.finding, ".github/security/actions/checkout/package-lock.json", deepmerge.package)
+        revision = "2026-10-27T21:45:04.256048Z"
+        receipt = {"name": "deepmerge", "version": "4.3.1", "locks": [deepmerge.path],
+            "advisories": [{"id": deepmerge.finding, "modified": revision}]}
+        observation = [{"advisories": [{"package": Package("npm", "deepmerge", "4.3.1", deepmerge.path).public(),
+            "id": deepmerge.finding, "modified": revision}]}]
+        self.assertEqual(sources.resolve_findings([deepmerge, action], observation, [receipt]), ([action], [deepmerge]))
+        observation[0]["advisories"][0]["modified"] = "changed-revision"
+        self.assertEqual(sources.resolve_findings([deepmerge, action], observation, [receipt]), ([deepmerge, action], []))
 
     def test_library_allowance_does_not_admit_aliases_or_changed_versions_and_integrities(self):
         configuration = json.loads(read_file(POLICY, "inventory.json"))
@@ -145,7 +162,7 @@ class NpmSourceRepairTests(unittest.TestCase):
             patches.append(pin)
             material[name], raw_inputs[name] = files, raw
         libraries = []
-        for name in ("braces", "http-cache-semantics"):
+        for name in ("braces", "http-cache-semantics", "deepmerge"):
             files, pin, repair = self.repair_fixture(name)
             raw_inputs[name] = tarball(files)
             material[name] = sources.source_repair(files, repair, pin)
@@ -157,7 +174,8 @@ class NpmSourceRepairTests(unittest.TestCase):
             policy[name] = {"version": pin["version"], "profile": repair["profile"],
                             "repair_sha256": sources.digest(encoded),
                             "integrity": sources.integrity(sources.distribution(material[name])), "advisories": []}
-            (libraries if name == "braces" else patches).append(pin if name == "braces" else {**pin, "from": "4.2.0"})
+            (patches if name == "http-cache-semantics" else libraries).append(
+                {**pin, "from": "4.2.0"} if name == "http-cache-semantics" else pin)
         base_files = {"package/package.json": (b'{"name":"npm","version":"11.19.1"}', 0o644),
                       "package/node_modules/balanced-match/package.json": (b'{"name":"balanced-match","version":"4.0.4"}', 0o644),
                       "package/node_modules/cssesc/package.json": (b'{"name":"cssesc","version":"3.0.0"}', 0o644),
@@ -209,9 +227,9 @@ class NpmSourceRepairTests(unittest.TestCase):
             packages, config, fetch = self.verification_fixture(root)
             with patch.object(sources, "POLICY", root):
                 result = sources.verify_sources(root, packages, config, fetch)
-            self.assertEqual({row["name"] for row in result}, {"braces", "http-cache-semantics"})
+            self.assertEqual({row["name"] for row in result}, {"braces", "http-cache-semantics", "deepmerge"})
             self.assertEqual({row["name"]: len(row["locks"]) for row in result},
-                             {"braces": 2, "http-cache-semantics": 3})
+                             {"braces": 2, "http-cache-semantics": 3, "deepmerge": 2})
 
     def test_independent_reconstruction_rejects_upstream_source_lock_and_patch_drift(self):
         for change in ("upstream", "source", "lock", "repair", "builder"):

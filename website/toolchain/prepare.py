@@ -163,7 +163,8 @@ def package(files: dict[str, tuple[bytes, int]], prefix: str = "package/") -> di
 def repair_source(files: dict[str, tuple[bytes, int]], repair: dict) -> dict[str, tuple[bytes, int]]:
     """Apply one reviewed complete-file repair to authenticated upstream bytes."""
     profiles = {"braces": ("3.0.3", "braces-3.0.3-lsf-depth-v1"),
-                "http-cache-semantics": ("4.3.0", "http-cache-semantics-4.3.0-lsf-cache-v1")}
+                "http-cache-semantics": ("4.3.0", "http-cache-semantics-4.3.0-lsf-cache-v1"),
+                "deepmerge": ("4.3.1", "deepmerge-4.3.1-lsf-prototype-v1")}
     if (set(repair) != {"schema", "profile", "name", "version", "upstreamIntegrity", "files"}
             or repair["schema"] != 1 or repair["name"] not in profiles
             or (repair["version"], repair["profile"]) != profiles[repair["name"]]):
@@ -177,7 +178,9 @@ def repair_source(files: dict[str, tuple[bytes, int]], repair: dict) -> dict[str
             or any(name.startswith("package/node_modules/") for name in files)
             or any(name in files for name in ("package/package-lock.json", "package/npm-shrinkwrap.json"))):
         raise ValueError("source repair package graph requires review")
-    required = {"lib/compile.js", "lib/expand.js", "lib/stringify.js", "lib/parse.js", "lib/utils.js"} if repair["name"] == "braces" else {"index.js"}
+    required = {"braces": {"lib/compile.js", "lib/expand.js", "lib/stringify.js", "lib/parse.js", "lib/utils.js"},
+                "http-cache-semantics": {"index.js"},
+                "deepmerge": {"index.js", "dist/cjs.js", "dist/umd.js"}}[repair["name"]]
     rows = repair["files"]
     if not isinstance(rows, list) or len(rows) != len(required):
         raise ValueError("source repair file coverage")
@@ -286,19 +289,19 @@ def compose(base: bytes, patches: list[tuple[dict, bytes]], *, repair: dict | No
 
 
 def library_material(pins: dict, acquired: list[tuple[dict, bytes]], *, offline: bool) -> tuple[dict, dict]:
-    """Authenticate the two fixed repair documents and their upstream archives."""
+    """Authenticate the three fixed repair documents and their upstream archives."""
     if set(pins) != {"schema", "profile", "base", "patches", "libraries", "repairs"}:
         raise ValueError("source repair profile fields")
-    if not isinstance(pins["libraries"], list) or len(pins["libraries"]) != 1 or pins["libraries"][0].get("name") != "braces":
+    if not isinstance(pins["libraries"], list) or [pin.get("name") for pin in pins["libraries"]] != ["braces", "deepmerge"]:
         raise ValueError("source repair library selection")
     material = {pin["name"]: (pin, raw) for pin, raw in acquired}
-    brace = pins["libraries"][0]
-    material["braces"] = brace, acquire(brace, CACHE, offline)
+    for library in pins["libraries"]:
+        material[library["name"]] = library, acquire(library, CACHE, offline)
     repairs = {}
-    if not isinstance(pins["repairs"], list) or len(pins["repairs"]) != 2:
+    if not isinstance(pins["repairs"], list) or len(pins["repairs"]) != 3:
         raise ValueError("source repair document coverage")
     for row in pins["repairs"]:
-        if (set(row) != {"path", "sha256"} or row["path"] not in {"repairs/braces.json", "repairs/http-cache-semantics.json"}
+        if (set(row) != {"path", "sha256"} or row["path"] not in {"repairs/braces.json", "repairs/http-cache-semantics.json", "repairs/deepmerge.json"}
                 or not isinstance(row["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", row["sha256"])):
             raise ValueError("source repair document identity")
         with (HERE / row["path"]).open("rb") as stream:
@@ -310,7 +313,7 @@ def library_material(pins: dict, acquired: list[tuple[dict, bytes]], *, offline:
         if name in repairs or record["name"] != name or record["upstreamIntegrity"] != material[name][0]["integrity"]:
             raise ValueError("source repair upstream identity drift")
         repairs[name] = record
-    if set(repairs) != {"braces", "http-cache-semantics"}:
+    if set(repairs) != {"braces", "http-cache-semantics", "deepmerge"}:
         raise ValueError("source repair coverage")
     libraries = {name: packed(repair_source(unpack(material[name][1]), repair)) for name, repair in repairs.items()}
     return libraries, repairs

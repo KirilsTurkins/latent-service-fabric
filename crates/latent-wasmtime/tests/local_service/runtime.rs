@@ -3,6 +3,7 @@
 use super::{fixture::Fixture, packages};
 use latent_activation::ActivationOutcome;
 use latent_artifacts::ArtifactRepository;
+use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage};
 use latent_core::{activation_runtime::RuntimeLimits, ActivationId, PlatformErrorCode, TenantId};
 use latent_executor::ExecutionBackend;
 use std::{future::Future, pin::Pin, sync::atomic::Ordering, task::Poll, time::Duration};
@@ -199,6 +200,28 @@ async fn signed_java_standard_timers_recur_cancel_and_drain_owned_workers() {
     .await;
 }
 
+#[tokio::test]
+#[ignore = "requires the pinned ordinary shutdownNow CompletableFuture component"]
+async fn signed_java_shutdown_now_withdraws_only_unstarted_callbacks() {
+    signed_java_fiber_fixture(
+        "LSF_JAVA_SHUTDOWN_NOW_FIXTURE",
+        include_bytes!("../../../../sdk/java-guest/fibers/conformance/shutdown-now/Capsule.java"),
+        "java-shutdown-now",
+    )
+    .await;
+}
+
+#[tokio::test]
+#[ignore = "requires the pinned normal FutureTask queue component and its one-Result fixture"]
+async fn signed_java_future_tasks_retain_result_ownership_across_queue_copies() {
+    signed_java_fiber_fixture(
+        "LSF_JAVA_FUTURE_QUEUE_FIXTURE",
+        include_bytes!("../../../../sdk/java-guest/fibers/conformance/future-queue/Capsule.java"),
+        "java-future-queue",
+    )
+    .await;
+}
+
 async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name: &str) {
     assert_eq!(
         std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(),
@@ -207,7 +230,10 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     let prepared = std::path::PathBuf::from(
         std::env::var_os(variable).expect("prepare the pinned Java fiber fixture"),
     );
-    if name == "java-scheduled-libraries" {
+    if matches!(
+        name,
+        "java-scheduled-libraries" | "java-shutdown-now" | "java-future-queue"
+    ) {
         assert!(prepared.is_absolute());
         for (path, maximum) in [
             ("src/Capsule.java", expected_source.len() as u64),
@@ -293,6 +319,51 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         );
         assert_eq!(record["scheduledModel"]["actualGuestBindingsUsed"], false);
     }
+    let shutdown_now = name == "java-shutdown-now";
+    let future_queue = name == "java-future-queue";
+    if shutdown_now {
+        assert_eq!(record["fixture"], "shutdown-now");
+        assert_eq!(record["status"], "component-built-unqualified");
+        assert_eq!(
+            record["shutdownNowSource"]["status"],
+            "SDK-source-controls-passed"
+        );
+        assert_eq!(record["shutdownNowSource"]["ownershipChecks"], 53);
+        assert_eq!(
+            record["shutdownNowSource"]["componentExecutionPerformed"],
+            false
+        );
+        assert_eq!(
+            record["shutdownNowSource"]["actualGuestBindingsUsed"],
+            false
+        );
+        assert_eq!(
+            record["completableModel"]["status"],
+            "actual-locked-classlib-model-passed"
+        );
+    }
+    if future_queue {
+        assert_eq!(record["fixture"], "future-queue");
+        assert_eq!(record["status"], "component-built-unqualified");
+        assert_eq!(
+            record["futureQueueSource"]["status"],
+            "SDK-source-controls-passed"
+        );
+        assert_eq!(record["futureQueueSource"]["ownershipChecks"], 48);
+        assert_eq!(
+            record["futureQueueSource"]["componentExecutionPerformed"],
+            false
+        );
+        assert_eq!(
+            record["futureQueueSource"]["actualGuestBindingsUsed"],
+            false
+        );
+        assert_eq!(
+            record["scheduledModel"]["status"],
+            "actual-locked-classlib-model-passed"
+        );
+        assert_eq!(record["scheduledModel"]["models"], 8);
+    }
     let bytes = std::fs::read(prepared.join("build/component.wasm")).unwrap();
     assert_eq!(
         record["componentDigest"],
@@ -305,7 +376,11 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     let scheduled = name == "java-scheduled-libraries";
     assert_eq!(
         record["reference"].as_array().unwrap().len(),
-        if scheduled { 1 } else { 3 }
+        if scheduled || shutdown_now || future_queue {
+            1
+        } else {
+            3
+        }
     );
     for control in record["reference"].as_array().unwrap() {
         if scheduled {
@@ -319,10 +394,21 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
             );
         } else {
             assert_eq!(control["modes"], serde_json::json!([0, 1, 2, 3]));
-            assert_eq!(control["results"], serde_json::json!([42, 42, 42, 42]));
+            assert_eq!(
+                control["results"],
+                if future_queue {
+                    serde_json::json!([41, 42, 42, 42])
+                } else {
+                    serde_json::json!([42, 42, 42, 42])
+                }
+            );
         }
     }
     let mut provenance_source = source.clone();
+    if shutdown_now || future_queue {
+        provenance_source
+            .extend_from_slice(&std::fs::read(prepared.join("FIBERS-COMPILE.json")).unwrap());
+    }
     if name == "java-worker-libraries" || scheduled {
         assert_eq!(record["libraries"]["sourceModified"], false);
         assert_eq!(record["libraries"]["externalExecutorInjected"], false);
@@ -359,7 +445,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         queued_work: 8,
         waits: 8,
         timers: 2,
-        results: 8,
+        results: if future_queue { 1 } else { 8 },
         native_owners: 2,
     };
     let f = signed_runtime_with_limits(
@@ -402,7 +488,13 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         "{profile} signed-preparation-setup-micros={} stores-created=0 guest-activations=0",
         preparation_started.elapsed().as_micros()
     );
-    for iteration in 0..if scheduled { 2 } else { 3 } {
+    for iteration in 0..if shutdown_now || future_queue {
+        1
+    } else if scheduled {
+        2
+    } else {
+        3
+    } {
         for mode in 0..if scheduled { 8 } else { 4 } {
             let requested_id = format!("{name}-{iteration}-{mode}");
             let stores_before = f.backend.resource_snapshot().stores_created;
@@ -413,7 +505,11 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 .await;
             if matches!(
                 name,
-                "java-fibers" | "java-worker-libraries" | "java-scheduled-libraries"
+                "java-fibers"
+                    | "java-worker-libraries"
+                    | "java-scheduled-libraries"
+                    | "java-shutdown-now"
+                    | "java-future-queue"
             ) {
                 assert_eq!(actual.activation_id.0, requested_id);
             }
@@ -431,7 +527,11 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
             f.idle().await;
             if matches!(
                 name,
-                "java-fibers" | "java-worker-libraries" | "java-scheduled-libraries"
+                "java-fibers"
+                    | "java-worker-libraries"
+                    | "java-scheduled-libraries"
+                    | "java-shutdown-now"
+                    | "java-future-queue"
             ) {
                 let runtime = f.backend.resource_snapshot();
                 let broker = f.broker.snapshot();
@@ -681,16 +781,7 @@ async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_adm
         PlatformErrorCode::ResourceExhausted
     );
     f.idle().await;
-    let second = value(
-        f.manager
-            .start(f.request("second-generation", 14))
-            .unwrap()
-            .await,
-    );
-    assert_ne!(first, second);
-    f.idle().await;
-    // These memory observations differ only in runtime work. The activation
-    // and defaulted root IDs are both retained by the original context charge.
+    // Compare the same scalar result with equal-width original context IDs.
     let direct_request = f.request("lazy-no-concurrency", 15);
     let owned_request = f.request("native-runtime-work", 0);
     let mut native_exhausted = f.request("native-runtime-deny", 23);
@@ -698,22 +789,43 @@ async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_adm
         .map(|request| request.activation_id.as_ref().unwrap().0.len());
     assert_eq!(id_widths, [19; 3]);
     let direct = success(f.manager.start(direct_request).unwrap().await);
-    // Compare identical canonical result bytes/capacity: this baseline does
-    // no runtime imports, while mode23 catches its native-memory refusal.
+    // The full-grant mode21 above catches the exact third-native-owner Limit.
     assert_eq!(direct.output.as_ref(), b"[42]");
     f.idle().await;
     let owned = success(f.manager.start(owned_request).unwrap().await);
+    assert_eq!(owned.output.as_ref(), direct.output.as_ref());
     f.idle().await;
+    // Mode15 never calls an import. Its lazy-only ceiling cannot fund the
+    // newly paid native import transport, before a WIT refusal can be caught.
+    // Keep that outer failure distinct from mode21's successful API catch.
     native_exhausted.budget.memory_bytes = direct.consumption.peak_memory_bytes;
-    let exhausted = success(f.manager.start(native_exhausted).unwrap().await);
+    let ActivationOutcome::Failed {
+        error, consumption, ..
+    } = f.manager.start(native_exhausted).unwrap().await.outcome
+    else {
+        panic!("lazy budget must refuse native transport")
+    };
+    assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+    let diagnostic = ActivationDiagnostic::from_error(&error).unwrap();
     assert_eq!(
-        serde_json::from_slice::<Vec<u32>>(&exhausted.output).unwrap(),
-        [42]
+        (diagnostic.stage, diagnostic.reason),
+        (
+            DiagnosticStage::Execution,
+            DiagnosticReason::GuestMemoryExhausted
+        )
     );
     assert_eq!(
-        exhausted.consumption.peak_memory_bytes,
+        consumption.peak_memory_bytes,
         direct.consumption.peak_memory_bytes
     );
+    f.idle().await;
+    let second = value(
+        f.manager
+            .start(f.request("second-generation", 14))
+            .unwrap()
+            .await,
+    );
+    assert_ne!(first, second);
     f.idle().await;
     assert!(owned.consumption.peak_memory_bytes > direct.consumption.peak_memory_bytes);
     assert!(owned.consumption.peak_memory_bytes <= packages::budget().memory_bytes);

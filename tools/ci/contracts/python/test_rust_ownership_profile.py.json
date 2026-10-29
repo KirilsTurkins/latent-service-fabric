@@ -3,7 +3,7 @@
 "kind":"python",
 "reviewReason":"Reviewed actual greeting creator/capture checks: select only the exact transaction Cargo feature while every other captured SDK/lock/project/runtime byte remains identical; wrong SDK mapping and repeated selection refuse without rewriting. These two Source cases do not replace the20actual wasm32 positive/negative ownership compiles.",
 "module":"tools/tests/test_rust_ownership_profile.py",
-"cases":["RustOwnershipProfile.test_feature_selection_preserves_every_other_captured_byte_and_project_limit","RustOwnershipProfile.test_manifest_drift_and_second_selection_refuse_without_rewriting_source"],
+"storageCases":"guard-keys",
 "guards":{
 "RustOwnershipProfile.test_feature_selection_preserves_every_other_captured_byte_and_project_limit":
       "56f6b8c08596b4e7579219657fcf82db63c8fa44632febc744e963658695a05a",

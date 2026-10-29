@@ -1,15 +1,15 @@
 {"cases":["HostStreamKernelReference.test_actual_cargo_json_errors_keep_only_bounded_codes_and_primary_source_spans","HostStreamKernelReference.test_exact_kernel_tail_witness_keeps_all_physical_qualification_false","HostStreamKernelReference.test_fd_absence_or_missing_case_cannot_substitute_for_actual_tail","HostStreamKernelReference.test_refunding_any_corrected_or_failed_original_owner_is_rejected","HostStreamKernelReference.test_unknown_private_unbounded_or_forged_retirement_fields_are_rejected","HostStreamKernelReference.test_wrong_platform_or_changed_source_refuses_before_any_build_or_output"],"guards":{"HostStreamKernelReference.test_actual_cargo_json_errors_keep_only_bounded_codes_and_primary_source_spans":
-  "55b9a0a2d4468b6c4fab3a045de3c7c816e159fa6d9d44f16ef006e32b06d5d9"
+  "993dd64ceadf8ec135a4c5e0714c7511c4921873874ff48506ea91d56024b604"
 ,"HostStreamKernelReference.test_exact_kernel_tail_witness_keeps_all_physical_qualification_false":
-  "55b9a0a2d4468b6c4fab3a045de3c7c816e159fa6d9d44f16ef006e32b06d5d9"
+  "993dd64ceadf8ec135a4c5e0714c7511c4921873874ff48506ea91d56024b604"
 ,"HostStreamKernelReference.test_fd_absence_or_missing_case_cannot_substitute_for_actual_tail":
-  "55b9a0a2d4468b6c4fab3a045de3c7c816e159fa6d9d44f16ef006e32b06d5d9"
+  "993dd64ceadf8ec135a4c5e0714c7511c4921873874ff48506ea91d56024b604"
 ,"HostStreamKernelReference.test_refunding_any_corrected_or_failed_original_owner_is_rejected":
-  "55b9a0a2d4468b6c4fab3a045de3c7c816e159fa6d9d44f16ef006e32b06d5d9"
+  "993dd64ceadf8ec135a4c5e0714c7511c4921873874ff48506ea91d56024b604"
 ,"HostStreamKernelReference.test_unknown_private_unbounded_or_forged_retirement_fields_are_rejected":
-  "55b9a0a2d4468b6c4fab3a045de3c7c816e159fa6d9d44f16ef006e32b06d5d9"
+  "993dd64ceadf8ec135a4c5e0714c7511c4921873874ff48506ea91d56024b604"
 ,"HostStreamKernelReference.test_wrong_platform_or_changed_source_refuses_before_any_build_or_output":
-  "55b9a0a2d4468b6c4fab3a045de3c7c816e159fa6d9d44f16ef006e32b06d5d9"
-},"kind":"python","module":"tools/tests/test_host_stream_kernel_reference.py","reviewReason":"Preserve strict complete44-case streams catalogue and one-missing43-case negative control after the reviewed new typed-fault test; original64KiB, numeric-owner, privacy and no-retirement guards unchanged.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "55b9a0a2d4468b6c4fab3a045de3c7c816e159fa6d9d44f16ef006e32b06d5d9"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7","class:setup-sha256:f3a61d2e9be2f3e3d2156fe9d4577d4429a7357c4390cd679355e423154baefd"],"skipSites":[]}}}
+  "993dd64ceadf8ec135a4c5e0714c7511c4921873874ff48506ea91d56024b604"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_reference.py","reviewReason":"Preserve strict complete47-case streams catalogue and one-missing46-case negative control after the reviewed new typed-fault test; original64KiB, numeric-owner, privacy and no-retirement guards unchanged.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "993dd64ceadf8ec135a4c5e0714c7511c4921873874ff48506ea91d56024b604"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b9c8032017803fa9e72692b5dc07dec434a4aecb287e543c7ad23c0a4f3a4de7","class:setup-sha256:717910a5ebe373d9d11acc71d8581eeff78ad0ced371b7e31e6e8b1c107a529e"],"skipSites":[]}}}

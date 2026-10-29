@@ -1027,4 +1027,144 @@ class ZNodeBootstrapObjectOwner(unittest.TestCase):
         self.assertNotIn('msi-descriptor-objects', owner.NODE_STAGES)
 
 
+class ZNodeIrqGeometryOwner(unittest.TestCase):
+    def test_complete_capture_and_closed_six_object_scope(self):
+        source=owner.geometry_materials(owner.ROOT)
+        self.assertEqual((len(source['physicalInputs']),len(source['logicalIdentities'])),(88,119))
+        self.assertEqual((len(source['prior85Physical']),len(source['prior116Logical'])),(85,116))
+        self.assertEqual(sum(r['bytes'] for r in source['physicalInputs'].values()),1018112)
+        self.assertEqual(owner.mode_targets(node_geometry=True),owner.GEOMETRY_TARGETS)
+        self.assertEqual(len(owner.GEOMETRY_TARGETS),6)
+        for old in ('node_bootstrap','msi_descriptor','q35','msi_context','classdir'):
+            with self.assertRaises(ValueError):owner.mode_targets(node_geometry=True,**{old:True})
+        with self.assertRaises(ValueError):owner.mode_targets(node_geometry=1)
+        for target in owner.GEOMETRY_TARGETS:
+            self.assertEqual(owner.public_allowed('objects/'+target,node_geometry=True),owner.MAX_OBJECT)
+        self.assertIsNone(owner.public_allowed('objects/net/factory.o',node_geometry=True))
+        self.assertIsNone(owner.public_allowed('logs/00-node-bootstrap-objects.stdout.txt',node_geometry=True))
+        self.assertEqual(owner.public_allowed('logs/00-node-irq-geometry-objects.stdout.txt',node_geometry=True),4*1024**2)
+        self.assertEqual(owner.mode_targets(node_bootstrap=True),('net/factory.o',))
+
+    @staticmethod
+    def _elf(role=1,flags=2,relocation=False):
+        import struct
+        fields=owner.GEOMETRY_FIELDS[role]
+        values=[8]*len(fields)
+        for i,name in enumerate(fields):
+            if name.endswith('.enabled'):values[i]=0
+        data=struct.pack('<28Q',0x314f45474e46534c,1,role,len(fields),*values,*([0]*(24-len(fields))))
+        strings=b'\0.shstrtab\0.lsf_node_geometry\0'
+        raw=bytearray(64);raw[:7]=b'\x7fELF\x02\x01\x01'
+        struct.pack_into('<HHI',raw,16,1,62,1)
+        raw.extend(strings);data_offset=len(raw);raw.extend(data)
+        table=len(raw);rows=[(0,0,0,0,0,0,0,0,0,0),
+            (1,3,0,0,64,len(strings),0,0,1,0),
+            (11,1,flags,0,data_offset,len(data),0,0,8,0)]
+        if relocation:rows.append((0,4,0,0,data_offset,24,0,2,8,24))
+        for row in rows:raw.extend(struct.pack('<IIQQQQIIQQ',*row))
+        struct.pack_into('<Q',raw,40,table);struct.pack_into('<HHH',raw,58,64,len(rows),1)
+        return bytes(raw)
+
+    def test_passive_geometry_rejects_wrong_role_write_relocations_and_truncation(self):
+        good=self._elf()
+        decoded=owner.geometry_decode(good,1)
+        self.assertFalse(decoded['objectExecuted']);self.assertFalse(decoded['fundingOrFitQualified'])
+        for bad,role in [(good,2),(good[:-1],1),(self._elf(flags=3),1),
+                (self._elf(flags=6),1),(self._elf(relocation=True),1),(b'not ELF',1)]:
+            with self.subTest(role=role,length=len(bad)),self.assertRaises(ValueError):
+                owner.geometry_decode(bad,role)
+        for role in owner.GEOMETRY_FIELDS:self.assertEqual(owner.geometry_decode(self._elf(role),role)['role'],role)
+
+    def test_native_operands_preserve_unfunded_dynamic_and_shared_boundaries(self):
+        root=owner.ROOT/'research/standard-outbound/linux-6.12-lineage/node-irq-geometry'
+        body=(root/'geometry.c').read_text()
+        self.assertIn('num_possible_cpus() != 1 || !cpu_possible(0) || nr_cpu_ids != 1',body)
+        self.assertIn('pcpu_chunk_struct_size',body);self.assertIn('need_pcpuobj_ext()',body)
+        self.assertIn('pcpu_group_sizes[group]',body);self.assertIn('check_mul_overflow',body)
+        self.assertIn('asynchronous balance work',body)
+        for birth in ('kmalloc(', 'kzalloc(', 'alloc_pages(', 'alloc_percpu(', 'request_irq(', 'NodeFunding'):
+            self.assertNotIn(birth,body)
+        self.assertEqual(len(owner.GEOMETRY_NATIVE_PINS),6)
+        self.assertEqual(set(owner.GEOMETRY_NATIVE_PINS),{'kernel/irq/matrix.c','lib/maple_tree.c',
+            'mm/percpu.c','mm/percpu-vm.c','mm/percpu-internal.h','kernel/irq/irqdesc.c'})
+
+
+class ZNodeNativeCapacityOwner(unittest.TestCase):
+    def _review(self, root):
+        prefix = Path(owner.CAPACITY_MODULE).parent
+        research = {}
+        for name, raw in [('projector.py',b'# captured only\n'),('native.c',b'int captured;\n')]:
+            path = root/prefix/name; path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(raw)
+            research[(prefix/name).as_posix()] = owner.identity(raw)
+        primary = {n:owner.identity(b'int original;\n') for n in
+            ('fs/proc/generic.c','fs/proc/inode.c','fs/proc/internal.h',
+             'drivers/virtio/virtio_pci_common.c')}
+        return {'research':research,'primary':primary,'projectorPrimary':{},'outputCount':464}
+
+    def test_closed_route_rejects_mixed_modes_and_unrelated_products(self):
+        old = (False,)*12
+        self.assertEqual(owner.capacity_targets(False,*old),owner.mode_targets())
+        self.assertEqual(owner.capacity_targets(True,*old),owner.CAPACITY_TARGETS)
+        self.assertEqual(len(owner.CAPACITY_TARGETS),18)
+        self.assertEqual(owner.capacity_targets(owner.CAPACITY_FACTS,*old),owner.CAPACITY_FACTS_TARGETS)
+        self.assertEqual(len(owner.CAPACITY_FACTS_TARGETS),3)
+        from tools import host_stream_kernel_stream_operations as operations
+        for selected,targets,expected in ((owner.CAPACITY_FACTS,owner.CAPACITY_FACTS_TARGETS,True),
+                (True,owner.CAPACITY_TARGETS,True),(False,owner.mode_targets(),False)):
+            actual,geometry=owner.capacity_plan(selected,*old)
+            self.assertEqual(actual,targets)
+            self.assertIs(geometry,expected)
+            with patch.object(operations,'transform',side_effect=RuntimeError('passed-mode-guard')):
+                with self.assertRaisesRegex(RuntimeError,'passed-mode-guard'):
+                    owner.current_compose({},Path('.'),netdev_post_init=geometry)
+        self.assertIs(owner.capacity_plan(False,*old[:-1],True)[1],True)
+        for args in ((1,*old),(owner.CAPACITY_FACTS,True,*old[1:]),(False,*old[:-1])):
+            with self.assertRaises(ValueError):owner.capacity_plan(*args)
+        for target in owner.CAPACITY_TARGETS:
+            allowed=owner.public_allowed('objects/'+target,node_capacity=owner.CAPACITY_FACTS)
+            self.assertEqual(allowed,owner.MAX_OBJECT if target in owner.CAPACITY_FACTS_TARGETS else None)
+        with self.assertRaises(ValueError):owner.capacity_targets(owner.CAPACITY_FACTS,True,*old[1:])
+        with self.assertRaises(ValueError):owner.capacity_targets('facts',*old)
+        with self.assertRaises(ValueError): owner.capacity_targets(True,True,*old[1:])
+        with self.assertRaises(ValueError): owner.capacity_targets(1,*old)
+        for name in owner.CAPACITY_TARGETS:
+            self.assertEqual(owner.public_allowed('objects/'+name,node_capacity=True),owner.MAX_OBJECT)
+        for name in ('objects/net/socket.o','layout.json','logs/00-node-irq-geometry-objects.stdout.txt',
+                     'logs/32-node-capacity-objects.stdout.txt'):
+            self.assertIsNone(owner.public_allowed(name,node_capacity=True))
+        self.assertEqual(owner.public_allowed('logs/00-node-capacity-objects.stderr.txt',
+            node_capacity=True),4*1024**2)
+
+    def test_capture_refuses_unfrozen_extra_drift_and_overflow_before_loading(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); review=self._review(root)
+            with patch.object(owner,'CAPACITY_REVIEW',None):
+                with self.assertRaises(ValueError): owner.capacity_capture(root)
+            with patch.object(owner,'CAPACITY_REVIEW',review),patch.object(owner,'geometry_capture',return_value=({}, {}, {})):
+                rows,raw=owner.capacity_capture(root)
+                self.assertEqual(rows,{n:owner.identity(b) for n,b in raw.items()})
+                extra=root/Path(owner.CAPACITY_MODULE).parent/'unexpected.c';extra.write_bytes(b'x')
+                with self.assertRaises(ValueError): owner.capacity_capture(root)
+                extra.unlink()
+                path=root/owner.CAPACITY_MODULE;path.write_bytes(b'drift')
+                with self.assertRaises(ValueError): owner.capacity_capture(root)
+                path.write_bytes(raw[owner.CAPACITY_MODULE])
+                with patch.object(owner,'MAX_SOURCE',1):
+                    with self.assertRaises(ValueError): owner.capacity_capture(root)
+
+    def test_native_capture_retains_every_original_body_and_refuses_drift(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);review=self._review(root)
+            tree=root/'linux';tree.mkdir()
+            for name in review['primary']:
+                path=tree/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'int original;\n')
+            with patch.object(owner,'CAPACITY_REVIEW',review):
+                result=owner.capacity_native_capture(tree,root/'captured')
+                self.assertEqual(set(result),set(review['primary']))
+                for name,raw in result.items():
+                    self.assertEqual((root/'captured/native'/name).read_bytes(),raw)
+                (tree/'fs/proc/generic.c').write_bytes(b'changed')
+                with self.assertRaises(ValueError): owner.capacity_native_capture(tree,root/'rejected')
+
+
 if __name__=='__main__':unittest.main()

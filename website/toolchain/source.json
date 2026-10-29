@@ -43,6 +43,11 @@
       "name": "braces",
       "version": "3.0.3",
       "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA=="
+    },
+    {
+      "name": "deepmerge",
+      "version": "4.3.1",
+      "integrity": "sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A=="
     }
   ],
   "repairs": [
@@ -53,6 +58,10 @@
     {
       "path": "repairs/http-cache-semantics.json",
       "sha256": "c903c8ad20a3c0f21bf217163550cd9c5989384ea1970626688b6cab30d0245a"
+    },
+    {
+      "path": "repairs/deepmerge.json",
+      "sha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7"
     }
   ]
 }

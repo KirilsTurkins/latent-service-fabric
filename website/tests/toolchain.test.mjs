@@ -24,9 +24,15 @@ test('website pins and lock agree without a root workspace or dependency lifecyc
   for (const [location, dependency] of Object.entries(lock.packages)) {
     if (location === '') continue;
     assert.match(dependency.version, /^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/);
-    if (location === 'node_modules/braces' || location === 'node_modules/http-cache-semantics') {
+    if (location === 'node_modules/braces' || location === 'node_modules/http-cache-semantics' || location === 'node_modules/deepmerge') {
       const name = location.slice('node_modules/'.length);
       const repair = repairs.repairs[name];
+      if (name === 'deepmerge') {
+        assert.deepEqual([repair.version, repair.profile, repair.integrity], [
+          '4.3.1', 'deepmerge-4.3.1-lsf-prototype-v1',
+          'sha512-w9M3UphEGYK/Zn9kkYnPVw7NnQyxE3T7gIcqBv3m4/Fe+LAhnAPZBwgYCqj0/orv2GagYhPGa2OMjqdzp7G0Lg==',
+        ]);
+      }
       assert.equal(dependency.version, repair.version);
       assert.equal(dependency.resolved, `file:../target/website-package-manager/${repair.profile}.tar`);
       assert.equal(manifest.overrides[name], dependency.resolved);
@@ -40,7 +46,7 @@ test('website pins and lock agree without a root workspace or dependency lifecyc
     assert.match(dependency.integrity, /^sha512-[A-Za-z0-9+/]+={0,2}$/);
     assert.equal(dependency.link, undefined);
   }
-  assert.deepEqual([...maintained].sort(), ['braces', 'http-cache-semantics']);
+  assert.deepEqual([...maintained].sort(), ['braces', 'deepmerge', 'http-cache-semantics']);
   assert.match(fs.readFileSync(path.join(websiteRoot, '.npmrc'), 'utf8'), /^ignore-scripts=true$/m);
   assert.equal(fs.existsSync(path.join(websiteRoot, '../package.json')), false);
   assert.equal(fs.existsSync(path.join(websiteRoot, 'docs')), false);

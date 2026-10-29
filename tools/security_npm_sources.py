@@ -84,7 +84,8 @@ def manifest(files: dict, name: str, version: str, dependencies: dict, prefix="p
 
 def source_repair(files: dict, repair: dict, pin: dict) -> dict:
     expected = {"braces": {"lib/utils.js", "lib/compile.js", "lib/expand.js", "lib/stringify.js", "lib/parse.js"},
-                "http-cache-semantics": {"index.js"}}
+                "http-cache-semantics": {"index.js"},
+                "deepmerge": {"index.js", "dist/cjs.js", "dist/umd.js"}}
     require(set(repair) == {"schema", "profile", "name", "version", "upstreamIntegrity", "files"}
             and repair["schema"] == 1 and repair["name"] == pin["name"]
             and repair["version"] == pin["version"] and repair["upstreamIntegrity"] == pin["integrity"]
@@ -137,7 +138,7 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
         return []
     policy = decode_json(read_file(POLICY, "npm-source-repairs.json"))
     require(set(policy) == {"schema", "source_sha256", "builder_sha256", "repairs"}
-            and policy["schema"] == 1 and set(policy["repairs"]) == {"braces", "http-cache-semantics"},
+            and policy["schema"] == 1 and set(policy["repairs"]) == {"braces", "http-cache-semantics", "deepmerge"},
             "npm-repair-policy")
     for path, field in (("website/toolchain/source.json", "source_sha256"),
                         ("website/toolchain/prepare.py", "builder_sha256")):
@@ -147,11 +148,11 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
     require(set(source) == {"schema", "profile", "base", "patches", "libraries", "repairs"}
             and source["schema"] == 1 and source["profile"] == "npm-11.19.1-lsf-bundle-v5"
             and isinstance(source["patches"], list) and len(source["patches"]) == 5
-            and isinstance(source["libraries"], list) and len(source["libraries"]) == 1
-            and source["libraries"][0]["name"] == "braces", "npm-repair-source-profile")
+            and isinstance(source["libraries"], list)
+            and [pin.get("name") for pin in source["libraries"]] == ["braces", "deepmerge"], "npm-repair-source-profile")
     pins = source["patches"] + source["libraries"]
-    require(len({pin["name"] for pin in pins}) == 6
-            and {pin["name"] for pin in pins} == {"ip-address", "undici", "brace-expansion", "http-cache-semantics", "braces", "postcss-selector-parser"},
+    require(len({pin["name"] for pin in pins}) == 7
+            and {pin["name"] for pin in pins} == {"ip-address", "undici", "brace-expansion", "http-cache-semantics", "braces", "postcss-selector-parser", "deepmerge"},
             "npm-repair-upstream-coverage")
     material = {}
     for pin in pins:
@@ -164,7 +165,7 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
         manifest(files, pin["name"], pin["version"], dependencies)
         material[pin["name"]] = files
     receipts = []
-    require(isinstance(source["repairs"], list) and len(source["repairs"]) == 2, "npm-repair-document-coverage")
+    require(isinstance(source["repairs"], list) and len(source["repairs"]) == 3, "npm-repair-document-coverage")
     for name, reviewed in policy["repairs"].items():
         require(set(reviewed) == {"version", "profile", "repair_sha256", "integrity", "advisories"},
                 "npm-repair-policy-fields")

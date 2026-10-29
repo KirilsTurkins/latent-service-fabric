@@ -1,7 +1,7 @@
 name: Protected stream normal C object check
 on:
   push:
-    branches: ['test/sdk-738-stream-objects-20261026', 'test/sdk-738-classdir-objects-20261026', 'test/sdk-738-classdir-kernfs-objects-20261026', 'test/sdk-738-netdev-directory-objects-20261026', 'test/sdk-738-netdev-layout-objects-20261026', 'test/sdk-738-netdev-post-init-objects-20261026', 'test/sdk-738-constructor-mmio-objects-20261027', 'test/sdk-738-vp-transport-objects-20261027', 'test/sdk-738-msi-context-objects-20261027', 'test/sdk-738-q35-msi-domain-objects-20261027', 'test/sdk-738-msi-descriptor-objects-20261027', 'test/sdk-738-node-bootstrap-custody-20261028']
+    branches: ['test/sdk-738-stream-objects-20261026', 'test/sdk-738-classdir-objects-20261026', 'test/sdk-738-classdir-kernfs-objects-20261026', 'test/sdk-738-netdev-directory-objects-20261026', 'test/sdk-738-netdev-layout-objects-20261026', 'test/sdk-738-netdev-post-init-objects-20261026', 'test/sdk-738-constructor-mmio-objects-20261027', 'test/sdk-738-vp-transport-objects-20261027', 'test/sdk-738-msi-context-objects-20261027', 'test/sdk-738-q35-msi-domain-objects-20261027', 'test/sdk-738-msi-descriptor-objects-20261027', 'test/sdk-738-node-bootstrap-custody-20261028', 'test/sdk-738-node-irq-geometry-20261028', 'test/sdk-738-node-native-capacity-20261028', 'test/sdk-738-node-capacity-facts-20261029']
 permissions:
   contents: read
 concurrency:
@@ -68,7 +68,7 @@ jobs:
           if-no-files-found: error
           path: ${{ runner.temp }}/stream-provider-objects/FAILED.json
   classdir-objects:
-    if: github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-msi-context-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-q35-msi-domain-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-msi-descriptor-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-node-bootstrap-custody-20261028'
+    if: github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-classdir-kernfs-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-directory-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-layout-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-netdev-post-init-objects-20261026' || github.ref == 'refs/heads/test/sdk-738-constructor-mmio-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-vp-transport-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-msi-context-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-q35-msi-domain-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-msi-descriptor-objects-20261027' || github.ref == 'refs/heads/test/sdk-738-node-bootstrap-custody-20261028' || github.ref == 'refs/heads/test/sdk-738-node-irq-geometry-20261028' || github.ref == 'refs/heads/test/sdk-738-node-native-capacity-20261028' || github.ref == 'refs/heads/test/sdk-738-node-capacity-facts-20261029'
     name: Changed class-directory translation units without image or boot
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -223,6 +223,20 @@ jobs:
           --source-commit "${{ github.sha }}"
           --started "$STREAM_OBJECT_STARTED"
           --output "$RUNNER_TEMP/stream-provider-classdir-objects"
+      - name: Check only new native-geometry capture and passive ELF controls
+        if: github.ref == 'refs/heads/test/sdk-738-node-irq-geometry-20261028'
+        run: >-
+          python3 -B -m unittest
+          tools.tests.test_host_stream_kernel_stream_objects.ZNodeIrqGeometryOwner.test_complete_capture_and_closed_six_object_scope
+          tools.tests.test_host_stream_kernel_stream_objects.ZNodeIrqGeometryOwner.test_passive_geometry_rejects_wrong_role_write_relocations_and_truncation
+          tools.tests.test_host_stream_kernel_stream_objects.ZNodeIrqGeometryOwner.test_native_operands_preserve_unfunded_dynamic_and_shared_boundaries -v
+      - name: Compile six actual IRQ allocating translation units and read geometry without execution
+        if: github.ref == 'refs/heads/test/sdk-738-node-irq-geometry-20261028'
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_stream_objects.py --node-geometry
+          --source-commit "${{ github.sha }}"
+          --started "$STREAM_OBJECT_STARTED"
+          --output "$RUNNER_TEMP/stream-provider-classdir-objects"
       - name: Admit the fixed bounded public union before any upload
         id: admission
         if: ${{ always() && github.ref == 'refs/heads/test/sdk-738-classdir-objects-20261026' }}
@@ -289,8 +303,40 @@ jobs:
         run: >-
           python3 -B tools/qualify_host_stream_kernel_stream_objects.py --node-bootstrap
           --admit --output "$RUNNER_TEMP/stream-provider-classdir-objects"
+      - name: Admit only six native-geometry objects and bounded receipt data
+        id: node_geometry_admission
+        if: ${{ always() && github.ref == 'refs/heads/test/sdk-738-node-irq-geometry-20261028' }}
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_stream_objects.py --node-geometry
+          --admit --output "$RUNNER_TEMP/stream-provider-classdir-objects"
+      - name: Compile only changed native Node allocating translation units
+        if: github.ref == 'refs/heads/test/sdk-738-node-native-capacity-20261028'
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_stream_objects.py --node-capacity
+          --source-commit "${{ github.sha }}"
+          --started "$STREAM_OBJECT_STARTED"
+          --output "$RUNNER_TEMP/stream-provider-classdir-objects"
+      - name: Admit only the closed native Node object union
+        id: node_capacity_admission
+        if: ${{ always() && github.ref == 'refs/heads/test/sdk-738-node-native-capacity-20261028' }}
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_stream_objects.py --node-capacity
+          --admit --output "$RUNNER_TEMP/stream-provider-classdir-objects"
+      - name: Compile three native capacity fact translation units
+        if: github.ref == 'refs/heads/test/sdk-738-node-capacity-facts-20261029'
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_stream_objects.py --node-capacity-facts
+          --source-commit "${{ github.sha }}"
+          --started "$STREAM_OBJECT_STARTED"
+          --output "$RUNNER_TEMP/stream-provider-classdir-objects"
+      - name: Admit only three native fact objects
+        id: node_capacity_facts_admission
+        if: ${{ always() && github.ref == 'refs/heads/test/sdk-738-node-capacity-facts-20261029' }}
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_stream_objects.py --node-capacity-facts
+          --admit --output "$RUNNER_TEMP/stream-provider-classdir-objects"
       - name: Retain only admitted object evidence
-        if: ${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true' || steps.layout_admission.outputs.admitted == 'true' || steps.post_init_admission.outputs.admitted == 'true' || steps.constructor_mmio_admission.outputs.admitted == 'true' || steps.vp_admission.outputs.admitted == 'true' || steps.msi_admission.outputs.admitted == 'true' || steps.q35_admission.outputs.admitted == 'true' || steps.msi_descriptor_admission.outputs.admitted == 'true' || steps.node_bootstrap_admission.outputs.admitted == 'true') }}
+        if: ${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true' || steps.layout_admission.outputs.admitted == 'true' || steps.post_init_admission.outputs.admitted == 'true' || steps.constructor_mmio_admission.outputs.admitted == 'true' || steps.vp_admission.outputs.admitted == 'true' || steps.msi_admission.outputs.admitted == 'true' || steps.q35_admission.outputs.admitted == 'true' || steps.msi_descriptor_admission.outputs.admitted == 'true' || steps.node_bootstrap_admission.outputs.admitted == 'true' || steps.node_geometry_admission.outputs.admitted == 'true' || steps.node_capacity_admission.outputs.admitted == 'true' || steps.node_capacity_facts_admission.outputs.admitted == 'true') }}
         uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: protected-stream-classdir-objects-${{ github.sha }}
@@ -311,7 +357,7 @@ jobs:
             ${{ runner.temp }}/stream-provider-classdir-objects/logs/*.stderr.txt
             ${{ runner.temp }}/stream-provider-classdir-objects/objects/**/*.o
       - name: Retain only the bounded admission-failure receipt
-        if: ${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true' || steps.layout_admission.outputs.fallback == 'true' || steps.post_init_admission.outputs.fallback == 'true' || steps.constructor_mmio_admission.outputs.fallback == 'true' || steps.vp_admission.outputs.fallback == 'true' || steps.msi_admission.outputs.fallback == 'true' || steps.q35_admission.outputs.fallback == 'true' || steps.msi_descriptor_admission.outputs.fallback == 'true' || steps.node_bootstrap_admission.outputs.fallback == 'true') }}
+        if: ${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true' || steps.layout_admission.outputs.fallback == 'true' || steps.post_init_admission.outputs.fallback == 'true' || steps.constructor_mmio_admission.outputs.fallback == 'true' || steps.vp_admission.outputs.fallback == 'true' || steps.msi_admission.outputs.fallback == 'true' || steps.q35_admission.outputs.fallback == 'true' || steps.msi_descriptor_admission.outputs.fallback == 'true' || steps.node_bootstrap_admission.outputs.fallback == 'true' || steps.node_geometry_admission.outputs.fallback == 'true' || steps.node_capacity_admission.outputs.fallback == 'true' || steps.node_capacity_facts_admission.outputs.fallback == 'true') }}
         uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: protected-stream-classdir-objects-FAILED-${{ github.sha }}

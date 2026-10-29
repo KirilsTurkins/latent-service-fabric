@@ -1,5 +1,5 @@
 {
-  "cases":["DotnetResourceLateReplay.test_every_member_is_crc_checked_and_private_or_escaping_members_refuse","DotnetResourceLateReplay.test_exact_failed_original_origin_and_archive_identity_are_mandatory","DotnetResourceLateReplay.test_node_only_workflow_has_no_compiler_and_restores_exact_df4_workflow","DotnetResourceLateReplay.test_source_allowance_is_only_reader_and_workflow_not_sdk_or_recipe"],
+  "storageCases":"guard-keys",
   "guards":{
     "DotnetResourceLateReplay.test_every_member_is_crc_checked_and_private_or_escaping_members_refuse":
       "21b70cb13f6e65431f1d12d13bfada4ee2604ca4f7de8ea134920927211e56dc",

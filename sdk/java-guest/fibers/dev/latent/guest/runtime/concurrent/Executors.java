@@ -9,6 +9,7 @@ import java.util.concurrent.ThreadFactory;
 public final class Executors {
     private static int nextPool;
     private Executors() { }
+    static boolean isManaged(java.util.concurrent.Executor executor) { return executor instanceof ManagedExecutor; }
     public static ExecutorService newFixedThreadPool(int threads) { return newFixedThreadPool(threads, defaultThreadFactory()); }
     public static ExecutorService newFixedThreadPool(int threads, ThreadFactory factory) { return new ManagedExecutor(threads, factory); }
     public static ExecutorService newSingleThreadExecutor() { return newFixedThreadPool(1); }

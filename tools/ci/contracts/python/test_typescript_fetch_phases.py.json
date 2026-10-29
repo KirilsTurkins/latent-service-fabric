@@ -1,11 +1,20 @@
-{"cases":["TypeScriptFetchPhaseTests.test_exact_latin1_empty_and_unavailable_reason_with_clone_and_original_call_arities","TypeScriptFetchPhaseTests.test_malformed_or_oversized_wire_reason_refuses_after_actual_resource_drop","TypeScriptFetchPhaseTests.test_phase_nested_uncertainty_and_dispatched_read_timeout_preserve_original_cause","TypeScriptFetchPhaseTests.test_phase_selection_requires_owned_async_profile_and_declared_contract"],"guards":{"TypeScriptFetchPhaseTests.test_exact_latin1_empty_and_unavailable_reason_with_clone_and_original_call_arities":
-  "c194adc2ab2b32e69a82f19581418c8336a32a45cc33b7fbd09ea1fd25f8cadd"
-,"TypeScriptFetchPhaseTests.test_malformed_or_oversized_wire_reason_refuses_after_actual_resource_drop":
-  "c194adc2ab2b32e69a82f19581418c8336a32a45cc33b7fbd09ea1fd25f8cadd"
-,"TypeScriptFetchPhaseTests.test_phase_nested_uncertainty_and_dispatched_read_timeout_preserve_original_cause":
-  "c194adc2ab2b32e69a82f19581418c8336a32a45cc33b7fbd09ea1fd25f8cadd"
-,"TypeScriptFetchPhaseTests.test_phase_selection_requires_owned_async_profile_and_declared_contract":
-  "c194adc2ab2b32e69a82f19581418c8336a32a45cc33b7fbd09ea1fd25f8cadd"
-},"kind":"python","module":"tools/tests/test_typescript_fetch_phases.py","reviewReason":"Add phase-contract Fetch adapter reference refusals; preserve all original default-profile tests and guards, no signed V7 claim.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "c194adc2ab2b32e69a82f19581418c8336a32a45cc33b7fbd09ea1fd25f8cadd"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:825014ed48ea5eb529ee8237bab6ec1b55bf71d6abd7de068074184514b8420a","class:setup-sha256:c15564ee0f5b11bfc7529d1615f7987b486148dbb7c64b86d1f085c2515deedb"],"skipSites":[]}}}
+{
+"storageCases":"guard-keys",
+"guards":{
+"TypeScriptFetchPhaseTests.test_exact_latin1_empty_and_unavailable_reason_with_clone_and_original_call_arities":
+      "c194adc2ab2b32e69a82f19581418c8336a32a45cc33b7fbd09ea1fd25f8cadd",
+"TypeScriptFetchPhaseTests.test_malformed_or_oversized_wire_reason_refuses_after_actual_resource_drop":
+      "c194adc2ab2b32e69a82f19581418c8336a32a45cc33b7fbd09ea1fd25f8cadd",
+"TypeScriptFetchPhaseTests.test_phase_nested_uncertainty_and_dispatched_read_timeout_preserve_original_cause":
+      "c194adc2ab2b32e69a82f19581418c8336a32a45cc33b7fbd09ea1fd25f8cadd",
+"TypeScriptFetchPhaseTests.test_phase_selection_requires_owned_async_profile_and_declared_contract":
+      "c194adc2ab2b32e69a82f19581418c8336a32a45cc33b7fbd09ea1fd25f8cadd"
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_fetch_phases.py",
+"reviewReason":"Add phase-contract Fetch adapter reference refusals; preserve all original default-profile tests and guards, no signed V7 claim.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"c194adc2ab2b32e69a82f19581418c8336a32a45cc33b7fbd09ea1fd25f8cadd":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:825014ed48ea5eb529ee8237bab6ec1b55bf71d6abd7de068074184514b8420a","class:setup-sha256:c15564ee0f5b11bfc7529d1615f7987b486148dbb7c64b86d1f085c2515deedb"],"skipSites":[]}
+}
+}

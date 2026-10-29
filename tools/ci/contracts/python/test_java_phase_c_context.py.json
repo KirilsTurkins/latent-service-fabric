@@ -1,17 +1,8 @@
-{"cases":["JavaPhaseCContext.test_default_success_other_stages_and_nonclosed_selections_never_capture_inputs","JavaPhaseCContext.test_failed_compiler_is_never_replayed_or_accepted_and_all_byte_limits_stay_fixed","JavaPhaseCContext.test_failed_public_assembly_retains_only_both_exact_regular_wasm_inputs","JavaPhaseCContext.test_failed_retention_does_not_mask_the_original_assembly_exception","JavaPhaseCContext.test_missing_oversized_bad_magic_and_hardlinked_pair_refuse_before_raw_publication","JavaPhaseCContext.test_old_selection_refuses_and_phase_selection_retains_actual_declaration_and_uses","JavaPhaseCContext.test_phase_selection_is_closed_and_never_reads_unselected_source"],"guards":{"JavaPhaseCContext.test_default_success_other_stages_and_nonclosed_selections_never_capture_inputs":
-  "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e"
-,"JavaPhaseCContext.test_failed_compiler_is_never_replayed_or_accepted_and_all_byte_limits_stay_fixed":
-  "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e"
-,"JavaPhaseCContext.test_failed_public_assembly_retains_only_both_exact_regular_wasm_inputs":
-  "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e"
-,"JavaPhaseCContext.test_failed_retention_does_not_mask_the_original_assembly_exception":
-  "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e"
-,"JavaPhaseCContext.test_missing_oversized_bad_magic_and_hardlinked_pair_refuse_before_raw_publication":
-  "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e"
-,"JavaPhaseCContext.test_old_selection_refuses_and_phase_selection_retains_actual_declaration_and_uses":
-  "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e"
-,"JavaPhaseCContext.test_phase_selection_is_closed_and_never_reads_unselected_source":
-  "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e"
-},"kind":"python","module":"tools/tests/test_java_phase_c_context.py","reviewReason":"Append four bounded public assembly retention controls to the three unchanged C-context cases: exact pair, default no-op, unsafe/overbound refusal and original exception preservation","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f053eb9fa5fa2bcb5d48908cdaf3b09f66370c228fceba1d913111e8cf39af92","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{"storageCases":"guard-keys","guards":{"JavaPhaseCContext.test_default_success_other_stages_and_nonclosed_selections_never_capture_inputs":
+      "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e","JavaPhaseCContext.test_failed_compiler_is_never_replayed_or_accepted_and_all_byte_limits_stay_fixed":
+      "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e","JavaPhaseCContext.test_failed_public_assembly_retains_only_both_exact_regular_wasm_inputs":
+      "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e","JavaPhaseCContext.test_failed_retention_does_not_mask_the_original_assembly_exception":
+      "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e","JavaPhaseCContext.test_missing_oversized_bad_magic_and_hardlinked_pair_refuse_before_raw_publication":
+      "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e","JavaPhaseCContext.test_old_selection_refuses_and_phase_selection_retains_actual_declaration_and_uses":
+      "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e","JavaPhaseCContext.test_phase_selection_is_closed_and_never_reads_unselected_source":
+      "920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e"},"kind":"python","module":"tools/tests/test_java_phase_c_context.py","reviewReason":"Append four bounded public assembly retention controls to the three unchanged C-context cases: exact pair, default no-op, unsafe/overbound refusal and original exception preservation","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"920a655f3408dc0ddf4dacc81d33120831a5b2eb17990291fe92871f2d01ca8e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f053eb9fa5fa2bcb5d48908cdaf3b09f66370c228fceba1d913111e8cf39af92","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

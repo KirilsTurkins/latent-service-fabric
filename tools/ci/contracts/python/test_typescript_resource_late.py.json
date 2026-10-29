@@ -1,5 +1,5 @@
 {
-"cases":["TypeScriptLateFacilities.test_explicit_random_contract_keeps_original_runtime_and_cell_limits","TypeScriptLateFacilities.test_root_result_or_root_log_alone_cannot_qualify_the_callback"],
+"storageCases":"guard-keys",
 "guards":{
 "TypeScriptLateFacilities.test_explicit_random_contract_keeps_original_runtime_and_cell_limits":
       "0bbeff93a4f45737b97d39f9c276a36c70386f676216432bbb9fb49ed08571e2",

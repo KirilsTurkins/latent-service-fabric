@@ -1,5 +1,5 @@
 {
-"cases":["TypeScriptScratchRefusals.test_capture_setup_generic_trap_and_wrong_profile_do_not_count_as_filesystem_refusal","TypeScriptScratchRefusals.test_real_bundle_refusal_does_not_claim_a_node_runtime_or_signed_component","TypeScriptScratchRefusals.test_success_component_or_uncompleted_compiler_refuses"],
+"storageCases":"guard-keys",
 "guards":{
 "TypeScriptScratchRefusals.test_capture_setup_generic_trap_and_wrong_profile_do_not_count_as_filesystem_refusal":
       "15bff2b3a76342d5655e2819bc8c4f94b9ce14beb71341307e4b8f6178b66439",

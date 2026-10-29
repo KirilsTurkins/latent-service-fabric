@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_host_stream_kernel_stream_objects.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add only the closed one-object Node custody mode with85 captured physical inputs before loader,116 logical identities and457 projected outputs; preserve prior83/114/456 and native2 plus all existing bounds and gates.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a7f6a686725737b0d8e18804e1c75d1c5e874c969c3a833cdbe585f064f725cf"
-}
+{"kind":"owner","path":"tools/qualify_host_stream_kernel_stream_objects.py","reviewBoundary":"committed-fingerprint","reviewReason":"Add unqualified capacity facts and a three-TU route; preserve prior captures, routes and caps.","schemaVersion":"latent.ci.contracts.v1","sha256":"7c3a715794a179320bba7c100fd13bf879324d6096446a349d36e19ce5d2e6d3"}

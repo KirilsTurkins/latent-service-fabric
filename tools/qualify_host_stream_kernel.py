@@ -31,7 +31,7 @@ def snapshot(root: Path) -> dict:
 
 
 def outcomes(raw: bytes, expected: set[str]) -> dict:
-    if len(raw) > 65536 or len(expected) != 44:
+    if len(raw) > 65536 or len(expected) != 47:
         raise ValueError("kernel-reference-output-bound")
     provider.outcomes(raw, expected)
     rows = [json.loads(value) for value in re.findall(rb"^KERNEL_OWNER_OBSERVATION (.+)$", raw, re.M)]

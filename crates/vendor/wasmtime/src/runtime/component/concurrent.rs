@@ -51,6 +51,7 @@
 //! in host functions.
 
 use self::error_contexts::GlobalErrorContextRefCount;
+use self::host_futures::call_result_channel as oneshot;
 use self::work_queue::{Queue, Slot as QueueSlot};
 use crate::bail_bug;
 use crate::component::func::{Func, call_post_return};
@@ -82,7 +83,6 @@ use core::ops::DerefMut;
 use core::pin::{Pin, pin};
 use core::ptr::{self, NonNull};
 use core::task::{Context, Poll, Waker};
-use futures::channel::oneshot;
 use futures::stream::StreamExt;
 use futures_and_streams::{FlatAbi, ReturnCode, TransmitHandle, TransmitIndex};
 use table::{TableDebug, TableId};
@@ -642,17 +642,42 @@ where
     fn run(self, accessor: &Accessor<T, D>) -> impl Future<Output = Result<()>> + Send;
 }
 
+enum CallParameters {
+    Legacy(Vec<ValRaw>),
+    Accounted(crate::runtime::native_memory::NativeVec<ValRaw>),
+}
+impl core::ops::Deref for CallParameters {
+    type Target = [ValRaw];
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Legacy(values) => values,
+            Self::Accounted(values) => values,
+        }
+    }
+}
+fn call_parameters(
+    src: &[ValRaw],
+    memory: crate::runtime::native_memory::Memory,
+) -> Result<CallParameters> {
+    if memory.is_none() {
+        return Ok(CallParameters::Legacy(src.to_vec()));
+    }
+    Ok(CallParameters::Accounted(lift_result_values(
+        src, None, memory,
+    )?))
+}
+
 /// Represents parameter and result metadata for the caller side of a
 /// guest->guest call orchestrated by a fused adapter.
 enum CallerInfo {
     /// Metadata for a call to an async-lowered import
     Async {
-        params: Vec<ValRaw>,
+        params: CallParameters,
         has_result: bool,
     },
     /// Metadata for a call to an sync-lowered import
     Sync {
-        params: Vec<ValRaw>,
+        params: CallParameters,
         result_count: u32,
     },
 }
@@ -1002,7 +1027,7 @@ fn handle_guest_call(store: &mut dyn VMStore, call: GuestCall) -> Result<()> {
                     bail_bug!("guest task callback field not present")
                 };
 
-                let code = callback(store, event, handle)?;
+                let code = callback.call(store, event, handle)?;
 
                 store
                     .concurrent_state_mut()?
@@ -1824,6 +1849,7 @@ impl StoreOpaque {
         }
 
         let thread = self.current_thread()?;
+        let native_memory = self.native_memory();
         let state = self.concurrent_state_mut()?;
         let instance = if let Some(task) = thread.guest_task() {
             Some(state.get_mut(task)?.instance)
@@ -1835,9 +1861,15 @@ impl StoreOpaque {
         }
         let guest_thread = GuestTask::new(
             state,
-            Box::new(move |_, _| bail_bug!("cannot lower params in sync call")),
+            RawLower::new(
+                move |_, _| bail_bug!("cannot lower params in sync call"),
+                &native_memory,
+            )?,
             LiftResult {
-                lift: Box::new(move |_, _| bail_bug!("cannot lift result in sync call")),
+                lift: RawLift::new(
+                    move |_, _| bail_bug!("cannot lift result in sync call"),
+                    &native_memory,
+                )?,
                 ty: TypeTupleIndex::reserved_value(),
                 memory: None,
                 string_encoding: StringEncoding::Utf8,
@@ -2744,7 +2776,7 @@ impl Instance {
                     None => bail_bug!("lower_params missing"),
                 };
 
-                lower(store, &mut storage[..param_count])?;
+                lower.call(store, &mut storage[..param_count])?;
 
                 let mut store = token.as_context_mut(store);
 
@@ -2883,7 +2915,7 @@ impl Instance {
 
                     // SAFETY: `result_count` represents the number of core Wasm
                     // results returned, per `wasmparser`.
-                    let result = (lift.lift)(store, unsafe {
+                    let result = lift.lift.call(store, unsafe {
                         mem::transmute::<&[MaybeUninit<ValRaw>], &[ValRaw]>(
                             &storage[..result_count],
                         )
@@ -3009,6 +3041,7 @@ impl Instance {
         let return_ = SendSyncPtr::new(return_);
         let token = StoreToken::new(store.as_context_mut());
         let old_thread = store.0.current_guest_thread()?;
+        let native_memory = store.0.native_memory();
         let state = store.0.concurrent_state_mut()?;
 
         debug_assert_eq!(
@@ -3018,111 +3051,117 @@ impl Instance {
 
         let guest_thread = GuestTask::new(
             state,
-            Box::new(move |store, dst| {
-                let mut store = token.as_context_mut(store);
-                assert!(dst.len() <= MAX_FLAT_PARAMS);
-                // The `+ 1` here accounts for the return pointer, if any:
-                let mut src = [MaybeUninit::uninit(); MAX_FLAT_PARAMS + 1];
-                let count = match caller_info {
-                    // Async callers, if they have a result, use the last
-                    // parameter as a return pointer so chop that off if
-                    // relevant here.
-                    CallerInfo::Async { params, has_result } => {
-                        let params = &params[..params.len() - usize::from(has_result)];
-                        for (param, src) in params.iter().zip(&mut src) {
-                            src.write(*param);
-                        }
-                        params.len()
-                    }
-
-                    // Sync callers forward everything directly.
-                    CallerInfo::Sync { params, .. } => {
-                        for (param, src) in params.iter().zip(&mut src) {
-                            src.write(*param);
-                        }
-                        params.len()
-                    }
-                };
-                // SAFETY: `start` is a valid `*mut VMFuncRef` from
-                // `wasmtime-cranelift`-generated fused adapter code.  Based on
-                // how it was constructed (see
-                // `wasmtime_environ::fact::trampoline::Compiler::compile_async_start_adapter`
-                // for details) we know it takes count parameters and returns
-                // `dst.len()` results.
-                unsafe {
-                    crate::Func::call_unchecked_raw(
-                        &mut store,
-                        start.as_non_null(),
-                        NonNull::new(
-                            &mut src[..count.max(dst.len())] as *mut [MaybeUninit<ValRaw>] as _,
-                        )
-                        .unwrap(),
-                    )?;
-                }
-                dst.copy_from_slice(&src[..dst.len()]);
-                let task = store.0.current_guest_thread()?.task;
-                let state = store.0.concurrent_state_mut()?;
-                Waitable::Guest(task).set_event(
-                    state,
-                    Some(Event::Subtask {
-                        status: Status::Started,
-                    }),
-                )?;
-                Ok(())
-            }),
-            LiftResult {
-                lift: Box::new(move |store, src| {
-                    // SAFETY: See comment in closure passed as `lower_params`
-                    // parameter above.
+            RawLower::new(
+                move |store, dst| {
                     let mut store = token.as_context_mut(store);
-                    let retptr = match &result_info {
-                        ResultInfo::Heap { results } => Some(*results),
-                        ResultInfo::Stack { .. } => None,
+                    assert!(dst.len() <= MAX_FLAT_PARAMS);
+                    // The `+ 1` here accounts for the return pointer, if any:
+                    let mut src = [MaybeUninit::uninit(); MAX_FLAT_PARAMS + 1];
+                    let count = match caller_info {
+                        // Async callers, if they have a result, use the last
+                        // parameter as a return pointer so chop that off if
+                        // relevant here.
+                        CallerInfo::Async { params, has_result } => {
+                            let params = &params[..params.len() - usize::from(has_result)];
+                            for (param, src) in params.iter().zip(&mut src) {
+                                src.write(*param);
+                            }
+                            params.len()
+                        }
+
+                        // Sync callers forward everything directly.
+                        CallerInfo::Sync { params, .. } => {
+                            for (param, src) in params.iter().zip(&mut src) {
+                                src.write(*param);
+                            }
+                            params.len()
+                        }
                     };
-                    let mut my_src = lift_result_values(src, retptr, store.0.native_memory())?;
-
-                    // Execute the `return_` hook, generated by Wasmtime's FACT
-                    // compiler, in the context of the old thread. The old
-                    // thread, this thread's caller, may have `realloc`
-                    // callbacks invoked for example and those need the correct
-                    // context set for the current thread.
-                    let prev = store.0.set_thread(old_thread)?;
-
-                    // SAFETY: `return_` is a valid `*mut VMFuncRef` from
-                    // `wasmtime-cranelift`-generated fused adapter code.  Based
-                    // on how it was constructed (see
-                    // `wasmtime_environ::fact::trampoline::Compiler::compile_async_return_adapter`
-                    // for details) we know it takes `src.len()` parameters and
-                    // returns up to 1 result.
+                    // SAFETY: `start` is a valid `*mut VMFuncRef` from
+                    // `wasmtime-cranelift`-generated fused adapter code.  Based on
+                    // how it was constructed (see
+                    // `wasmtime_environ::fact::trampoline::Compiler::compile_async_start_adapter`
+                    // for details) we know it takes count parameters and returns
+                    // `dst.len()` results.
                     unsafe {
                         crate::Func::call_unchecked_raw(
                             &mut store,
-                            return_.as_non_null(),
-                            (&mut my_src[..]).into(),
+                            start.as_non_null(),
+                            NonNull::new(
+                                &mut src[..count.max(dst.len())] as *mut [MaybeUninit<ValRaw>] as _,
+                            )
+                            .unwrap(),
                         )?;
                     }
-
-                    // Restore the previous current thread after the
-                    // lifting/lowering has returned.
-                    store.0.set_thread(prev)?;
-
-                    let thread = store.0.current_guest_thread()?;
+                    dst.copy_from_slice(&src[..dst.len()]);
+                    let task = store.0.current_guest_thread()?.task;
                     let state = store.0.concurrent_state_mut()?;
-                    if sync_caller {
-                        state.get_mut(thread.task)?.sync_result = SyncResult::Produced(
-                            if let ResultInfo::Stack { result_count } = &result_info {
-                                match result_count {
-                                    0 => None,
-                                    1 => Some(my_src[0]),
-                                    _ => unreachable!(),
-                                }
-                            } else {
-                                None
-                            },
-                        );
-                    }
-                    Ok(Box::new(DummyResult) as Box<dyn Any + Send + Sync>)
-                }),
+                    Waitable::Guest(task).set_event(
+                        state,
+                        Some(Event::Subtask {
+                            status: Status::Started,
+                        }),
+                    )?;
+                    Ok(())
+                },
+                &native_memory,
+            )?,
+            LiftResult {
+                lift: RawLift::new(
+                    move |store, src| {
+                        // SAFETY: See comment in closure passed as `lower_params`
+                        // parameter above.
+                        let mut store = token.as_context_mut(store);
+                        let retptr = match &result_info {
+                            ResultInfo::Heap { results } => Some(*results),
+                            ResultInfo::Stack { .. } => None,
+                        };
+                        let mut my_src = lift_result_values(src, retptr, store.0.native_memory())?;
+
+                        // Execute the `return_` hook, generated by Wasmtime's FACT
+                        // compiler, in the context of the old thread. The old
+                        // thread, this thread's caller, may have `realloc`
+                        // callbacks invoked for example and those need the correct
+                        // context set for the current thread.
+                        let prev = store.0.set_thread(old_thread)?;
+
+                        // SAFETY: `return_` is a valid `*mut VMFuncRef` from
+                        // `wasmtime-cranelift`-generated fused adapter code.  Based
+                        // on how it was constructed (see
+                        // `wasmtime_environ::fact::trampoline::Compiler::compile_async_return_adapter`
+                        // for details) we know it takes `src.len()` parameters and
+                        // returns up to 1 result.
+                        unsafe {
+                            crate::Func::call_unchecked_raw(
+                                &mut store,
+                                return_.as_non_null(),
+                                (&mut my_src[..]).into(),
+                            )?;
+                        }
+
+                        // Restore the previous current thread after the
+                        // lifting/lowering has returned.
+                        store.0.set_thread(prev)?;
+
+                        let thread = store.0.current_guest_thread()?;
+                        let state = store.0.concurrent_state_mut()?;
+                        if sync_caller {
+                            state.get_mut(thread.task)?.sync_result = SyncResult::Produced(
+                                if let ResultInfo::Stack { result_count } = &result_info {
+                                    match result_count {
+                                        0 => None,
+                                        1 => Some(my_src[0]),
+                                        _ => unreachable!(),
+                                    }
+                                } else {
+                                    None
+                                },
+                            );
+                        }
+                        Ok(Box::new(DummyResult) as Box<dyn Any + Send + Sync>)
+                    },
+                    &native_memory,
+                )?,
                 ty: task_return_type,
                 memory: NonNull::new(memory).map(SendSyncPtr::new),
                 string_encoding,
@@ -3198,6 +3237,7 @@ impl Instance {
         let token = StoreToken::new(store.as_context_mut());
         let async_caller = storage.is_none();
         let guest_thread = store.0.current_guest_thread()?;
+        let callback_memory = store.0.native_memory();
         let state = store.0.concurrent_state_mut()?;
         let callee_async = state.get_mut(guest_thread.task)?.async_function;
         let callee = SendSyncPtr::new(callee);
@@ -3212,10 +3252,13 @@ impl Instance {
             // the callback and related context as part of the task so we can
             // call it later when needed.
             let callback = SendSyncPtr::new(callback);
-            task.callback = Some(Box::new(move |store, event, handle| {
-                let store = token.as_context_mut(store);
-                unsafe { self.call_callback::<T>(store, callback, event, handle) }
-            }));
+            task.callback = Some(CallbackFn::new(
+                move |store: &mut dyn VMStore, event, handle| {
+                    let store = token.as_context_mut(store);
+                    unsafe { self.call_callback::<T>(store, callback, event, handle) }
+                },
+                &callback_memory,
+            )?);
         }
 
         let Caller::Guest { thread: caller } = &task.caller else {
@@ -3564,7 +3607,7 @@ impl Instance {
 
         log::trace!("task.return for {guest_thread:?}");
 
-        let result = (lift.lift)(store, storage)?;
+        let result = lift.lift.call(store, storage)?;
         self.task_complete(store, guest_thread.task, result, Status::Returned)
     }
 
@@ -4525,7 +4568,10 @@ impl<T: 'static> VMComponentAsyncStore for StoreInner<T> {
         // SAFETY: The `wasmtime_cranelift`-generated code that calls
         // this method will have ensured that `storage` is a valid
         // pointer containing at least `storage_len` items.
-        let params = unsafe { core::slice::from_raw_parts(storage, storage_len) }.to_vec();
+        let params = call_parameters(
+            unsafe { core::slice::from_raw_parts(storage, storage_len) },
+            self.native_memory(),
+        )?;
 
         unsafe {
             instance.prepare_call(
@@ -4878,7 +4924,13 @@ impl TableDebug for HostTask {
     }
 }
 
-type CallbackFn = Box<dyn Fn(&mut dyn VMStore, Event, u32) -> Result<u32> + Send + Sync + 'static>;
+type CallbackFn = ErasedClosure<CallbackVtable>;
+const _: () = {
+    assert!(core::mem::size_of::<CallbackFn>() == 2 * core::mem::size_of::<usize>());
+    assert!(core::mem::align_of::<CallbackFn>() == core::mem::align_of::<usize>());
+    assert!(core::mem::size_of::<Option<CallbackFn>>() == 2 * core::mem::size_of::<usize>());
+    assert!(core::mem::align_of::<Option<CallbackFn>>() == core::mem::align_of::<usize>());
+};
 
 /// Represents the caller of a given guest task.
 enum Caller {
@@ -5560,14 +5612,309 @@ impl TableDebug for WaitableSet {
     }
 }
 
+// Keep erased call carriers at the original two-pointer size. Accounted
+// closure metadata is IN its one paid Box, not added to the GuestTask Box.
+struct ErasedClosure<V: ClosureVtable + 'static> {
+    value: Option<SendSyncPtr<()>>,
+    vtable: &'static V,
+}
+
+trait ClosureVtable: Sync {
+    fn dropper(&self) -> unsafe fn(NonNull<()>);
+}
+
+struct CallbackVtable {
+    call: unsafe fn(NonNull<()>, &mut dyn VMStore, Event, u32) -> Result<u32>,
+    drop: unsafe fn(NonNull<()>),
+}
+impl ClosureVtable for CallbackVtable {
+    fn dropper(&self) -> unsafe fn(NonNull<()>) {
+        self.drop
+    }
+}
+
+struct LowerVtable {
+    call: unsafe fn(NonNull<()>, &mut dyn VMStore, &mut [MaybeUninit<ValRaw>]) -> Result<()>,
+    drop: unsafe fn(NonNull<()>),
+}
+struct LiftVtable {
+    call: unsafe fn(NonNull<()>, &mut dyn VMStore, &[ValRaw]) -> Result<Box<dyn Any + Send + Sync>>,
+    drop: unsafe fn(NonNull<()>),
+}
+impl ClosureVtable for LowerVtable {
+    fn dropper(&self) -> unsafe fn(NonNull<()>) {
+        self.drop
+    }
+}
+impl ClosureVtable for LiftVtable {
+    fn dropper(&self) -> unsafe fn(NonNull<()>) {
+        self.drop
+    }
+}
+impl<V: ClosureVtable> Drop for ErasedClosure<V> {
+    fn drop(&mut self) {
+        if let Some(value) = self.value.take() {
+            // SAFETY: only typed constructors install a matching private vtable.
+            // The sole pointer is consumed here or by call, never both.
+            unsafe { (self.vtable.dropper())(value.as_non_null()) }
+        }
+    }
+}
+
+struct ClosureHeader<F> {
+    value: F,
+    allocation: Option<Box<dyn crate::NativeAllocation>>,
+}
+
+fn allocate_closure<F: Send + Sync + 'static>(
+    value: F,
+    memory: &crate::runtime::native_memory::Memory,
+) -> Result<(SendSyncPtr<()>, Option<Box<dyn crate::NativeAllocation>>)> {
+    if let Some(memory) = memory.as_ref().filter(|_| core::mem::size_of::<F>() != 0) {
+        let allocation = memory.reserve(core::alloc::Layout::new::<ClosureHeader<F>>().size())?;
+        let header = Box::new(ClosureHeader {
+            value,
+            allocation: None,
+        });
+        let pointer = NonNull::new(Box::into_raw(header)).expect("Box pointer is non-null");
+        Ok((SendSyncPtr::new(pointer.cast()), Some(allocation)))
+    } else {
+        // Preserve the original Box<F> for None and zero-backing closures.
+        let pointer =
+            NonNull::new(Box::into_raw(Box::new(value))).expect("Box pointer is non-null");
+        Ok((SendSyncPtr::new(pointer.cast()), None))
+    }
+}
+
+unsafe fn drop_legacy_closure<F>(value: NonNull<()>) {
+    // SAFETY: paired only with the original Box<F> constructor.
+    drop(unsafe { Box::from_raw(value.cast::<F>().as_ptr()) });
+}
+unsafe fn take_accounted_closure<F>(value: NonNull<()>) -> ClosureHeader<F> {
+    // SAFETY: sole pointer, concrete type and layout installed by new::<F>.
+    // Moving out of Box destroys its allocation before returning the fields.
+    unsafe { *Box::from_raw(value.cast::<ClosureHeader<F>>().as_ptr()) }
+}
+unsafe fn drop_accounted_closure<F>(value: NonNull<()>) {
+    let ClosureHeader { value, allocation } = unsafe { take_accounted_closure::<F>(value) };
+    // Actual Box backing is gone. F's destructor (including unwind cleanup)
+    // finishes before this outer owner is destroyed. No retained/leaked ticket.
+    drop(value);
+    drop(allocation);
+}
+
+struct CallbackTable<F>(PhantomData<fn() -> F>);
+impl<F> CallbackTable<F>
+where
+    F: Fn(&mut dyn VMStore, Event, u32) -> Result<u32> + Send + Sync + 'static,
+{
+    const LEGACY: CallbackVtable = CallbackVtable {
+        call: Self::legacy,
+        drop: drop_legacy_closure::<F>,
+    };
+    const ACCOUNTED: CallbackVtable = CallbackVtable {
+        call: Self::accounted,
+        drop: drop_accounted_closure::<F>,
+    };
+    unsafe fn legacy(
+        value: NonNull<()>,
+        store: &mut dyn VMStore,
+        event: Event,
+        handle: u32,
+    ) -> Result<u32> {
+        // SAFETY: matching original Box<F>, borrowed until carrier Drop.
+        (unsafe { value.cast::<F>().as_ref() })(store, event, handle)
+    }
+    unsafe fn accounted(
+        value: NonNull<()>,
+        store: &mut dyn VMStore,
+        event: Event,
+        handle: u32,
+    ) -> Result<u32> {
+        // SAFETY: matching paid Header, never consumed by a repeated call.
+        (unsafe { &value.cast::<ClosureHeader<F>>().as_ref().value })(store, event, handle)
+    }
+}
+impl CallbackFn {
+    fn new<F>(value: F, memory: &crate::runtime::native_memory::Memory) -> Result<Self>
+    where
+        F: Fn(&mut dyn VMStore, Event, u32) -> Result<u32> + Send + Sync + 'static,
+    {
+        let (value, mut allocation) = allocate_closure(value, memory)?;
+        let result = Self {
+            value: Some(value),
+            vtable: if allocation.is_some() {
+                &CallbackTable::<F>::ACCOUNTED
+            } else {
+                &CallbackTable::<F>::LEGACY
+            },
+        };
+        if let Some(owner) = allocation.as_mut() {
+            // Unpublished result drops its Box/F before the outer ticket if confirmation unwinds.
+            owner.allocated();
+            // SAFETY: sole typed Header pointer, no publication or live alias.
+            unsafe {
+                (*value.as_non_null().cast::<ClosureHeader<F>>().as_ptr()).allocation =
+                    allocation.take()
+            };
+        }
+        Ok(result)
+    }
+    fn call(&self, store: &mut dyn VMStore, event: Event, handle: u32) -> Result<u32> {
+        let value = self.value.as_ref().expect("live callback closure");
+        // SAFETY: constructor fixed the pointer/vtable; shared borrow retains backing through return.
+        unsafe { (self.vtable.call)(value.as_non_null(), store, event, handle) }
+    }
+}
+
 /// Type-erased closure to lower the parameters for a guest task.
-type RawLower =
-    Box<dyn FnOnce(&mut dyn VMStore, &mut [MaybeUninit<ValRaw>]) -> Result<()> + Send + Sync>;
+type RawLower = ErasedClosure<LowerVtable>;
+struct LowerTable<F>(PhantomData<fn() -> F>);
+impl<F> LowerTable<F>
+where
+    F: FnOnce(&mut dyn VMStore, &mut [MaybeUninit<ValRaw>]) -> Result<()> + Send + Sync + 'static,
+{
+    const LEGACY: LowerVtable = LowerVtable {
+        call: Self::legacy,
+        drop: drop_legacy_closure::<F>,
+    };
+    const ACCOUNTED: LowerVtable = LowerVtable {
+        call: Self::accounted,
+        drop: drop_accounted_closure::<F>,
+    };
+    unsafe fn legacy(
+        value: NonNull<()>,
+        store: &mut dyn VMStore,
+        dst: &mut [MaybeUninit<ValRaw>],
+    ) -> Result<()> {
+        // SAFETY: matching original Box<F>, consumed once.
+        (unsafe { Box::from_raw(value.cast::<F>().as_ptr()) })(store, dst)
+    }
+    unsafe fn accounted(
+        value: NonNull<()>,
+        store: &mut dyn VMStore,
+        dst: &mut [MaybeUninit<ValRaw>],
+    ) -> Result<()> {
+        let ClosureHeader { value, allocation } = unsafe { take_accounted_closure::<F>(value) };
+        let result = value(store, dst);
+        drop(allocation);
+        result
+    }
+}
+impl RawLower {
+    fn new<F>(value: F, memory: &crate::runtime::native_memory::Memory) -> Result<Self>
+    where
+        F: FnOnce(&mut dyn VMStore, &mut [MaybeUninit<ValRaw>]) -> Result<()>
+            + Send
+            + Sync
+            + 'static,
+    {
+        let (value, mut allocation) = allocate_closure(value, memory)?;
+        let accounted = allocation.is_some();
+        let result = Self {
+            value: Some(value),
+            vtable: if accounted {
+                &LowerTable::<F>::ACCOUNTED
+            } else {
+                &LowerTable::<F>::LEGACY
+            },
+        };
+        if let Some(owner) = allocation.as_mut() {
+            // Ticket is still an outer local. If this unwinds, result's
+            // physical Header Box and F retire before that ticket drops.
+            owner.allocated();
+            // SAFETY: sole typed Header pointer, no publication or live alias.
+            unsafe {
+                (*value.as_non_null().cast::<ClosureHeader<F>>().as_ptr()).allocation =
+                    allocation.take()
+            };
+        }
+        Ok(result)
+    }
+    fn call(mut self, store: &mut dyn VMStore, dst: &mut [MaybeUninit<ValRaw>]) -> Result<()> {
+        let value = self.value.take().expect("sole lowering closure");
+        // SAFETY: the matching constructor established this function/pointer pair.
+        unsafe { (self.vtable.call)(value.as_non_null(), store, dst) }
+    }
+}
 
 /// Type-erased closure to lift the result for a guest task.
-type RawLift = Box<
-    dyn FnOnce(&mut dyn VMStore, &[ValRaw]) -> Result<Box<dyn Any + Send + Sync>> + Send + Sync,
->;
+type RawLift = ErasedClosure<LiftVtable>;
+struct LiftTable<F>(PhantomData<fn() -> F>);
+impl<F> LiftTable<F>
+where
+    F: FnOnce(&mut dyn VMStore, &[ValRaw]) -> Result<Box<dyn Any + Send + Sync>>
+        + Send
+        + Sync
+        + 'static,
+{
+    const LEGACY: LiftVtable = LiftVtable {
+        call: Self::legacy,
+        drop: drop_legacy_closure::<F>,
+    };
+    const ACCOUNTED: LiftVtable = LiftVtable {
+        call: Self::accounted,
+        drop: drop_accounted_closure::<F>,
+    };
+    unsafe fn legacy(
+        value: NonNull<()>,
+        store: &mut dyn VMStore,
+        src: &[ValRaw],
+    ) -> Result<Box<dyn Any + Send + Sync>> {
+        // SAFETY: matching original Box<F>, consumed once.
+        (unsafe { Box::from_raw(value.cast::<F>().as_ptr()) })(store, src)
+    }
+    unsafe fn accounted(
+        value: NonNull<()>,
+        store: &mut dyn VMStore,
+        src: &[ValRaw],
+    ) -> Result<Box<dyn Any + Send + Sync>> {
+        let ClosureHeader { value, allocation } = unsafe { take_accounted_closure::<F>(value) };
+        let result = value(store, src);
+        drop(allocation);
+        result
+    }
+}
+impl RawLift {
+    fn new<F>(value: F, memory: &crate::runtime::native_memory::Memory) -> Result<Self>
+    where
+        F: FnOnce(&mut dyn VMStore, &[ValRaw]) -> Result<Box<dyn Any + Send + Sync>>
+            + Send
+            + Sync
+            + 'static,
+    {
+        let (value, mut allocation) = allocate_closure(value, memory)?;
+        let accounted = allocation.is_some();
+        let result = Self {
+            value: Some(value),
+            vtable: if accounted {
+                &LiftTable::<F>::ACCOUNTED
+            } else {
+                &LiftTable::<F>::LEGACY
+            },
+        };
+        if let Some(owner) = allocation.as_mut() {
+            // Ticket is still an outer local. If this unwinds, result's
+            // physical Header Box and F retire before that ticket drops.
+            owner.allocated();
+            // SAFETY: sole typed Header pointer, no publication or live alias.
+            unsafe {
+                (*value.as_non_null().cast::<ClosureHeader<F>>().as_ptr()).allocation =
+                    allocation.take()
+            };
+        }
+        Ok(result)
+    }
+    fn call(
+        mut self,
+        store: &mut dyn VMStore,
+        src: &[ValRaw],
+    ) -> Result<Box<dyn Any + Send + Sync>> {
+        let value = self.value.take().expect("sole lifting closure");
+        // SAFETY: the matching constructor established this function/pointer pair.
+        unsafe { (self.vtable.call)(value.as_non_null(), store, src) }
+    }
+}
 
 /// Type erased result of a guest task which may be downcast to the expected
 /// type by a host caller (or simply ignored in the case of a guest caller; see
@@ -5733,12 +6080,13 @@ impl Default for ConcurrentState {
 impl ConcurrentState {
     pub(super) fn new(queue_memory: crate::runtime::native_memory::Memory) -> Self {
         let paid = queue_memory.is_some();
+        let table = ResourceTable::with_native_memory(queue_memory.clone());
         Self {
             high_priority: Queue::new(queue_memory.is_some()),
             low_priority: Queue::new(queue_memory.is_some()),
             queue_memory,
             unforced_current_thread: CurrentThread::None,
-            table: AlwaysMut::new(ResourceTable::new()),
+            table: AlwaysMut::new(table),
             futures: AlwaysMut::new(Some(HostFutureSet::new(paid))),
             suspend_reason: None,
             worker: None,
@@ -6205,16 +6553,20 @@ impl TaskId {
     /// can be resumed by other tasks for this component, so we mark the future
     /// as dropped and delete the task when all threads are done.
     pub(crate) fn host_future_dropped(&self, store: &mut StoreOpaque) -> Result<()> {
+        let native_memory = store.native_memory();
         let task = store.concurrent_state_mut()?.get_mut(self.task)?;
         if !task.already_lowered_parameters() {
             // TODO: avoid leaking the task and trapping in this case, e.g. by
             // allowing the replacement callback to return a value that tells
             // the event loop "nevermind, the host gave up on this call; just
             // skip it, clean up the task, and carry on with other work".
-            task.lower_params = Some(Box::new(|store, _| {
-                store.set_trapped();
-                bail!("the host future for this call was dropped before it started")
-            }));
+            task.lower_params = Some(RawLower::new(
+                |store, _| {
+                    store.set_trapped();
+                    bail!("the host future for this call was dropped before it started")
+                },
+                &native_memory,
+            )?);
         } else {
             task.host_future_state = HostFutureState::Dropped;
             if task.ready_to_delete() {
@@ -6264,20 +6616,25 @@ pub(crate) fn prepare_call<T, R>(
     let string_encoding = options.string_encoding;
     let token = StoreToken::new(store.as_context_mut());
     let caller = store.0.current_thread()?;
+    let native_memory = store.0.native_memory();
     let state = store.0.concurrent_state_mut()?;
 
-    let (tx, rx) = oneshot::channel();
+    let (tx, rx) = oneshot::channel(&native_memory)?;
 
     let instance = handle.instance().runtime_instance(component_instance);
     let thread = GuestTask::new(
         state,
-        Box::new(for_any_lower(move |store, params| {
-            lower_params(handle, token.as_context_mut(store), params)
-        })),
+        RawLower::new(
+            for_any_lower(move |store, params| {
+                lower_params(handle, token.as_context_mut(store), params)
+            }),
+            &native_memory,
+        )?,
         LiftResult {
-            lift: Box::new(for_any_lift(move |store, result| {
-                lift_result(handle, store, result)
-            })),
+            lift: RawLift::new(
+                for_any_lift(move |store, result| lift_result(handle, store, result)),
+                &native_memory,
+            )?,
             ty: task_return_type,
             memory,
             string_encoding,
@@ -6287,16 +6644,21 @@ pub(crate) fn prepare_call<T, R>(
             host_future_present,
             caller,
         },
-        callback.map(|callback| {
-            let callback = SendSyncPtr::new(callback);
-            let instance = handle.instance();
-            Box::new(move |store: &mut dyn VMStore, event, handle| {
-                let store = token.as_context_mut(store);
-                // SAFETY: Per the contract of `prepare_call`, the callback
-                // will remain valid at least as long is this task exists.
-                unsafe { instance.call_callback(store, callback, event, handle) }
-            }) as CallbackFn
-        }),
+        callback
+            .map(|callback| {
+                let callback = SendSyncPtr::new(callback);
+                let instance = handle.instance();
+                CallbackFn::new(
+                    move |store: &mut dyn VMStore, event, handle| {
+                        let store = token.as_context_mut(store);
+                        // SAFETY: Per the contract of `prepare_call`, the callback
+                        // will remain valid at least as long is this task exists.
+                        unsafe { instance.call_callback(store, callback, event, handle) }
+                    },
+                    &native_memory,
+                )
+            })
+            .transpose()?,
         instance,
         async_function,
     )?;
@@ -6408,5 +6770,542 @@ fn queue_call0<T: 'static>(
             callback,
             post_return.map(SendSyncPtr::new),
         )
+    }
+}
+
+#[cfg(test)]
+mod call_parameter_closure_memory_tests {
+    use super::{
+        CallParameters, CallbackFn, ClosureHeader, DummyResult, Event, RawLift, RawLower,
+        call_parameters,
+    };
+    use crate::{AsContextMut, Engine, NativeAllocation, NativeMemory, Store, ValRaw};
+    use alloc::{boxed::Box, sync::Arc, vec::Vec};
+    use core::alloc::Layout;
+    use core::any::Any;
+    use core::mem::{MaybeUninit, size_of};
+    use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+    use std::sync::Mutex;
+
+    #[derive(Default)]
+    struct State {
+        requests: Mutex<Vec<usize>>,
+        active: AtomicUsize,
+        confirmations: AtomicUsize,
+        retirements: AtomicUsize,
+        capture_drops: AtomicUsize,
+        deny: AtomicBool,
+        confirmation_panic: AtomicBool,
+    }
+    struct Memory(Arc<State>);
+    struct Allocation(Arc<State>);
+    impl NativeAllocation for Allocation {
+        fn allocated(&mut self) {
+            self.0.confirmations.fetch_add(1, Ordering::SeqCst);
+            assert!(
+                !self.0.confirmation_panic.load(Ordering::SeqCst),
+                "confirmation-unwind-control"
+            );
+        }
+    }
+    impl Drop for Allocation {
+        fn drop(&mut self) {
+            self.0.active.fetch_sub(1, Ordering::SeqCst);
+            self.0.retirements.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+    #[derive(Debug)]
+    struct Denied;
+    impl core::fmt::Display for Denied {
+        fn fmt(&self, out: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            out.write_str("call-closure-original-Store-admission")
+        }
+    }
+    impl std::error::Error for Denied {}
+    impl NativeMemory for Memory {
+        fn reserve(&self, bytes: usize) -> crate::Result<Box<dyn NativeAllocation>> {
+            self.0.requests.lock().unwrap().push(bytes);
+            if self.0.deny.load(Ordering::SeqCst) {
+                return Err(crate::Error::new(Denied));
+            }
+            self.0.active.fetch_add(1, Ordering::SeqCst);
+            Ok(Box::new(Allocation(self.0.clone())))
+        }
+    }
+    fn original_store() -> (Store<()>, Arc<State>) {
+        let state = Arc::new(State::default());
+        let store =
+            Store::try_new_with_memory(&Engine::default(), (), Arc::new(Memory(state.clone())))
+                .unwrap();
+        state.requests.lock().unwrap().clear();
+        (store, state)
+    }
+    fn memory(store: &mut Store<()>) -> crate::runtime::native_memory::Memory {
+        store.as_context_mut().0.native_memory()
+    }
+    struct Capture {
+        state: Arc<State>,
+        baseline: usize,
+        charged: bool,
+        panic: bool,
+    }
+    impl Drop for Capture {
+        fn drop(&mut self) {
+            if self.charged {
+                assert!(self.state.active.load(Ordering::SeqCst) > self.baseline);
+            }
+            self.state.capture_drops.fetch_add(1, Ordering::SeqCst);
+            assert!(!self.panic, "capture-destructor-control");
+        }
+    }
+    fn capture(state: &Arc<State>, baseline: usize, charged: bool, panic: bool) -> Capture {
+        Capture {
+            state: state.clone(),
+            baseline,
+            charged,
+            panic,
+        }
+    }
+    fn header_size<F>(_: &F) -> usize {
+        Layout::new::<ClosureHeader<F>>().size()
+    }
+
+    #[test]
+    fn original_store_parameter_refusal_and_fresh_empty_legacy_shapes() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let confirmed = state.confirmations.load(Ordering::SeqCst);
+        let src = core::array::from_fn::<_, 17, _>(|i| ValRaw::u32(i as u32));
+        state.deny.store(true, Ordering::SeqCst);
+        let error = match call_parameters(&src, memory(&mut store)) {
+            Err(error) => error,
+            Ok(_) => panic!("original memory refusal was bypassed"),
+        };
+        assert!(error.downcast_ref::<Denied>().is_some());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.confirmations.load(Ordering::SeqCst), confirmed);
+        assert_eq!(
+            *state.requests.lock().unwrap(),
+            [Layout::array::<ValRaw>(17).unwrap().size()]
+        );
+        state.deny.store(false, Ordering::SeqCst);
+        let params = call_parameters(&src, memory(&mut store)).unwrap();
+        assert!(matches!(&params, CallParameters::Accounted(_)));
+        for (i, value) in params.iter().enumerate() {
+            assert_eq!(value.get_u32(), i as u32);
+        }
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
+        drop(params);
+        let empty = call_parameters(&[], memory(&mut store)).unwrap();
+        assert!(empty.is_empty());
+        drop(empty);
+        let legacy = call_parameters(&src, None).unwrap();
+        assert!(matches!(&legacy, CallParameters::Legacy(_)));
+        assert_eq!(legacy[16].get_u32(), 16);
+        drop(legacy);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn exact_typed_closure_layout_refusal_preserves_two_pointer_carriers() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let confirmed = state.confirmations.load(Ordering::SeqCst);
+        assert_eq!(size_of::<RawLower>(), 2 * size_of::<usize>());
+        assert_eq!(size_of::<RawLift>(), 2 * size_of::<usize>());
+        let input = capture(&state, baseline, false, false);
+        let lower = move |_: &mut dyn crate::vm::VMStore, _: &mut [MaybeUninit<ValRaw>]| {
+            drop(input);
+            Ok(())
+        };
+        let lower_layout = header_size(&lower);
+        state.deny.store(true, Ordering::SeqCst);
+        let error = match RawLower::new(lower, &memory(&mut store)) {
+            Err(error) => error,
+            Ok(_) => panic!("lowering admission was bypassed"),
+        };
+        assert!(error.downcast_ref::<Denied>().is_some());
+        assert_eq!(
+            state.requests.lock().unwrap().last().copied(),
+            Some(lower_layout)
+        );
+        let input = capture(&state, baseline, false, false);
+        let lift = move |_: &mut dyn crate::vm::VMStore, _: &[ValRaw]| {
+            drop(input);
+            Ok(Box::new(DummyResult) as Box<dyn Any + Send + Sync>)
+        };
+        let lift_layout = header_size(&lift);
+        let error = match RawLift::new(lift, &memory(&mut store)) {
+            Err(error) => error,
+            Ok(_) => panic!("lifting admission was bypassed"),
+        };
+        assert!(error.downcast_ref::<Denied>().is_some());
+        assert_eq!(
+            state.requests.lock().unwrap().last().copied(),
+            Some(lift_layout)
+        );
+        assert_eq!(state.confirmations.load(Ordering::SeqCst), confirmed);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 2);
+        state.deny.store(false, Ordering::SeqCst);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn closures_hold_original_owner_through_calls_errors_and_cancelled_drop() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let input = capture(&state, baseline, true, false);
+        let lower = RawLower::new(
+            move |_, _| {
+                drop(input);
+                Err(crate::Error::new(Denied))
+            },
+            &memory(&mut store),
+        )
+        .unwrap();
+        let error = lower.call(store.as_context_mut().0, &mut []).unwrap_err();
+        assert!(error.downcast_ref::<Denied>().is_some());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        let input = capture(&state, baseline, true, false);
+        let lift = RawLift::new(
+            move |_, _| {
+                drop(input);
+                Ok(Box::new(DummyResult) as Box<dyn Any + Send + Sync>)
+            },
+            &memory(&mut store),
+        )
+        .unwrap();
+        drop(lift.call(store.as_context_mut().0, &[]).unwrap());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        let input = capture(&state, baseline, true, false);
+        let cancelled = RawLower::new(
+            move |_, _| {
+                drop(input);
+                panic!("cancelled lower must not run")
+            },
+            &memory(&mut store),
+        )
+        .unwrap();
+        drop(cancelled);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 3);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        let zst = RawLower::new(|_, _| Ok(()), &memory(&mut store)).unwrap();
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        zst.call(store.as_context_mut().0, &mut []).unwrap();
+        let requests = state.requests.lock().unwrap().len();
+        let input = capture(&state, baseline, false, false);
+        let legacy_lower = move |_: &mut dyn crate::vm::VMStore, _: &mut [MaybeUninit<ValRaw>]| {
+            drop(input);
+            Ok(())
+        };
+        assert!(core::mem::size_of_val(&legacy_lower) > 0);
+        RawLower::new(legacy_lower, &None)
+            .unwrap()
+            .call(store.as_context_mut().0, &mut [])
+            .unwrap();
+        let input = capture(&state, baseline, false, false);
+        let legacy_lift = move |_: &mut dyn crate::vm::VMStore, _: &[ValRaw]| {
+            drop(input);
+            Ok(Box::new(DummyResult) as Box<dyn Any + Send + Sync>)
+        };
+        assert!(core::mem::size_of_val(&legacy_lift) > 0);
+        drop(
+            RawLift::new(legacy_lift, &None)
+                .unwrap()
+                .call(store.as_context_mut().0, &[])
+                .unwrap(),
+        );
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 5);
+        assert_eq!(state.requests.lock().unwrap().len(), requests);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn unwind_and_capture_destructor_panic_retire_without_ticket_leaks() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let original_memory = memory(&mut store);
+        let unrelated = catch_unwind(AssertUnwindSafe(|| {
+            let input = capture(&state, baseline, true, false);
+            let _lower = RawLower::new(
+                move |_, _| {
+                    drop(input);
+                    Ok(())
+                },
+                &original_memory,
+            )
+            .unwrap();
+            panic!("unrelated-unwind-control");
+        }));
+        assert!(unrelated.is_err());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        let destructor = catch_unwind(AssertUnwindSafe(|| {
+            let input = capture(&state, baseline, true, true);
+            let lower = RawLower::new(
+                move |_, _| {
+                    drop(input);
+                    Ok(())
+                },
+                &original_memory,
+            )
+            .unwrap();
+            drop(lower);
+        }));
+        assert!(destructor.is_err());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        let called = catch_unwind(AssertUnwindSafe(|| {
+            let input = capture(&state, baseline, true, false);
+            let lower = RawLower::new(
+                move |_, _| {
+                    let _keep = &input;
+                    panic!("callback-unwind-control")
+                },
+                &original_memory,
+            )
+            .unwrap();
+            lower.call(store.as_context_mut().0, &mut []).unwrap();
+        }));
+        assert!(called.is_err());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        state.confirmation_panic.store(true, Ordering::SeqCst);
+        let confirmation = catch_unwind(AssertUnwindSafe(|| {
+            let input = capture(&state, baseline, true, false);
+            let _lower = RawLower::new(
+                move |_, _| {
+                    drop(input);
+                    Ok(())
+                },
+                &original_memory,
+            )
+            .unwrap();
+        }));
+        assert!(confirmation.is_err());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        state.confirmation_panic.store(false, Ordering::SeqCst);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 4);
+        drop(original_memory);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn callbacks_reserve_exact_original_store_layout_and_keep_legacy_shapes() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let confirmed = state.confirmations.load(Ordering::SeqCst);
+        type Legacy = Box<
+            dyn Fn(&mut dyn crate::vm::VMStore, Event, u32) -> crate::Result<u32> + Send + Sync,
+        >;
+        assert_eq!(size_of::<CallbackFn>(), size_of::<Legacy>());
+        assert_eq!(
+            core::mem::align_of::<CallbackFn>(),
+            core::mem::align_of::<Legacy>()
+        );
+        assert_eq!(size_of::<Option<CallbackFn>>(), size_of::<Option<Legacy>>());
+        assert_eq!(
+            core::mem::align_of::<Option<CallbackFn>>(),
+            core::mem::align_of::<Option<Legacy>>()
+        );
+        let input = capture(&state, baseline, false, false);
+        let callback = move |_: &mut dyn crate::vm::VMStore, _: Event, handle: u32| {
+            let _keep = &input;
+            Ok(handle)
+        };
+        let layout = header_size(&callback);
+        state.deny.store(true, Ordering::SeqCst);
+        let error = match CallbackFn::new(callback, &memory(&mut store)) {
+            Err(error) => error,
+            Ok(_) => panic!("callback admission was bypassed"),
+        };
+        assert!(error.downcast_ref::<Denied>().is_some());
+        assert_eq!(state.requests.lock().unwrap().last().copied(), Some(layout));
+        assert_eq!(state.confirmations.load(Ordering::SeqCst), confirmed);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 1);
+        let requests = state.requests.lock().unwrap().len();
+        let zst = |_: &mut dyn crate::vm::VMStore, _: Event, handle: u32| Ok(handle);
+        assert_eq!(core::mem::size_of_val(&zst), 0);
+        let zst = CallbackFn::new(zst, &memory(&mut store)).unwrap();
+        assert_eq!(
+            zst.call(store.as_context_mut().0, Event::None, 42).unwrap(),
+            42
+        );
+        drop(zst);
+        let input = capture(&state, baseline, false, false);
+        let legacy = move |_: &mut dyn crate::vm::VMStore, _: Event, handle: u32| {
+            let _keep = &input;
+            Ok(handle)
+        };
+        assert!(core::mem::size_of_val(&legacy) > 0);
+        let legacy = CallbackFn::new(legacy, &None).unwrap();
+        assert_eq!(
+            legacy
+                .call(store.as_context_mut().0, Event::None, 42)
+                .unwrap(),
+            42
+        );
+        drop(legacy);
+        assert_eq!(state.requests.lock().unwrap().len(), requests);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 2);
+        state.deny.store(false, Ordering::SeqCst);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn callbacks_borrow_repeatedly_and_keep_original_owner_after_error() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let retired = state.retirements.load(Ordering::SeqCst);
+        let input = capture(&state, baseline, true, false);
+        let calls = Arc::new(AtomicUsize::new(0));
+        let observed = calls.clone();
+        let callback = CallbackFn::new(
+            move |_: &mut dyn crate::vm::VMStore, event: Event, handle: u32| {
+                let _keep = &input;
+                observed.fetch_add(1, Ordering::SeqCst);
+                if handle == 99 {
+                    return Err(crate::Error::new(Denied));
+                }
+                Ok(event.parts().0 + handle)
+            },
+            &memory(&mut store),
+        )
+        .unwrap();
+        assert_eq!(
+            callback
+                .call(store.as_context_mut().0, Event::None, 40)
+                .unwrap(),
+            40
+        );
+        assert_eq!(
+            callback
+                .call(store.as_context_mut().0, Event::Cancelled, 36)
+                .unwrap(),
+            42
+        );
+        let error = callback
+            .call(store.as_context_mut().0, Event::None, 99)
+            .unwrap_err();
+        assert!(error.downcast_ref::<Denied>().is_some());
+        assert_eq!(
+            callback
+                .call(store.as_context_mut().0, Event::None, 42)
+                .unwrap(),
+            42
+        );
+        assert_eq!(calls.load(Ordering::SeqCst), 4);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 0);
+        drop(callback);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.retirements.load(Ordering::SeqCst), retired + 1);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 1);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn cancelled_callbacks_can_outlive_their_store_without_rebinding_payer() {
+        let (mut store, state) = original_store();
+        let original_memory = memory(&mut store);
+        let input = capture(&state, 0, true, false);
+        let cancelled = CallbackFn::new(
+            move |_: &mut dyn crate::vm::VMStore, _: Event, _: u32| -> crate::Result<u32> {
+                let _keep = &input;
+                panic!("cancelled callback must not run")
+            },
+            &original_memory,
+        )
+        .unwrap();
+        let baseline = state.active.load(Ordering::SeqCst) - 1;
+        drop(cancelled);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        let input = capture(&state, 0, true, false);
+        let orphan = CallbackFn::new(
+            move |_: &mut dyn crate::vm::VMStore, _: Event, _: u32| -> crate::Result<u32> {
+                let _keep = &input;
+                panic!("orphan callback must not run")
+            },
+            &original_memory,
+        )
+        .unwrap();
+        let (other_store, other) = original_store();
+        drop(original_memory);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 1);
+        drop(other_store);
+        assert_eq!(other.active.load(Ordering::SeqCst), 0);
+        assert_eq!(state.active.load(Ordering::SeqCst), 1);
+        drop(orphan);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 2);
+    }
+
+    #[test]
+    fn callback_confirmation_and_destructor_panics_preserve_physical_retirement() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let retired = state.retirements.load(Ordering::SeqCst);
+        let original_memory = memory(&mut store);
+        let input = capture(&state, baseline, true, false);
+        let callback = CallbackFn::new(
+            move |_: &mut dyn crate::vm::VMStore, _: Event, _: u32| -> crate::Result<u32> {
+                let _keep = &input;
+                panic!("callback-unwind-control")
+            },
+            &original_memory,
+        )
+        .unwrap();
+        let called = catch_unwind(AssertUnwindSafe(|| {
+            callback.call(store.as_context_mut().0, Event::None, 0)
+        }));
+        assert!(called.is_err());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 0);
+        drop(callback);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        state.confirmation_panic.store(true, Ordering::SeqCst);
+        let confirmation = catch_unwind(AssertUnwindSafe(|| {
+            let input = capture(&state, baseline, true, false);
+            let _callback = CallbackFn::new(
+                move |_: &mut dyn crate::vm::VMStore, _: Event, handle: u32| {
+                    let _keep = &input;
+                    Ok(handle)
+                },
+                &original_memory,
+            )
+            .unwrap();
+        }));
+        assert!(confirmation.is_err());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        state.confirmation_panic.store(false, Ordering::SeqCst);
+        let destructor = catch_unwind(AssertUnwindSafe(|| {
+            let input = capture(&state, baseline, true, true);
+            let callback = CallbackFn::new(
+                move |_: &mut dyn crate::vm::VMStore, _: Event, handle: u32| {
+                    let _keep = &input;
+                    Ok(handle)
+                },
+                &original_memory,
+            )
+            .unwrap();
+            drop(callback);
+        }));
+        assert!(destructor.is_err());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.retirements.load(Ordering::SeqCst), retired + 3);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 3);
+        drop(original_memory);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
     }
 }

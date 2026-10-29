@@ -562,3 +562,90 @@ exact final capacity/value order, scoped retirement and empty/legacy shapes;
 private counter owners do not qualify the original activation grant. Parameters,
 closure Boxes, returned result Boxes and other transitive costs remain separate.
 This does not complete #745 AC5 or native/full-cost accounting.
+
+## Original Store call-parameter and closure backing
+
+The selected fused prepare-call parameter copy now uses the Store's existing
+NativeMemory factory and exact NativeVec final backing before any value copy.
+CallerInfo owns it through lowering or cancellation. NativeMemory=None keeps
+the literal original Vec copy. No second allocation ledger is introduced.
+
+RawLower and RawLift retain their original two-pointer inline shape. An
+accounted nonzero closure reserves the complete concrete Header<F> layout
+before its single Box, including its original allocation-owner slot. That
+owner stays outside the header until confirmation returns; callback unwind
+retires the physical header before the pending ticket. Calls and cancellation
+move the typed header out of its sole Box, retiring backing before invoking or
+dropping F while its original ticket remains an outer local. Ordinary errors,
+unrelated unwind, capture-destructor panic and confirmation panic therefore
+retire exactly once without leaked tickets. None and zero-sized closures use
+the original Box<F> path. Private typed vtables preserve callback signatures,
+thread switches and cleanup; they add no host ABI or authority.
+
+Four new private native controls are source only until the bounded owning run
+passes. They exercise the actual Store-selected factory with instrumented
+original owners, exact typed layouts, refusal, cancellation and unwind. They
+do not qualify full ActivationBudget/RSS/stack costs or every async path.
+ResourceTable/oneshot/callback/result and other transitive backing remain
+separate accounting obligations; existing signed receipts stay source-dated.
+
+## Original Store resource table backing
+
+The internal ConcurrentState table now receives its original Store-selected
+NativeMemory at empty construction; no existing table is adopted. Each resource
+reserves the actual Layout<T> before its single Box. Its separate ticket stays
+outside until confirmation returns, then follows the physical Box through
+lookup, cancellation and destruction. Typed deletion moves T out of the sole
+Box and frees that backing before returning the ticket. The ordinary typed T
+may still outlive its table and Store; this does not manufacture a detached Box.
+
+The complete Entry array uses NativeVec for admitted replacement, retaining old
+and new backing during growth. Paid parent-child indices use a sorted NativeVec
+with replacement admitted before relationship mutation or child publication;
+this closes the previously unhookable BTreeSet node allocations. NativeMemory
+None retains the original Vec/BTreeSet/Box behavior. Public user-created legacy
+tables remain unbound rather than being retroactively attached to a Store.
+
+Four new private native controls are source-only until their bounded owning
+programme passes: original Store box/entry refusal and fresh use, typed and
+wrong-type deletion, atomic parent-child growth and sorted reused indices, and
+confirmation/destructor unwind with real last-owner retirement. They do not
+qualify full ActivationBudget/RSS/stack/transitive resource payloads, oneshot,
+other host callbacks, or whole736/745. Earlier receipts retain dated sources.
+
+## Original Store call-result channel backing
+
+The selected call-result channel now reserves the full declared owned Arc header
+before any allocation, using the same Store NativeMemory. It privately maintains
+the futures-channel 0.3.34 Inner/Lock protocol and original send, receive and drop
+bodies; dependency checksum, source identities and shared dual licenses are
+explicit in UPSTREAM.latent.json. None delegates the original dependency. No
+standard Arc layout is estimated or adopted. Payloads and cloned Wakers retain
+their separate original owners and transitive costs.
+
+The four new private native controls cover exact-layout original Store refusal,
+wake/send and last-half cleanup, cancelled/legacy channels, and confirmation
+unwind plus honest payload-destructor retention. Existing paid_arc semantics
+retain the same physical header/charge if payload destruction panics; no final
+free, recovery, quarantine completion or full ActivationBudget/RSS claim follows
+from that control. Tests remain source-only until their finite owning run.
+
+The cumulative patch uses one context line; all source postimages and 250 original source identities remain authenticated.
+
+## Original Store borrowed callback backing
+
+The two actual callback constructors now admit their complete typed Header<F>
+through the same Store NativeMemory before the sole Box. Private Fn vtables
+borrow that header for repeated calls; errors and callback-body unwind do not
+consume the carrier. The event dispatcher first takes the owned callback out of
+the task, calls it through a shared borrow, and reinserts only after success.
+That local owner keeps backing and its original charge alive through reentry.
+
+Final cancellation/drop reuses the qualified physical-Box-first typed helper:
+move the header out of its Box, then drop F while its original ticket remains an
+outer local. Confirmation keeps its ticket outside the unpublished header too.
+None and ZST closures retain the original Box path and two-word/Option shape.
+Four new native controls cover exact layout/refusal, repeated/error calls,
+other-Store-independent cancellation and confirmation/body/destructor unwind.
+They remain source-only until the bounded owning run; transitive captures, full
+ActivationBudget/RSS and whole736/745 are not qualified.

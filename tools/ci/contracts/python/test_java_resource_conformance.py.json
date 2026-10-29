@@ -1,23 +1,10 @@
-{"cases":["JavaResourceConformance.test_clock_parser_requires_actual_full_width_wall_and_ordered_bounded_monotonic","JavaResourceConformance.test_downloaded_native_modes_validate_then_execute_and_refuse_tamper","JavaResourceConformance.test_normal_unknown_transitive_capture_binds_exact_data_and_removes_originals","JavaResourceConformance.test_original_shared_runner_ast_is_preserved_after_only_new_selector_guard_and_branch","JavaResourceConformance.test_report_requires_original29_data_clock_and_owner_zero_without_count_relaxation","JavaResourceConformance.test_resource_child_preserves_all_original_jobs_commands_and_deadlines","JavaResourceConformance.test_selector_is_boolean_java_only_and_cannot_replace_scratch_programme","JavaResourceConformance.test_ten_calls_require_exact_resources_trap_fresh_and_actual_retirement_after_each","JavaResourceConformance.test_unknown_outcomes_wrong_bytes_side_effects_or_wrong_trap_cannot_qualify"],"guards":{"JavaResourceConformance.test_clock_parser_requires_actual_full_width_wall_and_ordered_bounded_monotonic":
-  "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2"
-,"JavaResourceConformance.test_downloaded_native_modes_validate_then_execute_and_refuse_tamper":
-  "6f2b54bf268a2c2587cca519cbf391511bcf7aec41805e71c65d615cf929567c"
-,"JavaResourceConformance.test_normal_unknown_transitive_capture_binds_exact_data_and_removes_originals":
-  "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2"
-,"JavaResourceConformance.test_original_shared_runner_ast_is_preserved_after_only_new_selector_guard_and_branch":
-  "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2"
-,"JavaResourceConformance.test_report_requires_original29_data_clock_and_owner_zero_without_count_relaxation":
-  "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2"
-,"JavaResourceConformance.test_resource_child_preserves_all_original_jobs_commands_and_deadlines":
-  "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2"
-,"JavaResourceConformance.test_selector_is_boolean_java_only_and_cannot_replace_scratch_programme":
-  "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2"
-,"JavaResourceConformance.test_ten_calls_require_exact_resources_trap_fresh_and_actual_retirement_after_each":
-  "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2"
-,"JavaResourceConformance.test_unknown_outcomes_wrong_bytes_side_effects_or_wrong_trap_cannot_qualify":
-  "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2"
-},"kind":"python","module":"tools/tests/test_java_resource_conformance.py","reviewReason":"Validate exact reviewed sealed compiler/cache setup and SDK argument inverse before all unchanged historical workflow assertions; same cases and skip/decorator predicates.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0","class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"],"skipSites":[]},
-  "6f2b54bf268a2c2587cca519cbf391511bcf7aec41805e71c65d615cf929567c"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0","class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"],"skipSites":["self.skipTest('requires real Linux executable modes/process ownership')","skip-control-sha256:0b36eca69a574e42745a1dbab5450ba3744148eca0f969f09f221f6941fc9a22"]}}}
+{"storageCases":"guard-keys","guards":{"JavaResourceConformance.test_clock_parser_requires_actual_full_width_wall_and_ordered_bounded_monotonic":
+      "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2","JavaResourceConformance.test_downloaded_native_modes_validate_then_execute_and_refuse_tamper":
+      "6f2b54bf268a2c2587cca519cbf391511bcf7aec41805e71c65d615cf929567c","JavaResourceConformance.test_normal_unknown_transitive_capture_binds_exact_data_and_removes_originals":
+      "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2","JavaResourceConformance.test_original_shared_runner_ast_is_preserved_after_only_new_selector_guard_and_branch":
+      "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2","JavaResourceConformance.test_report_requires_original29_data_clock_and_owner_zero_without_count_relaxation":
+      "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2","JavaResourceConformance.test_resource_child_preserves_all_original_jobs_commands_and_deadlines":
+      "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2","JavaResourceConformance.test_selector_is_boolean_java_only_and_cannot_replace_scratch_programme":
+      "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2","JavaResourceConformance.test_ten_calls_require_exact_resources_trap_fresh_and_actual_retirement_after_each":
+      "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2","JavaResourceConformance.test_unknown_outcomes_wrong_bytes_side_effects_or_wrong_trap_cannot_qualify":
+      "d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2"},"kind":"python","module":"tools/tests/test_java_resource_conformance.py","reviewReason":"Validate exact reviewed sealed compiler/cache setup and SDK argument inverse before all unchanged historical workflow assertions; same cases and skip/decorator predicates.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"d4bf2fbb4565d1ed6a1a0e0aa20d0a5c53cdaa7c4bb6e082b51e7b592eeba1a2":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0","class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"],"skipSites":[]},"6f2b54bf268a2c2587cca519cbf391511bcf7aec41805e71c65d615cf929567c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:def2c6fee8f97a23d2715ff67750898bdb5c9908d533e9d680e4d9c2f6901bc0","class:setup-sha256:2b18d3ff4985695fb4b067236664790b0f19e58147bfb7d8b209b290e0807875"],"skipSites":["self.skipTest('requires real Linux executable modes/process ownership')","skip-control-sha256:0b36eca69a574e42745a1dbab5450ba3744148eca0f969f09f221f6941fc9a22"]}}}

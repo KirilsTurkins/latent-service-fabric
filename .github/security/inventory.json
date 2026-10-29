@@ -71,7 +71,7 @@
     {
       "absent_when_directory_missing": "examples/framework-compatibility",
       "derived_libraries": {
-        "builder_sha256": "c190296798f4c1c6e7a7477991b1ee79a64e319e13eedd5c76ba53a69dd5d123",
+        "builder_sha256": "ddf866923b7202a85d73182a13bbd8046b99ab6a36add475cb8cde6bfeb0094f",
         "libraries": {
           "braces": {
             "integrity": "sha512-CIkqEUBCvkYNTPw2CazoGD9KYwYMmR4nrCdhfFx+ChUFj2o8r2X0U46IGbHVu0/YpdYC/dd69dibeJ64RZgwdw==",
@@ -82,10 +82,15 @@
             "integrity": "sha512-QoxZXkxpoKP9VMMA6OnDx1Ps0lIb4tBzw3DDVuH4MgHLaesYSqFBXdRJ0v7jpv2YzhtJ1qI/UzrrEerE9O/K9Q==",
             "profile": "http-cache-semantics-4.3.0-lsf-cache-v1",
             "version": "4.3.0"
+          },
+          "deepmerge": {
+            "version": "4.3.1",
+            "profile": "deepmerge-4.3.1-lsf-prototype-v1",
+            "integrity": "sha512-w9M3UphEGYK/Zn9kkYnPVw7NnQyxE3T7gIcqBv3m4/Fe+LAhnAPZBwgYCqj0/orv2GagYhPGa2OMjqdzp7G0Lg=="
           }
         },
-        "lock_sha256": "06bc2bc9bb5d630c3ef42442bb251f67ba0dbd1b982730f3b032e0558ce0c707",
-        "source_sha256": "cad35b45a94738effd1b5e5a61078607f4ae8a30b1b7ee4f0822d6a76345dad5"
+        "lock_sha256": "fda58995f14365c692cc36d195b5814c0af36a5eb8e7bc3a21965b25ea86afcb",
+        "source_sha256": "42da38ca0597fc243b088e95259519a886a520b8f4fb84b70d901c6ebebabfc3"
       },
       "kind": "npm",
       "lock": "examples/framework-compatibility/package-lock.json",
@@ -94,7 +99,7 @@
     {
       "absent_when_directory_missing": "website",
       "derived_libraries": {
-        "builder_sha256": "c190296798f4c1c6e7a7477991b1ee79a64e319e13eedd5c76ba53a69dd5d123",
+        "builder_sha256": "ddf866923b7202a85d73182a13bbd8046b99ab6a36add475cb8cde6bfeb0094f",
         "libraries": {
           "braces": {
             "integrity": "sha512-CIkqEUBCvkYNTPw2CazoGD9KYwYMmR4nrCdhfFx+ChUFj2o8r2X0U46IGbHVu0/YpdYC/dd69dibeJ64RZgwdw==",
@@ -105,10 +110,15 @@
             "integrity": "sha512-QoxZXkxpoKP9VMMA6OnDx1Ps0lIb4tBzw3DDVuH4MgHLaesYSqFBXdRJ0v7jpv2YzhtJ1qI/UzrrEerE9O/K9Q==",
             "profile": "http-cache-semantics-4.3.0-lsf-cache-v1",
             "version": "4.3.0"
+          },
+          "deepmerge": {
+            "version": "4.3.1",
+            "profile": "deepmerge-4.3.1-lsf-prototype-v1",
+            "integrity": "sha512-w9M3UphEGYK/Zn9kkYnPVw7NnQyxE3T7gIcqBv3m4/Fe+LAhnAPZBwgYCqj0/orv2GagYhPGa2OMjqdzp7G0Lg=="
           }
         },
-        "lock_sha256": "3d314fb11fc337adc79dcc3e4ede1e94564522ce91f713868e6460c8063fc4fa",
-        "source_sha256": "cad35b45a94738effd1b5e5a61078607f4ae8a30b1b7ee4f0822d6a76345dad5"
+        "lock_sha256": "dcdcd4dc913f4e460195f1778ec5a32fa823b7299a549d2e7d32c60415a40fc8",
+        "source_sha256": "42da38ca0597fc243b088e95259519a886a520b8f4fb84b70d901c6ebebabfc3"
       },
       "kind": "npm",
       "lock": "website/package-lock.json",
@@ -118,10 +128,10 @@
       "absent_when_directory_missing": "website/toolchain",
       "bundled_package": "npm",
       "derived_bundle": {
-        "builder_sha256": "c190296798f4c1c6e7a7477991b1ee79a64e319e13eedd5c76ba53a69dd5d123",
+        "builder_sha256": "ddf866923b7202a85d73182a13bbd8046b99ab6a36add475cb8cde6bfeb0094f",
         "integrity": "sha512-Au+9Z9eKirQFXxNZfh6rUFHGISDFxIzRIcUwtFu+d0AfBrbVzN6WaGKbsL4nhq6O5ZWqGvPmKdZX/01AFSygsA==",
         "lock_sha256": "0480d8eba3d10b20edbd55df15fa694424da5583db547b58478ee3c60bcb56b3",
-        "source_sha256": "cad35b45a94738effd1b5e5a61078607f4ae8a30b1b7ee4f0822d6a76345dad5"
+        "source_sha256": "42da38ca0597fc243b088e95259519a886a520b8f4fb84b70d901c6ebebabfc3"
       },
       "kind": "npm",
       "lock": "website/toolchain/package-lock.json",
