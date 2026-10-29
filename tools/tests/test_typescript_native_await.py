@@ -197,7 +197,10 @@ Object.defineProperty(resource1,symbolRscHandle,{writable:true,value:handle1});
 finalizationRegistry_import$test$thing.register(resource1,handle1,resource1);
 return [resource0,resource1];
 }`;
-const generated=header+body,rewritten=staticOwnBindings(generated,parse);
+const direct='const ret=__lsfImports.lift(await Promise.resolve(7));';
+const assigned='let ret; try { ret=__lsfImports.lift(await Promise.resolve(7)); } catch(error) { throw error; }';
+for (const carrier of [direct,assigned]) {
+const generated=header+body.replace(direct,carrier),rewritten=staticOwnBindings(generated,parse);
 assert(rewritten.includes('__lsfImports.attachOwn(__lsfImportId, 0)'));
 assert(rewritten.includes('__lsfImports.attachOwn(__lsfImportId, 1)'));
 assert(rewritten.includes('__lsfImports.uncertainOwn(__lsfImportId)'));
@@ -223,6 +226,15 @@ for(const [before,after] of [['ret+4','ret+0'],['getInt32','getUint32'],
  assert(refused.includes('__lsfImports.beginOwnPlans(2, 0, 0)'));
 }
 assert.throws(()=>staticOwnBindings(generated.replace('"resource":3','"resource":-1'),parse),/shape-drift/);
+}
+for (const changed of [assigned.replace('let ret;','let ret=0;'),
+ assigned.replace('let ret;','let ret,other;'),
+ assigned.replace('ret=__lsfImports.lift','ret=0; ret=__lsfImports.lift'),
+ assigned+' ret=0;', assigned+' ret++;',
+ assigned.replace('throw error;','void error;'),
+ 'let ret; try { (()=>{ret=__lsfImports.lift(Promise.resolve(7));})(); } catch(error){throw error;}']) {
+ assert.throws(()=>staticOwnBindings(header+body.replace(direct,changed),parse),/shape-drift/);
+}
 """)
 
     def test_static_own_plan_overbound_collision_and_missing_seal_shape_refuse(self):

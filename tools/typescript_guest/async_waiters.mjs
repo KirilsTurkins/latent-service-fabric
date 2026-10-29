@@ -677,11 +677,39 @@ export function staticOwnBindings(source, parse) {
     if (!fn?.async || fn.body.type!=='BlockStatement' || usedFunctions.has(fn)) fail();
     usedFunctions.add(fn);
     const inside=entries.filter(({node})=>node.start>=fn.start && node.end<=fn.end);
-    const carriers=inside.filter(({node})=>node.type==='VariableDeclarator' && node.id.type==='Identifier' &&
-      node.init?.type==='CallExpression' && member(node.init.callee,'__lsfImports','lift') &&
-      node.init.arguments.length===1 && node.init.arguments[0].type==='AwaitExpression');
+    const lifted = node => node?.type==='CallExpression' && member(node.callee,'__lsfImports','lift') &&
+      node.arguments.length===1 && node.arguments[0].type==='AwaitExpression';
+    const carriers=inside.filter(({node,parents})=>parents.findLast(functionNode)===fn &&
+      (node.type==='VariableDeclarator' && node.id.type==='Identifier' && lifted(node.init) ||
+       node.type==='AssignmentExpression' && node.operator==='=' && node.left.type==='Identifier' && lifted(node.right)));
     if (carriers.length!==1) fail();
-    const carrier=carriers[0].node.id.name;
+    const entry=carriers[0],assignment=entry.node.type==='AssignmentExpression';
+    const carrier=(assignment?entry.node.left:entry.node.id).name;
+    if (assignment) {
+      // Actual compiler output: one uninitialized lexical binding, immediately
+      // followed by the sole assignment in a try whose catch cannot fall through.
+      const contains = node => node && inside.some(e=>id(e.node,carrier) &&
+        e.node.start>=node.start && e.node.end<=node.end);
+      const bindings=inside.filter(e=>e.node.type==='VariableDeclarator' && contains(e.node.id));
+      const binding=bindings[0],declaration=binding?.parents.at(-1),scope=binding?.parents.at(-2);
+      const statement=entry.parents.at(-1),block=entry.parents.at(-2),guard=entry.parents.at(-3);
+      const terminal=guard?.handler?.body.body.at(-1);
+      const writes=inside.filter(({node})=>
+        node.type==='AssignmentExpression' && contains(node.left) ||
+        node.type==='UpdateExpression' && contains(node.argument) ||
+        ['ForInStatement','ForOfStatement','AssignmentPattern'].includes(node.type) && contains(node.left));
+      if (bindings.length!==1 || !id(binding.node.id,carrier) || binding.node.init!==null ||
+          declaration?.type!=='VariableDeclaration' || declaration.kind!=='let' || declaration.declarations.length!==1 ||
+          scope?.type!=='BlockStatement' || !entry.parents.includes(scope) ||
+          binding.parents.findLast(functionNode)!==fn ||
+          statement?.type!=='ExpressionStatement' || statement.expression!==entry.node ||
+          block?.type!=='BlockStatement' || block.body.length!==1 || block.body[0]!==statement ||
+          guard?.type!=='TryStatement' || guard.block!==block || guard.finalizer!==null ||
+          !['ReturnStatement','ThrowStatement'].includes(terminal?.type) ||
+          scope.body[scope.body.indexOf(declaration)+1]!==guard ||
+          writes.length!==1 || writes[0].node!==entry.node ||
+          inside.some(({node})=>functionNode(node) && node.params.some(contains))) fail();
+    }
     let supported=validSymbol;
     for (const slot of plan.slots) {
       const registries=declarators(slot.registry);
