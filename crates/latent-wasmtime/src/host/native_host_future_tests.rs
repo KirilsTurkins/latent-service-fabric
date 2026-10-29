@@ -105,23 +105,24 @@ async fn instance(
 }
 
 // Source-bound WARM call order: prepare_call channel/RawLower/RawLift;
-// ResourceValue GuestTask/WaitableSet/GuestThread; GuestCall queue; HostTask;
+// ResourceValue GuestTask/WaitableSet/GuestThread; GuestCall queue; StartImplicit; HostTask;
 // original callback Box/result reservation/outer Box/PushFuture queue/Task.
 // Warm ONLY real shared headers/table capacity, under the unchanged grant.
 const LOWER: usize = 1;
 const GUEST_CALL: usize = 6;
-const CALLBACK: usize = 8;
-const RESULT: usize = 9;
-const PUSH: usize = 11;
-const TASK: usize = 12;
-const WARM_REQUESTS: usize = 13;
+const START: usize = 7;
+const CALLBACK: usize = 9;
+const RESULT: usize = 10;
+const PUSH: usize = 12;
+const TASK: usize = 13;
+const WARM_REQUESTS: usize = 14;
 
 async fn warm_call(
     store: &mut Store<Data>,
     function: &TypedFunc<(), (u32,)>,
     gate: &Arc<Gate>,
     observed: &Arc<Observations>,
-) -> (usize, usize) {
+) -> (usize, usize, usize) {
     let before = allocation_rows(observed).len();
     store.run_concurrent(async |_| ()).await.unwrap();
     let headers = allocation_rows(observed);
@@ -132,10 +133,21 @@ async fn warm_call(
         .all(|r| r.bytes > 0 && r.admitted && r.confirmed && !r.released));
     gate.finish();
     assert_eq!(function.call_async(&mut *store, ()).await.unwrap(), (42,));
+    // A second immediate-ready call reuses actual table capacity and binds
+    // the anonymous original StartImplicit Header<F> layout, without a guess.
+    let call_before = allocation_rows(observed).len();
+    assert_eq!(function.call_async(&mut *store, ()).await.unwrap(), (42,));
+    let completed = allocation_rows(observed);
+    let call = &completed[call_before..];
+    assert_eq!(call.len(), WARM_REQUESTS);
+    assert!(call.iter().all(|row| row.admitted && row.released));
+    let start = &call[START];
+    assert!(start.bytes > 0 && start.confirmed && start.released);
+    let start_bytes = start.bytes;
     gate.ready.store(false, Ordering::SeqCst);
     gate.polls.store(0, Ordering::SeqCst);
     assert!(gate.waker.lock().unwrap().is_none());
-    (before, before + 1)
+    (before, before + 1, start_bytes)
 }
 
 fn warm_rows(rows: &[AllocationRow], before: usize, pending: bool) -> &[AllocationRow] {
@@ -175,7 +187,7 @@ async fn actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while
         let gate = Arc::new(Gate::default());
         let linker = linker(&engine, &gate, dynamic);
         let (_, function) = instance(&linker, &component, &mut store).await;
-        let (stub, _) = warm_call(&mut store, &function, &gate, &observed).await;
+        let (stub, _, start_bytes) = warm_call(&mut store, &function, &gate, &observed).await;
         let retained = original.host_memory_bytes();
         let before = allocation_rows(&observed).len();
         let mut call = Box::pin(function.call_async(&mut store, ()));
@@ -187,6 +199,8 @@ async fn actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while
         let allocated = allocation_rows(&observed);
         let pending = warm_rows(&allocated, before, true);
         assert_eq!(pending[TASK].bytes, allocated[stub].bytes);
+        assert_eq!(pending[START].bytes, start_bytes);
+        assert!(pending[START].confirmed && !pending[START].released);
         for (index, row) in pending.iter().enumerate() {
             assert_eq!(row.released, matches!(index, LOWER | PUSH));
             assert_eq!(row.confirmed, index != RESULT);
@@ -236,7 +250,7 @@ async fn actual_host_future_refusal_preserves_original_error_and_fresh_budget_re
         let kept_requested = requested.clone();
         let invocation = original.clone();
         // WARM source position CALLBACK follows all3 prepared owners,
-        // all4 resource-value boxes and the original GuestCall queue.
+        // all4 resource-value boxes, GuestCall queue and original StartImplicit owner.
         // Padding competes at that ORIGINAL Box reservation, before polling.
         observed.before_request(before + CALLBACK + 1, move |bytes| {
             let request = bytes as u64 + OWNER;
@@ -300,8 +314,8 @@ async fn actual_host_future_cancellation_cannot_credit_another_live_store() {
     let linker_b = linker(&engine, &gate_b, false);
     let (_, first_func) = instance(&linker_a, &component, &mut first).await;
     let (_, second_func) = instance(&linker_b, &component, &mut second).await;
-    let (_, ready_a) = warm_call(&mut first, &first_func, &gate_a, &observed_a).await;
-    let (_, ready_b) = warm_call(&mut second, &second_func, &gate_b, &observed_b).await;
+    let (_, ready_a, start_a) = warm_call(&mut first, &first_func, &gate_a, &observed_a).await;
+    let (_, ready_b, start_b) = warm_call(&mut second, &second_func, &gate_b, &observed_b).await;
     let baseline_a = a.host_memory_bytes();
     let baseline_b = b.host_memory_bytes();
     let before_a = allocation_rows(&observed_a).len();
@@ -319,6 +333,10 @@ async fn actual_host_future_cancellation_cannot_credit_another_live_store() {
     let rows_b = allocation_rows(&observed_b);
     let task_a = warm_rows(&rows_a, before_a, true)[TASK].bytes;
     let task_b = warm_rows(&rows_b, before_b, true)[TASK].bytes;
+    assert_eq!(rows_a[before_a + START].bytes, start_a);
+    assert_eq!(rows_b[before_b + START].bytes, start_b);
+    assert!(rows_a[before_a + START].confirmed && !rows_a[before_a + START].released);
+    assert!(rows_b[before_b + START].confirmed && !rows_b[before_b + START].released);
     let escaped_a = task_a as u64 + rows_a[ready_a].bytes as u64 + 2 * OWNER;
     let escaped_b = task_b as u64 + rows_b[ready_b].bytes as u64 + 2 * OWNER;
     let live_b = b.host_memory_bytes();
@@ -375,7 +393,7 @@ async fn actual_host_future_callback_error_is_unchanged_and_its_box_retires() {
         let gate = Arc::new(Gate::default());
         let linker = linker(&engine, &gate, dynamic);
         let (_, function) = instance(&linker, &component, &mut store).await;
-        warm_call(&mut store, &function, &gate, &observed).await;
+        let (_, _, start_bytes) = warm_call(&mut store, &function, &gate, &observed).await;
         gate.fail.store(true, Ordering::SeqCst);
         gate.finish();
         let retained = original.host_memory_bytes();
@@ -385,6 +403,8 @@ async fn actual_host_future_callback_error_is_unchanged_and_its_box_retires() {
         assert!(gate.polls.load(Ordering::SeqCst) > 0);
         let allocated = allocation_rows(&observed);
         let call = warm_rows(&allocated, before, false);
+        assert_eq!(call[START].bytes, start_bytes);
+        assert!(call[START].confirmed && call[START].released);
         let result_bytes = if dynamic {
             std::alloc::Layout::new::<Vec<Val>>().size()
         } else {
@@ -393,8 +413,9 @@ async fn actual_host_future_callback_error_is_unchanged_and_its_box_retires() {
         assert_eq!(call[RESULT].bytes, result_bytes);
         assert!(call[CALLBACK].confirmed);
         assert!(!call[RESULT].confirmed);
-        // Source overlap before PushFuture publication: RawLower already died;
-        // result backing is still unconfirmed but its real OWNER exists.
+        // Confirmed original charges overlap before PushFuture publication:
+        // RawLower retired; StartImplicit's Box was consumed, but its SAME
+        // ticket stays through F returning; result backing is unconfirmed.
         let physical_call = call
             .iter()
             .enumerate()

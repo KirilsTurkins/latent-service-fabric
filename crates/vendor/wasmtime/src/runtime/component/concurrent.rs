@@ -736,8 +736,8 @@ enum GuestCallKind {
     ///
     /// If the closure returns `Ok(Some(call))`, the `call` should be run
     /// immediately using `handle_guest_call`.
-    StartImplicit(Box<dyn FnOnce(&mut dyn VMStore) -> Result<Option<GuestCall>> + Send + Sync>),
-    StartExplicit(Box<dyn FnOnce(&mut dyn VMStore) -> Result<()> + Send + Sync>),
+    StartImplicit(StartCall<Option<GuestCall>>),
+    StartExplicit(StartCall<()>),
 }
 
 impl fmt::Debug for GuestCallKind {
@@ -1051,10 +1051,10 @@ fn handle_guest_call(store: &mut dyn VMStore, call: GuestCall) -> Result<()> {
                 );
             }
             GuestCallKind::StartImplicit(fun) => {
-                next = fun(store)?;
+                next = fun.call(store)?;
             }
             GuestCallKind::StartExplicit(fun) => {
-                fun(store)?;
+                fun.call(store)?;
             }
         }
     }
@@ -2817,11 +2817,12 @@ impl Instance {
             .get_mut(guest_thread.task)?
             .instance;
 
+        let native_memory = store.0.native_memory();
         let fun = if callback.is_some() {
             assert!(async_);
             let wake_slot = store.0.concurrent_state_mut()?.prepare_queue_slot()?;
 
-            Box::new(move |store: &mut dyn VMStore| {
+            let start = move |store: &mut dyn VMStore| {
                 self.add_guest_thread_to_instance_table(
                     guest_thread.thread,
                     store,
@@ -2862,11 +2863,11 @@ impl Instance {
                     code,
                     wake_slot,
                 )
-            })
-                as Box<dyn FnOnce(&mut dyn VMStore) -> Result<Option<GuestCall>> + Send + Sync>
+            };
+            StartCall::new(start, &native_memory)?
         } else {
             let token = StoreToken::new(store.as_context_mut());
-            Box::new(move |store: &mut dyn VMStore| {
+            let start = move |store: &mut dyn VMStore| {
                 self.add_guest_thread_to_instance_table(
                     guest_thread.thread,
                     store,
@@ -2951,7 +2952,8 @@ impl Instance {
                 // This is a callback-less call, so the implicit thread has now completed
                 store.cleanup_thread(guest_thread, callee_instance, CleanupTask::Yes)?;
                 Ok(None)
-            })
+            };
+            StartCall::new(start, &native_memory)?
         };
 
         store.0.concurrent_state_mut()?.push_high_priority(
@@ -3908,35 +3910,35 @@ impl Instance {
         }
 
         let token = StoreToken::new(store.as_context_mut());
-        let start_func = Box::new(
-            move |store: &mut dyn VMStore, guest_thread: QualifiedThreadId| -> Result<()> {
-                let old_thread = store.set_thread(guest_thread)?;
-                log::trace!(
-                    "thread start: replaced {old_thread:?} with {guest_thread:?} as current thread"
-                );
+        let native_memory = store.0.native_memory();
+        let start = move |store: &mut dyn VMStore, guest_thread: QualifiedThreadId| -> Result<()> {
+            let old_thread = store.set_thread(guest_thread)?;
+            log::trace!(
+                "thread start: replaced {old_thread:?} with {guest_thread:?} as current thread"
+            );
 
-                let mut store = token.as_context_mut(store);
-                let mut params = [ValRaw::i32(context)];
-                // Use call_unchecked rather than call or call_async, as we don't want to run the function
-                // on a separate fiber if we're running in an async store.
-                unsafe { callee.call_unchecked(store.as_context_mut(), &mut params)? };
+            let mut store = token.as_context_mut(store);
+            let mut params = [ValRaw::i32(context)];
+            // Use call_unchecked rather than call or call_async, as we don't want to run the function
+            // on a separate fiber if we're running in an async store.
+            unsafe { callee.call_unchecked(store.as_context_mut(), &mut params)? };
 
-                store.0.set_thread(old_thread)?;
+            store.0.set_thread(old_thread)?;
 
-                store.0.cleanup_thread(
-                    guest_thread,
-                    self.runtime_instance(runtime_instance),
-                    CleanupTask::Yes,
-                )?;
-                log::trace!("explicit thread {guest_thread:?} completed");
-                if let Some(t) = old_thread.guest() {
-                    store.0.set_running(t.thread)?;
-                }
-                log::trace!("thread start: restored {old_thread:?} as current thread");
+            store.0.cleanup_thread(
+                guest_thread,
+                self.runtime_instance(runtime_instance),
+                CleanupTask::Yes,
+            )?;
+            log::trace!("explicit thread {guest_thread:?} completed");
+            if let Some(t) = old_thread.guest() {
+                store.0.set_running(t.thread)?;
+            }
+            log::trace!("thread start: restored {old_thread:?} as current thread");
 
-                Ok(())
-            },
-        );
+            Ok(())
+        };
+        let start_func = ThreadStart::new(start, &native_memory)?;
 
         let current_thread = store.0.current_guest_thread()?;
         let state = store.0.concurrent_state_mut()?;
@@ -3961,6 +3963,7 @@ impl Instance {
     ) -> Result<()> {
         let thread_id =
             GuestThread::from_instance(self.id().get_mut(store), runtime_instance, thread_idx)?;
+        let native_memory = store.native_memory();
         let state = store.concurrent_state_mut()?;
         let guest_thread = QualifiedThreadId::qualify(state, thread_id)?;
         let queue_slot = if matches!(
@@ -3971,6 +3974,22 @@ impl Instance {
         } else {
             None // Ready promotes its SAME existing node, without admission.
         };
+        // Neither fallible preparation may consume the pending start function.
+        // Its concrete outer Header is reserved while NotStartedExplicit still
+        // owns the original inner carrier. The builder itself stays on stack.
+        let prepared_start = if matches!(
+            &state.get_mut(guest_thread.thread)?.state,
+            GuestThreadState::NotStartedExplicit(_)
+        ) {
+            Some(PreparedStart::new(
+                &native_memory,
+                move |start_func: ThreadStart| {
+                    move |store: &mut dyn VMStore| start_func.call(store, guest_thread)
+                },
+            )?)
+        } else {
+            None
+        };
         let thread = state.get_mut(guest_thread.thread)?;
 
         match mem::replace(&mut thread.state, GuestThreadState::Running) {
@@ -3980,9 +3999,11 @@ impl Instance {
                     runtime_instance,
                     GuestCall {
                         thread: guest_thread,
-                        kind: GuestCallKind::StartExplicit(Box::new(move |store| {
-                            start_func(store, guest_thread)
-                        })),
+                        kind: GuestCallKind::StartExplicit(
+                            prepared_start
+                                .expect("prepared explicit-start closure")
+                                .finish(start_func),
+                        ),
                     },
                 );
                 store.concurrent_state_mut()?.push_work_item(
@@ -5144,9 +5165,7 @@ impl fmt::Debug for QualifiedThreadId {
 
 enum GuestThreadState {
     NotStartedImplicit,
-    NotStartedExplicit(
-        Box<dyn FnOnce(&mut dyn VMStore, QualifiedThreadId) -> Result<()> + Send + Sync>,
-    ),
+    NotStartedExplicit(ThreadStart),
     Running,
     Suspended(StoreFiber<'static>),
     Ready {
@@ -5205,9 +5224,7 @@ impl GuestThread {
     fn new_explicit(
         state: &mut ConcurrentState,
         parent_task: TableId<GuestTask>,
-        start_func: Box<
-            dyn FnOnce(&mut dyn VMStore, QualifiedThreadId) -> Result<()> + Send + Sync,
-        >,
+        start_func: ThreadStart,
     ) -> Result<Self> {
         let sync_call_set = state.push(WaitableSet {
             is_sync_call_set: true,
@@ -5701,6 +5718,208 @@ unsafe fn drop_accounted_closure<F>(value: NonNull<()>) {
     // finishes before this outer owner is destroyed. No retained/leaked ticket.
     drop(value);
     drop(allocation);
+}
+
+// A start remains an affine two-word carrier: pending state, queue and owned
+// dispatcher locals all use the SAME allocation owner until actual call/drop.
+type StartCall<R> = ErasedClosure<StartVtable<R>>;
+struct StartVtable<R: 'static> {
+    call: unsafe fn(NonNull<()>, &mut dyn VMStore) -> Result<R>,
+    drop: unsafe fn(NonNull<()>),
+}
+impl<R: 'static> ClosureVtable for StartVtable<R> {
+    fn dropper(&self) -> unsafe fn(NonNull<()>) {
+        self.drop
+    }
+}
+struct StartTable<F, R>(PhantomData<fn() -> (F, R)>);
+impl<F, R: 'static> StartTable<F, R>
+where
+    F: FnOnce(&mut dyn VMStore) -> Result<R> + Send + Sync + 'static,
+{
+    const LEGACY: StartVtable<R> = StartVtable {
+        call: Self::legacy,
+        drop: drop_legacy_closure::<F>,
+    };
+    const ACCOUNTED: StartVtable<R> = StartVtable {
+        call: Self::accounted,
+        drop: drop_accounted_closure::<F>,
+    };
+    unsafe fn legacy(value: NonNull<()>, store: &mut dyn VMStore) -> Result<R> {
+        // SAFETY: the matching original Box<F> is consumed exactly once.
+        (unsafe { Box::from_raw(value.cast::<F>().as_ptr()) })(store)
+    }
+    unsafe fn accounted(value: NonNull<()>, store: &mut dyn VMStore) -> Result<R> {
+        let ClosureHeader { value, allocation } = unsafe { take_accounted_closure::<F>(value) };
+        let result = value(store);
+        drop(allocation);
+        result
+    }
+}
+impl<R: 'static> StartCall<R> {
+    fn from_allocated<F>(
+        value: SendSyncPtr<()>,
+        mut allocation: Option<Box<dyn crate::NativeAllocation>>,
+    ) -> Self
+    where
+        F: FnOnce(&mut dyn VMStore) -> Result<R> + Send + Sync + 'static,
+    {
+        let result = Self {
+            value: Some(value),
+            vtable: if allocation.is_some() {
+                &StartTable::<F, R>::ACCOUNTED
+            } else {
+                &StartTable::<F, R>::LEGACY
+            },
+        };
+        if let Some(owner) = allocation.as_mut() {
+            // The unpublished carrier drops its physical Box/F first if the
+            // confirmation callback unwinds; the ticket is still outside it.
+            owner.allocated();
+            unsafe {
+                (*value.as_non_null().cast::<ClosureHeader<F>>().as_ptr()).allocation =
+                    allocation.take()
+            };
+        }
+        result
+    }
+    fn new<F>(value: F, memory: &crate::runtime::native_memory::Memory) -> Result<Self>
+    where
+        F: FnOnce(&mut dyn VMStore) -> Result<R> + Send + Sync + 'static,
+    {
+        let (value, allocation) = allocate_closure(value, memory)?;
+        Ok(Self::from_allocated::<F>(value, allocation))
+    }
+    fn call(mut self, store: &mut dyn VMStore) -> Result<R> {
+        let value = self.value.take().expect("sole guest-start closure");
+        // SAFETY: the private typed constructor fixed this pointer/vtable pair.
+        unsafe { (self.vtable.call)(value.as_non_null(), store) }
+    }
+}
+
+// Preparation knows the complete concrete outer F layout without consuming
+// the inner ThreadStart. No allocator or user builder runs during admission.
+struct PreparedStart<F, B> {
+    allocation: Option<Box<dyn crate::NativeAllocation>>,
+    builder: B,
+    marker: PhantomData<fn() -> F>,
+}
+impl<F, B> PreparedStart<F, B>
+where
+    F: FnOnce(&mut dyn VMStore) -> Result<()> + Send + Sync + 'static,
+    B: FnOnce(ThreadStart) -> F,
+{
+    fn new(memory: &crate::runtime::native_memory::Memory, builder: B) -> Result<Self> {
+        let allocation =
+            if let Some(memory) = memory.as_ref().filter(|_| core::mem::size_of::<F>() != 0) {
+                Some(memory.reserve(core::alloc::Layout::new::<ClosureHeader<F>>().size())?)
+            } else {
+                None
+            };
+        Ok(Self {
+            allocation,
+            builder,
+            marker: PhantomData,
+        })
+    }
+    fn finish(self, start: ThreadStart) -> StartCall<()> {
+        let Self {
+            allocation,
+            builder,
+            marker: _,
+        } = self;
+        let value = builder(start);
+        // Both possible backing layouts were selected before state mutation.
+        // Box allocation is now the original infallible allocator boundary;
+        // no second NativeMemory admission or factory lookup is permitted.
+        let pointer = if allocation.is_some() {
+            let header = Box::new(ClosureHeader {
+                value,
+                allocation: None,
+            });
+            NonNull::new(Box::into_raw(header))
+                .expect("Box pointer is non-null")
+                .cast()
+        } else {
+            NonNull::new(Box::into_raw(Box::new(value)))
+                .expect("Box pointer is non-null")
+                .cast()
+        };
+        StartCall::from_allocated::<F>(SendSyncPtr::new(pointer), allocation)
+    }
+}
+
+type ThreadStart = ErasedClosure<ThreadStartVtable>;
+struct ThreadStartVtable {
+    call: unsafe fn(NonNull<()>, &mut dyn VMStore, QualifiedThreadId) -> Result<()>,
+    drop: unsafe fn(NonNull<()>),
+}
+impl ClosureVtable for ThreadStartVtable {
+    fn dropper(&self) -> unsafe fn(NonNull<()>) {
+        self.drop
+    }
+}
+struct ThreadStartTable<F>(PhantomData<fn() -> F>);
+impl<F> ThreadStartTable<F>
+where
+    F: FnOnce(&mut dyn VMStore, QualifiedThreadId) -> Result<()> + Send + Sync + 'static,
+{
+    const LEGACY: ThreadStartVtable = ThreadStartVtable {
+        call: Self::legacy,
+        drop: drop_legacy_closure::<F>,
+    };
+    const ACCOUNTED: ThreadStartVtable = ThreadStartVtable {
+        call: Self::accounted,
+        drop: drop_accounted_closure::<F>,
+    };
+    unsafe fn legacy(
+        value: NonNull<()>,
+        store: &mut dyn VMStore,
+        thread: QualifiedThreadId,
+    ) -> Result<()> {
+        (unsafe { Box::from_raw(value.cast::<F>().as_ptr()) })(store, thread)
+    }
+    unsafe fn accounted(
+        value: NonNull<()>,
+        store: &mut dyn VMStore,
+        thread: QualifiedThreadId,
+    ) -> Result<()> {
+        let ClosureHeader { value, allocation } = unsafe { take_accounted_closure::<F>(value) };
+        let result = value(store, thread);
+        drop(allocation);
+        result
+    }
+}
+impl ThreadStart {
+    fn new<F>(value: F, memory: &crate::runtime::native_memory::Memory) -> Result<Self>
+    where
+        F: FnOnce(&mut dyn VMStore, QualifiedThreadId) -> Result<()> + Send + Sync + 'static,
+    {
+        let (value, mut allocation) = allocate_closure(value, memory)?;
+        let result = Self {
+            value: Some(value),
+            vtable: if allocation.is_some() {
+                &ThreadStartTable::<F>::ACCOUNTED
+            } else {
+                &ThreadStartTable::<F>::LEGACY
+            },
+        };
+        if let Some(owner) = allocation.as_mut() {
+            owner.allocated();
+            unsafe {
+                (*value.as_non_null().cast::<ClosureHeader<F>>().as_ptr()).allocation =
+                    allocation.take()
+            };
+        }
+        Ok(result)
+    }
+    fn call(mut self, store: &mut dyn VMStore, thread: QualifiedThreadId) -> Result<()> {
+        let value = self
+            .value
+            .take()
+            .expect("sole explicit-thread start closure");
+        unsafe { (self.vtable.call)(value.as_non_null(), store, thread) }
+    }
 }
 
 struct CallbackTable<F>(PhantomData<fn() -> F>);
@@ -6776,8 +6995,9 @@ fn queue_call0<T: 'static>(
 #[cfg(test)]
 mod call_parameter_closure_memory_tests {
     use super::{
-        CallParameters, CallbackFn, ClosureHeader, DummyResult, Event, RawLift, RawLower,
-        call_parameters,
+        CallParameters, CallbackFn, ClosureHeader, ConcurrentState, DummyResult, Event, GuestCall,
+        GuestCallKind, GuestThreadState, PreparedStart, QualifiedThreadId, RawLift, RawLower,
+        RuntimeComponentInstanceIndex, StartCall, TableId, ThreadStart, WorkItem, call_parameters,
     };
     use crate::{AsContextMut, Engine, NativeAllocation, NativeMemory, Store, ValRaw};
     use alloc::{boxed::Box, sync::Arc, vec::Vec};
@@ -7305,6 +7525,462 @@ mod call_parameter_closure_memory_tests {
         assert_eq!(state.retirements.load(Ordering::SeqCst), retired + 3);
         assert_eq!(state.capture_drops.load(Ordering::SeqCst), 3);
         drop(original_memory);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    fn start_thread_id() -> QualifiedThreadId {
+        QualifiedThreadId {
+            task: TableId::new(0),
+            thread: TableId::new(0),
+        }
+    }
+    fn prepared_start_header_size<F, B>(_: &PreparedStart<F, B>) -> usize {
+        Layout::new::<ClosureHeader<F>>().size()
+    }
+
+    #[test]
+    fn guest_start_carriers_reserve_exact_layout_and_preserve_legacy_shapes() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let native_memory = memory(&mut store);
+        type LegacyCall<R> =
+            Box<dyn FnOnce(&mut dyn crate::vm::VMStore) -> crate::Result<R> + Send + Sync>;
+        type LegacyThread = Box<
+            dyn FnOnce(&mut dyn crate::vm::VMStore, QualifiedThreadId) -> crate::Result<()>
+                + Send
+                + Sync,
+        >;
+        assert_eq!(size_of::<StartCall<()>>(), size_of::<LegacyCall<()>>());
+        assert_eq!(
+            size_of::<StartCall<Option<GuestCall>>>(),
+            size_of::<LegacyCall<Option<GuestCall>>>()
+        );
+        assert_eq!(size_of::<ThreadStart>(), size_of::<LegacyThread>());
+        assert_eq!(
+            size_of::<Option<StartCall<()>>>(),
+            size_of::<Option<LegacyCall<()>>>()
+        );
+        assert_eq!(
+            size_of::<Option<StartCall<Option<GuestCall>>>>(),
+            size_of::<Option<LegacyCall<Option<GuestCall>>>>()
+        );
+        assert_eq!(
+            core::mem::align_of::<StartCall<()>>(),
+            core::mem::align_of::<LegacyCall<()>>()
+        );
+        assert_eq!(
+            size_of::<Option<ThreadStart>>(),
+            size_of::<Option<LegacyThread>>()
+        );
+        assert_eq!(
+            core::mem::align_of::<ThreadStart>(),
+            core::mem::align_of::<LegacyThread>()
+        );
+        let input = capture(&state, baseline, false, false);
+        let implicit = move |_: &mut dyn crate::vm::VMStore| -> crate::Result<Option<GuestCall>> {
+            drop(input);
+            Ok(None)
+        };
+        let layout = header_size(&implicit);
+        state.deny.store(true, Ordering::SeqCst);
+        let error = match StartCall::new(implicit, &native_memory) {
+            Err(error) => error,
+            Ok(_) => panic!("implicit start bypassed original admission"),
+        };
+        assert!(error.downcast_ref::<Denied>().is_some());
+        assert_eq!(state.requests.lock().unwrap().last().copied(), Some(layout));
+        let input = capture(&state, baseline, false, false);
+        let explicit = move |_: &mut dyn crate::vm::VMStore| {
+            drop(input);
+            Ok(())
+        };
+        let layout = header_size(&explicit);
+        assert!(StartCall::new(explicit, &native_memory).is_err());
+        assert_eq!(state.requests.lock().unwrap().last().copied(), Some(layout));
+        let input = capture(&state, baseline, false, false);
+        let thread = move |_: &mut dyn crate::vm::VMStore, _: QualifiedThreadId| {
+            drop(input);
+            Ok(())
+        };
+        let layout = header_size(&thread);
+        assert!(ThreadStart::new(thread, &native_memory).is_err());
+        assert_eq!(state.requests.lock().unwrap().last().copied(), Some(layout));
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 3);
+        let requests = state.requests.lock().unwrap().len();
+        let zst = StartCall::new(|_: &mut dyn crate::vm::VMStore| Ok(()), &native_memory).unwrap();
+        zst.call(store.as_context_mut().0).unwrap();
+        let zst = ThreadStart::new(
+            |_: &mut dyn crate::vm::VMStore, _: QualifiedThreadId| Ok(()),
+            &native_memory,
+        )
+        .unwrap();
+        zst.call(store.as_context_mut().0, start_thread_id())
+            .unwrap();
+        let input = capture(&state, baseline, false, false);
+        let legacy = StartCall::new(
+            move |_: &mut dyn crate::vm::VMStore| {
+                drop(input);
+                Ok(())
+            },
+            &None,
+        )
+        .unwrap();
+        legacy.call(store.as_context_mut().0).unwrap();
+        let input = capture(&state, baseline, false, false);
+        let legacy = ThreadStart::new(
+            move |_: &mut dyn crate::vm::VMStore, _: QualifiedThreadId| {
+                drop(input);
+                Ok(())
+            },
+            &None,
+        )
+        .unwrap();
+        let id = start_thread_id();
+        let prepared = PreparedStart::new(&None, move |start: ThreadStart| {
+            move |store: &mut dyn crate::vm::VMStore| start.call(store, id)
+        })
+        .unwrap();
+        prepared
+            .finish(legacy)
+            .call(store.as_context_mut().0)
+            .unwrap();
+        assert_eq!(state.requests.lock().unwrap().len(), requests);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 5);
+        state.deny.store(false, Ordering::SeqCst);
+        drop(native_memory);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn explicit_start_preparation_refusal_preserves_pending_function_and_queue() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let native_memory = memory(&mut store);
+        let calls = Arc::new(AtomicUsize::new(0));
+        let observed = calls.clone();
+        let id = start_thread_id();
+        let input = capture(&state, baseline, true, false);
+        let start = ThreadStart::new(
+            move |_: &mut dyn crate::vm::VMStore, actual: QualifiedThreadId| {
+                assert_eq!(actual, id);
+                observed.fetch_add(1, Ordering::SeqCst);
+                drop(input);
+                Ok(())
+            },
+            &native_memory,
+        )
+        .unwrap();
+        let mut pending = GuestThreadState::NotStartedExplicit(start);
+        let original_pointer = match &pending {
+            GuestThreadState::NotStartedExplicit(start) => {
+                start.value.as_ref().unwrap().as_non_null()
+            }
+            _ => unreachable!(),
+        };
+        let mut queue = ConcurrentState::new(native_memory.clone());
+        state.deny.store(true, Ordering::SeqCst);
+        assert!(queue.prepare_queue_slot().is_err());
+        let GuestThreadState::NotStartedExplicit(unchanged) = &pending else {
+            panic!("pending state changed on refusal")
+        };
+        assert_eq!(
+            unchanged.value.as_ref().unwrap().as_non_null(),
+            original_pointer
+        );
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 0);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
+        state.deny.store(false, Ordering::SeqCst);
+        let slot = queue.prepare_queue_slot().unwrap();
+        state.deny.store(true, Ordering::SeqCst);
+        let denied = PreparedStart::new(&native_memory, move |start: ThreadStart| {
+            move |store: &mut dyn crate::vm::VMStore| start.call(store, id)
+        });
+        assert!(denied.is_err());
+        let GuestThreadState::NotStartedExplicit(unchanged) = &pending else {
+            panic!("pending state changed on refusal")
+        };
+        assert_eq!(
+            unchanged.value.as_ref().unwrap().as_non_null(),
+            original_pointer
+        );
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 0);
+        drop(slot);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
+        state.deny.store(false, Ordering::SeqCst);
+        let slot = queue.prepare_queue_slot().unwrap();
+        let prepared = PreparedStart::new(&native_memory, move |start: ThreadStart| {
+            move |store: &mut dyn crate::vm::VMStore| start.call(store, id)
+        })
+        .unwrap();
+        assert_eq!(
+            state.requests.lock().unwrap().last().copied(),
+            Some(prepared_start_header_size(&prepared))
+        );
+        let requests = state.requests.lock().unwrap().len();
+        let GuestThreadState::NotStartedExplicit(start) =
+            core::mem::replace(&mut pending, GuestThreadState::Running)
+        else {
+            panic!("original pending start was lost on refused preparation")
+        };
+        let call = prepared.finish(start);
+        assert_eq!(state.requests.lock().unwrap().len(), requests);
+        queue.push_work_item(
+            slot,
+            WorkItem::GuestCall(
+                RuntimeComponentInstanceIndex::from_u32(0),
+                GuestCall {
+                    thread: id,
+                    kind: GuestCallKind::StartExplicit(call),
+                },
+            ),
+            true,
+        );
+        assert!(matches!(&pending, GuestThreadState::Running));
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 3);
+        let Some((slot, WorkItem::GuestCall(_, call))) = queue.high_priority.pop_back() else {
+            panic!("prepared queue lost start")
+        };
+        drop(slot);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 2);
+        assert_eq!(call.thread, id);
+        let GuestCallKind::StartExplicit(call) = call.kind else {
+            panic!("wrong queued start kind")
+        };
+        call.call(store.as_context_mut().0).unwrap();
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 1);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        drop(queue);
+        drop(native_memory);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn guest_starts_keep_original_owner_through_next_error_cancel_and_store_drop() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let native_memory = memory(&mut store);
+        let (mut other_store, other) = original_store();
+        let other_baseline = other.active.load(Ordering::SeqCst);
+        let id = start_thread_id();
+        let input = capture(&state, baseline, true, false);
+        let explicit = StartCall::new(
+            move |_: &mut dyn crate::vm::VMStore| {
+                drop(input);
+                Ok(())
+            },
+            &native_memory,
+        )
+        .unwrap();
+        let implicit = StartCall::new(
+            move |_: &mut dyn crate::vm::VMStore| {
+                Ok(Some(GuestCall {
+                    thread: id,
+                    kind: GuestCallKind::StartExplicit(explicit),
+                }))
+            },
+            &native_memory,
+        )
+        .unwrap();
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 2);
+        let next = implicit
+            .call(other_store.as_context_mut().0)
+            .unwrap()
+            .unwrap();
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
+        assert_eq!(other.active.load(Ordering::SeqCst), other_baseline);
+        let GuestCallKind::StartExplicit(next) = next.kind else {
+            panic!("implicit result lost explicit start")
+        };
+        next.call(other_store.as_context_mut().0).unwrap();
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        let input = capture(&state, baseline, true, false);
+        let error = StartCall::new(
+            move |_: &mut dyn crate::vm::VMStore| -> crate::Result<Option<GuestCall>> {
+                drop(input);
+                Err(crate::Error::new(Denied))
+            },
+            &native_memory,
+        )
+        .unwrap();
+        assert!(error.call(store.as_context_mut().0).is_err());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        let input = capture(&state, 0, true, false);
+        let orphan = GuestThreadState::NotStartedExplicit(
+            ThreadStart::new(
+                move |_: &mut dyn crate::vm::VMStore, _: QualifiedThreadId| {
+                    drop(input);
+                    Ok(())
+                },
+                &native_memory,
+            )
+            .unwrap(),
+        );
+        // Discarding a queued call cancels it without invoking its FnOnce body.
+        let invoked = Arc::new(AtomicUsize::new(0));
+        let observed = invoked.clone();
+        let input = capture(&state, baseline, true, false);
+        let cancelled = StartCall::new(
+            move |_: &mut dyn crate::vm::VMStore| {
+                observed.fetch_add(1, Ordering::SeqCst);
+                drop(input);
+                Ok(())
+            },
+            &native_memory,
+        )
+        .unwrap();
+        let mut queue = ConcurrentState::new(native_memory.clone());
+        let slot = queue.prepare_queue_slot().unwrap();
+        queue.push_work_item(
+            slot,
+            WorkItem::GuestCall(
+                RuntimeComponentInstanceIndex::from_u32(0),
+                GuestCall {
+                    thread: id,
+                    kind: GuestCallKind::StartExplicit(cancelled),
+                },
+            ),
+            false,
+        );
+        drop(queue);
+        assert_eq!(invoked.load(Ordering::SeqCst), 0);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 1);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 1);
+        drop(orphan);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 4);
+        assert_eq!(other.active.load(Ordering::SeqCst), other_baseline);
+        drop(native_memory);
+        drop(other_store);
+        assert_eq!(other.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn guest_start_confirmation_call_and_destructor_unwinds_retire_once() {
+        let (mut store, state) = original_store();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let native_memory = memory(&mut store);
+        let id = start_thread_id();
+        let retired = state.retirements.load(Ordering::SeqCst);
+        for thread in [false, true] {
+            state.confirmation_panic.store(true, Ordering::SeqCst);
+            assert!(
+                catch_unwind(AssertUnwindSafe(|| {
+                    let input = capture(&state, baseline, true, false);
+                    if thread {
+                        let _start = ThreadStart::new(
+                            move |_: &mut dyn crate::vm::VMStore, _: QualifiedThreadId| {
+                                drop(input);
+                                Ok(())
+                            },
+                            &native_memory,
+                        )
+                        .unwrap();
+                    } else {
+                        let _start = StartCall::new(
+                            move |_: &mut dyn crate::vm::VMStore| {
+                                drop(input);
+                                Ok(())
+                            },
+                            &native_memory,
+                        )
+                        .unwrap();
+                    }
+                }))
+                .is_err()
+            );
+            assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+            state.confirmation_panic.store(false, Ordering::SeqCst);
+        }
+        let input = capture(&state, baseline, true, false);
+        let start = ThreadStart::new(
+            move |_: &mut dyn crate::vm::VMStore, _: QualifiedThreadId| {
+                drop(input);
+                Ok(())
+            },
+            &native_memory,
+        )
+        .unwrap();
+        let prepared = PreparedStart::new(&native_memory, move |start: ThreadStart| {
+            move |store: &mut dyn crate::vm::VMStore| start.call(store, id)
+        })
+        .unwrap();
+        state.confirmation_panic.store(true, Ordering::SeqCst);
+        assert!(catch_unwind(AssertUnwindSafe(|| drop(prepared.finish(start)))).is_err());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        state.confirmation_panic.store(false, Ordering::SeqCst);
+        for thread in [false, true] {
+            let input = capture(&state, baseline, true, false);
+            assert!(
+                catch_unwind(AssertUnwindSafe(|| {
+                    if thread {
+                        ThreadStart::new(
+                            move |_: &mut dyn crate::vm::VMStore,
+                                  _: QualifiedThreadId|
+                                  -> crate::Result<()> {
+                                let _keep = &input;
+                                panic!("thread-start-body-unwind")
+                            },
+                            &native_memory,
+                        )
+                        .unwrap()
+                        .call(store.as_context_mut().0, id)
+                    } else {
+                        StartCall::new(
+                            move |_: &mut dyn crate::vm::VMStore| -> crate::Result<()> {
+                                let _keep = &input;
+                                panic!("guest-start-body-unwind")
+                            },
+                            &native_memory,
+                        )
+                        .unwrap()
+                        .call(store.as_context_mut().0)
+                    }
+                }))
+                .is_err()
+            );
+            assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+            assert!(
+                catch_unwind(AssertUnwindSafe(|| {
+                    let input = capture(&state, baseline, true, true);
+                    if thread {
+                        drop(
+                            ThreadStart::new(
+                                move |_: &mut dyn crate::vm::VMStore, _: QualifiedThreadId| {
+                                    drop(input);
+                                    Ok(())
+                                },
+                                &native_memory,
+                            )
+                            .unwrap(),
+                        );
+                    } else {
+                        drop(
+                            StartCall::new(
+                                move |_: &mut dyn crate::vm::VMStore| {
+                                    drop(input);
+                                    Ok(())
+                                },
+                                &native_memory,
+                            )
+                            .unwrap(),
+                        );
+                    }
+                }))
+                .is_err()
+            );
+            assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        }
+        assert_eq!(state.retirements.load(Ordering::SeqCst), retired + 8);
+        assert_eq!(state.capture_drops.load(Ordering::SeqCst), 7);
+        drop(native_memory);
         drop(store);
         assert_eq!(state.active.load(Ordering::SeqCst), 0);
     }

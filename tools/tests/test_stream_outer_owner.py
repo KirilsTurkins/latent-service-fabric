@@ -517,5 +517,38 @@ class TaskZZHostMemoryBaselineOwner(unittest.TestCase):
             owner.call_memory_result(b'', cases[0], _host_baseline='yes')
 
 
+class TaskZZZGuestStartMemoryOwner(unittest.TestCase):
+    def test_four_start_results_keep21_roots_and_refuse_skips_duplicates_or_cross_profile(self):
+        self.assertEqual((len(owner.GUEST_START_CASES), len(set(owner.GUEST_START_CASES))), (4, 4))
+        self.assertEqual(len(owner.CALL_MEMORY_STAGES), 21)
+        for case in owner.GUEST_START_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.guest_start_result(raw, case)['scope'],
+                'original-Store-guest-start-header-transaction-and-lifetime-counter-owner')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(b'0 measured', b'1 measured'),
+                    raw.replace(case.encode(), b'wrong::case'), b''):
+                with self.assertRaises(ValueError):
+                    owner.guest_start_result(changed, case)
+            for reader in (owner.call_memory_result, owner.resource_table_result,
+                    owner.call_result_channel_result, owner.callback_result):
+                with self.assertRaises(ValueError):
+                    reader(raw, case)
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(raw, case, _host_baseline=True)
+        for case in (*owner.CALL_MEMORY_CASES, *owner.RESOURCE_TABLE_CASES,
+                *owner.CALL_RESULT_CHANNEL_CASES, *owner.CALLBACK_CASES,
+                *owner.HOST_BASELINE_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.guest_start_result(b'', case)
+        for flags in ({'_resource_table': True}, {'_call_result_channel': True},
+                {'_callback_memory': True}, {'_host_baseline': True}):
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(b'', owner.GUEST_START_CASES[0], _guest_start=True, **flags)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', owner.GUEST_START_CASES[0], _guest_start='yes')
+
+
 if __name__ == '__main__':
     unittest.main()

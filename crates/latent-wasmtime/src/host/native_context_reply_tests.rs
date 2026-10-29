@@ -313,7 +313,7 @@ async fn actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_
     );
     // Warm ONLY real shared headers/resource table capacity under the SAME grant.
     // WARM source: channel, RawLower, RawLift, GuestTask, WaitableSet,
-    // GuestThread, GuestCall queue, HostTask. Legacy block_on still creates no
+    // GuestThread, GuestCall queue, StartImplicit, HostTask. Legacy block_on creates no
     // HostFuture/outer scheduler Task. This second call binds exact layouts.
     let baseline = original.host_memory_bytes();
     let before = super::native_store_tests::allocation_rows(&observed).len();
@@ -323,13 +323,13 @@ async fn actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_
     );
     let warmed = super::native_store_tests::allocation_rows(&observed);
     let call = &warmed[before..];
-    assert_eq!(call.len(), 8);
+    assert_eq!(call.len(), 9);
     assert!(call
         .iter()
         .all(|r| r.bytes > 0 && r.admitted && r.confirmed && r.released));
     assert_eq!(original.host_memory_bytes(), baseline);
     let expected: Vec<_> = call.iter().map(|r| r.bytes).collect();
-    let host_task_bytes = call[7].bytes;
+    let host_task_bytes = call[8].bytes;
     let next = warmed.len();
     let reply = super::policy::reply_string_charge("context-owned").unwrap() as u64
         + crate::native_tables::OWNER_ESCROW as u64;
@@ -342,7 +342,7 @@ async fn actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_
     // Actual HostTask is the LAST Wasmtime allocation before owned_reply.
     // RawLower has physically retired before core guest entry (make_call).
     // Including this real HostTask request avoids denying an earlier owner.
-    observed.before_request(next + 8, move |bytes| {
+    observed.before_request(next + 9, move |bytes| {
         assert_eq!(bytes, host_task_bytes);
         let task = bytes as u64 + crate::native_tables::OWNER_ESCROW as u64;
         let bytes = MIB - invocation.host_memory_bytes() - linear - task - reply + 1

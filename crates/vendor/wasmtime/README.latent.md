@@ -649,3 +649,24 @@ Four new native controls cover exact layout/refusal, repeated/error calls,
 other-Store-independent cancellation and confirmation/body/destructor unwind.
 They remain source-only until the bounded owning run; transitive captures, full
 ActivationBudget/RSS and whole736/745 are not qualified.
+
+
+The v27 source stage prepays the four selected guest-thread start closures:
+both implicit queue-call branches, the pending explicit start function and its
+resume wrapper. The original Store factory reserves the complete concrete
+ClosureHeader before Box allocation. Queue and typed outer-header preparation
+precede replacing NotStartedExplicit; refusal keeps the SAME pending function.
+The stack-only builder moves no original pending capture before admission and
+retains no extra factory Arc. Dispatch takes the sole pointer before calling;
+physical header deallocation precedes the FnOnce body/capture destructor and
+the original ticket remains live through success, error and unwind. None and
+ZST preserve original Box timing and the two-pointer/Option niche shape.
+
+Four source-bound native controls cover actual GuestThreadState plus the real
+queue/preparation APIs, original-factory refusal, pending cancellation, next
+call/error, Store-outliving custody and confirmation/body/destructor unwinds.
+They do not invoke a guest component or full resume_thread, and confirmation
+panic is cleanup evidence rather than admission-refusal rollback. Previous
+callback controls are retained. This is not whole #736/#745 accounting, an
+allocator/RSS bound, or transitive payload/stack admission. The cumulative
+patch retains one-line context, all source postimages and all250 originals.
