@@ -8237,7 +8237,7 @@ mod call_parameter_closure_memory_tests {
                     1
                 );
                 let opaque = store.as_context_mut().0;
-                let (_slot, item) = opaque
+                let (slot, item) = opaque
                     .concurrent_state_mut()
                     .unwrap()
                     .high_priority
@@ -8247,6 +8247,8 @@ mod call_parameter_closure_memory_tests {
                     panic!("expected eligible sibling")
                 };
                 handle_guest_call(opaque, call).unwrap();
+                // Dispatch consumed the item; retire its original queue-node owner here.
+                drop(slot);
                 let mut cx = Context::from_waker(Waker::noop());
                 assert!(
                     matches!(Pin::new(&mut sibling.rx).poll(&mut cx), Poll::Ready(Ok(value))

@@ -58,8 +58,8 @@ POSTIMAGES = {
         "bytes": 106434
     },
     "src/runtime/component/concurrent.rs": {
-        "sha256": "4c621c0bf1dccaefdf7d4c0a251bf8369f71a573f3ca99bf21e4985b55398ea2",
-        "bytes": 327029
+        "sha256": "577a046f2191b02642d5b4fb0587eef40ee1826d4303654b119192f38741a294",
+        "bytes": 327146
     },
     "src/runtime/component/dynamic_memory.rs": {
         "sha256": "70ab7ecf2fba9a29be46f4750e28ef404acc991d36d708939b022bce1872d57d",
@@ -246,8 +246,8 @@ POSTIMAGES = {
         "bytes": 46045
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "edc633545b8a2831fc9ef59223ff8e3dcda9f6dac4e240871d36f2b723cd8665",
-        "bytes": 645751
+        "sha256": "0a5f23d10a30d4c510fe0b20260df310e3d5d39c579cdb53298dff81022f5b81",
+        "bytes": 645870
     },
     "src/runtime/component/resource_table.rs": {
         "sha256": "2b08c8101f9cf35c1961f2693ba962329712898e7e4f30b0a5c5b46e43454042",
