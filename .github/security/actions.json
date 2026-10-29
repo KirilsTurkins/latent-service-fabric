@@ -192,25 +192,25 @@
       "upstream_repository": "actions/cache",
       "upstream_revision": "3edfce9056124e459a23f683a21433670d47daca"
     },
-    "KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9": {
+    "KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8": {
       "files": [
         {
           "sha256": "fc3f945029a3905c34bb8d52a6d2faf4a2bdde2ce7baa57ae648154b0b6f05b5",
           "snapshot": ".github/security/actions/checkout/action.yml.snapshot",
           "source": "action.yml",
-          "source_sha256": "d59219cb79590abdb877deaa14e3b65a00c05318bf5a6f3b989b9162b5d08c35"
+          "source_sha256": "fc3f945029a3905c34bb8d52a6d2faf4a2bdde2ce7baa57ae648154b0b6f05b5"
         },
         {
-          "sha256": "a67e2c88bf49ba078f5c16bd706194a2cd00ee9fcd431f11ce16930d64e43d9f",
+          "sha256": "64f50ca0c2e03efe66a47042c2347978b66d64ce3585d0a9f1f3047ac95e1484",
           "snapshot": ".github/security/actions/checkout/package.json",
           "source": "package.json",
-          "source_sha256": "a67e2c88bf49ba078f5c16bd706194a2cd00ee9fcd431f11ce16930d64e43d9f"
+          "source_sha256": "64f50ca0c2e03efe66a47042c2347978b66d64ce3585d0a9f1f3047ac95e1484"
         },
         {
-          "sha256": "42ed6454023f2da6b8ee3814c5158e643050281f67544503edd666a0972b9d22",
+          "sha256": "150804961399dd5d5689b87aaf7d1f7963dbb14dd4993851ee4a34893d860be3",
           "snapshot": ".github/security/actions/checkout/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "42ed6454023f2da6b8ee3814c5158e643050281f67544503edd666a0972b9d22"
+          "source_sha256": "150804961399dd5d5689b87aaf7d1f7963dbb14dd4993851ee4a34893d860be3"
         }
       ],
       "kind": "npm",
@@ -218,10 +218,10 @@
         "sha256": "fc3f945029a3905c34bb8d52a6d2faf4a2bdde2ce7baa57ae648154b0b6f05b5",
         "snapshot": ".github/security/actions/checkout/action.yml.snapshot",
         "source": "action.yml",
-        "source_sha256": "d59219cb79590abdb877deaa14e3b65a00c05318bf5a6f3b989b9162b5d08c35"
+        "source_sha256": "fc3f945029a3905c34bb8d52a6d2faf4a2bdde2ce7baa57ae648154b0b6f05b5"
       },
       "repository": "KirilsTurkins/lsf-checkout",
-      "revision": "c3024dfac542bb46ebccc7829ddf1f95e0be8da9",
+      "revision": "842365d0a25bf5a868311e4cb89c908bdcab4bb8",
       "security_pr": "https://github.com/actions/checkout/pull/2607",
       "upstream_repository": "actions/checkout",
       "upstream_revision": "f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a"

@@ -45,7 +45,7 @@ jobs:
       predecessor-version: ${{ steps.gate.outputs.predecessor-version }}
       predecessor-commit: ${{ steps.gate.outputs.predecessor-commit }}
     steps:
-      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - name: Prepare private exact-source host workspace
@@ -83,7 +83,7 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - name: Prepare private exact-source host workspace
@@ -164,7 +164,7 @@ jobs:
       contents: read
       actions: read
     steps:
-      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - name: Prepare private exact-source host workspace
@@ -245,7 +245,7 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - name: Prepare private exact-source host workspace

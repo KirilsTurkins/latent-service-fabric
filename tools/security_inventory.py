@@ -150,6 +150,8 @@ def npm_packages(repo: Path, entry: dict) -> list[Package]:
     bundled_prefix = None
     derived = False
     libraries = reviewed_npm_libraries(repo, entry, manifest, lock)
+    from tools.security_npm_sources import action_library_sources
+    libraries.update(action_library_sources(repo, entry, manifest, lock))
     require(entry.get("derived_bundle") is None or bundled is not None, "npm-derivation-without-bundle")
     if bundled is not None:
         require(isinstance(bundled, str) and re.fullmatch(r"(?:@[a-z0-9-]+/)?[a-z0-9-]+", bundled),

@@ -274,5 +274,92 @@ class NpmSourceRepairTests(unittest.TestCase):
                     sources.verify_sources(root, packages, config, fetch)
 
 
+    def checkout_fixture(self, root):
+        policy = json.loads(read_file(POLICY, "action-source-repairs.json"))
+        controls = root / "controls"
+        controls.mkdir()
+        (controls / "action-source-repairs.json").write_text(json.dumps(policy))
+        for row in (policy["bindings"] | policy["assets"]).values():
+            target = root / row["snapshot"]
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(read_file(ROOT, row["snapshot"]))
+        (root / ".github/security/actions.json").write_bytes(read_file(ROOT, ".github/security/actions.json"))
+        entry = {"path": sources.CHECKOUT_PREFIX + "package.json", "kind": "npm",
+                 "lock": sources.CHECKOUT_PREFIX + "package-lock.json",
+                 "source_repair": sources.CHECKOUT_PROFILE}
+        raw = read_file(root, policy["assets"]["upstream"]["snapshot"])
+        return controls, entry, lambda pin: raw
+
+    def test_checkout_published_source_reconstructs_and_resolves_only_its_exact_advisory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            controls, entry, fetch = self.checkout_fixture(root)
+            with patch.object(sources, "POLICY", controls):
+                packages = npm_packages(root, entry)
+                receipts = sources.verify_sources(root, packages, {"manifests": [entry]}, fetch)
+            self.assertEqual(len(packages), 580)
+            self.assertEqual(len(receipts), 1)
+            self.assertEqual(receipts[0]["action"], sources.CHECKOUT_REFERENCE)
+            known = finding("osv", "GHSA-gcqx-w48m-w2h4", entry["lock"], "npm:deepmerge@4.3.1")
+            foreign = finding("osv", known.finding, ".github/security/actions/setup-node/package-lock.json", known.package)
+            observations = [{"advisories": [{"package": {"name": "deepmerge", "version": "4.3.1", "path": known.path},
+                                              **receipts[0]["advisories"][0]}]}]
+            self.assertEqual(sources.resolve_findings([known, foreign], observations, receipts), ([foreign], [known]))
+            observations[0]["advisories"][0]["modified"] = "future-revision"
+            self.assertEqual(sources.resolve_findings([known], observations, receipts), ([known], []))
+
+    def test_checkout_source_rejects_graph_revision_source_and_build_drift(self):
+        changes = (
+            (".github/security/actions.json", lambda value: value.replace(b"842365d0", b"042365d0")),
+            (sources.CHECKOUT_PREFIX + "package-lock.json", lambda value: value.replace(b'"license": "MIT"', b'"license": "ISC"', 1)),
+            (".github/security/actions/checkout-source/deepmerge-4.3.1.repaired.tar", lambda value: value + b"drift"),
+            (".github/security/actions/checkout-source/repair.json", lambda value: value.replace(b"__proto__", b"__other__", 1)),
+            (".github/security/actions/checkout-source/declaration.json", lambda value: value.replace(b'"forkBuildVerified": false', b'"forkBuildVerified": true')),
+            (".github/security/actions/checkout-source/fork-build.json", lambda value: value.replace(b'"jobConclusion": "success"', b'"jobConclusion": "failure"')))
+        for name, mutate in changes:
+            with self.subTest(path=name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                controls, entry, fetch = self.checkout_fixture(root)
+                target = root / name
+                before = target.read_bytes()
+                after = mutate(before)
+                self.assertNotEqual(before, after)
+                target.write_bytes(after)
+                with patch.object(sources, "POLICY", controls), self.assertRaises(SecurityError):
+                    packages = npm_packages(root, entry)
+                    sources.verify_sources(root, packages, {"manifests": [entry]}, fetch)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            controls, entry, fetch = self.checkout_fixture(root)
+            with patch.object(sources, "POLICY", controls):
+                packages = npm_packages(root, entry)
+                with self.assertRaises(SecurityError):
+                    sources.verify_sources(root, packages, {"manifests": [entry]}, lambda pin: fetch(pin) + b"drift")
+
+    def test_checkout_source_never_admits_unselected_or_registry_graphs_as_repaired(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            controls, entry, fetch = self.checkout_fixture(root)
+            with patch.object(sources, "POLICY", controls):
+                unselected = {key: value for key, value in entry.items() if key != "source_repair"}
+                with self.assertRaises(SecurityError):
+                    npm_packages(root, unselected)
+                foreign = {**entry, "path": ".github/security/actions/setup-node/package.json"}
+                owner = json.loads(read_file(root, entry["path"]))
+                lock = json.loads(read_file(root, entry["lock"]))
+                with self.assertRaises(SecurityError):
+                    sources.action_library_sources(root, foreign, owner, lock)
+                del owner["devDependencies"]["deepmerge"]
+                del lock["packages"][""]["devDependencies"]["deepmerge"]
+                node = lock["packages"]["node_modules/deepmerge"]
+                node["resolved"] = "https://registry.npmjs.org/deepmerge/-/deepmerge-4.3.1.tgz"
+                node["integrity"] = sources.integrity(fetch({}))
+                for name, value in ((entry["path"], owner), (entry["lock"], lock)):
+                    (root / name).write_text(json.dumps(value))
+                self.assertEqual(sources.action_library_sources(root, entry, owner, lock), {})
+                packages = npm_packages(root, entry)
+                self.assertEqual(sources.verify_sources(root, packages, {"manifests": [entry]}, fetch), [])
+
+
 if __name__ == "__main__":
     unittest.main()
