@@ -3486,7 +3486,7 @@
 +                let mut cx = Context::from_waker(Waker::noop());
 +                assert!(
 +                    matches!(Pin::new(&mut sibling.rx).poll(&mut cx), Poll::Ready(Ok(value))
-+                    if *value.downcast::<u32>().unwrap() == 42)
++                    if value.downcast_ref::<u32>() == Some(&42))
 +                );
 +                assert_eq!(sibling_invocations.load(Ordering::SeqCst), 1);
 +                drop(sibling);
