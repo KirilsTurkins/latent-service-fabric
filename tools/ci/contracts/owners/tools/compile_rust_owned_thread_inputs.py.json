@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_rust_owned_thread_inputs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain the native control results while removing only their already-executed transient binaries so the fixed evidence cap remains enforced.",
+  "reviewReason": "Include the separate catalogue candidate pair without replacing the last complete runtime pair",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "eecf2d1be02c97b903a958749b396dc923efa9312d09665706acd856a0141569"
+  "sha256": "815d33627df04e3371f686fe83cbfd53b0325ff0b1ea8579dee0eaa063ae663c"
 }

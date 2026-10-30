@@ -1,9 +1,9 @@
 //! Closed, host-owned original-object expectations for the selected Rust port.
 //!
 //! A guest cannot provide or select this catalogue. The current immutable corpus
-//! is the independently verified passed28059 remapped compiler observation.
-//! Its original app and guarded core compiled; the ordinary guest was not run.
-//! The earlier byte-identical ec11 failure remains an immutable distinct event.
+//! is the independently verified a9809 compiler observation retained by run
+//! 41109207452. Its original app and guarded core compiled; the ordinary guest
+//! was not run because the stale catalogue refused the changed object graph.
 //! This source proof alone does not enable any runtime or component profile.
 use wasmparser::{BinaryReader, Encoding, Operator, Parser, Payload, Validator};
 
@@ -12,7 +12,7 @@ use wasmparser::{BinaryReader, Encoding, Operator, Parser, Payload, Validator};
 mod catalogue;
 
 const NODE_COUNT: usize = 1222;
-const REFERENCE_COUNT: usize = 5309;
+const REFERENCE_COUNT: usize = 5312;
 const MAX_BYTES: usize = 1024 * 1024;
 const MAX_FUNCTIONS: u32 = 1024;
 const MAX_OPERATORS: u64 = 262_144;
@@ -1802,7 +1802,7 @@ pub fn derive_source_core(
 #[cfg(test)]
 mod tests {
     use super::*;
-    const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/reviewed-original-core.wasm");
+    const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/catalogue-original-core.wasm");
     const PUBLIC: &str = "examples:greeting/api@1.0.0#greet";
     const POST: &str = "cabi_post_examples:greeting/api@1.0.0#greet";
 
@@ -1853,7 +1853,7 @@ mod tests {
         assert!(!proof.bindings.contains(&UNBOUND));
         assert_eq!(
             (proof.stack_low, proof.stack_high, proof.memory_bytes),
-            (27552, 1141664, 1179648)
+            (27984, 1142096, 1179648)
         );
         let module = Original::parse(ORIGINAL).unwrap();
         let selected = source_role(&proof, "runtime13executor_root12progress_all").unwrap();
@@ -1938,7 +1938,7 @@ mod tests {
         assert_eq!(sites.iter().filter(|site| site.fallback).count(), 1);
         let sealed = seal_original_callbacks(ORIGINAL).unwrap();
         // Exact independently retained Python production derivation from the
-        // authenticated 9d0e11d event. This is an emission comparison, not execution.
+        // authenticated a9809ca event. This is an emission comparison, not execution.
         assert_eq!(
             Sha256::digest(&sealed)
                 .iter()
@@ -1989,11 +1989,11 @@ mod tests {
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "261f4cd27a9f8229793ed6e5521986e8e3c0249eec800363394b1591292e8b57"
+            "e7d643d2b2593158ba1a40fdd4fc9f4613123064d056f9bf39fa3adbaeb324d7"
         );
         assert_eq!(receipt.original_panic_function, 527);
         assert_eq!(receipt.root.canonical_system_panic_trap, Some(528));
-        assert_eq!(receipt.root.canonical_system_stack_high, Some(1141664));
+        assert_eq!(receipt.root.canonical_system_stack_high, Some(1142096));
         assert_eq!(
             receipt.root.root_stack_high - receipt.root.root_stack_low,
             1024 * 1024
