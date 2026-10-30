@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Bind the delegated native-products reader fingerprint to the reviewed exact current 200-control receipt cohort pin used by the signed Rust runtime programme.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0c293a556c6a1a89a248287d78697cbeff57c544f0e21707fb7e69894818d8ce"
+  "sha256": "d47036205a37a4c1240356e523ef7d2b20aa545084bbf77b61e49e4e173afbca"
 }

@@ -23,7 +23,7 @@
       },
       {
         "name": "Fetch the two exact original compiler and native source events",
-        "run": "git fetch --no-tags --depth=1 origin 2259601ab19702eafd56c39bcb43f769cdb47fa5\ngit fetch --no-tags --depth=1 origin 9106147f83a2e19c8b1be16b9eb5d55e39512bde\n"
+        "run": "git fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222\ngit fetch --no-tags --depth=1 origin 9106147f83a2e19c8b1be16b9eb5d55e39512bde\n"
       },
       {
         "name": "Install locked Python dependencies and check finite replay and policy refusals",
