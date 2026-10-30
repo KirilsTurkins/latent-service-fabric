@@ -1,9 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/rust_thread_compiler_materials.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the exact second producer attempt while retaining the expired historical artifact identity and unchanged selected-member hashes.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "163c0cbdf6923de0957a621ed074e10f0c9a1418ffd30b3a095e6ac791ea3502"
-}
-
+{"kind":"owner","path":"tools/rust_thread_compiler_materials.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind the successful exact-head compiler artifact while retaining both older artifact identities and selected-member hashes.","schemaVersion":"latent.ci.contracts.v1","sha256":"77e35f9169fefc41e888d07bef1567a62f8eb106f98aa2ade86825b49f620c28"}

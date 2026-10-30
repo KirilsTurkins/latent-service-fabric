@@ -272,6 +272,8 @@ CONTROLS = (('original-host-memory',
   'activation_runtime::shared::tests::concurrent_last_strong_and_weak_drop_keep_both_headers_paid',
   'activation_runtime::shared::tests::payload_unwind_still_retires_both_headers_before_refund',
   'activation_runtime::shared::tests::preparation_prepays_both_padded_headers_and_rolls_back_without_observation',
+  'activation_runtime::tests::actual_native_reservation_refusal_keeps_original_budget_and_does_not_guess_other_dimensions',
+  'activation_runtime::tests::actual_owner_refusals_name_only_the_original_bucket_without_refunding_live_owners',
   'activation_runtime::tests::close_allows_bounded_live_continuations_and_rejects_independent_work',
   'activation_runtime::tests::continuations_require_live_original_generation_before_any_admission',
   'activation_runtime::tests::foreign_store_token_and_opaque_sleeping_work_cannot_establish_quiescence',
@@ -437,7 +439,7 @@ def qualify(output: Path, revision: str) -> dict:
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
     require(len(CONTROLS) == 44 and len({row[0] for row in CONTROLS}) == 44
-            and len(names) == len(set(names)) == 197, 'host-codec-control-inventory')
+            and len(names) == len(set(names)) == 199, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     result_bytes.verify(ROOT)
@@ -476,7 +478,7 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':193,'nativeCohort':NATIVE_COHORT,
+            'products':products,'commands':stages.records,'controlCount':199,'nativeCohort':NATIVE_COHORT,
             'wasmtimeAllocationCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,

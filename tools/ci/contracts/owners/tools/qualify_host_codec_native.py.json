@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/qualify_host_codec_native.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind all 197 unique source-bound controls after admitting the two existing host-future ownership cases; preserve commands, resource limits, products and required outcomes.","schemaVersion":"latent.ci.contracts.v1","sha256":"4a5fc4c5e5beb2e1f747e6e46b747427092a817f3a2efe6ffe2cd47999c58c38"}
+{
+  "kind": "owner",
+  "path": "tools/qualify_host_codec_native.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind all 199 exact controls including the two existing activation refusal cases",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "d99677333891f29a8c21ac21ea324a56c3d621b517be9edeec0159982d1cabf4"
+}
