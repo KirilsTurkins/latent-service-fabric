@@ -1989,11 +1989,11 @@ mod tests {
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "a1fd0ce4d9f557c88b2ff0df9ac0e7b99b25586bd6ddb2529f368339183faa27"
+            "31712d97ca16f65283b8d535d38f19a64c3ad048fdd8e774bd652c9b589b8fe7"
         );
-        assert_eq!(receipt.original_panic_function, 527);
-        assert_eq!(receipt.root.canonical_system_panic_trap, Some(528));
-        assert_eq!(receipt.root.canonical_system_stack_high, Some(1142096));
+        assert_eq!(receipt.original_panic_function, 529);
+        assert_eq!(receipt.root.canonical_system_panic_trap, Some(530));
+        assert_eq!(receipt.root.canonical_system_stack_high, Some(1142080));
         assert_eq!(
             receipt.root.root_stack_high - receipt.root.root_stack_low,
             1024 * 1024

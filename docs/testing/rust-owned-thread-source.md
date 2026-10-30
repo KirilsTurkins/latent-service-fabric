@@ -393,6 +393,17 @@ focused selector/capture controls prove the transform is one reversible cfg
 edit. A hosted sysroot/application/component build and real signed execution
 are still required; this source diagnosis is not a passing ThreadPool result.
 
+Hosted compiler run
+[`41125356593`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41125356593)
+at exact source `3f7f88abb1907234c8e2da3eb52570fd76cde878` passed all 29
+native controls and 75 of 76 source-mechanism controls. It stopped before the
+sysroot/application build, component encoding and guest execution because the
+remaining complete source-derived-core assertion still named the former
+catalogue graph. Artifact `13010103530` retains the exact current derivation as
+`sha256:31712d97ca16f65283b8d535d38f19a64c3ad048fdd8e774bd652c9b589b8fe7`.
+That identity now matches the separately retained catalogue origin; this is an
+identity correction, not a runtime result.
+
 Other validation includes source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
 the actual registry, wait, TLS and lifecycle bodies with explicit reference
