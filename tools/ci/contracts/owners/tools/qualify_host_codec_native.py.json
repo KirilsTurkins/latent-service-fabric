@@ -1,3 +1,1 @@
-{"kind":"owner","path":"tools/qualify_host_codec_native.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind the reviewed and actually passed193-control producer to its committed LF bytes; the prior fingerprint described only a Windows CRLF worktree, without changing source or coverage.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "165497353226b386a9cc66e198b06e556248b672a91edbdba52c040b56603d5c"
-}
+{"kind":"owner","path":"tools/qualify_host_codec_native.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind the two already-present native memory retirement controls into the exact host-memory discovery set; all 193 existing controls, resource limits, commands, and outcomes remain required.","schemaVersion":"latent.ci.contracts.v1","sha256":"f0cb5d9669ab5d026aadcb50a9062f8d31808b9c9fb660e1bc37d855f886b4b9"}
