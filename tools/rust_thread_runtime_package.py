@@ -38,9 +38,9 @@ PINS = {
     'raw-core.wasm': (262561, '1016bc74d96585be6943d2b1396cf79ebd8f1fa66828a321d2ee251827431bcc'),
     'observation.json': (5427, '86110a34ac5235bb70058f02b9c89c93ef322c209235e86badade5501c863b69'),
 }
-COMPONENT_SHA = 'sha256:8b25c9c738cfa6cf0f146f7575762e69dd82625cfdae12f2747586d3cd9ce6d2'
+COMPONENT_SHA = 'sha256:b7f7664a7a7cf07aac18628ed86124b03b50ef85c82ce1cfc66d9321e3e709f9'
 WRAPPED = {'bytes': 513900,
-           'sha256': 'sha256:5c326ff819667d0e23531c3f71e5142ae89cc4b357278ecc5eccf1dbe8c0eeb2'}
+           'sha256': 'sha256:c6d1156c12cc8464682e49ccc1763c1c68a5347266d1e71efa2b7b786f2cefc5'}
 PROFILE = 'rust-context40-sync-cooperative-v1'
 SOURCE_IMPORTS = ('latent:runtime/activation@0.1.0', 'latent:runtime-native/threads@0.1.0',
                   'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0')

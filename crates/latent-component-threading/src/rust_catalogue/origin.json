@@ -114,17 +114,24 @@
   "normalComponentEnvelope": {
     "tool": "wasm-tools",
     "version": "1.254.0",
-    "toolSha256": "3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd",
-    "componentDigest": "sha256:8b25c9c738cfa6cf0f146f7575762e69dd82625cfdae12f2747586d3cd9ce6d2",
+    "toolSha256": "cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+    "componentDigest": "sha256:b7f7664a7a7cf07aac18628ed86124b03b50ef85c82ce1cfc66d9321e3e709f9",
     "componentBytes": 251294,
     "derivedCoreDigest": "sha256:9fd38b90a1f8e758c6be4da4a9310ebf05373af8caee8fa9f5ef195411b87966",
+    "hostedSource": {
+      "run": 41089948823,
+      "head": "18c4bdbadd292159c567f9da399a42ac651fe5e0",
+      "artifact": 12993363449,
+      "platform": "ubuntu-24.04-x86_64",
+      "failedStageAfterComponentEncoding": "native-normal-component-proof"
+    },
     "actualGuestExecuted": false,
     "nativeVerifierExecuted": false,
     "files": [
       {
         "name": "normal-component-shell.bin",
         "bytes": 4422,
-        "digest": "sha256:9602d9ffab9e41776c5479ae09d8411ea1ee7ca1a6e22848c1e779ebbaa49e34"
+        "digest": "sha256:7640af9fd078983e33e464d5589e565a191686d0510ea5d5a4687bb886bf0e75"
       },
       {
         "name": "original-wit-metadata.bin",
