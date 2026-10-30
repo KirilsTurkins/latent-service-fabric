@@ -9,6 +9,9 @@ from tools.phase2_operator_process import WorkflowError
 
 class RustThreadRuntimeTests(unittest.TestCase):
     def test_retained_original_pair_refuses_foreign_core_envelope_and_double_framing(self):
+        self.assertEqual(package.PINS['raw-core.wasm'], package.HISTORICAL_PINS['raw-core.wasm'])
+        self.assertNotEqual(package.PINS['source-inputs.json'],
+                            package.HISTORICAL_PINS['source-inputs.json'])
         base = ROOT / 'crates/latent-component-threading/src/rust_catalogue'
         original = (base / 'reviewed-original-core.wasm').read_bytes()
         component = (base / 'reviewed-normal-component.wasm').read_bytes()

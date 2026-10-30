@@ -20,11 +20,17 @@ from tools.rust_thread_callback_paths import section, unsigned
 
 SOURCE = '28059f343bbd954e3e6614c5a24593897cc0c294'
 RUN = 39877020838
-PINS = {
+HISTORICAL_PINS = {
     'application-source-and-capture.tar.gz': (20761985, 'c6d9ef4e2eb48af53b7685065e406dd5ff8403c5b003c45383680c6afb68a085'),
     'source-inputs.json': (9204, '645f05410a943a1383462ce2eef5a30145c1f6953de74154b3e0b5c62174057e'),
     'raw-core.wasm': (262436, '583e2353a8405db569e61cb3269b3643aff39374c1e2d83cc970cc033604edec'),
     'observation.json': (4522, '8bbcc074c19d458230e14681f4be429848e6e156e327d8370f2c452cf00f35a2'),
+}
+PINS = {
+    'application-source-and-capture.tar.gz': (20758354, '426379c7f44ebd9bc903ddf7169454cc78c7fd28ca3a4f2ff744564be5f0aba3'),
+    'source-inputs.json': (9204, 'c9b24130d4c9f06b10e801f6fe78e6a2db5642164f7b67cb7f1d624431e29232'),
+    'raw-core.wasm': HISTORICAL_PINS['raw-core.wasm'],
+    'observation.json': (4521, 'fb43d1bcfe2d3d5f31bedcbe3e889f9a4e60389b7bc7bfe9034ecad94923da9d'),
 }
 COMPONENT_SHA = 'sha256:74247ff2b0aeb0a1c2f6fb3fbf3fef31bb0c427b724c58d675e0b73be5c74dd5'
 WRAPPED = {'bytes': 513571,
@@ -149,7 +155,10 @@ def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> d
                               read_file(base / 'reviewed-normal-component.wasm', 2 * 1024 * 1024))
     (output / 'component.wasm').write_bytes(component)
     record = {'schemaVersion': 'latent.rust.thread-runtime.projection.v1',
-        'compilerSource': SOURCE, 'compilerRun': str(RUN), 'retainedCompilerMaterials': identities,
+        'compilerSource': SOURCE, 'compilerRun': str(RUN), 'compilerRunAttempt': 2,
+        'retainedCompilerMaterials': identities,
+        'historicalCompilerArtifactMembers': {name: {'bytes': size, 'sha256': 'sha256:' + sha}
+            for name, (size, sha) in HISTORICAL_PINS.items()},
         'originalSourceDigest': digest(inventory(files)), 'projectedPublicWitDigest': digest(projected),
         'originalPublicWitDigest': digest(ORIGINAL_WIT), 'publicEffect': 'async',
         'originalDeclaredImports': list(SOURCE_IMPORTS), 'finalRequiredImports': list(IMPORTS),

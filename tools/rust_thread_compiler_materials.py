@@ -16,9 +16,11 @@ from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import fresh, write_json
 from tools.rust_thread_runtime_package import SOURCE, RUN, PINS
 
-ARTIFACT = {'id': 12469845581, 'size_in_bytes': 52246859,
+HISTORICAL_ARTIFACT = {'id': 12469845581, 'size_in_bytes': 52246859,
     'digest': 'sha256:76e11dc5d099d353d027b5e946ec7624f5c7bc90110f4844fc9aff387f2afdc6'}
-JOB = 120164975934
+ARTIFACT = {'id': 12968677962, 'size_in_bytes': 52244511,
+    'digest': 'sha256:feae6e80f418041ca48d5dce1c82456903d1d77cf5e93d1878e2ed0bd36a6138'}
+JOB = 124001219301
 PREFIX = 'application-diagnostic/'
 
 
@@ -80,6 +82,7 @@ def prepare(output: Path) -> dict:
             identities[name] = actual
     record = {'schemaVersion': 'latent.rust.thread-retained-compiler.v1',
         'source': SOURCE, 'run': RUN, 'job': JOB, 'artifact': ARTIFACT,
+        'producerAttempt': 2, 'historicalArtifact': HISTORICAL_ARTIFACT,
         'archiveDigestVerification': 'official-metadata-only-selected-members-hash-verified',
         'wholeArchiveRetained': False, 'selected': identities,
         'rangeBytes': remote.transferred, 'rangeRequests': remote.requests,
