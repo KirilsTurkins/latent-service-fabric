@@ -155,6 +155,8 @@ unsafe extern "C" fn destroy(value: *mut u8) {
 static FIRST: platform::LazyKey = platform::LazyKey::new(Some(destroy));
 static SECOND: platform::LazyKey = platform::LazyKey::new(Some(destroy));
 static BORROWED: platform::LazyKey = platform::LazyKey::new(None);
+static BLOCK_KEYS: [platform::LazyKey; 33] =
+    [const { platform::LazyKey::new(None) }; 33];
 
 fn boot(limit: usize) -> *mut u8 {
     reset(limit);
@@ -224,6 +226,30 @@ fn tls_only_admits_real_native_entries_without_creating_a_root_task() {
         wrapper_exited(root);
         platform::__lsf_rust_root_reap(root);
     }
+    assert_eq!(owners(), 0);
+    assert_eq!(SYSTEM_FREES.load(Ordering::SeqCst), freed + 1);
+}
+
+#[test]
+fn tls_entries_share_one_admitted_physical_block_and_next_block_still_obeys_limit() {
+    let root = boot(2);
+    let allocated = SYSTEM_ALLOCS.load(Ordering::SeqCst);
+    let freed = SYSTEM_FREES.load(Ordering::SeqCst);
+    for key in &BLOCK_KEYS[..32] {
+        unsafe {
+            platform::set(key.force(), std::ptr::without_provenance_mut(1));
+        }
+    }
+    assert_eq!(owners(), 2); // context allocation and one entry-block allocation
+    assert_eq!(LEDGER.with(|l| l.borrow().kinds.clone()), [7, 7]);
+    assert_eq!(SYSTEM_ALLOCS.load(Ordering::SeqCst), allocated + 1);
+    assert!(std::panic::catch_unwind(|| unsafe {
+        platform::get(BLOCK_KEYS[32].force());
+    })
+    .is_err());
+    assert_eq!(owners(), 2);
+    assert_eq!(SYSTEM_ALLOCS.load(Ordering::SeqCst), allocated + 1);
+    finish(root);
     assert_eq!(owners(), 0);
     assert_eq!(SYSTEM_FREES.load(Ordering::SeqCst), freed + 1);
 }

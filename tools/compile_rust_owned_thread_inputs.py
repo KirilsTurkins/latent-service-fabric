@@ -26,6 +26,7 @@ from tools.rust_capsule_project import checked_path, decode_json, digest, fresh,
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = '.github/workflows/rust-owned-thread-inputs.yml'
 CRATE = 'crates/latent-component-threading/'
+NATIVE_TLS_TEST = 'sdk/rust-standard-runtime/tests/thread_tls_native.rs'
 CRATE_SOURCES = tuple(CRATE + 'src/' + name for name in (
     'lib.rs', 'thread_entry.rs', 'root.rs', 'public_root.rs', 'admission.rs', 'component.rs',
     'c_abi.rs', 'c_component.rs', 'c_context.rs', 'c_lifecycle.rs',
@@ -44,7 +45,7 @@ RECIPE = tuple(dict.fromkeys((
     'tools/dev_workflow/common.py', 'tools/application_dependency_store.py',
     'tools/rust_standard_logging_inputs.py', 'tools/rust_application_dependencies.py',
     'tools/rust_standard_thread_capture.py', 'tools/rust_owned_thread_component.py',
-    *result_controls.RECIPE, *CRATE_SOURCES, *std.recipe(threads=True))))
+    *result_controls.RECIPE, *CRATE_SOURCES, *std.recipe(threads=True), NATIVE_TLS_TEST)))
 
 
 def git(*args, input=None):
@@ -169,6 +170,15 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
         require('release: 1.97.1\n' in version
                 and 'commit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\n' in version,
                 'rust-thread-inputs-pinned-compiler')
+        summary['stage'] = 'native-tls-controls'
+        native_tls = build_output / 'thread-tls-native'
+        commands.run('native-tls-build', tools['rustc'], '--edition=2024', '--test',
+                     ROOT / NATIVE_TLS_TEST, '-o', native_tls)
+        listed = commands.run('native-tls-list', native_tls, '--list')
+        require(sum(line.endswith(b': test') for line in listed.splitlines()) == 10,
+                'rust-thread-inputs-native-tls-case-closure')
+        commands.run('native-tls-run', native_tls, '--test-threads=1')
+        summary['nativeTlsControls'] = 10
         summary['stage'] = 'tool-build'
         cargo = commands.run('rust-context-build', tools['cargo'], 'build', '--locked',
             '--package', 'latent-component-threading', '--bin', 'rust-context', '--message-format=json')
