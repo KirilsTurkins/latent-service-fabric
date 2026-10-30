@@ -11,9 +11,12 @@ class RustThreadRuntimeTests(unittest.TestCase):
     def test_native_reader_uses_current_catalogue_and_retains_failed_runtime_origin(self):
         from tools import rust_thread_native_products as native
 
-        self.assertEqual(native.SOURCE, '9c0097fc4dee24c57e0cffbdf1963e47772b2ffc')
-        self.assertEqual(native.RUN, 41116286833)
-        self.assertEqual(native.ARTIFACT['id'], 13008060664)
+        self.assertEqual(native.SOURCE, 'deb654086a6e9ca85c1c96c7e3485babbc6557d9')
+        self.assertEqual(native.RUN, 41131800734)
+        self.assertEqual(native.ARTIFACT['id'], 13013563430)
+        self.assertEqual(native.PREVIOUS_RUNTIME_SOURCE,
+                         '9c0097fc4dee24c57e0cffbdf1963e47772b2ffc')
+        self.assertEqual(native.PREVIOUS_RUNTIME_RUN, 41116286833)
         self.assertEqual(native.FAILED_RUNTIME_SOURCE,
                          '79911762b366381d7dc61da12d1b5e9aba2b3222')
         self.assertEqual(native.FAILED_RUNTIME_RUN, 41096399674)
@@ -28,12 +31,15 @@ class RustThreadRuntimeTests(unittest.TestCase):
                          package.HISTORICAL_PINS['raw-core.wasm'])
         self.assertEqual(package.LATEST_PREVIOUS_PINS['raw-core.wasm'],
                          (262561, '1016bc74d96585be6943d2b1396cf79ebd8f1fa66828a321d2ee251827431bcc'))
+        self.assertEqual(package.HOSTED_PREVIOUS_PINS['raw-core.wasm'],
+                         (262853, 'ae5b68cec5fa2d68cdd65eb669844e0d2dd75d8a3fc7563d8fc0a272866b9c7b'))
         self.assertNotEqual(package.PINS['raw-core.wasm'], package.PREVIOUS_PINS['raw-core.wasm'])
         self.assertNotEqual(package.PINS['raw-core.wasm'], package.LATEST_PREVIOUS_PINS['raw-core.wasm'])
+        self.assertNotEqual(package.PINS['raw-core.wasm'], package.HOSTED_PREVIOUS_PINS['raw-core.wasm'])
         self.assertNotEqual(package.PINS['source-inputs.json'], package.PREVIOUS_PINS['source-inputs.json'])
         base = ROOT / 'crates/latent-component-threading/src/rust_catalogue'
-        original = (base / 'reviewed-original-core.wasm').read_bytes()
-        component = (base / 'reviewed-normal-component.wasm').read_bytes()
+        original = (base / 'catalogue-original-core.wasm').read_bytes()
+        component = (base / 'catalogue-normal-component.wasm').read_bytes()
         framed = package.wrap_original(original, component)
         self.assertEqual(package.WRAPPED, {'bytes': len(framed), 'sha256': digest(framed)})
         self.assertTrue(framed.startswith(component))

@@ -132,7 +132,7 @@ and therefore could not authenticate the repaired component pair from
 `9d9b4001bdefa57b6938c613d0fea13f8e638f83`. Its zero fuel, zero memory and zero
 effects are preserved as pre-execution evidence, not a ThreadPool result.
 
-The replacement current-head native producer
+The preceding source-matched native producer
 [`41116286833`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41116286833)
 passed the same 200 controls and 91 commands at exact source
 `9c0097fc4dee24c57e0cffbdf1963e47772b2ffc`. Its sole artifact `13008060664`
@@ -148,6 +148,26 @@ include the repaired Rust component identities for the next exact signed run.
 The bounded diagnostic fetches this exact producer source before importing the
 frozen reader; it separately retains the earlier failed-runtime source so the
 historical pre-entry refusal remains reproducible instead of being overwritten.
+
+The exact repaired-catalogue native producer
+[`41131800734`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41131800734)
+then passed all 200 controls and 91 command records at
+`deb654086a6e9ca85c1c96c7e3485babbc6557d9`. Job 124324299029 retained artifact
+`13013563430`, 74,661,577 compressed bytes with GitHub ZIP SHA-256
+`cd9d6429408c9c87aee29911a066bb2de74b7355440b0a5374c76b8bdc19de3a`.
+Independent download verified the 136,231-byte native-products receipt
+(`19f814e63fa6733b56b4cad18f06c7007cb287a563fc875d304db066950e7e12`),
+the 25,052-byte source-inputs receipt
+(`031028fe27de7925761453b337efe5f8cdbc65f45713aa913f185575e355d4e7`),
+the final passing command and all five product identities. The products are
+`latent` `sha256:16b113e8f2f72343500e790a2421bf01a55610c1b15a07a2bf5891f615091871`,
+`latentd` `sha256:e10ab51379007164d65b83a76aa0e7877c813ce6e8883b51ed48a1cdc7aa57db`,
+package `sha256:80a4513399e70fdbd6398b100aae5932c931e2156d3e43584e46973dd336625c`,
+capsule-contracts `sha256:d2bdea874a37cce5136220dfb1ad9ae514a316c5caf42bcbc5c568a8d294a2c9`
+and capsule-authoring
+`sha256:98e1956da6aef945927147b426d7261de654cc78873605e3367f5fb7613a9976`.
+This remains native source/control evidence only; it does not claim signed guest
+entry or ThreadPool completion.
 
 The first source-matched signed retry,
 [run 41121239149](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41121239149),

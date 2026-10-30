@@ -18,8 +18,8 @@ from tools.rust_capsule_build import BUILD_TYPE, Commands, package_inputs, selec
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, read_json, write_json
 from tools.rust_thread_callback_paths import section, unsigned
 
-SOURCE = '9d9b4001bdefa57b6938c613d0fea13f8e638f83'
-RUN = 41113065282
+SOURCE = 'ef841ed1d5691b4bf25db48b9980a776b4b56bc5'
+RUN = 41127291312
 HISTORICAL_PINS = {
     'application-source-and-capture.tar.gz': (20761985, 'c6d9ef4e2eb48af53b7685065e406dd5ff8403c5b003c45383680c6afb68a085'),
     'source-inputs.json': (9204, '645f05410a943a1383462ce2eef5a30145c1f6953de74154b3e0b5c62174057e'),
@@ -44,15 +44,21 @@ LATEST_PREVIOUS_PINS = {
     'raw-core.wasm': (262561, '1016bc74d96585be6943d2b1396cf79ebd8f1fa66828a321d2ee251827431bcc'),
     'observation.json': (5426, 'cf773f3995fa25fd43bba4183683dc8202759c805f8ca8b5e971068a9a2da4f9'),
 }
-PINS = {
+HOSTED_PREVIOUS_PINS = {
     'application-source-and-capture.tar.gz': (20966554, 'c1f67326b3cc0e3b1399ba0eeeb4b5ef05741874d9fc4bcacfe03e22dac52203'),
     'source-inputs.json': (9348, 'e7c36ea2ce9deb88b24aae2f797ced711e3a5a3b183a34c4ed2106d0b6de20e0'),
     'raw-core.wasm': (262853, 'ae5b68cec5fa2d68cdd65eb669844e0d2dd75d8a3fc7563d8fc0a272866b9c7b'),
     'observation.json': (5427, 'bd887733bf8360aeb85dfea8163067339a085f7f4fa5e95dac06e5ee3a11676a'),
 }
-COMPONENT_SHA = 'sha256:1f49c19d412b36f9a28c6e867298f5f149df40452a2b179fad7eee46578f3a8f'
-WRAPPED = {'bytes': 514484,
-           'sha256': 'sha256:c88f911cf1304ae9daba6e738bd4fc5128fb4e0b491d7143558905a70f04cdcf'}
+PINS = {
+    'application-source-and-capture.tar.gz': (20968654, '1daf63d7e138e68e2f69910de05c07fc98ed23b60bccd4fa3784e3746ebeca2b'),
+    'source-inputs.json': (9348, 'd0419a16e563d186d3c2fc323fa81bf26b13f18f068b88d5f36128bd9e7ada69'),
+    'raw-core.wasm': (263030, '0cbb66d8e363c47df6b158d50facb7fa04f280bcb2650aa0597385fd63025a24'),
+    'observation.json': (5426, '3738b83b3d08a857fe7dd38e73a9ebe415f65c0c8ff2551ac293bf465128a007'),
+}
+COMPONENT_SHA = 'sha256:1db2b051a515be1bd60974e38335f6bade254d6b016daf9e20b913360e72c00f'
+WRAPPED = {'bytes': 514833,
+           'sha256': 'sha256:e81881af5494d3d6ab3b071abd8fadca79d2f21b354e2e52dc746d492582f471'}
 PROFILE = 'rust-context40-sync-cooperative-v1'
 SOURCE_IMPORTS = ('latent:runtime/activation@0.1.0', 'latent:runtime-native/threads@0.1.0',
                   'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0')
@@ -111,7 +117,7 @@ def original_files(artifact: Path) -> tuple[dict[str, bytes], dict]:
 def wrap_original(original: bytes, component: bytes) -> bytes:
     """Untrusted preimage framing only; the selected native host recomputes it."""
     require(digest(original) == 'sha256:' + PINS['raw-core.wasm'][1]
-            and digest(component) == COMPONENT_SHA and len(component) == 251586,
+            and digest(component) == COMPONENT_SHA and len(component) == 251758,
             'rust-thread-original-component-pair')
     name = b'latent-rust-original-core-v1'
     payload = unsigned(len(name)) + name + b'LSFRPR01' + len(original).to_bytes(4, 'little') + original
@@ -170,7 +176,7 @@ def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> d
             'rust-thread-exact-projected-contract-surface')
     base = ROOT / 'crates/latent-component-threading/src/rust_catalogue'
     component = wrap_original(read_file(artifact / 'raw-core.wasm', 1024 * 1024),
-                              read_file(base / 'reviewed-normal-component.wasm', 2 * 1024 * 1024))
+                              read_file(base / 'catalogue-normal-component.wasm', 2 * 1024 * 1024))
     (output / 'component.wasm').write_bytes(component)
     record = {'schemaVersion': 'latent.rust.thread-runtime.projection.v1',
         'compilerSource': SOURCE, 'compilerRun': str(RUN), 'compilerRunAttempt': 1,
@@ -183,6 +189,8 @@ def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> d
             for name, (size, sha) in PRIOR_PINS.items()},
         'latestPreviousCompilerArtifactMembers': {name: {'bytes': size, 'sha256': 'sha256:' + sha}
             for name, (size, sha) in LATEST_PREVIOUS_PINS.items()},
+        'hostedPreviousCompilerArtifactMembers': {name: {'bytes': size, 'sha256': 'sha256:' + sha}
+            for name, (size, sha) in HOSTED_PREVIOUS_PINS.items()},
         'originalSourceDigest': digest(inventory(files)), 'projectedPublicWitDigest': digest(projected),
         'originalPublicWitDigest': digest(ORIGINAL_WIT), 'publicEffect': 'async',
         'originalDeclaredImports': list(SOURCE_IMPORTS), 'finalRequiredImports': list(IMPORTS),

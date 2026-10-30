@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Bind the delegated native-products reader fingerprint to the reviewed exact current 200-control receipt cohort pin used by both the runtime and diagnostic programmes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "67c0bbc8873695bbb1816cfd51a4271eaaa61fda67e0be7bcd81ed29588dda58"
+  "sha256": "478102b0d497cdd8d2f119aee6ee801090ff7fe9f0b56dde3f014471e5c6274f"
 }
