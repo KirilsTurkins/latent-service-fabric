@@ -1853,7 +1853,7 @@ mod tests {
         assert!(!proof.bindings.contains(&UNBOUND));
         assert_eq!(
             (proof.stack_low, proof.stack_high, proof.memory_bytes),
-            (27984, 1142096, 1179648)
+            (27968, 1142080, 1179648)
         );
         let module = Original::parse(ORIGINAL).unwrap();
         let selected = source_role(&proof, "runtime13executor_root12progress_all").unwrap();
@@ -1938,13 +1938,13 @@ mod tests {
         assert_eq!(sites.iter().filter(|site| site.fallback).count(), 1);
         let sealed = seal_original_callbacks(ORIGINAL).unwrap();
         // Exact independently retained Python production derivation from run
-        // 41109207452, artifact 13003202462. This compares emissions, not execution.
+        // 41122296703, artifact 13009371378. This compares emissions, not execution.
         assert_eq!(
             Sha256::digest(&sealed)
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "34eb2f704cae5a3f480a8975b3ca4e66b59311b65716118041c3cb1d72dfa182"
+            "21e5b1dc25f0b324eb3aa284a6683739e6dd1b544f7469c4ad1e157e877adb49"
         );
         let sealed_module = Original::parse(&sealed).unwrap();
         for (index, function) in module.table.iter().enumerate() {

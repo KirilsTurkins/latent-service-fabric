@@ -21,6 +21,16 @@ wasm-tools 1.254.0 envelope solely to permit review; its origin explicitly says
 `hostedConfirmation: false`, `runtimeQualified: false` and
 `actualGuestExecuted: false`.
 
+The first candidate-catalogue rerun,
+[run 41124401894](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41124401894),
+stopped before rebuilding the owned sysroot because three source-mechanism test
+expectations still named the previous catalogue head, stack geometry and sealed
+derivation digest. Its artifact 13010186814 has ZIP SHA-256
+`64dfbf84db8ab873bc062cb0e5fc2b3bc24f7271f57facd1b7d727d8cfe343c0`.
+The other 73 source-mechanism tests and all 29 native controls passed. This is a
+test-contract failure, not compiler or guest evidence; no application was
+compiled and no guest executed in that rerun.
+
 The preceding exact-head
 [run 41113065282](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41113065282)
 at `9d9b4001bdefa57b6938c613d0fea13f8e638f83` remains the independently
