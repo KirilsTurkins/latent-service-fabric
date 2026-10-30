@@ -363,7 +363,7 @@ mod tests {
         let proof = verify_rust_component_routing(ORIGINAL, COMPONENT).unwrap();
         assert_eq!(
             proof.catalogue_origin_head,
-            "eefea340b053d0f95185b6527e6caae5bf8bf457"
+            "ef841ed1d5691b4bf25db48b9980a776b4b56bc5"
         );
         assert!(proof.actual_component_graph_authenticated);
         assert!(!proof.canonical_creation_enabled && !proof.standard_runtime_qualified);

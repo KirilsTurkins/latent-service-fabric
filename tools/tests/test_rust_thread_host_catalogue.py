@@ -39,15 +39,18 @@ class HostCatalogueTests(unittest.TestCase):
         self.assertIn('current2id4ID32', records)
         self.assertNotIn('current2id2ID"', records)
         self.assertEqual(envelope['toolSha256'],
-                         '3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd')
+                         'cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6')
         self.assertEqual(envelope['candidateSource'], {
-            'compilerRun': 41122296703,
-            'compilerHead': 'eefea340b053d0f95185b6527e6caae5bf8bf457',
-            'compilerArtifact': 13009371378,
-            'platform': 'windows-x86_64-local-envelope-candidate',
-            'toolReleaseAsset': 'installed-wasm-tools-1.254.0.exe',
-            'toolSha256': '3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd',
-            'hostedConfirmation': False,
+            'compilerRun': 41127291312,
+            'compilerJob': 124309000420,
+            'compilerHead': 'ef841ed1d5691b4bf25db48b9980a776b4b56bc5',
+            'compilerArtifact': 13012116413,
+            'compilerArtifactZipSha256':
+                '1f1fc1598c340b22f74b2bdf6b361ad576168738bbd619043a136a5faefcf45e',
+            'platform': 'ubuntu-24.04-x86_64',
+            'toolReleaseAsset': 'lsf-bytecodealliance-actions-wasm-tools-1.254.0',
+            'toolSha256': 'cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6',
+            'hostedConfirmation': True,
         })
         self.assertEqual(envelope['previousHostedSource'], {
             'run': 41113065282,

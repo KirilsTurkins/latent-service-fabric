@@ -1,21 +1,21 @@
 {
   "schemaVersion": "latent.rust.trusted-original-catalogue.v1",
   "origin": {
-    "run": 41122296703,
-    "head": "eefea340b053d0f95185b6527e6caae5bf8bf457",
-    "artifact": 13009371378,
-    "artifactZipSha256": "1f40ddf6fe0f6d6cb0b2f136df04d4b965fa3833f15c9b9fde9079596c13e49a",
+    "run": 41127291312,
+    "head": "ef841ed1d5691b4bf25db48b9980a776b4b56bc5",
+    "artifact": 13012116413,
+    "artifactZipSha256": "1f1fc1598c340b22f74b2bdf6b361ad576168738bbd619043a136a5faefcf45e",
     "compilerDistributionDigest": "sha256:b8bbac71d7992a25a49b78726c4337dbcf0a6194700d42a444019b0ae19cda3f",
-    "sysrootIdentity": "sha256:a88d697595382e64fb006cbb871b1a439f5fe27bbe5a4be3a6bda8b8be43dccc",
+    "sysrootIdentity": "sha256:93566fabadd8cab1efd4087f3ab7de50a70326fa5e9f37a4edb30394bc502f6c",
     "sourceRecipeDigest": "sha256:726ab4756ac30e859a7f078301b8e01548b675bc7b5efd3017c3192e71b65b48",
     "originRawCoreDigest": "sha256:0cbb66d8e363c47df6b158d50facb7fa04f280bcb2650aa0597385fd63025a24",
     "sourceProfile": "lsf-rust-std-owned-thread-built-source-v1",
     "compilerRust": "1.97.1",
     "compilerCommit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
     "threadSourcePathRemap": {
-      "sourceRoot": "/tmp/lsf-rust-clock-std-ccbwfom6/library",
+      "sourceRoot": "/tmp/lsf-rust-clock-std-t7b7zdgk/library",
       "mappedRoot": "/lsf/rust/library",
-      "argument": "--remap-path-prefix=/tmp/lsf-rust-clock-std-ccbwfom6/library=/lsf/rust/library"
+      "argument": "--remap-path-prefix=/tmp/lsf-rust-clock-std-t7b7zdgk/library=/lsf/rust/library"
     },
     "owningStatus": "passed-10-native-tls-11-wait-8-sync-controls-76-source-controls-and-original-app-compile; refreshed-catalogue-not-runtime-qualified",
     "newApplicationStackGeometryClaimed": true,
@@ -114,7 +114,7 @@
   "normalComponentEnvelope": {
     "tool": "wasm-tools",
     "version": "1.254.0",
-    "toolSha256": "3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd",
+    "toolSha256": "cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
     "componentDigest": "sha256:1db2b051a515be1bd60974e38335f6bade254d6b016daf9e20b913360e72c00f",
     "componentBytes": 251758,
     "derivedCoreDigest": "sha256:31712d97ca16f65283b8d535d38f19a64c3ad048fdd8e774bd652c9b589b8fe7",
@@ -156,13 +156,15 @@
       "adaptedDigest": "sha256:14bae97e29b1064d917330e77a459d068214ae6857d5fe6ff2298bdbecc7b826"
     },
     "candidateSource": {
-      "compilerRun": 41122296703,
-      "compilerHead": "eefea340b053d0f95185b6527e6caae5bf8bf457",
-      "compilerArtifact": 13009371378,
-      "platform": "windows-x86_64-local-envelope-candidate",
-      "toolReleaseAsset": "installed-wasm-tools-1.254.0.exe",
-      "toolSha256": "3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd",
-      "hostedConfirmation": false
+      "compilerRun": 41127291312,
+      "compilerJob": 124309000420,
+      "compilerHead": "ef841ed1d5691b4bf25db48b9980a776b4b56bc5",
+      "compilerArtifact": 13012116413,
+      "compilerArtifactZipSha256": "1f1fc1598c340b22f74b2bdf6b361ad576168738bbd619043a136a5faefcf45e",
+      "platform": "ubuntu-24.04-x86_64",
+      "toolReleaseAsset": "lsf-bytecodealliance-actions-wasm-tools-1.254.0",
+      "toolSha256": "cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "hostedConfirmation": true
     },
     "previousHostedSource": {
       "run": 41113065282,
