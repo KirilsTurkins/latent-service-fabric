@@ -4,19 +4,31 @@ This draft adds a distinct `rust-context40-sync-cooperative-v1` host profile.
 The ordinary Rust builder remains closed. Signed execution of the captured
 default ThreadPool application and runtime qualification are still pending.
 
-The current compiled host catalogue borrows 177,210 original body bytes and
-fixes all 1,222 function/data records and 5,312 actual relocation referents. Its
-generation origin is the independently verified compiler observation at
-`a9809cab6aa3021b29014bd8b80dd15922c93265`, run 41109207452, artifact
-13003202462. That run compiled the original application but refused the stale
-catalogue before component encoding or guest execution. Exact-head run
-41113065282 at `9d9b4001bdefa57b6938c613d0fea13f8e638f83` subsequently passed all 29
-native and 76 source controls plus the independent normal-component proof. Its
-sole artifact 13004447135 is bound by ZIP SHA-256
+The current candidate host catalogue borrows 177,207 original body bytes and
+fixes all 1,225 function/data records and 5,312 actual relocation referents.
+Its generation origin is the exact hosted compiler observation at
+`eefea340b053d0f95185b6527e6caae5bf8bf457`,
+[run 41122296703](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41122296703),
+artifact 13009371378, whose ZIP SHA-256 is
+`1f40ddf6fe0f6d6cb0b2f136df04d4b965fa3833f15c9b9fde9079596c13e49a`.
+That run passed all 29 native and 76 source controls, built the repaired owned
+sysroot and compiled the unchanged application. It then refused the changed
+1,225-node object graph at the immutable previous catalogue, before component
+encoding or guest execution. The new graph has separate context-owned ID0 and
+ID32 records and no former shared ID record. The retained candidate component
+was closed locally from those exact hosted compiler bytes with the pinned
+wasm-tools 1.254.0 envelope solely to permit review; its origin explicitly says
+`hostedConfirmation: false`, `runtimeQualified: false` and
+`actualGuestExecuted: false`.
+
+The preceding exact-head
+[run 41113065282](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41113065282)
+at `9d9b4001bdefa57b6938c613d0fea13f8e638f83` remains the independently
+verified hosted origin for the previous catalogue. It passed all 29 native and
+76 source controls plus the independent normal-component proof. Its sole
+artifact 13004447135 is bound by ZIP SHA-256
 `b7df73bbe827a016e45b1681db7304054a6d941c7d1844ebde87063417a58c37`.
-The reviewed original/component pair now exactly matches that artifact, while
-both events remain recorded separately. Neither event executed a signed guest.
-Earlier observations,
+Neither compiler event executed a signed guest. Earlier observations,
 including `28059f3` and the `ec11` failure, remain distinct historical events.
 Guest JSON, names, producer strings and supplied rlibs never select or replace
 this catalogue.
@@ -111,3 +123,14 @@ the 25,052-byte source-inputs receipt
 and all five source-bound product identities. This producer event still executes
 no signed guest; it only supplies executables whose catalogue and runtime source
 include the repaired Rust component identities for the next exact signed run.
+
+The first source-matched signed retry,
+[run 41121239149](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41121239149),
+authenticated that producer and reached the unchanged guest at exact source
+`023b5f00f4d`. Its artifact 13008198151 has ZIP SHA-256
+`34b7d00596c4bf8d6567462d94b872b9fc83c8b880a8c5ca8dd988dc49780cf0`.
+The first ThreadPool call still trapped at the historical `unreachable` in
+component `sha256:c88f911c7534b119c4658da6f87553ac1b2d621607fed39123f28574033780bc`
+after 47,412 fuel, with 5,692,098 peak bytes and zero effects. That component
+predates the compiler repair and is retained as failed runtime evidence; it is
+not evidence against the repaired 1,225-node compiler output.

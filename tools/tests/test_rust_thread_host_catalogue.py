@@ -33,18 +33,23 @@ class HostCatalogueTests(unittest.TestCase):
         envelope = origin['normalComponentEnvelope']
         component = (base / 'catalogue-normal-component.wasm').read_bytes()
         shell = (base / 'normal-component-shell.bin').read_bytes()
+        records = (base.parent / 'rust_catalogue.rs').read_text(encoding='utf-8')
+        self.assertEqual(origin['nodeCount'], 1225)
+        self.assertIn('current2id3ID0', records)
+        self.assertIn('current2id4ID32', records)
+        self.assertNotIn('current2id2ID"', records)
         self.assertEqual(envelope['toolSha256'],
-                         'cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6')
+                         '3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd')
         self.assertEqual(envelope['candidateSource'], {
-            'compilerRun': 41109207452,
-            'compilerHead': 'a9809cab6aa3021b29014bd8b80dd15922c93265',
-            'compilerArtifact': 13003202462,
-            'platform': 'ubuntu-24.04-x86_64-container',
-            'toolReleaseAsset': 'wasm-tools-1.254.0-x86_64-linux.tar.gz',
-            'toolSha256': 'cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6',
+            'compilerRun': 41122296703,
+            'compilerHead': 'eefea340b053d0f95185b6527e6caae5bf8bf457',
+            'compilerArtifact': 13009371378,
+            'platform': 'windows-x86_64-local-envelope-candidate',
+            'toolReleaseAsset': 'installed-wasm-tools-1.254.0.exe',
+            'toolSha256': '3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd',
             'hostedConfirmation': False,
         })
-        self.assertEqual(envelope['hostedSource'], {
+        self.assertEqual(envelope['previousHostedSource'], {
             'run': 41113065282,
             'job': 124260142818,
             'head': '9d9b4001bdefa57b6938c613d0fea13f8e638f83',
@@ -57,7 +62,6 @@ class HostCatalogueTests(unittest.TestCase):
             'nativeControlsPassed': 29,
             'hostedConfirmation': True,
         })
-        self.assertEqual(envelope['previousHostedSource']['run'], 41089948823)
         self.assertEqual(envelope['componentBytes'], len(component))
         self.assertEqual(envelope['componentDigest'],
                          'sha256:' + hashlib.sha256(component).hexdigest())
