@@ -1,7 +1,7 @@
 name: Focused canonical IP formatting
 on:
   push:
-    branches: ['feat/sdk-736-http-ip-format-20261027', 'feat/sdk-745-lift-result-memory-20261028', 'test/sdk-738-node-bootstrap-custody-20261028', 'test/sdk-738-node-capacity-facts-20261029', 'feat/sdk-736-call-parameter-closure-memory-20261028', 'feat/sdk-736-resource-table-memory-20261028', 'feat/sdk-736-call-result-channel-memory-20261028', 'feat/sdk-736-callback-memory-20261028', 'test/sdk-736-host-memory-baseline-20261029']
+    branches: ['feat/sdk-736-http-ip-format-20261027', 'feat/sdk-745-lift-result-memory-20261028', 'test/sdk-738-node-bootstrap-custody-20261028', 'test/sdk-738-node-capacity-facts-20261029', 'feat/sdk-736-call-parameter-closure-memory-20261028', 'feat/sdk-736-resource-table-memory-20261028', 'feat/sdk-736-call-result-channel-memory-20261028', 'feat/sdk-736-callback-memory-20261028', 'test/sdk-736-host-memory-baseline-20261029', 'feat/sdk-736-guest-start-memory-20261029', 'feat/sdk-736-unstarted-host-drop-20261029']
     paths:
       - '.github/workflows/canonical-stream-outers.yml'
       - 'crates/latent-capabilities/**'
@@ -28,7 +28,7 @@ jobs:
   stream-outers:
     name: Four canonical IP formatting controls
     runs-on: ubuntu-24.04
-    timeout-minutes: ${{ (github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' || github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028' || github.ref_name == 'feat/sdk-736-callback-memory-20261028' || github.ref_name == 'test/sdk-736-host-memory-baseline-20261029') && 25 || 45 }}
+    timeout-minutes: ${{ (github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' || github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028' || github.ref_name == 'feat/sdk-736-callback-memory-20261028' || github.ref_name == 'test/sdk-736-host-memory-baseline-20261029' || github.ref_name == 'feat/sdk-736-guest-start-memory-20261029' || github.ref_name == 'feat/sdk-736-unstarted-host-drop-20261029') && 25 || 45 }}
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -39,7 +39,7 @@ jobs:
       CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
       CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
     steps:
-      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
@@ -121,11 +121,25 @@ jobs:
           --source-commit "${{ github.sha }}"
           --host-memory-baseline
           --output "$RUNNER_TEMP/canonical-stream-outers"
+      - name: Build one exact vendor lib and execute four guest-start ownership controls
+        if: github.ref_name == 'feat/sdk-736-guest-start-memory-20261029'
+        run: >-
+          python3 -B tools/qualify_stream_outers.py
+          --source-commit "${{ github.sha }}"
+          --guest-start-memory
+          --output "$RUNNER_TEMP/canonical-stream-outers"
+      - name: Build one exact wat-enabled vendor lib and execute four unstarted host-drop controls
+        if: github.ref_name == 'feat/sdk-736-unstarted-host-drop-20261029'
+        run: >-
+          python3 -B tools/qualify_stream_outers.py
+          --source-commit "${{ github.sha }}"
+          --unstarted-host-drop
+          --output "$RUNNER_TEMP/canonical-stream-outers"
       - name: Retain four source-bound canonical IP outcomes
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
-          name: ${{ github.ref_name == 'test/sdk-736-host-memory-baseline-20261029' && 'host-memory-baseline' || github.ref_name == 'feat/sdk-736-callback-memory-20261028' && 'callback-memory' || github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028' && 'call-result-channel-memory' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' && 'resource-table-memory' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' && 'call-parameter-closure-memory' || (github.ref_name == 'test/sdk-738-node-bootstrap-custody-20261028' || github.ref_name == 'test/sdk-738-node-capacity-facts-20261029') && 'node-bootstrap-custody' || github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 'canonical-lift-result' || 'canonical-ip-format' }}-${{ github.sha }}
+          name: ${{ github.ref_name == 'feat/sdk-736-unstarted-host-drop-20261029' && 'unstarted-host-drop' || github.ref_name == 'feat/sdk-736-guest-start-memory-20261029' && 'guest-start-memory' || github.ref_name == 'test/sdk-736-host-memory-baseline-20261029' && 'host-memory-baseline' || github.ref_name == 'feat/sdk-736-callback-memory-20261028' && 'callback-memory' || github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028' && 'call-result-channel-memory' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' && 'resource-table-memory' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' && 'call-parameter-closure-memory' || (github.ref_name == 'test/sdk-738-node-bootstrap-custody-20261028' || github.ref_name == 'test/sdk-738-node-capacity-facts-20261029') && 'node-bootstrap-custody' || github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 'canonical-lift-result' || 'canonical-ip-format' }}-${{ github.sha }}
           path: |
             ${{ runner.temp }}/canonical-stream-outers/receipt.json
             ${{ runner.temp }}/canonical-stream-outers/FAILED.json

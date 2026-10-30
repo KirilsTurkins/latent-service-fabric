@@ -204,6 +204,14 @@ pthread_t pthread_self(void) { return (pthread_t)(uintptr_t)current(); }
 int pthread_equal(pthread_t a,pthread_t b) { return a==b; }
 thrd_t thrd_current(void) { return (thrd_t)(uintptr_t)current(); }
 int thrd_equal(thrd_t a,thrd_t b) { return a==b; }
+void thrd_yield(void) {
+    int saved=errno;struct lsf_c_thread *caller=current();
+    /* Untargeted canonical yield schedules only genuinely runnable work.
+     * A C RUNNING phase never licenses promotion of a host-pending thread. */
+    require(lsf_c_thread_yield()==0);
+    require(current()==caller);errno=saved;
+}
+
 
 /* Shares the private current-thread and original-ledger operations above. */
 #include "synchronization.c"

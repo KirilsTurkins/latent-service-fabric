@@ -87,7 +87,7 @@ const {script}=await capturedInitializer(),modules=new Map(),memory={buffer:new 
 let sequence=0,allocated=16000,reads=0,drops=0;const records=new Map(),events=[],ackGets={read:[],chunkBytes:[]};
 const originalFault=Object.freeze({originalFault:true});
 const content={Promise,Error,TextEncoder,TextDecoder,Uint8Array,queueMicrotask,setTimeout,clearTimeout};
-content.__lsfAsyncImportBridge={reserve(){const id=++sequence;records.set(id,{id,ack:deferred(),handle:Object.freeze({id})});return id},
+content.__lsfAsyncImportBridge={beginOwnPlans(...v){assert.deepEqual(v,[2,0,0]);},reserve(){const id=++sequence;records.set(id,{id,ack:deferred(),handle:Object.freeze({id})});return id},
  watchBorrow(id){return records.get(id).handle},lift(value){return value},delivered(id,value){return value},
  finish(id){const r=records.get(id);r.finished=true;events.push('finish:'+r.kind);if(!['read','chunkBytes'].includes(r.kind)&&(!faultMode||faultMode==='hold-close'&&r.kind!=='close'))r.ack.resolve()},
  borrowReleased(handle){if(faultMode==='setup')throw originalFault;return records.get(handle.id).ack.promise},cancelBorrow(handle){const r=records.get(handle.id);events.push('cancel:'+r.kind);if(faultMode==='distinct-cancel'){r.cancelAck??=deferred();return r.cancelAck.promise}return r.ack.promise}};
@@ -500,7 +500,7 @@ for(const altered of [original.replace(/ret = await +_withGlobalCurrentTaskMetaA
  'import x from "x";\\n'+original,
  original.replace('errMsg: taskErr.message','errMsg: other.message')])
  {{assert.notEqual(altered,original);assert.throws(()=>nodeNetBindings(altered,parse,NET_PROFILE,proof.exports),/shape/);}}
-const modules=new Map(),content={{Promise,TextEncoder,TextDecoder,__lsfAsyncImportBridge:{{}}}};
+const modules=new Map(),content={{Promise,TextEncoder,TextDecoder,__lsfAsyncImportBridge:{{beginOwnPlans(...v){{assert.deepEqual(v,[2,0,0]);}}}}}};
 const scope={{contentGlobal:content,$bindings:[{{buffer:new ArrayBuffer(65536)}},()=>0,...Array(22).fill(()=>0)],
  defineBuiltinModule(name,exports){{modules.set(name,exports)}},TextEncoder,TextDecoder,console}};
 vm.runInNewContext(a.applicationRealmImportPromises(changed),scope,{{timeout:3000}});
@@ -514,7 +514,7 @@ assert.equal(typeof token,'object');
         self.javascript(r"""
 const {script}=await capturedInitializer(),modules=new Map();
 class Encoder extends TextEncoder {}
-const content={Promise,TextEncoder:Encoder,TextDecoder,__lsfAsyncImportBridge:{}};
+const content={Promise,TextEncoder:Encoder,TextDecoder,__lsfAsyncImportBridge:{beginOwnPlans(...v){assert.deepEqual(v,[2,0,0]);}}};
 const memory={buffer:new ArrayBuffer(65536)};
 const scope=vm.createContext({contentGlobal:content,$bindings:[memory,()=>32,...Array(22).fill(()=>0)],
  defineBuiltinModule(name,value){modules.set(name,value)},TextEncoder:Encoder,TextDecoder,console});
@@ -644,7 +644,7 @@ const {script}=await capturedInitializer(),native=deferred(),ack=deferred(),reas
 const application=vm.createContext({TextEncoder,TextDecoder});
 const content=vm.runInContext('globalThis',application),originalResolve=content.Promise.resolve;
 const handle=Object.freeze({});let watched=0,finished=0,cancelled=0,borrowed=0,mutatorCalls=0;
-content.__lsfAsyncImportBridge={reserve(){return 7},watchBorrow(id){assert.equal(id,7);++watched;return handle},
+content.__lsfAsyncImportBridge={beginOwnPlans(...v){assert.deepEqual(v,[2,0,0]);},reserve(){return 7},watchBorrow(id){assert.equal(id,7);++watched;return handle},
  lift(value){return value},delivered(_id,value){return value},finish(id){assert.equal(id,7);++finished},
  borrowReleased(value){assert.equal(value,handle);++borrowed;return ack.promise},
  cancelBorrow(value){assert.equal(value,handle);++cancelled;native.reject(reason);return ack.promise}};
@@ -766,7 +766,7 @@ import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 const source=await readFile(process.argv[1],'utf8');
 const context=vm.createContext({console,TextEncoder,TextDecoder,setTimeout,clearTimeout,queueMicrotask,performance:{now(){return 0},timeOrigin:0}});
-const content=vm.runInContext('globalThis',context);content.__lsfAsyncImportBridge={};
+const content=vm.runInContext('globalThis',context);content.__lsfAsyncImportBridge={beginOwnPlans(...v){assert.deepEqual(v,[2,0,0]);}};
 const registered=new Map(),{script}=await capturedInitializer();
 vm.runInNewContext(script,{contentGlobal:content,$bindings:[{buffer:new ArrayBuffer(65536)},()=>0,...Array(22).fill(()=>0)],
  defineBuiltinModule(name,exports){registered.set(name,exports)},TextEncoder,TextDecoder,console},{timeout:3000});

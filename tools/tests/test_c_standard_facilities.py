@@ -242,5 +242,48 @@ class StandardFacilities(unittest.TestCase):
             receipts.verify_build(receipt, 'c', changed, inventory(changed), component, materials)
 
 
+    def test_libfetch_profile_derives_only_typed_streams_and_preserves_dependency_selection(self):
+        from tools.c_dependency_authoring import manifest
+        profile = facilities.FETCH_PROFILE
+        original_defines = ('_POSIX_C_SOURCE=200809L',)
+        self.assertEqual(facilities.compiler_defines(profile, original_defines),
+                         (*original_defines, '_GNU_SOURCE=1'))
+        selected_defines = ('_GNU_SOURCE=1', '_POSIX_C_SOURCE=200809L')
+        self.assertIs(facilities.compiler_defines(profile, selected_defines), selected_defines)
+        for old_profile in (facilities.DEFAULT, facilities.PROFILE,
+                            facilities.LOGGING_PROFILE, facilities.COMBINED_PROFILE):
+            self.assertIs(facilities.compiler_defines(old_profile, original_defines), original_defines)
+        declaration = {'formatVersion': 1, 'language': 'c', 'selection': {'runtimeProfile': profile},
+                       'nativeLocks': [], 'artifacts': [], 'transformations': []}
+        self.assertEqual(manifest(declaration)['selection'], declaration['selection'])
+        self.assertEqual(facilities.selected_profile({'runtimeProfile': profile},
+                         {'selection': declaration['selection']}), profile)
+        with self.assertRaisesRegex(ValueError, 'selection-mismatch'):
+            facilities.selected_profile({'runtimeProfile': profile},
+                                        {'selection': {'runtimeProfile': facilities.DEFAULT}})
+        source = self.root / 'source'; source.mkdir()
+        original = b'package example:client; world service { export api; } interface api { run: func(); }\n'
+        (source / 'world.wit').write_bytes(original)
+        selected = facilities.stage(source, 'service', self.root / 'derived', ROOT / 'wit/platform', profile=profile)
+        text = (selected / 'world.wit').read_text()
+        self.assertEqual(text.count('import latent:http/streaming@0.3.0;'), 1)
+        self.assertNotIn('latent:http/client@', text)
+        self.assertNotIn('wasi:', text)
+        self.assertEqual((source / 'world.wit').read_bytes(), original)
+        self.assertEqual({path.name for path in (selected / 'deps').iterdir()}, {'http-v3'})
+
+    def test_libfetch_unthreaded_build_refuses_before_binding_generation_or_output(self):
+        from unittest import mock
+        from tools.c_guest.compiler import Compiler
+        compiler = Compiler.__new__(Compiler)
+        output = self.root / 'must-not-exist'
+        with mock.patch('tools.c_guest.compiler.generate') as generate:
+            with self.assertRaisesRegex(ValueError, 'libfetch-http-requires-cooperative-threading'):
+                compiler.compile([self.root / 'missing.c'], self.root / 'missing-wit',
+                                 'service', output, runtime_profile=facilities.FETCH_PROFILE)
+            generate.assert_not_called()
+        self.assertFalse(output.exists())
+
+
 if __name__ == '__main__':
     unittest.main()

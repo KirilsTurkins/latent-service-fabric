@@ -28,6 +28,18 @@ from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 
 
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
+
+
 class LlvmSsaConsumer(unittest.TestCase):
     def test_real_small_core_framing_counts_imports_bodies_and_fixed_pools_name(self):
         # Valid tiny core encoding, inspected as bytes only; no executable tool
@@ -60,7 +72,7 @@ class LlvmSsaConsumer(unittest.TestCase):
                                     + section(0, b'\4name' + section(1, duplicate)))
 
     def test_original_public_job_defaults_and_complete_command_recipe_remain_exact(self):
-        model = workflow_model((patch.ROOT / '.github/workflows/java-guest-feasibility.yml').read_text())
+        model = workflow_model(historical_checkout((patch.ROOT / '.github/workflows/java-guest-feasibility.yml').read_text()))
         job = copy.deepcopy(model['jobs']['public-fiber-assembly'])
         # Invert ONLY the explicit R8 additions before the original R7/default
         # preservation oracle below. Every removed route/pin is asserted first.

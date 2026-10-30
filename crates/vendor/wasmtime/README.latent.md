@@ -649,3 +649,40 @@ Four new native controls cover exact layout/refusal, repeated/error calls,
 other-Store-independent cancellation and confirmation/body/destructor unwind.
 They remain source-only until the bounded owning run; transitive captures, full
 ActivationBudget/RSS and whole736/745 are not qualified.
+
+
+The v27 source stage prepays the four selected guest-thread start closures:
+both implicit queue-call branches, the pending explicit start function and its
+resume wrapper. The original Store factory reserves the complete concrete
+ClosureHeader before Box allocation. Queue and typed outer-header preparation
+precede replacing NotStartedExplicit; refusal keeps the SAME pending function.
+The stack-only builder moves no original pending capture before admission and
+retains no extra factory Arc. Dispatch takes the sole pointer before calling;
+physical header deallocation precedes the FnOnce body/capture destructor and
+the original ticket remains live through success, error and unwind. None and
+ZST preserve original Box timing and the two-pointer/Option niche shape.
+
+Four source-bound native controls cover actual GuestThreadState plus the real
+queue/preparation APIs, original-factory refusal, pending cancellation, next
+call/error, Store-outliving custody and confirmation/body/destructor unwinds.
+They do not invoke a guest component or full resume_thread, and confirmation
+panic is cleanup evidence rather than admission-refusal rollback. Previous
+callback controls are retained. This is not whole #736/#745 accounting, an
+allocator/RSS bound, or transitive payload/stack admission. The cumulative
+patch retains one-line context, all source postimages and all250 originals.
+
+
+The v28 stage retires a host-owned call dropped before its original lower
+callback runs. It uses the original HostFuture/GuestTask cancellation waist,
+without invoking the abandoned borrowed lower/lift closures. The original
+implicit thread, synthetic sync waitable set, queue and unconsumed handoff
+are settled once; eligible sibling work and foreign Stores remain untouched.
+After lowering, existing live-thread cleanup semantics remain unchanged.
+
+Four private native controls use real Engine/Component/Instance/Store calls
+and inline components. Only this closed profile enables the already-locked
+optional wat feature; earlier profile feature strings remain unchanged.
+These controls are not signed SDK execution, full #736 retirement, payload
+or stack admission, or evidence that the existing post-lowering cleanup TODO
+is resolved. The maintained one-line-context patch preserves the other57
+sections and all250 original identities.

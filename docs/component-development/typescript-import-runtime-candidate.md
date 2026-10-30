@@ -23,21 +23,48 @@ cancellation with no returned outcome never reads the result buffer.
 
 Normal typed returns and intentional WIT error returns transfer ownership only
 after their complete value or error object has been constructed. An unexpected
-partial lift, unsupported disposal mapping or failed/partial destructor leaves
-the record quarantined with its original owners; cleanup cannot replay drops
-or report a refund. The native prerequisite campaign and the finite canonical
+partial lift outside the compiler-selected static OWN path, unsupported disposal
+mapping or failed/partial destructor leaves the record quarantined with its
+original owners; cleanup cannot replay drops or report a refund. The native prerequisite campaign and the finite canonical
 OWN-result campaign below have now executed this path. Canonical resource
 destruction alone does not certify physical provider close, native quota reuse,
 production support or completion of the SDK ticket.
 
+The private binding ABI 2 additionally selects fixed record/tuple results with
+at most 64 imported OWN slots and no dynamic backing. Before application code
+runs, the compiler binds the exact generated resource prototypes, private
+symbols and canonical offsets, and the native initializer seals the complete
+table. A fresh wrapper receives only the handle read from its original result
+frame. If later lifting fails, cleanup drops only slots that were not already
+transferred. Constructor-this branches, unsupported shapes, duplicate handles,
+mutation, cancellation during handoff and ambiguous destructor outcomes retain
+the conservative quarantine path.
+
+Each optional progress sidecar acquires an original Native owner before its
+allocation and is physically deleted before acknowledging that same owner.
+The static plan table is bounded initialization metadata in the existing
+engine image. These source bounds do not establish whole-image fit or complete
+native/GC cost. No public capability, runtime grant or resource limit changes.
+
+The existing native prerequisite workflow has a closed `--partial-own` mode
+for the two new Rust descriptor/splicer controls, their actual generated-binding
+capture, the affected JavaScript controls and four new native manager cases.
+It preserves the 90-minute setup/programme bound and narrower command limits,
+and does not replay the old native or backing matrix. One case first proves
+successful partial cleanup and fresh reuse, then deliberately refuses an ACK
+and retains its original ticket; that final state is not full retirement.
+This profile does not qualify a signed partial-OWN component, a provider or
+the remaining SDK cost requirement. Hosted results must identify the exact
+source revision; earlier canonical receipts below retain their original scope.
+
 The current source revision of `typescript-owned-results.yml` requires one fresh normal
-source splicer and engine and all 17 maintained Rust descriptor /
+source splicer and engine and all 19 maintained Rust descriptor /
 disposer tests and 13 real SpiderMonkey manager diagnostics. It retains all 11
 borrow controls and adds cancellation through real JS `finally` and the
 resolved-carrier/public-lift race. Six affected lifecycle C++ controls also run
 with explicit opaque-JS headers and canonical/broker doubles, including immediate
 handle-zero disposal and delayed/no-result retirement. Those references do not
-execute JavaScript; delayed cases retain their original readiness-set owner. All 32 Python controls must pass without
+execute JavaScript; delayed cases retain their original readiness-set owner. All 35 Python controls must pass without
 skips using the normal pinned compiler parser. The actual Wasm32 diagnostic
 measures the new Record size against the immutable pre-OWN header; it does
 not reuse the historical borrow ABI claim.

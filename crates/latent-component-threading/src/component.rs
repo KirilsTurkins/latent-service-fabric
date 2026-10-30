@@ -300,6 +300,7 @@ enum Value {
     CContextGet,
     CContextSet,
     CThreadIndex,
+    CThreadYield,
     CThreadPromote,
     CThreadSuspend,
     CThreadResumeLater,
@@ -612,6 +613,7 @@ impl<'a> Graph<'a> {
                     slot: 1,
                 } => Some(Value::CContextSet),
                 CanonicalFunction::ThreadIndex => Some(Value::CThreadIndex),
+                CanonicalFunction::ThreadYield => Some(Value::CThreadYield),
                 CanonicalFunction::ThreadYieldThenPromote => Some(Value::CThreadPromote),
                 CanonicalFunction::ThreadSuspend => Some(Value::CThreadSuspend),
                 CanonicalFunction::ThreadResumeLater => Some(Value::CThreadResumeLater),
@@ -968,12 +970,22 @@ impl<'a> Graph<'a> {
                         "[context-get-1]" => Value::CContextGet,
                         "[context-set-1]" => Value::CContextSet,
                         "[thread-index]" => Value::CThreadIndex,
+                        "[thread-yield]" => Value::CThreadYield,
                         "[thread-yield-then-promote]" => Value::CThreadPromote,
                         "[thread-suspend]" => Value::CThreadSuspend,
                         "[thread-resume-later]" => Value::CThreadResumeLater,
                         NEW => continue,
                         _ => return Err("c-component-unknown-root-intrinsic"),
                     };
+                    if expected == Value::CThreadYield {
+                        let signature = self.cores[self.main]
+                            .types
+                            .get(import.function_type as usize)
+                            .ok_or("c-component-thread-yield-signature")?;
+                        if !signature.params.is_empty() || signature.results != [ValType::I32] {
+                            return Err("c-component-thread-yield-signature");
+                        }
+                    }
                     // Intrinsics may be routed through the encoder's fixed
                     // shim. The actual fixup binding is checked below too.
                     let resolved = match value {

@@ -8,13 +8,16 @@ from tools.stage_runtime_wit import copy_wit_tree, dependencies
 PROFILE = 'c-standard-clock-entropy-v1'
 LOGGING_PROFILE = 'c-standard-stdio-v1'
 COMBINED_PROFILE = 'c-standard-facilities-v1'
+FETCH_PROFILE = 'c-libfetch-http-v1'
 DEFAULT = 'closed-synchronous-v1'
 IMPORTS = ('latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0', 'latent:random/random@0.1.0')
-SUPPORTED = frozenset((DEFAULT, PROFILE, LOGGING_PROFILE, COMBINED_PROFILE))
+SUPPORTED = frozenset((DEFAULT, PROFILE, LOGGING_PROFILE, COMBINED_PROFILE, FETCH_PROFILE))
 PROFILE_IMPORTS = {PROFILE: IMPORTS, LOGGING_PROFILE: ('latent:log/log@0.1.0',),
-                   COMBINED_PROFILE: (*IMPORTS, 'latent:log/log@0.1.0')}
+                   COMBINED_PROFILE: (*IMPORTS, 'latent:log/log@0.1.0'),
+                   FETCH_PROFILE: ('latent:http/streaming@0.3.0',)}
 PROFILE_SOURCES = {PROFILE: ('standard-clock-entropy.c',), LOGGING_PROFILE: ('standard-stdio.c',),
-                   COMBINED_PROFILE: ('standard-clock-entropy.c', 'standard-stdio.c')}
+                   COMBINED_PROFILE: ('standard-clock-entropy.c', 'standard-stdio.c'),
+                   FETCH_PROFILE: ('libfetch/fetch.c', 'libfetch/http.c')}
 RECIPE = ('tools/c_guest/standard_facilities.py',)
 
 
@@ -26,6 +29,13 @@ def selected_profile(project, graph=None):
     if declared is not None and declared != profile:
         raise ValueError('c-runtime-profile-dependency-selection-mismatch')
     return profile
+
+
+def compiler_defines(profile, defines):
+    """The selected GNU-cookie port owns its declaration feature selection."""
+    if profile == FETCH_PROFILE and not any(value.split('=', 1)[0] == '_GNU_SOURCE' for value in defines):
+        return (*defines, '_GNU_SOURCE=1')
+    return defines
 
 
 def code_view(text: str) -> str:

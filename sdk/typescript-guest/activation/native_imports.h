@@ -13,7 +13,12 @@
 
 namespace lsf::typescript::activation {
 
+class PartialOwnLifts;
 class Imports final {
+  friend class PartialOwnLifts;
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+  friend struct PartialOwnLiftControls;
+#endif
 #ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
   friend struct ImportBorrowControls;
 #endif
@@ -451,5 +456,7 @@ public:
     return false;
   }
 };
+
+
 
 } // namespace lsf::typescript::activation
