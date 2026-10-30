@@ -368,6 +368,19 @@ qualification false and does not reinterpret the trap as application success.
 Ordinary runtime matching and every capability, fuel, memory, effect and
 retirement requirement remain unchanged.
 
+Exact-head diagnostic
+[`41126387395`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41126387395)
+at `e839a0c37191560167ca63968e63e26f4626653f` passed that bounded fault
+contract. Artifact `13012450422` is 42,055,564 bytes with GitHub artifact
+digest `sha256:3e105389ee152a2b6840039fc347dafd32d15c095507742eacde252fa6b0214c`.
+The retained component is still
+`sha256:c88f911cf1304ae9daba6e738bd4fc5128fb4e0b491d7143558905a70f04cdcf`;
+the first call again consumed 47,412 fuel, peaked at 5,692,098 bytes, produced
+zero effects and ended at `unreachable-code`. The programme result is
+`completed-with-fault`, the node result is `diagnostic-fault-observed`, and the
+same four numeric frames are retained. Runtime qualification, default
+ThreadPool progress and ordinary ThreadPool qualification all remain false.
+
 The source-matched compiler repair keeps `ThreadInit::init`, `set_current`, the
 application and the executor unchanged. Only this explicit
 `rust-context40-sync-cooperative-v1` sysroot selects the existing 32-bit
