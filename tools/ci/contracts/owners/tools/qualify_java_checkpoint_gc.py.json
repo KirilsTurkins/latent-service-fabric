@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind bounded parent-class and field-offset frames to the retained exact-head unknown-class field edge without changing limits, collection behavior, or success criteria.",
+  "reviewReason": "Require the reason-specific bounded parent-class and field-offset receipt for the retained exact-head below-heap field edge without changing limits, collection behavior, or success criteria.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4cae884c36c4351e29bb98633daec7b08b6290126747b7063eafbab70e6cc349"
+  "sha256": "ef3ca9de2b1f193a259bfd822557346c47d5d7ea3e3ffa6a29ac14c32ae1954d"
 }

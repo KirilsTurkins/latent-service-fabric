@@ -251,3 +251,27 @@ with a fail-closed 4096-entry iteration bound. It still does not drop or rewrite
 the candidate, alter the collector, raise a runtime limit, or qualify the
 application. Another exact-head hosted run must continue beyond this false
 positive and retain the next real failure or signed outcome.
+
+Exact-head run
+[`41120180240`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41120180240)
+at `e56341bed7102a869794202e4c3aa4d083d0adf3` confirmed that correction: the
+first signed case progressed past the dynamic `Entry[]` class. Artifact
+`13009172489` has archive digest
+`sha256:bbe9c14f0dd7e067ceb5922753103a2358191f393869e48df68c5cff2805e6fc`;
+its component is
+`sha256:4d169b8fc1f5b466897341134071be975e2101754609201af8b9e052fa719969`.
+The call consumed 5,308,760 fuel, peaked at 9,791,504 bytes, produced zero
+effects and trapped at the retained below-heap enqueue guard. The exact route
+is `GC.markFields` through `GC.markObjectData`, `GC.mark`, and
+`GC.doCollectGarbage`: a compiler-described reference field of a live heap
+object contains a non-null value below the managed heap. No signed case or
+collection passed.
+
+Profile `teavm-0.15-c-packed-monitor-gc-root-v6` preserves every v5 guard and
+adds one reason-specific bounded frame chain before that exact below-heap field
+edge reaches `GC.enqueueMark`. It encodes only the existing parent class-table
+index and field offset under the same 4095/255 maxima. It does not accept,
+discard, rewrite or dereference the invalid value, and changes no collector
+order, application/library path, capability, owner, retirement rule or runtime
+limit. A hosted rerun must bind the field to its generated class layout before
+the underlying compiler/runtime repair can be selected.
