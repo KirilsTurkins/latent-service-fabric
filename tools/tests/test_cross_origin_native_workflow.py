@@ -15,6 +15,26 @@ SPEC.loader.exec_module(CAMPAIGN)
 
 
 class NativeCrossOriginWorkflow(unittest.TestCase):
+    def test_native_lint_uses_the_maintained_strict_owner_recipe(self):
+        from tools import ci_cargo, ci_lane_inventory
+        workflow = ci_lane_inventory.workflow_model((ROOT / '.github/workflows/cross-origin-assets.yml').read_text())
+        steps = workflow['jobs']['native']['steps']
+        lint = next(step for step in steps if step.get('name') ==
+                    'Check maintained formatting and strict native lint')
+        self.assertEqual(lint['run'].splitlines(), [
+            'python3 tools/ci_cargo.py run format',
+            'python3 tools/ci_cargo.py run clippy'])
+        self.assertNotIn('continue-on-error', lint)
+        commands = [invocation.command() for invocation in ci_cargo.RECIPES['clippy']]
+        self.assertEqual(commands[0], ['cargo', 'clippy', '--workspace',
+            '--all-targets', '--all-features', '--locked'])
+        strict = commands[1]
+        self.assertIn('latentd', strict)
+        self.assertIn('--all-targets', strict)
+        self.assertIn('--all-features', strict)
+        self.assertIn('--no-deps', strict)
+        self.assertEqual(strict[-3:], ['--', '-D', 'warnings'])
+
     def test_complete_lifecycle_has_no_optional_or_skipped_stage(self):
         self.assertEqual(CAMPAIGN.STAGES, ('default', 'allowed', 'removed', 'restored',
             'new-ungranted', 'new-opted-in', 'expiring', 'expired', 'renewed', 'revoked', 'restart-revoked'))

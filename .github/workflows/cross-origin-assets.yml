@@ -24,6 +24,10 @@ on:
       - 'tools/build_process*.py'
       - 'tools/ci/contracts/workflows/cross-origin-assets.yml/**'
       - 'examples/renderer-profile/package*.json'
+      - 'examples/cross-origin-assets/**'
+      - 'docs/operations/cross-origin-static-assets.md'
+      - 'docs/testing/cross-origin-static-assets.md'
+      - 'adr/0049-scope-cross-origin-assets-to-publications.md'
       - 'Cargo.toml'
       - 'Cargo.lock'
   workflow_dispatch:
@@ -50,12 +54,13 @@ jobs:
       CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
       CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
     steps:
-      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           components: rustfmt, clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
       - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: '3.13.5'
@@ -108,7 +113,7 @@ jobs:
       - name: Check maintained formatting and strict native lint
         run: |
           python3 tools/ci_cargo.py run format
-          cargo clippy --locked -p latentd --lib -- -D warnings
+          python3 tools/ci_cargo.py run clippy
       - name: Retain native diagnostics
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes

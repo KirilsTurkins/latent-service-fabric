@@ -1,4 +1,21 @@
-# Cross-origin asset feasibility
+# Cross-origin static asset qualification
+
+## Native signed publications
+
+`native_qualify.py` drives the real node/CLI and `native-browser.mjs` against
+signed static publications. The external Node HTTPS peer serves caller documents
+only, never assets or CORS responses. Use the [native qualification guide](../../docs/testing/cross-origin-static-assets.md)
+for the recorded 19-case browser/11-stage lifecycle result, exact source identity,
+retained receipts and reproduction commands. The [operator guide](../../docs/operations/cross-origin-static-assets.md)
+and [validated configuration fragment](../../examples/cross-origin-assets/http-ingress.json)
+describe development usage; this is not released alpha.5 or production TLS qualification.
+
+`native-network.mjs` records bounded Chromium network-service ExtraInfo, distinct
+from the explicit malformed-header wire client. Its tests cover event order,
+redaction, bounds and cleanup. Native Rust controls cover strict defaults, exact
+selection, revocation, disconnect/read-owner retention and capacity refusal.
+
+## Original separate-peer feasibility experiment
 
 This contributor experiment implements the contract in
 [ADR-0049](../../adr/0049-scope-cross-origin-assets-to-publications.md) on disposable
@@ -23,7 +40,7 @@ metadata and response headers. It closes its browser and loopback listeners.
 The test certificate is trusted only by the disposable browser context; no
 system trust store is changed. Do not publish its private key.
 
-The [native implementation follow-up](https://github.com/KirilsTurkins/latent-service-fabric/issues/660) must reuse the cases against actual LSF and
-add publication lifecycle, configuration, cancellation and capacity coverage.
-Passing this experiment is not permission to configure unsupported CORS fields
-on a node or to remove the existing browser boundary.
+This original experiment remains independent from the native campaign above.
+Passing it alone does not establish native publication admission, lifecycle,
+configuration, cancellation or capacity behavior, and is not permission to remove
+the existing browser boundary.

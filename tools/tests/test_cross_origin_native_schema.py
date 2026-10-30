@@ -19,6 +19,22 @@ PUBLIC = {'formatVersion': 1, 'bind': '127.0.0.1:0',
 
 
 class CrossOriginNativeSchema(unittest.TestCase):
+    def test_documented_native_grant_matches_the_validated_example(self):
+        import re
+        example = json.loads((ROOT / 'examples/cross-origin-assets/http-ingress.json').read_text())
+        VALIDATOR.validate(example)
+        guide = (ROOT / 'docs/operations/cross-origin-static-assets.md').read_text()
+        block = re.search(r'<!-- native-cors-grant:begin -->\s*```json\n(.*?)\n```\s*<!-- native-cors-grant:end -->',
+                          guide, re.S)
+        self.assertIsNotNone(block)
+        self.assertEqual(json.loads(block.group(1)), example['crossOriginAssets'][0])
+        grant = example['crossOriginAssets'][0]
+        owner = example['authentication']['origins'][0]
+        self.assertEqual((grant['authority'], grant['tenant']), (owner['authority'], owner['tenant']))
+        self.assertEqual(grant['credentials'], 'omit')
+        self.assertEqual(example['transport']['mode'], 'tls')
+        self.assertLessEqual(example['limits']['maximumExchanges'], 2)
+
     def test_schema_and_default_empty_preserve_existing_adapters(self):
         VALIDATOR.check_schema(SCHEMA)
         for authentication in (PUBLIC['authentication'], {'mode': 'bearer'}):
