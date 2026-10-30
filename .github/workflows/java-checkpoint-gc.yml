@@ -102,7 +102,7 @@ jobs:
             --features java-checkpoint-gc-trap-diagnostic \
             java_checkpoint_gc_fault::tests::java_gc_fault_visits_only_eight_numeric_frames_for_authenticated_profile \
             -- --exact --test-threads=1
-          cargo --config .cargo/managed-guest.toml build --locked -p latentd --bin latentd \
+          CARGO_PROFILE_DEV_STRIP=debuginfo cargo --config .cargo/managed-guest.toml build --locked -p latentd --bin latentd \
             --features java-checkpoint-gc-trap-diagnostic
       - name: Selected reference GC and real compiler controls then one fresh signed GC target
         run: |
