@@ -1,10 +1,9 @@
 //! One shared-router selection, retained through preflight/error output or read.
 use super::super::{request, Request};
-use super::metadata::Candidate;
+use super::{failure::selection_status, metadata::Candidate};
 use crate::standalone::http::{head::Head, Shared};
 use latent_artifacts::{web::WebSelection, PublicationRef};
 use latent_control_store::http_routes::{AcceptedHttpRoute, AcceptedHttpTarget};
-use latent_core::PlatformErrorCode;
 use latent_ingress::http::MAX_HEADERS;
 use latent_wire::invocation::{LocalPrincipalPolicy, PrincipalPolicy};
 
@@ -45,7 +44,7 @@ impl Selection {
             let selection = store
                 .repository
                 .select_web_publication(&reference)
-                .map_err(|error| denial(super::super::status(&error)))?;
+                .map_err(|error| selection_status(&error))?;
             return Ok(Self::Immutable {
                 selection: Box::new(selection),
                 path,
@@ -60,15 +59,7 @@ impl Selection {
             .services
             .deployments
             .select_http(target, candidate.method)
-            .map_err(|error| {
-                // No eligible route is a policy denial, not a transient outage.
-                // Keep genuine capacity/storage failures distinguishable as 503.
-                if error.code == PlatformErrorCode::RouteUnavailable {
-                    403
-                } else {
-                    denial(super::super::status(&error))
-                }
-            })?;
+            .map_err(|error| selection_status(&error))?;
         let AcceptedHttpTarget::StaticWeb { publication, .. } = route.target() else {
             return Err(403);
         };
@@ -97,7 +88,7 @@ impl Selection {
         let tenant = self.reference().scope.tenant().ok_or(403u16)?;
         self.web()
             .with_current(tenant, &mut |current| current.check())
-            .map_err(|error| denial(super::super::status(&error)))
+            .map_err(|error| selection_status(&error))
     }
 
     pub(super) fn asset_path(&self) -> Result<String, u16> {
@@ -153,13 +144,5 @@ impl Selection {
         // Immutable reads reselect this exact reference in Store::prepare and
         // recheck it at output. Do not hold two publication read owners at once.
         request
-    }
-}
-
-fn denial(status: u16) -> u16 {
-    if matches!(status, 400 | 401 | 403 | 404) {
-        403
-    } else {
-        status
     }
 }

@@ -7,17 +7,24 @@ use std::{
     collections::BTreeMap,
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc,
+        Arc, Mutex,
     },
 };
 
-pub(super) struct Authority(pub Arc<AtomicBool>);
+pub(super) struct Authority {
+    pub current: Arc<AtomicBool>,
+    pub failure: Arc<Mutex<Option<PlatformError>>>,
+}
 struct Grant {
     binding: WebAdmissionBinding,
     current: Arc<AtomicBool>,
+    failure: Arc<Mutex<Option<PlatformError>>>,
 }
 impl AdmissionRecheck for Grant {
     fn check(&self) -> Result<(), PlatformError> {
+        if let Some(error) = self.failure.lock().unwrap().clone() {
+            return Err(error);
+        }
         if self.current.load(Ordering::Acquire) {
             Ok(())
         } else {
@@ -87,7 +94,8 @@ impl AdmissionAuthority for Authority {
         };
         let grant = Arc::new(Grant {
             binding,
-            current: Arc::clone(&self.0),
+            current: Arc::clone(&self.current),
+            failure: Arc::clone(&self.failure),
         });
         Ok(VerifiedWebAdmission {
             layout,

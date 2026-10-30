@@ -81,6 +81,7 @@ async fn cross_origin_native_revocation_denies_cached_bodies_conditionals_and_pr
         "{metadata}If-None-Match: {}\r\n",
         field(&headers, "etag").unwrap()
     );
+    super::currentness::reject_stale_proof(&h, &reference, &conditional).await;
     h.repository
         .transition_web_publication(
             fixture::context("cross-revoke", 1),

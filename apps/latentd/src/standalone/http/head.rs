@@ -56,13 +56,7 @@ pub(super) fn parse(
             if close.is_some() {
                 return Err(400);
             }
-            close = Some(if field.value.eq_ignore_ascii_case(b"close") {
-                true
-            } else if field.value.eq_ignore_ascii_case(b"keep-alive") {
-                false
-            } else {
-                return Err(400);
-            });
+            close = Some(connection_close(field.value)?);
             continue;
         }
         if field.name.eq_ignore_ascii_case("expect") {
@@ -131,6 +125,16 @@ pub(super) fn parse(
         method,
     })
 }
+fn connection_close(value: &[u8]) -> Result<bool, u16> {
+    if value.eq_ignore_ascii_case(b"close") {
+        Ok(true)
+    } else if value.eq_ignore_ascii_case(b"keep-alive") {
+        Ok(false)
+    } else {
+        Err(400)
+    }
+}
+
 fn browser_policy(
     shared: &Shared,
     target: &latent_ingress::http::CanonicalTarget,

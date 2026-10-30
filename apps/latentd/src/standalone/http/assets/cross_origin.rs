@@ -1,5 +1,6 @@
 //! Publication-scoped static CORS on the existing bounded HTTP/asset owners.
 //! No request handled here can reach activation, prerender or HTML fallback.
+mod failure;
 mod metadata;
 mod response;
 mod selection;
@@ -247,19 +248,12 @@ async fn scoped_error<W: AsyncWrite + Unpin>(
     let selection = store
         .repository
         .select_web_publication(reference)
-        .map_err(|error| {
-            let code = super::status(&error);
-            if matches!(code, 400 | 401 | 403 | 404) {
-                403
-            } else {
-                code
-            }
-        })?;
+        .map_err(|error| failure::selection_status(&error))?;
     selection
         .with_current(reference.scope.tenant().ok_or(403u16)?, &mut |current| {
             current.check()
         })
-        .map_err(|error| super::status(&error))?;
+        .map_err(|error| failure::selection_status(&error))?;
     let until = write_deadline(shared, deadline);
     let result = timeout_at(
         until,
