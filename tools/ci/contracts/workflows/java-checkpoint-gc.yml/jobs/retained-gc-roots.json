@@ -11,13 +11,13 @@
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -47,7 +47,7 @@
       {
         "if": "always()",
         "name": "Retain original failed provenance and new actual runtime evidence without keys",
-        "uses": "actions/upload-artifact",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "java-checkpoint-gc-retained-${{ github.sha }}",
@@ -60,7 +60,8 @@
   },
   "jobId": "retained-gc-roots",
   "kind": "job",
-  "reviewReason": "Run the reviewed failure-only GC fixture diagnosis as one fresh target; retain the strict historical component reader as manual only.",
+  "reviewReason": "Align this draft workflow with development's approved patched Action sources; command bodies, evidence, limits, and required outcomes remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-gc.yml"
 }
+
