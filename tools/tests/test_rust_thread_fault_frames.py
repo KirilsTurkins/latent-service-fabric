@@ -15,6 +15,18 @@ class RustThreadFaultFramesTests(unittest.TestCase):
         self.assertIn('git fetch --no-tags --depth=1 origin '
                       '79911762b366381d7dc61da12d1b5e9aba2b3222', workflow)
 
+    def test_diagnostic_consumer_accepts_only_the_bound_numeric_unreachable_fault(self):
+        runtime = (Path(__file__).resolve().parents[2] / 'tools'
+                   / 'rust_thread_runtime_node.py').read_text(encoding='utf-8')
+        programme = (Path(__file__).resolve().parents[2] / 'tools'
+                     / 'diagnose_rust_thread_fault.py').read_text(encoding='utf-8')
+        self.assertIn("row['exitCode'] == 4 and row['decoded'] is None", runtime)
+        self.assertIn("{'kind': 'unreachable-code'}", runtime)
+        self.assertIn("'rust-thread-exact-numeric-original-fault-observation'", runtime)
+        self.assertIn("status='diagnostic-fault-observed'", runtime)
+        self.assertIn("'completed-with-fault'", programme)
+        self.assertIn("runtimeQualification=False", programme)
+
     def test_numeric_rows_are_finite_sequential_and_exclude_private_text(self):
         rows = b'private error and guest-name\n' + b''.join(
             f'LSF-RUST40-FAULT:{i}:123:456:789\n'.encode() for i in range(8))

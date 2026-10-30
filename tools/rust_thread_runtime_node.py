@@ -211,6 +211,28 @@ def run(artifact: Path, native: dict, output: Path, *, diagnostic=False):
                             fault_capture(node, before['latentd'], component, output)
                         except BaseException:
                             record['numericFaultDiagnosticRefused'] = True
+                        diagnostic_frames = output / 'numeric-fault-frames.json'
+                        details = row['response'].get('error', {}).get('details', [])
+                        require(row['exitCode'] == 4 and row['decoded'] is None
+                                and row['response']['data']['terminalState'] == 'guest_trap'
+                                and any(item.get('kind') == 'activation.guest-trap-kind'
+                                    and item.get('fields') == {'kind': 'unreachable-code'}
+                                    for item in details)
+                                and diagnostic_frames.is_file(),
+                                'rust-thread-exact-numeric-original-fault-observation')
+                        consumption = row['response']['data']['consumption']
+                        require(0 < integer(consumption['cpuFuel']) <= 100000000
+                                and 0 < integer(consumption['peakMemoryBytes']) <= 32 * 1024 * 1024
+                                and all(integer(consumption[name]) == 0 for name in (
+                                    'outboundRequests', 'stateReadBytes', 'stateWriteBytes',
+                                    'blobReadBytes', 'blobWriteBytes', 'logBytes', 'effectCount',
+                                    'childCalls')), 'rust-thread-finite-numeric-fault-only')
+                        record.update(status='diagnostic-fault-observed', qualification=False,
+                            actualDefaultThreadPoolProgress=False, diagnosticFaultObserved=True,
+                            diagnosticFaultFrames=file_identity(diagnostic_frames, 64 * 1024),
+                            cliCalls=client.calls, commands=commands.records)
+                        write_json(output / 'diagnostic-fault.json', record)
+                        return record
                     from tools.capsule_invocation_diagnostics import capture
                     capture(client, row)
                 require(matched, 'rust-thread-exact-original-default-pool-or-error-result')

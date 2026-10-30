@@ -346,6 +346,28 @@ canonical threads share linear-memory statics, so that native TLS selection is
 not a logical-thread boundary; `set_current` correctly rejected changing the
 already-set root ID.
 
+Exact-head diagnostic
+[run 41123607091](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41123607091)
+at `e2c83dd6c40f00db467016c975a84f1d9a97e54f` independently reproduced that
+route after authenticating both the current native producer and the historical
+failed component. Its sole artifact `13010052349` has ZIP SHA-256
+`16fd6e9fa0e4bafb940cf0653d1a708c4c824d1158736f70df99a40eb21a5248`.
+The exact 514,484-byte component remained
+`sha256:c88f911cf1304ae9daba6e738bd4fc5128fb4e0b491d7143558905a70f04cdcf`.
+The first call consumed 47,412 fuel, peaked at 5,692,082 bytes and produced
+zero effects before `unreachable`. Its four numeric frames map to
+`ThreadInit::init` (function 279, +79),
+`std::sys::thread::lsf::runtime::entered` (248, +402), the component adapter
+(561, +3), and `__lsf_rust_owned_thread_entry` (429, +39). The run is retained
+as failed historical execution, not ThreadPool qualification.
+
+The diagnostic consumer now accepts only that exact signed `guest_trap` /
+`unreachable-code` terminal shape when a bounded numeric frame file was
+actually retained. It reports `completed-with-fault`, keeps runtime
+qualification false and does not reinterpret the trap as application success.
+Ordinary runtime matching and every capability, fuel, memory, effect and
+retirement requirement remain unchanged.
+
 The source-matched compiler repair keeps `ThreadInit::init`, `set_current`, the
 application and the executor unchanged. Only this explicit
 `rust-context40-sync-cooperative-v1` sysroot selects the existing 32-bit

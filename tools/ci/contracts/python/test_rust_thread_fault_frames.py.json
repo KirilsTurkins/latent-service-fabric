@@ -1,9 +1,22 @@
 {
   "cases": [
+    "RustThreadFaultFramesTests.test_diagnostic_consumer_accepts_only_the_bound_numeric_unreachable_fault",
     "RustThreadFaultFramesTests.test_numeric_rows_are_finite_sequential_and_exclude_private_text",
     "RustThreadFaultFramesTests.test_workflow_fetches_current_native_and_retained_failure_sources"
   ],
   "guards": {
+    "RustThreadFaultFramesTests.test_diagnostic_consumer_accepts_only_the_bound_numeric_unreachable_fault": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5f4103f12474075341144678a5dd5aee833b041252affc1e96421424143f9c61",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "RustThreadFaultFramesTests.test_numeric_rows_are_finite_sequential_and_exclude_private_text": {
       "bases": [
         "unittest.TestCase"
@@ -31,6 +44,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_thread_fault_frames.py",
-  "reviewReason": "Finite off-default numeric fault diagnostic; one authentic trap control and one rebuilt node, four original helpers and unchanged guest retained; no qualification or timing equivalence claim.",
+  "reviewReason": "Finite off-default numeric fault diagnostic; one authenticated unreachable trap with bounded numeric frames, one rebuilt node, four original helpers and unchanged guest retained; no qualification or timing equivalence claim.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

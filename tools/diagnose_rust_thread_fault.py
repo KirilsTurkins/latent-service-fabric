@@ -103,7 +103,9 @@ def diagnose(prepared: Path, compiler_materials: Path, output: Path, revision: s
         record['package'] = prepare(compiler_materials, products, output / 'package', commands)
         stage = 'actual-original-guest-with-numeric-fault-observation'
         record['diagnosticConsumer'] = run(output / 'package', products, output / 'node', diagnostic=True)
-        record.update(status='completed-without-fault', runtimeQualification=False)
+        record.update(status=('completed-with-fault' if
+            record['diagnosticConsumer'].get('diagnosticFaultObserved') is True
+            else 'completed-without-fault'), runtimeQualification=False)
         return record
     except BaseException:
         primary = True
