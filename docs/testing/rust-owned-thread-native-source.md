@@ -111,3 +111,6 @@ the 25,052-byte source-inputs receipt
 and all five source-bound product identities. This producer event still executes
 no signed guest; it only supplies executables whose catalogue and runtime source
 include the repaired Rust component identities for the next exact signed run.
+The bounded diagnostic fetches this exact producer source before importing the
+frozen reader; it separately retains the earlier failed-runtime source so the
+historical pre-entry refusal remains reproducible instead of being overwritten.

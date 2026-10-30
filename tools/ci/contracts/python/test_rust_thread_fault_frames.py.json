@@ -1,6 +1,7 @@
 {
   "cases": [
-    "RustThreadFaultFramesTests.test_numeric_rows_are_finite_sequential_and_exclude_private_text"
+    "RustThreadFaultFramesTests.test_numeric_rows_are_finite_sequential_and_exclude_private_text",
+    "RustThreadFaultFramesTests.test_workflow_fetches_current_native_and_retained_failure_sources"
   ],
   "guards": {
     "RustThreadFaultFramesTests.test_numeric_rows_are_finite_sequential_and_exclude_private_text": {
@@ -10,7 +11,19 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:4ef5c5ec896d9d940e0bb3cb1691e2fb6783e9d84e4dca41b66741c5ae759587",
+        "module:setup-sha256:5f4103f12474075341144678a5dd5aee833b041252affc1e96421424143f9c61",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustThreadFaultFramesTests.test_workflow_fetches_current_native_and_retained_failure_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5f4103f12474075341144678a5dd5aee833b041252affc1e96421424143f9c61",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []

@@ -54,7 +54,9 @@ jobs:
           git fetch --no-tags --depth=1 origin 2259601ab19702eafd56c39bcb43f769cdb47fa5
           git fetch --no-tags --depth=1 origin 9106147f83a2e19c8b1be16b9eb5d55e39512bde
       - name: Fetch the exact successful native and compiler source event
-        run: git fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222
+        run: |
+          git fetch --no-tags --depth=1 origin 9c0097fc4dee24c57e0cffbdf1963e47772b2ffc
+          git fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222
       - name: Locked Python dependencies and finite numeric extraction control
         run: |
           python3 -m pip install --requirement tools/requirements.lock

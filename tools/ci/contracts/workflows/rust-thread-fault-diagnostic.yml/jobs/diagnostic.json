@@ -46,7 +46,7 @@
       },
       {
         "name": "Fetch the exact successful native and compiler source event",
-        "run": "git fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222"
+        "run": "git fetch --no-tags --depth=1 origin 9c0097fc4dee24c57e0cffbdf1963e47772b2ffc\ngit fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222\n"
       },
       {
         "name": "Locked Python dependencies and finite numeric extraction control",
