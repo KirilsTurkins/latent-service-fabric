@@ -71,6 +71,52 @@ class SourceCapacityTests(unittest.TestCase):
             self.assertFalse(captured_root.exists())
             self.assertEqual(list(target.iterdir()), [cache])
 
+    def test_expanded_file_inventory_is_shared_exact_and_still_bounded(self) -> None:
+        from tools import build_inventory_manifests
+        limits = SnapshotLimits()
+        self.assertEqual(limits.max_entries, 9248)
+        self.assertEqual(build_inventory_manifests.MAX_SOURCE_FILES, limits.max_entries)
+        self.assertEqual(limits.max_total_bytes, 76 * 1024 * 1024)
+        self.assertEqual(limits.max_archive_bytes, 83 * 1024 * 1024)
+        self.assertEqual(limits.max_file_bytes, 4 * 1024 * 1024)
+        self.assertEqual(limits.max_directories, 4096)
+        with self.assertRaises(SnapshotError):
+            SnapshotLimits(max_entries=limits.max_entries + 1).validate()
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            repo = parent / "repo"
+            repository(repo)
+            # Three selected source files exist; evidence outside the allowlist
+            # remains excluded. Many tiny inputs exercise count, not byte caps.
+            inputs = repo / "tools"
+            inputs.mkdir()
+            for index in range(limits.max_entries - 3):
+                (inputs / f"input-{index:05}.txt").write_bytes(b"x")
+            git(repo, "add", ".")
+            git(repo, "commit", "--quiet", "-m", "exact finite source count")
+            revision = git(repo, "rev-parse", "HEAD")
+            target = parent / "target"
+            target.mkdir()
+            with self.assertRaisesRegex(SnapshotError, "source tree entry limit"):
+                with capture_source(repo, revision, target, SnapshotLimits(max_entries=8992)):
+                    self.fail("old allowance accepted the larger source inventory")
+            self.assertEqual(list(target.iterdir()), [])
+            with capture_source(repo, revision, target) as captured:
+                rows = json.loads(captured.inventory)
+                self.assertEqual(len(rows), limits.max_entries)
+                self.assertEqual((captured.root / "tools/input-00000.txt").read_bytes(), b"x")
+                last = f"tools/input-{limits.max_entries - 4:05}.txt"
+                self.assertEqual((captured.root / last).read_bytes(), b"x")
+                self.assertFalse((captured.root / "benchmarks").exists())
+            self.assertEqual(list(target.iterdir()), [])
+            (inputs / "one-too-many.txt").write_bytes(b"x")
+            git(repo, "add", ".")
+            git(repo, "commit", "--quiet", "-m", "one above finite source count")
+            with self.assertRaisesRegex(SnapshotError, "source tree entry limit"):
+                with capture_source(repo, git(repo, "rev-parse", "HEAD"), target):
+                    self.fail("source inventory exceeded its finite allowance")
+            self.assertEqual(list(target.iterdir()), [])
+
     def test_tree_file_limit_rejects_before_archive_and_cleans_up(self) -> None:
         from unittest.mock import patch
         from tools import build_snapshot
@@ -97,7 +143,7 @@ class SourceCapacityTests(unittest.TestCase):
             source, inventory, cache, _ = source_fixture(Path(temporary))
             rows = json.loads(inventory)
             maximum = SnapshotLimits().max_entries
-            self.assertEqual(maximum, 8992)
+            self.assertEqual(maximum, 9248)
             rows.extend({"path": f"tools/ci/contracts/fixture-{index}.json",
                          "digest": digest(b"fixture"), "size": 7, "mode": 420}
                         for index in range(maximum - len(rows)))
