@@ -2,8 +2,7 @@
   "kind": "owner",
   "path": "tools/rust_thread_native_products.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the complete successful 200-control native producer and retain prior immutable origins.",
+  "reviewReason": "Bind the delegated native-products reader fingerprint to the reviewed exact current 200-control receipt cohort pin used by the signed Rust runtime programme.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "26f78c7734c7f5d63cfc972463df8ebc16ae0664eb7e774e52484ca72b8d2706"
+  "sha256": "0c293a556c6a1a89a248287d78697cbeff57c544f0e21707fb7e69894818d8ce"
 }
-
