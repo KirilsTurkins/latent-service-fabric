@@ -134,3 +134,20 @@ relocation table before ordinary field/array pointer updates. Exact generated
 function shapes and input/output hashes are required. No monitor queue, Java
 application/library code, assertion, capability, ownership limit, memory/fuel
 limit or retirement rule changes.
+
+Exact-head run
+[`41083065844`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41083065844)
+at `6a3958d8401f5163ef32984b0da4f8ccdd3b3cf1` showed that this repair is not yet
+sufficient. Construction and both grant denials passed, but the first signed
+`gc` call still trapped with memory out of bounds after 47,864,606 fuel and a
+10,211,360-byte peak; it recorded no effect. The exact numeric frames enter
+`GC.markObjectData` from its mark queue and fail while reading the queued
+candidate's class. No signed GC case passed.
+
+Profile `teavm-0.15-c-packed-monitor-gc-root-v2` therefore adds only bounded,
+fail-closed validity traps before a packed monitor candidate is enqueued. Six
+distinct no-output trap sites distinguish below-heap, past-heap, truncated,
+misaligned, free-chunk and unknown-class candidates. They do not discard a bad
+edge, manufacture a wake, change collection, raise a limit or qualify runtime
+success. A new hosted exact-head run must retain the numeric trap and exact
+generated-source identities before the remaining collector repair is chosen.

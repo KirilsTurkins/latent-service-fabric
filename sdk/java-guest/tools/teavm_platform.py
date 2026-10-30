@@ -254,6 +254,43 @@ def monitor_root_outputs(generated: Path, overrides: dict[Path, bytes] | None = 
     original = selected.decode('utf-8')
 
     start, end, body = _generated_function(original, 'meth_otr_GC_markObjectData')
+    diagnostics = '''static volatile int32_t teavm_monitor_root_trap_kind;
+__attribute__((noinline)) static void teavm_monitor_root_trap_below_heap(void) {
+    teavm_monitor_root_trap_kind = INT32_C(1);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_monitor_root_trap_past_heap(void) {
+    teavm_monitor_root_trap_kind = INT32_C(2);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_monitor_root_trap_truncated_header(void) {
+    teavm_monitor_root_trap_kind = INT32_C(3);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_monitor_root_trap_misaligned(void) {
+    teavm_monitor_root_trap_kind = INT32_C(4);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_monitor_root_trap_free_chunk(void) {
+    teavm_monitor_root_trap_kind = INT32_C(5);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_monitor_root_trap_unknown_class(void) {
+    teavm_monitor_root_trap_kind = INT32_C(6);
+    __builtin_trap();
+}
+static int32_t teavm_monitor_root_has_known_class(void* teavm_monitor) {
+    TeaVM_Class* teavm_monitor_class = meth_otr_RuntimeClass_getClass(teavm_monitor);
+    int32_t teavm_class_index;
+    for (teavm_class_index = INT32_C(0); teavm_class_index < teavm_classReferencesCount;
+            ++teavm_class_index) {
+        if (teavm_classReferences[teavm_class_index] == teavm_monitor_class) {
+            return INT32_C(1);
+        }
+    }
+    return INT32_C(0);
+}
+'''
     declaration = '    void* teavm_local_2;\n'
     class_read = '    teavm_local_2 = meth_otr_RuntimeClass_getClass(teavm_local_1);\n'
     object_return = '        return meth_otr_GC_markObject(teavm_local_2, teavm_local_1);'
@@ -264,13 +301,36 @@ def monitor_root_outputs(generated: Path, overrides: dict[Path, bytes] | None = 
         + '    void* teavm_monitor;\n    int32_t teavm_marked_monitor;\n')
     body = body.replace(class_read,
         '    teavm_monitor = TEAVM_UNPACK_MONITOR(TEAVM_FIELD(teavm_local_1, TeaVM_Object, hash));\n'
+        '    if (teavm_monitor != NULL) {\n'
+        '        if ((uintptr_t) teavm_monitor < (uintptr_t) teavm_gc_heapAddress) {\n'
+        '            teavm_monitor_root_trap_below_heap();\n'
+        '        }\n'
+        '        if ((uintptr_t) teavm_monitor >= (uintptr_t) TEAVM_ADDRESS_ADD(\n'
+        '                teavm_gc_heapAddress, teavm_gc_availableBytes)) {\n'
+        '            teavm_monitor_root_trap_past_heap();\n'
+        '        }\n'
+        '        if ((uintptr_t) TEAVM_ADDRESS_ADD(teavm_monitor, sizeof(TeaVM_Object)) >\n'
+        '                (uintptr_t) TEAVM_ADDRESS_ADD(teavm_gc_heapAddress, teavm_gc_availableBytes)) {\n'
+        '            teavm_monitor_root_trap_truncated_header();\n'
+        '        }\n'
+        '        if ((((uintptr_t) teavm_monitor - (uintptr_t) teavm_gc_heapAddress) &\n'
+        '                (INT32_C(8) - INT32_C(1))) != 0) {\n'
+        '            teavm_monitor_root_trap_misaligned();\n'
+        '        }\n'
+        '        if (TEAVM_FIELD(teavm_monitor, cls_otr_FreeChunk, fld_classReference) == INT32_C(0)) {\n'
+        '            teavm_monitor_root_trap_free_chunk();\n'
+        '        }\n'
+        '        if (!teavm_monitor_root_has_known_class(teavm_monitor)) {\n'
+        '            teavm_monitor_root_trap_unknown_class();\n'
+        '        }\n'
+        '    }\n'
         '    teavm_marked_monitor = teavm_monitor != NULL\n'
         '        ? meth_otr_GC_enqueueMark(teavm_monitor) : INT32_C(0);\n' + class_read)
     body = body.replace(object_return,
         '        return teavm_marked_monitor | meth_otr_GC_markObject(teavm_local_2, teavm_local_1);')
     body = body.replace(array_return,
         '    return teavm_marked_monitor | meth_otr_GC_markArray(teavm_local_2, teavm_local_1);')
-    adapted = original[:start] + body + original[end:]
+    adapted = original[:start] + diagnostics + body + original[end:]
 
     start, end, body = _generated_function(adapted, 'meth_otr_GC_updatePointers')
     opening = 'void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {\n'
@@ -290,7 +350,7 @@ def monitor_root_outputs(generated: Path, overrides: dict[Path, bytes] | None = 
     if value == selected:
         raise ValueError('unreviewed-teavm-monitor-root-closure')
     return [(path, value)], {
-        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v1',
+        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v2',
         'upstreamIssue': MONITOR_ROOT_ISSUE,
         'path': 'c/o/t/r/GC.c',
         'upstreamSha256': hashlib.sha256(raw).hexdigest(),
@@ -298,6 +358,8 @@ def monitor_root_outputs(generated: Path, overrides: dict[Path, bytes] | None = 
         'adaptedSha256': hashlib.sha256(value).hexdigest(),
         'markPackedMonitor': True,
         'rewriteRelocatedMonitor': True,
+        'boundedPackedMonitorValidityTraps': True,
+        'packedMonitorValidityTrapKinds': 6,
     }
 
 

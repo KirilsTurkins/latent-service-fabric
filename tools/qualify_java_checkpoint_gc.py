@@ -151,7 +151,7 @@ def build_evidence(artifact):
                 monitor['inputSha256'] if name=='c/o/t/r/GC.c' else file_identity(
                     artifact/'gc-root-generated'/name,1024**2)['sha256'].removeprefix('sha256:'))
             for name in alignment_runtime), 'java-checkpoint-exact-upstream-heap-alignment-repair')
-    require(monitor['profile']=='teavm-0.15-c-packed-monitor-gc-root-v1'
+    require(monitor['profile']=='teavm-0.15-c-packed-monitor-gc-root-v2'
         and monitor['upstreamIssue']=='konsoletyper/teavm#1330'
         and monitor['path']=='c/o/t/r/GC.c'
         and monitor['upstreamSha256']==alignment_files['c/o/t/r/GC.c']['upstreamSha256']
@@ -159,7 +159,9 @@ def build_evidence(artifact):
         and monitor['adaptedSha256']==file_identity(
             artifact/'gc-root-generated/c/o/t/r/GC.c',1024**2)['sha256'].removeprefix('sha256:')
         and monitor['markPackedMonitor'] is True
-        and monitor['rewriteRelocatedMonitor'] is True,
+        and monitor['rewriteRelocatedMonitor'] is True
+        and monitor['boundedPackedMonitorValidityTraps'] is True
+        and monitor['packedMonitorValidityTrapKinds']==6,
         'java-checkpoint-exact-packed-monitor-gc-root-repair')
     mechanism=generated_mechanism(artifact/'gc-root-generated')
     return {'component':component,'documents':documents,'classpath':classpath,

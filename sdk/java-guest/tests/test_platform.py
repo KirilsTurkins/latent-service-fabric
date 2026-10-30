@@ -111,13 +111,22 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
             original = gc.read_bytes()
             outputs, receipt = platform.monitor_root_outputs(root)
             self.assertEqual(receipt['upstreamIssue'], platform.MONITOR_ROOT_ISSUE)
+            self.assertEqual(receipt['profile'], 'teavm-0.15-c-packed-monitor-gc-root-v2')
             self.assertTrue(receipt['markPackedMonitor'])
             self.assertTrue(receipt['rewriteRelocatedMonitor'])
+            self.assertTrue(receipt['boundedPackedMonitorValidityTraps'])
+            self.assertEqual(receipt['packedMonitorValidityTrapKinds'], 6)
             self.assertEqual(gc.read_bytes(), original)
             adapted = dict(outputs)[gc].decode()
             self.assertIn('meth_otr_GC_enqueueMark(teavm_monitor)', adapted)
             self.assertEqual(adapted.count('teavm_marked_monitor |'), 2)
             self.assertIn('TEAVM_PACK_MONITOR(meth_otr_GC_updatePointer(teavm_monitor))', adapted)
+            for kind in ('below_heap', 'past_heap', 'truncated_header', 'misaligned',
+                    'free_chunk', 'unknown_class'):
+                self.assertEqual(adapted.count('teavm_monitor_root_trap_' + kind), 2)
+            self.assertIn('teavm_monitor_root_has_known_class(teavm_monitor)', adapted)
+            self.assertIn('teavm_classReferencesCount', adapted)
+            self.assertEqual(adapted.count('teavm_monitor_root_trap_kind = INT32_C('), 6)
 
     def test_packed_monitor_repair_refuses_unknown_collector_shapes(self):
         with tempfile.TemporaryDirectory() as directory:

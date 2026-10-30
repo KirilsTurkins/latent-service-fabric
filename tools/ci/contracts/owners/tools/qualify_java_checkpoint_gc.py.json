@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require the exact TeaVM packed-monitor mark and relocation repair together with the existing heap-alignment identities before any signed GC outcome can qualify; retain all original limits, witnesses and retirement gates.",
+  "reviewReason": "Require the reviewed packed-monitor validity profile and six fail-closed numeric diagnostic categories while preserving exact compiler identities, limits, denials, assertions, and runtime qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f36685f86ce9f7ff2de2201a0c2609c64ee3884f3d3e574fdf9191f21a44378a"
+  "sha256": "03b6c6a355676d5ab9badcb163c00e9aff0ca7b9178c1c65a8e5806a6ece7099"
 }
