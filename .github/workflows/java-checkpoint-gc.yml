@@ -22,10 +22,14 @@ on:
       - 'apps/latent/Cargo.toml'
       - 'apps/latentd/Cargo.toml'
       - 'sdk/java-guest/fibers/conformance/compiler/GcReferenceControl.java'
+      - 'sdk/java-guest/fibers/compiler-patch/**'
       - 'sdk/java-guest/tools/teavm_platform.py'
       - 'sdk/java-guest/tests/test_platform.py'
       - 'sdk/java-guest/tests/test_exception_spills.py'
       - 'sdk/java-guest/tests/test_exception_array_spills.py'
+      - 'tools/java_guest/coroutine_patch.py'
+      - 'tools/tests/test_java_checkpoint_context.py'
+      - 'tools/tests/test_java_http_fibers.py'
       - '.github/workflows/java-checkpoint-gc.yml'
   workflow_dispatch:
     inputs:

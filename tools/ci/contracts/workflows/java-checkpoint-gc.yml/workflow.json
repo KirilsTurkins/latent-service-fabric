@@ -1,68 +1,19 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "java-checkpoint-gc-${{ github.ref }}"
-    },
-    "name": "Java parked continuation GC witnesses",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/java-checkpoint-gc-current-20261023"
-        ],
-        "paths": [
-          "tools/fixtures/java-checkpoint-gc/**",
-          "tools/java_checkpoint_gc_*.py",
-          "tools/qualify_java_checkpoint_gc.py",
-          "tools/qualify_java_checkpoint_gc_retained.py",
-          "tools/fixtures/java-checkpoint-gc-retained-a5c.json",
-          "tools/tests/test_java_checkpoint_gc_retained.py",
-          "tools/tests/test_java_checkpoint_gc.py",
-          "tools/tests/test_java_checkpoint_gc_fault_frames.py",
-          "tools/java_guest/c_failure_context.py",
-          "crates/latent-wasmtime/src/java_checkpoint_gc_fault.rs",
-          "crates/latent-wasmtime/src/config/engine.rs",
-          "crates/latent-wasmtime/src/backend.rs",
-          "crates/latent-wasmtime/src/lib.rs",
-          "crates/latent-wasmtime/Cargo.toml",
-          "crates/latent-wire/src/management/capabilities/conversion.rs",
-          "apps/latent/src/management/phase2/projection/capability.rs",
-          "apps/latent/Cargo.toml",
-          "apps/latentd/Cargo.toml",
-          "sdk/java-guest/fibers/conformance/compiler/GcReferenceControl.java",
-          "sdk/java-guest/tools/teavm_platform.py",
-          "sdk/java-guest/tests/test_platform.py",
-          "sdk/java-guest/tests/test_exception_spills.py",
-          "sdk/java-guest/tests/test_exception_array_spills.py",
-          ".github/workflows/java-checkpoint-gc.yml"
-        ]
+  "kind":"workflow",
+  "policy":{
+    "concurrency":{"cancel-in-progress":false,"group":"java-checkpoint-gc-${{ github.ref }}"},
+    "name":"Java parked continuation GC witnesses",
+    "on":{
+      "push":{
+        "branches":["feat/java-checkpoint-gc-current-20261023"],
+        "paths":["tools/fixtures/java-checkpoint-gc/**","tools/java_checkpoint_gc_*.py","tools/qualify_java_checkpoint_gc.py","tools/qualify_java_checkpoint_gc_retained.py","tools/fixtures/java-checkpoint-gc-retained-a5c.json","tools/tests/test_java_checkpoint_gc_retained.py","tools/tests/test_java_checkpoint_gc.py","tools/tests/test_java_checkpoint_gc_fault_frames.py","tools/java_guest/c_failure_context.py","crates/latent-wasmtime/src/java_checkpoint_gc_fault.rs","crates/latent-wasmtime/src/config/engine.rs","crates/latent-wasmtime/src/backend.rs","crates/latent-wasmtime/src/lib.rs","crates/latent-wasmtime/Cargo.toml","crates/latent-wire/src/management/capabilities/conversion.rs","apps/latent/src/management/phase2/projection/capability.rs","apps/latent/Cargo.toml","apps/latentd/Cargo.toml","sdk/java-guest/fibers/conformance/compiler/GcReferenceControl.java","sdk/java-guest/fibers/compiler-patch/**","sdk/java-guest/tools/teavm_platform.py","sdk/java-guest/tests/test_platform.py","sdk/java-guest/tests/test_exception_spills.py","sdk/java-guest/tests/test_exception_array_spills.py","tools/java_guest/coroutine_patch.py","tools/tests/test_java_checkpoint_context.py","tools/tests/test_java_http_fibers.py",".github/workflows/java-checkpoint-gc.yml"]
       },
-      "workflow_dispatch": {
-        "inputs": {
-          "programme": {
-            "default": "fresh",
-            "description": "Retained runtime only, or the original fresh compiler programme",
-            "options": [
-              "retained",
-              "fresh"
-            ],
-            "required": true,
-            "type": "choice"
-          }
-        }
-      }
+      "workflow_dispatch":{"inputs":{"programme":{"default":"fresh","description":"Retained runtime only, or the original fresh compiler programme","options":["retained","fresh"],"required":true,"type":"choice"}}}
     },
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    }
+    "permissions":{"actions":"read","contents":"read"}
   },
-  "requiredJobs": [
-    "gc-roots",
-    "retained-gc-roots"
-  ],
-  "reviewReason": "Bind the Java GC workflow trigger to the generated-C alignment adapter and its focused controls while preserving both required jobs and the existing execution programmes.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/java-checkpoint-gc.yml"
+  "requiredJobs":["gc-roots","retained-gc-roots"],
+  "reviewReason":"Trigger the unchanged Java GC qualification when its exact compiler-patch source, controller, or focused source controls change; preserve every existing job and policy field.",
+  "schemaVersion":"latent.ci.contracts.v1",
+  "workflow":".github/workflows/java-checkpoint-gc.yml"
 }
