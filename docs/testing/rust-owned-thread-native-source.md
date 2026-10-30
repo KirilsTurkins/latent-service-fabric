@@ -176,3 +176,17 @@ component `sha256:c88f911c7534b119c4658da6f87553ac1b2d621607fed39123f28574033780
 after 47,412 fuel, with 5,692,098 peak bytes and zero effects. That component
 predates the compiler repair and is retained as failed runtime evidence; it is
 not evidence against the repaired 1,225-node compiler output.
+
+The repaired-component signed run
+[`41134417250`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41134417250)
+at `b60eb4c51fc30dd09bb8fab34969a6a152e06d4d` authenticated the exact compiler
+and current 200-control native origins, signed component
+`sha256:e81881af5494d3d6ab3b071abd8fadca79d2f21b354e2e52dc746d492582f471`
+and reached the unchanged `pools-cold` call. Artifact `13015681982` is 610,993
+compressed bytes with GitHub digest
+`sha256:9815184569a042438f93f0b78e092a7f08f29273c1bb5f3bf4380846e136c799`.
+The call still trapped with `unreachable-code`, no decoded result and zero
+effects after 93,883 fuel at a 5,692,107-byte peak. This progressed beyond the
+47,412-fuel shared-ThreadId failure but did not produce any ThreadPool result.
+The bounded #1373 diagnostic must identify this new exact trap before another
+runtime repair can be selected.
