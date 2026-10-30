@@ -47,6 +47,8 @@ jobs:
         run: |
           git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915
           git fetch --no-tags --depth=1 origin 28059f343bbd954e3e6614c5a24593897cc0c294
+          git fetch --no-tags --depth=1 origin 2259601ab19702eafd56c39bcb43f769cdb47fa5
+          git fetch --no-tags --depth=1 origin 9106147f83a2e19c8b1be16b9eb5d55e39512bde
       - name: Locked Python dependencies and finite numeric extraction control
         run: |
           python3 -m pip install --requirement tools/requirements.lock
