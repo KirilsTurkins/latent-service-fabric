@@ -14,6 +14,9 @@ Root { node: 1210, export: Some("__lsf_rust_owned_thread_entry") },
 Root { node: 1014, export: Some("__lsf_rust_root_bootstrap") },
 Root { node: 1021, export: Some("__lsf_rust_root_finish") },
 Root { node: 1029, export: Some("__lsf_rust_root_reap") },
+Root { node: 144, export: None },
+Root { node: 145, export: None },
+Root { node: 146, export: None },
 ];
 pub(super) static NODES: &[Node] = &[
 Node { kind: 0, signature: Signature { params: &[127,127,127], results: &[] }, name: "_RINvMNtNtCsbaq84OgtnfG_3std6thread7builderNtB3_7Builder15spawn_uncheckedNCNvMs3_NtCsffIcXob95CF_16futures_executor11thread_poolNtB1g_9PoolState17ensure_generation0uEB1i_", start: 0, size: 122, references: &[

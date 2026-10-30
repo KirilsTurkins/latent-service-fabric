@@ -22,6 +22,29 @@ def section(kind: int, payload: bytes) -> bytes:
 
 
 class HostCatalogueTests(unittest.TestCase):
+    def test_reviewed_roots_require_public_lifecycle_and_private_pool_entrypoints(self):
+        nodes = ([{'id': index, 'originalSymbol': name}
+                  for index, name in enumerate(host.ROOT_EXPORTS)]
+                 + [{'id': index + len(host.ROOT_EXPORTS), 'originalSymbol': name}
+                    for index, name in enumerate(host.ADDITIONAL_ROOT_SYMBOLS)])
+        manifest = {'nodes': nodes, 'roots': [
+            {'node': index, 'export': name} for index, name in enumerate(host.ROOT_EXPORTS)] + [
+            {'node': index + len(host.ROOT_EXPORTS), 'export': None}
+            for index, _ in enumerate(host.ADDITIONAL_ROOT_SYMBOLS)]}
+        host.reviewed_roots(manifest)
+        for change in ('missing', 'wrong-public', 'wrong-private'):
+            with self.subTest(change=change):
+                altered = {'nodes': [row.copy() for row in nodes],
+                           'roots': [row.copy() for row in manifest['roots']]}
+                if change == 'missing':
+                    altered['roots'].pop()
+                elif change == 'wrong-public':
+                    altered['roots'][0]['export'] = 'forged'
+                else:
+                    altered['nodes'][-1]['originalSymbol'] = 'forged'
+                with self.assertRaisesRegex(ValueError, 'rust-host-catalogue-reviewed-roots'):
+                    host.reviewed_roots(altered)
+
     def test_component_section_bound_precedes_next_read_and_allocation(self):
         class CountingReader(graph.Reader):
             reads = 0

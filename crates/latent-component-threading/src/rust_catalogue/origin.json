@@ -110,6 +110,7 @@
   "runtimeQualified": false,
   "nodeCount": 1222,
   "referenceCount": 5309,
+  "rootCount": 11,
   "normalComponentEnvelope": {
     "tool": "wasm-tools",
     "version": "1.254.0",

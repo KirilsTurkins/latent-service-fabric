@@ -1853,7 +1853,7 @@ mod tests {
         assert!(!proof.bindings.contains(&UNBOUND));
         assert_eq!(
             (proof.stack_low, proof.stack_high, proof.memory_bytes),
-            (26304, 1140416, 1179648)
+            (27552, 1141664, 1179648)
         );
         let module = Original::parse(ORIGINAL).unwrap();
         let selected = source_role(&proof, "runtime13executor_root12progress_all").unwrap();
@@ -1938,13 +1938,13 @@ mod tests {
         assert_eq!(sites.iter().filter(|site| site.fallback).count(), 1);
         let sealed = seal_original_callbacks(ORIGINAL).unwrap();
         // Exact independently retained Python production derivation from the
-        // authenticated 777bf46 event. This is an emission comparison, not execution.
+        // authenticated 9d0e11d event. This is an emission comparison, not execution.
         assert_eq!(
             Sha256::digest(&sealed)
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "9e10c03a39dfe70e43063a66dc4605c03342d070b8101f401ed221e9a330046e"
+            "85e67b8fe9ad9a888b3543b26f63261f906e70a03caec9d2c4ca5f0bf4a7cfa8"
         );
         let sealed_module = Original::parse(&sealed).unwrap();
         for (index, function) in module.table.iter().enumerate() {
@@ -1989,11 +1989,11 @@ mod tests {
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "cc65ef0a737f30dbb719852fb8209d43663c6c3496e8d16de3e888bf58fd8c96"
+            "261f4cd27a9f8229793ed6e5521986e8e3c0249eec800363394b1591292e8b57"
         );
-        assert_eq!(receipt.original_panic_function, 532);
-        assert_eq!(receipt.root.canonical_system_panic_trap, Some(533));
-        assert_eq!(receipt.root.canonical_system_stack_high, Some(1140416));
+        assert_eq!(receipt.original_panic_function, 527);
+        assert_eq!(receipt.root.canonical_system_panic_trap, Some(528));
+        assert_eq!(receipt.root.canonical_system_stack_high, Some(1141664));
         assert_eq!(
             receipt.root.root_stack_high - receipt.root.root_stack_low,
             1024 * 1024
