@@ -40,10 +40,10 @@ jobs:
         persist-credentials: false
     - name: Fetch the exact historical native source before bounded verification
       run: git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f
-    - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
       with:
         python-version: 3.13.5
-    - uses: KirilsTurkins/lsf-setup-java@f041d6677134ada73c077d0c012bd78164b251a7 # v6.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
       with:
         distribution: temurin
         java-version: 25.0.4+101.0.LTS
@@ -82,7 +82,7 @@ jobs:
           --output "$RUNNER_TEMP/java-compiler-diagnostics"
     - name: Retain bounded public identities, actual results and signable package for causal replay
       if: always()
-      uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+      uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: java-compiler-diagnostics-${{ github.sha }}
         retention-days: 3
@@ -171,7 +171,7 @@ jobs:
         persist-credentials: false
     - name: Fetch the exact historical native source before bounded verification
       run: git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f
-    - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
       with:
         python-version: 3.13.5
     - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
@@ -227,7 +227,7 @@ jobs:
           --output "$RUNNER_TEMP/dotnet-compiler-diagnostics"
     - name: Retain bounded public identities, actual results and signable package for causal replay
       if: always()
-      uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+      uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: dotnet-compiler-diagnostics-${{ github.sha }}
         retention-days: 3
@@ -300,7 +300,7 @@ jobs:
     - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
       with:
         persist-credentials: false
-    - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
       with:
         python-version: 3.13.5
     - name: Bind original qualified native source and locked reader dependencies
@@ -331,11 +331,11 @@ jobs:
         python3 -B tools/install_guest_bindgen.py "$RUNNER_TEMP/compatibility-bindgen"
 
         echo "$RUNNER_TEMP/compatibility-bindgen" >> "$GITHUB_PATH"'
-    - uses: KirilsTurkins/lsf-setup-node@c1136b2d97fe79ef645e9508b2048a222f50a170 # v7.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415 # v7.1.0 + upstream changes + LSF security fixes
       if: ${{ contains(fromJSON('["typescript","typescript-initializer"]'), matrix.cell) }}
       with:
         node-version: 24.19.0
-    - uses: KirilsTurkins/lsf-setup-java@f041d6677134ada73c077d0c012bd78164b251a7 # v6.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
       if: ${{ contains(fromJSON('["java"]'), matrix.cell) }}
       with:
         distribution: temurin
@@ -462,7 +462,7 @@ jobs:
         "$RUNNER_TEMP/compatibility-public"
 
         echo ''admitted=true'' >> "$GITHUB_OUTPUT"'
-    - uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
       if: ${{ always() && steps.public.outputs.admitted == 'true' }}
       with:
         name: compatibility-closure-${{ github.sha }}-${{ matrix.cell }}
@@ -477,7 +477,7 @@ jobs:
     - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
       with:
         persist-credentials: false
-    - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
       with:
         python-version: 3.13.5
     - name: Install only locked readers
@@ -500,7 +500,7 @@ jobs:
       run: python3 -B tools/compatibility_closure_matrix.py assemble --inputs "$RUNNER_TEMP/compatibility-inputs"
         --source-commit "$SOURCE_COMMIT" --preserved "$RUNNER_TEMP/compatibility-preserved"
         --diagnostics "$RUNNER_TEMP/compatibility-current-diagnostics" --output "$RUNNER_TEMP/compatibility-completion.json"
-    - uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: compatibility-closure-matrix-${{ github.sha }}
         path: ${{ runner.temp }}/compatibility-completion.json

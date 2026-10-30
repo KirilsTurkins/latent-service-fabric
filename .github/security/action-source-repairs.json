@@ -3,6 +3,24 @@
   "profile": "checkout-deepmerge-source-v1",
   "action": "KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8",
   "source_role": "development-build-tool",
+  "additional_actions": {
+    "profile": "deepmerge-action-source-v1",
+    "source_role": "development-build-tool",
+    "references": {
+      ".github/security/actions/setup-java/": "KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039",
+      ".github/security/actions/setup-node/": "KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415",
+      ".github/security/actions/setup-python/": "KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb",
+      ".github/security/actions/upload-artifact/": "KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16"
+    },
+    "verifier": {
+      "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
+      "source": ".lsf-source/verify-installed-deepmerge.mjs",
+      "role": "installed-source-verifier",
+      "bytes": 2381,
+      "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+      "gitBlob": "99d75a2ea3895eb8acc8018984ca9826e4edff51"
+    }
+  },
   "bindings": {
     "manifest": {
       "snapshot": ".github/security/actions/checkout/package.json",
