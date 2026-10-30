@@ -246,18 +246,32 @@ component (`sha256:c6d1156c12cc8464682e49ccc1763c1c68a5347266d1e71efa2b7b786f2ce
 The earlier artifacts and member identities remain recorded separately. This
 compiler success still establishes no signed runtime result.
 
-The first signed call reached that unchanged application/library path but
-overflowed its stack. Bounded frames isolated the primary failure to TLS owner
-admission: the eighth separately allocated TLS entry exhausted the unchanged
-Native-owner bound, and panic bookkeeping recursively attempted another TLS
-entry. The repair changes only compiler/runtime TLS storage: up to 32 entries
-share one admitted System allocation and one Native owner, admission still
-precedes allocation, Wasm linear-memory accounting is unchanged, cleanup still
-deallocates and settles the physical owner, and completion still requires a
-null TLS table. A 33-key bound case and the existing ten Native-owner controls
-close both the amortized and refusal paths. The complete repaired host control
-origin is separately retained in `rust-owned-thread-native-source.md`; a real
-signed execution remains the acceptance gate.
+Signed run `41101952346` reached that unchanged application/library path at
+component `sha256:c6d1156c12cc8464682e49ccc1763c1c68a5347266d1e71efa2b7b786f2cefc5`,
+but the first `pools-cold` call trapped before producing a typed result. The
+earlier stack-overflow label and per-key TLS hypothesis are retained as failed
+historical diagnoses; neither establishes the current cause.
+
+The bounded follow-up in
+[run 41106326690](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41106326690)
+at exact diagnostic source `48a6198bd31f88a4a3bd735dce03042de3a72918`
+reproduced the same component, fuel (`422285`), peak memory (`5692098`) and
+zero-effect trap. Its eight numeric frames put `Lease::acquire` at the panic
+format branch for `TLS owner admission rejected`; panic bookkeeping then entered
+`panic_count` TLS and the top frame reached the private stack-lower-bound guard.
+The guard is therefore secondary, not evidence that a larger stack is needed.
+
+Source reconciliation found the accounting defect below the unchanged library:
+each context was already allocated under its own Native owner (or was the fixed
+root record), yet its first bounded TLS entries required a second allocation and
+owner. The repair embeds the first 32 entries in that context. Fixed-root entries
+manufacture no owner; overflow blocks still require continuation-backed Native
+admission before each actual System allocation, remain under the unchanged
+linear-memory and owner limits, free before settlement and must leave a null TLS
+table. The ten focused controls now cover fixed-root entries, dynamically owned
+contexts, a 64-key inline-plus-overflow case and refusal of the 65th key under
+the original two-owner bound. A fresh compiler/native/signed hosted result is
+still required before runtime acceptance.
 
 Other validation includes source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
