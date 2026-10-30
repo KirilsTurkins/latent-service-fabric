@@ -46,7 +46,7 @@
       },
       {
         "name": "Fetch the exact successful native and compiler source event",
-        "run": "git fetch --no-tags --depth=1 origin 9c0097fc4dee24c57e0cffbdf1963e47772b2ffc\ngit fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222\n"
+        "run": "git fetch --no-tags --depth=1 origin deb654086a6e9ca85c1c96c7e3485babbc6557d9\ngit fetch --no-tags --depth=1 origin ef841ed1d5691b4bf25db48b9980a776b4b56bc5\ngit fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222\n"
       },
       {
         "name": "Locked Python dependencies and finite numeric extraction control",
@@ -79,7 +79,7 @@
   },
   "jobId": "diagnostic",
   "kind": "job",
-  "reviewReason": "Bind the bounded Rust diagnostic to the exact successful native and compiler source event without removing its retained historical fetches.",
+  "reviewReason": "Run the bounded observer against the exact repaired compiler component and current 200-control native producer while retaining the earlier failed source event.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-thread-fault-diagnostic.yml"
 }

@@ -11,7 +11,9 @@ class RustThreadFaultFramesTests(unittest.TestCase):
         workflow = (Path(__file__).resolve().parents[2] / '.github' / 'workflows'
                     / 'rust-thread-fault-diagnostic.yml').read_text(encoding='utf-8')
         self.assertIn('git fetch --no-tags --depth=1 origin '
-                      '9c0097fc4dee24c57e0cffbdf1963e47772b2ffc', workflow)
+                      'deb654086a6e9ca85c1c96c7e3485babbc6557d9', workflow)
+        self.assertIn('git fetch --no-tags --depth=1 origin '
+                      'ef841ed1d5691b4bf25db48b9980a776b4b56bc5', workflow)
         self.assertIn('git fetch --no-tags --depth=1 origin '
                       '79911762b366381d7dc61da12d1b5e9aba2b3222', workflow)
 
