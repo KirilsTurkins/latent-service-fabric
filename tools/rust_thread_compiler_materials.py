@@ -18,11 +18,13 @@ from tools.rust_thread_runtime_package import SOURCE, RUN, PINS
 
 HISTORICAL_ARTIFACT = {'id': 12469845581, 'size_in_bytes': 52246859,
     'digest': 'sha256:76e11dc5d099d353d027b5e946ec7624f5c7bc90110f4844fc9aff387f2afdc6'}
-PREVIOUS_ARTIFACT = {'id': 12968677962, 'size_in_bytes': 52244511,
+EARLIER_ARTIFACT = {'id': 12968677962, 'size_in_bytes': 52244511,
     'digest': 'sha256:feae6e80f418041ca48d5dce1c82456903d1d77cf5e93d1878e2ed0bd36a6138'}
-ARTIFACT = {'id': 12978203439, 'size_in_bytes': 55102784,
+PREVIOUS_ARTIFACT = {'id': 12978203439, 'size_in_bytes': 55102784,
     'digest': 'sha256:6570db47d0c9657b3375d66c0ddd720cbc2c05fcce61b48d3d2b9ae7ff47dbf2'}
-JOB = 124073347987
+ARTIFACT = {'id': 12996890774, 'size_in_bytes': 53110361,
+    'digest': 'sha256:1adc79551de5dfd54255c9fba50346a18161eeec3d01c2c097f06e69b8251e86'}
+JOB = 124197667917
 PREFIX = 'application-diagnostic/'
 
 
@@ -62,7 +64,7 @@ def prepare(output: Path) -> dict:
     identities = {}
     with zipfile.ZipFile(remote) as archive:
         rows = archive.infolist()
-        require(len(rows) == 114 and len({row.filename.casefold() for row in rows}) == 114,
+        require(len(rows) == 125 and len({row.filename.casefold() for row in rows}) == 125,
                 'rust-thread-retained-compiler-archive-index')
         # Only these four names can be extracted; all are fixed by the independently
         # verified immutable compiler event. No executable from this archive runs.
@@ -74,7 +76,7 @@ def prepare(output: Path) -> dict:
         for name, (size, sha) in PINS.items():
             count = 0
             with archive.open(PREFIX + name) as stream, (output / name).open('xb') as destination:
-                while data := stream.read(65536):
+                while data := stream.read(8 * 1024 * 1024):
                     count += len(data)
                     require(count <= size, 'rust-thread-retained-compiler-member-bound')
                     destination.write(data)
@@ -85,7 +87,7 @@ def prepare(output: Path) -> dict:
     record = {'schemaVersion': 'latent.rust.thread-retained-compiler.v1',
         'source': SOURCE, 'run': RUN, 'job': JOB, 'artifact': ARTIFACT,
         'producerAttempt': 1, 'historicalArtifact': HISTORICAL_ARTIFACT,
-        'previousArtifact': PREVIOUS_ARTIFACT,
+        'earlierArtifact': EARLIER_ARTIFACT, 'previousArtifact': PREVIOUS_ARTIFACT,
         'archiveDigestVerification': 'official-metadata-only-selected-members-hash-verified',
         'wholeArchiveRetained': False, 'selected': identities,
         'rangeBytes': remote.transferred, 'rangeRequests': remote.requests,

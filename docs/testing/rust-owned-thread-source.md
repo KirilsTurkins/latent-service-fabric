@@ -218,7 +218,7 @@ its distribution receipt is not reused. Normal builder, native catalogue,
 canonical-body, checkpoint and runtime qualification flags remain false.
 No normal component, signed Rust guest or runtime ThreadPool was executed.
 
-The current retained compiler origin is
+The preceding retained compiler origin is
 [run 41058624633](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41058624633)
 at exact source `9106147f83a2e19c8b1be16b9eb5d55e39512bde`. Its job
 `124073347987` passed and produced sole artifact `12978203439`, 55,102,784
@@ -230,6 +230,21 @@ and 514,214-byte wrapped component
 (`sha256:ad791f7486361d73f69b4b4a7b0bc57f5b5094d63cc3d5d2beddef560f9003dd`).
 No executable from that compiler artifact is invoked during retrieval, and the
 compiler observation alone still establishes no signed runtime result.
+
+The current retained compiler origin is exact-head
+[run 41094795688](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41094795688)
+at source `79911762b366381d7dc61da12d1b5e9aba2b3222`. Job `124197667917`
+passed the 29 native controls, 76 source controls, ordinary application compile,
+Linux component proof and fixed retained-evidence bound. Its sole artifact
+`12996890774` is 53,110,361 compressed bytes with SHA-256
+`1adc79551de5dfd54255c9fba50346a18161eeec3d01c2c097f06e69b8251e86`.
+Independent download verified all 125 archive members and the four selected
+preimages, including the 262,561-byte repaired core
+(`sha256:1016bc74d96585be6943d2b1396cf79ebd8f1fa66828a321d2ee251827431bcc`).
+That core and the reviewed Linux envelope produce the 513,900-byte wrapped
+component (`sha256:c6d1156c12cc8464682e49ccc1763c1c68a5347266d1e71efa2b7b786f2cefc5`).
+The earlier artifacts and member identities remain recorded separately. This
+compiler success still establishes no signed runtime result.
 
 The first signed call reached that unchanged application/library path but
 overflowed its stack. Bounded frames isolated the primary failure to TLS owner
