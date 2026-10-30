@@ -72,7 +72,7 @@
       },
       {
         "name": "Build one authenticated bounded numeric diagnostic node",
-        "run": "export CARGO_TARGET_DIR=\"$RUNNER_TEMP/java-gc-host-target\"\ncargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --lib \\\n  --features java-checkpoint-gc-trap-diagnostic \\\n  java_checkpoint_gc_fault::tests::java_gc_fault_visits_only_eight_numeric_frames_for_authenticated_profile \\\n  -- --exact --test-threads=1\nCARGO_PROFILE_DEV_STRIP=debuginfo cargo --config .cargo/managed-guest.toml build --locked -p latentd --bin latentd \\\n  --features java-checkpoint-gc-trap-diagnostic\n"
+        "run": "export CARGO_TARGET_DIR=\"$RUNNER_TEMP/java-gc-host-target\"\ncargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --lib \\\n  --features java-checkpoint-gc-trap-diagnostic \\\n  java_checkpoint_gc_fault::tests::java_gc_fault_visits_only_eight_numeric_frames_for_authenticated_profile \\\n  -- --exact --test-threads=1\nCARGO_PROFILE_DEV_OPT_LEVEL=1 CARGO_PROFILE_DEV_STRIP=debuginfo \\\n  cargo --config .cargo/managed-guest.toml build --locked -p latentd --bin latentd \\\n  --features java-checkpoint-gc-trap-diagnostic\n"
       },
       {
         "name": "Selected reference GC and real compiler controls then one fresh signed GC target",
@@ -94,7 +94,7 @@
   },
   "jobId": "gc-roots",
   "kind": "job",
-  "reviewReason": "Keep the diagnostic binary inside the existing evidence identity bound without changing guest limits or assertions.",
+  "reviewReason": "Reduce the diagnostic node's resident code after the exact stripped dev build was killed with SIGKILL; preserve debug assertions, overflow checks, the existing evidence bound, guest limits and assertions.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-gc.yml"
 }
