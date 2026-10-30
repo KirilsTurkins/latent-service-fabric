@@ -43,16 +43,18 @@ impl WaitQueue {
         self.count.get() == 0
     }
     pub(crate) fn prepare(&self, timeout: Option<Duration>) -> Wait<'_> {
-        // Wait/Timer admission may suspend. It precedes System allocation and
-        // all queue publication. Callers recheck their predicate after return.
-        let lease = WaitLease::admit(timeout);
-        let pointer = runtime::system_allocate(Node {
+        // Wait/Timer admission may suspend. A fixed node slot was reserved
+        // before admission; initialization and queue publication follow only
+        // after admission returns. Callers then recheck their predicate.
+        let mut lease = WaitLease::admit(timeout);
+        let token = lease.token();
+        let pointer = runtime::allocate_wait_node(&mut lease, Node {
             queue: self,
             next: Cell::new(ptr::null_mut()),
             linked: Cell::new(false),
             state: Cell::new(State::Waiting),
             index: runtime::current_index(),
-            token: lease.token(),
+            token,
         });
         let mut wait = Wait {
             queue: self,
@@ -182,12 +184,12 @@ impl Drop for Wait<'_> {
     fn drop(&mut self) {
         self.queue.unlink(self.pointer);
         let mut lease = self.lease.take().expect("one affine logical wait");
-        // Remove all runtime references before freeing the stable System node.
-        // Host Timer/Wait settlement may suspend, so it follows physical node
-        // removal. Pending native timer state retains its own original charge.
+        // Remove all runtime references before releasing the reserved fixed
+        // node. Host Timer/Wait settlement may suspend, so it follows physical
+        // node removal. Pending native timer state retains its own charge.
         runtime::unregister_wait(&mut lease, self.pointer);
         unsafe {
-            runtime::system_deallocate(self.pointer);
+            runtime::deallocate_wait_node(&mut lease, self.pointer);
         }
         drop(lease);
     }
