@@ -243,8 +243,11 @@ class ScratchQualification(unittest.TestCase):
         jobs = model['jobs']
         selector = model['on']['workflow_dispatch']['inputs']['qualify-scratch-refusals']
         self.assertEqual((selector['type'], selector['default']), ('boolean', False))
+        # Only the reviewed libfetch-only branch is excluded; the ordinary
+        # workflow-dispatch/replay condition and scratch dependency stay exact.
         self.assertEqual(jobs['runtime']['if'],
-            "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}")
+            "${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' "
+            "&& (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}")
         self.assertEqual(model['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']['type'], 'boolean')
         self.assertIs(model['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']['default'], False)
         self.assertEqual(jobs['standard-facilities']['timeout-minutes'], 25)

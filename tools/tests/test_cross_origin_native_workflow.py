@@ -35,6 +35,53 @@ class NativeCrossOriginWorkflow(unittest.TestCase):
         self.assertIn('--no-deps', strict)
         self.assertEqual(strict[-3:], ['--', '-D', 'warnings'])
 
+    def test_retained_green_run_binds_complete_native_receipts_and_cleanup(self):
+        import gzip
+        import hashlib
+        directory = ROOT / 'docs/testing/evidence'
+        name = 'cross-origin-native-2026-10-30.1817de8.json'
+        manifest = json.loads((directory / name).read_bytes())
+        self.assertEqual((manifest['runId'], manifest['jobId'], manifest['artifactId']),
+                         (41058876134, 124073873211, 12978249187))
+        self.assertEqual(manifest['headCommit'], '1817de81d59cfdd1811dab3b9ce0741de8f01b5b')
+        self.assertEqual(manifest['testedCommit'], '0e6fc761b8f6751a30e4d8a6301f75495db66315')
+        self.assertIs(manifest['workflowPassed'], True)
+        self.assertIs(manifest['qualificationPassed'], True)
+        receipts = {}
+        for source, record in manifest['receipts'].items():
+            packed = (directory / record['file']).read_bytes()
+            self.assertEqual(hashlib.sha256(packed).hexdigest(), record['gzipSha256'])
+            raw = gzip.decompress(packed)
+            self.assertEqual(len(raw), record['bytes'])
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), record['sha256'])
+            receipts[source] = json.loads(raw)
+        qualification, browser = receipts['qualification.json'], receipts['browser-network.json']
+        for receipt in (qualification, browser):
+            self.assertIs(receipt['passed'], True)
+            self.assertIs(receipt['nativeRuntimeQualified'], True)
+            self.assertIs(receipt['productionTlsQualified'], False)
+            self.assertIs(receipt['testIdentityOnly'], True)
+        self.assertEqual(tuple(phase['stage'] for phase in qualification['phases']), CAMPAIGN.STAGES)
+        self.assertTrue(all(phase['passed'] for phase in qualification['phases']))
+        self.assertEqual(qualification['networkReceiptSha256'],
+                         manifest['receipts']['browser-network.json']['sha256'])
+        self.assertEqual(qualification['browserCases'], len(browser['cases']))
+        self.assertEqual(len(browser['cases']), 19)
+        self.assertEqual((len(browser['observations']), len(browser['wireObservations'])), (73, 13))
+        self.assertEqual(len(qualification['shutdown']), 6)
+        for stop in qualification['shutdown']:
+            self.assertIs(stop['reaped'], True)
+            self.assertIs(stop['record']['clean'], True)
+            report = stop['record']['report']
+            self.assertEqual((report['activeActivations'], report['activeLeases']), (0, 0))
+            self.assertEqual(report['http']['assets']['activeReads'], 0)
+        self.assertEqual(browser['cleanup'], 'browser-and-caller-listener-closed')
+        self.assertEqual(qualification['cleanup'], 'owned-processes-closed-and-fixture-removed')
+        guide = (ROOT / 'docs/testing/cross-origin-static-assets.md').read_text()
+        self.assertIn(name, guide)
+        for record in manifest['receipts'].values():
+            self.assertIn(record['file'], guide)
+
     def test_complete_lifecycle_has_no_optional_or_skipped_stage(self):
         self.assertEqual(CAMPAIGN.STAGES, ('default', 'allowed', 'removed', 'restored',
             'new-ungranted', 'new-opted-in', 'expiring', 'expired', 'renewed', 'revoked', 'restart-revoked'))

@@ -47,7 +47,10 @@ def verify(repo: Path, paths: list[str]) -> list[dict]:
                 require(len(candidates) == 1, "unresolved-local-action-graph")
                 pending.extend(candidates)
                 continue
-            require(value in actions, "unreviewed-external-action-graph")
+            # Identify the offending source without echoing an untrusted action
+            # value. All policy/refusal checks remain mandatory.
+            require(value in actions,
+                    f"unreviewed-external-action-graph:{path}:{reference.line}")
             if value in seen_actions:
                 continue
             seen_actions.add(value)

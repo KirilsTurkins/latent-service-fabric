@@ -47,8 +47,11 @@ class ActionGraphTests(unittest.TestCase):
 
     def test_unreviewed_revision_fails(self):
         self.write(".github/workflows/ci.yml", "jobs:\n  test:\n    steps:\n      - uses: owner/action@" + "b" * 40 + "\n")
-        with self.assertRaisesRegex(SecurityError, "unreviewed-external"):
+        with self.assertRaisesRegex(SecurityError, "unreviewed-external") as failure:
             self.check()
+        self.assertEqual(str(failure.exception),
+                         "unreviewed-external-action-graph:.github/workflows/ci.yml:4")
+        self.assertNotIn("owner/action@", str(failure.exception))
 
     def test_changed_lock_bytes_fail(self):
         self.write(".github/security/actions/test/package-lock.json", '{"changed":true}\n')
@@ -68,8 +71,11 @@ class ActionGraphTests(unittest.TestCase):
     def test_composite_dependencies_are_checked_recursively(self):
         metadata = self.snapshot("action.yml", "runs:\n  using: composite\n  steps:\n    - uses: unknown/child@" + "c" * 40 + "\n")
         self.row.update(kind="composite", metadata=metadata, files=[metadata])
-        with self.assertRaisesRegex(SecurityError, "unreviewed-external"):
+        with self.assertRaisesRegex(SecurityError, "unreviewed-external") as failure:
             self.check()
+        self.assertEqual(str(failure.exception),
+                         "unreviewed-external-action-graph:.github/security/actions/test/action.yml:4")
+        self.assertNotIn("unknown/child@", str(failure.exception))
 
     def test_local_action_chain_is_checked(self):
         self.write(".github/workflows/ci.yml", "jobs:\n  test:\n    steps:\n      - uses: ./.github/actions/local\n")

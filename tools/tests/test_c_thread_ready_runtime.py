@@ -113,6 +113,22 @@ if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f
             b"        write_json(output / f'child-inventory-{process.authoring_activation}-{attempt}.json', inventory)\n")
         self.assertNotEqual(retained, original_node)
         current_node = (qualification.ROOT / node).read_text()
+        # libfetch is an additive, separately invoked programme. Project only
+        # its closed top-level suffix; the complete original threading prefix
+        # still has to match its historical source byte for byte below.
+        separator = "\n\nHTTP = "
+        self.assertEqual(current_node.count(separator), 1)
+        prefix, suffix = current_node.split(separator)
+        extension = ast.parse("HTTP = " + suffix)
+        self.assertEqual(
+            [(type(item).__name__, item.name if isinstance(item, ast.FunctionDef)
+              else ast.unparse(item.targets[0]) if isinstance(item, ast.Assign) else None)
+             for item in extension.body],
+            [('Assign', 'HTTP'), ('Assign', 'HTTP_OPS'),
+             ('FunctionDef', 'configure_http'), ('FunctionDef', 'install_http'),
+             ('FunctionDef', 'start_http_call'), ('FunctionDef', 'http_cell'),
+             ('FunctionDef', 'run_http')])
+        current_node = prefix + "\n"
         current_node = project_once(current_node,
             "            children = {'mixed': 2, 'pressure': 3, 'sync-pthread': 2, 'sync-mixed': 2}.get(mode, 1)\n"
             "            witness = fixture.observation(row['decoded'][0]['ok'], children,\n"

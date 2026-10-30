@@ -22,7 +22,17 @@ class CThreadMinimal(unittest.TestCase):
   with tempfile.TemporaryDirectory()as temp:
    a=original.prepare(Path(temp)/'original');b=selected.prepare(Path(temp)/'minimal')
    left,right=snapshot(a),snapshot(b)
-   self.assertEqual(set(left),set(right));self.assertEqual(len(left),65)
+   self.assertEqual(set(left),set(right))
+   # The shared SDK added seven captured libfetch inputs. Preserve the original
+   # 65-file envelope and compare every added input with its maintained source.
+   libfetch={'vendor/lsf/sdk/c-guest/'+name for name in (
+    'include/fetch.h','src/libfetch/UPSTREAM.json','src/libfetch/common.h',
+    'src/libfetch/fetch.c','src/libfetch/http.c',
+    'src/libfetch/upstream/common.h','src/libfetch/upstream/fetch.h')}
+   self.assertTrue(libfetch <= set(left))
+   self.assertEqual(len(set(left)-libfetch),65)
+   for name in sorted(libfetch):
+    self.assertEqual(left[name],(ROOT/name.removeprefix('vendor/lsf/')).read_bytes(),name)
    self.assertEqual([n for n in left if left[n]!=right[n]],['src/main.c'])
    self.assertEqual(read_json(a/'capsule-project.json'),read_json(b/'capsule-project.json'))
    self.assertIn(b'greet: async func',right['wit/world.wit'])

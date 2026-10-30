@@ -9,6 +9,26 @@ alpha.5, cloud, production certificate or end-user authentication claim.
 
 ## Recorded native result
 
+[Run 41058876134](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41058876134)
+completed **successfully**, including native Rust tests, the signed-publication
+Chromium campaign, maintained formatting and strict lint. It tested branch head
+`1817de81d59cfdd1811dab3b9ce0741de8f01b5b` with development
+`26966f822eaafcfad7749836e749b3ac25c5a9e8`, at clean synthetic merge
+`0e6fc761b8f6751a30e4d8a6301f75495db66315`.
+
+All **19 native Rust cases** and **19 browser cases across 11 lifecycle stages**
+passed again. The browser retained 73 network-service observations and 13 separate
+wire-client observations. All six node stops were clean and reaped. The
+[green-run manifest](evidence/cross-origin-native-2026-10-30.1817de8.json) binds the
+exact source, run, job and artifact to losslessly retained
+[qualification](evidence/cross-origin-native-2026-10-30.1817de8.qualification.json.gz)
+and [browser receipts](evidence/cross-origin-native-2026-10-30.1817de8.browser.json.gz).
+A regression checks their hashes, lifecycle completeness, authority limitations
+and cleanup. This is evidence for that exact revision, not a substitute for
+final-head checks on later changes or a claim that every repository CI job passed.
+
+### Earlier qualification and lint correction
+
 [Run 41038217752](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41038217752)
 on 30 October 2026 executed branch head
 `341e3e619f99862d611b1b8d2758987a1af01eee` merged with development
