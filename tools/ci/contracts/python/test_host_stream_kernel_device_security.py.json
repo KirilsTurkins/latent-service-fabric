@@ -1,114 +1,19 @@
-{
-  "cases": [
-    "KernelDeviceSecuritySource.test_changed_duplicate_unknown_and_crlf_preimages_refuse",
-    "KernelDeviceSecuritySource.test_device_cache_detach_keeps_original_application_cache_and_rcu_algorithms",
-    "KernelDeviceSecuritySource.test_fixed_originals_parent_and_uninstalled_claims",
-    "KernelDeviceSecuritySource.test_rehashed_members_or_enabled_qualification_claims_refuse",
-    "KernelDeviceSecuritySource.test_security_dispatch_keeps_real_default_active_order_and_unknown_refusal",
-    "KernelDeviceSecuritySource.test_selinux_permission_body_and_process_class_are_preserved",
-    "KernelDeviceSecuritySource.test_sigio_original_credential_namespace_rt_fallback_and_fasync_bodies_are_exact",
-    "KernelDeviceSecuritySource.test_socket_async_keeps_actual_flags_rcu_and_signal_selection"
-  ],
-  "guards": {
-    "KernelDeviceSecuritySource.test_changed_duplicate_unknown_and_crlf_preimages_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fffa103e09d2efeb0cd757bc383570255e762a49e5b1c2dcd2a7f14f3ebd67ef",
-        "class:setup-sha256:0b9fd9a2430387bcba07a54cbfb302268e5176e6d85fc0f2310e1bad9b103a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSecuritySource.test_device_cache_detach_keeps_original_application_cache_and_rcu_algorithms": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fffa103e09d2efeb0cd757bc383570255e762a49e5b1c2dcd2a7f14f3ebd67ef",
-        "class:setup-sha256:0b9fd9a2430387bcba07a54cbfb302268e5176e6d85fc0f2310e1bad9b103a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSecuritySource.test_fixed_originals_parent_and_uninstalled_claims": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fffa103e09d2efeb0cd757bc383570255e762a49e5b1c2dcd2a7f14f3ebd67ef",
-        "class:setup-sha256:0b9fd9a2430387bcba07a54cbfb302268e5176e6d85fc0f2310e1bad9b103a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSecuritySource.test_rehashed_members_or_enabled_qualification_claims_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fffa103e09d2efeb0cd757bc383570255e762a49e5b1c2dcd2a7f14f3ebd67ef",
-        "class:setup-sha256:0b9fd9a2430387bcba07a54cbfb302268e5176e6d85fc0f2310e1bad9b103a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSecuritySource.test_security_dispatch_keeps_real_default_active_order_and_unknown_refusal": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fffa103e09d2efeb0cd757bc383570255e762a49e5b1c2dcd2a7f14f3ebd67ef",
-        "class:setup-sha256:0b9fd9a2430387bcba07a54cbfb302268e5176e6d85fc0f2310e1bad9b103a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSecuritySource.test_selinux_permission_body_and_process_class_are_preserved": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fffa103e09d2efeb0cd757bc383570255e762a49e5b1c2dcd2a7f14f3ebd67ef",
-        "class:setup-sha256:0b9fd9a2430387bcba07a54cbfb302268e5176e6d85fc0f2310e1bad9b103a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSecuritySource.test_sigio_original_credential_namespace_rt_fallback_and_fasync_bodies_are_exact": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fffa103e09d2efeb0cd757bc383570255e762a49e5b1c2dcd2a7f14f3ebd67ef",
-        "class:setup-sha256:0b9fd9a2430387bcba07a54cbfb302268e5176e6d85fc0f2310e1bad9b103a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceSecuritySource.test_socket_async_keeps_actual_flags_rcu_and_signal_selection": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fffa103e09d2efeb0cd757bc383570255e762a49e5b1c2dcd2a7f14f3ebd67ef",
-        "class:setup-sha256:0b9fd9a2430387bcba07a54cbfb302268e5176e6d85fc0f2310e1bad9b103a33"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_device_security.py",
-  "reviewReason": "Reviewed grouped recipient signal and mandatory security source; one exclusive object-only lane retains every historical command, case, configuration and physical qualification boundary.",
-  "schemaVersion": "latent.ci.contracts.v1"
-}
+{"cases":["KernelDeviceSecuritySource.test_changed_duplicate_unknown_and_crlf_preimages_refuse","KernelDeviceSecuritySource.test_device_cache_detach_keeps_original_application_cache_and_rcu_algorithms","KernelDeviceSecuritySource.test_fixed_originals_parent_and_uninstalled_claims","KernelDeviceSecuritySource.test_rehashed_members_or_enabled_qualification_claims_refuse","KernelDeviceSecuritySource.test_security_dispatch_keeps_real_default_active_order_and_unknown_refusal","KernelDeviceSecuritySource.test_selinux_permission_body_and_process_class_are_preserved","KernelDeviceSecuritySource.test_sigio_original_credential_namespace_rt_fallback_and_fasync_bodies_are_exact","KernelDeviceSecuritySource.test_socket_async_keeps_actual_flags_rcu_and_signal_selection"],"guards":{"KernelDeviceSecuritySource.test_changed_duplicate_unknown_and_crlf_preimages_refuse":
+  "73d0a4c4eaba5e3b94cafa964c9d3f9915489ab42197a235656bc552cf4a3560"
+,"KernelDeviceSecuritySource.test_device_cache_detach_keeps_original_application_cache_and_rcu_algorithms":
+  "73d0a4c4eaba5e3b94cafa964c9d3f9915489ab42197a235656bc552cf4a3560"
+,"KernelDeviceSecuritySource.test_fixed_originals_parent_and_uninstalled_claims":
+  "73d0a4c4eaba5e3b94cafa964c9d3f9915489ab42197a235656bc552cf4a3560"
+,"KernelDeviceSecuritySource.test_rehashed_members_or_enabled_qualification_claims_refuse":
+  "73d0a4c4eaba5e3b94cafa964c9d3f9915489ab42197a235656bc552cf4a3560"
+,"KernelDeviceSecuritySource.test_security_dispatch_keeps_real_default_active_order_and_unknown_refusal":
+  "73d0a4c4eaba5e3b94cafa964c9d3f9915489ab42197a235656bc552cf4a3560"
+,"KernelDeviceSecuritySource.test_selinux_permission_body_and_process_class_are_preserved":
+  "73d0a4c4eaba5e3b94cafa964c9d3f9915489ab42197a235656bc552cf4a3560"
+,"KernelDeviceSecuritySource.test_sigio_original_credential_namespace_rt_fallback_and_fasync_bodies_are_exact":
+  "73d0a4c4eaba5e3b94cafa964c9d3f9915489ab42197a235656bc552cf4a3560"
+,"KernelDeviceSecuritySource.test_socket_async_keeps_actual_flags_rcu_and_signal_selection":
+  "73d0a4c4eaba5e3b94cafa964c9d3f9915489ab42197a235656bc552cf4a3560"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_device_security.py","reviewReason":"Reviewed grouped recipient signal and mandatory security source; one exclusive object-only lane retains every historical command, case, configuration and physical qualification boundary.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "73d0a4c4eaba5e3b94cafa964c9d3f9915489ab42197a235656bc552cf4a3560"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:fffa103e09d2efeb0cd757bc383570255e762a49e5b1c2dcd2a7f14f3ebd67ef","class:setup-sha256:0b9fd9a2430387bcba07a54cbfb302268e5176e6d85fc0f2310e1bad9b103a33"],"skipSites":[]}}}

@@ -1,203 +1,203 @@
 {
-  "schemaVersion": "lsf.kernel-maintained-netlabel-preimages.v1",
-  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
-  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
-  "source": {
-    "fs/inode.c": {
-      "bytes": 75338,
-      "sha256": "73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
-      "gitBlob": "7942673f686fdc24d92c2fb8033c2fb3b6df7709",
-      "independentlyGitCorroborated": true
-    },
-    "include/net/netlabel.h": {
-      "bytes": 21017,
-      "sha256": "82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
-      "gitBlob": "529160f76cac209ee7473ea7b5ccd49da0789f18",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/sock.h": {
-      "bytes": 85865,
-      "sha256": "5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
-      "gitBlob": "efa549885b7f85e50c55f95ad4eae0c1ef75797a",
-      "independentlyGitCorroborated": true
-    },
-    "net/core/sock.c": {
-      "bytes": 111636,
-      "sha256": "f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
-      "gitBlob": "75db38fdfd35fe87b87ac2755b0ef1db6fb96415",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/af_inet.c": {
-      "bytes": 51938,
-      "sha256": "9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
-      "gitBlob": "c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/cipso_ipv4.c": {
-      "bytes": 63739,
-      "sha256": "03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
-      "gitBlob": "53fcb2089cde2a246c0b84d31582485b2496da64",
-      "independentlyGitCorroborated": false
-    },
-    "net/netlabel/netlabel_kapi.c": {
-      "bytes": 38938,
-      "sha256": "d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
-      "gitBlob": "33b77084a4e5f34770f960d7c82e481d9889753a",
-      "independentlyGitCorroborated": false
-    },
-    "net/socket.c": {
-      "bytes": 92491,
-      "sha256": "95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
-      "gitBlob": "723bc3a1ba5cdd17f559a65de73d9c87911e6954",
-      "independentlyGitCorroborated": true
-    },
-    "security/security.c": {
-      "bytes": 180030,
-      "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
-      "gitBlob": "b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
-      "independentlyGitCorroborated": true
-    },
-    "security/selinux/netlabel.c": {
-      "bytes": 16481,
-      "sha256": "972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
-      "gitBlob": "d51dfe89231229e78903f3aa552286326524dca2",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/ss/ebitmap.c": {
-      "bytes": 12211,
-      "sha256": "69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
-      "gitBlob": "cd84357db2c47a034bb3601eeaaa8806dbf0f7af",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/ss/mls.c": {
-      "bytes": 16094,
-      "sha256": "349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
-      "gitBlob": "a6e49269f5351df096da8c9fb56103a2f7b0ee9d",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/ss/services.c": {
-      "bytes": 97756,
-      "sha256": "0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
-      "gitBlob": "54d121d64804295c8ae1f40103957f6a3b671640",
-      "independentlyGitCorroborated": true
-    }
-  },
-  "sections": {
-    "selinux_netlbl_sock_genattr": {
-      "source": "security/selinux/netlabel.c",
-      "prefix": "static struct netlbl_lsm_secattr *selinux_netlbl_sock_genattr(",
-      "sha256": "1c5ed70fb92a6e4922fcf65c3038766c80b161aa4f9404f07cbc868f82a7b09b",
-      "text": "static struct netlbl_lsm_secattr *selinux_netlbl_sock_genattr(struct sock *sk)\n{\n\tint rc;\n\tstruct sk_security_struct *sksec = selinux_sock(sk);\n\tstruct netlbl_lsm_secattr *secattr;\n\n\tif (sksec->nlbl_secattr != NULL)\n\t\treturn sksec->nlbl_secattr;\n\n\tsecattr = netlbl_secattr_alloc(GFP_ATOMIC);\n\tif (secattr == NULL)\n\t\treturn ERR_PTR(-ENOMEM);\n\n\trc = security_netlbl_sid_to_secattr(sksec->sid, secattr);\n\tif (rc != 0) {\n\t\tnetlbl_secattr_free(secattr);\n\t\treturn ERR_PTR(rc);\n\t}\n\tsksec->nlbl_secattr = secattr;\n\n\treturn secattr;\n}\n",
-      "allocationClosureProven": false
-    },
-    "selinux_netlbl_socket_post_create": {
-      "source": "security/selinux/netlabel.c",
-      "prefix": "int selinux_netlbl_socket_post_create(",
-      "sha256": "be3c4552e9b77f5146824f97348ec763404dd9a552207899487b730322e41ec5",
-      "text": "int selinux_netlbl_socket_post_create(struct sock *sk, u16 family)\n{\n\tint rc;\n\tstruct sk_security_struct *sksec = selinux_sock(sk);\n\tstruct netlbl_lsm_secattr *secattr;\n\n\tif (family != PF_INET && family != PF_INET6)\n\t\treturn 0;\n\n\tsecattr = selinux_netlbl_sock_genattr(sk);\n\tif (IS_ERR(secattr))\n\t\treturn PTR_ERR(secattr);\n\t/* On socket creation, replacement of IP options is safe even if\n\t * the caller does not hold the socket lock.\n\t */\n\trc = netlbl_sock_setattr(sk, family, secattr, true);\n\tswitch (rc) {\n\tcase 0:\n\t\tsksec->nlbl_state = NLBL_LABELED;\n\t\tbreak;\n\tcase -EDESTADDRREQ:\n\t\tsksec->nlbl_state = NLBL_REQSKB;\n\t\trc = 0;\n\t\tbreak;\n\t}\n\n\treturn rc;\n}\n",
-      "allocationClosureProven": false
-    },
-    "selinux_netlbl_socket_connect_helper": {
-      "source": "security/selinux/netlabel.c",
-      "prefix": "static int selinux_netlbl_socket_connect_helper(",
-      "sha256": "7fe5adc8961a2bff18276b32bac9a1825f8c98bebcbe229a2227903527ff1945",
-      "text": "static int selinux_netlbl_socket_connect_helper(struct sock *sk,\n\t\t\t\t\t\tstruct sockaddr *addr)\n{\n\tint rc;\n\tstruct sk_security_struct *sksec = selinux_sock(sk);\n\tstruct netlbl_lsm_secattr *secattr;\n\n\t/* connected sockets are allowed to disconnect when the address family\n\t * is set to AF_UNSPEC, if that is what is happening we want to reset\n\t * the socket */\n\tif (addr->sa_family == AF_UNSPEC) {\n\t\tnetlbl_sock_delattr(sk);\n\t\tsksec->nlbl_state = NLBL_REQSKB;\n\t\trc = 0;\n\t\treturn rc;\n\t}\n\tsecattr = selinux_netlbl_sock_genattr(sk);\n\tif (IS_ERR(secattr))\n\t\treturn PTR_ERR(secattr);\n\n\trc = netlbl_conn_setattr(sk, addr, secattr);\n\tif (rc == 0)\n\t\tsksec->nlbl_state = NLBL_CONNLABELED;\n\n\treturn rc;\n}\n",
-      "allocationClosureProven": false
-    },
-    "security_netlbl_sid_to_secattr": {
-      "source": "security/selinux/ss/services.c",
-      "prefix": "int security_netlbl_sid_to_secattr(",
-      "sha256": "9514b235e77382fa9ea47f1875acce45e3ee096064db2713688775faa62af2cc",
-      "text": "int security_netlbl_sid_to_secattr(u32 sid, struct netlbl_lsm_secattr *secattr)\n{\n\tstruct selinux_policy *policy;\n\tstruct policydb *policydb;\n\tint rc;\n\tstruct context *ctx;\n\n\tif (!selinux_initialized())\n\t\treturn 0;\n\n\trcu_read_lock();\n\tpolicy = rcu_dereference(selinux_state.policy);\n\tpolicydb = &policy->policydb;\n\n\trc = -ENOENT;\n\tctx = sidtab_search(policy->sidtab, sid);\n\tif (ctx == NULL)\n\t\tgoto out;\n\n\trc = -ENOMEM;\n\tsecattr->domain = kstrdup(sym_name(policydb, SYM_TYPES, ctx->type - 1),\n\t\t\t\t  GFP_ATOMIC);\n\tif (secattr->domain == NULL)\n\t\tgoto out;\n\n\tsecattr->attr.secid = sid;\n\tsecattr->flags |= NETLBL_SECATTR_DOMAIN_CPY | NETLBL_SECATTR_SECID;\n\tmls_export_netlbl_lvl(policydb, ctx, secattr);\n\trc = mls_export_netlbl_cat(policydb, ctx, secattr);\nout:\n\trcu_read_unlock();\n\treturn rc;\n}\n",
-      "allocationClosureProven": false
-    },
-    "mls_export_netlbl_cat": {
-      "source": "security/selinux/ss/mls.c",
-      "prefix": "int mls_export_netlbl_cat(",
-      "sha256": "f608aec5226d5eac1d5ebe75151a7302de79a4cb8948e7f2080cb9a6014002d2",
-      "text": "int mls_export_netlbl_cat(struct policydb *p, struct context *context,\n\t\t\t  struct netlbl_lsm_secattr *secattr)\n{\n\tint rc;\n\n\tif (!p->mls_enabled)\n\t\treturn 0;\n\n\trc = ebitmap_netlbl_export(&context->range.level[0].cat,\n\t\t\t\t   &secattr->attr.mls.cat);\n\tif (rc == 0 && secattr->attr.mls.cat != NULL)\n\t\tsecattr->flags |= NETLBL_SECATTR_MLS_CAT;\n\n\treturn rc;\n}\n",
-      "allocationClosureProven": false
-    },
-    "ebitmap_netlbl_export": {
-      "source": "security/selinux/ss/ebitmap.c",
-      "prefix": "int ebitmap_netlbl_export(",
-      "sha256": "d7dec7331f47c969fd768464d87797c12e86c570ac72b5a304aa7b81be3c2e03",
-      "text": "int ebitmap_netlbl_export(struct ebitmap *ebmap,\n\t\t\t  struct netlbl_lsm_catmap **catmap)\n{\n\tstruct ebitmap_node *e_iter = ebmap->node;\n\tunsigned long e_map;\n\tu32 offset;\n\tunsigned int iter;\n\tint rc;\n\n\tif (e_iter == NULL) {\n\t\t*catmap = NULL;\n\t\treturn 0;\n\t}\n\n\tif (*catmap != NULL)\n\t\tnetlbl_catmap_free(*catmap);\n\t*catmap = NULL;\n\n\twhile (e_iter) {\n\t\toffset = e_iter->startbit;\n\t\tfor (iter = 0; iter < EBITMAP_UNIT_NUMS; iter++) {\n\t\t\te_map = e_iter->maps[iter];\n\t\t\tif (e_map != 0) {\n\t\t\t\trc = netlbl_catmap_setlong(catmap, offset,\n\t\t\t\t\t\t\t   e_map, GFP_ATOMIC);\n\t\t\t\tif (rc != 0)\n\t\t\t\t\tgoto netlbl_export_failure;\n\t\t\t}\n\t\t\toffset += EBITMAP_UNIT_SIZE;\n\t\t}\n\t\te_iter = e_iter->next;\n\t}\n\n\treturn 0;\n\nnetlbl_export_failure:\n\tnetlbl_catmap_free(*catmap);\n\treturn -ENOMEM;\n}\n",
-      "allocationClosureProven": false
-    },
-    "_netlbl_catmap_getnode": {
-      "source": "net/netlabel/netlabel_kapi.c",
-      "prefix": "static struct netlbl_lsm_catmap *_netlbl_catmap_getnode(",
-      "sha256": "56efdaba37f95db5293d3b9da03996ddb9a998754c2674440a16583871259560",
-      "text": "static struct netlbl_lsm_catmap *_netlbl_catmap_getnode(\n\t\t\t\t\t     struct netlbl_lsm_catmap **catmap,\n\t\t\t\t\t     u32 offset,\n\t\t\t\t\t     unsigned int cm_flags,\n\t\t\t\t\t     gfp_t gfp_flags)\n{\n\tstruct netlbl_lsm_catmap *iter = *catmap;\n\tstruct netlbl_lsm_catmap *prev = NULL;\n\n\tif (iter == NULL)\n\t\tgoto catmap_getnode_alloc;\n\tif (offset < iter->startbit)\n\t\tgoto catmap_getnode_walk;\n\twhile (iter && offset >= (iter->startbit + NETLBL_CATMAP_SIZE)) {\n\t\tprev = iter;\n\t\titer = iter->next;\n\t}\n\tif (iter == NULL || offset < iter->startbit)\n\t\tgoto catmap_getnode_walk;\n\n\treturn iter;\n\ncatmap_getnode_walk:\n\tif (cm_flags & _CM_F_WALK)\n\t\treturn iter;\ncatmap_getnode_alloc:\n\tif (!(cm_flags & _CM_F_ALLOC))\n\t\treturn NULL;\n\n\titer = netlbl_catmap_alloc(gfp_flags);\n\tif (iter == NULL)\n\t\treturn NULL;\n\titer->startbit = offset & ~(NETLBL_CATMAP_SIZE - 1);\n\n\tif (prev == NULL) {\n\t\titer->next = *catmap;\n\t\t*catmap = iter;\n\t} else {\n\t\titer->next = prev->next;\n\t\tprev->next = iter;\n\t}\n\n\treturn iter;\n}\n",
-      "allocationClosureProven": false
-    },
-    "netlbl_catmap_setlong": {
-      "source": "net/netlabel/netlabel_kapi.c",
-      "prefix": "int netlbl_catmap_setlong(",
-      "sha256": "9d586966fde29a7079b809e1571f586de2128a013e96ffc6c0d925f41e0cc931",
-      "text": "int netlbl_catmap_setlong(struct netlbl_lsm_catmap **catmap,\n\t\t\t  u32 offset,\n\t\t\t  unsigned long bitmap,\n\t\t\t  gfp_t flags)\n{\n\tstruct netlbl_lsm_catmap *iter;\n\tu32 idx;\n\n\t/* only allow aligned offsets */\n\tif ((offset & (BITS_PER_LONG - 1)) != 0)\n\t\treturn -EINVAL;\n\n\titer = _netlbl_catmap_getnode(catmap, offset, _CM_F_ALLOC, flags);\n\tif (iter == NULL)\n\t\treturn -ENOMEM;\n\n\toffset -= iter->startbit;\n\tidx = offset / NETLBL_CATMAP_MAPSIZE;\n\titer->bitmap[idx] |= (u64)bitmap\n\t\t\t     << (offset % NETLBL_CATMAP_MAPSIZE);\n\n\treturn 0;\n}\n",
-      "allocationClosureProven": false
-    },
-    "netlbl_sock_setattr": {
-      "source": "net/netlabel/netlabel_kapi.c",
-      "prefix": "int netlbl_sock_setattr(",
-      "sha256": "455d3c408be09e1930a6ab96a87669b50416c18afa7dc7ea98b69e323de1a01d",
-      "text": "int netlbl_sock_setattr(struct sock *sk,\n\t\t\tu16 family,\n\t\t\tconst struct netlbl_lsm_secattr *secattr,\n\t\t\tbool sk_locked)\n{\n\tint ret_val;\n\tstruct netlbl_dom_map *dom_entry;\n\n\trcu_read_lock();\n\tdom_entry = netlbl_domhsh_getentry(secattr->domain, family);\n\tif (dom_entry == NULL) {\n\t\tret_val = -ENOENT;\n\t\tgoto socket_setattr_return;\n\t}\n\tswitch (family) {\n\tcase AF_INET:\n\t\tswitch (dom_entry->def.type) {\n\t\tcase NETLBL_NLTYPE_ADDRSELECT:\n\t\t\tret_val = -EDESTADDRREQ;\n\t\t\tbreak;\n\t\tcase NETLBL_NLTYPE_CIPSOV4:\n\t\t\tret_val = cipso_v4_sock_setattr(sk,\n\t\t\t\t\t\t\tdom_entry->def.cipso,\n\t\t\t\t\t\t\tsecattr, sk_locked);\n\t\t\tbreak;\n\t\tcase NETLBL_NLTYPE_UNLABELED:\n\t\t\tret_val = 0;\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tret_val = -ENOENT;\n\t\t}\n\t\tbreak;\n#if IS_ENABLED(CONFIG_IPV6)\n\tcase AF_INET6:\n\t\tswitch (dom_entry->def.type) {\n\t\tcase NETLBL_NLTYPE_ADDRSELECT:\n\t\t\tret_val = -EDESTADDRREQ;\n\t\t\tbreak;\n\t\tcase NETLBL_NLTYPE_CALIPSO:\n\t\t\tret_val = calipso_sock_setattr(sk,\n\t\t\t\t\t\t       dom_entry->def.calipso,\n\t\t\t\t\t\t       secattr);\n\t\t\tbreak;\n\t\tcase NETLBL_NLTYPE_UNLABELED:\n\t\t\tret_val = 0;\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tret_val = -ENOENT;\n\t\t}\n\t\tbreak;\n#endif /* IPv6 */\n\tdefault:\n\t\tret_val = -EPROTONOSUPPORT;\n\t}\n\nsocket_setattr_return:\n\trcu_read_unlock();\n\treturn ret_val;\n}\n",
-      "allocationClosureProven": false
-    },
-    "netlbl_conn_setattr": {
-      "source": "net/netlabel/netlabel_kapi.c",
-      "prefix": "int netlbl_conn_setattr(",
-      "sha256": "a9eb07828864348315e4c328d40c9f38b202ba7929b7464b009e4341b68f612e",
-      "text": "int netlbl_conn_setattr(struct sock *sk,\n\t\t\tstruct sockaddr *addr,\n\t\t\tconst struct netlbl_lsm_secattr *secattr)\n{\n\tint ret_val;\n\tstruct sockaddr_in *addr4;\n#if IS_ENABLED(CONFIG_IPV6)\n\tstruct sockaddr_in6 *addr6;\n#endif\n\tstruct netlbl_dommap_def *entry;\n\n\trcu_read_lock();\n\tswitch (addr->sa_family) {\n\tcase AF_INET:\n\t\taddr4 = (struct sockaddr_in *)addr;\n\t\tentry = netlbl_domhsh_getentry_af4(secattr->domain,\n\t\t\t\t\t\t   addr4->sin_addr.s_addr);\n\t\tif (entry == NULL) {\n\t\t\tret_val = -ENOENT;\n\t\t\tgoto conn_setattr_return;\n\t\t}\n\t\tswitch (entry->type) {\n\t\tcase NETLBL_NLTYPE_CIPSOV4:\n\t\t\tret_val = cipso_v4_sock_setattr(sk,\n\t\t\t\t\t\t\tentry->cipso, secattr,\n\t\t\t\t\t\t\tnetlbl_sk_lock_check(sk));\n\t\t\tbreak;\n\t\tcase NETLBL_NLTYPE_UNLABELED:\n\t\t\t/* just delete the protocols we support for right now\n\t\t\t * but we could remove other protocols if needed */\n\t\t\tnetlbl_sock_delattr(sk);\n\t\t\tret_val = 0;\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tret_val = -ENOENT;\n\t\t}\n\t\tbreak;\n#if IS_ENABLED(CONFIG_IPV6)\n\tcase AF_INET6:\n\t\tif (sk->sk_family != AF_INET6) {\n\t\t\tret_val = -EAFNOSUPPORT;\n\t\t\tgoto conn_setattr_return;\n\t\t}\n\n\t\taddr6 = (struct sockaddr_in6 *)addr;\n\t\tentry = netlbl_domhsh_getentry_af6(secattr->domain,\n\t\t\t\t\t\t   &addr6->sin6_addr);\n\t\tif (entry == NULL) {\n\t\t\tret_val = -ENOENT;\n\t\t\tgoto conn_setattr_return;\n\t\t}\n\t\tswitch (entry->type) {\n\t\tcase NETLBL_NLTYPE_CALIPSO:\n\t\t\tret_val = calipso_sock_setattr(sk,\n\t\t\t\t\t\t       entry->calipso, secattr);\n\t\t\tbreak;\n\t\tcase NETLBL_NLTYPE_UNLABELED:\n\t\t\t/* just delete the protocols we support for right now\n\t\t\t * but we could remove other protocols if needed */\n\t\t\tnetlbl_sock_delattr(sk);\n\t\t\tret_val = 0;\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tret_val = -ENOENT;\n\t\t}\n\t\tbreak;\n#endif /* IPv6 */\n\tdefault:\n\t\tret_val = -EPROTONOSUPPORT;\n\t}\n\nconn_setattr_return:\n\trcu_read_unlock();\n\treturn ret_val;\n}\n",
-      "allocationClosureProven": false
-    },
-    "netlbl_catmap_free": {
-      "source": "include/net/netlabel.h",
-      "prefix": "static inline void netlbl_catmap_free(",
-      "sha256": "a1462024a04c6ebc3eeaf1f3ffabafde118de579a6c0d53bbd0677dc5b4161f1",
-      "text": "static inline void netlbl_catmap_free(struct netlbl_lsm_catmap *catmap)\n{\n\tstruct netlbl_lsm_catmap *iter;\n\n\twhile (catmap) {\n\t\titer = catmap;\n\t\tcatmap = catmap->next;\n\t\tkfree(iter);\n\t}\n}\n",
-      "allocationClosureProven": false
-    },
-    "netlbl_secattr_destroy": {
-      "source": "include/net/netlabel.h",
-      "prefix": "static inline void netlbl_secattr_destroy(",
-      "sha256": "6d94a81c3ff1e1abb35ce54ea04a0835aab6015bc4c76c8b28e0a1861e4f8dcf",
-      "text": "static inline void netlbl_secattr_destroy(struct netlbl_lsm_secattr *secattr)\n{\n\tif (secattr->flags & NETLBL_SECATTR_FREE_DOMAIN)\n\t\tkfree(secattr->domain);\n\tif (secattr->flags & NETLBL_SECATTR_CACHE)\n\t\tnetlbl_secattr_cache_free(secattr->cache);\n\tif (secattr->flags & NETLBL_SECATTR_MLS_CAT)\n\t\tnetlbl_catmap_free(secattr->attr.mls.cat);\n}\n",
-      "allocationClosureProven": false
-    },
-    "netlbl_secattr_free": {
-      "source": "include/net/netlabel.h",
-      "prefix": "static inline void netlbl_secattr_free(",
-      "sha256": "40e1c16c724885aba918ac372e1cb38d56a41c97acf01e47dd57e5b432514956",
-      "text": "static inline void netlbl_secattr_free(struct netlbl_lsm_secattr *secattr)\n{\n\tnetlbl_secattr_destroy(secattr);\n\tkfree(secattr);\n}\n",
-      "allocationClosureProven": false
-    },
-    "cipso_v4_sock_setattr": {
-      "source": "net/ipv4/cipso_ipv4.c",
-      "prefix": "int cipso_v4_sock_setattr(",
-      "sha256": "9eeb6f43c347a9bbc41ff32e48a36c1ad47c5915562cb07ce50d2cfe69e4545f",
-      "text": "int cipso_v4_sock_setattr(struct sock *sk,\n\t\t\t  const struct cipso_v4_doi *doi_def,\n\t\t\t  const struct netlbl_lsm_secattr *secattr,\n\t\t\t  bool sk_locked)\n{\n\tint ret_val = -EPERM;\n\tunsigned char *buf = NULL;\n\tu32 buf_len;\n\tu32 opt_len;\n\tstruct ip_options_rcu *old, *opt = NULL;\n\tstruct inet_sock *sk_inet;\n\tstruct inet_connection_sock *sk_conn;\n\n\t/* In the case of sock_create_lite(), the sock->sk field is not\n\t * defined yet but it is not a problem as the only users of these\n\t * \"lite\" PF_INET sockets are functions which do an accept() call\n\t * afterwards so we will label the socket as part of the accept(). */\n\tif (!sk)\n\t\treturn 0;\n\n\t/* We allocate the maximum CIPSO option size here so we are probably\n\t * being a little wasteful, but it makes our life _much_ easier later\n\t * on and after all we are only talking about 40 bytes. */\n\tbuf_len = CIPSO_V4_OPT_LEN_MAX;\n\tbuf = kmalloc(buf_len, GFP_ATOMIC);\n\tif (!buf) {\n\t\tret_val = -ENOMEM;\n\t\tgoto socket_setattr_failure;\n\t}\n\n\tret_val = cipso_v4_genopt(buf, buf_len, doi_def, secattr);\n\tif (ret_val < 0)\n\t\tgoto socket_setattr_failure;\n\tbuf_len = ret_val;\n\n\t/* We can't use ip_options_get() directly because it makes a call to\n\t * ip_options_get_alloc() which allocates memory with GFP_KERNEL and\n\t * we won't always have CAP_NET_RAW even though we _always_ want to\n\t * set the IPOPT_CIPSO option. */\n\topt_len = (buf_len + 3) & ~3;\n\topt = kzalloc(sizeof(*opt) + opt_len, GFP_ATOMIC);\n\tif (!opt) {\n\t\tret_val = -ENOMEM;\n\t\tgoto socket_setattr_failure;\n\t}\n\tmemcpy(opt->opt.__data, buf, buf_len);\n\topt->opt.optlen = opt_len;\n\topt->opt.cipso = sizeof(struct iphdr);\n\tkfree(buf);\n\tbuf = NULL;\n\n\tsk_inet = inet_sk(sk);\n\n\told = rcu_dereference_protected(sk_inet->inet_opt, sk_locked);\n\tif (inet_test_bit(IS_ICSK, sk)) {\n\t\tsk_conn = inet_csk(sk);\n\t\tif (old)\n\t\t\tsk_conn->icsk_ext_hdr_len -= old->opt.optlen;\n\t\tsk_conn->icsk_ext_hdr_len += opt->opt.optlen;\n\t\tsk_conn->icsk_sync_mss(sk, sk_conn->icsk_pmtu_cookie);\n\t}\n\trcu_assign_pointer(sk_inet->inet_opt, opt);\n\tif (old)\n\t\tkfree_rcu(old, rcu);\n\n\treturn 0;\n\nsocket_setattr_failure:\n\tkfree(buf);\n\tkfree(opt);\n\treturn ret_val;\n}\n",
-      "allocationClosureProven": false
-    },
-    "cipso_v4_delopt": {
-      "source": "net/ipv4/cipso_ipv4.c",
-      "prefix": "static int cipso_v4_delopt(",
-      "sha256": "4eb6b794b79355cc7d6f1ed0a3df2bde4a590d33a0a2c698a7a0697b41f57627",
-      "text": "static int cipso_v4_delopt(struct ip_options_rcu __rcu **opt_ptr)\n{\n\tstruct ip_options_rcu *opt = rcu_dereference_protected(*opt_ptr, 1);\n\tint hdr_delta = 0;\n\n\tif (!opt || opt->opt.cipso == 0)\n\t\treturn 0;\n\tif (opt->opt.srr || opt->opt.rr || opt->opt.ts || opt->opt.router_alert) {\n\t\tu8 cipso_len;\n\t\tu8 cipso_off;\n\t\tunsigned char *cipso_ptr;\n\t\tint optlen_new;\n\n\t\tcipso_off = opt->opt.cipso - sizeof(struct iphdr);\n\t\tcipso_ptr = &opt->opt.__data[cipso_off];\n\t\tcipso_len = cipso_ptr[1];\n\n\t\tif (opt->opt.srr > opt->opt.cipso)\n\t\t\topt->opt.srr -= cipso_len;\n\t\tif (opt->opt.rr > opt->opt.cipso)\n\t\t\topt->opt.rr -= cipso_len;\n\t\tif (opt->opt.ts > opt->opt.cipso)\n\t\t\topt->opt.ts -= cipso_len;\n\t\tif (opt->opt.router_alert > opt->opt.cipso)\n\t\t\topt->opt.router_alert -= cipso_len;\n\t\topt->opt.cipso = 0;\n\n\t\tmemmove(cipso_ptr, cipso_ptr + cipso_len,\n\t\t\topt->opt.optlen - cipso_off - cipso_len);\n\n\t\toptlen_new = cipso_v4_get_actual_opt_len(opt->opt.__data,\n\t\t\t\t\t\t\t opt->opt.optlen);\n\t\thdr_delta = opt->opt.optlen;\n\t\topt->opt.optlen = (optlen_new + 3) & ~3;\n\t\thdr_delta -= opt->opt.optlen;\n\t} else {\n\t\t/* only the cipso option was present on the socket so we can\n\t\t * remove the entire option struct */\n\t\t*opt_ptr = NULL;\n\t\thdr_delta = opt->opt.optlen;\n\t\tkfree_rcu(opt, rcu);\n\t}\n\n\treturn hdr_delta;\n}\n",
-      "allocationClosureProven": false
-    },
-    "inet_sock_destruct": {
-      "source": "net/ipv4/af_inet.c",
-      "prefix": "void inet_sock_destruct(",
-      "sha256": "310e135a21513de6ed918f1f6cd56eaffabcb22273e98ba19057ddc970a3575d",
-      "text": "void inet_sock_destruct(struct sock *sk)\n{\n\tstruct inet_sock *inet = inet_sk(sk);\n\n\t__skb_queue_purge(&sk->sk_receive_queue);\n\t__skb_queue_purge(&sk->sk_error_queue);\n\n\tsk_mem_reclaim_final(sk);\n\n\tif (sk->sk_type == SOCK_STREAM && sk->sk_state != TCP_CLOSE) {\n\t\tpr_err(\"Attempt to release TCP socket in state %d %p\\n\",\n\t\t       sk->sk_state, sk);\n\t\treturn;\n\t}\n\tif (!sock_flag(sk, SOCK_DEAD)) {\n\t\tpr_err(\"Attempt to release alive inet socket %p\\n\", sk);\n\t\treturn;\n\t}\n\n\tWARN_ON_ONCE(atomic_read(&sk->sk_rmem_alloc));\n\tWARN_ON_ONCE(refcount_read(&sk->sk_wmem_alloc));\n\tWARN_ON_ONCE(sk->sk_wmem_queued);\n\tWARN_ON_ONCE(sk_forward_alloc_get(sk));\n\n\tkfree_rcu(rcu_dereference_protected(inet->inet_opt, 1), rcu);\n\tdst_release(rcu_dereference_protected(sk->sk_dst_cache, 1));\n\tdst_release(rcu_dereference_protected(sk->sk_rx_dst, 1));\n}\n",
-      "allocationClosureProven": false
-    }
-  },
-  "kernelBuilt": false,
-  "actualLsmExecuted": false,
-  "completeAllocationClosure": false,
-  "productionInstallation": false
+"schemaVersion":"lsf.kernel-maintained-netlabel-preimages.v1",
+"upstreamCommit":"7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+"archiveSha256":"e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+"source":{
+"fs/inode.c":{
+"bytes":75338,
+"sha256":"73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
+"gitBlob":"7942673f686fdc24d92c2fb8033c2fb3b6df7709",
+"independentlyGitCorroborated":true
+},
+"include/net/netlabel.h":{
+"bytes":21017,
+"sha256":"82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
+"gitBlob":"529160f76cac209ee7473ea7b5ccd49da0789f18",
+"independentlyGitCorroborated":false
+},
+"include/net/sock.h":{
+"bytes":85865,
+"sha256":"5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
+"gitBlob":"efa549885b7f85e50c55f95ad4eae0c1ef75797a",
+"independentlyGitCorroborated":true
+},
+"net/core/sock.c":{
+"bytes":111636,
+"sha256":"f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
+"gitBlob":"75db38fdfd35fe87b87ac2755b0ef1db6fb96415",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/af_inet.c":{
+"bytes":51938,
+"sha256":"9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
+"gitBlob":"c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/cipso_ipv4.c":{
+"bytes":63739,
+"sha256":"03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
+"gitBlob":"53fcb2089cde2a246c0b84d31582485b2496da64",
+"independentlyGitCorroborated":false
+},
+"net/netlabel/netlabel_kapi.c":{
+"bytes":38938,
+"sha256":"d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
+"gitBlob":"33b77084a4e5f34770f960d7c82e481d9889753a",
+"independentlyGitCorroborated":false
+},
+"net/socket.c":{
+"bytes":92491,
+"sha256":"95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
+"gitBlob":"723bc3a1ba5cdd17f559a65de73d9c87911e6954",
+"independentlyGitCorroborated":true
+},
+"security/security.c":{
+"bytes":180030,
+"sha256":"b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
+"gitBlob":"b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
+"independentlyGitCorroborated":true
+},
+"security/selinux/netlabel.c":{
+"bytes":16481,
+"sha256":"972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
+"gitBlob":"d51dfe89231229e78903f3aa552286326524dca2",
+"independentlyGitCorroborated":false
+},
+"security/selinux/ss/ebitmap.c":{
+"bytes":12211,
+"sha256":"69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
+"gitBlob":"cd84357db2c47a034bb3601eeaaa8806dbf0f7af",
+"independentlyGitCorroborated":false
+},
+"security/selinux/ss/mls.c":{
+"bytes":16094,
+"sha256":"349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
+"gitBlob":"a6e49269f5351df096da8c9fb56103a2f7b0ee9d",
+"independentlyGitCorroborated":false
+},
+"security/selinux/ss/services.c":{
+"bytes":97756,
+"sha256":"0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
+"gitBlob":"54d121d64804295c8ae1f40103957f6a3b671640",
+"independentlyGitCorroborated":true
+}
+},
+"sections":{
+"selinux_netlbl_sock_genattr":{
+"source":"security/selinux/netlabel.c",
+"prefix":"static struct netlbl_lsm_secattr *selinux_netlbl_sock_genattr(",
+"sha256":"1c5ed70fb92a6e4922fcf65c3038766c80b161aa4f9404f07cbc868f82a7b09b",
+"text":"static struct netlbl_lsm_secattr *selinux_netlbl_sock_genattr(struct sock *sk)\n{\n\tint rc;\n\tstruct sk_security_struct *sksec = selinux_sock(sk);\n\tstruct netlbl_lsm_secattr *secattr;\n\n\tif (sksec->nlbl_secattr != NULL)\n\t\treturn sksec->nlbl_secattr;\n\n\tsecattr = netlbl_secattr_alloc(GFP_ATOMIC);\n\tif (secattr == NULL)\n\t\treturn ERR_PTR(-ENOMEM);\n\n\trc = security_netlbl_sid_to_secattr(sksec->sid, secattr);\n\tif (rc != 0) {\n\t\tnetlbl_secattr_free(secattr);\n\t\treturn ERR_PTR(rc);\n\t}\n\tsksec->nlbl_secattr = secattr;\n\n\treturn secattr;\n}\n",
+"allocationClosureProven":false
+},
+"selinux_netlbl_socket_post_create":{
+"source":"security/selinux/netlabel.c",
+"prefix":"int selinux_netlbl_socket_post_create(",
+"sha256":"be3c4552e9b77f5146824f97348ec763404dd9a552207899487b730322e41ec5",
+"text":"int selinux_netlbl_socket_post_create(struct sock *sk, u16 family)\n{\n\tint rc;\n\tstruct sk_security_struct *sksec = selinux_sock(sk);\n\tstruct netlbl_lsm_secattr *secattr;\n\n\tif (family != PF_INET && family != PF_INET6)\n\t\treturn 0;\n\n\tsecattr = selinux_netlbl_sock_genattr(sk);\n\tif (IS_ERR(secattr))\n\t\treturn PTR_ERR(secattr);\n\t/* On socket creation, replacement of IP options is safe even if\n\t * the caller does not hold the socket lock.\n\t */\n\trc = netlbl_sock_setattr(sk, family, secattr, true);\n\tswitch (rc) {\n\tcase 0:\n\t\tsksec->nlbl_state = NLBL_LABELED;\n\t\tbreak;\n\tcase -EDESTADDRREQ:\n\t\tsksec->nlbl_state = NLBL_REQSKB;\n\t\trc = 0;\n\t\tbreak;\n\t}\n\n\treturn rc;\n}\n",
+"allocationClosureProven":false
+},
+"selinux_netlbl_socket_connect_helper":{
+"source":"security/selinux/netlabel.c",
+"prefix":"static int selinux_netlbl_socket_connect_helper(",
+"sha256":"7fe5adc8961a2bff18276b32bac9a1825f8c98bebcbe229a2227903527ff1945",
+"text":"static int selinux_netlbl_socket_connect_helper(struct sock *sk,\n\t\t\t\t\t\tstruct sockaddr *addr)\n{\n\tint rc;\n\tstruct sk_security_struct *sksec = selinux_sock(sk);\n\tstruct netlbl_lsm_secattr *secattr;\n\n\t/* connected sockets are allowed to disconnect when the address family\n\t * is set to AF_UNSPEC, if that is what is happening we want to reset\n\t * the socket */\n\tif (addr->sa_family == AF_UNSPEC) {\n\t\tnetlbl_sock_delattr(sk);\n\t\tsksec->nlbl_state = NLBL_REQSKB;\n\t\trc = 0;\n\t\treturn rc;\n\t}\n\tsecattr = selinux_netlbl_sock_genattr(sk);\n\tif (IS_ERR(secattr))\n\t\treturn PTR_ERR(secattr);\n\n\trc = netlbl_conn_setattr(sk, addr, secattr);\n\tif (rc == 0)\n\t\tsksec->nlbl_state = NLBL_CONNLABELED;\n\n\treturn rc;\n}\n",
+"allocationClosureProven":false
+},
+"security_netlbl_sid_to_secattr":{
+"source":"security/selinux/ss/services.c",
+"prefix":"int security_netlbl_sid_to_secattr(",
+"sha256":"9514b235e77382fa9ea47f1875acce45e3ee096064db2713688775faa62af2cc",
+"text":"int security_netlbl_sid_to_secattr(u32 sid, struct netlbl_lsm_secattr *secattr)\n{\n\tstruct selinux_policy *policy;\n\tstruct policydb *policydb;\n\tint rc;\n\tstruct context *ctx;\n\n\tif (!selinux_initialized())\n\t\treturn 0;\n\n\trcu_read_lock();\n\tpolicy = rcu_dereference(selinux_state.policy);\n\tpolicydb = &policy->policydb;\n\n\trc = -ENOENT;\n\tctx = sidtab_search(policy->sidtab, sid);\n\tif (ctx == NULL)\n\t\tgoto out;\n\n\trc = -ENOMEM;\n\tsecattr->domain = kstrdup(sym_name(policydb, SYM_TYPES, ctx->type - 1),\n\t\t\t\t  GFP_ATOMIC);\n\tif (secattr->domain == NULL)\n\t\tgoto out;\n\n\tsecattr->attr.secid = sid;\n\tsecattr->flags |= NETLBL_SECATTR_DOMAIN_CPY | NETLBL_SECATTR_SECID;\n\tmls_export_netlbl_lvl(policydb, ctx, secattr);\n\trc = mls_export_netlbl_cat(policydb, ctx, secattr);\nout:\n\trcu_read_unlock();\n\treturn rc;\n}\n",
+"allocationClosureProven":false
+},
+"mls_export_netlbl_cat":{
+"source":"security/selinux/ss/mls.c",
+"prefix":"int mls_export_netlbl_cat(",
+"sha256":"f608aec5226d5eac1d5ebe75151a7302de79a4cb8948e7f2080cb9a6014002d2",
+"text":"int mls_export_netlbl_cat(struct policydb *p, struct context *context,\n\t\t\t  struct netlbl_lsm_secattr *secattr)\n{\n\tint rc;\n\n\tif (!p->mls_enabled)\n\t\treturn 0;\n\n\trc = ebitmap_netlbl_export(&context->range.level[0].cat,\n\t\t\t\t   &secattr->attr.mls.cat);\n\tif (rc == 0 && secattr->attr.mls.cat != NULL)\n\t\tsecattr->flags |= NETLBL_SECATTR_MLS_CAT;\n\n\treturn rc;\n}\n",
+"allocationClosureProven":false
+},
+"ebitmap_netlbl_export":{
+"source":"security/selinux/ss/ebitmap.c",
+"prefix":"int ebitmap_netlbl_export(",
+"sha256":"d7dec7331f47c969fd768464d87797c12e86c570ac72b5a304aa7b81be3c2e03",
+"text":"int ebitmap_netlbl_export(struct ebitmap *ebmap,\n\t\t\t  struct netlbl_lsm_catmap **catmap)\n{\n\tstruct ebitmap_node *e_iter = ebmap->node;\n\tunsigned long e_map;\n\tu32 offset;\n\tunsigned int iter;\n\tint rc;\n\n\tif (e_iter == NULL) {\n\t\t*catmap = NULL;\n\t\treturn 0;\n\t}\n\n\tif (*catmap != NULL)\n\t\tnetlbl_catmap_free(*catmap);\n\t*catmap = NULL;\n\n\twhile (e_iter) {\n\t\toffset = e_iter->startbit;\n\t\tfor (iter = 0; iter < EBITMAP_UNIT_NUMS; iter++) {\n\t\t\te_map = e_iter->maps[iter];\n\t\t\tif (e_map != 0) {\n\t\t\t\trc = netlbl_catmap_setlong(catmap, offset,\n\t\t\t\t\t\t\t   e_map, GFP_ATOMIC);\n\t\t\t\tif (rc != 0)\n\t\t\t\t\tgoto netlbl_export_failure;\n\t\t\t}\n\t\t\toffset += EBITMAP_UNIT_SIZE;\n\t\t}\n\t\te_iter = e_iter->next;\n\t}\n\n\treturn 0;\n\nnetlbl_export_failure:\n\tnetlbl_catmap_free(*catmap);\n\treturn -ENOMEM;\n}\n",
+"allocationClosureProven":false
+},
+"_netlbl_catmap_getnode":{
+"source":"net/netlabel/netlabel_kapi.c",
+"prefix":"static struct netlbl_lsm_catmap *_netlbl_catmap_getnode(",
+"sha256":"56efdaba37f95db5293d3b9da03996ddb9a998754c2674440a16583871259560",
+"text":"static struct netlbl_lsm_catmap *_netlbl_catmap_getnode(\n\t\t\t\t\t     struct netlbl_lsm_catmap **catmap,\n\t\t\t\t\t     u32 offset,\n\t\t\t\t\t     unsigned int cm_flags,\n\t\t\t\t\t     gfp_t gfp_flags)\n{\n\tstruct netlbl_lsm_catmap *iter = *catmap;\n\tstruct netlbl_lsm_catmap *prev = NULL;\n\n\tif (iter == NULL)\n\t\tgoto catmap_getnode_alloc;\n\tif (offset < iter->startbit)\n\t\tgoto catmap_getnode_walk;\n\twhile (iter && offset >= (iter->startbit + NETLBL_CATMAP_SIZE)) {\n\t\tprev = iter;\n\t\titer = iter->next;\n\t}\n\tif (iter == NULL || offset < iter->startbit)\n\t\tgoto catmap_getnode_walk;\n\n\treturn iter;\n\ncatmap_getnode_walk:\n\tif (cm_flags & _CM_F_WALK)\n\t\treturn iter;\ncatmap_getnode_alloc:\n\tif (!(cm_flags & _CM_F_ALLOC))\n\t\treturn NULL;\n\n\titer = netlbl_catmap_alloc(gfp_flags);\n\tif (iter == NULL)\n\t\treturn NULL;\n\titer->startbit = offset & ~(NETLBL_CATMAP_SIZE - 1);\n\n\tif (prev == NULL) {\n\t\titer->next = *catmap;\n\t\t*catmap = iter;\n\t} else {\n\t\titer->next = prev->next;\n\t\tprev->next = iter;\n\t}\n\n\treturn iter;\n}\n",
+"allocationClosureProven":false
+},
+"netlbl_catmap_setlong":{
+"source":"net/netlabel/netlabel_kapi.c",
+"prefix":"int netlbl_catmap_setlong(",
+"sha256":"9d586966fde29a7079b809e1571f586de2128a013e96ffc6c0d925f41e0cc931",
+"text":"int netlbl_catmap_setlong(struct netlbl_lsm_catmap **catmap,\n\t\t\t  u32 offset,\n\t\t\t  unsigned long bitmap,\n\t\t\t  gfp_t flags)\n{\n\tstruct netlbl_lsm_catmap *iter;\n\tu32 idx;\n\n\t/* only allow aligned offsets */\n\tif ((offset & (BITS_PER_LONG - 1)) != 0)\n\t\treturn -EINVAL;\n\n\titer = _netlbl_catmap_getnode(catmap, offset, _CM_F_ALLOC, flags);\n\tif (iter == NULL)\n\t\treturn -ENOMEM;\n\n\toffset -= iter->startbit;\n\tidx = offset / NETLBL_CATMAP_MAPSIZE;\n\titer->bitmap[idx] |= (u64)bitmap\n\t\t\t     << (offset % NETLBL_CATMAP_MAPSIZE);\n\n\treturn 0;\n}\n",
+"allocationClosureProven":false
+},
+"netlbl_sock_setattr":{
+"source":"net/netlabel/netlabel_kapi.c",
+"prefix":"int netlbl_sock_setattr(",
+"sha256":"455d3c408be09e1930a6ab96a87669b50416c18afa7dc7ea98b69e323de1a01d",
+"text":"int netlbl_sock_setattr(struct sock *sk,\n\t\t\tu16 family,\n\t\t\tconst struct netlbl_lsm_secattr *secattr,\n\t\t\tbool sk_locked)\n{\n\tint ret_val;\n\tstruct netlbl_dom_map *dom_entry;\n\n\trcu_read_lock();\n\tdom_entry = netlbl_domhsh_getentry(secattr->domain, family);\n\tif (dom_entry == NULL) {\n\t\tret_val = -ENOENT;\n\t\tgoto socket_setattr_return;\n\t}\n\tswitch (family) {\n\tcase AF_INET:\n\t\tswitch (dom_entry->def.type) {\n\t\tcase NETLBL_NLTYPE_ADDRSELECT:\n\t\t\tret_val = -EDESTADDRREQ;\n\t\t\tbreak;\n\t\tcase NETLBL_NLTYPE_CIPSOV4:\n\t\t\tret_val = cipso_v4_sock_setattr(sk,\n\t\t\t\t\t\t\tdom_entry->def.cipso,\n\t\t\t\t\t\t\tsecattr, sk_locked);\n\t\t\tbreak;\n\t\tcase NETLBL_NLTYPE_UNLABELED:\n\t\t\tret_val = 0;\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tret_val = -ENOENT;\n\t\t}\n\t\tbreak;\n#if IS_ENABLED(CONFIG_IPV6)\n\tcase AF_INET6:\n\t\tswitch (dom_entry->def.type) {\n\t\tcase NETLBL_NLTYPE_ADDRSELECT:\n\t\t\tret_val = -EDESTADDRREQ;\n\t\t\tbreak;\n\t\tcase NETLBL_NLTYPE_CALIPSO:\n\t\t\tret_val = calipso_sock_setattr(sk,\n\t\t\t\t\t\t       dom_entry->def.calipso,\n\t\t\t\t\t\t       secattr);\n\t\t\tbreak;\n\t\tcase NETLBL_NLTYPE_UNLABELED:\n\t\t\tret_val = 0;\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tret_val = -ENOENT;\n\t\t}\n\t\tbreak;\n#endif /* IPv6 */\n\tdefault:\n\t\tret_val = -EPROTONOSUPPORT;\n\t}\n\nsocket_setattr_return:\n\trcu_read_unlock();\n\treturn ret_val;\n}\n",
+"allocationClosureProven":false
+},
+"netlbl_conn_setattr":{
+"source":"net/netlabel/netlabel_kapi.c",
+"prefix":"int netlbl_conn_setattr(",
+"sha256":"a9eb07828864348315e4c328d40c9f38b202ba7929b7464b009e4341b68f612e",
+"text":"int netlbl_conn_setattr(struct sock *sk,\n\t\t\tstruct sockaddr *addr,\n\t\t\tconst struct netlbl_lsm_secattr *secattr)\n{\n\tint ret_val;\n\tstruct sockaddr_in *addr4;\n#if IS_ENABLED(CONFIG_IPV6)\n\tstruct sockaddr_in6 *addr6;\n#endif\n\tstruct netlbl_dommap_def *entry;\n\n\trcu_read_lock();\n\tswitch (addr->sa_family) {\n\tcase AF_INET:\n\t\taddr4 = (struct sockaddr_in *)addr;\n\t\tentry = netlbl_domhsh_getentry_af4(secattr->domain,\n\t\t\t\t\t\t   addr4->sin_addr.s_addr);\n\t\tif (entry == NULL) {\n\t\t\tret_val = -ENOENT;\n\t\t\tgoto conn_setattr_return;\n\t\t}\n\t\tswitch (entry->type) {\n\t\tcase NETLBL_NLTYPE_CIPSOV4:\n\t\t\tret_val = cipso_v4_sock_setattr(sk,\n\t\t\t\t\t\t\tentry->cipso, secattr,\n\t\t\t\t\t\t\tnetlbl_sk_lock_check(sk));\n\t\t\tbreak;\n\t\tcase NETLBL_NLTYPE_UNLABELED:\n\t\t\t/* just delete the protocols we support for right now\n\t\t\t * but we could remove other protocols if needed */\n\t\t\tnetlbl_sock_delattr(sk);\n\t\t\tret_val = 0;\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tret_val = -ENOENT;\n\t\t}\n\t\tbreak;\n#if IS_ENABLED(CONFIG_IPV6)\n\tcase AF_INET6:\n\t\tif (sk->sk_family != AF_INET6) {\n\t\t\tret_val = -EAFNOSUPPORT;\n\t\t\tgoto conn_setattr_return;\n\t\t}\n\n\t\taddr6 = (struct sockaddr_in6 *)addr;\n\t\tentry = netlbl_domhsh_getentry_af6(secattr->domain,\n\t\t\t\t\t\t   &addr6->sin6_addr);\n\t\tif (entry == NULL) {\n\t\t\tret_val = -ENOENT;\n\t\t\tgoto conn_setattr_return;\n\t\t}\n\t\tswitch (entry->type) {\n\t\tcase NETLBL_NLTYPE_CALIPSO:\n\t\t\tret_val = calipso_sock_setattr(sk,\n\t\t\t\t\t\t       entry->calipso, secattr);\n\t\t\tbreak;\n\t\tcase NETLBL_NLTYPE_UNLABELED:\n\t\t\t/* just delete the protocols we support for right now\n\t\t\t * but we could remove other protocols if needed */\n\t\t\tnetlbl_sock_delattr(sk);\n\t\t\tret_val = 0;\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tret_val = -ENOENT;\n\t\t}\n\t\tbreak;\n#endif /* IPv6 */\n\tdefault:\n\t\tret_val = -EPROTONOSUPPORT;\n\t}\n\nconn_setattr_return:\n\trcu_read_unlock();\n\treturn ret_val;\n}\n",
+"allocationClosureProven":false
+},
+"netlbl_catmap_free":{
+"source":"include/net/netlabel.h",
+"prefix":"static inline void netlbl_catmap_free(",
+"sha256":"a1462024a04c6ebc3eeaf1f3ffabafde118de579a6c0d53bbd0677dc5b4161f1",
+"text":"static inline void netlbl_catmap_free(struct netlbl_lsm_catmap *catmap)\n{\n\tstruct netlbl_lsm_catmap *iter;\n\n\twhile (catmap) {\n\t\titer = catmap;\n\t\tcatmap = catmap->next;\n\t\tkfree(iter);\n\t}\n}\n",
+"allocationClosureProven":false
+},
+"netlbl_secattr_destroy":{
+"source":"include/net/netlabel.h",
+"prefix":"static inline void netlbl_secattr_destroy(",
+"sha256":"6d94a81c3ff1e1abb35ce54ea04a0835aab6015bc4c76c8b28e0a1861e4f8dcf",
+"text":"static inline void netlbl_secattr_destroy(struct netlbl_lsm_secattr *secattr)\n{\n\tif (secattr->flags & NETLBL_SECATTR_FREE_DOMAIN)\n\t\tkfree(secattr->domain);\n\tif (secattr->flags & NETLBL_SECATTR_CACHE)\n\t\tnetlbl_secattr_cache_free(secattr->cache);\n\tif (secattr->flags & NETLBL_SECATTR_MLS_CAT)\n\t\tnetlbl_catmap_free(secattr->attr.mls.cat);\n}\n",
+"allocationClosureProven":false
+},
+"netlbl_secattr_free":{
+"source":"include/net/netlabel.h",
+"prefix":"static inline void netlbl_secattr_free(",
+"sha256":"40e1c16c724885aba918ac372e1cb38d56a41c97acf01e47dd57e5b432514956",
+"text":"static inline void netlbl_secattr_free(struct netlbl_lsm_secattr *secattr)\n{\n\tnetlbl_secattr_destroy(secattr);\n\tkfree(secattr);\n}\n",
+"allocationClosureProven":false
+},
+"cipso_v4_sock_setattr":{
+"source":"net/ipv4/cipso_ipv4.c",
+"prefix":"int cipso_v4_sock_setattr(",
+"sha256":"9eeb6f43c347a9bbc41ff32e48a36c1ad47c5915562cb07ce50d2cfe69e4545f",
+"text":"int cipso_v4_sock_setattr(struct sock *sk,\n\t\t\t  const struct cipso_v4_doi *doi_def,\n\t\t\t  const struct netlbl_lsm_secattr *secattr,\n\t\t\t  bool sk_locked)\n{\n\tint ret_val = -EPERM;\n\tunsigned char *buf = NULL;\n\tu32 buf_len;\n\tu32 opt_len;\n\tstruct ip_options_rcu *old, *opt = NULL;\n\tstruct inet_sock *sk_inet;\n\tstruct inet_connection_sock *sk_conn;\n\n\t/* In the case of sock_create_lite(), the sock->sk field is not\n\t * defined yet but it is not a problem as the only users of these\n\t * \"lite\" PF_INET sockets are functions which do an accept() call\n\t * afterwards so we will label the socket as part of the accept(). */\n\tif (!sk)\n\t\treturn 0;\n\n\t/* We allocate the maximum CIPSO option size here so we are probably\n\t * being a little wasteful, but it makes our life _much_ easier later\n\t * on and after all we are only talking about 40 bytes. */\n\tbuf_len = CIPSO_V4_OPT_LEN_MAX;\n\tbuf = kmalloc(buf_len, GFP_ATOMIC);\n\tif (!buf) {\n\t\tret_val = -ENOMEM;\n\t\tgoto socket_setattr_failure;\n\t}\n\n\tret_val = cipso_v4_genopt(buf, buf_len, doi_def, secattr);\n\tif (ret_val < 0)\n\t\tgoto socket_setattr_failure;\n\tbuf_len = ret_val;\n\n\t/* We can't use ip_options_get() directly because it makes a call to\n\t * ip_options_get_alloc() which allocates memory with GFP_KERNEL and\n\t * we won't always have CAP_NET_RAW even though we _always_ want to\n\t * set the IPOPT_CIPSO option. */\n\topt_len = (buf_len + 3) & ~3;\n\topt = kzalloc(sizeof(*opt) + opt_len, GFP_ATOMIC);\n\tif (!opt) {\n\t\tret_val = -ENOMEM;\n\t\tgoto socket_setattr_failure;\n\t}\n\tmemcpy(opt->opt.__data, buf, buf_len);\n\topt->opt.optlen = opt_len;\n\topt->opt.cipso = sizeof(struct iphdr);\n\tkfree(buf);\n\tbuf = NULL;\n\n\tsk_inet = inet_sk(sk);\n\n\told = rcu_dereference_protected(sk_inet->inet_opt, sk_locked);\n\tif (inet_test_bit(IS_ICSK, sk)) {\n\t\tsk_conn = inet_csk(sk);\n\t\tif (old)\n\t\t\tsk_conn->icsk_ext_hdr_len -= old->opt.optlen;\n\t\tsk_conn->icsk_ext_hdr_len += opt->opt.optlen;\n\t\tsk_conn->icsk_sync_mss(sk, sk_conn->icsk_pmtu_cookie);\n\t}\n\trcu_assign_pointer(sk_inet->inet_opt, opt);\n\tif (old)\n\t\tkfree_rcu(old, rcu);\n\n\treturn 0;\n\nsocket_setattr_failure:\n\tkfree(buf);\n\tkfree(opt);\n\treturn ret_val;\n}\n",
+"allocationClosureProven":false
+},
+"cipso_v4_delopt":{
+"source":"net/ipv4/cipso_ipv4.c",
+"prefix":"static int cipso_v4_delopt(",
+"sha256":"4eb6b794b79355cc7d6f1ed0a3df2bde4a590d33a0a2c698a7a0697b41f57627",
+"text":"static int cipso_v4_delopt(struct ip_options_rcu __rcu **opt_ptr)\n{\n\tstruct ip_options_rcu *opt = rcu_dereference_protected(*opt_ptr, 1);\n\tint hdr_delta = 0;\n\n\tif (!opt || opt->opt.cipso == 0)\n\t\treturn 0;\n\tif (opt->opt.srr || opt->opt.rr || opt->opt.ts || opt->opt.router_alert) {\n\t\tu8 cipso_len;\n\t\tu8 cipso_off;\n\t\tunsigned char *cipso_ptr;\n\t\tint optlen_new;\n\n\t\tcipso_off = opt->opt.cipso - sizeof(struct iphdr);\n\t\tcipso_ptr = &opt->opt.__data[cipso_off];\n\t\tcipso_len = cipso_ptr[1];\n\n\t\tif (opt->opt.srr > opt->opt.cipso)\n\t\t\topt->opt.srr -= cipso_len;\n\t\tif (opt->opt.rr > opt->opt.cipso)\n\t\t\topt->opt.rr -= cipso_len;\n\t\tif (opt->opt.ts > opt->opt.cipso)\n\t\t\topt->opt.ts -= cipso_len;\n\t\tif (opt->opt.router_alert > opt->opt.cipso)\n\t\t\topt->opt.router_alert -= cipso_len;\n\t\topt->opt.cipso = 0;\n\n\t\tmemmove(cipso_ptr, cipso_ptr + cipso_len,\n\t\t\topt->opt.optlen - cipso_off - cipso_len);\n\n\t\toptlen_new = cipso_v4_get_actual_opt_len(opt->opt.__data,\n\t\t\t\t\t\t\t opt->opt.optlen);\n\t\thdr_delta = opt->opt.optlen;\n\t\topt->opt.optlen = (optlen_new + 3) & ~3;\n\t\thdr_delta -= opt->opt.optlen;\n\t} else {\n\t\t/* only the cipso option was present on the socket so we can\n\t\t * remove the entire option struct */\n\t\t*opt_ptr = NULL;\n\t\thdr_delta = opt->opt.optlen;\n\t\tkfree_rcu(opt, rcu);\n\t}\n\n\treturn hdr_delta;\n}\n",
+"allocationClosureProven":false
+},
+"inet_sock_destruct":{
+"source":"net/ipv4/af_inet.c",
+"prefix":"void inet_sock_destruct(",
+"sha256":"310e135a21513de6ed918f1f6cd56eaffabcb22273e98ba19057ddc970a3575d",
+"text":"void inet_sock_destruct(struct sock *sk)\n{\n\tstruct inet_sock *inet = inet_sk(sk);\n\n\t__skb_queue_purge(&sk->sk_receive_queue);\n\t__skb_queue_purge(&sk->sk_error_queue);\n\n\tsk_mem_reclaim_final(sk);\n\n\tif (sk->sk_type == SOCK_STREAM && sk->sk_state != TCP_CLOSE) {\n\t\tpr_err(\"Attempt to release TCP socket in state %d %p\\n\",\n\t\t       sk->sk_state, sk);\n\t\treturn;\n\t}\n\tif (!sock_flag(sk, SOCK_DEAD)) {\n\t\tpr_err(\"Attempt to release alive inet socket %p\\n\", sk);\n\t\treturn;\n\t}\n\n\tWARN_ON_ONCE(atomic_read(&sk->sk_rmem_alloc));\n\tWARN_ON_ONCE(refcount_read(&sk->sk_wmem_alloc));\n\tWARN_ON_ONCE(sk->sk_wmem_queued);\n\tWARN_ON_ONCE(sk_forward_alloc_get(sk));\n\n\tkfree_rcu(rcu_dereference_protected(inet->inet_opt, 1), rcu);\n\tdst_release(rcu_dereference_protected(sk->sk_dst_cache, 1));\n\tdst_release(rcu_dereference_protected(sk->sk_rx_dst, 1));\n}\n",
+"allocationClosureProven":false
+}
+},
+"kernelBuilt":false,
+"actualLsmExecuted":false,
+"completeAllocationClosure":false,
+"productionInstallation":false
 }

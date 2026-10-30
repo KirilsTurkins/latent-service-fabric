@@ -1,0 +1,202 @@
+{
+  "schemaVersion": "lsf.typescript-private-removed-observation.v1",
+  "status": "passed-finite-removed-phase",
+  "source": "63f0d0f41844dfd6452db6af3156910dfbe8469b",
+  "run": 39932466967,
+  "job": 120343827553,
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39932466967/job/120343827553",
+  "artifact": {
+    "id": 12493002420,
+    "bytes": 255347,
+    "sha256": "59e81cb59167369d28ff2cfd3ef734b2932bdd504f9dccce552253fcfaf61147",
+    "crcVerifiedMembers": 274
+  },
+  "guestSource": "a8cd4fbb71d7766e886ab518542ca398237debb6",
+  "guestProducer": {
+    "run": 39877856300,
+    "job": 120168368401,
+    "artifact": 12472730509,
+    "jobConclusion": "cancelled",
+    "selectedCrcAndHashVerifiedMembers": 72,
+    "wholeArchiveDigestVerified": false,
+    "reconstructedStaticLayer": {
+      "npm-private-dependencies/build-2/wit/world.wit": {
+        "gitPath": "tools/toolchain-smoke/examples/tutorial_greeting/world.wit",
+        "identity": {
+          "bytes": 144,
+          "sha256": "sha256:dc4d575fa5de96fc4507900381628c1807f41bd4f8d53f8504e3e13b28dc6b5e"
+        }
+      }
+    },
+    "rangeRequests": 270,
+    "rangeBytes": 21760349
+  },
+  "nativeSource": "b422af24d86344ac7abb8b8fa56c3782aab63915",
+  "nativeProducer": {
+    "run": 39884205952,
+    "job": 120188455407,
+    "artifact": 12472447074,
+    "controls": 193,
+    "products": {
+      "latent": {
+        "sha256": "sha256:50c7d4062932728970063b359823c059ac4e364f4a89971e5b374b20175731a6",
+        "bytes": 72391312
+      },
+      "latentd": {
+        "sha256": "sha256:597dc00d1739938cacf92353b6abd7881842959d9a63a155aab273653875d59c",
+        "bytes": 193037928
+      },
+      "examples/package": {
+        "sha256": "sha256:c92ca42e27eb04a677f1f8de946f1e15d5e0635c1c70af098a06759125f17810",
+        "bytes": 21183496
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:72119f836e4762e9d0a368db1a16b261043e2df7e1034df1b8e1c52cfd0d1794",
+        "bytes": 13878280
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:45eabf7cc481d173faa6338198152188cc11d00a8e4fc4488ecf8175efad9278",
+        "bytes": 27438000
+      }
+    },
+    "rangeRequests": 289,
+    "rangeBytes": 70883658,
+    "wholeArchiveDigestVerifiedByConsumer": false,
+    "productCount": 5
+  },
+  "consumerSource": {
+    "sha256": "sha256:d0caa5db688cb5eb636bfdb442a253a8417a1b9668a73d1b4fa590d4d85a2f15",
+    "files": 3702,
+    "bytes": 33814843,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "consumerMaterials": {
+    "tools/qualify_typescript_private_removed.py": {
+      "sha256": "sha256:d489a667e8e01510758ea0176f84f2de040cd70b278c571ba8520f9f8de1fa17",
+      "bytes": 6000
+    },
+    "tools/typescript_private_removed_inputs.py": {
+      "sha256": "sha256:fe2d8b319953817922713600cf8052c3d8e7e87c58087777a35f64041e2ca44d",
+      "bytes": 14011
+    },
+    "tools/tests/fixtures/typescript_private_removed_inputs.json": {
+      "sha256": "sha256:581863dbabb0821ad5602b3cbca8a7dc8d1bba846ec9b7f3efb8b2118910337c",
+      "bytes": 15088
+    },
+    "tools/rust_thread_native_products.py": {
+      "sha256": "sha256:f9fa3c290d9975f8f77a7882f04051c6cefc34b0a41075bb819acf473cb03310",
+      "bytes": 8176
+    },
+    "tools/sdk_native_products_reader.py": {
+      "sha256": "sha256:c5611e8d8a2f0df438141b9d5de37e9871d565c9e55b4376d35a3f35391fa07c",
+      "bytes": 17718
+    },
+    "tools/host_codec_native_products_reader.py": {
+      "sha256": "sha256:02762abbe8e0f151408aac9df6a674f05437e6ea20b821e27a772c3c1a2de3f0",
+      "bytes": 9479
+    },
+    "tools/host_codec_owned_reply_native_products_reader.py": {
+      "sha256": "sha256:1d4c18d78ba406ed7a6b52c4651815f178d6b916ee234c01d2118befa4f7756b",
+      "bytes": 2098
+    },
+    "tools/run_rust_capsule_workflow.py": {
+      "sha256": "sha256:7c32777ab230a9c1da5a8ad99b1edce1fd2518fad81525c52376a66ec27b67d7",
+      "bytes": 34233
+    },
+    "tools/npm_private_registry_fixture.py": {
+      "sha256": "sha256:1eacbaeb57d658ccda6441ffb2133ac0b003767b5a83ea345fded63f227e5f44",
+      "bytes": 10922
+    },
+    "tools/qualify_npm_private_dependencies.py": {
+      "sha256": "sha256:02eb299140ab21cd47969b58e695963d0ebf59833cc219b63bb3c139a99d36b0",
+      "bytes": 26071
+    },
+    ".github/workflows/typescript-private-removed.yml": {
+      "sha256": "sha256:e02e888e9e20ae34c64c9500bed028cab0103cb5abfe218b19cd3065a70ec6eb",
+      "bytes": 3261
+    }
+  },
+  "actualResults": {
+    "provenanceControls": 10,
+    "signingExitCode": 0,
+    "signedInvocations": 30,
+    "removedPrivateCases": 3,
+    "allCasesFreshAndActualSignedTarget": true,
+    "allInvocationProcessesReaped": true,
+    "allOutcomesKnown": true,
+    "idleInventorySamples": 25,
+    "activeInventorySamples": 2,
+    "providerIdleSamples": 9,
+    "activeCountersZeroPerIdleProviderSample": 18,
+    "nodeCleanAndReaped": true,
+    "peerAuthorizedContacts": 8,
+    "peerUnexpectedContacts": 0,
+    "peerHoldsClosed": 3,
+    "retainedNodeInfrastructureCountersMayBeNonzero": true
+  },
+  "nodeReceipt": {
+    "sha256": "sha256:5a69350a16368347c1f41864796c82620b2f33f006fb9111beebd7e19336a141",
+    "bytes": 286432
+  },
+  "historicalCompletedNodes": [
+    {
+      "label": "0",
+      "source": "a8cd4fbb71d7766e886ab518542ca398237debb6",
+      "status": "passed",
+      "invocations": 30,
+      "privateCases": 3,
+      "runtimeHostSource": "a8cd4fbb71d7766e886ab518542ca398237debb6",
+      "physicallyReaped": true,
+      "newHostExecutionClaimed": false
+    },
+    {
+      "label": "0-rebuild",
+      "source": "a8cd4fbb71d7766e886ab518542ca398237debb6",
+      "status": "passed",
+      "invocations": 30,
+      "privateCases": 3,
+      "runtimeHostSource": "a8cd4fbb71d7766e886ab518542ca398237debb6",
+      "physicallyReaped": true,
+      "newHostExecutionClaimed": false
+    },
+    {
+      "label": "1",
+      "source": "a8cd4fbb71d7766e886ab518542ca398237debb6",
+      "status": "passed",
+      "invocations": 30,
+      "privateCases": 3,
+      "runtimeHostSource": "a8cd4fbb71d7766e886ab518542ca398237debb6",
+      "physicallyReaped": true,
+      "newHostExecutionClaimed": false
+    }
+  ],
+  "guestComponentsCompiled": 0,
+  "nativeProductsBuilt": 0,
+  "priorThreeProgrammesReplayed": false,
+  "priorThreeProgrammesClaimedOnNewHost": false,
+  "wholeOriginalProducerQualified": false,
+  "fullTicketQualification": false,
+  "releasePublication": "not-performed",
+  "previousFailures": [
+    {
+      "run": 39925233628,
+      "attempt": 1,
+      "cause": "transient-503-ServerBusy-before-runtime"
+    },
+    {
+      "run": 39925233628,
+      "attempt": 2,
+      "cause": "512-range-request-bound-before-runtime"
+    },
+    {
+      "run": 39929506008,
+      "cause": "five-retained-deployment-inputs-missing-before-runtime"
+    },
+    {
+      "run": 39931466226,
+      "cause": "transient-503-ServerBusy-before-runtime"
+    }
+  ]
+}

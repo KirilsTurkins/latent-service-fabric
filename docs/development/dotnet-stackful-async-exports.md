@@ -2,10 +2,11 @@
 
 The `dotnet-native-aot-stackful-async-exports-v1` compiler bridge preserves the
 ordinary synchronous C# implementation interface while giving declared WIT
-`async` exports a real canonical async lift. This is a prerequisite candidate
-for [default HttpClient qualification](https://github.com/KirilsTurkins/latent-service-fabric/issues/693).
-Managed Task scheduling, cancellation, sibling progress and full default-client
-execution remain independently unqualified under
+`async` exports a real canonical async lift. This mechanism is separate from
+the finite [default HttpClient programmes](dotnet-published-http.md) and
+[managed Task runtime](../component-development/dotnet-task-runtime.md).
+Those records identify the selected scheduling, cancellation and client evidence;
+the bridge alone does not qualify their full cross-product or close
 [#746](https://github.com/KirilsTurkins/latent-service-fabric/issues/746).
 
 Previously, the binding generator projected every async implementation kind to

@@ -1,0 +1,221 @@
+{
+  "schemaVersion": "latent.dotnet.queued-owner-ack-reference.v1",
+  "status": "host-only-reference-passed",
+  "scope": "actual-production-registry-source-with-explicit-ledger-dispatcher-and-context-test-ports",
+  "baseCommit": "aac1ab668e33371f8fba1d78bf491f8ab7110c46",
+  "hostSDK": "10.0.303",
+  "maintainedSDKPin": "10.0.100",
+  "maintainedPinChanged": false,
+  "hostOnlyStagedGlobalJson": {
+    "path": "sdk/dotnet-guest/global.json",
+    "original": {
+      "bytes": 105,
+      "sha256": "sha256:0aa4b85ae248d59bbc4138f346d952b7fae4fe18cc701d921fa1c003211be777"
+    },
+    "staged": {
+      "digest": "sha256:1e3811718244a2aa32777b879dd8906bf2d37f4defce3526b6f3263e702390da",
+      "size": 105
+    }
+  },
+  "originalSourceInputs": {
+    "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Control.csproj": {
+      "bytes": 563,
+      "sha256": "sha256:e6a82918ae0965ae9267a2e167fd90001fdc02195874d76b6cbf94046d6e0ffd"
+    },
+    "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Program.cs": {
+      "bytes": 12413,
+      "sha256": "sha256:f606b5c7afad6809cab24fec84e57ec6a92f65a6a0daaa815fa187293752da1f"
+    },
+    "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Bindings.cs": {
+      "bytes": 1765,
+      "sha256": "sha256:02835c76c0424579561ea0e277864ea8e3834dadde11b9edce76b21272d7dd87"
+    },
+    "sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs": {
+      "bytes": 20191,
+      "sha256": "sha256:5f9496b2d76bed5eff1209b1b408766c876abe434b4a161c964fbb8f35cff1a9"
+    },
+    "sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs": {
+      "bytes": 4969,
+      "sha256": "sha256:fc13b8e01315ff23f36c74da9012b80d0365042fe197b9df80cd5147cf148013"
+    },
+    "sdk/dotnet-guest/global.json": {
+      "bytes": 105,
+      "sha256": "sha256:0aa4b85ae248d59bbc4138f346d952b7fae4fe18cc701d921fa1c003211be777"
+    }
+  },
+  "referenceAssemblies": {
+    "current": {
+      "bytes": 32768,
+      "sha256": "sha256:5b3447d84d642e1c8af79a4e1dab8ae472e25614285b5eae672da15159be1c56"
+    },
+    "old-counterfactual": {
+      "bytes": 32768,
+      "sha256": "sha256:33378615fea89d5771b2c68561dc1978701c7b6af53ca6b1498226262836c0e7"
+    }
+  },
+  "existingCasesPassed": 15,
+  "newCases": [
+    {
+      "control": "enqueue-failure-settlement-refusal-retains-owner",
+      "passed": true,
+      "registryCore": "production-source",
+      "nativeLedger": "explicit-test-port",
+      "dispatcher": "explicit-test-port",
+      "actualClrTasks": true,
+      "guestQualified": false,
+      "settlementRefusals": 1,
+      "retainedTasks": 2,
+      "retainedQueuedOwners": 1,
+      "controlDispatches": 0,
+      "automaticRetries": 0,
+      "rootSuccess": false
+    },
+    {
+      "control": "dequeue-settlement-refusal-retains-owner",
+      "passed": true,
+      "registryCore": "production-source",
+      "nativeLedger": "explicit-test-port",
+      "dispatcher": "explicit-test-port",
+      "actualClrTasks": true,
+      "guestQualified": false,
+      "settlementRefusals": 1,
+      "retainedTasks": 2,
+      "retainedQueuedOwners": 1,
+      "controlDispatches": 0,
+      "automaticRetries": 0,
+      "rootSuccess": false
+    }
+  ],
+  "originalCounterfactual": [
+    {
+      "control": "enqueue-failure-settlement-refusal-retains-owner",
+      "expectedFailure": true,
+      "exitCode": 3762504530,
+      "cause": "managed-work-control-queue-token-lost"
+    },
+    {
+      "control": "dequeue-settlement-refusal-retains-owner",
+      "expectedFailure": true,
+      "exitCode": 3762504530,
+      "cause": "managed-work-control-queue-token-lost"
+    }
+  ],
+  "selectedRawCommands": [
+    {
+      "stage": "reference-dotnet-version",
+      "exitCode": 0,
+      "seconds": 0.679905,
+      "stdout": {
+        "bytes": 10,
+        "sha256": "sha256:94736f29af38df9c42385cbda3e0854adaa638d67829700bc8907ecc4f876f87"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "stage": "reference-dotnet-info",
+      "exitCode": 0,
+      "seconds": 0.713715,
+      "stdout": {
+        "bytes": 1848,
+        "sha256": "sha256:bde1cc7a08d0d987c60a586045cf1589896ec0b70d0a4d2f39f6565c591213b6"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "stage": "current-build",
+      "exitCode": 0,
+      "seconds": 5.906998,
+      "stdout": {
+        "bytes": 488,
+        "sha256": "sha256:e804399a867bc7bf76874f2a5292a06a3c675748b9c87ca9cdd2a311d0e2238f"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "stage": "current-enqueue-failure-settlement-refusal-retains-owner",
+      "exitCode": 0,
+      "seconds": 0.348976,
+      "stdout": {
+        "bytes": 357,
+        "sha256": "sha256:17adb9fed81c53faf6284c13798abb27679fa3879fda851b65f1229c3022b613"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "stage": "current-dequeue-settlement-refusal-retains-owner",
+      "exitCode": 0,
+      "seconds": 0.30096,
+      "stdout": {
+        "bytes": 349,
+        "sha256": "sha256:588748b2d8fe6021434e64348c5856b0110b6ceda9e0ab0d57bf2de8782949ad"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "stage": "old-counterfactual-build",
+      "exitCode": 0,
+      "seconds": 4.71628,
+      "stdout": {
+        "bytes": 509,
+        "sha256": "sha256:c6f3477c318de05e30c53d93b22a734ba402ced7e081196ef010a07737a4a43b"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "stage": "old-enqueue-failure-settlement-refusal-retains-owner",
+      "exitCode": 3762504530,
+      "seconds": 1.220933,
+      "stdout": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "bytes": 603,
+        "sha256": "sha256:a441baa7d362b445de6563d4ff6e297075a41f880b53864bc452e60f11fd485f"
+      }
+    },
+    {
+      "stage": "old-dequeue-settlement-refusal-retains-owner",
+      "exitCode": 3762504530,
+      "seconds": 0.988895,
+      "stdout": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "bytes": 603,
+        "sha256": "sha256:a441baa7d362b445de6563d4ff6e297075a41f880b53864bc452e60f11fd485f"
+      }
+    }
+  ],
+  "totalCommands": 23,
+  "maximumCommandSeconds": 120,
+  "aggregateSecondsLimit": 300,
+  "observedSeconds": 19.271062100000563,
+  "stagedSourcesUnchangedAfterExecution": true,
+  "nativeOwnerSettlementExecuted": false,
+  "originalCoreLibProducerExecuted": false,
+  "pinnedMaintainedDriverExecuted": false,
+  "NativeAOTExecuted": false,
+  "signedGuestExecuted": false,
+  "runtimeProfileQualified": false,
+  "wholeIssueCompleted": false
+}

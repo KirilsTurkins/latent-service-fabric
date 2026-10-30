@@ -1,0 +1,20 @@
+{
+"storageCases":"guard-keys",
+"guards":{
+"BorrowSignedInputTests.test_archive_duplicates_and_traversal_refuse_before_receipt_parsing":
+      "37c9529d64e57b56c907de37ee88aba6378e5dc6cbfa1783495ffcab69c13367",
+"BorrowSignedInputTests.test_canonical_digest_is_preserved_and_bare_or_bool_identity_refuses":
+      "37c9529d64e57b56c907de37ee88aba6378e5dc6cbfa1783495ffcab69c13367",
+"BorrowSignedInputTests.test_failed_or_wrong_scope_prerequisite_cannot_be_promoted":
+      "37c9529d64e57b56c907de37ee88aba6378e5dc6cbfa1783495ffcab69c13367",
+"BorrowSignedInputTests.test_unpinned_success_material_refuses_before_api_or_output":
+      "37c9529d64e57b56c907de37ee88aba6378e5dc6cbfa1783495ffcab69c13367"
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_borrow_signed_inputs.py",
+"reviewReason":"Add four bounded artifact/digest/scope refusal controls for the shared successful OWN native prerequisite reader; synthetic controls never qualify runtime execution.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"37c9529d64e57b56c907de37ee88aba6378e5dc6cbfa1783495ffcab69c13367":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:eac616eb5c65f6ac0bba6800e5dc649df65687972def78a8fbc3c299edf0d611","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
+}

@@ -1,0 +1,3 @@
+{"kind":"owner","path":"tools/qualify_typescript_owned_component.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review late unlifted host-lowered backing disposal only: retain all prior cases, add exact source/metadata controls, strict17 Rust and32 source inventories, and no runtime or full-heap claim.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "57045376d3ad143a328ad81acb5c432035f3143d4e68f303612e25af38d1a961"
+}

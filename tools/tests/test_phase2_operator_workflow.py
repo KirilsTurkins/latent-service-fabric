@@ -526,6 +526,49 @@ class FailedCallObservationTests(unittest.TestCase):
         self.assert_one_process(process, launch)
 
 
+class PublicationAuditFailureObservationTests(unittest.TestCase):
+    def test_public_reason_is_closed_and_fatal_query_is_not_retried(self):
+        from tools import run_publication_workflow as workflow
+        allowed = ("audit-capacity", "audit-critical-pending", "audit-busy",
+                   "audit-unavailable", "audit-closed", "audit-corrupt")
+        cases = [([{"kind": "audit-journal", "fields": {"reason": reason}}], reason)
+                 for reason in allowed]
+        cases += [(details, "unclassified") for details in (
+            None, [], ["PRIVATE"],
+            [{"kind": "audit-journal", "fields": {"reason": "PRIVATE"}}],
+            [{"kind": "audit-journal", "fields": {"reason": "audit-busy", "token": "PRIVATE"}}],
+            [{"kind": "audit-journal", "fields": {"reason": "audit-busy"}}] * 2,
+            [{"kind": "audit-journal", "fields": {"reason": "audit-busy"}}] * 17,
+        )]
+        for details, expected in cases:
+            with self.subTest(expected=expected, details=details):
+                document = cli_document(error={"code": "resource-exhausted",
+                    "message": "PRIVATE-MESSAGE", "details": details})
+                process = Mock()
+                process.complete.return_value = subprocess.CompletedProcess(
+                    [], 4, json.dumps(document).encode(), b"PRIVATE-STDERR")
+                client = workflow.Client("PRIVATE-CLI", Path("PRIVATE-DIRECTORY"),
+                                         Mock(), time.monotonic() + 60)
+                with patch("tools.phase2_operator_process.Process", return_value=process) as launch, \
+                     self.assertRaisesRegex(WorkflowError,
+                         "^cli-exit-call-1-status-4-code-resource-exhausted-grpc-absent$"):
+                    client.call("audit", "query", "--scope", "tenant", "--page-size", "16")
+                self.assertEqual(client.calls, 1)
+                self.assertEqual(client.failed_call["auditReason"], expected)
+                self.assertEqual(client.failed_call["publicCode"], "resource-exhausted")
+                self.assertIs(client.failed_call["outcomeKnown"], True)
+                self.assertIs(client.failed_call["requestDispatched"], True)
+                encoded = json.dumps(client.failed_call)
+                self.assertNotIn("PRIVATE", encoded)
+                self.assertLess(len(encoded.encode()), 512)
+                launch.assert_called_once()
+                process.complete.assert_called_once()
+                process.close.assert_called_once_with()
+        client = workflow.Client("unused", Path("unused"), Mock(), time.monotonic() + 60)
+        observed = client.observe_failed_call(cli_document(command="invoke"), 1, 4)
+        self.assertNotIn("auditReason", observed)
+
+
 class FailedPublicationReceiptTests(unittest.TestCase):
     def setUp(self):
         from tools import run_publication_workflow as workflow

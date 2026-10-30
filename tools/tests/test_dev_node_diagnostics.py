@@ -269,7 +269,16 @@ class ProbeIntegration(unittest.TestCase):
                 report = node_scenarios.run(root, {"environment": "node", "selection": []},
                                             diagnostic_observer=capture.observer("common-scenarios"))
             self.assertFalse(report["passed"])
-            cli.call.assert_called_once()
+            calls = cli.call.call_args_list
+            # The outer compatibility test additionally enables its bounded
+            # resource observation; the direct diagnostics path only invokes.
+            self.assertIn(len(calls), (1, 2))
+            self.assertEqual(calls[0].args[0], 'invoke')
+            self.assertEqual([item.args[0] for item in calls].count('invoke'), 1)
+            for observation in calls[1:]:
+                self.assertEqual(observation.args,
+                    ('--rpc-timeout-ms', '1500', 'activation', 'tree', 'original', '--page-size', '1'))
+                self.assertEqual(observation.kwargs, {'timeout': 2})
             self.assertEqual(capture.snapshot()["cases"][0]["guestTrapCode"], "guest-runtime-error")
             self.assertEqual(capture.snapshot()["invocationClientCleanup"], "owned-client-reaped")
 

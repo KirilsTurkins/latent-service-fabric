@@ -62,6 +62,11 @@ pub(super) fn wasmtime(
     if let Some(fixtures) = &config.development_test {
         runtime.development_clock_readings = Some(fixtures.clock_readings(config)?);
     }
+    #[cfg(feature = "development-test-node")]
+    if let Some(observation) = &config.development_local_service_observation {
+        observation.check(config)?;
+        runtime.development_local_service_refusals = true;
+    }
     if runtime.instance_allocator == InstanceAllocator::Pooling {
         // Capacity has passed checked aggregation across every cell class.
         // Keep the inactive on-demand pool setting at its historical default.

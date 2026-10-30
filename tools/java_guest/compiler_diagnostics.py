@@ -20,6 +20,8 @@ NATIVE = re.compile(r'Method (' + NAME + r')' + DESCRIPTOR
                     + r' is native but has no org\.teavm\.interop\.Import annotation on it')
 MISSING_METHOD = re.compile(r'Method (' + NAME + r')' + DESCRIPTOR + r' was not found')
 MISSING_CLASS = re.compile(r'Class (' + NAME + r') was not found')
+CHECKPOINT_CONTEXT = re.compile(r'latent\.java\.checkpoint-context\.v1 '
+    r'java-checkpoint-(nonsuspendable-context|analysis-bound|unresolved)-741')
 
 
 def findings(raw: bytes, classpath: dict, source: str) -> tuple[list[dict], int]:
@@ -40,8 +42,14 @@ def findings(raw: bytes, classpath: dict, source: str) -> tuple[list[dict], int]
             continue
         line = line.strip()
         native, method, cls = NATIVE.fullmatch(line), MISSING_METHOD.fullmatch(line), MISSING_CLASS.fullmatch(line)
+        checkpoint = CHECKPOINT_CONTEXT.fullmatch(line)
         value = None
-        if native:
+        if checkpoint:
+            classification = ('missing-runtime-port' if checkpoint[1] == 'nonsuspendable-context'
+                else 'unresolved-behavior')
+            value = compatibility.finding(classification, 'compile', 'compiler',
+                operation='java-runtime-checkpoint-context', source_digest=source, owner_issue=741)
+        elif native:
             symbol = native[1]
             owner = owners.get(symbol.rsplit('.', 1)[0].replace('.', '/') + '.class')
             if owner is not None:

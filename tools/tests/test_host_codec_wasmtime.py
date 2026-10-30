@@ -16,15 +16,20 @@ from tools.native_runtime.common import InstallError
 class PinnedWasmtimeSource(unittest.TestCase):
     def fixture(self, root):
         shutil.copytree(source.ROOT / source.PROVIDER, root / source.PROVIDER)
+        shutil.copytree(source.ROOT / source.CACHE_PROVIDER, root / source.CACHE_PROVIDER)
         for name in ('Cargo.toml', 'Cargo.lock'):
             shutil.copyfile(source.ROOT / name, root / name)
 
     def test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph(self):
         checked = source.verify()
-        self.assertEqual(len(checked['files']), 259)
+        self.assertEqual(len(checked['files']), 276)
         self.assertEqual(checked['nativeCohort'], source.COHORT)
         self.assertEqual(checked['licenseFiles'], {'LICENSE': hashlib.sha256(
             (source.ROOT / source.PROVIDER / 'LICENSE').read_bytes()).hexdigest()})
+        self.assertEqual(checked['additionalLicenseFiles'], {name: hashlib.sha256(
+            (source.ROOT / source.PROVIDER / name).read_bytes()).hexdigest() for name in (
+                'src/runtime/component/concurrent/host_futures/LICENSE-MIT',
+                'src/runtime/component/concurrent/host_futures/LICENSE-APACHE')})
         graph = registry.workspace(source.ROOT)
         self.assertNotIn(source.NAME, graph)
         self.assertIn('latent-wasmtime', graph)
@@ -39,6 +44,16 @@ class PinnedWasmtimeSource(unittest.TestCase):
             directory = root / source.PROVIDER
             for name in ('Cargo.toml', 'LICENSE', 'src/runtime/component/values.rs',
                          'src/runtime/component/dynamic_memory.rs', 'UPSTREAM.latent.json',
+                         'src/runtime/component/concurrent/call_future.rs',
+                         'src/runtime/component/concurrent/worker_function.rs',
+                         'src/runtime/component/concurrent/work_queue.rs',
+                         'src/runtime/component/concurrent/host_futures/paid_arc.rs',
+                         'src/runtime/component/concurrent/host_futures/paid/task.rs',
+                         'src/runtime/component/concurrent/host_futures/LICENSE-MIT',
+                         'src/runtime/component/concurrent/host_futures/LICENSE-APACHE',
+                         'src/runtime/component/concurrent/futures_and_streams.rs',
+                         'src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs',
+                         'src/runtime/component/concurrent/pending_future.rs',
                          'README.latent.md', 'latent-dynamic-memory.patch'):
                 with self.subTest(name=name):
                     target = directory / name
@@ -55,6 +70,33 @@ class PinnedWasmtimeSource(unittest.TestCase):
             target = directory / 'LICENSE'
             target.unlink()
             with self.assertRaisesRegex(ValueError, 'source-identity'):
+                source.verify(root)
+
+    def test_cache_backport_complete_source_and_fixed_locks_are_required(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            checked = source.verify(root)
+            cache = checked['cacheSecurityBackport']
+            self.assertEqual(len(cache['files']), 14)
+            self.assertEqual(cache['fixedRegistryPackages']['zstd-safe']['version'], '8.2.0')
+            self.assertEqual(cache['fixedRegistryPackages']['zstd-sys']['version'], '2.1.2+zstd.1.5.7')
+            directory = root / source.CACHE_PROVIDER
+            for name in cache['files']:
+                with self.subTest(name=name):
+                    target = directory / name
+                    original = target.read_bytes()
+                    target.write_bytes(original + b'\nchanged\n')
+                    with self.assertRaisesRegex(ValueError, 'cache-source-identity'):
+                        source.verify(root)
+                    target.write_bytes(original)
+            extra = directory / 'foreign.rs'
+            extra.write_bytes(b'foreign')
+            with self.assertRaisesRegex(ValueError, 'cache-source-identity'):
+                source.verify(root)
+            extra.unlink()
+            shutil.rmtree(directory)
+            with self.assertRaisesRegex(ValueError, 'cache-source-directory'):
                 source.verify(root)
 
     def test_workspace_selection_isolation_global_override_and_registry_lock_are_refused(self):
@@ -94,7 +136,10 @@ class PinnedWasmtimeSource(unittest.TestCase):
         metadata = {'packages': [package], 'resolve': {'nodes': [{'id': package['id'], 'deps': []}]}}
         lock = tomllib.loads((source.ROOT / 'Cargo.lock').read_text())
         sbom, licenses = dependency_inventory(metadata, lock, 'a' * 40, 0, {}, root_names=frozenset({source.NAME}))
-        self.assertEqual(licenses, {'licenses/wasmtime-48.0.7/LICENSE': source.ROOT / source.PROVIDER / 'LICENSE'})
+        self.assertEqual(licenses, {f'licenses/wasmtime-48.0.7/{Path(name).name}':
+            source.ROOT / source.PROVIDER / name for name in (
+                *source.verify()['licenseFiles'], *source.verify()['additionalLicenseFiles'])})
+        self.assertEqual(len(licenses), 3)
         self.assertIn(source.RECORD_SHA256, sbom['packages'][0]['comment'])
         self.assertIn(source.COHORT, sbom['packages'][0]['comment'])
         self.assertNotIn('checksums', sbom['packages'][0])
@@ -102,6 +147,26 @@ class PinnedWasmtimeSource(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(InstallError):
                 dependency_inventory({**metadata, 'packages': [{**package, **change}]}, lock,
                     'a' * 40, 0, {}, root_names=frozenset({source.NAME}))
+
+    def test_local_cache_inventory_retains_original_license_and_backport_identity(self):
+        checked = source.verify()['cacheSecurityBackport']
+        package = {'id': 'pinned-cache', 'name': checked['package'], 'version': source.VERSION,
+                   'source': None, 'license': 'Apache-2.0 WITH LLVM-exception',
+                   'manifest_path': str(source.ROOT / source.CACHE_PROVIDER / 'Cargo.toml')}
+        metadata = {'packages': [package], 'resolve': {'nodes': [{'id': package['id'], 'deps': []}]}}
+        lock = tomllib.loads((source.ROOT / source.CACHE_PROVIDER / 'Cargo.lock').read_text())
+        sbom, licenses = dependency_inventory(metadata, lock, 'a' * 40, 0, {},
+            root_names=frozenset({checked['package']}))
+        self.assertEqual(licenses, {'licenses/wasmtime-internal-cache-48.0.7/LICENSE':
+            source.ROOT / source.CACHE_PROVIDER / 'LICENSE'})
+        self.assertIn(checked['upstreamSha256'], sbom['packages'][0]['comment'])
+        self.assertIn(source.RECORD_SHA256, sbom['packages'][0]['comment'])
+        self.assertNotIn('checksums', sbom['packages'][0])
+        for change in ({'version': '48.0.8'}, {'license': 'MIT'},
+                       {'manifest_path': str(source.ROOT / 'Cargo.toml')}):
+            with self.subTest(change=change), self.assertRaises(InstallError):
+                dependency_inventory({**metadata, 'packages': [{**package, **change}]}, lock,
+                    'a' * 40, 0, {}, root_names=frozenset({checked['package']}))
 
     def test_unregistered_local_dependency_cannot_reuse_the_wasmtime_alias(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -114,7 +179,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                 registry.workspace(root)
 
     def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
-        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9')
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v28-unstarted-host-drop-cache-repair')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
@@ -135,7 +200,8 @@ class PinnedWasmtimeSource(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
-            for name in ('src/runtime/native_memory.rs', 'src/runtime/vm/instance.rs',
+            for name in ('src/runtime/component/concurrent.rs',
+                         'src/runtime/native_memory.rs', 'src/runtime/vm/instance.rs',
                          'src/runtime/vm/component.rs', 'src/runtime/component/store.rs',
                          'src/runtime/store/data.rs', 'src/runtime/vm/component/resources.rs',
                          'src/runtime/vm/instance/allocator.rs', 'src/runtime.rs', 'src/runtime/module.rs',
@@ -147,7 +213,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 259)
+            self.assertEqual(len(source.verify(root)['files']), 276)
 
     def test_funcrefs_stable_arena_and_directory_sources_cannot_be_substituted(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -164,7 +230,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 259)
+            self.assertEqual(len(source.verify(root)['files']), 276)
 
 
     def test_resource_substitution_map_and_escape_ownership_sources_cannot_be_substituted(self):
@@ -186,7 +252,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 259)
+            self.assertEqual(len(source.verify(root)['files']), 276)
 
 
     def test_actual_linear_allocator_notifications_cannot_be_substituted(self):
@@ -202,7 +268,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 259)
+            self.assertEqual(len(source.verify(root)['files']), 276)
 
 
     def test_per_call_host_future_owner_requires_its_exact_source_postimage(self):
@@ -216,7 +282,19 @@ class PinnedWasmtimeSource(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                 source.verify(root)
             target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 259)
+            for name, token in (
+                ('src/runtime/component/concurrent/abort.rs', b'self.inner.take().and_then(Arc::into_inner)'),
+                ('src/runtime/component/concurrent.rs', b'JoinHandle::run_with_memory'),
+            ):
+                with self.subTest(name=name):
+                    target = root / source.PROVIDER / name
+                    original = target.read_bytes()
+                    self.assertIn(token, original)
+                    target.write_bytes(original.replace(token, b'unreviewed_join_cell', 1))
+                    with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
+                        source.verify(root)
+                    target.write_bytes(original)
+            self.assertEqual(len(source.verify(root)['files']), 276)
 
 
     def test_owned_context_reply_lowering_requires_exact_guard_and_public_entrypoint_sources(self):
@@ -236,7 +314,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 259)
+            self.assertEqual(len(source.verify(root)['files']), 276)
 
 
 if __name__ == '__main__':

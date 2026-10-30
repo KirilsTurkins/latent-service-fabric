@@ -39,7 +39,7 @@ compare actual build steps before attributing a timing change to either.
 ## Cached files and fresh evidence
 
 The workflow pins
-[Swatinem/rust-cache v2.9.2](https://github.com/Swatinem/rust-cache/tree/6323deb102c322ba6fcbdcafc7e3dddab59af2b6)
+[LSF rust-cache v2.9.3 security fork](https://github.com/KirilsTurkins/lsf-rust-cache/tree/476b290465f7c84db317df6e6a6e2d3c12ea3477)
 to its full commit. It uses GitHub's cache service and the action's maintained
 dependency pruning instead of a repository-specific artifact cleanup script.
 The Cargo registry and Git dependency cache are eligible for reuse. Installed
@@ -53,8 +53,8 @@ Before saving, the action removes workspace build outputs, unused dependencies
 and incremental artifacts from its workspace target inventory. It keeps the
 compiled dependency fingerprints and build-script outputs needed for reuse.
 This cleanup runs in the post step, after validation and evidence uploads.
-See the pinned [cleanup implementation](https://github.com/Swatinem/rust-cache/blob/6323deb102c322ba6fcbdcafc7e3dddab59af2b6/src/cleanup.ts)
-and [save implementation](https://github.com/Swatinem/rust-cache/blob/6323deb102c322ba6fcbdcafc7e3dddab59af2b6/src/save.ts).
+See the pinned [cleanup implementation](https://github.com/KirilsTurkins/lsf-rust-cache/blob/476b290465f7c84db317df6e6a6e2d3c12ea3477/src/cleanup.ts)
+and [save implementation](https://github.com/KirilsTurkins/lsf-rust-cache/blob/476b290465f7c84db317df6e6a6e2d3c12ea3477/src/save.ts).
 
 Pruning removes capsule files under `target/capsules`, generated contract inventories,
 provenance exports, native/raw runtime caches, catalogs, test fixtures,
@@ -104,7 +104,7 @@ frozen measurement and optimization smoke use `frozen-collector` and
 `optimization-smoke` respectively, keeping their complete dependency producers
 separate from workspace feature unification. No commit SHA or PR number is added. A version-only root
 manifest change can cause a cold cache; that is an accepted initial tradeoff.
-See the pinned [key construction](https://github.com/Swatinem/rust-cache/blob/6323deb102c322ba6fcbdcafc7e3dddab59af2b6/src/config.ts).
+See the pinned [key construction](https://github.com/KirilsTurkins/lsf-rust-cache/blob/476b290465f7c84db317df6e6a6e2d3c12ea3477/src/config.ts).
 
 The Rust tests variant, standalone contracts variant, both collector variants,
 MSRV and isolated compiler save their respective

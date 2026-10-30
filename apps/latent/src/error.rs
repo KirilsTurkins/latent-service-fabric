@@ -1,4 +1,6 @@
 //! Fixed diagnostics; remote error text and local paths never become diagnostics.
+#[cfg(test)]
+mod audit_tests;
 mod details;
 #[cfg(test)]
 mod tests;

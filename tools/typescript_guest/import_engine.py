@@ -4,7 +4,7 @@ import hashlib
 from tools.typescript_guest.activation_engine import identity, replace_once
 
 IMPORT_PROFILE = 'spidermonkey-activation-promises-clocks-imports-v1'
-NATIVE_IMPORT_SOURCES = ('native_import_lifecycle.h', 'native_imports.h',
+NATIVE_IMPORT_SOURCES = ('native_import_lifecycle.h', 'native_imports.h', 'native_import_partial.h',
                          'broker_import_accounting.h', 'native_import_bridge.cpp',
                          'native_import_values.h','native_import_globals.cpp',
                          'async_import_descriptor.rs','async_import_splice.rs')
@@ -14,6 +14,35 @@ SOURCE_PREIMAGES = {
     'crates/spidermonkey-embedding-splicer/src/splice.rs':
         'abb62bc9580a9f8b8e8026950f6bb285f64373a905ae770718612508dafa301a',
 }
+
+
+def derive_import_backing_embedding(embedding:bytes)->bytes:
+    """Extend the normal authenticated embedding; never patch the Mach library."""
+    if b'lsf_import_free_backing' in embedding:
+        raise ValueError('already-extended-import-backing-embedding')
+    embedding = replace_once(embedding,
+        b'  void *ret = JS_realloc(Runtime.cx, ptr, orig_size, new_size);\n',
+        b'  // Canonical fresh zero-byte values own no backing allocation.\n'
+        b'  if (!ptr && orig_size == 0 && new_size == 0) return nullptr;\n'
+        b'  void *ret = JS_realloc(Runtime.cx, ptr, orig_size, new_size);\n',
+        'canonical-fresh-zero-size-no-allocation')
+    return replace_once(embedding,
+        b'using componentize::embedding::ReportAndClearException;\nusing componentize::embedding::Runtime;\n',
+        b'using componentize::embedding::ReportAndClearException;\nusing componentize::embedding::Runtime;\n\n'
+        b'// Read-only diagnostic observation, never an ownership/refund ledger.\n'
+        b'struct LsfImportBackingFreeObservation { uint32_t returns; bool overflow; };\n'
+        b'static_assert(sizeof(LsfImportBackingFreeObservation) == 8);\n'
+        b'static LsfImportBackingFreeObservation lsf_import_backing_free_observation{};\n'
+        b'uint32_t lsf_import_backing_free_count() { return lsf_import_backing_free_observation.returns; }\n'
+        b'bool lsf_import_backing_free_overflow() { return lsf_import_backing_free_observation.overflow; }\n'
+        b'__attribute__((export_name("lsf_import_free_backing"))) void\n'
+        b'lsf_import_free_backing(void *ptr) {\n'
+        b'  cabi_free(ptr);\n'
+        b'  auto &observation = lsf_import_backing_free_observation;\n'
+        b'  if (observation.returns == 0xffffffffU) observation.overflow = true;\n'
+        b'  else ++observation.returns;\n'
+        b'}\n',
+        'private-original-import-backing-free')
 
 
 def extend_native_import_source(base_source: dict[str,bytes], native: dict[str,bytes]) -> tuple[dict[str,bytes],dict]:
@@ -35,11 +64,23 @@ def extend_native_import_source(base_source: dict[str,bytes], native: dict[str,b
         b'         lsf::typescript::activation::install_import_bridge(engine->cx(), engine->global());\n',
         'private-import-bridge-before-application')
     result=dict(base_source)
+    # These functions live in the freshly linked embedding translation unit,
+    # sharing the ORIGINAL Runtime.cx/cabi_free/JS_free allocator. The low-level
+    # SpiderMonkey library is unchanged. No public JS free API is installed.
+    result['embedding/embedding.cpp'] = derive_import_backing_embedding(result['embedding/embedding.cpp'])
     result[install]=source
+    engine='StarlingMonkey/runtime/engine.cpp'
+    if engine not in result:
+        raise ValueError('private-own-binding-original-engine-required')
+    result[engine]=replace_once(result[engine],
+        b'  return JS_ExecuteScript(cx, script, &result);\n',
+        b'  if (!JS_ExecuteScript(cx, script, &result)) return false;\n'
+        b'  return lsf::typescript::activation::seal_import_own_plans(cx);\n',
+        'private-own-ABI2-native-initializer-completeness-before-ESM')
     result.update({'lsf/'+name:raw for name,raw in native.items()})
     return result, {'profile':IMPORT_PROFILE,'originalSource':identity(base_source),'derivedSource':identity(result),
         'nativeSource':identity(native),'compilerSourceFilesToAdd':['lsf/native_import_bridge.cpp','lsf/native_import_globals.cpp'],
-        'activationInterfaceChanged':False,'clockAuthorityGranted':False,'qualification':'unknown',
+        'privateImportBindingAbi':2,'activationInterfaceChanged':False,'clockAuthorityGranted':False,'qualification':'unknown',
         'apiSupport':'not-evaluated','signedLSFComponentQualified':False}
 
 

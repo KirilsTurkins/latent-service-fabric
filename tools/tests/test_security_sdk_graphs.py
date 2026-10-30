@@ -33,7 +33,8 @@ class SdkGraphTests(unittest.TestCase):
         self.assertEqual({node.tag: node.text for node in project[0]}, {
             'OutputType': 'Exe', 'TargetFramework': 'net10.0', 'ImplicitUsings': 'enable',
             'Nullable': 'enable', 'EnableDefaultCompileItems': 'false'})
-        self.assertEqual([(node.tag, node.attrib) for node in project[1]], [('Compile', {'Include': 'Program.cs'})])
+        self.assertEqual([(node.tag, node.attrib) for node in project[1]], [
+            ('Compile', {'Include': 'Program.cs'}), ('Compile', {'Include': 'CilReferences.cs'})])
         for tag in ('PackageReference', 'ProjectReference', 'Reference', 'Import'):
             self.assertEqual(list(project.iter(tag)), [])
         _, records = inventory(root)
@@ -489,11 +490,11 @@ class SdkGraphTests(unittest.TestCase):
             "sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj":
                 "766809881ad0b7ff2ce3a59edf7a24de0a86d4869b455e27d3f3e9368fde1546",
             "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj":
-                "f2c7a0583896978a564abc90af940b66400b733359221d3344fdfa1f5c0055ec",
+                "3c17ef53bfdf5525340e1e0e0e33fe72dab97e5327621e37b10fdd01866a2ff7",
             "sdk/dotnet-guest/tests/fixtures/managed-work-state-control/Control.csproj":
                 "e6a82918ae0965ae9267a2e167fd90001fdc02195874d76b6cbf94046d6e0ffd",
             "sdk/dotnet-guest/tests/fixtures/http-abort-control/Control.csproj":
-                "1f288b33da1181d2d9ccb2ceb3f0363b5178be883c6b9eb6c05b6a98d2d5c225",
+                "6845b7563965c28e1529239aac8b1ea3c814192c938c74f719eb020d215c50a2",
             "sdk/dotnet-guest/tests/fixtures/managed-timer-state-control/Control.csproj":
                 "b98c105dbc08bba94f2d49a3d28e10f4ce2d197f9b52a1939c82adf446f35a3c",
         }
@@ -512,7 +513,7 @@ class SdkGraphTests(unittest.TestCase):
         packages, records = inventory(root)
         helper = xml.fromstring(read_file(root, "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj"))
         self.assertEqual([item.attrib for item in helper.iter("Compile")],
-                         [{"Include": "Program.cs"}, {"Include": "TaskWait.cs"}, {"Include": "IdleTimerDriver.cs"}, {"Include": "ClosedFilesystem.cs"}, {"Include": "ManagedWorkRuntime.cs"}, {"Include": "ManagedWorkTimers.cs"}, {"Include": "ManagedWorkBindings.cs"}, {"Include": "ManagedWorkCopy.cs"}, {"Include": "ManagedWorkContext.cs"}, {"Include": "ManagedWorkHooks.cs"}, {"Include": "ManagedWorkPort.cs"}, {"Include": "ManagedHttpWork.cs"}])
+                         [{"Include": "Program.cs"}, {"Include": "TaskWait.cs"}, {"Include": "AggregateTaskWait.cs"}, {"Include": "IdleTimerDriver.cs"}, {"Include": "ClosedFilesystem.cs"}, {"Include": "ManagedWorkRuntime.cs"}, {"Include": "ManagedWorkTimers.cs"}, {"Include": "ManagedWorkBindings.cs"}, {"Include": "ManagedWorkCopy.cs"}, {"Include": "ManagedWorkContext.cs"}, {"Include": "ManagedWorkHooks.cs"}, {"Include": "ManagedWorkPort.cs"}, {"Include": "ManagedHttpWork.cs"}])
         references = [item.attrib for item in helper.iter("Reference")]
         self.assertEqual(references, [{"Include": "Mono.Cecil", "HintPath": "$(LsfCecilPath)"}])
         self.assertIn(Package("NuGet", "Microsoft.NET.ILLink.Tasks", "10.0.0",

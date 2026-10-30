@@ -147,7 +147,7 @@ def probe(output: Path, gradle: str, wasi_sdk: str, bindgen: str, wasm_tools: st
             ('java-version', ['java', '-version'], config['sdk']['java']),
             ('gradle-version', [gradle, '--version'], config['sdk']['gradle']),
             ('clang-version', [clang, '--version'], '21.1.4-wasi-sdk'),
-            ('wit-bindgen-version', [bindgen, '--version'], config['rust']['dependencies']['wit-bindgen']),
+            ('wit-bindgen-version', [bindgen, '--version'], config['contracts']['wit-bindgen-cli']),
             ('wasm-tools-version', [wasm_tools, '--version'], config['contracts']['wasm-tools']),
         ):
             run(stage, command)

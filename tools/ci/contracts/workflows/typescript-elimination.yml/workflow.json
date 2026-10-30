@@ -1,35 +1,35 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "typescript-elimination-${{ github.ref }}"
-    },
-    "name": "TypeScript selected-root compiler elimination",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/typescript-elimination-20261022"
-        ],
-        "paths": [
-          ".github/workflows/typescript-elimination.yml",
-          "tools/qualify_typescript_elimination.py",
-          "tools/typescript_elimination_fixture.py",
-          "tools/typescript_elimination_node.py",
-          "tools/tests/test_typescript_elimination.py",
-          "tools/typescript_elimination_evidence.py"
-        ]
-      },
-      "workflow_dispatch": null
-    },
-    "permissions": {
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "compiler-elimination"
-  ],
-  "reviewReason": "Add finite two-build one-root-edge TypeScript compiler/elimination programme; preserve all historical campaigns and guards.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/typescript-elimination.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"typescript-elimination-${{ github.ref }}"
+},
+"name":"TypeScript selected-root compiler elimination",
+"on":{
+"push":{
+"branches":[
+"feat/typescript-elimination-20261022"
+],
+"paths":[
+".github/workflows/typescript-elimination.yml",
+"tools/qualify_typescript_elimination.py",
+"tools/typescript_elimination_fixture.py",
+"tools/typescript_elimination_node.py",
+"tools/tests/test_typescript_elimination.py",
+"tools/typescript_elimination_evidence.py"
+]
+},
+"workflow_dispatch":null
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"compiler-elimination"
+],
+"reviewReason":"Add finite two-build one-root-edge TypeScript compiler/elimination programme; preserve all historical campaigns and guards.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/typescript-elimination.yml"
 }

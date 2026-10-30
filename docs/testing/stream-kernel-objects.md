@@ -556,3 +556,152 @@ normal factory enabled. Extended task/PID/security/instrumentation descendants,
 running-stack/RCU/TLB final return, actual worker/queue/stop ownership, bootstrap,
 remaining device/RX/DNS/deferred closure, sealed image/layout/BTF and finite
 installed node/operator/provider conformance remain required.
+
+
+## Normal protected-stream objects, 2026-10-26
+
+[Run 40301019517](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40301019517)
+compiled all eighteen selected x86-64 objects at exact source
+`c6f901819ba5d84a5a0474f2e6bbcad8019b6dcd`. The
+[durable compile-only receipt](evidence/protected-stream-normal-objects-2026-10-26.json)
+binds eighteen ELF objects, all 81 safe artifact members, 27 successful owned
+commands with cleanup, 54 raw channels, 2,773 current and 2,725 original baseline
+Git materials, and the exact accepted configuration. Normal Kbuild used `-j2`
+under the unchanged 1,320-second owner and 1,200-second compile bounds.
+
+The first attempt failed a strict source-composition guard before the object
+command. The second reached C compilation and reported the missing original
+`VIRTIO_RING_F_INDIRECT_DESC` declaration at three sites. Adding its UAPI header
+changed one derived header by 36 bytes; the other 364 derived files remained
+exact. Both failed attempts remain historical failures.
+
+This checks C types and compilation of the reviewed source through NETDEV core
+and original kobject release tails. The later class-directory draft is excluded.
+The original bank, infrastructure and record limits remain fixed. Consumer
+selection stays NULL. There is no linked image, boot, actual socket/RX/DMA/DNS/TLS
+operation, complete physical geometry, useful-fit, final-free, installation or
+whole #738 qualification. Remaining class/kernfs and allocation/free source
+closure and real-kernel/node/provider/operator qualification remain required.
+Current-main composition and lossless contract storage retain the actual c6f9
+compile identity; they do not turn it into a newly executed result.
+
+
+## Class-directory lifetime objects, 2026-10-26
+
+[Run 40310522972](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40310522972)
+passed at `5c1e8876a2495843b902595d961c8cc4f068901c`. Its
+[separate durable receipt](evidence/protected-stream-classdir-objects-2026-10-26.json)
+binds the four changed translation units: `net/factory.o`, `drivers/base/core.o`,
+`lib/kobject.o` and `net/core/net-sysfs.o`. All four ELF objects, 67 safe archive
+members, 27 cleaned zero-exit commands, 54 raw channels, 2,779 current / 2,725
+baseline Git materials and the accepted configuration were authenticated.
+Two new pure controls passed. The eighteen-object job was skipped; its earlier
+c6f901 result remains separate and its other fourteen objects were not replayed.
+
+The source adds real typed class/name births, the original positive class
+subsystem reference and original kobject/name/parent release tails. An actual
+static-type/initialized witness distinguishes cleanup of an existing object
+from admission to create a new child. Unknown, poisoned or closed ownership
+still retains backing. The same original process, deadline, physical bank,
+infrastructure, record and bounded public-evidence limits remain in force.
+
+Compilation supplies no running lifetime or useful-fit proof. Consumer stays
+NULL; class/kernfs and full allocation/free closure, linked image, actual kernel
+operations/physical retirement and node/provider/operator qualification remain
+required. The fifty-source executed tuple is retained through later docs,
+lossless storage and independent native-cohort composition without C replay.
+
+
+## Empty class-directory kernfs objects, 2026-10-26
+
+[Run 40347086313](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40347086313)
+passed at `a53bb3595eddc6990868a3a9299f9781834bedc3`. Its
+[separate durable receipt](evidence/protected-stream-classdir-kernfs-objects-2026-10-26.json)
+binds nine ELF64 x86-64 relocatable objects, 52 source inputs / 369 derived rows,
+74 safe archive members, 28 cleaned zero-exit commands / 56 raw channels, 2,781
+current before/after Git materials and 2,725 original baseline materials. The
+nine targets cover factory, device core, kobject, sysfs/kernfs directory, IDR,
+radix tree and the original security/SELinux translation units. The two new
+source/admission controls passed; old four-object steps and the eighteen-object
+job were skipped. Their earlier results remain separate.
+
+The source routes the empty class_dir directory, exact copied name and actual
+IDR/radix storage through the original funded arena. It preserves real namespace,
+LSM and positive-parent operations, records the original completed kobject tail,
+and retains the same parent until actual kernfs/radix RCU children return. The
+first attempt failed a missing-prototype diagnostic; the second exposed three
+cross-enum comparison warnings. Both retain initial-only current-source evidence,
+without final current-source checks or nine-object qualification. File-local
+helpers now retain static scope, and all three kind assertions compare their
+constants as unsigned int. Assertions and warnings-as-errors remain enabled.
+
+The accepted configuration, one original 1,320-second owner / 1,200-second compile
+bound, `-j2`, physical bank and evidence caps are unchanged. A single bounded
+exact baseline fetch replaces assumptions about current-branch ancestry. This
+is compile-only evidence: consumer stays NULL, with no linked image, running
+provider, useful-fit or physical-retirement qualification. Ordinary NETDEV
+files/groups/queues, inherited attrs/labels, full source closure and actual
+kernel/node/provider/operator qualification remain open. Documentation and
+lossless contract storage do not relabel the executed a53 source or replay C.
+
+
+## NETDEV own-directory objects, 2026-10-26
+
+[Run 40368865475](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40368865475)
+passed at `cbab64b24c966966e8983708372be7a319c70894`. Its
+[separate durable receipt](evidence/protected-stream-netdev-directory-objects-2026-10-26.json)
+binds nine changed ELF64 x86-64 relocatable objects, 55 source inputs / 371
+derived rows, 74 safe archive members, 28 cleaned zero-exit commands / 56 raw
+channels, 2,786 current before/after Git materials and 2,725 original baseline
+materials. Compilation took 14,257.146562 ms. The two new controls passed;
+old four-object and empty-classdir nine-object steps and the eighteen-object job
+were skipped. Their earlier results and failure histories remain separate.
+
+The source adds the NETDEV's own empty directory, separately copied IFNAMSIZ
+name and typed IDR/radix births through the original funded arena. Original
+namespace, ownership and security operations remain guarded; delayed children
+retain the original NETDEV/VIRTIO parent custody. The actual device-add route
+refuses before platform notification and later sysfs families, using the original
+directory/glue/parent unwind without unpaired REMOVE notifications. All previous
+52 source files remain byte-exact; a dedicated projector follows their unchanged
+369-file intermediate. This programme passed on its first attempt.
+
+The selected configuration, original 1,320-second owner / 1,200-second compile
+bound, `-j2`, physical bank and evidence caps are unchanged. Source commit `cbab`
+and its exact tree were merged as `bdd50a4506394e9a1f0d85df14d09c1ec18d7ba4`;
+no C replay or receipt relabelling is used for that tree-identical merge. This is
+compile-only evidence: consumer stays NULL. Platform notification, ordinary
+NETDEV files/groups/queues, inherited attrs/labels, shared-IDR retirement, useful
+fit, actual kernel operations and node/provider/operator qualification remain
+open. The current 2,786-row input map is dated evidence, not a claim that later
+independent source composition has identical inputs.
+
+
+### Allocating-TU layout result — 2026-10-26
+
+The first [eleven-object layout programme](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40391149294)
+passed at source `85c56752e8b766aab8ad0e1f5f5670925201ff2e` (PR #1518).
+The [dated evidence](evidence/protected-stream-layout-objects-2026-10-26.json)
+binds the sole 1,954,503-byte artifact, all eleven ELF64 x86-64 relocatable objects,
+59 raw source files, 375 derived files, 2,790 current / 2,725 baseline Git inputs,
+28 zero-exit reaped commands and 56 raw channels. The older eighteen-object job
+and four/nine-object branches were skipped; this result does not replay or retag
+their historical receipts. Source composition merged as `4e0b9f04d403dc1a0caef253c5c8c8f2af62ae8d`;
+later source changes remain separately dated.
+
+Eight real allocating translation units emitted 93 fixed read-only facts under
+the unchanged `0015c9ac...` configuration. The bounded ELF reader independently
+binds their object/table identities without executing a product. The recomputed
+isolated Root-plus-75-RX minimum is **89,600 bytes / 76 births**. Its status is
+`insufficient-to-prove-fit`: 107,008 bytes / 180 records is only the numerical
+difference from the fixed infrastructure limits, **not available headroom**.
+Actual pre-RX cursor/occupied-record values remain unknown in this offline report.
+The real C allocator continues to check actual cursor, all nonempty records,
+padding and cumulative returned temporaries; no source-completeness bit is inferred.
+
+The programme keeps the existing 25-minute job, 1,320-second owner, 1,200-second
+`make -j2`, 128 MiB public union and 64 KiB report bounds. Full constructor/security/
+IRQ/shared-IDR/name/cleanup demand, later NETDEV effects, TCP/TX/DNS/IPv6/TLS,
+used-bank physical retirement and a current real-node standard-API vertical remain
+unqualified. No image, boot or network operation ran; the consumer remains NULL.
+The subsequent POST_INIT source draft was not compiled by this dated programme.

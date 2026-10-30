@@ -8,7 +8,7 @@ wit_bindgen::generate!({
     world: "closed",
     // Closed operations complete immediately; retain their synchronous ABI.
     // The private I/O function types are paired with compiler-projected imports.
-    async: ["-all"],
+    sync: true,
     with: {
         "latent:clock/monotonic@0.1.0": generate,
     },

@@ -9,10 +9,23 @@ import java.util.concurrent.ThreadFactory;
 public final class Executors {
     private static int nextPool;
     private Executors() { }
+    static boolean isManaged(java.util.concurrent.Executor executor) { return executor instanceof ManagedExecutor; }
     public static ExecutorService newFixedThreadPool(int threads) { return newFixedThreadPool(threads, defaultThreadFactory()); }
     public static ExecutorService newFixedThreadPool(int threads, ThreadFactory factory) { return new ManagedExecutor(threads, factory); }
     public static ExecutorService newSingleThreadExecutor() { return newFixedThreadPool(1); }
     public static ExecutorService newSingleThreadExecutor(ThreadFactory factory) { return newFixedThreadPool(1, factory); }
+    public static java.util.concurrent.ScheduledExecutorService newScheduledThreadPool(int threads) {
+        return newScheduledThreadPool(threads, defaultThreadFactory());
+    }
+    public static java.util.concurrent.ScheduledExecutorService newScheduledThreadPool(int threads, ThreadFactory factory) {
+        return new ScheduledThreadPoolExecutor(threads, factory);
+    }
+    public static java.util.concurrent.ScheduledExecutorService newSingleThreadScheduledExecutor() {
+        return newScheduledThreadPool(1);
+    }
+    public static java.util.concurrent.ScheduledExecutorService newSingleThreadScheduledExecutor(ThreadFactory factory) {
+        return newScheduledThreadPool(1, factory);
+    }
     public static ExecutorService newCachedThreadPool() { return newCachedThreadPool(defaultThreadFactory()); }
     public static ExecutorService newCachedThreadPool(ThreadFactory factory) {
         // Dynamic logical parallelism remains bounded by the original host task

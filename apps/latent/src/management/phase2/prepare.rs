@@ -14,7 +14,9 @@ pub(in crate::management) fn audit(
     command: &AuditCommand,
     config: &ResolvedConfig,
 ) -> Result<Operation, Failure> {
-    let AuditCommand::Query(args) = command;
+    let AuditCommand::Query(args) = command else {
+        return Err(invalid_input());
+    };
     let scope = match args.scope {
         Scope::Tenant => proto::AuditQueryScope {
             kind: proto::AuditScopeKind::Tenant as i32,

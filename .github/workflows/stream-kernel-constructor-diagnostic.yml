@@ -1,0 +1,52 @@
+name: Retained kernel constructor numeric refusal
+on:
+  push:
+    branches: ['feat/stream-kernel-vm-qualification-20261023']
+    paths: ['.github/workflows/stream-kernel-constructor-diagnostic.yml']
+  workflow_dispatch: {}
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: kernel-constructor-numeric-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  numeric-refusal:
+    name: Same linked image with one bounded numeric PID1 probe
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - name: Install existing locked recipe dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Refuse changed failure origins or unrelated initramfs bytes
+        run: python3 -B -m unittest tools.tests.test_kernel_vm_numeric -v
+      - name: Install only static probe compiler and isolated emulator
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes gcc qemu-system-x86
+      - name: Observe numeric BEGIN refusal on the unchanged linked kernel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/diagnose_host_stream_kernel_vm.py
+          --output "$RUNNER_TEMP/stream-kernel-numeric"
+      - name: Retain bounded numeric observations and original failure identity
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: stream-kernel-numeric-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/stream-kernel-numeric/numeric-diagnostic.json
+            ${{ runner.temp }}/stream-kernel-numeric/retained-image-origin.json
+            ${{ runner.temp }}/stream-kernel-numeric/constructor-init.c
+            ${{ runner.temp }}/stream-kernel-numeric/logs/*.txt
+          if-no-files-found: error
+          retention-days: 3

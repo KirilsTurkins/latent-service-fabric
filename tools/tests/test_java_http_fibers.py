@@ -549,6 +549,108 @@ class JavaPublicCFailureContext(unittest.TestCase):
             self.assertEqual(compiler.run.call_count, 2)
 
 
+class PublicCopyCostObservation(unittest.TestCase):
+    def test_closed_actual_trace_and_candidate_require_changed_decisions_and_smaller_c(self):
+        import json
+        from tools.java_guest import copy_cost_observation as observe
+        row = {'schemaVersion': observe.TRACE_SCHEMA, 'irreducible': True,
+            'hookCount': 1, 'blocks': 4, 'instructions': 6, 'phis': 2, 'incomings': 2,
+            'handlers': 2, 'exceptionBindings': 1, 'structuralWeight': 17,
+            'oldSplitCalls': 1, 'newSplitCalls': 1, 'oldCopiedNodes': 2, 'newCopiedNodes': 1,
+            'oldFinalBlocks': 6, 'newFinalBlocks': 5, 'oldFinalWeight': 25, 'newFinalWeight': 20,
+            'oldDecisionSha256': 'a' * 64, 'newDecisionSha256': 'b' * 64}
+        log = observe.MARKER + json.dumps(row) + '\n'
+        self.assertEqual(observe.trace(log), row)
+        raw = b'void* meth_dla_Capsule_pools() {\n    char* s = "}"; /* { */\n    return 0;\n}\n'
+        shape = observe.c_shape(raw)
+        self.assertEqual(shape['poolsBytes'], len(raw))
+        self.assertTrue(observe.candidate(row, shape))
+        self.assertFalse(observe.candidate({**row, 'newDecisionSha256': 'a' * 64}, shape))
+        self.assertFalse(observe.candidate(row, observe.BASELINE))
+        for changed in ('', log + log, 'diagnostic ' + log,
+                log.replace('"hookCount": 1', '"hookCount": true'),
+                log.replace('"blocks": 4', '"blocks": 4.0'),
+                log.replace('"blocks": 4', '"blocks": 4, "blocks": 4'),
+                log.replace('"newFinalBlocks": 5', '"newFinalBlocks": 6'),
+                log.replace('"oldFinalWeight": 25', '"oldFinalWeight": 2147483648'),
+                log.replace('"newCopiedNodes": 1', '"newCopiedNodes": 1048577')):
+            with self.subTest(changed=changed[:100]), self.assertRaises(ValueError):
+                observe.trace(changed)
+        for changed in (raw + raw, raw.replace(b'/* { */', b'/* {'), raw[:-2], b'\0' + raw):
+            with self.assertRaises(ValueError):
+                observe.c_shape(changed)
+
+    def test_preclang_stops_missing_unchanged_and_delegates_improved_exact_parent_command(self):
+        from tools.java_guest import copy_cost_observation as observe
+        calls = []
+        class Parent:
+            def run(self, stage, tool, *args, cwd=None):
+                calls.append((stage, tool, args, cwd, self.deadline))
+                return 'original parent clang output'
+        class Selected(observe.PublicCopyCostObservationMixin, Parent):
+            pass
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary).resolve()
+            for target, original in (
+                    ('src/Capsule.java', 'Capsule.java'),
+                    ('build/project/src/main/java/Capsule.java', 'Capsule.java'),
+                    ('wit/service.wit', 'service.wit'), ('build/wit/service.wit', 'service.wit')):
+                path = output / target
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(read_file(campaign.ROOT / 'sdk/java-guest/fibers/conformance' / original))
+            raw = b'void* meth_dla_Capsule_pools() {\n    return 0;\n}\n'
+            generated = output / observe.GENERATED_C
+            generated.parent.mkdir(parents=True, exist_ok=True)
+            generated.write_bytes(raw)
+            identity = {'trees': {'generated': {'c/d/l/a/Capsule.c': {'digest': digest(raw), 'size': len(raw)}}}}
+            values = (None,
+                {'irreducible': True, 'oldSplitCalls': 1, 'newSplitCalls': 1,
+                 'oldDecisionSha256': 'a' * 64, 'newDecisionSha256': 'a' * 64},
+                {'irreducible': True, 'oldSplitCalls': 1, 'newSplitCalls': 1,
+                 'oldDecisionSha256': 'a' * 64, 'newDecisionSha256': 'b' * 64})
+            for index, observed in enumerate(values):
+                selected = Selected.__new__(Selected)
+                selected.directory = output / 'compiler'
+                selected.directory.mkdir(exist_ok=True)
+                selected.paths = {'clang': Path('/owned/clang')}
+                selected._observe_public_copy_cost = True
+                selected._copy_gate_reached = False
+                selected._copy_trace = observed
+                selected._copy_trace_log_digest = 'sha256:' + 'c' * 64
+                selected.deadline = 2195
+                selected._copy_owner_deadline = 2195
+                with mock.patch.object(observe, 'expected_command', return_value=[str(selected.paths['clang'])]), \
+                        mock.patch.object(observe, 'input_identity', return_value=identity), \
+                        mock.patch.object(observe.time, 'monotonic', return_value=1000):
+                    if index < 2:
+                        with self.assertRaises(observe.ObservationStopped):
+                            selected.run('c-to-wasm', 'clang')
+                        self.assertEqual(calls, [])
+                    else:
+                        self.assertEqual(selected.run('c-to-wasm', 'clang'), 'original parent clang output')
+                        self.assertEqual(calls, [('c-to-wasm', 'clang', (), None, 1595)])
+                        self.assertEqual(selected.deadline, 2195)
+                receipt = selected.directory / 'public-copy-cost-candidate.json'
+                value = read_json(receipt)
+                self.assertFalse(value['qualification'])
+                self.assertEqual(value['componentAcceptance'], 'not-established-by-this-record')
+                self.assertEqual(value['clangDecision'], ('refused-not-invoked' if index < 2
+                    else 'admitted-pending-original-command'))
+                self.assertEqual(value['reason'], ('missing-actual-hook', 'candidate-not-improved',
+                                                   'strictly-improved')[index])
+                receipt.unlink()
+                self.assertEqual((selected.directory/'public-copy-cost-Capsule.c').read_bytes(), raw)
+                (selected.directory/'public-copy-cost-Capsule.c').unlink()
+            # Authentication still precedes the gate, even for an otherwise
+            # apparently improved record. No alternate public-source variant.
+            (output / 'src/Capsule.java').write_bytes(b'changed public input')
+            selected._copy_gate_reached = False
+            with mock.patch.object(observe, 'expected_command', return_value=[str(selected.paths['clang'])]), \
+                    self.assertRaisesRegex(ValueError, 'public-source-identity'):
+                selected.run('c-to-wasm', 'clang')
+            self.assertFalse(receipt.exists())
+
+
 class PinnedCoroutinePhiRepair(unittest.TestCase):
     def test_exact_pinned_source_repairs_only_copied_phi_filter(self):
         from tools.java_guest import coroutine_patch as patch
@@ -558,10 +660,22 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             patch.BEFORE.encode(), patch.AFTER.encode())
         for before, after in patch.LIVENESS_REPLACEMENTS:
             expected = expected.replace(before.encode(), after.encode())
+        for before, after in (*patch.COPY_COST_REPLACEMENTS, *patch.COPY_OBSERVER_REPLACEMENTS):
+            expected = expected.replace(before.encode(), after.encode())
         for name in patch.RELOCATED_IMPORTS:
             expected = expected.replace(('import com.carrotsearch.hppc.'+name+';').encode(),
                 ('import org.teavm.hppc.'+name+';').encode())
         self.assertEqual(corrected, expected)
+        inverse = corrected.decode()
+        for name in patch.RELOCATED_IMPORTS:
+            inverse = inverse.replace('import org.teavm.hppc.' + name + ';',
+                'import com.carrotsearch.hppc.' + name + ';')
+        for before, after in reversed((*patch.COPY_COST_REPLACEMENTS, *patch.COPY_OBSERVER_REPLACEMENTS)):
+            inverse = inverse.replace(after, before)
+        for before, after in reversed(patch.LIVENESS_REPLACEMENTS):
+            inverse = inverse.replace(after, before)
+        inverse = inverse.replace(patch.AFTER, patch.BEFORE).replace(patch.COPIED_DOMAIN, patch.DOMAIN)
+        self.assertEqual(inverse.encode(), source)
         self.assertIn(b'Licensed under the Apache License, Version 2.0', corrected)
         self.assertIn(b'phi.getIncomings().removeIf(incoming -> domainSet.contains(incoming.getSource().getIndex()));', corrected)
         for changed in (source+b' ', source.replace(b'0;', b'1;', 1), b'private source'):
@@ -659,6 +773,14 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
         self.assertIn('processBlock(program.basicBlockAt(i), i == basicBlockCount ? 0 : i);', corrected)
         self.assertIn('livenessAnalysis.liveOut(originalIndex);', corrected)
         self.assertNotIn('livenessAnalysis.liveOut(block.getIndex());', corrected)
+        async_raw=read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch/AsyncMethodFinder.java')
+        fixed=patch.corrected_async_source(async_raw)
+        reversed_source = fixed.decode().replace(patch.CHECKPOINT_VALIDATION, '').replace(
+            patch.CHECKPOINT_FIND_AFTER, patch.CHECKPOINT_FIND_BEFORE).replace(patch.ASYNC_AFTER,patch.ASYNC_BEFORE)
+        self.assertEqual(reversed_source,async_raw.decode())
+        self.assertIn('Thread.class, "start", void.class)',fixed.decode())
+        with self.assertRaises(ValueError):patch.corrected_async_source(async_raw+b' ')
+
 
 
     def test_real_pinned_inventory_and_process_boundary_stage_private_patch_only(self):
@@ -669,7 +791,7 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             (sdk/'tools/dependencies.py').write_bytes(read_file(campaign.ROOT/'sdk/java-guest/tools/dependencies.py'))
             sources=sdk/'fibers/compiler-patch';sources.mkdir(parents=True)
             for name in ('CoroutineTransformation.java','Compile.java','Check.java',
-                         'TypeInferer.java','ArrayTypeCheck.java'):
+                         'TypeInferer.java','ArrayTypeCheck.java','AsyncMethodFinder.java','MonitorAsyncControl.java'):
                 (sources/name).write_bytes(read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch'/name))
             cache=root/'files-2.1';base=cache/'org.teavm/teavm-core/0.15.0/pinned';base.mkdir(parents=True)
             core=base/'teavm-core-0.15.0.jar'
@@ -713,19 +835,31 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                         path=classes/name;path.parent.mkdir(parents=True,exist_ok=True)
                         path.write_bytes(b'\xca\xfe\xba\xbecompiled')
                     return ''
-                mode='original' if stage=='java-coroutine-original-control' else 'corrected'
+                if stage == 'java-coroutine-copy-cost-control':
+                    self.assertEqual(args[-1], 'copy-cost')
+                    self.assertEqual(args[0], '-cp')
+                    self.assertTrue(args[1].startswith(str(project/'compiler-patch/teavm-core-patched.jar')))
+                    return json.dumps({'schemaVersion':'latent.java.coroutine-copy-cost-control.v1',
+                        'cases':['domain-choice','reducible-parity','overflow-before-copy'],'passed':True})
+                mode='original' if stage.endswith('original-control') else 'corrected'
                 self.assertEqual(args[-1],mode)
                 self.assertEqual(args[0],'-cp')
                 expected=core if mode=='original' else project/'compiler-patch/teavm-core-patched.jar'
                 self.assertTrue(args[1].startswith(str(expected)))
-                return json.dumps({'schemaVersion':'latent.java.coroutine-phi-control.v1','mode':mode,'passed':True})
+                schema='latent.java.monitor-async-control.v1' if '-monitor-' in stage else 'latent.java.coroutine-phi-control.v1'
+                return json.dumps({'schemaVersion':schema,'mode':mode,'passed':True})
             compiler=SimpleNamespace(sdk=sdk,dependency_cache=cache,run=run,directory=root/'compiler-logs')
             compiler.directory.mkdir()
             receipt=patch.stage(compiler,project,root)
             from tools.java_capsule_build import retain_logs
             retain_logs(compiler.directory,root)
             self.assertEqual([call[0] for call in calls],['java-coroutine-patch',
-                'java-coroutine-original-control','java-coroutine-corrected-control'])
+                'java-coroutine-original-control','java-coroutine-monitor-original-control',
+                'java-coroutine-corrected-control','java-coroutine-monitor-corrected-control',
+                'java-coroutine-copy-cost-control'])
+            self.assertEqual(receipt['structuralCopyCostPolicy'], 'initial-ir-structural-copy-v1')
+            self.assertEqual(receipt['realStructuralCopyCostControls'],
+                ['domain-choice','reducible-parity','overflow-before-copy'])
             self.assertEqual(core.read_bytes(),raw)
             self.assertEqual(receipt['checkedCompilerJars'],[{'coordinate':
                 'org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar','sha256':sha,'bytes':len(raw)},

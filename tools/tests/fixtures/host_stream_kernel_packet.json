@@ -1,468 +1,468 @@
 {
-  "schemaVersion": "lsf.kernel-linear-packet-preimages.v1",
-  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
-  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
-  "source": {
-    "fs/inode.c": {
-      "bytes": 75338,
-      "sha256": "73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
-      "gitBlob": "7942673f686fdc24d92c2fb8033c2fb3b6df7709",
-      "independentlyGitCorroborated": true
-    },
-    "include/linux/netdevice.h": {
-      "bytes": 170262,
-      "sha256": "35577d1d0decaad06824a0591c5929a1e837c7dc00e95b42cba1bc6743fb3941",
-      "gitBlob": "0aa536df9cb594eb762465b2007390bc90e53815",
-      "independentlyGitCorroborated": false
-    },
-    "include/linux/rcuref.h": {
-      "bytes": 4771,
-      "sha256": "4bad6b9738eeae56cdb0735d8d8b901fd7b3fe4d9432701ffab40100bf9ea7c1",
-      "gitBlob": "6322d8c1c6b4294abb794b4e0af739f1b0caedd9",
-      "independentlyGitCorroborated": false
-    },
-    "include/linux/skbuff.h": {
-      "bytes": 151887,
-      "sha256": "af70ea27cf9a3a2d790b1005a16da7649d3bbb0fd136b2934ed4018077dbb822",
-      "gitBlob": "df548a3d606570d38614fc45403133069ecb9cab",
-      "independentlyGitCorroborated": true
-    },
-    "include/net/dst.h": {
-      "bytes": 16116,
-      "sha256": "78178f0528f8f9ee92ae63c7308f84cfc5d90941d92b674fc42078999a6d3369",
-      "gitBlob": "b3ac23e14adab857ca58013861ac124f68446559",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/dst_ops.h": {
-      "bytes": 2116,
-      "sha256": "388f5247da499afef3ae4f1a7f7ad779192aa31a071355bbb6d50e188e3ae524",
-      "gitBlob": "3a9001a042a5c392a79cfc59af528ef410a28668",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/inet_hashtables.h": {
-      "bytes": 17314,
-      "sha256": "a699f5b96229f9d6fa4bb5bf435285db59b7d2e45918044f2c5fec01e624bf6e",
-      "gitBlob": "b1118125486631e6e02ca2d1f6575dad60e6d705",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/ip.h": {
-      "bytes": 25084,
-      "sha256": "468170661746038b5ecc7bfa114433feeb853708d0af7a65d59541b602473963",
-      "gitBlob": "97c60b3002702ac98ded03e19aaeed539b657373",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/ip_fib.h": {
-      "bytes": 17526,
-      "sha256": "8f006444cb27c3d3dc92eb417ad90a9a9ae818f833982b85de3577a8cc854d65",
-      "gitBlob": "145b90d004ebb45952be61f98bc7c03f0039bd9d",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/lwtunnel.h": {
-      "bytes": 6850,
-      "sha256": "d5df355174e9182e145c1d4a67724d408f663d4eab35eac51f0af2c198b151e9",
-      "gitBlob": "09791f5d9b6ec8f06ff093ec1adcbf75e08bed62",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/netlabel.h": {
-      "bytes": 21017,
-      "sha256": "82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
-      "gitBlob": "529160f76cac209ee7473ea7b5ccd49da0789f18",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/nexthop.h": {
-      "bytes": 12985,
-      "sha256": "80faf19c5303d481542adbf2c23463c9a135bb4633957683161f64ff2cba2792",
-      "gitBlob": "d9fb44e8b3219cf01031385f03021097ef6e7a76",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/route.h": {
-      "bytes": 11707,
-      "sha256": "653aee3691e524225bbb9d1e4f7ace85b2e56f81a8047c7b10562201392b71a5",
-      "gitBlob": "76f526e051aa36e3ae33ee37bd8c8c2e19ef9ba6",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/sock.h": {
-      "bytes": 85865,
-      "sha256": "5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
-      "gitBlob": "efa549885b7f85e50c55f95ad4eae0c1ef75797a",
-      "independentlyGitCorroborated": true
-    },
-    "include/net/tcp.h": {
-      "bytes": 86800,
-      "sha256": "6d4ba5b9aab587292de3cb3836b5907ac265d866f94a52135452f8010af9243a",
-      "gitBlob": "ad9af706085ab368c9b0723e121f66a71939ad59",
-      "independentlyGitCorroborated": true
-    },
-    "include/net/xfrm.h": {
-      "bytes": 61675,
-      "sha256": "aadaea85ee3054727e4b568e82ca6ea3cee5c9f7be461134ed773f402dcfb9ef",
-      "gitBlob": "a20a01dd6f98e3c058dbedd820eeee60c4c24ae0",
-      "independentlyGitCorroborated": false
-    },
-    "kernel/audit.c": {
-      "bytes": 66999,
-      "sha256": "7a33029ecca2b8a71a8a12e9a1699a8180e64a82acfbdc599b0ec658fa07d564",
-      "gitBlob": "df279dd2e45086b791852f2a46ceb52f24f0fd78",
-      "independentlyGitCorroborated": false
-    },
-    "net/core/dst.c": {
-      "bytes": 8852,
-      "sha256": "362a3128a9d91cd676fe607746f3b169224083d86047a84583862c81f5661b86",
-      "gitBlob": "92aa81b2f33157e91c7de8f96254054380cb9b2a",
-      "independentlyGitCorroborated": true
-    },
-    "net/core/skbuff.c": {
-      "bytes": 189334,
-      "sha256": "6a2fec31182c7c4d247d85aaffba036de9c0b6a9911c3cc1249d00b423ea0ae8",
-      "gitBlob": "5608b5507b5bf03504a9093abaa865af2b82043e",
-      "independentlyGitCorroborated": true
-    },
-    "net/core/sock.c": {
-      "bytes": 111636,
-      "sha256": "f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
-      "gitBlob": "75db38fdfd35fe87b87ac2755b0ef1db6fb96415",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/af_inet.c": {
-      "bytes": 51938,
-      "sha256": "9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
-      "gitBlob": "c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/cipso_ipv4.c": {
-      "bytes": 63739,
-      "sha256": "03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
-      "gitBlob": "53fcb2089cde2a246c0b84d31582485b2496da64",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/fib_frontend.c": {
-      "bytes": 40789,
-      "sha256": "054b45ed18db33e7f842e3565aa29fd21e171fff61debfe3b9dd2def46f55682",
-      "gitBlob": "5b7c41333d6fc8f779a99dd11c8def5797ba3997",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/fib_semantics.c": {
-      "bytes": 54966,
-      "sha256": "7cb52cf170fbd73a80ac9a92c4cd668d90f935321deab8230f362b30dd4f04a7",
-      "gitBlob": "1e7961b8a7cee82179ef7c9b6f088146a7de799c",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/fib_trie.c": {
-      "bytes": 74770,
-      "sha256": "e87b942d3f04998cc2ceab4e40223bd24a4f2c89f3137bb4d847368485bd37b7",
-      "gitBlob": "f04a735ba7cac117041529fdf8f2a3174d3e816a",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/inet_connection_sock.c": {
-      "bytes": 45201,
-      "sha256": "cb3567452632b9017a463f8dc860bd046bb9e572bacd56d219a2c0e124f453c7",
-      "gitBlob": "eeee6f75833767f0ae5878bb285fbde63d027654",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/inet_hashtables.c": {
-      "bytes": 35429,
-      "sha256": "20113f4e67d557ef06a68322d0cb03da2de5463409eb2b8b5dd80b305e9aa08d",
-      "gitBlob": "37a6acff537e6511a84b7cdfc61af2412eb2cb0b",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/inet_timewait_sock.c": {
-      "bytes": 10794,
-      "sha256": "c200d5880fbf8dd56c0a058beb9b4e92465991038a81b98469aa98ad1c5f31c5",
-      "gitBlob": "74b84ac418e93c176336fc974b82c3586bae3fc1",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/metrics.c": {
-      "bytes": 2214,
-      "sha256": "b23000aa2906b653caa07638117c8c799f7c2ffd25fca9c4fbe0a234293ef134",
-      "gitBlob": "8ddac1f595ed8cc6077e027f53db7db3c7387843",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/nexthop.c": {
-      "bytes": 101381,
-      "sha256": "2be58e25f245b504674b60182098932468bf3b1f6c4cec89146b00419e341814",
-      "gitBlob": "fbb22a63b8807843d4bd5272739a3f7d8669b22f",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/route.c": {
-      "bytes": 97360,
-      "sha256": "18e47ff7b034786411f98221878df2ba5bb645e21c90d30c3a185cff1007aef3",
-      "gitBlob": "596c84fd5ab42f15b53700ecb3ab8d968ca4330f",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/tcp.c": {
-      "bytes": 143675,
-      "sha256": "b10e52525abec71fed9eb8d5fb201cda5118eef04de52fae4159477da3d77ec7",
-      "gitBlob": "21c64ca9bb9b496013773250a71690249756a653",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/tcp_input.c": {
-      "bytes": 218886,
-      "sha256": "82fc39a54ef30599ff19ce2e400c8d5bbec9cd9be8dcc150767f7ec73a4bd979",
-      "gitBlob": "5c581d4821c1dcce1c89f29c5d4a73865b668c73",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/tcp_output.c": {
-      "bytes": 132663,
-      "sha256": "d0a3f8ae8b7ed2b06900344be3bca1ba7f804e96eaba1195ab617fa75f3fd89b",
-      "gitBlob": "feb94fd45c59459bb3669c0a20c985477cdc01e2",
-      "independentlyGitCorroborated": true
-    },
-    "net/netlabel/netlabel_kapi.c": {
-      "bytes": 38938,
-      "sha256": "d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
-      "gitBlob": "33b77084a4e5f34770f960d7c82e481d9889753a",
-      "independentlyGitCorroborated": false
-    },
-    "net/netlink/af_netlink.c": {
-      "bytes": 71601,
-      "sha256": "2145f190dc87bfa5f79739d960766970652ed9e5c271ec847c1eeca4be86fd2d",
-      "gitBlob": "e250d4a3d03097f92c48c1741db405c8ea54899d",
-      "independentlyGitCorroborated": false
-    },
-    "net/socket.c": {
-      "bytes": 92491,
-      "sha256": "95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
-      "gitBlob": "723bc3a1ba5cdd17f559a65de73d9c87911e6954",
-      "independentlyGitCorroborated": true
-    },
-    "net/xfrm/xfrm_policy.c": {
-      "bytes": 114568,
-      "sha256": "79929076ddb7f855026ce831d48a8c22972724e639f25f66fe4630207f530680",
-      "gitBlob": "e033390e77855cd0c586b2ed6cc511b812193ce1",
-      "independentlyGitCorroborated": false
-    },
-    "security/lsm_audit.c": {
-      "bytes": 11088,
-      "sha256": "bd55731531fa8d095a2f7857afd8cdd83b689f8a675b7b05217910769c4bf257",
-      "gitBlob": "849e832719e2151a060679db4fe993e13f42b997",
-      "independentlyGitCorroborated": false
-    },
-    "security/security.c": {
-      "bytes": 180030,
-      "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
-      "gitBlob": "b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
-      "independentlyGitCorroborated": true
-    },
-    "security/selinux/avc.c": {
-      "bytes": 31717,
-      "sha256": "e5ead166180e1b51dab8f701f16a595e51ff68eb346f7a8b4549617ce4672ce6",
-      "gitBlob": "688ff9e63f514ec18b8096e59e0edd63ac6f5112"
-    },
-    "security/selinux/hooks.c": {
-      "bytes": 204597,
-      "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
-      "gitBlob": "d4abf15f0e6fb98505df81ac3128255b4cd9e1e7",
-      "independentlyGitCorroborated": true
-    },
-    "security/selinux/include/avc.h": {
-      "bytes": 4623,
-      "sha256": "b1bb6fd0b9fda55cce88a5fb2a359fd64cde40ef18162e6640cd33885ebb5966",
-      "gitBlob": "96a614d47df8d1d67b0b033ebb90954653dfeab7"
-    },
-    "security/selinux/netlabel.c": {
-      "bytes": 16481,
-      "sha256": "972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
-      "gitBlob": "d51dfe89231229e78903f3aa552286326524dca2",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/netport.c": {
-      "bytes": 5952,
-      "sha256": "8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
-      "gitBlob": "2e22ad9c2bd0d116668985e0fb579b5934df9394",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/ss/ebitmap.c": {
-      "bytes": 12211,
-      "sha256": "69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
-      "gitBlob": "cd84357db2c47a034bb3601eeaaa8806dbf0f7af",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/ss/mls.c": {
-      "bytes": 16094,
-      "sha256": "349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
-      "gitBlob": "a6e49269f5351df096da8c9fb56103a2f7b0ee9d",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/ss/services.c": {
-      "bytes": 97756,
-      "sha256": "0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
-      "gitBlob": "54d121d64804295c8ae1f40103957f6a3b671640",
-      "independentlyGitCorroborated": true
-    },
-    "security/selinux/ss/sidtab.c": {
-      "bytes": 14675,
-      "sha256": "5bc885230f9b6023ff7a64b0ff80746f607a572cf7d882eab149f6c1261c4f08",
-      "gitBlob": "c8848cbba81f24abbb2e0d07697ece10d2cc6637",
-      "independentlyGitCorroborated": false
-    }
-  },
-  "sections": {
-    "tcp_stream_alloc_skb": {
-      "source": "net/ipv4/tcp.c",
-      "prefix": "struct sk_buff *tcp_stream_alloc_skb(",
-      "bytes": 722,
-      "sha256": "ef5bad925e32e3bc9619f2b876f83f745693c420d3aea77c0669dc4b64c1d8c6",
-      "text": "struct sk_buff *tcp_stream_alloc_skb(struct sock *sk, gfp_t gfp,\n\t\t\t\t     bool force_schedule)\n{\n\tstruct sk_buff *skb;\n\n\tskb = alloc_skb_fclone(MAX_TCP_HEADER, gfp);\n\tif (likely(skb)) {\n\t\tbool mem_scheduled;\n\n\t\tskb->truesize = SKB_TRUESIZE(skb_end_offset(skb));\n\t\tif (force_schedule) {\n\t\t\tmem_scheduled = true;\n\t\t\tsk_forced_mem_schedule(sk, skb->truesize);\n\t\t} else {\n\t\t\tmem_scheduled = sk_wmem_schedule(sk, skb->truesize);\n\t\t}\n\t\tif (likely(mem_scheduled)) {\n\t\t\tskb_reserve(skb, MAX_TCP_HEADER);\n\t\t\tskb->ip_summed = CHECKSUM_PARTIAL;\n\t\t\tINIT_LIST_HEAD(&skb->tcp_tsorted_anchor);\n\t\t\treturn skb;\n\t\t}\n\t\t__kfree_skb(skb);\n\t} else {\n\t\tsk->sk_prot->enter_memory_pressure(sk);\n\t\tsk_stream_moderate_sndbuf(sk);\n\t}\n\treturn NULL;\n}\n"
-    },
-    "tcp_sendmsg_locked": {
-      "source": "net/ipv4/tcp.c",
-      "prefix": "int tcp_sendmsg_locked(",
-      "bytes": 7360,
-      "sha256": "6c4cae6e18eadecc0495fbb210acbbada593e0a51f30a07d92f33da648555f93",
-      "text": "int tcp_sendmsg_locked(struct sock *sk, struct msghdr *msg, size_t size)\n{\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tstruct ubuf_info *uarg = NULL;\n\tstruct sk_buff *skb;\n\tstruct sockcm_cookie sockc;\n\tint flags, err, copied = 0;\n\tint mss_now = 0, size_goal, copied_syn = 0;\n\tint process_backlog = 0;\n\tint zc = 0;\n\tlong timeo;\n\n\tflags = msg->msg_flags;\n\n\tif ((flags & MSG_ZEROCOPY) && size) {\n\t\tif (msg->msg_ubuf) {\n\t\t\tuarg = msg->msg_ubuf;\n\t\t\tif (sk->sk_route_caps & NETIF_F_SG)\n\t\t\t\tzc = MSG_ZEROCOPY;\n\t\t} else if (sock_flag(sk, SOCK_ZEROCOPY)) {\n\t\t\tskb = tcp_write_queue_tail(sk);\n\t\t\tuarg = msg_zerocopy_realloc(sk, size, skb_zcopy(skb));\n\t\t\tif (!uarg) {\n\t\t\t\terr = -ENOBUFS;\n\t\t\t\tgoto out_err;\n\t\t\t}\n\t\t\tif (sk->sk_route_caps & NETIF_F_SG)\n\t\t\t\tzc = MSG_ZEROCOPY;\n\t\t\telse\n\t\t\t\tuarg_to_msgzc(uarg)->zerocopy = 0;\n\t\t}\n\t} else if (unlikely(msg->msg_flags & MSG_SPLICE_PAGES) && size) {\n\t\tif (sk->sk_route_caps & NETIF_F_SG)\n\t\t\tzc = MSG_SPLICE_PAGES;\n\t}\n\n\tif (unlikely(flags & MSG_FASTOPEN ||\n\t\t     inet_test_bit(DEFER_CONNECT, sk)) &&\n\t    !tp->repair) {\n\t\terr = tcp_sendmsg_fastopen(sk, msg, &copied_syn, size, uarg);\n\t\tif (err == -EINPROGRESS && copied_syn > 0)\n\t\t\tgoto out;\n\t\telse if (err)\n\t\t\tgoto out_err;\n\t}\n\n\ttimeo = sock_sndtimeo(sk, flags & MSG_DONTWAIT);\n\n\ttcp_rate_check_app_limited(sk);  /* is sending application-limited? */\n\n\t/* Wait for a connection to finish. One exception is TCP Fast Open\n\t * (passive side) where data is allowed to be sent before a connection\n\t * is fully established.\n\t */\n\tif (((1 << sk->sk_state) & ~(TCPF_ESTABLISHED | TCPF_CLOSE_WAIT)) &&\n\t    !tcp_passive_fastopen(sk)) {\n\t\terr = sk_stream_wait_connect(sk, &timeo);\n\t\tif (err != 0)\n\t\t\tgoto do_error;\n\t}\n\n\tif (unlikely(tp->repair)) {\n\t\tif (tp->repair_queue == TCP_RECV_QUEUE) {\n\t\t\tcopied = tcp_send_rcvq(sk, msg, size);\n\t\t\tgoto out_nopush;\n\t\t}\n\n\t\terr = -EINVAL;\n\t\tif (tp->repair_queue == TCP_NO_QUEUE)\n\t\t\tgoto out_err;\n\n\t\t/* 'common' sending to sendq */\n\t}\n\n\tsockcm_init(&sockc, sk);\n\tif (msg->msg_controllen) {\n\t\terr = sock_cmsg_send(sk, msg, &sockc);\n\t\tif (unlikely(err)) {\n\t\t\terr = -EINVAL;\n\t\t\tgoto out_err;\n\t\t}\n\t}\n\n\t/* This should be in poll */\n\tsk_clear_bit(SOCKWQ_ASYNC_NOSPACE, sk);\n\n\t/* Ok commence sending. */\n\tcopied = 0;\n\nrestart:\n\tmss_now = tcp_send_mss(sk, &size_goal, flags);\n\n\terr = -EPIPE;\n\tif (sk->sk_err || (sk->sk_shutdown & SEND_SHUTDOWN))\n\t\tgoto do_error;\n\n\twhile (msg_data_left(msg)) {\n\t\tint copy = 0;\n\n\t\tskb = tcp_write_queue_tail(sk);\n\t\tif (skb)\n\t\t\tcopy = size_goal - skb->len;\n\n\t\tif (copy <= 0 || !tcp_skb_can_collapse_to(skb)) {\n\t\t\tbool first_skb;\n\nnew_segment:\n\t\t\tif (!sk_stream_memory_free(sk))\n\t\t\t\tgoto wait_for_space;\n\n\t\t\tif (unlikely(process_backlog >= 16)) {\n\t\t\t\tprocess_backlog = 0;\n\t\t\t\tif (sk_flush_backlog(sk))\n\t\t\t\t\tgoto restart;\n\t\t\t}\n\t\t\tfirst_skb = tcp_rtx_and_write_queues_empty(sk);\n\t\t\tskb = tcp_stream_alloc_skb(sk, sk->sk_allocation,\n\t\t\t\t\t\t   first_skb);\n\t\t\tif (!skb)\n\t\t\t\tgoto wait_for_space;\n\n\t\t\tprocess_backlog++;\n\n#ifdef CONFIG_SKB_DECRYPTED\n\t\t\tskb->decrypted = !!(flags & MSG_SENDPAGE_DECRYPTED);\n#endif\n\t\t\ttcp_skb_entail(sk, skb);\n\t\t\tcopy = size_goal;\n\n\t\t\t/* All packets are restored as if they have\n\t\t\t * already been sent. skb_mstamp_ns isn't set to\n\t\t\t * avoid wrong rtt estimation.\n\t\t\t */\n\t\t\tif (tp->repair)\n\t\t\t\tTCP_SKB_CB(skb)->sacked |= TCPCB_REPAIRED;\n\t\t}\n\n\t\t/* Try to append data to the end of skb. */\n\t\tif (copy > msg_data_left(msg))\n\t\t\tcopy = msg_data_left(msg);\n\n\t\tif (zc == 0) {\n\t\t\tbool merge = true;\n\t\t\tint i = skb_shinfo(skb)->nr_frags;\n\t\t\tstruct page_frag *pfrag = sk_page_frag(sk);\n\n\t\t\tif (!sk_page_frag_refill(sk, pfrag))\n\t\t\t\tgoto wait_for_space;\n\n\t\t\tif (!skb_can_coalesce(skb, i, pfrag->page,\n\t\t\t\t\t      pfrag->offset)) {\n\t\t\t\tif (i >= READ_ONCE(net_hotdata.sysctl_max_skb_frags)) {\n\t\t\t\t\ttcp_mark_push(tp, skb);\n\t\t\t\t\tgoto new_segment;\n\t\t\t\t}\n\t\t\t\tmerge = false;\n\t\t\t}\n\n\t\t\tcopy = min_t(int, copy, pfrag->size - pfrag->offset);\n\n\t\t\tif (unlikely(skb_zcopy_pure(skb) || skb_zcopy_managed(skb))) {\n\t\t\t\tif (tcp_downgrade_zcopy_pure(sk, skb))\n\t\t\t\t\tgoto wait_for_space;\n\t\t\t\tskb_zcopy_downgrade_managed(skb);\n\t\t\t}\n\n\t\t\tcopy = tcp_wmem_schedule(sk, copy);\n\t\t\tif (!copy)\n\t\t\t\tgoto wait_for_space;\n\n\t\t\terr = skb_copy_to_page_nocache(sk, &msg->msg_iter, skb,\n\t\t\t\t\t\t       pfrag->page,\n\t\t\t\t\t\t       pfrag->offset,\n\t\t\t\t\t\t       copy);\n\t\t\tif (err)\n\t\t\t\tgoto do_error;\n\n\t\t\t/* Update the skb. */\n\t\t\tif (merge) {\n\t\t\t\tskb_frag_size_add(&skb_shinfo(skb)->frags[i - 1], copy);\n\t\t\t} else {\n\t\t\t\tskb_fill_page_desc(skb, i, pfrag->page,\n\t\t\t\t\t\t   pfrag->offset, copy);\n\t\t\t\tpage_ref_inc(pfrag->page);\n\t\t\t}\n\t\t\tpfrag->offset += copy;\n\t\t} else if (zc == MSG_ZEROCOPY)  {\n\t\t\t/* First append to a fragless skb builds initial\n\t\t\t * pure zerocopy skb\n\t\t\t */\n\t\t\tif (!skb->len)\n\t\t\t\tskb_shinfo(skb)->flags |= SKBFL_PURE_ZEROCOPY;\n\n\t\t\tif (!skb_zcopy_pure(skb)) {\n\t\t\t\tcopy = tcp_wmem_schedule(sk, copy);\n\t\t\t\tif (!copy)\n\t\t\t\t\tgoto wait_for_space;\n\t\t\t}\n\n\t\t\terr = skb_zerocopy_iter_stream(sk, skb, msg, copy, uarg);\n\t\t\tif (err == -EMSGSIZE || err == -EEXIST) {\n\t\t\t\ttcp_mark_push(tp, skb);\n\t\t\t\tgoto new_segment;\n\t\t\t}\n\t\t\tif (err < 0)\n\t\t\t\tgoto do_error;\n\t\t\tcopy = err;\n\t\t} else if (zc == MSG_SPLICE_PAGES) {\n\t\t\t/* Splice in data if we can; copy if we can't. */\n\t\t\tif (tcp_downgrade_zcopy_pure(sk, skb))\n\t\t\t\tgoto wait_for_space;\n\t\t\tcopy = tcp_wmem_schedule(sk, copy);\n\t\t\tif (!copy)\n\t\t\t\tgoto wait_for_space;\n\n\t\t\terr = skb_splice_from_iter(skb, &msg->msg_iter, copy,\n\t\t\t\t\t\t   sk->sk_allocation);\n\t\t\tif (err < 0) {\n\t\t\t\tif (err == -EMSGSIZE) {\n\t\t\t\t\ttcp_mark_push(tp, skb);\n\t\t\t\t\tgoto new_segment;\n\t\t\t\t}\n\t\t\t\tgoto do_error;\n\t\t\t}\n\t\t\tcopy = err;\n\n\t\t\tif (!(flags & MSG_NO_SHARED_FRAGS))\n\t\t\t\tskb_shinfo(skb)->flags |= SKBFL_SHARED_FRAG;\n\n\t\t\tsk_wmem_queued_add(sk, copy);\n\t\t\tsk_mem_charge(sk, copy);\n\t\t}\n\n\t\tif (!copied)\n\t\t\tTCP_SKB_CB(skb)->tcp_flags &= ~TCPHDR_PSH;\n\n\t\tWRITE_ONCE(tp->write_seq, tp->write_seq + copy);\n\t\tTCP_SKB_CB(skb)->end_seq += copy;\n\t\ttcp_skb_pcount_set(skb, 0);\n\n\t\tcopied += copy;\n\t\tif (!msg_data_left(msg)) {\n\t\t\tif (unlikely(flags & MSG_EOR))\n\t\t\t\tTCP_SKB_CB(skb)->eor = 1;\n\t\t\tgoto out;\n\t\t}\n\n\t\tif (skb->len < size_goal || (flags & MSG_OOB) || unlikely(tp->repair))\n\t\t\tcontinue;\n\n\t\tif (forced_push(tp)) {\n\t\t\ttcp_mark_push(tp, skb);\n\t\t\t__tcp_push_pending_frames(sk, mss_now, TCP_NAGLE_PUSH);\n\t\t} else if (skb == tcp_send_head(sk))\n\t\t\ttcp_push_one(sk, mss_now);\n\t\tcontinue;\n\nwait_for_space:\n\t\tset_bit(SOCK_NOSPACE, &sk->sk_socket->flags);\n\t\ttcp_remove_empty_skb(sk);\n\t\tif (copied)\n\t\t\ttcp_push(sk, flags & ~MSG_MORE, mss_now,\n\t\t\t\t TCP_NAGLE_PUSH, size_goal);\n\n\t\terr = sk_stream_wait_memory(sk, &timeo);\n\t\tif (err != 0)\n\t\t\tgoto do_error;\n\n\t\tmss_now = tcp_send_mss(sk, &size_goal, flags);\n\t}\n\nout:\n\tif (copied) {\n\t\ttcp_tx_timestamp(sk, sockc.tsflags);\n\t\ttcp_push(sk, flags, mss_now, tp->nonagle, size_goal);\n\t}\nout_nopush:\n\t/* msg->msg_ubuf is pinned by the caller so we don't take extra refs */\n\tif (uarg && !msg->msg_ubuf)\n\t\tnet_zcopy_put(uarg);\n\treturn copied + copied_syn;\n\ndo_error:\n\ttcp_remove_empty_skb(sk);\n\n\tif (copied + copied_syn)\n\t\tgoto out;\nout_err:\n\t/* msg->msg_ubuf is pinned by the caller so we don't take extra refs */\n\tif (uarg && !msg->msg_ubuf)\n\t\tnet_zcopy_put_abort(uarg, true);\n\terr = sk_stream_error(sk, flags, err);\n\t/* make sure we wake any epoll edge trigger waiter */\n\tif (unlikely(tcp_rtx_and_write_queues_empty(sk) && err == -EAGAIN)) {\n\t\tREAD_ONCE(sk->sk_write_space)(sk);\n\t\ttcp_chrono_stop(sk, TCP_CHRONO_SNDBUF_LIMITED);\n\t}\n\treturn err;\n}\n"
-    },
-    "tcp_send_mss": {
-      "source": "net/ipv4/tcp.c",
-      "prefix": "int tcp_send_mss(",
-      "bytes": 197,
-      "sha256": "3005f8c1c5f0a10fa3fc66105fdbcfcb7433fada8bd915dfcb6596e1345c1afa",
-      "text": "int tcp_send_mss(struct sock *sk, int *size_goal, int flags)\n{\n\tint mss_now;\n\n\tmss_now = tcp_current_mss(sk);\n\t*size_goal = tcp_xmit_size_goal(sk, mss_now, !(flags & MSG_OOB));\n\n\treturn mss_now;\n}\n"
-    },
-    "tcp_skb_entail": {
-      "source": "net/ipv4/tcp.c",
-      "prefix": "void tcp_skb_entail(",
-      "bytes": 464,
-      "sha256": "297f9ecc71fd0315e4dd4a3be64efec9ddb1f04daf0627ee9a5b142a70f7bc68",
-      "text": "void tcp_skb_entail(struct sock *sk, struct sk_buff *skb)\n{\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tstruct tcp_skb_cb *tcb = TCP_SKB_CB(skb);\n\n\ttcb->seq     = tcb->end_seq = tp->write_seq;\n\ttcb->tcp_flags = TCPHDR_ACK;\n\t__skb_header_release(skb);\n\ttcp_add_write_queue_tail(sk, skb);\n\tsk_wmem_queued_add(sk, skb->truesize);\n\tsk_mem_charge(sk, skb->truesize);\n\tif (tp->nonagle & TCP_NAGLE_PUSH)\n\t\ttp->nonagle &= ~TCP_NAGLE_PUSH;\n\n\ttcp_slow_start_after_idle_check(sk);\n}\n"
-    },
-    "__build_skb_around": {
-      "source": "net/core/skbuff.c",
-      "prefix": "static void __build_skb_around(",
-      "bytes": 402,
-      "sha256": "bc58e0ee9c555579fd4c04a7b7f8090bc882e305d26eb4044e24ec494257dec4",
-      "text": "static void __build_skb_around(struct sk_buff *skb, void *data,\n\t\t\t       unsigned int frag_size)\n{\n\tunsigned int size = frag_size;\n\n\t/* frag_size == 0 is considered deprecated now. Callers\n\t * using slab buffer should use slab_build_skb() instead.\n\t */\n\tif (WARN_ONCE(size == 0, \"Use slab_build_skb() instead\"))\n\t\tdata = __slab_build_skb(skb, data, &size);\n\n\t__finalize_skb_around(skb, data, size);\n}\n"
-    },
-    "__alloc_skb": {
-      "source": "net/core/skbuff.c",
-      "prefix": "struct sk_buff *__alloc_skb(",
-      "bytes": 1843,
-      "sha256": "4530caefbab0eb8731ee3bcbc68ee3bf4a4d11e943b76d02d1ffea3216829f5a",
-      "text": "struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,\n\t\t\t    int flags, int node)\n{\n\tstruct kmem_cache *cache;\n\tstruct sk_buff *skb;\n\tbool pfmemalloc;\n\tu8 *data;\n\n\tcache = (flags & SKB_ALLOC_FCLONE)\n\t\t? net_hotdata.skbuff_fclone_cache : net_hotdata.skbuff_cache;\n\n\tif (sk_memalloc_socks() && (flags & SKB_ALLOC_RX))\n\t\tgfp_mask |= __GFP_MEMALLOC;\n\n\t/* Get the HEAD */\n\tif ((flags & (SKB_ALLOC_FCLONE | SKB_ALLOC_NAPI)) == SKB_ALLOC_NAPI &&\n\t    likely(node == NUMA_NO_NODE || node == numa_mem_id()))\n\t\tskb = napi_skb_cache_get();\n\telse\n\t\tskb = kmem_cache_alloc_node(cache, gfp_mask & ~GFP_DMA, node);\n\tif (unlikely(!skb))\n\t\treturn NULL;\n\tprefetchw(skb);\n\n\t/* We do our best to align skb_shared_info on a separate cache\n\t * line. It usually works because kmalloc(X > SMP_CACHE_BYTES) gives\n\t * aligned memory blocks, unless SLUB/SLAB debug is enabled.\n\t * Both skb->head and skb_shared_info are cache line aligned.\n\t */\n\tdata = kmalloc_reserve(&size, gfp_mask, node, &pfmemalloc);\n\tif (unlikely(!data))\n\t\tgoto nodata;\n\t/* kmalloc_size_roundup() might give us more room than requested.\n\t * Put skb_shared_info exactly at the end of allocated zone,\n\t * to allow max possible filling before reallocation.\n\t */\n\tprefetchw(data + SKB_WITH_OVERHEAD(size));\n\n\t/*\n\t * Only clear those fields we need to clear, not those that we will\n\t * actually initialise below. Hence, don't put any more fields after\n\t * the tail pointer in struct sk_buff!\n\t */\n\tmemset(skb, 0, offsetof(struct sk_buff, tail));\n\t__build_skb_around(skb, data, size);\n\tskb->pfmemalloc = pfmemalloc;\n\n\tif (flags & SKB_ALLOC_FCLONE) {\n\t\tstruct sk_buff_fclones *fclones;\n\n\t\tfclones = container_of(skb, struct sk_buff_fclones, skb1);\n\n\t\tskb->fclone = SKB_FCLONE_ORIG;\n\t\trefcount_set(&fclones->fclone_ref, 1);\n\t}\n\n\treturn skb;\n\nnodata:\n\tkmem_cache_free(cache, skb);\n\treturn NULL;\n}\n"
-    },
-    "skb_release_data": {
-      "source": "net/core/skbuff.c",
-      "prefix": "static void skb_release_data(",
-      "bytes": 1103,
-      "sha256": "bd3c68ebee8724b90456c42125e4c9f6b782b3087cbbb25c665ec57e36c63b25",
-      "text": "static void skb_release_data(struct sk_buff *skb, enum skb_drop_reason reason)\n{\n\tstruct skb_shared_info *shinfo = skb_shinfo(skb);\n\tint i;\n\n\tif (!skb_data_unref(skb, shinfo))\n\t\tgoto exit;\n\n\tif (skb_zcopy(skb)) {\n\t\tbool skip_unref = shinfo->flags & SKBFL_MANAGED_FRAG_REFS;\n\n\t\tskb_zcopy_clear(skb, true);\n\t\tif (skip_unref)\n\t\t\tgoto free_head;\n\t}\n\n\tfor (i = 0; i < shinfo->nr_frags; i++)\n\t\t__skb_frag_unref(&shinfo->frags[i], skb->pp_recycle);\n\nfree_head:\n\tif (shinfo->frag_list)\n\t\tkfree_skb_list_reason(shinfo->frag_list, reason);\n\n\tskb_free_head(skb);\nexit:\n\t/* When we clone an SKB we copy the reycling bit. The pp_recycle\n\t * bit is only set on the head though, so in order to avoid races\n\t * while trying to recycle fragments on __skb_frag_unref() we need\n\t * to make one SKB responsible for triggering the recycle path.\n\t * So disable the recycling bit if an SKB is cloned and we have\n\t * additional references to the fragmented part of the SKB.\n\t * Eventually the last SKB will have the recycling bit set and it's\n\t * dataref set to 0, which will trigger the recycling\n\t */\n\tskb->pp_recycle = 0;\n}\n"
-    },
-    "skb_try_coalesce": {
-      "source": "net/core/skbuff.c",
-      "prefix": "bool skb_try_coalesce(",
-      "bytes": 2374,
-      "sha256": "d31ca046d8ddcc19de29a7cd90d2ef402b543da213c6be16f704f9145eb4a4b1",
-      "text": "bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,\n\t\t      bool *fragstolen, int *delta_truesize)\n{\n\tstruct skb_shared_info *to_shinfo, *from_shinfo;\n\tint i, delta, len = from->len;\n\n\t*fragstolen = false;\n\n\tif (skb_cloned(to))\n\t\treturn false;\n\n\t/* In general, avoid mixing page_pool and non-page_pool allocated\n\t * pages within the same SKB. In theory we could take full\n\t * references if @from is cloned and !@to->pp_recycle but its\n\t * tricky (due to potential race with the clone disappearing) and\n\t * rare, so not worth dealing with.\n\t */\n\tif (to->pp_recycle != from->pp_recycle)\n\t\treturn false;\n\n\tif (skb_frags_readable(from) != skb_frags_readable(to))\n\t\treturn false;\n\n\tif (len <= skb_tailroom(to) && skb_frags_readable(from)) {\n\t\tif (len)\n\t\t\tBUG_ON(skb_copy_bits(from, 0, skb_put(to, len), len));\n\t\t*delta_truesize = 0;\n\t\treturn true;\n\t}\n\n\tto_shinfo = skb_shinfo(to);\n\tfrom_shinfo = skb_shinfo(from);\n\tif (to_shinfo->frag_list || from_shinfo->frag_list)\n\t\treturn false;\n\tif (skb_zcopy(to) || skb_zcopy(from))\n\t\treturn false;\n\n\tif (skb_headlen(from) != 0) {\n\t\tstruct page *page;\n\t\tunsigned int offset;\n\n\t\tif (to_shinfo->nr_frags +\n\t\t    from_shinfo->nr_frags >= MAX_SKB_FRAGS)\n\t\t\treturn false;\n\n\t\tif (skb_head_is_locked(from))\n\t\t\treturn false;\n\n\t\tdelta = from->truesize - SKB_DATA_ALIGN(sizeof(struct sk_buff));\n\n\t\tpage = virt_to_head_page(from->head);\n\t\toffset = from->data - (unsigned char *)page_address(page);\n\n\t\tskb_fill_page_desc(to, to_shinfo->nr_frags,\n\t\t\t\t   page, offset, skb_headlen(from));\n\t\t*fragstolen = true;\n\t} else {\n\t\tif (to_shinfo->nr_frags +\n\t\t    from_shinfo->nr_frags > MAX_SKB_FRAGS)\n\t\t\treturn false;\n\n\t\tdelta = from->truesize - SKB_TRUESIZE(skb_end_offset(from));\n\t}\n\n\tWARN_ON_ONCE(delta < len);\n\n\tmemcpy(to_shinfo->frags + to_shinfo->nr_frags,\n\t       from_shinfo->frags,\n\t       from_shinfo->nr_frags * sizeof(skb_frag_t));\n\tto_shinfo->nr_frags += from_shinfo->nr_frags;\n\tif (from_shinfo->nr_frags)\n\t\tto_shinfo->flags |= from_shinfo->flags & SKBFL_SHARED_FRAG;\n\n\tif (!skb_cloned(from))\n\t\tfrom_shinfo->nr_frags = 0;\n\n\t/* if the skb is not cloned this does nothing\n\t * since we set nr_frags to 0.\n\t */\n\tif (skb_pp_frag_ref(from)) {\n\t\tfor (i = 0; i < from_shinfo->nr_frags; i++)\n\t\t\t__skb_frag_ref(&from_shinfo->frags[i]);\n\t}\n\n\tto->truesize += delta;\n\tto->len += len;\n\tto->data_len += len;\n\n\t*delta_truesize = delta;\n\treturn true;\n}\n"
-    },
-    "skb_add_data_nocache": {
-      "source": "include/net/sock.h",
-      "prefix": "static inline int skb_add_data_nocache(",
-      "bytes": 299,
-      "sha256": "65be88ee0ff4a8a678191e314693c9aa7aaec034c0b2f79e06cb4e6e5a560cd1",
-      "text": "static inline int skb_add_data_nocache(struct sock *sk, struct sk_buff *skb,\n\t\t\t\t       struct iov_iter *from, int copy)\n{\n\tint err, offset = skb->len;\n\n\terr = skb_do_copy_data_nocache(sk, skb, from, skb_put(skb, copy),\n\t\t\t\t       copy, offset);\n\tif (err)\n\t\t__skb_trim(skb, offset);\n\n\treturn err;\n}\n"
-    },
-    "skb_copy_to_page_nocache": {
-      "source": "include/net/sock.h",
-      "prefix": "static inline int skb_copy_to_page_nocache(",
-      "bytes": 400,
-      "sha256": "5cb59f62515a731895bbef954556b8d083425b2044a6d806550f502bebaf8909",
-      "text": "static inline int skb_copy_to_page_nocache(struct sock *sk, struct iov_iter *from,\n\t\t\t\t\t   struct sk_buff *skb,\n\t\t\t\t\t   struct page *page,\n\t\t\t\t\t   int off, int copy)\n{\n\tint err;\n\n\terr = skb_do_copy_data_nocache(sk, skb, from, page_address(page) + off,\n\t\t\t\t       copy, skb->len);\n\tif (err)\n\t\treturn err;\n\n\tskb_len_add(skb, copy);\n\tsk_wmem_queued_add(sk, copy);\n\tsk_mem_charge(sk, copy);\n\treturn 0;\n}\n"
-    },
-    "tcp_send_fin": {
-      "source": "net/ipv4/tcp_output.c",
-      "prefix": "void tcp_send_fin(struct sock *sk)",
-      "bytes": 1477,
-      "sha256": "7f640ce542f092bd7f5798077cdcbb1585f9fc6d7ca610aa0cb86d3ec692a444",
-      "text": "void tcp_send_fin(struct sock *sk)\n{\n\tstruct sk_buff *skb, *tskb, *tail = tcp_write_queue_tail(sk);\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\n\t/* Optimization, tack on the FIN if we have one skb in write queue and\n\t * this skb was not yet sent, or we are under memory pressure.\n\t * Note: in the latter case, FIN packet will be sent after a timeout,\n\t * as TCP stack thinks it has already been transmitted.\n\t */\n\ttskb = tail;\n\tif (!tskb && tcp_under_memory_pressure(sk))\n\t\ttskb = skb_rb_last(&sk->tcp_rtx_queue);\n\n\tif (tskb) {\n\t\tTCP_SKB_CB(tskb)->tcp_flags |= TCPHDR_FIN;\n\t\tTCP_SKB_CB(tskb)->end_seq++;\n\t\ttp->write_seq++;\n\t\tif (!tail) {\n\t\t\t/* This means tskb was already sent.\n\t\t\t * Pretend we included the FIN on previous transmit.\n\t\t\t * We need to set tp->snd_nxt to the value it would have\n\t\t\t * if FIN had been sent. This is because retransmit path\n\t\t\t * does not change tp->snd_nxt.\n\t\t\t */\n\t\t\tWRITE_ONCE(tp->snd_nxt, tp->snd_nxt + 1);\n\t\t\treturn;\n\t\t}\n\t} else {\n\t\tskb = alloc_skb_fclone(MAX_TCP_HEADER,\n\t\t\t\t       sk_gfp_mask(sk, GFP_ATOMIC |\n\t\t\t\t\t\t       __GFP_NOWARN));\n\t\tif (unlikely(!skb))\n\t\t\treturn;\n\n\t\tINIT_LIST_HEAD(&skb->tcp_tsorted_anchor);\n\t\tskb_reserve(skb, MAX_TCP_HEADER);\n\t\tsk_forced_mem_schedule(sk, skb->truesize);\n\t\t/* FIN eats a sequence byte, write_seq advanced by tcp_queue_skb(). */\n\t\ttcp_init_nondata_skb(skb, tp->write_seq,\n\t\t\t\t     TCPHDR_ACK | TCPHDR_FIN);\n\t\ttcp_queue_skb(sk, skb);\n\t}\n\t__tcp_push_pending_frames(sk, tcp_current_mss(sk), TCP_NAGLE_OFF);\n}\n"
-    },
-    "tcp_send_active_reset": {
-      "source": "net/ipv4/tcp_output.c",
-      "prefix": "void tcp_send_active_reset(struct sock *sk, enum sk_rst_reason reason)",
-      "bytes": 911,
-      "sha256": "acbd159ffea2d2f0ff9ea6ae1c28841f9545641011b8d0ea79388284122522d1",
-      "text": "void tcp_send_active_reset(struct sock *sk, enum sk_rst_reason reason)\n{\n\tgfp_t priority = sk_gfp_mask(sk, GFP_ATOMIC | __GFP_NOWARN);\n\tstruct sk_buff *skb;\n\n\tTCP_INC_STATS(sock_net(sk), TCP_MIB_OUTRSTS);\n\n\t/* NOTE: No TCP options attached and we never retransmit this. */\n\tskb = alloc_skb(MAX_TCP_HEADER, priority);\n\tif (!skb) {\n\t\tNET_INC_STATS(sock_net(sk), LINUX_MIB_TCPABORTFAILED);\n\t\treturn;\n\t}\n\n\t/* Reserve space for headers and prepare control bits. */\n\tskb_reserve(skb, MAX_TCP_HEADER);\n\ttcp_init_nondata_skb(skb, tcp_acceptable_seq(sk),\n\t\t\t     TCPHDR_ACK | TCPHDR_RST);\n\ttcp_mstamp_refresh(tcp_sk(sk));\n\t/* Send it off. */\n\tif (tcp_transmit_skb(sk, skb, 0, priority))\n\t\tNET_INC_STATS(sock_net(sk), LINUX_MIB_TCPABORTFAILED);\n\n\t/* skb of trace_tcp_send_reset() keeps the skb that caused RST,\n\t * skb here is different to the troublesome skb, so use NULL\n\t */\n\ttrace_tcp_send_reset(sk, NULL, reason);\n}\n"
-    },
-    "__tcp_send_ack": {
-      "source": "net/ipv4/tcp_output.c",
-      "prefix": "void __tcp_send_ack(struct sock *sk, u32 rcv_nxt, u16 flags)",
-      "bytes": 1212,
-      "sha256": "6c9e3f761bfda4a1969658141c105889346c14eb82ce21df183f2be6ad8c5a3b",
-      "text": "void __tcp_send_ack(struct sock *sk, u32 rcv_nxt, u16 flags)\n{\n\tstruct sk_buff *buff;\n\n\t/* If we have been reset, we may not send again. */\n\tif (sk->sk_state == TCP_CLOSE)\n\t\treturn;\n\n\t/* We are not putting this on the write queue, so\n\t * tcp_transmit_skb() will set the ownership to this\n\t * sock.\n\t */\n\tbuff = alloc_skb(MAX_TCP_HEADER,\n\t\t\t sk_gfp_mask(sk, GFP_ATOMIC | __GFP_NOWARN));\n\tif (unlikely(!buff)) {\n\t\tstruct inet_connection_sock *icsk = inet_csk(sk);\n\t\tunsigned long delay;\n\n\t\tdelay = TCP_DELACK_MAX << icsk->icsk_ack.retry;\n\t\tif (delay < TCP_RTO_MAX)\n\t\t\ticsk->icsk_ack.retry++;\n\t\tinet_csk_schedule_ack(sk);\n\t\ticsk->icsk_ack.ato = TCP_ATO_MIN;\n\t\tinet_csk_reset_xmit_timer(sk, ICSK_TIME_DACK, delay, TCP_RTO_MAX);\n\t\treturn;\n\t}\n\n\t/* Reserve space for headers and prepare control bits. */\n\tskb_reserve(buff, MAX_TCP_HEADER);\n\ttcp_init_nondata_skb(buff, tcp_acceptable_seq(sk), TCPHDR_ACK | flags);\n\n\t/* We do not want pure acks influencing TCP Small Queues or fq/pacing\n\t * too much.\n\t * SKB_TRUESIZE(max(1 .. 66, MAX_TCP_HEADER)) is unfortunately ~784\n\t */\n\tskb_set_tcp_pure_ack(buff);\n\n\t/* Send it off, this clears delayed acks for us. */\n\t__tcp_transmit_skb(sk, buff, 0, (__force gfp_t)0, rcv_nxt);\n}\n"
-    },
-    "tcp_xmit_probe_skb": {
-      "source": "net/ipv4/tcp_output.c",
-      "prefix": "static int tcp_xmit_probe_skb(struct sock *sk, int urgent, int mib)",
-      "bytes": 673,
-      "sha256": "0ab54f2851046ca5095395956f0cdc32a0d8df09e31159d1ad70b8f3868b273c",
-      "text": "static int tcp_xmit_probe_skb(struct sock *sk, int urgent, int mib)\n{\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tstruct sk_buff *skb;\n\n\t/* We don't queue it, tcp_transmit_skb() sets ownership. */\n\tskb = alloc_skb(MAX_TCP_HEADER,\n\t\t\tsk_gfp_mask(sk, GFP_ATOMIC | __GFP_NOWARN));\n\tif (!skb)\n\t\treturn -1;\n\n\t/* Reserve space for headers and set control bits. */\n\tskb_reserve(skb, MAX_TCP_HEADER);\n\t/* Use a previous sequence.  This should cause the other\n\t * end to send an ack.  Don't queue or clone SKB, just\n\t * send it.\n\t */\n\ttcp_init_nondata_skb(skb, tp->snd_una - !urgent, TCPHDR_ACK);\n\tNET_INC_STATS(sock_net(sk), mib);\n\treturn tcp_transmit_skb(sk, skb, 0, (__force gfp_t)0);\n}\n"
-    },
-    "tcp_make_synack": {
-      "source": "net/ipv4/tcp_output.c",
-      "prefix": "struct sk_buff *tcp_make_synack(const struct sock *sk, struct dst_entry *dst,\n\t\t\t\tstruct request_sock *req,\n\t\t\t\tstruct tcp_fastopen_cookie *foc,\n\t\t\t\tenum tcp_synack_type synack_type,\n\t\t\t\tstruct sk_buff *syn_skb)",
-      "bytes": 4435,
-      "sha256": "3e2810babe269a992b23bf3bc740781ebad101c6e014bbccc4de54dc72e3b7a6",
-      "text": "struct sk_buff *tcp_make_synack(const struct sock *sk, struct dst_entry *dst,\n\t\t\t\tstruct request_sock *req,\n\t\t\t\tstruct tcp_fastopen_cookie *foc,\n\t\t\t\tenum tcp_synack_type synack_type,\n\t\t\t\tstruct sk_buff *syn_skb)\n{\n\tstruct inet_request_sock *ireq = inet_rsk(req);\n\tconst struct tcp_sock *tp = tcp_sk(sk);\n\tstruct tcp_out_options opts;\n\tstruct tcp_key key = {};\n\tstruct sk_buff *skb;\n\tint tcp_header_size;\n\tstruct tcphdr *th;\n\tint mss;\n\tu64 now;\n\n\tskb = alloc_skb(MAX_TCP_HEADER, GFP_ATOMIC);\n\tif (unlikely(!skb)) {\n\t\tdst_release(dst);\n\t\treturn NULL;\n\t}\n\t/* Reserve space for headers. */\n\tskb_reserve(skb, MAX_TCP_HEADER);\n\n\tswitch (synack_type) {\n\tcase TCP_SYNACK_NORMAL:\n\t\tskb_set_owner_w(skb, req_to_sk(req));\n\t\tbreak;\n\tcase TCP_SYNACK_COOKIE:\n\t\t/* Under synflood, we do not attach skb to a socket,\n\t\t * to avoid false sharing.\n\t\t */\n\t\tbreak;\n\tcase TCP_SYNACK_FASTOPEN:\n\t\t/* sk is a const pointer, because we want to express multiple\n\t\t * cpu might call us concurrently.\n\t\t * sk->sk_wmem_alloc in an atomic, we can promote to rw.\n\t\t */\n\t\tskb_set_owner_w(skb, (struct sock *)sk);\n\t\tbreak;\n\t}\n\tskb_dst_set(skb, dst);\n\n\tmss = tcp_mss_clamp(tp, tcp_dst_advmss(dst));\n\n\tmemset(&opts, 0, sizeof(opts));\n\tnow = tcp_clock_ns();\n#ifdef CONFIG_SYN_COOKIES\n\tif (unlikely(synack_type == TCP_SYNACK_COOKIE && ireq->tstamp_ok))\n\t\tskb_set_delivery_time(skb, cookie_init_timestamp(req, now),\n\t\t\t\t      SKB_CLOCK_MONOTONIC);\n\telse\n#endif\n\t{\n\t\tskb_set_delivery_time(skb, now, SKB_CLOCK_MONOTONIC);\n\t\tif (!tcp_rsk(req)->snt_synack) /* Timestamp first SYNACK */\n\t\t\ttcp_rsk(req)->snt_synack = tcp_skb_timestamp_us(skb);\n\t}\n\n#if defined(CONFIG_TCP_MD5SIG) || defined(CONFIG_TCP_AO)\n\trcu_read_lock();\n#endif\n\tif (tcp_rsk_used_ao(req)) {\n#ifdef CONFIG_TCP_AO\n\t\tstruct tcp_ao_key *ao_key = NULL;\n\t\tu8 keyid = tcp_rsk(req)->ao_keyid;\n\t\tu8 rnext = tcp_rsk(req)->ao_rcv_next;\n\n\t\tao_key = tcp_sk(sk)->af_specific->ao_lookup(sk, req_to_sk(req),\n\t\t\t\t\t\t\t    keyid, -1);\n\t\t/* If there is no matching key - avoid sending anything,\n\t\t * especially usigned segments. It could try harder and lookup\n\t\t * for another peer-matching key, but the peer has requested\n\t\t * ao_keyid (RFC5925 RNextKeyID), so let's keep it simple here.\n\t\t */\n\t\tif (unlikely(!ao_key)) {\n\t\t\ttrace_tcp_ao_synack_no_key(sk, keyid, rnext);\n\t\t\trcu_read_unlock();\n\t\t\tkfree_skb(skb);\n\t\t\tnet_warn_ratelimited(\"TCP-AO: the keyid %u from SYN packet is not present - not sending SYNACK\\n\",\n\t\t\t\t\t     keyid);\n\t\t\treturn NULL;\n\t\t}\n\t\tkey.ao_key = ao_key;\n\t\tkey.type = TCP_KEY_AO;\n#endif\n\t} else {\n#ifdef CONFIG_TCP_MD5SIG\n\t\tkey.md5_key = tcp_rsk(req)->af_specific->req_md5_lookup(sk,\n\t\t\t\t\treq_to_sk(req));\n\t\tif (key.md5_key)\n\t\t\tkey.type = TCP_KEY_MD5;\n#endif\n\t}\n\tskb_set_hash(skb, READ_ONCE(tcp_rsk(req)->txhash), PKT_HASH_TYPE_L4);\n\t/* bpf program will be interested in the tcp_flags */\n\tTCP_SKB_CB(skb)->tcp_flags = TCPHDR_SYN | TCPHDR_ACK;\n\ttcp_header_size = tcp_synack_options(sk, req, mss, skb, &opts,\n\t\t\t\t\t     &key, foc, synack_type, syn_skb)\n\t\t\t\t\t+ sizeof(*th);\n\n\tskb_push(skb, tcp_header_size);\n\tskb_reset_transport_header(skb);\n\n\tth = (struct tcphdr *)skb->data;\n\tmemset(th, 0, sizeof(struct tcphdr));\n\tth->syn = 1;\n\tth->ack = 1;\n\ttcp_ecn_make_synack(req, th);\n\tth->source = htons(ireq->ir_num);\n\tth->dest = ireq->ir_rmt_port;\n\tskb->mark = ireq->ir_mark;\n\tskb->ip_summed = CHECKSUM_PARTIAL;\n\tth->seq = htonl(tcp_rsk(req)->snt_isn);\n\t/* XXX data is queued and acked as is. No buffer/window check */\n\tth->ack_seq = htonl(tcp_rsk(req)->rcv_nxt);\n\n\t/* RFC1323: The window in SYN & SYN/ACK segments is never scaled. */\n\tth->window = htons(min(req->rsk_rcv_wnd, 65535U));\n\ttcp_options_write(th, NULL, tcp_rsk(req), &opts, &key);\n\tth->doff = (tcp_header_size >> 2);\n\tTCP_INC_STATS(sock_net(sk), TCP_MIB_OUTSEGS);\n\n\t/* Okay, we have all we need - do the md5 hash if needed */\n\tif (tcp_key_is_md5(&key)) {\n#ifdef CONFIG_TCP_MD5SIG\n\t\ttcp_rsk(req)->af_specific->calc_md5_hash(opts.hash_location,\n\t\t\t\t\tkey.md5_key, req_to_sk(req), skb);\n#endif\n\t} else if (tcp_key_is_ao(&key)) {\n#ifdef CONFIG_TCP_AO\n\t\ttcp_rsk(req)->af_specific->ao_synack_hash(opts.hash_location,\n\t\t\t\t\tkey.ao_key, req, skb,\n\t\t\t\t\topts.hash_location - (u8 *)th, 0);\n#endif\n\t}\n#if defined(CONFIG_TCP_MD5SIG) || defined(CONFIG_TCP_AO)\n\trcu_read_unlock();\n#endif\n\n\tbpf_skops_write_hdr_opt((struct sock *)sk, skb, req, syn_skb,\n\t\t\t\tsynack_type, &opts);\n\n\tskb_set_delivery_time(skb, now, SKB_CLOCK_MONOTONIC);\n\ttcp_add_tx_delay(skb, tp);\n\n\treturn skb;\n}\n"
-    },
-    "tcp_send_syn_data": {
-      "source": "net/ipv4/tcp_output.c",
-      "prefix": "static int tcp_send_syn_data(struct sock *sk, struct sk_buff *syn)",
-      "bytes": 3070,
-      "sha256": "81a9e788f93296bc95e868df6ee21e6c9c95197c1efe8bbc99f7ee19896d99d6",
-      "text": "static int tcp_send_syn_data(struct sock *sk, struct sk_buff *syn)\n{\n\tstruct inet_connection_sock *icsk = inet_csk(sk);\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tstruct tcp_fastopen_request *fo = tp->fastopen_req;\n\tstruct page_frag *pfrag = sk_page_frag(sk);\n\tstruct sk_buff *syn_data;\n\tint space, err = 0;\n\n\ttp->rx_opt.mss_clamp = tp->advmss;  /* If MSS is not cached */\n\tif (!tcp_fastopen_cookie_check(sk, &tp->rx_opt.mss_clamp, &fo->cookie))\n\t\tgoto fallback;\n\n\t/* MSS for SYN-data is based on cached MSS and bounded by PMTU and\n\t * user-MSS. Reserve maximum option space for middleboxes that add\n\t * private TCP options. The cost is reduced data space in SYN :(\n\t */\n\ttp->rx_opt.mss_clamp = tcp_mss_clamp(tp, tp->rx_opt.mss_clamp);\n\t/* Sync mss_cache after updating the mss_clamp */\n\ttcp_sync_mss(sk, icsk->icsk_pmtu_cookie);\n\n\tspace = __tcp_mtu_to_mss(sk, icsk->icsk_pmtu_cookie) -\n\t\tMAX_TCP_OPTION_SPACE;\n\n\tspace = min_t(size_t, space, fo->size);\n\n\tif (space &&\n\t    !skb_page_frag_refill(min_t(size_t, space, PAGE_SIZE),\n\t\t\t\t  pfrag, sk->sk_allocation))\n\t\tgoto fallback;\n\tsyn_data = tcp_stream_alloc_skb(sk, sk->sk_allocation, false);\n\tif (!syn_data)\n\t\tgoto fallback;\n\tmemcpy(syn_data->cb, syn->cb, sizeof(syn->cb));\n\tif (space) {\n\t\tspace = min_t(size_t, space, pfrag->size - pfrag->offset);\n\t\tspace = tcp_wmem_schedule(sk, space);\n\t}\n\tif (space) {\n\t\tspace = copy_page_from_iter(pfrag->page, pfrag->offset,\n\t\t\t\t\t    space, &fo->data->msg_iter);\n\t\tif (unlikely(!space)) {\n\t\t\ttcp_skb_tsorted_anchor_cleanup(syn_data);\n\t\t\tkfree_skb(syn_data);\n\t\t\tgoto fallback;\n\t\t}\n\t\tskb_fill_page_desc(syn_data, 0, pfrag->page,\n\t\t\t\t   pfrag->offset, space);\n\t\tpage_ref_inc(pfrag->page);\n\t\tpfrag->offset += space;\n\t\tskb_len_add(syn_data, space);\n\t\tskb_zcopy_set(syn_data, fo->uarg, NULL);\n\t}\n\t/* No more data pending in inet_wait_for_connect() */\n\tif (space == fo->size)\n\t\tfo->data = NULL;\n\tfo->copied = space;\n\n\ttcp_connect_queue_skb(sk, syn_data);\n\tif (syn_data->len)\n\t\ttcp_chrono_start(sk, TCP_CHRONO_BUSY);\n\n\terr = tcp_transmit_skb(sk, syn_data, 1, sk->sk_allocation);\n\n\tskb_set_delivery_time(syn, syn_data->skb_mstamp_ns, SKB_CLOCK_MONOTONIC);\n\n\t/* Now full SYN+DATA was cloned and sent (or not),\n\t * remove the SYN from the original skb (syn_data)\n\t * we keep in write queue in case of a retransmit, as we\n\t * also have the SYN packet (with no data) in the same queue.\n\t */\n\tTCP_SKB_CB(syn_data)->seq++;\n\tTCP_SKB_CB(syn_data)->tcp_flags = TCPHDR_ACK | TCPHDR_PSH;\n\tif (!err) {\n\t\ttp->syn_data = (fo->copied > 0);\n\t\ttcp_rbtree_insert(&sk->tcp_rtx_queue, syn_data);\n\t\tNET_INC_STATS(sock_net(sk), LINUX_MIB_TCPORIGDATASENT);\n\t\tgoto done;\n\t}\n\n\t/* data was not sent, put it in write_queue */\n\t__skb_queue_tail(&sk->sk_write_queue, syn_data);\n\ttp->packets_out -= tcp_skb_pcount(syn_data);\n\nfallback:\n\t/* Send a regular SYN with Fast Open cookie request option */\n\tif (fo->cookie.len > 0)\n\t\tfo->cookie.len = 0;\n\terr = tcp_transmit_skb(sk, syn, 1, sk->sk_allocation);\n\tif (err)\n\t\ttp->syn_fastopen = 0;\ndone:\n\tfo->cookie.len = -1;  /* Exclude Fast Open option for SYN retries */\n\treturn err;\n}\n"
-    },
-    "tcp_connect": {
-      "source": "net/ipv4/tcp_output.c",
-      "prefix": "int tcp_connect(struct sock *sk)",
-      "bytes": 3068,
-      "sha256": "2ccb7cd4b408df2eda6515f71a1f48c93eff4ecc0737b65759921ade4cff6a67",
-      "text": "int tcp_connect(struct sock *sk)\n{\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tstruct sk_buff *buff;\n\tint err;\n\n\ttcp_call_bpf(sk, BPF_SOCK_OPS_TCP_CONNECT_CB, 0, NULL);\n\n#if defined(CONFIG_TCP_MD5SIG) && defined(CONFIG_TCP_AO)\n\t/* Has to be checked late, after setting daddr/saddr/ops.\n\t * Return error if the peer has both a md5 and a tcp-ao key\n\t * configured as this is ambiguous.\n\t */\n\tif (unlikely(rcu_dereference_protected(tp->md5sig_info,\n\t\t\t\t\t       lockdep_sock_is_held(sk)))) {\n\t\tbool needs_ao = !!tp->af_specific->ao_lookup(sk, sk, -1, -1);\n\t\tbool needs_md5 = !!tp->af_specific->md5_lookup(sk, sk);\n\t\tstruct tcp_ao_info *ao_info;\n\n\t\tao_info = rcu_dereference_check(tp->ao_info,\n\t\t\t\t\t\tlockdep_sock_is_held(sk));\n\t\tif (ao_info) {\n\t\t\t/* This is an extra check: tcp_ao_required() in\n\t\t\t * tcp_v{4,6}_parse_md5_keys() should prevent adding\n\t\t\t * md5 keys on ao_required socket.\n\t\t\t */\n\t\t\tneeds_ao |= ao_info->ao_required;\n\t\t\tWARN_ON_ONCE(ao_info->ao_required && needs_md5);\n\t\t}\n\t\tif (needs_md5 && needs_ao)\n\t\t\treturn -EKEYREJECTED;\n\n\t\t/* If we have a matching md5 key and no matching tcp-ao key\n\t\t * then free up ao_info if allocated.\n\t\t */\n\t\tif (needs_md5) {\n\t\t\ttcp_ao_destroy_sock(sk, false);\n\t\t} else if (needs_ao) {\n\t\t\tstruct tcp_md5sig_info *md5sig;\n\n\t\t\ttcp_clear_md5_list(sk);\n\t\t\tmd5sig = rcu_replace_pointer(tp->md5sig_info, NULL,\n\t\t\t\t\t\t     lockdep_sock_is_held(sk));\n\t\t\tkfree_rcu(md5sig, rcu);\n\t\t\tstatic_branch_slow_dec_deferred(&tcp_md5_needed);\n\t\t}\n\t}\n#endif\n#ifdef CONFIG_TCP_AO\n\tif (unlikely(rcu_dereference_protected(tp->ao_info,\n\t\t\t\t\t       lockdep_sock_is_held(sk)))) {\n\t\t/* Don't allow connecting if ao is configured but no\n\t\t * matching key is found.\n\t\t */\n\t\tif (!tp->af_specific->ao_lookup(sk, sk, -1, -1))\n\t\t\treturn -EKEYREJECTED;\n\t}\n#endif\n\n\tif (inet_csk(sk)->icsk_af_ops->rebuild_header(sk))\n\t\treturn -EHOSTUNREACH; /* Routing failure or similar. */\n\n\ttcp_connect_init(sk);\n\n\tif (unlikely(tp->repair)) {\n\t\ttcp_finish_connect(sk, NULL);\n\t\treturn 0;\n\t}\n\n\tbuff = tcp_stream_alloc_skb(sk, sk->sk_allocation, true);\n\tif (unlikely(!buff))\n\t\treturn -ENOBUFS;\n\n\ttcp_init_nondata_skb(buff, tp->write_seq++, TCPHDR_SYN);\n\ttcp_mstamp_refresh(tp);\n\ttp->retrans_stamp = tcp_time_stamp_ts(tp);\n\ttcp_connect_queue_skb(sk, buff);\n\ttcp_ecn_send_syn(sk, buff);\n\ttcp_rbtree_insert(&sk->tcp_rtx_queue, buff);\n\n\t/* Send off SYN; include data in Fast Open. */\n\terr = tp->fastopen_req ? tcp_send_syn_data(sk, buff) :\n\t      tcp_transmit_skb(sk, buff, 1, sk->sk_allocation);\n\tif (err == -ECONNREFUSED)\n\t\treturn err;\n\n\t/* We change tp->snd_nxt after the tcp_transmit_skb() call\n\t * in order to make this packet get counted in tcpOutSegs.\n\t */\n\tWRITE_ONCE(tp->snd_nxt, tp->write_seq);\n\ttp->pushed_seq = tp->write_seq;\n\tbuff = tcp_send_head(sk);\n\tif (unlikely(buff)) {\n\t\tWRITE_ONCE(tp->snd_nxt, TCP_SKB_CB(buff)->seq);\n\t\ttp->pushed_seq\t= TCP_SKB_CB(buff)->seq;\n\t}\n\tTCP_INC_STATS(sock_net(sk), TCP_MIB_ACTIVEOPENS);\n\n\t/* Timer for repeating the SYN until an answer. */\n\tinet_csk_reset_xmit_timer(sk, ICSK_TIME_RETRANS,\n\t\t\t\t  inet_csk(sk)->icsk_rto, TCP_RTO_MAX);\n\treturn 0;\n}\n"
-    },
-    "tcp_collapse": {
-      "source": "net/ipv4/tcp_input.c",
-      "prefix": "static void\ntcp_collapse(struct sock *sk, struct sk_buff_head *list, struct rb_root *root,\n\t     struct sk_buff *head, struct sk_buff *tail, u32 start, u32 end)",
-      "bytes": 2801,
-      "sha256": "de2a8245beed589ed8662b5bb61cc6b47afab656ca4fc4f2ee5bdaa106607bc4",
-      "text": "static void\ntcp_collapse(struct sock *sk, struct sk_buff_head *list, struct rb_root *root,\n\t     struct sk_buff *head, struct sk_buff *tail, u32 start, u32 end)\n{\n\tstruct sk_buff *skb = head, *n;\n\tstruct sk_buff_head tmp;\n\tbool end_of_skbs;\n\n\t/* First, check that queue is collapsible and find\n\t * the point where collapsing can be useful.\n\t */\nrestart:\n\tfor (end_of_skbs = true; skb != NULL && skb != tail; skb = n) {\n\t\tn = tcp_skb_next(skb, list);\n\n\t\tif (!skb_frags_readable(skb))\n\t\t\tgoto skip_this;\n\n\t\t/* No new bits? It is possible on ofo queue. */\n\t\tif (!before(start, TCP_SKB_CB(skb)->end_seq)) {\n\t\t\tskb = tcp_collapse_one(sk, skb, list, root);\n\t\t\tif (!skb)\n\t\t\t\tbreak;\n\t\t\tgoto restart;\n\t\t}\n\n\t\t/* The first skb to collapse is:\n\t\t * - not SYN/FIN and\n\t\t * - bloated or contains data before \"start\" or\n\t\t *   overlaps to the next one and mptcp allow collapsing.\n\t\t */\n\t\tif (!(TCP_SKB_CB(skb)->tcp_flags & (TCPHDR_SYN | TCPHDR_FIN)) &&\n\t\t    (tcp_win_from_space(sk, skb->truesize) > skb->len ||\n\t\t     before(TCP_SKB_CB(skb)->seq, start))) {\n\t\t\tend_of_skbs = false;\n\t\t\tbreak;\n\t\t}\n\n\t\tif (n && n != tail && skb_frags_readable(n) &&\n\t\t    tcp_skb_can_collapse_rx(skb, n) &&\n\t\t    TCP_SKB_CB(skb)->end_seq != TCP_SKB_CB(n)->seq) {\n\t\t\tend_of_skbs = false;\n\t\t\tbreak;\n\t\t}\n\nskip_this:\n\t\t/* Decided to skip this, advance start seq. */\n\t\tstart = TCP_SKB_CB(skb)->end_seq;\n\t}\n\tif (end_of_skbs ||\n\t    (TCP_SKB_CB(skb)->tcp_flags & (TCPHDR_SYN | TCPHDR_FIN)) ||\n\t    !skb_frags_readable(skb))\n\t\treturn;\n\n\t__skb_queue_head_init(&tmp);\n\n\twhile (before(start, end)) {\n\t\tint copy = min_t(int, SKB_MAX_ORDER(0, 0), end - start);\n\t\tstruct sk_buff *nskb;\n\n\t\tnskb = alloc_skb(copy, GFP_ATOMIC);\n\t\tif (!nskb)\n\t\t\tbreak;\n\n\t\tmemcpy(nskb->cb, skb->cb, sizeof(skb->cb));\n\t\tskb_copy_decrypted(nskb, skb);\n\t\tTCP_SKB_CB(nskb)->seq = TCP_SKB_CB(nskb)->end_seq = start;\n\t\tif (list)\n\t\t\t__skb_queue_before(list, skb, nskb);\n\t\telse\n\t\t\t__skb_queue_tail(&tmp, nskb); /* defer rbtree insertion */\n\t\tskb_set_owner_r(nskb, sk);\n\t\tmptcp_skb_ext_move(nskb, skb);\n\n\t\t/* Copy data, releasing collapsed skbs. */\n\t\twhile (copy > 0) {\n\t\t\tint offset = start - TCP_SKB_CB(skb)->seq;\n\t\t\tint size = TCP_SKB_CB(skb)->end_seq - start;\n\n\t\t\tBUG_ON(offset < 0);\n\t\t\tif (size > 0) {\n\t\t\t\tsize = min(copy, size);\n\t\t\t\tif (skb_copy_bits(skb, offset, skb_put(nskb, size), size))\n\t\t\t\t\tBUG();\n\t\t\t\tTCP_SKB_CB(nskb)->end_seq += size;\n\t\t\t\tcopy -= size;\n\t\t\t\tstart += size;\n\t\t\t}\n\t\t\tif (!before(start, TCP_SKB_CB(skb)->end_seq)) {\n\t\t\t\tskb = tcp_collapse_one(sk, skb, list, root);\n\t\t\t\tif (!skb ||\n\t\t\t\t    skb == tail ||\n\t\t\t\t    !tcp_skb_can_collapse_rx(nskb, skb) ||\n\t\t\t\t    (TCP_SKB_CB(skb)->tcp_flags & (TCPHDR_SYN | TCPHDR_FIN)) ||\n\t\t\t\t    !skb_frags_readable(skb))\n\t\t\t\t\tgoto end;\n\t\t\t}\n\t\t}\n\t}\nend:\n\tskb_queue_walk_safe(&tmp, skb, n)\n\t\ttcp_rbtree_insert(root, skb);\n}\n"
-    },
-    "tcp_send_rcvq": {
-      "source": "net/ipv4/tcp_input.c",
-      "prefix": "int tcp_send_rcvq(struct sock *sk, struct msghdr *msg, size_t size)",
-      "bytes": 1132,
-      "sha256": "ead8a0dd23b41432c39bcc51f49f91137152f2b115d4c15a343b91bf1e22c557",
-      "text": "int tcp_send_rcvq(struct sock *sk, struct msghdr *msg, size_t size)\n{\n\tstruct sk_buff *skb;\n\tint err = -ENOMEM;\n\tint data_len = 0;\n\tbool fragstolen;\n\n\tif (size == 0)\n\t\treturn 0;\n\n\tif (size > PAGE_SIZE) {\n\t\tint npages = min_t(size_t, size >> PAGE_SHIFT, MAX_SKB_FRAGS);\n\n\t\tdata_len = npages << PAGE_SHIFT;\n\t\tsize = data_len + (size & ~PAGE_MASK);\n\t}\n\tskb = alloc_skb_with_frags(size - data_len, data_len,\n\t\t\t\t   PAGE_ALLOC_COSTLY_ORDER,\n\t\t\t\t   &err, sk->sk_allocation);\n\tif (!skb)\n\t\tgoto err;\n\n\tskb_put(skb, size - data_len);\n\tskb->data_len = data_len;\n\tskb->len = size;\n\n\tif (tcp_try_rmem_schedule(sk, skb, skb->truesize)) {\n\t\tNET_INC_STATS(sock_net(sk), LINUX_MIB_TCPRCVQDROP);\n\t\tgoto err_free;\n\t}\n\n\terr = skb_copy_datagram_from_iter(skb, 0, &msg->msg_iter, size);\n\tif (err)\n\t\tgoto err_free;\n\n\tTCP_SKB_CB(skb)->seq = tcp_sk(sk)->rcv_nxt;\n\tTCP_SKB_CB(skb)->end_seq = TCP_SKB_CB(skb)->seq + size;\n\tTCP_SKB_CB(skb)->ack_seq = tcp_sk(sk)->snd_una - 1;\n\n\tif (tcp_queue_rcv(sk, skb, &fragstolen)) {\n\t\tWARN_ON_ONCE(fragstolen); /* should not happen */\n\t\t__kfree_skb(skb);\n\t}\n\treturn size;\n\nerr_free:\n\tkfree_skb(skb);\nerr:\n\treturn err;\n\n}\n"
-    },
-    "inet_listen": {
-      "source": "net/ipv4/af_inet.c",
-      "prefix": "int inet_listen(struct socket *sock, int backlog)",
-      "bytes": 275,
-      "sha256": "decd2d1d5166484b582e6454985312b58c3104671729e87be9cf1486c0296331",
-      "text": "int inet_listen(struct socket *sock, int backlog)\n{\n\tstruct sock *sk = sock->sk;\n\tint err = -EINVAL;\n\n\tlock_sock(sk);\n\n\tif (sock->state != SS_UNCONNECTED || sock->type != SOCK_STREAM)\n\t\tgoto out;\n\n\terr = __inet_listen_sk(sk, backlog);\n\nout:\n\trelease_sock(sk);\n\treturn err;\n}\n"
-    },
-    "__pskb_copy_fclone": {
-      "source": "net/core/skbuff.c",
-      "prefix": "struct sk_buff *__pskb_copy_fclone(",
-      "bytes": 1190,
-      "sha256": "25d03782a27743b63a3faa895be74d046d84d5c970ae471c61dfdb451e0f7744",
-      "text": "struct sk_buff *__pskb_copy_fclone(struct sk_buff *skb, int headroom,\n\t\t\t\t   gfp_t gfp_mask, bool fclone)\n{\n\tunsigned int size = skb_headlen(skb) + headroom;\n\tint flags = skb_alloc_rx_flag(skb) | (fclone ? SKB_ALLOC_FCLONE : 0);\n\tstruct sk_buff *n = __alloc_skb(size, gfp_mask, flags, NUMA_NO_NODE);\n\n\tif (!n)\n\t\tgoto out;\n\n\t/* Set the data pointer */\n\tskb_reserve(n, headroom);\n\t/* Set the tail pointer and length */\n\tskb_put(n, skb_headlen(skb));\n\t/* Copy the bytes */\n\tskb_copy_from_linear_data(skb, n->data, n->len);\n\n\tn->truesize += skb->data_len;\n\tn->data_len  = skb->data_len;\n\tn->len\t     = skb->len;\n\n\tif (skb_shinfo(skb)->nr_frags) {\n\t\tint i;\n\n\t\tif (skb_orphan_frags(skb, gfp_mask) ||\n\t\t    skb_zerocopy_clone(n, skb, gfp_mask)) {\n\t\t\tkfree_skb(n);\n\t\t\tn = NULL;\n\t\t\tgoto out;\n\t\t}\n\t\tfor (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {\n\t\t\tskb_shinfo(n)->frags[i] = skb_shinfo(skb)->frags[i];\n\t\t\tskb_frag_ref(skb, i);\n\t\t}\n\t\tskb_shinfo(n)->nr_frags = i;\n\t\tskb_shinfo(n)->flags |= skb_shinfo(skb)->flags & SKBFL_SHARED_FRAG;\n\t}\n\n\tif (skb_has_frag_list(skb)) {\n\t\tskb_shinfo(n)->frag_list = skb_shinfo(skb)->frag_list;\n\t\tskb_clone_fraglist(n);\n\t}\n\n\tskb_copy_header(n, skb);\nout:\n\treturn n;\n}\n"
-    },
-    "skb_copy_expand": {
-      "source": "net/core/skbuff.c",
-      "prefix": "struct sk_buff *skb_copy_expand(",
-      "bytes": 1036,
-      "sha256": "0433a02a0c124f0550eada0ea23e5328fbb5b00a67a6d468aec5c5625ab1021f",
-      "text": "struct sk_buff *skb_copy_expand(const struct sk_buff *skb,\n\t\t\t\tint newheadroom, int newtailroom,\n\t\t\t\tgfp_t gfp_mask)\n{\n\t/*\n\t *\tAllocate the copy buffer\n\t */\n\tint head_copy_len, head_copy_off;\n\tstruct sk_buff *n;\n\tint oldheadroom;\n\n\tif (!skb_frags_readable(skb))\n\t\treturn NULL;\n\n\tif (WARN_ON_ONCE(skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST))\n\t\treturn NULL;\n\n\toldheadroom = skb_headroom(skb);\n\tn = __alloc_skb(newheadroom + skb->len + newtailroom,\n\t\t\tgfp_mask, skb_alloc_rx_flag(skb),\n\t\t\tNUMA_NO_NODE);\n\tif (!n)\n\t\treturn NULL;\n\n\tskb_reserve(n, newheadroom);\n\n\t/* Set the tail pointer and length */\n\tskb_put(n, skb->len);\n\n\thead_copy_len = oldheadroom;\n\thead_copy_off = 0;\n\tif (newheadroom <= head_copy_len)\n\t\thead_copy_len = newheadroom;\n\telse\n\t\thead_copy_off = newheadroom - head_copy_len;\n\n\t/* Copy the linear header and data. */\n\tBUG_ON(skb_copy_bits(skb, -head_copy_len, n->head + head_copy_off,\n\t\t\t     skb->len + head_copy_len));\n\n\tskb_copy_header(n, skb);\n\n\tskb_headers_offset_update(n, newheadroom - oldheadroom);\n\n\treturn n;\n}\n"
-    },
-    "skb_zerocopy_clone": {
-      "source": "net/core/skbuff.c",
-      "prefix": "static int skb_zerocopy_clone(",
-      "bytes": 454,
-      "sha256": "b07edd30698584c442f24ed8d3e5a06e4b6f260f0e7255152c5021a554454eea",
-      "text": "static int skb_zerocopy_clone(struct sk_buff *nskb, struct sk_buff *orig,\n\t\t\t      gfp_t gfp_mask)\n{\n\tif (skb_zcopy(orig)) {\n\t\tif (skb_zcopy(nskb)) {\n\t\t\t/* !gfp_mask callers are verified to !skb_zcopy(nskb) */\n\t\t\tif (!gfp_mask) {\n\t\t\t\tWARN_ON_ONCE(1);\n\t\t\t\treturn -ENOMEM;\n\t\t\t}\n\t\t\tif (skb_uarg(nskb) == skb_uarg(orig))\n\t\t\t\treturn 0;\n\t\t\tif (skb_copy_ubufs(nskb, GFP_ATOMIC))\n\t\t\t\treturn -EIO;\n\t\t}\n\t\tskb_zcopy_set(nskb, skb_uarg(orig), NULL);\n\t}\n\treturn 0;\n}\n"
-    }
-  },
-  "kernelBuilt": false,
-  "actualPacketExchangeExecuted": false,
-  "actualLinuxRcuExecuted": false,
-  "completeAllocationClosure": false,
-  "finalFreeCertified": false,
-  "productionInstallation": false
+"schemaVersion":"lsf.kernel-linear-packet-preimages.v1",
+"upstreamCommit":"7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+"archiveSha256":"e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+"source":{
+"fs/inode.c":{
+"bytes":75338,
+"sha256":"73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
+"gitBlob":"7942673f686fdc24d92c2fb8033c2fb3b6df7709",
+"independentlyGitCorroborated":true
+},
+"include/linux/netdevice.h":{
+"bytes":170262,
+"sha256":"35577d1d0decaad06824a0591c5929a1e837c7dc00e95b42cba1bc6743fb3941",
+"gitBlob":"0aa536df9cb594eb762465b2007390bc90e53815",
+"independentlyGitCorroborated":false
+},
+"include/linux/rcuref.h":{
+"bytes":4771,
+"sha256":"4bad6b9738eeae56cdb0735d8d8b901fd7b3fe4d9432701ffab40100bf9ea7c1",
+"gitBlob":"6322d8c1c6b4294abb794b4e0af739f1b0caedd9",
+"independentlyGitCorroborated":false
+},
+"include/linux/skbuff.h":{
+"bytes":151887,
+"sha256":"af70ea27cf9a3a2d790b1005a16da7649d3bbb0fd136b2934ed4018077dbb822",
+"gitBlob":"df548a3d606570d38614fc45403133069ecb9cab",
+"independentlyGitCorroborated":true
+},
+"include/net/dst.h":{
+"bytes":16116,
+"sha256":"78178f0528f8f9ee92ae63c7308f84cfc5d90941d92b674fc42078999a6d3369",
+"gitBlob":"b3ac23e14adab857ca58013861ac124f68446559",
+"independentlyGitCorroborated":false
+},
+"include/net/dst_ops.h":{
+"bytes":2116,
+"sha256":"388f5247da499afef3ae4f1a7f7ad779192aa31a071355bbb6d50e188e3ae524",
+"gitBlob":"3a9001a042a5c392a79cfc59af528ef410a28668",
+"independentlyGitCorroborated":false
+},
+"include/net/inet_hashtables.h":{
+"bytes":17314,
+"sha256":"a699f5b96229f9d6fa4bb5bf435285db59b7d2e45918044f2c5fec01e624bf6e",
+"gitBlob":"b1118125486631e6e02ca2d1f6575dad60e6d705",
+"independentlyGitCorroborated":false
+},
+"include/net/ip.h":{
+"bytes":25084,
+"sha256":"468170661746038b5ecc7bfa114433feeb853708d0af7a65d59541b602473963",
+"gitBlob":"97c60b3002702ac98ded03e19aaeed539b657373",
+"independentlyGitCorroborated":false
+},
+"include/net/ip_fib.h":{
+"bytes":17526,
+"sha256":"8f006444cb27c3d3dc92eb417ad90a9a9ae818f833982b85de3577a8cc854d65",
+"gitBlob":"145b90d004ebb45952be61f98bc7c03f0039bd9d",
+"independentlyGitCorroborated":false
+},
+"include/net/lwtunnel.h":{
+"bytes":6850,
+"sha256":"d5df355174e9182e145c1d4a67724d408f663d4eab35eac51f0af2c198b151e9",
+"gitBlob":"09791f5d9b6ec8f06ff093ec1adcbf75e08bed62",
+"independentlyGitCorroborated":false
+},
+"include/net/netlabel.h":{
+"bytes":21017,
+"sha256":"82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
+"gitBlob":"529160f76cac209ee7473ea7b5ccd49da0789f18",
+"independentlyGitCorroborated":false
+},
+"include/net/nexthop.h":{
+"bytes":12985,
+"sha256":"80faf19c5303d481542adbf2c23463c9a135bb4633957683161f64ff2cba2792",
+"gitBlob":"d9fb44e8b3219cf01031385f03021097ef6e7a76",
+"independentlyGitCorroborated":false
+},
+"include/net/route.h":{
+"bytes":11707,
+"sha256":"653aee3691e524225bbb9d1e4f7ace85b2e56f81a8047c7b10562201392b71a5",
+"gitBlob":"76f526e051aa36e3ae33ee37bd8c8c2e19ef9ba6",
+"independentlyGitCorroborated":false
+},
+"include/net/sock.h":{
+"bytes":85865,
+"sha256":"5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
+"gitBlob":"efa549885b7f85e50c55f95ad4eae0c1ef75797a",
+"independentlyGitCorroborated":true
+},
+"include/net/tcp.h":{
+"bytes":86800,
+"sha256":"6d4ba5b9aab587292de3cb3836b5907ac265d866f94a52135452f8010af9243a",
+"gitBlob":"ad9af706085ab368c9b0723e121f66a71939ad59",
+"independentlyGitCorroborated":true
+},
+"include/net/xfrm.h":{
+"bytes":61675,
+"sha256":"aadaea85ee3054727e4b568e82ca6ea3cee5c9f7be461134ed773f402dcfb9ef",
+"gitBlob":"a20a01dd6f98e3c058dbedd820eeee60c4c24ae0",
+"independentlyGitCorroborated":false
+},
+"kernel/audit.c":{
+"bytes":66999,
+"sha256":"7a33029ecca2b8a71a8a12e9a1699a8180e64a82acfbdc599b0ec658fa07d564",
+"gitBlob":"df279dd2e45086b791852f2a46ceb52f24f0fd78",
+"independentlyGitCorroborated":false
+},
+"net/core/dst.c":{
+"bytes":8852,
+"sha256":"362a3128a9d91cd676fe607746f3b169224083d86047a84583862c81f5661b86",
+"gitBlob":"92aa81b2f33157e91c7de8f96254054380cb9b2a",
+"independentlyGitCorroborated":true
+},
+"net/core/skbuff.c":{
+"bytes":189334,
+"sha256":"6a2fec31182c7c4d247d85aaffba036de9c0b6a9911c3cc1249d00b423ea0ae8",
+"gitBlob":"5608b5507b5bf03504a9093abaa865af2b82043e",
+"independentlyGitCorroborated":true
+},
+"net/core/sock.c":{
+"bytes":111636,
+"sha256":"f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
+"gitBlob":"75db38fdfd35fe87b87ac2755b0ef1db6fb96415",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/af_inet.c":{
+"bytes":51938,
+"sha256":"9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
+"gitBlob":"c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/cipso_ipv4.c":{
+"bytes":63739,
+"sha256":"03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
+"gitBlob":"53fcb2089cde2a246c0b84d31582485b2496da64",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/fib_frontend.c":{
+"bytes":40789,
+"sha256":"054b45ed18db33e7f842e3565aa29fd21e171fff61debfe3b9dd2def46f55682",
+"gitBlob":"5b7c41333d6fc8f779a99dd11c8def5797ba3997",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/fib_semantics.c":{
+"bytes":54966,
+"sha256":"7cb52cf170fbd73a80ac9a92c4cd668d90f935321deab8230f362b30dd4f04a7",
+"gitBlob":"1e7961b8a7cee82179ef7c9b6f088146a7de799c",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/fib_trie.c":{
+"bytes":74770,
+"sha256":"e87b942d3f04998cc2ceab4e40223bd24a4f2c89f3137bb4d847368485bd37b7",
+"gitBlob":"f04a735ba7cac117041529fdf8f2a3174d3e816a",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/inet_connection_sock.c":{
+"bytes":45201,
+"sha256":"cb3567452632b9017a463f8dc860bd046bb9e572bacd56d219a2c0e124f453c7",
+"gitBlob":"eeee6f75833767f0ae5878bb285fbde63d027654",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/inet_hashtables.c":{
+"bytes":35429,
+"sha256":"20113f4e67d557ef06a68322d0cb03da2de5463409eb2b8b5dd80b305e9aa08d",
+"gitBlob":"37a6acff537e6511a84b7cdfc61af2412eb2cb0b",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/inet_timewait_sock.c":{
+"bytes":10794,
+"sha256":"c200d5880fbf8dd56c0a058beb9b4e92465991038a81b98469aa98ad1c5f31c5",
+"gitBlob":"74b84ac418e93c176336fc974b82c3586bae3fc1",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/metrics.c":{
+"bytes":2214,
+"sha256":"b23000aa2906b653caa07638117c8c799f7c2ffd25fca9c4fbe0a234293ef134",
+"gitBlob":"8ddac1f595ed8cc6077e027f53db7db3c7387843",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/nexthop.c":{
+"bytes":101381,
+"sha256":"2be58e25f245b504674b60182098932468bf3b1f6c4cec89146b00419e341814",
+"gitBlob":"fbb22a63b8807843d4bd5272739a3f7d8669b22f",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/route.c":{
+"bytes":97360,
+"sha256":"18e47ff7b034786411f98221878df2ba5bb645e21c90d30c3a185cff1007aef3",
+"gitBlob":"596c84fd5ab42f15b53700ecb3ab8d968ca4330f",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/tcp.c":{
+"bytes":143675,
+"sha256":"b10e52525abec71fed9eb8d5fb201cda5118eef04de52fae4159477da3d77ec7",
+"gitBlob":"21c64ca9bb9b496013773250a71690249756a653",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/tcp_input.c":{
+"bytes":218886,
+"sha256":"82fc39a54ef30599ff19ce2e400c8d5bbec9cd9be8dcc150767f7ec73a4bd979",
+"gitBlob":"5c581d4821c1dcce1c89f29c5d4a73865b668c73",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/tcp_output.c":{
+"bytes":132663,
+"sha256":"d0a3f8ae8b7ed2b06900344be3bca1ba7f804e96eaba1195ab617fa75f3fd89b",
+"gitBlob":"feb94fd45c59459bb3669c0a20c985477cdc01e2",
+"independentlyGitCorroborated":true
+},
+"net/netlabel/netlabel_kapi.c":{
+"bytes":38938,
+"sha256":"d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
+"gitBlob":"33b77084a4e5f34770f960d7c82e481d9889753a",
+"independentlyGitCorroborated":false
+},
+"net/netlink/af_netlink.c":{
+"bytes":71601,
+"sha256":"2145f190dc87bfa5f79739d960766970652ed9e5c271ec847c1eeca4be86fd2d",
+"gitBlob":"e250d4a3d03097f92c48c1741db405c8ea54899d",
+"independentlyGitCorroborated":false
+},
+"net/socket.c":{
+"bytes":92491,
+"sha256":"95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
+"gitBlob":"723bc3a1ba5cdd17f559a65de73d9c87911e6954",
+"independentlyGitCorroborated":true
+},
+"net/xfrm/xfrm_policy.c":{
+"bytes":114568,
+"sha256":"79929076ddb7f855026ce831d48a8c22972724e639f25f66fe4630207f530680",
+"gitBlob":"e033390e77855cd0c586b2ed6cc511b812193ce1",
+"independentlyGitCorroborated":false
+},
+"security/lsm_audit.c":{
+"bytes":11088,
+"sha256":"bd55731531fa8d095a2f7857afd8cdd83b689f8a675b7b05217910769c4bf257",
+"gitBlob":"849e832719e2151a060679db4fe993e13f42b997",
+"independentlyGitCorroborated":false
+},
+"security/security.c":{
+"bytes":180030,
+"sha256":"b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
+"gitBlob":"b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
+"independentlyGitCorroborated":true
+},
+"security/selinux/avc.c":{
+"bytes":31717,
+"sha256":"e5ead166180e1b51dab8f701f16a595e51ff68eb346f7a8b4549617ce4672ce6",
+"gitBlob":"688ff9e63f514ec18b8096e59e0edd63ac6f5112"
+},
+"security/selinux/hooks.c":{
+"bytes":204597,
+"sha256":"6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
+"gitBlob":"d4abf15f0e6fb98505df81ac3128255b4cd9e1e7",
+"independentlyGitCorroborated":true
+},
+"security/selinux/include/avc.h":{
+"bytes":4623,
+"sha256":"b1bb6fd0b9fda55cce88a5fb2a359fd64cde40ef18162e6640cd33885ebb5966",
+"gitBlob":"96a614d47df8d1d67b0b033ebb90954653dfeab7"
+},
+"security/selinux/netlabel.c":{
+"bytes":16481,
+"sha256":"972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
+"gitBlob":"d51dfe89231229e78903f3aa552286326524dca2",
+"independentlyGitCorroborated":false
+},
+"security/selinux/netport.c":{
+"bytes":5952,
+"sha256":"8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
+"gitBlob":"2e22ad9c2bd0d116668985e0fb579b5934df9394",
+"independentlyGitCorroborated":false
+},
+"security/selinux/ss/ebitmap.c":{
+"bytes":12211,
+"sha256":"69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
+"gitBlob":"cd84357db2c47a034bb3601eeaaa8806dbf0f7af",
+"independentlyGitCorroborated":false
+},
+"security/selinux/ss/mls.c":{
+"bytes":16094,
+"sha256":"349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
+"gitBlob":"a6e49269f5351df096da8c9fb56103a2f7b0ee9d",
+"independentlyGitCorroborated":false
+},
+"security/selinux/ss/services.c":{
+"bytes":97756,
+"sha256":"0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
+"gitBlob":"54d121d64804295c8ae1f40103957f6a3b671640",
+"independentlyGitCorroborated":true
+},
+"security/selinux/ss/sidtab.c":{
+"bytes":14675,
+"sha256":"5bc885230f9b6023ff7a64b0ff80746f607a572cf7d882eab149f6c1261c4f08",
+"gitBlob":"c8848cbba81f24abbb2e0d07697ece10d2cc6637",
+"independentlyGitCorroborated":false
+}
+},
+"sections":{
+"tcp_stream_alloc_skb":{
+"source":"net/ipv4/tcp.c",
+"prefix":"struct sk_buff *tcp_stream_alloc_skb(",
+"bytes":722,
+"sha256":"ef5bad925e32e3bc9619f2b876f83f745693c420d3aea77c0669dc4b64c1d8c6",
+"text":"struct sk_buff *tcp_stream_alloc_skb(struct sock *sk, gfp_t gfp,\n\t\t\t\t     bool force_schedule)\n{\n\tstruct sk_buff *skb;\n\n\tskb = alloc_skb_fclone(MAX_TCP_HEADER, gfp);\n\tif (likely(skb)) {\n\t\tbool mem_scheduled;\n\n\t\tskb->truesize = SKB_TRUESIZE(skb_end_offset(skb));\n\t\tif (force_schedule) {\n\t\t\tmem_scheduled = true;\n\t\t\tsk_forced_mem_schedule(sk, skb->truesize);\n\t\t} else {\n\t\t\tmem_scheduled = sk_wmem_schedule(sk, skb->truesize);\n\t\t}\n\t\tif (likely(mem_scheduled)) {\n\t\t\tskb_reserve(skb, MAX_TCP_HEADER);\n\t\t\tskb->ip_summed = CHECKSUM_PARTIAL;\n\t\t\tINIT_LIST_HEAD(&skb->tcp_tsorted_anchor);\n\t\t\treturn skb;\n\t\t}\n\t\t__kfree_skb(skb);\n\t} else {\n\t\tsk->sk_prot->enter_memory_pressure(sk);\n\t\tsk_stream_moderate_sndbuf(sk);\n\t}\n\treturn NULL;\n}\n"
+},
+"tcp_sendmsg_locked":{
+"source":"net/ipv4/tcp.c",
+"prefix":"int tcp_sendmsg_locked(",
+"bytes":7360,
+"sha256":"6c4cae6e18eadecc0495fbb210acbbada593e0a51f30a07d92f33da648555f93",
+"text":"int tcp_sendmsg_locked(struct sock *sk, struct msghdr *msg, size_t size)\n{\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tstruct ubuf_info *uarg = NULL;\n\tstruct sk_buff *skb;\n\tstruct sockcm_cookie sockc;\n\tint flags, err, copied = 0;\n\tint mss_now = 0, size_goal, copied_syn = 0;\n\tint process_backlog = 0;\n\tint zc = 0;\n\tlong timeo;\n\n\tflags = msg->msg_flags;\n\n\tif ((flags & MSG_ZEROCOPY) && size) {\n\t\tif (msg->msg_ubuf) {\n\t\t\tuarg = msg->msg_ubuf;\n\t\t\tif (sk->sk_route_caps & NETIF_F_SG)\n\t\t\t\tzc = MSG_ZEROCOPY;\n\t\t} else if (sock_flag(sk, SOCK_ZEROCOPY)) {\n\t\t\tskb = tcp_write_queue_tail(sk);\n\t\t\tuarg = msg_zerocopy_realloc(sk, size, skb_zcopy(skb));\n\t\t\tif (!uarg) {\n\t\t\t\terr = -ENOBUFS;\n\t\t\t\tgoto out_err;\n\t\t\t}\n\t\t\tif (sk->sk_route_caps & NETIF_F_SG)\n\t\t\t\tzc = MSG_ZEROCOPY;\n\t\t\telse\n\t\t\t\tuarg_to_msgzc(uarg)->zerocopy = 0;\n\t\t}\n\t} else if (unlikely(msg->msg_flags & MSG_SPLICE_PAGES) && size) {\n\t\tif (sk->sk_route_caps & NETIF_F_SG)\n\t\t\tzc = MSG_SPLICE_PAGES;\n\t}\n\n\tif (unlikely(flags & MSG_FASTOPEN ||\n\t\t     inet_test_bit(DEFER_CONNECT, sk)) &&\n\t    !tp->repair) {\n\t\terr = tcp_sendmsg_fastopen(sk, msg, &copied_syn, size, uarg);\n\t\tif (err == -EINPROGRESS && copied_syn > 0)\n\t\t\tgoto out;\n\t\telse if (err)\n\t\t\tgoto out_err;\n\t}\n\n\ttimeo = sock_sndtimeo(sk, flags & MSG_DONTWAIT);\n\n\ttcp_rate_check_app_limited(sk);  /* is sending application-limited? */\n\n\t/* Wait for a connection to finish. One exception is TCP Fast Open\n\t * (passive side) where data is allowed to be sent before a connection\n\t * is fully established.\n\t */\n\tif (((1 << sk->sk_state) & ~(TCPF_ESTABLISHED | TCPF_CLOSE_WAIT)) &&\n\t    !tcp_passive_fastopen(sk)) {\n\t\terr = sk_stream_wait_connect(sk, &timeo);\n\t\tif (err != 0)\n\t\t\tgoto do_error;\n\t}\n\n\tif (unlikely(tp->repair)) {\n\t\tif (tp->repair_queue == TCP_RECV_QUEUE) {\n\t\t\tcopied = tcp_send_rcvq(sk, msg, size);\n\t\t\tgoto out_nopush;\n\t\t}\n\n\t\terr = -EINVAL;\n\t\tif (tp->repair_queue == TCP_NO_QUEUE)\n\t\t\tgoto out_err;\n\n\t\t/* 'common' sending to sendq */\n\t}\n\n\tsockcm_init(&sockc, sk);\n\tif (msg->msg_controllen) {\n\t\terr = sock_cmsg_send(sk, msg, &sockc);\n\t\tif (unlikely(err)) {\n\t\t\terr = -EINVAL;\n\t\t\tgoto out_err;\n\t\t}\n\t}\n\n\t/* This should be in poll */\n\tsk_clear_bit(SOCKWQ_ASYNC_NOSPACE, sk);\n\n\t/* Ok commence sending. */\n\tcopied = 0;\n\nrestart:\n\tmss_now = tcp_send_mss(sk, &size_goal, flags);\n\n\terr = -EPIPE;\n\tif (sk->sk_err || (sk->sk_shutdown & SEND_SHUTDOWN))\n\t\tgoto do_error;\n\n\twhile (msg_data_left(msg)) {\n\t\tint copy = 0;\n\n\t\tskb = tcp_write_queue_tail(sk);\n\t\tif (skb)\n\t\t\tcopy = size_goal - skb->len;\n\n\t\tif (copy <= 0 || !tcp_skb_can_collapse_to(skb)) {\n\t\t\tbool first_skb;\n\nnew_segment:\n\t\t\tif (!sk_stream_memory_free(sk))\n\t\t\t\tgoto wait_for_space;\n\n\t\t\tif (unlikely(process_backlog >= 16)) {\n\t\t\t\tprocess_backlog = 0;\n\t\t\t\tif (sk_flush_backlog(sk))\n\t\t\t\t\tgoto restart;\n\t\t\t}\n\t\t\tfirst_skb = tcp_rtx_and_write_queues_empty(sk);\n\t\t\tskb = tcp_stream_alloc_skb(sk, sk->sk_allocation,\n\t\t\t\t\t\t   first_skb);\n\t\t\tif (!skb)\n\t\t\t\tgoto wait_for_space;\n\n\t\t\tprocess_backlog++;\n\n#ifdef CONFIG_SKB_DECRYPTED\n\t\t\tskb->decrypted = !!(flags & MSG_SENDPAGE_DECRYPTED);\n#endif\n\t\t\ttcp_skb_entail(sk, skb);\n\t\t\tcopy = size_goal;\n\n\t\t\t/* All packets are restored as if they have\n\t\t\t * already been sent. skb_mstamp_ns isn't set to\n\t\t\t * avoid wrong rtt estimation.\n\t\t\t */\n\t\t\tif (tp->repair)\n\t\t\t\tTCP_SKB_CB(skb)->sacked |= TCPCB_REPAIRED;\n\t\t}\n\n\t\t/* Try to append data to the end of skb. */\n\t\tif (copy > msg_data_left(msg))\n\t\t\tcopy = msg_data_left(msg);\n\n\t\tif (zc == 0) {\n\t\t\tbool merge = true;\n\t\t\tint i = skb_shinfo(skb)->nr_frags;\n\t\t\tstruct page_frag *pfrag = sk_page_frag(sk);\n\n\t\t\tif (!sk_page_frag_refill(sk, pfrag))\n\t\t\t\tgoto wait_for_space;\n\n\t\t\tif (!skb_can_coalesce(skb, i, pfrag->page,\n\t\t\t\t\t      pfrag->offset)) {\n\t\t\t\tif (i >= READ_ONCE(net_hotdata.sysctl_max_skb_frags)) {\n\t\t\t\t\ttcp_mark_push(tp, skb);\n\t\t\t\t\tgoto new_segment;\n\t\t\t\t}\n\t\t\t\tmerge = false;\n\t\t\t}\n\n\t\t\tcopy = min_t(int, copy, pfrag->size - pfrag->offset);\n\n\t\t\tif (unlikely(skb_zcopy_pure(skb) || skb_zcopy_managed(skb))) {\n\t\t\t\tif (tcp_downgrade_zcopy_pure(sk, skb))\n\t\t\t\t\tgoto wait_for_space;\n\t\t\t\tskb_zcopy_downgrade_managed(skb);\n\t\t\t}\n\n\t\t\tcopy = tcp_wmem_schedule(sk, copy);\n\t\t\tif (!copy)\n\t\t\t\tgoto wait_for_space;\n\n\t\t\terr = skb_copy_to_page_nocache(sk, &msg->msg_iter, skb,\n\t\t\t\t\t\t       pfrag->page,\n\t\t\t\t\t\t       pfrag->offset,\n\t\t\t\t\t\t       copy);\n\t\t\tif (err)\n\t\t\t\tgoto do_error;\n\n\t\t\t/* Update the skb. */\n\t\t\tif (merge) {\n\t\t\t\tskb_frag_size_add(&skb_shinfo(skb)->frags[i - 1], copy);\n\t\t\t} else {\n\t\t\t\tskb_fill_page_desc(skb, i, pfrag->page,\n\t\t\t\t\t\t   pfrag->offset, copy);\n\t\t\t\tpage_ref_inc(pfrag->page);\n\t\t\t}\n\t\t\tpfrag->offset += copy;\n\t\t} else if (zc == MSG_ZEROCOPY)  {\n\t\t\t/* First append to a fragless skb builds initial\n\t\t\t * pure zerocopy skb\n\t\t\t */\n\t\t\tif (!skb->len)\n\t\t\t\tskb_shinfo(skb)->flags |= SKBFL_PURE_ZEROCOPY;\n\n\t\t\tif (!skb_zcopy_pure(skb)) {\n\t\t\t\tcopy = tcp_wmem_schedule(sk, copy);\n\t\t\t\tif (!copy)\n\t\t\t\t\tgoto wait_for_space;\n\t\t\t}\n\n\t\t\terr = skb_zerocopy_iter_stream(sk, skb, msg, copy, uarg);\n\t\t\tif (err == -EMSGSIZE || err == -EEXIST) {\n\t\t\t\ttcp_mark_push(tp, skb);\n\t\t\t\tgoto new_segment;\n\t\t\t}\n\t\t\tif (err < 0)\n\t\t\t\tgoto do_error;\n\t\t\tcopy = err;\n\t\t} else if (zc == MSG_SPLICE_PAGES) {\n\t\t\t/* Splice in data if we can; copy if we can't. */\n\t\t\tif (tcp_downgrade_zcopy_pure(sk, skb))\n\t\t\t\tgoto wait_for_space;\n\t\t\tcopy = tcp_wmem_schedule(sk, copy);\n\t\t\tif (!copy)\n\t\t\t\tgoto wait_for_space;\n\n\t\t\terr = skb_splice_from_iter(skb, &msg->msg_iter, copy,\n\t\t\t\t\t\t   sk->sk_allocation);\n\t\t\tif (err < 0) {\n\t\t\t\tif (err == -EMSGSIZE) {\n\t\t\t\t\ttcp_mark_push(tp, skb);\n\t\t\t\t\tgoto new_segment;\n\t\t\t\t}\n\t\t\t\tgoto do_error;\n\t\t\t}\n\t\t\tcopy = err;\n\n\t\t\tif (!(flags & MSG_NO_SHARED_FRAGS))\n\t\t\t\tskb_shinfo(skb)->flags |= SKBFL_SHARED_FRAG;\n\n\t\t\tsk_wmem_queued_add(sk, copy);\n\t\t\tsk_mem_charge(sk, copy);\n\t\t}\n\n\t\tif (!copied)\n\t\t\tTCP_SKB_CB(skb)->tcp_flags &= ~TCPHDR_PSH;\n\n\t\tWRITE_ONCE(tp->write_seq, tp->write_seq + copy);\n\t\tTCP_SKB_CB(skb)->end_seq += copy;\n\t\ttcp_skb_pcount_set(skb, 0);\n\n\t\tcopied += copy;\n\t\tif (!msg_data_left(msg)) {\n\t\t\tif (unlikely(flags & MSG_EOR))\n\t\t\t\tTCP_SKB_CB(skb)->eor = 1;\n\t\t\tgoto out;\n\t\t}\n\n\t\tif (skb->len < size_goal || (flags & MSG_OOB) || unlikely(tp->repair))\n\t\t\tcontinue;\n\n\t\tif (forced_push(tp)) {\n\t\t\ttcp_mark_push(tp, skb);\n\t\t\t__tcp_push_pending_frames(sk, mss_now, TCP_NAGLE_PUSH);\n\t\t} else if (skb == tcp_send_head(sk))\n\t\t\ttcp_push_one(sk, mss_now);\n\t\tcontinue;\n\nwait_for_space:\n\t\tset_bit(SOCK_NOSPACE, &sk->sk_socket->flags);\n\t\ttcp_remove_empty_skb(sk);\n\t\tif (copied)\n\t\t\ttcp_push(sk, flags & ~MSG_MORE, mss_now,\n\t\t\t\t TCP_NAGLE_PUSH, size_goal);\n\n\t\terr = sk_stream_wait_memory(sk, &timeo);\n\t\tif (err != 0)\n\t\t\tgoto do_error;\n\n\t\tmss_now = tcp_send_mss(sk, &size_goal, flags);\n\t}\n\nout:\n\tif (copied) {\n\t\ttcp_tx_timestamp(sk, sockc.tsflags);\n\t\ttcp_push(sk, flags, mss_now, tp->nonagle, size_goal);\n\t}\nout_nopush:\n\t/* msg->msg_ubuf is pinned by the caller so we don't take extra refs */\n\tif (uarg && !msg->msg_ubuf)\n\t\tnet_zcopy_put(uarg);\n\treturn copied + copied_syn;\n\ndo_error:\n\ttcp_remove_empty_skb(sk);\n\n\tif (copied + copied_syn)\n\t\tgoto out;\nout_err:\n\t/* msg->msg_ubuf is pinned by the caller so we don't take extra refs */\n\tif (uarg && !msg->msg_ubuf)\n\t\tnet_zcopy_put_abort(uarg, true);\n\terr = sk_stream_error(sk, flags, err);\n\t/* make sure we wake any epoll edge trigger waiter */\n\tif (unlikely(tcp_rtx_and_write_queues_empty(sk) && err == -EAGAIN)) {\n\t\tREAD_ONCE(sk->sk_write_space)(sk);\n\t\ttcp_chrono_stop(sk, TCP_CHRONO_SNDBUF_LIMITED);\n\t}\n\treturn err;\n}\n"
+},
+"tcp_send_mss":{
+"source":"net/ipv4/tcp.c",
+"prefix":"int tcp_send_mss(",
+"bytes":197,
+"sha256":"3005f8c1c5f0a10fa3fc66105fdbcfcb7433fada8bd915dfcb6596e1345c1afa",
+"text":"int tcp_send_mss(struct sock *sk, int *size_goal, int flags)\n{\n\tint mss_now;\n\n\tmss_now = tcp_current_mss(sk);\n\t*size_goal = tcp_xmit_size_goal(sk, mss_now, !(flags & MSG_OOB));\n\n\treturn mss_now;\n}\n"
+},
+"tcp_skb_entail":{
+"source":"net/ipv4/tcp.c",
+"prefix":"void tcp_skb_entail(",
+"bytes":464,
+"sha256":"297f9ecc71fd0315e4dd4a3be64efec9ddb1f04daf0627ee9a5b142a70f7bc68",
+"text":"void tcp_skb_entail(struct sock *sk, struct sk_buff *skb)\n{\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tstruct tcp_skb_cb *tcb = TCP_SKB_CB(skb);\n\n\ttcb->seq     = tcb->end_seq = tp->write_seq;\n\ttcb->tcp_flags = TCPHDR_ACK;\n\t__skb_header_release(skb);\n\ttcp_add_write_queue_tail(sk, skb);\n\tsk_wmem_queued_add(sk, skb->truesize);\n\tsk_mem_charge(sk, skb->truesize);\n\tif (tp->nonagle & TCP_NAGLE_PUSH)\n\t\ttp->nonagle &= ~TCP_NAGLE_PUSH;\n\n\ttcp_slow_start_after_idle_check(sk);\n}\n"
+},
+"__build_skb_around":{
+"source":"net/core/skbuff.c",
+"prefix":"static void __build_skb_around(",
+"bytes":402,
+"sha256":"bc58e0ee9c555579fd4c04a7b7f8090bc882e305d26eb4044e24ec494257dec4",
+"text":"static void __build_skb_around(struct sk_buff *skb, void *data,\n\t\t\t       unsigned int frag_size)\n{\n\tunsigned int size = frag_size;\n\n\t/* frag_size == 0 is considered deprecated now. Callers\n\t * using slab buffer should use slab_build_skb() instead.\n\t */\n\tif (WARN_ONCE(size == 0, \"Use slab_build_skb() instead\"))\n\t\tdata = __slab_build_skb(skb, data, &size);\n\n\t__finalize_skb_around(skb, data, size);\n}\n"
+},
+"__alloc_skb":{
+"source":"net/core/skbuff.c",
+"prefix":"struct sk_buff *__alloc_skb(",
+"bytes":1843,
+"sha256":"4530caefbab0eb8731ee3bcbc68ee3bf4a4d11e943b76d02d1ffea3216829f5a",
+"text":"struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,\n\t\t\t    int flags, int node)\n{\n\tstruct kmem_cache *cache;\n\tstruct sk_buff *skb;\n\tbool pfmemalloc;\n\tu8 *data;\n\n\tcache = (flags & SKB_ALLOC_FCLONE)\n\t\t? net_hotdata.skbuff_fclone_cache : net_hotdata.skbuff_cache;\n\n\tif (sk_memalloc_socks() && (flags & SKB_ALLOC_RX))\n\t\tgfp_mask |= __GFP_MEMALLOC;\n\n\t/* Get the HEAD */\n\tif ((flags & (SKB_ALLOC_FCLONE | SKB_ALLOC_NAPI)) == SKB_ALLOC_NAPI &&\n\t    likely(node == NUMA_NO_NODE || node == numa_mem_id()))\n\t\tskb = napi_skb_cache_get();\n\telse\n\t\tskb = kmem_cache_alloc_node(cache, gfp_mask & ~GFP_DMA, node);\n\tif (unlikely(!skb))\n\t\treturn NULL;\n\tprefetchw(skb);\n\n\t/* We do our best to align skb_shared_info on a separate cache\n\t * line. It usually works because kmalloc(X > SMP_CACHE_BYTES) gives\n\t * aligned memory blocks, unless SLUB/SLAB debug is enabled.\n\t * Both skb->head and skb_shared_info are cache line aligned.\n\t */\n\tdata = kmalloc_reserve(&size, gfp_mask, node, &pfmemalloc);\n\tif (unlikely(!data))\n\t\tgoto nodata;\n\t/* kmalloc_size_roundup() might give us more room than requested.\n\t * Put skb_shared_info exactly at the end of allocated zone,\n\t * to allow max possible filling before reallocation.\n\t */\n\tprefetchw(data + SKB_WITH_OVERHEAD(size));\n\n\t/*\n\t * Only clear those fields we need to clear, not those that we will\n\t * actually initialise below. Hence, don't put any more fields after\n\t * the tail pointer in struct sk_buff!\n\t */\n\tmemset(skb, 0, offsetof(struct sk_buff, tail));\n\t__build_skb_around(skb, data, size);\n\tskb->pfmemalloc = pfmemalloc;\n\n\tif (flags & SKB_ALLOC_FCLONE) {\n\t\tstruct sk_buff_fclones *fclones;\n\n\t\tfclones = container_of(skb, struct sk_buff_fclones, skb1);\n\n\t\tskb->fclone = SKB_FCLONE_ORIG;\n\t\trefcount_set(&fclones->fclone_ref, 1);\n\t}\n\n\treturn skb;\n\nnodata:\n\tkmem_cache_free(cache, skb);\n\treturn NULL;\n}\n"
+},
+"skb_release_data":{
+"source":"net/core/skbuff.c",
+"prefix":"static void skb_release_data(",
+"bytes":1103,
+"sha256":"bd3c68ebee8724b90456c42125e4c9f6b782b3087cbbb25c665ec57e36c63b25",
+"text":"static void skb_release_data(struct sk_buff *skb, enum skb_drop_reason reason)\n{\n\tstruct skb_shared_info *shinfo = skb_shinfo(skb);\n\tint i;\n\n\tif (!skb_data_unref(skb, shinfo))\n\t\tgoto exit;\n\n\tif (skb_zcopy(skb)) {\n\t\tbool skip_unref = shinfo->flags & SKBFL_MANAGED_FRAG_REFS;\n\n\t\tskb_zcopy_clear(skb, true);\n\t\tif (skip_unref)\n\t\t\tgoto free_head;\n\t}\n\n\tfor (i = 0; i < shinfo->nr_frags; i++)\n\t\t__skb_frag_unref(&shinfo->frags[i], skb->pp_recycle);\n\nfree_head:\n\tif (shinfo->frag_list)\n\t\tkfree_skb_list_reason(shinfo->frag_list, reason);\n\n\tskb_free_head(skb);\nexit:\n\t/* When we clone an SKB we copy the reycling bit. The pp_recycle\n\t * bit is only set on the head though, so in order to avoid races\n\t * while trying to recycle fragments on __skb_frag_unref() we need\n\t * to make one SKB responsible for triggering the recycle path.\n\t * So disable the recycling bit if an SKB is cloned and we have\n\t * additional references to the fragmented part of the SKB.\n\t * Eventually the last SKB will have the recycling bit set and it's\n\t * dataref set to 0, which will trigger the recycling\n\t */\n\tskb->pp_recycle = 0;\n}\n"
+},
+"skb_try_coalesce":{
+"source":"net/core/skbuff.c",
+"prefix":"bool skb_try_coalesce(",
+"bytes":2374,
+"sha256":"d31ca046d8ddcc19de29a7cd90d2ef402b543da213c6be16f704f9145eb4a4b1",
+"text":"bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,\n\t\t      bool *fragstolen, int *delta_truesize)\n{\n\tstruct skb_shared_info *to_shinfo, *from_shinfo;\n\tint i, delta, len = from->len;\n\n\t*fragstolen = false;\n\n\tif (skb_cloned(to))\n\t\treturn false;\n\n\t/* In general, avoid mixing page_pool and non-page_pool allocated\n\t * pages within the same SKB. In theory we could take full\n\t * references if @from is cloned and !@to->pp_recycle but its\n\t * tricky (due to potential race with the clone disappearing) and\n\t * rare, so not worth dealing with.\n\t */\n\tif (to->pp_recycle != from->pp_recycle)\n\t\treturn false;\n\n\tif (skb_frags_readable(from) != skb_frags_readable(to))\n\t\treturn false;\n\n\tif (len <= skb_tailroom(to) && skb_frags_readable(from)) {\n\t\tif (len)\n\t\t\tBUG_ON(skb_copy_bits(from, 0, skb_put(to, len), len));\n\t\t*delta_truesize = 0;\n\t\treturn true;\n\t}\n\n\tto_shinfo = skb_shinfo(to);\n\tfrom_shinfo = skb_shinfo(from);\n\tif (to_shinfo->frag_list || from_shinfo->frag_list)\n\t\treturn false;\n\tif (skb_zcopy(to) || skb_zcopy(from))\n\t\treturn false;\n\n\tif (skb_headlen(from) != 0) {\n\t\tstruct page *page;\n\t\tunsigned int offset;\n\n\t\tif (to_shinfo->nr_frags +\n\t\t    from_shinfo->nr_frags >= MAX_SKB_FRAGS)\n\t\t\treturn false;\n\n\t\tif (skb_head_is_locked(from))\n\t\t\treturn false;\n\n\t\tdelta = from->truesize - SKB_DATA_ALIGN(sizeof(struct sk_buff));\n\n\t\tpage = virt_to_head_page(from->head);\n\t\toffset = from->data - (unsigned char *)page_address(page);\n\n\t\tskb_fill_page_desc(to, to_shinfo->nr_frags,\n\t\t\t\t   page, offset, skb_headlen(from));\n\t\t*fragstolen = true;\n\t} else {\n\t\tif (to_shinfo->nr_frags +\n\t\t    from_shinfo->nr_frags > MAX_SKB_FRAGS)\n\t\t\treturn false;\n\n\t\tdelta = from->truesize - SKB_TRUESIZE(skb_end_offset(from));\n\t}\n\n\tWARN_ON_ONCE(delta < len);\n\n\tmemcpy(to_shinfo->frags + to_shinfo->nr_frags,\n\t       from_shinfo->frags,\n\t       from_shinfo->nr_frags * sizeof(skb_frag_t));\n\tto_shinfo->nr_frags += from_shinfo->nr_frags;\n\tif (from_shinfo->nr_frags)\n\t\tto_shinfo->flags |= from_shinfo->flags & SKBFL_SHARED_FRAG;\n\n\tif (!skb_cloned(from))\n\t\tfrom_shinfo->nr_frags = 0;\n\n\t/* if the skb is not cloned this does nothing\n\t * since we set nr_frags to 0.\n\t */\n\tif (skb_pp_frag_ref(from)) {\n\t\tfor (i = 0; i < from_shinfo->nr_frags; i++)\n\t\t\t__skb_frag_ref(&from_shinfo->frags[i]);\n\t}\n\n\tto->truesize += delta;\n\tto->len += len;\n\tto->data_len += len;\n\n\t*delta_truesize = delta;\n\treturn true;\n}\n"
+},
+"skb_add_data_nocache":{
+"source":"include/net/sock.h",
+"prefix":"static inline int skb_add_data_nocache(",
+"bytes":299,
+"sha256":"65be88ee0ff4a8a678191e314693c9aa7aaec034c0b2f79e06cb4e6e5a560cd1",
+"text":"static inline int skb_add_data_nocache(struct sock *sk, struct sk_buff *skb,\n\t\t\t\t       struct iov_iter *from, int copy)\n{\n\tint err, offset = skb->len;\n\n\terr = skb_do_copy_data_nocache(sk, skb, from, skb_put(skb, copy),\n\t\t\t\t       copy, offset);\n\tif (err)\n\t\t__skb_trim(skb, offset);\n\n\treturn err;\n}\n"
+},
+"skb_copy_to_page_nocache":{
+"source":"include/net/sock.h",
+"prefix":"static inline int skb_copy_to_page_nocache(",
+"bytes":400,
+"sha256":"5cb59f62515a731895bbef954556b8d083425b2044a6d806550f502bebaf8909",
+"text":"static inline int skb_copy_to_page_nocache(struct sock *sk, struct iov_iter *from,\n\t\t\t\t\t   struct sk_buff *skb,\n\t\t\t\t\t   struct page *page,\n\t\t\t\t\t   int off, int copy)\n{\n\tint err;\n\n\terr = skb_do_copy_data_nocache(sk, skb, from, page_address(page) + off,\n\t\t\t\t       copy, skb->len);\n\tif (err)\n\t\treturn err;\n\n\tskb_len_add(skb, copy);\n\tsk_wmem_queued_add(sk, copy);\n\tsk_mem_charge(sk, copy);\n\treturn 0;\n}\n"
+},
+"tcp_send_fin":{
+"source":"net/ipv4/tcp_output.c",
+"prefix":"void tcp_send_fin(struct sock *sk)",
+"bytes":1477,
+"sha256":"7f640ce542f092bd7f5798077cdcbb1585f9fc6d7ca610aa0cb86d3ec692a444",
+"text":"void tcp_send_fin(struct sock *sk)\n{\n\tstruct sk_buff *skb, *tskb, *tail = tcp_write_queue_tail(sk);\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\n\t/* Optimization, tack on the FIN if we have one skb in write queue and\n\t * this skb was not yet sent, or we are under memory pressure.\n\t * Note: in the latter case, FIN packet will be sent after a timeout,\n\t * as TCP stack thinks it has already been transmitted.\n\t */\n\ttskb = tail;\n\tif (!tskb && tcp_under_memory_pressure(sk))\n\t\ttskb = skb_rb_last(&sk->tcp_rtx_queue);\n\n\tif (tskb) {\n\t\tTCP_SKB_CB(tskb)->tcp_flags |= TCPHDR_FIN;\n\t\tTCP_SKB_CB(tskb)->end_seq++;\n\t\ttp->write_seq++;\n\t\tif (!tail) {\n\t\t\t/* This means tskb was already sent.\n\t\t\t * Pretend we included the FIN on previous transmit.\n\t\t\t * We need to set tp->snd_nxt to the value it would have\n\t\t\t * if FIN had been sent. This is because retransmit path\n\t\t\t * does not change tp->snd_nxt.\n\t\t\t */\n\t\t\tWRITE_ONCE(tp->snd_nxt, tp->snd_nxt + 1);\n\t\t\treturn;\n\t\t}\n\t} else {\n\t\tskb = alloc_skb_fclone(MAX_TCP_HEADER,\n\t\t\t\t       sk_gfp_mask(sk, GFP_ATOMIC |\n\t\t\t\t\t\t       __GFP_NOWARN));\n\t\tif (unlikely(!skb))\n\t\t\treturn;\n\n\t\tINIT_LIST_HEAD(&skb->tcp_tsorted_anchor);\n\t\tskb_reserve(skb, MAX_TCP_HEADER);\n\t\tsk_forced_mem_schedule(sk, skb->truesize);\n\t\t/* FIN eats a sequence byte, write_seq advanced by tcp_queue_skb(). */\n\t\ttcp_init_nondata_skb(skb, tp->write_seq,\n\t\t\t\t     TCPHDR_ACK | TCPHDR_FIN);\n\t\ttcp_queue_skb(sk, skb);\n\t}\n\t__tcp_push_pending_frames(sk, tcp_current_mss(sk), TCP_NAGLE_OFF);\n}\n"
+},
+"tcp_send_active_reset":{
+"source":"net/ipv4/tcp_output.c",
+"prefix":"void tcp_send_active_reset(struct sock *sk, enum sk_rst_reason reason)",
+"bytes":911,
+"sha256":"acbd159ffea2d2f0ff9ea6ae1c28841f9545641011b8d0ea79388284122522d1",
+"text":"void tcp_send_active_reset(struct sock *sk, enum sk_rst_reason reason)\n{\n\tgfp_t priority = sk_gfp_mask(sk, GFP_ATOMIC | __GFP_NOWARN);\n\tstruct sk_buff *skb;\n\n\tTCP_INC_STATS(sock_net(sk), TCP_MIB_OUTRSTS);\n\n\t/* NOTE: No TCP options attached and we never retransmit this. */\n\tskb = alloc_skb(MAX_TCP_HEADER, priority);\n\tif (!skb) {\n\t\tNET_INC_STATS(sock_net(sk), LINUX_MIB_TCPABORTFAILED);\n\t\treturn;\n\t}\n\n\t/* Reserve space for headers and prepare control bits. */\n\tskb_reserve(skb, MAX_TCP_HEADER);\n\ttcp_init_nondata_skb(skb, tcp_acceptable_seq(sk),\n\t\t\t     TCPHDR_ACK | TCPHDR_RST);\n\ttcp_mstamp_refresh(tcp_sk(sk));\n\t/* Send it off. */\n\tif (tcp_transmit_skb(sk, skb, 0, priority))\n\t\tNET_INC_STATS(sock_net(sk), LINUX_MIB_TCPABORTFAILED);\n\n\t/* skb of trace_tcp_send_reset() keeps the skb that caused RST,\n\t * skb here is different to the troublesome skb, so use NULL\n\t */\n\ttrace_tcp_send_reset(sk, NULL, reason);\n}\n"
+},
+"__tcp_send_ack":{
+"source":"net/ipv4/tcp_output.c",
+"prefix":"void __tcp_send_ack(struct sock *sk, u32 rcv_nxt, u16 flags)",
+"bytes":1212,
+"sha256":"6c9e3f761bfda4a1969658141c105889346c14eb82ce21df183f2be6ad8c5a3b",
+"text":"void __tcp_send_ack(struct sock *sk, u32 rcv_nxt, u16 flags)\n{\n\tstruct sk_buff *buff;\n\n\t/* If we have been reset, we may not send again. */\n\tif (sk->sk_state == TCP_CLOSE)\n\t\treturn;\n\n\t/* We are not putting this on the write queue, so\n\t * tcp_transmit_skb() will set the ownership to this\n\t * sock.\n\t */\n\tbuff = alloc_skb(MAX_TCP_HEADER,\n\t\t\t sk_gfp_mask(sk, GFP_ATOMIC | __GFP_NOWARN));\n\tif (unlikely(!buff)) {\n\t\tstruct inet_connection_sock *icsk = inet_csk(sk);\n\t\tunsigned long delay;\n\n\t\tdelay = TCP_DELACK_MAX << icsk->icsk_ack.retry;\n\t\tif (delay < TCP_RTO_MAX)\n\t\t\ticsk->icsk_ack.retry++;\n\t\tinet_csk_schedule_ack(sk);\n\t\ticsk->icsk_ack.ato = TCP_ATO_MIN;\n\t\tinet_csk_reset_xmit_timer(sk, ICSK_TIME_DACK, delay, TCP_RTO_MAX);\n\t\treturn;\n\t}\n\n\t/* Reserve space for headers and prepare control bits. */\n\tskb_reserve(buff, MAX_TCP_HEADER);\n\ttcp_init_nondata_skb(buff, tcp_acceptable_seq(sk), TCPHDR_ACK | flags);\n\n\t/* We do not want pure acks influencing TCP Small Queues or fq/pacing\n\t * too much.\n\t * SKB_TRUESIZE(max(1 .. 66, MAX_TCP_HEADER)) is unfortunately ~784\n\t */\n\tskb_set_tcp_pure_ack(buff);\n\n\t/* Send it off, this clears delayed acks for us. */\n\t__tcp_transmit_skb(sk, buff, 0, (__force gfp_t)0, rcv_nxt);\n}\n"
+},
+"tcp_xmit_probe_skb":{
+"source":"net/ipv4/tcp_output.c",
+"prefix":"static int tcp_xmit_probe_skb(struct sock *sk, int urgent, int mib)",
+"bytes":673,
+"sha256":"0ab54f2851046ca5095395956f0cdc32a0d8df09e31159d1ad70b8f3868b273c",
+"text":"static int tcp_xmit_probe_skb(struct sock *sk, int urgent, int mib)\n{\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tstruct sk_buff *skb;\n\n\t/* We don't queue it, tcp_transmit_skb() sets ownership. */\n\tskb = alloc_skb(MAX_TCP_HEADER,\n\t\t\tsk_gfp_mask(sk, GFP_ATOMIC | __GFP_NOWARN));\n\tif (!skb)\n\t\treturn -1;\n\n\t/* Reserve space for headers and set control bits. */\n\tskb_reserve(skb, MAX_TCP_HEADER);\n\t/* Use a previous sequence.  This should cause the other\n\t * end to send an ack.  Don't queue or clone SKB, just\n\t * send it.\n\t */\n\ttcp_init_nondata_skb(skb, tp->snd_una - !urgent, TCPHDR_ACK);\n\tNET_INC_STATS(sock_net(sk), mib);\n\treturn tcp_transmit_skb(sk, skb, 0, (__force gfp_t)0);\n}\n"
+},
+"tcp_make_synack":{
+"source":"net/ipv4/tcp_output.c",
+"prefix":"struct sk_buff *tcp_make_synack(const struct sock *sk, struct dst_entry *dst,\n\t\t\t\tstruct request_sock *req,\n\t\t\t\tstruct tcp_fastopen_cookie *foc,\n\t\t\t\tenum tcp_synack_type synack_type,\n\t\t\t\tstruct sk_buff *syn_skb)",
+"bytes":4435,
+"sha256":"3e2810babe269a992b23bf3bc740781ebad101c6e014bbccc4de54dc72e3b7a6",
+"text":"struct sk_buff *tcp_make_synack(const struct sock *sk, struct dst_entry *dst,\n\t\t\t\tstruct request_sock *req,\n\t\t\t\tstruct tcp_fastopen_cookie *foc,\n\t\t\t\tenum tcp_synack_type synack_type,\n\t\t\t\tstruct sk_buff *syn_skb)\n{\n\tstruct inet_request_sock *ireq = inet_rsk(req);\n\tconst struct tcp_sock *tp = tcp_sk(sk);\n\tstruct tcp_out_options opts;\n\tstruct tcp_key key = {};\n\tstruct sk_buff *skb;\n\tint tcp_header_size;\n\tstruct tcphdr *th;\n\tint mss;\n\tu64 now;\n\n\tskb = alloc_skb(MAX_TCP_HEADER, GFP_ATOMIC);\n\tif (unlikely(!skb)) {\n\t\tdst_release(dst);\n\t\treturn NULL;\n\t}\n\t/* Reserve space for headers. */\n\tskb_reserve(skb, MAX_TCP_HEADER);\n\n\tswitch (synack_type) {\n\tcase TCP_SYNACK_NORMAL:\n\t\tskb_set_owner_w(skb, req_to_sk(req));\n\t\tbreak;\n\tcase TCP_SYNACK_COOKIE:\n\t\t/* Under synflood, we do not attach skb to a socket,\n\t\t * to avoid false sharing.\n\t\t */\n\t\tbreak;\n\tcase TCP_SYNACK_FASTOPEN:\n\t\t/* sk is a const pointer, because we want to express multiple\n\t\t * cpu might call us concurrently.\n\t\t * sk->sk_wmem_alloc in an atomic, we can promote to rw.\n\t\t */\n\t\tskb_set_owner_w(skb, (struct sock *)sk);\n\t\tbreak;\n\t}\n\tskb_dst_set(skb, dst);\n\n\tmss = tcp_mss_clamp(tp, tcp_dst_advmss(dst));\n\n\tmemset(&opts, 0, sizeof(opts));\n\tnow = tcp_clock_ns();\n#ifdef CONFIG_SYN_COOKIES\n\tif (unlikely(synack_type == TCP_SYNACK_COOKIE && ireq->tstamp_ok))\n\t\tskb_set_delivery_time(skb, cookie_init_timestamp(req, now),\n\t\t\t\t      SKB_CLOCK_MONOTONIC);\n\telse\n#endif\n\t{\n\t\tskb_set_delivery_time(skb, now, SKB_CLOCK_MONOTONIC);\n\t\tif (!tcp_rsk(req)->snt_synack) /* Timestamp first SYNACK */\n\t\t\ttcp_rsk(req)->snt_synack = tcp_skb_timestamp_us(skb);\n\t}\n\n#if defined(CONFIG_TCP_MD5SIG) || defined(CONFIG_TCP_AO)\n\trcu_read_lock();\n#endif\n\tif (tcp_rsk_used_ao(req)) {\n#ifdef CONFIG_TCP_AO\n\t\tstruct tcp_ao_key *ao_key = NULL;\n\t\tu8 keyid = tcp_rsk(req)->ao_keyid;\n\t\tu8 rnext = tcp_rsk(req)->ao_rcv_next;\n\n\t\tao_key = tcp_sk(sk)->af_specific->ao_lookup(sk, req_to_sk(req),\n\t\t\t\t\t\t\t    keyid, -1);\n\t\t/* If there is no matching key - avoid sending anything,\n\t\t * especially usigned segments. It could try harder and lookup\n\t\t * for another peer-matching key, but the peer has requested\n\t\t * ao_keyid (RFC5925 RNextKeyID), so let's keep it simple here.\n\t\t */\n\t\tif (unlikely(!ao_key)) {\n\t\t\ttrace_tcp_ao_synack_no_key(sk, keyid, rnext);\n\t\t\trcu_read_unlock();\n\t\t\tkfree_skb(skb);\n\t\t\tnet_warn_ratelimited(\"TCP-AO: the keyid %u from SYN packet is not present - not sending SYNACK\\n\",\n\t\t\t\t\t     keyid);\n\t\t\treturn NULL;\n\t\t}\n\t\tkey.ao_key = ao_key;\n\t\tkey.type = TCP_KEY_AO;\n#endif\n\t} else {\n#ifdef CONFIG_TCP_MD5SIG\n\t\tkey.md5_key = tcp_rsk(req)->af_specific->req_md5_lookup(sk,\n\t\t\t\t\treq_to_sk(req));\n\t\tif (key.md5_key)\n\t\t\tkey.type = TCP_KEY_MD5;\n#endif\n\t}\n\tskb_set_hash(skb, READ_ONCE(tcp_rsk(req)->txhash), PKT_HASH_TYPE_L4);\n\t/* bpf program will be interested in the tcp_flags */\n\tTCP_SKB_CB(skb)->tcp_flags = TCPHDR_SYN | TCPHDR_ACK;\n\ttcp_header_size = tcp_synack_options(sk, req, mss, skb, &opts,\n\t\t\t\t\t     &key, foc, synack_type, syn_skb)\n\t\t\t\t\t+ sizeof(*th);\n\n\tskb_push(skb, tcp_header_size);\n\tskb_reset_transport_header(skb);\n\n\tth = (struct tcphdr *)skb->data;\n\tmemset(th, 0, sizeof(struct tcphdr));\n\tth->syn = 1;\n\tth->ack = 1;\n\ttcp_ecn_make_synack(req, th);\n\tth->source = htons(ireq->ir_num);\n\tth->dest = ireq->ir_rmt_port;\n\tskb->mark = ireq->ir_mark;\n\tskb->ip_summed = CHECKSUM_PARTIAL;\n\tth->seq = htonl(tcp_rsk(req)->snt_isn);\n\t/* XXX data is queued and acked as is. No buffer/window check */\n\tth->ack_seq = htonl(tcp_rsk(req)->rcv_nxt);\n\n\t/* RFC1323: The window in SYN & SYN/ACK segments is never scaled. */\n\tth->window = htons(min(req->rsk_rcv_wnd, 65535U));\n\ttcp_options_write(th, NULL, tcp_rsk(req), &opts, &key);\n\tth->doff = (tcp_header_size >> 2);\n\tTCP_INC_STATS(sock_net(sk), TCP_MIB_OUTSEGS);\n\n\t/* Okay, we have all we need - do the md5 hash if needed */\n\tif (tcp_key_is_md5(&key)) {\n#ifdef CONFIG_TCP_MD5SIG\n\t\ttcp_rsk(req)->af_specific->calc_md5_hash(opts.hash_location,\n\t\t\t\t\tkey.md5_key, req_to_sk(req), skb);\n#endif\n\t} else if (tcp_key_is_ao(&key)) {\n#ifdef CONFIG_TCP_AO\n\t\ttcp_rsk(req)->af_specific->ao_synack_hash(opts.hash_location,\n\t\t\t\t\tkey.ao_key, req, skb,\n\t\t\t\t\topts.hash_location - (u8 *)th, 0);\n#endif\n\t}\n#if defined(CONFIG_TCP_MD5SIG) || defined(CONFIG_TCP_AO)\n\trcu_read_unlock();\n#endif\n\n\tbpf_skops_write_hdr_opt((struct sock *)sk, skb, req, syn_skb,\n\t\t\t\tsynack_type, &opts);\n\n\tskb_set_delivery_time(skb, now, SKB_CLOCK_MONOTONIC);\n\ttcp_add_tx_delay(skb, tp);\n\n\treturn skb;\n}\n"
+},
+"tcp_send_syn_data":{
+"source":"net/ipv4/tcp_output.c",
+"prefix":"static int tcp_send_syn_data(struct sock *sk, struct sk_buff *syn)",
+"bytes":3070,
+"sha256":"81a9e788f93296bc95e868df6ee21e6c9c95197c1efe8bbc99f7ee19896d99d6",
+"text":"static int tcp_send_syn_data(struct sock *sk, struct sk_buff *syn)\n{\n\tstruct inet_connection_sock *icsk = inet_csk(sk);\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tstruct tcp_fastopen_request *fo = tp->fastopen_req;\n\tstruct page_frag *pfrag = sk_page_frag(sk);\n\tstruct sk_buff *syn_data;\n\tint space, err = 0;\n\n\ttp->rx_opt.mss_clamp = tp->advmss;  /* If MSS is not cached */\n\tif (!tcp_fastopen_cookie_check(sk, &tp->rx_opt.mss_clamp, &fo->cookie))\n\t\tgoto fallback;\n\n\t/* MSS for SYN-data is based on cached MSS and bounded by PMTU and\n\t * user-MSS. Reserve maximum option space for middleboxes that add\n\t * private TCP options. The cost is reduced data space in SYN :(\n\t */\n\ttp->rx_opt.mss_clamp = tcp_mss_clamp(tp, tp->rx_opt.mss_clamp);\n\t/* Sync mss_cache after updating the mss_clamp */\n\ttcp_sync_mss(sk, icsk->icsk_pmtu_cookie);\n\n\tspace = __tcp_mtu_to_mss(sk, icsk->icsk_pmtu_cookie) -\n\t\tMAX_TCP_OPTION_SPACE;\n\n\tspace = min_t(size_t, space, fo->size);\n\n\tif (space &&\n\t    !skb_page_frag_refill(min_t(size_t, space, PAGE_SIZE),\n\t\t\t\t  pfrag, sk->sk_allocation))\n\t\tgoto fallback;\n\tsyn_data = tcp_stream_alloc_skb(sk, sk->sk_allocation, false);\n\tif (!syn_data)\n\t\tgoto fallback;\n\tmemcpy(syn_data->cb, syn->cb, sizeof(syn->cb));\n\tif (space) {\n\t\tspace = min_t(size_t, space, pfrag->size - pfrag->offset);\n\t\tspace = tcp_wmem_schedule(sk, space);\n\t}\n\tif (space) {\n\t\tspace = copy_page_from_iter(pfrag->page, pfrag->offset,\n\t\t\t\t\t    space, &fo->data->msg_iter);\n\t\tif (unlikely(!space)) {\n\t\t\ttcp_skb_tsorted_anchor_cleanup(syn_data);\n\t\t\tkfree_skb(syn_data);\n\t\t\tgoto fallback;\n\t\t}\n\t\tskb_fill_page_desc(syn_data, 0, pfrag->page,\n\t\t\t\t   pfrag->offset, space);\n\t\tpage_ref_inc(pfrag->page);\n\t\tpfrag->offset += space;\n\t\tskb_len_add(syn_data, space);\n\t\tskb_zcopy_set(syn_data, fo->uarg, NULL);\n\t}\n\t/* No more data pending in inet_wait_for_connect() */\n\tif (space == fo->size)\n\t\tfo->data = NULL;\n\tfo->copied = space;\n\n\ttcp_connect_queue_skb(sk, syn_data);\n\tif (syn_data->len)\n\t\ttcp_chrono_start(sk, TCP_CHRONO_BUSY);\n\n\terr = tcp_transmit_skb(sk, syn_data, 1, sk->sk_allocation);\n\n\tskb_set_delivery_time(syn, syn_data->skb_mstamp_ns, SKB_CLOCK_MONOTONIC);\n\n\t/* Now full SYN+DATA was cloned and sent (or not),\n\t * remove the SYN from the original skb (syn_data)\n\t * we keep in write queue in case of a retransmit, as we\n\t * also have the SYN packet (with no data) in the same queue.\n\t */\n\tTCP_SKB_CB(syn_data)->seq++;\n\tTCP_SKB_CB(syn_data)->tcp_flags = TCPHDR_ACK | TCPHDR_PSH;\n\tif (!err) {\n\t\ttp->syn_data = (fo->copied > 0);\n\t\ttcp_rbtree_insert(&sk->tcp_rtx_queue, syn_data);\n\t\tNET_INC_STATS(sock_net(sk), LINUX_MIB_TCPORIGDATASENT);\n\t\tgoto done;\n\t}\n\n\t/* data was not sent, put it in write_queue */\n\t__skb_queue_tail(&sk->sk_write_queue, syn_data);\n\ttp->packets_out -= tcp_skb_pcount(syn_data);\n\nfallback:\n\t/* Send a regular SYN with Fast Open cookie request option */\n\tif (fo->cookie.len > 0)\n\t\tfo->cookie.len = 0;\n\terr = tcp_transmit_skb(sk, syn, 1, sk->sk_allocation);\n\tif (err)\n\t\ttp->syn_fastopen = 0;\ndone:\n\tfo->cookie.len = -1;  /* Exclude Fast Open option for SYN retries */\n\treturn err;\n}\n"
+},
+"tcp_connect":{
+"source":"net/ipv4/tcp_output.c",
+"prefix":"int tcp_connect(struct sock *sk)",
+"bytes":3068,
+"sha256":"2ccb7cd4b408df2eda6515f71a1f48c93eff4ecc0737b65759921ade4cff6a67",
+"text":"int tcp_connect(struct sock *sk)\n{\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tstruct sk_buff *buff;\n\tint err;\n\n\ttcp_call_bpf(sk, BPF_SOCK_OPS_TCP_CONNECT_CB, 0, NULL);\n\n#if defined(CONFIG_TCP_MD5SIG) && defined(CONFIG_TCP_AO)\n\t/* Has to be checked late, after setting daddr/saddr/ops.\n\t * Return error if the peer has both a md5 and a tcp-ao key\n\t * configured as this is ambiguous.\n\t */\n\tif (unlikely(rcu_dereference_protected(tp->md5sig_info,\n\t\t\t\t\t       lockdep_sock_is_held(sk)))) {\n\t\tbool needs_ao = !!tp->af_specific->ao_lookup(sk, sk, -1, -1);\n\t\tbool needs_md5 = !!tp->af_specific->md5_lookup(sk, sk);\n\t\tstruct tcp_ao_info *ao_info;\n\n\t\tao_info = rcu_dereference_check(tp->ao_info,\n\t\t\t\t\t\tlockdep_sock_is_held(sk));\n\t\tif (ao_info) {\n\t\t\t/* This is an extra check: tcp_ao_required() in\n\t\t\t * tcp_v{4,6}_parse_md5_keys() should prevent adding\n\t\t\t * md5 keys on ao_required socket.\n\t\t\t */\n\t\t\tneeds_ao |= ao_info->ao_required;\n\t\t\tWARN_ON_ONCE(ao_info->ao_required && needs_md5);\n\t\t}\n\t\tif (needs_md5 && needs_ao)\n\t\t\treturn -EKEYREJECTED;\n\n\t\t/* If we have a matching md5 key and no matching tcp-ao key\n\t\t * then free up ao_info if allocated.\n\t\t */\n\t\tif (needs_md5) {\n\t\t\ttcp_ao_destroy_sock(sk, false);\n\t\t} else if (needs_ao) {\n\t\t\tstruct tcp_md5sig_info *md5sig;\n\n\t\t\ttcp_clear_md5_list(sk);\n\t\t\tmd5sig = rcu_replace_pointer(tp->md5sig_info, NULL,\n\t\t\t\t\t\t     lockdep_sock_is_held(sk));\n\t\t\tkfree_rcu(md5sig, rcu);\n\t\t\tstatic_branch_slow_dec_deferred(&tcp_md5_needed);\n\t\t}\n\t}\n#endif\n#ifdef CONFIG_TCP_AO\n\tif (unlikely(rcu_dereference_protected(tp->ao_info,\n\t\t\t\t\t       lockdep_sock_is_held(sk)))) {\n\t\t/* Don't allow connecting if ao is configured but no\n\t\t * matching key is found.\n\t\t */\n\t\tif (!tp->af_specific->ao_lookup(sk, sk, -1, -1))\n\t\t\treturn -EKEYREJECTED;\n\t}\n#endif\n\n\tif (inet_csk(sk)->icsk_af_ops->rebuild_header(sk))\n\t\treturn -EHOSTUNREACH; /* Routing failure or similar. */\n\n\ttcp_connect_init(sk);\n\n\tif (unlikely(tp->repair)) {\n\t\ttcp_finish_connect(sk, NULL);\n\t\treturn 0;\n\t}\n\n\tbuff = tcp_stream_alloc_skb(sk, sk->sk_allocation, true);\n\tif (unlikely(!buff))\n\t\treturn -ENOBUFS;\n\n\ttcp_init_nondata_skb(buff, tp->write_seq++, TCPHDR_SYN);\n\ttcp_mstamp_refresh(tp);\n\ttp->retrans_stamp = tcp_time_stamp_ts(tp);\n\ttcp_connect_queue_skb(sk, buff);\n\ttcp_ecn_send_syn(sk, buff);\n\ttcp_rbtree_insert(&sk->tcp_rtx_queue, buff);\n\n\t/* Send off SYN; include data in Fast Open. */\n\terr = tp->fastopen_req ? tcp_send_syn_data(sk, buff) :\n\t      tcp_transmit_skb(sk, buff, 1, sk->sk_allocation);\n\tif (err == -ECONNREFUSED)\n\t\treturn err;\n\n\t/* We change tp->snd_nxt after the tcp_transmit_skb() call\n\t * in order to make this packet get counted in tcpOutSegs.\n\t */\n\tWRITE_ONCE(tp->snd_nxt, tp->write_seq);\n\ttp->pushed_seq = tp->write_seq;\n\tbuff = tcp_send_head(sk);\n\tif (unlikely(buff)) {\n\t\tWRITE_ONCE(tp->snd_nxt, TCP_SKB_CB(buff)->seq);\n\t\ttp->pushed_seq\t= TCP_SKB_CB(buff)->seq;\n\t}\n\tTCP_INC_STATS(sock_net(sk), TCP_MIB_ACTIVEOPENS);\n\n\t/* Timer for repeating the SYN until an answer. */\n\tinet_csk_reset_xmit_timer(sk, ICSK_TIME_RETRANS,\n\t\t\t\t  inet_csk(sk)->icsk_rto, TCP_RTO_MAX);\n\treturn 0;\n}\n"
+},
+"tcp_collapse":{
+"source":"net/ipv4/tcp_input.c",
+"prefix":"static void\ntcp_collapse(struct sock *sk, struct sk_buff_head *list, struct rb_root *root,\n\t     struct sk_buff *head, struct sk_buff *tail, u32 start, u32 end)",
+"bytes":2801,
+"sha256":"de2a8245beed589ed8662b5bb61cc6b47afab656ca4fc4f2ee5bdaa106607bc4",
+"text":"static void\ntcp_collapse(struct sock *sk, struct sk_buff_head *list, struct rb_root *root,\n\t     struct sk_buff *head, struct sk_buff *tail, u32 start, u32 end)\n{\n\tstruct sk_buff *skb = head, *n;\n\tstruct sk_buff_head tmp;\n\tbool end_of_skbs;\n\n\t/* First, check that queue is collapsible and find\n\t * the point where collapsing can be useful.\n\t */\nrestart:\n\tfor (end_of_skbs = true; skb != NULL && skb != tail; skb = n) {\n\t\tn = tcp_skb_next(skb, list);\n\n\t\tif (!skb_frags_readable(skb))\n\t\t\tgoto skip_this;\n\n\t\t/* No new bits? It is possible on ofo queue. */\n\t\tif (!before(start, TCP_SKB_CB(skb)->end_seq)) {\n\t\t\tskb = tcp_collapse_one(sk, skb, list, root);\n\t\t\tif (!skb)\n\t\t\t\tbreak;\n\t\t\tgoto restart;\n\t\t}\n\n\t\t/* The first skb to collapse is:\n\t\t * - not SYN/FIN and\n\t\t * - bloated or contains data before \"start\" or\n\t\t *   overlaps to the next one and mptcp allow collapsing.\n\t\t */\n\t\tif (!(TCP_SKB_CB(skb)->tcp_flags & (TCPHDR_SYN | TCPHDR_FIN)) &&\n\t\t    (tcp_win_from_space(sk, skb->truesize) > skb->len ||\n\t\t     before(TCP_SKB_CB(skb)->seq, start))) {\n\t\t\tend_of_skbs = false;\n\t\t\tbreak;\n\t\t}\n\n\t\tif (n && n != tail && skb_frags_readable(n) &&\n\t\t    tcp_skb_can_collapse_rx(skb, n) &&\n\t\t    TCP_SKB_CB(skb)->end_seq != TCP_SKB_CB(n)->seq) {\n\t\t\tend_of_skbs = false;\n\t\t\tbreak;\n\t\t}\n\nskip_this:\n\t\t/* Decided to skip this, advance start seq. */\n\t\tstart = TCP_SKB_CB(skb)->end_seq;\n\t}\n\tif (end_of_skbs ||\n\t    (TCP_SKB_CB(skb)->tcp_flags & (TCPHDR_SYN | TCPHDR_FIN)) ||\n\t    !skb_frags_readable(skb))\n\t\treturn;\n\n\t__skb_queue_head_init(&tmp);\n\n\twhile (before(start, end)) {\n\t\tint copy = min_t(int, SKB_MAX_ORDER(0, 0), end - start);\n\t\tstruct sk_buff *nskb;\n\n\t\tnskb = alloc_skb(copy, GFP_ATOMIC);\n\t\tif (!nskb)\n\t\t\tbreak;\n\n\t\tmemcpy(nskb->cb, skb->cb, sizeof(skb->cb));\n\t\tskb_copy_decrypted(nskb, skb);\n\t\tTCP_SKB_CB(nskb)->seq = TCP_SKB_CB(nskb)->end_seq = start;\n\t\tif (list)\n\t\t\t__skb_queue_before(list, skb, nskb);\n\t\telse\n\t\t\t__skb_queue_tail(&tmp, nskb); /* defer rbtree insertion */\n\t\tskb_set_owner_r(nskb, sk);\n\t\tmptcp_skb_ext_move(nskb, skb);\n\n\t\t/* Copy data, releasing collapsed skbs. */\n\t\twhile (copy > 0) {\n\t\t\tint offset = start - TCP_SKB_CB(skb)->seq;\n\t\t\tint size = TCP_SKB_CB(skb)->end_seq - start;\n\n\t\t\tBUG_ON(offset < 0);\n\t\t\tif (size > 0) {\n\t\t\t\tsize = min(copy, size);\n\t\t\t\tif (skb_copy_bits(skb, offset, skb_put(nskb, size), size))\n\t\t\t\t\tBUG();\n\t\t\t\tTCP_SKB_CB(nskb)->end_seq += size;\n\t\t\t\tcopy -= size;\n\t\t\t\tstart += size;\n\t\t\t}\n\t\t\tif (!before(start, TCP_SKB_CB(skb)->end_seq)) {\n\t\t\t\tskb = tcp_collapse_one(sk, skb, list, root);\n\t\t\t\tif (!skb ||\n\t\t\t\t    skb == tail ||\n\t\t\t\t    !tcp_skb_can_collapse_rx(nskb, skb) ||\n\t\t\t\t    (TCP_SKB_CB(skb)->tcp_flags & (TCPHDR_SYN | TCPHDR_FIN)) ||\n\t\t\t\t    !skb_frags_readable(skb))\n\t\t\t\t\tgoto end;\n\t\t\t}\n\t\t}\n\t}\nend:\n\tskb_queue_walk_safe(&tmp, skb, n)\n\t\ttcp_rbtree_insert(root, skb);\n}\n"
+},
+"tcp_send_rcvq":{
+"source":"net/ipv4/tcp_input.c",
+"prefix":"int tcp_send_rcvq(struct sock *sk, struct msghdr *msg, size_t size)",
+"bytes":1132,
+"sha256":"ead8a0dd23b41432c39bcc51f49f91137152f2b115d4c15a343b91bf1e22c557",
+"text":"int tcp_send_rcvq(struct sock *sk, struct msghdr *msg, size_t size)\n{\n\tstruct sk_buff *skb;\n\tint err = -ENOMEM;\n\tint data_len = 0;\n\tbool fragstolen;\n\n\tif (size == 0)\n\t\treturn 0;\n\n\tif (size > PAGE_SIZE) {\n\t\tint npages = min_t(size_t, size >> PAGE_SHIFT, MAX_SKB_FRAGS);\n\n\t\tdata_len = npages << PAGE_SHIFT;\n\t\tsize = data_len + (size & ~PAGE_MASK);\n\t}\n\tskb = alloc_skb_with_frags(size - data_len, data_len,\n\t\t\t\t   PAGE_ALLOC_COSTLY_ORDER,\n\t\t\t\t   &err, sk->sk_allocation);\n\tif (!skb)\n\t\tgoto err;\n\n\tskb_put(skb, size - data_len);\n\tskb->data_len = data_len;\n\tskb->len = size;\n\n\tif (tcp_try_rmem_schedule(sk, skb, skb->truesize)) {\n\t\tNET_INC_STATS(sock_net(sk), LINUX_MIB_TCPRCVQDROP);\n\t\tgoto err_free;\n\t}\n\n\terr = skb_copy_datagram_from_iter(skb, 0, &msg->msg_iter, size);\n\tif (err)\n\t\tgoto err_free;\n\n\tTCP_SKB_CB(skb)->seq = tcp_sk(sk)->rcv_nxt;\n\tTCP_SKB_CB(skb)->end_seq = TCP_SKB_CB(skb)->seq + size;\n\tTCP_SKB_CB(skb)->ack_seq = tcp_sk(sk)->snd_una - 1;\n\n\tif (tcp_queue_rcv(sk, skb, &fragstolen)) {\n\t\tWARN_ON_ONCE(fragstolen); /* should not happen */\n\t\t__kfree_skb(skb);\n\t}\n\treturn size;\n\nerr_free:\n\tkfree_skb(skb);\nerr:\n\treturn err;\n\n}\n"
+},
+"inet_listen":{
+"source":"net/ipv4/af_inet.c",
+"prefix":"int inet_listen(struct socket *sock, int backlog)",
+"bytes":275,
+"sha256":"decd2d1d5166484b582e6454985312b58c3104671729e87be9cf1486c0296331",
+"text":"int inet_listen(struct socket *sock, int backlog)\n{\n\tstruct sock *sk = sock->sk;\n\tint err = -EINVAL;\n\n\tlock_sock(sk);\n\n\tif (sock->state != SS_UNCONNECTED || sock->type != SOCK_STREAM)\n\t\tgoto out;\n\n\terr = __inet_listen_sk(sk, backlog);\n\nout:\n\trelease_sock(sk);\n\treturn err;\n}\n"
+},
+"__pskb_copy_fclone":{
+"source":"net/core/skbuff.c",
+"prefix":"struct sk_buff *__pskb_copy_fclone(",
+"bytes":1190,
+"sha256":"25d03782a27743b63a3faa895be74d046d84d5c970ae471c61dfdb451e0f7744",
+"text":"struct sk_buff *__pskb_copy_fclone(struct sk_buff *skb, int headroom,\n\t\t\t\t   gfp_t gfp_mask, bool fclone)\n{\n\tunsigned int size = skb_headlen(skb) + headroom;\n\tint flags = skb_alloc_rx_flag(skb) | (fclone ? SKB_ALLOC_FCLONE : 0);\n\tstruct sk_buff *n = __alloc_skb(size, gfp_mask, flags, NUMA_NO_NODE);\n\n\tif (!n)\n\t\tgoto out;\n\n\t/* Set the data pointer */\n\tskb_reserve(n, headroom);\n\t/* Set the tail pointer and length */\n\tskb_put(n, skb_headlen(skb));\n\t/* Copy the bytes */\n\tskb_copy_from_linear_data(skb, n->data, n->len);\n\n\tn->truesize += skb->data_len;\n\tn->data_len  = skb->data_len;\n\tn->len\t     = skb->len;\n\n\tif (skb_shinfo(skb)->nr_frags) {\n\t\tint i;\n\n\t\tif (skb_orphan_frags(skb, gfp_mask) ||\n\t\t    skb_zerocopy_clone(n, skb, gfp_mask)) {\n\t\t\tkfree_skb(n);\n\t\t\tn = NULL;\n\t\t\tgoto out;\n\t\t}\n\t\tfor (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {\n\t\t\tskb_shinfo(n)->frags[i] = skb_shinfo(skb)->frags[i];\n\t\t\tskb_frag_ref(skb, i);\n\t\t}\n\t\tskb_shinfo(n)->nr_frags = i;\n\t\tskb_shinfo(n)->flags |= skb_shinfo(skb)->flags & SKBFL_SHARED_FRAG;\n\t}\n\n\tif (skb_has_frag_list(skb)) {\n\t\tskb_shinfo(n)->frag_list = skb_shinfo(skb)->frag_list;\n\t\tskb_clone_fraglist(n);\n\t}\n\n\tskb_copy_header(n, skb);\nout:\n\treturn n;\n}\n"
+},
+"skb_copy_expand":{
+"source":"net/core/skbuff.c",
+"prefix":"struct sk_buff *skb_copy_expand(",
+"bytes":1036,
+"sha256":"0433a02a0c124f0550eada0ea23e5328fbb5b00a67a6d468aec5c5625ab1021f",
+"text":"struct sk_buff *skb_copy_expand(const struct sk_buff *skb,\n\t\t\t\tint newheadroom, int newtailroom,\n\t\t\t\tgfp_t gfp_mask)\n{\n\t/*\n\t *\tAllocate the copy buffer\n\t */\n\tint head_copy_len, head_copy_off;\n\tstruct sk_buff *n;\n\tint oldheadroom;\n\n\tif (!skb_frags_readable(skb))\n\t\treturn NULL;\n\n\tif (WARN_ON_ONCE(skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST))\n\t\treturn NULL;\n\n\toldheadroom = skb_headroom(skb);\n\tn = __alloc_skb(newheadroom + skb->len + newtailroom,\n\t\t\tgfp_mask, skb_alloc_rx_flag(skb),\n\t\t\tNUMA_NO_NODE);\n\tif (!n)\n\t\treturn NULL;\n\n\tskb_reserve(n, newheadroom);\n\n\t/* Set the tail pointer and length */\n\tskb_put(n, skb->len);\n\n\thead_copy_len = oldheadroom;\n\thead_copy_off = 0;\n\tif (newheadroom <= head_copy_len)\n\t\thead_copy_len = newheadroom;\n\telse\n\t\thead_copy_off = newheadroom - head_copy_len;\n\n\t/* Copy the linear header and data. */\n\tBUG_ON(skb_copy_bits(skb, -head_copy_len, n->head + head_copy_off,\n\t\t\t     skb->len + head_copy_len));\n\n\tskb_copy_header(n, skb);\n\n\tskb_headers_offset_update(n, newheadroom - oldheadroom);\n\n\treturn n;\n}\n"
+},
+"skb_zerocopy_clone":{
+"source":"net/core/skbuff.c",
+"prefix":"static int skb_zerocopy_clone(",
+"bytes":454,
+"sha256":"b07edd30698584c442f24ed8d3e5a06e4b6f260f0e7255152c5021a554454eea",
+"text":"static int skb_zerocopy_clone(struct sk_buff *nskb, struct sk_buff *orig,\n\t\t\t      gfp_t gfp_mask)\n{\n\tif (skb_zcopy(orig)) {\n\t\tif (skb_zcopy(nskb)) {\n\t\t\t/* !gfp_mask callers are verified to !skb_zcopy(nskb) */\n\t\t\tif (!gfp_mask) {\n\t\t\t\tWARN_ON_ONCE(1);\n\t\t\t\treturn -ENOMEM;\n\t\t\t}\n\t\t\tif (skb_uarg(nskb) == skb_uarg(orig))\n\t\t\t\treturn 0;\n\t\t\tif (skb_copy_ubufs(nskb, GFP_ATOMIC))\n\t\t\t\treturn -EIO;\n\t\t}\n\t\tskb_zcopy_set(nskb, skb_uarg(orig), NULL);\n\t}\n\treturn 0;\n}\n"
+}
+},
+"kernelBuilt":false,
+"actualPacketExchangeExecuted":false,
+"actualLinuxRcuExecuted":false,
+"completeAllocationClosure":false,
+"finalFreeCertified":false,
+"productionInstallation":false
 }

@@ -249,7 +249,7 @@ def public_graph(graph: dict, identity: str, *, _component_root: bool = False) -
             raise ValueError('typescript-runtime-unknown-function-kind')
         return {'name': value['name'], 'kind': tag,
                 'params': [{'name': item['name'], 'type': type_ref(item['type'])} for item in value['params']],
-                'result': type_ref(value['result'])}
+                'result': type_ref(value.get('result'))}
 
     def items(values):
         result = {}

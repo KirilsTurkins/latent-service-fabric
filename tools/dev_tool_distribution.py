@@ -136,6 +136,8 @@ def recipe(payload: Path, language: str, *, rust_http_runtime: bool = False) -> 
         names.update(c_capsule_project.authoring_inputs(ROOT))
     if language in {"java", "dotnet", "go", "typescript"}:
         names.add("tools/dev_managed_tools.py")
+    if language == "typescript":
+        names.add("tools/dev_workflow/diagnostics.py")
     if language == "java":
         names.update(java_capsule_project.authoring_inputs(ROOT))
         # Server builds already emit declarations. Ship their existing scoped

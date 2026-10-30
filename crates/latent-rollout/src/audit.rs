@@ -193,7 +193,7 @@ pub async fn reconcile_rollout_audit(
     }
     for pending in pending::read(audit, expires).await? {
         if !matches!(
-            pending.attempt.action,
+            pending.attempt().action,
             AuditControlAction::Rollout
                 | AuditControlAction::Promotion
                 | AuditControlAction::Rollback
@@ -203,11 +203,14 @@ pub async fn reconcile_rollout_audit(
         if Instant::now() >= expires {
             return Err(crate::deadline());
         }
-        let lookup = match (&pending.attempt.scope, &pending.attempt.identities.rollout) {
+        let lookup = match (
+            &pending.attempt().scope,
+            &pending.attempt().identities.rollout,
+        ) {
             (AuditScope::Tenant(tenant), Some(id)) => repository.get_rollout_operation(
                 tenant,
                 &RolloutId(id.clone()),
-                &pending.attempt.operation_id,
+                &pending.attempt().operation_id,
             )?,
             _ => RolloutOperationLookup::Unknown,
         };
@@ -215,14 +218,14 @@ pub async fn reconcile_rollout_audit(
             RolloutOperationLookup::Found(receipt) => Some(receipt),
             _ => None,
         };
-        let mut terminal = conclusion(&pending.attempt, receipt);
-        if let Some(receipt) = receipt.filter(|receipt| matches(&pending.attempt, receipt)) {
+        let mut terminal = conclusion(pending.attempt(), receipt);
+        if let Some(receipt) = receipt.filter(|receipt| matches(pending.attempt(), receipt)) {
             match canary::from_receipt(repository, receipt) {
                 Ok(summary) => terminal.canary_decision = summary,
-                Err(_) => terminal = conclusion(&pending.attempt, None),
+                Err(_) => terminal = conclusion(pending.attempt(), None),
             }
         }
-        let wait = pending::reconcile(audit, pending.sequence, &terminal, expires)
+        let wait = pending::reconcile(audit, pending.sequence(), &terminal, expires)
             .await?
             .wait();
         tokio::time::timeout_at(expires.into(), wait)

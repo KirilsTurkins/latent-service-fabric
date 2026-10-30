@@ -1,0 +1,42 @@
+{
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"java-llvm-ssa-producer-${{ github.ref }}"
+},
+"name":"Pinned Java LLVM SjLj compiler producer",
+"on":{
+"push":{
+"branches":[
+"feat/java-llvm-ssa-producer-20261025"
+],
+"paths":[
+".github/workflows/java-llvm-ssa-producer.yml",
+"NOTICE",
+"tools/qualify_java_llvm_ssa.py",
+"tools/java_guest/llvm_ssa_*.py",
+"tools/data/java-llvm-ssa/patch.json",
+"tools/data/java-llvm-ssa/tests.json",
+"tools/data/java-llvm-ssa/requirements.lock",
+"tools/data/java-llvm-ssa/LICENSE.txt",
+"tools/tests/test_java_llvm_ssa_producer.py",
+"tools/build_observation.py",
+"tools/build_snapshot.py",
+"tools/build_process.py",
+"tools/build_process_linux.py",
+"tools/build_process_signals.py"
+]
+}
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"compiler"
+],
+"reviewReason":"Hash-lock the psutil Linux timeout dependency and preflight before costly acquisition; preserve original 60s lit timeout, 13 regressions, nine units, 17 source controls, 75/90 minute maxima, exact branch and product admission.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/java-llvm-ssa-producer.yml"
+}

@@ -1,0 +1,9 @@
+{"cases":["VmapExtentSource.test_actual_2460_preimage_only_selection_changes_and_foreign_source_refuses","VmapExtentSource.test_domain_lower_bound_is_one_original_extent_and_never_next_fit","VmapExtentSource.test_exact_64_visit_boundary_refuses_unfinished_walk_and_cyclic_input"],"guards":{"VmapExtentSource.test_actual_2460_preimage_only_selection_changes_and_foreign_source_refuses":
+  "1c1d870976ba71b0263528f48e485bf5b7cd3234053ad0bca4110e614af624a9"
+,"VmapExtentSource.test_domain_lower_bound_is_one_original_extent_and_never_next_fit":
+  "1c1d870976ba71b0263528f48e485bf5b7cd3234053ad0bca4110e614af624a9"
+,"VmapExtentSource.test_exact_64_visit_boundary_refuses_unfinished_walk_and_cyclic_input":
+  "1c1d870976ba71b0263528f48e485bf5b7cd3234053ad0bca4110e614af624a9"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_vmap_extent.py","reviewReason":"Authenticate exact compiled-2460 selection preimage and finite domain lower-bound, one-candidate/no-retry and 64-visit refusal boundaries; no Linux execution claim.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "1c1d870976ba71b0263528f48e485bf5b7cd3234053ad0bca4110e614af624a9"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:3252a29e8d08d3dc72fd96b017d785e1b2119e9a9ebfd2c285c1112b973f5981","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

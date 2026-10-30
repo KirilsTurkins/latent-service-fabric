@@ -1,0 +1,9 @@
+{"cases":["TaskIdentityGeometrySource.test_actual_dynamic_geometry_and_fxsave_minimum_keep_undersize_alignment_refusals","TaskIdentityGeometrySource.test_all_five_original_callers_read_geometry_before_lock_and_task_fields_stay_guarded","TaskIdentityGeometrySource.test_exact_740_source_and_reviewed_inverse_projection_refuse_foreign_inputs"],"guards":{"TaskIdentityGeometrySource.test_actual_dynamic_geometry_and_fxsave_minimum_keep_undersize_alignment_refusals":
+  "3def1efefff4d45aa9bfdc30c05e8a29ff148b0af23fa4368ef00255323156e3"
+,"TaskIdentityGeometrySource.test_all_five_original_callers_read_geometry_before_lock_and_task_fields_stay_guarded":
+  "3def1efefff4d45aa9bfdc30c05e8a29ff148b0af23fa4368ef00255323156e3"
+,"TaskIdentityGeometrySource.test_exact_740_source_and_reviewed_inverse_projection_refuse_foreign_inputs":
+  "3def1efefff4d45aa9bfdc30c05e8a29ff148b0af23fa4368ef00255323156e3"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_task_identity_geometry.py","reviewReason":"Bind physical Task identity to its original boot-selected birth geometry before locks; preserve published lifecycle3 and append three source controls.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "3def1efefff4d45aa9bfdc30c05e8a29ff148b0af23fa4368ef00255323156e3"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:2a644d65cdf90b24903cac6c3cbb71f5b6f6cdbae27294f978d71f962bd72213","class:setup-sha256:8db52727659a4dbfa28bd030dce9e90e8cc3f8c4d54129977734d617c4575b40"],"skipSites":[]}}}

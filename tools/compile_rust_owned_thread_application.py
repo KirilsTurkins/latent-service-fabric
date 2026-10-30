@@ -249,7 +249,7 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path, *
             require(commands.run('zig-version', paths['zig'], 'version').decode().strip()
                     == pins['toolchain']['sdk']['zig'], 'rust-thread-app-pinned-zig')
             require(commands.run('bindgen-version', paths['wit-bindgen'], '--version').decode().strip()
-                    == 'wit-bindgen-cli ' + pins['toolchain']['rust']['dependencies']['wit-bindgen'],
+                    == 'wit-bindgen-cli ' + pins['toolchain']['contracts']['wit-bindgen-cli'],
                     'rust-thread-app-pinned-bindgen')
             linker = temporary / 'captured-host-linker'
             linker.write_text('#!' + str(paths['sh'])

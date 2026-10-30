@@ -144,7 +144,7 @@ async fn direct_host_tls_validates_peer_transfers_and_retires_original_charges()
     );
     let mut bytes = Vec::new();
     while let Some(mut chunk) = stream.read(2, None).unwrap().await.unwrap() {
-        bytes.extend(chunk.copy_bytes().unwrap());
+        bytes.extend_from_slice(&chunk.copy_bytes().unwrap());
     }
     assert_eq!(bytes, b"onetwo");
     assert_eq!(stream.inspect().accepted_write_bytes, 4);
@@ -485,7 +485,7 @@ async fn current_maximum_valid_chain_roots_and_stapled_extension_retire_actual_o
         );
         let mut body = Vec::new();
         while let Some(mut chunk) = stream.read(2, None).unwrap().await.unwrap() {
-            body.extend(chunk.copy_bytes().unwrap());
+            body.extend_from_slice(&chunk.copy_bytes().unwrap());
         }
         assert_eq!(body, b"PONG");
         stream.close().await.unwrap();

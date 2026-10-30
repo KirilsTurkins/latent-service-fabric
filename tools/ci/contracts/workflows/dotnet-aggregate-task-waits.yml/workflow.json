@@ -1,0 +1,39 @@
+{
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"dotnet-aggregate-task-waits-${{ github.ref }}"
+},
+"name":"Ordinary signed aggregate Task waits",
+"on":{
+"push":{
+"branches":[
+"feat/dotnet-waitall-promotion-20261025"
+],
+"paths":[
+".github/workflows/dotnet-aggregate-task-waits.yml",
+"tools/dotnet_guest/**",
+"sdk/dotnet-guest/tools/http-errors/**",
+"tools/dotnet_aggregate_wait_fixture.py",
+"tools/fixtures/dotnet-aggregate-task-waits/PublishedTasks.cs",
+"tools/dotnet_finite_wait_node.py",
+"tools/qualify_dotnet_finite_waits.py",
+"tools/qualify_dotnet_aggregate_waits.py",
+"tools/wasmtime_48_0_7_v10_native_products.py",
+"tools/tests/test_dotnet_aggregate_task_wait.py"
+]
+}
+},
+"permissions":{
+"actions":"read",
+"contents":"read"
+}
+},
+"requiredJobs":[
+"aggregate-waits"
+],
+"reviewReason":"Promote only the existing declaration-guarded managed finite selection to the authenticated 95-helper aggregate derivation; retain old modes/evidence and all limits, and add one normal Polly NativeAOT component with fourteen signed outcomes, source-exact v10 product reuse and bounded public evidence.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/dotnet-aggregate-task-waits.yml"
+}

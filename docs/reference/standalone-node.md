@@ -459,6 +459,21 @@ Omission selects unaudited operation only when this reserved path is absent;
 an existing directory, partial initialization or symlink prevents silent
 downgrade. Audit configuration is unsupported on other node platforms.
 
+Current development exposes one fixed `audit-journal` inventory topology row
+with profile `audit-capacity-v1`, configured ceilings and sampled owner counters.
+Configured capacity is not a live-worker measurement: unavailable live counts
+remain unknown. Use the [renewal capacity preflight](../operations/static-route-sets.md#preflight-audit-capacity-before-renewal)
+rather than treating missing observations as zero.
+
+The [explicit stopped-node lifecycle](../operations/audit-journal-lifecycle.md)
+seals a full epoch without an ordinary record reservation and preserves its
+history in finite custody. It requires the actual owning service UID, exclusive
+access and real filesystem space; it never moves a live journal or disables
+audit. These inventory/maintenance features are not in released alpha.4/alpha.5.
+The configured record and record-byte ceilings bound the active epoch, not all
+archived history. See the [static evidence renewal runbook](../operations/static-evidence-renewal.md)
+for scheduling, recovery and the separate publication-freshness checks.
+
 `QueryPhase2Audit` returns typed observations, mutation attempts and outcomes.
 Tenant queries require an administrator and exactly that principal's tenant.
 Node queries additionally require the trusted `latent.node.operator` claim;

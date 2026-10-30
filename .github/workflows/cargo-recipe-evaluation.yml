@@ -24,14 +24,14 @@ jobs:
       RUSTUP_TOOLCHAIN: 1.97.1
       LSF_REQUIRE_NATIVE_PROCESS_TESTS: "1"
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - name: Initialize attempt diagnostics before prerequisites
         run: |
           mkdir -p "$RUNNER_TEMP/cargo-recipe-evaluation"
           git rev-parse HEAD > "$RUNNER_TEMP/cargo-recipe-evaluation/revision.txt"
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install pinned validation dependencies
@@ -52,7 +52,7 @@ jobs:
         run: python3 tools/ci_cargo_probe.py --include-msrv --output "$RUNNER_TEMP/cargo-recipe-evaluation/probe"
       - name: Retain bounded evaluation diagnostics
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: cargo-recipe-evaluation-${{ github.sha }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/cargo-recipe-evaluation/
@@ -73,14 +73,14 @@ jobs:
       RUSTUP_TOOLCHAIN: 1.97.1
       LSF_REQUIRE_NATIVE_PROCESS_TESTS: "1"
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - name: Initialize recipe attempt diagnostics
         run: |
           mkdir -p "$RUNNER_TEMP/cargo-full-evaluation"
           git rev-parse HEAD > "$RUNNER_TEMP/cargo-full-evaluation/revision.txt"
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install pinned recipe prerequisites
@@ -98,7 +98,7 @@ jobs:
         run: python3 tools/ci_cargo_evaluate.py --disposable-checkout --configuration "$CONFIGURATION" --output "$RUNNER_TEMP/cargo-full-evaluation/recipes"
       - name: Retain full recipe observations including failed attempts
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: cargo-full-evaluation-${{ matrix.configuration }}-${{ github.sha }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/cargo-full-evaluation/

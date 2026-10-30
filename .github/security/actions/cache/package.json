@@ -1,0 +1,67 @@
+{
+  "name": "cache",
+  "version": "6.1.0",
+  "private": true,
+  "description": "Cache dependencies and build outputs",
+  "type": "module",
+  "main": "dist/restore/index.js",
+  "scripts": {
+    "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && ncc build -o dist/restore-only src/restoreOnly.ts && ncc build -o dist/save-only src/saveOnly.ts",
+    "test": "tsc --noEmit && node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "lint": "eslint **/*.ts --cache",
+    "format": "prettier --write **/*.ts",
+    "format-check": "prettier --check **/*.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/actions/cache.git"
+  },
+  "keywords": [
+    "actions",
+    "node",
+    "cache"
+  ],
+  "author": "GitHub",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/cache": "^6.2.0",
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0",
+    "@actions/io": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/nock": "^11.1.0",
+    "@types/node": "^24.1.0",
+    "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/parser": "^7.2.0",
+    "@vercel/ncc": "^0.38.3",
+    "eslint": "^8.28.0",
+    "eslint-config-prettier": "^9.1.2",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jest": "^27.9.0",
+    "eslint-plugin-prettier": "^5.5.3",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "jest": "^30.2.0",
+    "nock": "^13.2.9",
+    "prettier": "^3.6.2",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "overrides": {
+    "brace-expansion@1": "1.1.21",
+    "undici@6": "6.29.1",
+    "@babel/core@7": "7.29.7",
+    "baseline-browser-mapping@2": "2.11.33",
+    "brace-expansion@2": "2.1.7",
+    "browserslist@4": "4.29.5",
+    "handlebars@4": "4.7.10",
+    "js-yaml@3": "3.15.2",
+    "js-yaml@4": "4.3.2",
+    "picomatch@2": "2.3.2"
+  }
+}

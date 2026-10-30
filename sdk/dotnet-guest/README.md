@@ -22,7 +22,10 @@ Linux x86-64 is the qualified compiler host. The exact inputs are .NET SDK
 10.0.100, Componentize.NET SDK and WitBindgen 0.8.0-preview00011, NativeAOT LLVM
 10.0.0-rc.1.26306.1, WASI SDK 29.0 (LLVM 21.1.4), wit-bindgen 0.62.0 and
 wasm-tools 1.254.0. The six-package NuGet lock and SHA-512 package content
-hashes are checked. No application package or MSBuild override is admitted.
+hashes are checked. Application NuGet packages use the separate
+[capture and review workflow](../../docs/component-development/dotnet-dependencies.md);
+they cannot override the maintained compiler packages or execute arbitrary
+MSBuild extensions during normal compilation.
 Compiler SDK, runtime, reference-pack, NuGet and WASI trees are inventoried
 before and after each build. The observation deliberately says non-hermetic,
 declared-inputs-incomplete and reproducibility-not-checked.
@@ -55,8 +58,13 @@ The closed profile without that authority still refuses the operation.
 Loading captured valid managed bytes with `Assembly.Load(byte[])` is explicitly
 unsupported: the signed probe catches `PlatformNotSupportedException`, separately
 checks the uncaught terminal trap, then verifies fresh reflected state.
-Reflection.Emit, application threads, timers, task schedulers and a CLR host
-event loop are outside this profile. An unresolved managed task may belong
+Reflection.Emit and a CLR host event loop remain outside the profile. The
+base synchronous profile does not enable application threads, timers or task
+schedulers. Explicit [Task runtime](../../docs/component-development/dotnet-task-runtime.md),
+[stackful async exports](../../docs/development/dotnet-stackful-async-exports.md)
+and [finite Task waits](../../docs/testing/dotnet-finite-task-waits.md) have
+separate selections, bounds and evidence; they are not a full Thread/Monitor
+or CLR compatibility claim. An unresolved managed task may belong
 to an activation, but cannot preserve an application after its activation
 ends. Unsupported host operations trap; they do not acquire ambient authority.
 
@@ -103,8 +111,9 @@ when NativeAOT actually emits stdout/stderr imports. It preserves BCL formatting
 and routes bounded UTF-8 through the existing typed log capability; it creates
 no provider or grant. Provider rejection and canonical incomplete flush fail
 strictly; the unchanged BCL raw Console stream's flush remains a no-op.
-The new signed Console campaign is pending; local port references do not qualify
-the BCL/ABI or the broader asynchronous runtime.
+The guide retains the successful 45-outcome signed replay and earlier failures.
+That replay binds a metadata-only composition of the original NativeAOT/core;
+it is not a current BCL rebuild or broader asynchronous-runtime qualification.
 
 Standalone capsules use a 128 MiB memory ceiling, finite one-billion fuel
 ceiling and explicit 120-second cold invocation ceiling. The all-SDK harness

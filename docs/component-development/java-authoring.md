@@ -167,6 +167,10 @@ build and its first signed execution attempt are recorded in
 [Java activation fibers](../runtime/java-activation-fibers.md); that invocation
 failed and does not establish complete CompletableFuture execution support.
 
+Historical compiler failures, bounded observations and the successful remedy are
+recorded in [Java activation fibers](../runtime/java-activation-fibers.md#compiler-diagnostics-and-measured-construction).
+They retain their original source, limits and completion boundaries.
+
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.
 Choose one cache mode per build. Profile selection does not change invocation
@@ -450,26 +454,10 @@ sources and resource digests are bound to compiler evidence. Existing projects
 keep their immutable SDK locks; selecting a new SDK port requires a reviewed
 SDK snapshot rather than modifying an old vendored lock.
 
-The original actual two-library build failed at TeaVM's unsupported JavaScript
-resource methods. The [pinned class-library model control](../testing/evidence/java-immutable-resource-model-2026-10-02.json)
-preserved all nine standard ClassLoader method owners and passed fresh-stream,
-exact-byte, missing-name and changed-preimage controls. The subsequent
-[two-library signed node control](../testing/evidence/java-two-library-resource-node-2026-10-02.json)
-captured Commons Text and Commons Codec independently, Text's Commons Lang
-dependency, and a newly compiled developer-owned JAR. Its ordinary library
-calls and `Arithmetic.class.getResourceAsStream("badge.txt")` remained unchanged.
-After the original local JAR was deleted, the full offline recipe compiled,
-validated and packaged the actual component with 135 captured resource names.
-
-The strict signer and enforced node passed ten successful calls, including a
-fresh resource read after grant denial, and two missing or withdrawn clock
-grant controls. Every invocation was reaped; normal deletion, dormant owner
-observations and clean node shutdown passed. These finite checks used the
-recorded source and independently qualified native tools, with explicit
-provenance for both. They are contributor qualification; installed frontend,
-isolated processors and the full hostile-input and runtime matrix still need
-their own actual checks. Issue #682 and issue #681 remain
-open until their full acceptance evidence passes.
+[The immutable-resource qualification history](../testing/java-library-ingestion.md#historical-immutable-resource-qualification)
+retains the class-library model, original two-library result, source identities
+and finite signed-node observations. It does not replace the remaining complete
+runtime and hostile-input requirements.
 
 A private Maven feed uses the environment pair
 `LSF_REGISTRY_<REPOSITORY_ID>_USERNAME` and
@@ -510,3 +498,74 @@ approved annotation-processor control also passed actual source-ownership
 negatives, host containment and three signed-node calls with clean shutdown.
 Both controls retain their actual source, component and native-product identities;
 the remaining installed/private and failure-lifecycle gates stay explicit.
+
+
+## Source-pinned compiler profile and measured component construction
+
+The Java SDK builder can seal the authenticated `lsf-private-scalar-v1`
+compiler and sysroot into the existing `sdk/managed.zip` distribution, together
+with its canonical inventory, source-bound qualification receipts and notices.
+The existing installer expands regular files; normal Java compiler admission
+checks the complete installed inventory and source-owned profile. Explicit
+original WASI-SDK29 remains supported, and the independent historical
+feasibility helper keeps its original explicit SDK. This uses the existing SDK
+builder and installer; it does not publish a release or add an application
+compiler-selection option.
+
+[Compiler evidence](../testing/evidence/java-private-scalar-compiler-2026-10-25.json)
+binds the authenticated compiler, unchanged generated C and successful component
+construction. [The detailed record](../runtime/java-activation-fibers.md#compiler-diagnostics-and-measured-construction)
+keeps measured sizes, original failures, distribution checks and qualification limits.
+
+Prepared compiler inputs use the existing untrusted compiler archive cache,
+under `LSF_DEV_COMPILER_CACHE/java-prepared/<sha256>.archive`. Successful
+acquisition retains only the exact source-pinned producer archive and public
+compiler receipt. Every cache hit rechecks both complete sizes and digests;
+cache contents do not provide new provenance or compiler authority. A complete
+verified hit works without an origin token after the original Actions
+artifacts expire. CI restores and saves this finite pair with a key bound to
+the checked-in profile.
+
+Actions cache can be evicted and is branch-scoped; it is not an evergreen
+archive or release. A cold build after origin expiry must restore those exact
+entries or supply the existing builder-only `LSF_DEV_JAVA_COMPILER_INPUT`
+directory containing `producer.zip` and `public-compiler.json`. Both files must
+match the checked-in identities. Missing or altered inputs fail closed;
+there is no alternate compiler, permissive version gate or automatic rebuild.
+The source control exercised archived-input seeding, a real filesystem cache
+hit with expired source dates, tamper refusal, a tokenless cold miss and an
+otherwise matching expired origin refusal. No compiler or product check was
+repeated for this cache-only source change.
+
+
+## Retained public fibers through the normal signed node
+
+[The 26 October runtime receipt](../testing/evidence/java-retained-fibers-runtime-2026-10-26.json)
+records all twelve original signed calls on a source-matched v11 host without
+Java/component recompilation. [The detailed runtime record](../runtime/java-activation-fibers.md#retained-public-fibers-through-the-normal-signed-node)
+retains the actual IDs, Store progress, cleanup samples, limits and remaining #741 gaps.
+
+## Published worker libraries through the normal signed node
+
+[The worker-library receipt](../testing/evidence/java-published-workers-runtime-2026-10-26.json)
+records twelve signed calls using ordinary Commons Lang3 3.14.0 and Hutool Core
+5.8.40 factories, one normally compiled component and a source-matched v12 host.
+All returned `42`, created fresh Stores and reached zero in the seven reported idle
+counters. Original Maven archives and deterministic selected JARs are separately
+bound. No application executor was injected; fixture callbacks use the existing
+declared activation wait and private JDK wait reference.
+
+The receipt also preserves 36 earlier thread/I/O/JDK-timer calls as separate v11
+evidence from the failed normal authoring run. Neither those observations nor the
+new twelve are retagged as later native cohorts. Full Java-profile and cost-model
+qualification and whole #741 closure remain open.
+
+## Ordinary scheduled executors and published timers
+
+[The scheduled-library receipt](../testing/evidence/java-scheduled-libraries-runtime-2026-10-26.json)
+records sixteen signed calls on a source-matched v14 host: twelve unchanged
+Commons TimedSemaphore default-factory calls and four pending default
+CompletableFuture/shutdown-rejection calls. All returned `42`, created fresh
+Stores and retired the seven reported idle counters. Actual JDK/source/model
+controls passed. The exercised scheduling paths passed; broader scheduler
+APIs, GC, full cost/profile qualification and whole #741 remain open.

@@ -42,6 +42,9 @@ pub struct ExecutionProfileReport {
     #[cfg(feature = "development-test-node")]
     #[serde(skip_serializing_if = "Option::is_none")]
     development_guest_clock: Option<GuestClockReport>,
+    #[cfg(feature = "development-test-node")]
+    #[serde(skip_serializing_if = "is_false")]
+    development_local_service_observation: bool,
 }
 
 #[cfg(feature = "development-test-node")]
@@ -67,6 +70,12 @@ impl ExecutionProfileReport {
     pub(crate) fn matches(&self, settings: &NodeSettings) -> bool {
         #[cfg(feature = "development-test-node")]
         if self.development_guest_clock != guest_clock_report(settings) {
+            return false;
+        }
+        #[cfg(feature = "development-test-node")]
+        if self.development_local_service_observation
+            != settings.wasmtime.development_local_service_refusals
+        {
             return false;
         }
         self.profile == settings.wasmtime.execution_isolation_profile
@@ -155,6 +164,8 @@ pub(super) fn check(settings: &NodeSettings) -> Result<ExecutionProfileReport, P
         activation_stack_accounting: activation_stack_accounting(settings),
         #[cfg(feature = "development-test-node")]
         development_guest_clock: guest_clock_report(settings),
+        #[cfg(feature = "development-test-node")]
+        development_local_service_observation: settings.wasmtime.development_local_service_refusals,
     })
 }
 
@@ -205,4 +216,13 @@ pub(super) fn persist(settings: &NodeSettings) -> Result<(), PlatformError> {
         super::protected_file::execution_profile_marker(&settings.data_directory, true)?;
     }
     Ok(())
+}
+
+#[cfg(feature = "development-test-node")]
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "serde skip_serializing_if passes a borrowed field to this callback"
+)]
+fn is_false(value: &bool) -> bool {
+    !*value
 }

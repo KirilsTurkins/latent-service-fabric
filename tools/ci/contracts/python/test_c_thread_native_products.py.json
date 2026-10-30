@@ -1,49 +1,9 @@
-{
-  "cases": [
-    "CThreadNativeProducts.test_cli_help_is_available_without_checkout_or_pythonpath_or_output",
-    "CThreadNativeProducts.test_exact_thirty_three_stages_leave_original_twenty_one_tuple_immutable",
-    "CThreadNativeProducts.test_exact_tuple_agrees_with_whole_archive_git_and_real_control_observation"
-  ],
-  "guards": {
-    "CThreadNativeProducts.test_cli_help_is_available_without_checkout_or_pythonpath_or_output": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ebd9180b5bc10638ea7b03f548a03dfda7446018390b2ee99f53543b9d0ba643",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CThreadNativeProducts.test_exact_thirty_three_stages_leave_original_twenty_one_tuple_immutable": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ebd9180b5bc10638ea7b03f548a03dfda7446018390b2ee99f53543b9d0ba643",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CThreadNativeProducts.test_exact_tuple_agrees_with_whole_archive_git_and_real_control_observation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ebd9180b5bc10638ea7b03f548a03dfda7446018390b2ee99f53543b9d0ba643",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_c_thread_native_products.py",
-  "reviewReason": "Register immutable selected C native producer pins, preserved historical tuple and no-output CLI bootstrap controls; no guest execution.",
-  "schemaVersion": "latent.ci.contracts.v1"
-}
+{"storageCases":"guard-keys","guards":{"CThreadNativeProducts.test_cli_help_is_available_without_checkout_or_pythonpath_or_output":
+  "689f02e6d6a8d629e1922abba9da362c4f58cab5a9309f3a463f46e38e5c46cd"
+,"CThreadNativeProducts.test_exact_thirty_three_stages_leave_original_twenty_one_tuple_immutable":
+  "689f02e6d6a8d629e1922abba9da362c4f58cab5a9309f3a463f46e38e5c46cd"
+,"CThreadNativeProducts.test_exact_tuple_agrees_with_whole_archive_git_and_real_control_observation":
+  "689f02e6d6a8d629e1922abba9da362c4f58cab5a9309f3a463f46e38e5c46cd"
+},"kind":"python","module":"tools/tests/test_c_thread_native_products.py","reviewReason":"Register immutable selected C native producer pins, preserved historical tuple and no-output CLI bootstrap controls; no guest execution.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "689f02e6d6a8d629e1922abba9da362c4f58cab5a9309f3a463f46e38e5c46cd"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ebd9180b5bc10638ea7b03f548a03dfda7446018390b2ee99f53543b9d0ba643","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

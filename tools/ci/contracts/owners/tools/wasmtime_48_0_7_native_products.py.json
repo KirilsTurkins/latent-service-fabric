@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/wasmtime_48_0_7_native_products.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "First maintained owning workflow invocation of the already reviewed immutable .7 reader; register its exact unchanged source fingerprint.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "72e97a38c1aa837963fba896f3b613c08f0fc4d57305d2e2902bc7e88e00f9c0"
+{"kind":"owner","path":"tools/wasmtime_48_0_7_native_products.py","reviewBoundary":"committed-fingerprint","reviewReason":"First maintained owning workflow invocation of the already reviewed immutable .7 reader; register its exact unchanged source fingerprint.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "72e97a38c1aa837963fba896f3b613c08f0fc4d57305d2e2902bc7e88e00f9c0"
 }

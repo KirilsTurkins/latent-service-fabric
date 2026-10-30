@@ -17,6 +17,7 @@ pub mod identity;
 pub mod ids;
 pub mod lifecycle;
 pub mod native_capacity;
+pub mod node_metadata;
 pub mod publication;
 #[cfg(feature = "test-support")]
 pub mod test_support;

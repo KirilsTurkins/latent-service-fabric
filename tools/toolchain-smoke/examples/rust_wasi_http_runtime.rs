@@ -5,17 +5,6 @@ wit_bindgen::generate!({
     path: "../../sdk/wasi-http-runtime/wit",
     world: "client",
     generate_all,
-    async: [
-        "export:wasi:io/poll@0.2.12#poll",
-        "export:wasi:io/poll@0.2.12#[method]pollable.block",
-        "export:wasi:io/streams@0.2.12#[method]input-stream.blocking-read",
-        "export:wasi:io/streams@0.2.12#[method]input-stream.blocking-skip",
-        "export:wasi:io/streams@0.2.12#[method]output-stream.blocking-write-and-flush",
-        "export:wasi:io/streams@0.2.12#[method]output-stream.blocking-flush",
-        "export:wasi:io/streams@0.2.12#[method]output-stream.blocking-write-zeroes-and-flush",
-        "export:wasi:io/streams@0.2.12#[method]output-stream.blocking-splice",
-        "export:latent:rust-http-retirement/owner@0.1.0#drain",
-    ],
 });
 
 #[path = "../../../sdk/wasi-http-runtime/error.rs"]

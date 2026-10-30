@@ -92,11 +92,17 @@ current source by default. Original27 remains attributed to its real source,
 and the lane builds one new fixture component without another native build or
 repeating that already-passed baseline.
 
-Focused source/model controls are not execution evidence. The actual new
-six-invocation/four-node programme remains pending until its dedicated hosted
-lane succeeds. This slice does not qualify independent stack/GC/result/queue
-costs, every scheduler race/late wake or low-level net/DNS/TLS. #742 and #736
-remain open for their other literal requirements and mandatory evidence.
+Focused source/model controls are not execution evidence. The later
+[positive-timer programme](#positive-timer-consumer-with-distinct-v7-products)
+passed all six guest invocations and four clean node stops in
+[run 39433165880/job 118663188069](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39433165880/job/118663188069),
+consumer source `41e8084a573eea94f06fc4f527c4bc718fb7e2ed` with native producer
+`77bf0e3f3b68e17342b6146abd6f2de34a3efa00`. The
+[original receipt](../testing/evidence/go-node-stop-positive-2026-10-20.json)
+retains that exact tuple; the earlier audit-only failures below remain failures.
+This does not qualify independent stack/GC/result/queue costs, every scheduler
+race/late wake or low-level net/DNS/TLS. #742 and #736 remain open for their
+other literal requirements and mandatory evidence.
 
 The later88ae execution compiled and signed the same fixture, then rejected a
 real durable audit epoch before SIGTERM: the reader incorrectly treated it as

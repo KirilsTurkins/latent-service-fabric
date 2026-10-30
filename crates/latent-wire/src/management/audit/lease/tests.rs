@@ -1,6 +1,7 @@
 use super::*;
 use latent_audit::{
-    AuditFilter, AuditLimits, AuditQueryRequest, AuditScope, DirectoryPhase2AuditJournal,
+    AuditFilter, AuditHandle, AuditLimits, AuditQueryRequest, AuditQueryTicket, AuditScope,
+    DirectoryPhase2AuditJournal,
 };
 use std::{
     future::poll_fn,
@@ -9,16 +10,14 @@ use std::{
 use tempfile::TempDir;
 
 struct OneFrame(Option<Bytes>);
-fn accepted<T>(mut enqueue: impl FnMut() -> Result<T, latent_core::PlatformError>) -> T {
-    for _ in 0..128 {
-        match enqueue() {
-            Ok(value) => return value,
-            Err(error) if error.message == "audit-busy" => std::thread::yield_now(),
-            Err(error) => panic!("audit fixture enqueue failed: {}", error.message),
-        }
-    }
-    panic!("audit fixture enqueue exceeded its finite attempts");
+fn query_when_idle(handle: &AuditHandle, query: AuditQueryRequest) -> AuditQueryTicket {
+    // This isolated fixture has one worker. Observe its actual idle boundary,
+    // rather than racing thread startup with a fixed number of scheduler yields.
+    let deadline = Instant::now() + Duration::from_secs(5);
+    assert!(handle.wait_until_idle_for_test(deadline).unwrap());
+    handle.query(query, deadline).unwrap()
 }
+
 impl HttpBody for OneFrame {
     type Data = Bytes;
     type Error = Status;
@@ -46,11 +45,9 @@ async fn page_lease_follows_unpolled_body_and_transport_retained_bytes() {
         limit: 1,
         maximum_bytes: 32768,
     };
-    let page = accepted(|| handle.query(query(), Instant::now() + Duration::from_secs(5)))
-        .wait()
-        .await
-        .unwrap();
-    let (_, _, _, lease) = page.into_parts();
+    let page = query_when_idle(&handle, query()).wait().await.unwrap();
+    let lease = page.response_lease();
+    drop(page);
     let mut response = http::Response::new(Body::new(OneFrame(Some(Bytes::from_static(
         b"bounded-response",
     )))));
@@ -71,12 +68,7 @@ async fn page_lease_follows_unpolled_body_and_transport_retained_bytes() {
     drop(bytes);
     assert_eq!(handle.snapshot().query_owners, 0);
     assert_eq!(handle.snapshot().query_bytes, 0);
-    drop(
-        accepted(|| handle.query(query(), Instant::now() + Duration::from_secs(5)))
-            .wait()
-            .await
-            .unwrap(),
-    );
+    drop(query_when_idle(&handle, query()).wait().await.unwrap());
     handle.close();
     assert!(worker
         .join_until(Instant::now() + Duration::from_secs(5))

@@ -1,42 +1,52 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "compiler-diagnostics-${{ github.ref }}"
-    },
-    "name": "Compiler and signed initializer callback diagnostics",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/java-dotnet-diagnostics-679-20261021"
-        ],
-        "paths": [
-          ".github/workflows/compiler-compatibility.yml",
-          "sdk/java-guest/**",
-          "sdk/dotnet-guest/**",
-          "tools/java_guest/**",
-          "tools/dotnet_guest/**",
-          "tools/java_capsule.py",
-          "tools/java_capsule_build.py",
-          "tools/dotnet_capsule.py",
-          "tools/compiler_compatibility_*.py",
-          "tools/qualify_compiler_compatibility.py",
-          "tools/fixtures/compatibility-java/**",
-          "tools/fixtures/compatibility-dotnet/**"
-        ]
-      }
-    },
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "dotnet-diagnostics",
-    "java-diagnostics"
-  ],
-  "reviewReason": "Dedicated exact-branch substantive compiler and signed initializer callback diagnostics; preserve every historical workflow and default; no native rebuild or graph-based API certification.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/compiler-compatibility.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"compiler-diagnostics-${{ github.ref }}"
+},
+"name":"Compiler and signed initializer callback diagnostics",
+"on":{
+"push":{
+"branches":[
+"feat/java-dotnet-diagnostics-679-20261021",
+"feat/sdk-compatibility-closure-20261025"
+],
+"paths":[
+".github/workflows/compiler-compatibility.yml",
+"sdk/java-guest/**",
+"sdk/dotnet-guest/**",
+"tools/java_guest/**",
+"tools/dotnet_guest/**",
+"tools/java_capsule.py",
+"tools/java_capsule_build.py",
+"tools/dotnet_capsule.py",
+"tools/compiler_compatibility_*.py",
+"tools/qualify_compiler_compatibility.py",
+"tools/fixtures/compatibility-java/**",
+"tools/fixtures/compatibility-dotnet/**",
+"tools/compatibility_*.py",
+"tools/qualify_compatibility_closure.py",
+"tools/guest_api_analysis.py",
+"tools/guest_compiler_*.py",
+"tools/guest_compatibility*.py",
+"tools/*capsule_build.py",
+"tools/captured_compiler_isolation.py"
+]
+}
+},
+"permissions":{
+"actions":"read",
+"contents":"read"
+}
+},
+"requiredJobs":[
+"closure-matrix",
+"closure-required",
+"dotnet-diagnostics",
+"java-diagnostics"
+],
+"reviewReason":"Whole679 adds one closed eight-cell completion matrix and rollup on one exact feature branch; all original jobs and command blocks remain exact. Per-cell original owners and bounds unchanged; new scheduling parallelism4 is isolated to the new matrix.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/compiler-compatibility.yml"
 }

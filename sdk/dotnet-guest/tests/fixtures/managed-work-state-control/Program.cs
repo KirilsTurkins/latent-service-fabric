@@ -11,6 +11,10 @@ internal static class StateControl
     private static (ulong, ulong) context;
     private static int maximumTasks;
     private static int maximumResults;
+    private static ulong settlementRefusal;
+    private static int refusedSettlements;
+    private static int controlDispatches;
+    private static bool rootJoinReturned;
     private static int Count(int kind) => Owners.Values.Count(value => value == kind);
     private static void Need(bool value)
     {
@@ -35,11 +39,18 @@ internal static class StateControl
     }
     private static void Settle(ulong generation, ulong id)
     {
+        if (id == settlementRefusal)
+        {
+            // Model the real bridge's typed Err BEFORE any native-owner mutation.
+            Need(generation == 17 && id > uint.MaxValue && Owners.ContainsKey(id));
+            refusedSettlements++;
+            throw new InvalidOperationException("managed-work-settlement-refused");
+        }
         Need(generation == 17 && id > uint.MaxValue && Owners.Remove(id));
     }
     internal static void Step()
     {
-        Need(Work.Count != 0); Work.Dequeue()();
+        Need(Work.Count != 0); controlDispatches++; Work.Dequeue()();
     }
     private static void Begin() => ManagedWorkRuntime.Install(Reserve, Settle, () => closing = true,
         (generation, id) => context = (generation, id));
@@ -90,6 +101,29 @@ internal static class StateControl
             case "enqueue-failure-releases-both": {
                 object item = new(); ManagedWorkRuntime.Enqueue(item); ManagedWorkRuntime.EnqueueFailed(item);
                 Need(Count(0) == 1 && Count(3) == 0); Finish(); break;
+            }
+            case "enqueue-failure-settlement-refusal-retains-owner":
+            case "dequeue-settlement-refusal-retains-owner": {
+                object item = new(); ManagedWorkRuntime.Enqueue(item);
+                var original = ManagedWorkRuntime.QueuedTokenForControl(item)
+                    ?? throw new InvalidOperationException("missing-original-control-queue-token");
+                settlementRefusal = original.Id;
+                Need(Count(0) == 2 && Count(3) == 1 && original.Generation == 17);
+                Refuses(() => {
+                    if (name == "enqueue-failure-settlement-refusal-retains-owner") ManagedWorkRuntime.EnqueueFailed(item);
+                    else ManagedWorkRuntime.Dequeue(item);
+                }, "managed-work-settlement-refused");
+                if (ManagedWorkRuntime.QueuedTokenForControl(item) != original)
+                    throw new InvalidOperationException("managed-work-control-queue-token-lost");
+                Need(Count(0) == 2 && Count(3) == 1 && Owners.ContainsKey(original.Id));
+                // No synthetic completion, callback replay or automatic acknowledgement retry.
+                Refuses(() => { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; },
+                    "managed-work-unproven-quiescence");
+                Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+                Need(refusedSettlements == 1 && Work.Count == 0
+                    && ManagedWorkRuntime.QueuedTokenForControl(item) == original
+                    && Count(0) == 2 && Count(3) == 1);
+                break;
             }
             case "continuation-failure-before-acceptance": {
                 var pending = Pending(); ManagedWorkRuntime.Continuation(pending.Task);
@@ -162,6 +196,15 @@ internal static class StateControl
     private static void Main(string[] args)
     {
         Need(args.Length == 1); Run(args[0]);
+        if (settlementRefusal != 0)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new { control = args[0], passed = true,
+                registryCore = "production-source", nativeLedger = "explicit-test-port", dispatcher = "explicit-test-port",
+                actualClrTasks = true, guestQualified = false, settlementRefusals = refusedSettlements,
+                retainedTasks = Count(0), retainedQueuedOwners = Count(3), controlDispatches,
+                automaticRetries = refusedSettlements - 1, rootSuccess = rootJoinReturned }));
+            return;
+        }
         Console.WriteLine(JsonSerializer.Serialize(new { control = args[0], passed = true,
             registryCore = "production-source", nativeLedger = "explicit-test-port", dispatcher = "explicit-test-port",
             actualClrTasks = true, guestQualified = false }));

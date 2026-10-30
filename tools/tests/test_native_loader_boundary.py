@@ -42,6 +42,42 @@ all = "warn"
 
     def test_reviewed_boundary_passes(self) -> None:
         self.assertEqual(boundary.validate(self.root), [])
+        actual = Path(__file__).resolve().parents[2]
+        source = (actual / boundary.STREAM_FACTORY / "src/lib.rs").read_text(encoding="utf-8")
+        manifest = '''
+[package]
+name = "latent-stream-factory-native"
+[lints.rust]
+unsafe_code = "deny"
+[lints.clippy]
+all = "warn"
+[target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
+rustix = { version = "=1.1.5", features = ["fs"] }
+'''
+        self.write(f"{boundary.STREAM_FACTORY}/Cargo.toml", manifest)
+        self.write(f"{boundary.STREAM_FACTORY}/src/lib.rs", source)
+        workspace = self.root / "Cargo.toml"
+        workspace.write_text(workspace.read_text(encoding="utf-8").replace(
+            'members = [', f'members = ["{boundary.STREAM_FACTORY}", '), encoding="utf-8")
+        self.assertEqual(boundary.validate(self.root), [])
+        # These real outside files evade the leaf's src inventory; its Cargo
+        # target/build selection must independently remain closed.
+        self.write("crates/outside.rs", "#![allow(unsafe_code)]\nunsafe fn outside() {}\n")
+        for changed in (manifest.replace('unsafe_code = "deny"', 'unsafe_code = "allow"'),
+                        manifest.replace('unsafe_code = "deny"', ''),
+                        manifest.replace('name = "latent-stream-factory-native"', 'name = "unknown-native"'),
+                        manifest.replace('=1.1.5', '=1.1.6'),
+                        manifest + '\n[lib]\npath = "../outside.rs"\n',
+                        manifest.replace('[package]', '[package]\nbuild = "../outside.rs"')):
+            with self.subTest(manifest=changed):
+                self.write(f"{boundary.STREAM_FACTORY}/Cargo.toml", changed)
+                self.assertTrue(boundary.validate(self.root))
+        self.write(f"{boundary.STREAM_FACTORY}/Cargo.toml", manifest)
+        self.write(f"{boundary.STREAM_FACTORY}/src/lib.rs", source + '\nunsafe fn extra() {}\n')
+        self.assertTrue(boundary.validate(self.root))
+        self.write(f"{boundary.STREAM_FACTORY}/src/lib.rs", source)
+        self.write(f"{boundary.STREAM_FACTORY}/src/extra.rs", "fn another_target() {}\n")
+        self.assertTrue(boundary.validate(self.root))
 
     def test_actual_guest_matches_the_two_closed_profile_generators(self) -> None:
         self.assertEqual(boundary.validate_guest(Path(__file__).resolve().parents[2]), [])
@@ -70,6 +106,22 @@ all = "warn"
                 self.assertTrue(boundary.validate_guest(self.root))
 
     def test_second_unsafe_site_and_nested_allowance_fail(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.STREAM_COPY_RESULT).read_text(encoding="utf-8")
+        self.write(boundary.STREAM_COPY_RESULT, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        for changed in (
+            source.replace('pub(super) struct ChunkBytes(pub(super) IoOutputCopy);', 'pub(super) struct ChunkBytes(pub(super) ());'),
+            source.replace('self.0.as_ref().linear_lower_to_memory(cx, ty, offset)', 'unrelated_lower(cx, ty, offset)'),
+            source + '\nunsafe fn extra_copy_site() {}\n',
+            source + '\n#[allow(unsafe_code)] fn extra_copy_allowance() {}\n',
+            source.replace('#[allow(', '#![allow(', 1),
+        ):
+            with self.subTest(copy_change=changed[-120:]):
+                self.assertNotEqual(changed, source)
+                self.write(boundary.STREAM_COPY_RESULT, changed)
+                self.assertTrue(boundary.validate(self.root))
+        self.write(boundary.STREAM_COPY_RESULT, source)
+        self.assertEqual(boundary.validate(self.root), [])
         for addition in ("unsafe { second_load() }", "#[allow(unsafe_code)]\nfn extra() {}"):
             with self.subTest(addition=addition):
                 self.write(f"{boundary.CRATE}/src/extra.rs", addition)
@@ -173,8 +225,9 @@ all = "warn"
         self.assertTrue(boundary.validate(self.root))
 
     def test_other_workspace_member_cannot_relax_lints(self) -> None:
-        self.write("crates/other/Cargo.toml", '[lints.rust]\nunsafe_code = "allow"\n')
-        self.assertTrue(boundary.validate(self.root))
+        for level in ("allow", "deny"):
+            self.write("crates/other/Cargo.toml", f'[lints.rust]\nunsafe_code = "{level}"\n')
+            self.assertTrue(boundary.validate(self.root))
 
     def test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe(self) -> None:
         self.write(f"{boundary.GUEST}/src/lib.rs", '#![cfg(target_arch = "wasm32")]\n' + boundary.GUEST_ALLOW)

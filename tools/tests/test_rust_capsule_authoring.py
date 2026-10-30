@@ -537,7 +537,7 @@ class RustDeclaredEnvironment(unittest.TestCase):
                 if stage == 'zig-version':
                     return pins['sdk']['zig'].encode()
                 if stage == 'bindgen-version':
-                    return ('wit-bindgen-cli ' + pins['rust']['dependencies']['wit-bindgen']).encode()
+                    return ('wit-bindgen-cli ' + pins['contracts']['wit-bindgen-cli']).encode()
                 raise AssertionError('native compile boundary reached without stable declared environment')
         def isolate(owned, tools, distributions):
             scope.workspace, scope.tools, scope.distributions = owned.resolve(), tools, distributions
@@ -672,7 +672,7 @@ class RustExecutableOutputMaterials(unittest.TestCase):
                 stages.append(stage)
                 if stage == 'rust-sysroot': return str(scope.distributions['rust-compiler-and-sysroot']).encode()
                 if stage == 'zig-version': return pins['sdk']['zig'].encode()
-                if stage == 'bindgen-version': return ('wit-bindgen-cli ' + pins['rust']['dependencies']['wit-bindgen']).encode()
+                if stage == 'bindgen-version': return ('wit-bindgen-cli ' + pins['contracts']['wit-bindgen-cli']).encode()
                 if stage == 'compile':
                     selected = Path(self.environment['CARGO_TARGET_DIR']) / 'release/build/controlled/out/generated.rs'
                     selected.parent.mkdir(parents=True); selected.write_bytes(b'original generated input')
@@ -703,7 +703,8 @@ class RustExecutableOutputMaterials(unittest.TestCase):
         verified.lock['executableInputs'] = [{'id': 'outside/build-script'}]
         verified.lock['selection']['runtimeProfile'] = standard.DEFAULT
         output = workspace.parent / 'output'
-        with patch.object(build, 'resolve_tools', return_value=(dict(scope.tools), [])), \
+        with patch.object(build, 'resolve_tools', return_value=(dict(scope.tools),
+                [build.file_identity(scope.tools['rustc'], 'rustc')])), \
                 patch.object(build.shutil, 'which', side_effect=lambda name, **_kwargs: str(scope.tools['shell' if name == 'sh' else name])), \
                 patch.object(build, 'Commands', ObservedCommands), \
                 patch.object(build, 'binding_check', return_value=project.digest(b'controlled bindings')), \

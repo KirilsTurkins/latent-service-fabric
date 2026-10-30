@@ -10,12 +10,24 @@ from tools import dotnet_managed_capacity_node as node
 from tools.phase2_operator_process import WorkflowError
 
 
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
+
+
 class ManagedCapacityTests(unittest.TestCase):
     def test_manual_selector_restores_entire_original_three_job_workflow(self):
         import hashlib
         from tools.ci_lane_inventory import workflow_model
         from tools.rust_capsule_project import ROOT
-        value = workflow_model((ROOT/'.github/workflows/dotnet-published-http.yml').read_text(encoding='utf8'))
+        value = workflow_model(historical_checkout((ROOT/'.github/workflows/dotnet-published-http.yml').read_text(encoding='utf8')))
         diagnostic = value['on']['workflow_dispatch']['inputs'].pop('periodic_diagnostic')
         self.assertEqual(diagnostic['type'], 'boolean');self.assertIs(diagnostic['default'], False)
         value['jobs'].pop('periodic-diagnostic')
@@ -34,7 +46,7 @@ class ManagedCapacityTests(unittest.TestCase):
             self.assertEqual(value['jobs'][name]['if'], previous+' && !inputs.owner_capacity')
             value['jobs'][name]['if'] = previous
         self.assertEqual(hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
-            '0b62b9b830d6d01960cbf461b55323f4e2c2871c200f2bb1793f932377f9da0a')
+            'f99e0b898d7c2bb8f2b5bc73574fc10ddf8b194b54b42970189dcac61181abf1')
         commands = [step.get('run', '') for step in job['steps']]
         self.assertEqual(sum('tools/qualify_dotnet_managed_capacity.py' in line for line in commands), 1)
         self.assertFalse(any('tools/qualify_dotnet_http_mixed.py' in line for line in commands))

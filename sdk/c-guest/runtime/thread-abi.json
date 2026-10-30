@@ -59,7 +59,8 @@
     "cnd_wait",
     "cnd_signal",
     "cnd_broadcast",
-    "cnd_destroy"
+    "cnd_destroy",
+    "thrd_yield"
   ],
   "finiteBoundary": {
     "attributes": "NULL/default only; non-NULL returns ENOTSUP before admission",
@@ -73,7 +74,8 @@
     "registryLimitIsRuntimeTaskCeiling": false,
     "stackBytes": 65536,
     "templateExtentMaximum": 1048576,
-    "tlsOverAlignment": "must be rejected until authenticated bootstrap supports it"
+    "tlsOverAlignment": "must be rejected until authenticated bootstrap supports it",
+    "yield": "One untargeted canonical thread.yield; preserve errno/current C context, no C registry scan or promotion of host-pending threads; scheduler eligibility and original runtime budgets remain authoritative."
   },
   "creation": {
     "workerRunsInline": false,

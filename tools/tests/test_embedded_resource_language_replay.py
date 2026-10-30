@@ -165,7 +165,7 @@ class EmbeddedLanguageReplay(unittest.TestCase):
         self.assertNotIn('qualify_rust_capsules.py',commands)
         self.assertNotIn('--prepare-engine',commands)
         self.assertIn('--record-producer',commands); self.assertIn('--acquire',commands)
-        download = next(row for row in steps if row.get('uses','').startswith('actions/download-artifact@'))
+        download = next(row for row in steps if row.get('uses','').startswith('KirilsTurkins/lsf-download-artifact@'))
         self.assertEqual(download['with']['run-id'],39373374237)
         self.assertEqual(download['with']['name'],'go-scratch-prepared-'+replay.native.producer.PRODUCER_HEAD)
         self.assertLess(next(index for index,row in enumerate(steps) if '--record-producer' in row.get('run','')),steps.index(download))

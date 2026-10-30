@@ -1940,7 +1940,10 @@ mod tests {
         // Exact independently retained Python production derivation from the
         // authentic ec11 event. This is an emission comparison, not execution.
         assert_eq!(
-            format!("{:x}", Sha256::digest(&sealed)),
+            Sha256::digest(&sealed)
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>(),
             "8a23f238e78076122b458e174b9a4fb03b0f5d6be9f2807f57ba96d52c412dd0"
         );
         let sealed_module = Original::parse(&sealed).unwrap();
@@ -1982,7 +1985,10 @@ mod tests {
         let (derived, receipt) = derive_source_core(ORIGINAL, PUBLIC, POST).unwrap();
         Validator::new().validate_all(&derived).unwrap();
         assert_eq!(
-            format!("{:x}", Sha256::digest(&derived)),
+            Sha256::digest(&derived)
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>(),
             "e3ee64a72d7a75e229a4f07edf58b3e4907ae4e1e974609fc51c2fae4e5f91fd"
         );
         assert_eq!(receipt.original_panic_function, 531);

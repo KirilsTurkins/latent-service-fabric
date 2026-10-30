@@ -21,7 +21,7 @@ from tools.rust_capsule_project import ROOT, digest, write_json
 
 CASE = 'signed_standard_timers_contexts_and_rearm_keep_original_heap_owners'
 REASONS = 'tools/go_guest/terminal_reasons.json'
-REASONS_DIGEST = 'sha256:ec8b59ada82aab3b1f55bb6b89a510f558d184b2e98a4081531976bff34589fb'
+REASONS_DIGEST = 'sha256:5af1b5f362ae8142e5e462d47220960e5ddd401e012cb39f277568ea0a911dba'
 THROW_BODY_DIGEST = 'sha256:c049e89b86db59031835024047342eaaa3008b47897e6c42c40255f641fe6a3d'
 PATHS = ('crates/latent-wasmtime/src/containment.rs', 'crates/latent-wasmtime/src/config/engine.rs',
          'crates/latent-wasmtime/tests/local_service/runtime/go.rs')
@@ -156,6 +156,21 @@ def once(text, old, new):
     return text.replace(old, new)
 
 
+
+def backtrace_call(text):
+    # Two reviewed compiler spellings; mixed/duplicate/unknown source refuses.
+    anchors = ('wasm_backtrace_max_frames(None)', 'wasm_backtrace_max_frames(backtrace_limit)')
+    selected = [anchor for anchor in anchors if anchor in text]
+    if len(selected) != 1 or text.count(selected[0]) != 1:
+        raise ValueError('Go-private-frame-observer-source-drift')
+    return selected[0]
+
+
+def private_backtrace_source(text):
+    return once(text, backtrace_call(text),
+                'wasm_backtrace_max_frames(std::num::NonZeroUsize::new(32))')
+
+
 def overlay_sources(root: Path, output: Path) -> tuple[dict, list[tuple[Path, Path]]]:
     originals = {name: (root / name).read_bytes() for name in PATHS}
     changed = {}
@@ -183,8 +198,7 @@ def overlay_sources(root: Path, output: Path) -> tuple[dict, list[tuple[Path, Pa
     changed[PATHS[0]] = text[:offset] + observer + text[offset:]
     text = originals[PATHS[1]].decode()
     text = once(text, 'WasmBacktraceDetails::Disable', 'WasmBacktraceDetails::Enable')
-    changed[PATHS[1]] = once(text, 'wasm_backtrace_max_frames(None)',
-                           'wasm_backtrace_max_frames(std::num::NonZeroUsize::new(32))')
+    changed[PATHS[1]] = private_backtrace_source(text)
     text = originals[PATHS[2]].decode()
     begin = text.index('async fn ' + CASE + '() {')
     end = text.index('\nasync fn prepare_checkpoint_fixture(', begin)

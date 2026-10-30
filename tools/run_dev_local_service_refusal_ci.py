@@ -1,0 +1,296 @@
+#!/usr/bin/env python3
+"""One ordinary local-service fixture diagnosis, never a port or release qualification."""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import sys
+import tempfile
+import time
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from tools.build_observation import build_environment
+from tools.build_process import BuildProcessError, run_bounded_result
+from tools.native_runtime import files as native_files
+from tools.native_runtime.common import InstallError
+
+ROOT = Path(__file__).resolve().parents[1]
+BRANCH = "fix/local-service-registry-retirement-20261025"
+WORKFLOW = ".github/workflows/developer-local-service-refusal.yml"
+MAX_SECONDS = 2400
+MAX_LOG = 16 * 1024 * 1024
+PRIOR_NATIVE_CASES = (
+    "host::service::refusal::tests::disabled_and_first_per_activation_do_not_share_global_admission",
+    "host::service::refusal::tests::typed_budget_refuses_coercion_unknown_details_and_private_error_text",
+)
+NATIVE_CASES = (
+    "broker::tests::session_native_memory::post_store_registry_retirement_releases_original_child_capacity_without_a_new_session",
+)
+CONFIG_CASE = "config::tests::development::local_service_refusal_observation_requires_exact_consent_and_existing_local_provider"
+PYTHON_CASES = (
+    "test_two_cells_and_explicit_child_budget_only_follow_a_selected_local_fixture",
+    "test_refusal_records_bind_the_failed_activation_after_expected_negative_cases",
+    "test_refusal_reader_rejects_coerced_private_forged_or_foreign_observations",
+    "test_refusal_probe_option_leaves_ordinary_log_rpc_path_untouched",
+    "test_public_retention_excludes_private_scratch_and_refuses_file_or_byte_drift",
+)
+RECIPE = (
+    WORKFLOW, "tools/run_dev_local_service_refusal_ci.py", "tools/build_dev_guest_tools.py",
+    "tools/dev_tool_distribution.py", "tools/dev_node_application_probe.py",
+    "tools/dev_local_service_fixture_probe.py", "tools/dev_workflow/local_service_refusals.py",
+    "tools/dev_workflow/node_test_profile.py", "tools/dev_workflow/node_fixtures.py",
+    "tools/dev_workflow/local_service_fixture.py", "tools/dev_workflow/node_output.py",
+    "tools/dev_workflow/service.py", "tools/tests/test_dev_local_service_fixture.py",
+    "apps/latentd/Cargo.toml", "apps/latentd/src/config.rs",
+    "apps/latentd/src/config/development.rs", "apps/latentd/src/config/model.rs",
+    "apps/latentd/src/config/runtime.rs", "apps/latentd/src/config/security.rs",
+    "apps/latentd/src/config/tests/development.rs", "crates/latent-wasmtime/Cargo.toml",
+    "crates/latent-wasmtime/src/config.rs", "crates/latent-wasmtime/src/config/profile.rs",
+    "crates/latent-wasmtime/src/host.rs", "crates/latent-wasmtime/src/host/service.rs",
+    "crates/latent-wasmtime/src/host/service/refusal.rs", "tools/toolchain.toml",
+    "Cargo.toml", "Cargo.lock", ".cargo/managed-guest.toml", "wit/platform/invocation/package.wit",
+    "tools/requirements.lock",
+    "crates/latent-capabilities/src/broker/session.rs",
+    "crates/latent-capabilities/src/broker/session/shared.rs",
+    "crates/latent-capabilities/src/broker/session/native_backing.rs",
+    "crates/latent-capabilities/src/broker/work.rs",
+    "crates/latent-capabilities/src/broker/tests/session_native_memory.rs",
+    "crates/latent-capabilities/src/broker/tests/fixture.rs",
+    "crates/latent-capabilities/src/broker/tests/resource_table_memory.rs",
+    "crates/latent-core/src/budget.rs",
+    "crates/latent-core/src/budget/host_memory.rs",
+    "crates/latent-core/src/budget/descendants/mod.rs",
+    "crates/latent-core/src/budget/descendants/admission.rs",
+    "crates/latent-core/src/budget/descendants/retirement.rs",
+    "crates/latent-core/src/budget/descendants/memory.rs",
+)
+
+
+PRIOR_NATIVE_CONTROLS = {
+    "sourceCommit": "81e7c5a8e8d687d478bd502c35c5cca98e4f3fb9",
+    "sourceTree": "343a620dc91522bc1b35759f2cd48b2c4d955fbf",
+    "runId": 40156235393, "jobId": 121058134076, "artifactId": 12585211327,
+    "artifactBytes": 17457,
+    "artifactSha256": "sha256:d40994e1bb9f669c1f75685b978272ace5c9eae5be4eb3a684e1d0d846ca68bf",
+    "overallStatus": "failed", "overallFailurePhase": "python-controls",
+    "scope": "only-the-three-actually-passed-native-and-config-controls",
+    "observerStdout": {"bytes": 334, "sha256": "sha256:9fdd45e5950f5df520f4dff02d7ba932efaa9b44401d5332614221ae7e283dfa"},
+    "configStdout": {"bytes": 239, "sha256": "sha256:614fdae33b7d4376c8b1d26256ee0b6dc1ff3c35d39caff52d1e6c61ac857ab6"},
+    "nativeCases": list(PRIOR_NATIVE_CASES), "configCases": [CONFIG_CASE],
+}
+
+
+def require(value, reason):
+    if not value:
+        raise ValueError(reason)
+
+
+def identity(path, maximum):
+    require(path.is_file() and not path.is_symlink(), "regular-input-required")
+    require(path.stat().st_size <= maximum, "input-byte-bound")
+    with path.open("rb") as source:
+        data = source.read(maximum + 1)
+    require(len(data) <= maximum, "input-byte-bound")
+    return {"bytes": len(data), "sha256": "sha256:" + hashlib.sha256(data).hexdigest()}
+
+
+def native_result(raw, expected):
+    observed = re.findall(rb"^test ([a-zA-Z0-9_:]+) \.\.\. ok$", raw, re.M)
+    require(sorted(name.decode() for name in observed) == sorted(expected), "exact-native-cases-required")
+    summary = re.findall(rb"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", raw)
+    require(summary == [(str(len(expected)).encode(), b"0", b"0")], "native-zero-skip-summary-required")
+
+
+PUBLIC_COMMANDS = (
+    "source-head", "source-tree", "clean-source", "builder-import-preflight",
+    "fixture-cli-preflight", "current-source-inventory", "python-controls", "registry-retirement-native-control",
+    "normal-rust-tools-and-node", "original-local-service-fixture",
+)
+PUBLIC_REPORTS = {
+    "NODE-LOCAL-SERVICE-REFUSAL.json": 1024 * 1024,
+    "fixture/observation.json": 2 * 1024 * 1024,
+    "fixture/node/probe.json": 2 * 1024 * 1024,
+    "fixture/node/node-tests.json": 256 * 1024,
+}
+PUBLIC_FILES = {**PUBLIC_REPORTS,
+    **{f"commands/{name}.{channel}": MAX_LOG for name in PUBLIC_COMMANDS for channel in ("stdout", "stderr")},
+    "source-node.json": 65536}
+MAX_PUBLIC_FILES = 25
+MAX_PUBLIC_BYTES = sum(PUBLIC_FILES.values())
+PRIVATE_SCRATCH_ROOT = Path("/tmp")
+
+
+def native_scratch_preflight(scratch):
+    # The normal installer validates every ancestor, including ACLs, unchanged.
+    with native_files.directory(scratch, owners={0, os.geteuid()}):
+        pass
+
+
+def private_environment(output):
+    # tempfile-created failed fixture workspaces must never be under public output.
+    scratch = Path(tempfile.mkdtemp(prefix="local-service-private-", dir=PRIVATE_SCRATCH_ROOT)).resolve(strict=True)
+    require(scratch.parent == PRIVATE_SCRATCH_ROOT.resolve(strict=True)
+            and not scratch.is_relative_to(output.resolve(strict=True)), "private-fixed-root-scratch-required")
+    native_scratch_preflight(scratch)
+    return build_environment(scratch)
+
+
+def retain_public_evidence(output, source_node):
+    destination = output / "public"
+    require(not destination.exists() and not destination.is_symlink(), "new-public-evidence-required")
+    destination.mkdir(mode=0o700)
+    retained, total = [], 0
+    # Receipt last: a failed earlier copy cannot leave a stale success receipt.
+    for name in [key for key in PUBLIC_FILES if key != "NODE-LOCAL-SERVICE-REFUSAL.json"] + ["NODE-LOCAL-SERVICE-REFUSAL.json"]:
+        source = source_node if name == "source-node.json" else output / name
+        boundary = source_node.parent if name == "source-node.json" else output
+        require(not any(part.is_symlink() for part in (source, *source.parents)), "public-evidence-symlink-refused")
+        if not source.exists():
+            continue
+        require(source.is_file() and source.resolve(strict=True).is_relative_to(boundary.resolve(strict=True)),
+                "regular-public-evidence-required")
+        with source.open("rb") as stream:
+            raw = stream.read(PUBLIC_FILES[name] + 1)
+        require(len(raw) <= PUBLIC_FILES[name], "public-evidence-file-byte-bound")
+        total += len(raw)
+        require(len(retained) < MAX_PUBLIC_FILES and total <= MAX_PUBLIC_BYTES, "public-evidence-total-bound")
+        target = destination / name
+        target.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
+        with target.open("xb") as stream:
+            stream.write(raw)
+        retained.append(name)
+    return {"files": retained, "bytes": total}
+
+
+def run(python_prefix: Path, output: Path):
+    require(sys.platform == "linux" and os.geteuid() != 0 and not output.exists(), "new-unprivileged-linux-owner-required")
+    require(os.environ.get("GITHUB_EVENT_NAME") == "push" and os.environ.get("GITHUB_REF") == "refs/heads/" + BRANCH,
+            "exact-diagnostic-push-required")
+    origin = os.environ.get("GITHUB_WORKFLOW_REF")
+    require(origin == "KirilsTurkins/latent-service-fabric/" + WORKFLOW + "@refs/heads/" + BRANCH, "exact-workflow-required")
+    output.mkdir(parents=True, mode=0o700)
+    logs = output / "commands"
+    logs.mkdir(mode=0o700)
+    until = time.monotonic() + MAX_SECONDS
+    receipt = {"schemaVersion": "latent.dev.local-service-refusal-ci.v1", "status": "failed",
+               "scope": "ordinary-signed-local-service-fixture-diagnostic", "qualificationComplete": False,
+               "publisherAuthenticated": False, "maximumSeconds": MAX_SECONDS, "workflowOrigin": origin,
+               "runId": os.environ.get("GITHUB_RUN_ID"), "attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+               "commands": [], "originalFixtureAssertionsChanged": False, "limitsChanged": False,
+               "nativeCases": [], "configCases": [], "pythonCases": [], "originalTestsPassed": None}
+
+    def command(name, argv, cap):
+        require(time.monotonic() < until, "overall-deadline")
+        receipt["phase"] = name
+        started = time.monotonic()
+        result = run_bounded_result([str(item) for item in argv], cwd=ROOT, env=environment,
+            timeout_seconds=min(cap, until - started), max_output_bytes=MAX_LOG)
+        (logs / (name + ".stdout")).write_bytes(result.stdout)
+        (logs / (name + ".stderr")).write_bytes(result.stderr)
+        receipt["commands"].append({"name": name, "argv": [str(item) for item in argv],
+            "seconds": time.monotonic() - started, "exitCode": result.returncode,
+            "stdout": identity(logs / (name + ".stdout"), MAX_LOG),
+            "stderr": identity(logs / (name + ".stderr"), MAX_LOG)})
+        require(result.returncode == 0, "command-exit:" + name)
+        return result
+
+    try:
+        receipt["phase"] = "private-scratch-preflight"
+        environment = private_environment(output)
+        environment.update(RUSTUP_TOOLCHAIN="1.97.1", GITHUB_ACTIONS="true", RUNNER_OS="Linux")
+        commit = command("source-head", ["git", "rev-parse", "HEAD"], 15).stdout.decode().strip()
+        require(re.fullmatch(r"[0-9a-f]{40}", commit) and commit == os.environ.get("GITHUB_SHA"), "exact-source-head-required")
+        receipt["sourceCommit"] = commit
+        receipt["sourceTree"] = command("source-tree", ["git", "rev-parse", "HEAD^{tree}"], 15).stdout.decode().strip()
+        require(re.fullmatch(r"[0-9a-f]{40}", receipt["sourceTree"]), "exact-source-tree-required")
+        require(not command("clean-source", ["git", "status", "--porcelain"], 15).stdout, "clean-source-required")
+        receipt["recipe"] = {name: identity(ROOT / name, 4 * 1024 * 1024) for name in RECIPE}
+        command("builder-import-preflight", [sys.executable, "tools/build_dev_guest_tools.py", "--help"], 60)
+        fixture_help = command("fixture-cli-preflight", [sys.executable, "tools/dev_local_service_fixture_probe.py", "--help"], 60)
+        require(b"--observe-refusals" in fixture_help.stdout, "explicit-fixture-option-required")
+        source_tree = command("current-source-inventory", ["git", "ls-tree", "-r", "-z", "HEAD"], 15)
+        require(source_tree.stdout and source_tree.stdout.endswith(b"\0"), "current-git-inventory-required")
+        receipt["currentSourceInventory"] = identity(logs / "current-source-inventory.stdout", MAX_LOG)
+        receipt["priorNativeControls"] = PRIOR_NATIVE_CONTROLS
+        # The broker change invalidates the former full-tree equality proof.
+        # These three historical passes confer no current native/config credit.
+        receipt["priorNativeControlsCurrentSourceEquivalent"] = False
+        receipt["priorNativeControlsCurrentExecution"] = "not-run;historical-only"
+        receipt["currentExecutionScope"] = "one-native-registry-regression-and-original-fourteen-fixture-cases"
+        controls = command("python-controls", [sys.executable, "-m", "unittest", "-v",
+            *("tools.tests.test_dev_local_service_fixture.LocalServiceFixture." + case for case in PYTHON_CASES)], 60)
+        passed_python = re.findall(rb"^(test_[a-zA-Z0-9_]+) \([^\n]+\) \.\.\. ok$", controls.stderr, re.M)
+        require(sorted(name.decode() for name in passed_python) == sorted(PYTHON_CASES)
+                and b"Ran 5 tests" in controls.stderr and controls.stderr.rstrip().endswith(b"OK"), "five-python-cases-zero-skip-required")
+        receipt["pythonCases"] = list(PYTHON_CASES)
+        native = command("registry-retirement-native-control", ["cargo", "--config", ".cargo/managed-guest.toml",
+            "test", "--locked", "-p", "latent-capabilities", "--lib", NATIVE_CASES[0], "--", "--exact"], 600)
+        native_result(native.stdout, NATIVE_CASES)
+        receipt["nativeCases"] = list(NATIVE_CASES)
+        command("normal-rust-tools-and-node", [sys.executable, "tools/build_dev_guest_tools.py", "--language", "rust",
+            "--output", "target/local-service-tools", "--python-prefix", python_prefix, "--node-tests"], 1800)
+        source_node = ROOT / "target/local-service-tools/source-node/source-node.json"
+        receipt["sourceNode"] = identity(source_node, 65536)
+        command("original-local-service-fixture", [sys.executable, "tools/dev_local_service_fixture_probe.py",
+            "--payload", "target/local-service-tools/payload", "--source-node", "target/local-service-tools/source-node",
+            "--output", output / "fixture", "--observe-refusals"], 900)
+        result = output / "fixture/node/node-tests.json"
+        receipt["originalNodeTests"] = identity(result, 256 * 1024)
+        receipt["originalTestsPassed"] = json.loads(result.read_bytes()).get("passed")
+        require(receipt["originalTestsPassed"] is True, "original-fixture-did-not-pass")
+        require(receipt["recipe"] == {name: identity(ROOT / name, 4 * 1024 * 1024) for name in RECIPE}, "source-changed")
+        require(time.monotonic() < until, "overall-deadline")
+        receipt["status"] = "passed"
+        receipt["phase"] = "complete"
+    except (ValueError, BuildProcessError, InstallError) as error:
+        receipt["failure"] = str(error)
+        raise
+    finally:
+        original_failure = sys.exc_info()[0] is not None
+        result = output / "fixture/node/node-tests.json"
+        if result.is_file():
+            try:
+                receipt["originalNodeTests"] = identity(result, 256 * 1024)
+                receipt["originalTestsPassed"] = json.loads(result.read_bytes()).get("passed")
+            except (ValueError, OSError):
+                receipt["originalTestsObservation"] = "unavailable"
+                receipt["status"] = "failed"
+        # The original failed test remains failed; no expected-negative rewriting.
+        (output / "NODE-LOCAL-SERVICE-REFUSAL.json").write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n")
+        try:
+            retain_public_evidence(output, ROOT / "target/local-service-tools/source-node/source-node.json")
+        except (ValueError, OSError):
+            # Never replace an original fixture failure with a retention failure.
+            receipt.update(status="failed", publicEvidenceRetention="unavailable-fixed-public-allowlist")
+            public_receipt = output / "public/NODE-LOCAL-SERVICE-REFUSAL.json"
+            try:
+                require(public_receipt.parent.is_dir()
+                        and not any(part.is_symlink() for part in (public_receipt, *public_receipt.parents)),
+                        "regular-public-receipt-required")
+                raw = (json.dumps(receipt, sort_keys=True, indent=2) + "\n").encode("utf-8")
+                require(len(raw) <= PUBLIC_FILES["NODE-LOCAL-SERVICE-REFUSAL.json"], "public-evidence-file-byte-bound")
+                public_receipt.write_bytes(raw)
+            except (ValueError, OSError):
+                pass
+            print("public-evidence-retention-unavailable", file=sys.stderr)
+            if not original_failure:
+                raise
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--python-prefix", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    run(args.python_prefix.resolve(strict=True), args.output.absolute())
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,41 @@
+{
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"typescript-buffer-globals-${{ github.ref }}"
+},
+"name":"TypeScript finite global Buffer signed qualification",
+"on":{
+"push":{
+"branches":[
+"feat/typescript-global-buffer-20261025"
+],
+"paths":[
+".github/workflows/typescript-buffer-globals.yml",
+"tools/qualify_typescript_buffer_globals.py",
+"tools/typescript_buffer_globals_fixture.py",
+"tools/typescript_guest/buffer*.mjs",
+"tools/typescript_guest/buffer_profile.py",
+"tools/typescript_guest/bundle.mjs",
+"tools/typescript_guest/compiler.py",
+"tools/typescript_guest/build.py",
+"tools/guest_compatibility_context*.py",
+"tools/guest_compatibility_outcomes.py",
+"tools/tests/test_typescript_buffer_globals*.py",
+"sdk/typescript-guest/runtime/buffer-globals.d.ts",
+"sdk/typescript-guest/probes/buffer-globals/**"
+]
+}
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"global-buffer"
+],
+"reviewReason":"Add one fixed-branch25minute normal-component four-signed global Buffer campaign with original1200aggregate cap, pinned existing inputs, no native/engine rebuild and explicit public-only artifacts.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/typescript-buffer-globals.yml"
+}

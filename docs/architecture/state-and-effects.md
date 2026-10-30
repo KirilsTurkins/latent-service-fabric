@@ -76,6 +76,16 @@ acceptance. This source description does not approve that architectural change.
 
 ## Host-owned transaction lifecycle
 
+[![An eligible successful command stages writes and intents, then the host atomically commits state, outbox, original outcome and applicable inbox facts. Result recovery and effect dispatch follow independent authority checks.](../assets/transaction-command-recovery.svg)](../assets/transaction-command-recovery.svg)
+
+[Open the command/recovery diagram at full size](../assets/transaction-command-recovery.svg).
+
+This is the successful business-command path in the explicitly installed
+Development profile, not a workflow checkpoint or a claim of complete packaged
+qualification. Rejections and conflicts retain their own dispositions below.
+Reply delivery, effect completion and physical cleanup remain separate from
+the local durable commit.
+
 ```text
 authenticate/admit stable command and acquire one view
   -> execute/initialize within narrow authority and finite budgets

@@ -1,0 +1,151 @@
+name: TypeScript signed canonical borrow release
+
+on:
+  push:
+    branches: ['feat/typescript-borrow-release-probe-20261024', 'feat/typescript-accepted-close-20261025']
+    paths:
+      - '.github/workflows/typescript-borrow-signed.yml'
+      - 'tools/qualify_typescript_borrow_signed.py'
+      - 'tools/typescript_guest/borrow_*.py'
+      - 'tools/typescript_guest/borrow_probe.mjs'
+      - 'tools/typescript_guest/compiler.py'
+      - 'tools/typescript_guest/runtime_profile.py'
+      - 'tools/typescript_guest/componentize.mjs'
+      - 'tools/typescript_guest/async_waiters.mjs'
+      - 'tools/typescript_guest/node_net*.mjs'
+      - 'tools/typescript_guest/net_*.mjs'
+      - 'tools/typescript_guest/net_profile.py'
+      - 'tools/typescript_guest/build.py'
+      - 'tools/typescript_guest/bundle.mjs'
+      - 'tools/typescript_guest/import_cancellation.mjs'
+      - 'tools/java_phase_native_products.py'
+      - 'tools/guest_compatibility_context*.py'
+      - 'tools/guest_compatibility_outcomes.py'
+      - 'tools/tests/test_typescript_node_net.py'
+      - 'tools/tests/fixtures/typescript_node_net_generated.json'
+      - 'sdk/typescript-guest/runtime/net.d.ts'
+      - 'wit/platform/network/package.wit'
+      - 'sdk/typescript-guest/probes/node-net/**'
+      - 'tools/tests/test_typescript_native_carrier_scheduling.py'
+      - 'tools/tests/test_typescript_borrow*.py'
+      - 'sdk/typescript-guest/probes/borrow-release/**'
+      - 'crates/latent-wasmtime/src/backend.rs'
+      - 'crates/latent-wasmtime/src/containment.rs'
+      - 'crates/latent-wasmtime/src/lib.rs'
+      - 'crates/latent-wasmtime/src/development_trap_observer.rs'
+      - 'crates/latent-wasmtime/src/development_borrow_admission.rs'
+      - 'crates/latent-wasmtime/src/host.rs'
+      - 'crates/latent-wasmtime/src/host/runtime.rs'
+      - 'crates/latent-wasmtime/src/config.rs'
+      - 'crates/latent-wasmtime/src/config/engine.rs'
+      - 'crates/latent-wasmtime/src/config/profile.rs'
+      - 'crates/latent-wasmtime/tests/local_service/fixture.rs'
+      - 'crates/latent-wasmtime/tests/typescript_import_borrow_release*'
+      - 'crates/latent-wasmtime/tests/typescript_import_borrow_release/**'
+      - 'crates/latent-wasmtime/tests/local_service/packages.rs'
+      - 'crates/latent-wasmtime/tests/guest_sdk/package.rs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typescript-borrow-signed-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  signed-borrow:
+    name: One fresh component and six actual signed borrow activations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Start the aggregate setup and programme clock
+        run: python3 -c 'import os,time;open(os.environ["GITHUB_ENV"],"a").write("LSF_BORROW_SIGNED_STARTED_NS="+str(time.time_ns())+"\n")'
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-node@c1136b2d97fe79ef645e9508b2048a222f50a170 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        with:
+          version: 1.254.0
+      - name: Install locked Python controls and normal compiler isolation
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Fetch only the eventual immutable successful producer source
+        run: git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3
+      - name: Fetch the exact normal CLI producer source for the Socket programme
+        if: github.ref == 'refs/heads/feat/typescript-accepted-close-20261025'
+        run: git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
+      - name: Install the normal locked public compiler and pinned parser
+        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-borrow-signed-tools"
+      - name: Authenticate fresh prerequisites compile once and execute signed cases
+        if: github.ref == 'refs/heads/feat/typescript-borrow-release-probe-20261024'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/qualify_typescript_borrow_signed.py \
+            --tools "$RUNNER_TEMP/typescript-borrow-signed-tools" \
+            --inputs "$RUNNER_TEMP/typescript-borrow-signed-inputs" \
+            --output "$RUNNER_TEMP/typescript-borrow-signed"
+      - name: Build one normal Socket component and execute eight signed client cases
+        if: github.ref == 'refs/heads/feat/typescript-accepted-close-20261025'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/qualify_typescript_borrow_signed.py \
+            --programme node-net \
+            --tools "$RUNNER_TEMP/typescript-borrow-signed-tools" \
+            --inputs "$RUNNER_TEMP/typescript-borrow-signed-inputs" \
+            --prepared-native "$RUNNER_TEMP/typescript-node-net-native" \
+            --output "$RUNNER_TEMP/typescript-borrow-signed"
+      - name: Retain original input identities compiler observations signed cases and failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: typescript-borrow-signed-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/typescript-borrow-signed-inputs/ACQUIRED.json
+            ${{ runner.temp }}/typescript-borrow-signed-inputs/products/OWN-RESULTS.json
+            ${{ runner.temp }}/typescript-borrow-signed/*.json
+            ${{ runner.temp }}/typescript-borrow-signed/commands/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/BORROW-COMPILE.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/compiler-inputs.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/engine-qualification/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/src/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/wit/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.wasm
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.js
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.mjs
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/build/*.wit
+            ${{ runner.temp }}/typescript-node-net-native/*.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/src/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/wit/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/capsule-project.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/sdk-lock.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/*.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/*.wasm
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/generated-bindings.js
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/logs/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/typescript-node-net-service/wit/**
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/package.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/package-lock.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/npm-resolved.lock.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/latent.dependencies.json
+            ${{ runner.temp }}/typescript-borrow-signed/prepared/project/latent.dependencies.lock.json

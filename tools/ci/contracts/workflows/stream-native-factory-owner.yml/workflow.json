@@ -1,33 +1,46 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "stream-native-factory-owner-${{ github.ref }}"
-    },
-    "name": "Stream native factory descriptor ownership",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/stream-kernel-native-factory-owner-20261023"
-        ],
-        "paths": [
-          ".github/workflows/stream-native-factory-owner.yml",
-          "crates/latent-streams/**",
-          "crates/latent-capabilities/src/broker/pools/control.rs",
-          "tools/qualify_host_stream_native.py"
-        ]
-      },
-      "workflow_dispatch": null
-    },
-    "permissions": {
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "native-owner"
-  ],
-  "reviewReason": "Actual affine native factory descriptor ownership and real pending/ready constructor routing; add ten Linux descriptor/quarantine controls and seven source/collector controls. Preserve all original thirty stream cases and their witnesses; cardinality becomes forty. Normal constructor selection remains zero, production socket consumer NULL, full Linux/Root final-free unqualified.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/stream-native-factory-owner.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"stream-native-factory-owner-${{ github.ref }}"
+},
+"name":"Stream native factory descriptor ownership",
+"on":{
+"push":{
+"branches":[
+"feat/stream-kernel-native-factory-owner-20261023",
+"feat/kernel-native-constructor-vm-20261024",
+"feat/kernel-native-close-20261024"
+],
+"paths":[
+".github/workflows/stream-native-factory-owner.yml",
+"crates/latent-streams/**",
+"crates/latent-capabilities/src/broker/pools/control.rs",
+"crates/latent-capabilities/src/broker/pools.rs",
+"crates/latent-capabilities/src/broker/pools/tests.rs",
+"crates/latent-capabilities/src/broker/pools/tests/close_observation.rs",
+"tools/qualify_host_stream_native.py",
+"tools/qualify_host_stream_kernel_native_vm.py",
+"tools/host_stream_kernel_native_vm.py",
+"tools/host_stream_kernel_native_vm_inputs.py",
+"tools/tests/test_kernel_native_constructor_vm.py",
+"tools/ci/suites.json",
+"tools/ci/suites.d/outbound-streams.json",
+"research/standard-outbound/linux-6.12-lineage/native-constructor-vm-init.c"
+]
+},
+"workflow_dispatch":null
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"native-kernel-vm",
+"native-owner"
+],
+"reviewReason":"Preserve prior owner commands and exact case obligations; require the fixed CLOSE observation, held receipt charge and original native/quarantine boundaries on closed qualification branches. Add no production gate, refund or ignored case.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/stream-native-factory-owner.yml"
 }

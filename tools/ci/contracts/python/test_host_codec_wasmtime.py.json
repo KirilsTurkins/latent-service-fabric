@@ -1,166 +1,31 @@
-{
-  "cases": [
-    "PinnedWasmtimeSource.test_actual_linear_allocator_notifications_cannot_be_substituted",
-    "PinnedWasmtimeSource.test_actual_table_hook_sources_and_new_cohort_require_exact_postimages",
-    "PinnedWasmtimeSource.test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph",
-    "PinnedWasmtimeSource.test_funcrefs_stable_arena_and_directory_sources_cannot_be_substituted",
-    "PinnedWasmtimeSource.test_native_inventory_retains_original_license_and_distinct_fork_provenance",
-    "PinnedWasmtimeSource.test_original_patched_added_metadata_extra_and_missing_vendor_bytes_are_refused",
-    "PinnedWasmtimeSource.test_owned_context_reply_lowering_requires_exact_guard_and_public_entrypoint_sources",
-    "PinnedWasmtimeSource.test_per_call_host_future_owner_requires_its_exact_source_postimage",
-    "PinnedWasmtimeSource.test_resource_substitution_map_and_escape_ownership_sources_cannot_be_substituted",
-    "PinnedWasmtimeSource.test_store_header_binding_and_guarded_buffer_postimages_cannot_be_substituted",
-    "PinnedWasmtimeSource.test_unregistered_local_dependency_cannot_reuse_the_wasmtime_alias",
-    "PinnedWasmtimeSource.test_workspace_selection_isolation_global_override_and_registry_lock_are_refused"
-  ],
-  "guards": {
-    "PinnedWasmtimeSource.test_actual_linear_allocator_notifications_cannot_be_substituted": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
-        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
-      ],
-      "skipSites": []
-    },
-    "PinnedWasmtimeSource.test_actual_table_hook_sources_and_new_cohort_require_exact_postimages": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
-        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
-      ],
-      "skipSites": []
-    },
-    "PinnedWasmtimeSource.test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
-        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
-      ],
-      "skipSites": []
-    },
-    "PinnedWasmtimeSource.test_funcrefs_stable_arena_and_directory_sources_cannot_be_substituted": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
-        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
-      ],
-      "skipSites": []
-    },
-    "PinnedWasmtimeSource.test_native_inventory_retains_original_license_and_distinct_fork_provenance": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
-        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
-      ],
-      "skipSites": []
-    },
-    "PinnedWasmtimeSource.test_original_patched_added_metadata_extra_and_missing_vendor_bytes_are_refused": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
-        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
-      ],
-      "skipSites": []
-    },
-    "PinnedWasmtimeSource.test_owned_context_reply_lowering_requires_exact_guard_and_public_entrypoint_sources": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
-        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
-      ],
-      "skipSites": []
-    },
-    "PinnedWasmtimeSource.test_per_call_host_future_owner_requires_its_exact_source_postimage": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
-        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
-      ],
-      "skipSites": []
-    },
-    "PinnedWasmtimeSource.test_resource_substitution_map_and_escape_ownership_sources_cannot_be_substituted": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
-        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
-      ],
-      "skipSites": []
-    },
-    "PinnedWasmtimeSource.test_store_header_binding_and_guarded_buffer_postimages_cannot_be_substituted": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
-        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
-      ],
-      "skipSites": []
-    },
-    "PinnedWasmtimeSource.test_unregistered_local_dependency_cannot_reuse_the_wasmtime_alias": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
-        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
-      ],
-      "skipSites": []
-    },
-    "PinnedWasmtimeSource.test_workspace_selection_isolation_global_override_and_registry_lock_are_refused": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c",
-        "class:setup-sha256:0a68a711ecd0cbf5db9e60af422b4c9e6f829672aca12dcb6ec28c67f6a32cce"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_host_codec_wasmtime.py",
-  "reviewReason": "Reviewed v9 appends five closed context reply ownership controls and two exact CLI native-thread audit projection controls after all121 prior selectors; original recipes/products/assertions/commands and prior Python guards retained.",
-  "schemaVersion": "latent.ci.contracts.v1"
-}
+{"schemaVersion":"latent.ci.contracts.v2","kind":"python","reviewReason":"Reviewed #736 buffered HTTP ingress and public same-Store canonical string view. Ten exact ordinary cases: six native original-session ingress controls, one unchanged preallocated API reference, two public canonical API encoding/Store controls and one unchanged installed managed HTTP case. Two locked test targets,24commands48raw; all original job/process/grant/log/source caps and old owner modes remain unchanged. No vendor-private unit, Blob, language or cache programme replay; parser/HeaderMap/redirect/TLS/control/transitive allocations remain explicit unpaid scopes. Source-only pending the bounded owning programme.","module":"tools/tests/test_host_codec_wasmtime.py","cases":["PinnedWasmtimeSource.test_actual_linear_allocator_notifications_cannot_be_substituted","PinnedWasmtimeSource.test_actual_table_hook_sources_and_new_cohort_require_exact_postimages","PinnedWasmtimeSource.test_cache_backport_complete_source_and_fixed_locks_are_required","PinnedWasmtimeSource.test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph","PinnedWasmtimeSource.test_funcrefs_stable_arena_and_directory_sources_cannot_be_substituted","PinnedWasmtimeSource.test_local_cache_inventory_retains_original_license_and_backport_identity","PinnedWasmtimeSource.test_native_inventory_retains_original_license_and_distinct_fork_provenance","PinnedWasmtimeSource.test_original_patched_added_metadata_extra_and_missing_vendor_bytes_are_refused","PinnedWasmtimeSource.test_owned_context_reply_lowering_requires_exact_guard_and_public_entrypoint_sources","PinnedWasmtimeSource.test_per_call_host_future_owner_requires_its_exact_source_postimage","PinnedWasmtimeSource.test_resource_substitution_map_and_escape_ownership_sources_cannot_be_substituted","PinnedWasmtimeSource.test_store_header_binding_and_guarded_buffer_postimages_cannot_be_substituted","PinnedWasmtimeSource.test_unregistered_local_dependency_cannot_reuse_the_wasmtime_alias","PinnedWasmtimeSource.test_workspace_selection_isolation_global_override_and_registry_lock_are_refused"],"guards":{"PinnedWasmtimeSource.test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_original_patched_added_metadata_extra_and_missing_vendor_bytes_are_refused":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_cache_backport_complete_source_and_fixed_locks_are_required":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_workspace_selection_isolation_global_override_and_registry_lock_are_refused":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_native_inventory_retains_original_license_and_distinct_fork_provenance":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_local_cache_inventory_retains_original_license_and_backport_identity":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_unregistered_local_dependency_cannot_reuse_the_wasmtime_alias":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_actual_table_hook_sources_and_new_cohort_require_exact_postimages":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_store_header_binding_and_guarded_buffer_postimages_cannot_be_substituted":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_funcrefs_stable_arena_and_directory_sources_cannot_be_substituted":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_resource_substitution_map_and_escape_ownership_sources_cannot_be_substituted":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_actual_linear_allocator_notifications_cannot_be_substituted":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_per_call_host_future_owner_requires_its_exact_source_postimage":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+,"PinnedWasmtimeSource.test_owned_context_reply_lowering_requires_exact_guard_and_public_entrypoint_sources":
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+},"guardDefinitions":{
+  "c9e90cd95ef07581e8f9520a03a2a7f7b4bc5c388c036293a531adf80f040fde"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:92c5f4a5c5c781beee8bd5890415806c52625826d4be661ca36cf3c41fb8527c","class:setup-sha256:f007939ecca73ebac6e94cc14d855106f111e46d7f3441097c480333da48732d"]}}}

@@ -1,6 +1,8 @@
 name: .NET guest qualification
 
 on:
+  push:
+    branches: [test/sdk-dotnet-root-return-20261027, test/sdk-dotnet-join-cause-20261027]
   pull_request:
     paths:
       - 'sdk/dotnet-guest/**'
@@ -97,13 +99,14 @@ env:
 
 jobs:
   toolchain:
+    if: github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' && github.head_ref != 'test/sdk-dotnet-root-return-20261027' && github.ref != 'refs/heads/test/sdk-dotnet-join-cause-20261027' && github.head_ref != 'test/sdk-dotnet-join-cause-20261027'
     name: NativeAOT component qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     env:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - name: Capture immutable qualification source inputs
@@ -115,7 +118,7 @@ jobs:
           test "$(stat --format=%s "$RUNNER_TEMP/dotnet-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/dotnet-guest-source.sha"
       - name: Retain the exact reviewed command contract input
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-guest-command-contract-${{ github.sha }}
           path: |
@@ -124,19 +127,19 @@ jobs:
             ${{ runner.temp }}/dotnet-guest-source.sha
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Test contract projection, output ownership and drift rejection
         run: python3 -m unittest discover -s sdk/dotnet-guest/tests -v
-      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
         with:
           dotnet-version: '10.0.100'
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           targets: wasm32-unknown-unknown
           components: rustfmt
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -147,7 +150,7 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Retain exact inputs and check the clock contract
@@ -245,6 +248,31 @@ jobs:
       - name: Qualify captured projects, all SDK owners, enforced node and printed guide
         run: |
           python3 tools/qualify_dotnet_capsules.py --output "$RUNNER_TEMP/dotnet-capsule-authoring" --tools "$RUNNER_TEMP/dotnet-authoring-tools"
+      - name: Export exact normal public products for the separate published task programme
+        run: >-
+          python3 tools/qualify_sdk_scratch.py --export-bundle --language dotnet
+          --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+          --output "$RUNNER_TEMP/dotnet-published-prepared"
+      - name: Retain identity-checked normal task prerequisites
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: dotnet-published-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-published-prepared/
+          if-no-files-found: error
+          retention-days: 3
+      - name: Export exact normal public products for the separate ordinary scratch programme
+        run: >-
+          python3 tools/qualify_sdk_scratch.py --export-bundle --language dotnet
+          --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+          --output "$RUNNER_TEMP/dotnet-scratch-prepared"
+      - name: Retain identity-checked normal task prerequisites
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: dotnet-scratch-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-scratch-prepared/
+          if-no-files-found: error
+          retention-days: 3
+
       - name: Qualify ordinary default HttpClient, JSON parsing, disposal and cancellation
         run: |
           python3 tools/qualify_dotnet_standard_http.py --output "$RUNNER_TEMP/dotnet-standard-http" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
@@ -277,71 +305,12 @@ jobs:
           python3 tools/qualify_dotnet_reflection_boundaries.py --prepared-qualification "$RUNNER_TEMP/dotnet-capsule-dependencies" --output "$RUNNER_TEMP/dotnet-reflection-boundaries" --tools "$RUNNER_TEMP/dotnet-authoring-tools"
       - name: Check real closed adapter synchronous types and exact core preservation
         run: python3 -B -m unittest tools.tests.test_dotnet_closed_io -v
-      - name: Qualify captured ordinary Console and strict bounded logging
-        run: |
-          python3 -m unittest tools.tests.test_dotnet_standard_console
-          python3 tools/qualify_dotnet_standard_console.py --output "$RUNNER_TEMP/dotnet-standard-console" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
-      - name: Check native PAL secure entropy behavior and explicit scalar authority
-        run: python3 -m unittest tools.tests.test_dotnet_secure_entropy -v
-      - name: Validate exact managed RNG derivation and private NativeAOT references
-        run: python3 -m unittest tools.tests.test_dotnet_managed_entropy -v
-      - name: Qualify captured ordinary RandomNumberGenerator and typed source denial
-        run: >-
-          python3 tools/qualify_dotnet_standard_entropy.py --output "$RUNNER_TEMP/dotnet-standard-entropy"
-          --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
-      - name: Check ordinary managed task authority and retirement gates
-        run: python3 -m unittest tools.tests.test_dotnet_task_runtime tools.tests.test_dotnet_task_wait -v
-      - name: Qualify captured default Task and ThreadPool progress without HTTP
-        run: >-
-          python3 tools/qualify_dotnet_task_runtime.py --output "$RUNNER_TEMP/dotnet-task-runtime"
-          --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
-      - name: Export exact normal public products for the separate published task programme
-        run: >-
-          python3 tools/qualify_sdk_scratch.py --export-bundle --language dotnet
-          --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
-          --output "$RUNNER_TEMP/dotnet-published-prepared"
-      - name: Retain identity-checked normal task prerequisites
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: dotnet-published-prepared-${{ github.sha }}
-          path: ${{ runner.temp }}/dotnet-published-prepared/
-          if-no-files-found: error
-          retention-days: 3
       - name: Retain output and failed attempts
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-guest-qualification-${{ github.sha }}
           path: |
-            ${{ runner.temp }}/dotnet-task-runtime/qualified.json
-            ${{ runner.temp }}/dotnet-task-runtime/FAILED.json
-            ${{ runner.temp }}/dotnet-task-runtime/logs/**
-            ${{ runner.temp }}/dotnet-task-runtime/outside/evidence/**
-            ${{ runner.temp }}/dotnet-task-runtime/build/*.json
-            ${{ runner.temp }}/dotnet-task-runtime/build/logs/**
-            ${{ runner.temp }}/dotnet-task-runtime/build/component.wasm
-            ${{ runner.temp }}/dotnet-task-runtime/node/workflow.json
-            ${{ runner.temp }}/dotnet-task-runtime/node/public-workflow.json
-            ${{ runner.temp }}/dotnet-task-runtime/node/FAILED.json
-            ${{ runner.temp }}/dotnet-standard-entropy/qualified.json
-            ${{ runner.temp }}/dotnet-standard-entropy/FAILED.json
-            ${{ runner.temp }}/dotnet-standard-entropy/logs/**
-            ${{ runner.temp }}/dotnet-standard-entropy/outside/evidence/**
-            ${{ runner.temp }}/dotnet-standard-entropy/build/BUILD-COMPLETE.json
-            ${{ runner.temp }}/dotnet-standard-entropy/build/BUILD-FAILED.json
-            ${{ runner.temp }}/dotnet-standard-entropy/build/build-observation.json
-            ${{ runner.temp }}/dotnet-standard-entropy/build/source-inputs.json
-            ${{ runner.temp }}/dotnet-standard-entropy/build/recipe-inputs.json
-            ${{ runner.temp }}/dotnet-standard-entropy/build/compiler-inputs.json
-            ${{ runner.temp }}/dotnet-standard-entropy/build/nuget-build-inputs.json
-            ${{ runner.temp }}/dotnet-standard-entropy/build/noncrypto-entropy*.json
-            ${{ runner.temp }}/dotnet-standard-entropy/build/managed-entropy*.json
-            ${{ runner.temp }}/dotnet-standard-entropy/build/noncrypto-entropy.o
-            ${{ runner.temp }}/dotnet-standard-entropy/build/compatibility*.json
-            ${{ runner.temp }}/dotnet-standard-entropy/build/component.wasm
-            ${{ runner.temp }}/dotnet-standard-entropy/build/logs/**
-            ${{ runner.temp }}/dotnet-standard-entropy/node/public-workflow.json
-            ${{ runner.temp }}/dotnet-standard-entropy/node/controls/dotnet-entropy-*.json
             ${{ runner.temp }}/dotnet-reflection-boundaries/qualification.json
             ${{ runner.temp }}/dotnet-reflection-boundaries/FAILED.json
             ${{ runner.temp }}/dotnet-reflection-boundaries/capture.json
@@ -355,22 +324,6 @@ jobs:
             ${{ runner.temp }}/dotnet-reflection-boundaries/build/compiler-containment.json
             ${{ runner.temp }}/dotnet-reflection-boundaries/node/workflow.json
             ${{ runner.temp }}/dotnet-reflection-boundaries/node/FAILED.json
-            ${{ runner.temp }}/dotnet-standard-console/qualified.json
-            ${{ runner.temp }}/dotnet-standard-console/FAILED.json
-            ${{ runner.temp }}/dotnet-standard-console/logs/**
-            ${{ runner.temp }}/dotnet-standard-console/outside/evidence/**
-            ${{ runner.temp }}/dotnet-standard-console/build/BUILD-COMPLETE.json
-            ${{ runner.temp }}/dotnet-standard-console/build/BUILD-FAILED.json
-            ${{ runner.temp }}/dotnet-standard-console/build/build-observation.json
-            ${{ runner.temp }}/dotnet-standard-console/build/source-inputs.json
-            ${{ runner.temp }}/dotnet-standard-console/build/recipe-inputs.json
-            ${{ runner.temp }}/dotnet-standard-console/build/compiler-inputs.json
-            ${{ runner.temp }}/dotnet-standard-console/build/nuget-build-inputs.json
-            ${{ runner.temp }}/dotnet-standard-console/build/compatibility*.json
-            ${{ runner.temp }}/dotnet-standard-console/build/component.wasm
-            ${{ runner.temp }}/dotnet-standard-console/build/logs/**
-            ${{ runner.temp }}/dotnet-standard-console/node/public-workflow.json
-            ${{ runner.temp }}/dotnet-standard-console/node/controls/dotnet-console-*.json
             ${{ runner.temp }}/dotnet-reflection/qualification.json
             ${{ runner.temp }}/dotnet-reflection/FAILED.json
             ${{ runner.temp }}/dotnet-reflection/capture.json
@@ -443,41 +396,28 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Export exact normal public products for the separate ordinary scratch programme
-        run: >-
-          python3 tools/qualify_sdk_scratch.py --export-bundle --language dotnet
-          --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
-          --output "$RUNNER_TEMP/dotnet-scratch-prepared"
-      - name: Retain identity-checked normal task prerequisites
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: dotnet-scratch-prepared-${{ github.sha }}
-          path: ${{ runner.temp }}/dotnet-scratch-prepared/
-          if-no-files-found: error
-          retention-days: 3
-
-  scratch-refusals:
-    name: Ordinary .NET filesystem refusals and fresh state
+  ordinary-runtime:
+    name: Ordinary Console RNG and Task qualification
     needs: toolchain
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
         with:
           dotnet-version: '10.0.100'
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           targets: wasm32-unknown-unknown
           components: rustfmt
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -488,11 +428,165 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Download this run's exact normal public products
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
+        with:
+          name: dotnet-published-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-capsule-authoring
+      - name: Install the existing qualification Python requirements
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Install captured NativeAOT namespace and loader inputs
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install the pinned native compiler and closed runtime
+        shell: bash
+        run: |
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-authoring-bindgen"
+          export PATH="$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH"
+          printf '%s\n' "$RUNNER_TEMP/dotnet-authoring-bindgen" >> "$GITHUB_PATH"
+          python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Authenticate normal products before restoring exact executable modes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          from tools.qualify_dotnet_standard_console import inherited
+          root = Path(os.environ['RUNNER_TEMP']) / 'dotnet-capsule-authoring'
+          binaries, companions, before = inherited(root)
+          names = ('latent', 'latentd', 'package', 'capsule_contracts', 'capsule_authoring')
+          if set(binaries) != set(names):
+              raise RuntimeError('dotnet-late-normal-native-products')
+          for name in names:
+              binaries[name].chmod(0o700)
+          if inherited(root)[2] != before:
+              raise RuntimeError('dotnet-late-normal-native-changed')
+          PY
+      - name: Qualify captured ordinary Console and strict bounded logging
+        run: |
+          python3 -m unittest tools.tests.test_dotnet_standard_console
+          python3 tools/qualify_dotnet_standard_console.py --output "$RUNNER_TEMP/dotnet-standard-console" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+      - name: Check native PAL secure entropy behavior and explicit scalar authority
+        run: python3 -m unittest tools.tests.test_dotnet_secure_entropy -v
+      - name: Validate exact managed RNG derivation and private NativeAOT references
+        run: python3 -m unittest tools.tests.test_dotnet_managed_entropy -v
+      - name: Qualify captured ordinary RandomNumberGenerator and typed source denial
+        run: >-
+          python3 tools/qualify_dotnet_standard_entropy.py --output "$RUNNER_TEMP/dotnet-standard-entropy"
+          --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+      - name: Check ordinary managed task authority and retirement gates
+        run: python3 -m unittest tools.tests.test_dotnet_task_runtime tools.tests.test_dotnet_task_wait -v
+      - name: Qualify captured default Task and ThreadPool progress without HTTP
+        run: >-
+          python3 tools/qualify_dotnet_task_runtime.py --output "$RUNNER_TEMP/dotnet-task-runtime"
+          --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
+      - name: Retain ordinary Console RNG and Task observations including failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: dotnet-ordinary-runtime-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/dotnet-task-runtime/qualified.json
+            ${{ runner.temp }}/dotnet-task-runtime/FAILED.json
+            ${{ runner.temp }}/dotnet-task-runtime/logs/**
+            ${{ runner.temp }}/dotnet-task-runtime/outside/evidence/**
+            ${{ runner.temp }}/dotnet-task-runtime/build/*.json
+            ${{ runner.temp }}/dotnet-task-runtime/build/logs/**
+            ${{ runner.temp }}/dotnet-task-runtime/build/component.wasm
+            ${{ runner.temp }}/dotnet-task-runtime/node/workflow.json
+            ${{ runner.temp }}/dotnet-task-runtime/node/public-workflow.json
+            ${{ runner.temp }}/dotnet-task-runtime/node/FAILED.json
+            ${{ runner.temp }}/dotnet-standard-entropy/qualified.json
+            ${{ runner.temp }}/dotnet-standard-entropy/FAILED.json
+            ${{ runner.temp }}/dotnet-standard-entropy/logs/**
+            ${{ runner.temp }}/dotnet-standard-entropy/outside/evidence/**
+            ${{ runner.temp }}/dotnet-standard-entropy/build/BUILD-COMPLETE.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/BUILD-FAILED.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/build-observation.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/source-inputs.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/recipe-inputs.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/compiler-inputs.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/nuget-build-inputs.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/noncrypto-entropy*.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/managed-entropy*.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/noncrypto-entropy.o
+            ${{ runner.temp }}/dotnet-standard-entropy/build/compatibility*.json
+            ${{ runner.temp }}/dotnet-standard-entropy/build/component.wasm
+            ${{ runner.temp }}/dotnet-standard-entropy/build/logs/**
+            ${{ runner.temp }}/dotnet-standard-entropy/node/public-workflow.json
+            ${{ runner.temp }}/dotnet-standard-entropy/node/controls/dotnet-entropy-*.json
+            ${{ runner.temp }}/dotnet-standard-console/qualified.json
+            ${{ runner.temp }}/dotnet-standard-console/FAILED.json
+            ${{ runner.temp }}/dotnet-standard-console/logs/**
+            ${{ runner.temp }}/dotnet-standard-console/outside/evidence/**
+            ${{ runner.temp }}/dotnet-standard-console/build/BUILD-COMPLETE.json
+            ${{ runner.temp }}/dotnet-standard-console/build/BUILD-FAILED.json
+            ${{ runner.temp }}/dotnet-standard-console/build/build-observation.json
+            ${{ runner.temp }}/dotnet-standard-console/build/source-inputs.json
+            ${{ runner.temp }}/dotnet-standard-console/build/recipe-inputs.json
+            ${{ runner.temp }}/dotnet-standard-console/build/compiler-inputs.json
+            ${{ runner.temp }}/dotnet-standard-console/build/nuget-build-inputs.json
+            ${{ runner.temp }}/dotnet-standard-console/build/compatibility*.json
+            ${{ runner.temp }}/dotnet-standard-console/build/component.wasm
+            ${{ runner.temp }}/dotnet-standard-console/build/logs/**
+            ${{ runner.temp }}/dotnet-standard-console/node/public-workflow.json
+            ${{ runner.temp }}/dotnet-standard-console/node/controls/dotnet-console-*.json
+            ${{ runner.temp }}/dotnet-authoring-tools/logs/*.stdout.txt
+            ${{ runner.temp }}/dotnet-authoring-tools/logs/*.stderr.txt
+            ${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json
+            ${{ runner.temp }}/dotnet-authoring-tools/runtime-inputs.json
+            ${{ runner.temp }}/dotnet-authoring-tools/wasi-sdk.json
+          if-no-files-found: error
+          retention-days: 7
+
+  scratch-refusals:
+    name: Ordinary .NET filesystem refusals and fresh state
+    needs: toolchain
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
+        with:
+          dotnet-version: '10.0.100'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        with:
+          version: 1.254.0
+      - name: Download this run's exact normal public products
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-scratch-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/dotnet-scratch-prepared
@@ -537,7 +631,7 @@ jobs:
           --output "$RUNNER_TEMP/dotnet-closed-filesystem"
       - name: Retain bounded filesystem observations including failures
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-scratch-refusals-${{ github.sha }}
           path: |
@@ -577,20 +671,20 @@ jobs:
     env:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
         with:
           dotnet-version: '10.0.100'
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           targets: wasm32-unknown-unknown
           components: rustfmt
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -601,11 +695,11 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Download this run's exact normal public products
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-published-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/dotnet-published-prepared
@@ -639,7 +733,7 @@ jobs:
           --output "$RUNNER_TEMP/dotnet-published-tasks"
       - name: Retain bounded published task observations including failures
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-published-tasks-${{ github.sha }}
           path: |
@@ -659,3 +753,129 @@ jobs:
             ${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json
           if-no-files-found: warn
           retention-days: 3
+
+  root-return:
+    name: ${{ github.ref == 'refs/heads/test/sdk-dotnet-join-cause-20261027' && 'Auxiliary managed Join cause before unchanged finalization' || 'Normal managed accepted work after application root return' }}
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027' || github.ref == 'refs/heads/test/sdk-dotnet-join-cause-20261027')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      RUSTUP_TOOLCHAIN: '1.97.1'
+      RUSTUP_AUTO_INSTALL: '0'
+    steps:
+      - name: Establish the one original 1320-second programme deadline
+        timeout-minutes: 1
+        shell: bash
+        run: python3 -c 'import os,time; open(os.environ["GITHUB_ENV"],"a").write("LSF_ROOT_RETURN_DEADLINE="+str(time.monotonic()+1320)+"\n")'
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
+        timeout-minutes: 2
+        with:
+          dotnet-version: '10.0.100'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        timeout-minutes: 2
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          version: 1.254.0
+      - name: Acquire the fixed same-core normal products without rebuilding them
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          timeout 90s gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12731925685/zip > "$RUNNER_TEMP/root-return-normal.zip"
+          test "$(stat --format=%s "$RUNNER_TEMP/root-return-normal.zip")" = 76670714
+          printf '%s  %s\n' eab2202cc3522f225624a771bc446c26af3a422ae201abae0784bb3c38a0582e "$RUNNER_TEMP/root-return-normal.zip" | sha256sum --check --strict
+      - name: Install the existing locked Python parser dependencies
+        timeout-minutes: 1
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Check only the new closed normal observer and programme controls
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
+        timeout-minutes: 1
+        run: python3 -B -m unittest tools.tests.test_dotnet_task_runtime.RootReturnNormalControls -v
+      - name: Install captured NativeAOT namespace and loader inputs
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
+        timeout-minutes: 2
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install the pinned native compiler and closed runtime
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-authoring-bindgen"
+          export PATH="$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH"
+          printf '%s\n' "$RUNNER_TEMP/dotnet-authoring-bindgen" >> "$GITHUB_PATH"
+          python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Compile one normal component and execute eleven root cases plus four grant denials
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
+        timeout-minutes: 22
+        run: >-
+          python3 tools/qualify_dotnet_task_runtime.py --root-return
+          --prerequisite-archive "$RUNNER_TEMP/root-return-normal.zip"
+          --tools "$RUNNER_TEMP/dotnet-authoring-tools"
+          --output "$RUNNER_TEMP/dotnet-root-return"
+      - name: Acquire the exact completed component pair without rebuilding either
+        if: github.ref == 'refs/heads/test/sdk-dotnet-join-cause-20261027'
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          timeout 90s gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12759125468/zip > "$RUNNER_TEMP/join-cause-replay.zip"
+          test "$(stat --format=%s "$RUNNER_TEMP/join-cause-replay.zip")" = 15120874
+          printf '%s  %s\n' f542e7493f4b212edc17c06d94a2f2e0a913670b1480a7e062fbeb535091f714 "$RUNNER_TEMP/join-cause-replay.zip" | sha256sum --check --strict
+      - name: Build only current local_service and execute the six retained-component signed calls
+        if: github.ref == 'refs/heads/test/sdk-dotnet-join-cause-20261027'
+        timeout-minutes: 22
+        run: >-
+          python3 tools/qualify_dotnet_task_runtime.py --join-cause-replay
+          --source-commit "${{ github.sha }}"
+          --replay-archive "$RUNNER_TEMP/join-cause-replay.zip"
+          --output "$RUNNER_TEMP/dotnet-root-return"
+      - name: Retain admitted actual helper and results including failures
+        timeout-minutes: 2
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: dotnet-root-return-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-root-return/public/**
+          if-no-files-found: warn
+          retention-days: 7

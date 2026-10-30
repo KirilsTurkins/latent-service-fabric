@@ -122,6 +122,108 @@ impl Setup {
             .unwrap();
         (session, control)
     }
+    pub fn native_session_for(
+        &self,
+        provider: &InstalledProvider,
+        tenant: &str,
+        id: &str,
+    ) -> (CapabilitySession, Control) {
+        let (mut request, mut control) = self.fixture.request(id);
+        let publication = if tenant == "a" {
+            self.fixture.publication.clone()
+        } else {
+            let receipt = publish(&self.fixture.catalog, tenant, tenant);
+            let publication = self
+                .fixture
+                .catalog
+                .execution_eligibility_selected(
+                    &receipt.operation.record.as_ref().unwrap().release,
+                    Some(&receipt.publication.id),
+                )
+                .unwrap()
+                .unwrap();
+            let digest = format!("sha256:{}", "2".repeat(64));
+            let policy = json!({"formatVersion":1,"tenant":tenant,"rules":[{
+                "id":"allow","effect":"allow","principals":[{"kind":"user","subject":"alice"}],
+                "services":["echo"],"publications":[publication.publication().as_str()],"capability":CAP,
+                "operations":["read"],"resources":{"kind":"secrets","references":["test-key"]},
+                "ceiling":{"operations":4,"inputBytes":128,"outputBytes":256,"wallTimeMillis":5000}}]});
+            let binding = json!({"formatVersion":1,"tenant":tenant,"capability":CAP,"providerProfile":"local-secrets-v1",
+                "configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}});
+            for (name, kind, value) in [
+                ("p", RecordKind::Policy, policy),
+                ("binding", RecordKind::ProviderBinding, binding),
+            ] {
+                let bytes = serde_json::to_vec(&value).unwrap();
+                self.fixture
+                    .policies
+                    .mutate(
+                        MutationRequest {
+                            tenant,
+                            actor: "operator",
+                            id: name,
+                            kind,
+                            operation_id: name,
+                            expected_revision: 0,
+                            document: Some(&bytes),
+                        },
+                        Instant::now() + Duration::from_secs(1),
+                        |_| Ok(()),
+                    )
+                    .unwrap();
+            }
+            publication
+        };
+        let mut revision = self.fixture.revision.clone();
+        revision.target.tenant = latent_core::TenantId(tenant.into());
+        revision.target.contract = latent_core::ContractId(format!("{tenant}:echo/api@0.1.0"));
+        revision.publication = Some(publication.publication().clone());
+        revision.release = publication.release().clone();
+        request.activation.principal.tenant = Some(revision.target.tenant.clone());
+        request.activation.target = revision.target.clone();
+        request.activation.resolved_revision = Some(revision.clone());
+        request
+            .prepared
+            .key
+            .publication
+            .clone_from(&revision.publication);
+        request.prepared.key.release = revision.release.clone();
+        let plan = self
+            .fixture
+            .broker
+            .compile_plan(
+                &revision,
+                &[CapabilityBindingSpec {
+                    definition_digest: None,
+                    provider: &provider.reference(),
+                    imported_operations: &["read".into()],
+                    policy_ids: &["p".into()],
+                    provider_binding_id: "binding",
+                    deployment_restriction_json: br#"{"operations":[]}"#,
+                }],
+                &publication,
+                Instant::now() + Duration::from_secs(1),
+            )
+            .unwrap();
+        let profile = latent_core::BudgetProfile::Phase3;
+        let grant = latent_core::EffectiveActivationBudget::admit_profile_at(
+            profile,
+            &request.budget,
+            &request.budget,
+            &request.budget,
+            None,
+            latent_core::ClockSample::system_now(),
+        )
+        .unwrap();
+        control.budget = latent_core::ActivationBudget::with_profile(grant, profile).unwrap();
+        request.activation.deadline_unix_millis = control.budget.deadline().unix_millis();
+        let session = self
+            .fixture
+            .broker
+            .open_session(plan, &request, &control, &publication)
+            .unwrap();
+        (session, control)
+    }
     pub async fn call(&self, session: &CapabilitySession) -> PoolCall {
         start(&self.pools, &self.client, session).await
     }

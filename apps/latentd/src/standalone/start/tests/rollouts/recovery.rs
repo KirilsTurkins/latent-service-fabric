@@ -194,10 +194,9 @@ async fn disabled_rollouts_reconcile_existing_history_without_exposing_the_servi
         .wait()
         .await
         .unwrap();
-    let (records, _, _, lease) = page.into_parts();
+    let records = page.records();
     assert!(records.iter().any(|record| matches!(&record.data,AuditRecordData::Outcome{conclusion,..} if conclusion.result == AuditOperationResult::Committed)));
-    drop(records);
-    drop(lease);
+    drop(page);
     let status = reopened
         .deployments
         .get_rollout(&TenantId("tests".into()), &RolloutId("retained".into()))

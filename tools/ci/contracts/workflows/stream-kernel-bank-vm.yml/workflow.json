@@ -1,0 +1,35 @@
+{
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"stream-kernel-bank-vm-${{ github.ref }}"
+},
+"name":"Authenticated fixed kernel bank reclamation",
+"on":{
+"push":{
+"branches":[
+"feat/kernel-bank-reclamation-20261025"
+],
+"paths":[
+".github/workflows/stream-kernel-bank-vm.yml",
+"crates/latent-streams/**",
+"crates/latent-stream-factory-native/**",
+"crates/latent-capabilities/src/broker/pools/**",
+"tools/*host_stream_kernel*",
+"tools/tests/test_kernel_bank_reclamation_vm.py",
+"tools/ci/suites.d/kernel-bank-reclamation-vm.json"
+]
+}
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"fixed-bank"
+],
+"reviewReason":"Add a fixed bank consumer with immutable successful observation-kernel reuse; preserve every prior workflow and gate.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/stream-kernel-bank-vm.yml"
+}

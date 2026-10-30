@@ -453,3 +453,161 @@ checks pass; the unchanged documentation validator reaches its original
 
 A fresh full build and signed normal execution remain required. The source
 repair does not explain the earlier mode-0 trap or complete #741.
+
+
+## Compiler diagnostics and measured construction
+
+These historical observations retain the source, limits and completion status of
+each cited run. Later measurements do not turn an earlier failure into a pass.
+
+The [normal checkpoint compiler repair evidence](../testing/java-checkpoint-normal-source-evidence.json)
+binds the original and corrected JVM controls and the actual CTarget build.
+The pinned private `Fiber.start()` baseline now receives TeaVM's original
+reference-resolution and class-initialization passes before exact comparison;
+unknown instructions and changed class identities still refuse. The actual
+normal authoring build passed CTarget generation and core compilation, then
+refused component assembly at the unchanged function-body size limit of
+7,654,321 bytes. A later [retained normal build](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40097935402)
+identified `meth_dla_Capsule_pools` at 15,264,587 bytes; the closed runtime adapter
+had no oversized function. These are compiler boundary results, not Java runtime,
+GC, signed-execution or complete standard-library qualification.
+
+For this exact public source/WIT only, a failed component assembly also attempts
+to retain its generated `c/d/l/a/Capsule.c` Clang input under an independent
+4-MiB ceiling. `generated-c.json` records its identity or a closed unavailable
+status. Missing, oversized or unsafe C never removes the two existing bounded
+Wasm captures or changes the original compiler failure. This separates the
+available C input from final Wasm growth without accepting an oversized function.
+The existing Java authoring workflow's default-false `public_fiber_assembly`
+manual selector runs only the original public fiber preparation command and its
+JDK/compiler controls; it refuses combinations with either other optional mode
+before acquisition. Default authoring CI coverage remains intact. This path
+provides compiler evidence, not component execution or runtime qualification.
+
+The compiler retains the current development defaults: TeaVM C `FULL` and
+Clang `-O2`. Earlier [BALANCED](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40101238993)
+and [activation `Oz`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40109009991)
+experiments did not repair the size boundary: the same public `pools` body was
+13,993,280 and 14,367,528 bytes respectively. Those policy and provenance-value
+experiments are withdrawn. Their failed histories remain separately attributed;
+the retained capture programme does not establish a compiler or runtime fix.
+
+Only that manual public-fiber job additionally selects `--observe-public-wineh`.
+The optional observer snapshots the admitted generated C, headers, bindings,
+SDK, tools and the maintained observer/filter/qualifier files before the unchanged
+normal Clang command. After an authenticated
+component-assembly failure, it rechecks those inputs and the original command
+receipt, then requests LLVM's before/after `win-eh-prepare` prints for only
+`meth_dla_Capsule_pools`, using a separate output path. A sealed fixed-public
+ticket permits only that exact Clang command, environment and working directory.
+The private count-only filter launches it in the existing owner's process group;
+the original owner still accounts every compiler/linker descendant before a
+summary is returned. Existing process owners, the 600-second outer command bound,
+35-minute job and 80-MiB defensive capture ceiling remain unchanged.
+
+The filter streams at most **256 MiB of combined raw compiler output** through
+the same incremental parser and hashes, without a raw IR file or full buffer.
+This is a separate diagnostic transit budget. Each line is limited to 256 KiB
+before UTF-8 decoding; fixed counters and at most 16 KiB of scalar samples are
+retained. Only a summary of at most 64 KiB reaches the outer capture. The parent
+rechecks identities after owned cleanup, including incomplete summaries.
+`component-inputs/public-wineh.json` cannot report observed unless the child
+exits successfully, both pipes reach EOF, both exact prints complete and the
+postchecks pass. Raw IR, the ticket and diagnostic Wasm are not uploaded. Missing
+or changed inputs, overflow, unknown syntax and incomplete output fail closed;
+an earlier failure is not applicable. Original compiler output, exception and
+the 16-MiB normal log cap remain unchanged; no automatic retry is selected.
+
+The [first attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40117757282)
+refused TeaVM's actual `@`-escaped header names before replay. The private reader
+correction retains the original inventory bounds and global Rust path rules.
+The [corrective attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40120265783)
+reached real replay but exceeded the then-used 80-MiB full-buffer cap. Both are
+failed/incomplete historical observations; no counters or pass attribution were
+retained. The [count-only run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40125799067)
+completed both prints and owned cleanup, with unchanged postchecks. It observed
+140,717,621 bytes of compiler stderr, no stdout, and a zero compiler exit. All ten
+hosted source controls passed. Its original module remains byte-identical to the
+historical `FULL`/`-O2` failure, and component assembly still refuses the oversized
+15,264,587-byte public `pools` body at the unchanged parser limit.
+
+For that one function, the pass changed these complete IR counts:
+
+| Counter | Before WinEH preparation | After | Change |
+| --- | ---: | ---: | ---: |
+| Instructions | 231,750 | 1,913,670 | +1,681,920 |
+| PHIs | 216,215 | 214,755 | -1,460 |
+| PHI incoming edges | 2,574,479 | 894,019 | -1,680,460 |
+| Stores | 5,405 | 1,685,865 | +1,680,460 |
+| Allocas | 190 | 1,650 | +1,460 |
+| Volatile stores | 2,586 | 2,586 | 0 |
+| Volatile loads | 2,145 | 2,145 | 0 |
+
+The matching removed PHI incoming edges and added stores identify substantial
+expansion during WinEH preparation. The volatile counts did not grow across
+this pass. This measurement does not establish an exclusive end-to-end cause,
+a safe compiler repair or Java execution qualification. The
+[retained evidence](../evidence/java-public-wineh-ea252/receipt.json) binds the
+source, original module, commands, finite limits and complete scalar counts.
+
+A subsequent [selected-fiber `-O0` attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40129296830)
+used identical generated C and changed only the Clang optimization argument.
+Its ten hosted source controls passed, but component assembly still refused
+`pools`: 9,904,105 bytes at `0x1b343`, above the unchanged 7,654,321-byte limit.
+WinEH preparation added 638,994 stores (379 PHIs times 1,686 invoke sites);
+volatile counts again stayed unchanged across that pass. The smaller expansion
+did not establish a compiler repair. The candidate `O0` policy, provenance enum
+and added candidate test are withdrawn; the original `FULL`/`-O2` compiler and
+`O2`-only Java provenance validation remain intact. The [failed-attempt receipt](../evidence/java-fiber-o0-a464/receipt.json)
+binds its historical source and actual failure. No runtime qualification or
+additional compiler trial follows from this measurement.
+
+[The 25 October compiler evidence](../testing/evidence/java-private-scalar-compiler-2026-10-25.json)
+records one authenticated compiler build with 9 SSA controls and 15 LLVM lit
+cases, followed by the unchanged public Java/WIT programme. TeaVM remains at
+`FULL`, Clang at `-O2`, with native EH/SjLj, 64 KiB stack and 64 MiB maximum
+memory. Its generated C remains 733,980 bytes with the original digest and
+650-file inventory. The largest core function, `meth_dla_Capsule_pools`, fell
+from 15,264,587 to 6,133,668 bytes, below the unchanged 7,654,321-byte parser
+limit. Normal component construction and validation passed. The raw result
+remains `component-built-unqualified`; that compiler-only run did not execute
+a Java component. Runtime execution is recorded separately below.
+
+A separate data-only check used the existing packer and installer on the exact
+compiler subproduct: 10,154 SDK files plus 13 provenance files, 771,176,565 bytes
+in total. Both complete inventory identities matched, including link
+flattening. Normal compiler admission also passed from the isolated installed
+recipe without site packages. The selected `clang-21` driver bytes and command
+construction matched the actual public compilation. This check executed no
+Clang command and did not assemble or qualify an entire native SDK/frontend.
+Actions artifacts are expiring builder inputs; the sealed normal distribution
+contains the compiler bytes and provenance rather than relying on an evergreen
+Actions URL. Full runtime, GC, hostile-input, cost and ownership acceptance
+remains open.
+
+
+
+## Retained public fibers through the normal signed node
+
+[The 26 October runtime evidence](../testing/evidence/java-retained-fibers-runtime-2026-10-26.json)
+records twelve fresh activations of that exact retained 10,282,099-byte public
+component: three iterations of all four original modes. A source-matched native
+v11 `local_service` harness was built once; Java, LLVM and the component were
+not rebuilt. The existing package, signing, catalog admission and activation
+manager path returned `[42]` for every call, with twelve distinct requested and
+actual activation IDs. The actual cumulative Store counter advanced from zero
+to twelve. All seven sampled Store/reservation/broker counters were zero after
+each call; the original broader `Fixture::idle` assertions also remained active.
+
+The original ceiling stayed at 10 billion fuel, 64 MiB and 120 seconds per
+activation, one cell and zero outbound requests, with Task5/Executor3/Queue8/
+Wait8/Timer2/Result8/Native2. Actual fuel was 5,708,210 to 10,186,665 and maximum
+reported peak memory was 9,549,999 bytes. Preparation took about 55.6 seconds;
+the 65.5-second selected test process includes that setup. All three pure
+input/origin/observation controls and all five owned commands passed.
+
+The original compiler receipt remains unchanged; this separate runtime receipt
+binds source `9f4d763b5b4eda8f6e9c62f70bf03175487c4dca` and its raw twelve rows.
+It qualifies this finite public fixture, not the full Java concurrency profile,
+GC/accounting matrix, published worker/timer library requirement or separately
+gated standard socket/DNS/stream integration. Issue #741 remains open.

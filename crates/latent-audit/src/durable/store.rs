@@ -1,4 +1,5 @@
 mod io;
+pub(super) mod lifecycle;
 mod query;
 use super::{
     capacity, codec, corrupt,
@@ -9,6 +10,7 @@ use super::{
     },
     AuditLimits, Result,
 };
+use latent_core::node_metadata::NodeMetadataLease;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
 
@@ -22,7 +24,7 @@ struct Head {
     bytes: usize,
     last_digest: String,
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Mode {
     format_version: u32,
@@ -30,6 +32,12 @@ struct Mode {
     retention: String,
     initialized: bool,
     sessions: u64,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    lineage: Option<lifecycle::EpochLink>,
 }
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -51,20 +59,34 @@ pub(super) struct Entry {
 pub(super) struct Store {
     root: io::Root,
     head: Head,
+    first_sequence: u64,
+    seed_digest: String,
     entries: Vec<Entry>,
     pub limits: AuditLimits,
     pub pending: Option<AuditPendingAttempt>,
     pub unknown: u64,
     pub unhealthy: bool,
     pub previous_session_loss_unknown: bool,
+    // Actual entries, captured pending record, path and filesystem owner drop first.
+    _native: NodeMetadataLease,
 }
 impl Store {
+    #[cfg(test)]
     pub fn open(path: &Path, limits: AuditLimits) -> Result<Self> {
+        Self::open_with_metadata(path, limits, NodeMetadataLease::default(), false)
+    }
+    pub(super) fn open_with_metadata(
+        path: &Path,
+        limits: AuditLimits,
+        native: NodeMetadataLease,
+        funded: bool,
+    ) -> Result<Self> {
         let limits = limits.validate()?;
         if limits.maximum_metadata_bytes < 128 * 1024 + limits.maximum_records * 1536 {
             return Err(capacity());
         }
         let root = io::root(path)?;
+        lifecycle::guard_open(&root)?;
         let allowed = [
             ".audit.lock",
             "MODE",
@@ -74,9 +96,11 @@ impl Store {
             "INTENT",
             "INTENT.next",
             "record.next",
+            "ROLLOVER.next",
+            "TRANSFER.next",
             "records",
         ];
-        let names = io::names(&root.path, 10)?;
+        let names = io::names(&root.path, 12)?;
         if names.iter().any(|s| !allowed.contains(&s.as_str())) {
             return Err(corrupt());
         }
@@ -102,16 +126,12 @@ impl Store {
                 retention: "reject-new".into(),
                 initialized: false,
                 sessions: 0,
+                lineage: None,
             };
             io::atomic(&mode_path, &codec::encode(&mode, 1024)?)?;
             mode
         };
-        if mode.format_version != 1
-            || mode.retention != "reject-new"
-            || !codec::hex(&mode.epoch, 32)
-        {
-            return Err(corrupt());
-        }
+        let (first_sequence, seed_digest, unknown) = lifecycle::epoch_state(&mode)?;
         let initial = Head {
             format_version: 1,
             epoch: mode.epoch.clone(),
@@ -147,14 +167,23 @@ impl Store {
         let mut store = Self {
             root,
             head,
-            entries: Vec::new(),
+            first_sequence,
+            seed_digest,
+            entries: if funded {
+                Vec::with_capacity(limits.maximum_records)
+            } else {
+                Vec::new()
+            },
             limits,
             pending: None,
-            unknown: 0,
+            unknown,
             unhealthy: false,
-            previous_session_loss_unknown: mode.sessions > 0,
+            previous_session_loss_unknown: mode.sessions > 0 || mode.lineage.is_some(),
+            _native: native,
         };
         store.scan()?;
+        io::remove(&store.root.path.join("ROLLOVER.next"), 16384)?;
+        io::remove(&store.root.path.join("TRANSFER.next"), 16384)?;
         mode.initialized = true;
         mode.sessions = mode.sessions.checked_add(1).ok_or_else(corrupt)?;
         io::atomic(&mode_path, &codec::encode(&mode, 1024)?)?;
@@ -164,20 +193,29 @@ impl Store {
         (self.head.records, self.head.bytes, self.head.next_sequence)
     }
     fn scan(&mut self) -> Result<()> {
+        self.scan_with_deadline(None)
+    }
+    fn scan_with_deadline(&mut self, deadline: Option<std::time::Instant>) -> Result<()> {
+        check_scan_deadline(deadline)?;
         let names = io::names(&self.root.path.join("records"), self.limits.maximum_records)?;
         if names.len() != self.head.records
-            || self.head.next_sequence != names.len() as u64 + 1
+            || self.first_sequence.checked_add(names.len() as u64) != Some(self.head.next_sequence)
             || self.head.bytes > self.limits.maximum_disk_bytes
         {
             return Err(corrupt());
         }
-        let mut previous = "0".repeat(64);
+        let mut previous = self.seed_digest.clone();
         let mut total = 0usize;
         self.entries
             .try_reserve_exact(names.len())
             .map_err(|_| capacity())?;
         for (i, name) in names.iter().enumerate() {
-            if name != &filename(i as u64 + 1) {
+            check_scan_deadline(deadline)?;
+            let sequence = self
+                .first_sequence
+                .checked_add(i as u64)
+                .ok_or_else(corrupt)?;
+            if name != &filename(sequence) {
                 return Err(corrupt());
             }
             let bytes = io::read(
@@ -192,7 +230,7 @@ impl Store {
                 codec::decode(&bytes, self.limits.maximum_record_bytes)?;
             codec::record(&record)?;
             if record.epoch != self.head.epoch
-                || record.sequence != i as u64 + 1
+                || record.sequence != sequence
                 || record.previous_digest != previous
                 || codec::encode(&record, self.limits.maximum_record_bytes)?.as_slice() != bytes
             {
@@ -201,6 +239,7 @@ impl Store {
             previous = codec::digest(&bytes);
             self.adopt(&record, bytes.len(), previous.clone())?;
         }
+        check_scan_deadline(deadline)?;
         if total != self.head.bytes || previous != self.head.last_digest {
             return Err(corrupt());
         }
@@ -315,6 +354,15 @@ impl Store {
             digest: codec::blob(&bytes),
         })
     }
+}
+fn check_scan_deadline(deadline: Option<std::time::Instant>) -> Result<()> {
+    if deadline.is_some_and(|value| std::time::Instant::now() >= value) {
+        return Err(super::error(
+            latent_core::PlatformErrorCode::DeadlineExceeded,
+            "audit-maintenance-deadline",
+        ));
+    }
+    Ok(())
 }
 fn filename(sequence: u64) -> String {
     format!("r-{sequence:016x}")
@@ -439,3 +487,29 @@ fn cut(point: u8) -> Result<()> {
 }
 #[cfg(test)]
 thread_local! {pub(super) static FAIL:std::cell::Cell<u8>=const{std::cell::Cell::new(0)};}
+
+// Closed Store scratch bound: at most three typed record images (including
+// retained pending + validation clone), three16KiB serialized/read buffers,
+// eight bounded4096-byte paths, and8KiB small HEAD/INTENT/codec bookkeeping.
+// Names/Entry rows are separately charged below; worker operations are serial.
+const _: () = assert!(std::mem::size_of::<AuditStoredRecord>() <= 4096);
+const _: () =
+    assert!(3 * (16384 + 256 * 128 + 4096) + 3 * 16384 + 8 * (4096 + 64) + 8192 <= 256 * 1024);
+
+/// Preflight the exact fixed backing and conservative bounded row payloads
+/// before opening/reloading the journal. No actor/tenant name supplies a grant.
+pub(super) fn native_memory_bytes(limits: AuditLimits) -> Result<usize> {
+    let row = std::mem::size_of::<Entry>()
+        .checked_add(2 * std::mem::size_of::<String>())
+        // scope/actor maximum512-byte tokens; digest/name maximum64 bytes.
+        // Each real string allocation has its own64-byte bookkeeping allowance.
+        .and_then(|bytes| bytes.checked_add(2 * (512 + 64) + 2 * (64 + 64)))
+        .ok_or_else(capacity)?;
+    row.checked_mul(limits.maximum_records)
+        // Serial Store startup/append scratch: three decoded bounded record
+        // images, input/output buffers, filesystem paths and HEAD/INTENT copies.
+        // The decoder separately limits256 nodes/8levels/32-element arrays.
+        .and_then(|bytes| bytes.checked_add(256 * 1024))
+        .and_then(|bytes| bytes.checked_add(4 * 64))
+        .ok_or_else(capacity)
+}

@@ -1,49 +1,18 @@
 {
-  "cases": [
-    "RustHttpForbiddenRuntimeReplay.test_exact_one_reader_pair_never_allows_an_unknown_compiler_or_helper_change",
-    "RustHttpForbiddenRuntimeReplay.test_only_exact_failed_original_origin_is_accepted",
-    "RustHttpForbiddenRuntimeReplay.test_restored_public_bytes_must_match_both_original_source_and_original_packaging"
-  ],
-  "guards": {
-    "RustHttpForbiddenRuntimeReplay.test_exact_one_reader_pair_never_allows_an_unknown_compiler_or_helper_change": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ed93b95c6242db2a7bee4e60c5b6b32d1b0223a6c5375854475dbde47ee6fdde",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "RustHttpForbiddenRuntimeReplay.test_only_exact_failed_original_origin_is_accepted": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ed93b95c6242db2a7bee4e60c5b6b32d1b0223a6c5375854475dbde47ee6fdde",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "RustHttpForbiddenRuntimeReplay.test_restored_public_bytes_must_match_both_original_source_and_original_packaging": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ed93b95c6242db2a7bee4e60c5b6b32d1b0223a6c5375854475dbde47ee6fdde",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_rust_wasi_http_forbidden_runtime_replay.py",
-  "reviewReason": "Parent reviewed exact source/owning proposal: all original compiler, artifact, source, library and runtime cases/limits retained; no native/backend rebuild or qualification borrowed from failures.",
-  "schemaVersion": "latent.ci.contracts.v1"
+"storageCases":"guard-keys",
+"guards":{
+"RustHttpForbiddenRuntimeReplay.test_exact_one_reader_pair_never_allows_an_unknown_compiler_or_helper_change":
+      "25180f747f7bbb8ea3158ff9626bd5505c97ef43000c67599d7ee31db5573475",
+"RustHttpForbiddenRuntimeReplay.test_only_exact_failed_original_origin_is_accepted":
+      "25180f747f7bbb8ea3158ff9626bd5505c97ef43000c67599d7ee31db5573475",
+"RustHttpForbiddenRuntimeReplay.test_restored_public_bytes_must_match_both_original_source_and_original_packaging":
+      "25180f747f7bbb8ea3158ff9626bd5505c97ef43000c67599d7ee31db5573475"
+},
+"kind":"python",
+"module":"tools/tests/test_rust_wasi_http_forbidden_runtime_replay.py",
+"reviewReason":"Parent reviewed exact source/owning proposal: all original compiler, artifact, source, library and runtime cases/limits retained; no native/backend rebuild or qualification borrowed from failures.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"25180f747f7bbb8ea3158ff9626bd5505c97ef43000c67599d7ee31db5573475":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ed93b95c6242db2a7bee4e60c5b6b32d1b0223a6c5375854475dbde47ee6fdde","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }

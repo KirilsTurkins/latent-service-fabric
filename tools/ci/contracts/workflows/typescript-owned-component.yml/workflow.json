@@ -1,0 +1,51 @@
+{
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"typescript-canonical-own-${{ github.ref }}"
+},
+"name":"TypeScript canonical OWN diagnostic",
+"on":{
+"push":{
+"branches":[
+"feat/typescript-owned-canonical-source-20261024"
+],
+"paths":[
+".github/workflows/typescript-owned-component.yml",
+"tools/qualify_typescript_owned_component.py",
+"tools/typescript_guest/owned_component_controls.py",
+"tools/typescript_guest/owned_result_component.py",
+"tools/typescript_guest/owned_result_fixture.*",
+"tools/typescript_guest/borrow_signed_inputs.py",
+"tools/tests/test_typescript_owned_component.py",
+"tools/tests/test_typescript_owned_fixture.py",
+"crates/latent-wasmtime/examples/typescript_runtime_probe*",
+"crates/latent-wasmtime/examples/typescript_runtime_probe/**"
+]
+},
+"workflow_dispatch":{
+"inputs":{
+"profile":{
+"default":"canonical-own",
+"description":"Closed diagnostic profile using the exact completed normal producer",
+"options":[
+"canonical-own",
+"late-backing"
+],
+"type":"choice"
+}
+}
+}
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"canonical-own"
+],
+"reviewReason":"Review late unlifted host-lowered backing disposal only: retain all prior cases, add exact source/metadata controls, strict17 Rust and32 source inventories, and no runtime or full-heap claim.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/typescript-owned-component.yml"
+}

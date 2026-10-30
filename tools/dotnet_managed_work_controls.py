@@ -20,6 +20,9 @@ FIXTURE = 'sdk/dotnet-guest/tests/fixtures/managed-work-state-control'
 SOURCES = (FIXTURE+'/Control.csproj', FIXTURE+'/Program.cs', FIXTURE+'/Bindings.cs',
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs',
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs', 'sdk/dotnet-guest/global.json')
+SETTLEMENT_CASES = (
+    'enqueue-failure-settlement-refusal-retains-owner',
+    'dequeue-settlement-refusal-retains-owner')
 CASES = (
     'native-task-admission', 'unwrap-inner-actual-completion', 'queued-admission-rollback',
     'enqueue-failure-releases-both', 'continuation-failure-before-acceptance',
@@ -27,7 +30,7 @@ CASES = (
     'live-descendant-during-closing', 'closing-rejects-independent',
     'unobserved-original-fault-result', 'observed-fault-does-not-become-unhandled',
     'bounded-required-continuations', 'opaque-pending-is-not-quiescent',
-    'untracked-startup-refused-before-admission')
+    'untracked-startup-refused-before-admission', *SETTLEMENT_CASES)
 
 
 def verify(dotnet: Path, output: Path) -> dict:
@@ -53,6 +56,9 @@ def verify(dotnet: Path, output: Path) -> dict:
         expected = {'control': name, 'passed': True, 'registryCore': 'production-source',
             'nativeLedger': 'explicit-test-port', 'dispatcher': 'explicit-test-port',
             'actualClrTasks': True, 'guestQualified': False}
+        if name in SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=2, retainedQueuedOwners=1,
+                            controlDispatches=0, automaticRetries=0, rootSuccess=False)
         require(len(raw) <= 1024 and json.loads(raw) == expected, 'managed-work-state-control-result')
         rows.append(expected)
     require(inventory(snapshot(source)) == before, 'managed-work-state-control-source-changed')
@@ -226,7 +232,7 @@ def verify_abort(dotnet: Path, tools: Path, output: Path) -> dict:
     fixture = 'sdk/dotnet-guest/tests/fixtures/http-abort-control'
     names = (fixture+'/Control.csproj', fixture+'/Program.cs', 'sdk/dotnet-guest/global.json',
         *('sdk/dotnet-guest/tools/http-errors/'+name for name in (
-            'Program.cs', 'TaskWait.cs', 'IdleTimerDriver.cs', 'ClosedFilesystem.cs',
+            'Program.cs', 'TaskWait.cs', 'AggregateTaskWait.cs', 'IdleTimerDriver.cs', 'ClosedFilesystem.cs',
             'ManagedWorkRuntime.cs', 'ManagedWorkTimers.cs', 'ManagedWorkBindings.cs', 'ManagedWorkCopy.cs',
             'ManagedWorkContext.cs', 'ManagedWorkHooks.cs', 'ManagedWorkPort.cs', 'ManagedHttpWork.cs')))
     source = output/'source'

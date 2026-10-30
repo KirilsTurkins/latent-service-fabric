@@ -1,0 +1,37 @@
+{
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"canonical-outer-sync-result-${{ github.ref }}"
+},
+"name":"Focused canonical outer and sync result backing",
+"on":{
+"push":{
+"branches":[
+"feat/sdk-736-legacy-host-futures-20261026"
+],
+"paths":[
+".github/workflows/canonical-join-state.yml",
+"crates/vendor/wasmtime/**",
+"crates/latent-wasmtime/src/host.rs",
+"crates/latent-wasmtime/src/host/join_state_tests.rs",
+"crates/latent-wasmtime/src/host/native_host_future_tests.rs",
+"crates/latent-wasmtime/src/host/native_context_reply_tests.rs",
+"crates/latent-wasmtime/src/host/native_store_tests.rs",
+"tools/qualify_canonical_join_state.py",
+"tools/host_codec_wasmtime.py"
+]
+}
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"join-state"
+],
+"reviewReason":"SOURCE ONLY v16: six exact sync-result private controls plus seven actual host cases including prior late-waker cancellation, original callback refusal4 and new typed result refusal5; same two locked targets/features and all bounds; no old v15 aggregate replay.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/canonical-join-state.yml"
+}

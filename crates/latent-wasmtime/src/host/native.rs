@@ -31,6 +31,9 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
                 };
                 let result = runtime::native_context(store.data_mut())
                     .and_then(|context| context.reserve_child(runtime::token(value)));
+                if let Err(error) = &result {
+                    runtime::observe_runtime_refusal(store.data(), error);
+                }
                 let _ = call.record_provider_outcome(AuditProviderOutcome::HostCompleted);
                 super::service::synchronize(&mut store)?;
                 store.data_mut().record_host_call(started);

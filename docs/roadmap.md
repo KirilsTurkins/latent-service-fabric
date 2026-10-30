@@ -38,15 +38,18 @@ server declarations, final compatibility reports and authenticated build/watch
 inputs. Start with [application libraries](how-to/add-application-libraries.md)
 and [composition inspection](how-to/inspect-a-composition.md).
 
-Selected Rust standard-clock, TypeScript Promise/clock/service/npm, Java server
-revision/processor and .NET resource/wall-clock fixtures have executed evidence.
-Each profile retains its narrower acceptance boundary in
-[engineering records](development/engineering-records.md). Full standard
-thread/executor/reactor behavior, ordinary HTTP clients, private/update/watch
-lifecycle, broader exhaustion/cancellation and clean installed distributions
-remain owned by their language tickets. No general runtime is inferred from a
-captured package or one successful fixture. Outbound research remains separate
-from enabled, explicitly authorized provider profiles.
+Selected standard-facility, resource, HTTP-client, timer/task and library/watch
+programmes now have executed evidence in several languages. The
+[runtime capability matrix](component-development/runtime-capabilities.md)
+keeps their source-specific status; [Development changes](start/development-changes.md)
+links later Buffer/net, managed-wait and C/Rust continuation work. These finite
+programmes do not close the complete six-language thread/executor/reactor,
+private/update/watch, exhaustion/cancellation or installed-distribution matrices.
+Those gates remain owned by their language tickets. Neither a captured package
+nor independent successful fixtures qualify all combinations on the current
+host. [Protected outbound streams](reference/standalone-streams.md) have an
+accepted bounded design and separate implementation/production-enablement gates;
+an approved design or source-only operator helper is not an enabled provider.
 
 ## Phase 4: state and effects
 

@@ -138,10 +138,13 @@ fn actual_resource_types_both_admission_refusals_preserve_prior_instance_and_ret
             MIB + 1
         );
         assert!(budget.host_memory_bytes() > retained);
-        assert_eq!(call.call(&mut store, ()).unwrap(), (42,));
         drop(error);
         drop(padding.lock().unwrap().take());
         assert_eq!(budget.host_memory_bytes(), retained);
+        // A new call now legitimately prepays its channel/closures/task. Only
+        // actual padding retirement restores that headroom; no larger grant.
+        // The SAME preexisting function/instance must remain usable afterward.
+        assert_eq!(call.call(&mut store, ()).unwrap(), (42,));
         let fresh = linker.instantiate(&mut store, &component).unwrap();
         assert_eq!(answer(fresh, &mut store), 42);
         assert_eq!(call.call(&mut store, ()).unwrap(), (42,));

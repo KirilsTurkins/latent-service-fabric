@@ -1,0 +1,205 @@
+{
+  "schemaVersion": "latent.java.fiber-o0-attempt.v1",
+  "scope": "Failed compiler-only experiment; policy and provenance changes withdrawn",
+  "historicalSource": "a4646f48e808899f62a294bcd987bc4655430825",
+  "historicalTree": "10571d48746b4568867f15366e5264bd6b07addd",
+  "run": {
+    "id": 40129296830,
+    "job": 120977378859,
+    "event": "workflow_dispatch",
+    "workflow": ".github/workflows/java-guest-feasibility.yml",
+    "branch": "fix/java-fiber-scalar-promotion-20261024",
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40129296830",
+    "conclusion": "failure",
+    "inputs": {
+      "public_fiber_assembly": true,
+      "java_http_spi": false,
+      "qualify-scratch-refusals": false
+    }
+  },
+  "artifact": {
+    "id": 12574652389,
+    "bytes": 4376995,
+    "sha256": "9b3e2e237873535a753a4627784e85518f6095b65eda3d15882815a3e4860422",
+    "crcMembers": 84
+  },
+  "sourceAuthentication": {
+    "gitRecipeBlobsMatched": 79,
+    "recipeInputsCanonicalDigest": "sha256:6fb45f60d2e4cd8043ab4b0223df3435e8cf40091afb525127dcd3c51a623f5c",
+    "canonicalization": "UTF8 JSON sorted keys, compact comma/colon separators, no newline",
+    "safeMembersCRCAndHashChecked": 84
+  },
+  "hostedControls": {
+    "passed": 10,
+    "skipped": 0,
+    "seconds": 5.962,
+    "names": [
+      "test_fixed_normal_public_sources_and_only_failed_assembly_pair_are_retained",
+      "test_optional_exact_generated_c_and_c_only_refusals_preserve_both_wasm_inputs",
+      "test_other_stages_changed_sources_unsafe_pairs_and_capture_failures_preserve_original_failure",
+      "test_actual_owned_pipe_collector_and_abort_cleanup",
+      "test_admission_and_bounded_capture_failures_preserve_original_exception",
+      "test_changed_real_materials_or_command_receipt_refuse_before_execution",
+      "test_real_admission_replay_uses_original_argv_and_separate_output_only",
+      "test_real_hosted_context_guards_and_named_source_identities",
+      "test_sealed_ticket_checks_actual_files_and_rejects_retargeting",
+      "test_synthetic_pinned_print_text_is_counted_and_unknown_formats_refuse"
+    ]
+  },
+  "jobLog": {
+    "bytes": 53533,
+    "sha256": "0d5e8fc43c26df4a9e775cdeedd0e8c862af9d205895cb66e89e886ce21550f3"
+  },
+  "actualCompiler": {
+    "teaVM": "FULL",
+    "clang": "O0",
+    "exitCode": 0,
+    "seconds": 16.573046,
+    "argvDifferencesFromMeasuredFullO2": [
+      {
+        "index": 4,
+        "old": "-O2",
+        "new": "-O0"
+      }
+    ],
+    "allOtherArgumentsExact": true,
+    "originalC": {
+      "bytes": 733980,
+      "sha256": "e8ac2e599bf4777f0abefbaeeebd3f8b34dc00e45b4d45a5327ba4affc7a8e22"
+    },
+    "originalCWholeIdentityMatchesFullO2": true
+  },
+  "assemblyFailure": {
+    "stage": "component-new",
+    "exitCode": 1,
+    "category": "function body size count exceeds limit",
+    "parserLimit": 7654321,
+    "reportedOffset": "0x1b343",
+    "failedBody": {
+      "localFunction": 66,
+      "start": 111427,
+      "end": 10015532,
+      "bytes": 9904105,
+      "function": 83,
+      "name": "meth_dla_Capsule_pools"
+    },
+    "bytesOverLimit": 2249784,
+    "metadataScope": "Wasm-v1 section/name/body-length metadata only; no opcode decoding or execution"
+  },
+  "measurement": {
+    "status": "observed",
+    "before": {
+      "alloca": 383,
+      "blocks": 3391,
+      "catchswitch": 1,
+      "instructions": 124005,
+      "invoke": 1686,
+      "load": 10638,
+      "phi": 90744,
+      "phiIncoming": 971430,
+      "store": 10614,
+      "volatileLoad": 2909,
+      "volatileStore": 2586
+    },
+    "after": {
+      "alloca": 762,
+      "blocks": 3055,
+      "catchswitch": 1,
+      "instructions": 760078,
+      "invoke": 1686,
+      "load": 11017,
+      "phi": 90365,
+      "phiIncoming": 332436,
+      "store": 649608,
+      "volatileLoad": 2909,
+      "volatileStore": 2586
+    },
+    "delta": {
+      "alloca": 379,
+      "blocks": -336,
+      "catchswitch": 0,
+      "instructions": 636073,
+      "invoke": 0,
+      "load": 379,
+      "phi": -379,
+      "phiIncoming": -638994,
+      "store": 638994,
+      "volatileLoad": 0,
+      "volatileStore": 0
+    },
+    "removedPhiCount": 379,
+    "invokeSites": 1686,
+    "product": 638994,
+    "stderrBytes": 56122349,
+    "stderrDigest": "sha256:7c1d233c66ae3ed5ab7d6a584ae06197f382e6faf2be0a9dead7b047bdd5acd7",
+    "stdoutBytes": 0,
+    "childExitCode": 0,
+    "pipeEOFComplete": true,
+    "postReplayIdentitiesVerified": true,
+    "rawIRRetained": false
+  },
+  "bounds": {
+    "stackBytes": 65536,
+    "linearMaximumBytes": 67108864,
+    "parserFunctionBodyBytes": 7654321,
+    "normalLogBytes": 16777216,
+    "outerCaptureBytes": 83886080,
+    "diagnosticTransitBytes": 268435456,
+    "commandSeconds": 600,
+    "jobMinutes": 35
+  },
+  "retainedMembers": {
+    "FIBERS-COMPILE.json": {
+      "bytes": 12344,
+      "sha256": "ceb35474d9af3c34ba2bf977aaf9bc0543cb937cd01e68cb708d8042156be24f"
+    },
+    "compiler/35-c-to-wasm.command.json": {
+      "bytes": 1478,
+      "sha256": "8488ef0f265b092271829c2d2b456c2cce24f497928b8e66c14257cc356ed94a"
+    },
+    "compiler/37-component-new.command.json": {
+      "bytes": 437,
+      "sha256": "6d7c013f138eb99069b0f69f4d87fbd27239116a84e9ee2b18104eff717e0dd6"
+    },
+    "compiler/37-component-new.log": {
+      "bytes": 208,
+      "sha256": "dfa02e07ef75c83dc77be472c12ac49bc1505b0955fd161f989dbd76700075a3"
+    },
+    "build/component-inputs/core.wasm": {
+      "bytes": 17168466,
+      "sha256": "9bd02c4753ca37accda4dd75aa14acf62c990ab7ff5e01b9832195dc73e769b7"
+    },
+    "build/component-inputs/closed-runtime.wasm": {
+      "bytes": 773,
+      "sha256": "c3eca145a81bc22a1519d6e42da9c6665c5e5c2c5edf69fa68a34d5d4b10ef36"
+    },
+    "build/component-inputs/Capsule.c": {
+      "bytes": 733980,
+      "sha256": "e8ac2e599bf4777f0abefbaeeebd3f8b34dc00e45b4d45a5327ba4affc7a8e22"
+    },
+    "build/component-inputs/generated-c.json": {
+      "bytes": 376,
+      "sha256": "3f3bd3cbc804f952bea1e3edbc64d3ed9774324e08c3c44a067d2f9d9fa0a57c"
+    },
+    "build/component-inputs/public-wineh.json": {
+      "bytes": 8197,
+      "sha256": "f64233f3c8067195eb7ef5db17f9b0909d1c0f677fd841748330b747f843134b"
+    },
+    "build/component-inputs/record.json": {
+      "bytes": 756,
+      "sha256": "20afc2a0f29bf85ee0c052a7bd08c9827755d21072c87db2c484a039a4fb9da4"
+    }
+  },
+  "disposition": {
+    "candidate": "withdrawn",
+    "productionCompiler": "Original TeaVM FULL / Clang O2 restored",
+    "javaOptimizationAdmission": "Original O2-only schemas and native validator restored",
+    "candidateRustControl": "Never compiled or executed; restored to original source",
+    "compilerRepair": false,
+    "componentAssemblyPassed": false,
+    "signedGuestExecution": false,
+    "runtimeQualification": false,
+    "wholeIssue741": false,
+    "automaticRetry": false
+  }
+}

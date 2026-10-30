@@ -110,11 +110,21 @@ public:
     if (subtask_.physical()) {
       if (!subtask_.cancel(cx)) return false;
       if (subtask_.pending()) { phase_ = Phase::Pending; return true; }
+      // A real Returned outcome owns its canonical result independently of
+      // the subtask. The embedding must dispose those typed OWN slots first.
+      if (subtask_.resultReady()) { phase_ = Phase::Cancelled; return true; }
       if (!subtask_.drop(cx)) return false;
     }
     // No lifting occurs after cancellation. Buffers and captures still live
     // until the embedding's destruction acknowledgement below.
     if (!accounting_.complete(cx, work_)) return false;
+    phase_ = Phase::Retiring;
+    return true;
+  }
+  bool discardCompleted(JSContext* cx) {
+    if (phase_ != Phase::Cancelled || !cancelled_ || !subtask_.resultReady())
+      return invalid(cx);
+    if (!subtask_.drop(cx) || !accounting_.complete(cx, work_)) return false;
     phase_ = Phase::Retiring;
     return true;
   }
@@ -139,6 +149,7 @@ public:
   }
   Phase phase() const { return phase_; }
   bool hasPhysicalSubtask() const { return subtask_.physical(); }
+  bool hasReturnedResult() const { return subtask_.resultReady(); }
   bool resultMayBeRead() const { return phase_ == Phase::Lifting && !cancelled_; }
 };
 

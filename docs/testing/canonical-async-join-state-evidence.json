@@ -1,0 +1,523 @@
+{
+  "schemaVersion": "lsf.canonical-async-join-state.public-evidence.v1",
+  "status": "passed-focused-native-controls",
+  "qualifiedSourceRevision": "7e6cad7a1f9399f44a019425d8533452f6ba75c4",
+  "developmentBase": "dc7d4620e6f5bb3959260cfd48effa2011d2da9e",
+  "pullRequest": 1461,
+  "run": {
+    "id": 40179265940,
+    "jobId": 121126588148,
+    "event": "push",
+    "branch": "feat/canonical-join-state-accounting-20261025",
+    "conclusion": "success",
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40179265940"
+  },
+  "artifact": {
+    "id": 12593516724,
+    "name": "canonical-join-state-7e6cad7a1f9399f44a019425d8533452f6ba75c4",
+    "bytes": 1386935,
+    "sha256": "45c4a6747ac4049ea57316708ce4d738e0561baa45aaa8eea2d0a0b70637a37e",
+    "members": {
+      "receipt.json": {
+        "bytes": 3064308,
+        "sha256": "a01e1940e7d111049aaa4f588d983a928de011c55ce011692faa51409d38e327"
+      },
+      "source-inputs.json": {
+        "bytes": 1438057,
+        "sha256": "f8eadca2d8875dff718a4bfff560b891488ebe8ba9eb2556a2464f74324c238c"
+      },
+      "commands.json": {
+        "bytes": 1078,
+        "sha256": "90b093fa357a8bd6b4ff96ab525439c3150e5ed238636447a286ac5b3b0be84d"
+      },
+      "commands/logs/00-build-private-controls.stderr.txt": {
+        "bytes": 11355,
+        "sha256": "dab5d2ba24f3b30cc4b15030b6c11044ec06084de9a3ad69d110b2bf033f6d27"
+      },
+      "commands/logs/00-build-private-controls.stdout.txt": {
+        "bytes": 210161,
+        "sha256": "e4f97ce7118198b6e5b7b1fbe6b1e9b8418da098c9917e8ffda10a562500e87a"
+      },
+      "commands/logs/01-private-rust-library-path.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/01-private-rust-library-path.stdout.txt": {
+        "bytes": 105,
+        "sha256": "7675ece60101aa9118dc7df3c8865c010dc07858e7fb4b48536a3376fa3b9ed0"
+      },
+      "commands/logs/02-list-five-private-controls.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/02-list-five-private-controls.stdout.txt": {
+        "bytes": 624,
+        "sha256": "327e0663f7f65b9e2f1bc392f6d829e80cf774ef1ca7fb2f47d12064a22bd55a"
+      },
+      "commands/logs/03-private-case-0.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/03-private-case-0.stdout.txt": {
+        "bytes": 543,
+        "sha256": "79138cf338925af90b4b8f39b73c94a381c5fb9ec10a9197e5a5230f54934547"
+      },
+      "commands/logs/04-private-case-1.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/04-private-case-1.stdout.txt": {
+        "bytes": 384,
+        "sha256": "11175720ad3583d58f3f4375d4d64060593b63c17d970cfd8ecb763f68b2c8fb"
+      },
+      "commands/logs/05-private-case-2.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/05-private-case-2.stdout.txt": {
+        "bytes": 374,
+        "sha256": "ce330d1f7128807970cf8cc6c8f92dd96cbd89d0b3c7ad97ac616a1fa6d96b1c"
+      },
+      "commands/logs/06-private-case-3.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/06-private-case-3.stdout.txt": {
+        "bytes": 821,
+        "sha256": "4bebfa16d8883ab8c21f68e068a49c1d79b5899b30a268f95fe35e9eecf26511"
+      },
+      "commands/logs/07-private-case-4.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/07-private-case-4.stdout.txt": {
+        "bytes": 824,
+        "sha256": "9653e8b860e37b11b166c6334706623d95e3b26825d5562487c4701dad6d47b5"
+      },
+      "commands/logs/08-build-canonical-control.stderr.txt": {
+        "bytes": 17588,
+        "sha256": "dd474aba1824bc52c1c88988e88bf80071201b097481ac62b63c671938056e08"
+      },
+      "commands/logs/08-build-canonical-control.stdout.txt": {
+        "bytes": 308951,
+        "sha256": "ba4c72f4da4b3965cc3b4dbcb99c9c06fba2776b4e9e9b37b12abc710c792f0f"
+      },
+      "commands/logs/09-canonical-rust-library-path.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/09-canonical-rust-library-path.stdout.txt": {
+        "bytes": 105,
+        "sha256": "7675ece60101aa9118dc7df3c8865c010dc07858e7fb4b48536a3376fa3b9ed0"
+      },
+      "commands/logs/10-list-one-canonical-control.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/10-list-one-canonical-control.stdout.txt": {
+        "bytes": 120,
+        "sha256": "575e190bf5ee6a158b020ac6a8d49a9e0120de0709ed34511eecc629d3fa8a8e"
+      },
+      "commands/logs/11-execute-one-canonical-control.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/11-execute-one-canonical-control.stdout.txt": {
+        "bytes": 338,
+        "sha256": "3cb5d11fe9e5e9942ce4fa1affde9e4e895f19bfa587b774a49346c0472e246c"
+      }
+    }
+  },
+  "scope": {
+    "selectedCanonicalAsyncJoinStateBacking": true,
+    "completePinnedArcBackingLayout": true,
+    "nativeMemoryFactoryRetainedByCell": false,
+    "unselectedLegacyArcBackingPreserved": true,
+    "inlineHandlesMayGrow": true,
+    "unwindChargeConservativelyRetained": true,
+    "fullCostModelQualified": false,
+    "fullVendorSuiteExecuted": false,
+    "fullRuntimeSuiteExecuted": false,
+    "signedJavaScriptExecuted": false,
+    "compilerImplicitInputsAttested": false,
+    "hermetic": false,
+    "excluded": [
+      "opaque host-future implementations",
+      "remaining concurrent scheduler allocations",
+      "engine GC and cache allocations",
+      "complete native allocator/RSS coverage",
+      "networking qualification",
+      "whole #745 acceptance closure"
+    ]
+  },
+  "limits": {
+    "overallSeconds": 2400,
+    "buildCommandSeconds": 900,
+    "caseProcessSeconds": 60,
+    "listProcessSeconds": 30,
+    "cleanupReserveSeconds": 5
+  },
+  "activationLimits": {
+    "cpuFuel": 1000000000,
+    "memoryBytes": 67108864,
+    "wallTimeMilliseconds": 120000
+  },
+  "compiledJoinStateLayoutBytes": 80,
+  "layoutWitness": {
+    "member": "commands/logs/03-private-case-0.stdout.txt",
+    "meaning": "compiled complete private cell layout assertion witness; no budget or authority input"
+  },
+  "cases": [
+    {
+      "case": "runtime::component::concurrent::abort::tests::accounted_join_state_refuses_before_poll_and_none_retains_legacy_arc",
+      "stdout": {
+        "bytes": 543,
+        "sha256": "79138cf338925af90b4b8f39b73c94a381c5fb9ec10a9197e5a5230f54934547"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 178,
+      "member": "commands/logs/03-private-case-0.stdout.txt"
+    },
+    {
+      "case": "runtime::component::concurrent::abort::tests::accounted_join_state_normal_and_abort_keep_charge_through_last_alias",
+      "stdout": {
+        "bytes": 384,
+        "sha256": "11175720ad3583d58f3f4375d4d64060593b63c17d970cfd8ecb763f68b2c8fb"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 178,
+      "member": "commands/logs/04-private-case-1.stdout.txt"
+    },
+    {
+      "case": "runtime::component::concurrent::abort::tests::accounted_join_state_concurrent_final_drops_refund_exactly_once",
+      "stdout": {
+        "bytes": 374,
+        "sha256": "ce330d1f7128807970cf8cc6c8f92dd96cbd89d0b3c7ad97ac616a1fa6d96b1c"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 178,
+      "member": "commands/logs/05-private-case-2.stdout.txt"
+    },
+    {
+      "case": "runtime::component::concurrent::abort::tests::accounted_join_state_confirmation_unwind_destroys_cell_before_refund",
+      "stdout": {
+        "bytes": 821,
+        "sha256": "4bebfa16d8883ab8c21f68e068a49c1d79b5899b30a268f95fe35e9eecf26511"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 178,
+      "member": "commands/logs/06-private-case-3.stdout.txt"
+    },
+    {
+      "case": "runtime::component::concurrent::abort::tests::accounted_join_state_waker_destructor_unwind_retains_uncertain_charge",
+      "stdout": {
+        "bytes": 824,
+        "sha256": "9653e8b860e37b11b166c6334706623d95e3b26825d5562487c4701dad6d47b5"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 178,
+      "member": "commands/logs/07-private-case-4.stdout.txt"
+    },
+    {
+      "case": "host::join_state_tests::canonical_join_state_first_poll_refusal_and_same_budget_fresh_store",
+      "stdout": {
+        "bytes": 338,
+        "sha256": "3cb5d11fe9e5e9942ce4fa1affde9e4e895f19bfa587b774a49346c0472e246c"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 476,
+      "member": "commands/logs/11-execute-one-canonical-control.stdout.txt"
+    }
+  ],
+  "canonicalControlAssertions": [
+    "Original typed ResourceExhausted memory-bytes cause on the cell admission",
+    "Exactly two selected NativeMemory requests after pre-instantiation; request2 equals the compiled layout",
+    "Host application closure and its future remain unentered/unpolled on refusal",
+    "Failed Store physically destroyed before releasing contention and requiring zero original host memory/reservations",
+    "Fresh Store uses the same original ActivationBudget and remaining CPU allowance; actual async scalar result42",
+    "Fresh Store physical teardown returns original host memory/reservations to zero"
+  ],
+  "assertionScope": "These are assertions exercised by the passing real implementation control, not separately emitted scalar/RSS measurements.",
+  "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-memory-v10",
+  "sourceRecordSha256": "84b5b595e1c14318eb680c3c513e70afd928c102f1fc072d10c3ecb5f8017bea",
+  "completeMaintainedPatchSha256": "f4f3b6c621d6685550f1a6c19f92193d7642e4393e608cb1bba102f8ddf51963",
+  "sourceInventories": {
+    "executedSource": {
+      "count": 8763,
+      "bytes": 76954765,
+      "canonicalSha256": "83c7a386b521b3ad81f384bc6852d4e4c91d78188d3ceb48e82267cf96805113",
+      "sourceBeforeEqualsSourceAfter": true,
+      "retainedMember": "source-inputs.json"
+    },
+    "maintainedWasmtime": {
+      "count": 259,
+      "canonicalSha256": "646b35c774d405c5962e34328cdc1ea1b069fff600990fce4d430e737cea0aa9",
+      "originalRegistrySha256": "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6",
+      "licenseFiles": {
+        "LICENSE": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
+      }
+    },
+    "reviewedFeatureGitBlobs": {
+      ".github/workflows/canonical-join-state.yml": {
+        "bytes": 3030,
+        "sha256": "a7c949ab9ca5fbd2b042d48744cd8527c4758071e717511825340409075d89b7"
+      },
+      "crates/latent-wasmtime/src/host.rs": {
+        "bytes": 19276,
+        "sha256": "7aeb9bd0046b4eec57713ad36a543c68c8ed8f574063ff9f21de335b0a10782f"
+      },
+      "crates/latent-wasmtime/src/host/join_state_tests.rs": {
+        "bytes": 15570,
+        "sha256": "cf8ff0999f92474f365cb70b5e4c3393e24448f6926813657773eb38128d21f2"
+      },
+      "crates/vendor/wasmtime/README.latent.md": {
+        "bytes": 13061,
+        "sha256": "95b828ffa06ed87594f0f1ee29a6f395e7bbaa5523ed175be8a48331bc81c907"
+      },
+      "crates/vendor/wasmtime/UPSTREAM.latent.json": {
+        "bytes": 42454,
+        "sha256": "84b5b595e1c14318eb680c3c513e70afd928c102f1fc072d10c3ecb5f8017bea"
+      },
+      "crates/vendor/wasmtime/latent-dynamic-memory.patch": {
+        "bytes": 200979,
+        "sha256": "f4f3b6c621d6685550f1a6c19f92193d7642e4393e608cb1bba102f8ddf51963"
+      },
+      "crates/vendor/wasmtime/src/runtime/component/concurrent.rs": {
+        "bytes": 232972,
+        "sha256": "a63f706d5d5f58096be88126ca5f8e6217641b7f1a7dc24c889a34848fbc26ae"
+      },
+      "crates/vendor/wasmtime/src/runtime/component/concurrent/abort.rs": {
+        "bytes": 26992,
+        "sha256": "a42a819ef66cf352114ca4a06d9279189f215c19e1231d1d71f0dd1ce53d1f55"
+      },
+      "crates/vendor/wasmtime/src/runtime/component/mod.rs": {
+        "bytes": 33048,
+        "sha256": "4a9e0dfa4854a1170ab67b8b4d354849da25358d355b02d5b79534598123e49e"
+      },
+      "tools/ci/contracts/owners/tools/qualify_canonical_join_state.py.json": {
+        "bytes": 439,
+        "sha256": "c2a74ef75a479a94b4483811bd48becd1cdc304927a2545a7588f111425ebab4"
+      },
+      "tools/ci/contracts/workflows/canonical-join-state.yml/jobs/join-state.json": {
+        "bytes": 2842,
+        "sha256": "60e0f87c9f89499ced9aa0b51b9ceca8276dce7bfcfd229cdc97ae8c0cf0a275"
+      },
+      "tools/ci/contracts/workflows/canonical-join-state.yml/workflow.json": {
+        "bytes": 1091,
+        "sha256": "880e40acd815c3570d19805146d16c329b32e0d8d8ba969db060652dc0d349bd"
+      },
+      "tools/ci/suites.json": {
+        "bytes": 743804,
+        "sha256": "5e98b937c564101a364dfffe65181aa4b3bc9e34cf652eef8518fa247fa76317"
+      },
+      "tools/host_codec_wasmtime.py": {
+        "bytes": 10389,
+        "sha256": "3525fd35dd6c368278b872fe63150799401d5aa3880e82ce6571c1f55c9407b9"
+      },
+      "tools/qualify_canonical_join_state.py": {
+        "bytes": 12031,
+        "sha256": "76178bc39e6c0197d80738282917c402e199d9c16de73f6ce89dd33cbbe762cd"
+      },
+      "tools/tests/test_host_codec_wasmtime.py": {
+        "bytes": 14414,
+        "sha256": "142ca452f78cfe60ecade41fdbdde4694c781fb2cb4118e84e1dc97edda398d0"
+      }
+    },
+    "gitIdentityVerification": {
+      "rawExact": 8762,
+      "declaredCheckoutTransform": [
+        {
+          "path": "tools/intellij.cmd",
+          "git": {
+            "bytes": 894,
+            "sha256": "fcaca9e75d7d09ebd0863ca252222a1e1b7ac3f78bd1efb465f94b5209545049"
+          },
+          "retained": {
+            "bytes": 922,
+            "sha256": "7d96a1573b04fb4c7aa3add1ec47fd5ba8a2c827dda142e6b2098843b33f45e4"
+          },
+          "crlfTransformMatches": true
+        }
+      ]
+    }
+  },
+  "toolIdentities": [
+    {
+      "name": "cargo",
+      "digest": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "size": 42839824
+    },
+    {
+      "name": "rustc",
+      "digest": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "size": 645000
+    },
+    {
+      "name": "wasm-tools",
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "size": 20231696
+    }
+  ],
+  "hostBuilds": [
+    {
+      "stage": "build-private-controls",
+      "targetName": "wasmtime",
+      "manifestRelative": "crates/vendor/wasmtime/Cargo.toml",
+      "targetKind": [
+        "lib"
+      ],
+      "features": [
+        "async",
+        "cache",
+        "component-model",
+        "component-model-async",
+        "coredump",
+        "cranelift",
+        "gc",
+        "gc-drc",
+        "once_cell",
+        "pooling-allocator",
+        "runtime",
+        "std",
+        "threads",
+        "wasmtime-jit-icache-coherence",
+        "wit-parser"
+      ],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "buildFinishedSuccess": true,
+      "executable": {
+        "name": "wasmtime-private-controls",
+        "digest": "sha256:6d8306d220f781774b253b10fcafea0460b106dbebfbf89b804a976c32d0d254",
+        "size": 77374936
+      }
+    },
+    {
+      "stage": "build-canonical-control",
+      "targetName": "latent_wasmtime",
+      "manifestRelative": "crates/latent-wasmtime/Cargo.toml",
+      "targetKind": [
+        "lib"
+      ],
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "buildFinishedSuccess": true,
+      "executable": {
+        "name": "latent-wasmtime-canonical-control",
+        "digest": "sha256:c73b652712765fb7f82db5b53201ab4893eaab0fcfef72c38344a925240d4c12",
+        "size": 120870080
+      }
+    }
+  ],
+  "commands": [
+    {
+      "stage": "build-private-controls",
+      "exitCode": 0,
+      "seconds": 75.25435
+    },
+    {
+      "stage": "private-rust-library-path",
+      "exitCode": 0,
+      "seconds": 0.014353
+    },
+    {
+      "stage": "list-five-private-controls",
+      "exitCode": 0,
+      "seconds": 0.013774
+    },
+    {
+      "stage": "private-case-0",
+      "exitCode": 0,
+      "seconds": 0.013621
+    },
+    {
+      "stage": "private-case-1",
+      "exitCode": 0,
+      "seconds": 0.013594
+    },
+    {
+      "stage": "private-case-2",
+      "exitCode": 0,
+      "seconds": 0.013543
+    },
+    {
+      "stage": "private-case-3",
+      "exitCode": 0,
+      "seconds": 0.013601
+    },
+    {
+      "stage": "private-case-4",
+      "exitCode": 0,
+      "seconds": 0.013734
+    },
+    {
+      "stage": "build-canonical-control",
+      "exitCode": 0,
+      "seconds": 181.658449
+    },
+    {
+      "stage": "canonical-rust-library-path",
+      "exitCode": 0,
+      "seconds": 0.01449
+    },
+    {
+      "stage": "list-one-canonical-control",
+      "exitCode": 0,
+      "seconds": 0.0138
+    },
+    {
+      "stage": "execute-one-canonical-control",
+      "exitCode": 0,
+      "seconds": 0.024096
+    }
+  ],
+  "priorFailedObservation": {
+    "runId": 40178623379,
+    "sourceRevision": "edab1f0ae3315b84b3cf0c1d3ee8bf36032c5d4b",
+    "jobId": 121124660904,
+    "conclusion": "failure",
+    "stage": "build-five-private-controls",
+    "artifactId": 12592954902,
+    "artifactBytes": 917374,
+    "artifactSha256": "0debf1aafc3bc05056ffac1238cecf8a59203b6d72ebe2273ac55a10e6e1871c",
+    "compilerErrors": 26,
+    "controlsExecuted": 0,
+    "cause": "Missing Box/ToString imports in the new private test module; unchanged vendor libtests additionally require cache/threads/coredump.",
+    "correction": "Test-only imports and standalone vendor-test feature closure; production/root flags and original limits unchanged."
+  },
+  "localSourceChecks": {
+    "affectedSourceAdmissionControlsPassed": 2,
+    "staticCico": {
+      "baselineRunBlocks": 88,
+      "currentRunBlocks": 1285,
+      "delegatedOwners": 379,
+      "reusedForReviewedBodyOnlyCorrections": true
+    },
+    "sourceFindings": 0,
+    "secretFindings": 0,
+    "workflowFindings": 0
+  }
+}

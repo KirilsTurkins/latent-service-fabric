@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_owned_results.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Closed9c626 prepared compiler/engine reuse; fresh current fixture and four native cases, no producer qualification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "a042110886538a22105edcc78ae398bf3bf64a7d3f35942b80a001f8ce128ca9"
+}

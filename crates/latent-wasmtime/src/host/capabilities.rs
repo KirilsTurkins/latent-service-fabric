@@ -148,7 +148,7 @@ impl HostCapabilities {
     pub(super) fn http_start(
         &self,
         invoker: &dyn latent_capabilities::broker::http::OutboundHttpInvoker,
-        request: latent_capabilities::broker::http::HttpRequest,
+        source: &mut dyn latent_capabilities::broker::http::HttpRequestSource,
     ) -> Result<
         latent_capabilities::broker::http::HttpInvocation,
         latent_capabilities::broker::http::HttpError,
@@ -157,7 +157,7 @@ impl HostCapabilities {
             .session
             .as_ref()
             .ok_or(latent_capabilities::broker::http::HttpError::PermissionDenied)?;
-        invoker.start(session, request)
+        invoker.start_from(session, source)
     }
     pub(super) fn prepare_secret_lowering(&mut self) -> wasmtime::Result<()> {
         self.secret_lowering.prepare_one()

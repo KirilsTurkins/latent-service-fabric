@@ -149,6 +149,7 @@ def core_graph(raw, budget):
     imported, declared, bodies, labels = [], 0, [], {}
     roots = {'invocation': set(), 'initialization': set(), 'callbacks': set()}
     dynamic, seen, reasons = False, set(), set()
+    imported_tables, tables = 0, []
     while reader.at < len(reader.data):
         kind, section = reader.byte(), reader.child()
         if kind and kind in seen: raise UnknownEncoding('unsupported-or-malformed-encoding')
@@ -169,7 +170,8 @@ def core_graph(raw, budget):
             for _ in range(section.count(MAX_FUNCTIONS)):
                 module, name, sort = section.name(), section.name(), section.byte()
                 if sort == 0: section.leb(); imported.append(module + '/' + name)
-                elif sort == 1: value_type(section); limits(section); dynamic = True
+                elif sort == 1:
+                    value_type(section); limits(section); dynamic = True; imported_tables += 1
                 elif sort == 2: limits(section)
                 elif sort == 3: value_type(section); section.byte()
                 elif sort == 4: section.byte(); section.leb()
@@ -197,10 +199,43 @@ def core_graph(raw, budget):
                 except UnknownEncoding as error:
                     calls, addresses, indirect = set(), set(), True; reasons.add(str(error))
                 bodies.append(calls); roots['callbacks'].update(addresses); dynamic |= indirect
-        elif kind in (4, 9):
-            # Tables/element segments can introduce host-visible callback
-            # references. Do not certify a closed graph from their mere presence.
-            dynamic = True; section.at = len(section.data)
+        elif kind == 4:
+            # Only the observed MVP funcref table geometry is decoded. This is
+            # still indirect dispatch, not a closed graph or an executed call.
+            dynamic = True
+            for _ in range(section.count(128)):
+                if section.byte() != 0x70: raise UnknownEncoding('unsupported-or-malformed-encoding')
+                flags = section.leb()
+                if flags not in (0, 1): raise UnknownEncoding('unsupported-or-malformed-encoding')
+                initial = section.count(MAX_FUNCTIONS)
+                maximum = section.count(MAX_FUNCTIONS) if flags else None
+                if maximum is not None and maximum < initial:
+                    raise UnknownEncoding('unsupported-or-malformed-encoding')
+                tables.append(initial)
+        elif kind == 9:
+            dynamic = True
+            if imported_tables:
+                # The separate canonical adapter imports a table. Preserve its
+                # original opaque/dynamic handling, without callback facts or
+                # closed credit. Its labels still participate in collisions.
+                section.at = len(section.data); continue
+            for _ in range(section.count(MAX_FUNCTIONS)):
+                # Form0 is active table0, constant i32 offset, function-index
+                # vector. Imported tables, other forms and nonconstant offsets
+                # stay unknown. Never infer an indirect call actually occurred.
+                if section.leb() != 0 or imported_tables or not tables or section.byte() != 0x41:
+                    raise UnknownEncoding('unsupported-or-malformed-encoding')
+                offset = section.leb(32, True)
+                if section.data[section.at - 1] & 0x40 or section.byte() != 0x0b:
+                    raise UnknownEncoding('unsupported-or-malformed-encoding')
+                count = section.count(MAX_FUNCTIONS)
+                budget.add('instructions', count, MAX_INSTRUCTIONS)
+                if offset + count > tables[0]: raise UnknownEncoding('unsupported-or-malformed-encoding')
+                for _ in range(count):
+                    index = section.leb()
+                    if not len(imported) <= index < len(imported) + declared:
+                        raise UnknownEncoding('unsupported-or-malformed-encoding')
+                    roots['callbacks'].add(index)
         elif kind in (1, 11, 12, 13): section.at = len(section.data)
         else: raise UnknownEncoding('unsupported-or-malformed-encoding')
         section.done()

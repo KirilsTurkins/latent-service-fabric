@@ -2,14 +2,13 @@
 //! pre-enqueue lock acquisition, within the original deadline. Never retry an
 //! accepted journal write or its acknowledgement.
 use crate::Result;
-use latent_audit::{AuditAppendTicket, AuditHandle, AuditOperationConclusion, AuditPendingAttempt};
+use latent_audit::{
+    AuditAppendTicket, AuditHandle, AuditOperationConclusion, AuditPendingAttempts,
+};
 use latent_core::PlatformErrorCode;
 use std::time::{Duration, Instant};
 
-pub(crate) async fn read(
-    audit: &AuditHandle,
-    expires: Instant,
-) -> Result<Vec<AuditPendingAttempt>> {
+pub(crate) async fn read(audit: &AuditHandle, expires: Instant) -> Result<AuditPendingAttempts> {
     retry(|| audit.pending_attempts(), expires).await
 }
 
@@ -59,7 +58,7 @@ mod tests {
                 if calls < 3 {
                     Err(crate::capacity("audit-busy"))
                 } else {
-                    Ok(Vec::<AuditPendingAttempt>::new())
+                    Ok(AuditPendingAttempts::default())
                 }
             },
             Instant::now() + Duration::from_secs(1),

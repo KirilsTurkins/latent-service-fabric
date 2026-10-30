@@ -1,0 +1,2719 @@
+{
+  "schemaVersion": "latent.typescript.late-backing-evidence.v1",
+  "status": "passed",
+  "scope": "actual-canonical-resource-drops-and-same-store-capacity-one-payload-reuse",
+  "qualification": "unknown",
+  "apiSupport": "not-evaluated",
+  "source": {
+    "commit": "739155b4e5c58f9715f06bec43c758201a8cd740",
+    "tree": "d374f1c515ba6b3d4f022dc92bdf57b7f55cefb4",
+    "recipe": {
+      "tools/qualify_typescript_owned_component.py": {
+        "sha256": "sha256:57045376d3ad143a328ad81acb5c432035f3143d4e68f303612e25af38d1a961",
+        "bytes": 825
+      },
+      "tools/typescript_guest/owned_component_controls.py": {
+        "sha256": "sha256:de8347d514bce847c984d531906113c6d6e433cd2ed47a68920251937834fb47",
+        "bytes": 16952
+      },
+      "tools/typescript_guest/owned_result_component.py": {
+        "sha256": "sha256:a12ad1ab6f1f0088112474e9a393b309be5ac52f5dc17681d1db85bcb58c5648",
+        "bytes": 9377
+      },
+      "tools/typescript_guest/owned_result_fixture.py": {
+        "sha256": "sha256:ce30f12741f300ccdb3c537d5af847959fca6691126692ed5c3a5ca7f0b2ac75",
+        "bytes": 7586
+      },
+      "tools/typescript_guest/owned_result_fixture.mjs": {
+        "sha256": "sha256:1c9bd33ab5bdf60ade16c8dd9ee172483d1776d0bf1a683313528bf0fd38cba9",
+        "bytes": 5987
+      },
+      "tools/typescript_guest/compiler.py": {
+        "sha256": "sha256:354c7003017300ef6ca66e9afcffba82e9c881526c9b9a906f87fbb423bf482a",
+        "bytes": 36420
+      },
+      "tools/typescript_guest/late_backing_evidence.py": {
+        "sha256": "sha256:6b4df0a81c48936a8c55e5c1b612a95624e35786c998f64b48b5e150b587d181",
+        "bytes": 5282
+      },
+      "tools/tests/test_typescript_late_backing_evidence.py": {
+        "sha256": "sha256:5108ea54c4f0d46d8d4da7bfadc2d563bcfc14c25dd0028e46214bb26301bf5a",
+        "bytes": 4562
+      },
+      "tools/tests/test_typescript_native_carrier_scheduling.py": {
+        "sha256": "sha256:81b08216dcd24e2ab3e87935fa05910f80689a63d7bd906ceb288391d9ee68c3",
+        "bytes": 10285
+      },
+      "tools/typescript_guest/componentize.mjs": {
+        "sha256": "sha256:b94f3deecb9b94b66d5d61798d723f65308f9939c270de0ec1d49adb24116a7b",
+        "bytes": 8984
+      },
+      "tools/typescript_guest/async_waiters.mjs": {
+        "sha256": "sha256:d34a8e0e942a57fb710b0b0295bca95cb9fd1132c9e6ab71ae97002081045fbb",
+        "bytes": 36545
+      },
+      "tools/typescript_guest/import_cancellation.mjs": {
+        "sha256": "sha256:2decdfe01ed8a96c3619cc6f806c33f5ee1e0e93be763552757202486a965b6b",
+        "bytes": 7628
+      },
+      "tools/typescript_guest/resources.mjs": {
+        "sha256": "sha256:14e01f582cbadbe37e722b692e6b57b7bceb45d884e01ffae273aa8e7977d9b9",
+        "bytes": 1830
+      },
+      "tools/typescript_guest/signed64.mjs": {
+        "sha256": "sha256:52ef7eb6c6b963d7f577d614cdb1dc19dcb54b437d8edc6115ac0e717de8fc22",
+        "bytes": 1641
+      },
+      "tools/typescript_guest/source_splicer.mjs": {
+        "sha256": "sha256:d5d5fa4bcfc79adf63eb208d99868ad5e65cf327a38e6877fd22f2c091982283",
+        "bytes": 464
+      },
+      "tools/typescript_guest/runtime_profile.py": {
+        "sha256": "sha256:61fe49b8d3de948abea7c036e10aefcb90c68b115dc969e0d940c47773437148",
+        "bytes": 23226
+      },
+      "tools/typescript_guest/import_profile.py": {
+        "sha256": "sha256:049391920f3308f22226e5441458f490ae753785e6785910489901ee8aa5b53a",
+        "bytes": 4324
+      },
+      "tools/typescript_guest/build.py": {
+        "sha256": "sha256:bf3263a6c4016d08975877422e837a0222e09468aad36df9b244d1def7e0f5fa",
+        "bytes": 22604
+      },
+      "tools/typescript_guest/bundle.mjs": {
+        "sha256": "sha256:ea434b2e8126ae6f78372ca16caeceecf5d7b454ee25b38c1d6b1af1054d17eb",
+        "bytes": 14007
+      },
+      "tools/typescript_guest/standard_global_types.py": {
+        "sha256": "sha256:184111b08ffce610537e4dc71269b17db9c224e53c9c90e50bbe2c530cba7210",
+        "bytes": 9218
+      },
+      "tools/typescript_guest/borrow_probe_profile.py": {
+        "sha256": "sha256:88f8ecb0fa9051d6e90f4dad111e715860f170c7095529c049db2b8ef37f1daa",
+        "bytes": 2592
+      },
+      "sdk/typescript-guest/probes/borrow-release/outer.wit": {
+        "sha256": "sha256:a731c03d5a32351b8575b7432dd6282a6cfbcec759eea537b90d553fdc41c4d0",
+        "bytes": 320
+      },
+      "sdk/typescript-guest/probes/borrow-release/main.ts": {
+        "sha256": "sha256:88fec2ab7803e7283d3dc19c9d50ce1ca30e907d427cf8d0bb5ecd5067939318",
+        "bytes": 6992
+      },
+      "sdk/typescript-guest/probes/borrow-release/world.wit": {
+        "sha256": "sha256:c9e950876b014f0ea72d13f51dc89565d8ae2769f01320382e145d88e685fb9f",
+        "bytes": 326
+      },
+      "sdk/typescript-guest/probes/borrow-release/gate.wit": {
+        "sha256": "sha256:1a8543ecbc3d05acc470f3f61f09c8ad198776fd6d22a19f74e6bc475878b496",
+        "bytes": 1195
+      },
+      "sdk/typescript-guest/probes/borrow-release/private.d.ts": {
+        "sha256": "sha256:3ea3eacdcfc2ea7ccf9b6b07a3da6965c5e460efb32acd0c893f411153cb4884",
+        "bytes": 412
+      },
+      "tools/typescript_guest/splicer_input.py": {
+        "sha256": "sha256:13dad90d3ea9ce55d767c38edab78a693e471868de9e596a88c2e7a01f8c32b2",
+        "bytes": 3070
+      },
+      "tools/typescript_guest/native_build.py": {
+        "sha256": "sha256:1c5c889b9bb6f8b10fc02537e74ee0edafbf863cd370ab61657f89657f5c5054",
+        "bytes": 23201
+      },
+      "tools/typescript_guest/owned_result_controls.py": {
+        "sha256": "sha256:e98bcee88e5ac2b6e57ed01c46bef31a597a753b78b0384d626854cd850361ac",
+        "bytes": 25185
+      },
+      "tools/typescript_guest/probe.py": {
+        "sha256": "sha256:535a99c354e65b17b2bcf9d60a5cf9273634d130f23a243ed847aa678d02842c",
+        "bytes": 5948
+      },
+      "tools/typescript_guest/borrow_signed_inputs.py": {
+        "sha256": "sha256:b254979c60ade0b32653f9393f34f4ac361e72056500eea6cab560d84500792a",
+        "bytes": 21433
+      },
+      "tools/java_replay_materials.py": {
+        "sha256": "sha256:155092d73c3f847d2250076bed86f6694c738d011fab30d7269fb27c5a1e63e3",
+        "bytes": 15714
+      },
+      "tools/rust_capsule_build.py": {
+        "sha256": "sha256:8fbcb10eb7e7b2a2fc39834f0b94600fad2364c9b326bcc9db030418cf891b61",
+        "bytes": 49509
+      },
+      "tools/rust_capsule_project.py": {
+        "sha256": "sha256:584331e9da177b9443738916047a2a7bb076b86de6348105baa04514ede0be36",
+        "bytes": 20476
+      },
+      "tools/build_process.py": {
+        "sha256": "sha256:c387ba86b28f6db9f2c092c3fba3005a356b69105df19ec6c46c6c5aff69e849",
+        "bytes": 9063
+      },
+      "tools/build_process_linux.py": {
+        "sha256": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+        "bytes": 3853
+      },
+      "tools/build_process_signals.py": {
+        "sha256": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+        "bytes": 3012
+      },
+      "tools/build_observation.py": {
+        "sha256": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+        "bytes": 7868
+      },
+      "tools/captured_compiler_isolation.py": {
+        "sha256": "sha256:4ec520b256b5200ffaa9f86045dabcbd8cd018f05d8cd7fa98968dc410d7b99c",
+        "bytes": 18680
+      },
+      "tools/phase3_resource_identity.py": {
+        "sha256": "sha256:ca979a245b623bd588fe6ce32aec1de3a45a00e8bb0d6e49c6554417051327b0",
+        "bytes": 3354
+      },
+      "tools/tests/test_typescript_owned_fixture.py": {
+        "sha256": "sha256:1e545f24c600eb5168c92ac18e60d52381d187cd411d54e9b0875d3b839b6e55",
+        "bytes": 9397
+      },
+      "tools/tests/test_typescript_owned_component.py": {
+        "sha256": "sha256:2fff225948216b125f7b7ddec6efad66f58aa68338d5853f12ee674db7f7d8b6",
+        "bytes": 5342
+      },
+      "tools/tests/fixtures/typescript_native_open_binding.json": {
+        "sha256": "sha256:743d745bfde6086ffe75be4f9508ce34a48fdc45389b7e610897d2511cb89cc6",
+        "bytes": 8372
+      },
+      "tools/tests/fixtures/typescript_native_task_state.json": {
+        "sha256": "sha256:92b79c89ed5b2cc8695bb8c9f6202d680fa801ae0bb82bb28242bbac12c420dc",
+        "bytes": 91619
+      },
+      "crates/latent-wasmtime/examples/typescript_runtime_probe.rs": {
+        "sha256": "sha256:fea4d32d766c018e432791f28c180cd433231dabfe2de72b1a4172d0c28e0330",
+        "bytes": 17863
+      },
+      "crates/latent-wasmtime/examples/typescript_runtime_probe/owned_results.rs": {
+        "sha256": "sha256:ad27fe93f4526d243c4b3c78e25f52cff173b4f6ef21f573e5ad9f28118a90ac",
+        "bytes": 26469
+      },
+      "crates/latent-wasmtime/examples/typescript_runtime_probe/owned_results_runtime.rs": {
+        "sha256": "sha256:0cce4565ebb6f65d24102c1b93819376305c07c1454fc924e6b62723425e90d4",
+        "bytes": 8049
+      },
+      "crates/latent-wasmtime/examples/typescript_runtime_probe/backing_controls.rs": {
+        "sha256": "sha256:7e19ed98783a95778506cf1086fdacef721d8894fd1fae535d86765339d65b52",
+        "bytes": 5903
+      },
+      "Cargo.toml": {
+        "sha256": "sha256:8497c2d6f6ef7948243e16009539359984b73ed0f96786cafdb7156f32ba887b",
+        "bytes": 3939
+      },
+      "Cargo.lock": {
+        "sha256": "sha256:d2c14f36cfaa691df60a1f13de4482f397b4dfd8be5333f2ac5c8044efdd241c",
+        "bytes": 112392
+      },
+      "rust-toolchain.toml": {
+        "sha256": "sha256:7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc",
+        "bytes": 140
+      },
+      "crates/latent-wasmtime/Cargo.toml": {
+        "sha256": "sha256:b002550a20b2bf887dc6a4e37b1c9a66b065baa578a769fbc1613901eb486cf4",
+        "bytes": 4032
+      },
+      ".github/workflows/typescript-owned-component.yml": {
+        "sha256": "sha256:e392dae8359ca2fdde04d61cfbc704a9178f7cbed189e4037526b34e505cbda8",
+        "bytes": 4623
+      },
+      "tools/build_typescript_source_splicer.py": {
+        "sha256": "sha256:681b4c1ea25635b92b9d7009bbb8ddadcd5c6d4d76ac1c5fc07500d260534fbe",
+        "bytes": 618
+      },
+      "tools/typescript_guest/splicer_build.py": {
+        "sha256": "sha256:5940435c259a9385bdf75348a444ea26da18fe5cb09eb56dc1027bf6d5145bde",
+        "bytes": 11294
+      },
+      "tools/typescript_guest/promise_library.py": {
+        "sha256": "sha256:b64ab1cebbf83b988635ec67da1f840e5cfe15a45e446ddd0f7ed141ce15de91",
+        "bytes": 12479
+      },
+      "tools/typescript_guest/import_bindgen.py": {
+        "sha256": "sha256:1367d6d2ae3224e8f13dae3bb3a593926dd516d8b577c0931b90cf99ee3eb4b5",
+        "bytes": 20717
+      },
+      "tools/typescript_guest/import_engine.py": {
+        "sha256": "sha256:462f705fb07152dc20195edafc607c8d8b63f91e75eea36564e9c44b0eca6896",
+        "bytes": 7572
+      },
+      "sdk/typescript-guest/activation/async_import_descriptor.rs": {
+        "sha256": "sha256:ba1a5157b05166c8a8ed1767131c0974ee7084343bc18ebbf0d863e2592d53b0",
+        "bytes": 19068
+      },
+      "sdk/typescript-guest/activation/async_import_splice.rs": {
+        "sha256": "sha256:acb431c53a88bb83b16d13222e1b1510476be6cb7c37e71ed5d9f1a879e5f2d0",
+        "bytes": 42408
+      },
+      "tools/typescript_guest/borrow_probe.mjs": {
+        "sha256": "sha256:7b76bb367be241c2dd8f33815bce9586d4a4f9a2fe75d728ac6deae14aa86cf7",
+        "bytes": 3737
+      }
+    },
+    "recipeCanonicalJSON": {
+      "bytes": 8758,
+      "sha256": "sha256:8249568ce8164f22c37c593f7373c613478a505f80ab18da48a61cd29eb51e0b"
+    }
+  },
+  "owning": {
+    "run": 40087893943,
+    "job": 120854448123,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40087893943",
+    "event": "workflow_dispatch",
+    "branch": "feat/typescript-late-backing-disposal-20261024",
+    "profile": "late-backing",
+    "artifactId": 12558037571,
+    "artifactName": "typescript-own-canonical-739155b4e5c58f9715f06bec43c758201a8cd740",
+    "archive": {
+      "bytes": 52467076,
+      "sha256": "sha256:0e38646fd6a4724eae376ca56bf803cc757b3291dbc1599440fdefb180525de9"
+    },
+    "safeCRCmembers": 463,
+    "rawChannels": 376,
+    "rawChannelsCanonicalJSON": {
+      "bytes": 60006,
+      "sha256": "sha256:35c3c24b6d5465f881e1ec7b98336df7403790c44294e69d88627a7e6018d19d"
+    },
+    "retainedMembers": {
+      "typescript-own-canonical/CANONICAL-OWN.json": {
+        "bytes": 77554,
+        "sha256": "sha256:85848e6e2ab1f6f9d58a8e44831c6ede2be12c2a3272d6456555f670c19cd73a"
+      },
+      "typescript-own-canonical-inputs/ACQUIRED.json": {
+        "bytes": 11308,
+        "sha256": "sha256:de3c7afa0e3c5cc8260a56bddad1da4f8e7ce5024c194419e913214b5386da3a"
+      },
+      "typescript-own-canonical-inputs/products/OWN-RESULTS.json": {
+        "bytes": 1165557,
+        "sha256": "sha256:aafa805e52db3c47d46acd9b35f57e9079c1d032a1073f0f55e5d6c52f0e7bce"
+      },
+      "typescript-own-canonical-inputs/products/engine/engine-input.json": {
+        "bytes": 8954,
+        "sha256": "sha256:db366145b31ee2bd1ba034fdfd60512ff83fa4ddd4a64d4f86c989da941e7dc6"
+      },
+      "typescript-own-canonical-inputs/products/engine/engine.wasm": {
+        "bytes": 10163160,
+        "sha256": "sha256:567bbda2bb31d49833136efed03ef77e06a57f03783b7904c0d50d43f98c069c"
+      },
+      "typescript-own-canonical-inputs/products/backing-core-controls/manifest.json": {
+        "bytes": 1584,
+        "sha256": "sha256:77d5826ee3540a0d49cd6ccf8c53340df0ab7e0614780b0e5dc6cd5498e0b721"
+      },
+      "typescript-own-canonical/compiled/compiler.json": {
+        "bytes": 1911,
+        "sha256": "sha256:1ee8d79293b843fa936e057d37e65b6657084f4092849ca5f4a7d365343d243e"
+      },
+      "typescript-own-canonical/compiled/selection.json": {
+        "bytes": 15156,
+        "sha256": "sha256:c22f4a824eab2526fd9a04cecfc5e8e290f931222b8c8412dbaea021413ac9ad"
+      },
+      "typescript-own-canonical/fixture/fixture.json": {
+        "bytes": 2635,
+        "sha256": "sha256:b1a17f8a050e0bf8e2328a7a7777b447265e0a77052b5c32343024444db6e36a"
+      },
+      "typescript-own-canonical/fixture/world.wit": {
+        "bytes": 699,
+        "sha256": "sha256:d2fe7a8e2db8089e00c1ec5ed9467bd21d2513dc6faa005f8930a86aefbb59bb"
+      },
+      "typescript-own-canonical/fixture/application.js": {
+        "bytes": 2376,
+        "sha256": "sha256:4d3af53f78d0c29121f38bfdc94b5bd406e036ef45782564feaf848c476af0fd"
+      },
+      "typescript-own-canonical/compiled/bare.wasm": {
+        "bytes": 12359810,
+        "sha256": "sha256:deefb4eba19223aa14cf45292936aaf73e872901c85882fd50681216ec8c2c78"
+      },
+      "typescript-own-canonical/compiled/component.wasm": {
+        "bytes": 12366921,
+        "sha256": "sha256:7a0f1757bda11d2f662e97164eba98cd8b2d9f15333b5fa1fcc463c1f4eb9384"
+      },
+      "typescript-own-canonical/compiled/core.wasm": {
+        "bytes": 12378242,
+        "sha256": "sha256:db6d795b4489b5a3adf16d7870b61f52a861a93b3b0a82d759c7044c6a02900a"
+      },
+      "typescript-own-canonical/compiled/embedded.wasm": {
+        "bytes": 12361300,
+        "sha256": "sha256:a292f4ae4228aa88b817f6c7f8e15c00c4dfca633e5e51fb5a1a51964c436309"
+      },
+      "typescript-own-canonical/logs/04-canonical-source-controls.stderr.txt": {
+        "bytes": 3300,
+        "sha256": "sha256:df0cefcf35606d4205f320c9e34df8ed063e483fde806c2153055ba51024c8c1"
+      },
+      "typescript-own-canonical/logs/04-canonical-source-controls.stdout.txt": {
+        "bytes": 59,
+        "sha256": "sha256:bcfd413d51cf8405847dbaff53e4e8fc0c6c37c7dec058f089879c786c2eca63"
+      },
+      "typescript-own-canonical/logs/100-actual-backing-core-controls.stderr.txt": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "typescript-own-canonical/logs/100-actual-backing-core-controls.stdout.txt": {
+        "bytes": 3554,
+        "sha256": "sha256:67a4048f2745d71ec4fd3a58c1c9f7093dd308ae16f5a2e3c154a692b59e7e9b"
+      },
+      "typescript-own-canonical/logs/101-actual-late-backing-cases.stderr.txt": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "typescript-own-canonical/logs/101-actual-late-backing-cases.stdout.txt": {
+        "bytes": 7065,
+        "sha256": "sha256:d4d449782ae7318575a9035a095f39379666e4337895b2f72425ec6b266fa69d"
+      },
+      "typescript-own-canonical/logs/98-canonical-probe-build.stderr.txt": {
+        "bytes": 22805,
+        "sha256": "sha256:eb383ecea86ff2b105c20489c68052bad71167c698bacd8d9a3329aa225a9785"
+      },
+      "typescript-own-canonical/logs/98-canonical-probe-build.stdout.txt": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "typescript-own-canonical/logs/99-canonical-own-cases.stderr.txt": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "typescript-own-canonical/logs/99-canonical-own-cases.stdout.txt": {
+        "bytes": 8322,
+        "sha256": "sha256:9fbda09d686a60a7b8dcac5c9e4a96d7fde0b272f234a73837fb6e62391a61ce"
+      },
+      "typescript-own-canonical-inputs/products/backing-core-controls/00-invalid-active-tag.wasm": {
+        "bytes": 897,
+        "sha256": "sha256:e611ef8d87848f4ca0401f3566aba20ee8f8648274e799e3a26dd3c80c05c027"
+      },
+      "typescript-own-canonical-inputs/products/backing-core-controls/01-overflowing-list-range.wasm": {
+        "bytes": 819,
+        "sha256": "sha256:35d6b410d179f2b84912ff6b9b9b4364296d30885dd1c16fbf329ad024d2ecdd"
+      },
+      "typescript-own-canonical-inputs/products/backing-core-controls/02-misaligned-list.wasm": {
+        "bytes": 819,
+        "sha256": "sha256:463d499a63c69d1cf6535e10d4a30c1844db5994aeb42d57acd6bbe9d7444cff"
+      },
+      "typescript-own-canonical-inputs/products/backing-core-controls/03-zero-size-nonzero-pointer.wasm": {
+        "bytes": 819,
+        "sha256": "sha256:9c27c17c5c4da561a0ea4605bbb0a0ffc58193edcb92e4ddc4c6a103461e13eb"
+      },
+      "typescript-own-canonical-inputs/products/backing-core-controls/04-valid-empty-string.wasm": {
+        "bytes": 819,
+        "sha256": "sha256:f109890a97a525120cccd8991a8f8b23f6f9bd150b833d228136e6db4033d969"
+      },
+      "typescript-own-canonical-inputs/products/backing-core-controls/05-valid-zero-stride-list.wasm": {
+        "bytes": 810,
+        "sha256": "sha256:6c9e89b95c5b4ab23bceb82d8cfd5ab2395ff08267f09dcae8f527fb5cc9be75"
+      },
+      "typescript-own-canonical-inputs/products/backing-core-controls/06-nested-invalid-after-valid-child.wasm": {
+        "bytes": 1012,
+        "sha256": "sha256:17ec20adef6cbb4513bb94897e1803cfa4c27804081e2025cf96453533e9389a"
+      },
+      "typescript-own-canonical-inputs/products/backing-core-controls/07-own-trap-before-container-free.wasm": {
+        "bytes": 973,
+        "sha256": "sha256:722d866ca12288677905771deb6b522e648f6d5e90c7448c054a12c2bdf7d888"
+      }
+    }
+  },
+  "limits": {
+    "overallSecondsIncludingSetup": 900,
+    "commandSeconds": 600,
+    "perCaseSeconds": 20,
+    "aggregateLinearMemoryBytes": 134217728,
+    "fuelPerStore": 1000000000,
+    "rustJobs": 2
+  },
+  "setupElapsedSeconds": 66.779337009,
+  "setupPlusRecordedCommandSeconds": 375.579280009,
+  "commands": [
+    {
+      "stage": "canonical-source-head",
+      "exitCode": 0,
+      "seconds": 0.015539
+    },
+    {
+      "stage": "canonical-source-tree",
+      "exitCode": 0,
+      "seconds": 0.0156
+    },
+    {
+      "stage": "canonical-source-clean",
+      "exitCode": 0,
+      "seconds": 0.692858
+    },
+    {
+      "stage": "canonical-rust-version",
+      "exitCode": 0,
+      "seconds": 0.025546
+    },
+    {
+      "stage": "canonical-source-controls",
+      "exitCode": 0,
+      "seconds": 4.163141
+    },
+    {
+      "stage": "producer-tree",
+      "exitCode": 0,
+      "seconds": 0.015419
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014995
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.015322
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.015443
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.015151
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.015217
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014944
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014851
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014848
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014794
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014778
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014774
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014723
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014746
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.01479
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014742
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014728
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014765
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014891
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.015413
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.015511
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.015001
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.01514
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014803
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014711
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014725
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014705
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014786
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014741
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014791
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014828
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014736
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.01484
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.015769
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014796
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.01485
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014801
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014735
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014841
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014799
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014837
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014808
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014833
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.015062
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014963
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014872
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014805
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014773
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014838
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014826
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014824
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014751
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014729
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014764
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014778
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014753
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014763
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014831
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014792
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014776
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014795
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.015283
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.019896
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014938
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.01481
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014785
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014747
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014827
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014812
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014789
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014759
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014773
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014745
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014801
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014788
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014754
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014765
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014854
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.025003
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014784
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014784
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.024917
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.0148
+    },
+    {
+      "stage": "node-version",
+      "exitCode": 0,
+      "seconds": 0.015464
+    },
+    {
+      "stage": "wasm-tools-version",
+      "exitCode": 0,
+      "seconds": 0.015073
+    },
+    {
+      "stage": "prepare-compiler-adapter",
+      "exitCode": 0,
+      "seconds": 0.169885
+    },
+    {
+      "stage": "own-fixture-types",
+      "exitCode": 0,
+      "seconds": 0.015065
+    },
+    {
+      "stage": "own-fixture-componentize",
+      "exitCode": 0,
+      "seconds": 8.19181
+    },
+    {
+      "stage": "own-fixture-strip",
+      "exitCode": 0,
+      "seconds": 0.025746
+    },
+    {
+      "stage": "own-fixture-embed",
+      "exitCode": 0,
+      "seconds": 0.025829
+    },
+    {
+      "stage": "own-fixture-compose",
+      "exitCode": 0,
+      "seconds": 0.126788
+    },
+    {
+      "stage": "own-fixture-validate",
+      "exitCode": 0,
+      "seconds": 0.06835
+    },
+    {
+      "stage": "own-fixture-final-types",
+      "exitCode": 0,
+      "seconds": 0.03724
+    },
+    {
+      "stage": "canonical-probe-build",
+      "exitCode": 0,
+      "seconds": 225.031937
+    },
+    {
+      "stage": "canonical-own-cases",
+      "exitCode": 0,
+      "seconds": 33.642059
+    },
+    {
+      "stage": "actual-backing-core-controls",
+      "exitCode": 0,
+      "seconds": 0.045362
+    },
+    {
+      "stage": "actual-late-backing-cases",
+      "exitCode": 0,
+      "seconds": 33.905761
+    },
+    {
+      "stage": "producer-tree",
+      "exitCode": 0,
+      "seconds": 0.015175
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014607
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014715
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014562
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014628
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014479
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014549
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014463
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014475
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014481
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014496
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014592
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014524
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014474
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014734
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014722
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014571
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014805
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.01454
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014485
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014466
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014403
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014503
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014538
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.01454
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.01451
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014471
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014566
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014493
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014594
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014509
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014473
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014495
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014539
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014543
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014509
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014441
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.01445
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014396
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014554
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014539
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014497
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.01449
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014491
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014483
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014493
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014403
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014432
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014437
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.01449
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.0145
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014498
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014479
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014548
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014491
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014543
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014531
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014525
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014516
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014504
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014748
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.0145
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014537
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014499
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014486
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014471
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014453
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014554
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014409
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014433
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014544
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014549
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014481
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014558
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014519
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014492
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014422
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014463
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.024617
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014652
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014555
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.02464
+    },
+    {
+      "stage": "producer-source",
+      "exitCode": 0,
+      "seconds": 0.014493
+    },
+    {
+      "stage": "canonical-final-head",
+      "exitCode": 0,
+      "seconds": 0.014995
+    },
+    {
+      "stage": "canonical-final-tree",
+      "exitCode": 0,
+      "seconds": 0.014672
+    },
+    {
+      "stage": "canonical-final-clean",
+      "exitCode": 0,
+      "seconds": 0.055358
+    }
+  ],
+  "sourceControls": {
+    "testsRun": 14,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "actualCaseNames": [
+      "tools.tests.test_typescript_owned_fixture.TypeScriptOwnedFixtureTests.test_actual_captured_shapes_get_only_three_closed_carrier_reactions",
+      "tools.tests.test_typescript_owned_fixture.TypeScriptOwnedFixtureTests.test_backing_fixture_captures_only_readonly_count_and_closed_fourth_import",
+      "tools.tests.test_typescript_owned_fixture.TypeScriptOwnedFixtureTests.test_fixture_frontend_is_separate_and_normal_inputs_stay_identical",
+      "tools.tests.test_typescript_owned_fixture.TypeScriptOwnedFixtureTests.test_missing_first_yield_unknown_native_call_and_module_collision_refuse",
+      "tools.tests.test_typescript_owned_component.TypeScriptOwnedComponentTests.test_evidence_parser_refuses_owner_leaks_zero_start_and_false_scope",
+      "tools.tests.test_typescript_owned_component.TypeScriptOwnedComponentTests.test_failed_or_promoted_input_cannot_reach_normal_compiler_validation",
+      "tools.tests.test_typescript_owned_component.TypeScriptOwnedComponentTests.test_setup_time_reduces_the_single_monotonic_nine_hundred_second_budget",
+      "tools.tests.test_typescript_late_backing_evidence.LateBackingEvidenceTests.test_actual_raw_channel_refuses_missing_duplicate_or_foreign_rows",
+      "tools.tests.test_typescript_late_backing_evidence.LateBackingEvidenceTests.test_core_parser_binds_loaded_hashes_and_keeps_counter_double_scope",
+      "tools.tests.test_typescript_late_backing_evidence.LateBackingEvidenceTests.test_real_backing_parser_requires_before_store_counts_and_truthful_refusal",
+      "tools.tests.test_typescript_native_carrier_scheduling.TypeScriptNativeCarrierSchedulingTests.test_default_other_wrappers_and_ambient_metadata_are_unchanged",
+      "tools.tests.test_typescript_native_carrier_scheduling.TypeScriptNativeCarrierSchedulingTests.test_new_task_borrow_callback_postreturn_and_reachable_helper_duties_refuse",
+      "tools.tests.test_typescript_native_carrier_scheduling.TypeScriptNativeCarrierSchedulingTests.test_same_namespace_sibling_starts_while_first_native_carrier_is_pending",
+      "tools.tests.test_typescript_native_carrier_scheduling.TypeScriptNativeCarrierSchedulingTests.test_typed_values_errors_cancellation_lift_and_start_failure_keep_finally"
+    ]
+  },
+  "normalPrerequisites": {
+    "producerHead": "6d834e502beea33fbae9347fbaf23ff8c37223b3",
+    "producerRun": 40077087832,
+    "producerJob": 120822677716,
+    "artifactId": 12553639081,
+    "archive": {
+      "bytes": 196495650,
+      "sha256": "sha256:b009b2ae4b62fd74ecfad43dadfffb51301d94220e090216201d39d7468afd77"
+    },
+    "originalReceipt": {
+      "sha256": "sha256:aafa805e52db3c47d46acd9b35f57e9079c1d032a1073f0f55e5d6c52f0e7bce",
+      "bytes": 1165557
+    },
+    "selectedProducts": 62,
+    "engineProducts": {
+      "engine.wasm": {
+        "sha256": "sha256:567bbda2bb31d49833136efed03ef77e06a57f03783b7904c0d50d43f98c069c",
+        "bytes": 10163160
+      },
+      "engine-input.json": {
+        "sha256": "sha256:db366145b31ee2bd1ba034fdfd60512ff83fa4ddd4a64d4f86c989da941e7dc6",
+        "bytes": 8954
+      },
+      "engine-build.json": {
+        "sha256": "sha256:c81430b4db538a5a9e5a5c2068f3ad38e6fbbc8544228eac5ef0e62cb694b0f7",
+        "bytes": 70374
+      },
+      "engine-compilation.json": {
+        "sha256": "sha256:6130517d80e46016069200c708526dbae12c7a51929725317dfa0129b60e18b7",
+        "bytes": 70256
+      },
+      "source-derivation.json": {
+        "sha256": "sha256:07721b1c35518cd187fb3030d394e98aa1b9a1020afccb061ba23ea83df37638",
+        "bytes": 1242526
+      }
+    },
+    "sourceSplicerInputDigest": "sha256:1826ee2dec7dafc3a1e0eb94bb5e49d3a5151eacb20114f76defe6d14f6e81ae",
+    "compiledSDKInputs": [
+      {
+        "path": "sdk/typescript-guest/activation/async_import_descriptor.rs",
+        "digest": "sha256:ba1a5157b05166c8a8ed1767131c0974ee7084343bc18ebbf0d863e2592d53b0",
+        "size": 19068
+      },
+      {
+        "path": "sdk/typescript-guest/activation/async_import_splice.rs",
+        "digest": "sha256:acb431c53a88bb83b16d13222e1b1510476be6cb7c37e71ed5d9f1a879e5f2d0",
+        "size": 42408
+      },
+      {
+        "path": "sdk/typescript-guest/activation/broker_accounting.h",
+        "digest": "sha256:6fbb553a55e5206367a2d8fb978139bd5f1f2d0e5e507289168151f0fed1f256",
+        "size": 9669
+      },
+      {
+        "path": "sdk/typescript-guest/activation/broker_import_accounting.h",
+        "digest": "sha256:d06c3a53bc789ac68b87475ac83543da37f42b6ac61c5a96f63c21c99b4f3ec1",
+        "size": 3204
+      },
+      {
+        "path": "sdk/typescript-guest/activation/clock-globals.d.ts",
+        "digest": "sha256:200c8e3d6be9c33a56101b8c5ce9b2d7e252b27c7fb8631884b4654fbb227cc7",
+        "size": 159
+      },
+      {
+        "path": "sdk/typescript-guest/activation/clock_globals.js",
+        "digest": "sha256:883fb57b1266b9643f3f61e817cf2f4c0e51fdbde80d2edbf3acb95f3d9badbd",
+        "size": 984
+      },
+      {
+        "path": "sdk/typescript-guest/activation/clock_values.h",
+        "digest": "sha256:8e85831a0817eda3a1375fda790df22a6b343277ee102e64ef7b2be37df0bb42",
+        "size": 1238
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_cancel.h",
+        "digest": "sha256:59397ab2badf02d292e517157c9686a730cd7ebe582ea1d5a7b4c81be57b7438",
+        "size": 479
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_clock_engine.cpp",
+        "digest": "sha256:897d1611ac4e9d4557756447355d0aad7110b02f863c378df48ca28a755e1885",
+        "size": 1859
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_clocks.h",
+        "digest": "sha256:2a318536a65272343a7c7579c0baecdac42a0a22e307e30ec7146a2df288659a",
+        "size": 1584
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_engine.cpp",
+        "digest": "sha256:dd33c839eaafb2255dff1c3f814b6c1c81a6fc870efbad0f15bc273231094018",
+        "size": 13090
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_engine.h",
+        "digest": "sha256:5696c5ac430588cf22a117184c4be8cfea901bfb02e41ad436414faa61974896",
+        "size": 2187
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_import_bridge.cpp",
+        "digest": "sha256:7adfdf02d6fb5c6810d4578084070cdcff682d468ad010e20a19945d7297d44c",
+        "size": 3090
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_import_globals.cpp",
+        "digest": "sha256:8f49463641c988c8a4457a7f93078dee48f25c3e6d94b3217f345bf92ab56c34",
+        "size": 4768
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_import_lifecycle.h",
+        "digest": "sha256:67b2cd927e20f22610c1c310c3011ab564c4ad795b432523acebf71e43f55027",
+        "size": 6419
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_import_observer.h",
+        "digest": "sha256:28437293ebfc727091a5566153307b891e566758813ebfa2dfae0fe72a5c3ba3",
+        "size": 4808
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_import_values.h",
+        "digest": "sha256:5b98e85df356d7005ab6a3085fc9c12ad4e5f6cc8d00ddf33095f4683fc0ea24",
+        "size": 2390
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_imports.h",
+        "digest": "sha256:c4eca831d52cb3e39e33d4712a355040e7ea246bb8ee4bae493f0a37e430b617",
+        "size": 20108
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_job_queue.h",
+        "digest": "sha256:3df24d0b1c17c27f8b6a3d9d90ba292dde23804c3af626cdb16d7911f5bffb49",
+        "size": 9584
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_objects.h",
+        "digest": "sha256:081afe123537c0555d0d29d20a85181dcb7feb62ce85251d4de7e2932427d039",
+        "size": 1028
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_ownership.h",
+        "digest": "sha256:476b5db1f88bf96637221e199e0dbbd44deb3d924d7f3389ef4b7f3bccf472ed",
+        "size": 615
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_readiness.h",
+        "digest": "sha256:d38d7d66ed3b16d25c3e1705f2858923ed47ef1a374c88ee9049a98ce04801f3",
+        "size": 8450
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_retirement.h",
+        "digest": "sha256:5921cccf4dd2cd6a11ad070383247a4e186cbd15e21f955a56069149297d24b6",
+        "size": 4294
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_timeout.h",
+        "digest": "sha256:f5b1e996dc1e7fa9a535760a13d00829854773eb11b0676727365582cfaad2d9",
+        "size": 1416
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_timers.h",
+        "digest": "sha256:5413bb498d1c0ca713d87eb171c4e4ca19e330831de3db069cf96d5b5a5b32a3",
+        "size": 11314
+      },
+      {
+        "path": "sdk/typescript-guest/activation/promise_accounting.h",
+        "digest": "sha256:1451f4d6d53a300e378a0a371810021ded638d683bf0b3dc145671ec0d5060b9",
+        "size": 2406
+      },
+      {
+        "path": "sdk/typescript-guest/activation/promise_hooks.h",
+        "digest": "sha256:c533f19bc2010c9df736ef4ce9585620aca9ef7c0b8a27d9987e4602b99a10eb",
+        "size": 2147
+      },
+      {
+        "path": "sdk/typescript-guest/activation/promise_records.h",
+        "digest": "sha256:70602d45bdc088d43878a2b44de814bd58ea6d137803f1c4393c2caf6963f3ff",
+        "size": 5174
+      },
+      {
+        "path": "sdk/typescript-guest/activation/reaction_records.h",
+        "digest": "sha256:89dea37b194c3f0c31f17983aabaa624baf8c5091dd16ca3df4dfab4b356a95b",
+        "size": 5680
+      },
+      {
+        "path": "tools/typescript_guest/abort_engine.py",
+        "digest": "sha256:1ca796a7c902c99e186baa10df6a19df23626d464972773a242e4f7eedd3ec4b",
+        "size": 4020
+      },
+      {
+        "path": "tools/typescript_guest/activation_engine.py",
+        "digest": "sha256:5e576fd983990296b18a6ac743a1bca42d22c6a521f89a14c1e2221177a9b7a5",
+        "size": 14962
+      },
+      {
+        "path": "tools/typescript_guest/clock_engine.py",
+        "digest": "sha256:c9d75ae50b8290e380f1b5d9d33729df931767ca2efb59dcd556c05df96af669",
+        "size": 7780
+      },
+      {
+        "path": "tools/typescript_guest/event_engine.py",
+        "digest": "sha256:30264b9718c0d02e2f2a79897334b3f088ef62590983ceb0c211922c87169b63",
+        "size": 18823
+      },
+      {
+        "path": "tools/typescript_guest/import_bindgen.py",
+        "digest": "sha256:1367d6d2ae3224e8f13dae3bb3a593926dd516d8b577c0931b90cf99ee3eb4b5",
+        "size": 20717
+      },
+      {
+        "path": "tools/typescript_guest/import_engine.py",
+        "digest": "sha256:462f705fb07152dc20195edafc607c8d8b63f91e75eea36564e9c44b0eca6896",
+        "size": 7572
+      },
+      {
+        "path": "tools/typescript_guest/import_profile.py",
+        "digest": "sha256:049391920f3308f22226e5441458f490ae753785e6785910489901ee8aa5b53a",
+        "size": 4324
+      },
+      {
+        "path": "tools/typescript_guest/promise_engine.py",
+        "digest": "sha256:e10298e8916272c1ca53d99ba195150ca678707ac75d6ab9cf1afd0d53fbd5af",
+        "size": 10598
+      },
+      {
+        "path": "tools/typescript_guest/splicer_input.py",
+        "digest": "sha256:13dad90d3ea9ce55d767c38edab78a693e471868de9e596a88c2e7a01f8c32b2",
+        "size": 3070
+      },
+      {
+        "path": "tools/typescript_guest/text_codec_engine.py",
+        "digest": "sha256:22493a4a4d254e86f296493069094b3d27bf890b0eee84cf190f19b11f431e78",
+        "size": 2178
+      },
+      {
+        "path": "tools/typescript_guest/timer_engine.py",
+        "digest": "sha256:d24094ced9bb6ec3e11b80308bddc569d0daefa8449892d3d22a058bd9702277",
+        "size": 4996
+      },
+      {
+        "path": "wit/platform/clock/package.wit",
+        "digest": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+        "size": 139
+      }
+    ],
+    "normalValidatorsPassed": true,
+    "freshEngineBuildsInThisCampaign": 0,
+    "freshSplicerBuildsInThisCampaign": 0,
+    "freshMachBuildsInThisCampaign": 0,
+    "producerActualControls": {
+      "source": 32,
+      "rust": 17,
+      "nativeManager": 13,
+      "lifecycle": 6,
+      "emittedModules": 8
+    },
+    "diagnosticScalarLayoutCompiledStaticAssertBytes": 8,
+    "wholeEngineCostQualified": false
+  },
+  "fixture": {
+    "scope": "compiler-only-owned-result-fixture",
+    "normalFrontend": {
+      "sha256": "sha256:b94f3deecb9b94b66d5d61798d723f65308f9939c270de0ec1d49adb24116a7b",
+      "bytes": 8984
+    },
+    "fixtureFrontend": {
+      "sha256": "sha256:df5a1fc469e239d081c80b1ac2627ff6dffe4868d848d33899b85445737d1b0c",
+      "bytes": 9067
+    },
+    "world": {
+      "sha256": "sha256:d2fe7a8e2db8089e00c1ec5ed9467bd21d2513dc6faa005f8930a86aefbb59bb",
+      "bytes": 699
+    },
+    "application": {
+      "sha256": "sha256:4d3af53f78d0c29121f38bfdc94b5bd406e036ef45782564feaf848c476af0fd",
+      "bytes": 2376
+    },
+    "cases": [
+      "delivered-connection",
+      "immediate-cancel-same-store-reuse",
+      "delayed-returned-cancel-same-store-reuse",
+      "chunk-cancel-reuse",
+      "inactive-none-no-drop",
+      "intentional-wit-error",
+      "nested-active-own",
+      "pending-cancel-no-result",
+      "destructor-refusal-quarantine",
+      "distinct-resource-types",
+      "nested-inactive-none"
+    ],
+    "fixtureRecipe": {
+      "componentize.mjs": {
+        "sha256": "sha256:df5a1fc469e239d081c80b1ac2627ff6dffe4868d848d33899b85445737d1b0c",
+        "bytes": 9067
+      },
+      "signed64.mjs": {
+        "sha256": "sha256:52ef7eb6c6b963d7f577d614cdb1dc19dcb54b437d8edc6115ac0e717de8fc22",
+        "bytes": 1641
+      },
+      "resources.mjs": {
+        "sha256": "sha256:14e01f582cbadbe37e722b692e6b57b7bceb45d884e01ffae273aa8e7977d9b9",
+        "bytes": 1830
+      },
+      "source_splicer.mjs": {
+        "sha256": "sha256:d5d5fa4bcfc79adf63eb208d99868ad5e65cf327a38e6877fd22f2c091982283",
+        "bytes": 464
+      },
+      "async_waiters.mjs": {
+        "sha256": "sha256:d34a8e0e942a57fb710b0b0295bca95cb9fd1132c9e6ab71ae97002081045fbb",
+        "bytes": 36545
+      },
+      "import_cancellation.mjs": {
+        "sha256": "sha256:2decdfe01ed8a96c3619cc6f806c33f5ee1e0e93be763552757202486a965b6b",
+        "bytes": 7628
+      },
+      "owned_result_fixture.mjs": {
+        "sha256": "sha256:1c9bd33ab5bdf60ade16c8dd9ee172483d1776d0bf1a683313528bf0fd38cba9",
+        "bytes": 5987
+      },
+      "borrow_probe.mjs": {
+        "sha256": "sha256:7b76bb367be241c2dd8f33815bce9586d4a4f9a2fe75d728ac6deae14aa86cf7",
+        "bytes": 3737
+      }
+    },
+    "runtimePumpPatched": false,
+    "canonicalIntrinsicsMocked": false,
+    "signedExecution": false,
+    "backingCases": [
+      "ordinary-empty-list",
+      "cancelled-empty-list",
+      "cancelled-nested-backing",
+      "cancelled-empty-nested-values",
+      "ordinary-empty-nested-values",
+      "cancelled-mixed-own-and-backing",
+      "cancelled-active-error-string",
+      "mixed-destructor-refusal-count-unobserved"
+    ],
+    "zeroStrideNormalComponentSupported": false,
+    "zeroStrideNormalComponentQualified": false
+  },
+  "component": {
+    "sha256": "sha256:7a0f1757bda11d2f662e97164eba98cd8b2d9f15333b5fa1fcc463c1f4eb9384",
+    "bytes": 12366921
+  },
+  "runtimeMaterials": [
+    {
+      "name": "typescript-native-engine",
+      "digest": "sha256:567bbda2bb31d49833136efed03ef77e06a57f03783b7904c0d50d43f98c069c",
+      "size": 10163160
+    },
+    {
+      "name": "typescript-native-engine-input",
+      "digest": "sha256:db366145b31ee2bd1ba034fdfd60512ff83fa4ddd4a64d4f86c989da941e7dc6",
+      "size": 8954
+    },
+    {
+      "name": "typescript-source-splicer-input",
+      "digest": "sha256:1826ee2dec7dafc3a1e0eb94bb5e49d3a5151eacb20114f76defe6d14f6e81ae",
+      "size": 5242
+    },
+    {
+      "name": "typescript-source-splicer-files",
+      "digest": "sha256:2e41b65f49dcc5f054f4e0f32bc439d74825b94c208c233770c546010a3112bf",
+      "size": 3007
+    }
+  ],
+  "probe": {
+    "sha256": "sha256:3dc46f7724c12adf0cc5a7242abb1ae65c6549919b9f3b2bad0aa10a8c8fcb95",
+    "bytes": 54002344
+  },
+  "canonicalRows": [
+    {
+      "allocations": 1,
+      "canonicalResourceDropActual": true,
+      "canonicalTableIndexObserved": false,
+      "case": 0,
+      "chunkDestructorCalls": 0,
+      "connectionDestructorCalls": 1,
+      "destructorCalls": 1,
+      "fuel": 17495193,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "liveBeforeStoreDrop": false,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "nestedBackingStorageQualified": false,
+      "observedImports": 1,
+      "payloadCapacity": 1,
+      "payloadDropsAfterStoreDrop": 1,
+      "payloadDropsBeforeStoreDrop": 1,
+      "peakLinearMemoryBytes": 9502720,
+      "pendingProviderStarts": 0,
+      "physicalProviderQualified": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "sameStorePayloadReuse": false,
+      "schemaVersion": "latent.typescript.canonical-own-case.v1",
+      "signedExecution": false,
+      "status": "passed"
+    },
+    {
+      "allocations": 2,
+      "canonicalResourceDropActual": true,
+      "canonicalTableIndexObserved": false,
+      "case": 1,
+      "chunkDestructorCalls": 0,
+      "connectionDestructorCalls": 2,
+      "destructorCalls": 2,
+      "fuel": 29669259,
+      "futureDrops": 2,
+      "futureStarts": 2,
+      "liveBeforeStoreDrop": false,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "nestedBackingStorageQualified": false,
+      "observedImports": 2,
+      "payloadCapacity": 1,
+      "payloadDropsAfterStoreDrop": 2,
+      "payloadDropsBeforeStoreDrop": 2,
+      "peakLinearMemoryBytes": 9502720,
+      "pendingProviderStarts": 0,
+      "physicalProviderQualified": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "sameStorePayloadReuse": true,
+      "schemaVersion": "latent.typescript.canonical-own-case.v1",
+      "signedExecution": false,
+      "status": "passed"
+    },
+    {
+      "allocations": 2,
+      "canonicalResourceDropActual": true,
+      "canonicalTableIndexObserved": false,
+      "case": 2,
+      "chunkDestructorCalls": 0,
+      "connectionDestructorCalls": 2,
+      "destructorCalls": 2,
+      "fuel": 37019582,
+      "futureDrops": 2,
+      "futureStarts": 2,
+      "liveBeforeStoreDrop": false,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "nestedBackingStorageQualified": false,
+      "observedImports": 2,
+      "payloadCapacity": 1,
+      "payloadDropsAfterStoreDrop": 2,
+      "payloadDropsBeforeStoreDrop": 2,
+      "peakLinearMemoryBytes": 9502720,
+      "pendingProviderStarts": 0,
+      "physicalProviderQualified": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "sameStorePayloadReuse": true,
+      "schemaVersion": "latent.typescript.canonical-own-case.v1",
+      "signedExecution": false,
+      "status": "passed"
+    },
+    {
+      "allocations": 2,
+      "canonicalResourceDropActual": true,
+      "canonicalTableIndexObserved": false,
+      "case": 3,
+      "chunkDestructorCalls": 2,
+      "connectionDestructorCalls": 0,
+      "destructorCalls": 2,
+      "fuel": 29670462,
+      "futureDrops": 2,
+      "futureStarts": 2,
+      "liveBeforeStoreDrop": false,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "nestedBackingStorageQualified": false,
+      "observedImports": 2,
+      "payloadCapacity": 1,
+      "payloadDropsAfterStoreDrop": 2,
+      "payloadDropsBeforeStoreDrop": 2,
+      "peakLinearMemoryBytes": 9502720,
+      "pendingProviderStarts": 0,
+      "physicalProviderQualified": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "sameStorePayloadReuse": true,
+      "schemaVersion": "latent.typescript.canonical-own-case.v1",
+      "signedExecution": false,
+      "status": "passed"
+    },
+    {
+      "allocations": 1,
+      "canonicalResourceDropActual": true,
+      "canonicalTableIndexObserved": false,
+      "case": 4,
+      "chunkDestructorCalls": 0,
+      "connectionDestructorCalls": 1,
+      "destructorCalls": 1,
+      "fuel": 29673150,
+      "futureDrops": 2,
+      "futureStarts": 2,
+      "liveBeforeStoreDrop": false,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "nestedBackingStorageQualified": false,
+      "observedImports": 2,
+      "payloadCapacity": 1,
+      "payloadDropsAfterStoreDrop": 1,
+      "payloadDropsBeforeStoreDrop": 1,
+      "peakLinearMemoryBytes": 9502720,
+      "pendingProviderStarts": 0,
+      "physicalProviderQualified": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "sameStorePayloadReuse": false,
+      "schemaVersion": "latent.typescript.canonical-own-case.v1",
+      "signedExecution": false,
+      "status": "passed"
+    },
+    {
+      "allocations": 0,
+      "canonicalResourceDropActual": false,
+      "canonicalTableIndexObserved": false,
+      "case": 5,
+      "chunkDestructorCalls": 0,
+      "connectionDestructorCalls": 0,
+      "destructorCalls": 0,
+      "fuel": 18135808,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "liveBeforeStoreDrop": false,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "nestedBackingStorageQualified": false,
+      "observedImports": 1,
+      "payloadCapacity": 1,
+      "payloadDropsAfterStoreDrop": 0,
+      "payloadDropsBeforeStoreDrop": 0,
+      "peakLinearMemoryBytes": 9502720,
+      "pendingProviderStarts": 0,
+      "physicalProviderQualified": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "sameStorePayloadReuse": false,
+      "schemaVersion": "latent.typescript.canonical-own-case.v1",
+      "signedExecution": false,
+      "status": "passed"
+    },
+    {
+      "allocations": 2,
+      "canonicalResourceDropActual": true,
+      "canonicalTableIndexObserved": false,
+      "case": 6,
+      "chunkDestructorCalls": 0,
+      "connectionDestructorCalls": 2,
+      "destructorCalls": 2,
+      "fuel": 29728764,
+      "futureDrops": 2,
+      "futureStarts": 2,
+      "liveBeforeStoreDrop": false,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "nestedBackingStorageQualified": false,
+      "observedImports": 2,
+      "payloadCapacity": 1,
+      "payloadDropsAfterStoreDrop": 2,
+      "payloadDropsBeforeStoreDrop": 2,
+      "peakLinearMemoryBytes": 9502720,
+      "pendingProviderStarts": 0,
+      "physicalProviderQualified": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "sameStorePayloadReuse": true,
+      "schemaVersion": "latent.typescript.canonical-own-case.v1",
+      "signedExecution": false,
+      "status": "passed"
+    },
+    {
+      "allocations": 0,
+      "canonicalResourceDropActual": false,
+      "canonicalTableIndexObserved": false,
+      "case": 7,
+      "chunkDestructorCalls": 0,
+      "connectionDestructorCalls": 0,
+      "destructorCalls": 0,
+      "fuel": 17346916,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "liveBeforeStoreDrop": false,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "nestedBackingStorageQualified": false,
+      "observedImports": 1,
+      "payloadCapacity": 1,
+      "payloadDropsAfterStoreDrop": 0,
+      "payloadDropsBeforeStoreDrop": 0,
+      "peakLinearMemoryBytes": 9502720,
+      "pendingProviderStarts": 1,
+      "physicalProviderQualified": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "sameStorePayloadReuse": false,
+      "schemaVersion": "latent.typescript.canonical-own-case.v1",
+      "signedExecution": false,
+      "status": "passed"
+    },
+    {
+      "allocations": 1,
+      "canonicalResourceDropActual": true,
+      "canonicalTableIndexObserved": false,
+      "case": 8,
+      "chunkDestructorCalls": 0,
+      "connectionDestructorCalls": 1,
+      "destructorCalls": 1,
+      "fuel": 9373736,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "liveBeforeStoreDrop": true,
+      "matchedImportNativeOwnersBeforeStoreDrop": 2,
+      "matchedImportResultOwnersBeforeStoreDrop": 1,
+      "nestedBackingStorageQualified": false,
+      "observedImports": 1,
+      "payloadCapacity": 1,
+      "payloadDropsAfterStoreDrop": 1,
+      "payloadDropsBeforeStoreDrop": 0,
+      "peakLinearMemoryBytes": 9502720,
+      "pendingProviderStarts": 0,
+      "physicalProviderQualified": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        13,
+        0,
+        10,
+        0,
+        0,
+        1,
+        32
+      ],
+      "sameStorePayloadReuse": false,
+      "schemaVersion": "latent.typescript.canonical-own-case.v1",
+      "signedExecution": false,
+      "status": "passed"
+    },
+    {
+      "allocations": 2,
+      "canonicalResourceDropActual": true,
+      "canonicalTableIndexObserved": false,
+      "case": 9,
+      "chunkDestructorCalls": 1,
+      "connectionDestructorCalls": 1,
+      "destructorCalls": 2,
+      "fuel": 26047137,
+      "futureDrops": 2,
+      "futureStarts": 2,
+      "liveBeforeStoreDrop": false,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "nestedBackingStorageQualified": false,
+      "observedImports": 2,
+      "payloadCapacity": 1,
+      "payloadDropsAfterStoreDrop": 2,
+      "payloadDropsBeforeStoreDrop": 2,
+      "peakLinearMemoryBytes": 9502720,
+      "pendingProviderStarts": 0,
+      "physicalProviderQualified": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "sameStorePayloadReuse": true,
+      "schemaVersion": "latent.typescript.canonical-own-case.v1",
+      "signedExecution": false,
+      "status": "passed"
+    },
+    {
+      "allocations": 0,
+      "canonicalResourceDropActual": false,
+      "canonicalTableIndexObserved": false,
+      "case": 10,
+      "chunkDestructorCalls": 0,
+      "connectionDestructorCalls": 0,
+      "destructorCalls": 0,
+      "fuel": 21125883,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "liveBeforeStoreDrop": false,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "nestedBackingStorageQualified": false,
+      "observedImports": 1,
+      "payloadCapacity": 1,
+      "payloadDropsAfterStoreDrop": 0,
+      "payloadDropsBeforeStoreDrop": 0,
+      "peakLinearMemoryBytes": 9502720,
+      "pendingProviderStarts": 0,
+      "physicalProviderQualified": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "sameStorePayloadReuse": false,
+      "schemaVersion": "latent.typescript.canonical-own-case.v1",
+      "signedExecution": false,
+      "status": "passed"
+    }
+  ],
+  "emittedBackingControls": {
+    "manifest": {
+      "sha256": "sha256:77d5826ee3540a0d49cd6ccf8c53340df0ab7e0614780b0e5dc6cd5498e0b721",
+      "bytes": 1584
+    },
+    "modules": [
+      {
+        "case": "invalid-active-tag",
+        "file": "00-invalid-active-tag.wasm",
+        "sha256": "sha256:e611ef8d87848f4ca0401f3566aba20ee8f8648274e799e3a26dd3c80c05c027",
+        "bytes": 897
+      },
+      {
+        "case": "overflowing-list-range",
+        "file": "01-overflowing-list-range.wasm",
+        "sha256": "sha256:35d6b410d179f2b84912ff6b9b9b4364296d30885dd1c16fbf329ad024d2ecdd",
+        "bytes": 819
+      },
+      {
+        "case": "misaligned-list",
+        "file": "02-misaligned-list.wasm",
+        "sha256": "sha256:463d499a63c69d1cf6535e10d4a30c1844db5994aeb42d57acd6bbe9d7444cff",
+        "bytes": 819
+      },
+      {
+        "case": "zero-size-nonzero-pointer",
+        "file": "03-zero-size-nonzero-pointer.wasm",
+        "sha256": "sha256:9c27c17c5c4da561a0ea4605bbb0a0ffc58193edcb92e4ddc4c6a103461e13eb",
+        "bytes": 819
+      },
+      {
+        "case": "valid-empty-string",
+        "file": "04-valid-empty-string.wasm",
+        "sha256": "sha256:f109890a97a525120cccd8991a8f8b23f6f9bd150b833d228136e6db4033d969",
+        "bytes": 819
+      },
+      {
+        "case": "valid-zero-stride-list",
+        "file": "05-valid-zero-stride-list.wasm",
+        "sha256": "sha256:6c9e89b95c5b4ab23bceb82d8cfd5ab2395ff08267f09dcae8f527fb5cc9be75",
+        "bytes": 810
+      },
+      {
+        "case": "nested-invalid-after-valid-child",
+        "file": "06-nested-invalid-after-valid-child.wasm",
+        "sha256": "sha256:17ec20adef6cbb4513bb94897e1803cfa4c27804081e2025cf96453533e9389a",
+        "bytes": 1012
+      },
+      {
+        "case": "own-trap-before-container-free",
+        "file": "07-own-trap-before-container-free.wasm",
+        "sha256": "sha256:722d866ca12288677905771deb6b522e648f6d5e90c7448c054a12c2bdf7d888",
+        "bytes": 973
+      }
+    ],
+    "allocatorEvidence": false,
+    "executed": false
+  },
+  "backingCoreRows": [
+    {
+      "allocatorEvidence": false,
+      "case": "invalid-active-tag",
+      "doubleFreeReturns": 0,
+      "fuel": 29,
+      "guestRootReopened": false,
+      "index": 0,
+      "manifestSha256": "77d5826ee3540a0d49cd6ccf8c53340df0ab7e0614780b0e5dc6cd5498e0b721",
+      "moduleBytes": 897,
+      "moduleSha256": "e611ef8d87848f4ca0401f3566aba20ee8f8648274e799e3a26dd3c80c05c027",
+      "originalDropCalls": 0,
+      "returned": 0,
+      "schemaVersion": "latent.typescript.backing-core-case.v1",
+      "status": "passed",
+      "trapped": false
+    },
+    {
+      "allocatorEvidence": false,
+      "case": "overflowing-list-range",
+      "doubleFreeReturns": 0,
+      "fuel": 53,
+      "guestRootReopened": false,
+      "index": 1,
+      "manifestSha256": "77d5826ee3540a0d49cd6ccf8c53340df0ab7e0614780b0e5dc6cd5498e0b721",
+      "moduleBytes": 819,
+      "moduleSha256": "35d6b410d179f2b84912ff6b9b9b4364296d30885dd1c16fbf329ad024d2ecdd",
+      "originalDropCalls": 0,
+      "returned": 0,
+      "schemaVersion": "latent.typescript.backing-core-case.v1",
+      "status": "passed",
+      "trapped": false
+    },
+    {
+      "allocatorEvidence": false,
+      "case": "misaligned-list",
+      "doubleFreeReturns": 0,
+      "fuel": 40,
+      "guestRootReopened": false,
+      "index": 2,
+      "manifestSha256": "77d5826ee3540a0d49cd6ccf8c53340df0ab7e0614780b0e5dc6cd5498e0b721",
+      "moduleBytes": 819,
+      "moduleSha256": "463d499a63c69d1cf6535e10d4a30c1844db5994aeb42d57acd6bbe9d7444cff",
+      "originalDropCalls": 0,
+      "returned": 0,
+      "schemaVersion": "latent.typescript.backing-core-case.v1",
+      "status": "passed",
+      "trapped": false
+    },
+    {
+      "allocatorEvidence": false,
+      "case": "zero-size-nonzero-pointer",
+      "doubleFreeReturns": 0,
+      "fuel": 35,
+      "guestRootReopened": false,
+      "index": 3,
+      "manifestSha256": "77d5826ee3540a0d49cd6ccf8c53340df0ab7e0614780b0e5dc6cd5498e0b721",
+      "moduleBytes": 819,
+      "moduleSha256": "9c27c17c5c4da561a0ea4605bbb0a0ffc58193edcb92e4ddc4c6a103461e13eb",
+      "originalDropCalls": 0,
+      "returned": 0,
+      "schemaVersion": "latent.typescript.backing-core-case.v1",
+      "status": "passed",
+      "trapped": false
+    },
+    {
+      "allocatorEvidence": false,
+      "case": "valid-empty-string",
+      "doubleFreeReturns": 0,
+      "fuel": 43,
+      "guestRootReopened": false,
+      "index": 4,
+      "manifestSha256": "77d5826ee3540a0d49cd6ccf8c53340df0ab7e0614780b0e5dc6cd5498e0b721",
+      "moduleBytes": 819,
+      "moduleSha256": "f109890a97a525120cccd8991a8f8b23f6f9bd150b833d228136e6db4033d969",
+      "originalDropCalls": 0,
+      "returned": 1,
+      "schemaVersion": "latent.typescript.backing-core-case.v1",
+      "status": "passed",
+      "trapped": false
+    },
+    {
+      "allocatorEvidence": false,
+      "case": "valid-zero-stride-list",
+      "doubleFreeReturns": 0,
+      "fuel": 41,
+      "guestRootReopened": false,
+      "index": 5,
+      "manifestSha256": "77d5826ee3540a0d49cd6ccf8c53340df0ab7e0614780b0e5dc6cd5498e0b721",
+      "moduleBytes": 810,
+      "moduleSha256": "6c9e89b95c5b4ab23bceb82d8cfd5ab2395ff08267f09dcae8f527fb5cc9be75",
+      "originalDropCalls": 0,
+      "returned": 1,
+      "schemaVersion": "latent.typescript.backing-core-case.v1",
+      "status": "passed",
+      "trapped": false
+    },
+    {
+      "allocatorEvidence": false,
+      "case": "nested-invalid-after-valid-child",
+      "doubleFreeReturns": 0,
+      "fuel": 162,
+      "guestRootReopened": false,
+      "index": 6,
+      "manifestSha256": "77d5826ee3540a0d49cd6ccf8c53340df0ab7e0614780b0e5dc6cd5498e0b721",
+      "moduleBytes": 1012,
+      "moduleSha256": "17ec20adef6cbb4513bb94897e1803cfa4c27804081e2025cf96453533e9389a",
+      "originalDropCalls": 0,
+      "returned": 0,
+      "schemaVersion": "latent.typescript.backing-core-case.v1",
+      "status": "passed",
+      "trapped": false
+    },
+    {
+      "allocatorEvidence": false,
+      "case": "own-trap-before-container-free",
+      "doubleFreeReturns": 0,
+      "fuel": 104,
+      "guestRootReopened": false,
+      "index": 7,
+      "manifestSha256": "77d5826ee3540a0d49cd6ccf8c53340df0ab7e0614780b0e5dc6cd5498e0b721",
+      "moduleBytes": 973,
+      "moduleSha256": "722d866ca12288677905771deb6b522e648f6d5e90c7448c054a12c2bdf7d888",
+      "originalDropCalls": 1,
+      "returned": null,
+      "schemaVersion": "latent.typescript.backing-core-case.v1",
+      "status": "passed",
+      "trapped": true
+    }
+  ],
+  "backingRows": [
+    {
+      "allocations": 0,
+      "allocatorBoundaryOnly": true,
+      "backingFreeReturnsBeforeStoreDrop": 0,
+      "case": 0,
+      "deliveredStorageCleanupQualified": false,
+      "destructorCalls": 0,
+      "destructorRefused": false,
+      "fuel": 17415663,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "observedImports": 1,
+      "ordinaryDeliveryOnly": true,
+      "osOrLinearMemoryReturnQualified": false,
+      "parametersCleanupQualified": false,
+      "parentFreeAfterTrapUnreachableByEmittedOrder": false,
+      "partialLowerCleanupQualified": false,
+      "payloadDropsAfterStoreDrop": 0,
+      "payloadDropsBeforeStoreDrop": 0,
+      "peakLinearMemoryBytes": 9502720,
+      "physicalProviderQualified": false,
+      "postTrapFreeCountObserved": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "schemaVersion": "latent.typescript.late-backing-case.v1",
+      "signedExecution": false,
+      "status": "passed",
+      "wholeCostQualification": false
+    },
+    {
+      "allocations": 0,
+      "allocatorBoundaryOnly": true,
+      "backingFreeReturnsBeforeStoreDrop": 0,
+      "case": 1,
+      "deliveredStorageCleanupQualified": false,
+      "destructorCalls": 0,
+      "destructorRefused": false,
+      "fuel": 21198353,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "observedImports": 1,
+      "ordinaryDeliveryOnly": false,
+      "osOrLinearMemoryReturnQualified": false,
+      "parametersCleanupQualified": false,
+      "parentFreeAfterTrapUnreachableByEmittedOrder": false,
+      "partialLowerCleanupQualified": false,
+      "payloadDropsAfterStoreDrop": 0,
+      "payloadDropsBeforeStoreDrop": 0,
+      "peakLinearMemoryBytes": 9502720,
+      "physicalProviderQualified": false,
+      "postTrapFreeCountObserved": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "schemaVersion": "latent.typescript.late-backing-case.v1",
+      "signedExecution": false,
+      "status": "passed",
+      "wholeCostQualification": false
+    },
+    {
+      "allocations": 0,
+      "allocatorBoundaryOnly": true,
+      "backingFreeReturnsBeforeStoreDrop": 5,
+      "case": 2,
+      "deliveredStorageCleanupQualified": false,
+      "destructorCalls": 0,
+      "destructorRefused": false,
+      "fuel": 21200489,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "observedImports": 1,
+      "ordinaryDeliveryOnly": false,
+      "osOrLinearMemoryReturnQualified": false,
+      "parametersCleanupQualified": false,
+      "parentFreeAfterTrapUnreachableByEmittedOrder": false,
+      "partialLowerCleanupQualified": false,
+      "payloadDropsAfterStoreDrop": 0,
+      "payloadDropsBeforeStoreDrop": 0,
+      "peakLinearMemoryBytes": 9502720,
+      "physicalProviderQualified": false,
+      "postTrapFreeCountObserved": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "schemaVersion": "latent.typescript.late-backing-case.v1",
+      "signedExecution": false,
+      "status": "passed",
+      "wholeCostQualification": false
+    },
+    {
+      "allocations": 0,
+      "allocatorBoundaryOnly": true,
+      "backingFreeReturnsBeforeStoreDrop": 1,
+      "case": 3,
+      "deliveredStorageCleanupQualified": false,
+      "destructorCalls": 0,
+      "destructorRefused": false,
+      "fuel": 21197901,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "observedImports": 1,
+      "ordinaryDeliveryOnly": false,
+      "osOrLinearMemoryReturnQualified": false,
+      "parametersCleanupQualified": false,
+      "parentFreeAfterTrapUnreachableByEmittedOrder": false,
+      "partialLowerCleanupQualified": false,
+      "payloadDropsAfterStoreDrop": 0,
+      "payloadDropsBeforeStoreDrop": 0,
+      "peakLinearMemoryBytes": 9502720,
+      "physicalProviderQualified": false,
+      "postTrapFreeCountObserved": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "schemaVersion": "latent.typescript.late-backing-case.v1",
+      "signedExecution": false,
+      "status": "passed",
+      "wholeCostQualification": false
+    },
+    {
+      "allocations": 0,
+      "allocatorBoundaryOnly": true,
+      "backingFreeReturnsBeforeStoreDrop": 0,
+      "case": 4,
+      "deliveredStorageCleanupQualified": false,
+      "destructorCalls": 0,
+      "destructorRefused": false,
+      "fuel": 18089848,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "observedImports": 1,
+      "ordinaryDeliveryOnly": true,
+      "osOrLinearMemoryReturnQualified": false,
+      "parametersCleanupQualified": false,
+      "parentFreeAfterTrapUnreachableByEmittedOrder": false,
+      "partialLowerCleanupQualified": false,
+      "payloadDropsAfterStoreDrop": 0,
+      "payloadDropsBeforeStoreDrop": 0,
+      "peakLinearMemoryBytes": 9502720,
+      "physicalProviderQualified": false,
+      "postTrapFreeCountObserved": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "schemaVersion": "latent.typescript.late-backing-case.v1",
+      "signedExecution": false,
+      "status": "passed",
+      "wholeCostQualification": false
+    },
+    {
+      "allocations": 1,
+      "allocatorBoundaryOnly": true,
+      "backingFreeReturnsBeforeStoreDrop": 3,
+      "case": 5,
+      "deliveredStorageCleanupQualified": false,
+      "destructorCalls": 1,
+      "destructorRefused": false,
+      "fuel": 21199741,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "observedImports": 1,
+      "ordinaryDeliveryOnly": false,
+      "osOrLinearMemoryReturnQualified": false,
+      "parametersCleanupQualified": false,
+      "parentFreeAfterTrapUnreachableByEmittedOrder": false,
+      "partialLowerCleanupQualified": false,
+      "payloadDropsAfterStoreDrop": 1,
+      "payloadDropsBeforeStoreDrop": 1,
+      "peakLinearMemoryBytes": 9502720,
+      "physicalProviderQualified": false,
+      "postTrapFreeCountObserved": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "schemaVersion": "latent.typescript.late-backing-case.v1",
+      "signedExecution": false,
+      "status": "passed",
+      "wholeCostQualification": false
+    },
+    {
+      "allocations": 0,
+      "allocatorBoundaryOnly": true,
+      "backingFreeReturnsBeforeStoreDrop": 1,
+      "case": 6,
+      "deliveredStorageCleanupQualified": false,
+      "destructorCalls": 0,
+      "destructorRefused": false,
+      "fuel": 21198700,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "matchedImportNativeOwnersBeforeStoreDrop": 0,
+      "matchedImportResultOwnersBeforeStoreDrop": 0,
+      "observedImports": 1,
+      "ordinaryDeliveryOnly": false,
+      "osOrLinearMemoryReturnQualified": false,
+      "parametersCleanupQualified": false,
+      "parentFreeAfterTrapUnreachableByEmittedOrder": false,
+      "partialLowerCleanupQualified": false,
+      "payloadDropsAfterStoreDrop": 0,
+      "payloadDropsBeforeStoreDrop": 0,
+      "peakLinearMemoryBytes": 9502720,
+      "physicalProviderQualified": false,
+      "postTrapFreeCountObserved": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ],
+      "schemaVersion": "latent.typescript.late-backing-case.v1",
+      "signedExecution": false,
+      "status": "passed",
+      "wholeCostQualification": false
+    },
+    {
+      "allocations": 1,
+      "allocatorBoundaryOnly": true,
+      "backingFreeReturnsBeforeStoreDrop": null,
+      "case": 7,
+      "deliveredStorageCleanupQualified": false,
+      "destructorCalls": 1,
+      "destructorRefused": true,
+      "fuel": 9417872,
+      "futureDrops": 1,
+      "futureStarts": 1,
+      "matchedImportNativeOwnersBeforeStoreDrop": 2,
+      "matchedImportResultOwnersBeforeStoreDrop": 1,
+      "observedImports": 1,
+      "ordinaryDeliveryOnly": false,
+      "osOrLinearMemoryReturnQualified": false,
+      "parametersCleanupQualified": false,
+      "parentFreeAfterTrapUnreachableByEmittedOrder": true,
+      "partialLowerCleanupQualified": false,
+      "payloadDropsAfterStoreDrop": 1,
+      "payloadDropsBeforeStoreDrop": 0,
+      "peakLinearMemoryBytes": 9502720,
+      "physicalProviderQualified": false,
+      "postTrapFreeCountObserved": false,
+      "runtimeOwnersBeforeStoreDrop": [
+        13,
+        0,
+        10,
+        0,
+        0,
+        1,
+        32
+      ],
+      "schemaVersion": "latent.typescript.late-backing-case.v1",
+      "signedExecution": false,
+      "status": "passed",
+      "wholeCostQualification": false
+    }
+  ],
+  "rawObservation": {
+    "bytes": 8322,
+    "sha256": "sha256:9fbda09d686a60a7b8dcac5c9e4a96d7fde0b272f234a73837fb6e62391a61ce"
+  },
+  "rawBackingCoreObservation": {
+    "bytes": 3554,
+    "sha256": "sha256:67a4048f2745d71ec4fd3a58c1c9f7093dd308ae16f5a2e3c154a692b59e7e9b"
+  },
+  "rawBackingObservation": {
+    "bytes": 7065,
+    "sha256": "sha256:d4d449782ae7318575a9035a095f39379666e4337895b2f72425ec6b266fa69d"
+  },
+  "observedMaxima": {
+    "linearMemoryBytesPerStore": 9502720,
+    "fuelPerStore": 37019582
+  },
+  "preStoreOwnerInterpretation": "Successful backing cases retire the matched original Native/Result tokens before Store drop and report two unrelated managed Native owners separately. The refusal retains its matched two Native/one Result owners and wider quarantine snapshot. Store teardown of its payload is not successful task cleanup.",
+  "allocatorInterpretation": "The getter counts only returns from the original cabi_free/JS_free, before Store drop in successful cancelled cases. The destructor-refusal case has no post-trap allocator count; parent-free exclusion is inferred from the verified emitted call order and actual trap. Eight emitted-core controls use counter-double free functions and never qualify the allocator.",
+  "history": [
+    {
+      "head": "3ebc9a6c9b02cb34564a7de5158e80993910d261",
+      "run": 40084273482,
+      "artifactId": 12556059534,
+      "archive": {
+        "bytes": 24800736,
+        "sha256": "sha256:9e1cb67222b1cce7ccc3f28ece068c03ce34d9a274f7c513b8d8b8a3a5a5c112"
+      },
+      "result": "14 source controls passed; normal component construction refused the invalid empty tuple. No runtime case ran. Valid empty list<u8> inputs preserve the eight backing cases and original expected free counts."
+    },
+    {
+      "head": "60246d74f71e0a58105e1425a9a2de710b896124",
+      "run": 40085913667,
+      "artifactId": 12557191443,
+      "archive": {
+        "bytes": 40892385,
+        "sha256": "sha256:1fa4523708bed1f0257221fd6430f756002f0a77c0c451b8cc9ac62a66991e50"
+      },
+      "result": "Real component construction/composition/validation and 14 source controls passed; host compilation refused direct LowerHex formatting of the pinned SHA-256 0.11 digest array. No runtime case ran; the observer now formats each byte explicitly."
+    },
+    {
+      "head": "216cbe6fc7581d1b446bc592690b08d260c7224b",
+      "run": 40086712381,
+      "artifactId": 12558120004,
+      "archive": {
+        "bytes": 52184448,
+        "sha256": "sha256:b6ff18731ed47a7ffcb8edb27a4b2ee6b1a719add206866d077feab702c5d8f5"
+      },
+      "result": "Real component and host compilation passed; the eleven-case runner could not instantiate the extended fixture because its backing import was not registered. No case row was emitted. A closed late-backing argument selects the complete fixture implementation; default canonical behavior and all oracles remain unchanged."
+    }
+  ],
+  "claims": {
+    "canonicalOwnComponentExecuted": true,
+    "actualCanonicalResourceDropExecuted": true,
+    "sameStorePayloadCapacityReuseExecuted": true,
+    "completeUnliftedResultBackingCleanupExecuted": true,
+    "nestedBackingStorageQualified": false,
+    "canonicalTableNumericIndexObserved": false,
+    "signedExecution": false,
+    "physicalProviderQualified": false,
+    "wholeCostQualification": false
+  },
+  "limitations": [
+    "Standalone explicit runtime/clock/provider diagnostic hosts are not signed node admission.",
+    "Original import Result and matched Native tokens are checked before Store Drop; unrelated managed Native and Task lifetimes are reported separately.",
+    "Capacity-one payload reuse does not observe the guest canonical table numeric slot.",
+    "Only complete, unlifted host-lowered result backing is checked; delivered/partial-lower/parameter storage, provider physical close and whole cost remain unqualified.",
+    "Zero-stride normal components are unsupported/unqualified by the pinned normal component type validator; raw emitted-core zero-stride control remains separate.",
+    "This result covers only complete unlifted host-lowered results, not normal delivered/partially lifted values, partially lowered values, parameters, captured buffers, GC allocations, OS/linear-memory return or completion of AC5/AC7/#745."
+  ]
+}

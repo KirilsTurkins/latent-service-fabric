@@ -67,18 +67,20 @@ impl proto::audit_service_server::AuditService for ManagementServiceAdapter {
                 refusal_status(error, &self.limits, RefusalStage::AuditQueryCompletion)
             })?;
         validation::completed(deadline)?;
-        let (records, coverage, cursor, lease) = page.into_parts();
-        conversion::scope(&records, &scope)?;
-        let records = records
-            .into_iter()
+        let lease = page.response_lease();
+        conversion::scope(page.records(), &scope)?;
+        let records = page
+            .records()
+            .iter()
+            .cloned()
             .map(conversion::record)
             .collect::<Result<_, _>>()?;
         let value = proto::QueryPhase2AuditResponse {
             records,
             page: Some(proto::PageResponse {
-                next_page_token: cursor.map(|value| value.0),
+                next_page_token: page.next_cursor().map(|value| value.0.clone()),
             }),
-            coverage: Some(conversion::coverage(coverage)),
+            coverage: Some(conversion::coverage(page.coverage().clone())),
         };
         validation::encoded(&value, maximum)?;
         let mut response = self.response(value)?;

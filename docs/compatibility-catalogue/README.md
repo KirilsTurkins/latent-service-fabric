@@ -1,8 +1,9 @@
 # Informational compatibility catalogue
 
-The [version 2 catalogue](v2/README.md) and its [JSON data](v2/catalogue.json)
-publish finite package observations. [Version 1](v1/README.md) remains unchanged
-as the original Java-only edition. The [schema](v1/schema.json) describes their
+The current [version 3 catalogue](v3/README.md) and its [JSON data](v3/catalogue.json)
+publish eight finite package observations bound to 31 original public documents.
+[Version 2](v2/README.md) and [version 1](v1/README.md) remain unchanged historical
+editions; version 1 is the original Java-only edition. The [schema](v1/schema.json) describes their
 machine-readable structure. They are optional documentation: dependency capture,
 compiler selection, signing, admission and capability grants do not consume them.
 An unknown coordinate has the same opportunity to build and execute as a listed
@@ -11,8 +12,8 @@ coordinate using the same implemented API/profile and explicit authority.
 Read and verify the retained document bytes and entry bindings from a checkout:
 
 ```sh
-python -m tools.compatibility_catalogue docs/compatibility-catalogue/v2/catalogue.json
-python -m tools.compatibility_catalogue docs/compatibility-catalogue/v2/catalogue.json --json
+python -m tools.compatibility_catalogue docs/compatibility-catalogue/v3/catalogue.json
+python -m tools.compatibility_catalogue docs/compatibility-catalogue/v3/catalogue.json --json
 ```
 
 The reader performs no network request, build, installation, grant or invocation.
@@ -94,6 +95,15 @@ This is the original v4/6f5 execution; the maintained workflow's later f919
 acquisition configuration supplies no new guest execution. Managed-v5 accounting,
 HTTPS and production stream/kernel qualification remain separate. Version 2 now
 contains six entries backed by twenty-three original public documents.
+
+[Version 3 publication #1245](https://github.com/KirilsTurkins/latent-service-fabric/pull/1245)
+preserves those six entries and adds Flurl.Http 4.0.2 and Refit 16.4.0 from the
+original source `7ee` twenty-call/two-refusal signed .NET programme. Refit retains
+its supported ordinary captured serializer/generator configuration; optional
+handler cases supply no default-client credit. The original failed `7e3`
+progress writer and runtime-selection unknown/not-run labels remain intact.
+This catalogue update supplies no new execution, HTTPS, full-runtime or
+native/kernel-accounting qualification.
 
 Reusable API/runtime contracts remain separate from sample package entries:
 

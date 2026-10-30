@@ -1,4 +1,5 @@
 import {randomUUID} from 'node:crypto';
+import {knownRejection, operationSummary, publicAuditReason, publicCode, rememberAudit} from './audit-diagnostics.mjs';
 import {eligible, equal, observe, requireValue, sameManifest} from './model.mjs';
 
 function receiptMatches(receipt, row, attempt, intent) {
@@ -17,14 +18,19 @@ function matchesCurrent(current, row, generation) {
 function expected(row) { return row.attempts.findLast(attempt => attempt.status === 'confirmed')?.receipt.objectGeneration; }
 
 export async function reconcile(client, journal, save, maximumWrites = 16) {
-  let writes = 0, stage = journal.rows.some(row => row.attempts.some(attempt => attempt.status === 'pending')) ? 'uncertain' : 'failed';
+  const hasPending = () => journal.rows.some(row => row.attempts.some(attempt => attempt.status === 'pending'));
+  let writes = 0, auditCapacity = null, stage = hasPending() ? 'uncertain' : 'failed';
   requireValue(Number.isInteger(maximumWrites) && maximumWrites >= 0 && maximumWrites <= 64, 'write-bound');
   const finish = async (status, reason, complete = false) => {
+    // Failure on an earlier row cannot hide a later original pending operation.
+    // No preflight, authorization change or epoch transition proves nonexecution.
+    if (hasPending()) { status = 'uncertain'; complete = false; }
     journal.status = status; journal.reason = reason;
     await save(journal);
     return {schemaVersion: 'latent.static.route-result.v1', id: journal.id, status, reason,
-      observedComplete: complete, writes, routes: journal.rows.map(row => ({id: row.desired.metadata.name,
-        generation: expected(row) ?? null, pendingOperation: row.attempts.findLast(attempt => attempt.status === 'pending')?.id ?? null}))};
+      observedComplete: complete, writes, auditCapacity, routes: journal.rows.map(row => ({id: row.desired.metadata.name,
+        generation: expected(row) ?? null, pendingOperation: row.attempts.findLast(attempt => attempt.status === 'pending')?.id ?? null,
+        operations: row.attempts.map(operationSummary)}))};
   };
   try {
     await eligible(client, journal.intent);
@@ -38,13 +44,16 @@ export async function reconcile(client, journal, save, maximumWrites = 16) {
           return finish('uncertain', 'receipt-unavailable-no-replay');
         }
         requireValue(receiptMatches(result.data.receipt, row, pending, journal.intent), 'receipt-identity-mismatch');
+        rememberAudit(pending, result);
         pending.receipt = result.data.receipt; pending.status = 'confirmed';
         await save(journal);
         stage = 'failed';
         requireValue(matchesCurrent(current, row, result.data.receipt.objectGeneration), 'confirmed-route-changed-no-overwrite');
       }
       stage = 'failed';
-      requireValue(!row.attempts.some(attempt => attempt.status === 'rejected' && attempt.code !== 'state-conflict'), 'previous-mutation-rejected-new-plan-required');
+      const rejected = row.attempts.findLast(attempt => attempt.status === 'rejected' && attempt.code !== 'state-conflict');
+      requireValue(!rejected, publicAuditReason(rejected?.auditReason) === null
+        ? 'previous-mutation-rejected-new-plan-required' : 'previous-audit-rejection-new-plan-required');
       let done = false;
       while (!done) {
         await eligible(client, journal.intent);
@@ -58,6 +67,17 @@ export async function reconcile(client, journal, save, maximumWrites = 16) {
         if (current.manifest && sameManifest(current.manifest, row.desired)) { done = true; continue; }
         if (writes >= maximumWrites) return finish('partial', 'write-budget-reached');
         requireValue(row.attempts.length < 4, 'conflict-attempt-bound');
+        const report = await client.auditPreflight(journal.intent.routes.length);
+        requireValue(report?.schemaVersion === 'latent.static.audit-headroom.v1' && report.advisory === true
+          && report.reservation === false && report.executionPermission === false
+          && ['headroom-observed', 'warning', 'blocked', 'unavailable'].includes(report.status), 'audit-preflight-invalid');
+        auditCapacity = report; journal.auditCapacity = report; await save(journal);
+        if (!['headroom-observed', 'warning'].includes(report.status)) {
+          return finish(journal.rows.some(value => expected(value)) ? 'partial' : 'failed',
+            report.status === 'blocked' ? 'audit-preflight-blocked' : 'audit-preflight-unavailable');
+        }
+        // The snapshot is advisory, not a reservation or an authorization lease.
+        // The actual guarded mutation below may still be rejected or uncertain.
         const attempt = {id: 'route-' + randomUUID(), generation: current.generation, stateVersion: current.stateVersion, status: 'pending'};
         row.attempts.push(attempt);
         journal.status = 'applying'; await save(journal);
@@ -65,6 +85,7 @@ export async function reconcile(client, journal, save, maximumWrites = 16) {
         // This durable intent precedes the only dispatch. A timeout, truncated
         // response or process interruption leaves it pending for read-only recovery.
         const result = await client.apply(row.desired, attempt);
+        rememberAudit(attempt, result);
         if (result.category === 'success' && result.outcomeKnown === true) {
           requireValue(result.data?.durability === 'confirmed', 'mutation-durability-unconfirmed');
           requireValue(receiptMatches(result.data.receipt, row, attempt, journal.intent), 'receipt-identity-mismatch');
@@ -72,10 +93,12 @@ export async function reconcile(client, journal, save, maximumWrites = 16) {
           stage = 'failed';
           continue;
         }
-        if (result.outcomeKnown !== true) return finish('uncertain', 'mutation-outcome-unknown-no-replay');
-        attempt.status = 'rejected'; attempt.code = result.error?.code ?? 'request-rejected'; await save(journal);
+        // Keep generic exhaustion and post-commit failures separate from an
+        // affirmative rejection. Audit diagnostics never change disposition.
+        if (!knownRejection(result)) return finish('uncertain', 'mutation-outcome-unknown-no-replay');
+        attempt.status = 'rejected'; attempt.code = publicCode(result.error?.code); await save(journal);
         stage = 'failed';
-        requireValue(attempt.code === 'state-conflict', 'mutation-rejected');
+        requireValue(attempt.code === 'state-conflict', publicAuditReason(attempt.auditReason) ?? 'mutation-rejected');
         // Only a known rejection permits a fresh operation. The next live read
         // must still equal the original route generation and complete manifest.
       }

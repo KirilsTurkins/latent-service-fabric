@@ -413,5 +413,30 @@ class CThreadRuntime(unittest.TestCase):
                 node.usage(client, {'name': node.SERVICE}, idle=True)
 
 
+class CHttpClientControls(unittest.TestCase):
+    def test_libfetch_results_require_exact_case_error_checksum_and_no_bool_exit(self):
+        from tools.standard_http.vectors import DOMAIN, PARTIAL, json_bytes
+        def encoded(data):
+            value = 0
+            for byte in data:
+                value = (33 * value + byte) & 0xffffffff
+            return str(len(data)) + ':' + str(value)
+        values = {'normal': (0, [{'ok': encoded(json_bytes(DOMAIN))}]),
+            'not-found': (3, [{'err': 'unavailable'}]), 'denied': (3, [{'err': 'permission-denied'}]),
+            'early-close': (0, [{'ok': 'closed'}]),
+            'sibling': (0, [{'ok': encoded(PARTIAL) + ':' + encoded(json_bytes(DOMAIN)) + ':1:1:1'}])}
+        self.assertEqual(tuple(values), fixture.HTTP_CASES)
+        for case, (code, decoded) in values.items():
+            fixture.http_result({'exitCode': code, 'decoded': decoded}, case)
+            for wrong in ({'exitCode': 4, 'decoded': decoded}, {'exitCode': code, 'decoded': []},
+                          {'exitCode': code, 'decoded': [{'ok': 'closed'}] if case != 'early-close' else [{'ok': '0'}]}):
+                with self.assertRaisesRegex(ValueError, '^c-libfetch-exact-ordinary-result$'):
+                    fixture.http_result(wrong, case)
+        with self.assertRaisesRegex(ValueError, '^c-libfetch-exact-ordinary-result$'):
+            fixture.http_result({'exitCode': False, 'decoded': values['normal'][1]}, 'normal')
+        with self.assertRaisesRegex(ValueError, '^c-libfetch-exact-ordinary-result$'):
+            fixture.http_result({'exitCode': 0, 'decoded': values['normal'][1]}, 'unknown')
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_stream_operator_node.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add one closed current-source unavailable-stream INSPECT mode: one native/frontend build, unchanged signed fixture exporter, eight real node cells, no stream install/grant/socket execution, same original command/process owners and explicit fixed bounds; preserve all original configuration-check helpers.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "b48dc0b710c5a30b2d8a378f3eb692f3e6db67214b9d125bf9d96b72f1474260"
+}

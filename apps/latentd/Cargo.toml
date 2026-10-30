@@ -13,7 +13,7 @@ path = "src/lib_root.rs"
 
 [features]
 # Explicit developer artifact only. Ordinary node builds reject these inputs.
-development-test-node = ["latent-wasmtime/development-clock-fixture"]
+development-test-node = ["latent-wasmtime/development-clock-fixture", "latent-wasmtime/development-local-service-fixture"]
 development-outbound-streams = ["latent-streams/development-outbound"]
 rust-thread-trap-diagnostic = ["latent-wasmtime/rust-thread-trap-diagnostic"]
 
@@ -54,7 +54,7 @@ latent-wire = { path = "../../crates/latent-wire" }
 http-body.workspace = true
 httparse = "=1.10.1"
 rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std"] }
-tokio-rustls = { version = "=0.26.5", default-features = false, features = ["ring"] }
+tokio-rustls = { version = "=0.26.6", default-features = false, features = ["ring"] }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

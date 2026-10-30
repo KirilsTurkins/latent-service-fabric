@@ -1,0 +1,307 @@
+{
+  "schemaVersion": "latent.sdk.compatibility-completion.v1",
+  "issue": 679,
+  "status": "required-finite-programme-qualified",
+  "runtimeSource": "92a9b0bf0436b142433ba66ebe5f8b8db59c874c",
+  "runtimeTree": "c13ae597779c9eee00ae2865ca35a8771561feda",
+  "owningRun": 40240058211,
+  "owningUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40240058211",
+  "matrix": {
+    "artifact": 12616757316,
+    "archiveBytes": 21231,
+    "archiveSha256": "c04f30ee3b3036aa7f359bb0782cd985764c185b4cc28e06a25f1e42379f643b",
+    "member": "compatibility-completion.json",
+    "bytes": 161826,
+    "sha256": "5c02c46492d47bf0aa507b58ab69ae33b44a6dcba17639657311570085f0f5ed",
+    "logicalCells": 8,
+    "retainedByteForByte": true
+  },
+  "currentApiLedgerCode": {
+    "size": 71586,
+    "digest": "sha256:ae9f6636d7a03abe43fdc82ce830392453b93705c3852b38e15d453ba978e215"
+  },
+  "newCurrentRuntimeExecutionClaimed": false,
+  "perLanguage": [
+    {
+      "language": "C",
+      "runtimeSource": "61a0be045ca33f44cd2ae1467e272168bccdafb7",
+      "outcomes": "baseline2 + native ENOTSUP fallback2 + eager constructor count1/fresh2; all success",
+      "uncaughtAndFresh": "sdk-explicit-fallback-2026-10-22.json, original C scope"
+    },
+    {
+      "language": "Rust",
+      "runtimeSource": "723ffc6a304737b000af03ddb65499b30e0a25f4",
+      "outcomes": "baseline2 + File::open Unsupported fallback2 + LazyLock two forces/count1/fresh2; all success",
+      "initialization": "lazy-static-during-invocation, not eager component start",
+      "uncaughtAndFresh": "rust-compatibility-signed-2026-10-21.json, original Rust scope"
+    },
+    {
+      "language": "Go",
+      "runtimeSource": "92a9b0bf0436b142433ba66ebe5f8b8db59c874c",
+      "outcomes": "current baseline2 + os.Open Unsupported fallback2 + eager package-variable count1/fresh2; all success",
+      "uncaughtAndFresh": "sdk-explicit-fallback-2026-10-22.json, original Go scope"
+    },
+    {
+      "language": "Java",
+      "runtimeSource": "cc8b88b18abda6e03fc3097d8af658f5e16022f6",
+      "outcomes": "init/constructor Unsupported fallback + callback fallback; init-trap and callback-trap remain guest-trap/unreachable; fresh success after each",
+      "caseCount": 6,
+      "uncaughtCause": "unknown"
+    },
+    {
+      "language": ".NET",
+      "runtimeSource": "92a9b0bf0436b142433ba66ebe5f8b8db59c874c",
+      "builderAndBaselineSource": "61a0be045ca33f44cd2ae1467e272168bccdafb7",
+      "outcomes": "original baseline2 + current GetTempFileName Unsupported fallback/fresh2; all success",
+      "currentCctorDisposition": "unknown; no standalone scanner/codegen nodes, not runtime init proof",
+      "actualInitialization": "dotnet-compiler-observations-signed-2026-10-21.json: original0a9dc35/run39658568744/job119425261204/art12373935352; init=1,ctor=1,denied=2,fallback42; init-trap failure then fresh success; original source/profile only"
+    },
+    {
+      "language": "TypeScript",
+      "runtimeSource": "cc8b resources +723ffc initializer",
+      "outcomes": "Task16/request17 and Timer8/request9 independently typed operation refusals, fresh success after each; class-static-in-invocation DefaultClock Unsupported fallback/count1/two reads/fresh2",
+      "uncaughtAndFresh": "typescript-explicit-fallback-2026-10-22.json, original source/profile only"
+    }
+  ],
+  "criteria": {
+    "AC2": {
+      "scope": "automatic default six-owner captured roots + conservative final-component export/init/addressable-callback analysis; incomplete, indirect and unresolved paths remain unknown",
+      "evidence": "C LLVM/Rust literal MIR/Go SSA exact one-edge differentials; Java compiler graph/counterfactual; .NET original CIL plus both complete ILC graphs and actual API0-to1, unchanged source operand/body; existing TypeScript elimination receipt",
+      "sources": [
+        "tools/guest_compiler_capture.py",
+        "tools/guest_compiler_edges.py",
+        "tools/guest_emitted_code.py",
+        "tools/guest_api_analysis.py"
+      ]
+    },
+    "AC4": {
+      "scope": "eight source-owned finite API/implementation fixture bindings, original/selected/transformed/profile identities; Java stable original-artifact/CFileSystem source join, all other rows exact original-selection scope",
+      "newGoDotnetApiBindings": [
+        {
+          "cell": "go",
+          "language": "go",
+          "apis": [
+            "go.os.Open"
+          ],
+          "runtimeProfile": "go-component-async-v1",
+          "hostAbiProfile": "lsf-host-abi-phase3-v4",
+          "materials": [
+            {
+              "kind": "compiler",
+              "name": "go-runtime-transformations",
+              "digest": "sha256:6d87d43c0fae25821eeb69be0147c750fd04134f34c2e8c80309131eb5beeedb"
+            },
+            {
+              "kind": "runtime",
+              "name": "selected-runtime-original",
+              "digest": "sha256:d8e1e9539cc6e8026276a1137ee9a8d1a86fd6bd1f44d4df2a7790d3e91575a4",
+              "profile": "go-component-async-v1"
+            },
+            {
+              "kind": "runtime",
+              "name": "selected-standard-runtime",
+              "digest": "sha256:57ab0f4347a613260b3e362c118eb877a995e264fe03b2ca0d85fee3bb7773e2",
+              "profile": "go-component-async-v1"
+            }
+          ],
+          "ownerObservations": {},
+          "scope": "normal-API-Unsupported-fallback-and-eager-package-initialization-count1-with-fresh-stores",
+          "origin": {
+            "sourceCommit": "92a9b0bf0436b142433ba66ebe5f8b8db59c874c",
+            "run": 40240058211,
+            "job": 121309733980,
+            "artifact": 12616747190,
+            "archive": {
+              "bytes": 8716339,
+              "sha256": "sha256:1456016bf3bbfa69bb8272283774fa6b13c80e83d075809b356baa2a9bd14ab4"
+            },
+            "qualifiedReceipt": {
+              "member": "qualified.json",
+              "bytes": 175088,
+              "sha256": "sha256:7ebff6738e52fb03e07ec18cfe054b45e8bb102e12ba42d3c866b76330fe83e6"
+            },
+            "componentDigest": "sha256:f2d770ddcd749cf6f1092a0a7239ffeb944c4ea62d81edcada283e383fe1d3ea",
+            "sourceDigest": "sha256:d132b746b7d4bffe6319e277996b7a71aea04c49f18d24894e2e6dacb373ad75",
+            "recipeDigest": "sha256:7f9b9852fe0482be85eca2d557202f3878df1cde70195ddf66c1ae932586bc82",
+            "qualifiedCanonicalDigest": "sha256:91c8ed4ffa73323dddb191faa20ec56b93d5c6ff9b783060e427f0dd55f06eed"
+          },
+          "appExecution": "not-observed",
+          "apiGlobalBehavior": "unknown",
+          "authority": "none",
+          "operationImplementationBinding": "not-derived-from-management-fact",
+          "qualifiedImplementationMaterials": [
+            {
+              "kind": "compiler",
+              "name": "go-runtime-transformations",
+              "digest": "sha256:6d87d43c0fae25821eeb69be0147c750fd04134f34c2e8c80309131eb5beeedb"
+            },
+            {
+              "kind": "runtime",
+              "name": "selected-standard-runtime",
+              "digest": "sha256:57ab0f4347a613260b3e362c118eb877a995e264fe03b2ca0d85fee3bb7773e2",
+              "profile": "go-component-async-v1"
+            }
+          ],
+          "qualification": "finite-selected-implementation-fixture",
+          "matchingScope": "exact-original-selection-receipt-only",
+          "selectionReceiptRole": "original-fixture-provenance-only"
+        },
+        {
+          "cell": "dotnet",
+          "language": "dotnet",
+          "apis": [
+            "dotnet.System.IO.Path.GetTempFileName"
+          ],
+          "runtimeProfile": "closed",
+          "hostAbiProfile": "lsf-host-abi-phase3-v4",
+          "materials": [
+            {
+              "kind": "runtime",
+              "name": "selected-standard-runtime",
+              "digest": "sha256:de00ac2c6ee70d7e223a84387d93c708650a50306b5fa0eda027f7dfbe26a449",
+              "profile": "closed"
+            }
+          ],
+          "ownerObservations": {},
+          "scope": "original-baseline2-and-current-GetTempFileName-Unsupported-fallback-positive2-with-fresh-stores",
+          "origin": {
+            "sourceCommit": "92a9b0bf0436b142433ba66ebe5f8b8db59c874c",
+            "run": 40240058211,
+            "job": 121309733750,
+            "artifact": 12616142034,
+            "archive": {
+              "bytes": 721496,
+              "sha256": "sha256:8fc5edfd7e822abd92e99af8df3357f840c8ed5800ec8d9ea2a47398a652e69a"
+            },
+            "qualifiedReceipt": {
+              "member": "qualified.json",
+              "bytes": 363707,
+              "sha256": "sha256:8ace1fd8f69b558243f8ac2132f8ebe6ae484e955f02d5cda802eaa5e13179ec"
+            },
+            "componentDigest": "sha256:acc5b1772c352501b2ee05f5b641e2bc5fc249a813970ff678cf3aa17c73eb0d",
+            "sourceDigest": "sha256:1205f7d6c1094620662f58235dbc2aea13dd43789660384c21813504c5e69c59",
+            "recipeDigest": "sha256:cae18db846427000c92cf4792dc05417592b026ef9e6aa29173ac50f3d29c0cb",
+            "qualifiedCanonicalDigest": "sha256:cecdc6be33a4713d2d505bab166525777454a592c722efe6e471e2d91d7f6821",
+            "builderSourceCommit": "61a0be045ca33f44cd2ae1467e272168bccdafb7",
+            "baselineRuntimeSourceCommit": "61a0be045ca33f44cd2ae1467e272168bccdafb7",
+            "nodeSourceCommit": "92a9b0bf0436b142433ba66ebe5f8b8db59c874c"
+          },
+          "appExecution": "not-observed",
+          "apiGlobalBehavior": "unknown",
+          "authority": "none",
+          "operationImplementationBinding": "not-derived-from-management-fact",
+          "qualifiedImplementationMaterials": [
+            {
+              "kind": "patch",
+              "name": "dotnet-closed-filesystem-v1",
+              "digest": "sha256:953314dee4f7c25f202b2d44536c6c84439aa3042cb7a2ccc95ee7a74227d43b",
+              "profile": "dotnet-closed-filesystem-v1",
+              "originalDigest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+              "transformDigest": "sha256:2dab00934a65c9f7533752db8ab005d2a8d1c7473364a8e67a262cd8993c3e5f"
+            }
+          ],
+          "qualification": "finite-selected-implementation-fixture",
+          "matchingScope": "exact-original-selection-receipt-only",
+          "selectionReceiptRole": "original-fixture-provenance-only",
+          "initializationDisposition": "unknown"
+        }
+      ],
+      "missingImplementationTickets": {
+        "node.net.Socket": [
+          738,
+          739,
+          745
+        ],
+        "otherUnqualifiedPaths": "their explicit language/implementation issue; arbitrary APIs remain unknown"
+      },
+      "admissionAuthority": "none"
+    },
+    "AC5": {
+      "scope": "normal source-captured libraries and native API denials stay catchable; original uncaught failures/fresh-store evidence retained at original source/profile; no operation fact becomes an invented terminal cause",
+      "historicalAnchors": [
+        "sdk-explicit-fallback-2026-10-22.json",
+        "rust-compatibility-signed-2026-10-21.json",
+        "java-compiler-observations-signed-2026-10-21.json",
+        "dotnet-compiler-observations-signed-2026-10-21.json",
+        "typescript-explicit-fallback-2026-10-22.json",
+        "six-language-final-import-controls-2026-10-21.json"
+      ]
+    },
+    "AC8": {
+      "scope": "producer-owned resource labels only; original diagnostics and unavailable/invalid/unknown states stay distinct",
+      "resources": [
+        {
+          "kind": "task/timer",
+          "evidence": "signed TypeScript: reasons17/19, bounds16/8, requests17/9, fresh stores; management implementation binding unavailable, not terminal cause"
+        },
+        {
+          "kind": "queue",
+          "evidence": "signed Go v6 queue8/9 differential, reason18, fresh stores; no os.Open or global goroutine qualification inferred"
+        },
+        {
+          "kind": "frame/stack",
+          "evidence": "native17e8 actual shared normal component invokes non-tail recursion: StackOverflow26 then42 in a fresh Store; unsigned shared-engine scope, no numeric private frame quota"
+        },
+        {
+          "kind": "thread",
+          "evidence": "native17e8 original11 actual worker tests include child_total_start_capacity_survives_logical_completion_and_releases_only_after_store_drop; native owner scope, not a restarted Rust/C thread campaign"
+        },
+        {
+          "kind": "native-memory",
+          "evidence": "native17e8 actual_native_reservation_refusal_keeps_original_budget_and_does_not_guess_other_dimensions; real native reservation unit, not OS OOM/guest heap stress"
+        },
+        {
+          "kind": "external uncertainty",
+          "evidence": "unclassified/absent/native allocator errors and unrelated traps remain unknown; source reader/presentation controls, not an asserted OS-exhaustion runtime campaign"
+        }
+      ],
+      "nativePrerequisite": {
+        "source": "17e8e622ecd3307a246196cbb5ca06c0fac37301",
+        "run": 40208542534,
+        "job": 121214620779,
+        "artifact": 12604978936,
+        "stages": 29,
+        "allCommandsZero": true,
+        "explicitResourceControls": 3,
+        "originalWorkers": 11,
+        "actualStackComponent": true
+      }
+    }
+  },
+  "limits": "Original compiler/runtime/process/heap/stack/fuel/grant limits unchanged. No native/engine rebuild or passed six-cell runtime replay.",
+  "limitations": [
+    "No arbitrary-library or whole-program API safety claim",
+    "No new compiled-pair execution at the later ledger head",
+    "No inference that absent .NET standalone cctor nodes mean initialization executed",
+    "No management API/source/revision attribution from activation/service-only resource facts",
+    "No Rust1371/1373, C thread or Java GC1388 campaign resumed"
+  ],
+  "requiredExtraControls": {
+    "scope": "Existing source/reader/classification controls; no new runtime campaign or inferred opaque-worker retirement.",
+    "sourceBindingAndRenaming": [
+      "tools/tests/test_guest_api_analysis.py::test_unknown_package_rename_changes_source_binding_without_changing_api_verdict",
+      "tools/tests/test_guest_api_analysis.py::test_exact_standard_materials_profiles_and_owners_only_select_finite_fixture",
+      "tools/tests/test_guest_compatibility.py::test_catalogue_absence_and_renaming_do_not_change_import_classification"
+    ],
+    "providerAndAuthoritySeparation": [
+      "tools/tests/test_guest_compatibility.py::test_import_recognition_provider_installation_and_grant_are_separate",
+      "tools/tests/test_guest_compatibility_profiles.py::test_v5_recognition_cannot_turn_http_grants_into_runtime_or_socket_grants",
+      "tools/tests/test_guest_compatibility_profiles.py::test_stale_manifest_reporting_preserves_original_compiler_error"
+    ],
+    "typedResourceAndLifecycleReaders": [
+      "tools/tests/test_guest_compatibility_outcomes.py::test_original_typed_bucket_observations_distinguish_bytes_counts_and_stack",
+      "tools/tests/test_guest_compatibility_outcomes.py::test_display_labels_match_the_producer_owned_numeric_vocabulary",
+      "tools/tests/test_guest_compatibility_outcomes.py::test_observed_lifecycle_disposition_round_trips_for_every_language_without_cause_claims",
+      "tools/tests/test_guest_compatibility_outcomes.py::test_lifecycle_disposition_cannot_certify_a_cause_or_accept_unknown_tokens",
+      "tools/tests/test_guest_compatibility_outcomes.py::test_rehashed_support_retirement_and_retry_claims_are_rejected"
+    ],
+    "deadlineCancellationAndWorkerDrain": {
+      "readerControl": "tools/tests/test_guest_compatibility.py::test_denial_resource_and_uncertainty_remain_distinct",
+      "scope": "Pure classification distinguishes deadline-exceeded, cancelled and external uncertainty. Original outcomes whose worker drain is unproven remain unproven; no retirement or cause is certified by these reader controls."
+    },
+    "actualUnknownImportRuntime": {
+      "evidence": "docs/testing/evidence/six-language-final-import-controls-2026-10-21.json",
+      "scope": "Original six-language signed unknown-import/refusal and fresh-instance evidence at its dated source/profile; no new execution or current arbitrary-library support inferred."
+    }
+  }
+}

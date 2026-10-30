@@ -1,258 +1,258 @@
 {
-  "schemaVersion": "lsf.kernel-maintained-bind-source.v1",
-  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
-  "archiveSha256": "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
-  "source": {
-    "fs/inode.c": {
-      "bytes": 75338,
-      "sha256": "73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
-      "gitBlob": "7942673f686fdc24d92c2fb8033c2fb3b6df7709",
-      "independentlyGitCorroborated": true
-    },
-    "include/linux/skbuff.h": {
-      "bytes": 151887,
-      "sha256": "af70ea27cf9a3a2d790b1005a16da7649d3bbb0fd136b2934ed4018077dbb822",
-      "gitBlob": "df548a3d606570d38614fc45403133069ecb9cab",
-      "independentlyGitCorroborated": true
-    },
-    "include/net/inet_hashtables.h": {
-      "bytes": 17314,
-      "sha256": "a699f5b96229f9d6fa4bb5bf435285db59b7d2e45918044f2c5fec01e624bf6e",
-      "gitBlob": "b1118125486631e6e02ca2d1f6575dad60e6d705",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/netlabel.h": {
-      "bytes": 21017,
-      "sha256": "82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
-      "gitBlob": "529160f76cac209ee7473ea7b5ccd49da0789f18",
-      "independentlyGitCorroborated": false
-    },
-    "include/net/sock.h": {
-      "bytes": 85865,
-      "sha256": "5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
-      "gitBlob": "efa549885b7f85e50c55f95ad4eae0c1ef75797a",
-      "independentlyGitCorroborated": true
-    },
-    "kernel/audit.c": {
-      "bytes": 66999,
-      "sha256": "7a33029ecca2b8a71a8a12e9a1699a8180e64a82acfbdc599b0ec658fa07d564",
-      "gitBlob": "df279dd2e45086b791852f2a46ceb52f24f0fd78",
-      "independentlyGitCorroborated": false
-    },
-    "net/core/skbuff.c": {
-      "bytes": 189334,
-      "sha256": "6a2fec31182c7c4d247d85aaffba036de9c0b6a9911c3cc1249d00b423ea0ae8",
-      "gitBlob": "5608b5507b5bf03504a9093abaa865af2b82043e",
-      "independentlyGitCorroborated": true
-    },
-    "net/core/sock.c": {
-      "bytes": 111636,
-      "sha256": "f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
-      "gitBlob": "75db38fdfd35fe87b87ac2755b0ef1db6fb96415",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/af_inet.c": {
-      "bytes": 51938,
-      "sha256": "9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
-      "gitBlob": "c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/cipso_ipv4.c": {
-      "bytes": 63739,
-      "sha256": "03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
-      "gitBlob": "53fcb2089cde2a246c0b84d31582485b2496da64",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/inet_connection_sock.c": {
-      "bytes": 45201,
-      "sha256": "cb3567452632b9017a463f8dc860bd046bb9e572bacd56d219a2c0e124f453c7",
-      "gitBlob": "eeee6f75833767f0ae5878bb285fbde63d027654",
-      "independentlyGitCorroborated": false
-    },
-    "net/ipv4/inet_hashtables.c": {
-      "bytes": 35429,
-      "sha256": "20113f4e67d557ef06a68322d0cb03da2de5463409eb2b8b5dd80b305e9aa08d",
-      "gitBlob": "37a6acff537e6511a84b7cdfc61af2412eb2cb0b",
-      "independentlyGitCorroborated": true
-    },
-    "net/ipv4/inet_timewait_sock.c": {
-      "bytes": 10794,
-      "sha256": "c200d5880fbf8dd56c0a058beb9b4e92465991038a81b98469aa98ad1c5f31c5",
-      "gitBlob": "74b84ac418e93c176336fc974b82c3586bae3fc1",
-      "independentlyGitCorroborated": true
-    },
-    "net/netlabel/netlabel_kapi.c": {
-      "bytes": 38938,
-      "sha256": "d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
-      "gitBlob": "33b77084a4e5f34770f960d7c82e481d9889753a",
-      "independentlyGitCorroborated": false
-    },
-    "net/netlink/af_netlink.c": {
-      "bytes": 71601,
-      "sha256": "2145f190dc87bfa5f79739d960766970652ed9e5c271ec847c1eeca4be86fd2d",
-      "gitBlob": "e250d4a3d03097f92c48c1741db405c8ea54899d",
-      "independentlyGitCorroborated": false
-    },
-    "net/socket.c": {
-      "bytes": 92491,
-      "sha256": "95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
-      "gitBlob": "723bc3a1ba5cdd17f559a65de73d9c87911e6954",
-      "independentlyGitCorroborated": true
-    },
-    "security/lsm_audit.c": {
-      "bytes": 11088,
-      "sha256": "bd55731531fa8d095a2f7857afd8cdd83b689f8a675b7b05217910769c4bf257",
-      "gitBlob": "849e832719e2151a060679db4fe993e13f42b997",
-      "independentlyGitCorroborated": false
-    },
-    "security/security.c": {
-      "bytes": 180030,
-      "sha256": "b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
-      "gitBlob": "b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
-      "independentlyGitCorroborated": true
-    },
-    "security/selinux/avc.c": {
-      "bytes": 31717,
-      "sha256": "e5ead166180e1b51dab8f701f16a595e51ff68eb346f7a8b4549617ce4672ce6",
-      "gitBlob": "688ff9e63f514ec18b8096e59e0edd63ac6f5112"
-    },
-    "security/selinux/hooks.c": {
-      "bytes": 204597,
-      "sha256": "6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
-      "gitBlob": "d4abf15f0e6fb98505df81ac3128255b4cd9e1e7",
-      "independentlyGitCorroborated": true
-    },
-    "security/selinux/include/avc.h": {
-      "bytes": 4623,
-      "sha256": "b1bb6fd0b9fda55cce88a5fb2a359fd64cde40ef18162e6640cd33885ebb5966",
-      "gitBlob": "96a614d47df8d1d67b0b033ebb90954653dfeab7"
-    },
-    "security/selinux/netlabel.c": {
-      "bytes": 16481,
-      "sha256": "972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
-      "gitBlob": "d51dfe89231229e78903f3aa552286326524dca2",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/netport.c": {
-      "bytes": 5952,
-      "sha256": "8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
-      "gitBlob": "2e22ad9c2bd0d116668985e0fb579b5934df9394",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/ss/ebitmap.c": {
-      "bytes": 12211,
-      "sha256": "69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
-      "gitBlob": "cd84357db2c47a034bb3601eeaaa8806dbf0f7af",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/ss/mls.c": {
-      "bytes": 16094,
-      "sha256": "349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
-      "gitBlob": "a6e49269f5351df096da8c9fb56103a2f7b0ee9d",
-      "independentlyGitCorroborated": false
-    },
-    "security/selinux/ss/services.c": {
-      "bytes": 97756,
-      "sha256": "0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
-      "gitBlob": "54d121d64804295c8ae1f40103957f6a3b671640",
-      "independentlyGitCorroborated": true
-    },
-    "security/selinux/ss/sidtab.c": {
-      "bytes": 14675,
-      "sha256": "5bc885230f9b6023ff7a64b0ff80746f607a572cf7d882eab149f6c1261c4f08",
-      "gitBlob": "c8848cbba81f24abbb2e0d07697ece10d2cc6637",
-      "independentlyGitCorroborated": false
-    }
-  },
-  "sections": {
-    "inet_bind_bucket_create": {
-      "source": "net/ipv4/inet_hashtables.c",
-      "prefix": "struct inet_bind_bucket *inet_bind_bucket_create(",
-      "bytes": 498,
-      "sha256": "2bb7897e58f13fe7785cac24ae81aebd4e8f24ab14d46482eb8cf9b9be66baa2",
-      "text": "struct inet_bind_bucket *inet_bind_bucket_create(struct kmem_cache *cachep,\n\t\t\t\t\t\t struct net *net,\n\t\t\t\t\t\t struct inet_bind_hashbucket *head,\n\t\t\t\t\t\t const unsigned short snum,\n\t\t\t\t\t\t int l3mdev)\n{\n\tstruct inet_bind_bucket *tb = kmem_cache_alloc(cachep, GFP_ATOMIC);\n\n\tif (tb) {\n\t\twrite_pnet(&tb->ib_net, net);\n\t\ttb->l3mdev    = l3mdev;\n\t\ttb->port      = snum;\n\t\ttb->fastreuse = 0;\n\t\ttb->fastreuseport = 0;\n\t\tINIT_HLIST_HEAD(&tb->bhash2);\n\t\thlist_add_head(&tb->node, &head->chain);\n\t}\n\treturn tb;\n}\n"
-    },
-    "inet_bind_bucket_destroy": {
-      "source": "net/ipv4/inet_hashtables.c",
-      "prefix": "void inet_bind_bucket_destroy(",
-      "bytes": 183,
-      "sha256": "6fe3c93729661c040a41984f31a6a6e0d73522859252f79ec4cb7b94726640f4",
-      "text": "void inet_bind_bucket_destroy(struct kmem_cache *cachep, struct inet_bind_bucket *tb)\n{\n\tif (hlist_empty(&tb->bhash2)) {\n\t\t__hlist_del(&tb->node);\n\t\tkmem_cache_free(cachep, tb);\n\t}\n}\n"
-    },
-    "inet_bind2_bucket_init": {
-      "source": "net/ipv4/inet_hashtables.c",
-      "prefix": "static void inet_bind2_bucket_init(",
-      "bytes": 795,
-      "sha256": "6234ea24f277ea487b67beb8b041af7751743538034e997914b69aa27fa15b4e",
-      "text": "static void inet_bind2_bucket_init(struct inet_bind2_bucket *tb2,\n\t\t\t\t   struct net *net,\n\t\t\t\t   struct inet_bind_hashbucket *head,\n\t\t\t\t   struct inet_bind_bucket *tb,\n\t\t\t\t   const struct sock *sk)\n{\n\twrite_pnet(&tb2->ib_net, net);\n\ttb2->l3mdev = tb->l3mdev;\n\ttb2->port = tb->port;\n#if IS_ENABLED(CONFIG_IPV6)\n\tBUILD_BUG_ON(USHRT_MAX < (IPV6_ADDR_ANY | IPV6_ADDR_MAPPED));\n\tif (sk->sk_family == AF_INET6) {\n\t\ttb2->addr_type = ipv6_addr_type(&sk->sk_v6_rcv_saddr);\n\t\ttb2->v6_rcv_saddr = sk->sk_v6_rcv_saddr;\n\t} else {\n\t\ttb2->addr_type = IPV6_ADDR_MAPPED;\n\t\tipv6_addr_set_v4mapped(sk->sk_rcv_saddr, &tb2->v6_rcv_saddr);\n\t}\n#else\n\ttb2->rcv_saddr = sk->sk_rcv_saddr;\n#endif\n\tINIT_HLIST_HEAD(&tb2->owners);\n\thlist_add_head(&tb2->node, &head->chain);\n\thlist_add_head(&tb2->bhash_node, &tb->bhash2);\n}\n"
-    },
-    "inet_bind2_bucket_create": {
-      "source": "net/ipv4/inet_hashtables.c",
-      "prefix": "struct inet_bind2_bucket *inet_bind2_bucket_create(",
-      "bytes": 368,
-      "sha256": "6abec0a445ab6fd026ba49242bc121a9377d1b8f58b4b29a972d974db6f28500",
-      "text": "struct inet_bind2_bucket *inet_bind2_bucket_create(struct kmem_cache *cachep,\n\t\t\t\t\t\t   struct net *net,\n\t\t\t\t\t\t   struct inet_bind_hashbucket *head,\n\t\t\t\t\t\t   struct inet_bind_bucket *tb,\n\t\t\t\t\t\t   const struct sock *sk)\n{\n\tstruct inet_bind2_bucket *tb2 = kmem_cache_alloc(cachep, GFP_ATOMIC);\n\n\tif (tb2)\n\t\tinet_bind2_bucket_init(tb2, net, head, tb, sk);\n\n\treturn tb2;\n}\n"
-    },
-    "inet_bind2_bucket_destroy": {
-      "source": "net/ipv4/inet_hashtables.c",
-      "prefix": "void inet_bind2_bucket_destroy(",
-      "bytes": 217,
-      "sha256": "627ca1e7866cb40e0b399fc586f02738d88d25f039bca6768a84cdacd6ef275c",
-      "text": "void inet_bind2_bucket_destroy(struct kmem_cache *cachep, struct inet_bind2_bucket *tb)\n{\n\tif (hlist_empty(&tb->owners)) {\n\t\t__hlist_del(&tb->node);\n\t\t__hlist_del(&tb->bhash_node);\n\t\tkmem_cache_free(cachep, tb);\n\t}\n}\n"
-    },
-    "__inet_hash_connect": {
-      "source": "net/ipv4/inet_hashtables.c",
-      "prefix": "int __inet_hash_connect(",
-      "bytes": 4273,
-      "sha256": "26d365d3fbe230c13f954f7eeff2cbdb53e87753bcdfb80136fc53391b706db0",
-      "text": "int __inet_hash_connect(struct inet_timewait_death_row *death_row,\n\t\tstruct sock *sk, u64 port_offset,\n\t\tint (*check_established)(struct inet_timewait_death_row *,\n\t\t\tstruct sock *, __u16, struct inet_timewait_sock **))\n{\n\tstruct inet_hashinfo *hinfo = death_row->hashinfo;\n\tstruct inet_bind_hashbucket *head, *head2;\n\tstruct inet_timewait_sock *tw = NULL;\n\tint port = inet_sk(sk)->inet_num;\n\tstruct net *net = sock_net(sk);\n\tstruct inet_bind2_bucket *tb2;\n\tstruct inet_bind_bucket *tb;\n\tbool tb_created = false;\n\tu32 remaining, offset;\n\tint ret, i, low, high;\n\tbool local_ports;\n\tint step, l3mdev;\n\tu32 index;\n\n\tif (port) {\n\t\tlocal_bh_disable();\n\t\tret = check_established(death_row, sk, port, NULL);\n\t\tlocal_bh_enable();\n\t\treturn ret;\n\t}\n\n\tl3mdev = inet_sk_bound_l3mdev(sk);\n\n\tlocal_ports = inet_sk_get_local_port_range(sk, &low, &high);\n\tstep = local_ports ? 1 : 2;\n\n\thigh++; /* [32768, 60999] -> [32768, 61000[ */\n\tremaining = high - low;\n\tif (!local_ports && remaining > 1)\n\t\tremaining &= ~1U;\n\n\tget_random_sleepable_once(table_perturb,\n\t\t\t\t  INET_TABLE_PERTURB_SIZE * sizeof(*table_perturb));\n\tindex = port_offset & (INET_TABLE_PERTURB_SIZE - 1);\n\n\toffset = READ_ONCE(table_perturb[index]) + (port_offset >> 32);\n\toffset %= remaining;\n\n\t/* In first pass we try ports of @low parity.\n\t * inet_csk_get_port() does the opposite choice.\n\t */\n\tif (!local_ports)\n\t\toffset &= ~1U;\nother_parity_scan:\n\tport = low + offset;\n\tfor (i = 0; i < remaining; i += step, port += step) {\n\t\tif (unlikely(port >= high))\n\t\t\tport -= remaining;\n\t\tif (inet_is_local_reserved_port(net, port))\n\t\t\tcontinue;\n\t\thead = &hinfo->bhash[inet_bhashfn(net, port,\n\t\t\t\t\t\t  hinfo->bhash_size)];\n\t\tspin_lock_bh(&head->lock);\n\n\t\t/* Does not bother with rcv_saddr checks, because\n\t\t * the established check is already unique enough.\n\t\t */\n\t\tinet_bind_bucket_for_each(tb, &head->chain) {\n\t\t\tif (inet_bind_bucket_match(tb, net, port, l3mdev)) {\n\t\t\t\tif (tb->fastreuse >= 0 ||\n\t\t\t\t    tb->fastreuseport >= 0)\n\t\t\t\t\tgoto next_port;\n\t\t\t\tWARN_ON(hlist_empty(&tb->bhash2));\n\t\t\t\tif (!check_established(death_row, sk,\n\t\t\t\t\t\t       port, &tw))\n\t\t\t\t\tgoto ok;\n\t\t\t\tgoto next_port;\n\t\t\t}\n\t\t}\n\n\t\ttb = inet_bind_bucket_create(hinfo->bind_bucket_cachep,\n\t\t\t\t\t     net, head, port, l3mdev);\n\t\tif (!tb) {\n\t\t\tspin_unlock_bh(&head->lock);\n\t\t\treturn -ENOMEM;\n\t\t}\n\t\ttb_created = true;\n\t\ttb->fastreuse = -1;\n\t\ttb->fastreuseport = -1;\n\t\tgoto ok;\nnext_port:\n\t\tspin_unlock_bh(&head->lock);\n\t\tcond_resched();\n\t}\n\n\tif (!local_ports) {\n\t\toffset++;\n\t\tif ((offset & 1) && remaining > 1)\n\t\t\tgoto other_parity_scan;\n\t}\n\treturn -EADDRNOTAVAIL;\n\nok:\n\t/* Find the corresponding tb2 bucket since we need to\n\t * add the socket to the bhash2 table as well\n\t */\n\thead2 = inet_bhashfn_portaddr(hinfo, sk, net, port);\n\tspin_lock(&head2->lock);\n\n\ttb2 = inet_bind2_bucket_find(head2, net, port, l3mdev, sk);\n\tif (!tb2) {\n\t\ttb2 = inet_bind2_bucket_create(hinfo->bind2_bucket_cachep, net,\n\t\t\t\t\t       head2, tb, sk);\n\t\tif (!tb2)\n\t\t\tgoto error;\n\t}\n\n\t/* Here we want to add a little bit of randomness to the next source\n\t * port that will be chosen. We use a max() with a random here so that\n\t * on low contention the randomness is maximal and on high contention\n\t * it may be inexistent.\n\t */\n\ti = max_t(int, i, get_random_u32_below(8) * step);\n\tWRITE_ONCE(table_perturb[index], READ_ONCE(table_perturb[index]) + i + step);\n\n\t/* Head lock still held and bh's disabled */\n\tinet_bind_hash(sk, tb, tb2, port);\n\n\tif (sk_unhashed(sk)) {\n\t\tinet_sk(sk)->inet_sport = htons(port);\n\t\tinet_ehash_nolisten(sk, (struct sock *)tw, NULL);\n\t}\n\tif (tw)\n\t\tinet_twsk_bind_unhash(tw, hinfo);\n\n\tspin_unlock(&head2->lock);\n\tspin_unlock(&head->lock);\n\n\tif (tw)\n\t\tinet_twsk_deschedule_put(tw);\n\tlocal_bh_enable();\n\treturn 0;\n\nerror:\n\tif (sk_hashed(sk)) {\n\t\tspinlock_t *lock = inet_ehash_lockp(hinfo, sk->sk_hash);\n\n\t\tsock_prot_inuse_add(net, sk->sk_prot, -1);\n\n\t\tspin_lock(lock);\n\t\t__sk_nulls_del_node_init_rcu(sk);\n\t\tspin_unlock(lock);\n\n\t\tsk->sk_hash = 0;\n\t\tinet_sk(sk)->inet_sport = 0;\n\t\tinet_sk(sk)->inet_num = 0;\n\n\t\tif (tw)\n\t\t\tinet_twsk_bind_unhash(tw, hinfo);\n\t}\n\n\tspin_unlock(&head2->lock);\n\tif (tb_created)\n\t\tinet_bind_bucket_destroy(hinfo->bind_bucket_cachep, tb);\n\tspin_unlock(&head->lock);\n\n\tif (tw)\n\t\tinet_twsk_deschedule_put(tw);\n\n\tlocal_bh_enable();\n\n\treturn -ENOMEM;\n}\n"
-    },
-    "__inet_bhash2_update_saddr": {
-      "source": "net/ipv4/inet_hashtables.c",
-      "prefix": "static int __inet_bhash2_update_saddr(",
-      "bytes": 2090,
-      "sha256": "6bfc334eaa71341d53805159963a32b45157215050d3422b78ad8c6d6589e602",
-      "text": "static int __inet_bhash2_update_saddr(struct sock *sk, void *saddr, int family, bool reset)\n{\n\tstruct inet_hashinfo *hinfo = tcp_or_dccp_get_hashinfo(sk);\n\tstruct inet_bind_hashbucket *head, *head2;\n\tstruct inet_bind2_bucket *tb2, *new_tb2;\n\tint l3mdev = inet_sk_bound_l3mdev(sk);\n\tint port = inet_sk(sk)->inet_num;\n\tstruct net *net = sock_net(sk);\n\tint bhash;\n\n\tif (!inet_csk(sk)->icsk_bind2_hash) {\n\t\t/* Not bind()ed before. */\n\t\tif (reset)\n\t\t\tinet_reset_saddr(sk);\n\t\telse\n\t\t\tinet_update_saddr(sk, saddr, family);\n\n\t\treturn 0;\n\t}\n\n\t/* Allocate a bind2 bucket ahead of time to avoid permanently putting\n\t * the bhash2 table in an inconsistent state if a new tb2 bucket\n\t * allocation fails.\n\t */\n\tnew_tb2 = kmem_cache_alloc(hinfo->bind2_bucket_cachep, GFP_ATOMIC);\n\tif (!new_tb2) {\n\t\tif (reset) {\n\t\t\t/* The (INADDR_ANY, port) bucket might have already\n\t\t\t * been freed, then we cannot fixup icsk_bind2_hash,\n\t\t\t * so we give up and unlink sk from bhash/bhash2 not\n\t\t\t * to leave inconsistency in bhash2.\n\t\t\t */\n\t\t\tinet_put_port(sk);\n\t\t\tinet_reset_saddr(sk);\n\t\t}\n\n\t\treturn -ENOMEM;\n\t}\n\n\tbhash = inet_bhashfn(net, port, hinfo->bhash_size);\n\thead = &hinfo->bhash[bhash];\n\thead2 = inet_bhashfn_portaddr(hinfo, sk, net, port);\n\n\t/* If we change saddr locklessly, another thread\n\t * iterating over bhash might see corrupted address.\n\t */\n\tspin_lock_bh(&head->lock);\n\n\tspin_lock(&head2->lock);\n\t__sk_del_bind_node(sk);\n\tinet_bind2_bucket_destroy(hinfo->bind2_bucket_cachep, inet_csk(sk)->icsk_bind2_hash);\n\tspin_unlock(&head2->lock);\n\n\tif (reset)\n\t\tinet_reset_saddr(sk);\n\telse\n\t\tinet_update_saddr(sk, saddr, family);\n\n\thead2 = inet_bhashfn_portaddr(hinfo, sk, net, port);\n\n\tspin_lock(&head2->lock);\n\ttb2 = inet_bind2_bucket_find(head2, net, port, l3mdev, sk);\n\tif (!tb2) {\n\t\ttb2 = new_tb2;\n\t\tinet_bind2_bucket_init(tb2, net, head2, inet_csk(sk)->icsk_bind_hash, sk);\n\t}\n\tinet_csk(sk)->icsk_bind2_hash = tb2;\n\tsk_add_bind_node(sk, &tb2->owners);\n\tspin_unlock(&head2->lock);\n\n\tspin_unlock_bh(&head->lock);\n\n\tif (tb2 != new_tb2)\n\t\tkmem_cache_free(hinfo->bind2_bucket_cachep, new_tb2);\n\n\treturn 0;\n}\n"
-    },
-    "__inet_inherit_port": {
-      "source": "net/ipv4/inet_hashtables.c",
-      "prefix": "int __inet_inherit_port(",
-      "bytes": 2205,
-      "sha256": "358993694f3f7284c3103725bb2e15a6bee8aec31fadc9357e33f7e771fcad53",
-      "text": "int __inet_inherit_port(const struct sock *sk, struct sock *child)\n{\n\tstruct inet_hashinfo *table = tcp_or_dccp_get_hashinfo(sk);\n\tunsigned short port = inet_sk(child)->inet_num;\n\tstruct inet_bind_hashbucket *head, *head2;\n\tbool created_inet_bind_bucket = false;\n\tstruct net *net = sock_net(sk);\n\tbool update_fastreuse = false;\n\tstruct inet_bind2_bucket *tb2;\n\tstruct inet_bind_bucket *tb;\n\tint bhash, l3mdev;\n\n\tbhash = inet_bhashfn(net, port, table->bhash_size);\n\thead = &table->bhash[bhash];\n\thead2 = inet_bhashfn_portaddr(table, child, net, port);\n\n\tspin_lock(&head->lock);\n\tspin_lock(&head2->lock);\n\ttb = inet_csk(sk)->icsk_bind_hash;\n\ttb2 = inet_csk(sk)->icsk_bind2_hash;\n\tif (unlikely(!tb || !tb2)) {\n\t\tspin_unlock(&head2->lock);\n\t\tspin_unlock(&head->lock);\n\t\treturn -ENOENT;\n\t}\n\tif (tb->port != port) {\n\t\tl3mdev = inet_sk_bound_l3mdev(sk);\n\n\t\t/* NOTE: using tproxy and redirecting skbs to a proxy\n\t\t * on a different listener port breaks the assumption\n\t\t * that the listener socket's icsk_bind_hash is the same\n\t\t * as that of the child socket. We have to look up or\n\t\t * create a new bind bucket for the child here. */\n\t\tinet_bind_bucket_for_each(tb, &head->chain) {\n\t\t\tif (inet_bind_bucket_match(tb, net, port, l3mdev))\n\t\t\t\tbreak;\n\t\t}\n\t\tif (!tb) {\n\t\t\ttb = inet_bind_bucket_create(table->bind_bucket_cachep,\n\t\t\t\t\t\t     net, head, port, l3mdev);\n\t\t\tif (!tb) {\n\t\t\t\tspin_unlock(&head2->lock);\n\t\t\t\tspin_unlock(&head->lock);\n\t\t\t\treturn -ENOMEM;\n\t\t\t}\n\t\t\tcreated_inet_bind_bucket = true;\n\t\t}\n\t\tupdate_fastreuse = true;\n\n\t\tgoto bhash2_find;\n\t} else if (!inet_bind2_bucket_addr_match(tb2, child)) {\n\t\tl3mdev = inet_sk_bound_l3mdev(sk);\n\nbhash2_find:\n\t\ttb2 = inet_bind2_bucket_find(head2, net, port, l3mdev, child);\n\t\tif (!tb2) {\n\t\t\ttb2 = inet_bind2_bucket_create(table->bind2_bucket_cachep,\n\t\t\t\t\t\t       net, head2, tb, child);\n\t\t\tif (!tb2)\n\t\t\t\tgoto error;\n\t\t}\n\t}\n\tif (update_fastreuse)\n\t\tinet_csk_update_fastreuse(tb, child);\n\tinet_bind_hash(child, tb, tb2, port);\n\tspin_unlock(&head2->lock);\n\tspin_unlock(&head->lock);\n\n\treturn 0;\n\nerror:\n\tif (created_inet_bind_bucket)\n\t\tinet_bind_bucket_destroy(table->bind_bucket_cachep, tb);\n\tspin_unlock(&head2->lock);\n\tspin_unlock(&head->lock);\n\treturn -ENOMEM;\n}\n"
-    },
-    "__inet_put_port": {
-      "source": "net/ipv4/inet_hashtables.c",
-      "prefix": "static void __inet_put_port(",
-      "bytes": 923,
-      "sha256": "5616b568f9a819cde1ed96fa48423501283d50b93870a9a0cc20b416e13bfefb",
-      "text": "static void __inet_put_port(struct sock *sk)\n{\n\tstruct inet_hashinfo *hashinfo = tcp_or_dccp_get_hashinfo(sk);\n\tstruct inet_bind_hashbucket *head, *head2;\n\tstruct net *net = sock_net(sk);\n\tstruct inet_bind_bucket *tb;\n\tint bhash;\n\n\tbhash = inet_bhashfn(net, inet_sk(sk)->inet_num, hashinfo->bhash_size);\n\thead = &hashinfo->bhash[bhash];\n\thead2 = inet_bhashfn_portaddr(hashinfo, sk, net, inet_sk(sk)->inet_num);\n\n\tspin_lock(&head->lock);\n\ttb = inet_csk(sk)->icsk_bind_hash;\n\tinet_csk(sk)->icsk_bind_hash = NULL;\n\tinet_sk(sk)->inet_num = 0;\n\n\tspin_lock(&head2->lock);\n\tif (inet_csk(sk)->icsk_bind2_hash) {\n\t\tstruct inet_bind2_bucket *tb2 = inet_csk(sk)->icsk_bind2_hash;\n\n\t\t__sk_del_bind_node(sk);\n\t\tinet_csk(sk)->icsk_bind2_hash = NULL;\n\t\tinet_bind2_bucket_destroy(hashinfo->bind2_bucket_cachep, tb2);\n\t}\n\tspin_unlock(&head2->lock);\n\n\tinet_bind_bucket_destroy(hashinfo->bind_bucket_cachep, tb);\n\tspin_unlock(&head->lock);\n}\n"
-    },
-    "inet_csk_get_port": {
-      "source": "net/ipv4/inet_connection_sock.c",
-      "prefix": "int inet_csk_get_port(",
-      "bytes": 2498,
-      "sha256": "a012ea84c1c4cc27ff0319739c1d541195e97babc4f5253e7f8f220a4b150e9d",
-      "text": "int inet_csk_get_port(struct sock *sk, unsigned short snum)\n{\n\tstruct inet_hashinfo *hinfo = tcp_or_dccp_get_hashinfo(sk);\n\tbool reuse = sk->sk_reuse && sk->sk_state != TCP_LISTEN;\n\tbool found_port = false, check_bind_conflict = true;\n\tbool bhash_created = false, bhash2_created = false;\n\tint ret = -EADDRINUSE, port = snum, l3mdev;\n\tstruct inet_bind_hashbucket *head, *head2;\n\tstruct inet_bind2_bucket *tb2 = NULL;\n\tstruct inet_bind_bucket *tb = NULL;\n\tbool head2_lock_acquired = false;\n\tstruct net *net = sock_net(sk);\n\n\tl3mdev = inet_sk_bound_l3mdev(sk);\n\n\tif (!port) {\n\t\thead = inet_csk_find_open_port(sk, &tb, &tb2, &head2, &port);\n\t\tif (!head)\n\t\t\treturn ret;\n\n\t\thead2_lock_acquired = true;\n\n\t\tif (tb && tb2)\n\t\t\tgoto success;\n\t\tfound_port = true;\n\t} else {\n\t\thead = &hinfo->bhash[inet_bhashfn(net, port,\n\t\t\t\t\t\t  hinfo->bhash_size)];\n\t\tspin_lock_bh(&head->lock);\n\t\tinet_bind_bucket_for_each(tb, &head->chain)\n\t\t\tif (inet_bind_bucket_match(tb, net, port, l3mdev))\n\t\t\t\tbreak;\n\t}\n\n\tif (!tb) {\n\t\ttb = inet_bind_bucket_create(hinfo->bind_bucket_cachep, net,\n\t\t\t\t\t     head, port, l3mdev);\n\t\tif (!tb)\n\t\t\tgoto fail_unlock;\n\t\tbhash_created = true;\n\t}\n\n\tif (!found_port) {\n\t\tif (!hlist_empty(&tb->bhash2)) {\n\t\t\tif (sk->sk_reuse == SK_FORCE_REUSE ||\n\t\t\t    (tb->fastreuse > 0 && reuse) ||\n\t\t\t    sk_reuseport_match(tb, sk))\n\t\t\t\tcheck_bind_conflict = false;\n\t\t}\n\n\t\tif (check_bind_conflict && inet_use_hash2_on_bind(sk)) {\n\t\t\tif (inet_bhash2_addr_any_conflict(sk, port, l3mdev, true, true))\n\t\t\t\tgoto fail_unlock;\n\t\t}\n\n\t\thead2 = inet_bhashfn_portaddr(hinfo, sk, net, port);\n\t\tspin_lock(&head2->lock);\n\t\thead2_lock_acquired = true;\n\t\ttb2 = inet_bind2_bucket_find(head2, net, port, l3mdev, sk);\n\t}\n\n\tif (!tb2) {\n\t\ttb2 = inet_bind2_bucket_create(hinfo->bind2_bucket_cachep,\n\t\t\t\t\t       net, head2, tb, sk);\n\t\tif (!tb2)\n\t\t\tgoto fail_unlock;\n\t\tbhash2_created = true;\n\t}\n\n\tif (!found_port && check_bind_conflict) {\n\t\tif (inet_csk_bind_conflict(sk, tb, tb2, true, true))\n\t\t\tgoto fail_unlock;\n\t}\n\nsuccess:\n\tinet_csk_update_fastreuse(tb, sk);\n\n\tif (!inet_csk(sk)->icsk_bind_hash)\n\t\tinet_bind_hash(sk, tb, tb2, port);\n\tWARN_ON(inet_csk(sk)->icsk_bind_hash != tb);\n\tWARN_ON(inet_csk(sk)->icsk_bind2_hash != tb2);\n\tret = 0;\n\nfail_unlock:\n\tif (ret) {\n\t\tif (bhash2_created)\n\t\t\tinet_bind2_bucket_destroy(hinfo->bind2_bucket_cachep, tb2);\n\t\tif (bhash_created)\n\t\t\tinet_bind_bucket_destroy(hinfo->bind_bucket_cachep, tb);\n\t}\n\tif (head2_lock_acquired)\n\t\tspin_unlock(&head2->lock);\n\tspin_unlock_bh(&head->lock);\n\treturn ret;\n}\n"
-    },
-    "inet_twsk_bind_unhash": {
-      "source": "net/ipv4/inet_timewait_sock.c",
-      "prefix": "void inet_twsk_bind_unhash(",
-      "bytes": 445,
-      "sha256": "589b5d44dd7bc462e4988b63b4dcbb9e7cbd0bdd9b1e372d038c1ae486935340",
-      "text": "void inet_twsk_bind_unhash(struct inet_timewait_sock *tw,\n\t\t\t  struct inet_hashinfo *hashinfo)\n{\n\tstruct inet_bind2_bucket *tb2 = tw->tw_tb2;\n\tstruct inet_bind_bucket *tb = tw->tw_tb;\n\n\tif (!tb)\n\t\treturn;\n\n\t__sk_del_bind_node((struct sock *)tw);\n\ttw->tw_tb = NULL;\n\ttw->tw_tb2 = NULL;\n\tinet_bind2_bucket_destroy(hashinfo->bind2_bucket_cachep, tb2);\n\tinet_bind_bucket_destroy(hashinfo->bind_bucket_cachep, tb);\n\n\t__sock_put((struct sock *)tw);\n}\n"
-    },
-    "inet_twsk_kill": {
-      "source": "net/ipv4/inet_timewait_sock.c",
-      "prefix": "static void inet_twsk_kill(",
-      "bytes": 751,
-      "sha256": "7e425147e0ada274148f1998ab7129f9e2065e7735d1f3e8650230610f62f27c",
-      "text": "static void inet_twsk_kill(struct inet_timewait_sock *tw)\n{\n\tstruct inet_hashinfo *hashinfo = tw->tw_dr->hashinfo;\n\tspinlock_t *lock = inet_ehash_lockp(hashinfo, tw->tw_hash);\n\tstruct inet_bind_hashbucket *bhead, *bhead2;\n\n\tspin_lock(lock);\n\tsk_nulls_del_node_init_rcu((struct sock *)tw);\n\tspin_unlock(lock);\n\n\t/* Disassociate with bind bucket. */\n\tbhead = &hashinfo->bhash[inet_bhashfn(twsk_net(tw), tw->tw_num,\n\t\t\thashinfo->bhash_size)];\n\tbhead2 = inet_bhashfn_portaddr(hashinfo, (struct sock *)tw,\n\t\t\t\t       twsk_net(tw), tw->tw_num);\n\n\tspin_lock(&bhead->lock);\n\tspin_lock(&bhead2->lock);\n\tinet_twsk_bind_unhash(tw, hashinfo);\n\tspin_unlock(&bhead2->lock);\n\tspin_unlock(&bhead->lock);\n\n\trefcount_dec(&tw->tw_dr->tw_refcount);\n\tinet_twsk_put(tw);\n}\n"
-    }
-  },
-  "kernelBuilt": false,
-  "actualKernelExecuted": false,
-  "completeAllocationClosure": false,
-  "finalFreeCertified": false,
-  "productionInstallation": false
+"schemaVersion":"lsf.kernel-maintained-bind-source.v1",
+"upstreamCommit":"7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+"archiveSha256":"e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428",
+"source":{
+"fs/inode.c":{
+"bytes":75338,
+"sha256":"73e256cf70bb0d80e6fee28d969c6fb44ab4c5c7cd92b6f74edff8b5297e7070",
+"gitBlob":"7942673f686fdc24d92c2fb8033c2fb3b6df7709",
+"independentlyGitCorroborated":true
+},
+"include/linux/skbuff.h":{
+"bytes":151887,
+"sha256":"af70ea27cf9a3a2d790b1005a16da7649d3bbb0fd136b2934ed4018077dbb822",
+"gitBlob":"df548a3d606570d38614fc45403133069ecb9cab",
+"independentlyGitCorroborated":true
+},
+"include/net/inet_hashtables.h":{
+"bytes":17314,
+"sha256":"a699f5b96229f9d6fa4bb5bf435285db59b7d2e45918044f2c5fec01e624bf6e",
+"gitBlob":"b1118125486631e6e02ca2d1f6575dad60e6d705",
+"independentlyGitCorroborated":false
+},
+"include/net/netlabel.h":{
+"bytes":21017,
+"sha256":"82861a26d850caa742f5fc54da857720c52dc02f05feabaa93987540e6191f85",
+"gitBlob":"529160f76cac209ee7473ea7b5ccd49da0789f18",
+"independentlyGitCorroborated":false
+},
+"include/net/sock.h":{
+"bytes":85865,
+"sha256":"5d52f73f4898f2a52001aa9b7db8e863eee384e4c9fa43eaf281fb01dd9e4182",
+"gitBlob":"efa549885b7f85e50c55f95ad4eae0c1ef75797a",
+"independentlyGitCorroborated":true
+},
+"kernel/audit.c":{
+"bytes":66999,
+"sha256":"7a33029ecca2b8a71a8a12e9a1699a8180e64a82acfbdc599b0ec658fa07d564",
+"gitBlob":"df279dd2e45086b791852f2a46ceb52f24f0fd78",
+"independentlyGitCorroborated":false
+},
+"net/core/skbuff.c":{
+"bytes":189334,
+"sha256":"6a2fec31182c7c4d247d85aaffba036de9c0b6a9911c3cc1249d00b423ea0ae8",
+"gitBlob":"5608b5507b5bf03504a9093abaa865af2b82043e",
+"independentlyGitCorroborated":true
+},
+"net/core/sock.c":{
+"bytes":111636,
+"sha256":"f68f84b6dafdd3762b0599ab91f0face78b154d60bdccdf8920cbdf2e9f00be7",
+"gitBlob":"75db38fdfd35fe87b87ac2755b0ef1db6fb96415",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/af_inet.c":{
+"bytes":51938,
+"sha256":"9079f259c6687d3aa0faea64889f7ec248e7327a5799b90a6f7c860b81522873",
+"gitBlob":"c310a60760f3433c2dd7f1a65ea61aa1cd2e40ed",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/cipso_ipv4.c":{
+"bytes":63739,
+"sha256":"03a86947b0292c1ed9a1d637a67a12fb147f6839ee0c0c209dfe40eafb4ab089",
+"gitBlob":"53fcb2089cde2a246c0b84d31582485b2496da64",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/inet_connection_sock.c":{
+"bytes":45201,
+"sha256":"cb3567452632b9017a463f8dc860bd046bb9e572bacd56d219a2c0e124f453c7",
+"gitBlob":"eeee6f75833767f0ae5878bb285fbde63d027654",
+"independentlyGitCorroborated":false
+},
+"net/ipv4/inet_hashtables.c":{
+"bytes":35429,
+"sha256":"20113f4e67d557ef06a68322d0cb03da2de5463409eb2b8b5dd80b305e9aa08d",
+"gitBlob":"37a6acff537e6511a84b7cdfc61af2412eb2cb0b",
+"independentlyGitCorroborated":true
+},
+"net/ipv4/inet_timewait_sock.c":{
+"bytes":10794,
+"sha256":"c200d5880fbf8dd56c0a058beb9b4e92465991038a81b98469aa98ad1c5f31c5",
+"gitBlob":"74b84ac418e93c176336fc974b82c3586bae3fc1",
+"independentlyGitCorroborated":true
+},
+"net/netlabel/netlabel_kapi.c":{
+"bytes":38938,
+"sha256":"d16333fd75af20b6ad837bd062a1720390374f72f2ca514174aa6dbbfce8c150",
+"gitBlob":"33b77084a4e5f34770f960d7c82e481d9889753a",
+"independentlyGitCorroborated":false
+},
+"net/netlink/af_netlink.c":{
+"bytes":71601,
+"sha256":"2145f190dc87bfa5f79739d960766970652ed9e5c271ec847c1eeca4be86fd2d",
+"gitBlob":"e250d4a3d03097f92c48c1741db405c8ea54899d",
+"independentlyGitCorroborated":false
+},
+"net/socket.c":{
+"bytes":92491,
+"sha256":"95ec72eeccec766e102b6d532270bc52813c2f86d9bfa761d20900e07b2216db",
+"gitBlob":"723bc3a1ba5cdd17f559a65de73d9c87911e6954",
+"independentlyGitCorroborated":true
+},
+"security/lsm_audit.c":{
+"bytes":11088,
+"sha256":"bd55731531fa8d095a2f7857afd8cdd83b689f8a675b7b05217910769c4bf257",
+"gitBlob":"849e832719e2151a060679db4fe993e13f42b997",
+"independentlyGitCorroborated":false
+},
+"security/security.c":{
+"bytes":180030,
+"sha256":"b72fd7f869275b1caf1a98449e92024a779534fb36c77cb88f4ac210e4493055",
+"gitBlob":"b31fd25f4e5e3d37e22e111fa67351b51ef99d2f",
+"independentlyGitCorroborated":true
+},
+"security/selinux/avc.c":{
+"bytes":31717,
+"sha256":"e5ead166180e1b51dab8f701f16a595e51ff68eb346f7a8b4549617ce4672ce6",
+"gitBlob":"688ff9e63f514ec18b8096e59e0edd63ac6f5112"
+},
+"security/selinux/hooks.c":{
+"bytes":204597,
+"sha256":"6079b88f15ca1966b640753e35edc291139fe925fca37e5c54d0a2d6e36d8370",
+"gitBlob":"d4abf15f0e6fb98505df81ac3128255b4cd9e1e7",
+"independentlyGitCorroborated":true
+},
+"security/selinux/include/avc.h":{
+"bytes":4623,
+"sha256":"b1bb6fd0b9fda55cce88a5fb2a359fd64cde40ef18162e6640cd33885ebb5966",
+"gitBlob":"96a614d47df8d1d67b0b033ebb90954653dfeab7"
+},
+"security/selinux/netlabel.c":{
+"bytes":16481,
+"sha256":"972d5786a9fb4da8845c839f06f1999bfc70e88a3d63ec904e0a080504d2631d",
+"gitBlob":"d51dfe89231229e78903f3aa552286326524dca2",
+"independentlyGitCorroborated":false
+},
+"security/selinux/netport.c":{
+"bytes":5952,
+"sha256":"8deed649b14f7a2dfe7b4dab94dde5f741ddc6858e098c3ef5dbff9e5df38b4b",
+"gitBlob":"2e22ad9c2bd0d116668985e0fb579b5934df9394",
+"independentlyGitCorroborated":false
+},
+"security/selinux/ss/ebitmap.c":{
+"bytes":12211,
+"sha256":"69ffd1eaf09c8aca73a3aaabda9e31d0207b98b7d8eb4843d66106b0a75e9b94",
+"gitBlob":"cd84357db2c47a034bb3601eeaaa8806dbf0f7af",
+"independentlyGitCorroborated":false
+},
+"security/selinux/ss/mls.c":{
+"bytes":16094,
+"sha256":"349ec7a62da7777fd3ab12226538a1c486654ee917003b0d6b0b5bf3a6352f88",
+"gitBlob":"a6e49269f5351df096da8c9fb56103a2f7b0ee9d",
+"independentlyGitCorroborated":false
+},
+"security/selinux/ss/services.c":{
+"bytes":97756,
+"sha256":"0b0a29ad428bd17a50784c4b87b47837e5dfb3e695255e98fb55e4a03d5d08a1",
+"gitBlob":"54d121d64804295c8ae1f40103957f6a3b671640",
+"independentlyGitCorroborated":true
+},
+"security/selinux/ss/sidtab.c":{
+"bytes":14675,
+"sha256":"5bc885230f9b6023ff7a64b0ff80746f607a572cf7d882eab149f6c1261c4f08",
+"gitBlob":"c8848cbba81f24abbb2e0d07697ece10d2cc6637",
+"independentlyGitCorroborated":false
+}
+},
+"sections":{
+"inet_bind_bucket_create":{
+"source":"net/ipv4/inet_hashtables.c",
+"prefix":"struct inet_bind_bucket *inet_bind_bucket_create(",
+"bytes":498,
+"sha256":"2bb7897e58f13fe7785cac24ae81aebd4e8f24ab14d46482eb8cf9b9be66baa2",
+"text":"struct inet_bind_bucket *inet_bind_bucket_create(struct kmem_cache *cachep,\n\t\t\t\t\t\t struct net *net,\n\t\t\t\t\t\t struct inet_bind_hashbucket *head,\n\t\t\t\t\t\t const unsigned short snum,\n\t\t\t\t\t\t int l3mdev)\n{\n\tstruct inet_bind_bucket *tb = kmem_cache_alloc(cachep, GFP_ATOMIC);\n\n\tif (tb) {\n\t\twrite_pnet(&tb->ib_net, net);\n\t\ttb->l3mdev    = l3mdev;\n\t\ttb->port      = snum;\n\t\ttb->fastreuse = 0;\n\t\ttb->fastreuseport = 0;\n\t\tINIT_HLIST_HEAD(&tb->bhash2);\n\t\thlist_add_head(&tb->node, &head->chain);\n\t}\n\treturn tb;\n}\n"
+},
+"inet_bind_bucket_destroy":{
+"source":"net/ipv4/inet_hashtables.c",
+"prefix":"void inet_bind_bucket_destroy(",
+"bytes":183,
+"sha256":"6fe3c93729661c040a41984f31a6a6e0d73522859252f79ec4cb7b94726640f4",
+"text":"void inet_bind_bucket_destroy(struct kmem_cache *cachep, struct inet_bind_bucket *tb)\n{\n\tif (hlist_empty(&tb->bhash2)) {\n\t\t__hlist_del(&tb->node);\n\t\tkmem_cache_free(cachep, tb);\n\t}\n}\n"
+},
+"inet_bind2_bucket_init":{
+"source":"net/ipv4/inet_hashtables.c",
+"prefix":"static void inet_bind2_bucket_init(",
+"bytes":795,
+"sha256":"6234ea24f277ea487b67beb8b041af7751743538034e997914b69aa27fa15b4e",
+"text":"static void inet_bind2_bucket_init(struct inet_bind2_bucket *tb2,\n\t\t\t\t   struct net *net,\n\t\t\t\t   struct inet_bind_hashbucket *head,\n\t\t\t\t   struct inet_bind_bucket *tb,\n\t\t\t\t   const struct sock *sk)\n{\n\twrite_pnet(&tb2->ib_net, net);\n\ttb2->l3mdev = tb->l3mdev;\n\ttb2->port = tb->port;\n#if IS_ENABLED(CONFIG_IPV6)\n\tBUILD_BUG_ON(USHRT_MAX < (IPV6_ADDR_ANY | IPV6_ADDR_MAPPED));\n\tif (sk->sk_family == AF_INET6) {\n\t\ttb2->addr_type = ipv6_addr_type(&sk->sk_v6_rcv_saddr);\n\t\ttb2->v6_rcv_saddr = sk->sk_v6_rcv_saddr;\n\t} else {\n\t\ttb2->addr_type = IPV6_ADDR_MAPPED;\n\t\tipv6_addr_set_v4mapped(sk->sk_rcv_saddr, &tb2->v6_rcv_saddr);\n\t}\n#else\n\ttb2->rcv_saddr = sk->sk_rcv_saddr;\n#endif\n\tINIT_HLIST_HEAD(&tb2->owners);\n\thlist_add_head(&tb2->node, &head->chain);\n\thlist_add_head(&tb2->bhash_node, &tb->bhash2);\n}\n"
+},
+"inet_bind2_bucket_create":{
+"source":"net/ipv4/inet_hashtables.c",
+"prefix":"struct inet_bind2_bucket *inet_bind2_bucket_create(",
+"bytes":368,
+"sha256":"6abec0a445ab6fd026ba49242bc121a9377d1b8f58b4b29a972d974db6f28500",
+"text":"struct inet_bind2_bucket *inet_bind2_bucket_create(struct kmem_cache *cachep,\n\t\t\t\t\t\t   struct net *net,\n\t\t\t\t\t\t   struct inet_bind_hashbucket *head,\n\t\t\t\t\t\t   struct inet_bind_bucket *tb,\n\t\t\t\t\t\t   const struct sock *sk)\n{\n\tstruct inet_bind2_bucket *tb2 = kmem_cache_alloc(cachep, GFP_ATOMIC);\n\n\tif (tb2)\n\t\tinet_bind2_bucket_init(tb2, net, head, tb, sk);\n\n\treturn tb2;\n}\n"
+},
+"inet_bind2_bucket_destroy":{
+"source":"net/ipv4/inet_hashtables.c",
+"prefix":"void inet_bind2_bucket_destroy(",
+"bytes":217,
+"sha256":"627ca1e7866cb40e0b399fc586f02738d88d25f039bca6768a84cdacd6ef275c",
+"text":"void inet_bind2_bucket_destroy(struct kmem_cache *cachep, struct inet_bind2_bucket *tb)\n{\n\tif (hlist_empty(&tb->owners)) {\n\t\t__hlist_del(&tb->node);\n\t\t__hlist_del(&tb->bhash_node);\n\t\tkmem_cache_free(cachep, tb);\n\t}\n}\n"
+},
+"__inet_hash_connect":{
+"source":"net/ipv4/inet_hashtables.c",
+"prefix":"int __inet_hash_connect(",
+"bytes":4273,
+"sha256":"26d365d3fbe230c13f954f7eeff2cbdb53e87753bcdfb80136fc53391b706db0",
+"text":"int __inet_hash_connect(struct inet_timewait_death_row *death_row,\n\t\tstruct sock *sk, u64 port_offset,\n\t\tint (*check_established)(struct inet_timewait_death_row *,\n\t\t\tstruct sock *, __u16, struct inet_timewait_sock **))\n{\n\tstruct inet_hashinfo *hinfo = death_row->hashinfo;\n\tstruct inet_bind_hashbucket *head, *head2;\n\tstruct inet_timewait_sock *tw = NULL;\n\tint port = inet_sk(sk)->inet_num;\n\tstruct net *net = sock_net(sk);\n\tstruct inet_bind2_bucket *tb2;\n\tstruct inet_bind_bucket *tb;\n\tbool tb_created = false;\n\tu32 remaining, offset;\n\tint ret, i, low, high;\n\tbool local_ports;\n\tint step, l3mdev;\n\tu32 index;\n\n\tif (port) {\n\t\tlocal_bh_disable();\n\t\tret = check_established(death_row, sk, port, NULL);\n\t\tlocal_bh_enable();\n\t\treturn ret;\n\t}\n\n\tl3mdev = inet_sk_bound_l3mdev(sk);\n\n\tlocal_ports = inet_sk_get_local_port_range(sk, &low, &high);\n\tstep = local_ports ? 1 : 2;\n\n\thigh++; /* [32768, 60999] -> [32768, 61000[ */\n\tremaining = high - low;\n\tif (!local_ports && remaining > 1)\n\t\tremaining &= ~1U;\n\n\tget_random_sleepable_once(table_perturb,\n\t\t\t\t  INET_TABLE_PERTURB_SIZE * sizeof(*table_perturb));\n\tindex = port_offset & (INET_TABLE_PERTURB_SIZE - 1);\n\n\toffset = READ_ONCE(table_perturb[index]) + (port_offset >> 32);\n\toffset %= remaining;\n\n\t/* In first pass we try ports of @low parity.\n\t * inet_csk_get_port() does the opposite choice.\n\t */\n\tif (!local_ports)\n\t\toffset &= ~1U;\nother_parity_scan:\n\tport = low + offset;\n\tfor (i = 0; i < remaining; i += step, port += step) {\n\t\tif (unlikely(port >= high))\n\t\t\tport -= remaining;\n\t\tif (inet_is_local_reserved_port(net, port))\n\t\t\tcontinue;\n\t\thead = &hinfo->bhash[inet_bhashfn(net, port,\n\t\t\t\t\t\t  hinfo->bhash_size)];\n\t\tspin_lock_bh(&head->lock);\n\n\t\t/* Does not bother with rcv_saddr checks, because\n\t\t * the established check is already unique enough.\n\t\t */\n\t\tinet_bind_bucket_for_each(tb, &head->chain) {\n\t\t\tif (inet_bind_bucket_match(tb, net, port, l3mdev)) {\n\t\t\t\tif (tb->fastreuse >= 0 ||\n\t\t\t\t    tb->fastreuseport >= 0)\n\t\t\t\t\tgoto next_port;\n\t\t\t\tWARN_ON(hlist_empty(&tb->bhash2));\n\t\t\t\tif (!check_established(death_row, sk,\n\t\t\t\t\t\t       port, &tw))\n\t\t\t\t\tgoto ok;\n\t\t\t\tgoto next_port;\n\t\t\t}\n\t\t}\n\n\t\ttb = inet_bind_bucket_create(hinfo->bind_bucket_cachep,\n\t\t\t\t\t     net, head, port, l3mdev);\n\t\tif (!tb) {\n\t\t\tspin_unlock_bh(&head->lock);\n\t\t\treturn -ENOMEM;\n\t\t}\n\t\ttb_created = true;\n\t\ttb->fastreuse = -1;\n\t\ttb->fastreuseport = -1;\n\t\tgoto ok;\nnext_port:\n\t\tspin_unlock_bh(&head->lock);\n\t\tcond_resched();\n\t}\n\n\tif (!local_ports) {\n\t\toffset++;\n\t\tif ((offset & 1) && remaining > 1)\n\t\t\tgoto other_parity_scan;\n\t}\n\treturn -EADDRNOTAVAIL;\n\nok:\n\t/* Find the corresponding tb2 bucket since we need to\n\t * add the socket to the bhash2 table as well\n\t */\n\thead2 = inet_bhashfn_portaddr(hinfo, sk, net, port);\n\tspin_lock(&head2->lock);\n\n\ttb2 = inet_bind2_bucket_find(head2, net, port, l3mdev, sk);\n\tif (!tb2) {\n\t\ttb2 = inet_bind2_bucket_create(hinfo->bind2_bucket_cachep, net,\n\t\t\t\t\t       head2, tb, sk);\n\t\tif (!tb2)\n\t\t\tgoto error;\n\t}\n\n\t/* Here we want to add a little bit of randomness to the next source\n\t * port that will be chosen. We use a max() with a random here so that\n\t * on low contention the randomness is maximal and on high contention\n\t * it may be inexistent.\n\t */\n\ti = max_t(int, i, get_random_u32_below(8) * step);\n\tWRITE_ONCE(table_perturb[index], READ_ONCE(table_perturb[index]) + i + step);\n\n\t/* Head lock still held and bh's disabled */\n\tinet_bind_hash(sk, tb, tb2, port);\n\n\tif (sk_unhashed(sk)) {\n\t\tinet_sk(sk)->inet_sport = htons(port);\n\t\tinet_ehash_nolisten(sk, (struct sock *)tw, NULL);\n\t}\n\tif (tw)\n\t\tinet_twsk_bind_unhash(tw, hinfo);\n\n\tspin_unlock(&head2->lock);\n\tspin_unlock(&head->lock);\n\n\tif (tw)\n\t\tinet_twsk_deschedule_put(tw);\n\tlocal_bh_enable();\n\treturn 0;\n\nerror:\n\tif (sk_hashed(sk)) {\n\t\tspinlock_t *lock = inet_ehash_lockp(hinfo, sk->sk_hash);\n\n\t\tsock_prot_inuse_add(net, sk->sk_prot, -1);\n\n\t\tspin_lock(lock);\n\t\t__sk_nulls_del_node_init_rcu(sk);\n\t\tspin_unlock(lock);\n\n\t\tsk->sk_hash = 0;\n\t\tinet_sk(sk)->inet_sport = 0;\n\t\tinet_sk(sk)->inet_num = 0;\n\n\t\tif (tw)\n\t\t\tinet_twsk_bind_unhash(tw, hinfo);\n\t}\n\n\tspin_unlock(&head2->lock);\n\tif (tb_created)\n\t\tinet_bind_bucket_destroy(hinfo->bind_bucket_cachep, tb);\n\tspin_unlock(&head->lock);\n\n\tif (tw)\n\t\tinet_twsk_deschedule_put(tw);\n\n\tlocal_bh_enable();\n\n\treturn -ENOMEM;\n}\n"
+},
+"__inet_bhash2_update_saddr":{
+"source":"net/ipv4/inet_hashtables.c",
+"prefix":"static int __inet_bhash2_update_saddr(",
+"bytes":2090,
+"sha256":"6bfc334eaa71341d53805159963a32b45157215050d3422b78ad8c6d6589e602",
+"text":"static int __inet_bhash2_update_saddr(struct sock *sk, void *saddr, int family, bool reset)\n{\n\tstruct inet_hashinfo *hinfo = tcp_or_dccp_get_hashinfo(sk);\n\tstruct inet_bind_hashbucket *head, *head2;\n\tstruct inet_bind2_bucket *tb2, *new_tb2;\n\tint l3mdev = inet_sk_bound_l3mdev(sk);\n\tint port = inet_sk(sk)->inet_num;\n\tstruct net *net = sock_net(sk);\n\tint bhash;\n\n\tif (!inet_csk(sk)->icsk_bind2_hash) {\n\t\t/* Not bind()ed before. */\n\t\tif (reset)\n\t\t\tinet_reset_saddr(sk);\n\t\telse\n\t\t\tinet_update_saddr(sk, saddr, family);\n\n\t\treturn 0;\n\t}\n\n\t/* Allocate a bind2 bucket ahead of time to avoid permanently putting\n\t * the bhash2 table in an inconsistent state if a new tb2 bucket\n\t * allocation fails.\n\t */\n\tnew_tb2 = kmem_cache_alloc(hinfo->bind2_bucket_cachep, GFP_ATOMIC);\n\tif (!new_tb2) {\n\t\tif (reset) {\n\t\t\t/* The (INADDR_ANY, port) bucket might have already\n\t\t\t * been freed, then we cannot fixup icsk_bind2_hash,\n\t\t\t * so we give up and unlink sk from bhash/bhash2 not\n\t\t\t * to leave inconsistency in bhash2.\n\t\t\t */\n\t\t\tinet_put_port(sk);\n\t\t\tinet_reset_saddr(sk);\n\t\t}\n\n\t\treturn -ENOMEM;\n\t}\n\n\tbhash = inet_bhashfn(net, port, hinfo->bhash_size);\n\thead = &hinfo->bhash[bhash];\n\thead2 = inet_bhashfn_portaddr(hinfo, sk, net, port);\n\n\t/* If we change saddr locklessly, another thread\n\t * iterating over bhash might see corrupted address.\n\t */\n\tspin_lock_bh(&head->lock);\n\n\tspin_lock(&head2->lock);\n\t__sk_del_bind_node(sk);\n\tinet_bind2_bucket_destroy(hinfo->bind2_bucket_cachep, inet_csk(sk)->icsk_bind2_hash);\n\tspin_unlock(&head2->lock);\n\n\tif (reset)\n\t\tinet_reset_saddr(sk);\n\telse\n\t\tinet_update_saddr(sk, saddr, family);\n\n\thead2 = inet_bhashfn_portaddr(hinfo, sk, net, port);\n\n\tspin_lock(&head2->lock);\n\ttb2 = inet_bind2_bucket_find(head2, net, port, l3mdev, sk);\n\tif (!tb2) {\n\t\ttb2 = new_tb2;\n\t\tinet_bind2_bucket_init(tb2, net, head2, inet_csk(sk)->icsk_bind_hash, sk);\n\t}\n\tinet_csk(sk)->icsk_bind2_hash = tb2;\n\tsk_add_bind_node(sk, &tb2->owners);\n\tspin_unlock(&head2->lock);\n\n\tspin_unlock_bh(&head->lock);\n\n\tif (tb2 != new_tb2)\n\t\tkmem_cache_free(hinfo->bind2_bucket_cachep, new_tb2);\n\n\treturn 0;\n}\n"
+},
+"__inet_inherit_port":{
+"source":"net/ipv4/inet_hashtables.c",
+"prefix":"int __inet_inherit_port(",
+"bytes":2205,
+"sha256":"358993694f3f7284c3103725bb2e15a6bee8aec31fadc9357e33f7e771fcad53",
+"text":"int __inet_inherit_port(const struct sock *sk, struct sock *child)\n{\n\tstruct inet_hashinfo *table = tcp_or_dccp_get_hashinfo(sk);\n\tunsigned short port = inet_sk(child)->inet_num;\n\tstruct inet_bind_hashbucket *head, *head2;\n\tbool created_inet_bind_bucket = false;\n\tstruct net *net = sock_net(sk);\n\tbool update_fastreuse = false;\n\tstruct inet_bind2_bucket *tb2;\n\tstruct inet_bind_bucket *tb;\n\tint bhash, l3mdev;\n\n\tbhash = inet_bhashfn(net, port, table->bhash_size);\n\thead = &table->bhash[bhash];\n\thead2 = inet_bhashfn_portaddr(table, child, net, port);\n\n\tspin_lock(&head->lock);\n\tspin_lock(&head2->lock);\n\ttb = inet_csk(sk)->icsk_bind_hash;\n\ttb2 = inet_csk(sk)->icsk_bind2_hash;\n\tif (unlikely(!tb || !tb2)) {\n\t\tspin_unlock(&head2->lock);\n\t\tspin_unlock(&head->lock);\n\t\treturn -ENOENT;\n\t}\n\tif (tb->port != port) {\n\t\tl3mdev = inet_sk_bound_l3mdev(sk);\n\n\t\t/* NOTE: using tproxy and redirecting skbs to a proxy\n\t\t * on a different listener port breaks the assumption\n\t\t * that the listener socket's icsk_bind_hash is the same\n\t\t * as that of the child socket. We have to look up or\n\t\t * create a new bind bucket for the child here. */\n\t\tinet_bind_bucket_for_each(tb, &head->chain) {\n\t\t\tif (inet_bind_bucket_match(tb, net, port, l3mdev))\n\t\t\t\tbreak;\n\t\t}\n\t\tif (!tb) {\n\t\t\ttb = inet_bind_bucket_create(table->bind_bucket_cachep,\n\t\t\t\t\t\t     net, head, port, l3mdev);\n\t\t\tif (!tb) {\n\t\t\t\tspin_unlock(&head2->lock);\n\t\t\t\tspin_unlock(&head->lock);\n\t\t\t\treturn -ENOMEM;\n\t\t\t}\n\t\t\tcreated_inet_bind_bucket = true;\n\t\t}\n\t\tupdate_fastreuse = true;\n\n\t\tgoto bhash2_find;\n\t} else if (!inet_bind2_bucket_addr_match(tb2, child)) {\n\t\tl3mdev = inet_sk_bound_l3mdev(sk);\n\nbhash2_find:\n\t\ttb2 = inet_bind2_bucket_find(head2, net, port, l3mdev, child);\n\t\tif (!tb2) {\n\t\t\ttb2 = inet_bind2_bucket_create(table->bind2_bucket_cachep,\n\t\t\t\t\t\t       net, head2, tb, child);\n\t\t\tif (!tb2)\n\t\t\t\tgoto error;\n\t\t}\n\t}\n\tif (update_fastreuse)\n\t\tinet_csk_update_fastreuse(tb, child);\n\tinet_bind_hash(child, tb, tb2, port);\n\tspin_unlock(&head2->lock);\n\tspin_unlock(&head->lock);\n\n\treturn 0;\n\nerror:\n\tif (created_inet_bind_bucket)\n\t\tinet_bind_bucket_destroy(table->bind_bucket_cachep, tb);\n\tspin_unlock(&head2->lock);\n\tspin_unlock(&head->lock);\n\treturn -ENOMEM;\n}\n"
+},
+"__inet_put_port":{
+"source":"net/ipv4/inet_hashtables.c",
+"prefix":"static void __inet_put_port(",
+"bytes":923,
+"sha256":"5616b568f9a819cde1ed96fa48423501283d50b93870a9a0cc20b416e13bfefb",
+"text":"static void __inet_put_port(struct sock *sk)\n{\n\tstruct inet_hashinfo *hashinfo = tcp_or_dccp_get_hashinfo(sk);\n\tstruct inet_bind_hashbucket *head, *head2;\n\tstruct net *net = sock_net(sk);\n\tstruct inet_bind_bucket *tb;\n\tint bhash;\n\n\tbhash = inet_bhashfn(net, inet_sk(sk)->inet_num, hashinfo->bhash_size);\n\thead = &hashinfo->bhash[bhash];\n\thead2 = inet_bhashfn_portaddr(hashinfo, sk, net, inet_sk(sk)->inet_num);\n\n\tspin_lock(&head->lock);\n\ttb = inet_csk(sk)->icsk_bind_hash;\n\tinet_csk(sk)->icsk_bind_hash = NULL;\n\tinet_sk(sk)->inet_num = 0;\n\n\tspin_lock(&head2->lock);\n\tif (inet_csk(sk)->icsk_bind2_hash) {\n\t\tstruct inet_bind2_bucket *tb2 = inet_csk(sk)->icsk_bind2_hash;\n\n\t\t__sk_del_bind_node(sk);\n\t\tinet_csk(sk)->icsk_bind2_hash = NULL;\n\t\tinet_bind2_bucket_destroy(hashinfo->bind2_bucket_cachep, tb2);\n\t}\n\tspin_unlock(&head2->lock);\n\n\tinet_bind_bucket_destroy(hashinfo->bind_bucket_cachep, tb);\n\tspin_unlock(&head->lock);\n}\n"
+},
+"inet_csk_get_port":{
+"source":"net/ipv4/inet_connection_sock.c",
+"prefix":"int inet_csk_get_port(",
+"bytes":2498,
+"sha256":"a012ea84c1c4cc27ff0319739c1d541195e97babc4f5253e7f8f220a4b150e9d",
+"text":"int inet_csk_get_port(struct sock *sk, unsigned short snum)\n{\n\tstruct inet_hashinfo *hinfo = tcp_or_dccp_get_hashinfo(sk);\n\tbool reuse = sk->sk_reuse && sk->sk_state != TCP_LISTEN;\n\tbool found_port = false, check_bind_conflict = true;\n\tbool bhash_created = false, bhash2_created = false;\n\tint ret = -EADDRINUSE, port = snum, l3mdev;\n\tstruct inet_bind_hashbucket *head, *head2;\n\tstruct inet_bind2_bucket *tb2 = NULL;\n\tstruct inet_bind_bucket *tb = NULL;\n\tbool head2_lock_acquired = false;\n\tstruct net *net = sock_net(sk);\n\n\tl3mdev = inet_sk_bound_l3mdev(sk);\n\n\tif (!port) {\n\t\thead = inet_csk_find_open_port(sk, &tb, &tb2, &head2, &port);\n\t\tif (!head)\n\t\t\treturn ret;\n\n\t\thead2_lock_acquired = true;\n\n\t\tif (tb && tb2)\n\t\t\tgoto success;\n\t\tfound_port = true;\n\t} else {\n\t\thead = &hinfo->bhash[inet_bhashfn(net, port,\n\t\t\t\t\t\t  hinfo->bhash_size)];\n\t\tspin_lock_bh(&head->lock);\n\t\tinet_bind_bucket_for_each(tb, &head->chain)\n\t\t\tif (inet_bind_bucket_match(tb, net, port, l3mdev))\n\t\t\t\tbreak;\n\t}\n\n\tif (!tb) {\n\t\ttb = inet_bind_bucket_create(hinfo->bind_bucket_cachep, net,\n\t\t\t\t\t     head, port, l3mdev);\n\t\tif (!tb)\n\t\t\tgoto fail_unlock;\n\t\tbhash_created = true;\n\t}\n\n\tif (!found_port) {\n\t\tif (!hlist_empty(&tb->bhash2)) {\n\t\t\tif (sk->sk_reuse == SK_FORCE_REUSE ||\n\t\t\t    (tb->fastreuse > 0 && reuse) ||\n\t\t\t    sk_reuseport_match(tb, sk))\n\t\t\t\tcheck_bind_conflict = false;\n\t\t}\n\n\t\tif (check_bind_conflict && inet_use_hash2_on_bind(sk)) {\n\t\t\tif (inet_bhash2_addr_any_conflict(sk, port, l3mdev, true, true))\n\t\t\t\tgoto fail_unlock;\n\t\t}\n\n\t\thead2 = inet_bhashfn_portaddr(hinfo, sk, net, port);\n\t\tspin_lock(&head2->lock);\n\t\thead2_lock_acquired = true;\n\t\ttb2 = inet_bind2_bucket_find(head2, net, port, l3mdev, sk);\n\t}\n\n\tif (!tb2) {\n\t\ttb2 = inet_bind2_bucket_create(hinfo->bind2_bucket_cachep,\n\t\t\t\t\t       net, head2, tb, sk);\n\t\tif (!tb2)\n\t\t\tgoto fail_unlock;\n\t\tbhash2_created = true;\n\t}\n\n\tif (!found_port && check_bind_conflict) {\n\t\tif (inet_csk_bind_conflict(sk, tb, tb2, true, true))\n\t\t\tgoto fail_unlock;\n\t}\n\nsuccess:\n\tinet_csk_update_fastreuse(tb, sk);\n\n\tif (!inet_csk(sk)->icsk_bind_hash)\n\t\tinet_bind_hash(sk, tb, tb2, port);\n\tWARN_ON(inet_csk(sk)->icsk_bind_hash != tb);\n\tWARN_ON(inet_csk(sk)->icsk_bind2_hash != tb2);\n\tret = 0;\n\nfail_unlock:\n\tif (ret) {\n\t\tif (bhash2_created)\n\t\t\tinet_bind2_bucket_destroy(hinfo->bind2_bucket_cachep, tb2);\n\t\tif (bhash_created)\n\t\t\tinet_bind_bucket_destroy(hinfo->bind_bucket_cachep, tb);\n\t}\n\tif (head2_lock_acquired)\n\t\tspin_unlock(&head2->lock);\n\tspin_unlock_bh(&head->lock);\n\treturn ret;\n}\n"
+},
+"inet_twsk_bind_unhash":{
+"source":"net/ipv4/inet_timewait_sock.c",
+"prefix":"void inet_twsk_bind_unhash(",
+"bytes":445,
+"sha256":"589b5d44dd7bc462e4988b63b4dcbb9e7cbd0bdd9b1e372d038c1ae486935340",
+"text":"void inet_twsk_bind_unhash(struct inet_timewait_sock *tw,\n\t\t\t  struct inet_hashinfo *hashinfo)\n{\n\tstruct inet_bind2_bucket *tb2 = tw->tw_tb2;\n\tstruct inet_bind_bucket *tb = tw->tw_tb;\n\n\tif (!tb)\n\t\treturn;\n\n\t__sk_del_bind_node((struct sock *)tw);\n\ttw->tw_tb = NULL;\n\ttw->tw_tb2 = NULL;\n\tinet_bind2_bucket_destroy(hashinfo->bind2_bucket_cachep, tb2);\n\tinet_bind_bucket_destroy(hashinfo->bind_bucket_cachep, tb);\n\n\t__sock_put((struct sock *)tw);\n}\n"
+},
+"inet_twsk_kill":{
+"source":"net/ipv4/inet_timewait_sock.c",
+"prefix":"static void inet_twsk_kill(",
+"bytes":751,
+"sha256":"7e425147e0ada274148f1998ab7129f9e2065e7735d1f3e8650230610f62f27c",
+"text":"static void inet_twsk_kill(struct inet_timewait_sock *tw)\n{\n\tstruct inet_hashinfo *hashinfo = tw->tw_dr->hashinfo;\n\tspinlock_t *lock = inet_ehash_lockp(hashinfo, tw->tw_hash);\n\tstruct inet_bind_hashbucket *bhead, *bhead2;\n\n\tspin_lock(lock);\n\tsk_nulls_del_node_init_rcu((struct sock *)tw);\n\tspin_unlock(lock);\n\n\t/* Disassociate with bind bucket. */\n\tbhead = &hashinfo->bhash[inet_bhashfn(twsk_net(tw), tw->tw_num,\n\t\t\thashinfo->bhash_size)];\n\tbhead2 = inet_bhashfn_portaddr(hashinfo, (struct sock *)tw,\n\t\t\t\t       twsk_net(tw), tw->tw_num);\n\n\tspin_lock(&bhead->lock);\n\tspin_lock(&bhead2->lock);\n\tinet_twsk_bind_unhash(tw, hashinfo);\n\tspin_unlock(&bhead2->lock);\n\tspin_unlock(&bhead->lock);\n\n\trefcount_dec(&tw->tw_dr->tw_refcount);\n\tinet_twsk_put(tw);\n}\n"
+}
+},
+"kernelBuilt":false,
+"actualKernelExecuted":false,
+"completeAllocationClosure":false,
+"finalFreeCertified":false,
+"productionInstallation":false
 }

@@ -5,6 +5,7 @@ from tools import guest_compatibility_context_build, guest_runtime_receipts
 from tools.transaction_guest_project import packaging_arguments
 
 import json
+import math
 from pathlib import Path
 import tempfile
 import time
@@ -66,7 +67,10 @@ def binding_check(work: Path, lock: dict, commands: Commands, generator: Path) -
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
-          *, installed: dict[str, Path] | None = None) -> Path:
+          *, installed: dict[str, Path] | None = None, _deadline: float | None = None) -> Path:
+    if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
+                                 or _deadline <= time.monotonic() + 5):
+        raise ValueError('C-build-original-owner-deadline')
     project_path, output = checked_path(project_path), checked_path(output)
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
@@ -97,9 +101,16 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
+            if _deadline is not None:
+                if _deadline <= time.monotonic() + 5:
+                    raise ValueError('compiler-setup-consumed-parent-cleanup-reserve')
+                commands.deadline = min(commands.deadline, _deadline - 5)
+                commands._parent_deadline = _deadline
             stage = "application-dependencies"
             closure = prepare(dependency_root, work, output, "c")
             runtime_profile = standard_facilities.selected_profile(project, closure.lock if closure is not None else None)
+            if runtime_profile == standard_facilities.FETCH_PROFILE and not threaded:
+                raise ValueError('c-libfetch-http-requires-cooperative-threading')
             language_standard = language.selected_standard(project, closure.lock if closure is not None else None)
             resources = c_resource_inputs.selected(closure, files)
             write_json(output / 'c-resources.json', resources.observation)
@@ -108,6 +119,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             compiler = Compiler(temporary / "compiler", 900, sdk=work / "vendor/lsf/sdk/c-guest",
                                 platform=None, config=pins, commands=commands, installed=installed,
                                 **({'threading_tool': checked_path(contracts_tool)} if threaded else {}))
+            from tools import guest_compiler_capture
+            compiler.compiler_edges = guest_compiler_capture.Capture(files, 'c')
+            compiler.compiler_edge_sources = {row['source']: work / row['source']
+                                              for row in compiler.compiler_edges.queries}
             if closure is not None or threaded:
                 stage = "captured-compiler-isolation"
                 isolated_inputs = compiler.enable_captured_isolation(temporary)
@@ -223,6 +238,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                   "digest": digest(data), "size": len(data)})
             runtime_bindings = (digest(json.dumps({'sdkBindings': binding_digest, 'applicationBindings': generated},
                 sort_keys=True, separators=(',', ':')).encode()) if runtime_profile in standard_facilities.PROFILE_IMPORTS else binding_digest)
+            materials.append(guest_compiler_capture.finish(compiler.compiler_edges, output, files, component,
+                recipe_inputs, compiler.materials['zig']['digest']))
             materials.append(guest_runtime_receipts.emit(output, 'c', runtime_profile, files,
                 source_inputs, component, materials, graph=closure.lock if closure is not None else None,
                 binding_digest=runtime_bindings, configuration={"profile": runtime_profile, "world": project['world'],
@@ -248,5 +265,5 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": commands.records if commands else []})
-        guest_compatibility_build.failure_report(output, "c", stage)
+        guest_compatibility_build.failure_report(output, "c", stage, cause=error)
         raise

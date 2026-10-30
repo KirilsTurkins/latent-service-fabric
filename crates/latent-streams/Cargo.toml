@@ -30,13 +30,14 @@ socket2 = "=0.6.5"
 tokio = { workspace = true, features = ["net", "io-util"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-rustix = { version = "=1.1.5", features = ["fs", "time"] }
+rustix = { version = "=1.1.5", features = ["event", "fs", "time"] }
+latent-stream-factory-native = { path = "../latent-stream-factory-native" }
 
 [dev-dependencies]
 rustls-upstream = { package = "rustls", version = "=0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
 hickory-proto = "=0.26.3"
 rcgen = { version = "=0.14.10", default-features = false, features = ["crypto", "ring"] }
-tokio-rustls = { version = "=0.26.5", default-features = false, features = ["ring", "tls12"] }
+tokio-rustls = { version = "=0.26.6", default-features = false, features = ["ring", "tls12"] }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-manifest = { path = "../latent-manifest" }
 latent-executor = { path = "../latent-executor" }

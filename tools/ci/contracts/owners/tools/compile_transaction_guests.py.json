@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/compile_transaction_guests.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain exact accepted Java read-only cache, lifecycle, diagnostic and current HTTP selections; add separate Java-only early HTTP capture without changing original variants, budgets or commands.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "83747450f74144f5685cea9b43cd1668fda7fd23fdf894a77c380c1c8eb2e4de"
+{"kind":"owner","path":"tools/compile_transaction_guests.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain exact accepted Java read-only cache, lifecycle, diagnostic and current HTTP selections; add separate Java-only early HTTP capture without changing original variants, budgets or commands.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "83747450f74144f5685cea9b43cd1668fda7fd23fdf894a77c380c1c8eb2e4de"
 }

@@ -4,15 +4,29 @@ use super::{
 };
 use std::time::Instant;
 impl Store {
-    #[expect(
-        clippy::too_many_lines,
-        reason = "The bounded cursor scan keeps its deadline, continuation and page ownership decisions together"
-    )]
+    #[cfg(test)]
     pub fn query(
         &self,
         q: &AuditQueryRequest,
         deadline: Instant,
         dropped: u64,
+    ) -> Result<(
+        Vec<AuditStoredRecord>,
+        AuditPageCoverage,
+        Option<AuditCursor>,
+    )> {
+        self.query_with_custody(q, deadline, dropped, |_| Ok(()))
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "The bounded cursor scan keeps its deadline, continuation and page ownership decisions together"
+    )]
+    pub fn query_with_custody(
+        &self,
+        q: &AuditQueryRequest,
+        deadline: Instant,
+        dropped: u64,
+        mut prepare_record: impl FnMut(&[u8]) -> Result<()>,
     ) -> Result<(
         Vec<AuditStoredRecord>,
         AuditPageCoverage,
@@ -36,12 +50,12 @@ impl Store {
             }
             let a = u64::from_str_radix(p[3], 16).map_err(|_| corrupt())?;
             let h = u64::from_str_radix(p[4], 16).map_err(|_| corrupt())?;
-            if a > h || h >= self.head.next_sequence {
+            if a < self.first_sequence - 1 || a > h || h >= self.head.next_sequence {
                 return Err(super::super::invalid());
             }
             (a, h)
         } else {
-            (0, self.head.next_sequence - 1)
+            (self.first_sequence - 1, self.head.next_sequence - 1)
         };
         let mut events = Vec::new();
         let mut scanned = 0;
@@ -50,7 +64,7 @@ impl Store {
         for e in self
             .entries
             .iter()
-            .skip(usize::try_from(after).map_err(|_| corrupt())?)
+            .skip(usize::try_from(after - (self.first_sequence - 1)).map_err(|_| corrupt())?)
         {
             if e.sequence > high {
                 break;
@@ -92,6 +106,10 @@ impl Store {
                 if bytes.len() != e.bytes || codec::digest(&bytes) != e.digest {
                     return Err(corrupt());
                 }
+                // Original node capacity precedes typed graph/vector birth and
+                // every later trusted adapter copy. The original page limit
+                // remains a separate, unchanged logical subset.
+                prepare_record(&bytes)?;
                 let record = codec::decode(&bytes, self.limits.maximum_record_bytes)?;
                 codec::record(&record)?;
                 #[cfg(test)]
@@ -121,7 +139,7 @@ impl Store {
             events,
             AuditPageCoverage {
                 epoch: self.head.epoch.clone(),
-                retained_floor: 1,
+                retained_floor: self.first_sequence,
                 high_watermark: high,
                 scanned,
                 stop,

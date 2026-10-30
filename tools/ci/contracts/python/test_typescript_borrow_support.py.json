@@ -1,0 +1,16 @@
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "BorrowSupportTests.test_exact_four_crates_preserve_original_lock_and_features":
+      "2056c34aa3e03d6a71a9c98fb5d74e5f9069070ef73ae169bbaaf5b0b738926f",
+    "BorrowSupportTests.test_missing_changed_or_extra_crate_refuses_before_output":
+      "2056c34aa3e03d6a71a9c98fb5d74e5f9069070ef73ae169bbaaf5b0b738926f"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_typescript_borrow_support.py",
+  "reviewReason":"Two additive source graph and original-lock preservation/refusal controls for maintained diagnostic-only support; no native build or runtime claim",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "2056c34aa3e03d6a71a9c98fb5d74e5f9069070ef73ae169bbaaf5b0b738926f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a1b76343550651951ba704efe689a12871916a11ebc53ab90348b0318addc53a","class:setup-sha256:579b25047dfe96561ff409949cd38081293a3d49188c97d7871247b3e5f4dcfb"],"skipSites":[]}
+  }
+}

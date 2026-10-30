@@ -19,6 +19,13 @@ and [package architecture walkthrough](docs/development/workspace-packages.md).
 Every Rust workspace package has a README mapping its modules, ownership,
 dependencies, feature/target gates, tests and related contracts.
 
+The current SVG maps show [delivery](docs/assets/package-delivery.svg),
+[shared-node responsibilities](docs/assets/standalone-architecture.svg),
+[activation cleanup](docs/assets/activation-lifecycle.svg),
+[physical memory ownership](docs/assets/activation-memory-ownership.svg) and
+[command commitment and recovery](docs/assets/transaction-command-recovery.svg).
+Their linked guides remain authoritative for scope and qualification.
+
 The [container profile](docs/operations/container-runtime.md) runs the same
 standalone node as a non-root process. Optional node-level adapters provide
 [private readiness probes](docs/operations/readiness-probes.md),
@@ -49,6 +56,9 @@ the linked implementation and qualification pages establish availability.
 - [Control plane](docs/architecture/control-plane.md)
 - [Data plane](docs/architecture/data-plane.md)
 - [Execution cells](docs/architecture/execution-cells.md)
+- [Selected Wasmtime continuation and memory profiles](docs/runtime/wasmtime.md#selected-continuation-and-memory-profiles)
+- [Resource budgets and physical ownership](docs/runtime/resource-budgets.md)
+- [Guest API/runtime evidence matrix](docs/component-development/runtime-capabilities.md)
 - [Contracts and bindings](docs/architecture/contracts-and-bindings.md)
 - [Ingress and triggers](docs/architecture/ingress-and-triggers.md)
 - [Static website delivery](docs/component-development/static-sites.md)

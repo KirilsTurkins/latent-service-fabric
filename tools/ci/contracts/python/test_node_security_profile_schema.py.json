@@ -1,20 +1,11 @@
-{
-  "cases":["SecurityProfileSchema.test_external_report_requires_every_observed_control","SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings","SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement","SecurityProfileSchema.test_transactional_host_observations_require_actual_enforced_admission"],
-  "guardDefinitions":{
-    "0d36d622eb39bbf4c257d20701349cd3feec04367e36903ebf31524855ad9ed1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7f356de3f00da806afa614abedf146c545d4b3fe02be9ecbf817d7db91d8cbbb","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  },
-  "guards":{
-    "SecurityProfileSchema.test_external_report_requires_every_observed_control":
-      "0d36d622eb39bbf4c257d20701349cd3feec04367e36903ebf31524855ad9ed1",
-    "SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings":
-      "0d36d622eb39bbf4c257d20701349cd3feec04367e36903ebf31524855ad9ed1",
-    "SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement":
-      "0d36d622eb39bbf4c257d20701349cd3feec04367e36903ebf31524855ad9ed1",
-    "SecurityProfileSchema.test_transactional_host_observations_require_actual_enforced_admission":
-      "0d36d622eb39bbf4c257d20701349cd3feec04367e36903ebf31524855ad9ed1"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_node_security_profile_schema.py",
-  "reviewReason":"Authenticate selected Wasmtime48.0.7 security patch and coupled current identities; preserve all historical evidence, feature/capability/limit/skip obligations and exact native source guard.",
-  "schemaVersion":"latent.ci.contracts.v2"
-}
+{"cases":["SecurityProfileSchema.test_external_report_requires_every_observed_control","SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings","SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement","SecurityProfileSchema.test_transactional_host_observations_require_actual_enforced_admission"],"guardDefinitions":{
+  "0d36d622eb39bbf4c257d20701349cd3feec04367e36903ebf31524855ad9ed1"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7f356de3f00da806afa614abedf146c545d4b3fe02be9ecbf817d7db91d8cbbb","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}},"guards":{"SecurityProfileSchema.test_external_report_requires_every_observed_control":
+  "0d36d622eb39bbf4c257d20701349cd3feec04367e36903ebf31524855ad9ed1"
+,"SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings":
+  "0d36d622eb39bbf4c257d20701349cd3feec04367e36903ebf31524855ad9ed1"
+,"SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement":
+  "0d36d622eb39bbf4c257d20701349cd3feec04367e36903ebf31524855ad9ed1"
+,"SecurityProfileSchema.test_transactional_host_observations_require_actual_enforced_admission":
+  "0d36d622eb39bbf4c257d20701349cd3feec04367e36903ebf31524855ad9ed1"
+},"kind":"python","module":"tools/tests/test_node_security_profile_schema.py","reviewReason":"Authenticate selected Wasmtime48.0.7 security patch and coupled current identities; preserve all historical evidence, feature/capability/limit/skip obligations and exact native source guard.","schemaVersion":"latent.ci.contracts.v2"}

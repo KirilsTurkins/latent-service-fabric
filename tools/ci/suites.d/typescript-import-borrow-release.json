@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "signed_borrow_release_preserves_original_socket_until_consuming_close_and_root_retirement",
+        "signed_normal_node_net_socket_uses_original_stream_owners_and_close_events"
+      ],
+      "expectedIgnored": [
+        "signed_borrow_release_preserves_original_socket_until_consuming_close_and_root_retirement",
+        "signed_normal_node_net_socket_uses_original_stream_owners_and_close_events"
+      ],
+      "id": "latent-wasmtime.test.typescript_import_borrow_release",
+      "ignoredLeaves": [
+        "signed_borrow_release_preserves_original_socket_until_consuming_close_and_root_retirement",
+        "signed_normal_node_net_socket_uses_original_stream_owners_and_close_events"
+      ],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 2,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain and development-test-host feature",
+        "fresh source-bound TypeScript borrow component and qualified OWN-result engine",
+        "successful source-matched native signer Cargo inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/typescript_import_borrow_release.rs",
+      "target": "typescript_import_borrow_release",
+      "timeoutSeconds": 300
+    }
+  ]
+}

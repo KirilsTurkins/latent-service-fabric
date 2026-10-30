@@ -1,0 +1,24 @@
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "AggregateTaskWaitPortTests.test_authenticated_receipt_refuses_every_missing_or_cross_typed_aggregate_identity":
+      "5ad99bd0c6784b5f881fd628adc0beaefa6bf23ac139df0e9736546295f6c297",
+    "AggregateTaskWaitPortTests.test_both_node_modes_keep_the_actual_fresh_directory_owner_callable":
+      "5ad99bd0c6784b5f881fd628adc0beaefa6bf23ac139df0e9736546295f6c297",
+    "AggregateTaskWaitPortTests.test_legacy_receipts_and_authority_selections_cannot_impersonate_aggregate":
+      "5ad99bd0c6784b5f881fd628adc0beaefa6bf23ac139df0e9736546295f6c297",
+    "AggregateTaskWaitPortTests.test_normal_managed_selection_preserves_exact_final_corelib_chain_and_rejects_drift":
+      "5ad99bd0c6784b5f881fd628adc0beaefa6bf23ac139df0e9736546295f6c297",
+    "AggregateTaskWaitPortTests.test_public_evidence_gate_excludes_private_workspaces_and_reserves_admission_bytes":
+      "5ad99bd0c6784b5f881fd628adc0beaefa6bf23ac139df0e9736546295f6c297",
+    "AggregateTaskWaitPortTests.test_rehashed_build_cannot_hide_changed_aggregate_selection_or_final_helper_chain":
+      "5ad99bd0c6784b5f881fd628adc0beaefa6bf23ac139df0e9736546295f6c297"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_dotnet_aggregate_task_wait.py",
+  "reviewReason":"Preserve six case identities and all bases/decorators/skips; bind the separate controlled v2 receipt and strict guarded Pump detachment identities without reinterpreting the observed v1 fixture.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "5ad99bd0c6784b5f881fd628adc0beaefa6bf23ac139df0e9736546295f6c297":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:17c96c7e3ac3ba7d9e00b4ebd217b2859b76f8df7c93a282901dd13a9ee9acbf","class:setup-sha256:5ab2068e1b51c2806546c883d2f441480cd4d205b1c83ec671df4d96aab96ea3"],"skipSites":[]}
+  }
+}

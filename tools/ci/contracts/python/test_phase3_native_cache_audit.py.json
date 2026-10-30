@@ -1,5 +1,5 @@
 {
-  "cases":["NativeCacheAuditTests.test_empty_baseline_does_not_waive_component_identity","NativeCacheAuditTests.test_required_observation_and_original_overflow_limit_stay_fail_closed","NativeCacheAuditTests.test_resident_image_can_have_no_pre_restart_native_store_hits"],
+  "storageCases":"guard-keys",
   "guards":{
     "NativeCacheAuditTests.test_empty_baseline_does_not_waive_component_identity":
       "c696f48a763f02dc92d0f989111a151a3f912ba974ad058d30eab1884340f6bd",

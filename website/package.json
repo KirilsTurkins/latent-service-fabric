@@ -9,19 +9,21 @@
   "packageManager": "npm@11.19.1",
   "overrides": {
     "lodash-es": "4.18.1",
-    "serialize-javascript": "7.0.5",
+    "serialize-javascript": "7.1.3",
     "sockjs": {
       "uuid": "11.1.1"
     },
     "dompurify": "3.4.17",
     "http-cache-semantics": "file:../target/website-package-manager/http-cache-semantics-4.3.0-lsf-cache-v1.tar",
     "braces": "file:../target/website-package-manager/braces-3.0.3-lsf-depth-v1.tar",
+    "deepmerge": "file:../target/website-package-manager/deepmerge-4.3.1-lsf-prototype-v1.tar",
     "tinypool": "2.1.2",
     "source-map-js": "1.2.2",
     "postcss-selector-parser": "7.1.6",
     "katex": "0.18.2",
     "launch-editor": "2.14.2",
-    "follow-redirects": "1.16.1"
+    "follow-redirects": "1.16.1",
+    "qs": "6.16.1"
   },
   "scripts": {
     "start": "node scripts/site.mjs start",

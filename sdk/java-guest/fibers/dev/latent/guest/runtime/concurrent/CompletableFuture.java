@@ -34,7 +34,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             synchronized (this) {
                 if (pool == null) {
                     try { pool = Executors.newDefaultAsyncPool(); }
-                    catch (Throwable error) { rejectedBeforeAcceptance(command); throw error; }
+                    catch (Throwable error) { rejectedBeforeAcceptance(command, this); throw error; }
                 }
                 selected = pool;
             }
@@ -73,9 +73,15 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     }
     private synchronized void unsubscribe(Action action) { dependents.remove(action); }
 
-    /** Only an SDK-owned queue can prove that this runnable was not accepted. */
-    static void rejectedBeforeAcceptance(Runnable command) {
-        if (command instanceof Action) ((Action)command).finish();
+    /** An SDK rejection describes this submission, never another accepted copy. */
+    static void rejectedBeforeAcceptance(Runnable command, Executor rejecting) {
+        if (command instanceof Action) ((Action)command).rejectBeforeRun(rejecting);
+    }
+    static boolean acceptedByQueue(Runnable command) {
+        return command instanceof Action && ((Action)command).acceptQueueCopy();
+    }
+    static void removedFromQueue(Runnable command, boolean accepted, boolean withdrawn) {
+        if (accepted) ((Action)command).removeQueueCopy(withdrawn);
     }
 
     private static class Action implements Runnable {
@@ -91,6 +97,9 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         private Activation.Lease queued;
         volatile boolean dispatched;
         volatile boolean finished;
+        private boolean started;
+        private boolean withdrawn;
+        private int sdkCopies;
 
         Action(CompletableFuture<?> destination, CompletableFuture<?> left, CompletableFuture<?> right,
                boolean both, Executor executor, Runnable body) {
@@ -130,6 +139,48 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             detach();
             try { queued.close(); }
             finally { queued = null; destination.retired(this); }
+        }
+        private synchronized void rejectBeforeRun(Executor rejecting) {
+            // Only the original direct SDK route can prove nonacceptance of
+            // the initial dispatch. Opaque forwarding executors may retain it.
+            if (started || sdkCopies != 0 || !(executor == rejecting
+                    || executor instanceof DefaultExecutor && ((DefaultExecutor)executor).pool == rejecting)) return;
+            finish();
+        }
+        private boolean readmit() {
+            if (destination.isDone()) { withdrawn = false; return false; }
+            Activation.Lease readmitted = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
+            boolean accepted;
+            try { accepted = destination.accept(this, false); }
+            catch (Throwable error) { readmitted.close(); throw error; }
+            if (!accepted) { readmitted.close(); withdrawn = false; return false; }
+            queued = readmitted;
+            finished = false;
+            withdrawn = false;
+            return true;
+        }
+        private synchronized boolean acceptQueueCopy() {
+            if (started || finished && !withdrawn) return false;
+            if (sdkCopies == Integer.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("activation-future-queue-copies");
+            if (withdrawn && !readmit()) return false;
+            sdkCopies++;
+            return true;
+        }
+        private synchronized void removeQueueCopy(boolean removed) {
+            if (sdkCopies <= 0) throw new IllegalStateException("activation-future-queue-copy");
+            sdkCopies--;
+            // A running/dequeued Item keeps its claim until command.run's
+            // finally. Removing one queue never refunds another queue's copy.
+            if (!removed || sdkCopies != 0 || started || finished) return;
+            if (!(Executors.isManaged(executor) || executor instanceof DefaultExecutor)) return;
+            finish();
+            withdrawn = true;
+        }
+        private synchronized boolean startRun() {
+            if (started || finished && !withdrawn) return false;
+            if (withdrawn && !readmit()) return false;
+            started = true;
+            return true;
         }
         void cancelWaiting() {
             synchronized (this) {
@@ -178,6 +229,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             }
         }
         @Override public void run() {
+            if (!startRun()) return;
             try {
                 if (!destination.isDone()) perform();
             } catch (Throwable error) { destination.asyncFailure(error); }

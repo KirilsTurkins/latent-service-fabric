@@ -4,9 +4,11 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains twenty-nine changed upstream files and six added
-implementation files. Other Wasmtime packages remain at the original locked
-registry versions.
+original package; it contains 34 changed upstream files and 22 added
+source/license files. Other Wasmtime packages remain at the original locked
+registry versions. The standalone development lock selects Tokio 1.51.6 for
+RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
+identity. This dependency-only lock correction changes no Wasmtime runtime source.
 
 The maintained extension is `component::DynamicValueMemory` and
 `Func::call_async_with_memory`. It admits actual allocation capacity in the
@@ -34,7 +36,7 @@ retains confirmed actual allocations through native unwind, without confirming
 a hypothetical signature maximum as observed peak.
 
 The native cohort is
-`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9`. Runtime engine configuration identity
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-memory-v17`. Runtime engine configuration identity
 includes this cohort, so old prepared/AOT identity cannot certify this host.
 The immutable v1/7b programme passed 61 controls; v2/de0 passed81,
 v3/48a passed85, v4/3e417 passed92, v5/94f passed97, v7/f535 passed114,
@@ -169,3 +171,518 @@ shared preparation closure/import backing, concurrent task/queue/resource and ho
 request ingress/discarded scaffolding, other hostcall copies, or controller/legacy transport allocations.
 Existing finite caps are not original memory admission. Whole SDK cost acceptance
 remains open; the source package and planned controls are not execution evidence.
+
+
+The v10 source extension pre-admits the complete allocation of a selected
+canonical-async JoinState cell before publishing either of its two private
+strong owners. This includes the Arc header, payload and alignment from the
+pinned Rust 1.97.1 source (compiler commit 8bab26f4f, alloc/src/sync.rs SHA256
+768776d4a37cfeb28c71a0c6d8b2ad33332d11ceaef7e47cb01463bd71b9048a).
+Every strong wrapper uses Arc::into_inner: the last winner receives the payload
+only after its implicit weak header is deallocated. It destroys state and wakers
+before refunding the original allocation owner. A state-destructor unwind keeps
+the charge conservatively retained. The cell does not retain its NativeMemory
+factory; a real owned binding lifetime control covers that separation.
+
+NativeMemory=None retains the original Arc<TryMutex<JoinState>> allocation and
+operation semantics. The private handle enum can enlarge inline handles/futures;
+existing concrete future-box admission charges their actual Layout. This is a
+source-only implementation until its five private implementation controls and
+separate actual canonical first_poll/original-budget control execute. It does
+not account all concurrent scheduler, opaque host future, engine GC or cache
+allocations, and does not complete a full JavaScript cost-model qualification.
+
+
+The v11 source extension additionally pre-admits the exact concrete abortable
+future Box in Instance::first_poll, after the separately paid JoinState cell but
+before the running handle is published or the future is polled. Its private
+wrapper keeps the original allocation owner outside the pinned Box; normal
+completion retains backing until actual Box destruction. A destructor unwind
+keeps that same original charge conservatively retained. Confirmation unwind
+also destroys the installed Box before refund. No factory or new ledger is held.
+NativeMemory=None preserves the original Box<F> allocation and poll semantics;
+the inline wrapper can enlarge the separate enclosing scheduler future.
+Layout<F> covers this backing, not allocator overhead or an RSS upper bound.
+Other scheduler/opaque future boxes, FuturesUnordered nodes, queue/waitable
+backing and transitive captures remain outside this slice. At that historical
+source stage the four private controls and actual third-admission/refusal/fresh-
+Store control were prepared but unexecuted. They subsequently all passed at
+source e225fc670b97f4511c2acac21cfd3b7b8f47d9af, run 40245918267. That v11
+qualification covers only those four private cases and request-3/fresh-42 native
+control; it does not qualify this v12 continuation extension or the full runtime.
+
+
+The v12 source extension prepares the selected pending continuation before the
+initial host poll or CalleeRunning publication. A private noncapturing factory
+and its typed (inner future, lower, StoreToken, task) tuple determine the exact
+factory-output Future Layout without invoking the factory. Ready releases the
+unused unconfirmed reservation before direct lowering. Pending creates one Box
+of that SAME output type with the SAME owner, outside its erased pinned pointer.
+Completion keeps the charge until actual destruction/deallocation; confirmation
+unwind destroys the installed Box before refund, while destructor unwind retains
+the original charge conservatively. There is no new admission after user I/O.
+Other existing scheduler boxed paths retain their infallible Legacy adapter;
+NativeMemory=None retains the original allocation/poll semantics. The scheduler
+enum can enlarge separate queue/node backing, which this slice does not pay.
+Layout<Output> is payload backing, not allocator overhead or an RSS upper bound.
+The v11 inner CallFuture source is unchanged. Completion WorkerFunction boxes,
+FuturesUnordered nodes, queue backing and other transitive/opaque allocations
+remain separate gaps at that historical source stage. The four private controls
+and actual fourth-admission/refusal/fresh-Store control subsequently passed at
+source 5d72ee7886bfd4ed737d02d49e7f85a60c00f0cd, run 40252236378. That v12
+receipt is limited to those five controls and does not qualify later extensions.
+The v11 cases and Java twelve were not replayed by that v12 programme.
+
+
+The v13 source extension pre-admits the exact completion WorkerFunction closure
+Box using a noncapturing typed-context/result factory. Creating the prepared
+holder does not allocate or reserve. The enclosing pending-output reservation
+remains admission four; admission five then reserves Layout<Function> through
+the prepared tuple before Running publication or the first poll. Ready refunds
+both unused reservations before direct lowering. Pending transfers the SAME
+worker reservation into one erased closure Box without post-I/O admission.
+Its outside affine owner travels through the queue and one-shot invocation.
+Normal return/error and unrun queue drop destroy/deallocate the Box before
+refund; confirmation unwind has installed cleanup, while call/destructor unwind
+conservatively retains the SAME original charge. None keeps the legacy Box call.
+Pinned Rust 1.97.1 boxed.rs (8bab26f4f, SHA256
+31fe2ec856527253e2a78279f44b7dec14b73d9f1114a75584b031dcd6f64418)
+binds its consuming FnOnce call and target/deallocation behavior. This charges
+only closure payload backing, not allocator/RSS, transitive captures, escaping
+error backing, queue storage or FuturesUnordered nodes. The v11 inner and v12
+pending helper source files remain unchanged, although the exact concrete
+pending output now includes the prepared worker holder. Four NEW private
+controls and actual fifth-admission/refusal/fresh-Store control are prepared,
+UNCOMPILED and UNEXECUTED at that source stage; only those five are selected by
+the focused owner. The initial attempt at source
+743cf2c4ad7250a4c36d586472d83e2aa5754928 (run 40257187860) stopped in the private
+Rust build with E0308 before executing any control: a separate pre-existing
+stream callback still supplied the old boxed type. The corrective source wraps
+that SAME existing Box in the infallible Legacy adapter, preserving its closure
+body and allocation point. This stream callback remains unpaid and outside the
+selected first_poll completion-closure slice. The failed attempt receives no
+control credit; the corrected four-plus-one programme is not yet executed.
+
+
+The v13 source stage above was subsequently qualified at source
+1f8eb3411c87454d19fd543339cd6e9b07342b20, run 40259061940: four private
+completion-owner controls and the actual local-fifth-owner refusal/fresh-Store
+case passed. The preceding 743cf2c4ad7250a4c36d586472d83e2aa5754928 run
+40257187860 failed compilation before executing any controls. Its separate
+Legacy stream callback adapter was corrected; those original receipts remain
+historical and do not qualify the following extension.
+
+The v14 SOURCE extension charges exact scheduler Entry<WorkItem> Box layouts,
+not guessed VecDeque capacity. An affine outside owner accompanies one stable
+Box::into_raw allocation, reconstructed once for physical drop before refund.
+Private predecessor/tail pointers are non-owning. A destructor unwind retains
+the SAME original charge and any uncertain remaining chain. Normal draining is
+iterative. None keeps the original VecDeque path. This does not account for
+allocator metadata/RSS or the other remaining runtime allocations.
+
+Empty nodes are prepared before effects. The SAME node survives queue pop,
+pending-instance storage, priority promotion, worker/fiber execution and waits;
+wake and cancellation publication are infallible. The former at-most-one ready
+Vec is inline Option staging. Stream pipe nodes precede the initial poll;
+possible producer-realloc work is prepared before polling the producer. The
+separate stream callback closure Box itself remains unpaid.
+
+Canonical first_poll preserves the original host-local callback/JoinState/
+CallFuture/pending-output/WorkerFunction order 1..5, then prepares two DISTINCT
+physical nodes (completion and PushFuture) before Running or user poll. Ready
+deallocates/refunds both unused nodes before direct lowering. The controlled
+callback-style export also now has two upstream nodes before its sole import.
+Old actual local-owner 2..5 case identities therefore target globals 4..7,
+explicitly retaining their meaning rather than relabeling old receipts. New
+actual cases target local 6/7 at globals 8/9, plus one two-scenario case refuses
+upstream nodes 1/2 before any guest fuel consumption. Every refusal requires
+the original typed budget error, teardown to zero and fresh 42 on the SAME
+original budget. Compiled Entry and JoinState layout witnesses plus bounded
+observed reservation sequences must validate that closed source chain.
+
+Four NEW private controls and SEVEN affected/new actual case IDs are prepared,
+UNCOMPILED and UNEXECUTED at this source stage. One focused programme will run
+those eleven IDs under the original two locked targets, 45-minute job,
+2400-second aggregate, 900-second build, 60-second case and two compile-job
+limits, including existing cleanup reserves. The aggregate clips late commands;
+there is no guarantee every stage receives its individual maximum. No old
+private v11/v12/v13 programme or signed-language/Java campaign is selected.
+FuturesUnordered task/Arc/waker nodes, other scheduler maps/collections, Legacy
+stream closure Box and transitive/escaping backing remain separate unpaid gaps.
+This is not whole #736 or a complete native allocator/RSS quota.
+
+
+The frozen v14 stage above was later qualified at source
+b5fc40c2703621c23c0107434c46933ef78846ec, run40270862197: four new private
+queue controls and seven affected/new actual controls passed (eight refusal/
+fresh scenarios). Its first c4a1afeb attempt failed compilation with zero
+controls. Durable results are outside this vendor snapshot; those receipts
+retain their original scope and source rather than qualifying this extension.
+
+The v15 SOURCE stage derives only the five locked futures-util0.3.34 unordered
+files and retains their MIT/Apache licenses and exact original identities in
+UPSTREAM.latent.json. The declared private sized Header includes strong/weak
+counters, the SAME original affine allocation owner and ManuallyDrop payload.
+Its own actual Layout is admitted before raw global allocation. On the last
+weak, the owner moves outside the header; identical-layout deallocation returns
+before refund. Weak paths never reference destroyed payloads. Payload-unwind
+keeps the SAME original implicit weak/header/charge, never an unpaid control
+Arc. Escaped wakers keep task and weak ready-queue backing paid until actual
+deallocation. Refcount overflow aborts before publishing an out-of-bound CAS.
+
+The paid set lazily initializes its stub and ready queue before the event-loop
+argument's first poll. It stores only a mode flag and backing owners, never a
+factory Memory Arc. Task headers are prepared at all six pre-effect producers;
+publication, wake, cancellation and teardown only transfer existing owners.
+The None path remains the original futures::FuturesUnordered implementation.
+The linked-list/MPSC/pin/yield/release-bomb algorithm remains source-derived;
+unused infallible allocating builder APIs are absent from the private fork.
+
+Six new private source controls are UNCOMPILED/UNEXECUTED here. The forthcoming
+finite owner must also execute actual lazy-header/task refusals and repair/
+verify existing controls whose original owner positions or live-cost premises
+change. Callback and callbackless paths have different source-owned sequences;
+byte size alone never selects an owner. Original job/aggregate/build/case,
+cleanup, two compile-job and activation limits remain unchanged. No old private
+groups or Java campaign is implied. Legacy callback/pipe Boxes, other maps/
+collections, transitive allocations and full allocator/RSS/#736 remain gaps.
+
+
+The frozen v15 stage above subsequently passed twenty focused controls at
+source a32624956270c6e18f3f108b831574e22368704b, run40294127180. Its separate
+six-private/eight-canonical/six-affected receipt and failed history remain at
+docs/testing/evidence/canonical-unordered-backing-native-2026-10-26.json.
+That immutable result does not qualify this next source stage.
+
+The v16 SOURCE stage uses existing PreparedFuture for two remaining concurrent
+outer Boxes. poll_and_block preadmits exact Layout<R>, actual outer Output,
+then queue/task owners before outer allocation or first user poll. The result
+owner travels into CalleeFinished independently of outer completion/set_event
+failure. spawn_with_accessor prepares its outer Box after JoinState admission
+and before publication/task.run. Neither stores a factory Memory Arc. None
+preserves original physical allocation/callback/receiver order; inline enum,
+HostTaskState and enclosing Output can enlarge and are not all claimed paid.
+
+Exact safe downcast yields the same Box<R,Global>; into_raw/read moves R,
+matching nonzero Global dealloc(Layout<R>) returns BEFORE its original guard
+refunds. Abandonment destroys R/backing first; destructor unwind retains the
+same charge conservatively. Confirmation has installed cleanup, wrong type
+retains its envelope, ZST has no allocation/reservation. The private primitive
+follows Rust1.97.1 boxed.rs at8bab26f4f68e0e26f0bb7960be334d5b520ea452,
+SHA31fe2ec856527253e2a78279f44b7dec14b73d9f1114a75584b031dcd6f64418.
+No unstable/custom allocator APIs, erased layout or raw owner escape is used.
+Global LiftedResult and unrelated result/stream paths remain unchanged; R's
+Vec/String/Arc transitive backing is outside the Box<R> charge.
+
+Six NEW private sync-result and seven actual host controls are prepared,
+UNCOMPILED/UNEXECUTED: pending/refusal/error/cancellation/None plus new Accessor
+and typed result-refusal/fresh-Store cases on the existing component. Typed
+R=(u32,), dynamic R=Vec<Val>; the dynamic callback's Ok(()) is not enclosing R.
+The documented cold source order is callback4/result5/outer6/PushFuture7/Task8
+after three upstream/shared owners, not fresh evidence or a universal ordinal.
+Callback refusal remains4; exact late-waker/foreign-Store assertions remain.
+No old v15 aggregate, Java or unrelated private programme is reexecuted.
+Original45m/2400/900/60/30 bounds,5s cleanup and2 compile jobs remain; actual
+accounted host cases keep original1MiB/1B fuel/5s. Stream Boxes, collections,
+transitive metadata, allocator/RSS/full cost and whole #736 remain gaps.
+
+
+The frozen v16 source stage above was subsequently qualified in the dated
+docs/testing/evidence/canonical-outer-sync-result-native-2026-10-26.json.
+Its original source epochs, bounded actual outcomes and failed-attempt scopes
+remain that receipt's evidence; this new source stage borrows no runtime pass.
+
+The v17 SOURCE stage prepares the three exact stream outer future layouts.
+Guest HostReady read/write cuts admit their existing queue/Task plus exact
+completion Output before Busy, transmit replacement, factory invocation and
+first poll. The reverse already-GuestReady host consumer cut preserves the
+legitimate prior Busy state while admitting before its new consumer effects.
+HostReady producer-loop output has a distinct exact named factory and keeps
+the original success/error map deletion and error precedence. Ready retains
+the original inner through settle/error cleanup while unused outer admission
+refunds. Published outputs add no factory Memory Arc. None keeps original
+literal helper/loop bodies and their physical future/order boundaries.
+
+Six NEW controls are SOURCE ONLY, UNCOMPILED/UNEXECUTED: four owner-only ignored
+canonical read/write controls and two public HostReady controls. One future
+pinned wasm-tools1.254 parse writes the component ONLY to private RunnerTemp,
+not tracked inputs; its exact identity is rechecked before/after the controls.
+The one-page no-allocator fixture checks actual byte42 in both directions,
+separately from a fresh-Store answer42. Public original ActivationBudget stays
+1MiB/1B fuel/5s; private counter-owner evidence is separately64MiB/1B/120s and
+does not claim original ActivationBudget or signed-node coverage. Original
+45m/2400/900/60/30 bounds,5s cleanup and2 compile jobs remain. No old v15/v16,
+Java, SDK or other language programme is selected for replay.
+
+Inner producer/consume/accept factory Boxes, consumer Arc/pinned consumer,
+stream buffers, resource tables/collections and transitive backing remain
+separate unpaid scopes. Prepared outer Layout payload is not allocator/RSS
+quota; full CPU/memory accounting and whole #736 remain OPEN. Physical Store
+teardown and real escaped-waker retirement remain distinct from logical
+completion; consumed pipe handles have no invented rollback guarantee.
+
+
+The source-only zstd security backport retains the complete fourteen-file
+wasmtime-internal-cache48.0.7 package at crates/vendor/wasmtime-cache. Only its
+normalized Cargo.toml zstd requirement, explicit empty standalone workspace,
+and its own active Cargo.lock change;
+all published Rust, tests, build.rs, license and original manifest remain exact.
+The security inventory authenticates that isolated manifest by its whole-file
+digest through the existing isolated Cargo policy; no vendor exemption applies.
+The parent Wasmtime manifest selects that same-version local cache, retaining
+optional cache features/coverage; this is not an unmodified registry package.
+Both active standalone locks select zstd0.14.3, zstd-safe8.2.0 and
+zstd-sys2.1.2+zstd.1.5.7, with exact registry checksums in the source record.
+These satisfy all ten named RustSec fixes from advisory-db a78282a1414d6c28cc228c4eae3570451affb0dc.
+The original250 Wasmtime identities and complete275-file source remain bound;
+the separate14-file cache inventory is mandatory, not optional on absence.
+The existing v17/fe9 result retains its ORIGINAL source/dependencies. It does
+not qualify this backport; no cache compilation or runtime execution is
+claimed here. Native memory/refund code and runtime budgets are unchanged.
+
+Current source-cohort identity for this unqualified dependency backport is
+`wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-memory-v20-cache-repair`. The original plain-v17/fe9 execution remains a separate immutable source.
+
+
+The v18 SOURCE stage adds exact selected consumer pinned-value and shared-cell
+backing. Existing queue/Task/outer preparation remains before both new affine
+reservations; both are admitted before either consumer allocation, consumer
+factory construction, first poll or transmit mutation. Shared retirement uses
+the pinned Arc::into_inner physical-header contract, then destroys the original
+LockedState and pinned consumer before releasing their original charges.
+Confirmation unwind has physical cleanup installed; destructor unwind keeps
+both uncertain original charges. No Memory/factory Arc enters either owner.
+None retains its original concrete Arc<LockedState<Pin<Box<C>>>> and literal
+Box/Arc allocation expression; this is not a machine-code identity claim.
+
+Five new private implementation controls and two affected public HostReady
+controls are prepared SOURCE ONLY, UNCOMPILED/UNEXECUTED. Public original
+ActivationBudget remains 1MiB / 1B fuel / 5s, with local queue/Task/outer/C-box/
+shared-cell admission order; private counter evidence is separate. The owning
+plan selects only those seven IDs in two locked targets, with no canonical WAT
+assembly, old four canonical controls, six-control programme or language replay.
+The dated fe9 v17 six-control native receipt remains scoped to that original
+source and dependency identity; it qualifies neither these new consumer owners
+nor this cache-repair source cohort. Strict 14-file cache authentication remains.
+
+Inner producer/consume/accept factory Boxes and closure backing, producer shared
+state, P::Buffer default/transitive allocations, per-invocation inner Boxes,
+resource tables/collections and borrowed host-to-host future backing remain
+separate unpaid scopes. Payload layouts are not allocator/RSS/full-cost quotas;
+whole #736 CPU/memory/retirement coverage remains OPEN.
+
+
+The v19 SOURCE stage adds exact selected producer shared-cell backing. General
+StreamProducer P Boxes remain explicitly unpaid: an owning try_into may return
+or retain arbitrary original/different Boxes. Shared-only general producers do
+not strand credit on ordinary Err. FutureReader's original function-local
+Producer<P> alone chooses the private body-plus-cell policy; its literal
+source-known default Err restores the original affine body token. Unexpected
+Ok/panic retains that same uncertain charge, without pointer equality proof.
+
+All selected reservations precede table insertion, P Box, Buffer::default, Arc,
+factory construction and poll. None keeps the literal original tuple/Arc and
+closure captures; the write body is unchanged behind a private static storage
+trait with Send guard and no new P:Sync bound. Final private Arc retirement
+deallocates its header before original P-then-B destruction and token refunds.
+Confirmation cleanup is installed before confirmation; destructor unwind keeps
+the original uncertain charge. No Memory/factory Arc is published.
+
+Six new private implementation controls, three new public creation/conversion
+cases and two affected existing public cases are SOURCE ONLY, UNCOMPILED and
+UNEXECUTED. The bounded owner plan selects only these eleven ordinary cases in
+two locked targets,26 supervised commands/52 raw channels; it adds no WAT/cache
+roundtrip, old private group or language replay. Public original grant remains
+1MiB/1B fuel/5s; private counters do not certify that grant or a generic ceiling.
+
+The earlier v18 preparation wording above is a historical source stage. Its
+later exact e4ce seven-case qualification is recorded separately in the dated
+consumer-cell evidence, not retagged as this new v19 source cohort. This slice
+narrows the historical producer-shared-state gap only; general P Boxes, inner
+factories/completion closures, buffer-owned storage, tables/collections and
+transitive allocations remain unpaid. Layout is not allocator/RSS/full cost;
+whole #736 CPU/memory/retirement completion remains OPEN. Mandatory current
+14-file workspace-isolated cache authentication and fixed locks are unchanged.
+
+
+The v20 SOURCE stage adds exact producer factory closure backing on the selected
+path. Typed builders reserve the actual produce/conversion output Layout before
+transmit insertion, producer Box, Buffer::default, cell or factory construction.
+The original body-plus-cell or shared-only reservations remain first. Builders
+receive the actual ID/cell late and never retain NativeMemory or a factory Arc.
+
+Each original erased Box moves with an inline affine owner. Physical closure,
+capture and Box destruction precedes refund of its SAME guard; confirmation
+cleanup is installed first and capture-destructor unwind retains uncertain
+credit. Borrowed invocation and arbitrary general P::try_into return/escape do
+not transfer the factory owner. None keeps its original concrete Boxes,
+captures, tuple/Arc and force point through infallible inline adapters. Inline
+HostReady/outer metadata may grow; containing paid layouts use actual new types.
+There is no added P:Sync requirement and no inference from pointer history.
+
+Four new private and two new public controls plus only three affected old count
+cases are SOURCE ONLY, UNCOMPILED and UNEXECUTED. The proposed narrow owner has
+nine cases/22 commands/44 raw channels in the original two locked targets and
+original deadlines. Public grants stay1MiB/1B fuel/5s. Private implementation
+counters are not generic memory/RSS grants. No old eleven-case aggregate is
+replayed or credited as a fresh v20 result. Prior v19 source, failed attempts
+and any later qualification remain tied to their actual original source/run.
+
+General StreamProducer P Boxes, transitive Buffer heaps, set_consumer factories,
+returned inner futures and Legacy completion/collections remain explicit gaps.
+This narrows two physical factory allocations only, not whole736 cost-model or
+node/runtime completion. Mandatory275-file Wasmtime/14-file workspace-isolated
+cache authentication and all fixed dependency locks remain unchanged in scope.
+
+The v21 source stage adds the opt-in WasmStr UTF-8 view for the buffered HTTP
+ingress path. The view validates the original Store and all UTF-8, UTF-16 and
+compact encodings, measures exact output length, and writes into caller-prepaid
+fixed storage without allocating a decoded payload. Existing lifting and decoding
+remain unchanged. The joined HTTP source carries original-session native credits
+through request, body, Bytes and the current transport hop; redirect hops preserve
+the original credit identity while retiring the previous running permit.
+
+This source stage alone is not compiler qualification. Two actual canonical-component
+controls and
+the bounded HTTP owner are prepared separately; private vendor source controls
+are not an executed qualification. Parser, redirect URL, wire HeaderMap, digest,
+TLS, Bytes/control and other transitive allocations remain explicit gaps. The
+34 changed original files, 22 added implementation/license files, immutable
+250-file registry inventory, 275 maintained files and strict 14-file isolated
+cache authentication remain the same finite sets. Earlier v20 and other dated
+receipts retain their original source and execution identities.
+
+The v22 source stage prepays only the fused guest-to-guest LiftResult temporary
+value vector through the original Store NativeMemory factory. Its full final
+ValRaw layout, including an optional original caller return pointer, is admitted
+before copy or allocation. The same NativeVec owns its buffer until actual
+destruction before refund; thread switching and return/error order are unchanged.
+Four private controls are SOURCE ONLY and UNEXECUTED. They cover typed refusal,
+exact final capacity/value order, scoped retirement and empty/legacy shapes;
+private counter owners do not qualify the original activation grant. Parameters,
+closure Boxes, returned result Boxes and other transitive costs remain separate.
+This does not complete #745 AC5 or native/full-cost accounting.
+
+## Original Store call-parameter and closure backing
+
+The selected fused prepare-call parameter copy now uses the Store's existing
+NativeMemory factory and exact NativeVec final backing before any value copy.
+CallerInfo owns it through lowering or cancellation. NativeMemory=None keeps
+the literal original Vec copy. No second allocation ledger is introduced.
+
+RawLower and RawLift retain their original two-pointer inline shape. An
+accounted nonzero closure reserves the complete concrete Header<F> layout
+before its single Box, including its original allocation-owner slot. That
+owner stays outside the header until confirmation returns; callback unwind
+retires the physical header before the pending ticket. Calls and cancellation
+move the typed header out of its sole Box, retiring backing before invoking or
+dropping F while its original ticket remains an outer local. Ordinary errors,
+unrelated unwind, capture-destructor panic and confirmation panic therefore
+retire exactly once without leaked tickets. None and zero-sized closures use
+the original Box<F> path. Private typed vtables preserve callback signatures,
+thread switches and cleanup; they add no host ABI or authority.
+
+Four new private native controls are source only until the bounded owning run
+passes. They exercise the actual Store-selected factory with instrumented
+original owners, exact typed layouts, refusal, cancellation and unwind. They
+do not qualify full ActivationBudget/RSS/stack costs or every async path.
+ResourceTable/oneshot/callback/result and other transitive backing remain
+separate accounting obligations; existing signed receipts stay source-dated.
+
+## Original Store resource table backing
+
+The internal ConcurrentState table now receives its original Store-selected
+NativeMemory at empty construction; no existing table is adopted. Each resource
+reserves the actual Layout<T> before its single Box. Its separate ticket stays
+outside until confirmation returns, then follows the physical Box through
+lookup, cancellation and destruction. Typed deletion moves T out of the sole
+Box and frees that backing before returning the ticket. The ordinary typed T
+may still outlive its table and Store; this does not manufacture a detached Box.
+
+The complete Entry array uses NativeVec for admitted replacement, retaining old
+and new backing during growth. Paid parent-child indices use a sorted NativeVec
+with replacement admitted before relationship mutation or child publication;
+this closes the previously unhookable BTreeSet node allocations. NativeMemory
+None retains the original Vec/BTreeSet/Box behavior. Public user-created legacy
+tables remain unbound rather than being retroactively attached to a Store.
+
+Four new private native controls are source-only until their bounded owning
+programme passes: original Store box/entry refusal and fresh use, typed and
+wrong-type deletion, atomic parent-child growth and sorted reused indices, and
+confirmation/destructor unwind with real last-owner retirement. They do not
+qualify full ActivationBudget/RSS/stack/transitive resource payloads, oneshot,
+other host callbacks, or whole736/745. Earlier receipts retain dated sources.
+
+## Original Store call-result channel backing
+
+The selected call-result channel now reserves the full declared owned Arc header
+before any allocation, using the same Store NativeMemory. It privately maintains
+the futures-channel 0.3.34 Inner/Lock protocol and original send, receive and drop
+bodies; dependency checksum, source identities and shared dual licenses are
+explicit in UPSTREAM.latent.json. None delegates the original dependency. No
+standard Arc layout is estimated or adopted. Payloads and cloned Wakers retain
+their separate original owners and transitive costs.
+
+The four new private native controls cover exact-layout original Store refusal,
+wake/send and last-half cleanup, cancelled/legacy channels, and confirmation
+unwind plus honest payload-destructor retention. Existing paid_arc semantics
+retain the same physical header/charge if payload destruction panics; no final
+free, recovery, quarantine completion or full ActivationBudget/RSS claim follows
+from that control. Tests remain source-only until their finite owning run.
+
+The cumulative patch uses one context line; all source postimages and 250 original source identities remain authenticated.
+
+## Original Store borrowed callback backing
+
+The two actual callback constructors now admit their complete typed Header<F>
+through the same Store NativeMemory before the sole Box. Private Fn vtables
+borrow that header for repeated calls; errors and callback-body unwind do not
+consume the carrier. The event dispatcher first takes the owned callback out of
+the task, calls it through a shared borrow, and reinserts only after success.
+That local owner keeps backing and its original charge alive through reentry.
+
+Final cancellation/drop reuses the qualified physical-Box-first typed helper:
+move the header out of its Box, then drop F while its original ticket remains an
+outer local. Confirmation keeps its ticket outside the unpublished header too.
+None and ZST closures retain the original Box path and two-word/Option shape.
+Four new native controls cover exact layout/refusal, repeated/error calls,
+other-Store-independent cancellation and confirmation/body/destructor unwind.
+They remain source-only until the bounded owning run; transitive captures, full
+ActivationBudget/RSS and whole736/745 are not qualified.
+
+
+The v27 source stage prepays the four selected guest-thread start closures:
+both implicit queue-call branches, the pending explicit start function and its
+resume wrapper. The original Store factory reserves the complete concrete
+ClosureHeader before Box allocation. Queue and typed outer-header preparation
+precede replacing NotStartedExplicit; refusal keeps the SAME pending function.
+The stack-only builder moves no original pending capture before admission and
+retains no extra factory Arc. Dispatch takes the sole pointer before calling;
+physical header deallocation precedes the FnOnce body/capture destructor and
+the original ticket remains live through success, error and unwind. None and
+ZST preserve original Box timing and the two-pointer/Option niche shape.
+
+Four source-bound native controls cover actual GuestThreadState plus the real
+queue/preparation APIs, original-factory refusal, pending cancellation, next
+call/error, Store-outliving custody and confirmation/body/destructor unwinds.
+They do not invoke a guest component or full resume_thread, and confirmation
+panic is cleanup evidence rather than admission-refusal rollback. Previous
+callback controls are retained. This is not whole #736/#745 accounting, an
+allocator/RSS bound, or transitive payload/stack admission. The cumulative
+patch retains one-line context, all source postimages and all250 originals.
+
+
+The v28 stage retires a host-owned call dropped before its original lower
+callback runs. It uses the original HostFuture/GuestTask cancellation waist,
+without invoking the abandoned borrowed lower/lift closures. The original
+implicit thread, synthetic sync waitable set, queue and unconsumed handoff
+are settled once; eligible sibling work and foreign Stores remain untouched.
+After lowering, existing live-thread cleanup semantics remain unchanged.
+
+Four private native controls use real Engine/Component/Instance/Store calls
+and inline components. Only this closed profile enables the already-locked
+optional wat feature; earlier profile feature strings remain unchanged.
+These controls are not signed SDK execution, full #736 retirement, payload
+or stack admission, or evidence that the existing post-lowering cleanup TODO
+is resolved. The maintained one-line-context patch preserves the other57
+sections and all250 original identities.

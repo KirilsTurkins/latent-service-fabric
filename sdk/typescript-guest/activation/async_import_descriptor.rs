@@ -1,6 +1,6 @@
 // Compiled into the separately derived pinned source-owned splicer. This
 // internal descriptor does not change its public WIT or certify runtime APIs.
-use wit_parser::{Function, SizeAlign, Type, TypeDefKind, Int};
+use wit_parser::{Function, SizeAlign, Type, TypeDefKind, TypeId, Handle, Int};
 use wit_parser::abi::{AbiVariant, WasmType};
 
 #[derive(Clone, Debug)]
@@ -11,6 +11,113 @@ pub struct Descriptor {
     pub asynchronous_params: Vec<WasmType>,
     pub indirect_params: bool,
     pub writes: Vec<MemoryWrite>,
+    pub disposal: Vec<ResourceDisposal>,
+}
+
+// Complete, unlifted host-lowered results own their canonical backing tree.
+// Delivered/partially lifted JS values and parameter storage are not covered.
+#[derive(Clone, Debug)]
+pub enum ResourceDisposal {
+    Own { offset: u32, resource: TypeId, drop_import: Option<(String, String)> },
+    String { offset: u32 },
+    Variant { offset: u32, tag_bytes: u32, cases: Vec<Vec<ResourceDisposal>> },
+    List { offset: u32, stride: u32, align: u32, elements: Vec<ResourceDisposal> },
+    Unsupported,
+}
+
+impl Descriptor {
+    // Static OWN-only result shape. No dynamic traversal or backing is inferred
+    // from a progress mask. Unsupported/overbound shapes keep old quarantine.
+    pub fn partial_slots(&self)->Option<(u32,Vec<(u32,TypeId)>)> {
+        if self.disposal.is_empty() || self.disposal.len()>64 {return None;}
+        let mut slots=Vec::new();
+        let mut key=2166136261u32;
+        let mut word=|n:u32| {for byte in n.to_le_bytes() {
+            key=(key^u32::from(byte)).wrapping_mul(16777619);
+        }};
+        word(2);word(self.result_bytes);word(self.raw_result);word(self.disposal.len() as u32);
+        for item in &self.disposal {
+            let ResourceDisposal::Own{offset,resource,..}=item else {return None};
+            if offset.checked_add(4)? > self.result_bytes {return None;}
+            word(*offset);word(u32::try_from(resource.index()).ok()?);
+            slots.push((*offset,*resource));
+        }
+        // This is only a deterministic private join key. The JS source pass
+        // compares complete plans and disables ALL colliding keys; native
+        // handoff additionally compares the real compiled offset/type getter.
+        Some((key,slots))
+    }
+    pub fn bind_resource_drops(&mut self, imports: &std::collections::BTreeMap<TypeId,(String,String)>) {
+        fn bind(plan:&mut [ResourceDisposal], imports:&std::collections::BTreeMap<TypeId,(String,String)>) {
+            for node in plan {
+                match node {
+                    ResourceDisposal::Own{resource,drop_import,..} => *drop_import=imports.get(resource).cloned(),
+                    ResourceDisposal::Variant{cases,..} => for case in cases {bind(case,imports);},
+                    ResourceDisposal::List{elements,..} => bind(elements,imports),
+                    ResourceDisposal::String{..} | ResourceDisposal::Unsupported => {},
+                }
+            }
+        }
+        bind(&mut self.disposal,imports);
+    }
+}
+
+fn resource_disposal(resolve:&wit_parser::Resolve,sizes:&SizeAlign,ty:Type,offset:u32)
+    ->Vec<ResourceDisposal> {
+    fn at(offset:u32,relative:usize)->u32 {
+        offset.checked_add(u32::try_from(relative).expect("canonical-disposal-offset-width"))
+            .expect("canonical-disposal-offset-overflow")
+    }
+    fn variant(resolve:&wit_parser::Resolve,sizes:&SizeAlign,tag:Int,cases:Vec<Option<Type>>,offset:u32,
+        visiting:&mut std::collections::BTreeSet<TypeId>)
+        ->Vec<ResourceDisposal> {
+        let payload=at(offset,sizes.payload_offset(tag,cases.iter().map(Option::as_ref)).size_wasm32());
+        let cases=cases.into_iter().map(|ty|ty.map(|ty|walk(resolve,sizes,ty,payload,visiting))
+            .unwrap_or_default()).collect::<Vec<_>>();
+        if cases.iter().all(Vec::is_empty) {return Vec::new();}
+        let tag_bytes=match tag {Int::U8=>1,Int::U16=>2,Int::U32=>4,Int::U64=>8};
+        vec![ResourceDisposal::Variant{offset,tag_bytes,cases}]
+    }
+    fn walk(resolve:&wit_parser::Resolve,sizes:&SizeAlign,ty:Type,offset:u32,
+        visiting:&mut std::collections::BTreeSet<TypeId>)->Vec<ResourceDisposal> {
+      match ty {
+        Type::Id(id) => {
+          // The parser's resolved type DAG supplies the only static depth.
+          // Refuse cycles rather than growing a guest-controlled recursion.
+          assert!(visiting.insert(id),"recursive-canonical-result-type");
+          let plan=match &resolve.types[id].kind {
+            TypeDefKind::Type(ty) => walk(resolve,sizes,*ty,offset,visiting),
+            TypeDefKind::Handle(Handle::Own(resource)) => vec![ResourceDisposal::Own{
+                offset,resource:js_component_bindgen::dealias(resolve,*resource),drop_import:None}],
+            TypeDefKind::Handle(Handle::Borrow(_)) => vec![ResourceDisposal::Unsupported],
+            TypeDefKind::Record(record) => sizes.field_offsets(record.fields.iter().map(|field|&field.ty))
+                .into_iter().flat_map(|(relative,ty)|walk(resolve,sizes,*ty,at(offset,relative.size_wasm32()),visiting)).collect(),
+            TypeDefKind::Tuple(tuple) => sizes.field_offsets(tuple.types.iter())
+                .into_iter().flat_map(|(relative,ty)|walk(resolve,sizes,*ty,at(offset,relative.size_wasm32()),visiting)).collect(),
+            TypeDefKind::List(ty) => {
+                let elements=walk(resolve,sizes,*ty,0,visiting);
+                let stride=u32::try_from(sizes.size(ty).size_wasm32()).expect("canonical-list-stride-width");
+                let align=u32::try_from(sizes.align(ty).align_wasm32()).expect("canonical-list-align-width");
+                assert!(stride>0 || elements.is_empty(),"zero-stride-result-cannot-own-children");
+                vec![ResourceDisposal::List{offset,stride,align,elements}]
+            },
+            TypeDefKind::Variant(value) => variant(resolve,sizes,value.tag(),value.cases.iter().map(|case|case.ty).collect(),offset,visiting),
+            TypeDefKind::Option(ty) => variant(resolve,sizes,Int::U8,vec![None,Some(*ty)],offset,visiting),
+            TypeDefKind::Result(value) => variant(resolve,sizes,Int::U8,vec![value.ok,value.err],offset,visiting),
+            TypeDefKind::Enum(_) | TypeDefKind::Flags(_) => Vec::new(),
+            _ => vec![ResourceDisposal::Unsupported],
+          };
+          visiting.remove(&id);
+          plan
+        },
+        Type::String => vec![ResourceDisposal::String{offset}],
+        Type::Bool | Type::U8 | Type::S8 | Type::U16 | Type::S16 |
+        Type::U32 | Type::S32 | Type::U64 | Type::S64 | Type::Char |
+        Type::F32 | Type::F64 => Vec::new(),
+        _ => vec![ResourceDisposal::Unsupported],
+      }
+    }
+    walk(resolve,sizes,ty,offset,&mut std::collections::BTreeSet::new())
 }
 
 #[derive(Clone, Debug)]
@@ -123,7 +230,8 @@ pub fn descriptor(resolve: &wit_parser::Resolve, function: &Function, sizes: &Si
     }
     Descriptor { result_bytes, parameter_bytes, raw_result,
                  asynchronous_params:asynchronous.params,
-                 indirect_params:asynchronous.indirect_params,writes }
+                 indirect_params:asynchronous.indirect_params,writes,
+                 disposal:function.result.map(|ty|resource_disposal(resolve,sizes,ty,0)).unwrap_or_default() }
 }
 
 #[cfg(test)]
@@ -134,7 +242,9 @@ mod tests {
         let package=resolve.push_str(std::path::Path::new("actual.wit"),wit).unwrap();
         let world=resolve.select_world(&[package],Some("guest")).unwrap();
         let function=resolve.worlds[world].imports.values().find_map(|item|match item {
-            wit_parser::WorldItem::Function(function)=>Some(function),_=>None,
+            wit_parser::WorldItem::Function(function)=>Some(function),
+            wit_parser::WorldItem::Interface{id,..}=>resolve.interfaces[*id].functions.values().next(),
+            _=>None,
         }).unwrap();
         let mut sizes=SizeAlign::default();sizes.fill(&resolve);
         descriptor(&resolve,function,&sizes)
@@ -187,4 +297,111 @@ mod tests {
         assert_eq!((value.raw_result,value.result_bytes),(5,12));
         assert!(matches!(value.writes[4],MemoryWrite::Variant{tag_argument:4,tag_offset:16,tag_bytes:1,..}));
     }
+    #[test]
+    fn actual_own_result_is_bound_to_original_resource_identity() {
+        let mut value=actual("package tests:imports@1.0.0; interface io { resource connection; connect: async func()->result<connection,u32>; } world guest { import io; }");
+        let resource=match &value.disposal[0] {
+            ResourceDisposal::Variant{offset:0,tag_bytes:1,cases} => {
+                assert!(cases[1].is_empty());
+                match &cases[0][0] {
+                    ResourceDisposal::Own{offset:4,resource,drop_import:None}=>*resource,
+                    _=>panic!("exact-own-payload-offset-required"),
+                }
+            },_=>panic!("exact-result-tag-required"),
+        };
+        let key=("tests:imports/io@1.0.0".to_owned(),"[resource-drop]connection".to_owned());
+        value.bind_resource_drops(&std::collections::BTreeMap::from([(resource,key.clone())]));
+        match &value.disposal[0] {
+            ResourceDisposal::Variant{cases,..}=>assert!(matches!(&cases[0][0],
+                ResourceDisposal::Own{drop_import:Some(actual),..} if actual==&key)),
+            _=>panic!(),
+        }
+    }
+    #[test]
+    fn actual_nested_owned_list_walk_keeps_backing_storage_separate() {
+        let value=actual("package tests:imports@1.0.0; interface io { resource chunk; record item { label:string, payload:option<chunk> } read: async func()->list<item>; } world guest { import io; }");
+        match &value.disposal[0] {
+            ResourceDisposal::List{offset:0,stride:16,align:4,elements}=> {
+              assert!(matches!(elements[0],ResourceDisposal::String{offset:0}));
+              match &elements[1] {
+                ResourceDisposal::Variant{offset:8,tag_bytes:1,cases}=> {
+                    assert!(cases[0].is_empty());
+                    assert!(matches!(&cases[1][0],ResourceDisposal::Own{offset:12,..}));
+                    assert_eq!(elements.len(),2); // label backing and OWN stay distinct
+                },_=>panic!(),
+              }
+            },_=>panic!("exact-owned-list-layout-required"),
+        }
+    }
+    #[test]
+    fn actual_plain_and_zero_stride_lists_keep_backing_without_element_work() {
+        let plain=actual("package tests:imports@1.0.0; world guest { import call: async func()->list<u16>; }");
+        assert!(matches!(&plain.disposal[0],ResourceDisposal::List{offset:0,stride:2,align:2,elements} if elements.is_empty()));
+        let zero=actual("package tests:imports@1.0.0; world guest { import call: async func()->list<tuple<>>; }");
+        assert!(matches!(&zero.disposal[0],ResourceDisposal::List{offset:0,stride:0,align:1,elements} if elements.is_empty()));
+    }
+    #[test]
+    fn actual_nested_string_variant_uses_original_active_payload_offsets() {
+        let value=actual("package tests:imports@1.0.0; world guest { import call: async func()->list<option<string>>; }");
+        match &value.disposal[0] {
+            ResourceDisposal::List{stride:12,align:4,elements,..}=>match &elements[0] {
+                ResourceDisposal::Variant{offset:0,tag_bytes:1,cases}=> {
+                    assert!(cases[0].is_empty());
+                    assert!(matches!(cases[1].as_slice(),[ResourceDisposal::String{offset:4}]));
+                },_=>panic!("original-option-layout-required"),
+            },_=>panic!("original-list-layout-required"),
+        }
+    }
+    #[test]
+    fn actual_static_own_slots_follow_resolved_layout_and_reject_dynamic_trees() {
+        let source=|result:&str|format!("package tests:imports@1.0.0; interface io {{ resource connection; read: async func()->{result}; }} world guest {{ import io; }}");
+        let value=actual(&source("tuple<connection,connection>"));
+        let (key,slots)=value.partial_slots().unwrap();
+        assert_eq!((value.result_bytes,value.raw_result),(8,5));
+        assert_eq!(slots.len(),2);assert_eq!((slots[0].0,slots[1].0),(0,4));
+        assert_eq!(slots[0].1,slots[1].1);
+        assert_eq!(value.partial_slots().unwrap().0,key);
+        let distinct=actual("package tests:imports@1.0.0; interface io { resource first; resource second; read: async func()->tuple<first,second>; } world guest { import io; }");
+        let (_,distinct_slots)=distinct.partial_slots().unwrap();
+        assert_ne!(distinct_slots[0].1,distinct_slots[1].1);
+        // Actual pinned FunctionBindgen output, not a hand-written claim about
+        // temporary variable names. The owning profile retains this before the
+        // JS AST control consumes it; normal callers create no artifact.
+        let mut resolve=wit_parser::Resolve::default();
+        let package=resolve.push_str(std::path::Path::new("partial-static.wit"),
+            &source("tuple<connection,connection>")).unwrap();
+        let world=resolve.select_world(&[package],Some("guest")).unwrap();
+        let generated=crate::bindgen::componentize_bindgen(&resolve,world,&Vec::new()).unwrap();
+        assert!(generated.js_bindings.contains("lsf-own-plan-v2:"));
+        assert!(generated.js_bindings.len()<=256*1024);
+        let mut zero=wit_parser::Resolve::default();
+        let zero_package=zero.push_str(std::path::Path::new("zero-async.wit"),
+            "package tests:zero@1.0.0; world guest { export greet: func()->u32; }").unwrap();
+        let zero_world=zero.select_world(&[zero_package],Some("guest")).unwrap();
+        let zero_generated=crate::bindgen::componentize_bindgen(&zero,zero_world,&Vec::new()).unwrap();
+        assert!(zero_generated.js_bindings.contains("const __lsfImports = contentGlobal.__lsfAsyncImportBridge;"));
+        assert!(!zero_generated.js_bindings.contains("__lsfAwaitImport"));
+        assert!(zero_generated.js_bindings.len()<=256*1024);
+        if let Some(path)=std::env::var_os("LSF_TYPESCRIPT_PARTIAL_BINDING_CAPTURE") {
+            use std::io::Write;
+            let path=std::path::PathBuf::from(path);
+            std::fs::OpenOptions::new().write(true).create_new(true).open(&path).unwrap()
+                .write_all(generated.js_bindings.as_bytes()).unwrap();
+            std::fs::OpenOptions::new().write(true).create_new(true).open(path.with_extension("zero.js")).unwrap()
+                .write_all(zero_generated.js_bindings.as_bytes()).unwrap();
+        }
+        for result in ["tuple<connection,string>","list<connection>","option<connection>"] {
+            assert!(actual(&source(result)).partial_slots().is_none());
+        }
+        let mut bounded=value.clone();
+        bounded.result_bytes=65*4;
+        bounded.disposal=(0..65).map(|index|ResourceDisposal::Own{offset:index*4,
+            resource:slots[0].1,drop_import:None}).collect();
+        assert!(bounded.partial_slots().is_none());
+        bounded.disposal.pop();
+        assert_eq!(bounded.partial_slots().unwrap().1.len(),64);
+        bounded.result_bytes=1;
+        assert!(bounded.partial_slots().is_none());
+    }
+
 }

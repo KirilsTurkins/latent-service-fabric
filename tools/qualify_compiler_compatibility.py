@@ -66,7 +66,7 @@ def java_counterfactual(app, output, native, wasi_sdk, cache, deadline, positive
         try:
             java_build(app, destination, native['capsule_contracts'], native['package'], REPOSITORY,
                 wasi_sdk, read_only_cache=cache, runtime_profile=FIBER_IO_PROFILE,
-                timeout=min(900, deadline-time.monotonic()), compiler_methods=True)
+                timeout=min(900, deadline-time.monotonic()-5), compiler_methods=True, _deadline=deadline)
         except Exception as error:
             record['originalFailureCategory'] = type(error).__name__
         else:

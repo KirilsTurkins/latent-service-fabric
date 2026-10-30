@@ -7,11 +7,18 @@ const publication = digit => 'publication:sha256:' + digit.repeat(64);
 const intent = (digit = 'a') => ({schemaVersion: 'latent.static.route-set.v1', tenant: 'example', publication: publication(digit),
   routes: [{get: 'docs-get', head: 'docs-head', scheme: 'https', host: 'docs.example.test', path: '/docs', pathMatch: 'prefix'}]});
 const success = data => ({schemaVersion: 'latent.cli.result.v1', category: 'success', requestDispatched: true, outcomeKnown: true, data});
+const capacity = status => ({schemaVersion: 'latent.static.audit-headroom.v1', status,
+  advisory: true, reservation: false, executionPermission: false});
+const rejected = (known = true, reason = 'audit-capacity') => ({...success({auditAck: {status: 'audit-unavailable'}}),
+  category: 'platform-failure', outcomeKnown: known, error: {code: 'resource-exhausted',
+    details: [{kind: 'audit-journal', fields: {reason}}]}});
 
 // Fault-oriented model tests supplement the real CLI/node workflow. They do not
 // qualify a managed host, filesystem or network environment.
 class Catalog {
   state = 0n; rows = new Map(); receipts = new Map(); writes = []; eligibility = 'ELIGIBLE'; before = null; lost = false;
+  pressure = null; preflights = 0;
+  async auditPreflight() { this.preflights++; return capacity(this.pressure ?? 'headroom-observed'); }
   async call(args) {
     if (args[0] === 'web') return success({record: {publication: {id: args[3], tenant: 'example'}},
       eligibility: 'RELEASE_LIVE_ELIGIBILITY_' + this.eligibility,
@@ -26,7 +33,8 @@ class Catalog {
   }
   async apply(manifest, attempt) {
     this.writes.push(structuredClone({manifest, attempt}));
-    await this.before?.(this, manifest, attempt);
+    const refusal = await this.before?.(this, manifest, attempt);
+    if (refusal) return refusal;
     if (attempt.stateVersion !== String(this.state) || attempt.generation !== (this.rows.get(manifest.metadata.name)?.generation ?? '0')) {
       return {...success({}), category: 'platform-failure', error: {code: 'state-conflict'}};
     }
@@ -130,4 +138,107 @@ test('operator intent is finite, complete GET/HEAD pairs and preserves current r
   const previous = manifests(base)[0]; previous.spec.configuration.path = '/another-owner';
   client.rows.set('docs-get', {manifest: previous, generation: '1'}); client.state = 1n;
   await assert.rejects(plan(client, base, 'connection'), /route-ownership-changed/);
+});
+
+test('blocked or unavailable preflight creates no operation and changes no route', async () => {
+  for (const pressure of ['blocked', 'unavailable']) {
+    const client = new Catalog(), store = storage(), journal = await plan(client, intent(), 'connection');
+    client.pressure = pressure;
+    const result = await reconcile(client, journal, store.save);
+    assert.equal(result.status, 'failed');
+    assert.equal(result.reason, 'audit-preflight-' + pressure);
+    assert.equal(result.writes, 0); assert.equal(client.writes.length, 0); assert.equal(client.rows.size, 0);
+    assert.deepEqual(store.load().rows.map(row => row.attempts), [[], []]);
+    assert.equal(store.load().auditCapacity.reservation, false);
+    client.pressure = null;
+    assert.equal((await reconcile(client, store.load(), store.save)).status, 'complete');
+  }
+});
+test('pressure between GET and HEAD preserves exact committed progress for explicit continuation', async () => {
+  const client = new Catalog(), store = storage(), journal = await plan(client, intent(), 'connection');
+  client.before = async catalog => { catalog.pressure = 'blocked'; };
+  const partial = await reconcile(client, journal, store.save);
+  assert.equal(partial.status, 'partial'); assert.equal(partial.reason, 'audit-preflight-blocked');
+  assert.equal(client.writes.length, 1); assert.equal(client.rows.has('docs-head'), false);
+  const original = store.load().rows[0].attempts[0];
+  assert.equal(original.status, 'confirmed');
+  client.before = null; client.pressure = null;
+  assert.equal((await reconcile(client, store.load(), store.save)).status, 'complete');
+  assert.equal(client.writes.length, 2);
+  assert.deepEqual(store.load().rows[0].attempts, [original]);
+});
+test('an affirmative first audit rejection survives recovery and requires an explicit new plan', async () => {
+  const client = new Catalog(), store = storage(), journal = await plan(client, intent(), 'connection');
+  client.before = async () => rejected();
+  const result = await reconcile(client, journal, store.save);
+  assert.equal(result.status, 'failed'); assert.equal(result.reason, 'audit-capacity');
+  assert.equal(client.rows.size, 0); assert.equal(client.state, 0n);
+  const operation = result.routes[0].operations[0];
+  assert.equal(operation.status, 'rejected'); assert.equal(operation.auditReason, 'audit-capacity');
+  assert.equal(operation.auditAck.status, 'audit-unavailable');
+  assert.equal(operation.nextAction, 'restore-audit-headroom-then-explicit-new-plan');
+  assert.equal(operation.id, client.writes[0].attempt.id);
+  assert.equal(operation.expectedStateVersion, '0');
+  client.before = null;
+  const recovery = await reconcile(client, store.load(), store.save);
+  assert.equal(recovery.reason, 'previous-audit-rejection-new-plan-required');
+  assert.equal(client.writes.length, 1);
+  const fresh = await plan(client, intent(), 'connection');
+  assert.equal((await reconcile(client, fresh, store.save)).status, 'complete');
+  assert.notEqual(fresh.rows[0].attempts[0].id, operation.id);
+});
+test('affirmative HEAD rejection preserves GET receipt and does not retry after headroom returns', async () => {
+  const client = new Catalog(), store = storage(), journal = await plan(client, intent(), 'connection');
+  client.before = async (_catalog, manifest) => manifest.metadata.name === 'docs-head' ? rejected() : null;
+  const result = await reconcile(client, journal, store.save);
+  assert.equal(result.status, 'partial'); assert.equal(client.writes.length, 2);
+  const retained = store.load();
+  assert.equal(retained.rows[0].attempts[0].status, 'confirmed');
+  assert.equal(retained.rows[1].attempts[0].status, 'rejected');
+  assert.equal(client.rows.has('docs-head'), false);
+  client.before = null;
+  assert.equal((await reconcile(client, retained, store.save)).reason, 'previous-audit-rejection-new-plan-required');
+  assert.equal(client.writes.length, 2);
+});
+test('unknown exhaustion and postcommit details stay pending despite an audit reason', async () => {
+  for (const response of [rejected(false), {...rejected(), data: {receipt: {unvalidated: true}}},
+    {...rejected(), error: {code: 'resource-exhausted', details: [
+      {kind: 'audit-journal', fields: {reason: 'audit-capacity'}},
+      {kind: 'deployment-mutation', fields: {committed: 'true'}}]}}]) {
+    const client = new Catalog(), store = storage(), journal = await plan(client, intent(), 'connection');
+    client.before = async () => response;
+    assert.equal((await reconcile(client, journal, store.save)).status, 'uncertain');
+    const original = store.load().rows[0].attempts[0];
+    assert.equal(original.status, 'pending');
+    client.before = null;
+    assert.equal((await reconcile(client, store.load(), store.save)).reason, 'receipt-unavailable-no-replay');
+    assert.equal(client.writes.length, 1);
+    assert.equal(store.load().rows[0].attempts[0].id, original.id);
+  }
+});
+test('read-only receipt recovery is not gated by unavailable headroom', async () => {
+  const client = new Catalog(), store = storage(), journal = await plan(client, intent(), 'connection');
+  client.lost = true;
+  await reconcile(client, journal, store.save);
+  const original = store.load().rows[0].attempts[0].id, calls = client.preflights;
+  client.pressure = 'unavailable';
+  const result = await reconcile(client, store.load(), store.save, 0);
+  assert.equal(result.status, 'partial'); assert.equal(client.preflights, calls);
+  assert.equal(store.load().rows[0].attempts[0].id, original);
+  assert.equal(store.load().rows[0].attempts[0].status, 'confirmed');
+  assert.equal(client.writes.length, 1);
+});
+test('a later pending HEAD remains uncertain when authorization changes while rechecking GET', async () => {
+  const client = new Catalog(), store = storage(), journal = await plan(client, intent(), 'connection');
+  client.before = async (catalog, manifest) => { if (manifest.metadata.name === 'docs-head') catalog.lost = true; };
+  assert.equal((await reconcile(client, journal, store.save)).status, 'uncertain');
+  const original = store.load().rows[1].attempts[0].id;
+  const call = client.call.bind(client); let observations = 0;
+  client.call = async args => {
+    if (args[0] === 'web' && ++observations === 2) client.eligibility = 'DENIED';
+    return call(args);
+  };
+  const result = await reconcile(client, store.load(), store.save);
+  assert.equal(result.status, 'uncertain'); assert.equal(result.reason, 'publication-not-currently-eligible');
+  assert.equal(result.routes[1].pendingOperation, original); assert.equal(client.writes.length, 2);
 });

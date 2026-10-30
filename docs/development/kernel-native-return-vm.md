@@ -1,0 +1,152 @@
+# Authenticated native Root-return observation programme
+
+The [owning run40144839812](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40144839812)
+passed at exact source `15167d63a3aef6d211ffc83c9591890d4d2486b2`. The
+[public receipt](../testing/evidence/kernel-native-root-return-observation-2026-10-25.json)
+binds its retained archive, raw observations, products and original limits.
+All nineteen registered/unignored Rust controls, twelve compiled C controls and
+twenty-six commands passed before/through one fresh kernel and one validated VM.
+All6471 source-before/after rows and296 kernel materials match that source
+(6694 unique Git blobs). The historical294-material subset remains unchanged.
+
+The actual native caller reached READY with one factory and one observation FD,
+closed the original File, and received typed `KernelRootReturned` from its
+protected fixed48-byte observer. Both FDs were absent afterward. Genuine kernel
+physical-return/outside-collector rows were also mandatory independent evidence.
+Holding the close receipt kept cleanupJobs2; explicit drop/worker completion
+returned that count to1. The original connection1, failedCleanup1 and metadata
+1,125,184B remained quarantined, including the original1MiB backing and4096-byte
+observation reservation. These counters do not measure complete native/VFS/LSM
+allocation costs. Normal installation remains Unsupported; native quota refund,
+production enablement and whole-issue acceptance remain unqualified.
+
+## Retained failed attempts
+
+The first owning run at `eff7adf1d1ef` passed
+all nineteen Rust controls, the static native example build and twelve compiled
+C controls. It failed before kernel configuration/link or VM execution because
+the historical 294-material comparison included two newly captured C sources.
+All historical entries were unchanged; the current set has 296 entries. The
+reviewed correction binds and retains those two additional entries separately
+while preserving the exact historical digest and final full-set recheck.
+The second run at `de408ae48f28` passed that corrected 294+2 boundary and the
+nineteen Rust/native-build/twelve C prerequisites again. It stopped before
+Kconfig, linking or VM because Kbuild's CC argument concatenated a Path rather
+than its string spelling. The one-line conversion preserves the exact selected
+lexical tool path and flags. Both failed attempts remain failed observations.
+The third run at `01e065225400` resolved the real kernel configuration, then
+refused the historical data-fixture compiler probe. The normal native compiler
+is pinned to Rust1.97.1, while that old kernel programme used a Rust1.99 probe.
+The actual configuration differs only in three unselected Rust compiler probes:
+version109701 versus109900, LLVM220106 versus230101, and an absent suspicious
+runtime-symbol-definitions probe. The new producer pins the complete actual
+configuration and projects only these three fields into DATA-ONLY historical
+source-fixture bytes. Actual Kbuild config and all active options/hooks remain
+unchanged; CONFIG_RUST stays unselected. All other config bytes must match the
+audited configuration exactly, and every actual/projection identity is retained.
+The fourth run at `8e473e5e1d05` passed the nineteen Rust and twelve compiled C
+controls, linked the fresh kernel and launched one VM. Its raw serial reported
+`LSFRETURN1 result=FAIL stage=native-constructor` after the baseline snapshot.
+The genuine pending-handoff, physical-return and outside-collector rows followed
+during failure cleanup, but no typed native Root-return result was observed.
+All 26 command exits were zero; the strict serial oracle correctly refused the
+failed child. This failed attempt records one attempted and zero validated boots.
+The next published source added only bounded failure diagnostics (fixed stage,
+numeric errno or closed error code/kind) and a ready-rejection snapshot. It preserved
+every original error, permission/actor check, success predicate and limit; the
+constructor cause was unknown at that point.
+The fifth run at `a6931393c093` again linked and booted the same kernel bytes.
+Its new diagnostic was `stage=mint errno=0 kind=PermissionDenied`: the private
+wrapper rejected metadata before issuing the observation ioctl, after genuine
+READY initialization. Exact selected Linux source/configuration explains the
+missing fixture premise: rootfs selects tmpfs, defaults to mode01777, and this
+CPIO contains no root entry. The supervisor had not protected that root before
+the strict wrapper checked it. The subsequently qualified fix sets mode0755 on `/` in PID1,
+checks the actual resulting directory type/root uid/mode before any child or
+factory access, and retains all wrapper, device, `/dev`, actor and LSM checks.
+The first existing pure C control additionally refuses writable/sticky root,
+wrong uid and non-directory metadata; all twelve original parser assertions
+remain. Both failed boots stay failed observations; their cleanup markers are
+not relabelled as successful authenticated native Root-return results.
+The historical image has no observation ioctl and is never relabelled as this
+image. Normal installation remains Unsupported; native backing stays quarantined.
+
+The explicit `kernel_return_observation_vm` example invokes only
+`install_kernel_return_observation_for_qualification`. It observes the actual
+original factory FD and independently owned observation FD after READY. Its
+close receipt must contain `KernelRootReturned`, obtained by the private exact
+48-byte observation reader after the original File closes. UART does not supply
+this typed result. It then requires both FDs absent, the held receipt's cleanup
+charge, explicit receipt drop and actual worker-tail completion. The original
+connection, failed cleanup and at least 1 MiB backing plus the 4 KiB observation
+metadata remain charged. There is no native quota release.
+
+The host requires that strict native protocol and the genuine kernel post-free
+marker independently. Cross-CPU printk ring reads do not fence UART delivery;
+the native/PID1 sequence and ordered kernel sequence are checked separately.
+Missing, duplicated, reordered or unknown evidence fails. No successful sleep,
+descriptor disappearance or PID1 close return substitutes for the typed result.
+
+## One fresh producer
+
+The owning push workflow is `stream-kernel-return-vm.yml`, restricted to
+`feat/kernel-native-return-vm-20261024`. Its source controls run first. The
+controller then executes the original thirteen native cases, five paid cleanup
+result cases and one descriptor-leaf case, with exact Cargo source/product,
+registered names and unignored outcomes. It builds the new normal static Rust
+example, checks its fixed ELF limits, compiles the selected C supervisor and
+executes all twelve pure host parser controls. Only then may Linux acquisition
+and the expensive fresh kernel build start. No native constructor runs on the
+build host.
+
+Normal authenticated Linux source composition retains all 294 original kernel
+producer materials and witnesses. It changes exactly three derived files:
+factory ioctl dispatch, collector scalar publication, and the added observation
+fragment. The fresh kernel keeps the production socket consumer NULL. The
+complete new source, recipe, configuration and compiler products receive new
+identities; historical receipts and images remain historical.
+
+The fixed source fixture binds original VFS/LSM files and exact ordinary function
+bodies in the actual compiled tree. Prepaid constructors require explicit
+context/source carriers and do not redirect ordinary inode, file, dentry or
+security allocation. The selected active hook configuration must equal the
+audited original. SELinux copies only context SID/class into the new inode;
+its transient permission/cache reads finish under the factory mutex before
+final-close or the outside collector can remove the bank. Unexpected hooks or
+changed ordinary bodies refuse; no LSM is disabled. These are source lifetime
+premises, not complete allocator/LSM cost qualification.
+
+The kernel's own newly built initramfs generator constructs the selected
+supervisor image; the maintained bounded newc helper adds only tmp/native-init.
+Both exact executables and original dev/console entry are retained. One fresh
+isolated VM runs this fresh image. The old fast, late-FD and no-BEGIN readers,
+examples and accepted historical protocols are unchanged.
+
+## Retained finite limits and evidence
+
+The job envelope remains 45 minutes. One Commands owner has a 2400-second
+absolute overall deadline. Its native phase narrows that deadline to at most
+1320 seconds; restoring the original absolute deadline does not renew it.
+Cargo commands are at most 1200 seconds, kernel commands 1800, discovery 30 and
+tests 120. Deadline expiry is never success. One VM uses at most 180 seconds,
+512 MiB and two CPUs, without host drives, external networking or installation.
+
+PID1 remains at most 2 MiB, the separate Rust child at most 3 MiB, their combined
+PT_LOAD spans at most 4 MiB and the entire CPIO at most 4 MiB. All original
+static ET_EXEC, no interpreter, W^X and finite-entry checks remain. Rejected
+native products may be retained only through the existing fixed 8 MiB forensic
+path, unadmitted/nonexecutable and never run. There is no cap-increase fallback.
+The bounded supervisor has its 20-second event deadline and 4096-byte record,
+65536-byte total and 128-record bounds. Native observation uses its original
+READY expiry/close deadline, at most twenty seconds, one pollfd and sixteen
+interrupts; it cannot remint or reset the one-birth static slot.
+
+Receipts retain all source before/after identities, original and derived
+allocation functions, configuration, compiler/ELF/kernel/CPIO/firmware hashes,
+command outcomes, raw UART and strict parsed fields. `freshVmAttempts` records
+the attempted command; `validatedVmBoots` becomes one only after complete
+serial validation. A failed attempted boot is not reported as validated.
+Actual EMFILE, descriptor-zero minting and production installation are outside
+this single success boot; source/RAII controls are not relabelled as those runs.
+Whole-node/signed-component/TLS, full VFS/LSM cost and native refund qualification
+remain false after this bounded constructor/observation programme passed.

@@ -83,12 +83,30 @@ impl StreamLifecycle {
             Err(std::sync::TryLockError::WouldBlock) => return Ok(false),
             Err(std::sync::TryLockError::Poisoned(_)) => return Err(unavailable()),
         };
-        if state.stopped {
-            return Ok(true);
+        #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+        let protected = state.current.inner.native_bank.is_some()
+            || state
+                .retired
+                .iter()
+                .flatten()
+                .any(|p| p.inner.native_bank.is_some());
+        #[cfg(not(all(target_os = "linux", any(test, feature = "development-outbound"))))]
+        let protected = false;
+        if state.stopped && !protected {
+            return Ok(true); // Original unselected maintenance behavior.
         }
         state.current.maintenance_step(now);
         for retired in state.retired.iter().flatten() {
             retired.maintenance_step(now);
+        }
+        if state.stopped {
+            // No renewed authority or forced timeout-success. Unknown physical
+            // retirement keeps the original paid driver and quarantine alive.
+            let mut owners = state.current.usage()?.owners;
+            for retired in state.retired.iter().flatten() {
+                owners = owners.saturating_add(retired.usage()?.owners);
+            }
+            return Ok(owners == 0);
         }
         Ok(false)
     }
@@ -220,6 +238,10 @@ impl StreamLifecycle {
             usage.pending_operations += u.pending_operations;
             usage.retained_chunks += u.retained_chunks;
             usage.accepted_write_bytes += u.accepted_write_bytes;
+            #[cfg(any(test, feature = "development-outbound"))]
+            {
+                usage.input_budget_bytes += u.input_budget_bytes;
+            }
             usage.delivered_read_bytes += u.delivered_read_bytes;
         }
         Ok(StreamStatus {

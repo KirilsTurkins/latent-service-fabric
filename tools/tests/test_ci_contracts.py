@@ -295,6 +295,169 @@ class ContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "changed-workflow-job"):
             coverage.validate(self.root)
 
+    def test_case_key_storage_roundtrips_v1_v2_order_and_complete_assembly(self):
+        def ordered(value):
+            if isinstance(value, dict):
+                return (dict, [(key, ordered(item)) for key, item in value.items()])
+            if isinstance(value, list):
+                return (list, [ordered(item) for item in value])
+            return (type(value), value)
+
+        before = contracts.fragments(self.root)
+        value = copy.deepcopy(before["python/test_alpha.py.json"])
+        value = dict(reversed(list(value.items())))
+        guard = dict(reversed(list(next(iter(value["guards"].values())).items())))
+        guard["decorators"] = ["second(é)", "first(β)"]
+        value["cases"] = ["Cases.test_first", "Cases.test_second"]
+        value["guards"] = {case: copy.deepcopy(guard) for case in value["cases"]}
+        for version, physical in (("v1", value), ("v2", contracts.shared_python_record(value))):
+            with self.subTest(version=version):
+                stored = contracts.case_key_python_record(physical)
+                self.assertNotIn("cases", stored)
+                self.assertEqual(stored["storageCases"], "guard-keys")
+                self.assertEqual(ordered(contracts.semantic_record(stored)), ordered(value))
+                self.assertEqual(contracts.case_key_python_record(stored), stored)
+                shared = contracts.shared_python_record(stored)
+                self.assertEqual(shared["storageCases"], "guard-keys")
+                self.assertEqual(ordered(contracts.semantic_record(shared)), ordered(value))
+                destination = self.root / ("case-key-" + version)
+                contracts.write_records(destination, [stored])
+                loaded = contracts.read_json(destination / contracts.fragment_path(stored))
+                self.assertEqual(ordered(loaded), ordered(stored))
+                self.assertEqual(ordered(contracts.semantic_record(loaded)), ordered(value))
+                self.assertNotIn(b"\r", (destination / contracts.fragment_path(stored)).read_bytes())
+
+        expected = contracts.load(self.root)
+        for relative, original in before.items():
+            if original["kind"] == "python":
+                physical = (contracts.shared_python_record(original)
+                            if relative.endswith("test_beta.py.json") else original)
+                stored = contracts.case_key_python_record(physical)
+                path = self.root / contracts.DIRECTORY / relative
+                path.write_text(json.dumps(stored, ensure_ascii=False, separators=(",", ":")) + "\n",
+                                encoding="utf-8")
+        self.assertEqual(ordered(contracts.fragments(self.root)), ordered(before))
+        self.assertEqual(ordered(contracts.load(self.root)), ordered(expected))
+        coverage.validate(self.root)
+
+    def test_case_key_storage_refuses_ambiguous_malformed_and_ordered_inventory_changes(self):
+        value = contracts.fragments(self.root)["python/test_alpha.py.json"]
+        for physical in (value, contracts.shared_python_record(value)):
+            stored = contracts.case_key_python_record(physical)
+            variants = [dict(stored, storageCases="other"), dict(stored, storageCases=True),
+                        dict(stored, schemaVersion="latent.ci.contracts.v3"), dict(stored, kind="owner"),
+                        dict(stored, cases=value["cases"]), dict(stored, extra="field"),
+                        {key: item for key, item in stored.items() if key != "storageCases"},
+                        dict(stored, guards={}), dict(stored, guards=[]),
+                        dict(stored, module="tools/tests/../outside.py")]
+            guard = next(iter(stored["guards"].values()))
+            for name in ("broken", "Cases.helper", "Cases.test_bad.extra", "1Cases.test_ok",
+                         "Cases.test_bad-name", "class.test_ok", 7):
+                variants.append(dict(stored, guards={name: guard}))
+            variants.append(dict(stored, guards={"Cases.test_z": guard, "Cases.test_a": guard}))
+            if physical["schemaVersion"] == contracts.PYTHON_STORAGE_SCHEMA:
+                variants.extend([dict(stored, guards={value["cases"][0]: "f" * 64}),
+                                 {key: item for key, item in stored.items() if key != "guardDefinitions"}])
+            for malformed in variants:
+                with self.subTest(schema=physical["schemaVersion"], fields=malformed), self.assertRaises(ValueError):
+                    contracts.fragment_path(malformed)
+            duplicate = self.root / (physical["schemaVersion"].rsplit(".", 1)[-1] + "-duplicate-case-storage.json")
+            raw = json.dumps(stored)
+            raw = raw.replace('"storageCases": "guard-keys"',
+                              '"storageCases": "guard-keys", "storageCases": "guard-keys"', 1)
+            duplicate.write_text(raw)
+            with self.assertRaisesRegex(ValueError, "duplicate"):
+                contracts.read_json(duplicate)
+        ineligible = copy.deepcopy(value)
+        guard = next(iter(ineligible["guards"].values()))
+        ineligible["cases"] = ["Cases.test_a", "Cases.test_z"]
+        ineligible["guards"] = {case: guard for case in reversed(ineligible["cases"])}
+        with self.assertRaisesRegex(ValueError, "case-storage-requires-ordered-guards"):
+            contracts.case_key_python_record(ineligible)
+
+    def test_case_key_storage_keeps_physical_and_expanded_bounds_before_guard_copies(self):
+        value = contracts.fragments(self.root)["python/test_alpha.py.json"]
+        for physical in (value, contracts.shared_python_record(value)):
+            stored = contracts.case_key_python_record(physical)
+            size = max(len(contracts.canonical(physical).encode("utf-8")),
+                       len(contracts.canonical(value).encode("utf-8")))
+            with patch.object(registry, "MAX_BYTES", size):
+                self.assertEqual(contracts.semantic_record(stored), value)
+            with patch.object(registry, "MAX_BYTES", len(contracts.canonical(physical).encode("utf-8")) - 1), \
+                    patch.object(contracts.copy, "deepcopy", side_effect=AssertionError("copied before bound")):
+                with self.assertRaisesRegex(ValueError, "decoded-contract-byte-limit"):
+                    contracts.semantic_record(stored)
+
+        value["cases"] = ["Cases.test_" + str(index) for index in range(4)]
+        guard = next(iter(value["guards"].values()))
+        value["guards"] = {case: copy.deepcopy(guard) for case in value["cases"]}
+        stored = contracts.case_key_python_record(contracts.shared_python_record(value))
+        identity = next(iter(stored["guardDefinitions"]))
+        large_guard = stored["guardDefinitions"].pop(identity)
+        large_guard["fixtureGuards"] = ["é" * 300000]
+        identity = hashlib.sha256(contracts.canonical(large_guard).encode("utf-8")).hexdigest()
+        stored["guardDefinitions"][identity] = large_guard
+        stored["guards"] = {case: identity for case in value["cases"]}
+        path = self.root / "case-key-expanded-bound.json"
+        path.write_bytes(json.dumps(stored, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+        self.assertLess(path.stat().st_size, registry.MAX_BYTES)
+        with patch.object(contracts.copy, "deepcopy", side_effect=AssertionError("copied before bound")):
+            with self.assertRaisesRegex(ValueError, "decoded-contract-byte-limit"):
+                contracts.fragment_path(contracts.read_json(path))
+        path.write_bytes(b" " * (registry.MAX_BYTES + 1))
+        with self.assertRaisesRegex(ValueError, "contract-byte-limit"):
+            contracts.read_json(path)
+
+    def test_case_key_proposals_preserve_opt_in_defaults_and_source_guard_failures(self):
+        for shared in (False, True):
+            with self.subTest(shared=shared), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                fixture(root)
+                source = root / "tools/tests/test_alpha.py"
+                source.write_text(source.read_text() + "    def test_a_first(self):\n        self.assertTrue(True)\n")
+                baseline_source = source.read_text()
+                observed = contracts.python_expectations(root)["tools/tests/test_alpha.py"]
+                self.assertNotEqual(list(observed["guards"]), observed["cases"])
+                path = root / contracts.DIRECTORY / "python/test_alpha.py.json"
+                reviewed = contracts.read_json(path)
+                fields = list(next(iter(reviewed["guards"].values())))
+                reviewed["cases"] = observed["cases"]
+                reviewed["guards"] = {case: {field: observed["guards"][case][field] for field in fields}
+                                      for case in reviewed["cases"]}
+                stored = contracts.case_key_python_record(
+                    contracts.shared_python_record(reviewed) if shared else reviewed)
+                path.write_text(json.dumps(stored, ensure_ascii=False, separators=(",", ":")) + "\n")
+                coverage.validate(root)
+                source.write_text(baseline_source + "    def test_zz_added(self):\n        self.assertTrue(True)\n")
+                proposal = contracts.propose(root, "python", "tools/tests/test_alpha.py", None,
+                    root / "target/ci/proposals/selected", "Add one reviewed case, preserving explicit storage.")
+                selected = contracts.read_json(proposal)
+                self.assertEqual(selected["storageCases"], "guard-keys")
+                self.assertEqual(selected["schemaVersion"], stored["schemaVersion"])
+                resolved = contracts.semantic_record(selected)
+                self.assertEqual(list(resolved), list(reviewed))
+                self.assertEqual(resolved["cases"], [*reviewed["cases"], "Cases.test_zz_added"])
+                self.assertEqual(resolved["guards"],
+                                 contracts.python_expectations(root)["tools/tests/test_alpha.py"]["guards"])
+                for case in reviewed["cases"]:
+                    self.assertEqual(list(resolved["guards"][case]), list(reviewed["guards"][case]))
+                self.assertEqual(contracts.read_json(path), stored)
+                default = contracts.propose(root, "python", "tools/tests/test_beta.py", None,
+                    root / "target/ci/proposals/default", "Preserve the unselected v1 default.")
+                self.assertEqual(contracts.read_json(default)["schemaVersion"], contracts.SCHEMA)
+                self.assertNotIn("storageCases", contracts.read_json(default))
+                for changed, reason in (
+                    (baseline_source.replace("def test_works", "def helper_works"),
+                     "missing-or-renamed-or-unregistered-python-case"),
+                    (baseline_source.replace("    def test_works", "    @unittest.skip('changed')\n    def test_works"),
+                     "changed-python-test-execution-guard"),
+                    ("CHANGED_SETUP = True\n" + baseline_source, "changed-python-test-execution-guard")):
+                    source.write_text(changed)
+                    with self.assertRaisesRegex(ValueError, reason):
+                        coverage.validate(root)
+                source.write_text(baseline_source)
+                coverage.validate(root)
+
     def test_pin_only_comments_and_yaml_formatting_do_not_change_contracts(self):
         path = self.root / ".github/workflows/ci.yml"
         before = {name: contracts.canonical(value) for name, value in contracts.fragments(self.root).items()}
@@ -844,6 +1007,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         reviewed_go_probe = ".github/workflows/go-guest.yml:upstream-probe:Generate and compile upstream and constrained LSF components"
         reviewed_go_normal_id = ".github/workflows/go-guest.yml:upstream-probe:Qualify editable projects, all SDK owners, enforced node and printed guide"
         reviewed_typescript_console = ".github/workflows/typescript-guest.yml:boundary:Qualify captured projects, all SDK owners, enforced node and printed guide"
+        reviewed_typescript_models = ".github/workflows/typescript-guest.yml:boundary:Execute supplementary value and ownership models"
         performance_extensions = {
             ".github/workflows/ci.yml:rust:integration_lanes": [
                 "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
@@ -882,9 +1046,41 @@ class RepositoryMigrationTests(unittest.TestCase):
         java_selector = data['workflowContracts']['.github/workflows/java-guest-feasibility.yml']['on']['workflow_dispatch']['inputs']['java_http_spi']
         self.assertEqual(java_selector['type'], 'boolean')
         self.assertIs(java_selector['default'], False)
+        java_assembly_selector = data['workflowContracts']['.github/workflows/java-guest-feasibility.yml']['on']['workflow_dispatch']['inputs']['public_fiber_assembly']
+        self.assertEqual(java_assembly_selector['type'], 'boolean')
+        self.assertIs(java_assembly_selector['default'], False)
+        for name in ('public_fiber_derived_llvm', 'public_fiber_private_scalar_llvm'):
+            selector = data['workflowContracts']['.github/workflows/java-guest-feasibility.yml']['on']['workflow_dispatch']['inputs'][name]
+            self.assertEqual(selector['type'], 'boolean')
+            self.assertIs(selector['default'], False)
+        product_selector = data['workflowContracts']['.github/workflows/developer-tools.yml']['on']['workflow_dispatch']['inputs']['java_compiler_product']
+        self.assertEqual(product_selector['type'], 'boolean')
+        self.assertIs(product_selector['default'], False)
+        self.assertEqual(data['workflowContracts']['.github/workflows/developer-tools.yml']['jobs']['java-compiler-product']['if'],
+                         "github.event_name == 'workflow_dispatch' && inputs.java_compiler_product")
+        java_normal_routes = {
+            'Compile generated typed Java bindings against async capability WIT',
+            'Qualify standalone Java projects, nine SDK components, signed node and printed guide',
+        }
         lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
         for key, original in legacy["after"].items():
             value = dict(original)
+            if value["workflow"] == ".github/workflows/dotnet-guest.yml" and value["job"] == "toolchain":
+                # Only the two reviewed closed root-return fixture branches exclude this job.
+                # No status override is introduced: ordinary branches retain
+                # GitHub's implicit success() and every original command field.
+                self.assertEqual(value["jobIf"], "success()", key)
+                value["jobIf"] = (
+                    "github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' "
+                    "&& github.head_ref != 'test/sdk-dotnet-root-return-20261027' "
+                    "&& github.ref != 'refs/heads/test/sdk-dotnet-join-cause-20261027' "
+                    "&& github.head_ref != 'test/sdk-dotnet-join-cause-20261027'")
+            if value['workflow'] == '.github/workflows/developer-tools.yml' and value['job'] in {'contracts', 'guest-tools', 'wsl-image'}:
+                # Only the closed default-false data-only mode skips these
+                # jobs. Every existing ordinary command remains mandatory.
+                old_guard = "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository"
+                self.assertEqual(value['jobIf'], old_guard, key)
+                value['jobIf'] = '${{ !inputs.java_compiler_product && (' + old_guard + ') }}'
             if value["workflow"] == ".github/workflows/typescript-guest.yml" and value["job"] == "boundary":
                 self.assertEqual(value["jobIf"], "success()", key)
                 value["jobIf"] = reviewed_typescript_observer_guard
@@ -901,7 +1097,33 @@ class RepositoryMigrationTests(unittest.TestCase):
                 value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}"
             if value['workflow'] == '.github/workflows/java-guest-feasibility.yml' and value['job'] == 'compiler-component':
                 self.assertEqual(value['jobIf'], 'success()', key)
-                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}"
+                # Only these explicit manual modes exclude the unchanged full
+                # job; default, PR and ordinary dispatch retain every command.
+                value['jobIf'] = "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}"
+                if value['name'] in java_normal_routes:
+                    old_sdk = '$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux'
+                    self.assertEqual(value['run'].count(old_sdk), 1, key)
+                    value['run'] = value['run'].replace(old_sdk, '$LSF_JAVA_WASI_SDK')
+                elif value['name'] == 'Install pinned compiler tools':
+                    old_download = 'curl --fail --location --max-time 180 \\\n'
+                    explanation = (
+                        '# The independent historical feasibility helper still requires its\n'
+                        '# original explicit SDK. Ordinary BaseCompiler routes use the sealed\n'
+                        '# promoted product below; no old helper/version gate is weakened.\n')
+                    self.assertEqual(value['run'].count(old_download), 1, key)
+                    value['run'] = value['run'].replace(old_download, explanation + old_download)
+                    bindgen = 'python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"\n'
+                    product = (
+                        'compiler_root=$(mktemp -d /tmp/latent-java-normal.XXXXXXXX)\n'
+                        'timeout --signal=TERM --kill-after=5 1195 \\\n'
+                        '  python3 -B tools/java_guest/compiler_profile_distribution.py stage \\\n'
+                        '    --root "$compiler_root" --output "$RUNNER_TEMP/java-normal-compiler-product.json" \\\n'
+                        '    > "$RUNNER_TEMP/java-normal-compiler-path.txt"\n'
+                        'compiler_sdk=$(cat "$RUNNER_TEMP/java-normal-compiler-path.txt")\n'
+                        'test "$compiler_sdk" = "$compiler_root/work/installed/wasi-sdk"\n'
+                        "printf 'LSF_JAVA_WASI_SDK=%s\\n' \"$compiler_sdk\" >> \"$GITHUB_ENV\"\n")
+                    self.assertEqual(value['run'].count(bindgen), 1, key)
+                    value['run'] = value['run'].replace(bindgen, product + bindgen)
             if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
                 # Exact commands survive; the reviewed fixed matrix allocates
                 # every obligation to its required, failure-propagating lane.
@@ -985,6 +1207,19 @@ class RepositoryMigrationTests(unittest.TestCase):
                 self.assertEqual(value["run"].count(command), 1)
                 self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(
                     command, command + " --standard-console", 1)), key)
+            elif key == '.github/workflows/ci.yml:rust:Qualify signed static sites through OCI and actual browsers':
+                old = '--chrome "$(command -v google-chrome)" > "${RUNNER_TEMP}/phase2-gate/static-site-receipt.json"'
+                new = '--chrome "$(command -v google-chrome)" --audit-lifecycle-receipt "${RUNNER_TEMP}/phase2-gate/audit-lifecycle-receipt.json" > "${RUNNER_TEMP}/phase2-gate/static-site-receipt.json"'
+                self.assertEqual(value["run"].count(old), 1)
+                self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(old, new)), key)
+            elif key == reviewed_typescript_models:
+                # Compile the same executable runtime and both model sources.
+                # Profile-scoped ambient Node declarations require application
+                # module mappings and are not standalone model inputs.
+                original_inputs = "sdk/typescript-guest/runtime/*.ts"
+                self.assertEqual(value["run"].count(original_inputs), 1)
+                self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(
+                    original_inputs, "sdk/typescript-guest/runtime/text.ts", 1)), key)
             elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:

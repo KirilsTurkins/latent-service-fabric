@@ -1,192 +1,31 @@
-{
-  "cases": [
-    "KernelBind.test_actual_empty_list_unlinks_precede_private_return_even_when_poisoned",
-    "KernelBind.test_all_owned_connect_and_get_port_misses_use_real_socket",
-    "KernelBind.test_definition_edits_duplicates_crlf_and_unknown_names_refuse",
-    "KernelBind.test_every_original_normal_function_body_is_recovered_exactly",
-    "KernelBind.test_inherited_listener_participants_are_explicitly_unsupported_before_lookup",
-    "KernelBind.test_no_normal_heap_fallback_after_owned_refusal_or_exhaustion",
-    "KernelBind.test_original_bind_initializer_is_exact_except_prepaid_birth",
-    "KernelBind.test_original_fixed_slots_byte_caps_and_backing_retirement_gate_remain",
-    "KernelBind.test_real_port_authority_reuse_conflict_randomness_and_reschedule_are_preserved",
-    "KernelBind.test_shared_bind2_constructor_and_saddr_preallocation_use_same_exact_producer",
-    "KernelBind.test_socket_and_timewait_original_put_paths_keep_both_real_locks_and_destroy_calls",
-    "KernelBind.test_source_is_actual_prior_socket_record_not_current_task_or_late_registration",
-    "KernelBind.test_twenty_seven_complete_sources_and_twelve_definitions_are_exact",
-    "KernelBind.test_unknown_or_duplicate_arena_return_never_reaches_normal_free_or_reads_pointer"
-  ],
-  "guards": {
-    "KernelBind.test_actual_empty_list_unlinks_precede_private_return_even_when_poisoned": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_all_owned_connect_and_get_port_misses_use_real_socket": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_definition_edits_duplicates_crlf_and_unknown_names_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_every_original_normal_function_body_is_recovered_exactly": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_inherited_listener_participants_are_explicitly_unsupported_before_lookup": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_no_normal_heap_fallback_after_owned_refusal_or_exhaustion": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_original_bind_initializer_is_exact_except_prepaid_birth": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_original_fixed_slots_byte_caps_and_backing_retirement_gate_remain": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_real_port_authority_reuse_conflict_randomness_and_reschedule_are_preserved": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_shared_bind2_constructor_and_saddr_preallocation_use_same_exact_producer": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_socket_and_timewait_original_put_paths_keep_both_real_locks_and_destroy_calls": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_source_is_actual_prior_socket_record_not_current_task_or_late_registration": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_twenty_seven_complete_sources_and_twelve_definitions_are_exact": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    },
-    "KernelBind.test_unknown_or_duplicate_arena_return_never_reaches_normal_free_or_reads_pointer": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d",
-        "class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_bind.py",
-  "reviewReason": "Add fourteen closed maintained bind producer/source controls; preserve every prior case and guard. No workflow selection or qualification promotion.",
-  "schemaVersion": "latent.ci.contracts.v1"
-}
+{"cases":["KernelBind.test_actual_empty_list_unlinks_precede_private_return_even_when_poisoned","KernelBind.test_all_owned_connect_and_get_port_misses_use_real_socket","KernelBind.test_definition_edits_duplicates_crlf_and_unknown_names_refuse","KernelBind.test_every_original_normal_function_body_is_recovered_exactly","KernelBind.test_inherited_listener_participants_are_explicitly_unsupported_before_lookup","KernelBind.test_no_normal_heap_fallback_after_owned_refusal_or_exhaustion","KernelBind.test_original_bind_initializer_is_exact_except_prepaid_birth","KernelBind.test_original_fixed_slots_byte_caps_and_backing_retirement_gate_remain","KernelBind.test_real_port_authority_reuse_conflict_randomness_and_reschedule_are_preserved","KernelBind.test_shared_bind2_constructor_and_saddr_preallocation_use_same_exact_producer","KernelBind.test_socket_and_timewait_original_put_paths_keep_both_real_locks_and_destroy_calls","KernelBind.test_source_is_actual_prior_socket_record_not_current_task_or_late_registration","KernelBind.test_twenty_seven_complete_sources_and_twelve_definitions_are_exact","KernelBind.test_unknown_or_duplicate_arena_return_never_reaches_normal_free_or_reads_pointer"],"guards":{"KernelBind.test_actual_empty_list_unlinks_precede_private_return_even_when_poisoned":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_all_owned_connect_and_get_port_misses_use_real_socket":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_definition_edits_duplicates_crlf_and_unknown_names_refuse":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_every_original_normal_function_body_is_recovered_exactly":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_inherited_listener_participants_are_explicitly_unsupported_before_lookup":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_no_normal_heap_fallback_after_owned_refusal_or_exhaustion":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_original_bind_initializer_is_exact_except_prepaid_birth":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_original_fixed_slots_byte_caps_and_backing_retirement_gate_remain":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_real_port_authority_reuse_conflict_randomness_and_reschedule_are_preserved":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_shared_bind2_constructor_and_saddr_preallocation_use_same_exact_producer":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_socket_and_timewait_original_put_paths_keep_both_real_locks_and_destroy_calls":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_source_is_actual_prior_socket_record_not_current_task_or_late_registration":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_twenty_seven_complete_sources_and_twelve_definitions_are_exact":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+,"KernelBind.test_unknown_or_duplicate_arena_return_never_reaches_normal_free_or_reads_pointer":
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_bind.py","reviewReason":"Add fourteen closed maintained bind producer/source controls; preserve every prior case and guard. No workflow selection or qualification promotion.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "57bdfaace3c014846c7950258a998cb5902f8059b2f598b69a7d1ec8cef4704b"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:b7fb48f66f866591a4bcb69241ebc625779c85429b167c581fae3cdd3023d17d","class:setup-sha256:73cf1721d95f0810be80218b9504baa9cbbf91557cabe9c4ae450bcf38974e19"],"skipSites":[]}}}

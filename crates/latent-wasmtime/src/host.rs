@@ -13,6 +13,7 @@ pub(crate) mod clock;
 pub(crate) mod context;
 pub(crate) mod events;
 pub(crate) mod http;
+mod io_copy;
 mod logging;
 pub(crate) mod metrics;
 pub(crate) mod native;
@@ -267,6 +268,10 @@ impl ActivationHostContext {
 }
 
 pub(crate) struct HostState {
+    #[cfg(feature = "development-test-host")]
+    pub(crate) development_borrow_admission: Option<crate::development_borrow_admission::Observer>,
+    #[cfg(feature = "development-local-service-fixture")]
+    pub(crate) local_service_refusals: service::refusal::Observer,
     pub(crate) runtime: Option<runtime::Table>,
     pub(crate) runtime_limits: Option<latent_core::activation_runtime::RuntimeLimits>,
     pub(crate) runtime_stop: Option<Arc<crate::containment::StopControl>>,
@@ -318,7 +323,19 @@ impl HostState {
             limiter.budget = Some(accounting.budget().clone());
         }
         let capabilities = capabilities::HostCapabilities::new(None, accounting.budget());
+        #[cfg(feature = "development-test-host")]
+        let development_borrow_admission =
+            crate::development_borrow_admission::Observer::for_activation(
+                &context.activation_id.0,
+                config.development_numeric_trap_observation,
+            );
         Self {
+            #[cfg(feature = "development-test-host")]
+            development_borrow_admission,
+            #[cfg(feature = "development-local-service-fixture")]
+            local_service_refusals: service::refusal::Observer::new(
+                config.development_local_service_refusals,
+            ),
             context,
             runtime: None,
             runtime_limits: config.activation_runtime,
@@ -517,3 +534,9 @@ mod native_table_tests;
 
 #[cfg(test)]
 mod native_context_reply_tests;
+
+#[cfg(test)]
+mod join_state_tests;
+
+#[cfg(test)]
+mod native_stream_outer_tests;

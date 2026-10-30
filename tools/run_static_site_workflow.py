@@ -503,13 +503,17 @@ def run(args):
             stop(client, node)
             shutdown = stopped_record(node)
             node = None
+            from tools.static_audit_lifecycle import qualify as qualify_audit_lifecycle, retain_receipt
+            lifecycle = qualify_audit_lifecycle(client, args, directory / 'audit-lifecycle', configure)
+            if getattr(args, 'audit_lifecycle_receipt', None) is not None:
+                lifecycle = retain_receipt(lifecycle, args.audit_lifecycle_receipt)
             require(tree_inventory(args.fixture, client, maximum_entries=2048) == original, 'static-fixture-mutated')
             return bounded_receipt({'schemaVersion': 'latent.static.workflow.v1', 'passed': True,
                 'identity': identity, 'publications': publications, 'packageDigests': {n: r['packageDigest'] for n, r in records.items()},
                 'ociExactDigestRoundtrip': True, 'browserA': browser_a, 'cutover': handoff, 'browserB': browser_b,
                 'rollback': rollback, 'revokedConditionalDenied': True, 'revokedRollbackDenied': True,
                 'foreignPublicationDenied': True, 'before': before, 'dormant': dormant, 'after': after,
-                'audit': audit_receipt, 'routeReconciliation': reconciliation,
+                'audit': audit_receipt, 'routeReconciliation': reconciliation, 'auditLifecycle': lifecycle,
                 'errorDocumentLifecycle': error_lifecycle,
                 'corruptErrorDocument': corrupt_error,
                 'unconfiguredErrorResponses': unconfigured_wire,
@@ -562,6 +566,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('cli', 'node', 'fixture', 'toolchain', 'chrome'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--audit-lifecycle-receipt', type=Path,
+                        help='Exclusive output for complete bounded audit lifecycle evidence')
     parser.add_argument('--registry-origin')
     parser.add_argument('--registry-ca', type=Path)
     args = parser.parse_args()

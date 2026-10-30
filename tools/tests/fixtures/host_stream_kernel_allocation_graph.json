@@ -1,418 +1,418 @@
 {
-  "schemaVersion": "lsf.kernel-allocation-graph.v1",
-  "upstreamCommit": "adc218676eef25575469234709c2d87185ca223a",
-  "additionalSource": {
-    "include/linux/skbuff.h": {
-      "bytes": 149284,
-      "sha256": "7bf07791f2aa5c4914e80139113406d36148d8b69e24ce34d777aead9beb80dc",
-      "gitBlob": "39f1d16f362887821caa022464695c4045461493",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/include/linux/skbuff.h"
-    },
-    "include/linux/slab.h": {
-      "bytes": 36868,
-      "sha256": "5af4c4ab86b1ed2378cbf342b9be9b2a306043b7d7624493d7e1f9c37a3d70fe",
-      "gitBlob": "b35e2db7eb0ecc4933126f56b2c3dbf369cbb44b",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/include/linux/slab.h"
-    },
-    "include/net/page_pool/helpers.h": {
-      "bytes": 15104,
-      "sha256": "54beec50f9cad98a651a8a6e83388145f4e14e1fecbf5ca53f26206ef61d39eb",
-      "gitBlob": "793e6fd78bc5c0890bc875a0ddfcc896e89896dd",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/include/net/page_pool/helpers.h"
-    },
-    "include/net/page_pool/types.h": {
-      "bytes": 9558,
-      "sha256": "b7ca44304a7bb01ea3370c35d25cfc3da4952227863fe0ceed3355f372ef2b8b",
-      "gitBlob": "c022c410abe39d588c0933479ab131b3c07391fd",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/include/net/page_pool/types.h"
-    },
-    "net/core/dev.c": {
-      "bytes": 316577,
-      "sha256": "a200c79da6df04e95435219a09f1c46673cffce89667e429c3880a1e2f508956",
-      "gitBlob": "8453e14d301b63a84f3d505a1f3dc08f88fe8f7b",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/core/dev.c"
-    },
-    "net/core/page_pool.c": {
-      "bytes": 31648,
-      "sha256": "f66cb52a2abc055881fd45d10810ade4e40030170432eaa8b111e541e6c55efd",
-      "gitBlob": "a813d30d213536beab16106ea9a4b6856fa991bb",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/core/page_pool.c"
-    },
-    "net/core/dst.c": {
-      "bytes": 8541,
-      "sha256": "2e2fda0decc922dd427b4696f071ce782b9f9510fd74f363cf18a55386fc7392",
-      "gitBlob": "9552a90d4772dce49b5fe94d2f1d8da6979d9908",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/core/dst.c"
-    },
-    "net/core/neighbour.c": {
-      "bytes": 100504,
-      "sha256": "9d5a9b83248a6ee1b0aad45f7eaeb404ac193c86249f62bb3881993b944cd599",
-      "gitBlob": "77b819cd995b2510fed7ace688bce60c98a57563",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/core/neighbour.c"
-    },
-    "mm/page_alloc.c": {
-      "bytes": 202777,
-      "sha256": "55a8c09ee0fb9f64bef126ce9645bac9b77e440476d50cf80b43df3c3ae503eb",
-      "gitBlob": "b6958333054d06ed910f8fef863d83a7312eca9e",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/mm/page_alloc.c"
-    },
-    "mm/slub.c": {
-      "bytes": 190999,
-      "sha256": "7bd937024342d5c7a40120aaaf50061644c2fefe92ca71b069a38bb6b4770f04",
-      "gitBlob": "5b832512044e3ead8ccde2c02308bd8954246db5",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/mm/slub.c"
-    },
-    "net/ipv4/route.c": {
-      "bytes": 95588,
-      "sha256": "51936639a42e42d71051d834e43b2f8164c104d3772a213e65f6c040a44f5ba0",
-      "gitBlob": "723ac9181558c3240204d7b6830a9557d06b10f3",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/route.c"
-    },
-    "net/ipv4/tcp.c": {
-      "bytes": 142868,
-      "sha256": "a323a8aa41a10e1e30f5dead2a6be0fed4c7912e27c624ac273e7d5198d7adef",
-      "gitBlob": "4f77bd862e957f865eb919a30475c929da369792",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/tcp.c"
-    },
-    "net/ipv4/tcp_output.c": {
-      "bytes": 131725,
-      "sha256": "81a3e778a6b698192745c4fc9c50c26245374ffd605b095d894659ca2cbc751a",
-      "gitBlob": "68804fd01dafc48101ca8c3f15991dbe02a0dd6f",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/tcp_output.c"
-    },
-    "net/ipv4/tcp_input.c": {
-      "bytes": 216789,
-      "sha256": "8007c66e4cf200085935805d33863a75a03089487a53a8b42a596025d859749d",
-      "gitBlob": "2d844e1f867f0a67187fcd7f5eed2e30156f2bd7",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/tcp_input.c"
-    },
-    "net/ipv4/ip_output.c": {
-      "bytes": 43475,
-      "sha256": "39af3b45940a3926ab7c82545049af631eec59308fa1bfd2f9a2c0009eda0b1c",
-      "gitBlob": "49811c9281d424bc4b43b8e9075da9fe724773cb",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/ip_output.c"
-    },
-    "net/ipv4/udp.c": {
-      "bytes": 94445,
-      "sha256": "aef73b6f132756fdba97937cb5205b060dd075e520ba182b9355770728b33f5d",
-      "gitBlob": "2849b273b131076cf8300633d6642a6b84468235",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/udp.c"
-    },
-    "net/ipv6/route.c": {
-      "bytes": 171168,
-      "sha256": "f66fdcfe8a3d817514462f1a4335518d6eda445d6ee4ecdd3eaabcd2ecfbe2a7",
-      "gitBlob": "b4251915585f75ff4ae2038befda9efd09bc5887",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv6/route.c"
-    },
-    "net/ipv6/ip6_output.c": {
-      "bytes": 53932,
-      "sha256": "5472439d49f2832ecf1eee212ce5f9128848f797d6062cfa7cb6b061509e7b29",
-      "gitBlob": "f26841f1490f5c31e3b09bce5773391e779128e1",
-      "url": "https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv6/ip6_output.c"
-    }
-  },
-  "functions": {
-    "napi_skb_cache_get": {
-      "source": "net/core/skbuff.c",
-      "prefix": "static struct sk_buff *napi_skb_cache_get(",
-      "sha256": "d5d7ec98d2885972e8353a7d6f2a7286413ccf14bed7897529295492fda74449",
-      "text": "static struct sk_buff *napi_skb_cache_get(void)\n{\n\tstruct napi_alloc_cache *nc = this_cpu_ptr(&napi_alloc_cache);\n\tstruct sk_buff *skb;\n\n\tlocal_lock_nested_bh(&napi_alloc_cache.bh_lock);\n\tif (unlikely(!nc->skb_count)) {\n\t\tnc->skb_count = kmem_cache_alloc_bulk(net_hotdata.skbuff_cache,\n\t\t\t\t\t\t      GFP_ATOMIC | __GFP_NOWARN,\n\t\t\t\t\t\t      NAPI_SKB_CACHE_BULK,\n\t\t\t\t\t\t      nc->skb_cache);\n\t\tif (unlikely(!nc->skb_count)) {\n\t\t\tlocal_unlock_nested_bh(&napi_alloc_cache.bh_lock);\n\t\t\treturn NULL;\n\t\t}\n\t}\n\n\tskb = nc->skb_cache[--nc->skb_count];\n\tlocal_unlock_nested_bh(&napi_alloc_cache.bh_lock);\n\tkasan_mempool_unpoison_object(skb, kmem_cache_size(net_hotdata.skbuff_cache));\n\n\treturn skb;\n}\n",
-      "obligation": "prelookup-bulk-header-cache",
-      "physicalClosureProven": false
-    },
-    "__build_skb": {
-      "source": "net/core/skbuff.c",
-      "prefix": "struct sk_buff *__build_skb(",
-      "sha256": "adc749df23aed1b903ccc3f551acbea025d0ce22c888ab1849f6aecc63a42ff4",
-      "text": "struct sk_buff *__build_skb(void *data, unsigned int frag_size)\n{\n\tstruct sk_buff *skb;\n\n\tskb = kmem_cache_alloc(net_hotdata.skbuff_cache,\n\t\t\t       GFP_ATOMIC | __GFP_NOWARN);\n\tif (unlikely(!skb))\n\t\treturn NULL;\n\n\tmemset(skb, 0, offsetof(struct sk_buff, tail));\n\t__build_skb_around(skb, data, frag_size);\n\n\treturn skb;\n}\n",
-      "obligation": "preexisting-rx-data-before-header",
-      "physicalClosureProven": false
-    },
-    "__napi_build_skb": {
-      "source": "net/core/skbuff.c",
-      "prefix": "static struct sk_buff *__napi_build_skb(",
-      "sha256": "7eb75c4883a04750e0d5d30c4c7abff8087152f25b15736d01113cf94143f315",
-      "text": "static struct sk_buff *__napi_build_skb(void *data, unsigned int frag_size)\n{\n\tstruct sk_buff *skb;\n\n\tskb = napi_skb_cache_get();\n\tif (unlikely(!skb))\n\t\treturn NULL;\n\n\tmemset(skb, 0, offsetof(struct sk_buff, tail));\n\t__build_skb_around(skb, data, frag_size);\n\n\treturn skb;\n}\n",
-      "obligation": "prelookup-cached-header",
-      "physicalClosureProven": false
-    },
-    "kmalloc_reserve": {
-      "source": "net/core/skbuff.c",
-      "prefix": "static void *kmalloc_reserve(",
-      "sha256": "ab543fca18d8363d1d755e60ea5ead7a836d62b962b5aa7bc482121c509e36e4",
-      "text": "static void *kmalloc_reserve(unsigned int *size, gfp_t flags, int node,\n\t\t\t     bool *pfmemalloc)\n{\n\tbool ret_pfmemalloc = false;\n\tsize_t obj_size;\n\tvoid *obj;\n\n\tobj_size = SKB_HEAD_ALIGN(*size);\n\tif (obj_size <= SKB_SMALL_HEAD_CACHE_SIZE &&\n\t    !(flags & KMALLOC_NOT_NORMAL_BITS)) {\n\t\tobj = kmem_cache_alloc_node(net_hotdata.skb_small_head_cache,\n\t\t\t\tflags | __GFP_NOMEMALLOC | __GFP_NOWARN,\n\t\t\t\tnode);\n\t\t*size = SKB_SMALL_HEAD_CACHE_SIZE;\n\t\tif (obj || !(gfp_pfmemalloc_allowed(flags)))\n\t\t\tgoto out;\n\t\t/* Try again but now we are using pfmemalloc reserves */\n\t\tret_pfmemalloc = true;\n\t\tobj = kmem_cache_alloc_node(net_hotdata.skb_small_head_cache, flags, node);\n\t\tgoto out;\n\t}\n\n\tobj_size = kmalloc_size_roundup(obj_size);\n\t/* The following cast might truncate high-order bits of obj_size, this\n\t * is harmless because kmalloc(obj_size >= 2^32) will fail anyway.\n\t */\n\t*size = (unsigned int)obj_size;\n\n\t/*\n\t * Try a regular allocation, when that fails and we're not entitled\n\t * to the reserves, fail.\n\t */\n\tobj = kmalloc_node_track_caller(obj_size,\n\t\t\t\t\tflags | __GFP_NOMEMALLOC | __GFP_NOWARN,\n\t\t\t\t\tnode);\n\tif (obj || !(gfp_pfmemalloc_allowed(flags)))\n\t\tgoto out;\n\n\t/* Try again but now we are using pfmemalloc reserves */\n\tret_pfmemalloc = true;\n\tobj = kmalloc_node_track_caller(obj_size, flags, node);\n\nout:\n\tif (pfmemalloc)\n\t\t*pfmemalloc = ret_pfmemalloc;\n\n\treturn obj;\n}\n",
-      "obligation": "size-roundup-small-head-and-emergency-cache",
-      "physicalClosureProven": false
-    },
-    "__alloc_skb": {
-      "source": "net/core/skbuff.c",
-      "prefix": "struct sk_buff *__alloc_skb(",
-      "sha256": "4530caefbab0eb8731ee3bcbc68ee3bf4a4d11e943b76d02d1ffea3216829f5a",
-      "text": "struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,\n\t\t\t    int flags, int node)\n{\n\tstruct kmem_cache *cache;\n\tstruct sk_buff *skb;\n\tbool pfmemalloc;\n\tu8 *data;\n\n\tcache = (flags & SKB_ALLOC_FCLONE)\n\t\t? net_hotdata.skbuff_fclone_cache : net_hotdata.skbuff_cache;\n\n\tif (sk_memalloc_socks() && (flags & SKB_ALLOC_RX))\n\t\tgfp_mask |= __GFP_MEMALLOC;\n\n\t/* Get the HEAD */\n\tif ((flags & (SKB_ALLOC_FCLONE | SKB_ALLOC_NAPI)) == SKB_ALLOC_NAPI &&\n\t    likely(node == NUMA_NO_NODE || node == numa_mem_id()))\n\t\tskb = napi_skb_cache_get();\n\telse\n\t\tskb = kmem_cache_alloc_node(cache, gfp_mask & ~GFP_DMA, node);\n\tif (unlikely(!skb))\n\t\treturn NULL;\n\tprefetchw(skb);\n\n\t/* We do our best to align skb_shared_info on a separate cache\n\t * line. It usually works because kmalloc(X > SMP_CACHE_BYTES) gives\n\t * aligned memory blocks, unless SLUB/SLAB debug is enabled.\n\t * Both skb->head and skb_shared_info are cache line aligned.\n\t */\n\tdata = kmalloc_reserve(&size, gfp_mask, node, &pfmemalloc);\n\tif (unlikely(!data))\n\t\tgoto nodata;\n\t/* kmalloc_size_roundup() might give us more room than requested.\n\t * Put skb_shared_info exactly at the end of allocated zone,\n\t * to allow max possible filling before reallocation.\n\t */\n\tprefetchw(data + SKB_WITH_OVERHEAD(size));\n\n\t/*\n\t * Only clear those fields we need to clear, not those that we will\n\t * actually initialise below. Hence, don't put any more fields after\n\t * the tail pointer in struct sk_buff!\n\t */\n\tmemset(skb, 0, offsetof(struct sk_buff, tail));\n\t__build_skb_around(skb, data, size);\n\tskb->pfmemalloc = pfmemalloc;\n\n\tif (flags & SKB_ALLOC_FCLONE) {\n\t\tstruct sk_buff_fclones *fclones;\n\n\t\tfclones = container_of(skb, struct sk_buff_fclones, skb1);\n\n\t\tskb->fclone = SKB_FCLONE_ORIG;\n\t\trefcount_set(&fclones->fclone_ref, 1);\n\t}\n\n\treturn skb;\n\nnodata:\n\tkmem_cache_free(cache, skb);\n\treturn NULL;\n}\n",
-      "obligation": "distinct-header-and-data-extents",
-      "physicalClosureProven": false
-    },
-    "__netdev_alloc_skb": {
-      "source": "net/core/skbuff.c",
-      "prefix": "struct sk_buff *__netdev_alloc_skb(",
-      "sha256": "7823e8515b43f18cbacc0a6dcbd7d3ad4cca0714bf87b013d17571fa37e67006",
-      "text": "struct sk_buff *__netdev_alloc_skb(struct net_device *dev, unsigned int len,\n\t\t\t\t   gfp_t gfp_mask)\n{\n\tstruct page_frag_cache *nc;\n\tstruct sk_buff *skb;\n\tbool pfmemalloc;\n\tvoid *data;\n\n\tlen += NET_SKB_PAD;\n\n\t/* If requested length is either too small or too big,\n\t * we use kmalloc() for skb->head allocation.\n\t */\n\tif (len <= SKB_WITH_OVERHEAD(1024) ||\n\t    len > SKB_WITH_OVERHEAD(PAGE_SIZE) ||\n\t    (gfp_mask & (__GFP_DIRECT_RECLAIM | GFP_DMA))) {\n\t\tskb = __alloc_skb(len, gfp_mask, SKB_ALLOC_RX, NUMA_NO_NODE);\n\t\tif (!skb)\n\t\t\tgoto skb_fail;\n\t\tgoto skb_success;\n\t}\n\n\tlen = SKB_HEAD_ALIGN(len);\n\n\tif (sk_memalloc_socks())\n\t\tgfp_mask |= __GFP_MEMALLOC;\n\n\tif (in_hardirq() || irqs_disabled()) {\n\t\tnc = this_cpu_ptr(&netdev_alloc_cache);\n\t\tdata = page_frag_alloc(nc, len, gfp_mask);\n\t\tpfmemalloc = nc->pfmemalloc;\n\t} else {\n\t\tlocal_bh_disable();\n\t\tlocal_lock_nested_bh(&napi_alloc_cache.bh_lock);\n\n\t\tnc = this_cpu_ptr(&napi_alloc_cache.page);\n\t\tdata = page_frag_alloc(nc, len, gfp_mask);\n\t\tpfmemalloc = nc->pfmemalloc;\n\n\t\tlocal_unlock_nested_bh(&napi_alloc_cache.bh_lock);\n\t\tlocal_bh_enable();\n\t}\n\n\tif (unlikely(!data))\n\t\treturn NULL;\n\n\tskb = __build_skb(data, len);\n\tif (unlikely(!skb)) {\n\t\tskb_free_frag(data);\n\t\treturn NULL;\n\t}\n\n\tif (pfmemalloc)\n\t\tskb->pfmemalloc = 1;\n\tskb->head_frag = 1;\n\nskb_success:\n\tskb_reserve(skb, NET_SKB_PAD);\n\tskb->dev = dev;\n\nskb_fail:\n\treturn skb;\n}\n",
-      "obligation": "prelookup-page-fragments",
-      "physicalClosureProven": false
-    },
-    "napi_alloc_skb": {
-      "source": "net/core/skbuff.c",
-      "prefix": "struct sk_buff *napi_alloc_skb(",
-      "sha256": "c3de20dca2e9618aad081ac05253766b64b867a40d8f9d8090042baec59a87e3",
-      "text": "struct sk_buff *napi_alloc_skb(struct napi_struct *napi, unsigned int len)\n{\n\tgfp_t gfp_mask = GFP_ATOMIC | __GFP_NOWARN;\n\tstruct napi_alloc_cache *nc;\n\tstruct sk_buff *skb;\n\tbool pfmemalloc;\n\tvoid *data;\n\n\tDEBUG_NET_WARN_ON_ONCE(!in_softirq());\n\tlen += NET_SKB_PAD + NET_IP_ALIGN;\n\n\t/* If requested length is either too small or too big,\n\t * we use kmalloc() for skb->head allocation.\n\t * When the small frag allocator is available, prefer it over kmalloc\n\t * for small fragments\n\t */\n\tif ((!NAPI_HAS_SMALL_PAGE_FRAG && len <= SKB_WITH_OVERHEAD(1024)) ||\n\t    len > SKB_WITH_OVERHEAD(PAGE_SIZE) ||\n\t    (gfp_mask & (__GFP_DIRECT_RECLAIM | GFP_DMA))) {\n\t\tskb = __alloc_skb(len, gfp_mask, SKB_ALLOC_RX | SKB_ALLOC_NAPI,\n\t\t\t\t  NUMA_NO_NODE);\n\t\tif (!skb)\n\t\t\tgoto skb_fail;\n\t\tgoto skb_success;\n\t}\n\n\tif (sk_memalloc_socks())\n\t\tgfp_mask |= __GFP_MEMALLOC;\n\n\tlocal_lock_nested_bh(&napi_alloc_cache.bh_lock);\n\tnc = this_cpu_ptr(&napi_alloc_cache);\n\tif (NAPI_HAS_SMALL_PAGE_FRAG && len <= SKB_WITH_OVERHEAD(1024)) {\n\t\t/* we are artificially inflating the allocation size, but\n\t\t * that is not as bad as it may look like, as:\n\t\t * - 'len' less than GRO_MAX_HEAD makes little sense\n\t\t * - On most systems, larger 'len' values lead to fragment\n\t\t *   size above 512 bytes\n\t\t * - kmalloc would use the kmalloc-1k slab for such values\n\t\t * - Builds with smaller GRO_MAX_HEAD will very likely do\n\t\t *   little networking, as that implies no WiFi and no\n\t\t *   tunnels support, and 32 bits arches.\n\t\t */\n\t\tlen = SZ_1K;\n\n\t\tdata = page_frag_alloc_1k(&nc->page_small, gfp_mask);\n\t\tpfmemalloc = NAPI_SMALL_PAGE_PFMEMALLOC(nc->page_small);\n\t} else {\n\t\tlen = SKB_HEAD_ALIGN(len);\n\n\t\tdata = page_frag_alloc(&nc->page, len, gfp_mask);\n\t\tpfmemalloc = nc->page.pfmemalloc;\n\t}\n\tlocal_unlock_nested_bh(&napi_alloc_cache.bh_lock);\n\n\tif (unlikely(!data))\n\t\treturn NULL;\n\n\tskb = __napi_build_skb(data, len);\n\tif (unlikely(!skb)) {\n\t\tskb_free_frag(data);\n\t\treturn NULL;\n\t}\n\n\tif (pfmemalloc)\n\t\tskb->pfmemalloc = 1;\n\tskb->head_frag = 1;\n\nskb_success:\n\tskb_reserve(skb, NET_SKB_PAD + NET_IP_ALIGN);\n\tskb->dev = napi->dev;\n\nskb_fail:\n\treturn skb;\n}\n",
-      "obligation": "prelookup-small-and-normal-fragments",
-      "physicalClosureProven": false
-    },
-    "skb_clone": {
-      "source": "net/core/skbuff.c",
-      "prefix": "struct sk_buff *skb_clone(",
-      "sha256": "7a26ccfc7ce40445d5ae30567d3641937fbfbeaf8756b8a7c3c9ea001e317c83",
-      "text": "struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t gfp_mask)\n{\n\tstruct sk_buff_fclones *fclones = container_of(skb,\n\t\t\t\t\t\t       struct sk_buff_fclones,\n\t\t\t\t\t\t       skb1);\n\tstruct sk_buff *n;\n\n\tif (skb_orphan_frags(skb, gfp_mask))\n\t\treturn NULL;\n\n\tif (skb->fclone == SKB_FCLONE_ORIG &&\n\t    refcount_read(&fclones->fclone_ref) == 1) {\n\t\tn = &fclones->skb2;\n\t\trefcount_set(&fclones->fclone_ref, 2);\n\t\tn->fclone = SKB_FCLONE_CLONE;\n\t} else {\n\t\tif (skb_pfmemalloc(skb))\n\t\t\tgfp_mask |= __GFP_MEMALLOC;\n\n\t\tn = kmem_cache_alloc(net_hotdata.skbuff_cache, gfp_mask);\n\t\tif (!n)\n\t\t\treturn NULL;\n\n\t\tn->fclone = SKB_FCLONE_UNAVAILABLE;\n\t}\n\n\treturn __skb_clone(n, skb);\n}\n",
-      "obligation": "shared-data-and-conditional-fclone-view",
-      "physicalClosureProven": false
-    },
-    "pskb_expand_head": {
-      "source": "net/core/skbuff.c",
-      "prefix": "int pskb_expand_head(",
-      "sha256": "07698a5f83542395b269bee01c4bd01f26d5d46e10e7c1b2f1c5032fc76ad25e",
-      "text": "int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,\n\t\t     gfp_t gfp_mask)\n{\n\tunsigned int osize = skb_end_offset(skb);\n\tunsigned int size = osize + nhead + ntail;\n\tlong off;\n\tu8 *data;\n\tint i;\n\n\tBUG_ON(nhead < 0);\n\n\tBUG_ON(skb_shared(skb));\n\n\tskb_zcopy_downgrade_managed(skb);\n\n\tif (skb_pfmemalloc(skb))\n\t\tgfp_mask |= __GFP_MEMALLOC;\n\n\tdata = kmalloc_reserve(&size, gfp_mask, NUMA_NO_NODE, NULL);\n\tif (!data)\n\t\tgoto nodata;\n\tsize = SKB_WITH_OVERHEAD(size);\n\n\t/* Copy only real data... and, alas, header. This should be\n\t * optimized for the cases when header is void.\n\t */\n\tmemcpy(data + nhead, skb->head, skb_tail_pointer(skb) - skb->head);\n\n\tmemcpy((struct skb_shared_info *)(data + size),\n\t       skb_shinfo(skb),\n\t       offsetof(struct skb_shared_info, frags[skb_shinfo(skb)->nr_frags]));\n\n\t/*\n\t * if shinfo is shared we must drop the old head gracefully, but if it\n\t * is not we can just drop the old head and let the existing refcount\n\t * be since all we did is relocate the values\n\t */\n\tif (skb_cloned(skb)) {\n\t\tif (skb_orphan_frags(skb, gfp_mask))\n\t\t\tgoto nofrags;\n\t\tif (skb_zcopy(skb))\n\t\t\trefcount_inc(&skb_uarg(skb)->refcnt);\n\t\tfor (i = 0; i < skb_shinfo(skb)->nr_frags; i++)\n\t\t\tskb_frag_ref(skb, i);\n\n\t\tif (skb_has_frag_list(skb))\n\t\t\tskb_clone_fraglist(skb);\n\n\t\tskb_release_data(skb, SKB_CONSUMED);\n\t} else {\n\t\tskb_free_head(skb);\n\t}\n\toff = (data + nhead) - skb->head;\n\n\tskb->head     = data;\n\tskb->head_frag = 0;\n\tskb->data    += off;\n\n\tskb_set_end_offset(skb, size);\n#ifdef NET_SKBUFF_DATA_USES_OFFSET\n\toff           = nhead;\n#endif\n\tskb->tail\t      += off;\n\tskb_headers_offset_update(skb, nhead);\n\tskb->cloned   = 0;\n\tskb->hdr_len  = 0;\n\tskb->nohdr    = 0;\n\tatomic_set(&skb_shinfo(skb)->dataref, 1);\n\n\tskb_metadata_clear(skb);\n\n\t/* It is not generally safe to change skb->truesize.\n\t * For the moment, we really care of rx path, or\n\t * when skb is orphaned (not attached to a socket).\n\t */\n\tif (!skb->sk || skb->destructor == sock_edemux)\n\t\tskb->truesize += size - osize;\n\n\treturn 0;\n\nnofrags:\n\tskb_kfree_head(data, size);\nnodata:\n\treturn -ENOMEM;\n}\n",
-      "obligation": "new-head-overlaps-old-shared-lifetime",
-      "physicalClosureProven": false
-    },
-    "skb_release_data": {
-      "source": "net/core/skbuff.c",
-      "prefix": "static void skb_release_data(",
-      "sha256": "bd3c68ebee8724b90456c42125e4c9f6b782b3087cbbb25c665ec57e36c63b25",
-      "text": "static void skb_release_data(struct sk_buff *skb, enum skb_drop_reason reason)\n{\n\tstruct skb_shared_info *shinfo = skb_shinfo(skb);\n\tint i;\n\n\tif (!skb_data_unref(skb, shinfo))\n\t\tgoto exit;\n\n\tif (skb_zcopy(skb)) {\n\t\tbool skip_unref = shinfo->flags & SKBFL_MANAGED_FRAG_REFS;\n\n\t\tskb_zcopy_clear(skb, true);\n\t\tif (skip_unref)\n\t\t\tgoto free_head;\n\t}\n\n\tfor (i = 0; i < shinfo->nr_frags; i++)\n\t\t__skb_frag_unref(&shinfo->frags[i], skb->pp_recycle);\n\nfree_head:\n\tif (shinfo->frag_list)\n\t\tkfree_skb_list_reason(shinfo->frag_list, reason);\n\n\tskb_free_head(skb);\nexit:\n\t/* When we clone an SKB we copy the reycling bit. The pp_recycle\n\t * bit is only set on the head though, so in order to avoid races\n\t * while trying to recycle fragments on __skb_frag_unref() we need\n\t * to make one SKB responsible for triggering the recycle path.\n\t * So disable the recycling bit if an SKB is cloned and we have\n\t * additional references to the fragmented part of the SKB.\n\t * Eventually the last SKB will have the recycling bit set and it's\n\t * dataref set to 0, which will trigger the recycling\n\t */\n\tskb->pp_recycle = 0;\n}\n",
-      "obligation": "last-dataref-fraglist-and-page-recycling",
-      "physicalClosureProven": false
-    },
-    "napi_skb_cache_put": {
-      "source": "net/core/skbuff.c",
-      "prefix": "static void napi_skb_cache_put(",
-      "sha256": "00395d528cb85866d073f3ac8768a50c5aec9394b9e1f0eeffc5b77647b38981",
-      "text": "static void napi_skb_cache_put(struct sk_buff *skb)\n{\n\tstruct napi_alloc_cache *nc = this_cpu_ptr(&napi_alloc_cache);\n\tu32 i;\n\n\tif (!kasan_mempool_poison_object(skb))\n\t\treturn;\n\n\tlocal_lock_nested_bh(&napi_alloc_cache.bh_lock);\n\tnc->skb_cache[nc->skb_count++] = skb;\n\n\tif (unlikely(nc->skb_count == NAPI_SKB_CACHE_SIZE)) {\n\t\tfor (i = NAPI_SKB_CACHE_HALF; i < NAPI_SKB_CACHE_SIZE; i++)\n\t\t\tkasan_mempool_unpoison_object(nc->skb_cache[i],\n\t\t\t\t\t\tkmem_cache_size(net_hotdata.skbuff_cache));\n\n\t\tkmem_cache_free_bulk(net_hotdata.skbuff_cache, NAPI_SKB_CACHE_HALF,\n\t\t\t\t     nc->skb_cache + NAPI_SKB_CACHE_HALF);\n\t\tnc->skb_count = NAPI_SKB_CACHE_HALF;\n\t}\n\tlocal_unlock_nested_bh(&napi_alloc_cache.bh_lock);\n}\n",
-      "obligation": "cache-return-not-backing-free",
-      "physicalClosureProven": false
-    },
-    "napi_pp_put_page": {
-      "source": "net/core/skbuff.c",
-      "prefix": "bool napi_pp_put_page(",
-      "sha256": "99c0ee16ca738e6226bfd2abb34698e5347238d157f0de7954d02e8386327a9a",
-      "text": "bool napi_pp_put_page(netmem_ref netmem)\n{\n\tnetmem = netmem_compound_head(netmem);\n\n\t/* page->pp_magic is OR'ed with PP_SIGNATURE after the allocation\n\t * in order to preserve any existing bits, such as bit 0 for the\n\t * head page of compound page and bit 1 for pfmemalloc page, so\n\t * mask those bits for freeing side when doing below checking,\n\t * and page_is_pfmemalloc() is checked in __page_pool_put_page()\n\t * to avoid recycling the pfmemalloc page.\n\t */\n\tif (unlikely(!is_pp_netmem(netmem)))\n\t\treturn false;\n\n\tpage_pool_put_full_netmem(netmem_get_pp(netmem), netmem, false);\n\n\treturn true;\n}\n",
-      "obligation": "page-pool-return-not-final-free",
-      "physicalClosureProven": false
-    },
-    "alloc_skb_with_frags": {
-      "source": "net/core/skbuff.c",
-      "prefix": "struct sk_buff *alloc_skb_with_frags(",
-      "sha256": "90755fbd7241a4b245ac61c5431324a92ee55b6c851be7b330bfc98f430761e3",
-      "text": "struct sk_buff *alloc_skb_with_frags(unsigned long header_len,\n\t\t\t\t     unsigned long data_len,\n\t\t\t\t     int order,\n\t\t\t\t     int *errcode,\n\t\t\t\t     gfp_t gfp_mask)\n{\n\tunsigned long chunk;\n\tstruct sk_buff *skb;\n\tstruct page *page;\n\tint nr_frags = 0;\n\n\t*errcode = -EMSGSIZE;\n\tif (unlikely(data_len > MAX_SKB_FRAGS * (PAGE_SIZE << order)))\n\t\treturn NULL;\n\n\t*errcode = -ENOBUFS;\n\tskb = alloc_skb(header_len, gfp_mask);\n\tif (!skb)\n\t\treturn NULL;\n\n\twhile (data_len) {\n\t\tif (nr_frags == MAX_SKB_FRAGS - 1)\n\t\t\tgoto failure;\n\t\twhile (order && PAGE_ALIGN(data_len) < (PAGE_SIZE << order))\n\t\t\torder--;\n\n\t\tif (order) {\n\t\t\tpage = alloc_pages((gfp_mask & ~__GFP_DIRECT_RECLAIM) |\n\t\t\t\t\t   __GFP_COMP |\n\t\t\t\t\t   __GFP_NOWARN,\n\t\t\t\t\t   order);\n\t\t\tif (!page) {\n\t\t\t\torder--;\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t} else {\n\t\t\tpage = alloc_page(gfp_mask);\n\t\t\tif (!page)\n\t\t\t\tgoto failure;\n\t\t}\n\t\tchunk = min_t(unsigned long, data_len,\n\t\t\t      PAGE_SIZE << order);\n\t\tskb_fill_page_desc(skb, nr_frags, page, 0, chunk);\n\t\tnr_frags++;\n\t\tskb->truesize += (PAGE_SIZE << order);\n\t\tdata_len -= chunk;\n\t}\n\treturn skb;\n\nfailure:\n\tkfree_skb(skb);\n\treturn NULL;\n}\n",
-      "obligation": "header-plus-compound-pages",
-      "physicalClosureProven": false
-    },
-    "__page_pool_alloc_pages_slow": {
-      "source": "net/core/page_pool.c",
-      "prefix": "static noinline netmem_ref __page_pool_alloc_pages_slow(",
-      "sha256": "81d272316513b3c208a5c09dd149ceefcc2d96f0d8970ba488f5ceddf2fd7dc9",
-      "text": "static noinline netmem_ref __page_pool_alloc_pages_slow(struct page_pool *pool,\n\t\t\t\t\t\t\tgfp_t gfp)\n{\n\tconst int bulk = PP_ALLOC_CACHE_REFILL;\n\tunsigned int pp_order = pool->p.order;\n\tbool dma_map = pool->dma_map;\n\tnetmem_ref netmem;\n\tint i, nr_pages;\n\n\t/* Don't support bulk alloc for high-order pages */\n\tif (unlikely(pp_order))\n\t\treturn page_to_netmem(__page_pool_alloc_page_order(pool, gfp));\n\n\t/* Unnecessary as alloc cache is empty, but guarantees zero count */\n\tif (unlikely(pool->alloc.count > 0))\n\t\treturn pool->alloc.cache[--pool->alloc.count];\n\n\t/* Mark empty alloc.cache slots \"empty\" for alloc_pages_bulk_array */\n\tmemset(&pool->alloc.cache, 0, sizeof(void *) * bulk);\n\n\tnr_pages = alloc_pages_bulk_array_node(gfp,\n\t\t\t\t\t       pool->p.nid, bulk,\n\t\t\t\t\t       (struct page **)pool->alloc.cache);\n\tif (unlikely(!nr_pages))\n\t\treturn 0;\n\n\t/* Pages have been filled into alloc.cache array, but count is zero and\n\t * page element have not been (possibly) DMA mapped.\n\t */\n\tfor (i = 0; i < nr_pages; i++) {\n\t\tnetmem = pool->alloc.cache[i];\n\t\tif (dma_map && unlikely(!page_pool_dma_map(pool, netmem))) {\n\t\t\tput_page(netmem_to_page(netmem));\n\t\t\tcontinue;\n\t\t}\n\n\t\tpage_pool_set_pp_info(pool, netmem);\n\t\tpool->alloc.cache[pool->alloc.count++] = netmem;\n\t\t/* Track how many pages are held 'in-flight' */\n\t\tpool->pages_state_hold_cnt++;\n\t\ttrace_page_pool_state_hold(pool, netmem,\n\t\t\t\t\t   pool->pages_state_hold_cnt);\n\t}\n\n\t/* Return last page */\n\tif (likely(pool->alloc.count > 0)) {\n\t\tnetmem = pool->alloc.cache[--pool->alloc.count];\n\t\talloc_stat_inc(pool, slow);\n\t} else {\n\t\tnetmem = 0;\n\t}\n\n\t/* When page just alloc'ed is should/must have refcnt 1. */\n\treturn netmem;\n}\n",
-      "obligation": "bulk-or-order-page-allocation",
-      "physicalClosureProven": false
-    },
-    "page_pool_recycle_in_cache": {
-      "source": "net/core/page_pool.c",
-      "prefix": "static bool page_pool_recycle_in_cache(",
-      "sha256": "eb7cf4ceb8b930bd564ba70b999b7b14b0e76220086b01446f34d8efef5d8b3b",
-      "text": "static bool page_pool_recycle_in_cache(netmem_ref netmem,\n\t\t\t\t       struct page_pool *pool)\n{\n\tif (unlikely(pool->alloc.count == PP_ALLOC_CACHE_SIZE)) {\n\t\trecycle_stat_inc(pool, cache_full);\n\t\treturn false;\n\t}\n\n\t/* Caller MUST have verified/know (page_ref_count(page) == 1) */\n\tpool->alloc.cache[pool->alloc.count++] = netmem;\n\trecycle_stat_inc(pool, cached);\n\treturn true;\n}\n",
-      "obligation": "shared-page-cache-retention",
-      "physicalClosureProven": false
-    },
-    "page_pool_return_page": {
-      "source": "net/core/page_pool.c",
-      "prefix": "void page_pool_return_page(",
-      "sha256": "5e4406d22824712ab4ec2821e71de79dc0b9b2e502dd7784df04fef3302f5a81",
-      "text": "void page_pool_return_page(struct page_pool *pool, netmem_ref netmem)\n{\n\tint count;\n\tbool put;\n\n\tput = true;\n\tif (static_branch_unlikely(&page_pool_mem_providers) && pool->mp_priv)\n\t\tput = mp_dmabuf_devmem_release_page(pool, netmem);\n\telse\n\t\t__page_pool_release_page_dma(pool, netmem);\n\n\t/* This may be the last page returned, releasing the pool, so\n\t * it is not safe to reference pool afterwards.\n\t */\n\tcount = atomic_inc_return_relaxed(&pool->pages_state_release_cnt);\n\ttrace_page_pool_state_release(pool, netmem, count);\n\n\tif (put) {\n\t\tpage_pool_clear_pp_info(netmem);\n\t\tput_page(netmem_to_page(netmem));\n\t}\n\t/* An optimization would be to call __free_pages(page, pool->p.order)\n\t * knowing page is not part of page-cache (thus avoiding a\n\t * __page_cache_release() call).\n\t */\n}\n",
-      "obligation": "dma-release-and-page-owner-drop",
-      "physicalClosureProven": false
-    },
-    "page_pool_put_unrefed_netmem": {
-      "source": "net/core/page_pool.c",
-      "prefix": "void page_pool_put_unrefed_netmem(",
-      "sha256": "075991270e31235937c486f82a7989e5680f25d2fee2bac9662125965f32e6d1",
-      "text": "void page_pool_put_unrefed_netmem(struct page_pool *pool, netmem_ref netmem,\n\t\t\t\t  unsigned int dma_sync_size, bool allow_direct)\n{\n\tif (!allow_direct)\n\t\tallow_direct = page_pool_napi_local(pool);\n\n\tnetmem =\n\t\t__page_pool_put_page(pool, netmem, dma_sync_size, allow_direct);\n\tif (netmem && !page_pool_recycle_in_ring(pool, netmem)) {\n\t\t/* Cache full, fallback to free pages */\n\t\trecycle_stat_inc(pool, ring_full);\n\t\tpage_pool_return_page(pool, netmem);\n\t}\n}\n",
-      "obligation": "reference-and-recycle-choice",
-      "physicalClosureProven": false
-    },
-    "page_pool_destroy": {
-      "source": "net/core/page_pool.c",
-      "prefix": "void page_pool_destroy(",
-      "sha256": "2399fb3b814b151be3970700262dcefc62af95b56906c0174e0f9b042cbe87e8",
-      "text": "void page_pool_destroy(struct page_pool *pool)\n{\n\tif (!pool)\n\t\treturn;\n\n\tif (!page_pool_put(pool))\n\t\treturn;\n\n\tpage_pool_disable_direct_recycling(pool);\n\tpage_pool_free_frag(pool);\n\n\tif (!page_pool_release(pool))\n\t\treturn;\n\n\tpage_pool_detached(pool);\n\tpool->defer_start = jiffies;\n\tpool->defer_warn  = jiffies + DEFER_WARN_INTERVAL;\n\n\tINIT_DELAYED_WORK(&pool->release_dw, page_pool_release_retry);\n\tschedule_delayed_work(&pool->release_dw, DEFER_TIME);\n}\n",
-      "obligation": "deferred-pool-lifetime",
-      "physicalClosureProven": false
-    },
-    "__page_frag_cache_refill": {
-      "source": "mm/page_alloc.c",
-      "prefix": "static struct page *__page_frag_cache_refill(",
-      "sha256": "5356c9ad625842080a502b117532e24b068b9b44dd463dbbc394f1aa32e8fd19",
-      "text": "static struct page *__page_frag_cache_refill(struct page_frag_cache *nc,\n\t\t\t\t\t     gfp_t gfp_mask)\n{\n\tstruct page *page = NULL;\n\tgfp_t gfp = gfp_mask;\n\n#if (PAGE_SIZE < PAGE_FRAG_CACHE_MAX_SIZE)\n\tgfp_mask = (gfp_mask & ~__GFP_DIRECT_RECLAIM) |  __GFP_COMP |\n\t\t   __GFP_NOWARN | __GFP_NORETRY | __GFP_NOMEMALLOC;\n\tpage = alloc_pages_node(NUMA_NO_NODE, gfp_mask,\n\t\t\t\tPAGE_FRAG_CACHE_MAX_ORDER);\n\tnc->size = page ? PAGE_FRAG_CACHE_MAX_SIZE : PAGE_SIZE;\n#endif\n\tif (unlikely(!page))\n\t\tpage = alloc_pages_node(NUMA_NO_NODE, gfp, 0);\n\n\tnc->va = page ? page_address(page) : NULL;\n\n\treturn page;\n}\n",
-      "obligation": "compound-fallback-page-allocation",
-      "physicalClosureProven": false
-    },
-    "__page_frag_alloc_align": {
-      "source": "mm/page_alloc.c",
-      "prefix": "void *__page_frag_alloc_align(",
-      "sha256": "1f3fea5ca0a2f08cd802c1c4f9460bd0dfd1758133c8930e31bb503953d0ebb0",
-      "text": "void *__page_frag_alloc_align(struct page_frag_cache *nc,\n\t\t\t      unsigned int fragsz, gfp_t gfp_mask,\n\t\t\t      unsigned int align_mask)\n{\n\tunsigned int size = PAGE_SIZE;\n\tstruct page *page;\n\tint offset;\n\n\tif (unlikely(!nc->va)) {\nrefill:\n\t\tpage = __page_frag_cache_refill(nc, gfp_mask);\n\t\tif (!page)\n\t\t\treturn NULL;\n\n#if (PAGE_SIZE < PAGE_FRAG_CACHE_MAX_SIZE)\n\t\t/* if size can vary use size else just use PAGE_SIZE */\n\t\tsize = nc->size;\n#endif\n\t\t/* Even if we own the page, we do not use atomic_set().\n\t\t * This would break get_page_unless_zero() users.\n\t\t */\n\t\tpage_ref_add(page, PAGE_FRAG_CACHE_MAX_SIZE);\n\n\t\t/* reset page count bias and offset to start of new frag */\n\t\tnc->pfmemalloc = page_is_pfmemalloc(page);\n\t\tnc->pagecnt_bias = PAGE_FRAG_CACHE_MAX_SIZE + 1;\n\t\tnc->offset = size;\n\t}\n\n\toffset = nc->offset - fragsz;\n\tif (unlikely(offset < 0)) {\n\t\tpage = virt_to_page(nc->va);\n\n\t\tif (!page_ref_sub_and_test(page, nc->pagecnt_bias))\n\t\t\tgoto refill;\n\n\t\tif (unlikely(nc->pfmemalloc)) {\n\t\t\tfree_unref_page(page, compound_order(page));\n\t\t\tgoto refill;\n\t\t}\n\n#if (PAGE_SIZE < PAGE_FRAG_CACHE_MAX_SIZE)\n\t\t/* if size can vary use size else just use PAGE_SIZE */\n\t\tsize = nc->size;\n#endif\n\t\t/* OK, page count is 0, we can safely set it */\n\t\tset_page_count(page, PAGE_FRAG_CACHE_MAX_SIZE + 1);\n\n\t\t/* reset page count bias and offset to start of new frag */\n\t\tnc->pagecnt_bias = PAGE_FRAG_CACHE_MAX_SIZE + 1;\n\t\toffset = size - fragsz;\n\t\tif (unlikely(offset < 0)) {\n\t\t\t/*\n\t\t\t * The caller is trying to allocate a fragment\n\t\t\t * with fragsz > PAGE_SIZE but the cache isn't big\n\t\t\t * enough to satisfy the request, this may\n\t\t\t * happen in low memory conditions.\n\t\t\t * We don't release the cache page because\n\t\t\t * it could make memory pressure worse\n\t\t\t * so we simply return NULL here.\n\t\t\t */\n\t\t\treturn NULL;\n\t\t}\n\t}\n\n\tnc->pagecnt_bias--;\n\toffset &= align_mask;\n\tnc->offset = offset;\n\n\treturn nc->va + offset;\n}\n",
-      "obligation": "shared-fragment-refcounts-and-cache",
-      "physicalClosureProven": false
-    },
-    "page_frag_free": {
-      "source": "mm/page_alloc.c",
-      "prefix": "void page_frag_free(",
-      "sha256": "216eb080c3a775109207b278fc3af19a7a55813b26a72d3c270bf0857b34a2fd",
-      "text": "void page_frag_free(void *addr)\n{\n\tstruct page *page = virt_to_head_page(addr);\n\n\tif (unlikely(put_page_testzero(page)))\n\t\tfree_unref_page(page, compound_order(page));\n}\n",
-      "obligation": "last-fragment-before-page-return",
-      "physicalClosureProven": false
-    },
-    "free_unref_page": {
-      "source": "mm/page_alloc.c",
-      "prefix": "void free_unref_page(",
-      "sha256": "49e3af96081e51fa55df6720b645880e65bdacf264662cf2c0794808bc98c8bb",
-      "text": "void free_unref_page(struct page *page, unsigned int order)\n{\n\tunsigned long __maybe_unused UP_flags;\n\tstruct per_cpu_pages *pcp;\n\tstruct zone *zone;\n\tunsigned long pfn = page_to_pfn(page);\n\tint migratetype;\n\n\tif (!pcp_allowed_order(order)) {\n\t\t__free_pages_ok(page, order, FPI_NONE);\n\t\treturn;\n\t}\n\n\tif (!free_pages_prepare(page, order))\n\t\treturn;\n\n\t/*\n\t * We only track unmovable, reclaimable and movable on pcp lists.\n\t * Place ISOLATE pages on the isolated list because they are being\n\t * offlined but treat HIGHATOMIC and CMA as movable pages so we can\n\t * get those areas back if necessary. Otherwise, we may have to free\n\t * excessively into the page allocator\n\t */\n\tmigratetype = get_pfnblock_migratetype(page, pfn);\n\tif (unlikely(migratetype >= MIGRATE_PCPTYPES)) {\n\t\tif (unlikely(is_migrate_isolate(migratetype))) {\n\t\t\tfree_one_page(page_zone(page), page, pfn, order, FPI_NONE);\n\t\t\treturn;\n\t\t}\n\t\tmigratetype = MIGRATE_MOVABLE;\n\t}\n\n\tzone = page_zone(page);\n\tpcp_trylock_prepare(UP_flags);\n\tpcp = pcp_spin_trylock(zone->per_cpu_pageset);\n\tif (pcp) {\n\t\tfree_unref_page_commit(zone, pcp, page, migratetype, order);\n\t\tpcp_spin_unlock(pcp);\n\t} else {\n\t\tfree_one_page(zone, page, pfn, order, FPI_NONE);\n\t}\n\tpcp_trylock_finish(UP_flags);\n}\n",
-      "obligation": "percpu-page-return-not-observed-unmapping",
-      "physicalClosureProven": false
-    },
-    "__slab_free": {
-      "source": "mm/slub.c",
-      "prefix": "static void __slab_free(",
-      "sha256": "d45ad5966e93b9694f6b3777ea24db1e6490304553461fcb5d84cb3e72e3d64a",
-      "text": "static void __slab_free(struct kmem_cache *s, struct slab *slab,\n\t\t\tvoid *head, void *tail, int cnt,\n\t\t\tunsigned long addr)\n\n{\n\tvoid *prior;\n\tint was_frozen;\n\tstruct slab new;\n\tunsigned long counters;\n\tstruct kmem_cache_node *n = NULL;\n\tunsigned long flags;\n\tbool on_node_partial;\n\n\tstat(s, FREE_SLOWPATH);\n\n\tif (IS_ENABLED(CONFIG_SLUB_TINY) || kmem_cache_debug(s)) {\n\t\tfree_to_partial_list(s, slab, head, tail, cnt, addr);\n\t\treturn;\n\t}\n\n\tdo {\n\t\tif (unlikely(n)) {\n\t\t\tspin_unlock_irqrestore(&n->list_lock, flags);\n\t\t\tn = NULL;\n\t\t}\n\t\tprior = slab->freelist;\n\t\tcounters = slab->counters;\n\t\tset_freepointer(s, tail, prior);\n\t\tnew.counters = counters;\n\t\twas_frozen = new.frozen;\n\t\tnew.inuse -= cnt;\n\t\tif ((!new.inuse || !prior) && !was_frozen) {\n\t\t\t/* Needs to be taken off a list */\n\t\t\tif (!kmem_cache_has_cpu_partial(s) || prior) {\n\n\t\t\t\tn = get_node(s, slab_nid(slab));\n\t\t\t\t/*\n\t\t\t\t * Speculatively acquire the list_lock.\n\t\t\t\t * If the cmpxchg does not succeed then we may\n\t\t\t\t * drop the list_lock without any processing.\n\t\t\t\t *\n\t\t\t\t * Otherwise the list_lock will synchronize with\n\t\t\t\t * other processors updating the list of slabs.\n\t\t\t\t */\n\t\t\t\tspin_lock_irqsave(&n->list_lock, flags);\n\n\t\t\t\ton_node_partial = slab_test_node_partial(slab);\n\t\t\t}\n\t\t}\n\n\t} while (!slab_update_freelist(s, slab,\n\t\tprior, counters,\n\t\thead, new.counters,\n\t\t\"__slab_free\"));\n\n\tif (likely(!n)) {\n\n\t\tif (likely(was_frozen)) {\n\t\t\t/*\n\t\t\t * The list lock was not taken therefore no list\n\t\t\t * activity can be necessary.\n\t\t\t */\n\t\t\tstat(s, FREE_FROZEN);\n\t\t} else if (kmem_cache_has_cpu_partial(s) && !prior) {\n\t\t\t/*\n\t\t\t * If we started with a full slab then put it onto the\n\t\t\t * per cpu partial list.\n\t\t\t */\n\t\t\tput_cpu_partial(s, slab, 1);\n\t\t\tstat(s, CPU_PARTIAL_FREE);\n\t\t}\n\n\t\treturn;\n\t}\n\n\t/*\n\t * This slab was partially empty but not on the per-node partial list,\n\t * in which case we shouldn't manipulate its list, just return.\n\t */\n\tif (prior && !on_node_partial) {\n\t\tspin_unlock_irqrestore(&n->list_lock, flags);\n\t\treturn;\n\t}\n\n\tif (unlikely(!new.inuse && n->nr_partial >= s->min_partial))\n\t\tgoto slab_empty;\n\n\t/*\n\t * Objects left in the slab. If it was not on the partial list before\n\t * then add it.\n\t */\n\tif (!kmem_cache_has_cpu_partial(s) && unlikely(!prior)) {\n\t\tadd_partial(n, slab, DEACTIVATE_TO_TAIL);\n\t\tstat(s, FREE_ADD_PARTIAL);\n\t}\n\tspin_unlock_irqrestore(&n->list_lock, flags);\n\treturn;\n\nslab_empty:\n\tif (prior) {\n\t\t/*\n\t\t * Slab on the partial list.\n\t\t */\n\t\tremove_partial(n, slab);\n\t\tstat(s, FREE_REMOVE_PARTIAL);\n\t}\n\n\tspin_unlock_irqrestore(&n->list_lock, flags);\n\tstat(s, FREE_SLAB);\n\tdiscard_slab(s, slab);\n}\n",
-      "obligation": "partial-slab-or-release-choice",
-      "physicalClosureProven": false
-    },
-    "discard_slab": {
-      "source": "mm/slub.c",
-      "prefix": "static void discard_slab(",
-      "sha256": "66edd88c8e262d08c56a70ee5596429355226bcf1b5130ab256cfe1d26bd3583",
-      "text": "static void discard_slab(struct kmem_cache *s, struct slab *slab)\n{\n\tdec_slabs_node(s, slab_nid(slab), slab->objects);\n\tfree_slab(s, slab);\n}\n",
-      "obligation": "slab-backing-release-entry",
-      "physicalClosureProven": false
-    },
-    "free_slab": {
-      "source": "mm/slub.c",
-      "prefix": "static void free_slab(",
-      "sha256": "c2cc7c56cf673c107298f52e9ba54db7773055ae73471dc41a39f1462822bfd8",
-      "text": "static void free_slab(struct kmem_cache *s, struct slab *slab)\n{\n\tif (kmem_cache_debug_flags(s, SLAB_CONSISTENCY_CHECKS)) {\n\t\tvoid *p;\n\n\t\tslab_pad_check(s, slab);\n\t\tfor_each_object(p, s, slab_address(slab), slab->objects)\n\t\t\tcheck_object(s, slab, p, SLUB_RED_INACTIVE);\n\t}\n\n\tif (unlikely(s->flags & SLAB_TYPESAFE_BY_RCU))\n\t\tcall_rcu(&slab->rcu_head, rcu_free_slab);\n\telse\n\t\t__free_slab(s, slab);\n}\n",
-      "obligation": "optional-rcu-before-backing-release",
-      "physicalClosureProven": false
-    },
-    "__free_slab": {
-      "source": "mm/slub.c",
-      "prefix": "static void __free_slab(",
-      "sha256": "c651c34fbef865f25f70816d82df209c1a7dcbfe3a555c35bc8a61d7faf08818",
-      "text": "static void __free_slab(struct kmem_cache *s, struct slab *slab)\n{\n\tstruct folio *folio = slab_folio(slab);\n\tint order = folio_order(folio);\n\tint pages = 1 << order;\n\n\t__slab_clear_pfmemalloc(slab);\n\tfolio->mapping = NULL;\n\t/* Make the mapping reset visible before clearing the flag */\n\tsmp_wmb();\n\t__folio_clear_slab(folio);\n\tmm_account_reclaimed_pages(pages);\n\tunaccount_slab(slab, order, s);\n\t__free_pages(&folio->page, order);\n}\n",
-      "obligation": "slab-metadata-plus-backing-page-release",
-      "physicalClosureProven": false
-    },
-    "dst_alloc": {
-      "source": "net/core/dst.c",
-      "prefix": "void *dst_alloc(",
-      "sha256": "f52b665aca1ae1eb8b4a8a13fd85fab5662ff12b711f8faa660d8ac64e935dbd",
-      "text": "void *dst_alloc(struct dst_ops *ops, struct net_device *dev,\n\t\tint initial_obsolete, unsigned short flags)\n{\n\tstruct dst_entry *dst;\n\n\tif (ops->gc &&\n\t    !(flags & DST_NOCOUNT) &&\n\t    dst_entries_get_fast(ops) > ops->gc_thresh)\n\t\tops->gc(ops);\n\n\tdst = kmem_cache_alloc(ops->kmem_cachep, GFP_ATOMIC);\n\tif (!dst)\n\t\treturn NULL;\n\n\tdst_init(dst, ops, dev, initial_obsolete, flags);\n\n\treturn dst;\n}\n",
-      "obligation": "shared-route-slab-allocation",
-      "physicalClosureProven": false
-    },
-    "dst_destroy": {
-      "source": "net/core/dst.c",
-      "prefix": "static void dst_destroy(",
-      "sha256": "3d246b801af8046a4bd5ef121d125fc7c1e197fafbd020dbc7201f2ccce25685",
-      "text": "static void dst_destroy(struct dst_entry *dst)\n{\n\tstruct dst_entry *child = NULL;\n\n\tsmp_rmb();\n\n#ifdef CONFIG_XFRM\n\tif (dst->xfrm) {\n\t\tstruct xfrm_dst *xdst = (struct xfrm_dst *) dst;\n\n\t\tchild = xdst->child;\n\t}\n#endif\n\tif (dst->ops->destroy)\n\t\tdst->ops->destroy(dst);\n\tnetdev_put(dst->dev, &dst->dev_tracker);\n\n\tlwtstate_put(dst->lwtstate);\n\n\tif (dst->flags & DST_METADATA)\n\t\tmetadata_dst_free((struct metadata_dst *)dst);\n\telse\n\t\tkmem_cache_free(dst->ops->kmem_cachep, dst);\n\n\tdst = child;\n\tif (dst)\n\t\tdst_release_immediate(dst);\n}\n",
-      "obligation": "route-destruction-and-slab-return",
-      "physicalClosureProven": false
-    },
-    "dst_destroy_rcu": {
-      "source": "net/core/dst.c",
-      "prefix": "static void dst_destroy_rcu(",
-      "sha256": "63203b38c0d15d1bd98b73efa028a05d766f2e412c53d0cd499910bc1af6d51c",
-      "text": "static void dst_destroy_rcu(struct rcu_head *head)\n{\n\tstruct dst_entry *dst = container_of(head, struct dst_entry, rcu_head);\n\n\tdst_destroy(dst);\n}\n",
-      "obligation": "deferred-route-destruction",
-      "physicalClosureProven": false
-    },
-    "neigh_alloc": {
-      "source": "net/core/neighbour.c",
-      "prefix": "static struct neighbour *neigh_alloc(",
-      "sha256": "61947d18155253866e54bb7e8512f4869352a8262c13ebd9ac79d288f6c0fcb5",
-      "text": "static struct neighbour *neigh_alloc(struct neigh_table *tbl,\n\t\t\t\t     struct net_device *dev,\n\t\t\t\t     u32 flags, bool exempt_from_gc)\n{\n\tstruct neighbour *n = NULL;\n\tunsigned long now = jiffies;\n\tint entries, gc_thresh3;\n\n\tif (exempt_from_gc)\n\t\tgoto do_alloc;\n\n\tentries = atomic_inc_return(&tbl->gc_entries) - 1;\n\tgc_thresh3 = READ_ONCE(tbl->gc_thresh3);\n\tif (entries >= gc_thresh3 ||\n\t    (entries >= READ_ONCE(tbl->gc_thresh2) &&\n\t     time_after(now, READ_ONCE(tbl->last_flush) + 5 * HZ))) {\n\t\tif (!neigh_forced_gc(tbl) && entries >= gc_thresh3) {\n\t\t\tnet_info_ratelimited(\"%s: neighbor table overflow!\\n\",\n\t\t\t\t\t     tbl->id);\n\t\t\tNEIGH_CACHE_STAT_INC(tbl, table_fulls);\n\t\t\tgoto out_entries;\n\t\t}\n\t}\n\ndo_alloc:\n\tn = kzalloc(tbl->entry_size + dev->neigh_priv_len, GFP_ATOMIC);\n\tif (!n)\n\t\tgoto out_entries;\n\n\t__skb_queue_head_init(&n->arp_queue);\n\trwlock_init(&n->lock);\n\tseqlock_init(&n->ha_lock);\n\tn->updated\t  = n->used = now;\n\tn->nud_state\t  = NUD_NONE;\n\tn->output\t  = neigh_blackhole;\n\tn->flags\t  = flags;\n\tseqlock_init(&n->hh.hh_lock);\n\tn->parms\t  = neigh_parms_clone(&tbl->parms);\n\ttimer_setup(&n->timer, neigh_timer_handler, 0);\n\n\tNEIGH_CACHE_STAT_INC(tbl, allocs);\n\tn->tbl\t\t  = tbl;\n\trefcount_set(&n->refcnt, 1);\n\tn->dead\t\t  = 1;\n\tINIT_LIST_HEAD(&n->gc_list);\n\tINIT_LIST_HEAD(&n->managed_list);\n\n\tatomic_inc(&tbl->entries);\nout:\n\treturn n;\n\nout_entries:\n\tif (!exempt_from_gc)\n\t\tatomic_dec(&tbl->gc_entries);\n\tgoto out;\n}\n",
-      "obligation": "separate-neighbour-allocation",
-      "physicalClosureProven": false
-    },
-    "__netif_receive_skb_core": {
-      "source": "net/core/dev.c",
-      "prefix": "static int __netif_receive_skb_core(",
-      "sha256": "291a00f0358aae6c3e5e2aa4e7fd6a3ed620e1c6c97b921f44696caee98d8689",
-      "text": "static int __netif_receive_skb_core(struct sk_buff **pskb, bool pfmemalloc,\n\t\t\t\t    struct packet_type **ppt_prev)\n{\n\tstruct packet_type *ptype, *pt_prev;\n\trx_handler_func_t *rx_handler;\n\tstruct sk_buff *skb = *pskb;\n\tstruct net_device *orig_dev;\n\tbool deliver_exact = false;\n\tint ret = NET_RX_DROP;\n\t__be16 type;\n\n\tnet_timestamp_check(!READ_ONCE(net_hotdata.tstamp_prequeue), skb);\n\n\ttrace_netif_receive_skb(skb);\n\n\torig_dev = skb->dev;\n\n\tskb_reset_network_header(skb);\n\tif (!skb_transport_header_was_set(skb))\n\t\tskb_reset_transport_header(skb);\n\tskb_reset_mac_len(skb);\n\n\tpt_prev = NULL;\n\nanother_round:\n\tskb->skb_iif = skb->dev->ifindex;\n\n\t__this_cpu_inc(softnet_data.processed);\n\n\tif (static_branch_unlikely(&generic_xdp_needed_key)) {\n\t\tint ret2;\n\n\t\tmigrate_disable();\n\t\tret2 = do_xdp_generic(rcu_dereference(skb->dev->xdp_prog),\n\t\t\t\t      &skb);\n\t\tmigrate_enable();\n\n\t\tif (ret2 != XDP_PASS) {\n\t\t\tret = NET_RX_DROP;\n\t\t\tgoto out;\n\t\t}\n\t}\n\n\tif (eth_type_vlan(skb->protocol)) {\n\t\tskb = skb_vlan_untag(skb);\n\t\tif (unlikely(!skb))\n\t\t\tgoto out;\n\t}\n\n\tif (skb_skip_tc_classify(skb))\n\t\tgoto skip_classify;\n\n\tif (pfmemalloc)\n\t\tgoto skip_taps;\n\n\tlist_for_each_entry_rcu(ptype, &net_hotdata.ptype_all, list) {\n\t\tif (pt_prev)\n\t\t\tret = deliver_skb(skb, pt_prev, orig_dev);\n\t\tpt_prev = ptype;\n\t}\n\n\tlist_for_each_entry_rcu(ptype, &skb->dev->ptype_all, list) {\n\t\tif (pt_prev)\n\t\t\tret = deliver_skb(skb, pt_prev, orig_dev);\n\t\tpt_prev = ptype;\n\t}\n\nskip_taps:\n#ifdef CONFIG_NET_INGRESS\n\tif (static_branch_unlikely(&ingress_needed_key)) {\n\t\tbool another = false;\n\n\t\tnf_skip_egress(skb, true);\n\t\tskb = sch_handle_ingress(skb, &pt_prev, &ret, orig_dev,\n\t\t\t\t\t &another);\n\t\tif (another)\n\t\t\tgoto another_round;\n\t\tif (!skb)\n\t\t\tgoto out;\n\n\t\tnf_skip_egress(skb, false);\n\t\tif (nf_ingress(skb, &pt_prev, &ret, orig_dev) < 0)\n\t\t\tgoto out;\n\t}\n#endif\n\tskb_reset_redirect(skb);\nskip_classify:\n\tif (pfmemalloc && !skb_pfmemalloc_protocol(skb))\n\t\tgoto drop;\n\n\tif (skb_vlan_tag_present(skb)) {\n\t\tif (pt_prev) {\n\t\t\tret = deliver_skb(skb, pt_prev, orig_dev);\n\t\t\tpt_prev = NULL;\n\t\t}\n\t\tif (vlan_do_receive(&skb))\n\t\t\tgoto another_round;\n\t\telse if (unlikely(!skb))\n\t\t\tgoto out;\n\t}\n\n\trx_handler = rcu_dereference(skb->dev->rx_handler);\n\tif (rx_handler) {\n\t\tif (pt_prev) {\n\t\t\tret = deliver_skb(skb, pt_prev, orig_dev);\n\t\t\tpt_prev = NULL;\n\t\t}\n\t\tswitch (rx_handler(&skb)) {\n\t\tcase RX_HANDLER_CONSUMED:\n\t\t\tret = NET_RX_SUCCESS;\n\t\t\tgoto out;\n\t\tcase RX_HANDLER_ANOTHER:\n\t\t\tgoto another_round;\n\t\tcase RX_HANDLER_EXACT:\n\t\t\tdeliver_exact = true;\n\t\t\tbreak;\n\t\tcase RX_HANDLER_PASS:\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tBUG();\n\t\t}\n\t}\n\n\tif (unlikely(skb_vlan_tag_present(skb)) && !netdev_uses_dsa(skb->dev)) {\ncheck_vlan_id:\n\t\tif (skb_vlan_tag_get_id(skb)) {\n\t\t\t/* Vlan id is non 0 and vlan_do_receive() above couldn't\n\t\t\t * find vlan device.\n\t\t\t */\n\t\t\tskb->pkt_type = PACKET_OTHERHOST;\n\t\t} else if (eth_type_vlan(skb->protocol)) {\n\t\t\t/* Outer header is 802.1P with vlan 0, inner header is\n\t\t\t * 802.1Q or 802.1AD and vlan_do_receive() above could\n\t\t\t * not find vlan dev for vlan id 0.\n\t\t\t */\n\t\t\t__vlan_hwaccel_clear_tag(skb);\n\t\t\tskb = skb_vlan_untag(skb);\n\t\t\tif (unlikely(!skb))\n\t\t\t\tgoto out;\n\t\t\tif (vlan_do_receive(&skb))\n\t\t\t\t/* After stripping off 802.1P header with vlan 0\n\t\t\t\t * vlan dev is found for inner header.\n\t\t\t\t */\n\t\t\t\tgoto another_round;\n\t\t\telse if (unlikely(!skb))\n\t\t\t\tgoto out;\n\t\t\telse\n\t\t\t\t/* We have stripped outer 802.1P vlan 0 header.\n\t\t\t\t * But could not find vlan dev.\n\t\t\t\t * check again for vlan id to set OTHERHOST.\n\t\t\t\t */\n\t\t\t\tgoto check_vlan_id;\n\t\t}\n\t\t/* Note: we might in the future use prio bits\n\t\t * and set skb->priority like in vlan_do_receive()\n\t\t * For the time being, just ignore Priority Code Point\n\t\t */\n\t\t__vlan_hwaccel_clear_tag(skb);\n\t}\n\n\ttype = skb->protocol;\n\n\t/* deliver only exact match when indicated */\n\tif (likely(!deliver_exact)) {\n\t\tdeliver_ptype_list_skb(skb, &pt_prev, orig_dev, type,\n\t\t\t\t       &ptype_base[ntohs(type) &\n\t\t\t\t\t\t   PTYPE_HASH_MASK]);\n\t}\n\n\tdeliver_ptype_list_skb(skb, &pt_prev, orig_dev, type,\n\t\t\t       &orig_dev->ptype_specific);\n\n\tif (unlikely(skb->dev != orig_dev)) {\n\t\tdeliver_ptype_list_skb(skb, &pt_prev, orig_dev, type,\n\t\t\t\t       &skb->dev->ptype_specific);\n\t}\n\n\tif (pt_prev) {\n\t\tif (unlikely(skb_orphan_frags_rx(skb, GFP_ATOMIC)))\n\t\t\tgoto drop;\n\t\t*ppt_prev = pt_prev;\n\t} else {\ndrop:\n\t\tif (!deliver_exact)\n\t\t\tdev_core_stats_rx_dropped_inc(skb->dev);\n\t\telse\n\t\t\tdev_core_stats_rx_nohandler_inc(skb->dev);\n\t\tkfree_skb_reason(skb, SKB_DROP_REASON_UNHANDLED_PROTO);\n\t\t/* Jamal, now you will not able to escape explaining\n\t\t * me how you were going to use this. :-)\n\t\t */\n\t\tret = NET_RX_DROP;\n\t}\n\nout:\n\t/* The invariant here is that if *ppt_prev is not NULL\n\t * then skb should also be non-NULL.\n\t *\n\t * Apparently *ppt_prev assignment above holds this invariant due to\n\t * skb dereferencing near it.\n\t */\n\t*pskb = skb;\n\treturn ret;\n}\n",
-      "obligation": "receive-demux-after-driver-allocation",
-      "physicalClosureProven": false
-    },
-    "tcp_stream_alloc_skb": {
-      "source": "net/ipv4/tcp.c",
-      "prefix": "struct sk_buff *tcp_stream_alloc_skb(",
-      "sha256": "ef5bad925e32e3bc9619f2b876f83f745693c420d3aea77c0669dc4b64c1d8c6",
-      "text": "struct sk_buff *tcp_stream_alloc_skb(struct sock *sk, gfp_t gfp,\n\t\t\t\t     bool force_schedule)\n{\n\tstruct sk_buff *skb;\n\n\tskb = alloc_skb_fclone(MAX_TCP_HEADER, gfp);\n\tif (likely(skb)) {\n\t\tbool mem_scheduled;\n\n\t\tskb->truesize = SKB_TRUESIZE(skb_end_offset(skb));\n\t\tif (force_schedule) {\n\t\t\tmem_scheduled = true;\n\t\t\tsk_forced_mem_schedule(sk, skb->truesize);\n\t\t} else {\n\t\t\tmem_scheduled = sk_wmem_schedule(sk, skb->truesize);\n\t\t}\n\t\tif (likely(mem_scheduled)) {\n\t\t\tskb_reserve(skb, MAX_TCP_HEADER);\n\t\t\tskb->ip_summed = CHECKSUM_PARTIAL;\n\t\t\tINIT_LIST_HEAD(&skb->tcp_tsorted_anchor);\n\t\t\treturn skb;\n\t\t}\n\t\t__kfree_skb(skb);\n\t} else {\n\t\tsk->sk_prot->enter_memory_pressure(sk);\n\t\tsk_stream_moderate_sndbuf(sk);\n\t}\n\treturn NULL;\n}\n",
-      "obligation": "socket-owned-tx-header-before-data",
-      "physicalClosureProven": false
-    },
-    "tcp_sendmsg_locked": {
-      "source": "net/ipv4/tcp.c",
-      "prefix": "int tcp_sendmsg_locked(",
-      "sha256": "5dcff08f97ce41fa8f871746e4749bc848736b186bcd1be49dadecc2ec7e1e2d",
-      "text": "int tcp_sendmsg_locked(struct sock *sk, struct msghdr *msg, size_t size)\n{\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tstruct ubuf_info *uarg = NULL;\n\tstruct sk_buff *skb;\n\tstruct sockcm_cookie sockc;\n\tint flags, err, copied = 0;\n\tint mss_now = 0, size_goal, copied_syn = 0;\n\tint process_backlog = 0;\n\tint zc = 0;\n\tlong timeo;\n\n\tflags = msg->msg_flags;\n\n\tif ((flags & MSG_ZEROCOPY) && size) {\n\t\tif (msg->msg_ubuf) {\n\t\t\tuarg = msg->msg_ubuf;\n\t\t\tif (sk->sk_route_caps & NETIF_F_SG)\n\t\t\t\tzc = MSG_ZEROCOPY;\n\t\t} else if (sock_flag(sk, SOCK_ZEROCOPY)) {\n\t\t\tskb = tcp_write_queue_tail(sk);\n\t\t\tuarg = msg_zerocopy_realloc(sk, size, skb_zcopy(skb));\n\t\t\tif (!uarg) {\n\t\t\t\terr = -ENOBUFS;\n\t\t\t\tgoto out_err;\n\t\t\t}\n\t\t\tif (sk->sk_route_caps & NETIF_F_SG)\n\t\t\t\tzc = MSG_ZEROCOPY;\n\t\t\telse\n\t\t\t\tuarg_to_msgzc(uarg)->zerocopy = 0;\n\t\t}\n\t} else if (unlikely(msg->msg_flags & MSG_SPLICE_PAGES) && size) {\n\t\tif (sk->sk_route_caps & NETIF_F_SG)\n\t\t\tzc = MSG_SPLICE_PAGES;\n\t}\n\n\tif (unlikely(flags & MSG_FASTOPEN ||\n\t\t     inet_test_bit(DEFER_CONNECT, sk)) &&\n\t    !tp->repair) {\n\t\terr = tcp_sendmsg_fastopen(sk, msg, &copied_syn, size, uarg);\n\t\tif (err == -EINPROGRESS && copied_syn > 0)\n\t\t\tgoto out;\n\t\telse if (err)\n\t\t\tgoto out_err;\n\t}\n\n\ttimeo = sock_sndtimeo(sk, flags & MSG_DONTWAIT);\n\n\ttcp_rate_check_app_limited(sk);  /* is sending application-limited? */\n\n\t/* Wait for a connection to finish. One exception is TCP Fast Open\n\t * (passive side) where data is allowed to be sent before a connection\n\t * is fully established.\n\t */\n\tif (((1 << sk->sk_state) & ~(TCPF_ESTABLISHED | TCPF_CLOSE_WAIT)) &&\n\t    !tcp_passive_fastopen(sk)) {\n\t\terr = sk_stream_wait_connect(sk, &timeo);\n\t\tif (err != 0)\n\t\t\tgoto do_error;\n\t}\n\n\tif (unlikely(tp->repair)) {\n\t\tif (tp->repair_queue == TCP_RECV_QUEUE) {\n\t\t\tcopied = tcp_send_rcvq(sk, msg, size);\n\t\t\tgoto out_nopush;\n\t\t}\n\n\t\terr = -EINVAL;\n\t\tif (tp->repair_queue == TCP_NO_QUEUE)\n\t\t\tgoto out_err;\n\n\t\t/* 'common' sending to sendq */\n\t}\n\n\tsockcm_init(&sockc, sk);\n\tif (msg->msg_controllen) {\n\t\terr = sock_cmsg_send(sk, msg, &sockc);\n\t\tif (unlikely(err)) {\n\t\t\terr = -EINVAL;\n\t\t\tgoto out_err;\n\t\t}\n\t}\n\n\t/* This should be in poll */\n\tsk_clear_bit(SOCKWQ_ASYNC_NOSPACE, sk);\n\n\t/* Ok commence sending. */\n\tcopied = 0;\n\nrestart:\n\tmss_now = tcp_send_mss(sk, &size_goal, flags);\n\n\terr = -EPIPE;\n\tif (sk->sk_err || (sk->sk_shutdown & SEND_SHUTDOWN))\n\t\tgoto do_error;\n\n\twhile (msg_data_left(msg)) {\n\t\tssize_t copy = 0;\n\n\t\tskb = tcp_write_queue_tail(sk);\n\t\tif (skb)\n\t\t\tcopy = size_goal - skb->len;\n\n\t\tif (copy <= 0 || !tcp_skb_can_collapse_to(skb)) {\n\t\t\tbool first_skb;\n\nnew_segment:\n\t\t\tif (!sk_stream_memory_free(sk))\n\t\t\t\tgoto wait_for_space;\n\n\t\t\tif (unlikely(process_backlog >= 16)) {\n\t\t\t\tprocess_backlog = 0;\n\t\t\t\tif (sk_flush_backlog(sk))\n\t\t\t\t\tgoto restart;\n\t\t\t}\n\t\t\tfirst_skb = tcp_rtx_and_write_queues_empty(sk);\n\t\t\tskb = tcp_stream_alloc_skb(sk, sk->sk_allocation,\n\t\t\t\t\t\t   first_skb);\n\t\t\tif (!skb)\n\t\t\t\tgoto wait_for_space;\n\n\t\t\tprocess_backlog++;\n\n#ifdef CONFIG_SKB_DECRYPTED\n\t\t\tskb->decrypted = !!(flags & MSG_SENDPAGE_DECRYPTED);\n#endif\n\t\t\ttcp_skb_entail(sk, skb);\n\t\t\tcopy = size_goal;\n\n\t\t\t/* All packets are restored as if they have\n\t\t\t * already been sent. skb_mstamp_ns isn't set to\n\t\t\t * avoid wrong rtt estimation.\n\t\t\t */\n\t\t\tif (tp->repair)\n\t\t\t\tTCP_SKB_CB(skb)->sacked |= TCPCB_REPAIRED;\n\t\t}\n\n\t\t/* Try to append data to the end of skb. */\n\t\tif (copy > msg_data_left(msg))\n\t\t\tcopy = msg_data_left(msg);\n\n\t\tif (zc == 0) {\n\t\t\tbool merge = true;\n\t\t\tint i = skb_shinfo(skb)->nr_frags;\n\t\t\tstruct page_frag *pfrag = sk_page_frag(sk);\n\n\t\t\tif (!sk_page_frag_refill(sk, pfrag))\n\t\t\t\tgoto wait_for_space;\n\n\t\t\tif (!skb_can_coalesce(skb, i, pfrag->page,\n\t\t\t\t\t      pfrag->offset)) {\n\t\t\t\tif (i >= READ_ONCE(net_hotdata.sysctl_max_skb_frags)) {\n\t\t\t\t\ttcp_mark_push(tp, skb);\n\t\t\t\t\tgoto new_segment;\n\t\t\t\t}\n\t\t\t\tmerge = false;\n\t\t\t}\n\n\t\t\tcopy = min_t(int, copy, pfrag->size - pfrag->offset);\n\n\t\t\tif (unlikely(skb_zcopy_pure(skb) || skb_zcopy_managed(skb))) {\n\t\t\t\tif (tcp_downgrade_zcopy_pure(sk, skb))\n\t\t\t\t\tgoto wait_for_space;\n\t\t\t\tskb_zcopy_downgrade_managed(skb);\n\t\t\t}\n\n\t\t\tcopy = tcp_wmem_schedule(sk, copy);\n\t\t\tif (!copy)\n\t\t\t\tgoto wait_for_space;\n\n\t\t\terr = skb_copy_to_page_nocache(sk, &msg->msg_iter, skb,\n\t\t\t\t\t\t       pfrag->page,\n\t\t\t\t\t\t       pfrag->offset,\n\t\t\t\t\t\t       copy);\n\t\t\tif (err)\n\t\t\t\tgoto do_error;\n\n\t\t\t/* Update the skb. */\n\t\t\tif (merge) {\n\t\t\t\tskb_frag_size_add(&skb_shinfo(skb)->frags[i - 1], copy);\n\t\t\t} else {\n\t\t\t\tskb_fill_page_desc(skb, i, pfrag->page,\n\t\t\t\t\t\t   pfrag->offset, copy);\n\t\t\t\tpage_ref_inc(pfrag->page);\n\t\t\t}\n\t\t\tpfrag->offset += copy;\n\t\t} else if (zc == MSG_ZEROCOPY)  {\n\t\t\t/* First append to a fragless skb builds initial\n\t\t\t * pure zerocopy skb\n\t\t\t */\n\t\t\tif (!skb->len)\n\t\t\t\tskb_shinfo(skb)->flags |= SKBFL_PURE_ZEROCOPY;\n\n\t\t\tif (!skb_zcopy_pure(skb)) {\n\t\t\t\tcopy = tcp_wmem_schedule(sk, copy);\n\t\t\t\tif (!copy)\n\t\t\t\t\tgoto wait_for_space;\n\t\t\t}\n\n\t\t\terr = skb_zerocopy_iter_stream(sk, skb, msg, copy, uarg);\n\t\t\tif (err == -EMSGSIZE || err == -EEXIST) {\n\t\t\t\ttcp_mark_push(tp, skb);\n\t\t\t\tgoto new_segment;\n\t\t\t}\n\t\t\tif (err < 0)\n\t\t\t\tgoto do_error;\n\t\t\tcopy = err;\n\t\t} else if (zc == MSG_SPLICE_PAGES) {\n\t\t\t/* Splice in data if we can; copy if we can't. */\n\t\t\tif (tcp_downgrade_zcopy_pure(sk, skb))\n\t\t\t\tgoto wait_for_space;\n\t\t\tcopy = tcp_wmem_schedule(sk, copy);\n\t\t\tif (!copy)\n\t\t\t\tgoto wait_for_space;\n\n\t\t\terr = skb_splice_from_iter(skb, &msg->msg_iter, copy,\n\t\t\t\t\t\t   sk->sk_allocation);\n\t\t\tif (err < 0) {\n\t\t\t\tif (err == -EMSGSIZE) {\n\t\t\t\t\ttcp_mark_push(tp, skb);\n\t\t\t\t\tgoto new_segment;\n\t\t\t\t}\n\t\t\t\tgoto do_error;\n\t\t\t}\n\t\t\tcopy = err;\n\n\t\t\tif (!(flags & MSG_NO_SHARED_FRAGS))\n\t\t\t\tskb_shinfo(skb)->flags |= SKBFL_SHARED_FRAG;\n\n\t\t\tsk_wmem_queued_add(sk, copy);\n\t\t\tsk_mem_charge(sk, copy);\n\t\t}\n\n\t\tif (!copied)\n\t\t\tTCP_SKB_CB(skb)->tcp_flags &= ~TCPHDR_PSH;\n\n\t\tWRITE_ONCE(tp->write_seq, tp->write_seq + copy);\n\t\tTCP_SKB_CB(skb)->end_seq += copy;\n\t\ttcp_skb_pcount_set(skb, 0);\n\n\t\tcopied += copy;\n\t\tif (!msg_data_left(msg)) {\n\t\t\tif (unlikely(flags & MSG_EOR))\n\t\t\t\tTCP_SKB_CB(skb)->eor = 1;\n\t\t\tgoto out;\n\t\t}\n\n\t\tif (skb->len < size_goal || (flags & MSG_OOB) || unlikely(tp->repair))\n\t\t\tcontinue;\n\n\t\tif (forced_push(tp)) {\n\t\t\ttcp_mark_push(tp, skb);\n\t\t\t__tcp_push_pending_frames(sk, mss_now, TCP_NAGLE_PUSH);\n\t\t} else if (skb == tcp_send_head(sk))\n\t\t\ttcp_push_one(sk, mss_now);\n\t\tcontinue;\n\nwait_for_space:\n\t\tset_bit(SOCK_NOSPACE, &sk->sk_socket->flags);\n\t\ttcp_remove_empty_skb(sk);\n\t\tif (copied)\n\t\t\ttcp_push(sk, flags & ~MSG_MORE, mss_now,\n\t\t\t\t TCP_NAGLE_PUSH, size_goal);\n\n\t\terr = sk_stream_wait_memory(sk, &timeo);\n\t\tif (err != 0)\n\t\t\tgoto do_error;\n\n\t\tmss_now = tcp_send_mss(sk, &size_goal, flags);\n\t}\n\nout:\n\tif (copied) {\n\t\ttcp_tx_timestamp(sk, sockc.tsflags);\n\t\ttcp_push(sk, flags, mss_now, tp->nonagle, size_goal);\n\t}\nout_nopush:\n\t/* msg->msg_ubuf is pinned by the caller so we don't take extra refs */\n\tif (uarg && !msg->msg_ubuf)\n\t\tnet_zcopy_put(uarg);\n\treturn copied + copied_syn;\n\ndo_error:\n\ttcp_remove_empty_skb(sk);\n\n\tif (copied + copied_syn)\n\t\tgoto out;\nout_err:\n\t/* msg->msg_ubuf is pinned by the caller so we don't take extra refs */\n\tif (uarg && !msg->msg_ubuf)\n\t\tnet_zcopy_put_abort(uarg, true);\n\terr = sk_stream_error(sk, flags, err);\n\t/* make sure we wake any epoll edge trigger waiter */\n\tif (unlikely(tcp_rtx_and_write_queues_empty(sk) && err == -EAGAIN)) {\n\t\tsk->sk_write_space(sk);\n\t\ttcp_chrono_stop(sk, TCP_CHRONO_SNDBUF_LIMITED);\n\t}\n\treturn err;\n}\n",
-      "obligation": "socket-page-frag-and-coalescing",
-      "physicalClosureProven": false
-    },
-    "__tcp_close": {
-      "source": "net/ipv4/tcp.c",
-      "prefix": "void __tcp_close(",
-      "sha256": "4de67bc18451ad80a6a18f52ea38502456ad8dd941eb71e5943fb570876f574c",
-      "text": "void __tcp_close(struct sock *sk, long timeout)\n{\n\tstruct sk_buff *skb;\n\tint data_was_unread = 0;\n\tint state;\n\n\tWRITE_ONCE(sk->sk_shutdown, SHUTDOWN_MASK);\n\n\tif (sk->sk_state == TCP_LISTEN) {\n\t\ttcp_set_state(sk, TCP_CLOSE);\n\n\t\t/* Special case. */\n\t\tinet_csk_listen_stop(sk);\n\n\t\tgoto adjudge_to_death;\n\t}\n\n\t/*  We need to flush the recv. buffs.  We do this only on the\n\t *  descriptor close, not protocol-sourced closes, because the\n\t *  reader process may not have drained the data yet!\n\t */\n\twhile ((skb = __skb_dequeue(&sk->sk_receive_queue)) != NULL) {\n\t\tu32 len = TCP_SKB_CB(skb)->end_seq - TCP_SKB_CB(skb)->seq;\n\n\t\tif (TCP_SKB_CB(skb)->tcp_flags & TCPHDR_FIN)\n\t\t\tlen--;\n\t\tdata_was_unread += len;\n\t\t__kfree_skb(skb);\n\t}\n\n\t/* If socket has been already reset (e.g. in tcp_reset()) - kill it. */\n\tif (sk->sk_state == TCP_CLOSE)\n\t\tgoto adjudge_to_death;\n\n\t/* As outlined in RFC 2525, section 2.17, we send a RST here because\n\t * data was lost. To witness the awful effects of the old behavior of\n\t * always doing a FIN, run an older 2.1.x kernel or 2.0.x, start a bulk\n\t * GET in an FTP client, suspend the process, wait for the client to\n\t * advertise a zero window, then kill -9 the FTP client, wheee...\n\t * Note: timeout is always zero in such a case.\n\t */\n\tif (unlikely(tcp_sk(sk)->repair)) {\n\t\tsk->sk_prot->disconnect(sk, 0);\n\t} else if (data_was_unread) {\n\t\t/* Unread data was tossed, zap the connection. */\n\t\tNET_INC_STATS(sock_net(sk), LINUX_MIB_TCPABORTONCLOSE);\n\t\ttcp_set_state(sk, TCP_CLOSE);\n\t\ttcp_send_active_reset(sk, sk->sk_allocation,\n\t\t\t\t      SK_RST_REASON_TCP_ABORT_ON_CLOSE);\n\t} else if (sock_flag(sk, SOCK_LINGER) && !sk->sk_lingertime) {\n\t\t/* Check zero linger _after_ checking for unread data. */\n\t\tsk->sk_prot->disconnect(sk, 0);\n\t\tNET_INC_STATS(sock_net(sk), LINUX_MIB_TCPABORTONDATA);\n\t} else if (tcp_close_state(sk)) {\n\t\t/* We FIN if the application ate all the data before\n\t\t * zapping the connection.\n\t\t */\n\n\t\t/* RED-PEN. Formally speaking, we have broken TCP state\n\t\t * machine. State transitions:\n\t\t *\n\t\t * TCP_ESTABLISHED -> TCP_FIN_WAIT1\n\t\t * TCP_SYN_RECV\t-> TCP_FIN_WAIT1 (it is difficult)\n\t\t * TCP_CLOSE_WAIT -> TCP_LAST_ACK\n\t\t *\n\t\t * are legal only when FIN has been sent (i.e. in window),\n\t\t * rather than queued out of window. Purists blame.\n\t\t *\n\t\t * F.e. \"RFC state\" is ESTABLISHED,\n\t\t * if Linux state is FIN-WAIT-1, but FIN is still not sent.\n\t\t *\n\t\t * The visible declinations are that sometimes\n\t\t * we enter time-wait state, when it is not required really\n\t\t * (harmless), do not send active resets, when they are\n\t\t * required by specs (TCP_ESTABLISHED, TCP_CLOSE_WAIT, when\n\t\t * they look as CLOSING or LAST_ACK for Linux)\n\t\t * Probably, I missed some more holelets.\n\t\t * \t\t\t\t\t\t--ANK\n\t\t * XXX (TFO) - To start off we don't support SYN+ACK+FIN\n\t\t * in a single packet! (May consider it later but will\n\t\t * probably need API support or TCP_CORK SYN-ACK until\n\t\t * data is written and socket is closed.)\n\t\t */\n\t\ttcp_send_fin(sk);\n\t}\n\n\tsk_stream_wait_close(sk, timeout);\n\nadjudge_to_death:\n\tstate = sk->sk_state;\n\tsock_hold(sk);\n\tsock_orphan(sk);\n\n\tlocal_bh_disable();\n\tbh_lock_sock(sk);\n\t/* remove backlog if any, without releasing ownership. */\n\t__release_sock(sk);\n\n\tthis_cpu_inc(tcp_orphan_count);\n\n\t/* Have we already been destroyed by a softirq or backlog? */\n\tif (state != TCP_CLOSE && sk->sk_state == TCP_CLOSE)\n\t\tgoto out;\n\n\t/*\tThis is a (useful) BSD violating of the RFC. There is a\n\t *\tproblem with TCP as specified in that the other end could\n\t *\tkeep a socket open forever with no application left this end.\n\t *\tWe use a 1 minute timeout (about the same as BSD) then kill\n\t *\tour end. If they send after that then tough - BUT: long enough\n\t *\tthat we won't make the old 4*rto = almost no time - whoops\n\t *\treset mistake.\n\t *\n\t *\tNope, it was not mistake. It is really desired behaviour\n\t *\tf.e. on http servers, when such sockets are useless, but\n\t *\tconsume significant resources. Let's do it with special\n\t *\tlinger2\toption.\t\t\t\t\t--ANK\n\t */\n\n\tif (sk->sk_state == TCP_FIN_WAIT2) {\n\t\tstruct tcp_sock *tp = tcp_sk(sk);\n\t\tif (READ_ONCE(tp->linger2) < 0) {\n\t\t\ttcp_set_state(sk, TCP_CLOSE);\n\t\t\ttcp_send_active_reset(sk, GFP_ATOMIC,\n\t\t\t\t\t      SK_RST_REASON_TCP_ABORT_ON_LINGER);\n\t\t\t__NET_INC_STATS(sock_net(sk),\n\t\t\t\t\tLINUX_MIB_TCPABORTONLINGER);\n\t\t} else {\n\t\t\tconst int tmo = tcp_fin_time(sk);\n\n\t\t\tif (tmo > TCP_TIMEWAIT_LEN) {\n\t\t\t\tinet_csk_reset_keepalive_timer(sk,\n\t\t\t\t\t\ttmo - TCP_TIMEWAIT_LEN);\n\t\t\t} else {\n\t\t\t\ttcp_time_wait(sk, TCP_FIN_WAIT2, tmo);\n\t\t\t\tgoto out;\n\t\t\t}\n\t\t}\n\t}\n\tif (sk->sk_state != TCP_CLOSE) {\n\t\tif (tcp_check_oom(sk, 0)) {\n\t\t\ttcp_set_state(sk, TCP_CLOSE);\n\t\t\ttcp_send_active_reset(sk, GFP_ATOMIC,\n\t\t\t\t\t      SK_RST_REASON_TCP_ABORT_ON_MEMORY);\n\t\t\t__NET_INC_STATS(sock_net(sk),\n\t\t\t\t\tLINUX_MIB_TCPABORTONMEMORY);\n\t\t} else if (!check_net(sock_net(sk))) {\n\t\t\t/* Not possible to send reset; just close */\n\t\t\ttcp_set_state(sk, TCP_CLOSE);\n\t\t}\n\t}\n\n\tif (sk->sk_state == TCP_CLOSE) {\n\t\tstruct request_sock *req;\n\n\t\treq = rcu_dereference_protected(tcp_sk(sk)->fastopen_rsk,\n\t\t\t\t\t\tlockdep_sock_is_held(sk));\n\t\t/* We could get here with a non-NULL req if the socket is\n\t\t * aborted (e.g., closed with unread data) before 3WHS\n\t\t * finishes.\n\t\t */\n\t\tif (req)\n\t\t\treqsk_fastopen_remove(sk, req, false);\n\t\tinet_csk_destroy_sock(sk);\n\t}\n\t/* Otherwise, socket is reprieved until protocol close. */\n\nout:\n\tbh_unlock_sock(sk);\n\tlocal_bh_enable();\n}\n",
-      "obligation": "close-with-deferred-descendants",
-      "physicalClosureProven": false
-    },
-    "__tcp_retransmit_skb": {
-      "source": "net/ipv4/tcp_output.c",
-      "prefix": "int __tcp_retransmit_skb(",
-      "sha256": "da551be5583e9392cb3f97ab0237347a04e752307a7aa65aea0d091ea23fce09",
-      "text": "int __tcp_retransmit_skb(struct sock *sk, struct sk_buff *skb, int segs)\n{\n\tstruct inet_connection_sock *icsk = inet_csk(sk);\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tunsigned int cur_mss;\n\tint diff, len, err;\n\tint avail_wnd;\n\n\t/* Inconclusive MTU probe */\n\tif (icsk->icsk_mtup.probe_size)\n\t\ticsk->icsk_mtup.probe_size = 0;\n\n\tif (skb_still_in_host_queue(sk, skb))\n\t\treturn -EBUSY;\n\nstart:\n\tif (before(TCP_SKB_CB(skb)->seq, tp->snd_una)) {\n\t\tif (unlikely(TCP_SKB_CB(skb)->tcp_flags & TCPHDR_SYN)) {\n\t\t\tTCP_SKB_CB(skb)->tcp_flags &= ~TCPHDR_SYN;\n\t\t\tTCP_SKB_CB(skb)->seq++;\n\t\t\tgoto start;\n\t\t}\n\t\tif (unlikely(before(TCP_SKB_CB(skb)->end_seq, tp->snd_una))) {\n\t\t\tWARN_ON_ONCE(1);\n\t\t\treturn -EINVAL;\n\t\t}\n\t\tif (tcp_trim_head(sk, skb, tp->snd_una - TCP_SKB_CB(skb)->seq))\n\t\t\treturn -ENOMEM;\n\t}\n\n\tif (inet_csk(sk)->icsk_af_ops->rebuild_header(sk))\n\t\treturn -EHOSTUNREACH; /* Routing failure or similar. */\n\n\tcur_mss = tcp_current_mss(sk);\n\tavail_wnd = tcp_wnd_end(tp) - TCP_SKB_CB(skb)->seq;\n\n\t/* If receiver has shrunk his window, and skb is out of\n\t * new window, do not retransmit it. The exception is the\n\t * case, when window is shrunk to zero. In this case\n\t * our retransmit of one segment serves as a zero window probe.\n\t */\n\tif (avail_wnd <= 0) {\n\t\tif (TCP_SKB_CB(skb)->seq != tp->snd_una)\n\t\t\treturn -EAGAIN;\n\t\tavail_wnd = cur_mss;\n\t}\n\n\tlen = cur_mss * segs;\n\tif (len > avail_wnd) {\n\t\tlen = rounddown(avail_wnd, cur_mss);\n\t\tif (!len)\n\t\t\tlen = avail_wnd;\n\t}\n\tif (skb->len > len) {\n\t\tif (tcp_fragment(sk, TCP_FRAG_IN_RTX_QUEUE, skb, len,\n\t\t\t\t cur_mss, GFP_ATOMIC))\n\t\t\treturn -ENOMEM; /* We'll try again later. */\n\t} else {\n\t\tif (skb_unclone_keeptruesize(skb, GFP_ATOMIC))\n\t\t\treturn -ENOMEM;\n\n\t\tdiff = tcp_skb_pcount(skb);\n\t\ttcp_set_skb_tso_segs(skb, cur_mss);\n\t\tdiff -= tcp_skb_pcount(skb);\n\t\tif (diff)\n\t\t\ttcp_adjust_pcount(sk, skb, diff);\n\t\tavail_wnd = min_t(int, avail_wnd, cur_mss);\n\t\tif (skb->len < avail_wnd)\n\t\t\ttcp_retrans_try_collapse(sk, skb, avail_wnd);\n\t}\n\n\t/* RFC3168, section 6.1.1.1. ECN fallback */\n\tif ((TCP_SKB_CB(skb)->tcp_flags & TCPHDR_SYN_ECN) == TCPHDR_SYN_ECN)\n\t\ttcp_ecn_clear_syn(sk, skb);\n\n\t/* Update global and local TCP statistics. */\n\tsegs = tcp_skb_pcount(skb);\n\tTCP_ADD_STATS(sock_net(sk), TCP_MIB_RETRANSSEGS, segs);\n\tif (TCP_SKB_CB(skb)->tcp_flags & TCPHDR_SYN)\n\t\t__NET_INC_STATS(sock_net(sk), LINUX_MIB_TCPSYNRETRANS);\n\ttp->total_retrans += segs;\n\ttp->bytes_retrans += skb->len;\n\n\t/* make sure skb->data is aligned on arches that require it\n\t * and check if ack-trimming & collapsing extended the headroom\n\t * beyond what csum_start can cover.\n\t */\n\tif (unlikely((NET_IP_ALIGN && ((unsigned long)skb->data & 3)) ||\n\t\t     skb_headroom(skb) >= 0xFFFF)) {\n\t\tstruct sk_buff *nskb;\n\n\t\ttcp_skb_tsorted_save(skb) {\n\t\t\tnskb = __pskb_copy(skb, MAX_TCP_HEADER, GFP_ATOMIC);\n\t\t\tif (nskb) {\n\t\t\t\tnskb->dev = NULL;\n\t\t\t\terr = tcp_transmit_skb(sk, nskb, 0, GFP_ATOMIC);\n\t\t\t} else {\n\t\t\t\terr = -ENOBUFS;\n\t\t\t}\n\t\t} tcp_skb_tsorted_restore(skb);\n\n\t\tif (!err) {\n\t\t\ttcp_update_skb_after_send(sk, skb, tp->tcp_wstamp_ns);\n\t\t\ttcp_rate_skb_sent(sk, skb);\n\t\t}\n\t} else {\n\t\terr = tcp_transmit_skb(sk, skb, 1, GFP_ATOMIC);\n\t}\n\n\tif (BPF_SOCK_OPS_TEST_FLAG(tp, BPF_SOCK_OPS_RETRANS_CB_FLAG))\n\t\ttcp_call_bpf_3arg(sk, BPF_SOCK_OPS_RETRANS_CB,\n\t\t\t\t  TCP_SKB_CB(skb)->seq, segs, err);\n\n\tif (likely(!err)) {\n\t\ttrace_tcp_retransmit_skb(sk, skb);\n\t} else if (err != -EBUSY) {\n\t\tNET_ADD_STATS(sock_net(sk), LINUX_MIB_TCPRETRANSFAIL, segs);\n\t}\n\n\t/* To avoid taking spuriously low RTT samples based on a timestamp\n\t * for a transmit that never happened, always mark EVER_RETRANS\n\t */\n\tTCP_SKB_CB(skb)->sacked |= TCPCB_EVER_RETRANS;\n\n\treturn err;\n}\n",
-      "obligation": "retransmit-copy-clone-and-head-expansion",
-      "physicalClosureProven": false
-    },
-    "ip_finish_output2": {
-      "source": "net/ipv4/ip_output.c",
-      "prefix": "static int ip_finish_output2(",
-      "sha256": "bba4d68dc2610832a55bee69efd9226484bd359319abf165dcb6fe8ec011941c",
-      "text": "static int ip_finish_output2(struct net *net, struct sock *sk, struct sk_buff *skb)\n{\n\tstruct dst_entry *dst = skb_dst(skb);\n\tstruct rtable *rt = dst_rtable(dst);\n\tstruct net_device *dev = dst->dev;\n\tunsigned int hh_len = LL_RESERVED_SPACE(dev);\n\tstruct neighbour *neigh;\n\tbool is_v6gw = false;\n\n\tif (rt->rt_type == RTN_MULTICAST) {\n\t\tIP_UPD_PO_STATS(net, IPSTATS_MIB_OUTMCAST, skb->len);\n\t} else if (rt->rt_type == RTN_BROADCAST)\n\t\tIP_UPD_PO_STATS(net, IPSTATS_MIB_OUTBCAST, skb->len);\n\n\t/* OUTOCTETS should be counted after fragment */\n\tIP_UPD_PO_STATS(net, IPSTATS_MIB_OUT, skb->len);\n\n\tif (unlikely(skb_headroom(skb) < hh_len && dev->header_ops)) {\n\t\tskb = skb_expand_head(skb, hh_len);\n\t\tif (!skb)\n\t\t\treturn -ENOMEM;\n\t}\n\n\tif (lwtunnel_xmit_redirect(dst->lwtstate)) {\n\t\tint res = lwtunnel_xmit(skb);\n\n\t\tif (res != LWTUNNEL_XMIT_CONTINUE)\n\t\t\treturn res;\n\t}\n\n\trcu_read_lock();\n\tneigh = ip_neigh_for_gw(rt, skb, &is_v6gw);\n\tif (!IS_ERR(neigh)) {\n\t\tint res;\n\n\t\tsock_confirm_neigh(skb, neigh);\n\t\t/* if crossing protocols, can not use the cached header */\n\t\tres = neigh_output(neigh, skb, is_v6gw);\n\t\trcu_read_unlock();\n\t\treturn res;\n\t}\n\trcu_read_unlock();\n\n\tnet_dbg_ratelimited(\"%s: No header cache and no neighbour!\\n\",\n\t\t\t    __func__);\n\tkfree_skb_reason(skb, SKB_DROP_REASON_NEIGH_CREATEFAIL);\n\treturn PTR_ERR(neigh);\n}\n",
-      "obligation": "route-neighbour-and-head-expansion",
-      "physicalClosureProven": false
-    },
-    "ip6_finish_output2": {
-      "source": "net/ipv6/ip6_output.c",
-      "prefix": "static int ip6_finish_output2(",
-      "sha256": "5c6d3a127c78efcf388b6489800ad97186246a4c41e1a601cf374d62dadc0ddb",
-      "text": "static int ip6_finish_output2(struct net *net, struct sock *sk, struct sk_buff *skb)\n{\n\tstruct dst_entry *dst = skb_dst(skb);\n\tstruct net_device *dev = dst->dev;\n\tstruct inet6_dev *idev = ip6_dst_idev(dst);\n\tunsigned int hh_len = LL_RESERVED_SPACE(dev);\n\tconst struct in6_addr *daddr, *nexthop;\n\tstruct ipv6hdr *hdr;\n\tstruct neighbour *neigh;\n\tint ret;\n\n\t/* Be paranoid, rather than too clever. */\n\tif (unlikely(hh_len > skb_headroom(skb)) && dev->header_ops) {\n\t\t/* Make sure idev stays alive */\n\t\trcu_read_lock();\n\t\tskb = skb_expand_head(skb, hh_len);\n\t\tif (!skb) {\n\t\t\tIP6_INC_STATS(net, idev, IPSTATS_MIB_OUTDISCARDS);\n\t\t\trcu_read_unlock();\n\t\t\treturn -ENOMEM;\n\t\t}\n\t\trcu_read_unlock();\n\t}\n\n\thdr = ipv6_hdr(skb);\n\tdaddr = &hdr->daddr;\n\tif (ipv6_addr_is_multicast(daddr)) {\n\t\tif (!(dev->flags & IFF_LOOPBACK) && sk_mc_loop(sk) &&\n\t\t    ((mroute6_is_socket(net, skb) &&\n\t\t     !(IP6CB(skb)->flags & IP6SKB_FORWARDED)) ||\n\t\t     ipv6_chk_mcast_addr(dev, daddr, &hdr->saddr))) {\n\t\t\tstruct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);\n\n\t\t\t/* Do not check for IFF_ALLMULTI; multicast routing\n\t\t\t   is not supported in any case.\n\t\t\t */\n\t\t\tif (newskb)\n\t\t\t\tNF_HOOK(NFPROTO_IPV6, NF_INET_POST_ROUTING,\n\t\t\t\t\tnet, sk, newskb, NULL, newskb->dev,\n\t\t\t\t\tdev_loopback_xmit);\n\n\t\t\tif (hdr->hop_limit == 0) {\n\t\t\t\tIP6_INC_STATS(net, idev,\n\t\t\t\t\t      IPSTATS_MIB_OUTDISCARDS);\n\t\t\t\tkfree_skb(skb);\n\t\t\t\treturn 0;\n\t\t\t}\n\t\t}\n\n\t\tIP6_UPD_PO_STATS(net, idev, IPSTATS_MIB_OUTMCAST, skb->len);\n\t\tif (IPV6_ADDR_MC_SCOPE(daddr) <= IPV6_ADDR_SCOPE_NODELOCAL &&\n\t\t    !(dev->flags & IFF_LOOPBACK)) {\n\t\t\tkfree_skb(skb);\n\t\t\treturn 0;\n\t\t}\n\t}\n\n\tif (lwtunnel_xmit_redirect(dst->lwtstate)) {\n\t\tint res = lwtunnel_xmit(skb);\n\n\t\tif (res != LWTUNNEL_XMIT_CONTINUE)\n\t\t\treturn res;\n\t}\n\n\tIP6_UPD_PO_STATS(net, idev, IPSTATS_MIB_OUT, skb->len);\n\n\trcu_read_lock();\n\tnexthop = rt6_nexthop(dst_rt6_info(dst), daddr);\n\tneigh = __ipv6_neigh_lookup_noref(dev, nexthop);\n\n\tif (unlikely(IS_ERR_OR_NULL(neigh))) {\n\t\tif (unlikely(!neigh))\n\t\t\tneigh = __neigh_create(&nd_tbl, nexthop, dev, false);\n\t\tif (IS_ERR(neigh)) {\n\t\t\trcu_read_unlock();\n\t\t\tIP6_INC_STATS(net, idev, IPSTATS_MIB_OUTNOROUTES);\n\t\t\tkfree_skb_reason(skb, SKB_DROP_REASON_NEIGH_CREATEFAIL);\n\t\t\treturn -EINVAL;\n\t\t}\n\t}\n\tsock_confirm_neigh(skb, neigh);\n\tret = neigh_output(neigh, skb, false);\n\trcu_read_unlock();\n\treturn ret;\n}\n",
-      "obligation": "ipv6-route-neighbour-and-head-expansion",
-      "physicalClosureProven": false
-    }
-  },
-  "completeGraph": false,
-  "runningKernelAuthenticated": false,
-  "trustedFactoryInstalled": false,
-  "physicalAllocationQualified": false,
-  "beforeSocketLookupClassified": false,
-  "finalFreeCertified": false
+"schemaVersion":"lsf.kernel-allocation-graph.v1",
+"upstreamCommit":"adc218676eef25575469234709c2d87185ca223a",
+"additionalSource":{
+"include/linux/skbuff.h":{
+"bytes":149284,
+"sha256":"7bf07791f2aa5c4914e80139113406d36148d8b69e24ce34d777aead9beb80dc",
+"gitBlob":"39f1d16f362887821caa022464695c4045461493",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/include/linux/skbuff.h"
+},
+"include/linux/slab.h":{
+"bytes":36868,
+"sha256":"5af4c4ab86b1ed2378cbf342b9be9b2a306043b7d7624493d7e1f9c37a3d70fe",
+"gitBlob":"b35e2db7eb0ecc4933126f56b2c3dbf369cbb44b",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/include/linux/slab.h"
+},
+"include/net/page_pool/helpers.h":{
+"bytes":15104,
+"sha256":"54beec50f9cad98a651a8a6e83388145f4e14e1fecbf5ca53f26206ef61d39eb",
+"gitBlob":"793e6fd78bc5c0890bc875a0ddfcc896e89896dd",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/include/net/page_pool/helpers.h"
+},
+"include/net/page_pool/types.h":{
+"bytes":9558,
+"sha256":"b7ca44304a7bb01ea3370c35d25cfc3da4952227863fe0ceed3355f372ef2b8b",
+"gitBlob":"c022c410abe39d588c0933479ab131b3c07391fd",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/include/net/page_pool/types.h"
+},
+"net/core/dev.c":{
+"bytes":316577,
+"sha256":"a200c79da6df04e95435219a09f1c46673cffce89667e429c3880a1e2f508956",
+"gitBlob":"8453e14d301b63a84f3d505a1f3dc08f88fe8f7b",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/core/dev.c"
+},
+"net/core/page_pool.c":{
+"bytes":31648,
+"sha256":"f66cb52a2abc055881fd45d10810ade4e40030170432eaa8b111e541e6c55efd",
+"gitBlob":"a813d30d213536beab16106ea9a4b6856fa991bb",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/core/page_pool.c"
+},
+"net/core/dst.c":{
+"bytes":8541,
+"sha256":"2e2fda0decc922dd427b4696f071ce782b9f9510fd74f363cf18a55386fc7392",
+"gitBlob":"9552a90d4772dce49b5fe94d2f1d8da6979d9908",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/core/dst.c"
+},
+"net/core/neighbour.c":{
+"bytes":100504,
+"sha256":"9d5a9b83248a6ee1b0aad45f7eaeb404ac193c86249f62bb3881993b944cd599",
+"gitBlob":"77b819cd995b2510fed7ace688bce60c98a57563",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/core/neighbour.c"
+},
+"mm/page_alloc.c":{
+"bytes":202777,
+"sha256":"55a8c09ee0fb9f64bef126ce9645bac9b77e440476d50cf80b43df3c3ae503eb",
+"gitBlob":"b6958333054d06ed910f8fef863d83a7312eca9e",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/mm/page_alloc.c"
+},
+"mm/slub.c":{
+"bytes":190999,
+"sha256":"7bd937024342d5c7a40120aaaf50061644c2fefe92ca71b069a38bb6b4770f04",
+"gitBlob":"5b832512044e3ead8ccde2c02308bd8954246db5",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/mm/slub.c"
+},
+"net/ipv4/route.c":{
+"bytes":95588,
+"sha256":"51936639a42e42d71051d834e43b2f8164c104d3772a213e65f6c040a44f5ba0",
+"gitBlob":"723ac9181558c3240204d7b6830a9557d06b10f3",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/route.c"
+},
+"net/ipv4/tcp.c":{
+"bytes":142868,
+"sha256":"a323a8aa41a10e1e30f5dead2a6be0fed4c7912e27c624ac273e7d5198d7adef",
+"gitBlob":"4f77bd862e957f865eb919a30475c929da369792",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/tcp.c"
+},
+"net/ipv4/tcp_output.c":{
+"bytes":131725,
+"sha256":"81a3e778a6b698192745c4fc9c50c26245374ffd605b095d894659ca2cbc751a",
+"gitBlob":"68804fd01dafc48101ca8c3f15991dbe02a0dd6f",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/tcp_output.c"
+},
+"net/ipv4/tcp_input.c":{
+"bytes":216789,
+"sha256":"8007c66e4cf200085935805d33863a75a03089487a53a8b42a596025d859749d",
+"gitBlob":"2d844e1f867f0a67187fcd7f5eed2e30156f2bd7",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/tcp_input.c"
+},
+"net/ipv4/ip_output.c":{
+"bytes":43475,
+"sha256":"39af3b45940a3926ab7c82545049af631eec59308fa1bfd2f9a2c0009eda0b1c",
+"gitBlob":"49811c9281d424bc4b43b8e9075da9fe724773cb",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/ip_output.c"
+},
+"net/ipv4/udp.c":{
+"bytes":94445,
+"sha256":"aef73b6f132756fdba97937cb5205b060dd075e520ba182b9355770728b33f5d",
+"gitBlob":"2849b273b131076cf8300633d6642a6b84468235",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv4/udp.c"
+},
+"net/ipv6/route.c":{
+"bytes":171168,
+"sha256":"f66fdcfe8a3d817514462f1a4335518d6eda445d6ee4ecdd3eaabcd2ecfbe2a7",
+"gitBlob":"b4251915585f75ff4ae2038befda9efd09bc5887",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv6/route.c"
+},
+"net/ipv6/ip6_output.c":{
+"bytes":53932,
+"sha256":"5472439d49f2832ecf1eee212ce5f9128848f797d6062cfa7cb6b061509e7b29",
+"gitBlob":"f26841f1490f5c31e3b09bce5773391e779128e1",
+"url":"https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/net/ipv6/ip6_output.c"
+}
+},
+"functions":{
+"napi_skb_cache_get":{
+"source":"net/core/skbuff.c",
+"prefix":"static struct sk_buff *napi_skb_cache_get(",
+"sha256":"d5d7ec98d2885972e8353a7d6f2a7286413ccf14bed7897529295492fda74449",
+"text":"static struct sk_buff *napi_skb_cache_get(void)\n{\n\tstruct napi_alloc_cache *nc = this_cpu_ptr(&napi_alloc_cache);\n\tstruct sk_buff *skb;\n\n\tlocal_lock_nested_bh(&napi_alloc_cache.bh_lock);\n\tif (unlikely(!nc->skb_count)) {\n\t\tnc->skb_count = kmem_cache_alloc_bulk(net_hotdata.skbuff_cache,\n\t\t\t\t\t\t      GFP_ATOMIC | __GFP_NOWARN,\n\t\t\t\t\t\t      NAPI_SKB_CACHE_BULK,\n\t\t\t\t\t\t      nc->skb_cache);\n\t\tif (unlikely(!nc->skb_count)) {\n\t\t\tlocal_unlock_nested_bh(&napi_alloc_cache.bh_lock);\n\t\t\treturn NULL;\n\t\t}\n\t}\n\n\tskb = nc->skb_cache[--nc->skb_count];\n\tlocal_unlock_nested_bh(&napi_alloc_cache.bh_lock);\n\tkasan_mempool_unpoison_object(skb, kmem_cache_size(net_hotdata.skbuff_cache));\n\n\treturn skb;\n}\n",
+"obligation":"prelookup-bulk-header-cache",
+"physicalClosureProven":false
+},
+"__build_skb":{
+"source":"net/core/skbuff.c",
+"prefix":"struct sk_buff *__build_skb(",
+"sha256":"adc749df23aed1b903ccc3f551acbea025d0ce22c888ab1849f6aecc63a42ff4",
+"text":"struct sk_buff *__build_skb(void *data, unsigned int frag_size)\n{\n\tstruct sk_buff *skb;\n\n\tskb = kmem_cache_alloc(net_hotdata.skbuff_cache,\n\t\t\t       GFP_ATOMIC | __GFP_NOWARN);\n\tif (unlikely(!skb))\n\t\treturn NULL;\n\n\tmemset(skb, 0, offsetof(struct sk_buff, tail));\n\t__build_skb_around(skb, data, frag_size);\n\n\treturn skb;\n}\n",
+"obligation":"preexisting-rx-data-before-header",
+"physicalClosureProven":false
+},
+"__napi_build_skb":{
+"source":"net/core/skbuff.c",
+"prefix":"static struct sk_buff *__napi_build_skb(",
+"sha256":"7eb75c4883a04750e0d5d30c4c7abff8087152f25b15736d01113cf94143f315",
+"text":"static struct sk_buff *__napi_build_skb(void *data, unsigned int frag_size)\n{\n\tstruct sk_buff *skb;\n\n\tskb = napi_skb_cache_get();\n\tif (unlikely(!skb))\n\t\treturn NULL;\n\n\tmemset(skb, 0, offsetof(struct sk_buff, tail));\n\t__build_skb_around(skb, data, frag_size);\n\n\treturn skb;\n}\n",
+"obligation":"prelookup-cached-header",
+"physicalClosureProven":false
+},
+"kmalloc_reserve":{
+"source":"net/core/skbuff.c",
+"prefix":"static void *kmalloc_reserve(",
+"sha256":"ab543fca18d8363d1d755e60ea5ead7a836d62b962b5aa7bc482121c509e36e4",
+"text":"static void *kmalloc_reserve(unsigned int *size, gfp_t flags, int node,\n\t\t\t     bool *pfmemalloc)\n{\n\tbool ret_pfmemalloc = false;\n\tsize_t obj_size;\n\tvoid *obj;\n\n\tobj_size = SKB_HEAD_ALIGN(*size);\n\tif (obj_size <= SKB_SMALL_HEAD_CACHE_SIZE &&\n\t    !(flags & KMALLOC_NOT_NORMAL_BITS)) {\n\t\tobj = kmem_cache_alloc_node(net_hotdata.skb_small_head_cache,\n\t\t\t\tflags | __GFP_NOMEMALLOC | __GFP_NOWARN,\n\t\t\t\tnode);\n\t\t*size = SKB_SMALL_HEAD_CACHE_SIZE;\n\t\tif (obj || !(gfp_pfmemalloc_allowed(flags)))\n\t\t\tgoto out;\n\t\t/* Try again but now we are using pfmemalloc reserves */\n\t\tret_pfmemalloc = true;\n\t\tobj = kmem_cache_alloc_node(net_hotdata.skb_small_head_cache, flags, node);\n\t\tgoto out;\n\t}\n\n\tobj_size = kmalloc_size_roundup(obj_size);\n\t/* The following cast might truncate high-order bits of obj_size, this\n\t * is harmless because kmalloc(obj_size >= 2^32) will fail anyway.\n\t */\n\t*size = (unsigned int)obj_size;\n\n\t/*\n\t * Try a regular allocation, when that fails and we're not entitled\n\t * to the reserves, fail.\n\t */\n\tobj = kmalloc_node_track_caller(obj_size,\n\t\t\t\t\tflags | __GFP_NOMEMALLOC | __GFP_NOWARN,\n\t\t\t\t\tnode);\n\tif (obj || !(gfp_pfmemalloc_allowed(flags)))\n\t\tgoto out;\n\n\t/* Try again but now we are using pfmemalloc reserves */\n\tret_pfmemalloc = true;\n\tobj = kmalloc_node_track_caller(obj_size, flags, node);\n\nout:\n\tif (pfmemalloc)\n\t\t*pfmemalloc = ret_pfmemalloc;\n\n\treturn obj;\n}\n",
+"obligation":"size-roundup-small-head-and-emergency-cache",
+"physicalClosureProven":false
+},
+"__alloc_skb":{
+"source":"net/core/skbuff.c",
+"prefix":"struct sk_buff *__alloc_skb(",
+"sha256":"4530caefbab0eb8731ee3bcbc68ee3bf4a4d11e943b76d02d1ffea3216829f5a",
+"text":"struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,\n\t\t\t    int flags, int node)\n{\n\tstruct kmem_cache *cache;\n\tstruct sk_buff *skb;\n\tbool pfmemalloc;\n\tu8 *data;\n\n\tcache = (flags & SKB_ALLOC_FCLONE)\n\t\t? net_hotdata.skbuff_fclone_cache : net_hotdata.skbuff_cache;\n\n\tif (sk_memalloc_socks() && (flags & SKB_ALLOC_RX))\n\t\tgfp_mask |= __GFP_MEMALLOC;\n\n\t/* Get the HEAD */\n\tif ((flags & (SKB_ALLOC_FCLONE | SKB_ALLOC_NAPI)) == SKB_ALLOC_NAPI &&\n\t    likely(node == NUMA_NO_NODE || node == numa_mem_id()))\n\t\tskb = napi_skb_cache_get();\n\telse\n\t\tskb = kmem_cache_alloc_node(cache, gfp_mask & ~GFP_DMA, node);\n\tif (unlikely(!skb))\n\t\treturn NULL;\n\tprefetchw(skb);\n\n\t/* We do our best to align skb_shared_info on a separate cache\n\t * line. It usually works because kmalloc(X > SMP_CACHE_BYTES) gives\n\t * aligned memory blocks, unless SLUB/SLAB debug is enabled.\n\t * Both skb->head and skb_shared_info are cache line aligned.\n\t */\n\tdata = kmalloc_reserve(&size, gfp_mask, node, &pfmemalloc);\n\tif (unlikely(!data))\n\t\tgoto nodata;\n\t/* kmalloc_size_roundup() might give us more room than requested.\n\t * Put skb_shared_info exactly at the end of allocated zone,\n\t * to allow max possible filling before reallocation.\n\t */\n\tprefetchw(data + SKB_WITH_OVERHEAD(size));\n\n\t/*\n\t * Only clear those fields we need to clear, not those that we will\n\t * actually initialise below. Hence, don't put any more fields after\n\t * the tail pointer in struct sk_buff!\n\t */\n\tmemset(skb, 0, offsetof(struct sk_buff, tail));\n\t__build_skb_around(skb, data, size);\n\tskb->pfmemalloc = pfmemalloc;\n\n\tif (flags & SKB_ALLOC_FCLONE) {\n\t\tstruct sk_buff_fclones *fclones;\n\n\t\tfclones = container_of(skb, struct sk_buff_fclones, skb1);\n\n\t\tskb->fclone = SKB_FCLONE_ORIG;\n\t\trefcount_set(&fclones->fclone_ref, 1);\n\t}\n\n\treturn skb;\n\nnodata:\n\tkmem_cache_free(cache, skb);\n\treturn NULL;\n}\n",
+"obligation":"distinct-header-and-data-extents",
+"physicalClosureProven":false
+},
+"__netdev_alloc_skb":{
+"source":"net/core/skbuff.c",
+"prefix":"struct sk_buff *__netdev_alloc_skb(",
+"sha256":"7823e8515b43f18cbacc0a6dcbd7d3ad4cca0714bf87b013d17571fa37e67006",
+"text":"struct sk_buff *__netdev_alloc_skb(struct net_device *dev, unsigned int len,\n\t\t\t\t   gfp_t gfp_mask)\n{\n\tstruct page_frag_cache *nc;\n\tstruct sk_buff *skb;\n\tbool pfmemalloc;\n\tvoid *data;\n\n\tlen += NET_SKB_PAD;\n\n\t/* If requested length is either too small or too big,\n\t * we use kmalloc() for skb->head allocation.\n\t */\n\tif (len <= SKB_WITH_OVERHEAD(1024) ||\n\t    len > SKB_WITH_OVERHEAD(PAGE_SIZE) ||\n\t    (gfp_mask & (__GFP_DIRECT_RECLAIM | GFP_DMA))) {\n\t\tskb = __alloc_skb(len, gfp_mask, SKB_ALLOC_RX, NUMA_NO_NODE);\n\t\tif (!skb)\n\t\t\tgoto skb_fail;\n\t\tgoto skb_success;\n\t}\n\n\tlen = SKB_HEAD_ALIGN(len);\n\n\tif (sk_memalloc_socks())\n\t\tgfp_mask |= __GFP_MEMALLOC;\n\n\tif (in_hardirq() || irqs_disabled()) {\n\t\tnc = this_cpu_ptr(&netdev_alloc_cache);\n\t\tdata = page_frag_alloc(nc, len, gfp_mask);\n\t\tpfmemalloc = nc->pfmemalloc;\n\t} else {\n\t\tlocal_bh_disable();\n\t\tlocal_lock_nested_bh(&napi_alloc_cache.bh_lock);\n\n\t\tnc = this_cpu_ptr(&napi_alloc_cache.page);\n\t\tdata = page_frag_alloc(nc, len, gfp_mask);\n\t\tpfmemalloc = nc->pfmemalloc;\n\n\t\tlocal_unlock_nested_bh(&napi_alloc_cache.bh_lock);\n\t\tlocal_bh_enable();\n\t}\n\n\tif (unlikely(!data))\n\t\treturn NULL;\n\n\tskb = __build_skb(data, len);\n\tif (unlikely(!skb)) {\n\t\tskb_free_frag(data);\n\t\treturn NULL;\n\t}\n\n\tif (pfmemalloc)\n\t\tskb->pfmemalloc = 1;\n\tskb->head_frag = 1;\n\nskb_success:\n\tskb_reserve(skb, NET_SKB_PAD);\n\tskb->dev = dev;\n\nskb_fail:\n\treturn skb;\n}\n",
+"obligation":"prelookup-page-fragments",
+"physicalClosureProven":false
+},
+"napi_alloc_skb":{
+"source":"net/core/skbuff.c",
+"prefix":"struct sk_buff *napi_alloc_skb(",
+"sha256":"c3de20dca2e9618aad081ac05253766b64b867a40d8f9d8090042baec59a87e3",
+"text":"struct sk_buff *napi_alloc_skb(struct napi_struct *napi, unsigned int len)\n{\n\tgfp_t gfp_mask = GFP_ATOMIC | __GFP_NOWARN;\n\tstruct napi_alloc_cache *nc;\n\tstruct sk_buff *skb;\n\tbool pfmemalloc;\n\tvoid *data;\n\n\tDEBUG_NET_WARN_ON_ONCE(!in_softirq());\n\tlen += NET_SKB_PAD + NET_IP_ALIGN;\n\n\t/* If requested length is either too small or too big,\n\t * we use kmalloc() for skb->head allocation.\n\t * When the small frag allocator is available, prefer it over kmalloc\n\t * for small fragments\n\t */\n\tif ((!NAPI_HAS_SMALL_PAGE_FRAG && len <= SKB_WITH_OVERHEAD(1024)) ||\n\t    len > SKB_WITH_OVERHEAD(PAGE_SIZE) ||\n\t    (gfp_mask & (__GFP_DIRECT_RECLAIM | GFP_DMA))) {\n\t\tskb = __alloc_skb(len, gfp_mask, SKB_ALLOC_RX | SKB_ALLOC_NAPI,\n\t\t\t\t  NUMA_NO_NODE);\n\t\tif (!skb)\n\t\t\tgoto skb_fail;\n\t\tgoto skb_success;\n\t}\n\n\tif (sk_memalloc_socks())\n\t\tgfp_mask |= __GFP_MEMALLOC;\n\n\tlocal_lock_nested_bh(&napi_alloc_cache.bh_lock);\n\tnc = this_cpu_ptr(&napi_alloc_cache);\n\tif (NAPI_HAS_SMALL_PAGE_FRAG && len <= SKB_WITH_OVERHEAD(1024)) {\n\t\t/* we are artificially inflating the allocation size, but\n\t\t * that is not as bad as it may look like, as:\n\t\t * - 'len' less than GRO_MAX_HEAD makes little sense\n\t\t * - On most systems, larger 'len' values lead to fragment\n\t\t *   size above 512 bytes\n\t\t * - kmalloc would use the kmalloc-1k slab for such values\n\t\t * - Builds with smaller GRO_MAX_HEAD will very likely do\n\t\t *   little networking, as that implies no WiFi and no\n\t\t *   tunnels support, and 32 bits arches.\n\t\t */\n\t\tlen = SZ_1K;\n\n\t\tdata = page_frag_alloc_1k(&nc->page_small, gfp_mask);\n\t\tpfmemalloc = NAPI_SMALL_PAGE_PFMEMALLOC(nc->page_small);\n\t} else {\n\t\tlen = SKB_HEAD_ALIGN(len);\n\n\t\tdata = page_frag_alloc(&nc->page, len, gfp_mask);\n\t\tpfmemalloc = nc->page.pfmemalloc;\n\t}\n\tlocal_unlock_nested_bh(&napi_alloc_cache.bh_lock);\n\n\tif (unlikely(!data))\n\t\treturn NULL;\n\n\tskb = __napi_build_skb(data, len);\n\tif (unlikely(!skb)) {\n\t\tskb_free_frag(data);\n\t\treturn NULL;\n\t}\n\n\tif (pfmemalloc)\n\t\tskb->pfmemalloc = 1;\n\tskb->head_frag = 1;\n\nskb_success:\n\tskb_reserve(skb, NET_SKB_PAD + NET_IP_ALIGN);\n\tskb->dev = napi->dev;\n\nskb_fail:\n\treturn skb;\n}\n",
+"obligation":"prelookup-small-and-normal-fragments",
+"physicalClosureProven":false
+},
+"skb_clone":{
+"source":"net/core/skbuff.c",
+"prefix":"struct sk_buff *skb_clone(",
+"sha256":"7a26ccfc7ce40445d5ae30567d3641937fbfbeaf8756b8a7c3c9ea001e317c83",
+"text":"struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t gfp_mask)\n{\n\tstruct sk_buff_fclones *fclones = container_of(skb,\n\t\t\t\t\t\t       struct sk_buff_fclones,\n\t\t\t\t\t\t       skb1);\n\tstruct sk_buff *n;\n\n\tif (skb_orphan_frags(skb, gfp_mask))\n\t\treturn NULL;\n\n\tif (skb->fclone == SKB_FCLONE_ORIG &&\n\t    refcount_read(&fclones->fclone_ref) == 1) {\n\t\tn = &fclones->skb2;\n\t\trefcount_set(&fclones->fclone_ref, 2);\n\t\tn->fclone = SKB_FCLONE_CLONE;\n\t} else {\n\t\tif (skb_pfmemalloc(skb))\n\t\t\tgfp_mask |= __GFP_MEMALLOC;\n\n\t\tn = kmem_cache_alloc(net_hotdata.skbuff_cache, gfp_mask);\n\t\tif (!n)\n\t\t\treturn NULL;\n\n\t\tn->fclone = SKB_FCLONE_UNAVAILABLE;\n\t}\n\n\treturn __skb_clone(n, skb);\n}\n",
+"obligation":"shared-data-and-conditional-fclone-view",
+"physicalClosureProven":false
+},
+"pskb_expand_head":{
+"source":"net/core/skbuff.c",
+"prefix":"int pskb_expand_head(",
+"sha256":"07698a5f83542395b269bee01c4bd01f26d5d46e10e7c1b2f1c5032fc76ad25e",
+"text":"int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,\n\t\t     gfp_t gfp_mask)\n{\n\tunsigned int osize = skb_end_offset(skb);\n\tunsigned int size = osize + nhead + ntail;\n\tlong off;\n\tu8 *data;\n\tint i;\n\n\tBUG_ON(nhead < 0);\n\n\tBUG_ON(skb_shared(skb));\n\n\tskb_zcopy_downgrade_managed(skb);\n\n\tif (skb_pfmemalloc(skb))\n\t\tgfp_mask |= __GFP_MEMALLOC;\n\n\tdata = kmalloc_reserve(&size, gfp_mask, NUMA_NO_NODE, NULL);\n\tif (!data)\n\t\tgoto nodata;\n\tsize = SKB_WITH_OVERHEAD(size);\n\n\t/* Copy only real data... and, alas, header. This should be\n\t * optimized for the cases when header is void.\n\t */\n\tmemcpy(data + nhead, skb->head, skb_tail_pointer(skb) - skb->head);\n\n\tmemcpy((struct skb_shared_info *)(data + size),\n\t       skb_shinfo(skb),\n\t       offsetof(struct skb_shared_info, frags[skb_shinfo(skb)->nr_frags]));\n\n\t/*\n\t * if shinfo is shared we must drop the old head gracefully, but if it\n\t * is not we can just drop the old head and let the existing refcount\n\t * be since all we did is relocate the values\n\t */\n\tif (skb_cloned(skb)) {\n\t\tif (skb_orphan_frags(skb, gfp_mask))\n\t\t\tgoto nofrags;\n\t\tif (skb_zcopy(skb))\n\t\t\trefcount_inc(&skb_uarg(skb)->refcnt);\n\t\tfor (i = 0; i < skb_shinfo(skb)->nr_frags; i++)\n\t\t\tskb_frag_ref(skb, i);\n\n\t\tif (skb_has_frag_list(skb))\n\t\t\tskb_clone_fraglist(skb);\n\n\t\tskb_release_data(skb, SKB_CONSUMED);\n\t} else {\n\t\tskb_free_head(skb);\n\t}\n\toff = (data + nhead) - skb->head;\n\n\tskb->head     = data;\n\tskb->head_frag = 0;\n\tskb->data    += off;\n\n\tskb_set_end_offset(skb, size);\n#ifdef NET_SKBUFF_DATA_USES_OFFSET\n\toff           = nhead;\n#endif\n\tskb->tail\t      += off;\n\tskb_headers_offset_update(skb, nhead);\n\tskb->cloned   = 0;\n\tskb->hdr_len  = 0;\n\tskb->nohdr    = 0;\n\tatomic_set(&skb_shinfo(skb)->dataref, 1);\n\n\tskb_metadata_clear(skb);\n\n\t/* It is not generally safe to change skb->truesize.\n\t * For the moment, we really care of rx path, or\n\t * when skb is orphaned (not attached to a socket).\n\t */\n\tif (!skb->sk || skb->destructor == sock_edemux)\n\t\tskb->truesize += size - osize;\n\n\treturn 0;\n\nnofrags:\n\tskb_kfree_head(data, size);\nnodata:\n\treturn -ENOMEM;\n}\n",
+"obligation":"new-head-overlaps-old-shared-lifetime",
+"physicalClosureProven":false
+},
+"skb_release_data":{
+"source":"net/core/skbuff.c",
+"prefix":"static void skb_release_data(",
+"sha256":"bd3c68ebee8724b90456c42125e4c9f6b782b3087cbbb25c665ec57e36c63b25",
+"text":"static void skb_release_data(struct sk_buff *skb, enum skb_drop_reason reason)\n{\n\tstruct skb_shared_info *shinfo = skb_shinfo(skb);\n\tint i;\n\n\tif (!skb_data_unref(skb, shinfo))\n\t\tgoto exit;\n\n\tif (skb_zcopy(skb)) {\n\t\tbool skip_unref = shinfo->flags & SKBFL_MANAGED_FRAG_REFS;\n\n\t\tskb_zcopy_clear(skb, true);\n\t\tif (skip_unref)\n\t\t\tgoto free_head;\n\t}\n\n\tfor (i = 0; i < shinfo->nr_frags; i++)\n\t\t__skb_frag_unref(&shinfo->frags[i], skb->pp_recycle);\n\nfree_head:\n\tif (shinfo->frag_list)\n\t\tkfree_skb_list_reason(shinfo->frag_list, reason);\n\n\tskb_free_head(skb);\nexit:\n\t/* When we clone an SKB we copy the reycling bit. The pp_recycle\n\t * bit is only set on the head though, so in order to avoid races\n\t * while trying to recycle fragments on __skb_frag_unref() we need\n\t * to make one SKB responsible for triggering the recycle path.\n\t * So disable the recycling bit if an SKB is cloned and we have\n\t * additional references to the fragmented part of the SKB.\n\t * Eventually the last SKB will have the recycling bit set and it's\n\t * dataref set to 0, which will trigger the recycling\n\t */\n\tskb->pp_recycle = 0;\n}\n",
+"obligation":"last-dataref-fraglist-and-page-recycling",
+"physicalClosureProven":false
+},
+"napi_skb_cache_put":{
+"source":"net/core/skbuff.c",
+"prefix":"static void napi_skb_cache_put(",
+"sha256":"00395d528cb85866d073f3ac8768a50c5aec9394b9e1f0eeffc5b77647b38981",
+"text":"static void napi_skb_cache_put(struct sk_buff *skb)\n{\n\tstruct napi_alloc_cache *nc = this_cpu_ptr(&napi_alloc_cache);\n\tu32 i;\n\n\tif (!kasan_mempool_poison_object(skb))\n\t\treturn;\n\n\tlocal_lock_nested_bh(&napi_alloc_cache.bh_lock);\n\tnc->skb_cache[nc->skb_count++] = skb;\n\n\tif (unlikely(nc->skb_count == NAPI_SKB_CACHE_SIZE)) {\n\t\tfor (i = NAPI_SKB_CACHE_HALF; i < NAPI_SKB_CACHE_SIZE; i++)\n\t\t\tkasan_mempool_unpoison_object(nc->skb_cache[i],\n\t\t\t\t\t\tkmem_cache_size(net_hotdata.skbuff_cache));\n\n\t\tkmem_cache_free_bulk(net_hotdata.skbuff_cache, NAPI_SKB_CACHE_HALF,\n\t\t\t\t     nc->skb_cache + NAPI_SKB_CACHE_HALF);\n\t\tnc->skb_count = NAPI_SKB_CACHE_HALF;\n\t}\n\tlocal_unlock_nested_bh(&napi_alloc_cache.bh_lock);\n}\n",
+"obligation":"cache-return-not-backing-free",
+"physicalClosureProven":false
+},
+"napi_pp_put_page":{
+"source":"net/core/skbuff.c",
+"prefix":"bool napi_pp_put_page(",
+"sha256":"99c0ee16ca738e6226bfd2abb34698e5347238d157f0de7954d02e8386327a9a",
+"text":"bool napi_pp_put_page(netmem_ref netmem)\n{\n\tnetmem = netmem_compound_head(netmem);\n\n\t/* page->pp_magic is OR'ed with PP_SIGNATURE after the allocation\n\t * in order to preserve any existing bits, such as bit 0 for the\n\t * head page of compound page and bit 1 for pfmemalloc page, so\n\t * mask those bits for freeing side when doing below checking,\n\t * and page_is_pfmemalloc() is checked in __page_pool_put_page()\n\t * to avoid recycling the pfmemalloc page.\n\t */\n\tif (unlikely(!is_pp_netmem(netmem)))\n\t\treturn false;\n\n\tpage_pool_put_full_netmem(netmem_get_pp(netmem), netmem, false);\n\n\treturn true;\n}\n",
+"obligation":"page-pool-return-not-final-free",
+"physicalClosureProven":false
+},
+"alloc_skb_with_frags":{
+"source":"net/core/skbuff.c",
+"prefix":"struct sk_buff *alloc_skb_with_frags(",
+"sha256":"90755fbd7241a4b245ac61c5431324a92ee55b6c851be7b330bfc98f430761e3",
+"text":"struct sk_buff *alloc_skb_with_frags(unsigned long header_len,\n\t\t\t\t     unsigned long data_len,\n\t\t\t\t     int order,\n\t\t\t\t     int *errcode,\n\t\t\t\t     gfp_t gfp_mask)\n{\n\tunsigned long chunk;\n\tstruct sk_buff *skb;\n\tstruct page *page;\n\tint nr_frags = 0;\n\n\t*errcode = -EMSGSIZE;\n\tif (unlikely(data_len > MAX_SKB_FRAGS * (PAGE_SIZE << order)))\n\t\treturn NULL;\n\n\t*errcode = -ENOBUFS;\n\tskb = alloc_skb(header_len, gfp_mask);\n\tif (!skb)\n\t\treturn NULL;\n\n\twhile (data_len) {\n\t\tif (nr_frags == MAX_SKB_FRAGS - 1)\n\t\t\tgoto failure;\n\t\twhile (order && PAGE_ALIGN(data_len) < (PAGE_SIZE << order))\n\t\t\torder--;\n\n\t\tif (order) {\n\t\t\tpage = alloc_pages((gfp_mask & ~__GFP_DIRECT_RECLAIM) |\n\t\t\t\t\t   __GFP_COMP |\n\t\t\t\t\t   __GFP_NOWARN,\n\t\t\t\t\t   order);\n\t\t\tif (!page) {\n\t\t\t\torder--;\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t} else {\n\t\t\tpage = alloc_page(gfp_mask);\n\t\t\tif (!page)\n\t\t\t\tgoto failure;\n\t\t}\n\t\tchunk = min_t(unsigned long, data_len,\n\t\t\t      PAGE_SIZE << order);\n\t\tskb_fill_page_desc(skb, nr_frags, page, 0, chunk);\n\t\tnr_frags++;\n\t\tskb->truesize += (PAGE_SIZE << order);\n\t\tdata_len -= chunk;\n\t}\n\treturn skb;\n\nfailure:\n\tkfree_skb(skb);\n\treturn NULL;\n}\n",
+"obligation":"header-plus-compound-pages",
+"physicalClosureProven":false
+},
+"__page_pool_alloc_pages_slow":{
+"source":"net/core/page_pool.c",
+"prefix":"static noinline netmem_ref __page_pool_alloc_pages_slow(",
+"sha256":"81d272316513b3c208a5c09dd149ceefcc2d96f0d8970ba488f5ceddf2fd7dc9",
+"text":"static noinline netmem_ref __page_pool_alloc_pages_slow(struct page_pool *pool,\n\t\t\t\t\t\t\tgfp_t gfp)\n{\n\tconst int bulk = PP_ALLOC_CACHE_REFILL;\n\tunsigned int pp_order = pool->p.order;\n\tbool dma_map = pool->dma_map;\n\tnetmem_ref netmem;\n\tint i, nr_pages;\n\n\t/* Don't support bulk alloc for high-order pages */\n\tif (unlikely(pp_order))\n\t\treturn page_to_netmem(__page_pool_alloc_page_order(pool, gfp));\n\n\t/* Unnecessary as alloc cache is empty, but guarantees zero count */\n\tif (unlikely(pool->alloc.count > 0))\n\t\treturn pool->alloc.cache[--pool->alloc.count];\n\n\t/* Mark empty alloc.cache slots \"empty\" for alloc_pages_bulk_array */\n\tmemset(&pool->alloc.cache, 0, sizeof(void *) * bulk);\n\n\tnr_pages = alloc_pages_bulk_array_node(gfp,\n\t\t\t\t\t       pool->p.nid, bulk,\n\t\t\t\t\t       (struct page **)pool->alloc.cache);\n\tif (unlikely(!nr_pages))\n\t\treturn 0;\n\n\t/* Pages have been filled into alloc.cache array, but count is zero and\n\t * page element have not been (possibly) DMA mapped.\n\t */\n\tfor (i = 0; i < nr_pages; i++) {\n\t\tnetmem = pool->alloc.cache[i];\n\t\tif (dma_map && unlikely(!page_pool_dma_map(pool, netmem))) {\n\t\t\tput_page(netmem_to_page(netmem));\n\t\t\tcontinue;\n\t\t}\n\n\t\tpage_pool_set_pp_info(pool, netmem);\n\t\tpool->alloc.cache[pool->alloc.count++] = netmem;\n\t\t/* Track how many pages are held 'in-flight' */\n\t\tpool->pages_state_hold_cnt++;\n\t\ttrace_page_pool_state_hold(pool, netmem,\n\t\t\t\t\t   pool->pages_state_hold_cnt);\n\t}\n\n\t/* Return last page */\n\tif (likely(pool->alloc.count > 0)) {\n\t\tnetmem = pool->alloc.cache[--pool->alloc.count];\n\t\talloc_stat_inc(pool, slow);\n\t} else {\n\t\tnetmem = 0;\n\t}\n\n\t/* When page just alloc'ed is should/must have refcnt 1. */\n\treturn netmem;\n}\n",
+"obligation":"bulk-or-order-page-allocation",
+"physicalClosureProven":false
+},
+"page_pool_recycle_in_cache":{
+"source":"net/core/page_pool.c",
+"prefix":"static bool page_pool_recycle_in_cache(",
+"sha256":"eb7cf4ceb8b930bd564ba70b999b7b14b0e76220086b01446f34d8efef5d8b3b",
+"text":"static bool page_pool_recycle_in_cache(netmem_ref netmem,\n\t\t\t\t       struct page_pool *pool)\n{\n\tif (unlikely(pool->alloc.count == PP_ALLOC_CACHE_SIZE)) {\n\t\trecycle_stat_inc(pool, cache_full);\n\t\treturn false;\n\t}\n\n\t/* Caller MUST have verified/know (page_ref_count(page) == 1) */\n\tpool->alloc.cache[pool->alloc.count++] = netmem;\n\trecycle_stat_inc(pool, cached);\n\treturn true;\n}\n",
+"obligation":"shared-page-cache-retention",
+"physicalClosureProven":false
+},
+"page_pool_return_page":{
+"source":"net/core/page_pool.c",
+"prefix":"void page_pool_return_page(",
+"sha256":"5e4406d22824712ab4ec2821e71de79dc0b9b2e502dd7784df04fef3302f5a81",
+"text":"void page_pool_return_page(struct page_pool *pool, netmem_ref netmem)\n{\n\tint count;\n\tbool put;\n\n\tput = true;\n\tif (static_branch_unlikely(&page_pool_mem_providers) && pool->mp_priv)\n\t\tput = mp_dmabuf_devmem_release_page(pool, netmem);\n\telse\n\t\t__page_pool_release_page_dma(pool, netmem);\n\n\t/* This may be the last page returned, releasing the pool, so\n\t * it is not safe to reference pool afterwards.\n\t */\n\tcount = atomic_inc_return_relaxed(&pool->pages_state_release_cnt);\n\ttrace_page_pool_state_release(pool, netmem, count);\n\n\tif (put) {\n\t\tpage_pool_clear_pp_info(netmem);\n\t\tput_page(netmem_to_page(netmem));\n\t}\n\t/* An optimization would be to call __free_pages(page, pool->p.order)\n\t * knowing page is not part of page-cache (thus avoiding a\n\t * __page_cache_release() call).\n\t */\n}\n",
+"obligation":"dma-release-and-page-owner-drop",
+"physicalClosureProven":false
+},
+"page_pool_put_unrefed_netmem":{
+"source":"net/core/page_pool.c",
+"prefix":"void page_pool_put_unrefed_netmem(",
+"sha256":"075991270e31235937c486f82a7989e5680f25d2fee2bac9662125965f32e6d1",
+"text":"void page_pool_put_unrefed_netmem(struct page_pool *pool, netmem_ref netmem,\n\t\t\t\t  unsigned int dma_sync_size, bool allow_direct)\n{\n\tif (!allow_direct)\n\t\tallow_direct = page_pool_napi_local(pool);\n\n\tnetmem =\n\t\t__page_pool_put_page(pool, netmem, dma_sync_size, allow_direct);\n\tif (netmem && !page_pool_recycle_in_ring(pool, netmem)) {\n\t\t/* Cache full, fallback to free pages */\n\t\trecycle_stat_inc(pool, ring_full);\n\t\tpage_pool_return_page(pool, netmem);\n\t}\n}\n",
+"obligation":"reference-and-recycle-choice",
+"physicalClosureProven":false
+},
+"page_pool_destroy":{
+"source":"net/core/page_pool.c",
+"prefix":"void page_pool_destroy(",
+"sha256":"2399fb3b814b151be3970700262dcefc62af95b56906c0174e0f9b042cbe87e8",
+"text":"void page_pool_destroy(struct page_pool *pool)\n{\n\tif (!pool)\n\t\treturn;\n\n\tif (!page_pool_put(pool))\n\t\treturn;\n\n\tpage_pool_disable_direct_recycling(pool);\n\tpage_pool_free_frag(pool);\n\n\tif (!page_pool_release(pool))\n\t\treturn;\n\n\tpage_pool_detached(pool);\n\tpool->defer_start = jiffies;\n\tpool->defer_warn  = jiffies + DEFER_WARN_INTERVAL;\n\n\tINIT_DELAYED_WORK(&pool->release_dw, page_pool_release_retry);\n\tschedule_delayed_work(&pool->release_dw, DEFER_TIME);\n}\n",
+"obligation":"deferred-pool-lifetime",
+"physicalClosureProven":false
+},
+"__page_frag_cache_refill":{
+"source":"mm/page_alloc.c",
+"prefix":"static struct page *__page_frag_cache_refill(",
+"sha256":"5356c9ad625842080a502b117532e24b068b9b44dd463dbbc394f1aa32e8fd19",
+"text":"static struct page *__page_frag_cache_refill(struct page_frag_cache *nc,\n\t\t\t\t\t     gfp_t gfp_mask)\n{\n\tstruct page *page = NULL;\n\tgfp_t gfp = gfp_mask;\n\n#if (PAGE_SIZE < PAGE_FRAG_CACHE_MAX_SIZE)\n\tgfp_mask = (gfp_mask & ~__GFP_DIRECT_RECLAIM) |  __GFP_COMP |\n\t\t   __GFP_NOWARN | __GFP_NORETRY | __GFP_NOMEMALLOC;\n\tpage = alloc_pages_node(NUMA_NO_NODE, gfp_mask,\n\t\t\t\tPAGE_FRAG_CACHE_MAX_ORDER);\n\tnc->size = page ? PAGE_FRAG_CACHE_MAX_SIZE : PAGE_SIZE;\n#endif\n\tif (unlikely(!page))\n\t\tpage = alloc_pages_node(NUMA_NO_NODE, gfp, 0);\n\n\tnc->va = page ? page_address(page) : NULL;\n\n\treturn page;\n}\n",
+"obligation":"compound-fallback-page-allocation",
+"physicalClosureProven":false
+},
+"__page_frag_alloc_align":{
+"source":"mm/page_alloc.c",
+"prefix":"void *__page_frag_alloc_align(",
+"sha256":"1f3fea5ca0a2f08cd802c1c4f9460bd0dfd1758133c8930e31bb503953d0ebb0",
+"text":"void *__page_frag_alloc_align(struct page_frag_cache *nc,\n\t\t\t      unsigned int fragsz, gfp_t gfp_mask,\n\t\t\t      unsigned int align_mask)\n{\n\tunsigned int size = PAGE_SIZE;\n\tstruct page *page;\n\tint offset;\n\n\tif (unlikely(!nc->va)) {\nrefill:\n\t\tpage = __page_frag_cache_refill(nc, gfp_mask);\n\t\tif (!page)\n\t\t\treturn NULL;\n\n#if (PAGE_SIZE < PAGE_FRAG_CACHE_MAX_SIZE)\n\t\t/* if size can vary use size else just use PAGE_SIZE */\n\t\tsize = nc->size;\n#endif\n\t\t/* Even if we own the page, we do not use atomic_set().\n\t\t * This would break get_page_unless_zero() users.\n\t\t */\n\t\tpage_ref_add(page, PAGE_FRAG_CACHE_MAX_SIZE);\n\n\t\t/* reset page count bias and offset to start of new frag */\n\t\tnc->pfmemalloc = page_is_pfmemalloc(page);\n\t\tnc->pagecnt_bias = PAGE_FRAG_CACHE_MAX_SIZE + 1;\n\t\tnc->offset = size;\n\t}\n\n\toffset = nc->offset - fragsz;\n\tif (unlikely(offset < 0)) {\n\t\tpage = virt_to_page(nc->va);\n\n\t\tif (!page_ref_sub_and_test(page, nc->pagecnt_bias))\n\t\t\tgoto refill;\n\n\t\tif (unlikely(nc->pfmemalloc)) {\n\t\t\tfree_unref_page(page, compound_order(page));\n\t\t\tgoto refill;\n\t\t}\n\n#if (PAGE_SIZE < PAGE_FRAG_CACHE_MAX_SIZE)\n\t\t/* if size can vary use size else just use PAGE_SIZE */\n\t\tsize = nc->size;\n#endif\n\t\t/* OK, page count is 0, we can safely set it */\n\t\tset_page_count(page, PAGE_FRAG_CACHE_MAX_SIZE + 1);\n\n\t\t/* reset page count bias and offset to start of new frag */\n\t\tnc->pagecnt_bias = PAGE_FRAG_CACHE_MAX_SIZE + 1;\n\t\toffset = size - fragsz;\n\t\tif (unlikely(offset < 0)) {\n\t\t\t/*\n\t\t\t * The caller is trying to allocate a fragment\n\t\t\t * with fragsz > PAGE_SIZE but the cache isn't big\n\t\t\t * enough to satisfy the request, this may\n\t\t\t * happen in low memory conditions.\n\t\t\t * We don't release the cache page because\n\t\t\t * it could make memory pressure worse\n\t\t\t * so we simply return NULL here.\n\t\t\t */\n\t\t\treturn NULL;\n\t\t}\n\t}\n\n\tnc->pagecnt_bias--;\n\toffset &= align_mask;\n\tnc->offset = offset;\n\n\treturn nc->va + offset;\n}\n",
+"obligation":"shared-fragment-refcounts-and-cache",
+"physicalClosureProven":false
+},
+"page_frag_free":{
+"source":"mm/page_alloc.c",
+"prefix":"void page_frag_free(",
+"sha256":"216eb080c3a775109207b278fc3af19a7a55813b26a72d3c270bf0857b34a2fd",
+"text":"void page_frag_free(void *addr)\n{\n\tstruct page *page = virt_to_head_page(addr);\n\n\tif (unlikely(put_page_testzero(page)))\n\t\tfree_unref_page(page, compound_order(page));\n}\n",
+"obligation":"last-fragment-before-page-return",
+"physicalClosureProven":false
+},
+"free_unref_page":{
+"source":"mm/page_alloc.c",
+"prefix":"void free_unref_page(",
+"sha256":"49e3af96081e51fa55df6720b645880e65bdacf264662cf2c0794808bc98c8bb",
+"text":"void free_unref_page(struct page *page, unsigned int order)\n{\n\tunsigned long __maybe_unused UP_flags;\n\tstruct per_cpu_pages *pcp;\n\tstruct zone *zone;\n\tunsigned long pfn = page_to_pfn(page);\n\tint migratetype;\n\n\tif (!pcp_allowed_order(order)) {\n\t\t__free_pages_ok(page, order, FPI_NONE);\n\t\treturn;\n\t}\n\n\tif (!free_pages_prepare(page, order))\n\t\treturn;\n\n\t/*\n\t * We only track unmovable, reclaimable and movable on pcp lists.\n\t * Place ISOLATE pages on the isolated list because they are being\n\t * offlined but treat HIGHATOMIC and CMA as movable pages so we can\n\t * get those areas back if necessary. Otherwise, we may have to free\n\t * excessively into the page allocator\n\t */\n\tmigratetype = get_pfnblock_migratetype(page, pfn);\n\tif (unlikely(migratetype >= MIGRATE_PCPTYPES)) {\n\t\tif (unlikely(is_migrate_isolate(migratetype))) {\n\t\t\tfree_one_page(page_zone(page), page, pfn, order, FPI_NONE);\n\t\t\treturn;\n\t\t}\n\t\tmigratetype = MIGRATE_MOVABLE;\n\t}\n\n\tzone = page_zone(page);\n\tpcp_trylock_prepare(UP_flags);\n\tpcp = pcp_spin_trylock(zone->per_cpu_pageset);\n\tif (pcp) {\n\t\tfree_unref_page_commit(zone, pcp, page, migratetype, order);\n\t\tpcp_spin_unlock(pcp);\n\t} else {\n\t\tfree_one_page(zone, page, pfn, order, FPI_NONE);\n\t}\n\tpcp_trylock_finish(UP_flags);\n}\n",
+"obligation":"percpu-page-return-not-observed-unmapping",
+"physicalClosureProven":false
+},
+"__slab_free":{
+"source":"mm/slub.c",
+"prefix":"static void __slab_free(",
+"sha256":"d45ad5966e93b9694f6b3777ea24db1e6490304553461fcb5d84cb3e72e3d64a",
+"text":"static void __slab_free(struct kmem_cache *s, struct slab *slab,\n\t\t\tvoid *head, void *tail, int cnt,\n\t\t\tunsigned long addr)\n\n{\n\tvoid *prior;\n\tint was_frozen;\n\tstruct slab new;\n\tunsigned long counters;\n\tstruct kmem_cache_node *n = NULL;\n\tunsigned long flags;\n\tbool on_node_partial;\n\n\tstat(s, FREE_SLOWPATH);\n\n\tif (IS_ENABLED(CONFIG_SLUB_TINY) || kmem_cache_debug(s)) {\n\t\tfree_to_partial_list(s, slab, head, tail, cnt, addr);\n\t\treturn;\n\t}\n\n\tdo {\n\t\tif (unlikely(n)) {\n\t\t\tspin_unlock_irqrestore(&n->list_lock, flags);\n\t\t\tn = NULL;\n\t\t}\n\t\tprior = slab->freelist;\n\t\tcounters = slab->counters;\n\t\tset_freepointer(s, tail, prior);\n\t\tnew.counters = counters;\n\t\twas_frozen = new.frozen;\n\t\tnew.inuse -= cnt;\n\t\tif ((!new.inuse || !prior) && !was_frozen) {\n\t\t\t/* Needs to be taken off a list */\n\t\t\tif (!kmem_cache_has_cpu_partial(s) || prior) {\n\n\t\t\t\tn = get_node(s, slab_nid(slab));\n\t\t\t\t/*\n\t\t\t\t * Speculatively acquire the list_lock.\n\t\t\t\t * If the cmpxchg does not succeed then we may\n\t\t\t\t * drop the list_lock without any processing.\n\t\t\t\t *\n\t\t\t\t * Otherwise the list_lock will synchronize with\n\t\t\t\t * other processors updating the list of slabs.\n\t\t\t\t */\n\t\t\t\tspin_lock_irqsave(&n->list_lock, flags);\n\n\t\t\t\ton_node_partial = slab_test_node_partial(slab);\n\t\t\t}\n\t\t}\n\n\t} while (!slab_update_freelist(s, slab,\n\t\tprior, counters,\n\t\thead, new.counters,\n\t\t\"__slab_free\"));\n\n\tif (likely(!n)) {\n\n\t\tif (likely(was_frozen)) {\n\t\t\t/*\n\t\t\t * The list lock was not taken therefore no list\n\t\t\t * activity can be necessary.\n\t\t\t */\n\t\t\tstat(s, FREE_FROZEN);\n\t\t} else if (kmem_cache_has_cpu_partial(s) && !prior) {\n\t\t\t/*\n\t\t\t * If we started with a full slab then put it onto the\n\t\t\t * per cpu partial list.\n\t\t\t */\n\t\t\tput_cpu_partial(s, slab, 1);\n\t\t\tstat(s, CPU_PARTIAL_FREE);\n\t\t}\n\n\t\treturn;\n\t}\n\n\t/*\n\t * This slab was partially empty but not on the per-node partial list,\n\t * in which case we shouldn't manipulate its list, just return.\n\t */\n\tif (prior && !on_node_partial) {\n\t\tspin_unlock_irqrestore(&n->list_lock, flags);\n\t\treturn;\n\t}\n\n\tif (unlikely(!new.inuse && n->nr_partial >= s->min_partial))\n\t\tgoto slab_empty;\n\n\t/*\n\t * Objects left in the slab. If it was not on the partial list before\n\t * then add it.\n\t */\n\tif (!kmem_cache_has_cpu_partial(s) && unlikely(!prior)) {\n\t\tadd_partial(n, slab, DEACTIVATE_TO_TAIL);\n\t\tstat(s, FREE_ADD_PARTIAL);\n\t}\n\tspin_unlock_irqrestore(&n->list_lock, flags);\n\treturn;\n\nslab_empty:\n\tif (prior) {\n\t\t/*\n\t\t * Slab on the partial list.\n\t\t */\n\t\tremove_partial(n, slab);\n\t\tstat(s, FREE_REMOVE_PARTIAL);\n\t}\n\n\tspin_unlock_irqrestore(&n->list_lock, flags);\n\tstat(s, FREE_SLAB);\n\tdiscard_slab(s, slab);\n}\n",
+"obligation":"partial-slab-or-release-choice",
+"physicalClosureProven":false
+},
+"discard_slab":{
+"source":"mm/slub.c",
+"prefix":"static void discard_slab(",
+"sha256":"66edd88c8e262d08c56a70ee5596429355226bcf1b5130ab256cfe1d26bd3583",
+"text":"static void discard_slab(struct kmem_cache *s, struct slab *slab)\n{\n\tdec_slabs_node(s, slab_nid(slab), slab->objects);\n\tfree_slab(s, slab);\n}\n",
+"obligation":"slab-backing-release-entry",
+"physicalClosureProven":false
+},
+"free_slab":{
+"source":"mm/slub.c",
+"prefix":"static void free_slab(",
+"sha256":"c2cc7c56cf673c107298f52e9ba54db7773055ae73471dc41a39f1462822bfd8",
+"text":"static void free_slab(struct kmem_cache *s, struct slab *slab)\n{\n\tif (kmem_cache_debug_flags(s, SLAB_CONSISTENCY_CHECKS)) {\n\t\tvoid *p;\n\n\t\tslab_pad_check(s, slab);\n\t\tfor_each_object(p, s, slab_address(slab), slab->objects)\n\t\t\tcheck_object(s, slab, p, SLUB_RED_INACTIVE);\n\t}\n\n\tif (unlikely(s->flags & SLAB_TYPESAFE_BY_RCU))\n\t\tcall_rcu(&slab->rcu_head, rcu_free_slab);\n\telse\n\t\t__free_slab(s, slab);\n}\n",
+"obligation":"optional-rcu-before-backing-release",
+"physicalClosureProven":false
+},
+"__free_slab":{
+"source":"mm/slub.c",
+"prefix":"static void __free_slab(",
+"sha256":"c651c34fbef865f25f70816d82df209c1a7dcbfe3a555c35bc8a61d7faf08818",
+"text":"static void __free_slab(struct kmem_cache *s, struct slab *slab)\n{\n\tstruct folio *folio = slab_folio(slab);\n\tint order = folio_order(folio);\n\tint pages = 1 << order;\n\n\t__slab_clear_pfmemalloc(slab);\n\tfolio->mapping = NULL;\n\t/* Make the mapping reset visible before clearing the flag */\n\tsmp_wmb();\n\t__folio_clear_slab(folio);\n\tmm_account_reclaimed_pages(pages);\n\tunaccount_slab(slab, order, s);\n\t__free_pages(&folio->page, order);\n}\n",
+"obligation":"slab-metadata-plus-backing-page-release",
+"physicalClosureProven":false
+},
+"dst_alloc":{
+"source":"net/core/dst.c",
+"prefix":"void *dst_alloc(",
+"sha256":"f52b665aca1ae1eb8b4a8a13fd85fab5662ff12b711f8faa660d8ac64e935dbd",
+"text":"void *dst_alloc(struct dst_ops *ops, struct net_device *dev,\n\t\tint initial_obsolete, unsigned short flags)\n{\n\tstruct dst_entry *dst;\n\n\tif (ops->gc &&\n\t    !(flags & DST_NOCOUNT) &&\n\t    dst_entries_get_fast(ops) > ops->gc_thresh)\n\t\tops->gc(ops);\n\n\tdst = kmem_cache_alloc(ops->kmem_cachep, GFP_ATOMIC);\n\tif (!dst)\n\t\treturn NULL;\n\n\tdst_init(dst, ops, dev, initial_obsolete, flags);\n\n\treturn dst;\n}\n",
+"obligation":"shared-route-slab-allocation",
+"physicalClosureProven":false
+},
+"dst_destroy":{
+"source":"net/core/dst.c",
+"prefix":"static void dst_destroy(",
+"sha256":"3d246b801af8046a4bd5ef121d125fc7c1e197fafbd020dbc7201f2ccce25685",
+"text":"static void dst_destroy(struct dst_entry *dst)\n{\n\tstruct dst_entry *child = NULL;\n\n\tsmp_rmb();\n\n#ifdef CONFIG_XFRM\n\tif (dst->xfrm) {\n\t\tstruct xfrm_dst *xdst = (struct xfrm_dst *) dst;\n\n\t\tchild = xdst->child;\n\t}\n#endif\n\tif (dst->ops->destroy)\n\t\tdst->ops->destroy(dst);\n\tnetdev_put(dst->dev, &dst->dev_tracker);\n\n\tlwtstate_put(dst->lwtstate);\n\n\tif (dst->flags & DST_METADATA)\n\t\tmetadata_dst_free((struct metadata_dst *)dst);\n\telse\n\t\tkmem_cache_free(dst->ops->kmem_cachep, dst);\n\n\tdst = child;\n\tif (dst)\n\t\tdst_release_immediate(dst);\n}\n",
+"obligation":"route-destruction-and-slab-return",
+"physicalClosureProven":false
+},
+"dst_destroy_rcu":{
+"source":"net/core/dst.c",
+"prefix":"static void dst_destroy_rcu(",
+"sha256":"63203b38c0d15d1bd98b73efa028a05d766f2e412c53d0cd499910bc1af6d51c",
+"text":"static void dst_destroy_rcu(struct rcu_head *head)\n{\n\tstruct dst_entry *dst = container_of(head, struct dst_entry, rcu_head);\n\n\tdst_destroy(dst);\n}\n",
+"obligation":"deferred-route-destruction",
+"physicalClosureProven":false
+},
+"neigh_alloc":{
+"source":"net/core/neighbour.c",
+"prefix":"static struct neighbour *neigh_alloc(",
+"sha256":"61947d18155253866e54bb7e8512f4869352a8262c13ebd9ac79d288f6c0fcb5",
+"text":"static struct neighbour *neigh_alloc(struct neigh_table *tbl,\n\t\t\t\t     struct net_device *dev,\n\t\t\t\t     u32 flags, bool exempt_from_gc)\n{\n\tstruct neighbour *n = NULL;\n\tunsigned long now = jiffies;\n\tint entries, gc_thresh3;\n\n\tif (exempt_from_gc)\n\t\tgoto do_alloc;\n\n\tentries = atomic_inc_return(&tbl->gc_entries) - 1;\n\tgc_thresh3 = READ_ONCE(tbl->gc_thresh3);\n\tif (entries >= gc_thresh3 ||\n\t    (entries >= READ_ONCE(tbl->gc_thresh2) &&\n\t     time_after(now, READ_ONCE(tbl->last_flush) + 5 * HZ))) {\n\t\tif (!neigh_forced_gc(tbl) && entries >= gc_thresh3) {\n\t\t\tnet_info_ratelimited(\"%s: neighbor table overflow!\\n\",\n\t\t\t\t\t     tbl->id);\n\t\t\tNEIGH_CACHE_STAT_INC(tbl, table_fulls);\n\t\t\tgoto out_entries;\n\t\t}\n\t}\n\ndo_alloc:\n\tn = kzalloc(tbl->entry_size + dev->neigh_priv_len, GFP_ATOMIC);\n\tif (!n)\n\t\tgoto out_entries;\n\n\t__skb_queue_head_init(&n->arp_queue);\n\trwlock_init(&n->lock);\n\tseqlock_init(&n->ha_lock);\n\tn->updated\t  = n->used = now;\n\tn->nud_state\t  = NUD_NONE;\n\tn->output\t  = neigh_blackhole;\n\tn->flags\t  = flags;\n\tseqlock_init(&n->hh.hh_lock);\n\tn->parms\t  = neigh_parms_clone(&tbl->parms);\n\ttimer_setup(&n->timer, neigh_timer_handler, 0);\n\n\tNEIGH_CACHE_STAT_INC(tbl, allocs);\n\tn->tbl\t\t  = tbl;\n\trefcount_set(&n->refcnt, 1);\n\tn->dead\t\t  = 1;\n\tINIT_LIST_HEAD(&n->gc_list);\n\tINIT_LIST_HEAD(&n->managed_list);\n\n\tatomic_inc(&tbl->entries);\nout:\n\treturn n;\n\nout_entries:\n\tif (!exempt_from_gc)\n\t\tatomic_dec(&tbl->gc_entries);\n\tgoto out;\n}\n",
+"obligation":"separate-neighbour-allocation",
+"physicalClosureProven":false
+},
+"__netif_receive_skb_core":{
+"source":"net/core/dev.c",
+"prefix":"static int __netif_receive_skb_core(",
+"sha256":"291a00f0358aae6c3e5e2aa4e7fd6a3ed620e1c6c97b921f44696caee98d8689",
+"text":"static int __netif_receive_skb_core(struct sk_buff **pskb, bool pfmemalloc,\n\t\t\t\t    struct packet_type **ppt_prev)\n{\n\tstruct packet_type *ptype, *pt_prev;\n\trx_handler_func_t *rx_handler;\n\tstruct sk_buff *skb = *pskb;\n\tstruct net_device *orig_dev;\n\tbool deliver_exact = false;\n\tint ret = NET_RX_DROP;\n\t__be16 type;\n\n\tnet_timestamp_check(!READ_ONCE(net_hotdata.tstamp_prequeue), skb);\n\n\ttrace_netif_receive_skb(skb);\n\n\torig_dev = skb->dev;\n\n\tskb_reset_network_header(skb);\n\tif (!skb_transport_header_was_set(skb))\n\t\tskb_reset_transport_header(skb);\n\tskb_reset_mac_len(skb);\n\n\tpt_prev = NULL;\n\nanother_round:\n\tskb->skb_iif = skb->dev->ifindex;\n\n\t__this_cpu_inc(softnet_data.processed);\n\n\tif (static_branch_unlikely(&generic_xdp_needed_key)) {\n\t\tint ret2;\n\n\t\tmigrate_disable();\n\t\tret2 = do_xdp_generic(rcu_dereference(skb->dev->xdp_prog),\n\t\t\t\t      &skb);\n\t\tmigrate_enable();\n\n\t\tif (ret2 != XDP_PASS) {\n\t\t\tret = NET_RX_DROP;\n\t\t\tgoto out;\n\t\t}\n\t}\n\n\tif (eth_type_vlan(skb->protocol)) {\n\t\tskb = skb_vlan_untag(skb);\n\t\tif (unlikely(!skb))\n\t\t\tgoto out;\n\t}\n\n\tif (skb_skip_tc_classify(skb))\n\t\tgoto skip_classify;\n\n\tif (pfmemalloc)\n\t\tgoto skip_taps;\n\n\tlist_for_each_entry_rcu(ptype, &net_hotdata.ptype_all, list) {\n\t\tif (pt_prev)\n\t\t\tret = deliver_skb(skb, pt_prev, orig_dev);\n\t\tpt_prev = ptype;\n\t}\n\n\tlist_for_each_entry_rcu(ptype, &skb->dev->ptype_all, list) {\n\t\tif (pt_prev)\n\t\t\tret = deliver_skb(skb, pt_prev, orig_dev);\n\t\tpt_prev = ptype;\n\t}\n\nskip_taps:\n#ifdef CONFIG_NET_INGRESS\n\tif (static_branch_unlikely(&ingress_needed_key)) {\n\t\tbool another = false;\n\n\t\tnf_skip_egress(skb, true);\n\t\tskb = sch_handle_ingress(skb, &pt_prev, &ret, orig_dev,\n\t\t\t\t\t &another);\n\t\tif (another)\n\t\t\tgoto another_round;\n\t\tif (!skb)\n\t\t\tgoto out;\n\n\t\tnf_skip_egress(skb, false);\n\t\tif (nf_ingress(skb, &pt_prev, &ret, orig_dev) < 0)\n\t\t\tgoto out;\n\t}\n#endif\n\tskb_reset_redirect(skb);\nskip_classify:\n\tif (pfmemalloc && !skb_pfmemalloc_protocol(skb))\n\t\tgoto drop;\n\n\tif (skb_vlan_tag_present(skb)) {\n\t\tif (pt_prev) {\n\t\t\tret = deliver_skb(skb, pt_prev, orig_dev);\n\t\t\tpt_prev = NULL;\n\t\t}\n\t\tif (vlan_do_receive(&skb))\n\t\t\tgoto another_round;\n\t\telse if (unlikely(!skb))\n\t\t\tgoto out;\n\t}\n\n\trx_handler = rcu_dereference(skb->dev->rx_handler);\n\tif (rx_handler) {\n\t\tif (pt_prev) {\n\t\t\tret = deliver_skb(skb, pt_prev, orig_dev);\n\t\t\tpt_prev = NULL;\n\t\t}\n\t\tswitch (rx_handler(&skb)) {\n\t\tcase RX_HANDLER_CONSUMED:\n\t\t\tret = NET_RX_SUCCESS;\n\t\t\tgoto out;\n\t\tcase RX_HANDLER_ANOTHER:\n\t\t\tgoto another_round;\n\t\tcase RX_HANDLER_EXACT:\n\t\t\tdeliver_exact = true;\n\t\t\tbreak;\n\t\tcase RX_HANDLER_PASS:\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tBUG();\n\t\t}\n\t}\n\n\tif (unlikely(skb_vlan_tag_present(skb)) && !netdev_uses_dsa(skb->dev)) {\ncheck_vlan_id:\n\t\tif (skb_vlan_tag_get_id(skb)) {\n\t\t\t/* Vlan id is non 0 and vlan_do_receive() above couldn't\n\t\t\t * find vlan device.\n\t\t\t */\n\t\t\tskb->pkt_type = PACKET_OTHERHOST;\n\t\t} else if (eth_type_vlan(skb->protocol)) {\n\t\t\t/* Outer header is 802.1P with vlan 0, inner header is\n\t\t\t * 802.1Q or 802.1AD and vlan_do_receive() above could\n\t\t\t * not find vlan dev for vlan id 0.\n\t\t\t */\n\t\t\t__vlan_hwaccel_clear_tag(skb);\n\t\t\tskb = skb_vlan_untag(skb);\n\t\t\tif (unlikely(!skb))\n\t\t\t\tgoto out;\n\t\t\tif (vlan_do_receive(&skb))\n\t\t\t\t/* After stripping off 802.1P header with vlan 0\n\t\t\t\t * vlan dev is found for inner header.\n\t\t\t\t */\n\t\t\t\tgoto another_round;\n\t\t\telse if (unlikely(!skb))\n\t\t\t\tgoto out;\n\t\t\telse\n\t\t\t\t/* We have stripped outer 802.1P vlan 0 header.\n\t\t\t\t * But could not find vlan dev.\n\t\t\t\t * check again for vlan id to set OTHERHOST.\n\t\t\t\t */\n\t\t\t\tgoto check_vlan_id;\n\t\t}\n\t\t/* Note: we might in the future use prio bits\n\t\t * and set skb->priority like in vlan_do_receive()\n\t\t * For the time being, just ignore Priority Code Point\n\t\t */\n\t\t__vlan_hwaccel_clear_tag(skb);\n\t}\n\n\ttype = skb->protocol;\n\n\t/* deliver only exact match when indicated */\n\tif (likely(!deliver_exact)) {\n\t\tdeliver_ptype_list_skb(skb, &pt_prev, orig_dev, type,\n\t\t\t\t       &ptype_base[ntohs(type) &\n\t\t\t\t\t\t   PTYPE_HASH_MASK]);\n\t}\n\n\tdeliver_ptype_list_skb(skb, &pt_prev, orig_dev, type,\n\t\t\t       &orig_dev->ptype_specific);\n\n\tif (unlikely(skb->dev != orig_dev)) {\n\t\tdeliver_ptype_list_skb(skb, &pt_prev, orig_dev, type,\n\t\t\t\t       &skb->dev->ptype_specific);\n\t}\n\n\tif (pt_prev) {\n\t\tif (unlikely(skb_orphan_frags_rx(skb, GFP_ATOMIC)))\n\t\t\tgoto drop;\n\t\t*ppt_prev = pt_prev;\n\t} else {\ndrop:\n\t\tif (!deliver_exact)\n\t\t\tdev_core_stats_rx_dropped_inc(skb->dev);\n\t\telse\n\t\t\tdev_core_stats_rx_nohandler_inc(skb->dev);\n\t\tkfree_skb_reason(skb, SKB_DROP_REASON_UNHANDLED_PROTO);\n\t\t/* Jamal, now you will not able to escape explaining\n\t\t * me how you were going to use this. :-)\n\t\t */\n\t\tret = NET_RX_DROP;\n\t}\n\nout:\n\t/* The invariant here is that if *ppt_prev is not NULL\n\t * then skb should also be non-NULL.\n\t *\n\t * Apparently *ppt_prev assignment above holds this invariant due to\n\t * skb dereferencing near it.\n\t */\n\t*pskb = skb;\n\treturn ret;\n}\n",
+"obligation":"receive-demux-after-driver-allocation",
+"physicalClosureProven":false
+},
+"tcp_stream_alloc_skb":{
+"source":"net/ipv4/tcp.c",
+"prefix":"struct sk_buff *tcp_stream_alloc_skb(",
+"sha256":"ef5bad925e32e3bc9619f2b876f83f745693c420d3aea77c0669dc4b64c1d8c6",
+"text":"struct sk_buff *tcp_stream_alloc_skb(struct sock *sk, gfp_t gfp,\n\t\t\t\t     bool force_schedule)\n{\n\tstruct sk_buff *skb;\n\n\tskb = alloc_skb_fclone(MAX_TCP_HEADER, gfp);\n\tif (likely(skb)) {\n\t\tbool mem_scheduled;\n\n\t\tskb->truesize = SKB_TRUESIZE(skb_end_offset(skb));\n\t\tif (force_schedule) {\n\t\t\tmem_scheduled = true;\n\t\t\tsk_forced_mem_schedule(sk, skb->truesize);\n\t\t} else {\n\t\t\tmem_scheduled = sk_wmem_schedule(sk, skb->truesize);\n\t\t}\n\t\tif (likely(mem_scheduled)) {\n\t\t\tskb_reserve(skb, MAX_TCP_HEADER);\n\t\t\tskb->ip_summed = CHECKSUM_PARTIAL;\n\t\t\tINIT_LIST_HEAD(&skb->tcp_tsorted_anchor);\n\t\t\treturn skb;\n\t\t}\n\t\t__kfree_skb(skb);\n\t} else {\n\t\tsk->sk_prot->enter_memory_pressure(sk);\n\t\tsk_stream_moderate_sndbuf(sk);\n\t}\n\treturn NULL;\n}\n",
+"obligation":"socket-owned-tx-header-before-data",
+"physicalClosureProven":false
+},
+"tcp_sendmsg_locked":{
+"source":"net/ipv4/tcp.c",
+"prefix":"int tcp_sendmsg_locked(",
+"sha256":"5dcff08f97ce41fa8f871746e4749bc848736b186bcd1be49dadecc2ec7e1e2d",
+"text":"int tcp_sendmsg_locked(struct sock *sk, struct msghdr *msg, size_t size)\n{\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tstruct ubuf_info *uarg = NULL;\n\tstruct sk_buff *skb;\n\tstruct sockcm_cookie sockc;\n\tint flags, err, copied = 0;\n\tint mss_now = 0, size_goal, copied_syn = 0;\n\tint process_backlog = 0;\n\tint zc = 0;\n\tlong timeo;\n\n\tflags = msg->msg_flags;\n\n\tif ((flags & MSG_ZEROCOPY) && size) {\n\t\tif (msg->msg_ubuf) {\n\t\t\tuarg = msg->msg_ubuf;\n\t\t\tif (sk->sk_route_caps & NETIF_F_SG)\n\t\t\t\tzc = MSG_ZEROCOPY;\n\t\t} else if (sock_flag(sk, SOCK_ZEROCOPY)) {\n\t\t\tskb = tcp_write_queue_tail(sk);\n\t\t\tuarg = msg_zerocopy_realloc(sk, size, skb_zcopy(skb));\n\t\t\tif (!uarg) {\n\t\t\t\terr = -ENOBUFS;\n\t\t\t\tgoto out_err;\n\t\t\t}\n\t\t\tif (sk->sk_route_caps & NETIF_F_SG)\n\t\t\t\tzc = MSG_ZEROCOPY;\n\t\t\telse\n\t\t\t\tuarg_to_msgzc(uarg)->zerocopy = 0;\n\t\t}\n\t} else if (unlikely(msg->msg_flags & MSG_SPLICE_PAGES) && size) {\n\t\tif (sk->sk_route_caps & NETIF_F_SG)\n\t\t\tzc = MSG_SPLICE_PAGES;\n\t}\n\n\tif (unlikely(flags & MSG_FASTOPEN ||\n\t\t     inet_test_bit(DEFER_CONNECT, sk)) &&\n\t    !tp->repair) {\n\t\terr = tcp_sendmsg_fastopen(sk, msg, &copied_syn, size, uarg);\n\t\tif (err == -EINPROGRESS && copied_syn > 0)\n\t\t\tgoto out;\n\t\telse if (err)\n\t\t\tgoto out_err;\n\t}\n\n\ttimeo = sock_sndtimeo(sk, flags & MSG_DONTWAIT);\n\n\ttcp_rate_check_app_limited(sk);  /* is sending application-limited? */\n\n\t/* Wait for a connection to finish. One exception is TCP Fast Open\n\t * (passive side) where data is allowed to be sent before a connection\n\t * is fully established.\n\t */\n\tif (((1 << sk->sk_state) & ~(TCPF_ESTABLISHED | TCPF_CLOSE_WAIT)) &&\n\t    !tcp_passive_fastopen(sk)) {\n\t\terr = sk_stream_wait_connect(sk, &timeo);\n\t\tif (err != 0)\n\t\t\tgoto do_error;\n\t}\n\n\tif (unlikely(tp->repair)) {\n\t\tif (tp->repair_queue == TCP_RECV_QUEUE) {\n\t\t\tcopied = tcp_send_rcvq(sk, msg, size);\n\t\t\tgoto out_nopush;\n\t\t}\n\n\t\terr = -EINVAL;\n\t\tif (tp->repair_queue == TCP_NO_QUEUE)\n\t\t\tgoto out_err;\n\n\t\t/* 'common' sending to sendq */\n\t}\n\n\tsockcm_init(&sockc, sk);\n\tif (msg->msg_controllen) {\n\t\terr = sock_cmsg_send(sk, msg, &sockc);\n\t\tif (unlikely(err)) {\n\t\t\terr = -EINVAL;\n\t\t\tgoto out_err;\n\t\t}\n\t}\n\n\t/* This should be in poll */\n\tsk_clear_bit(SOCKWQ_ASYNC_NOSPACE, sk);\n\n\t/* Ok commence sending. */\n\tcopied = 0;\n\nrestart:\n\tmss_now = tcp_send_mss(sk, &size_goal, flags);\n\n\terr = -EPIPE;\n\tif (sk->sk_err || (sk->sk_shutdown & SEND_SHUTDOWN))\n\t\tgoto do_error;\n\n\twhile (msg_data_left(msg)) {\n\t\tssize_t copy = 0;\n\n\t\tskb = tcp_write_queue_tail(sk);\n\t\tif (skb)\n\t\t\tcopy = size_goal - skb->len;\n\n\t\tif (copy <= 0 || !tcp_skb_can_collapse_to(skb)) {\n\t\t\tbool first_skb;\n\nnew_segment:\n\t\t\tif (!sk_stream_memory_free(sk))\n\t\t\t\tgoto wait_for_space;\n\n\t\t\tif (unlikely(process_backlog >= 16)) {\n\t\t\t\tprocess_backlog = 0;\n\t\t\t\tif (sk_flush_backlog(sk))\n\t\t\t\t\tgoto restart;\n\t\t\t}\n\t\t\tfirst_skb = tcp_rtx_and_write_queues_empty(sk);\n\t\t\tskb = tcp_stream_alloc_skb(sk, sk->sk_allocation,\n\t\t\t\t\t\t   first_skb);\n\t\t\tif (!skb)\n\t\t\t\tgoto wait_for_space;\n\n\t\t\tprocess_backlog++;\n\n#ifdef CONFIG_SKB_DECRYPTED\n\t\t\tskb->decrypted = !!(flags & MSG_SENDPAGE_DECRYPTED);\n#endif\n\t\t\ttcp_skb_entail(sk, skb);\n\t\t\tcopy = size_goal;\n\n\t\t\t/* All packets are restored as if they have\n\t\t\t * already been sent. skb_mstamp_ns isn't set to\n\t\t\t * avoid wrong rtt estimation.\n\t\t\t */\n\t\t\tif (tp->repair)\n\t\t\t\tTCP_SKB_CB(skb)->sacked |= TCPCB_REPAIRED;\n\t\t}\n\n\t\t/* Try to append data to the end of skb. */\n\t\tif (copy > msg_data_left(msg))\n\t\t\tcopy = msg_data_left(msg);\n\n\t\tif (zc == 0) {\n\t\t\tbool merge = true;\n\t\t\tint i = skb_shinfo(skb)->nr_frags;\n\t\t\tstruct page_frag *pfrag = sk_page_frag(sk);\n\n\t\t\tif (!sk_page_frag_refill(sk, pfrag))\n\t\t\t\tgoto wait_for_space;\n\n\t\t\tif (!skb_can_coalesce(skb, i, pfrag->page,\n\t\t\t\t\t      pfrag->offset)) {\n\t\t\t\tif (i >= READ_ONCE(net_hotdata.sysctl_max_skb_frags)) {\n\t\t\t\t\ttcp_mark_push(tp, skb);\n\t\t\t\t\tgoto new_segment;\n\t\t\t\t}\n\t\t\t\tmerge = false;\n\t\t\t}\n\n\t\t\tcopy = min_t(int, copy, pfrag->size - pfrag->offset);\n\n\t\t\tif (unlikely(skb_zcopy_pure(skb) || skb_zcopy_managed(skb))) {\n\t\t\t\tif (tcp_downgrade_zcopy_pure(sk, skb))\n\t\t\t\t\tgoto wait_for_space;\n\t\t\t\tskb_zcopy_downgrade_managed(skb);\n\t\t\t}\n\n\t\t\tcopy = tcp_wmem_schedule(sk, copy);\n\t\t\tif (!copy)\n\t\t\t\tgoto wait_for_space;\n\n\t\t\terr = skb_copy_to_page_nocache(sk, &msg->msg_iter, skb,\n\t\t\t\t\t\t       pfrag->page,\n\t\t\t\t\t\t       pfrag->offset,\n\t\t\t\t\t\t       copy);\n\t\t\tif (err)\n\t\t\t\tgoto do_error;\n\n\t\t\t/* Update the skb. */\n\t\t\tif (merge) {\n\t\t\t\tskb_frag_size_add(&skb_shinfo(skb)->frags[i - 1], copy);\n\t\t\t} else {\n\t\t\t\tskb_fill_page_desc(skb, i, pfrag->page,\n\t\t\t\t\t\t   pfrag->offset, copy);\n\t\t\t\tpage_ref_inc(pfrag->page);\n\t\t\t}\n\t\t\tpfrag->offset += copy;\n\t\t} else if (zc == MSG_ZEROCOPY)  {\n\t\t\t/* First append to a fragless skb builds initial\n\t\t\t * pure zerocopy skb\n\t\t\t */\n\t\t\tif (!skb->len)\n\t\t\t\tskb_shinfo(skb)->flags |= SKBFL_PURE_ZEROCOPY;\n\n\t\t\tif (!skb_zcopy_pure(skb)) {\n\t\t\t\tcopy = tcp_wmem_schedule(sk, copy);\n\t\t\t\tif (!copy)\n\t\t\t\t\tgoto wait_for_space;\n\t\t\t}\n\n\t\t\terr = skb_zerocopy_iter_stream(sk, skb, msg, copy, uarg);\n\t\t\tif (err == -EMSGSIZE || err == -EEXIST) {\n\t\t\t\ttcp_mark_push(tp, skb);\n\t\t\t\tgoto new_segment;\n\t\t\t}\n\t\t\tif (err < 0)\n\t\t\t\tgoto do_error;\n\t\t\tcopy = err;\n\t\t} else if (zc == MSG_SPLICE_PAGES) {\n\t\t\t/* Splice in data if we can; copy if we can't. */\n\t\t\tif (tcp_downgrade_zcopy_pure(sk, skb))\n\t\t\t\tgoto wait_for_space;\n\t\t\tcopy = tcp_wmem_schedule(sk, copy);\n\t\t\tif (!copy)\n\t\t\t\tgoto wait_for_space;\n\n\t\t\terr = skb_splice_from_iter(skb, &msg->msg_iter, copy,\n\t\t\t\t\t\t   sk->sk_allocation);\n\t\t\tif (err < 0) {\n\t\t\t\tif (err == -EMSGSIZE) {\n\t\t\t\t\ttcp_mark_push(tp, skb);\n\t\t\t\t\tgoto new_segment;\n\t\t\t\t}\n\t\t\t\tgoto do_error;\n\t\t\t}\n\t\t\tcopy = err;\n\n\t\t\tif (!(flags & MSG_NO_SHARED_FRAGS))\n\t\t\t\tskb_shinfo(skb)->flags |= SKBFL_SHARED_FRAG;\n\n\t\t\tsk_wmem_queued_add(sk, copy);\n\t\t\tsk_mem_charge(sk, copy);\n\t\t}\n\n\t\tif (!copied)\n\t\t\tTCP_SKB_CB(skb)->tcp_flags &= ~TCPHDR_PSH;\n\n\t\tWRITE_ONCE(tp->write_seq, tp->write_seq + copy);\n\t\tTCP_SKB_CB(skb)->end_seq += copy;\n\t\ttcp_skb_pcount_set(skb, 0);\n\n\t\tcopied += copy;\n\t\tif (!msg_data_left(msg)) {\n\t\t\tif (unlikely(flags & MSG_EOR))\n\t\t\t\tTCP_SKB_CB(skb)->eor = 1;\n\t\t\tgoto out;\n\t\t}\n\n\t\tif (skb->len < size_goal || (flags & MSG_OOB) || unlikely(tp->repair))\n\t\t\tcontinue;\n\n\t\tif (forced_push(tp)) {\n\t\t\ttcp_mark_push(tp, skb);\n\t\t\t__tcp_push_pending_frames(sk, mss_now, TCP_NAGLE_PUSH);\n\t\t} else if (skb == tcp_send_head(sk))\n\t\t\ttcp_push_one(sk, mss_now);\n\t\tcontinue;\n\nwait_for_space:\n\t\tset_bit(SOCK_NOSPACE, &sk->sk_socket->flags);\n\t\ttcp_remove_empty_skb(sk);\n\t\tif (copied)\n\t\t\ttcp_push(sk, flags & ~MSG_MORE, mss_now,\n\t\t\t\t TCP_NAGLE_PUSH, size_goal);\n\n\t\terr = sk_stream_wait_memory(sk, &timeo);\n\t\tif (err != 0)\n\t\t\tgoto do_error;\n\n\t\tmss_now = tcp_send_mss(sk, &size_goal, flags);\n\t}\n\nout:\n\tif (copied) {\n\t\ttcp_tx_timestamp(sk, sockc.tsflags);\n\t\ttcp_push(sk, flags, mss_now, tp->nonagle, size_goal);\n\t}\nout_nopush:\n\t/* msg->msg_ubuf is pinned by the caller so we don't take extra refs */\n\tif (uarg && !msg->msg_ubuf)\n\t\tnet_zcopy_put(uarg);\n\treturn copied + copied_syn;\n\ndo_error:\n\ttcp_remove_empty_skb(sk);\n\n\tif (copied + copied_syn)\n\t\tgoto out;\nout_err:\n\t/* msg->msg_ubuf is pinned by the caller so we don't take extra refs */\n\tif (uarg && !msg->msg_ubuf)\n\t\tnet_zcopy_put_abort(uarg, true);\n\terr = sk_stream_error(sk, flags, err);\n\t/* make sure we wake any epoll edge trigger waiter */\n\tif (unlikely(tcp_rtx_and_write_queues_empty(sk) && err == -EAGAIN)) {\n\t\tsk->sk_write_space(sk);\n\t\ttcp_chrono_stop(sk, TCP_CHRONO_SNDBUF_LIMITED);\n\t}\n\treturn err;\n}\n",
+"obligation":"socket-page-frag-and-coalescing",
+"physicalClosureProven":false
+},
+"__tcp_close":{
+"source":"net/ipv4/tcp.c",
+"prefix":"void __tcp_close(",
+"sha256":"4de67bc18451ad80a6a18f52ea38502456ad8dd941eb71e5943fb570876f574c",
+"text":"void __tcp_close(struct sock *sk, long timeout)\n{\n\tstruct sk_buff *skb;\n\tint data_was_unread = 0;\n\tint state;\n\n\tWRITE_ONCE(sk->sk_shutdown, SHUTDOWN_MASK);\n\n\tif (sk->sk_state == TCP_LISTEN) {\n\t\ttcp_set_state(sk, TCP_CLOSE);\n\n\t\t/* Special case. */\n\t\tinet_csk_listen_stop(sk);\n\n\t\tgoto adjudge_to_death;\n\t}\n\n\t/*  We need to flush the recv. buffs.  We do this only on the\n\t *  descriptor close, not protocol-sourced closes, because the\n\t *  reader process may not have drained the data yet!\n\t */\n\twhile ((skb = __skb_dequeue(&sk->sk_receive_queue)) != NULL) {\n\t\tu32 len = TCP_SKB_CB(skb)->end_seq - TCP_SKB_CB(skb)->seq;\n\n\t\tif (TCP_SKB_CB(skb)->tcp_flags & TCPHDR_FIN)\n\t\t\tlen--;\n\t\tdata_was_unread += len;\n\t\t__kfree_skb(skb);\n\t}\n\n\t/* If socket has been already reset (e.g. in tcp_reset()) - kill it. */\n\tif (sk->sk_state == TCP_CLOSE)\n\t\tgoto adjudge_to_death;\n\n\t/* As outlined in RFC 2525, section 2.17, we send a RST here because\n\t * data was lost. To witness the awful effects of the old behavior of\n\t * always doing a FIN, run an older 2.1.x kernel or 2.0.x, start a bulk\n\t * GET in an FTP client, suspend the process, wait for the client to\n\t * advertise a zero window, then kill -9 the FTP client, wheee...\n\t * Note: timeout is always zero in such a case.\n\t */\n\tif (unlikely(tcp_sk(sk)->repair)) {\n\t\tsk->sk_prot->disconnect(sk, 0);\n\t} else if (data_was_unread) {\n\t\t/* Unread data was tossed, zap the connection. */\n\t\tNET_INC_STATS(sock_net(sk), LINUX_MIB_TCPABORTONCLOSE);\n\t\ttcp_set_state(sk, TCP_CLOSE);\n\t\ttcp_send_active_reset(sk, sk->sk_allocation,\n\t\t\t\t      SK_RST_REASON_TCP_ABORT_ON_CLOSE);\n\t} else if (sock_flag(sk, SOCK_LINGER) && !sk->sk_lingertime) {\n\t\t/* Check zero linger _after_ checking for unread data. */\n\t\tsk->sk_prot->disconnect(sk, 0);\n\t\tNET_INC_STATS(sock_net(sk), LINUX_MIB_TCPABORTONDATA);\n\t} else if (tcp_close_state(sk)) {\n\t\t/* We FIN if the application ate all the data before\n\t\t * zapping the connection.\n\t\t */\n\n\t\t/* RED-PEN. Formally speaking, we have broken TCP state\n\t\t * machine. State transitions:\n\t\t *\n\t\t * TCP_ESTABLISHED -> TCP_FIN_WAIT1\n\t\t * TCP_SYN_RECV\t-> TCP_FIN_WAIT1 (it is difficult)\n\t\t * TCP_CLOSE_WAIT -> TCP_LAST_ACK\n\t\t *\n\t\t * are legal only when FIN has been sent (i.e. in window),\n\t\t * rather than queued out of window. Purists blame.\n\t\t *\n\t\t * F.e. \"RFC state\" is ESTABLISHED,\n\t\t * if Linux state is FIN-WAIT-1, but FIN is still not sent.\n\t\t *\n\t\t * The visible declinations are that sometimes\n\t\t * we enter time-wait state, when it is not required really\n\t\t * (harmless), do not send active resets, when they are\n\t\t * required by specs (TCP_ESTABLISHED, TCP_CLOSE_WAIT, when\n\t\t * they look as CLOSING or LAST_ACK for Linux)\n\t\t * Probably, I missed some more holelets.\n\t\t * \t\t\t\t\t\t--ANK\n\t\t * XXX (TFO) - To start off we don't support SYN+ACK+FIN\n\t\t * in a single packet! (May consider it later but will\n\t\t * probably need API support or TCP_CORK SYN-ACK until\n\t\t * data is written and socket is closed.)\n\t\t */\n\t\ttcp_send_fin(sk);\n\t}\n\n\tsk_stream_wait_close(sk, timeout);\n\nadjudge_to_death:\n\tstate = sk->sk_state;\n\tsock_hold(sk);\n\tsock_orphan(sk);\n\n\tlocal_bh_disable();\n\tbh_lock_sock(sk);\n\t/* remove backlog if any, without releasing ownership. */\n\t__release_sock(sk);\n\n\tthis_cpu_inc(tcp_orphan_count);\n\n\t/* Have we already been destroyed by a softirq or backlog? */\n\tif (state != TCP_CLOSE && sk->sk_state == TCP_CLOSE)\n\t\tgoto out;\n\n\t/*\tThis is a (useful) BSD violating of the RFC. There is a\n\t *\tproblem with TCP as specified in that the other end could\n\t *\tkeep a socket open forever with no application left this end.\n\t *\tWe use a 1 minute timeout (about the same as BSD) then kill\n\t *\tour end. If they send after that then tough - BUT: long enough\n\t *\tthat we won't make the old 4*rto = almost no time - whoops\n\t *\treset mistake.\n\t *\n\t *\tNope, it was not mistake. It is really desired behaviour\n\t *\tf.e. on http servers, when such sockets are useless, but\n\t *\tconsume significant resources. Let's do it with special\n\t *\tlinger2\toption.\t\t\t\t\t--ANK\n\t */\n\n\tif (sk->sk_state == TCP_FIN_WAIT2) {\n\t\tstruct tcp_sock *tp = tcp_sk(sk);\n\t\tif (READ_ONCE(tp->linger2) < 0) {\n\t\t\ttcp_set_state(sk, TCP_CLOSE);\n\t\t\ttcp_send_active_reset(sk, GFP_ATOMIC,\n\t\t\t\t\t      SK_RST_REASON_TCP_ABORT_ON_LINGER);\n\t\t\t__NET_INC_STATS(sock_net(sk),\n\t\t\t\t\tLINUX_MIB_TCPABORTONLINGER);\n\t\t} else {\n\t\t\tconst int tmo = tcp_fin_time(sk);\n\n\t\t\tif (tmo > TCP_TIMEWAIT_LEN) {\n\t\t\t\tinet_csk_reset_keepalive_timer(sk,\n\t\t\t\t\t\ttmo - TCP_TIMEWAIT_LEN);\n\t\t\t} else {\n\t\t\t\ttcp_time_wait(sk, TCP_FIN_WAIT2, tmo);\n\t\t\t\tgoto out;\n\t\t\t}\n\t\t}\n\t}\n\tif (sk->sk_state != TCP_CLOSE) {\n\t\tif (tcp_check_oom(sk, 0)) {\n\t\t\ttcp_set_state(sk, TCP_CLOSE);\n\t\t\ttcp_send_active_reset(sk, GFP_ATOMIC,\n\t\t\t\t\t      SK_RST_REASON_TCP_ABORT_ON_MEMORY);\n\t\t\t__NET_INC_STATS(sock_net(sk),\n\t\t\t\t\tLINUX_MIB_TCPABORTONMEMORY);\n\t\t} else if (!check_net(sock_net(sk))) {\n\t\t\t/* Not possible to send reset; just close */\n\t\t\ttcp_set_state(sk, TCP_CLOSE);\n\t\t}\n\t}\n\n\tif (sk->sk_state == TCP_CLOSE) {\n\t\tstruct request_sock *req;\n\n\t\treq = rcu_dereference_protected(tcp_sk(sk)->fastopen_rsk,\n\t\t\t\t\t\tlockdep_sock_is_held(sk));\n\t\t/* We could get here with a non-NULL req if the socket is\n\t\t * aborted (e.g., closed with unread data) before 3WHS\n\t\t * finishes.\n\t\t */\n\t\tif (req)\n\t\t\treqsk_fastopen_remove(sk, req, false);\n\t\tinet_csk_destroy_sock(sk);\n\t}\n\t/* Otherwise, socket is reprieved until protocol close. */\n\nout:\n\tbh_unlock_sock(sk);\n\tlocal_bh_enable();\n}\n",
+"obligation":"close-with-deferred-descendants",
+"physicalClosureProven":false
+},
+"__tcp_retransmit_skb":{
+"source":"net/ipv4/tcp_output.c",
+"prefix":"int __tcp_retransmit_skb(",
+"sha256":"da551be5583e9392cb3f97ab0237347a04e752307a7aa65aea0d091ea23fce09",
+"text":"int __tcp_retransmit_skb(struct sock *sk, struct sk_buff *skb, int segs)\n{\n\tstruct inet_connection_sock *icsk = inet_csk(sk);\n\tstruct tcp_sock *tp = tcp_sk(sk);\n\tunsigned int cur_mss;\n\tint diff, len, err;\n\tint avail_wnd;\n\n\t/* Inconclusive MTU probe */\n\tif (icsk->icsk_mtup.probe_size)\n\t\ticsk->icsk_mtup.probe_size = 0;\n\n\tif (skb_still_in_host_queue(sk, skb))\n\t\treturn -EBUSY;\n\nstart:\n\tif (before(TCP_SKB_CB(skb)->seq, tp->snd_una)) {\n\t\tif (unlikely(TCP_SKB_CB(skb)->tcp_flags & TCPHDR_SYN)) {\n\t\t\tTCP_SKB_CB(skb)->tcp_flags &= ~TCPHDR_SYN;\n\t\t\tTCP_SKB_CB(skb)->seq++;\n\t\t\tgoto start;\n\t\t}\n\t\tif (unlikely(before(TCP_SKB_CB(skb)->end_seq, tp->snd_una))) {\n\t\t\tWARN_ON_ONCE(1);\n\t\t\treturn -EINVAL;\n\t\t}\n\t\tif (tcp_trim_head(sk, skb, tp->snd_una - TCP_SKB_CB(skb)->seq))\n\t\t\treturn -ENOMEM;\n\t}\n\n\tif (inet_csk(sk)->icsk_af_ops->rebuild_header(sk))\n\t\treturn -EHOSTUNREACH; /* Routing failure or similar. */\n\n\tcur_mss = tcp_current_mss(sk);\n\tavail_wnd = tcp_wnd_end(tp) - TCP_SKB_CB(skb)->seq;\n\n\t/* If receiver has shrunk his window, and skb is out of\n\t * new window, do not retransmit it. The exception is the\n\t * case, when window is shrunk to zero. In this case\n\t * our retransmit of one segment serves as a zero window probe.\n\t */\n\tif (avail_wnd <= 0) {\n\t\tif (TCP_SKB_CB(skb)->seq != tp->snd_una)\n\t\t\treturn -EAGAIN;\n\t\tavail_wnd = cur_mss;\n\t}\n\n\tlen = cur_mss * segs;\n\tif (len > avail_wnd) {\n\t\tlen = rounddown(avail_wnd, cur_mss);\n\t\tif (!len)\n\t\t\tlen = avail_wnd;\n\t}\n\tif (skb->len > len) {\n\t\tif (tcp_fragment(sk, TCP_FRAG_IN_RTX_QUEUE, skb, len,\n\t\t\t\t cur_mss, GFP_ATOMIC))\n\t\t\treturn -ENOMEM; /* We'll try again later. */\n\t} else {\n\t\tif (skb_unclone_keeptruesize(skb, GFP_ATOMIC))\n\t\t\treturn -ENOMEM;\n\n\t\tdiff = tcp_skb_pcount(skb);\n\t\ttcp_set_skb_tso_segs(skb, cur_mss);\n\t\tdiff -= tcp_skb_pcount(skb);\n\t\tif (diff)\n\t\t\ttcp_adjust_pcount(sk, skb, diff);\n\t\tavail_wnd = min_t(int, avail_wnd, cur_mss);\n\t\tif (skb->len < avail_wnd)\n\t\t\ttcp_retrans_try_collapse(sk, skb, avail_wnd);\n\t}\n\n\t/* RFC3168, section 6.1.1.1. ECN fallback */\n\tif ((TCP_SKB_CB(skb)->tcp_flags & TCPHDR_SYN_ECN) == TCPHDR_SYN_ECN)\n\t\ttcp_ecn_clear_syn(sk, skb);\n\n\t/* Update global and local TCP statistics. */\n\tsegs = tcp_skb_pcount(skb);\n\tTCP_ADD_STATS(sock_net(sk), TCP_MIB_RETRANSSEGS, segs);\n\tif (TCP_SKB_CB(skb)->tcp_flags & TCPHDR_SYN)\n\t\t__NET_INC_STATS(sock_net(sk), LINUX_MIB_TCPSYNRETRANS);\n\ttp->total_retrans += segs;\n\ttp->bytes_retrans += skb->len;\n\n\t/* make sure skb->data is aligned on arches that require it\n\t * and check if ack-trimming & collapsing extended the headroom\n\t * beyond what csum_start can cover.\n\t */\n\tif (unlikely((NET_IP_ALIGN && ((unsigned long)skb->data & 3)) ||\n\t\t     skb_headroom(skb) >= 0xFFFF)) {\n\t\tstruct sk_buff *nskb;\n\n\t\ttcp_skb_tsorted_save(skb) {\n\t\t\tnskb = __pskb_copy(skb, MAX_TCP_HEADER, GFP_ATOMIC);\n\t\t\tif (nskb) {\n\t\t\t\tnskb->dev = NULL;\n\t\t\t\terr = tcp_transmit_skb(sk, nskb, 0, GFP_ATOMIC);\n\t\t\t} else {\n\t\t\t\terr = -ENOBUFS;\n\t\t\t}\n\t\t} tcp_skb_tsorted_restore(skb);\n\n\t\tif (!err) {\n\t\t\ttcp_update_skb_after_send(sk, skb, tp->tcp_wstamp_ns);\n\t\t\ttcp_rate_skb_sent(sk, skb);\n\t\t}\n\t} else {\n\t\terr = tcp_transmit_skb(sk, skb, 1, GFP_ATOMIC);\n\t}\n\n\tif (BPF_SOCK_OPS_TEST_FLAG(tp, BPF_SOCK_OPS_RETRANS_CB_FLAG))\n\t\ttcp_call_bpf_3arg(sk, BPF_SOCK_OPS_RETRANS_CB,\n\t\t\t\t  TCP_SKB_CB(skb)->seq, segs, err);\n\n\tif (likely(!err)) {\n\t\ttrace_tcp_retransmit_skb(sk, skb);\n\t} else if (err != -EBUSY) {\n\t\tNET_ADD_STATS(sock_net(sk), LINUX_MIB_TCPRETRANSFAIL, segs);\n\t}\n\n\t/* To avoid taking spuriously low RTT samples based on a timestamp\n\t * for a transmit that never happened, always mark EVER_RETRANS\n\t */\n\tTCP_SKB_CB(skb)->sacked |= TCPCB_EVER_RETRANS;\n\n\treturn err;\n}\n",
+"obligation":"retransmit-copy-clone-and-head-expansion",
+"physicalClosureProven":false
+},
+"ip_finish_output2":{
+"source":"net/ipv4/ip_output.c",
+"prefix":"static int ip_finish_output2(",
+"sha256":"bba4d68dc2610832a55bee69efd9226484bd359319abf165dcb6fe8ec011941c",
+"text":"static int ip_finish_output2(struct net *net, struct sock *sk, struct sk_buff *skb)\n{\n\tstruct dst_entry *dst = skb_dst(skb);\n\tstruct rtable *rt = dst_rtable(dst);\n\tstruct net_device *dev = dst->dev;\n\tunsigned int hh_len = LL_RESERVED_SPACE(dev);\n\tstruct neighbour *neigh;\n\tbool is_v6gw = false;\n\n\tif (rt->rt_type == RTN_MULTICAST) {\n\t\tIP_UPD_PO_STATS(net, IPSTATS_MIB_OUTMCAST, skb->len);\n\t} else if (rt->rt_type == RTN_BROADCAST)\n\t\tIP_UPD_PO_STATS(net, IPSTATS_MIB_OUTBCAST, skb->len);\n\n\t/* OUTOCTETS should be counted after fragment */\n\tIP_UPD_PO_STATS(net, IPSTATS_MIB_OUT, skb->len);\n\n\tif (unlikely(skb_headroom(skb) < hh_len && dev->header_ops)) {\n\t\tskb = skb_expand_head(skb, hh_len);\n\t\tif (!skb)\n\t\t\treturn -ENOMEM;\n\t}\n\n\tif (lwtunnel_xmit_redirect(dst->lwtstate)) {\n\t\tint res = lwtunnel_xmit(skb);\n\n\t\tif (res != LWTUNNEL_XMIT_CONTINUE)\n\t\t\treturn res;\n\t}\n\n\trcu_read_lock();\n\tneigh = ip_neigh_for_gw(rt, skb, &is_v6gw);\n\tif (!IS_ERR(neigh)) {\n\t\tint res;\n\n\t\tsock_confirm_neigh(skb, neigh);\n\t\t/* if crossing protocols, can not use the cached header */\n\t\tres = neigh_output(neigh, skb, is_v6gw);\n\t\trcu_read_unlock();\n\t\treturn res;\n\t}\n\trcu_read_unlock();\n\n\tnet_dbg_ratelimited(\"%s: No header cache and no neighbour!\\n\",\n\t\t\t    __func__);\n\tkfree_skb_reason(skb, SKB_DROP_REASON_NEIGH_CREATEFAIL);\n\treturn PTR_ERR(neigh);\n}\n",
+"obligation":"route-neighbour-and-head-expansion",
+"physicalClosureProven":false
+},
+"ip6_finish_output2":{
+"source":"net/ipv6/ip6_output.c",
+"prefix":"static int ip6_finish_output2(",
+"sha256":"5c6d3a127c78efcf388b6489800ad97186246a4c41e1a601cf374d62dadc0ddb",
+"text":"static int ip6_finish_output2(struct net *net, struct sock *sk, struct sk_buff *skb)\n{\n\tstruct dst_entry *dst = skb_dst(skb);\n\tstruct net_device *dev = dst->dev;\n\tstruct inet6_dev *idev = ip6_dst_idev(dst);\n\tunsigned int hh_len = LL_RESERVED_SPACE(dev);\n\tconst struct in6_addr *daddr, *nexthop;\n\tstruct ipv6hdr *hdr;\n\tstruct neighbour *neigh;\n\tint ret;\n\n\t/* Be paranoid, rather than too clever. */\n\tif (unlikely(hh_len > skb_headroom(skb)) && dev->header_ops) {\n\t\t/* Make sure idev stays alive */\n\t\trcu_read_lock();\n\t\tskb = skb_expand_head(skb, hh_len);\n\t\tif (!skb) {\n\t\t\tIP6_INC_STATS(net, idev, IPSTATS_MIB_OUTDISCARDS);\n\t\t\trcu_read_unlock();\n\t\t\treturn -ENOMEM;\n\t\t}\n\t\trcu_read_unlock();\n\t}\n\n\thdr = ipv6_hdr(skb);\n\tdaddr = &hdr->daddr;\n\tif (ipv6_addr_is_multicast(daddr)) {\n\t\tif (!(dev->flags & IFF_LOOPBACK) && sk_mc_loop(sk) &&\n\t\t    ((mroute6_is_socket(net, skb) &&\n\t\t     !(IP6CB(skb)->flags & IP6SKB_FORWARDED)) ||\n\t\t     ipv6_chk_mcast_addr(dev, daddr, &hdr->saddr))) {\n\t\t\tstruct sk_buff *newskb = skb_clone(skb, GFP_ATOMIC);\n\n\t\t\t/* Do not check for IFF_ALLMULTI; multicast routing\n\t\t\t   is not supported in any case.\n\t\t\t */\n\t\t\tif (newskb)\n\t\t\t\tNF_HOOK(NFPROTO_IPV6, NF_INET_POST_ROUTING,\n\t\t\t\t\tnet, sk, newskb, NULL, newskb->dev,\n\t\t\t\t\tdev_loopback_xmit);\n\n\t\t\tif (hdr->hop_limit == 0) {\n\t\t\t\tIP6_INC_STATS(net, idev,\n\t\t\t\t\t      IPSTATS_MIB_OUTDISCARDS);\n\t\t\t\tkfree_skb(skb);\n\t\t\t\treturn 0;\n\t\t\t}\n\t\t}\n\n\t\tIP6_UPD_PO_STATS(net, idev, IPSTATS_MIB_OUTMCAST, skb->len);\n\t\tif (IPV6_ADDR_MC_SCOPE(daddr) <= IPV6_ADDR_SCOPE_NODELOCAL &&\n\t\t    !(dev->flags & IFF_LOOPBACK)) {\n\t\t\tkfree_skb(skb);\n\t\t\treturn 0;\n\t\t}\n\t}\n\n\tif (lwtunnel_xmit_redirect(dst->lwtstate)) {\n\t\tint res = lwtunnel_xmit(skb);\n\n\t\tif (res != LWTUNNEL_XMIT_CONTINUE)\n\t\t\treturn res;\n\t}\n\n\tIP6_UPD_PO_STATS(net, idev, IPSTATS_MIB_OUT, skb->len);\n\n\trcu_read_lock();\n\tnexthop = rt6_nexthop(dst_rt6_info(dst), daddr);\n\tneigh = __ipv6_neigh_lookup_noref(dev, nexthop);\n\n\tif (unlikely(IS_ERR_OR_NULL(neigh))) {\n\t\tif (unlikely(!neigh))\n\t\t\tneigh = __neigh_create(&nd_tbl, nexthop, dev, false);\n\t\tif (IS_ERR(neigh)) {\n\t\t\trcu_read_unlock();\n\t\t\tIP6_INC_STATS(net, idev, IPSTATS_MIB_OUTNOROUTES);\n\t\t\tkfree_skb_reason(skb, SKB_DROP_REASON_NEIGH_CREATEFAIL);\n\t\t\treturn -EINVAL;\n\t\t}\n\t}\n\tsock_confirm_neigh(skb, neigh);\n\tret = neigh_output(neigh, skb, false);\n\trcu_read_unlock();\n\treturn ret;\n}\n",
+"obligation":"ipv6-route-neighbour-and-head-expansion",
+"physicalClosureProven":false
+}
+},
+"completeGraph":false,
+"runningKernelAuthenticated":false,
+"trustedFactoryInstalled":false,
+"physicalAllocationQualified":false,
+"beforeSocketLookupClassified":false,
+"finalFreeCertified":false
 }

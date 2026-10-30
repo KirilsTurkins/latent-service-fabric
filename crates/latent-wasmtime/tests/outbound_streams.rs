@@ -31,8 +31,10 @@ async fn closure(socket: &mut tokio::net::TcpStream) {
 async fn clean(fixture: Fixture, control: &Control) {
     fixture.idle();
     assert_eq!(fixture.io.snapshot(), IoSnapshot::default());
-    assert!(control.budget.host_memory_bytes() > 0);
-    assert_eq!(control.budget.outstanding_reservations(), 2);
+    // The returned report follows actual Store destruction and automatic
+    // retirement of the original registry's paid weak headers.
+    assert_eq!(control.budget.host_memory_bytes(), 0);
+    assert_eq!(control.budget.outstanding_reservations(), 0);
     let snapshot = fixture
         .pools
         .shutdown(Instant::now() + Duration::from_secs(2))
@@ -76,7 +78,7 @@ async fn canonical_guest_reads_partial_chunks_eof_and_reuses_no_authenticated_so
             serde_json::json!([4])
         );
         if let Some(previous) = &previous {
-            // Replacing the actual reusable registry slot retires the old headers.
+            // The previous invocation was already retired before this fresh one.
             assert_eq!(previous.host_memory_bytes(), 0);
             assert_eq!(previous.outstanding_reservations(), 0);
         }
@@ -89,12 +91,13 @@ async fn canonical_guest_reads_partial_chunks_eof_and_reuses_no_authenticated_so
         fixture.idle();
         assert_eq!(fixture.io.snapshot(), IoSnapshot::default());
         let output_bytes = output.capacity() as u64 + 256;
-        let retained_headers = control.budget.host_memory_bytes() - output_bytes;
-        assert!(retained_headers > 0);
-        assert_eq!(control.budget.outstanding_reservations(), 3);
+        // Only the actual returned payload remains owned after Store/registry
+        // retirement; its original reservation persists until payload drop.
+        assert_eq!(control.budget.host_memory_bytes(), output_bytes);
+        assert_eq!(control.budget.outstanding_reservations(), 1);
         drop(output);
-        assert_eq!(control.budget.host_memory_bytes(), retained_headers);
-        assert_eq!(control.budget.outstanding_reservations(), 2);
+        assert_eq!(control.budget.host_memory_bytes(), 0);
+        assert_eq!(control.budget.outstanding_reservations(), 0);
         previous = Some(control.budget.clone());
         assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
     }

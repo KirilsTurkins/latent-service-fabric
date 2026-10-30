@@ -2,7 +2,10 @@
 //! pool connection survives every pending Arc<TcpStream> and is never parked.
 use crate::{error, provider::Inner, StreamError, StreamErrorCode, StreamResolution, StreamUsage};
 use latent_capabilities::broker::{
-    io::{IoCall, IoInputChunk, IoOutputChunk, IoTransfer, IoTransferOptions},
+    io::{
+        IoCall, IoFuture, IoInputChunk, IoOutputChunk, IoTransfer, IoTransferBuffer,
+        IoTransferOptions,
+    },
     network::{
         OutboundStream, StreamInterest, StreamObservation, StreamReadiness, StreamScope,
         StreamShutdown, StreamState, MAXIMUM_CHUNK_BYTES, STREAM_CAPABILITY,
@@ -14,22 +17,16 @@ use latent_capabilities::broker::{
     AuditProviderOutcome, CapabilityAuditDurability, CapabilityCallCost, CapabilityRequestDigest,
     CapabilityStreamBudget, ProviderCall,
 };
-use latent_core::{budget::HostMemoryReservation, BoxFuture, BudgetDimension};
+use latent_core::{budget::HostMemoryReservation, BudgetDimension};
 use latent_network::{canonical, NetworkError};
 use latent_policy::capability::{ResourceTarget, StreamEndpoint};
 use std::{
     future::Future,
-    io,
-    net::{Shutdown, SocketAddr},
-    pin::Pin,
+    net::SocketAddr,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
-use tokio::{
-    io::Interest,
-    net::{TcpSocket, TcpStream},
-    sync::Notify,
-};
+use tokio::{io::Interest, net::TcpSocket, sync::Notify};
 
 // One accepted readiness/DNS/connect future stays owned by the original IoCall.
 // Only its pinned authority is inspected periodically; network work is never
@@ -113,9 +110,50 @@ pub(crate) struct Socket {
     _native: Option<SocketMemory>,
     _metadata: Option<ProviderMetadata>,
     _dns_native: Option<SocketMemory>,
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    _dns_transport: Option<Arc<crate::kernel::native::StreamSocket>>,
     _dns_metadata: Option<ProviderMetadata>,
     kernel_mode: crate::kernel::Mode,
+    // Fixed internal selection, never serialized or supplied by the caller.
+    protected_selected: bool,
     _kernel_scope: Arc<StreamScope>,
+    // Only the original pool's explicit quarantine may retain a lost registry
+    // owner. This is the SAME Connection/PoolCall/IoCall, never replacement work.
+    _quarantined_connection: Option<Arc<Connection>>,
+}
+impl Socket {
+    // The ONLY registered callback is this fixed private host function. No
+    // guest function, closure, receipt field or timeout is accepted as proof.
+    fn retire_quarantined(&mut self) -> bool {
+        if !self.protected_selected {
+            return false;
+        }
+        if let Some(connection) = &self._quarantined_connection {
+            let Ok(state) = connection.state.try_lock() else {
+                return false;
+            };
+            if !state.closing || state.pending != 0 {
+                return false;
+            }
+        }
+        #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+        {
+            // These are SAME original Arc/identity/Scope owners, not a second
+            // context table. RETIRED validates slot/generation/lease/sequence.
+            let dns = self
+                ._dns_transport
+                .as_ref()
+                .is_none_or(|socket| socket.retire_step());
+            let tcp = self.stream.as_ref().is_none_or(|stream| {
+                stream.protected_owner() && stream.retire_step() && stream.protected_retired()
+            });
+            dns && tcp
+        }
+        #[cfg(not(all(target_os = "linux", any(test, feature = "development-outbound"))))]
+        {
+            false
+        }
+    }
 }
 enum SocketMemory {
     Logical(HostMemoryReservation),
@@ -141,9 +179,6 @@ impl SocketMemory {
             Self::Kernel(owner) => owner.confirm(),
         }
     }
-}
-struct Connecting {
-    future: Pin<Box<dyn Future<Output = io::Result<TcpStream>> + Send>>,
 }
 // Declared before every actual resolver/socket future. Unwinding, cancellation,
 // failed currentness and ordinary errors all drop those futures before moving
@@ -172,33 +207,83 @@ impl SocketOwner {
 }
 impl Drop for SocketOwner {
     fn drop(&mut self) {
+        #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+        if let Some(dns) = self.value.as_ref().and_then(|v| v._dns_transport.as_ref()) {
+            dns.retire_step();
+        }
         if self.armed
             && self
                 .value
                 .as_ref()
                 .is_some_and(|v| v.kernel_mode.retains_unproved())
         {
+            if self
+                .value
+                .as_ref()
+                .and_then(|value| value.stream.as_ref())
+                .is_some_and(|transport| transport.protected_retired())
+            {
+                return; // Actual original context retired; normal field Drop is permitted.
+            }
             let mut value = self.value.take().expect("original socket owners");
-            drop(value.stream.take());
-            self.reservation
-                .take()
-                .expect("original dial reservation")
-                .quarantine(value);
+            if !value
+                .stream
+                .as_ref()
+                .is_some_and(|transport| transport.protected_owner())
+            {
+                drop(value.stream.take());
+            }
+            let reservation = self.reservation.take().expect("original dial reservation");
+            if value.protected_selected {
+                reservation.quarantine_stream(value, Socket::retire_quarantined);
+            } else {
+                reservation.quarantine(value); // Old unproved profile stays permanent.
+            }
         }
     }
 }
 struct PhysicalSocket(Option<PooledConnection<Socket>>);
 impl PhysicalSocket {
+    fn quarantine_with_connection(mut self, owner: Arc<Connection>) {
+        let mut original = self.0.take().expect("original physical wrapper");
+        original.resource()._quarantined_connection = Some(owner);
+        if original.resource().protected_selected {
+            original.quarantine_stream(Socket::retire_quarantined);
+        } else {
+            original.quarantine();
+        } // SAME original finite client quarantine table.
+    }
     fn resource(&mut self) -> &mut Socket {
         self.0.as_mut().expect("physical socket owner").resource()
     }
 }
 impl Drop for PhysicalSocket {
     fn drop(&mut self) {
-        let mut original = self.0.take().expect("physical socket owner");
+        let Some(mut original) = self.0.take() else {
+            return;
+        };
         if original.resource().kernel_mode.retains_unproved() {
-            drop(original.resource().stream.take());
-            original.quarantine();
+            let protected = original
+                .resource()
+                .stream
+                .as_ref()
+                .is_some_and(|s| s.protected_owner());
+            let retired = protected
+                && original
+                    .resource()
+                    .stream
+                    .as_ref()
+                    .is_some_and(|s| s.protected_retired());
+            if !retired {
+                if !protected {
+                    drop(original.resource().stream.take());
+                }
+                if original.resource().protected_selected {
+                    original.quarantine_stream(Socket::retire_quarantined);
+                } else {
+                    original.quarantine();
+                }
+            }
         }
     }
 }
@@ -211,6 +296,7 @@ struct State {
     pending: usize,
     busy: [bool; 3],
     closing: bool,
+    quarantined: bool,
     failure: Option<StreamErrorCode>,
     read_eof: bool,
     write_shut: bool,
@@ -229,7 +315,8 @@ pub(crate) struct Connection {
     call: PoolCall,
     scope: Arc<StreamScope>,
     owner_memory: HostMemoryReservation,
-    _owner_metadata: ProviderMetadata,
+    registry: crate::connection_registry::RegistryWeak,
+    _owner_metadata: Arc<ProviderMetadata>,
 }
 struct Handle {
     connection: Arc<Connection>,
@@ -299,12 +386,21 @@ pub(crate) async fn connect(
     })?;
     let owner_metadata = inner.pools.reserve_protocol_metadata(16 * 1024)?;
     let owner_memory = scope.reserve_host_memory(16 * 1024)?;
+    // Both new Arc layouts stay inside the original prepaid 16-KiB owner.
+    if crate::connection_registry::arc_bytes::<Connection>()
+        + crate::connection_registry::arc_bytes::<ProviderMetadata>()
+        > 16 * 1024
+    {
+        return Err(error(StreamErrorCode::Exhausted));
+    }
+    let owner_metadata = Arc::new(owner_metadata);
     let mut connection = Arc::new(Connection {
         state: Mutex::new(State {
             socket: Some(socket),
             pending: 0,
             busy: [false; 3],
             closing: false,
+            quarantined: false,
             failure: None,
             read_eof: false,
             write_shut: false,
@@ -321,6 +417,7 @@ pub(crate) async fn connect(
         call,
         scope,
         owner_memory,
+        registry: inner.connections.downgrade(),
         _owner_metadata: owner_metadata,
     });
     // Move the confirmed owner reservation into the real Arc; it cannot be
@@ -329,16 +426,7 @@ pub(crate) async fn connect(
         .expect("new owner")
         .owner_memory
         .confirm();
-    let mut registry = inner
-        .connections
-        .lock()
-        .map_err(|_| error(StreamErrorCode::Exhausted))?;
-    let slot = registry
-        .iter_mut()
-        .find(|slot| slot.strong_count() == 0)
-        .ok_or_else(|| error(StreamErrorCode::Exhausted))?;
-    *slot = Arc::downgrade(&connection);
-    drop(registry);
+    inner.connections.register(&connection)?;
     Ok(Box::new(Handle { connection }))
 }
 
@@ -365,9 +453,16 @@ async fn create_socket(
             _native: None,
             _metadata: None,
             _dns_native: None,
+            #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+            _dns_transport: None,
             _dns_metadata: None,
             kernel_mode: inner.kernel_mode,
+            #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+            protected_selected: inner.native_bank.is_some(),
+            #[cfg(not(all(target_os = "linux", any(test, feature = "development-outbound"))))]
+            protected_selected: false,
             _kernel_scope: Arc::clone(scope),
+            _quarantined_connection: None,
         }),
         armed: false,
     };
@@ -381,7 +476,9 @@ async fn create_socket(
                 .ok_or_else(|| error(StreamErrorCode::Denied))?,
             deadline,
         ),
-        StreamResolution::Dns { .. } => {
+        StreamResolution::Dns { server, .. } => {
+            #[cfg(not(all(target_os = "linux", any(test, feature = "development-outbound"))))]
+            let _ = server;
             owned.value()._dns_native = Some(SocketMemory::reserve(
                 scope,
                 call,
@@ -393,19 +490,96 @@ async fn create_socket(
                 .as_ref()
                 .ok_or_else(|| error(StreamErrorCode::DnsFailed))?;
             owned.armed = true;
-            let dns_memory = owned
-                .value()
-                ._dns_native
-                .as_mut()
-                .expect("original DNS allowance");
-            let answers = wait_current(
-                call.io(),
-                deadline,
-                resolver
-                    .resolve_with_expiry_observed(deadline.into(), &mut || dns_memory.confirm()),
-            )
-            .await?
-            .map_err(network_error)?;
+            #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+            let protected = if let Some(bank) = &inner.native_bank {
+                let original = match owned.value()._dns_native.take() {
+                    Some(SocketMemory::Kernel(original)) => original,
+                    _ => return Err(error(StreamErrorCode::Denied)),
+                };
+                let socket = crate::kernel::native::StreamSocket::prepare_dns(
+                    Arc::clone(bank),
+                    original,
+                    *server,
+                    deadline,
+                )?;
+                // Original pool/quarantine owns this Arc BEFORE any constructor
+                // or UDP/TCP future. Cancellation never drops an entered loan.
+                owned.value()._dns_transport = Some(Arc::clone(&socket));
+                let mut transport =
+                    crate::kernel::native::StreamDnsExchange::new(Arc::clone(&socket), *server);
+                let result = wait_current(
+                    call.io(),
+                    deadline,
+                    resolver.resolve_with_expiry_using(deadline.into(), &mut || {}, &mut transport),
+                )
+                .await;
+                // Close ACK is not occupancy return. Both successful answers
+                // and failed queries keep this SAME admission until RETIRED.
+                socket.retire_step();
+                let retired = wait_current(
+                    call.io(),
+                    deadline,
+                    std::future::poll_fn(|_| {
+                        if socket.retire_step() {
+                            std::task::Poll::Ready(())
+                        } else {
+                            std::task::Poll::Pending
+                        }
+                    }),
+                )
+                .await;
+                // Preserve the original resolution/authority failure even if
+                // cleanup cannot finish; SocketOwner retains the SAME loan.
+                let protocol_may_have_applied = transport.may_have_applied();
+                let answers = result
+                    .map_err(|authority| {
+                        // wait_current can fail its POST-future authority check.
+                        // Preserve that code, plus effects of actual earlier DNS IO.
+                        StreamError::from(authority).uncertain(protocol_may_have_applied)
+                    })?
+                    .map_err(|network| {
+                        transport.take_failure().map_or_else(
+                            || network_error(network).uncertain(protocol_may_have_applied),
+                            |mut native| {
+                                // Retain actual private native code/uncertainty. This
+                                // prefix counts DNS protocol bytes, NOT app plaintext.
+                                native.may_have_applied |=
+                                    protocol_may_have_applied || native.accepted_prefix_bytes != 0;
+                                native.accepted_prefix_bytes = 0;
+                                native
+                            },
+                        )
+                    })?;
+                retired.map_err(|authority| {
+                    StreamError::from(authority).uncertain(protocol_may_have_applied)
+                })?;
+                drop(transport);
+                drop(owned.value()._dns_transport.take());
+                Some(answers)
+            } else {
+                None
+            };
+            #[cfg(not(all(target_os = "linux", any(test, feature = "development-outbound"))))]
+            let protected: Option<latent_network::dns::ResolvedAnswers> = None;
+            let answers = match protected {
+                Some(answers) => answers,
+                None => {
+                    let dns_memory = owned
+                        .value()
+                        ._dns_native
+                        .as_mut()
+                        .expect("original DNS allowance");
+                    wait_current(
+                        call.io(),
+                        deadline,
+                        resolver.resolve_with_expiry_observed(deadline.into(), &mut || {
+                            dns_memory.confirm()
+                        }),
+                    )
+                    .await?
+                    .map_err(network_error)?
+                }
+            };
             let first = answers
                 .answers
                 .iter()
@@ -447,6 +621,54 @@ async fn create_socket(
         owned.value()._tls_native = Some(memory);
         owned.value()._tls_metadata = Some(metadata);
     }
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    if let Some(bank) = &inner.native_bank {
+        let original = match owned.value()._native.take() {
+            Some(SocketMemory::Kernel(original)) => original,
+            _ => return Err(error(StreamErrorCode::Denied)),
+        };
+        let peer = SocketAddr::new(canonical(address), destination.endpoint.port);
+        let socket = crate::kernel::native::StreamSocket::prepare(
+            Arc::clone(bank),
+            original,
+            peer,
+            deadline.min(valid_until),
+        )?;
+        if let Some(memory) = owned.value()._tls_native.as_mut() {
+            memory.confirm();
+        }
+        let transport = Arc::new(crate::transport::Transport::protected(
+            Arc::clone(&socket),
+            inner.tls[index].as_ref().map(Arc::clone),
+            destination.endpoint.host.clone(),
+        )?);
+        // SAME original PooledConnection/Scope custody is attached BEFORE any
+        // protected constructor syscall can execute, including failed birth.
+        owned.value().stream = Some(Arc::clone(&transport));
+        owned.armed = true;
+        let connected =
+            wait_current(call.io(), deadline.min(valid_until), socket.connect(peer)).await?;
+        if let Err(fault) = connected {
+            socket.retire_step(); // One real cleanup attempt, never a refund proof.
+            return Err(fault);
+        }
+        if transport.host_tls() {
+            loop {
+                recheck_io(call.io(), deadline.min(valid_until)).await?;
+                let Some(interest) = transport.handshake_step()? else {
+                    break;
+                };
+                wait_current(
+                    call.io(),
+                    deadline.min(valid_until),
+                    transport.ready(interest),
+                )
+                .await?
+                .map_err(|_| error(StreamErrorCode::TlsFailed))?;
+            }
+        }
+        return Ok((owned.connected()?, valid_until));
+    }
     owned.armed = true;
     let socket = if address.is_ipv4() {
         TcpSocket::new_v4()
@@ -478,17 +700,14 @@ async fn create_socket(
         return Err(error(StreamErrorCode::Exhausted));
     }
     let peer = SocketAddr::new(address, destination.endpoint.port);
-    let mut connecting = Connecting {
-        future: Box::pin(socket.connect(peer)),
-    };
+    // This future never escapes this lexical owner. Pin it inline rather than
+    // adding a second unowned heap allocation inside the admitted connect F.
+    let connecting = socket.connect(peer);
+    let mut connecting = std::pin::pin!(connecting);
     recheck_io(call.io(), deadline.min(valid_until)).await?;
-    let stream = wait_current(
-        call.io(),
-        deadline.min(valid_until),
-        connecting.future.as_mut(),
-    )
-    .await?
-    .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
+    let stream = wait_current(call.io(), deadline.min(valid_until), connecting.as_mut())
+        .await?
+        .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
     let peer = stream
         .peer_addr()
         .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
@@ -521,7 +740,7 @@ async fn create_socket(
             wait_current(
                 call.io(),
                 deadline.min(valid_until),
-                transport.tcp.ready(interest),
+                transport.ready(interest),
             )
             .await?
             .map_err(|_| error(StreamErrorCode::TlsFailed))?;
@@ -532,7 +751,37 @@ async fn create_socket(
 }
 
 impl Connection {
-    pub(crate) fn maintenance_step(&self, now: Instant) {
+    pub(crate) fn metadata_billing(&self) -> Arc<ProviderMetadata> {
+        Arc::clone(&self._owner_metadata)
+    }
+
+    // The last copied transport reference retires before PendingGuard calls
+    // finish. Only a now-empty original physical wrapper may release custody.
+    fn release_retiring_if_done(&self) {
+        let done = self
+            .state
+            .try_lock()
+            .is_ok_and(|state| state.closing && state.pending == 0 && state.socket.is_none());
+        if done {
+            self.registry.release(self);
+        }
+    }
+
+    pub(crate) fn maintenance_step(self: &Arc<Self>, now: Instant) {
+        self.release_retiring_if_done();
+        let transport = {
+            let Ok(mut state) = self.state.try_lock() else {
+                return;
+            };
+            state
+                .socket
+                .as_mut()
+                .and_then(|physical| physical.resource().stream.as_ref().map(Arc::clone))
+        };
+        if let Some(transport) = transport {
+            transport.maintenance();
+        }
+        self.drain_closed();
         let expired = match self.state.try_lock() {
             Ok(state) => {
                 !state.closing && now >= self.deadline.min(state.last_progress + self.idle)
@@ -609,14 +858,31 @@ impl Connection {
             deadline,
         })
     }
-    fn finish(&self, direction: usize) {
+    fn drain_closed(&self) {
+        let transport = {
+            let Ok(mut state) = self.state.try_lock() else {
+                return;
+            };
+            if !state.closing || state.pending != 0 {
+                return;
+            }
+            state
+                .socket
+                .as_mut()
+                .and_then(|physical| physical.resource().stream.as_ref().map(Arc::clone))
+        };
+        let released = transport
+            .as_ref()
+            .is_none_or(|transport| transport.retire_step());
+        drop(transport); // No copied transport remains when wrapper is removed.
+        if !released {
+            return;
+        }
         let physical = {
             let mut state = self
                 .state
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
-            state.pending -= 1;
-            state.busy[direction] = false;
             if state.closing && state.pending == 0 {
                 state.socket.take()
             } else {
@@ -624,13 +890,50 @@ impl Connection {
             }
         };
         drop(physical);
+        self.release_retiring_if_done();
         self.changed.notify_waiters();
     }
-    pub(crate) fn abort(&self, reason: StreamErrorCode) {
+    fn finish(&self, direction: usize) {
+        {
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            state.pending -= 1;
+            state.busy[direction] = false;
+        }
+        self.drain_closed();
+        self.changed.notify_waiters();
+    }
+    pub(crate) fn abort(self: &Arc<Self>, reason: StreamErrorCode) {
         self.stop(Some(reason));
     }
-    fn stop(&self, reason: Option<StreamErrorCode>) {
-        let physical = {
+    fn stop(self: &Arc<Self>, reason: Option<StreamErrorCode>) {
+        // SAME registry slot takes strong custody before admission closes.
+        // Refusal never fabricates a release: original physical Drop still
+        // follows its same mode-specific quarantine contract.
+        if !self.registry.retain(self) {
+            // Registry teardown/missing identity cannot become an ordinary
+            // release. Move the SAME full original owner into its original
+            // paid client quarantine; no callbacks or Drop under state lock.
+            let physical = {
+                let mut state = self
+                    .state
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                state.closing = true;
+                state.quarantined = true;
+                state.failure = Some(StreamErrorCode::Uncertain);
+                state.socket.take()
+            };
+            self.call.io().stop_handle().stop();
+            if let Some(physical) = physical {
+                physical.quarantine_with_connection(Arc::clone(self));
+            }
+            self.changed.notify_waiters();
+            return;
+        }
+        {
             let mut state = self
                 .state
                 .lock()
@@ -639,14 +942,9 @@ impl Connection {
             if state.failure.is_none() {
                 state.failure = reason;
             }
-            if state.pending == 0 {
-                state.socket.take()
-            } else {
-                None
-            }
-        };
+        }
         self.call.io().stop_handle().stop();
-        drop(physical);
+        self.drain_closed();
         self.changed.notify_waiters();
     }
     fn observe(&self) -> StreamObservation {
@@ -684,13 +982,15 @@ impl Connection {
             connections: usize::from(state.socket.is_some()),
             pending_operations: state.pending,
             retained_chunks: self.transfer.outstanding_chunks(),
+            #[cfg(any(test, feature = "development-outbound"))]
+            input_budget_bytes: self.transfer.accepted_input_bytes(),
             accepted_write_bytes: state.accepted_write,
             delivered_read_bytes: state.delivered_read,
             retired: false,
         })
     }
     async fn authorize(
-        &self,
+        self: &Arc<Self>,
         operation: &str,
         cost: CapabilityCallCost,
     ) -> Result<ProviderCall, StreamError> {
@@ -758,10 +1058,63 @@ impl OutboundStream for Handle {
         &self,
         maximum: usize,
         timeout: Option<u32>,
-    ) -> Result<BoxFuture<'static, Result<Option<IoOutputChunk>, StreamError>>, StreamError> {
+    ) -> Result<IoFuture<'static, Result<Option<IoOutputChunk>, StreamError>>, StreamError> {
         if maximum == 0 || maximum > MAXIMUM_CHUNK_BYTES {
             return Err(error(StreamErrorCode::InvalidInput));
         }
+        let connection = Arc::clone(&self.connection);
+        let prepared = self.connection.call.prepare_io_future_with(
+            move |(pending, mut buffer): (Pending, IoTransferBuffer)| async move {
+                let mut call = connection
+                    .authorize("read", CapabilityCallCost::new(maximum))
+                    .await?;
+                connection.scope.charge_transfer(maximum)?;
+                let result = connection
+                    .wait(&pending, call.deadline(), async {
+                        loop {
+                            recheck_provider(&mut call).await?;
+                            match pending.socket.try_read(buffer.spare_mut()?) {
+                                Ok(None) => pending
+                                    .socket
+                                    .readable()
+                                    .await
+                                    .map_err(|_| error(StreamErrorCode::IoFailed))?,
+                                Ok(Some(count)) => break Ok(count),
+                                Err(error) => break Err(error),
+                            }
+                        }
+                    })
+                    .await
+                    .and_then(|value| value);
+                let count = match result {
+                    Ok(count) => count,
+                    Err(failure) => {
+                        connection.abort(failure.code);
+                        connection.audit(call, false).await?;
+                        return Err(connection.terminal_error(failure));
+                    }
+                };
+                {
+                    let mut state = connection
+                        .state
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    state.read_eof |= count == 0;
+                    state.delivered_read += count as u64;
+                    if count != 0 {
+                        state.last_progress = Instant::now();
+                    }
+                }
+                buffer.advance_written(count)?;
+                let result = if count == 0 {
+                    None
+                } else {
+                    Some(buffer.finish()?)
+                };
+                connection.audit(call, true).await?;
+                Ok(result)
+            },
+        )?;
         let pending = self.connection.pending(0, timeout)?;
         let window = self.connection.scope.reserve_chunk(maximum * 2)?;
         let mut buffer = self.connection.transfer.output_buffer(maximum)?;
@@ -769,64 +1122,13 @@ impl OutboundStream for Handle {
             _connection: Arc::clone(&self.connection),
             _window: window,
         }))?;
-        let connection = Arc::clone(&self.connection);
-        Ok(Box::pin(async move {
-            let mut call = connection
-                .authorize("read", CapabilityCallCost::new(maximum))
-                .await?;
-            connection.scope.charge_transfer(maximum)?;
-            let result = connection
-                .wait(&pending, call.deadline(), async {
-                    loop {
-                        recheck_provider(&mut call).await?;
-                        match pending.socket.try_read(buffer.spare_mut()?) {
-                            Ok(None) => pending
-                                .socket
-                                .tcp
-                                .readable()
-                                .await
-                                .map_err(|_| error(StreamErrorCode::IoFailed))?,
-                            Ok(Some(count)) => break Ok(count),
-                            Err(error) => break Err(error),
-                        }
-                    }
-                })
-                .await
-                .and_then(|value| value);
-            let count = match result {
-                Ok(count) => count,
-                Err(failure) => {
-                    connection.abort(failure.code);
-                    connection.audit(call, false).await?;
-                    return Err(connection.terminal_error(failure));
-                }
-            };
-            {
-                let mut state = connection
-                    .state
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner);
-                state.read_eof |= count == 0;
-                state.delivered_read += count as u64;
-                if count != 0 {
-                    state.last_progress = Instant::now();
-                }
-            }
-            buffer.advance_written(count)?;
-            let result = if count == 0 {
-                None
-            } else {
-                Some(buffer.finish()?)
-            };
-            connection.audit(call, true).await?;
-            Ok(result)
-        }))
+        Ok(prepared.finish((pending, buffer)))
     }
     fn write(
         &self,
         bytes: Vec<u8>,
         timeout: Option<u32>,
-    ) -> Result<BoxFuture<'static, Result<u32, StreamError>>, StreamError> {
+    ) -> Result<IoFuture<'static, Result<u32, StreamError>>, StreamError> {
         let maximum = bytes.capacity();
         let mut bytes = Some(bytes);
         self.write_from(maximum, timeout, &mut || {
@@ -838,10 +1140,91 @@ impl OutboundStream for Handle {
         maximum: usize,
         timeout: Option<u32>,
         produce: &mut dyn FnMut() -> Result<Vec<u8>, latent_core::PlatformError>,
-    ) -> Result<BoxFuture<'static, Result<u32, StreamError>>, StreamError> {
+    ) -> Result<IoFuture<'static, Result<u32, StreamError>>, StreamError> {
         if maximum == 0 || maximum > MAXIMUM_CHUNK_BYTES {
             return Err(error(StreamErrorCode::InvalidInput));
         }
+        let connection = Arc::clone(&self.connection);
+        let prepared = self.connection.call.prepare_io_future_with(
+            move |(pending, input, cost): (Pending, IoInputChunk, CapabilityCallCost)| async move {
+                let mut call = connection.authorize("write", cost).await?;
+                connection.scope.charge_transfer(input.as_ref().len())?;
+                let mut accepted_prefix = 0u32;
+                let result = connection
+                    .wait(&pending, call.deadline(), async {
+                        loop {
+                            recheck_provider(&mut call).await?;
+                            connection
+                                .state
+                                .lock()
+                                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                                .attempted_write = true;
+                            match pending.socket.try_write(input.as_ref()) {
+                                Ok(None) => pending
+                                    .socket
+                                    .writable()
+                                    .await
+                                    .map_err(|_| error(StreamErrorCode::IoFailed))?,
+                                Ok(Some(count)) => {
+                                    accepted_prefix = u32::try_from(count).expect("bounded chunk");
+                                    // Flush only this accepted plaintext prefix.
+                                    // No new write or retry occurs while waiting.
+                                    loop {
+                                        recheck_provider(&mut call).await?;
+                                        if pending.socket.flush_pending()? {
+                                            break;
+                                        }
+                                        pending
+                                            .socket
+                                            .writable()
+                                            .await
+                                            .map_err(|_| error(StreamErrorCode::IoFailed))?;
+                                    }
+                                    break Ok(count);
+                                }
+                                Err(error) => break Err(error),
+                            }
+                        }
+                    })
+                    .await
+                    .and_then(|value| value);
+                let count = match result {
+                    Ok(count) if count != 0 => count,
+                    Ok(_) => {
+                        connection.abort(StreamErrorCode::IoFailed);
+                        connection.audit(call, false).await?;
+                        return Err(error(StreamErrorCode::IoFailed).uncertain(true));
+                    }
+                    Err(mut failure) => {
+                        failure.accepted_prefix_bytes =
+                            failure.accepted_prefix_bytes.max(accepted_prefix);
+                        if failure.accepted_prefix_bytes != 0 {
+                            connection
+                                .state
+                                .lock()
+                                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                                .accepted_write += u64::from(failure.accepted_prefix_bytes);
+                        }
+                        connection.abort(failure.code);
+                        connection.audit(call, false).await?;
+                        return Err(connection.terminal_error(failure));
+                    }
+                };
+                {
+                    let mut state = connection
+                        .state
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    state.accepted_write += count as u64;
+                    state.last_progress = Instant::now();
+                }
+                if let Err(mut failure) = connection.audit(call, true).await {
+                    failure.accepted_prefix_bytes = u32::try_from(count).expect("bounded chunk");
+                    return Err(failure.uncertain(true));
+                }
+                Ok(u32::try_from(count).expect("bounded chunk"))
+            },
+        )?;
         let pending = self.connection.pending(1, timeout)?;
         let window = self.connection.scope.reserve_chunk(maximum)?;
         let mut input: IoInputChunk = self.connection.transfer.input_with(maximum, produce)?;
@@ -852,136 +1235,56 @@ impl OutboundStream for Handle {
             _connection: Arc::clone(&self.connection),
             _window: window,
         }))?;
-        let connection = Arc::clone(&self.connection);
-        Ok(Box::pin(async move {
-            let mut call = connection.authorize("write", cost).await?;
-            connection.scope.charge_transfer(input.as_ref().len())?;
-            let mut accepted_prefix = 0u32;
-            let result = connection
-                .wait(&pending, call.deadline(), async {
-                    loop {
-                        recheck_provider(&mut call).await?;
-                        connection
-                            .state
-                            .lock()
-                            .unwrap_or_else(std::sync::PoisonError::into_inner)
-                            .attempted_write = true;
-                        match pending.socket.try_write(input.as_ref()) {
-                            Ok(None) => pending
-                                .socket
-                                .tcp
-                                .writable()
-                                .await
-                                .map_err(|_| error(StreamErrorCode::IoFailed))?,
-                            Ok(Some(count)) => {
-                                accepted_prefix = u32::try_from(count).expect("bounded chunk");
-                                // Flush only this accepted plaintext prefix.
-                                // No new write or retry occurs while waiting.
-                                loop {
-                                    recheck_provider(&mut call).await?;
-                                    if pending.socket.flush_pending()? {
-                                        break;
-                                    }
-                                    pending
-                                        .socket
-                                        .tcp
-                                        .writable()
-                                        .await
-                                        .map_err(|_| error(StreamErrorCode::IoFailed))?;
-                                }
-                                break Ok(count);
-                            }
-                            Err(error) => break Err(error),
-                        }
-                    }
-                })
-                .await
-                .and_then(|value| value);
-            let count = match result {
-                Ok(count) if count != 0 => count,
-                Ok(_) => {
-                    connection.abort(StreamErrorCode::IoFailed);
-                    connection.audit(call, false).await?;
-                    return Err(error(StreamErrorCode::IoFailed).uncertain(true));
-                }
-                Err(mut failure) => {
-                    failure.accepted_prefix_bytes =
-                        failure.accepted_prefix_bytes.max(accepted_prefix);
-                    if failure.accepted_prefix_bytes != 0 {
-                        connection
-                            .state
-                            .lock()
-                            .unwrap_or_else(std::sync::PoisonError::into_inner)
-                            .accepted_write += u64::from(failure.accepted_prefix_bytes);
-                    }
-                    connection.abort(failure.code);
-                    connection.audit(call, false).await?;
-                    return Err(connection.terminal_error(failure));
-                }
-            };
-            {
-                let mut state = connection
-                    .state
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner);
-                state.accepted_write += count as u64;
-                state.last_progress = Instant::now();
-            }
-            if let Err(mut failure) = connection.audit(call, true).await {
-                failure.accepted_prefix_bytes = u32::try_from(count).expect("bounded chunk");
-                return Err(failure.uncertain(true));
-            }
-            Ok(u32::try_from(count).expect("bounded chunk"))
-        }))
+        Ok(prepared.finish((pending, input, cost)))
     }
     fn ready(
         &self,
         interest: StreamInterest,
         timeout: Option<u32>,
-    ) -> Result<BoxFuture<'static, Result<StreamReadiness, StreamError>>, StreamError> {
-        let pending = self.connection.pending(2, timeout)?;
+    ) -> Result<IoFuture<'static, Result<StreamReadiness, StreamError>>, StreamError> {
         let connection = Arc::clone(&self.connection);
-        Ok(Box::pin(async move {
-            let call = connection
-                .authorize("ready", CapabilityCallCost::new(0))
-                .await?;
-            let selected = match interest {
-                StreamInterest::Readable => Interest::READABLE,
-                StreamInterest::Writable => Interest::WRITABLE,
-                StreamInterest::Either => Interest::READABLE | Interest::WRITABLE,
-            };
-            if matches!(interest, StreamInterest::Readable | StreamInterest::Either)
-                && pending.socket.buffered_readable()?
-            {
-                connection.audit(call, true).await?;
-                return Ok(StreamReadiness {
-                    readable: true,
-                    writable: false,
-                });
-            }
-            let result = connection
-                .wait(
-                    &pending,
-                    call.deadline(),
-                    pending.socket.tcp.ready(selected),
-                )
-                .await
-                .and_then(|value| value.map_err(|_| error(StreamErrorCode::IoFailed)));
-            match result {
-                Ok(ready) => {
-                    connection.audit(call, true).await?;
-                    Ok(StreamReadiness {
-                        readable: ready.is_readable() || ready.is_read_closed(),
-                        writable: ready.is_writable() || ready.is_write_closed(),
-                    })
-                }
-                Err(failure) => {
-                    connection.abort(failure.code);
-                    connection.audit(call, false).await?;
-                    Err(failure.uncertain(connection.observe().application_write_attempted))
-                }
-            }
-        }))
+        let prepared =
+            self.connection
+                .call
+                .prepare_io_future_with(move |pending: Pending| async move {
+                    let call = connection
+                        .authorize("ready", CapabilityCallCost::new(0))
+                        .await?;
+                    let selected = match interest {
+                        StreamInterest::Readable => Interest::READABLE,
+                        StreamInterest::Writable => Interest::WRITABLE,
+                        StreamInterest::Either => Interest::READABLE | Interest::WRITABLE,
+                    };
+                    if matches!(interest, StreamInterest::Readable | StreamInterest::Either)
+                        && pending.socket.buffered_readable()?
+                    {
+                        connection.audit(call, true).await?;
+                        return Ok(StreamReadiness {
+                            readable: true,
+                            writable: false,
+                        });
+                    }
+                    let result = connection
+                        .wait(&pending, call.deadline(), pending.socket.ready(selected))
+                        .await
+                        .and_then(|value| value.map_err(|_| error(StreamErrorCode::IoFailed)));
+                    match result {
+                        Ok(ready) => {
+                            connection.audit(call, true).await?;
+                            Ok(StreamReadiness {
+                                readable: ready.is_readable() || ready.is_read_closed(),
+                                writable: ready.is_writable() || ready.is_write_closed(),
+                            })
+                        }
+                        Err(failure) => {
+                            connection.abort(failure.code);
+                            connection.audit(call, false).await?;
+                            Err(failure.uncertain(connection.observe().application_write_attempted))
+                        }
+                    }
+                })?;
+        let pending = self.connection.pending(2, timeout)?;
+        Ok(prepared.finish(pending))
     }
     fn inspect(&self) -> StreamObservation {
         self.connection.observe()
@@ -989,7 +1292,7 @@ impl OutboundStream for Handle {
     fn shutdown(
         &self,
         how: StreamShutdown,
-    ) -> Result<BoxFuture<'static, Result<StreamObservation, StreamError>>, StreamError> {
+    ) -> Result<IoFuture<'static, Result<StreamObservation, StreamError>>, StreamError> {
         if how == StreamShutdown::Receive
             || (how == StreamShutdown::Send
                 && self.connection.endpoint.transport
@@ -997,64 +1300,100 @@ impl OutboundStream for Handle {
         {
             return Err(error(StreamErrorCode::Unsupported));
         }
+        let connection = Arc::clone(&self.connection);
+        let prepared =
+            self.connection
+                .call
+                .prepare_io_future_with(move |pending: Pending| async move {
+                    let mut call = connection
+                        .authorize("shutdown", CapabilityCallCost::new(0))
+                        .await?;
+                    let current = connection
+                        .wait(&pending, call.deadline(), recheck_provider(&mut call))
+                        .await
+                        .and_then(|value| value.map_err(Into::into));
+                    if let Err(failure) = current {
+                        connection.abort(failure.code);
+                        connection.audit(call, false).await?;
+                        return Err(connection.terminal_error(failure));
+                    }
+                    if how == StreamShutdown::Both {
+                        connection.stop(None);
+                    } else {
+                        connection
+                            .wait(&pending, call.deadline(), async {
+                                loop {
+                                    recheck_provider(&mut call).await?;
+                                    if pending.socket.shutdown_send()?.is_some() {
+                                        break Ok::<_, StreamError>(());
+                                    }
+                                    pending
+                                        .socket
+                                        .writable()
+                                        .await
+                                        .map_err(|_| error(StreamErrorCode::IoFailed))?;
+                                }
+                            })
+                            .await??;
+                        connection
+                            .state
+                            .lock()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner)
+                            .write_shut = true;
+                    }
+                    connection.audit(call, true).await?;
+                    drop(pending);
+                    Ok(connection.observe())
+                })?;
         let pending = self.connection.pending(1, None)?;
-        let connection = Arc::clone(&self.connection);
-        Ok(Box::pin(async move {
-            let mut call = connection
-                .authorize("shutdown", CapabilityCallCost::new(0))
-                .await?;
-            let current = connection
-                .wait(&pending, call.deadline(), recheck_provider(&mut call))
-                .await
-                .and_then(|value| value.map_err(Into::into));
-            if let Err(failure) = current {
-                connection.abort(failure.code);
-                connection.audit(call, false).await?;
-                return Err(connection.terminal_error(failure));
-            }
-            if how == StreamShutdown::Both {
-                connection.stop(None);
-            } else {
-                socket2::SockRef::from(pending.socket.tcp.as_ref())
-                    .shutdown(Shutdown::Write)
-                    .map_err(|_| error(StreamErrorCode::IoFailed))?;
-                connection
-                    .state
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner)
-                    .write_shut = true;
-            }
-            connection.audit(call, true).await?;
-            drop(pending);
-            Ok(connection.observe())
-        }))
+        Ok(prepared.finish(pending))
     }
-    fn close(self: Box<Self>) -> BoxFuture<'static, Result<StreamObservation, StreamError>> {
+    fn close(self: Box<Self>) -> IoFuture<'static, Result<StreamObservation, StreamError>> {
         let connection = Arc::clone(&self.connection);
+        let prepared =
+            connection
+                .call
+                .prepare_io_future_with(move |connection: Arc<Connection>| async move {
+                    let call = connection
+                        .authorize("close", CapabilityCallCost::new(0))
+                        .await?;
+                    loop {
+                        let changed = connection.changed.notified();
+                        tokio::pin!(changed);
+                        changed.as_mut().enable();
+                        if {
+                            let usage = connection.usage()?;
+                            usage.pending_operations == 0 && usage.connections == 0
+                        } {
+                            break;
+                        }
+                        if tokio::time::timeout_at(connection.deadline.into(), changed)
+                            .await
+                            .is_err()
+                        {
+                            return Err(error(StreamErrorCode::Uncertain)
+                                .uncertain(connection.observe().application_write_attempted));
+                        }
+                    }
+                    let quarantined = connection
+                        .state
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .quarantined;
+                    if quarantined {
+                        connection.audit(call, false).await?;
+                        return Err(error(StreamErrorCode::Uncertain)
+                            .uncertain(connection.observe().application_write_attempted));
+                    }
+                    connection.audit(call, true).await?;
+                    Ok(connection.observe())
+                });
         connection.stop(None);
         drop(self);
-        Box::pin(async move {
-            let call = connection
-                .authorize("close", CapabilityCallCost::new(0))
-                .await?;
-            loop {
-                let changed = connection.changed.notified();
-                tokio::pin!(changed);
-                changed.as_mut().enable();
-                if connection.usage()?.pending_operations == 0 {
-                    break;
-                }
-                if tokio::time::timeout_at(connection.deadline.into(), changed)
-                    .await
-                    .is_err()
-                {
-                    return Err(error(StreamErrorCode::Uncertain)
-                        .uncertain(connection.observe().application_write_attempted));
-                }
-            }
-            connection.audit(call, true).await?;
-            Ok(connection.observe())
-        })
+        match prepared {
+            Ok(prepared) => prepared.finish(connection),
+            Err(error) => IoFuture::failed(error.into()),
+        }
     }
 }
 impl Drop for Handle {
@@ -1088,7 +1427,12 @@ impl Connection {
         use std::os::fd::AsRawFd;
         let mut state = self.state.lock().unwrap();
         let socket = state.socket.as_mut().unwrap().resource();
-        let tcp = &socket.stream.as_ref().expect("live socket transport").tcp;
+        let tcp = socket
+            .stream
+            .as_ref()
+            .expect("live socket transport")
+            .host_tcp()
+            .expect("historical ordinary-socket identity only");
         let (local, peer) = (tcp.local_addr().unwrap(), tcp.peer_addr().unwrap());
         assert_eq!(local.ip(), std::net::Ipv4Addr::LOCALHOST);
         assert_eq!(peer.ip(), std::net::Ipv4Addr::LOCALHOST);

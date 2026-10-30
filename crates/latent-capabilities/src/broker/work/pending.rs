@@ -165,9 +165,11 @@ impl PendingWork {
             },
         )?;
         let pending_budget = cost.reserve(&core.budget)?;
+        let prepared =
+            crate::broker::audit::CallAudit::prepare(core, row.binding, clock.operation(), false)?;
         let id = crate::broker::session::next_incarnation()?;
-        let audit = if core.owner.audit.is_some() {
-            crate::broker::audit::CallAudit::prepare(
+        let audit = if let Some(prepared) = prepared {
+            prepared.capture(
                 core,
                 row.binding,
                 clock.operation(),
@@ -178,7 +180,6 @@ impl PendingWork {
                     &[],
                     None,
                 ),
-                false,
                 id,
             )?
         } else {

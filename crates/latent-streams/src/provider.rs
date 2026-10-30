@@ -1,20 +1,19 @@
 #[cfg(any(test, feature = "development-outbound"))]
 use crate::StreamResolution;
 use crate::{
-    StreamError, StreamErrorCode, StreamProviderConfig,
-    connection::{self, Connection, Socket},
-    error,
+    connection::{self, Socket},
+    error, StreamError, StreamErrorCode, StreamProviderConfig,
 };
 use latent_capabilities::broker::{
+    network::{OutboundStreamInvoker, StreamConnectRequest, StreamInvocation, StreamScope},
+    pools::{InstalledProvider, PoolAdmission, ProviderClient, ProviderMetadata, ProviderPools},
     CapabilitySession, ProviderReference,
-    network::{OutboundStreamInvoker, StreamConnectRequest, StreamInvocation},
-    pools::{InstalledProvider, ProviderClient, ProviderMetadata, ProviderPools},
 };
 #[cfg(any(test, feature = "development-outbound"))]
 use latent_capabilities::broker::{
-    ProviderBudgetRequirement, ProviderConfiguration,
     network::{STREAM_CAPABILITY, STREAM_PROFILE},
     pools::ProviderSetup,
+    ProviderBudgetRequirement, ProviderConfiguration,
 };
 #[cfg(any(test, feature = "development-outbound"))]
 use latent_core::BudgetDimension;
@@ -22,7 +21,7 @@ use latent_network::dns::Resolver;
 #[cfg(any(test, feature = "development-outbound"))]
 use sha2::{Digest, Sha256};
 use std::{
-    sync::{Arc, Mutex, Weak},
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
@@ -37,9 +36,11 @@ pub(crate) struct Inner {
     pub pools: Arc<ProviderPools>,
     pub resolvers: Vec<Option<Resolver>>,
     pub tls: Vec<Option<Arc<crate::tls::InstalledTls>>>,
-    pub connections: Mutex<[Weak<Connection>; 32]>,
+    pub connections: Arc<crate::connection_registry::Registry>,
     #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
     native: Mutex<Option<crate::kernel::native::NativeOwner>>,
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    pub(crate) native_bank: Option<Arc<crate::kernel::native::StreamBank>>,
     _configuration: ProviderMetadata,
 }
 #[cfg(any(test, feature = "development-outbound"))]
@@ -102,6 +103,115 @@ impl StreamProvider {
             .try_lock()
             .map_err(crate::snapshot_lock_error)? = Some(owner);
         Ok(provider)
+    }
+    /// Explicit consumer for a NEW source-matched retirement-observation image.
+    /// It cannot enable normal sockets or return any native capacity. The old
+    /// constructor entry above never mints an observation descriptor.
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    pub async fn install_kernel_return_observation_for_qualification(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        deadline: Instant,
+    ) -> Result<Self, StreamError> {
+        let provider = Self::install_with_modes(
+            Arc::clone(&pools),
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::Qualified,
+            crate::kernel::Mode::RetainUnproved,
+        )?;
+        let owner = crate::kernel::native::start_with_retirement_observation(
+            pools,
+            &provider.inner.installed,
+            deadline,
+        )
+        .await?;
+        if Instant::now() >= deadline {
+            drop(owner);
+            return Err(error(StreamErrorCode::Timeout));
+        }
+        *provider
+            .inner
+            .native
+            .try_lock()
+            .map_err(crate::snapshot_lock_error)? = Some(owner);
+        Ok(provider)
+    }
+    /// Fixed qualification-only consumption of the original 512 KiB bank.
+    /// Connection, bootstrap/descriptor remainder and observer costs remain
+    /// quarantined. This cannot select normal provider installation.
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    pub async fn install_kernel_bank_reclamation_for_qualification(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        deadline: Instant,
+    ) -> Result<Self, StreamError> {
+        let provider = Self::install_with_modes(
+            Arc::clone(&pools),
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::Qualified,
+            crate::kernel::Mode::RetainUnproved,
+        )?;
+        let owner = crate::kernel::native::start_with_bank_reclamation(
+            pools,
+            &provider.inner.installed,
+            deadline,
+        )
+        .await?;
+        if Instant::now() >= deadline {
+            drop(owner);
+            return Err(error(StreamErrorCode::Timeout));
+        }
+        *provider
+            .inner
+            .native
+            .try_lock()
+            .map_err(crate::snapshot_lock_error)? = Some(owner);
+        Ok(provider)
+    }
+    /// Observe the same native close that ordinary retirement initiates. Its
+    /// fixed result is not an affine native refund proof or full cost claim.
+    /// Holding it keeps the original cleanup/result charge.
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    pub async fn retire_kernel_constructor_for_qualification(
+        &self,
+        deadline: Instant,
+    ) -> Result<latent_capabilities::broker::pools::StreamKernelCloseReceipt, StreamError> {
+        let owner = self
+            .inner
+            .native
+            .try_lock()
+            .map_err(crate::snapshot_lock_error)?
+            .take()
+            .ok_or_else(|| error(StreamErrorCode::Unsupported))?;
+        // The native slot is already empty: normal retirement cannot submit a
+        // duplicate close. It still retires all the original other resources.
+        self.retire();
+        let job = owner.close_before(deadline)?;
+        tokio::select! {
+            biased;
+            () = tokio::time::sleep_until(deadline.into()) => Err(error(StreamErrorCode::Timeout)),
+            result = job.wait() => {
+                let receipt = result?;
+                if Instant::now() >= deadline {
+                    drop(receipt);
+                    Err(error(StreamErrorCode::Timeout))
+                } else {
+                    Ok(receipt)
+                }
+            }
+        }
     }
     /// Normal installation refuses before protected inputs, resolver/socket
     /// allocation or provider publication until an actual platform is qualified.
@@ -311,6 +421,7 @@ impl StreamProvider {
             },
             expected_epoch,
         )?;
+        let connections = crate::connection_registry::Registry::new(&pools)?;
         Ok(Self {
             inner: Arc::new(Inner {
                 config,
@@ -319,9 +430,11 @@ impl StreamProvider {
                 pools,
                 resolvers,
                 tls,
-                connections: Mutex::new(std::array::from_fn(|_| Weak::new())),
+                connections,
                 #[cfg(target_os = "linux")]
                 native: Mutex::new(None),
+                #[cfg(target_os = "linux")]
+                native_bank: None, // No normal/qualification consumer selects it yet.
                 _configuration: configuration,
             }),
         })
@@ -345,12 +458,7 @@ impl StreamProvider {
             drop(owner);
         }
         for index in 0..32 {
-            let connection = self
-                .inner
-                .connections
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)[index]
-                .upgrade();
+            let connection = self.inner.connections.snapshot(index).ok().flatten();
             if let Some(connection) = connection {
                 connection.abort(StreamErrorCode::Revoked);
             }
@@ -365,12 +473,7 @@ impl StreamProvider {
             ..Default::default()
         };
         for index in 0..32 {
-            let connection = self
-                .inner
-                .connections
-                .try_lock()
-                .map_err(crate::snapshot_lock_error)?[index]
-                .upgrade();
+            let connection = self.inner.connections.snapshot(index)?;
             if let Some(connection) = connection {
                 let usage = connection.usage()?;
                 result.owners += usage.owners;
@@ -378,6 +481,10 @@ impl StreamProvider {
                 result.pending_operations += usage.pending_operations;
                 result.retained_chunks += usage.retained_chunks;
                 result.accepted_write_bytes += usage.accepted_write_bytes;
+                #[cfg(any(test, feature = "development-outbound"))]
+                {
+                    result.input_budget_bytes += usage.input_budget_bytes;
+                }
                 result.delivered_read_bytes += usage.delivered_read_bytes;
             }
         }
@@ -388,17 +495,18 @@ impl StreamProvider {
     }
 
     pub(crate) fn maintenance_step(&self, now: Instant) {
+        // Same existing paid maintenance turn, including failed predials that
+        // have not entered the32-slot Connection registry. No new executor.
+        #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+        if self.inner.native_bank.is_some() {
+            self.inner
+                .pools
+                .maintain_stream_quarantine(&self.inner.installed, now);
+        }
         for index in 0..32 {
-            let connection = match self.inner.connections.try_lock() {
-                Ok(slots) => slots[index].upgrade(),
-                Err(std::sync::TryLockError::WouldBlock) => continue,
-                Err(std::sync::TryLockError::Poisoned(slots)) => {
-                    let connection = slots.into_inner()[index].upgrade();
-                    if let Some(connection) = connection {
-                        connection.abort(StreamErrorCode::Exhausted);
-                    }
-                    continue;
-                }
+            let connection = match self.inner.connections.snapshot(index) {
+                Ok(connection) => connection,
+                Err(_) => continue, // Existing bounded next turn; no owner dropped.
             };
             if let Some(connection) = connection {
                 connection.maintenance_step(now);
@@ -458,27 +566,32 @@ impl OutboundStreamInvoker for StreamProvider {
             }
             deadline = deadline.min(now + Duration::from_millis(u64::from(timeout)));
         }
+        let inner = Arc::clone(&self.inner);
+        let prepared = session.prepare_io_future_with(
+            move |(scope, client, admission): (
+                StreamScope,
+                Arc<ProviderClient<Socket>>,
+                PoolAdmission,
+            )| {
+                connection::connect(inner, scope, index, client, admission, deadline)
+            },
+        )?;
         let scope = session.reserve_stream()?;
         let client: Arc<ProviderClient<Socket>> = self.inner.pools.client(
             &self.inner.installed,
             u16::try_from(index).map_err(|_| error(StreamErrorCode::InvalidInput))?,
         )?;
         let admission = self.inner.pools.admit_until(&client, session, deadline)?;
-        let inner = Arc::clone(&self.inner);
-        Ok(Box::pin(connection::connect(
-            inner, scope, index, client, admission, deadline,
-        )))
+        Ok(prepared.finish((scope, client, admission)))
     }
 }
 impl Drop for Inner {
     fn drop(&mut self) {
         self.installed.retire();
-        let slots = self
-            .connections
-            .get_mut()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        for connection in slots.iter().filter_map(Weak::upgrade) {
-            connection.abort(StreamErrorCode::Revoked);
+        for index in 0..crate::connection_registry::CAPACITY {
+            if let Ok(Some(connection)) = self.connections.snapshot(index) {
+                connection.abort(StreamErrorCode::Revoked);
+            }
         }
         for resolver in self.resolvers.iter().flatten() {
             let _ = resolver.close();

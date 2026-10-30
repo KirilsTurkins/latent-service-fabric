@@ -90,7 +90,7 @@ fn defaults_derive_compatible_node_limits_without_creating_storage() {
     assert_eq!(settings.manager.journal.maximum_active, 19);
     assert_eq!(settings.wasmtime.maximum_active_instances, 2);
     assert_eq!(settings.inventory.cell_classes, [CellClass::Standard]);
-    assert_eq!(settings.inventory.maximum_topology_entries, 38);
+    assert_eq!(settings.inventory.maximum_topology_entries, 39);
     assert_eq!(
         settings.inventory.maximum_topology_entries,
         super::topology::MAXIMUM_ENTRIES

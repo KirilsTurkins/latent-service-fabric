@@ -1,113 +1,27 @@
 {
-  "cases": [
-    "ClosedIO.test_actual_closed_graph_changes_only_four_async_kinds_and_preserves_every_core_byte",
-    "ClosedIO.test_closed_async_type_preimage_and_public_signature_changes_fail_closed",
-    "ClosedIO.test_metadata_rewrite_preserves_canonical_options_and_unselected_spans",
-    "ClosedIO.test_nonclosed_profiles_refuse_before_inspection_or_component_rewrite",
-    "ClosedIO.test_relocated_captured_sdk_works_without_a_repository_sdk_or_root_lookup",
-    "ClosedIO.test_unknown_unreferenced_and_shared_foreign_async_types_are_refused",
-    "CodecVersionSpelling.test_only_the_exact_pinned_bare_and_official_build_forms_are_accepted"
-  ],
-  "guards": {
-    "ClosedIO.test_actual_closed_graph_changes_only_four_async_kinds_and_preserves_every_core_byte": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [
-        "unittest.skipUnless(shutil.which('wasm-tools'), 'pinned wasm-tools is required for real component encoding')"
-      ],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d1b16b1ae28e6a8cbabec0f9fcbb12e8afb2c4065b4b518a029cbf7fdeeb77d",
-        "class:setup-sha256:46511976ba67d4a8e079d0c22cf9c12166bed9782b01922769b1d533b9c8b8a5"
-      ],
-      "skipSites": []
-    },
-    "ClosedIO.test_closed_async_type_preimage_and_public_signature_changes_fail_closed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [
-        "unittest.skipUnless(shutil.which('wasm-tools'), 'pinned wasm-tools is required for real component encoding')"
-      ],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d1b16b1ae28e6a8cbabec0f9fcbb12e8afb2c4065b4b518a029cbf7fdeeb77d",
-        "class:setup-sha256:46511976ba67d4a8e079d0c22cf9c12166bed9782b01922769b1d533b9c8b8a5"
-      ],
-      "skipSites": []
-    },
-    "ClosedIO.test_metadata_rewrite_preserves_canonical_options_and_unselected_spans": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [
-        "unittest.skipUnless(shutil.which('wasm-tools'), 'pinned wasm-tools is required for real component encoding')"
-      ],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d1b16b1ae28e6a8cbabec0f9fcbb12e8afb2c4065b4b518a029cbf7fdeeb77d",
-        "class:setup-sha256:46511976ba67d4a8e079d0c22cf9c12166bed9782b01922769b1d533b9c8b8a5"
-      ],
-      "skipSites": []
-    },
-    "ClosedIO.test_nonclosed_profiles_refuse_before_inspection_or_component_rewrite": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [
-        "unittest.skipUnless(shutil.which('wasm-tools'), 'pinned wasm-tools is required for real component encoding')"
-      ],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d1b16b1ae28e6a8cbabec0f9fcbb12e8afb2c4065b4b518a029cbf7fdeeb77d",
-        "class:setup-sha256:46511976ba67d4a8e079d0c22cf9c12166bed9782b01922769b1d533b9c8b8a5"
-      ],
-      "skipSites": []
-    },
-    "ClosedIO.test_relocated_captured_sdk_works_without_a_repository_sdk_or_root_lookup": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [
-        "unittest.skipUnless(shutil.which('wasm-tools'), 'pinned wasm-tools is required for real component encoding')"
-      ],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d1b16b1ae28e6a8cbabec0f9fcbb12e8afb2c4065b4b518a029cbf7fdeeb77d",
-        "class:setup-sha256:46511976ba67d4a8e079d0c22cf9c12166bed9782b01922769b1d533b9c8b8a5"
-      ],
-      "skipSites": []
-    },
-    "ClosedIO.test_unknown_unreferenced_and_shared_foreign_async_types_are_refused": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [
-        "unittest.skipUnless(shutil.which('wasm-tools'), 'pinned wasm-tools is required for real component encoding')"
-      ],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d1b16b1ae28e6a8cbabec0f9fcbb12e8afb2c4065b4b518a029cbf7fdeeb77d",
-        "class:setup-sha256:46511976ba67d4a8e079d0c22cf9c12166bed9782b01922769b1d533b9c8b8a5"
-      ],
-      "skipSites": []
-    },
-    "CodecVersionSpelling.test_only_the_exact_pinned_bare_and_official_build_forms_are_accepted": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:8d1b16b1ae28e6a8cbabec0f9fcbb12e8afb2c4065b4b518a029cbf7fdeeb77d",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "storageCases":"guard-keys",
+  "guards":{
+    "ClosedIO.test_actual_closed_graph_changes_only_four_async_kinds_and_preserves_every_core_byte":
+      "5435ce3ed4e8f645a2f89c80895f45031c3256404053282bb738b057ffce38f9",
+    "ClosedIO.test_closed_async_type_preimage_and_public_signature_changes_fail_closed":
+      "5435ce3ed4e8f645a2f89c80895f45031c3256404053282bb738b057ffce38f9",
+    "ClosedIO.test_metadata_rewrite_preserves_canonical_options_and_unselected_spans":
+      "5435ce3ed4e8f645a2f89c80895f45031c3256404053282bb738b057ffce38f9",
+    "ClosedIO.test_nonclosed_profiles_refuse_before_inspection_or_component_rewrite":
+      "5435ce3ed4e8f645a2f89c80895f45031c3256404053282bb738b057ffce38f9",
+    "ClosedIO.test_relocated_captured_sdk_works_without_a_repository_sdk_or_root_lookup":
+      "5435ce3ed4e8f645a2f89c80895f45031c3256404053282bb738b057ffce38f9",
+    "ClosedIO.test_unknown_unreferenced_and_shared_foreign_async_types_are_refused":
+      "5435ce3ed4e8f645a2f89c80895f45031c3256404053282bb738b057ffce38f9",
+    "CodecVersionSpelling.test_only_the_exact_pinned_bare_and_official_build_forms_are_accepted":
+      "ad4f2c4da6f2210f6dc66b61b8bc6b695bb8c3831a607eb13f7e2e330428b9d2"
   },
-  "kind": "python",
-  "module": "tools/tests/test_dotnet_closed_io.py",
-  "reviewReason": "Reviewed exact pinned wasm-tools bare and official Linux build spellings, with additive rejection controls; all six original case names, execution decorators and skip guards retained; only the version assertion fixture digest changes.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_dotnet_closed_io.py",
+  "reviewReason":"Reviewed exact pinned wasm-tools bare and official Linux build spellings, with additive rejection controls; all six original case names, execution decorators and skip guards retained; only the version assertion fixture digest changes.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "5435ce3ed4e8f645a2f89c80895f45031c3256404053282bb738b057ffce38f9":{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(shutil.which('wasm-tools'), 'pinned wasm-tools is required for real component encoding')"],"decorators":[],"fixtureGuards":["module:setup-sha256:8d1b16b1ae28e6a8cbabec0f9fcbb12e8afb2c4065b4b518a029cbf7fdeeb77d","class:setup-sha256:46511976ba67d4a8e079d0c22cf9c12166bed9782b01922769b1d533b9c8b8a5"],"skipSites":[]},
+    "ad4f2c4da6f2210f6dc66b61b8bc6b695bb8c3831a607eb13f7e2e330428b9d2":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:8d1b16b1ae28e6a8cbabec0f9fcbb12e8afb2c4065b4b518a029cbf7fdeeb77d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
 }

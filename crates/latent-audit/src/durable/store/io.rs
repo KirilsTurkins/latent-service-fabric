@@ -116,6 +116,8 @@ pub(super) fn atomic(path: &Path, bytes: &[u8]) -> Result<()> {
 fn registered_bound(path: &Path) -> Result<usize> {
     match path.file_name().and_then(|n| n.to_str()) {
         Some("MODE" | "HEAD" | "MODE.next" | "HEAD.next") => Ok(1024),
+        Some("CUSTODY" | "CUSTODY.next" | "SEAL" | "SEAL.next") => Ok(4096),
+        Some("ROLLOVER" | "ROLLOVER.next" | "TRANSFER" | "TRANSFER.next") => Ok(16384),
         Some("INTENT" | "INTENT.next" | "record.next") => Ok(16384),
         _ => Err(corrupt()),
     }

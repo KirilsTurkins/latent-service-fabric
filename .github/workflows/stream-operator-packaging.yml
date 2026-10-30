@@ -1,0 +1,54 @@
+name: Stream operator frontend packaging
+
+on:
+  push:
+    branches: ['feat/stream-operator-lifecycle-20261023']
+    paths: ['.github/workflows/stream-operator-packaging.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stream-operator-packaging-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Stream operator frontend (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            lock: tools/dev-frontend-linux.lock
+          - os: windows-2025
+            lock: tools/dev-frontend-windows.lock
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - name: Install exact hashed frontend and schema-validator inputs
+        run: python -m pip install --require-hashes -r "${{ matrix.lock }}"
+      - name: Exercise protected preparation and isolated frontend source boundaries
+        run: python -B -m unittest tools.tests.test_outbound_stream_preparation tools.tests.test_outbound_stream_operator tools.tests.test_dev_frontend_preflight_packaging tools.tests.test_dev_frontend_native_wheel
+      - name: Build frozen frontend and execute outside-checkout smoke checks
+        run: python tools/build_dev_frontend.py --output target/stream-operator-frontend
+      - name: Retain actual frontend products and existing source/license inventories
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: stream-operator-frontend-${{ matrix.os }}-${{ github.sha }}
+          path: |
+            target/stream-operator-frontend/build.json
+            target/stream-operator-frontend/helper.pyz
+            target/stream-operator-frontend/python-inventory.json
+            target/stream-operator-frontend/licenses/
+            target/stream-operator-frontend/dist/
+          if-no-files-found: error
+          retention-days: 7

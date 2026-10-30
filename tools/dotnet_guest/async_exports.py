@@ -382,3 +382,51 @@ def memory_support(synchronous: str, asynchronous: str) -> str:
         raise ValueError('dotnet-async-export-memory-helper-placement-drift')
     offset = anchors[0].end()
     return synchronous[:offset] + '\n\n' + selected[0][0] + synchronous[offset:]
+
+
+# This test-only adapter is pinned to the complete retained NORMAL helper,
+# including its actual int TaskReturn ABI. Ordinary bridge() never calls it.
+JOIN_CAUSE_NORMAL_SHA256 = '6cad4650339b330d39ceeca74af9dde080cfbc751fdbbda26ab2323349a63e8d'
+JOIN_CAUSE_FILE = 'ServiceWorld.wit.Exports.examples.greeting.ApiExportsInterop.cs'
+JOIN_CAUSE_NORMAL = '            global::LsfManagedWorkRoot.Join();'
+JOIN_CAUSE_SELECTED = '''            try
+            {
+                global::LsfManagedWorkRoot.Join();
+            }
+            catch (global::System.InvalidOperationException failure) when (
+                failure.GetType() == typeof(global::System.InvalidOperationException) &&
+                failure.Message == "managed-work-unproven-quiescence")
+            {
+                ProbeTaskReturn(unchecked((int)0x4A430001u));
+                return;
+            }
+            catch (global::System.AggregateException failure) when (
+                failure.InnerExceptions.Count == 1 &&
+                global::System.Object.ReferenceEquals(failure.InnerExceptions[0],
+                    global::OutsideRootDrain.Library.OriginalFault))
+            {
+                ProbeTaskReturn(unchecked((int)0x4A430002u));
+                return;
+            }
+            catch (global::System.Exception)
+            {
+                ProbeTaskReturn(unchecked((int)0x4A430003u));
+                return;
+            }'''
+
+
+def diagnostic_join_cause(name: str, text: str) -> tuple[str, dict]:
+    """Explicit auxiliary source, never a drain or original-trap qualification."""
+    import hashlib
+    if name != JOIN_CAUSE_FILE or hashlib.sha256(text.encode('utf-8')).hexdigest() != JOIN_CAUSE_NORMAL_SHA256:
+        raise ValueError('dotnet-join-cause-unreviewed-normal-helper')
+    if text.count(JOIN_CAUSE_NORMAL) != 1:
+        raise ValueError('dotnet-join-cause-join-shape')
+    selected = text.replace(JOIN_CAUSE_NORMAL, JOIN_CAUSE_SELECTED)
+    if selected.replace(JOIN_CAUSE_SELECTED, JOIN_CAUSE_NORMAL) != text:
+        raise ValueError('dotnet-join-cause-normal-inverse')
+    return selected, {'profile': 'dotnet-ac7-join-cause-auxiliary-v1', 'source': name,
+        'normalSha256': JOIN_CAUSE_NORMAL_SHA256,
+        'selectedSha256': hashlib.sha256(selected.encode('utf-8')).hexdigest(),
+        'taskReturnOperand': 'int', 'diagnosticWords': [0x4A430001, 0x4A430002, 0x4A430003],
+        'physicalRetirementQualified': False, 'originalTrapQualified': False}
