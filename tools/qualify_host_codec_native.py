@@ -292,7 +292,8 @@ CONTROLS = (('original-host-memory',
    'broker::tests::session_native_memory::original_session_native_observer_and_reused_registry_never_credit_a_fresh_budget',
    'broker::tests::session_native_memory::original_session_native_real_provider_call_keeps_closed_session_backing_until_drop',
    'broker::tests::session_native_memory::original_session_native_real_provider_result_keeps_original_owner_after_scope_close',
-   'broker::tests::session_native_memory::original_session_native_concurrent_final_core_drops_retire_the_real_registry_weak_graph')),
+   'broker::tests::session_native_memory::original_session_native_concurrent_final_core_drops_retire_the_real_registry_weak_graph',
+   'broker::tests::session_native_memory::post_store_registry_retirement_releases_original_child_capacity_without_a_new_session')),
  ('original-session-optional-shared-owner',
   'latent-capabilities',
   'broker::session::shared::tests::',
@@ -439,7 +440,7 @@ def qualify(output: Path, revision: str) -> dict:
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
     require(len(CONTROLS) == 44 and len({row[0] for row in CONTROLS}) == 44
-            and len(names) == len(set(names)) == 199, 'host-codec-control-inventory')
+            and len(names) == len(set(names)) == 200, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     result_bytes.verify(ROOT)
@@ -478,7 +479,7 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':199,'nativeCohort':NATIVE_COHORT,
+            'products':products,'commands':stages.records,'controlCount':200,'nativeCohort':NATIVE_COHORT,
             'wasmtimeAllocationCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
