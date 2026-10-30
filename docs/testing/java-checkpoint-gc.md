@@ -168,3 +168,23 @@ fail-closed checks at `GC.enqueueMark`. A bad reference now traps before queue
 insertion, preserving the exact caller frame that supplied it. This is
 diagnostic only: it does not discard the reference, change the application,
 alter collection order, raise a limit or claim runtime qualification.
+
+Exact-head run
+[`41098690060`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41098690060)
+at `82fcf9871e042665b7b46d8b2d99c12d5db6469f` reached that guard. Function 514
+is the retained `teavm_enqueued_root_trap_unknown_class`; its caller is
+`GC.markFields` inlined into `GC.markObject`, so the invalid value came from a
+live object's compiler-described reference field. Both grant denials passed,
+but the first signed case trapped and no collection or signed success was
+observed. This excludes both the packed monitor and a direct static-root value.
+
+The matching compiler defect is TeaVM 0.15.0's nested-handler volatile-definition
+analysis. A definition made inside a nested protected body is backed up for that
+inner handler, but not on entry to each live outer handler. After a parked
+continuation resumes, C exception lowering can therefore publish an undefined
+reference temporary into an otherwise live heap object. TeaVM repaired this in
+commit `ae0630dd286cf57bcb4ec175696ae8010e42588c`. The private compiler derivation
+now applies those exact four lines to the hash-pinned 0.15.0 source and replaces
+only `VolatileDefinitionFinder.class` in addition to the eleven already bound
+compiler classes. Application/library paths, GC order, capabilities and limits
+remain unchanged. Successful signed execution is still required.
