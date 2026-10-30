@@ -24,7 +24,10 @@ mod wait_registry;
 pub(crate) use owner::Token;
 use owner::{AllocationError, Error, Kind, Owner, SystemOwned};
 pub(crate) use registry::Handle;
-pub(crate) use wait_driver::{drive_wait, register_wait, unregister_wait, wake_wait, WaitLease};
+pub(crate) use wait_driver::{
+    allocate_wait_node, deallocate_wait_node, drive_wait, register_wait, unregister_wait, wake_wait,
+    WaitLease,
+};
 
 struct Child {
     task: Owner,
