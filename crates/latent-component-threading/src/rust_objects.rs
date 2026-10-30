@@ -11,8 +11,8 @@ use wasmparser::{BinaryReader, Encoding, Operator, Parser, Payload, Validator};
 #[path = "rust_catalogue.rs"]
 mod catalogue;
 
-const NODE_COUNT: usize = 1225;
-const REFERENCE_COUNT: usize = 5325;
+const NODE_COUNT: usize = 1226;
+const REFERENCE_COUNT: usize = 5323;
 const MAX_BYTES: usize = 1024 * 1024;
 const MAX_FUNCTIONS: u32 = 1024;
 const MAX_OPERATORS: u64 = 262_144;
@@ -1853,7 +1853,7 @@ mod tests {
         assert!(!proof.bindings.contains(&UNBOUND));
         assert_eq!(
             (proof.stack_low, proof.stack_high, proof.memory_bytes),
-            (26256, 1140368, 1179648)
+            (26304, 1140416, 1179648)
         );
         let module = Original::parse(ORIGINAL).unwrap();
         let selected = source_role(&proof, "runtime13executor_root12progress_all").unwrap();
@@ -1938,13 +1938,13 @@ mod tests {
         assert_eq!(sites.iter().filter(|site| site.fallback).count(), 1);
         let sealed = seal_original_callbacks(ORIGINAL).unwrap();
         // Exact independently retained Python production derivation from the
-        // authentic ec11 event. This is an emission comparison, not execution.
+        // authenticated 777bf46 event. This is an emission comparison, not execution.
         assert_eq!(
             Sha256::digest(&sealed)
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "8a23f238e78076122b458e174b9a4fb03b0f5d6be9f2807f57ba96d52c412dd0"
+            "9e10c03a39dfe70e43063a66dc4605c03342d070b8101f401ed221e9a330046e"
         );
         let sealed_module = Original::parse(&sealed).unwrap();
         for (index, function) in module.table.iter().enumerate() {
@@ -1989,11 +1989,11 @@ mod tests {
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "e3ee64a72d7a75e229a4f07edf58b3e4907ae4e1e974609fc51c2fae4e5f91fd"
+            "cc65ef0a737f30dbb719852fb8209d43663c6c3496e8d16de3e888bf58fd8c96"
         );
-        assert_eq!(receipt.original_panic_function, 531);
-        assert_eq!(receipt.root.canonical_system_panic_trap, Some(532));
-        assert_eq!(receipt.root.canonical_system_stack_high, Some(1140368));
+        assert_eq!(receipt.original_panic_function, 532);
+        assert_eq!(receipt.root.canonical_system_panic_trap, Some(533));
+        assert_eq!(receipt.root.canonical_system_stack_high, Some(1140416));
         assert_eq!(
             receipt.root.root_stack_high - receipt.root.root_stack_low,
             1024 * 1024
