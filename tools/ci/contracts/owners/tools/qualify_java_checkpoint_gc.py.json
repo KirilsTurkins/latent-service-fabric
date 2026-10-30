@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "bind exact-head Java GC numeric diagnostic engine and source paths",
+  "reviewReason": "Require and attest the diagnostic CLI and node as one exact-head pair",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3053bc8ca39858ca773ea53f0ee9c35a5e5d05f1f7a71c20eb9e6bcc89da2aa9"
+  "sha256": "2392d0ae1c1fb9a122c28b467df653d84920daa0c46999203459868748dd9129"
 }

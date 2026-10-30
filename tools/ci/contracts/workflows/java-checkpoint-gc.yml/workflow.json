@@ -25,6 +25,9 @@
           "crates/latent-wasmtime/src/backend.rs",
           "crates/latent-wasmtime/src/lib.rs",
           "crates/latent-wasmtime/Cargo.toml",
+          "crates/latent-wire/src/management/capabilities/conversion.rs",
+          "apps/latent/src/management/phase2/projection/capability.rs",
+          "apps/latent/Cargo.toml",
           "apps/latentd/Cargo.toml",
           "sdk/java-guest/fibers/conformance/compiler/GcReferenceControl.java",
           ".github/workflows/java-checkpoint-gc.yml"
@@ -54,7 +57,7 @@
     "gc-roots",
     "retained-gc-roots"
   ],
-  "reviewReason": "Move runner temp resolution into the hosted diagnostic step",
+  "reviewReason": "Bind and trigger the exact-head diagnostic CLI and node source pair",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-gc.yml"
 }

@@ -16,6 +16,9 @@ on:
       - 'crates/latent-wasmtime/src/backend.rs'
       - 'crates/latent-wasmtime/src/lib.rs'
       - 'crates/latent-wasmtime/Cargo.toml'
+      - 'crates/latent-wire/src/management/capabilities/conversion.rs'
+      - 'apps/latent/src/management/phase2/projection/capability.rs'
+      - 'apps/latent/Cargo.toml'
       - 'apps/latentd/Cargo.toml'
       - 'sdk/java-guest/fibers/conformance/compiler/GcReferenceControl.java'
       - '.github/workflows/java-checkpoint-gc.yml'
@@ -104,12 +107,14 @@ jobs:
             -- --exact --test-threads=1
           cargo --config .cargo/managed-guest.toml build --release --locked -p latentd --bin latentd \
             --features java-checkpoint-gc-trap-diagnostic
+          cargo --config .cargo/managed-guest.toml build --release --locked -p latent --bin latent
       - name: Selected reference GC and real compiler controls then one fresh signed GC target
         run: |
           python3 -B tools/qualify_java_checkpoint_gc.py \
             --native "$RUNNER_TEMP/java-gc-native" \
             --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" \
             --diagnostic-node "$RUNNER_TEMP/java-gc-host-target/release/latentd" \
+            --diagnostic-client "$RUNNER_TEMP/java-gc-host-target/release/latent" \
             --output "$RUNNER_TEMP/java-gc-roots"
       - name: Retain bounded source compiler and actual runtime evidence without keys
         if: always()

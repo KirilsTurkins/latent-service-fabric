@@ -12,6 +12,19 @@ from tools.phase2_operator_process import WorkflowError
 
 
 class JavaCheckpointGcTests(unittest.TestCase):
+    def test_diagnostic_node_requires_a_distinct_exact_campaign_client(self):
+        from tools.qualify_java_checkpoint_gc import diagnostic_pair
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);node_path=root/'latentd';client_path=root/'latent'
+            node_path.write_bytes(b'node');client_path.write_bytes(b'client')
+            retained={'latent':root/'retained-latent','latentd':root/'retained-latentd'}
+            with self.assertRaisesRegex(WorkflowError,'diagnostic-pair-required'):
+                diagnostic_pair(retained,node_path,None)
+            with self.assertRaisesRegex(WorkflowError,'diagnostic-products-distinct'):
+                diagnostic_pair(retained,node_path,node_path)
+            selected,node,client=diagnostic_pair(retained,node_path,client_path)
+            self.assertEqual((selected['latentd'],selected['latent']),(node,client))
+
     def test_original_project_has_only_explicit_runtime_clocks_and_unchanged_limits(self):
         with tempfile.TemporaryDirectory() as temporary:
             app=fixture.project(Path(temporary)/'application')

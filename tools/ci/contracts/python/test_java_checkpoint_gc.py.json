@@ -1,6 +1,7 @@
 {
   "cases": [
     "JavaCheckpointGcTests.test_configuration_refuses_missing_optional_duplicate_and_network_imports",
+    "JavaCheckpointGcTests.test_diagnostic_node_requires_a_distinct_exact_campaign_client",
     "JavaCheckpointGcTests.test_gc_case_does_not_accept_fresh_or_one_collection_or_ignored_error",
     "JavaCheckpointGcTests.test_generated_mechanism_refuses_missing_collector_getter_or_child_resume",
     "JavaCheckpointGcTests.test_missing_build_proof_cannot_become_runtime_evidence",
@@ -10,6 +11,18 @@
   ],
   "guards": {
     "JavaCheckpointGcTests.test_configuration_refuses_missing_optional_duplicate_and_network_imports": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fa19b63aa3bd5637c660dcfe8884136cc8a875beda441813359326d864bd5e76",
+        "class:setup-sha256:071d085f3fc8b3044181b99137f2498fcd12548e22b5feae92419fdf8bdd20df"
+      ],
+      "skipSites": []
+    },
+    "JavaCheckpointGcTests.test_diagnostic_node_requires_a_distinct_exact_campaign_client": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -96,6 +109,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_checkpoint_gc.py",
-  "reviewReason": "Add seven finite GC controller custody and refusal controls with no mocked execution evidence, all original suites retained.",
+  "reviewReason": "Cover refusal of incomplete or aliased diagnostic product pairs",
   "schemaVersion": "latent.ci.contracts.v1"
 }

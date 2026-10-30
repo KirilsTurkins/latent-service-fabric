@@ -37,7 +37,9 @@ MATERIALS=tuple(sorted(set((*RECIPE,fixture.SOURCE,fixture.REFERENCE,fixture.CON
     'tools/phase2_operator_process.py','tools/phase2_operator_scenario.py','tools/sdk_provider_scenario.py',
     'tools/run_rust_capsule_workflow.py','crates/latent-wasmtime/src/java_checkpoint_gc_fault.rs',
     'crates/latent-wasmtime/src/config/engine.rs','crates/latent-wasmtime/src/backend.rs',
-    'crates/latent-wasmtime/src/lib.rs','crates/latent-wasmtime/Cargo.toml','apps/latentd/Cargo.toml',
+    'crates/latent-wasmtime/src/lib.rs','crates/latent-wasmtime/Cargo.toml','apps/latent/Cargo.toml',
+    'apps/latent/src/management/phase2/projection/capability.rs',
+    'crates/latent-wire/src/management/capabilities/conversion.rs','apps/latentd/Cargo.toml',
     '.github/workflows/java-checkpoint-gc.yml'))))
 
 
@@ -140,7 +142,19 @@ def build_evidence(artifact):
         'monitorCompiler':compiler,'actualGcMechanism':mechanism,'signedQualification':False}
 
 
-def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None,diagnostic_node=None):
+def diagnostic_pair(native, diagnostic_node, diagnostic_client):
+    require((diagnostic_node is None) == (diagnostic_client is None),
+        'java-checkpoint-diagnostic-pair-required')
+    if diagnostic_node is None:
+        return native, None, None
+    node,client=(Path(path).resolve(strict=True) for path in (diagnostic_node,diagnostic_client))
+    require(node!=client,'java-checkpoint-diagnostic-products-distinct')
+    for path in (node,client):path.chmod(0o700)
+    return {**native,'latentd':node,'latent':client},node,client
+
+
+def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None,diagnostic_node=None,
+        diagnostic_client=None):
     require(sys.platform=='linux' and sys.version_info>=(3,13),'java-checkpoint-linux-python313')
     native_directory,wasi_sdk=(Path(p).resolve(strict=True) for p in (native_directory,wasi_sdk))
     output=Path(output).absolute()
@@ -149,10 +163,7 @@ def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None,diagnostic_n
         'java-checkpoint-separated-inputs')
     origin=products.verify_prepared(native_directory);native=products.native_products(native_directory)
     for path in native.values():path.chmod(0o700)
-    diagnostic_node = Path(diagnostic_node).resolve(strict=True) if diagnostic_node is not None else None
-    if diagnostic_node is not None:
-        diagnostic_node.chmod(0o700)
-        native = {**native, 'latentd': diagnostic_node}
+    native,diagnostic_node,diagnostic_client=diagnostic_pair(native,diagnostic_node,diagnostic_client)
     output=fresh(output)
     before={name:file_identity(ROOT/name) for name in MATERIALS};consumer=source_identity(ROOT)
     commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=1800,command_seconds=600)
@@ -162,6 +173,7 @@ def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None,diagnostic_n
         'guestComponentsCompiled':0,'targetComponentsCompiled':0,'fullTicketQualification':False,
         'garbageCollectionObserved':False,'historicalGuestQualificationRelabelled':False,
         'diagnosticNode':file_identity(diagnostic_node,256*1024**2) if diagnostic_node is not None else None,
+        'diagnosticClient':file_identity(diagnostic_client,128*1024**2) if diagnostic_client is not None else None,
         'diagnosticRuntimeQualification':False}
     stage='normal-pinned-commons-capture'
     try:
@@ -208,6 +220,7 @@ if __name__=='__main__':
     for name in ('native','wasi-sdk','output'):parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--read-only-cache',type=Path)
     parser.add_argument('--diagnostic-node',type=Path)
+    parser.add_argument('--diagnostic-client',type=Path)
     args=parser.parse_args()
     print(qualify(args.native,args.wasi_sdk,args.output,read_only_cache=args.read_only_cache,
-        diagnostic_node=args.diagnostic_node)['status'])
+        diagnostic_node=args.diagnostic_node,diagnostic_client=args.diagnostic_client)['status'])

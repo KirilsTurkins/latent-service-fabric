@@ -72,11 +72,11 @@
       },
       {
         "name": "Build one authenticated bounded numeric diagnostic node",
-        "run": "export CARGO_TARGET_DIR=\"$RUNNER_TEMP/java-gc-host-target\"\ncargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --lib \\\n  --features java-checkpoint-gc-trap-diagnostic \\\n  java_checkpoint_gc_fault::tests::java_gc_fault_visits_only_eight_numeric_frames_for_authenticated_profile \\\n  -- --exact --test-threads=1\ncargo --config .cargo/managed-guest.toml build --release --locked -p latentd --bin latentd \\\n  --features java-checkpoint-gc-trap-diagnostic\n"
+        "run": "export CARGO_TARGET_DIR=\"$RUNNER_TEMP/java-gc-host-target\"\ncargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --lib \\\n  --features java-checkpoint-gc-trap-diagnostic \\\n  java_checkpoint_gc_fault::tests::java_gc_fault_visits_only_eight_numeric_frames_for_authenticated_profile \\\n  -- --exact --test-threads=1\ncargo --config .cargo/managed-guest.toml build --release --locked -p latentd --bin latentd \\\n  --features java-checkpoint-gc-trap-diagnostic\ncargo --config .cargo/managed-guest.toml build --release --locked -p latent --bin latent\n"
       },
       {
         "name": "Selected reference GC and real compiler controls then one fresh signed GC target",
-        "run": "python3 -B tools/qualify_java_checkpoint_gc.py \\\n  --native \"$RUNNER_TEMP/java-gc-native\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" \\\n  --diagnostic-node \"$RUNNER_TEMP/java-gc-host-target/release/latentd\" \\\n  --output \"$RUNNER_TEMP/java-gc-roots\"\n"
+        "run": "python3 -B tools/qualify_java_checkpoint_gc.py \\\n  --native \"$RUNNER_TEMP/java-gc-native\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" \\\n  --diagnostic-node \"$RUNNER_TEMP/java-gc-host-target/release/latentd\" \\\n  --diagnostic-client \"$RUNNER_TEMP/java-gc-host-target/release/latent\" \\\n  --output \"$RUNNER_TEMP/java-gc-roots\"\n"
       },
       {
         "if": "always()",
@@ -94,7 +94,7 @@
   },
   "jobId": "gc-roots",
   "kind": "job",
-  "reviewReason": "Build the diagnostic-only node with the production release profile after the stripped dev node was killed during management setup; preserve the existing 256 MiB evidence bound, guest limits, runtime assertions and focused trap control.",
+  "reviewReason": "Build and pass the exact-head CLI alongside the diagnostic node",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-gc.yml"
 }
