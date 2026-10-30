@@ -2,7 +2,7 @@
 // Full bodies are borrowed from the immutable original image, never supplied by a guest.
 use super::{Node, Reference, Root, Signature, Target};
 pub(super) static BODIES: &[u8] = include_bytes!("rust_catalogue/original-body-image.bin");
-pub(super) const ORIGIN_HEAD: &str = "eefea340b053d0f95185b6527e6caae5bf8bf457";
+pub(super) const ORIGIN_HEAD: &str = "ef841ed1d5691b4bf25db48b9980a776b4b56bc5";
 pub(super) const ORIGIN_RECIPE: &str = "sha256:726ab4756ac30e859a7f078301b8e01548b675bc7b5efd3017c3192e71b65b48";
 pub(super) const BODY_DIGEST: &str = "sha256:b39bf23bfa8c1cd0217fb0ed785558d6c0812f8da170eb45fb57d9bf1b92343d";
 pub(super) static ROOTS: &[Root] = &[

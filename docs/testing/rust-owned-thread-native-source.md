@@ -7,19 +7,31 @@ default ThreadPool application and runtime qualification are still pending.
 The current candidate host catalogue borrows 177,207 original body bytes and
 fixes all 1,225 function/data records and 5,312 actual relocation referents.
 Its generation origin is the exact hosted compiler observation at
-`eefea340b053d0f95185b6527e6caae5bf8bf457`,
-[run 41122296703](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41122296703),
-artifact 13009371378, whose ZIP SHA-256 is
-`1f40ddf6fe0f6d6cb0b2f136df04d4b965fa3833f15c9b9fde9079596c13e49a`.
-That run passed all 29 native and 76 source controls, built the repaired owned
-sysroot and compiled the unchanged application. It then refused the changed
-1,225-node object graph at the immutable previous catalogue, before component
-encoding or guest execution. The new graph has separate context-owned ID0 and
-ID32 records and no former shared ID record. The retained candidate component
-was closed locally from those exact hosted compiler bytes with the pinned
-wasm-tools 1.254.0 envelope solely to permit review; its origin explicitly says
-`hostedConfirmation: false`, `runtimeQualified: false` and
-`actualGuestExecuted: false`.
+`ef841ed1d5691b4bf25db48b9980a776b4b56bc5`,
+[run 41127291312](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41127291312),
+job 124309000420 and artifact 13012116413, whose GitHub artifact SHA-256 is
+`1f1fc1598c340b22f74b2bdf6b361ad576168738bbd619043a136a5faefcf45e`.
+That Ubuntu 24.04 run passed all 29 native and 76 source controls, rebuilt the
+repaired owned sysroot, compiled the unchanged application and reproduced the
+reviewed 251,758-byte component
+`sha256:1db2b051a515be1bd60974e38335f6bade254d6b016daf9e20b913360e72c00f`
+and 248,711-byte original source-adapted core
+`sha256:31712d97ca16f65283b8d535d38f19a64c3ad048fdd8e774bd652c9b589b8fe7`.
+The graph has separate context-owned ID0 and ID32 records and no former shared
+ID record. The catalogue now records `hostedConfirmation: true` while retaining
+`runtimeQualified: false` and `actualGuestExecuted: false`; this compiler event
+did not execute a signed guest.
+
+The preceding exact compiler
+[run 41122296703](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41122296703)
+at `eefea340b053d0f95185b6527e6caae5bf8bf457`, artifact 13009371378 and
+ZIP SHA-256
+`1f40ddf6fe0f6d6cb0b2f136df04d4b965fa3833f15c9b9fde9079596c13e49a`
+first produced the repaired 1,225-node object graph. It passed the same 29
+native and 76 source controls but refused that graph at the immutable previous
+catalogue before component encoding or guest execution. A local Windows
+wasm-tools 1.254.0 envelope was retained provisionally until the hosted run
+reproduced the exact component bytes above.
 
 The first candidate-catalogue rerun,
 [run 41124401894](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41124401894),
