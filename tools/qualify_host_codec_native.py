@@ -211,7 +211,9 @@ CONTROLS = (('original-host-memory',
   'host::native_host_future_tests::actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse',
   'host::native_host_future_tests::actual_host_future_cancellation_cannot_credit_another_live_store',
   'host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires',
-  'host::native_host_future_tests::actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_result')),
+  'host::native_host_future_tests::actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_result',
+  'host::native_host_future_tests::actual_accessor_spawn_outer_box_refuses_before_run_and_retires_after_pending',
+  'host::native_host_future_tests::actual_sync_lower_result_box_refuses_before_poll_and_fresh_budget_reuses')),
  ('c-canonical-wait-routes',
  'latent-component-threading',
  'c_wait_',
@@ -435,7 +437,7 @@ def qualify(output: Path, revision: str) -> dict:
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
     require(len(CONTROLS) == 44 and len({row[0] for row in CONTROLS}) == 44
-            and len(names) == len(set(names)) == 195, 'host-codec-control-inventory')
+            and len(names) == len(set(names)) == 197, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     result_bytes.verify(ROOT)
