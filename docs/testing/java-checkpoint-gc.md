@@ -106,3 +106,31 @@ transforms, grants, four MiB Java heap, 64 MiB linear memory, one-billion fuel,
 weak witnesses and success assertions are unchanged. Focused source checks do
 not qualify runtime collection; the draft still requires new signed `gc` and
 fresh-state outcomes.
+
+Exact-head run
+[`41075609429`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41075609429)
+at `cb1ab83f4a6e7de78cf7318d58684f51828eaf2f` removed the original
+memory-out-of-bounds fault but did not pass. The first signed `gc` call remained
+parked until the unchanged five-second capability wall boundary, then its
+uncaught wait failure entered TeaVM's unavailable print stub and trapped as
+`unreachable-code`. It consumed 5,366,604 fuel with a 9,791,504-byte peak; no
+effect or external byte was recorded. The exact component is
+`sha256:77c34e8e7d5b893310d0afbe5517fcfbe2ef55730f5fa1c0bdad7348a3f0de22`.
+No signed GC case passed.
+
+The retained generated collector exposes the remaining cause. TeaVM stores an
+inflated `Object.Monitor` only as a tagged pointer in the object's header hash.
+`GC.markObjectData` follows class-layout fields but not that header pointer, and
+`GC.updatePointers` likewise never rewrites it after compaction. A collection
+while the child is parked can therefore collect or move the monitor that owns
+its notify listener and continuation. Root's later `notifyAll()` then cannot
+deliver that wake. This is the same still-open TeaVM C-backend defect reported
+as [`konsoletyper/teavm#1330`](https://github.com/konsoletyper/teavm/issues/1330).
+
+The second repair changes only those two generated collector boundaries. It
+marks the unpacked monitor together with every live object or array, preserves
+the young-generation result, and repacks the pointer returned by the existing
+relocation table before ordinary field/array pointer updates. Exact generated
+function shapes and input/output hashes are required. No monitor queue, Java
+application/library code, assertion, capability, ownership limit, memory/fuel
+limit or retirement rule changes.

@@ -129,6 +129,7 @@ HEAP_ALIGNMENT_RUNTIME = {
     'c/o/t/r/Allocator.c': 'meth_otr_Allocator_allocateArray',
     'c/o/t/r/GC.c': 'meth_otr_GC_objectSize_0',
 }
+MONITOR_ROOT_ISSUE = 'konsoletyper/teavm#1330'
 
 
 def _aligned_runtime_function(original: str, function: str) -> str:
@@ -219,6 +220,87 @@ def heap_alignment_outputs(generated: Path, overrides: dict[Path, bytes] | None 
         'classSizeAlignments': class_sizes, 'files': identities}
 
 
+def _generated_function(original: str, function: str) -> tuple[int, int, str]:
+    signatures = list(re.finditer(
+        r'(?m)^[^\r\n{};]*\b' + re.escape(function) + r'\([^;\r\n]*\) \{\r?$', original))
+    if len(signatures) != 1:
+        raise ValueError('unreviewed-teavm-monitor-root-function')
+    closing = re.search(r'(?m)^}\r?$', original[signatures[0].end():])
+    if closing is None:
+        raise ValueError('unreviewed-teavm-monitor-root-function')
+    end = signatures[0].end() + closing.end()
+    return signatures[0].start(), end, original[signatures[0].start():end]
+
+
+def monitor_root_outputs(generated: Path, overrides: dict[Path, bytes] | None = None) -> tuple[list, dict]:
+    """Keep packed Object.Monitor references live and relocation-correct.
+
+    TeaVM stores a monitor only in the tagged object-header hash. The 0.15 C
+    collector visits generated class layouts but neither marks that header
+    reference nor rewrites it after compaction. Patch only those two generated
+    collector boundaries; application, class library and monitor queues remain
+    unchanged.
+    """
+    overrides = {} if overrides is None else overrides
+    if type(overrides) is not dict:
+        raise ValueError('unreviewed-teavm-monitor-root-overrides')
+    path = generated / 'c/o/t/r/GC.c'
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > 16 * 1024 * 1024:
+        raise ValueError('unreviewed-teavm-monitor-root-source')
+    raw = path.read_bytes()
+    selected = overrides.get(path, raw)
+    if type(selected) is not bytes or path in overrides and selected == raw:
+        raise ValueError('unreviewed-teavm-monitor-root-overrides')
+    original = selected.decode('utf-8')
+
+    start, end, body = _generated_function(original, 'meth_otr_GC_markObjectData')
+    declaration = '    void* teavm_local_2;\n'
+    class_read = '    teavm_local_2 = meth_otr_RuntimeClass_getClass(teavm_local_1);\n'
+    object_return = '        return meth_otr_GC_markObject(teavm_local_2, teavm_local_1);'
+    array_return = '    return meth_otr_GC_markArray(teavm_local_2, teavm_local_1);'
+    if any(body.count(value) != 1 for value in (declaration, class_read, object_return, array_return)):
+        raise ValueError('unreviewed-teavm-monitor-root-mark')
+    body = body.replace(declaration, declaration
+        + '    void* teavm_monitor;\n    int32_t teavm_marked_monitor;\n')
+    body = body.replace(class_read,
+        '    teavm_monitor = TEAVM_UNPACK_MONITOR(TEAVM_FIELD(teavm_local_1, TeaVM_Object, hash));\n'
+        '    teavm_marked_monitor = teavm_monitor != NULL\n'
+        '        ? meth_otr_GC_enqueueMark(teavm_monitor) : INT32_C(0);\n' + class_read)
+    body = body.replace(object_return,
+        '        return teavm_marked_monitor | meth_otr_GC_markObject(teavm_local_2, teavm_local_1);')
+    body = body.replace(array_return,
+        '    return teavm_marked_monitor | meth_otr_GC_markArray(teavm_local_2, teavm_local_1);')
+    adapted = original[:start] + body + original[end:]
+
+    start, end, body = _generated_function(adapted, 'meth_otr_GC_updatePointers')
+    opening = 'void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {\n'
+    branch = '    if ((TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType) == NULL)) {'
+    if body.count(opening) != 1 or body.count(branch) != 1:
+        raise ValueError('unreviewed-teavm-monitor-root-relocation')
+    body = body.replace(opening, opening
+        + '    int32_t teavm_monitor_hash;\n    void* teavm_monitor;\n'
+        + '    teavm_monitor_hash = TEAVM_FIELD(teavm_local_2, TeaVM_Object, hash);\n'
+        + '    teavm_monitor = TEAVM_UNPACK_MONITOR(teavm_monitor_hash);\n'
+        + '    if (teavm_monitor != NULL) {\n'
+        + '        TEAVM_FIELD(teavm_local_2, TeaVM_Object, hash) =\n'
+        + '            TEAVM_PACK_MONITOR(meth_otr_GC_updatePointer(teavm_monitor));\n'
+        + '    }\n')
+    adapted = adapted[:start] + body + adapted[end:]
+    value = adapted.encode('utf-8')
+    if value == selected:
+        raise ValueError('unreviewed-teavm-monitor-root-closure')
+    return [(path, value)], {
+        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v1',
+        'upstreamIssue': MONITOR_ROOT_ISSUE,
+        'path': 'c/o/t/r/GC.c',
+        'upstreamSha256': hashlib.sha256(raw).hexdigest(),
+        'inputSha256': hashlib.sha256(selected).hexdigest(),
+        'adaptedSha256': hashlib.sha256(value).hexdigest(),
+        'markPackedMonitor': True,
+        'rewriteRelocatedMonitor': True,
+    }
+
+
 def reference_spills(original: str, *, array_references: bool = False) -> tuple[str, int]:
     # TeaVM 0.15 saves Java locals across setjmp/longjmp in teavm_spill_N.
     # Its scalar spills qualify the local correctly, but "volatile void*"
@@ -300,6 +382,8 @@ def adapt(generated: Path) -> dict:
     spill_map = dict(spill_outputs)
     alignment_outputs, alignment_receipt = heap_alignment_outputs(generated, spill_map)
     alignment_paths = {path for path, _value in alignment_outputs}
+    monitor_outputs, monitor_receipt = monitor_root_outputs(generated, dict(alignment_outputs))
+    monitor_paths = {path for path, _value in monitor_outputs}
     memory = originals['memory.c'].replace('#if TEAVM_UNIX\n', '#if TEAVM_UNIX && !defined(LSF_TEAVM_WASM)\n', 1)
     memory = memory.replace('#if defined(__EMSCRIPTEN__)', MEMORY, 1)
     outputs = {'fiber.c': FIBER, 'time.c': CLOCK, 'memory.c': memory, 'file.c': FILESYSTEM,
@@ -311,10 +395,15 @@ def adapt(generated: Path) -> dict:
             continue
         path.write_bytes(value)
     for path, value in alignment_outputs:
+        if path in monitor_paths:
+            continue
+        path.write_bytes(value)
+    for path, value in monitor_outputs:
         path.write_bytes(value)
     receipt = {name: {'upstreamSha256': PREIMAGES[name],
                      'adaptedSha256': hashlib.sha256(value.encode()).hexdigest()}
                for name, value in outputs.items()}
     receipt['referenceSpills'] = spill_receipt
     receipt['heapAlignment'] = alignment_receipt
+    receipt['monitorRoots'] = monitor_receipt
     return receipt

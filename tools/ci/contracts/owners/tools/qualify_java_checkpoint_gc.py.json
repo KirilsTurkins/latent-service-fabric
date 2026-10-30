@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the signed Java GC controller owner fingerprint to verification of the exact TeaVM heap-alignment adaptation receipt and retained generated-C identities.",
+  "reviewReason": "Require the exact TeaVM packed-monitor mark and relocation repair together with the existing heap-alignment identities before any signed GC outcome can qualify; retain all original limits, witnesses and retirement gates.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0542ef02eded77bd117232a58b0d46848955cf3b020a7776cc896a3f9a0f4ae5"
+  "sha256": "f36685f86ce9f7ff2de2201a0c2609c64ee3884f3d3e574fdf9191f21a44378a"
 }

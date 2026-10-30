@@ -87,6 +87,47 @@ void untouched(void) { value = TEAVM_ALIGN(value, sizeof(void*)); }
             with self.assertRaisesRegex(ValueError, 'unreviewed-teavm-heap-alignment-closure'):
                 platform.heap_alignment_outputs(root)
 
+    def test_packed_monitor_is_marked_and_rewritten_after_relocation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            gc = root / 'c/o/t/r/GC.c'
+            gc.parent.mkdir(parents=True)
+            gc.write_text('''int32_t meth_otr_GC_markObjectData(void* teavm_local_1) {
+    void* teavm_local_2;
+    teavm_local_2 = meth_otr_RuntimeClass_getClass(teavm_local_1);
+    if ((TEAVM_FIELD(teavm_local_2, TeaVM_Class, itemType) == NULL)) {
+        return meth_otr_GC_markObject(teavm_local_2, teavm_local_1);
+    }
+    return meth_otr_GC_markArray(teavm_local_2, teavm_local_1);
+}
+void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
+    if ((TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType) == NULL)) {
+        meth_otr_GC_updatePointersInObject(teavm_local_1, teavm_local_2);
+    } else {
+        meth_otr_GC_updatePointersInArray(teavm_local_1, teavm_local_2);
+    }
+}
+''', newline='\n')
+            original = gc.read_bytes()
+            outputs, receipt = platform.monitor_root_outputs(root)
+            self.assertEqual(receipt['upstreamIssue'], platform.MONITOR_ROOT_ISSUE)
+            self.assertTrue(receipt['markPackedMonitor'])
+            self.assertTrue(receipt['rewriteRelocatedMonitor'])
+            self.assertEqual(gc.read_bytes(), original)
+            adapted = dict(outputs)[gc].decode()
+            self.assertIn('meth_otr_GC_enqueueMark(teavm_monitor)', adapted)
+            self.assertEqual(adapted.count('teavm_marked_monitor |'), 2)
+            self.assertIn('TEAVM_PACK_MONITOR(meth_otr_GC_updatePointer(teavm_monitor))', adapted)
+
+    def test_packed_monitor_repair_refuses_unknown_collector_shapes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            gc = root / 'c/o/t/r/GC.c'
+            gc.parent.mkdir(parents=True)
+            gc.write_text('void meth_otr_GC_markObjectData(void) { changed(); }\n')
+            with self.assertRaisesRegex(ValueError, 'unreviewed-teavm-monitor-root'):
+                platform.monitor_root_outputs(root)
+
 
 if __name__ == '__main__':
     unittest.main()
