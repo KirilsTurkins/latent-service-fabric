@@ -111,6 +111,10 @@ mod tests {
         // control enough finite fuel to reach Wasmtime's stack guard; the
         // production diagnostic still uses the invocation's admitted budget.
         store.set_fuel(1_000_000_000).unwrap();
+        // The owning engine also enables epoch interruption. No host advances
+        // epochs in this synthetic control, so a finite deadline keeps the
+        // recursion on the stack-overflow path without changing runtime policy.
+        store.set_epoch_deadline(1_000);
         let instance = wasmtime::Instance::new(&mut store, &module, &[]).unwrap();
         let function = instance
             .get_typed_func::<(), ()>(&mut store, "private-guest-export-must-never-be-printed")
@@ -121,7 +125,8 @@ mod tests {
             Some(&wasmtime::Trap::StackOverflow)
         );
         let original = error.downcast_ref::<wasmtime::WasmBacktrace>().unwrap();
-        assert!(original.frames().len() > MAX_FRAMES);
+        // The owning diagnostic engine itself retains at most eight frames.
+        assert_eq!(original.frames().len(), MAX_FRAMES);
         let mut frames = [None; MAX_FRAMES];
         let mut index = 0;
         let proof = Authentication::RustSyncVerified([0x11; 32]);
