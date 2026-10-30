@@ -11,8 +11,8 @@ use wasmparser::{BinaryReader, Encoding, Operator, Parser, Payload, Validator};
 #[path = "rust_catalogue.rs"]
 mod catalogue;
 
-const NODE_COUNT: usize = 1226;
-const REFERENCE_COUNT: usize = 5323;
+const NODE_COUNT: usize = 1222;
+const REFERENCE_COUNT: usize = 5309;
 const MAX_BYTES: usize = 1024 * 1024;
 const MAX_FUNCTIONS: u32 = 1024;
 const MAX_OPERATORS: u64 = 262_144;
