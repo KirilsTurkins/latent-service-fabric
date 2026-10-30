@@ -1,34 +1,34 @@
 {
   "schemaVersion": "latent.rust.trusted-original-catalogue.v1",
   "origin": {
-    "run": 41052945511,
-    "head": "777bf46e80e74945b286415d2c7276ee239a164b",
-    "artifact": 12976325543,
-    "artifactZipSha256": "69de48e6ff9b2affcaa6144e39daad604450cf02bd5ddade67f50a67a82dbabf",
+    "run": 41082423885,
+    "head": "9d0e11dea3c469202eb3d446f44755b6ac3d3b9e",
+    "artifact": 12990232297,
+    "artifactZipSha256": "6b477c68849db71abcb04c26c5ef7af7ca5f4ef63009146d1754301247dd95e4",
     "compilerDistributionDigest": "sha256:b8bbac71d7992a25a49b78726c4337dbcf0a6194700d42a444019b0ae19cda3f",
-    "sysrootIdentity": "sha256:f215f013eaf2549b9e16c15cfb3928c2321c92332c43fe277298e8c94ad3e66a",
-    "sourceRecipeDigest": "sha256:3ebe668572beff225133fdbb266a99b3190082793d37161b2e036865241c2167",
-    "originRawCoreDigest": "sha256:32d45c689b53d41e6a4797e4a293c3a41ad5a3e7219407632101cf3858a18468",
+    "sysrootIdentity": "sha256:67aee2b2949fd560d589c97ff9f73a5ab38cd604b10c7336b15bc042879dd9ea",
+    "sourceRecipeDigest": "sha256:500630119cf4437ceed1e98fe9edba7e50313abcceed44b6819e8b3fa7722482",
+    "originRawCoreDigest": "sha256:1016bc74d96585be6943d2b1396cf79ebd8f1fa66828a321d2ee251827431bcc",
     "sourceProfile": "lsf-rust-std-owned-thread-built-source-v1",
     "compilerRust": "1.97.1",
     "compilerCommit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
     "threadSourcePathRemap": {
-      "sourceRoot": "/tmp/lsf-rust-clock-std-mlkjw2_2/library",
+      "sourceRoot": "/tmp/lsf-rust-clock-std-32590vwe/library",
       "mappedRoot": "/lsf/rust/library",
-      "argument": "--remap-path-prefix=/tmp/lsf-rust-clock-std-mlkjw2_2/library=/lsf/rust/library"
+      "argument": "--remap-path-prefix=/tmp/lsf-rust-clock-std-32590vwe/library=/lsf/rust/library"
     },
-    "owningStatus": "passed-10-native-tls-controls-76-source-controls-12-emitted-guards-and-original-app-compile; stale-catalogue-refused-before-runtime",
+    "owningStatus": "passed-29-native-controls-76-source-controls-and-original-app-compile; refreshed-catalogue-not-runtime-qualified",
     "newApplicationStackGeometryClaimed": true,
     "actualOriginalLinkerLayout": {
-      "stackLow": 26304,
-      "stackHigh": 1140416,
-      "activeDataHigh": 25584,
+      "stackLow": 27552,
+      "stackHigh": 1141664,
+      "activeDataHigh": 26840,
       "initialMemoryBytes": 1179648
     },
     "actualGuestExecuted": false
   },
-  "originalBodyImageDigest": "sha256:c21c25cc65288ba74852886903b81695906ab08ee152ad3df102f3cfea6d0130",
-  "originalBodyImageBytes": 176196,
+  "originalBodyImageDigest": "sha256:73ee2f69236bd38d7bbb3b789e48af5195f9c67ada6765545831e1d9c7d02dd3",
+  "originalBodyImageBytes": 176596,
   "libraries": [
     {
       "label": "libcore-93c73edb509ba1e1.rlib",
@@ -66,14 +66,14 @@
       "bytes": 17806
     },
     {
-      "label": "librustc_demangle-36611d0700866548.rlib",
-      "digest": "sha256:3a214c8cd524daf2d69d52272d7e13e9e006bded9593bece7978930322addd35",
-      "bytes": 316046
-    },
-    {
       "label": "libpanic_abort-f135c3a08b9cddd2.rlib",
       "digest": "sha256:0debe40192c81d8fe8b45b5655234a5923c063a2bf136a0fd151c8eae92e4a11",
       "bytes": 7762
+    },
+    {
+      "label": "librustc_demangle-36611d0700866548.rlib",
+      "digest": "sha256:3a214c8cd524daf2d69d52272d7e13e9e006bded9593bece7978930322addd35",
+      "bytes": 316046
     },
     {
       "label": "librustc_std_workspace_alloc-509bc7cd45824e5d.rlib",
@@ -81,14 +81,14 @@
       "bytes": 4880
     },
     {
-      "label": "libhashbrown-0a531973ae5c1204.rlib",
-      "digest": "sha256:4787ca04cf7787dcd92d63900a58d8cadb0193997ce8605a4283ecf77a62b107",
-      "bytes": 1697010
-    },
-    {
       "label": "liballoc-b59d09930bc4c66c.rlib",
       "digest": "sha256:923042d711fa2eb649df270906f8fefd8f2280d988b37b2346517dfe818f05fb",
       "bytes": 7254690
+    },
+    {
+      "label": "libhashbrown-0a531973ae5c1204.rlib",
+      "digest": "sha256:4787ca04cf7787dcd92d63900a58d8cadb0193997ce8605a4283ecf77a62b107",
+      "bytes": 1697010
     },
     {
       "label": "libstd_detect-426e1e971f3c6043.rlib",
@@ -97,26 +97,26 @@
     },
     {
       "label": "libstd.rlib",
-      "digest": "sha256:49584d032a1ff8d1e89bd45f0188c9ea0fca9d5e678ecad79823cf1ed8f66e50",
-      "bytes": 9229856
+      "digest": "sha256:4f8b610022499ae1ac4d9b69d395fc7ac0bea48ce0d4ca99ee70727f2e0081e5",
+      "bytes": 9226934
     },
     {
       "label": "captured-futures-executor.rlib",
-      "digest": "sha256:72cb26eab5c6045ef8c8cbf5ae809464edf008993a0c56461e2370ec02713fa3",
+      "digest": "sha256:86bfe6557ff27b4bcac9bf2c1ab97c543750fca7bf2e667aec128a28e161285f",
       "bytes": 301150
     }
   ],
   "generationGrantsAuthority": false,
   "runtimeQualified": false,
-  "nodeCount": 1226,
-  "referenceCount": 5323,
+  "nodeCount": 1222,
+  "referenceCount": 5309,
   "normalComponentEnvelope": {
     "tool": "wasm-tools",
     "version": "1.254.0",
     "toolSha256": "3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd",
-    "componentDigest": "sha256:31b303a38b19750ca5d3ab45a3b4b981706950f3b1d1544ee518a35f6956b374",
-    "componentBytes": 251409,
-    "derivedCoreDigest": "sha256:cc65ef0a737f30dbb719852fb8209d43663c6c3496e8d16de3e888bf58fd8c96",
+    "componentDigest": "sha256:8b25c9c738cfa6cf0f146f7575762e69dd82625cfdae12f2747586d3cd9ce6d2",
+    "componentBytes": 251294,
+    "derivedCoreDigest": "sha256:9fd38b90a1f8e758c6be4da4a9310ebf05373af8caee8fa9f5ef195411b87966",
     "actualGuestExecuted": false,
     "nativeVerifierExecuted": false,
     "files": [
@@ -146,18 +146,18 @@
         "digest": "sha256:14bae97e29b1064d917330e77a459d068214ae6857d5fe6ff2298bdbecc7b826"
       }
     ],
-    "originalSyncCoreDigest": "sha256:24f72880c6921c01472455abece927d3210276bede1fe3bdd9468036c4b3b137",
+    "originalSyncCoreDigest": "sha256:261f4cd27a9f8229793ed6e5521986e8e3c0249eec800363394b1591292e8b57",
     "publicEffect": "explicit-async-WIT-ordinary-synchronous-core-ABI",
     "metadataAdaptation": {
       "originalBytes": 1420,
       "adaptedBytes": 1420,
+      "completeParsedGraphDifference": "only examples:greeting/api@1.0.0#greet async flag",
+      "instructionDataImportExportsChanged": false,
+      "hostSyncTaskSemanticsChanged": false,
       "changedOffset": 1244,
       "originalByte": 64,
       "adaptedByte": 67,
-      "adaptedDigest": "sha256:14bae97e29b1064d917330e77a459d068214ae6857d5fe6ff2298bdbecc7b826",
-      "completeParsedGraphDifference": "only examples:greeting/api@1.0.0#greet async flag",
-      "instructionDataImportExportsChanged": false,
-      "hostSyncTaskSemanticsChanged": false
+      "adaptedDigest": "sha256:14bae97e29b1064d917330e77a459d068214ae6857d5fe6ff2298bdbecc7b826"
     }
   }
 }

@@ -35,12 +35,12 @@ PREVIOUS_PINS = {
 PINS = {
     'application-source-and-capture.tar.gz': (20967082, '0fc010b42fa347a494c4f0590a1e75ce46e0d0a181bf07c9f62201e06d9492ca'),
     'source-inputs.json': (9348, '13cf42650a10c4e8659ef9bf4216a39e19a190e27b327f6f8f9b76073272b52c'),
-    'raw-core.wasm': (262760, '32d45c689b53d41e6a4797e4a293c3a41ad5a3e7219407632101cf3858a18468'),
+    'raw-core.wasm': (262561, '1016bc74d96585be6943d2b1396cf79ebd8f1fa66828a321d2ee251827431bcc'),
     'observation.json': (5427, '86110a34ac5235bb70058f02b9c89c93ef322c209235e86badade5501c863b69'),
 }
-COMPONENT_SHA = 'sha256:31b303a38b19750ca5d3ab45a3b4b981706950f3b1d1544ee518a35f6956b374'
-WRAPPED = {'bytes': 514214,
-           'sha256': 'sha256:ad791f7486361d73f69b4b4a7b0bc57f5b5094d63cc3d5d2beddef560f9003dd'}
+COMPONENT_SHA = 'sha256:8b25c9c738cfa6cf0f146f7575762e69dd82625cfdae12f2747586d3cd9ce6d2'
+WRAPPED = {'bytes': 513900,
+           'sha256': 'sha256:5c326ff819667d0e23531c3f71e5142ae89cc4b357278ecc5eccf1dbe8c0eeb2'}
 PROFILE = 'rust-context40-sync-cooperative-v1'
 SOURCE_IMPORTS = ('latent:runtime/activation@0.1.0', 'latent:runtime-native/threads@0.1.0',
                   'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0')
@@ -99,7 +99,7 @@ def original_files(artifact: Path) -> tuple[dict[str, bytes], dict]:
 def wrap_original(original: bytes, component: bytes) -> bytes:
     """Untrusted preimage framing only; the selected native host recomputes it."""
     require(digest(original) == 'sha256:' + PINS['raw-core.wasm'][1]
-            and digest(component) == COMPONENT_SHA and len(component) == 251409,
+            and digest(component) == COMPONENT_SHA and len(component) == 251294,
             'rust-thread-original-component-pair')
     name = b'latent-rust-original-core-v1'
     payload = unsigned(len(name)) + name + b'LSFRPR01' + len(original).to_bytes(4, 'little') + original

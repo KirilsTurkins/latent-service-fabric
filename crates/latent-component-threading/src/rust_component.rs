@@ -13,7 +13,7 @@ pub const MAX_ORIGINAL_BYTES: usize = 1024 * 1024;
 pub const MAX_COMPONENT_BYTES: usize = 2 * 1024 * 1024;
 // Admitted BEFORE recomputation. Sixteen2MiB image units cover overlapping
 // input/output/reencoder/section/TLS buffers; eightMiB separately covers the
-// fixed1226-node/5323-edge graph and bounded scalar signatures; eightMiB covers
+// fixed1222-node/5309-edge graph and bounded scalar signatures; eightMiB covers
 // validator state. Original component storage is charged independently.
 pub const RUST_VERIFICATION_WORK_BYTES: usize = 48 * 1024 * 1024;
 const MAGIC: &[u8; 8] = b"LSFRPR01";

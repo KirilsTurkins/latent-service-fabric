@@ -141,8 +141,8 @@ def catalogue(core: bytes, libraries: tuple[graph.Library, ...], observation: di
 def rust_records(image: bytes, manifest: dict) -> bytes:
     """Emit borrowed immutable typed records; no runtime JSON/global cache."""
     graph.require(manifest['originalBodyImageDigest'] == graph.digest(image)
-                  and len(manifest['nodes']) == 1226
-                  and sum(len(row['references']) for row in manifest['nodes']) == 5323,
+                  and len(manifest['nodes']) == 1222
+                  and sum(len(row['references']) for row in manifest['nodes']) == 5309,
                   'rust-host-catalogue-reviewed-membership')
 
     def quoted(value):
