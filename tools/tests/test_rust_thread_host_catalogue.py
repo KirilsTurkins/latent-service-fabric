@@ -22,6 +22,37 @@ def section(kind: int, payload: bytes) -> bytes:
 
 
 class HostCatalogueTests(unittest.TestCase):
+    def test_retained_linux_normal_envelope_matches_exact_hosted_receipt(self):
+        import hashlib
+        import json
+        from pathlib import Path
+
+        base = (Path(__file__).resolve().parents[2] /
+                'crates/latent-component-threading/src/rust_catalogue')
+        origin = json.loads((base / 'origin.json').read_text(encoding='utf-8'))
+        envelope = origin['normalComponentEnvelope']
+        component = (base / 'reviewed-normal-component.wasm').read_bytes()
+        shell = (base / 'normal-component-shell.bin').read_bytes()
+        self.assertEqual(envelope['toolSha256'],
+                         'cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6')
+        self.assertEqual(envelope['hostedSource'], {
+            'run': 41089948823,
+            'head': '18c4bdbadd292159c567f9da399a42ac651fe5e0',
+            'artifact': 12993363449,
+            'platform': 'ubuntu-24.04-x86_64',
+            'failedStageAfterComponentEncoding': 'native-normal-component-proof',
+        })
+        self.assertEqual(envelope['componentBytes'], len(component))
+        self.assertEqual(envelope['componentDigest'],
+                         'sha256:' + hashlib.sha256(component).hexdigest())
+        retained_shell = next(row for row in envelope['files']
+                              if row['name'] == 'normal-component-shell.bin')
+        self.assertEqual(retained_shell, {
+            'name': 'normal-component-shell.bin',
+            'bytes': len(shell),
+            'digest': 'sha256:' + hashlib.sha256(shell).hexdigest(),
+        })
+
     def test_reviewed_roots_require_public_lifecycle_and_private_pool_entrypoints(self):
         nodes = ([{'id': index, 'originalSymbol': name}
                   for index, name in enumerate(host.ROOT_EXPORTS)]
