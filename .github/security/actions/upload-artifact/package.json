@@ -5,8 +5,8 @@
   "type": "module",
   "main": "dist/upload/index.js",
   "scripts": {
-    "build": "tsc",
-    "release": "ncc build src/upload/index.ts -o dist/upload && ncc build src/merge/index.ts -o dist/merge",
+    "build": "node .lsf-source/verify-installed-deepmerge.mjs && tsc",
+    "release": "node .lsf-source/verify-installed-deepmerge.mjs && ncc build src/upload/index.ts -o dist/upload && ncc build src/merge/index.ts -o dist/merge",
     "check-all": "concurrently \"npm:format-check\" \"npm:lint\" \"npm:test\" \"npm:build\"",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
@@ -47,6 +47,7 @@
     "@typescript-eslint/parser": "^8.54.0",
     "@vercel/ncc": "^0.38.4",
     "concurrently": "^9.2.1",
+    "deepmerge": "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
     "eslint": "^9.39.2",
     "eslint-plugin-github": "^6.0.0",
     "eslint-plugin-jest": "^29.12.1",

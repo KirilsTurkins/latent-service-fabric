@@ -376,12 +376,14 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/setup-node/package-lock.json",
-      "path": ".github/security/actions/setup-node/package.json"
+      "path": ".github/security/actions/setup-node/package.json",
+      "source_repair": "deepmerge-action-source-v1"
     },
     {
       "kind": "npm",
       "lock": ".github/security/actions/setup-python/package-lock.json",
-      "path": ".github/security/actions/setup-python/package.json"
+      "path": ".github/security/actions/setup-python/package.json",
+      "source_repair": "deepmerge-action-source-v1"
     },
     {
       "kind": "npm",
@@ -396,7 +398,8 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/setup-java/package-lock.json",
-      "path": ".github/security/actions/setup-java/package.json"
+      "path": ".github/security/actions/setup-java/package.json",
+      "source_repair": "deepmerge-action-source-v1"
     },
     {
       "kind": "npm",
@@ -412,7 +415,8 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/upload-artifact/package-lock.json",
-      "path": ".github/security/actions/upload-artifact/package.json"
+      "path": ".github/security/actions/upload-artifact/package.json",
+      "source_repair": "deepmerge-action-source-v1"
     },
     {
       "kind": "npm",
