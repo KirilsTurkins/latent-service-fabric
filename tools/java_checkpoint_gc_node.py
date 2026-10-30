@@ -43,14 +43,19 @@ def configuration(settings, capsule):
     return settings
 
 
-def invoke(client,target,mode,label,component):
+def invoke(client,target,mode,label,component,*,diagnostic=None):
     revision=selected_revision(client,target)
     row=call(client,target,'greeting','greet',[mode],label)
     require(revision['releaseDigest']==component and row['processReaped']
         and row['response']['outcomeKnown'] and row['response']['data']['resolvedRevision']==revision,
         'java-checkpoint-actual-known-signed-revision')
     usage=row['response']['data']['consumption']
-    require(row['exitCode']==0 and row['decoded']==[{'ok':fixture.EXPECTED[mode]}]
+    matched = row['exitCode']==0 and row['decoded']==[{'ok':fixture.EXPECTED[mode]}]
+    if not matched and diagnostic is not None:
+        node, native, output = diagnostic
+        from tools.java_checkpoint_gc_fault_frames import capture
+        capture(node, native, component, output)
+    require(matched
         and 0<int(usage['cpuFuel'])<=1000000000 and 0<int(usage['peakMemoryBytes'])<=67108864
         and all(int(usage[k])==0 for k in ('childCalls','outboundRequests','logBytes','effectCount',
             'stateReadBytes','stateWriteBytes','blobReadBytes','blobWriteBytes')),
@@ -58,7 +63,7 @@ def invoke(client,target,mode,label,component):
     return row
 
 
-def execute(artifact,native,output,deadline,component):
+def execute(artifact,native,output,deadline,component,*,diagnostic=False):
     output=fresh(output)
     seconds=int(min(600,deadline-time.monotonic()))
     require(seconds>=120,'java-checkpoint-reserved-runtime-window')
@@ -111,7 +116,8 @@ def execute(artifact,native,output,deadline,component):
                 stage='signed-published-loop-and-monitor-programme'
                 for index,(tenant,mode) in enumerate(CASES):
                     selected,target=clients[tenant],targets[tenant];label=f'checkpoint-{index}-{tenant}-{mode}'
-                    row=invoke(selected,target,mode,label,component)
+                    context=(node,file_identity(native['latentd']),output) if diagnostic else None
+                    row=invoke(selected,target,mode,label,component,diagnostic=context)
                     record['cases'].append({'tenant':tenant,'mode':mode,'invocation':row,
                         'retirement':retire(selected,probe,target,output,label)})
                     write_workflow_receipt(output/f'progress-{index}.json',record)

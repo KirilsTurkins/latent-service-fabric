@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Authenticate and run the unchanged GC programme on its retained a5c component; no guest/native compilation.",
+  "reviewReason": "bind exact-head Java GC numeric diagnostic engine and source paths",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2111697405ea1704e1749564701c29552a4a97522dca08fc9b658e2bfb256769"
+  "sha256": "3053bc8ca39858ca773ea53f0ee9c35a5e5d05f1f7a71c20eb9e6bcc89da2aa9"
 }

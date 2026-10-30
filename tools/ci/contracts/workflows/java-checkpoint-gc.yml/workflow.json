@@ -19,6 +19,13 @@
           "tools/fixtures/java-checkpoint-gc-retained-a5c.json",
           "tools/tests/test_java_checkpoint_gc_retained.py",
           "tools/tests/test_java_checkpoint_gc.py",
+          "tools/tests/test_java_checkpoint_gc_fault_frames.py",
+          "crates/latent-wasmtime/src/java_checkpoint_gc_fault.rs",
+          "crates/latent-wasmtime/src/config/engine.rs",
+          "crates/latent-wasmtime/src/backend.rs",
+          "crates/latent-wasmtime/src/lib.rs",
+          "crates/latent-wasmtime/Cargo.toml",
+          "apps/latentd/Cargo.toml",
           "sdk/java-guest/fibers/conformance/compiler/GcReferenceControl.java",
           ".github/workflows/java-checkpoint-gc.yml"
         ]
@@ -47,7 +54,7 @@
     "gc-roots",
     "retained-gc-roots"
   ],
-  "reviewReason": "Run the reviewed failure-only GC fixture diagnosis as one fresh target; retain the strict historical component reader as manual only.",
+  "reviewReason": "bind exact-head Java GC numeric diagnostic engine and source paths",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-gc.yml"
 }

@@ -4,6 +4,9 @@
   "coverage": {},
   "definition": {
     "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "${{ runner.temp }}/java-gc-host-target",
       "PYTHONDONTWRITEBYTECODE": "1"
     },
     "if": "github.event_name == 'push' || inputs.programme == 'fresh'",
@@ -40,8 +43,25 @@
         }
       },
       {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
         "name": "Install the maintained exact compiler tools and focused controller checks",
-        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_checkpoint_gc -v\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ntimeout --signal=KILL 180s curl --fail --location \\\n  --retry 3 --retry-all-errors --retry-delay 1 --max-time 60 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
+        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_checkpoint_gc \\\n  tools.tests.test_java_checkpoint_gc_fault_frames -v\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ntimeout --signal=KILL 180s curl --fail --location \\\n  --retry 3 --retry-all-errors --retry-delay 1 --max-time 60 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
         "shell": "bash"
       },
       {
@@ -52,8 +72,12 @@
         "run": "python3 -B tools/rust_thread_native_products.py --output \"$RUNNER_TEMP/java-gc-native\""
       },
       {
+        "name": "Build one authenticated bounded numeric diagnostic node",
+        "run": "cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --lib \\\n  --features java-checkpoint-gc-trap-diagnostic \\\n  java_checkpoint_gc_fault::tests::java_gc_fault_visits_only_eight_numeric_frames_for_authenticated_profile \\\n  -- --exact --test-threads=1\ncargo --config .cargo/managed-guest.toml build --locked -p latentd --bin latentd \\\n  --features java-checkpoint-gc-trap-diagnostic\n"
+      },
+      {
         "name": "Selected reference GC and real compiler controls then one fresh signed GC target",
-        "run": "python3 -B tools/qualify_java_checkpoint_gc.py \\\n  --native \"$RUNNER_TEMP/java-gc-native\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" \\\n  --output \"$RUNNER_TEMP/java-gc-roots\"\n"
+        "run": "python3 -B tools/qualify_java_checkpoint_gc.py \\\n  --native \"$RUNNER_TEMP/java-gc-native\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" \\\n  --diagnostic-node \"$RUNNER_TEMP/java-gc-host-target/debug/latentd\" \\\n  --output \"$RUNNER_TEMP/java-gc-roots\"\n"
       },
       {
         "if": "always()",
@@ -71,8 +95,7 @@
   },
   "jobId": "gc-roots",
   "kind": "job",
-  "reviewReason": "Align this draft workflow with development's approved patched Action sources; command bodies, evidence, limits, and required outcomes remain unchanged.",
+  "reviewReason": "bind exact-head Java GC numeric diagnostic source and hosted job",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-gc.yml"
 }
-

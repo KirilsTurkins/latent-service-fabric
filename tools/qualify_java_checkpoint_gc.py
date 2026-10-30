@@ -25,6 +25,8 @@ from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_j
 
 MATERIALS=tuple(sorted(set((*RECIPE,fixture.SOURCE,fixture.REFERENCE,fixture.CONTROL,fixture.DEPENDENCY_CONTROL,
     'tools/java_checkpoint_gc_fixture.py','tools/java_checkpoint_gc_node.py',
+    'tools/java_checkpoint_gc_fault_frames.py',
+    'tools/tests/test_java_checkpoint_gc_fault_frames.py',
     'tools/qualify_java_checkpoint_gc.py','tools/java_standard_http_library.py',
     'tools/qualify_java_fibers.py','tools/rust_thread_native_products.py',
     'tools/sdk_native_products_reader.py','tools/host_codec_native_products_reader.py',
@@ -33,7 +35,10 @@ MATERIALS=tuple(sorted(set((*RECIPE,fixture.SOURCE,fixture.REFERENCE,fixture.CON
     'tools/qualify_resource_tenants.py','tools/java_http_release_preparation.py',
     'tools/rust_capsule_node.py','tools/phase3_resource_profile.py','tools/phase3_resource_os.py',
     'tools/phase2_operator_process.py','tools/phase2_operator_scenario.py','tools/sdk_provider_scenario.py',
-    'tools/run_rust_capsule_workflow.py','.github/workflows/java-checkpoint-gc.yml'))))
+    'tools/run_rust_capsule_workflow.py','crates/latent-wasmtime/src/java_checkpoint_gc_fault.rs',
+    'crates/latent-wasmtime/src/config/engine.rs','crates/latent-wasmtime/src/backend.rs',
+    'crates/latent-wasmtime/src/lib.rs','crates/latent-wasmtime/Cargo.toml','apps/latentd/Cargo.toml',
+    '.github/workflows/java-checkpoint-gc.yml'))))
 
 
 def generated_mechanism(directory):
@@ -135,7 +140,7 @@ def build_evidence(artifact):
         'monitorCompiler':compiler,'actualGcMechanism':mechanism,'signedQualification':False}
 
 
-def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None):
+def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None,diagnostic_node=None):
     require(sys.platform=='linux' and sys.version_info>=(3,13),'java-checkpoint-linux-python313')
     native_directory,wasi_sdk=(Path(p).resolve(strict=True) for p in (native_directory,wasi_sdk))
     output=Path(output).absolute()
@@ -144,6 +149,10 @@ def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None):
         'java-checkpoint-separated-inputs')
     origin=products.verify_prepared(native_directory);native=products.native_products(native_directory)
     for path in native.values():path.chmod(0o700)
+    diagnostic_node = Path(diagnostic_node).resolve(strict=True) if diagnostic_node is not None else None
+    if diagnostic_node is not None:
+        diagnostic_node.chmod(0o700)
+        native = {**native, 'latentd': diagnostic_node}
     output=fresh(output)
     before={name:file_identity(ROOT/name) for name in MATERIALS};consumer=source_identity(ROOT)
     commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=1800,command_seconds=600)
@@ -151,7 +160,9 @@ def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None):
         'source':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip(),
         'consumerSource':consumer,'materials':before,'nativeOrigin':origin,'nativeProductsBuilt':0,
         'guestComponentsCompiled':0,'targetComponentsCompiled':0,'fullTicketQualification':False,
-        'garbageCollectionObserved':False,'historicalGuestQualificationRelabelled':False}
+        'garbageCollectionObserved':False,'historicalGuestQualificationRelabelled':False,
+        'diagnosticNode':file_identity(diagnostic_node,256*1024**2) if diagnostic_node is not None else None,
+        'diagnosticRuntimeQualification':False}
     stage='normal-pinned-commons-capture'
     try:
         app,selected,original,record['capture']=fixture.capture(output/'project')
@@ -178,7 +189,8 @@ def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None):
             'java-checkpoint-same-selected-bytecode-for-model-and-component')
         require((artifact/'source-inputs.json').read_bytes()==source,'java-checkpoint-exact-compiled-source')
         stage='signed-two-tenant-dependency-checkpoint-programme'
-        record['node']=execute(artifact,native,output/'node',commands.deadline,record['build']['component']['sha256'])
+        record['node']=execute(artifact,native,output/'node',commands.deadline,
+            record['build']['component']['sha256'],diagnostic=diagnostic_node is not None)
         require(build_evidence(artifact)==record['build'] and inventory(snapshot(app))==source
             and verify_inputs(app,'java').identity==record['capture']['capturedInputIdentity']
             and origin==products.verify_prepared(native_directory) and consumer==source_identity(ROOT)
@@ -195,5 +207,7 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('native','wasi-sdk','output'):parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--read-only-cache',type=Path)
+    parser.add_argument('--diagnostic-node',type=Path)
     args=parser.parse_args()
-    print(qualify(args.native,args.wasi_sdk,args.output,read_only_cache=args.read_only_cache)['status'])
+    print(qualify(args.native,args.wasi_sdk,args.output,read_only_cache=args.read_only_cache,
+        diagnostic_node=args.diagnostic_node)['status'])
