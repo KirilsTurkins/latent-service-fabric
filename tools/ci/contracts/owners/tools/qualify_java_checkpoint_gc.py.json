@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require the reason-specific bounded parent-class and field-offset receipt for the retained exact-head below-heap field edge without changing limits, collection behavior, or success criteria.",
+  "reviewReason": "Accept only pre-marked TeaVM static objects below the managed heap while retaining bounded diagnostics for unmarked field edges and unchanged limits, collection behavior, and success criteria.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ef3ca9de2b1f193a259bfd822557346c47d5d7ea3e3ffa6a29ac14c32ae1954d"
+  "sha256": "2cc5b840de015e4a7d58fa809e2b948e7d5071abdebc2feb54598b4239ee360c"
 }

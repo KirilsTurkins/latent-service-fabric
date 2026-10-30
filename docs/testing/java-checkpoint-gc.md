@@ -275,3 +275,34 @@ discard, rewrite or dereference the invalid value, and changes no collector
 order, application/library path, capability, owner, retirement rule or runtime
 limit. A hosted rerun must bind the field to its generated class layout before
 the underlying compiler/runtime repair can be selected.
+
+Exact-head run
+[`41125017767`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41125017767)
+at `9c07fd17cb7dde4257430e179dad8befc78fa61b` reached that frame chain.
+Artifact `13011871212` has archive digest
+`sha256:ac4f40605a776117d6c84949b27bd967cabc584030ec189e1cc5ebc110eaba4d`;
+its component is
+`sha256:623d3491ab52e84cc7e132a3073b96a621d52ca3a9fb5cf84332f0eee0690f3d`.
+The frame digits encode parent class-table index `0x01a` (26) and field offset
+`0x3c` (60). The retained generated class descriptor and layout bind those
+values to `java.lang.Thread.name`, assigned by TeaVM's unchanged class
+initializer from `TEAVM_GET_STRING(34)`.
+
+That value is not a corrupt continuation reference. TeaVM's C string pool is
+static wasm data below `teavm_gc_heapAddress`; initialization marks each pool
+object with `RuntimeObject.GC_MARKED`, and the ordinary `GC.enqueueMark` path
+therefore accepts it through `GC.isMarked` without queueing or relocating it.
+The v6 precondition trapped before that intentional immortal-object fast path.
+Construction and both grant denials passed, but the first signed call still
+trapped after 5,309,566 fuel at a 9,791,504-byte peak with zero effects. It is
+retained as a diagnostic false positive, not as signed GC success.
+
+Profile `teavm-0.15-c-packed-monitor-gc-root-v7` narrows both below-heap probes
+to unmarked references. A pre-marked static object follows TeaVM's unchanged
+`GC.isMarked` branch; a non-null, unmarked below-heap edge still traps with the
+same bounded parent-class and field identity. All past-heap, truncated,
+alignment, free-chunk, known-class and dynamic-array checks remain unchanged.
+This restores upstream static-object semantics without dropping a reference,
+weakening a failure, changing collection order or raising any resource limit.
+Another exact-head hosted run must now retain the next real failure or complete
+the signed GC cases.

@@ -292,7 +292,7 @@ def _field_edge_diagnostics() -> str:
         '    }',
         '    teavm_field_edge_trap_value = INT32_C(-3);',
         '}',
-        '__attribute__((noinline)) static void teavm_field_edge_below_heap_diagnose(',
+        '__attribute__((noinline)) static void teavm_field_edge_unmarked_below_heap_diagnose(',
         '        int32_t teavm_parent, int32_t teavm_field) {',
         '    teavm_field_edge_diagnose(teavm_parent, teavm_field);',
         '}',
@@ -469,7 +469,8 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
 }
 '''
     validation = (
-        '    if ((uintptr_t) teavm_local_1 < (uintptr_t) teavm_gc_heapAddress) {\n'
+        '    if ((uintptr_t) teavm_local_1 < (uintptr_t) teavm_gc_heapAddress\n'
+        '            && !meth_otr_GC_isMarked(teavm_local_1)) {\n'
         '        teavm_enqueued_root_trap_below_heap();\n'
         '    }\n'
         '    if ((uintptr_t) teavm_local_1 >= (uintptr_t) TEAVM_ADDRESS_ADD(\n'
@@ -507,9 +508,10 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
         '            teavm_local_2, teavm_local_7));\n'
         '        if (teavm_field_edge_candidate != NULL\n'
         '                && (uintptr_t) teavm_field_edge_candidate <\n'
-        '                    (uintptr_t) teavm_gc_heapAddress) {\n'
+        '                    (uintptr_t) teavm_gc_heapAddress\n'
+        '                && !meth_otr_GC_isMarked(teavm_field_edge_candidate)) {\n'
         '            teavm_field_edge_parent = teavm_gc_known_class_index(teavm_local_1);\n'
-        '            teavm_field_edge_below_heap_diagnose(\n'
+        '            teavm_field_edge_unmarked_below_heap_diagnose(\n'
         '                teavm_field_edge_parent, teavm_local_7);\n'
         '        }\n'
         '        if (teavm_gc_candidate_is_valid_unknown_class(teavm_field_edge_candidate)) {\n'
@@ -538,7 +540,7 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
     if value == selected:
         raise ValueError('unreviewed-teavm-monitor-root-closure')
     return [(path, value)], {
-        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v6',
+        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v7',
         'upstreamIssue': MONITOR_ROOT_ISSUE,
         'path': 'c/o/t/r/GC.c',
         'upstreamSha256': hashlib.sha256(raw).hexdigest(),
@@ -550,10 +552,11 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
         'packedMonitorValidityTrapKinds': 6,
         'boundedEnqueuedReferenceValidityTraps': True,
         'enqueuedReferenceValidityTrapKinds': 6,
+        'preMarkedBelowHeapReferencesAccepted': True,
         'dynamicArrayClassesAcceptedByValidityTraps': True,
         'dynamicArrayClassCountMaximum': 4096,
         'boundedFieldEdgeIdentityFrames': True,
-        'boundedBelowHeapFieldEdgeIdentityFrames': True,
+        'boundedUnmarkedBelowHeapFieldEdgeIdentityFrames': True,
         'fieldEdgeParentClassIndexMaximum': 4095,
         'fieldEdgeOffsetMaximum': 255,
     }
