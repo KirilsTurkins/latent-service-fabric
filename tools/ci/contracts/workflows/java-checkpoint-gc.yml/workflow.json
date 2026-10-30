@@ -20,6 +20,7 @@
           "tools/tests/test_java_checkpoint_gc_retained.py",
           "tools/tests/test_java_checkpoint_gc.py",
           "tools/tests/test_java_checkpoint_gc_fault_frames.py",
+          "tools/java_guest/c_failure_context.py",
           "crates/latent-wasmtime/src/java_checkpoint_gc_fault.rs",
           "crates/latent-wasmtime/src/config/engine.rs",
           "crates/latent-wasmtime/src/backend.rs",
@@ -30,6 +31,10 @@
           "apps/latent/Cargo.toml",
           "apps/latentd/Cargo.toml",
           "sdk/java-guest/fibers/conformance/compiler/GcReferenceControl.java",
+          "sdk/java-guest/tools/teavm_platform.py",
+          "sdk/java-guest/tests/test_platform.py",
+          "sdk/java-guest/tests/test_exception_spills.py",
+          "sdk/java-guest/tests/test_exception_array_spills.py",
           ".github/workflows/java-checkpoint-gc.yml"
         ]
       },
@@ -57,7 +62,7 @@
     "gc-roots",
     "retained-gc-roots"
   ],
-  "reviewReason": "Bind and trigger the exact-head diagnostic CLI and node source pair",
+  "reviewReason": "Bind the Java GC workflow trigger to the generated-C alignment adapter and its focused controls while preserving both required jobs and the existing execution programmes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-gc.yml"
 }

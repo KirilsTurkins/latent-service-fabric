@@ -125,7 +125,8 @@ def build_evidence(artifact):
         and context['bytes']==sum(row['bytes'] for row in context['files'].values())<=8*1024**2
         and all(file_identity(artifact/'gc-root-generated'/name,1024**2)==row
             for name,row in context['files'].items()), 'java-checkpoint-actual-generated-context-before-runtime')
-    compiler=read_json(artifact/'bindings.json')['coroutineCompiler']
+    binding=read_json(artifact/'bindings.json')
+    compiler=binding['coroutineCompiler']
     require(set(compiler['replacedClasses'])==set(PATCH_CLASSES)
         and set(ASYNC_CLASSES)<=set(compiler['loadedCompiler']['loadedClasses'])
         and compiler['loadedCompiler']['loadedClasses']=={
@@ -136,10 +137,23 @@ def build_evidence(artifact):
             'realCorrectedMonitorCallerAndFamilyClosurePreserved',
             'realNoThreadStartAndUnrelatedMethodNegativesPreserved','originalInputsUnchanged')),
         'java-checkpoint-real-original-fixed-monitor-controls-and-loaded-classes')
+    alignment=binding['platform']['heapAlignment']
+    alignment_files={row['path']:row for row in alignment['files']}
+    alignment_runtime={'c/o/t/r/Allocator.c','c/o/t/r/GC.c','heaptrace.c'}
+    require(alignment['profile']=='teavm-0.15-wasm32-eight-byte-heap-alignment-v1'
+        and alignment['upstreamFix']=='konsoletyper/teavm#1281@c197880e951b8ecb6c6ee5bffa7c16563be790f3'
+        and type(alignment['scannedClasses']) is int and 0<alignment['scannedClasses']<=16384
+        and type(alignment['classSizeAlignments']) is int and 0<alignment['classSizeAlignments']<=16384
+        and alignment_runtime<=set(alignment_files)
+        and all(alignment_files[name]['runtimeArrayAlignment'] is True
+            and alignment_files[name]['adaptedSha256']==file_identity(
+                artifact/'gc-root-generated'/name,1024**2)['sha256'].removeprefix('sha256:')
+            for name in alignment_runtime), 'java-checkpoint-exact-upstream-heap-alignment-repair')
     mechanism=generated_mechanism(artifact/'gc-root-generated')
     return {'component':component,'documents':documents,'classpath':classpath,
         'runtimeProfile':profile,'heapBytes':4194304,'generatedCContext':context,
-        'monitorCompiler':compiler,'actualGcMechanism':mechanism,'signedQualification':False}
+        'monitorCompiler':compiler,'heapAlignment':alignment,
+        'actualGcMechanism':mechanism,'signedQualification':False}
 
 
 def diagnostic_pair(native, diagnostic_node, diagnostic_client):

@@ -121,6 +121,103 @@ SPILL_DECLARATION = re.compile(
 SPILL_TYPES = {'volatile void*', 'volatile int32_t', 'volatile int64_t',
                'volatile float', 'volatile double'}
 
+CLASS_SIZE_ALIGNMENT = re.compile(
+    r'(?m)^(\s+\.size = \(int32_t\) \(intptr_t\) TEAVM_ALIGN\(sizeof\([A-Za-z_][A-Za-z0-9_]*\), )'
+    r'sizeof\(void\*\)(\),\s*)$')
+HEAP_ALIGNMENT_FIX = 'konsoletyper/teavm#1281@c197880e951b8ecb6c6ee5bffa7c16563be790f3'
+HEAP_ALIGNMENT_RUNTIME = {
+    'c/o/t/r/Allocator.c': 'meth_otr_Allocator_allocateArray',
+    'c/o/t/r/GC.c': 'meth_otr_GC_objectSize_0',
+}
+
+
+def _aligned_runtime_function(original: str, function: str) -> str:
+    signatures = list(re.finditer(
+        r'(?m)^[^\r\n{};]*\b' + re.escape(function) + r'\([^;\r\n]*\) \{\r?$', original))
+    if len(signatures) != 1:
+        raise ValueError('unreviewed-teavm-heap-alignment-function')
+    closing = re.search(r'(?m)^}\r?$', original[signatures[0].end():])
+    if closing is None:
+        raise ValueError('unreviewed-teavm-heap-alignment-function')
+    end = signatures[0].end() + closing.end()
+    body = original[signatures[0].start():end]
+    candidates = [line for line in body.splitlines(keepends=True)
+                  if 'TEAVM_ALIGN' in line and 'sizeof(void*)' in line]
+    if len(candidates) != 1 or candidates[0].count('sizeof(void*)') != 1:
+        raise ValueError('unreviewed-teavm-heap-alignment-runtime')
+    corrected = candidates[0].replace('sizeof(void*)', 'INT32_C(8)')
+    return original[:signatures[0].start()] + body.replace(candidates[0], corrected) + original[end:]
+
+
+def heap_alignment_outputs(generated: Path, overrides: dict[Path, bytes] | None = None) -> tuple[list, dict]:
+    """Backport TeaVM's reviewed eight-byte 32-bit heap layout repair.
+
+    The application and class library stay unchanged. This changes only the
+    four generated expressions and bundled heap tracer fixed upstream by
+    TeaVM #1281, after the exact pinned compiler has produced C.
+    """
+    overrides = {} if overrides is None else overrides
+    if type(overrides) is not dict:
+        raise ValueError('unreviewed-teavm-heap-alignment-overrides')
+    classes = generated / 'c'
+    if classes.is_symlink() or not classes.is_dir():
+        raise ValueError('unreviewed-teavm-generated-classes')
+    outputs, identities = [], []
+    seen_runtime = set()
+    entries = total_bytes = scanned = class_sizes = 0
+    for path in classes.rglob('*'):
+        entries += 1
+        if entries > 65536 or path.is_symlink():
+            raise ValueError('unreviewed-teavm-generated-classes')
+        if path.suffix != '.c':
+            continue
+        if not path.is_file() or path.stat().st_size > 16 * 1024 * 1024:
+            raise ValueError('unreviewed-teavm-generated-class')
+        scanned += 1
+        total_bytes += path.stat().st_size
+        if scanned > 16384 or total_bytes > 256 * 1024 * 1024:
+            raise ValueError('teavm-generated-class-size-limit')
+        raw = path.read_bytes()
+        selected = overrides.get(path, raw)
+        if type(selected) is not bytes or path in overrides and hashlib.sha256(raw).digest() == hashlib.sha256(selected).digest():
+            raise ValueError('unreviewed-teavm-heap-alignment-overrides')
+        original = selected.decode('utf-8')
+        adapted, count = CLASS_SIZE_ALIGNMENT.subn(r'\g<1>8\g<2>', original)
+        class_sizes += count
+        relative = path.relative_to(generated).as_posix()
+        if relative in HEAP_ALIGNMENT_RUNTIME:
+            adapted = _aligned_runtime_function(adapted, HEAP_ALIGNMENT_RUNTIME[relative])
+            seen_runtime.add(relative)
+        if adapted == original:
+            continue
+        value = adapted.encode('utf-8')
+        outputs.append((path, value))
+        identities.append({'path': relative, 'upstreamSha256': hashlib.sha256(raw).hexdigest(),
+            'adaptedSha256': hashlib.sha256(value).hexdigest(), 'classSizeAlignments': count,
+            'runtimeArrayAlignment': relative in HEAP_ALIGNMENT_RUNTIME})
+    if seen_runtime != set(HEAP_ALIGNMENT_RUNTIME) or class_sizes <= 0:
+        raise ValueError('unreviewed-teavm-heap-alignment-closure')
+
+    heaptrace = generated / 'heaptrace.c'
+    if heaptrace.is_symlink() or not heaptrace.is_file() or heaptrace.stat().st_size > 65536:
+        raise ValueError('unreviewed-teavm-heap-alignment-heaptrace')
+    heaptrace_raw = heaptrace.read_bytes()
+    heaptrace_source = heaptrace_raw.decode('utf-8')
+    before = '    size = TEAVM_ALIGN(size, sizeof(void*));'
+    after = '    size = TEAVM_ALIGN(size, 8);'
+    if heaptrace_source.count(before) != 1:
+        raise ValueError('unreviewed-teavm-heap-alignment-heaptrace')
+    heaptrace_value = heaptrace_source.replace(before, after).encode('utf-8')
+    outputs.append((heaptrace, heaptrace_value))
+    identities.append({'path': 'heaptrace.c', 'upstreamSha256': hashlib.sha256(heaptrace_raw).hexdigest(),
+        'adaptedSha256': hashlib.sha256(heaptrace_value).hexdigest(), 'classSizeAlignments': 0,
+        'runtimeArrayAlignment': True})
+    outputs.sort(key=lambda item: item[0].relative_to(generated).as_posix())
+    identities.sort(key=lambda item: item['path'])
+    return outputs, {'profile': 'teavm-0.15-wasm32-eight-byte-heap-alignment-v1',
+        'upstreamFix': HEAP_ALIGNMENT_FIX, 'scannedClasses': scanned,
+        'classSizeAlignments': class_sizes, 'files': identities}
+
 
 def reference_spills(original: str, *, array_references: bool = False) -> tuple[str, int]:
     # TeaVM 0.15 saves Java locals across setjmp/longjmp in teavm_spill_N.
@@ -200,6 +297,9 @@ def adapt(generated: Path) -> dict:
     # VariableType categories. Its array saves need the same pointer qualifier.
     # Keep the historical v1 helper boundary; the maintained compiler selects v2.
     spill_outputs, spill_receipt = reference_spill_outputs(generated, array_references=True)
+    spill_map = dict(spill_outputs)
+    alignment_outputs, alignment_receipt = heap_alignment_outputs(generated, spill_map)
+    alignment_paths = {path for path, _value in alignment_outputs}
     memory = originals['memory.c'].replace('#if TEAVM_UNIX\n', '#if TEAVM_UNIX && !defined(LSF_TEAVM_WASM)\n', 1)
     memory = memory.replace('#if defined(__EMSCRIPTEN__)', MEMORY, 1)
     outputs = {'fiber.c': FIBER, 'time.c': CLOCK, 'memory.c': memory, 'file.c': FILESYSTEM,
@@ -207,9 +307,14 @@ def adapt(generated: Path) -> dict:
     for name, value in outputs.items():
         (generated / name).write_text(value, encoding='utf-8', newline='\n')
     for path, value in spill_outputs:
+        if path in alignment_paths:
+            continue
+        path.write_bytes(value)
+    for path, value in alignment_outputs:
         path.write_bytes(value)
     receipt = {name: {'upstreamSha256': PREIMAGES[name],
                      'adaptedSha256': hashlib.sha256(value.encode()).hexdigest()}
                for name, value in outputs.items()}
     receipt['referenceSpills'] = spill_receipt
+    receipt['heapAlignment'] = alignment_receipt
     return receipt

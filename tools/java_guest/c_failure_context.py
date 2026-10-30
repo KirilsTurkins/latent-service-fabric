@@ -17,7 +17,8 @@ CHECKPOINT_SOURCES = tuple(name + suffix for name in CHECKPOINT_CLASSES for suff
 CHECKPOINT_JAVA = 'sha256:2fe6c39a15d8e230838ae709599055cdba156bd8d9058f472c1dc5be469a88e8'
 GC_ROOT_CLASSES = (*CHECKPOINT_CLASSES, 'c/d/l/a/Capsule@d1', 'c/o/t/r/GC',
     'c/j/l/r/WeakReference', 'c/j/l/System')
-GC_ROOT_SOURCES = tuple(name + suffix for name in GC_ROOT_CLASSES for suffix in ('.c', '.h'))
+GC_ROOT_SOURCES = (*tuple(name + suffix for name in GC_ROOT_CLASSES for suffix in ('.c', '.h')),
+    'c/o/t/r/Allocator.c', 'heaptrace.c')
 GC_ROOT_JAVA = 'sha256:e6fa160c97a9c448db7af2fb78b81af95b5a360d79b3470084650813724ec7b0'
 CHECKPOINT_MAX_FILE = 1024 * 1024
 CHECKPOINT_MAX_BYTES = 8 * 1024 * 1024
@@ -243,7 +244,8 @@ def retain_gc_root_inputs(compiler, source: Path, output: Path) -> None:
     """Fixed GC fixture only; old checkpoint selection stays byte-exact."""
     try:
         # Only this byte-exact public diagnostic fixture can select the
-        # closed twelve-class GC projection. The read occurs after adapt and
+        # closed GC projection. The read occurs after adapt and includes the
+        # two additional runtime files changed by the heap-alignment repair;
         # the real clang attempt, before the original temporary cleanup.
         if compiler is None or not any(row.get('stage') == 'c-to-wasm' for row in compiler.records):
             raise ValueError('gc-root-generated-before-adapt')

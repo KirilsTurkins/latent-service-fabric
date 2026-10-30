@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require and attest the diagnostic CLI and node as one exact-head pair",
+  "reviewReason": "Bind the signed Java GC controller owner fingerprint to verification of the exact TeaVM heap-alignment adaptation receipt and retained generated-C identities.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2392d0ae1c1fb9a122c28b467df653d84920daa0c46999203459868748dd9129"
+  "sha256": "0542ef02eded77bd117232a58b0d46848955cf3b020a7776cc896a3f9a0f4ae5"
 }

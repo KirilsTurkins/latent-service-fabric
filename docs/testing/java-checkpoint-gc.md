@@ -20,8 +20,9 @@ allocation-pressure loops, custom executors or larger heap grants.
 
 `System.gc()` alone cannot satisfy this programme. Both weak-clear witnesses must
 pass, and the standard collector/getter bodies and both continuation bodies are
-retained through a separate byte-exact public-fixture selector: twenty-four fixed
-C/header files, including `Capsule@d1` for the anonymous initializer. Limits remain
+retained through a separate byte-exact public-fixture selector: twenty-six fixed
+C/header/runtime files, including `Capsule@d1` for the anonymous initializer and
+the allocator/heap-tracer sources changed by the alignment repair. Limits remain
 one MiB per file and eight MiB total. Passive real pinned compiler/classlib controls
 check the full collector call chain, actual weak-reference lowering and original/
 unrelated negatives; those controls remain separate from runtime evidence.
@@ -44,7 +45,7 @@ open. No #741 acceptance criterion is marked complete from this source proposal.
 
 
 The first GC producer (`a5c4385`, run `39960502389`) completed the reference and
-real compiler controls, component and all twenty-four C captures. Its reader then
+real compiler controls, component and all twenty-four original C captures. Its reader then
 rejected TeaVM's actual `TEAVM_FIELD(..., TeaVM_Reference, object) = NULL` spelling;
 no signed runtime case ran. That failure stays retained. The corrected reader
 continues to require reachable mark/sweep and weak-field clearing.
@@ -73,3 +74,35 @@ success. Collection flags, weak-clear witnesses, success strings and budgets
 remain unchanged. This is diagnostic error completion, with no underlying GC
 runtime fix claimed. The push-owned programme now selects the fresh compiler
 job (one maintained unsigned warm-up plus one target; zero native builds).
+
+The bounded diagnostic run
+[`41067407392`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41067407392)
+at `8943e074e5e098161dcfbbcffd60850b9e473c1d` passed native authentication,
+reference/compiler controls, construction and both grant denials, then reproduced
+the first signed `gc` call's memory-out-of-bounds trap. Its eight numeric frames
+resolve through the exact component name section from `ArrayDeque.ensureCapacity`
+and `addLast` back through `Object.monitorEnterWait`, `Fiber.suspend`, monitor
+entry and `Capsule.checked`. Artifact `12985366080` is 1,263,076 compressed bytes
+with SHA-256 `1ad9719ce4829db1f09bc0a50faa69e02f795eba199a8d6e8a5f34f67b4a124e`;
+the component SHA-256 is `63e5cbe6f2ed086bc784b15b1e78d1e824cf7da14eddf705f220f81393aecbe7`.
+No signed GC case passed.
+
+The retained C shows that the contended monitor deque and callback are registered
+as live shadow roots before the allocating call. The corruption instead matches
+the pinned TeaVM 0.15 C backend's 32-bit heap-layout defect fixed upstream by
+[`konsoletyper/teavm#1281`](https://github.com/konsoletyper/teavm/pull/1281), commit
+`c197880e951b8ecb6c6ee5bffa7c16563be790f3`: object and array sizes were rounded
+to the four-byte pointer size even though long/double arraycopy uses a fixed
+eight-byte data offset. A misaligned arraycopy can therefore overwrite a later
+object, with the observed invalid `ArrayDeque` receiver being the downstream
+fault rather than a missing root store.
+
+The repair backports only upstream's generated class-size initializers,
+allocator/collector array-size expressions and heap-tracer expression after the
+exact compiler emits C. It fails closed on
+unknown function or class-initializer shapes and records original/adapted hashes
+for every changed C file. The application, Commons library, continuation/monitor
+transforms, grants, four MiB Java heap, 64 MiB linear memory, one-billion fuel,
+weak witnesses and success assertions are unchanged. Focused source checks do
+not qualify runtime collection; the draft still requires new signed `gc` and
+fresh-state outcomes.

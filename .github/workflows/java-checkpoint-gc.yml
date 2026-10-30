@@ -11,6 +11,7 @@ on:
       - 'tools/tests/test_java_checkpoint_gc_retained.py'
       - 'tools/tests/test_java_checkpoint_gc.py'
       - 'tools/tests/test_java_checkpoint_gc_fault_frames.py'
+      - 'tools/java_guest/c_failure_context.py'
       - 'crates/latent-wasmtime/src/java_checkpoint_gc_fault.rs'
       - 'crates/latent-wasmtime/src/config/engine.rs'
       - 'crates/latent-wasmtime/src/backend.rs'
@@ -21,6 +22,10 @@ on:
       - 'apps/latent/Cargo.toml'
       - 'apps/latentd/Cargo.toml'
       - 'sdk/java-guest/fibers/conformance/compiler/GcReferenceControl.java'
+      - 'sdk/java-guest/tools/teavm_platform.py'
+      - 'sdk/java-guest/tests/test_platform.py'
+      - 'sdk/java-guest/tests/test_exception_spills.py'
+      - 'sdk/java-guest/tests/test_exception_array_spills.py'
       - '.github/workflows/java-checkpoint-gc.yml'
   workflow_dispatch:
     inputs:
@@ -79,7 +84,10 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_java_checkpoint_gc \
+          python3 -B -m unittest sdk.java-guest.tests.test_platform \
+            sdk.java-guest.tests.test_exception_spills \
+            sdk.java-guest.tests.test_exception_array_spills \
+            tools.tests.test_java_checkpoint_gc \
             tools.tests.test_java_checkpoint_gc_fault_frames -v
           curl --fail --location --retry 3 --max-time 180 \
             https://services.gradle.org/distributions/gradle-9.1.0-bin.zip -o "$RUNNER_TEMP/gradle.zip"

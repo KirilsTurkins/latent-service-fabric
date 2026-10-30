@@ -149,7 +149,7 @@ class JavaCheckpointGcTests(unittest.TestCase):
             record=json.loads((output/'gc-root-generated.json').read_bytes())
             self.assertFalse(record['qualification'])
             self.assertEqual(set(record['files']),set(context.GC_ROOT_SOURCES))
-            self.assertEqual(len(record['files']),24)
+            self.assertEqual(len(record['files']),26)
             self.assertEqual(record['fixtureDigest'],context.GC_ROOT_JAVA)
             for name in context.GC_ROOT_SOURCES:
                 self.assertEqual((output/'gc-root-generated'/name).read_bytes(),(generated/name).read_bytes())
