@@ -93,6 +93,10 @@ mod tests {
         let engine = crate::WasmtimeConfig::default().runtime_engine().unwrap();
         let module = wasmtime::Module::new(&engine, module.finish()).unwrap();
         let mut store = wasmtime::Store::new(&engine, ());
+        // The owning engine meters every Store. Give this synthetic recursive
+        // control enough finite fuel to reach more than the eight retained
+        // frames; the signed Java invocation keeps its admitted budget.
+        store.set_fuel(1_000_000_000).unwrap();
         let instance = wasmtime::Instance::new(&mut store, &module, &[]).unwrap();
         let function = instance
             .get_typed_func::<(), ()>(&mut store, "private-name")
