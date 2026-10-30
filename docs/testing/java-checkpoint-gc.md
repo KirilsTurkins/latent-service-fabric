@@ -306,3 +306,27 @@ This restores upstream static-object semantics without dropping a reference,
 weakening a failure, changing collection order or raising any resource limit.
 Another exact-head hosted run must now retain the next real failure or complete
 the signed GC cases.
+
+Exact-head v7 run
+[`41130553727`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41130553727)
+at `ce79a593626e3dd611abc46b8c34fa9c9567fed3` passed construction and both
+grant denials, then its first signed `examples` GC call trapped with
+`unreachable-code`. Artifact `13013981983` is 1,316,557 compressed bytes with
+GitHub digest
+`sha256:0bd8b946b609a5598f497e800a9d2eebbc56b36e4fd6d6cd9873adb0a587dcfc`;
+the exact 2,721,004-byte component is
+`sha256:abd3b448fe2d4bd5a7720c66015ca7abbd59e1e54536dfd15b0db44c7a2ad097`.
+The call consumed 5,309,197 fuel, peaked at 10,211,360 bytes, produced zero
+effects and passed the intentional pre-marked below-heap string edge. Its
+retained frames instead reach `teavm_enqueued_root_trap_misaligned` from
+`GC.markFields` through `GC.markObject`, `GC.markObjectData`, `GC.mark`, and
+`GC.doCollectGarbage`. No collection or signed GC case passed.
+
+Profile `teavm-0.15-c-packed-monitor-gc-root-v8` leaves that eight-byte
+validity rule and every existing collector guard unchanged. Immediately before
+the same generic enqueue trap, it emits the already bounded parent-class index
+and field offset through a distinct no-inline misaligned-field wrapper. The
+candidate must be non-null and inside the managed heap; the diagnostic never
+dereferences, accepts, rewrites or drops the misaligned value. This is a
+cause-localization refinement only. A hosted rerun must identify the generated
+parent layout before a compiler/runtime repair can be selected.
