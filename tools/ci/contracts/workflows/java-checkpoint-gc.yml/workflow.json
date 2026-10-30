@@ -54,7 +54,7 @@
     "gc-roots",
     "retained-gc-roots"
   ],
-  "reviewReason": "bind exact-head Java GC numeric diagnostic engine and source paths",
+  "reviewReason": "Move runner temp resolution into the hosted diagnostic step",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-gc.yml"
 }

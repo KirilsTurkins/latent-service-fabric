@@ -6,7 +6,6 @@
     "env": {
       "CARGO_BUILD_JOBS": "2",
       "CARGO_INCREMENTAL": "0",
-      "CARGO_TARGET_DIR": "${{ runner.temp }}/java-gc-host-target",
       "PYTHONDONTWRITEBYTECODE": "1"
     },
     "if": "github.event_name == 'push' || inputs.programme == 'fresh'",
@@ -73,7 +72,7 @@
       },
       {
         "name": "Build one authenticated bounded numeric diagnostic node",
-        "run": "cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --lib \\\n  --features java-checkpoint-gc-trap-diagnostic \\\n  java_checkpoint_gc_fault::tests::java_gc_fault_visits_only_eight_numeric_frames_for_authenticated_profile \\\n  -- --exact --test-threads=1\ncargo --config .cargo/managed-guest.toml build --locked -p latentd --bin latentd \\\n  --features java-checkpoint-gc-trap-diagnostic\n"
+        "run": "export CARGO_TARGET_DIR=\"$RUNNER_TEMP/java-gc-host-target\"\ncargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --lib \\\n  --features java-checkpoint-gc-trap-diagnostic \\\n  java_checkpoint_gc_fault::tests::java_gc_fault_visits_only_eight_numeric_frames_for_authenticated_profile \\\n  -- --exact --test-threads=1\ncargo --config .cargo/managed-guest.toml build --locked -p latentd --bin latentd \\\n  --features java-checkpoint-gc-trap-diagnostic\n"
       },
       {
         "name": "Selected reference GC and real compiler controls then one fresh signed GC target",
@@ -95,7 +94,7 @@
   },
   "jobId": "gc-roots",
   "kind": "job",
-  "reviewReason": "bind exact-head Java GC numeric diagnostic source and hosted job",
+  "reviewReason": "Move runner temp resolution into the hosted diagnostic step",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-checkpoint-gc.yml"
 }
