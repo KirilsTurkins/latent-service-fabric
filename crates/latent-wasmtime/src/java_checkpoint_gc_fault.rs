@@ -97,13 +97,18 @@ mod tests {
         // control enough finite fuel to reach more than the eight retained
         // frames; the signed Java invocation keeps its admitted budget.
         store.set_fuel(1_000_000_000).unwrap();
+        // The owning engine also enables epoch interruption. No host advances
+        // epochs in this synthetic control, so a finite deadline keeps the
+        // recursion on the stack-overflow path without changing runtime policy.
+        store.set_epoch_deadline(1_000);
         let instance = wasmtime::Instance::new(&mut store, &module, &[]).unwrap();
         let function = instance
             .get_typed_func::<(), ()>(&mut store, "private-name")
             .unwrap();
         let error = function.call(&mut store, ()).unwrap_err();
         let original = error.downcast_ref::<wasmtime::WasmBacktrace>().unwrap();
-        assert!(original.frames().len() > MAX_FRAMES);
+        // The owning diagnostic engine itself retains at most eight frames.
+        assert_eq!(original.frames().len(), MAX_FRAMES);
         let proof = Authentication::Verified([0x11; 32]);
         let mut output = std::io::Cursor::new([0_u8; 1024]);
         emit(&proof, &error, &mut output);
