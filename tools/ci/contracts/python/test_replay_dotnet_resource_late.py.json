@@ -1,62 +1,20 @@
 {
-  "cases": [
-    "DotnetResourceLateReplay.test_every_member_is_crc_checked_and_private_or_escaping_members_refuse",
-    "DotnetResourceLateReplay.test_exact_failed_original_origin_and_archive_identity_are_mandatory",
-    "DotnetResourceLateReplay.test_node_only_workflow_has_no_compiler_and_restores_exact_df4_workflow",
-    "DotnetResourceLateReplay.test_source_allowance_is_only_reader_and_workflow_not_sdk_or_recipe"
-  ],
-  "guards": {
-    "DotnetResourceLateReplay.test_every_member_is_crc_checked_and_private_or_escaping_members_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4d360b58a105b89c499ec225797308c55b061854d211fa44485be852ddf037e6",
-        "class:setup-sha256:053310cdf36ae0edc850ddbdc7cf2ffce148fd12ab9ad788251269a4c2b0a05c"
-      ],
-      "skipSites": []
-    },
-    "DotnetResourceLateReplay.test_exact_failed_original_origin_and_archive_identity_are_mandatory": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4d360b58a105b89c499ec225797308c55b061854d211fa44485be852ddf037e6",
-        "class:setup-sha256:053310cdf36ae0edc850ddbdc7cf2ffce148fd12ab9ad788251269a4c2b0a05c"
-      ],
-      "skipSites": []
-    },
-    "DotnetResourceLateReplay.test_node_only_workflow_has_no_compiler_and_restores_exact_df4_workflow": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4d360b58a105b89c499ec225797308c55b061854d211fa44485be852ddf037e6",
-        "class:setup-sha256:053310cdf36ae0edc850ddbdc7cf2ffce148fd12ab9ad788251269a4c2b0a05c"
-      ],
-      "skipSites": []
-    },
-    "DotnetResourceLateReplay.test_source_allowance_is_only_reader_and_workflow_not_sdk_or_recipe": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4d360b58a105b89c499ec225797308c55b061854d211fa44485be852ddf037e6",
-        "class:setup-sha256:053310cdf36ae0edc850ddbdc7cf2ffce148fd12ab9ad788251269a4c2b0a05c"
-      ],
-      "skipSites": []
-    }
+  "storageCases":"guard-keys",
+  "guards":{
+    "DotnetResourceLateReplay.test_every_member_is_crc_checked_and_private_or_escaping_members_refuse":
+      "ed7a9e8136228c1495d70ab3f7d2e7767eef1afbedc7ceae8b3d7e6ebda4feed",
+    "DotnetResourceLateReplay.test_exact_failed_original_origin_and_archive_identity_are_mandatory":
+      "ed7a9e8136228c1495d70ab3f7d2e7767eef1afbedc7ceae8b3d7e6ebda4feed",
+    "DotnetResourceLateReplay.test_node_only_workflow_has_no_compiler_and_restores_exact_df4_workflow":
+      "ed7a9e8136228c1495d70ab3f7d2e7767eef1afbedc7ceae8b3d7e6ebda4feed",
+    "DotnetResourceLateReplay.test_source_allowance_is_only_reader_and_workflow_not_sdk_or_recipe":
+      "ed7a9e8136228c1495d70ab3f7d2e7767eef1afbedc7ceae8b3d7e6ebda4feed"
   },
-  "kind": "python",
-  "module": "tools/tests/test_replay_dotnet_resource_late.py",
-  "reviewReason": "Reviewed exact df4 completed AOT package node-only continuation: same six late/fresh obligations and caps; no guest/native compilation; exact old jobs restored after only explicit default-false replay selector and job removal. Current managed-profile reader is bound to actual owner/private-IO/task-v2 receipts.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_replay_dotnet_resource_late.py",
+  "reviewReason":"Reviewed exact df4 completed AOT package node-only continuation: same six late/fresh obligations and caps; no guest/native compilation; exact old jobs restored after only explicit default-false replay selector and job removal. Current managed-profile reader is bound to actual owner/private-IO/task-v2 receipts. Authenticate the exact repaired checkout inverse before historical workflow/source hashes; all original case IDs and non-setup guards retained.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "ed7a9e8136228c1495d70ab3f7d2e7767eef1afbedc7ceae8b3d7e6ebda4feed":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:1ee8f4a49143fb93731dca51627627f7517ca040393a320d7a04128059772a0f","class:setup-sha256:053310cdf36ae0edc850ddbdc7cf2ffce148fd12ab9ad788251269a4c2b0a05c"]}
+  }
 }

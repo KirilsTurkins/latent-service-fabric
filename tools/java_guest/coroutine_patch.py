@@ -25,6 +25,224 @@ LIVENESS_REPLACEMENTS = (
      'private Map<Instruction, BitSet> collectSplitInstructions(BasicBlock block, int originalIndex) {'),
     ('livenessAnalysis.liveOut(block.getIndex());', 'livenessAnalysis.liveOut(originalIndex);'),
 )
+# Preserve the immutable upstream source. Only this exact private derivation
+# changes the split objective; the graph algorithm and all old repairs remain.
+COPY_COST_FIELDS = '''    private List<Integer> copyWeights;
+    private int totalCopyWeight;
+'''
+COPY_COST_HELPERS = '''    private static int structuralCopyCost(BasicBlock block) {
+        // Count the complete initial IR payload copied by copyBasicBlock.
+        // These are structural units, never predicted machine bytes or time.
+        int result = Math.addExact(1, block.instructionCount());
+        result = Math.addExact(result, block.getPhis().size());
+        for (var phi : block.getPhis()) {
+            result = Math.addExact(result, phi.getIncomings().size());
+        }
+        result = Math.addExact(result, block.getTryCatchBlocks().size());
+        return Math.addExact(result, block.getExceptionVariable() == null ? 0 : 1);
+    }
+
+    private int[] initializeCopyWeights() {
+        int[] result = new int[program.basicBlockCount()];
+        var tracked = new ArrayList<Integer>(result.length);
+        int total = 0;
+        for (int i = 0; i < result.length; ++i) {
+            int weight = structuralCopyCost(program.basicBlockAt(i));
+            total = Math.addExact(total, weight);
+            result[i] = weight;
+            tracked.add(weight);
+        }
+        copyWeights = tracked;
+        totalCopyWeight = total;
+        return result;
+    }
+
+    private int checkedCopiedTotal(int[] toCopy) {
+        if (copyWeights == null) {
+            initializeCopyWeights();
+        }
+        if (copyWeights.size() != program.basicBlockCount()) {
+            throw new IllegalStateException("coroutine-copy-cost-node-drift");
+        }
+        int additional = 0;
+        for (int node : toCopy) {
+            additional = Math.addExact(additional, copyWeights.get(node));
+        }
+        // The unchanged splitter's nonnegative domain/collapse sums represent
+        // subsets of these real-node weights. Admit every clone before it
+        // exists, keeping their checked global sum within int throughout.
+        return Math.addExact(totalCopyWeight, additional);
+    }
+
+'''
+COPY_COST_REPLACEMENTS = (
+    ('    private ValueType returnType;\n',
+     '    private ValueType returnType;\n' + COPY_COST_FIELDS),
+    ('    private void processIrreducibleCfg() {\n',
+     COPY_COST_HELPERS + '    private void processIrreducibleCfg() {\n'
+     '        copyWeights = null;\n        totalCopyWeight = 0;\n'),
+    ('''        int[] weights = new int[graph.size()];
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            weights[i] = program.basicBlockAt(i).instructionCount();
+        }''', '''        int[] weights = initializeCopyWeights();'''),
+    ('        public int[] split(int[] remaining, int[] toCopy) {\n',
+     '        public int[] split(int[] remaining, int[] toCopy) {\n'
+     '            int checkedTotal = checkedCopiedTotal(toCopy);\n'),
+    ('''                ProgramUtils.copyBasicBlock(block, blockCopy);
+                copies[i] = blockCopy.getIndex();''',
+     '''                ProgramUtils.copyBasicBlock(block, blockCopy);
+                if (blockCopy.getIndex() != copyWeights.size()) {
+                    throw new IllegalStateException("coroutine-copy-cost-copy-drift");
+                }
+                // Keep the same initial weight inherited by the splitter,
+                // even after predecessor pruning changes the copied PHIs.
+                copyWeights.add(copyWeights.get(node));
+                copies[i] = blockCopy.getIndex();'''),
+    ('            return copies;\n',
+     '            totalCopyWeight = checkedTotal;\n            return copies;\n'),
+)
+# Default-off, fixed public-source observation; never selects production weights.
+COPY_OBSERVER_PROPERTY = 'latent.java.coroutine.public-copy-cost.v1'
+COPY_OBSERVER_TOKEN = '6a2f7a5a13b3295761b0f18989e47cc7ff106a7c9546c559492247fcd36430c8:14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236'
+COPY_OBSERVER_FIELDS = '''    private java.security.MessageDigest observedDecisions;
+    private int observedSplitCalls;
+    private int observedCopiedNodes;
+    private int observedTraceNodes;
+    private static int publicObservationCount;
+'''
+COPY_OBSERVER_HELPERS = r'''    private static java.security.MessageDigest copyDecisionDigest() {
+        try {
+            return java.security.MessageDigest.getInstance("SHA-256");
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException("coroutine-copy-observer-sha256", e);
+        }
+    }
+
+    private void observeInteger(int value) {
+        observedDecisions.update((byte) (value >>> 24));
+        observedDecisions.update((byte) (value >>> 16));
+        observedDecisions.update((byte) (value >>> 8));
+        observedDecisions.update((byte) value);
+    }
+
+    private void observeSplit(int[] remaining, int[] toCopy) {
+        if (observedDecisions == null) {
+            return;
+        }
+        observedSplitCalls = Math.addExact(observedSplitCalls, 1);
+        observedCopiedNodes = Math.addExact(observedCopiedNodes, toCopy.length);
+        observedTraceNodes = Math.addExact(observedTraceNodes,
+                Math.addExact(remaining.length, toCopy.length));
+        if (observedSplitCalls > 65536 || observedTraceNodes > 1048576
+                || observedCopiedNodes > 1048576) {
+            throw new IllegalStateException("coroutine-copy-observer-trace-bound");
+        }
+        observeInteger(remaining.length);
+        for (int node : remaining) {
+            observeInteger(node);
+        }
+        observeInteger(toCopy.length);
+        for (int node : toCopy) {
+            observeInteger(node);
+        }
+    }
+
+    private static String observedHex(byte[] bytes) {
+        var result = new StringBuilder(64);
+        for (byte value : bytes) {
+            result.append(Character.forDigit((value >>> 4) & 15, 16));
+            result.append(Character.forDigit(value & 15, 16));
+        }
+        return result.toString();
+    }
+
+    private static synchronized void claimPublicObservation() {
+        if (++publicObservationCount != 1) {
+            throw new IllegalStateException("coroutine-copy-observer-ambiguous");
+        }
+    }
+
+    private boolean observePublicCopyCost(MethodReference method) {
+        if (!"__COPY_OBSERVER_TOKEN__".equals(System.getProperty(
+                "latent.java.coroutine.public-copy-cost.v1"))) {
+            return false;
+        }
+        if (!method.getClassName().equals("dev.latent.app.Capsule") || !method.getName().equals("pools")) {
+            return false;
+        }
+        if (method.parameterCount() != 0 || !method.getReturnType().equals(ValueType.object("java.lang.Long"))) {
+            throw new IllegalStateException("coroutine-copy-observer-method-shape");
+        }
+        claimPublicObservation();
+        int blocks = program.basicBlockCount();
+        if (blocks > 65536 || program.variableCount() > 262144) {
+            throw new IllegalStateException("coroutine-copy-observer-input-bound");
+        }
+        int instructions = 0;
+        int phis = 0;
+        int incoming = 0;
+        int handlers = 0;
+        int exceptions = 0;
+        int structural = 0;
+        for (var block : program.getBasicBlocks()) {
+            instructions = Math.addExact(instructions, block.instructionCount());
+            phis = Math.addExact(phis, block.getPhis().size());
+            for (var phi : block.getPhis()) {
+                incoming = Math.addExact(incoming, phi.getIncomings().size());
+            }
+            handlers = Math.addExact(handlers, block.getTryCatchBlocks().size());
+            exceptions = Math.addExact(exceptions, block.getExceptionVariable() == null ? 0 : 1);
+            structural = Math.addExact(structural, structuralCopyCost(block));
+        }
+        if (structural > 1048576) {
+            throw new IllegalStateException("coroutine-copy-observer-input-bound");
+        }
+        // Copy the actual post-resume-split, pre-normalization Program once.
+        // Run the SAME splitter and corrected PHI backend, not a graph model.
+        var old = new CoroutineTransformation(classSource, asyncMethods, hasThreads);
+        old.program = ProgramUtils.copy(program);
+        old.observedDecisions = copyDecisionDigest();
+        var oldGraph = ProgramUtils.buildControlFlowGraph(old.program);
+        boolean irreducible = GraphUtils.isIrreducible(oldGraph);
+        if (irreducible) {
+            old.initializeCopyWeights(); // Conservative global safety bound on copies.
+            int[] oldWeights = new int[blocks];
+            for (int i = 0; i < blocks; ++i) {
+                oldWeights[i] = old.program.basicBlockAt(i).instructionCount();
+            }
+            GraphUtils.splitIrreducibleGraph(oldGraph, oldWeights, old.new SplittingBackend());
+        }
+        observedDecisions = copyDecisionDigest();
+        observedSplitCalls = observedCopiedNodes = observedTraceNodes = 0;
+        processIrreducibleCfg();
+        String oldDigest = observedHex(old.observedDecisions.digest());
+        String newDigest = observedHex(observedDecisions.digest());
+        observedDecisions = null;
+        System.err.println("latent.java.coroutine-copy-observation.v1 {"
+                + "\"schemaVersion\":\"latent.java.coroutine-copy-observation.v1\","
+                + "\"hookCount\":1,\"blocks\":" + blocks
+                + ",\"instructions\":" + instructions + ",\"phis\":" + phis
+                + ",\"incomings\":" + incoming + ",\"handlers\":" + handlers
+                + ",\"exceptionBindings\":" + exceptions + ",\"structuralWeight\":" + structural
+                + ",\"irreducible\":" + irreducible
+                + ",\"oldSplitCalls\":" + old.observedSplitCalls + ",\"newSplitCalls\":" + observedSplitCalls
+                + ",\"oldCopiedNodes\":" + old.observedCopiedNodes + ",\"newCopiedNodes\":" + observedCopiedNodes
+                + ",\"oldFinalBlocks\":" + old.program.basicBlockCount()
+                + ",\"newFinalBlocks\":" + program.basicBlockCount()
+                + ",\"oldFinalWeight\":" + old.totalCopyWeight + ",\"newFinalWeight\":" + totalCopyWeight
+                + ",\"oldDecisionSha256\":\"" + oldDigest + "\",\"newDecisionSha256\":\"" + newDigest + "\"}");
+        return true;
+    }
+
+'''.replace('__COPY_OBSERVER_TOKEN__', COPY_OBSERVER_TOKEN)
+COPY_OBSERVER_REPLACEMENTS = (
+    (COPY_COST_FIELDS, COPY_COST_FIELDS + COPY_OBSERVER_FIELDS),
+    ('        processIrreducibleCfg();\n        RedundantJumpElimination.optimize(program);',
+     '        if (!observePublicCopyCost(methodReference)) {\n            processIrreducibleCfg();\n        }\n        RedundantJumpElimination.optimize(program);'),
+    (COPY_COST_HELPERS, COPY_COST_HELPERS + COPY_OBSERVER_HELPERS),
+    ('            int checkedTotal = checkedCopiedTotal(toCopy);\n',
+     '            int checkedTotal = checkedCopiedTotal(toCopy);\n            observeSplit(remaining, toCopy);\n'),
+)
 TYPE_INFERER_SHA256 = 'a1139fea2ab16d6b520e6c975f5fb04f9a54077269c811ee9853bf301db8489d'
 TYPE_SEED_BEFORE = 'if (types[i] != null && graph.outgoingEdgesCount(i) > 0) {'
 TYPE_SEED_AFTER = ('if (types[i] != null && (graph.outgoingEdgesCount(i) > 0\n'
@@ -98,6 +316,315 @@ ASYNC_AFTER = '''    private boolean findAsyncMethods() {
     }
 '''
 
+CHECKPOINT_FIND_BEFORE = '''        this.classSource = classSource;
+        hasAsyncMethods = findAsyncMethods();'''
+CHECKPOINT_FIND_AFTER = '''        this.classSource = classSource;
+        validateCheckpointCallers();
+        hasAsyncMethods = findAsyncMethods();'''
+CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
+        // CTarget calls find after every dependency completion callback, before
+        // coroutine transformation. This closure deliberately ignores asyncMethods.
+        MethodReference checkpoint = new MethodReference("dev.latent.guest.runtime.Activation",
+                "checkpoint", org.teavm.model.ValueType.VOID);
+        MethodReference managedEntry = new MethodReference(Fiber.class, "start", void.class);
+        if (!dependency.getReachableMethods().contains(checkpoint)) {
+            return;
+        }
+        CallGraphNode root = callGraph.getNode(checkpoint);
+        if (root == null) {
+            System.err.println("latent.java.checkpoint-site.v1 root");
+            throw checkpointRefusal("java-checkpoint-unresolved-741");
+        }
+        Set<MethodReference> visited = new HashSet<>();
+        List<CallGraphNode> pending = new ArrayList<>();
+        visited.add(checkpoint);
+        pending.add(root);
+        int edges = 0;
+        for (int index = 0; index < pending.size(); ++index) {
+            CallGraphNode node = pending.get(index);
+            MethodReference reference = node.getMethod();
+            ClassReader cls = reference == null ? null : classSource.get(reference.getClassName());
+            MethodReader method = cls == null ? null : cls.getMethod(reference.getDescriptor());
+            if (method == null) {
+                System.err.println("latent.java.checkpoint-site.v1 method");
+                throw checkpointRefusal("java-checkpoint-unresolved-741");
+            }
+            if (reference.getName().equals("<clinit>")
+                    || method.getAnnotations().get("org.teavm.interop.Unmanaged") != null
+                    || cls.getAnnotations().get("org.teavm.interop.Unmanaged") != null) {
+                throw checkpointRefusal("java-checkpoint-nonsuspendable-context-741");
+            }
+            // Pinned Fiber.start() installs current=this before runner.run() and
+            // restores its former value afterward. Callers are outside that new
+            // managed context. No other method/overload or async label is a barrier.
+            if (reference.equals(managedEntry)
+                    && method.getLevel() == org.teavm.model.AccessLevel.PRIVATE
+                    && !method.hasModifier(ElementModifier.STATIC)) {
+                if (!pinnedFiberEntry(method)) {
+                    System.err.println("latent.java.checkpoint-site.v1 managed-entry");
+                    throw checkpointRefusal("java-checkpoint-unresolved-741");
+                }
+                continue;
+            }
+            for (CallSite site : node.getCallerCallSites()) {
+                if (++edges > 262144) {
+                    throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+                }
+                for (CallGraphNode caller : site.getCallers()) {
+                    if (++edges > 262144) {
+                        throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+                    }
+                    if (caller == null || caller.getMethod() == null) {
+                        System.err.println("latent.java.checkpoint-site.v1 caller");
+                        throw checkpointRefusal("java-checkpoint-unresolved-741");
+                    }
+                    if (!visited.contains(caller.getMethod())) {
+                        if (pending.size() == 65536) {
+                            throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+                        }
+                        visited.add(caller.getMethod());
+                        pending.add(caller);
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean pinnedFiberEntry(MethodReader method) {
+        // Never resolve this baseline through an application classpath. Both
+        // host classes must come from the same authenticated compiler JAR,
+        // whose nonreplacement entries the owned compiler recipe preserves.
+        int stage = 1;
+        try {
+            if (Fiber.class.getClassLoader() != AsyncMethodFinder.class.getClassLoader()) {
+                return fiberEntryRefusal(stage);
+            }
+            java.nio.file.Path jar = java.nio.file.Path.of(Fiber.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI()).toRealPath();
+            java.nio.file.Path finderJar = java.nio.file.Path.of(AsyncMethodFinder.class
+                    .getProtectionDomain().getCodeSource().getLocation().toURI()).toRealPath();
+            if (!jar.equals(finderJar) || !java.nio.file.Files.isRegularFile(jar,
+                    java.nio.file.LinkOption.NOFOLLOW_LINKS) || java.nio.file.Files.size(jar) > 67108864) {
+                return fiberEntryRefusal(stage);
+            }
+            stage = 2;
+            try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(jar.toFile())) {
+                java.util.zip.ZipEntry entry = zip.getEntry("org/teavm/runtime/Fiber.class");
+                if (entry == null || entry.getSize() <= 0 || entry.getSize() > 131072) {
+                    return fiberEntryRefusal(stage);
+                }
+            }
+            try (org.teavm.parsing.resource.ResourceProvider provider =
+                    org.teavm.parsing.resource.ResourceProvider.ofClassPath(
+                            Collections.singletonList(jar.toFile()))) {
+                // Match TeaVMTool's pinned nonincremental production source pass.
+                org.teavm.model.ClassHolderSource pinnedSource = new org.teavm.model.PreOptimizingClassHolderSource(
+                        new org.teavm.parsing.resource.ResourceBytecodeClassHolderSource(
+                                provider, new org.teavm.model.ReferenceCache()));
+                org.teavm.model.ClassHolder pinned = pinnedSource.get(Fiber.class.getName());
+                org.teavm.model.MethodHolder expected = pinned == null ? null : pinned.getMethod(method.getDescriptor());
+                stage = 3;
+                if (expected == null || expected.getLevel() != org.teavm.model.AccessLevel.PRIVATE
+                        || expected.hasModifier(ElementModifier.STATIC)) {
+                    return fiberEntryRefusal(stage);
+                }
+                for (ElementModifier modifier : ElementModifier.values()) {
+                    if (method.hasModifier(modifier) != expected.hasModifier(modifier)) {
+                        return fiberEntryRefusal(stage);
+                    }
+                }
+                stage = 2;
+                // DependencyClassSource's pinned normal program-supplier pass.
+                // Resolve only against this same authenticated compiler JAR,
+                // never dependency/application class sources or host resources.
+                org.teavm.diagnostics.AccumulationDiagnostics diagnostics =
+                        new org.teavm.diagnostics.AccumulationDiagnostics();
+                org.teavm.dependency.ReferenceResolver resolver = new org.teavm.dependency.ReferenceResolver(
+                        pinnedSource, new String[] { org.teavm.interop.Platforms.C,
+                                org.teavm.interop.Platforms.LOW_LEVEL, org.teavm.interop.Platforms.OWN_GC }, diagnostics);
+                org.teavm.model.Program program = expected.getProgram();
+                if (program == null) {
+                    return fiberEntryRefusal(stage);
+                }
+                resolver.use(expected.getReference());
+                resolver.resolve(expected, program);
+                if (!diagnostics.getSevereProblems().isEmpty()) {
+                    return fiberEntryRefusal(stage);
+                }
+                new org.teavm.model.transformation.ClassInitInsertion(pinnedSource).apply(expected, program);
+                stage = 4;
+                return sameFiberEntryBody(program, method.getProgram()) || fiberEntryRefusal(stage);
+            }
+        } catch (Exception failure) {
+            return fiberEntryRefusal(stage); // Unavailable proof cannot establish a context boundary.
+        }
+    }
+
+    private boolean fiberEntryRefusal(int stage) {
+        // Four fixed compiler-owned categories; no paths, names, IR or exception text.
+        System.err.println("latent.java.checkpoint-entry.v1 " + stage);
+        return false;
+    }
+
+    private org.teavm.model.Program boundedFiberEntryBody(ProgramReader program) {
+        if (program == null || program.variableCount() <= 0 || program.variableCount() > 128
+                || program.basicBlockCount() <= 0 || program.basicBlockCount() > 64) {
+            return null;
+        }
+        int instructions = 0, phis = 0;
+        for (int index = 0; index < program.basicBlockCount(); ++index) {
+            org.teavm.model.BasicBlockReader block = program.basicBlockAt(index);
+            // The pinned private entry has no exceptional control-flow region.
+            // Any added handler or exception receiver must refuse, never disappear
+            // from a pretty-printed body comparison.
+            if (block == null || block.getExceptionVariable() != null || !block.readTryCatchBlocks().isEmpty()) {
+                return null;
+            }
+            for (org.teavm.model.PhiReader phi : block.readPhis()) {
+                if (++phis > 128 || phi.readIncomings().size() > 64) {
+                    return null;
+                }
+            }
+            org.teavm.model.InstructionIterator iterator = block.iterateInstructions();
+            while (iterator.hasNext()) {
+                iterator.next();
+                if (++instructions > 256) {
+                    return null;
+                }
+            }
+        }
+        return org.teavm.model.util.ProgramUtils.copy(program);
+    }
+
+    private boolean sameFiberVariable(VariableReader first, VariableReader second) {
+        return first == null ? second == null : second != null && first.getIndex() == second.getIndex();
+    }
+
+    private boolean sameFiberEntryBody(ProgramReader expectedReader, ProgramReader actualReader) {
+        org.teavm.model.Program expected = boundedFiberEntryBody(expectedReader);
+        org.teavm.model.Program actual = boundedFiberEntryBody(actualReader);
+        if (expected == null || actual == null || expected.variableCount() != actual.variableCount()
+                || expected.basicBlockCount() != actual.basicBlockCount()) {
+            return false;
+        }
+        for (int index = 0; index < expected.basicBlockCount(); ++index) {
+            org.teavm.model.BasicBlock first = expected.basicBlockAt(index), second = actual.basicBlockAt(index);
+            if (first.getPhis().size() != second.getPhis().size()) {
+                return false;
+            }
+            for (int phiIndex = 0; phiIndex < first.getPhis().size(); ++phiIndex) {
+                org.teavm.model.Phi left = first.getPhis().get(phiIndex), right = second.getPhis().get(phiIndex);
+                if (!sameFiberVariable(left.getReceiver(), right.getReceiver())
+                        || left.getIncomings().size() != right.getIncomings().size()) {
+                    return false;
+                }
+                for (int incomingIndex = 0; incomingIndex < left.getIncomings().size(); ++incomingIndex) {
+                    org.teavm.model.Incoming leftIncoming = left.getIncomings().get(incomingIndex);
+                    org.teavm.model.Incoming rightIncoming = right.getIncomings().get(incomingIndex);
+                    if (leftIncoming.getSource().getIndex() != rightIncoming.getSource().getIndex()
+                            || !sameFiberVariable(leftIncoming.getValue(), rightIncoming.getValue())) {
+                        return false;
+                    }
+                }
+            }
+            java.util.Iterator<org.teavm.model.Instruction> left = first.iterator(), right = second.iterator();
+            while (left.hasNext() && right.hasNext()) {
+                if (!sameFiberInstruction(left.next(), right.next())) {
+                    return false;
+                }
+            }
+            if (left.hasNext() || right.hasNext()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean sameFiberInstruction(org.teavm.model.Instruction first, org.teavm.model.Instruction second) {
+        if (first.getClass() != second.getClass()) {
+            return false;
+        }
+        if (first instanceof org.teavm.model.instructions.EmptyInstruction) {
+            // The pinned preoptimized body retains operandless NOPs. Their
+            // concrete type, position and count remain part of exact equality.
+            return true;
+        } else if (first instanceof org.teavm.model.instructions.InitClassInstruction) {
+            return ((org.teavm.model.instructions.InitClassInstruction) first).getClassName().equals(
+                    ((org.teavm.model.instructions.InitClassInstruction) second).getClassName());
+        } else if (first instanceof org.teavm.model.instructions.GetFieldInstruction) {
+            org.teavm.model.instructions.GetFieldInstruction left =
+                    (org.teavm.model.instructions.GetFieldInstruction) first;
+            org.teavm.model.instructions.GetFieldInstruction right =
+                    (org.teavm.model.instructions.GetFieldInstruction) second;
+            return left.getField().equals(right.getField()) && left.getFieldType().equals(right.getFieldType())
+                    && sameFiberVariable(left.getInstance(), right.getInstance())
+                    && sameFiberVariable(left.getReceiver(), right.getReceiver());
+        } else if (first instanceof org.teavm.model.instructions.PutFieldInstruction) {
+            org.teavm.model.instructions.PutFieldInstruction left =
+                    (org.teavm.model.instructions.PutFieldInstruction) first;
+            org.teavm.model.instructions.PutFieldInstruction right =
+                    (org.teavm.model.instructions.PutFieldInstruction) second;
+            return left.getField().equals(right.getField()) && left.getFieldType().equals(right.getFieldType())
+                    && sameFiberVariable(left.getInstance(), right.getInstance())
+                    && sameFiberVariable(left.getValue(), right.getValue());
+        } else if (first instanceof org.teavm.model.instructions.InvokeInstruction) {
+            org.teavm.model.instructions.InvokeInstruction left = (org.teavm.model.instructions.InvokeInstruction) first;
+            org.teavm.model.instructions.InvokeInstruction right = (org.teavm.model.instructions.InvokeInstruction) second;
+            if (!left.getMethod().equals(right.getMethod()) || left.getType() != right.getType()
+                    || !sameFiberVariable(left.getInstance(), right.getInstance())
+                    || !sameFiberVariable(left.getReceiver(), right.getReceiver())
+                    || left.getArguments().size() != right.getArguments().size()) {
+                return false;
+            }
+            for (int index = 0; index < left.getArguments().size(); ++index) {
+                if (!sameFiberVariable(left.getArguments().get(index), right.getArguments().get(index))) {
+                    return false;
+                }
+            }
+            return true;
+        } else if (first instanceof org.teavm.model.instructions.AssignInstruction) {
+            org.teavm.model.instructions.AssignInstruction left = (org.teavm.model.instructions.AssignInstruction) first;
+            org.teavm.model.instructions.AssignInstruction right = (org.teavm.model.instructions.AssignInstruction) second;
+            return sameFiberVariable(left.getAssignee(), right.getAssignee())
+                    && sameFiberVariable(left.getReceiver(), right.getReceiver());
+        } else if (first instanceof org.teavm.model.instructions.IntegerConstantInstruction) {
+            org.teavm.model.instructions.IntegerConstantInstruction left =
+                    (org.teavm.model.instructions.IntegerConstantInstruction) first;
+            org.teavm.model.instructions.IntegerConstantInstruction right =
+                    (org.teavm.model.instructions.IntegerConstantInstruction) second;
+            return left.getConstant() == right.getConstant()
+                    && sameFiberVariable(left.getReceiver(), right.getReceiver());
+        } else if (first instanceof org.teavm.model.instructions.BinaryInstruction) {
+            org.teavm.model.instructions.BinaryInstruction left = (org.teavm.model.instructions.BinaryInstruction) first;
+            org.teavm.model.instructions.BinaryInstruction right = (org.teavm.model.instructions.BinaryInstruction) second;
+            return left.getOperation() == right.getOperation() && left.getOperandType() == right.getOperandType()
+                    && sameFiberVariable(left.getReceiver(), right.getReceiver())
+                    && sameFiberVariable(left.getFirstOperand(), right.getFirstOperand())
+                    && sameFiberVariable(left.getSecondOperand(), right.getSecondOperand());
+        } else if (first instanceof org.teavm.model.instructions.BranchingInstruction) {
+            org.teavm.model.instructions.BranchingInstruction left = (org.teavm.model.instructions.BranchingInstruction) first;
+            org.teavm.model.instructions.BranchingInstruction right = (org.teavm.model.instructions.BranchingInstruction) second;
+            return left.getCondition() == right.getCondition() && sameFiberVariable(left.getOperand(), right.getOperand())
+                    && left.getConsequent().getIndex() == right.getConsequent().getIndex()
+                    && left.getAlternative().getIndex() == right.getAlternative().getIndex();
+        } else if (first instanceof org.teavm.model.instructions.JumpInstruction) {
+            return ((org.teavm.model.instructions.JumpInstruction) first).getTarget().getIndex()
+                    == ((org.teavm.model.instructions.JumpInstruction) second).getTarget().getIndex();
+        } else if (first instanceof org.teavm.model.instructions.ExitInstruction) {
+            return sameFiberVariable(((org.teavm.model.instructions.ExitInstruction) first).getValueToReturn(),
+                    ((org.teavm.model.instructions.ExitInstruction) second).getValueToReturn());
+        }
+        return false; // No unknown instruction or incomplete representation can establish this barrier.
+    }
+
+    private IllegalStateException checkpointRefusal(String reason) {
+        // Static owned reason only: never print application/call-graph details.
+        System.err.println("latent.java.checkpoint-context.v1 " + reason);
+        return new IllegalStateException(reason);
+    }
+
+'''
+
 TYPE_CLASSES = frozenset(TYPE_ROOT + name for name in (
     'TypeInferer.class', 'TypeInferer$1.class', 'TypeInferer$2.class',
     'TypeInferer$InferenceKind.class', 'TypeInferer$InferenceType.class'))
@@ -121,6 +648,14 @@ def corrected_source(raw: bytes) -> bytes:
     for before, after in LIVENESS_REPLACEMENTS:
         if source.count(before) != 1:
             raise ValueError('unreviewed-teavm-coroutine-liveness')
+        source = source.replace(before, after)
+    for before, after in COPY_COST_REPLACEMENTS:
+        if source.count(before) != 1:
+            raise ValueError('unreviewed-teavm-coroutine-copy-cost')
+        source = source.replace(before, after)
+    for before, after in COPY_OBSERVER_REPLACEMENTS:
+        if source.count(before) != 1:
+            raise ValueError('unreviewed-teavm-copy-observer')
         source = source.replace(before, after)
     # The published 0.15.0 artifacts relocate HPPC, unlike the Git source tree.
     for name in RELOCATED_IMPORTS:
@@ -147,7 +682,10 @@ def corrected_async_source(raw: bytes) -> bytes:
     source = raw.decode('utf-8')
     if source.count(ASYNC_BEFORE) != 1:
         raise ValueError('unreviewed-teavm-async-finder-preimage')
-    return source.replace(ASYNC_BEFORE, ASYNC_AFTER).encode('utf-8')
+    if source.count(CHECKPOINT_FIND_BEFORE) != 1:
+        raise ValueError('unreviewed-teavm-checkpoint-find-preimage')
+    return source.replace(ASYNC_BEFORE, CHECKPOINT_VALIDATION + ASYNC_AFTER).replace(
+        CHECKPOINT_FIND_BEFORE, CHECKPOINT_FIND_AFTER).encode('utf-8')
 
 
 def checked_jars(compiler, project: Path) -> list[Path]:
@@ -314,6 +852,12 @@ def _groovy_path(path: Path) -> str:
 
 
 def stage(compiler, project: Path, destination: Path) -> dict:
+    observe_copy_cost = getattr(compiler, '_observe_public_copy_cost', False)
+    if type(observe_copy_cost) is not bool:
+        raise ValueError('coroutine-copy-observer-selection')
+    if observe_copy_cost:
+        from tools.java_guest.public_wineh import public_sources
+        public_sources(compiler.directory.parent)
     # The first ordinary classes task has already populated the strictly checked cache.
     jars = checked_jars(compiler, project)
     check_relocated_classes(jars)
@@ -357,6 +901,14 @@ def stage(compiler, project: Path, destination: Path) -> dict:
         if json.loads(monitor) != {'schemaVersion': 'latent.java.monitor-async-control.v1',
                 'mode': mode, 'passed': True}:
             raise ValueError('coroutine-patch-real-monitor-async-control')
+    cost_classpath = os.pathsep.join(map(str, [replacement, classes,
+        *[p for p in jars if p != original[0]]]))
+    cost_controls = ['domain-choice', 'reducible-parity', 'overflow-before-copy']
+    cost = compiler.run('java-coroutine-copy-cost-control', 'java', '-cp', cost_classpath,
+        'org.teavm.backend.lowlevel.transform.Check', 'copy-cost')
+    if json.loads(cost) != {'schemaVersion': 'latent.java.coroutine-copy-cost-control.v1',
+            'cases': cost_controls, 'passed': True}:
+        raise ValueError('coroutine-patch-real-copy-cost-control')
     if identities != jar_identities(compiler.dependency_cache, checked_jars(compiler, project)):
         raise ValueError('coroutine-patch-original-input-mutated')
     build = project / 'build.gradle'; script = read_file(build).decode('utf-8')
@@ -413,6 +965,7 @@ tasks.named('generateC') {
             if (classHash != expected) throw new GradleException('coroutine-patch-loaded-class-bytes')
             loadedClasses[name] = classHash
         }
+        __COPY_COST_OBSERVER__
         file('compiler-patch/loaded.json').text = groovy.json.JsonOutput.toJson([
             schemaVersion: 'latent.java.coroutine-compiler-load.v1',
             selectedOwnedReplacement: true, replacementJarSha256: hash,
@@ -422,6 +975,12 @@ tasks.named('generateC') {
 '''.replace('__PATCH_SHA256__', receipt['replacementJarSha256']).replace('__EXPECTED_CLASSES__',
         json.dumps({name: row['replacementSha256'] for name, row in receipt['replacedClasses'].items()},
                    sort_keys=True, separators=(',', ':')))
+    observer_hook = ("if (System.getProperty('" + COPY_OBSERVER_PROPERTY + "') != null) "
+        "throw new GradleException('coroutine-copy-observer-ambient-selection');")
+    if observe_copy_cost:
+        observer_hook += ("\n        System.setProperty('" + COPY_OBSERVER_PROPERTY + "', '"
+                          + COPY_OBSERVER_TOKEN + "');")
+    script = script.replace('__COPY_COST_OBSERVER__', observer_hook)
     build.write_bytes(script.encode('utf-8'))
     receipt.update(schemaVersion='latent.java.coroutine-compiler-patch.v1',
         upstreamSourceSha256=UPSTREAM_SHA256, correctedSourceSha256=hashlib.sha256(corrected).hexdigest(),
@@ -432,6 +991,10 @@ tasks.named('generateC') {
         realOriginalPrimitiveArrayRootDefectObserved=True,
         realCorrectedArrayTypesAndReferenceRootsPreserved=True,
         realCorrectedRestoredArrayPrimitiveTypePreserved=True,
+        structuralCopyCostPolicy='initial-ir-structural-copy-v1',
+        publicCopyCostObserverSelected=observe_copy_cost,
+        publicCopyCostObserverMaximumRecordBytes=131072,
+        realStructuralCopyCostControls=cost_controls,
         upstreamAsyncFinderSourceSha256=ASYNC_SOURCE_SHA256,
         correctedAsyncFinderSourceSha256=hashlib.sha256(corrected_async).hexdigest(),
         realOriginalMonitorBoundaryDefectObserved=True,

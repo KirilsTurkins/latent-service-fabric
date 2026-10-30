@@ -10,6 +10,7 @@ from tools.dev_workflow.common import decode, digest, encode, integer, members, 
 
 SCHEMA = 'lsf.guest.compatibility.outcomes.v1'
 MAX_BYTES = node_diagnostics.MAX_BYTES
+MAX_NODE_OBSERVATIONS = 8
 ERROR_CODES = frozenset({'ok', 'cancelled', 'unknown', 'deadline-exceeded', 'unimplemented', 'internal',
     'unavailable', 'data-loss', 'out-of-range', 'resource-exhausted', 'invalid-argument', 'not-found',
     'already-exists', 'permission-denied', 'unauthenticated', 'failed-precondition', 'aborted',
@@ -26,13 +27,23 @@ DIAGNOSTIC_LABELS = {
         5: 'provider-absent', 6: 'binding-absent', 7: 'admission-denied', 8: 'grant-denied',
         9: 'queue-pressure', 10: 'guest-memory-exhausted', 11: 'guest-fuel-exhausted',
         12: 'guest-resource-exhausted', 13: 'provider-timeout', 14: 'deadline-exceeded',
-        15: 'cancelled', 16: 'http-response-rejected'},
+        15: 'cancelled', 16: 'http-response-rejected',
+        17: 'runtime-task-limit', 18: 'runtime-queue-limit', 19: 'runtime-timer-limit',
+        20: 'runtime-executor-limit', 21: 'runtime-wait-limit', 22: 'runtime-result-limit',
+        23: 'runtime-native-owner-limit', 24: 'native-thread-start-limit',
+        25: 'native-memory-exhausted', 26: 'guest-stack-exhausted'},
     'profile': {1: 'wasmtime-service-values-v1', 2: 'wasmtime-buffered-web-values-v1'},
 }
 DIAGNOSTIC_MEASUREMENTS = ('configured_bound', 'calculated_requirement', 'fixed_bytes',
                            'lifting_fuel', 'lift_multiplier')
 CAUSES = {5: 'missing-provider', 8: 'denied-grant', 10: 'resource-exhausted',
           11: 'resource-exhausted', 12: 'resource-exhausted', 13: 'deadline', 14: 'deadline', 15: 'cancelled'}
+RESOURCE_DIMENSIONS = {10: 'guest-memory', 11: 'fuel', 17: 'tasks', 18: 'queues', 19: 'timers',
+    20: 'executors', 21: 'waits', 22: 'results', 23: 'native-owners',
+    24: 'thread-total-starts', 25: 'native-memory', 26: 'guest-stack'}
+CAUSES.update({reason: 'resource-exhausted' for reason in range(17, 27)})
+NODE_UNAVAILABLE = frozenset({'history-unavailable', 'observation-deadline', 'observation-limit',
+                             'original-identifier-unavailable', 'target-unconfirmed'})
 
 
 def from_build(source, descriptor, receipt):
@@ -53,6 +64,7 @@ def from_build(source, descriptor, receipt):
         selected = context.read(paths.read(source, name, context.MAX_BYTES), report=report,
                                 source=digest(original_source), component=capture.component)
         runtime = selected['standardRuntime']
+        owner = None
         if runtime['state'] == 'selected-unqualified':
             owner_runtime = runtime.get('receiptName') == 'standard-runtime-selection.json'
             raw = paths.read(source, str(parent / runtime.get('receiptName', 'runtime-profile.json')).replace('\\', '/'),
@@ -67,21 +79,60 @@ def from_build(source, descriptor, receipt):
             if material['name'] == 'automatic-compiler-patches':
                 raw = paths.read(source, str(parent / 'compiler-patches.json').replace('\\', '/'), 4 * 1024 * 1024)
                 require(digest(raw) == material['digest'], 'compatibility-outcomes-stale-patch')
-        from tools.guest_compatibility_context_build import JAVA_COMPILER_PATCH_NAMES, java_compiler_materials
-        if any(row['kind'] == 'patch' and row['name'] in JAVA_COMPILER_PATCH_NAMES
-               for row in selected['materials']):
-            bindings = [row for row in selected['materials'] if row['name'] == 'generated-bindings']
+        from tools.guest_compatibility_context_build import (JAVA_COMPILER_PATCH_NAMES, java_compiler_materials,
+                                                            typescript_buffer_materials, typescript_buffer_owner,
+                                                            typescript_net_materials, typescript_net_owner)
+        buffer = context.buffer_module(selected)
+        if owner is not None and any(row['name'] == context.BUFFER_MATERIALS[0]
+                                     for row in owner['toolAndCompilerInputs']):
+            require(buffer is not None, 'compatibility-outcomes-missing-buffer-module')
+        if buffer is not None:
+            typescript_buffer_owner(owner, buffer[context.BUFFER_MATERIALS[0]]['digest'], buffer['build-recipe']['digest'])
+            raw = paths.read(source, str(parent / 'typescript-buffer-selection.json').replace('\\', '/'), 65536)
+            require(digest(raw) == buffer[context.BUFFER_MATERIALS[0]]['digest'],
+                    'compatibility-outcomes-stale-buffer-receipt')
+            recipe = paths.read(source, str(parent / 'recipe-inputs.json').replace('\\', '/'), 8 * 1024 * 1024)
+            require(digest(recipe) == buffer['build-recipe']['digest'], 'compatibility-outcomes-stale-buffer-recipe')
+            expected = typescript_buffer_materials(raw, recipe, original_source)
+            require(set(buffer) - {'build-recipe'} == {row['name'] for row in expected}
+                    and all(buffer.get(row['name']) == row for row in expected),
+                    'compatibility-outcomes-detached-buffer-module')
+        net = context.net_module(selected)
+        if owner is not None and any(row['name'] == context.NET_MATERIALS[0]
+                                     for row in owner['toolAndCompilerInputs']):
+            require(net is not None, 'compatibility-outcomes-missing-net-module')
+        if net is not None:
+            typescript_net_owner(owner, net[context.NET_MATERIALS[0]]['digest'], net['build-recipe']['digest'])
+            raw = paths.read(source, str(parent / 'typescript-net-selection.json').replace('\\', '/'), 65536)
+            require(digest(raw) == net[context.NET_MATERIALS[0]]['digest'],
+                    'compatibility-outcomes-stale-net-receipt')
+            recipe = paths.read(source, str(parent / 'recipe-inputs.json').replace('\\', '/'), 8 * 1024 * 1024)
+            require(digest(recipe) == net['build-recipe']['digest'], 'compatibility-outcomes-stale-net-recipe')
+            expected = typescript_net_materials(raw, recipe, original_source)
+            require(all(net[row['name']] == row for row in expected), 'compatibility-outcomes-detached-net-module')
+        java_patches = [row for row in selected['materials']
+                        if row['kind'] == 'patch' and row['name'] in JAVA_COMPILER_PATCH_NAMES]
+        bindings = [row for row in selected['materials'] if row['name'] == 'generated-bindings']
+        bindings_path = source / parent / 'bindings.json'
+        if java_patches or (selected['language'] == 'java'
+                            and (bindings or bindings_path.exists() or bindings_path.is_symlink())):
+            require(selected['language'] == 'java', 'compatibility-outcomes-java-compiler-language')
             raw = paths.read(source, str(parent / 'bindings.json').replace('\\', '/'), 4 * 1024 * 1024)
             require(len(bindings) == 1 and digest(raw) == bindings[0]['digest'],
                     'compatibility-outcomes-stale-java-compiler')
-            recipes = [row for row in selected['materials'] if row['name'] == 'build-recipe']
-            recipe = paths.read(source, str(parent / 'recipe-inputs.json').replace('\\', '/'), 8 * 1024 * 1024)
-            require(len(recipes) == 1 and digest(recipe) == recipes[0]['digest'],
-                    'compatibility-outcomes-stale-java-compiler-recipe')
-            expected = java_compiler_materials(decode(raw, 4 * 1024 * 1024),
-                runtime['profile'], recipes[0]['digest'])
-            require(selected['language'] == 'java' and len(expected) == 4
-                    and all(row in selected['materials'] for row in expected),
+            bound_bindings = decode(raw, 4 * 1024 * 1024)
+            require(isinstance(bound_bindings, dict), 'compatibility-outcomes-java-bindings')
+            expected = []
+            if 'coroutineCompiler' in bound_bindings:
+                require(runtime['state'] == 'selected-unqualified',
+                        'compatibility-outcomes-java-compiler-runtime')
+                recipes = [row for row in selected['materials'] if row['name'] == 'build-recipe']
+                recipe = paths.read(source, str(parent / 'recipe-inputs.json').replace('\\', '/'), 8 * 1024 * 1024)
+                require(len(recipes) == 1 and digest(recipe) == recipes[0]['digest'],
+                        'compatibility-outcomes-stale-java-compiler-recipe')
+                expected = java_compiler_materials(bound_bindings, runtime['profile'], recipes[0]['digest'])
+                require(len(expected) == 4, 'compatibility-outcomes-java-compiler-group')
+            require(len(java_patches) == len(expected) and all(row in java_patches for row in expected),
                     'compatibility-outcomes-detached-java-compiler')
         capture.context, capture.context_state = selected, 'observed'
     except (ValueError, OSError, TypeError, KeyError):
@@ -136,11 +187,88 @@ def original(value):
     if observed['state'] == 'observed':
         reason = int(observed['fields']['reason'])
         projected['cause'] = CAUSES.get(reason, 'unknown')
-        if reason in {10, 11}:
-            projected['resourceDimension'] = {10: 'guest-memory', 11: 'fuel'}[reason]
+        projected['resourceDimension'] = RESOURCE_DIMENSIONS.get(reason, 'unknown')
     projected['libraryReachability'] = 'unknown'
     projected['physicalRetirement'] = 'unproven'
     return projected
+
+
+def node_observation(value, activation, service):
+    """Project one already-authorized tree lookup by issued ID and service.
+
+    This is an observed failed operation when diagnosticIsTerminal is false.
+    The management API has no revision/record nonce. Retained IDs can be reused
+    after eviction: this fact is NOT bound to the invocation implementation.
+    It NEVER replaces an invocation's original error/cause or proves refund.
+    No RPC, retries, source payloads or exception strings occur in this reader.
+    """
+    invalid = {'state': 'invalid-present'}
+    if (type(activation) is not str or not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_.-]{0,127}', activation)
+            or type(value) is not dict or value.get('category') != 'success'
+            or value.get('outcomeKnown') is not True or type(value.get('data')) is not dict):
+        return invalid
+    tree = value['data']
+    if (type(tree.get('schemaVersion')) is not int or tree['schemaVersion'] != 1
+            or tree.get('historyAvailable') is not True or type(tree.get('nodes')) is not list
+            or len(tree['nodes']) != 1):
+        return invalid
+    node = tree['nodes'][0]
+    if (type(node) is not dict or node.get('activationId') != activation
+            or node.get('targetService') != service or type(node.get('diagnosticIsTerminal')) is not bool):
+        return invalid
+    raw = node.get('diagnostic')
+    if raw is None:
+        return {'state': 'absent'}
+    if (type(raw) is not dict or type(raw.get('schemaVersion')) is not int or raw['schemaVersion'] != 1
+            or type(raw.get('stage')) is not int or type(raw.get('reason')) is not int
+            or raw['stage'] not in DIAGNOSTIC_LABELS['stage'] or raw['reason'] not in DIAGNOSTIC_LABELS['reason']):
+        return invalid
+    fields = {'stage': str(raw['stage']), 'reason': str(raw['reason'])}
+    names = {'profile': 'profile', 'profileDigest': 'profile_digest',
+        'configuredBound': 'configured_bound', 'calculatedRequirement': 'calculated_requirement',
+        'fixedBytes': 'fixed_bytes', 'liftingFuel': 'lifting_fuel', 'liftMultiplier': 'lift_multiplier'}
+    for camel, name in names.items():
+        item = raw.get(camel)
+        if item is None:
+            continue
+        if name == 'profile':
+            if type(item) is not int:
+                return invalid
+            item = str(item)
+        fields[name] = item
+    observed = diagnostic({'details': [{'kind': 'activation.diagnostic.v1', 'fields': fields}]})
+    if observed['state'] != 'observed':
+        return invalid
+    return {'state': 'observed', 'fields': fields, 'activationIdentity': digest(activation.encode()),
+        'terminal': node['diagnosticIsTerminal'],
+        'resourceDimension': RESOURCE_DIMENSIONS.get(raw['reason'], 'unknown'),
+        'scope': 'activation-id-service-only', 'implementationBinding': 'unavailable'}
+
+
+def validate_node_observation(value):
+    members(value, {'state'}, {'fields', 'activationIdentity', 'terminal', 'resourceDimension', 'scope', 'reason',
+                             'implementationBinding'})
+    require(type(value['state']) is str and value['state'] in {'observed', 'absent', 'invalid-present', 'unavailable'},
+            'compatibility-node-observation-state')
+    if value['state'] == 'observed':
+        require(set(value) == {'state', 'fields', 'activationIdentity', 'terminal', 'resourceDimension', 'scope',
+                              'implementationBinding'}
+            and diagnostic({'details': [{'kind': 'activation.diagnostic.v1', 'fields': value['fields']}]})
+                == {'state': 'observed', 'fields': value['fields']}
+            and type(value['terminal']) is bool and value['scope'] == 'activation-id-service-only'
+            and value['implementationBinding'] == 'unavailable',
+            'compatibility-node-observation-fields')
+        sha(value['activationIdentity'])
+        reason = int(value['fields']['reason'])
+        require(value['resourceDimension'] == RESOURCE_DIMENSIONS.get(reason, 'unknown'),
+                'compatibility-node-observation-resource')
+    elif value['state'] == 'unavailable':
+        require(set(value) == {'state', 'reason'} and type(value['reason']) is str
+                and value['reason'] in NODE_UNAVAILABLE,
+                'compatibility-node-observation-unavailable')
+    else:
+        require(set(value) == {'state'}, 'compatibility-node-observation-fields')
+    return value
 
 
 def validate(value, *, report=None, selected_context=None):
@@ -168,7 +296,7 @@ def validate(value, *, report=None, selected_context=None):
             'libraryReachability', 'physicalRetirement', 'clientProcess'},
             {'malformed', 'category', 'outcomeKnown', 'consumption', 'invalidConsumptionFields',
              'guestTrapCode', 'trapDetailsUnavailable', 'admissionCurrentnessReason', 'errorCode', 'targetMatches',
-             'guestTrapKind', 'guestRuntimePhase', 'trapKindUnavailable'})
+             'guestTrapKind', 'guestRuntimePhase', 'trapKindUnavailable', 'nodeDiagnostic'})
         require(isinstance(row['case'], str)
                 and re.fullmatch('[A-Za-z0-9][A-Za-z0-9_.-]{0,127}', row['case']) is not None,
                 'compatibility-outcomes-case-name')
@@ -187,8 +315,10 @@ def validate(value, *, report=None, selected_context=None):
                     'compatibility-outcomes-diagnostic-fields')
         reason = int(observed['fields']['reason']) if observed['state'] == 'observed' else None
         require(row['cause'] == CAUSES.get(reason, 'unknown')
-                and row['resourceDimension'] == {10: 'guest-memory', 11: 'fuel'}.get(reason, 'unknown'),
+                and row['resourceDimension'] == RESOURCE_DIMENSIONS.get(reason, 'unknown'),
                 'compatibility-outcomes-cause-evidence')
+        if 'nodeDiagnostic' in row:
+            validate_node_observation(row['nodeDiagnostic'])
         require((row['libraryReachability'], row['physicalRetirement']) == ('unknown', 'unproven')
                 and isinstance(row['clientProcess'], str) and row['clientProcess'] in {'reaped', 'not-confirmed'},
                 'compatibility-outcomes-retirement-evidence')
@@ -280,6 +410,15 @@ def present(value):
                 lines.append('Observed node measurements: ' + '; '.join(measurements) + '.')
         else:
             lines.append(f"Node diagnostic: {observed['state']}.")
+        if 'nodeDiagnostic' in row:
+            retained = row['nodeDiagnostic']
+            if retained['state'] == 'observed':
+                label = DIAGNOSTIC_LABELS['reason'][int(retained['fields']['reason'])]
+                scope = 'management record terminal flag' if retained['terminal'] else 'operation observation; terminal cause unchanged'
+                lines.append(f"Retained node {scope}: {label}; resource {retained['resourceDimension']}; "
+                             'implementation revision unavailable, no invocation-cause attribution.')
+            else:
+                lines.append(f"Retained node observation: {retained['state']}.")
         if row.get('targetMatches') is False:
             lines.append('Selected target differs from the original invocation result.')
     if value['omittedCases']:
@@ -316,6 +455,28 @@ class Capture:
             self.omitted += 1
             return
         self.rows.append(row); self.bytes += size
+
+    def observe_node(self, case, value, activation, service, *, unavailable=None):
+        selected = [row for row in self.rows if row['case'] == case]
+        if len(selected) != 1:
+            self.omitted += 1
+            return
+        row = selected[0]
+        if unavailable is not None:
+            fact = validate_node_observation({'state': 'unavailable', 'reason': unavailable})
+        elif row.get('targetMatches') is not True:
+            fact = {'state': 'unavailable', 'reason': 'target-unconfirmed'}
+        else:
+            fact = node_observation(value, activation, service)
+        changed = {**row, 'nodeDiagnostic': fact}
+        additional = len(encode(changed)) - len(encode(row))
+        if self.bytes + additional > node_diagnostics.MAX_BYTES - 4096:
+            self.omitted += 1
+            return
+        # Keep cause/error from the original invocation. A later management
+        # observation is not rewritten into its terminal failure or authority.
+        row['nodeDiagnostic'] = fact
+        self.bytes += additional
 
     def snapshot(self):
         value = {'schemaVersion': SCHEMA, 'frontendSourceDigest': self.source, 'componentDigest': self.component,

@@ -1,7 +1,7 @@
 //! Fixed Store-local generations. Only the installed provider creates values;
 //! a guessed/stale/foreign representation cannot insert or recover authority.
 use latent_capabilities::broker::{
-    io::IoOutputChunk,
+    io::{IoOutputChunk, IoOutputCopy},
     network::{OutboundStream, StreamError, StreamErrorCode},
     CapabilitySession, SessionResourceTableReservation,
 };
@@ -121,7 +121,7 @@ impl Table {
         entry.rep = 0;
         Ok(())
     }
-    pub(super) fn chunk_bytes(&mut self, rep: u32) -> Result<Vec<u8>, StreamError> {
+    pub(super) fn chunk_bytes(&mut self, rep: u32) -> Result<IoOutputCopy, StreamError> {
         let Some(Value::Chunk { value, delivered }) = &mut self.entry(rep, Kind::Chunk)?.value
         else {
             return Err(invalid());

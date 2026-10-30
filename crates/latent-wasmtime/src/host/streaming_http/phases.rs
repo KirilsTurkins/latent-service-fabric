@@ -73,7 +73,7 @@ fn open(
                 })?;
                 let completion = match opening {
                     Ok(mut pending) => {
-                        let result = pending.value.as_mut().await;
+                        let result = (&mut pending.value).await;
                         // Keep successful output ahead of the guard as well.
                         drop(pending.value);
                         Ok(Reserved {

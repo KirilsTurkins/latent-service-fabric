@@ -160,10 +160,29 @@ def dependency_inventory(metadata: dict, lock: dict, commit: str, epoch: int,
                     and manifest == root / codec_wasmtime.PROVIDER / "Cargo.toml",
                     "codec-wasmtime-license-package-identity")
             checked = codec_wasmtime.verify(root)
-            candidates = {manifest.parent / name for name in checked["licenseFiles"]}
+            candidates = {manifest.parent / name for name in
+                          (*checked["licenseFiles"], *checked["additionalLicenseFiles"])}
             entry["comment"] = "Authenticated pinned Wasmtime allocation-hook fork: " + encode({
                 key: checked[key] for key in ("upstreamArchive", "upstreamSha256", "recordSha256",
-                    "patchSha256", "nativeCohort", "licenseFiles")}).decode().strip()
+                    "patchSha256", "nativeCohort", "licenseFiles", "additionalLicenseFiles")}).decode().strip()
+        elif package["name"] == "wasmtime-internal-cache" and package.get("source") is None:
+            from tools import host_codec_wasmtime as codec_wasmtime
+
+            manifest = Path(package["manifest_path"]).resolve()
+            require(len(manifest.parents) >= 4, "cache-backport-license-package-path")
+            root = manifest.parents[3]
+            require(package["version"] == codec_wasmtime.VERSION
+                    and package.get("license") == "Apache-2.0 WITH LLVM-exception"
+                    and manifest == root / codec_wasmtime.CACHE_PROVIDER / "Cargo.toml",
+                    "cache-backport-license-package-identity")
+            checked = codec_wasmtime.verify(root)["cacheSecurityBackport"]
+            candidates = {manifest.parent / name for name in checked["licenseFiles"]}
+            entry["comment"] = "Authenticated manifest-only cache dependency backport: " + encode({
+                "upstreamArchive": checked["upstreamArchive"],
+                "upstreamSha256": checked["upstreamSha256"],
+                "recordSha256": codec_wasmtime.RECORD_SHA256,
+                "fixedRegistryPackages": checked["fixedRegistryPackages"],
+                "licenseFiles": checked["licenseFiles"]}).decode().strip()
         elif checksum:
             entry["checksums"] = [{"algorithm": "SHA256", "checksumValue": checksum}]
             directory = Path(package["manifest_path"]).parent

@@ -6,12 +6,43 @@ import subprocess
 import tempfile
 import unittest
 import zipfile
+from unittest.mock import patch
 
 from tools.dev_workflow.common import digest, encode
 from tools.java_guest import reachability as r
 
 
 class CompilerMethods(unittest.TestCase):
+    def test_passive_source_origin_or_class_refusal_is_unknown_but_required_gate_and_owner_failures_stay_hard(self):
+        from tools.build_process import BuildProcessError
+        from tools.java_guest.compiler import Compiler, coroutine_patch
+        valid = '{"schemaVersion":"lsf.java.source-origins.v1","sources":[{"source":"Capsule.java","package":"p"}]}'
+        for stage in ('java-source-origins', 'java-owned-classes'):
+            for required in (False, True):
+                with self.subTest(stage=stage, required=required), tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    owner = Compiler.__new__(Compiler); owner.sdk = root; owner.offline = True
+                    calls = []
+                    def run(actual, *args, **kwargs):
+                        calls.append(actual)
+                        if actual == stage: raise ValueError('diagnostic-only-source-refusal')
+                        return valid
+                    owner.run = run
+                    with patch.object(coroutine_patch, 'record_original_classpath', side_effect=lambda _: calls.append('original-classpath')):
+                        if required:
+                            with self.assertRaisesRegex(ValueError, 'diagnostic-only-source-refusal'):
+                                owner.prepare_method_analysis(root, root, root, {'Capsule.java'}, required=True)
+                        else:
+                            self.assertIsNone(owner.prepare_method_analysis(root, root, root, {'Capsule.java'}, required=False))
+                    self.assertEqual(calls, ['java-source-origins'] +
+                        (['original-classpath', 'java-owned-classes'] if required else ['java-owned-classes'])
+                        if stage == 'java-owned-classes' else ['java-source-origins'])
+        owner = Compiler.__new__(Compiler); owner.sdk = Path('.'); owner.offline = True
+        def unretired(*args, **kwargs): raise BuildProcessError('process-cleanup')
+        owner.run = unretired
+        with self.assertRaisesRegex(BuildProcessError, 'process-cleanup'):
+            owner.prepare_method_analysis(Path('.'), Path('.'), Path('.'), set(), required=False)
+
     def test_normal_builder_preserves_the_selected_option_at_the_actual_compiler_constructor(self):
         from tools.tests.test_java_activation_authoring import AuthoringSelection
         from tools.java_guest.compiler import Compiler as JavaCompiler
@@ -21,8 +52,7 @@ class CompilerMethods(unittest.TestCase):
             try:
                 control.setUp()
                 result = control.inspect_compile_boundary(compiler_methods=value)
-                if value: self.assertIs(result['inputs']['compiler_methods'], True)
-                else: self.assertNotIn('compiler_methods', result['inputs'])
+                self.assertIs(result['inputs']['compiler_methods'], True)
                 self.assertEqual(result['compile'], {'application_classpath': ()})
             finally: control.doCleanups()
         # Existing compiler-boundary controls construct without __init__;

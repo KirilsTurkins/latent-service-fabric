@@ -4,7 +4,10 @@
 mod signing;
 
 use latent_packaging::{read_package_directory, PackagingLimits};
-use latent_signing::{decode_web_build_observation, ProvenanceLimits, WEB_ASSEMBLY_BUILD_TYPE};
+use latent_signing::{
+    decode_web_build_observation, BuilderPolicy, ProvenanceLimits, PublisherPolicy,
+    SignatureLimits, WEB_ASSEMBLY_BUILD_TYPE,
+};
 use serde_json::json;
 use std::{fs, io::Write, os::unix::fs::PermissionsExt, path::Path};
 
@@ -101,10 +104,36 @@ fn export_actual_static_site_fixtures() {
             "sourceSnapshotDigest":observation.source.snapshot_digest,"renderer":false}));
     }
     assert_ne!(records[0]["packageDigest"], records[1]["packageDigest"]);
-    write(&root.join("policy.json"), &signers.unwrap().policy_document);
+    let policy = signers.unwrap().policy_document;
+    write(&root.join("policy.json"), &policy);
+    write(&root.join("audit-policy.json"), &audit_policy(&policy));
     write(&root.join("fixture.json"), &serde_json::to_vec(&json!({
         "schemaVersion":"latent.static.reference.fixture.v1", "tenant":"tests", "fixtures":records,
         "actualCsrBuilds":true,"frameworkReferences":frameworks,
         "reproducibility":"not-checked","dependencyCompleteness":"declared-inputs-incomplete"
     })).unwrap());
+}
+
+// A separate stricter policy for the bounded audit lifecycle campaign. It uses
+// the same actual package signatures, builders and subjects. Recompute both
+// typed policy digests; do not bypass revocations or invent an unsigned grant.
+fn audit_policy(original: &[u8]) -> Vec<u8> {
+    let mut policy: serde_json::Value = serde_json::from_slice(original).unwrap();
+    policy["publisher"]["maxProofAgeSeconds"] = json!(30);
+    policy["builder"]["maxProofAgeSeconds"] = json!(30);
+    let publisher = PublisherPolicy::from_json(
+        &serde_json::to_vec(&policy["publisher"]).unwrap(),
+        SignatureLimits::default(),
+    )
+    .unwrap();
+    let builder = BuilderPolicy::from_json(
+        &serde_json::to_vec(&policy["builder"]).unwrap(),
+        ProvenanceLimits::default(),
+    )
+    .unwrap();
+    policy["publisherRevocations"]["policyDigest"] = json!(publisher.digest().to_string());
+    policy["builderRevocations"]["policyDigest"] = json!(builder.digest().to_string());
+    let bytes = serde_json::to_vec(&policy).unwrap();
+    latent_policy::supply_chain::SupplyChainPolicy::from_json(&bytes).unwrap();
+    bytes
 }

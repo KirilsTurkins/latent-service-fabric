@@ -1,114 +1,19 @@
-{
-  "cases": [
-    "HostStreamKernelDerivation.test_all_upstream_function_statements_remain_byte_exact_and_ordered",
-    "HostStreamKernelDerivation.test_bounded_private_state_has_no_public_release_or_allocator",
-    "HostStreamKernelDerivation.test_changed_function_repeated_anchor_unknown_function_and_hunk_refuse",
-    "HostStreamKernelDerivation.test_normal_provider_gate_and_accounting_flag_stay_closed",
-    "HostStreamKernelDerivation.test_original_five_functions_bind_three_authenticated_upstream_files",
-    "HostStreamKernelDerivation.test_skb_physical_header_clone_and_data_free_are_distinct",
-    "HostStreamKernelDerivation.test_socket_and_timewait_copy_identity_before_free_and_observe_after",
-    "HostStreamKernelDerivation.test_whole_preimages_and_exact_source_membership_are_mandatory"
-  ],
-  "guards": {
-    "HostStreamKernelDerivation.test_all_upstream_function_statements_remain_byte_exact_and_ordered": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fc67372e9ee6805b49667cf7c688475272a0aa31e504faea407c54232b7c07a8",
-        "class:setup-sha256:04d9a0854a7e2bb667fa509c00ca16e02692b043cb31e4f750917d722e93aaae"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelDerivation.test_bounded_private_state_has_no_public_release_or_allocator": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fc67372e9ee6805b49667cf7c688475272a0aa31e504faea407c54232b7c07a8",
-        "class:setup-sha256:04d9a0854a7e2bb667fa509c00ca16e02692b043cb31e4f750917d722e93aaae"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelDerivation.test_changed_function_repeated_anchor_unknown_function_and_hunk_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fc67372e9ee6805b49667cf7c688475272a0aa31e504faea407c54232b7c07a8",
-        "class:setup-sha256:04d9a0854a7e2bb667fa509c00ca16e02692b043cb31e4f750917d722e93aaae"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelDerivation.test_normal_provider_gate_and_accounting_flag_stay_closed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fc67372e9ee6805b49667cf7c688475272a0aa31e504faea407c54232b7c07a8",
-        "class:setup-sha256:04d9a0854a7e2bb667fa509c00ca16e02692b043cb31e4f750917d722e93aaae"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelDerivation.test_original_five_functions_bind_three_authenticated_upstream_files": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fc67372e9ee6805b49667cf7c688475272a0aa31e504faea407c54232b7c07a8",
-        "class:setup-sha256:04d9a0854a7e2bb667fa509c00ca16e02692b043cb31e4f750917d722e93aaae"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelDerivation.test_skb_physical_header_clone_and_data_free_are_distinct": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fc67372e9ee6805b49667cf7c688475272a0aa31e504faea407c54232b7c07a8",
-        "class:setup-sha256:04d9a0854a7e2bb667fa509c00ca16e02692b043cb31e4f750917d722e93aaae"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelDerivation.test_socket_and_timewait_copy_identity_before_free_and_observe_after": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fc67372e9ee6805b49667cf7c688475272a0aa31e504faea407c54232b7c07a8",
-        "class:setup-sha256:04d9a0854a7e2bb667fa509c00ca16e02692b043cb31e4f750917d722e93aaae"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelDerivation.test_whole_preimages_and_exact_source_membership_are_mandatory": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:fc67372e9ee6805b49667cf7c688475272a0aa31e504faea407c54232b7c07a8",
-        "class:setup-sha256:04d9a0854a7e2bb667fa509c00ca16e02692b043cb31e4f750917d722e93aaae"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_derivation.py",
-  "reviewReason": "Eight additive pure controls authenticate three complete Linux source preimages and five insertion-only free paths; preserve closed production gates and distinguish native mechanism from kernel proof",
-  "schemaVersion": "latent.ci.contracts.v1"
-}
+{"cases":["HostStreamKernelDerivation.test_all_upstream_function_statements_remain_byte_exact_and_ordered","HostStreamKernelDerivation.test_bounded_private_state_has_no_public_release_or_allocator","HostStreamKernelDerivation.test_changed_function_repeated_anchor_unknown_function_and_hunk_refuse","HostStreamKernelDerivation.test_normal_provider_gate_and_accounting_flag_stay_closed","HostStreamKernelDerivation.test_original_five_functions_bind_three_authenticated_upstream_files","HostStreamKernelDerivation.test_skb_physical_header_clone_and_data_free_are_distinct","HostStreamKernelDerivation.test_socket_and_timewait_copy_identity_before_free_and_observe_after","HostStreamKernelDerivation.test_whole_preimages_and_exact_source_membership_are_mandatory"],"guards":{"HostStreamKernelDerivation.test_all_upstream_function_statements_remain_byte_exact_and_ordered":
+  "11edb5b54479d5fe4e53875a3efaa81a4e29731d1d0b3fb17c960937729a60ec"
+,"HostStreamKernelDerivation.test_bounded_private_state_has_no_public_release_or_allocator":
+  "11edb5b54479d5fe4e53875a3efaa81a4e29731d1d0b3fb17c960937729a60ec"
+,"HostStreamKernelDerivation.test_changed_function_repeated_anchor_unknown_function_and_hunk_refuse":
+  "11edb5b54479d5fe4e53875a3efaa81a4e29731d1d0b3fb17c960937729a60ec"
+,"HostStreamKernelDerivation.test_normal_provider_gate_and_accounting_flag_stay_closed":
+  "11edb5b54479d5fe4e53875a3efaa81a4e29731d1d0b3fb17c960937729a60ec"
+,"HostStreamKernelDerivation.test_original_five_functions_bind_three_authenticated_upstream_files":
+  "11edb5b54479d5fe4e53875a3efaa81a4e29731d1d0b3fb17c960937729a60ec"
+,"HostStreamKernelDerivation.test_skb_physical_header_clone_and_data_free_are_distinct":
+  "11edb5b54479d5fe4e53875a3efaa81a4e29731d1d0b3fb17c960937729a60ec"
+,"HostStreamKernelDerivation.test_socket_and_timewait_copy_identity_before_free_and_observe_after":
+  "11edb5b54479d5fe4e53875a3efaa81a4e29731d1d0b3fb17c960937729a60ec"
+,"HostStreamKernelDerivation.test_whole_preimages_and_exact_source_membership_are_mandatory":
+  "11edb5b54479d5fe4e53875a3efaa81a4e29731d1d0b3fb17c960937729a60ec"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_derivation.py","reviewReason":"Eight additive pure controls authenticate three complete Linux source preimages and five insertion-only free paths; preserve closed production gates and distinguish native mechanism from kernel proof","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "11edb5b54479d5fe4e53875a3efaa81a4e29731d1d0b3fb17c960937729a60ec"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:fc67372e9ee6805b49667cf7c688475272a0aa31e504faea407c54232b7c07a8","class:setup-sha256:04d9a0854a7e2bb667fa509c00ca16e02692b043cb31e4f750917d722e93aaae"],"skipSites":[]}}}

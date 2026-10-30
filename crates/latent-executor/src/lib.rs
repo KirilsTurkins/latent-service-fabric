@@ -14,7 +14,7 @@ pub use transaction_input::CanonicalTransactionInput;
 mod prepared_readiness;
 mod prepared_use;
 pub use preparation_inspection::PreparationInspection;
-pub use preparation_read_wait::PreparationReadWait;
+pub use preparation_read_wait::{OwnedPreparationWait, PreparationReadWait};
 pub use prepared_activation::PreparedActivation;
 pub use prepared_readiness::PreparedReadiness;
 pub use prepared_use::PreparedUse;

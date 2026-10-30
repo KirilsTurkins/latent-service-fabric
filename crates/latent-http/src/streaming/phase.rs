@@ -25,25 +25,27 @@ impl Deadline {
         timeout: HttpPhaseError,
     ) -> Result<F::Output, HttpPhaseError> {
         self.control.checkpoint()?;
-        let mut future = Box::pin(future);
-        let result = if let Some(at) = self.at {
-            tokio::select! {
-                biased;
-                () = tokio::time::sleep_until(at.into()) => {
-                    // Original cancellation/deadline wins, even if both clocks
-                    // become ready together. A phase cannot relabel either.
-                    self.control.checkpoint()?;
-                    Err(timeout)
-                },
-                value = &mut future => {
-                    self.control.checkpoint()?;
-                    Ok(value)
-                },
+        {
+            // The pin! storage itself lives only in this block. Ending this
+            // scope drops F, not merely a Pin<&mut F>, before result escapes.
+            let mut future = std::pin::pin!(future);
+            if let Some(at) = self.at {
+                tokio::select! {
+                    biased;
+                    () = tokio::time::sleep_until(at.into()) => {
+                        // Original cancellation/deadline wins, even if both clocks
+                        // become ready together. A phase cannot relabel either.
+                        self.control.checkpoint()?;
+                        Err(timeout)
+                    },
+                    value = &mut future => {
+                        self.control.checkpoint()?;
+                        Ok(value)
+                    },
+                }
+            } else {
+                Ok(future.as_mut().await)
             }
-        } else {
-            Ok(future.as_mut().await)
-        };
-        drop(future);
-        result
+        }
     }
 }

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -20,6 +21,7 @@ from tools.rust_capsule_project import fresh
 from tools.test_run import digest, redact
 
 SUITE = "latent-streams.lib.latent-streams"
+EXPECTED_CASES_SHA256 = "c65d9974e96103c237ee78d17e3e36a0e3ee038a9a2e70e102a01b69af66a0dd"
 TLS_CASES = frozenset("tests::tls::" + name for name in (
     "direct_host_tls_validates_peer_transfers_and_retires_original_charges",
     "wrong_tls_hostname_fails_closed_without_cleartext_fallback",
@@ -32,6 +34,11 @@ ACCOUNTING_CASES = frozenset("tests::tls::" + name for name in (
 ))
 KERNEL_CASE = 'tests::kernel::current_linux_pressure_and_active_close_distinguish_kernel_tail_from_fd_refund'
 KERNEL_RETIREMENT_CASES = frozenset(('tests::kernel::current_linux_kernel_tail_keeps_original_leases_quarantined', 'tests::kernel::current_linux_failed_connect_quarantines_original_dial_and_native_charge', 'tests::kernel::current_linux_cancelled_dns_quarantines_original_scope_and_native_charge', 'tests::kernel::current_unqualified_kernel_profile_refuses_normal_install_without_allocation'))
+NATIVE_CLOSE_CASES = frozenset('kernel::native::tests::' + name for name in (
+    'close_status_preserves_original_expiry_and_never_accepts_ready_as_retirement',
+    'real_file_close_transfer_keeps_exact_frame_and_refuses_short_or_error_reply',
+    'fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backing',
+))
 DENIAL = "tests::tls::unqualified_tls_installation_fails_before_contact_and_leaves_no_owner"
 
 
@@ -58,8 +65,9 @@ def suite_contract(root: Path) -> dict:
     if len(matches) != 1:
         raise ValueError("tls-provider-reference-suite-owner")
     row = matches[0]
-    if (row["minimumCases"] != 40 or len(row["expectedCases"]) != 40
-            or not (TLS_CASES | ACCOUNTING_CASES | KERNEL_RETIREMENT_CASES | {DENIAL, KERNEL_CASE}) <= set(row["expectedCases"])
+    if (row["minimumCases"] != 47 or len(row["expectedCases"]) != 47
+            or hashlib.sha256(json.dumps(row["expectedCases"], separators=(",", ":")).encode()).hexdigest() != EXPECTED_CASES_SHA256
+            or not (TLS_CASES | ACCOUNTING_CASES | KERNEL_RETIREMENT_CASES | NATIVE_CLOSE_CASES | {DENIAL, KERNEL_CASE}) <= set(row["expectedCases"])
             or row["expectedIgnored"] or row["ignoredLeaves"] or row["timeoutSeconds"] != 900):
         raise ValueError("tls-provider-reference-suite-contract")
     return row
@@ -168,7 +176,7 @@ def main() -> int:
     parser.add_argument("--source-commit", default=os.environ.get("GITHUB_SHA"))
     args = parser.parse_args()
     qualify(provider.ROOT, args.output, args.source_commit)
-    print("Actual bounded TLS provider: 40 cases passed; accounting remains unqualified")
+    print("Actual bounded TLS provider: 47 cases passed; accounting remains unqualified")
     return 0
 
 

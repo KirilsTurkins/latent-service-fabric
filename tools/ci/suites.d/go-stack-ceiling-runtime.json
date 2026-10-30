@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "signed_go_v7_stack_cap_gc_initializer_and_fresh_state_keep_original_budgets"
+      ],
+      "expectedIgnored": [
+        "signed_go_v7_stack_cap_gc_initializer_and_fresh_state_keep_original_budgets"
+      ],
+      "id": "latent-wasmtime.test.go_stack_ceiling_runtime",
+      "ignoredLeaves": [
+        "signed_go_v7_stack_cap_gc_initializer_and_fresh_state_keep_original_budgets"
+      ],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain and development-test-host feature",
+        "two normally built Go v7 source variants and actual numeric cap mapping",
+        "successful source-matched native signer Cargo inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/go_stack_ceiling_runtime.rs",
+      "target": "go_stack_ceiling_runtime",
+      "timeoutSeconds": 300
+    }
+  ]
+}

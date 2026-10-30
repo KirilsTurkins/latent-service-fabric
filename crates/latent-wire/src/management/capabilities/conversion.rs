@@ -176,6 +176,10 @@ pub(super) fn node_usage(value: &domain::NodeUsage) -> proto::CapabilityResource
         stream_usage(&mut result, value.streams);
     }
     if let Some(audit) = value.audit {
+        result.counters.insert(
+            "audit_previous_session_loss_unknown".into(),
+            u64::from(audit.previous_session_loss_unknown),
+        );
         result
             .counters
             .insert("audit_closed".into(), u64::from(audit.closed));
@@ -186,6 +190,9 @@ pub(super) fn node_usage(value: &domain::NodeUsage) -> proto::CapabilityResource
         counts!(
             "audit_",
             audit,
+            retained_records,
+            retained_bytes,
+            unknown_outcomes,
             dropped_observations,
             unavailable_events,
             pending_attempts,
@@ -257,6 +264,10 @@ mod tests {
             streams: None,
             audit_capture_dropped: 0,
             audit: Some(latent_audit::AuditSnapshot {
+                retained_records: 4096,
+                retained_bytes: 4_299_161,
+                unknown_outcomes: 2,
+                previous_session_loss_unknown: true,
                 queued_bytes: 16 * 1024,
                 stage_bytes: 68 * 1024,
                 node_metadata_maximum_bytes: 8 * 1024 * 1024,
@@ -276,6 +287,10 @@ mod tests {
             .counters
             .keys()
             .any(|key| key.starts_with("stream_")));
+        assert_eq!(encoded.counters["audit_retained_records"], 4096);
+        assert_eq!(encoded.counters["audit_retained_bytes"], 4_299_161);
+        assert_eq!(encoded.counters["audit_unknown_outcomes"], 2);
+        assert_eq!(encoded.counters["audit_previous_session_loss_unknown"], 1);
         assert_eq!(encoded.counters["audit_queued_operations"], 0);
         assert_eq!(encoded.counters["audit_reserved_records"], 0);
         assert_eq!(encoded.counters["audit_reserved_bytes"], 0);

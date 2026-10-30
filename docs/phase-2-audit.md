@@ -134,15 +134,29 @@ Recovery never reexecutes the mutation. Durable unknown outcomes remain counted
 after restart. Volatile loss counters cannot establish prior-session completeness,
 so `previousSessionLossUnknown` is explicitly true after reopening.
 
-Retention rejects new records when full. There is no hidden pruning, overwrite,
-rotation or remote exporter. Operators must provision finite capacity; reducing
-limits cannot discard existing history to make it fit.
+Retention rejects new records when the active epoch is full. There is no
+automatic pruning, overwrite, rotation or remote exporter. Current development
+adds an explicit [stopped-node audit-journal lifecycle](operations/audit-journal-lifecycle.md):
+the filesystem owner seals an epoch, preserves its original bytes in finite
+local custody, and opens a linked successor without resetting global sequences.
+Local custody is limited to four epochs and 1 GiB of record bytes; explicit
+verified transfer of the oldest archive releases local capacity only after its
+durable external copy is verified. These commands are not in the released
+alpha.4/alpha.5 binaries. Reducing configured limits never discards history.
+
+The table below bounds the active epoch, not total archived history. Rollover
+requires the whole node and its restart supervision to be stopped, exclusive
+effective-UID ownership, and sufficient filesystem space. It needs no ordinary
+audit-record reservation, but neither renews publication evidence nor permits
+replay of an unknown operation. Follow the
+[static-site renewal runbook](operations/static-evidence-renewal.md) for headroom
+checks, evidence renewal, GET/HEAD reconciliation and interruption recovery.
 
 | Resource | Default | Hard ceiling |
 | --- | ---: | ---: |
-| Retained records | 4,096 | 16,384 |
+| Active-epoch retained records | 4,096 | 16,384 |
 | Encoded record | 16 KiB | 16 KiB |
-| Retained record bytes | 64 MiB | 256 MiB |
+| Active-epoch retained record bytes | 64 MiB | 256 MiB |
 | Metadata allowance | 8 MiB | 32 MiB |
 | Queued operations / bytes | 64 / 256 KiB | 256 / 1 MiB |
 | Records per query page | 128 | 256 |
@@ -170,7 +184,10 @@ records.
 
 Cursors bind the journal epoch, exact scope and filters, position and frozen high
 watermark. They grant no authorization. Later appends are excluded from the same
-pagination sequence. Filters select event kind, actor and an inclusive time range
+pagination sequence. A cursor from before rollover cannot continue silently
+into the successor epoch; query the explicitly selected sealed archive for that
+history. A new active epoch can have a retained floor greater than one.
+Filters select event kind, actor and an inclusive time range
 over **durable acceptance timestamps**, not caller-supplied occurrence timestamps.
 Scan work counts nonmatching entries too: a valid empty `ScanLimit` page can have
 a continuation. Coverage reports retained floor, high watermark, scanned count,

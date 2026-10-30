@@ -100,7 +100,9 @@ pub(super) fn chunk_bytes(
                         .streams
                         .chunk_bytes(value.rep());
                     synchronize(&mut store)?;
-                    Ok((result.map_err(convert_error),))
+                    Ok((result
+                        .map(super::super::io_copy::ChunkBytes)
+                        .map_err(convert_error),))
                 })
             })
         },

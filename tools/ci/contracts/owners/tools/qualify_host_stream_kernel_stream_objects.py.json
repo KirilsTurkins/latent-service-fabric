@@ -1,0 +1,1 @@
+{"kind":"owner","path":"tools/qualify_host_stream_kernel_stream_objects.py","reviewBoundary":"committed-fingerprint","reviewReason":"Add unqualified capacity facts and a three-TU route; preserve prior captures, routes and caps.","schemaVersion":"latent.ci.contracts.v1","sha256":"7c3a715794a179320bba7c100fd13bf879324d6096446a349d36e19ce5d2e6d3"}

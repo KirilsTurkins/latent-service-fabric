@@ -113,5 +113,57 @@ class StreamOperatorNode(unittest.TestCase):
         self.assertEqual(value['capabilityPolicies'], {'formatVersion': 1})
 
 
+class UnavailableInspection(unittest.TestCase):
+    """Pure public-result parsers; these do not execute or qualify a node."""
+
+    def test_unavailable_inspection_requires_exact_publication_and_never_invents_usage_or_authority(self):
+        import copy
+        publication = 'publication:sha256:' + 'a' * 64
+        value = {'executionPermission': False, 'state': 'compiled-plan', 'nextPageToken': None,
+            'revision': {'deploymentId': 'blue', 'publicationId': publication}, 'capabilities': [],
+            'nodeUsage': {'scope': 'node', 'counters': {}}}
+        self.assertFalse(programme.inspection_view(value, publication)['streamUsageObserved'])
+        variants = [dict(value, executionPermission=True), dict(value, state='binding-plan-unavailable'),
+                    dict(value, nextPageToken='another-page'), dict(value, capabilities=[{}]),
+                    dict(value, nodeUsage=None),
+                    dict(value, nodeUsage={'scope': 'node', 'counters': {'stream_owners': '0'}})]
+        for changed in variants:
+            with self.assertRaises(DevError):
+                programme.inspection_view(changed, publication)
+        for field in ('deploymentId', 'publicationId'):
+            changed = copy.deepcopy(value)
+            changed['revision'][field] = 'foreign'
+            with self.assertRaisesRegex(DevError, 'exact-publication'):
+                programme.inspection_view(changed, publication)
+        ordinary = copy.deepcopy(value)
+        ordinary['capabilities'] = [{'id': programme.CLOCK, 'contract': programme.CLOCK,
+            'provider': programme.CLOCK_PROFILE,
+            'inspection': {'providerProfile': programme.CLOCK_PROFILE}}]
+        self.assertEqual(len(programme.inspection_view(ordinary, publication, clock=True)['capabilities']), 1)
+        ordinary['capabilities'][0]['provider'] = 'foreign'
+        with self.assertRaisesRegex(DevError, 'ordinary-clock-control'):
+            programme.inspection_view(ordinary, publication, clock=True)
+
+    def test_frozen_frontend_projection_keeps_failed_scope_and_publication_outcomes_closed(self):
+        value = {'schemaVersion': 'latent.outbound-stream.operator.result.v1', 'command': 'inspect',
+            'status': 'completed', 'result': {'executionPermission': False}}
+        success = subprocess.CompletedProcess([], 0, encode(value), b'')
+        self.assertEqual(programme.inspection_frontend(success), value['result'])
+        refusal = 'stream-operator-inspection-publication-changed'
+        failed = {'schemaVersion': value['schemaVersion'], 'command': 'inspect', 'status': 'failed',
+                  'code': refusal, 'uncertain': False}
+        result = subprocess.CompletedProcess([], 1, b'', encode(failed))
+        self.assertEqual(programme.inspection_frontend(result, refusal=refusal)['code'], refusal)
+        for changed in (dict(failed, uncertain=True), dict(failed, command='grant'),
+                        dict(failed, code='operator-outcome-uncertain'), dict(failed, raw='forbidden')):
+            with self.assertRaises(DevError):
+                programme.inspection_frontend(subprocess.CompletedProcess([], 1, b'', encode(changed)),
+                                               refusal=refusal)
+        with self.assertRaises(DevError):
+            programme.inspection_frontend(subprocess.CompletedProcess([], 0, encode(value), b'error'))
+        self.assertEqual(len(programme.INSPECT_CASES), len(set(programme.INSPECT_CASES)))
+        self.assertEqual(len(programme.INSPECT_CASES), 8)
+
+
 if __name__ == '__main__':
     unittest.main()

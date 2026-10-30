@@ -1,5 +1,6 @@
 //! Bounded, single-operation standalone operator client.
 mod args;
+mod audit_maintenance;
 mod client;
 mod command;
 mod completions;

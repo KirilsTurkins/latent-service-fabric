@@ -1,4 +1,5 @@
 """Owning Java packet wiring; source controls do not qualify filesystem errors."""
+import copy
 import hashlib
 import json
 import unittest
@@ -12,26 +13,116 @@ def signature(value):
 
 
 def model():
-    return workflow_model((ROOT/'.github/workflows/java-guest-feasibility.yml').read_bytes().decode('utf-8'))
+    return workflow_model(historical_checkout((ROOT/'.github/workflows/java-guest-feasibility.yml').read_bytes()).decode('utf-8'))
+
+
+def original_compiler_parent(test, parent):
+    """Invert only the reviewed sealed-profile/cache setup before old comparisons."""
+    parent = copy.deepcopy(parent)
+    test.assertEqual(parent.pop('permissions'), {'contents': 'read', 'actions': 'read'})
+    steps = parent['steps']
+    index = next(i for i, step in enumerate(steps) if step.get('name') == 'Install pinned compiler tools')
+    selected = steps[index - 2:index + 2]
+    test.assertEqual([step.get('name') for step in selected], [
+        'Select the runner-owned compiler archive cache',
+        'Restore untrusted source-pinned Java prepared inputs',
+        'Install pinned compiler tools',
+        'Save only reverified Java prepared input bytes'])
+    # Covers every command, action SHA, cache key/path, token scope and condition.
+    test.assertEqual(signature(selected),
+        'f145f3a3fbb98a7473f7c35bb07b1b3fd82b3f82a5e54003fc04f72755bad476')
+    legacy = next(step['run'] for step in model()['jobs']['scratch-refusals']['steps']
+        if step.get('name') == 'Install only the pinned ordinary Java component compiler')
+    test.assertEqual(hashlib.sha256(legacy.encode()).hexdigest(),
+        'a4e2763d338b1b6d304092eb90a6051c155dcdbb0f7afb07fb4a5d32204cf0e5')
+    prerequisite = 'python3 -m pip install --requirement tools/requirements.lock\n'
+    test.assertEqual(legacy.count(prerequisite), 1)
+    install = copy.deepcopy(selected[2])
+    test.assertEqual(install.pop('env'), {'GH_TOKEN': '${{ github.token }}'})
+    install['run'] = legacy.replace(prerequisite, '', 1)
+    steps[index - 2:index + 2] = [install]
+    routed = [(i, step) for i, step in enumerate(steps)
+        if '$LSF_JAVA_WASI_SDK' in step.get('run', '')]
+    test.assertEqual([i for i, _ in routed],
+        [13, 15, 16, 18, 22, 24, 26, 28, 30, 33, 35, 36, 37, 38, 39, 41, 43])
+    test.assertEqual(signature(routed),
+        '9a2e5bc2032e49606bf83c8d370a4ce68db128582e1d704fc9ca2fabc9bb3609')
+    for _, step in routed:
+        selected = '--wasi-sdk "$LSF_JAVA_WASI_SDK"'
+        test.assertEqual(step['run'].count(selected), 1)
+        step['run'] = step['run'].replace(selected,
+            '--wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"', 1)
+    return parent
+
+
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
 
 
 class JavaScratchWiring(unittest.TestCase):
     def test_original_normal_parent_and_dependency_programmes_remain_exact(self):
-        jobs = model()['jobs']
-        parent = dict(jobs['compiler-component'])
+        workflow = model()
+        private = workflow['on']['workflow_dispatch']['inputs'].pop('public_fiber_private_scalar_llvm')
+        self.assertEqual(private['type'], 'boolean');self.assertIs(private['default'], False)
+        clause = " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)"
+        for name in ('compiler-component', 'dependency-ingestion', 'http-public-spi'):
+            self.assertEqual(workflow['jobs'][name]['if'].count(clause), 1)
+            workflow['jobs'][name]['if'] = workflow['jobs'][name]['if'].replace(clause, '', 1)
+        self.assertEqual(workflow['jobs']['public-fiber-assembly']['if'],
+            "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm || inputs.public_fiber_private_scalar_llvm) }}")
+        workflow['jobs']['public-fiber-assembly']['if'] = "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}"
+        derived = workflow['on']['workflow_dispatch']['inputs'].pop('public_fiber_derived_llvm')
+        self.assertEqual(derived['type'], 'boolean');self.assertIs(derived['default'], False)
+        for name, clause in (
+                ('compiler-component', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm)"),
+                ('dependency-ingestion', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm)"),
+                ('http-public-spi', ' && !inputs.public_fiber_derived_llvm')):
+            self.assertEqual(workflow['jobs'][name]['if'].count(clause), 1)
+            workflow['jobs'][name]['if'] = workflow['jobs'][name]['if'].replace(clause, '', 1)
+        self.assertEqual(workflow['jobs']['public-fiber-assembly']['if'],
+            "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}")
+        workflow['jobs']['public-fiber-assembly']['if'] = "${{ github.event_name == 'workflow_dispatch' && inputs.public_fiber_assembly }}"
+        public = workflow['on']['workflow_dispatch']['inputs'].pop('public_fiber_assembly')
+        self.assertEqual(public['type'], 'boolean');self.assertIs(public['default'], False)
+        assembly = workflow['jobs'].pop('public-fiber-assembly')
+        self.assertEqual(assembly['if'],
+            "${{ github.event_name == 'workflow_dispatch' && inputs.public_fiber_assembly }}")
+        self.assertEqual(workflow['jobs']['compiler-component']['if'],
+            "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) }}")
+        workflow['jobs']['compiler-component']['if'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}"
+        for name, clause in (
+                ('dependency-ingestion', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly)"),
+                ('http-public-spi', ' && !inputs.public_fiber_assembly')):
+            self.assertEqual(workflow['jobs'][name]['if'].count(clause), 1)
+            workflow['jobs'][name]['if'] = workflow['jobs'][name]['if'].replace(clause, '', 1)
+        jobs = workflow['jobs']
+        parent = original_compiler_parent(self, jobs['compiler-component'])
         self.assertEqual(parent['timeout-minutes'], 55)
         self.assertEqual(parent.pop('if'),
             "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}")
         self.assertEqual(len(parent['steps']), 45)
+        retained = next(step for step in parent['steps'] if step.get('name') ==
+            'Retain diagnostics, generated source and component candidates')
+        added = '${{ runner.temp }}/java-activation-fibers/build/component-inputs/**'
+        self.assertEqual(retained['with']['path'].splitlines().count(added), 1)
+        retained['with']['path'] = retained['with']['path'].replace(added + '\n', '', 1)
         parent['steps'] = [step for step in parent['steps'] if step.get('name') not in {
             'Export only exact normal public prerequisites for the separate Java scratch packet',
             'Retain verified normal Java products without keys or compiler caches'}]
         self.assertEqual(len(parent['steps']), 43)
-        self.assertEqual(signature(parent), '675efc9337b2541aa3e3ded18bc473fb3109c5653794d80c347a45a539c12fb6')
+        self.assertEqual(signature(parent), 'd7166e281fd131f0e43f0412e680c79f89c14f0a614fc2acfea0ff84b70563ed')
         dependency = dict(jobs['dependency-ingestion'])
         self.assertEqual(dependency.pop('if'),
             "${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}")
-        self.assertEqual(signature(dependency), '610ba34e0cd9c37dacdc2f5c1575272cc609d62f261656ff145e4bdc22f4694e')
+        self.assertEqual(signature(dependency), 'd79386c6ceabb835c556a46db3b480f43e87f3f35bd9189f4e424c4281eca44f')
         selector = model()['on']['workflow_dispatch']['inputs']['qualify-scratch-refusals']
         self.assertEqual(selector['type'], 'boolean')
         self.assertIs(selector['default'], False)
@@ -76,12 +167,12 @@ class JavaScratchWiring(unittest.TestCase):
             self.assertIn('/java-scratch-refusals/'+name, retained['with']['path'])
 
     def test_child_compiler_and_jdk_are_the_same_pinned_tools_as_original_parent(self):
-        jobs = model()['jobs'];parent = jobs['compiler-component']['steps'];child = jobs['scratch-refusals']['steps']
+        jobs = model()['jobs'];parent = original_compiler_parent(self, jobs['compiler-component'])['steps'];child = jobs['scratch-refusals']['steps']
         original = next(s['run'] for s in parent if s.get('name') == 'Install pinned compiler tools')
         selected = next(s['run'] for s in child if s.get('name') == 'Install only the pinned ordinary Java component compiler')
         self.assertEqual(selected.replace('          ', ''),
             original.replace('set -euo pipefail\n', 'set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\n', 1).replace('          ', ''))
-        for action in ('actions/setup-java@', 'bytecodealliance/actions/wasm-tools/setup@'):
+        for action in ('KirilsTurkins/lsf-setup-java@', 'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@'):
             self.assertEqual(next(s for s in child if action in s.get('uses', '')),
                              next(s for s in parent if action in s.get('uses', '')))
 

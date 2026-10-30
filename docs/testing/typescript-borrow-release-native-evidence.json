@@ -1,0 +1,178 @@
+{
+  "schemaVersion": "latent.typescript.borrow-native-diagnostic-evidence.v1",
+  "scope": "real-SpiderMonkey-native-diagnostic-with-fixture-canonical-and-broker-intrinsics",
+  "status": "eleven-diagnostic-cases-passed",
+  "sourceCommit": "af6e665d92acc53af7f2a8973aa5db513ea1abaf",
+  "sourceTree": "2fdffbe4f007190b3a1c694ce60ef9e86ddbc7a4",
+  "owningRun": 40050239109,
+  "owningJob": 120741076064,
+  "owningUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40050239109",
+  "artifact": {
+    "id": 12543261360,
+    "bytes": 383805018,
+    "sha256": "c9a2b9870ea545b8750fd5ae2f6f4b6e042f9efd3fd183123ced7a8e1d65b13e"
+  },
+  "security": {
+    "run": 40050242585,
+    "conclusion": "success",
+    "head": "af6e665d92acc53af7f2a8973aa5db513ea1abaf"
+  },
+  "pinnedParserControls": {
+    "testsRun": 6,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0
+  },
+  "controlCore": {
+    "sha256": "sha256:b0a4fe2bd2c78653ebe7f7068127240c3bb3ae681cf836fbcd75a78a25e5dcd3",
+    "bytes": 9289463
+  },
+  "actualWasm32ABI": {
+    "managerBytes": 112,
+    "baselineManagerBytes": 96,
+    "fixedManagerDeltaBytes": 16,
+    "recordBytes": 248,
+    "observerBytes": 72
+  },
+  "cases": [
+    {
+      "case": "borrow-observer-blocked-cancel-awaits-actual-drop",
+      "status": 0,
+      "owners": 0,
+      "expectedQuarantine": false,
+      "exactAckRefusals": 0
+    },
+    {
+      "case": "borrow-observer-rejects-foreign-and-unregistered-handles",
+      "status": 0,
+      "owners": 0,
+      "expectedQuarantine": false,
+      "exactAckRefusals": 0
+    },
+    {
+      "case": "borrow-observer-native-denial-precedes-node-and-Promise",
+      "status": 0,
+      "owners": 0,
+      "expectedQuarantine": false,
+      "exactAckRefusals": 0
+    },
+    {
+      "case": "cancel-keeps-import-buffer-until-terminal",
+      "status": 0,
+      "owners": 0,
+      "expectedQuarantine": false,
+      "exactAckRefusals": 0
+    },
+    {
+      "case": "borrow-refusal-observer-Promise-admission",
+      "status": 0,
+      "owners": 4,
+      "expectedQuarantine": true,
+      "exactAckRefusals": 0
+    },
+    {
+      "case": "borrow-refusal-bounded-cycle",
+      "status": 0,
+      "owners": 4,
+      "expectedQuarantine": true,
+      "exactAckRefusals": 0
+    },
+    {
+      "case": "borrow-refusal-original-work-ack",
+      "status": 0,
+      "owners": 5,
+      "expectedQuarantine": true,
+      "exactAckRefusals": 1
+    },
+    {
+      "case": "borrow-refusal-original-result-ack",
+      "status": 0,
+      "owners": 4,
+      "expectedQuarantine": true,
+      "exactAckRefusals": 1
+    },
+    {
+      "case": "borrow-refusal-original-native-ack",
+      "status": 0,
+      "owners": 3,
+      "expectedQuarantine": true,
+      "exactAckRefusals": 1
+    },
+    {
+      "case": "borrow-refusal-original-record-ack",
+      "status": 0,
+      "owners": 2,
+      "expectedQuarantine": true,
+      "exactAckRefusals": 1
+    },
+    {
+      "case": "borrow-refusal-observer-owner-ack",
+      "status": 0,
+      "owners": 1,
+      "expectedQuarantine": true,
+      "exactAckRefusals": 1
+    }
+  ],
+  "allDropOrdersValid": true,
+  "fixtureCanonicalOrBrokerCallInGCObserved": false,
+  "libraryJSRebuildCount": 0,
+  "engineRebuildCount": 0,
+  "reusedSourceProducer": {
+    "producerRun": 40042939576,
+    "producerHead": "e2dfcf6d1b48b650fee585e83cd15720bf7f745c",
+    "producerConclusion": "failure",
+    "engineInputs": 41,
+    "engineCore": {
+      "sha256": "sha256:90e2e7ac2e70758fcbde34c5f1d57a06fdd4f3d51bfd5019539a7a5f199a6d65",
+      "bytes": 10160787
+    },
+    "engineInput": {
+      "sha256": "sha256:18557c70748fd27daefa296d7bcc156533f5f943317489c3a256e16b2c78918b",
+      "bytes": 8954
+    }
+  },
+  "normalDiagnosticSupport": {
+    "source": "StarlingMonkey9dda8ba7fcda2e17c6795d402f0478cf4c1f7f37",
+    "rust": "1.97.1",
+    "lock": "original maintained four-crate Cargo.lock; --locked",
+    "status": "passed",
+    "library": {
+      "sha256": "sha256:1375a0e81ff8a7c5614378bfe84c329b1d0d264c67d232dfb66d3a6572986549",
+      "bytes": 4074640
+    },
+    "wrapper": {
+      "sha256": "sha256:aaa3a3a3f3bb297c1e305030f04dc581a04e61577e4b9d31ef5e2248cf868619",
+      "bytes": 662
+    }
+  },
+  "priorFailedRunsRetained": [
+    40041622868,
+    40042939576,
+    40047503071,
+    40049437805
+  ],
+  "limits": {
+    "diagnosticCompileLinkSeconds": 120,
+    "diagnosticCoreBytes": 67108864,
+    "supportSeconds": 300,
+    "caseSeconds": 20
+  },
+  "qualification": "unknown",
+  "signedExecution": "not-run",
+  "physicalProviderQualification": "not-evaluated",
+  "wholeCostQualification": false,
+  "transferredOwnedResultDisposal": "not-qualified",
+  "nodeSocketModule": "not-implemented",
+  "productionEnablement": "not-qualified",
+  "wholeAcceptanceCriteriaCompleted": false,
+  "issueClosed": false,
+  "retainedReceipt": {
+    "path": "typescript-borrow-controls/BORROW-CONTROLS.json",
+    "bytes": 1136143,
+    "sha256": "cad1d544de9a3d786134fe5ce8f4573b4a9ab5dc88a6cf9e6a0cc84ca1e1c3c5"
+  },
+  "phaseSeconds": {
+    "compile": 1.789576480000008,
+    "link": 41.15010443199999
+  }
+}

@@ -1,101 +1,17 @@
-{
-  "cases": [
-    "MaintainedKernelSource.test_archive_hash_and_original_deadline_gate_before_any_publication",
-    "MaintainedKernelSource.test_every_selected_byte_and_git_object_identity_is_required",
-    "MaintainedKernelSource.test_extra_files_are_bounded_data_from_same_archive_and_never_bypass_original_pins",
-    "MaintainedKernelSource.test_frozen_primary_inputs_do_not_claim_kernel_configuration_or_installation",
-    "MaintainedKernelSource.test_omitted_or_extra_archive_members_expansion_and_content_drift_refuse",
-    "MaintainedKernelSource.test_streaming_selection_never_extracts_unselected_members",
-    "MaintainedKernelSource.test_traversal_foreign_prefix_backslash_duplicate_and_links_refuse"
-  ],
-  "guards": {
-    "MaintainedKernelSource.test_archive_hash_and_original_deadline_gate_before_any_publication": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cb76e70795cd634172789e19adf0f679ad9a78c1559ce8f31327aa9f59a97fda",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "MaintainedKernelSource.test_every_selected_byte_and_git_object_identity_is_required": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cb76e70795cd634172789e19adf0f679ad9a78c1559ce8f31327aa9f59a97fda",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "MaintainedKernelSource.test_extra_files_are_bounded_data_from_same_archive_and_never_bypass_original_pins": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cb76e70795cd634172789e19adf0f679ad9a78c1559ce8f31327aa9f59a97fda",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "MaintainedKernelSource.test_frozen_primary_inputs_do_not_claim_kernel_configuration_or_installation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cb76e70795cd634172789e19adf0f679ad9a78c1559ce8f31327aa9f59a97fda",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "MaintainedKernelSource.test_omitted_or_extra_archive_members_expansion_and_content_drift_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cb76e70795cd634172789e19adf0f679ad9a78c1559ce8f31327aa9f59a97fda",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "MaintainedKernelSource.test_streaming_selection_never_extracts_unselected_members": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cb76e70795cd634172789e19adf0f679ad9a78c1559ce8f31327aa9f59a97fda",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "MaintainedKernelSource.test_traversal_foreign_prefix_backslash_duplicate_and_links_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:cb76e70795cd634172789e19adf0f679ad9a78c1559ce8f31327aa9f59a97fda",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_maintained.py",
-  "reviewReason": "Authenticate whole maintained archive and fixed source plus bounded extra data without executing or enabling a kernel",
-  "schemaVersion": "latent.ci.contracts.v1"
-}
+{"cases":["MaintainedKernelSource.test_archive_hash_and_original_deadline_gate_before_any_publication","MaintainedKernelSource.test_every_selected_byte_and_git_object_identity_is_required","MaintainedKernelSource.test_extra_files_are_bounded_data_from_same_archive_and_never_bypass_original_pins","MaintainedKernelSource.test_frozen_primary_inputs_do_not_claim_kernel_configuration_or_installation","MaintainedKernelSource.test_omitted_or_extra_archive_members_expansion_and_content_drift_refuse","MaintainedKernelSource.test_streaming_selection_never_extracts_unselected_members","MaintainedKernelSource.test_traversal_foreign_prefix_backslash_duplicate_and_links_refuse"],"guards":{"MaintainedKernelSource.test_archive_hash_and_original_deadline_gate_before_any_publication":
+  "79b611bbe35090fa548bd30943b7885ae0637d8023341539acb5c826a6a3cea9"
+,"MaintainedKernelSource.test_every_selected_byte_and_git_object_identity_is_required":
+  "79b611bbe35090fa548bd30943b7885ae0637d8023341539acb5c826a6a3cea9"
+,"MaintainedKernelSource.test_extra_files_are_bounded_data_from_same_archive_and_never_bypass_original_pins":
+  "79b611bbe35090fa548bd30943b7885ae0637d8023341539acb5c826a6a3cea9"
+,"MaintainedKernelSource.test_frozen_primary_inputs_do_not_claim_kernel_configuration_or_installation":
+  "79b611bbe35090fa548bd30943b7885ae0637d8023341539acb5c826a6a3cea9"
+,"MaintainedKernelSource.test_omitted_or_extra_archive_members_expansion_and_content_drift_refuse":
+  "79b611bbe35090fa548bd30943b7885ae0637d8023341539acb5c826a6a3cea9"
+,"MaintainedKernelSource.test_streaming_selection_never_extracts_unselected_members":
+  "79b611bbe35090fa548bd30943b7885ae0637d8023341539acb5c826a6a3cea9"
+,"MaintainedKernelSource.test_traversal_foreign_prefix_backslash_duplicate_and_links_refuse":
+  "79b611bbe35090fa548bd30943b7885ae0637d8023341539acb5c826a6a3cea9"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_maintained.py","reviewReason":"Authenticate whole maintained archive and fixed source plus bounded extra data without executing or enabling a kernel","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "79b611bbe35090fa548bd30943b7885ae0637d8023341539acb5c826a6a3cea9"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:cb76e70795cd634172789e19adf0f679ad9a78c1559ce8f31327aa9f59a97fda","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

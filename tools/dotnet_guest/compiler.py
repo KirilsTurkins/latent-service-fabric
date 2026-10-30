@@ -215,10 +215,14 @@ class Compiler:
                 'selection':retirement_port})
         generated = output / "generated"
         binding = work / "vendor/lsf/tools/dotnet_guest_bindings.py"
+        join_cause = getattr(self, 'development_root_join_cause', False)
+        if type(join_cause) is not bool or (join_cause and not managed):
+            raise ValueError('dotnet-join-cause-requires-managed-root')
+        diagnostic_arguments = ('--development-root-join-cause',) if join_cause else ()
         self.run("bindings", self.python, "-I", "-B", binding, "c-sharp", binding_source, "--world", world,
-            "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated)
+            "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated, *diagnostic_arguments)
         self.run("bindings-drift", self.python, "-I", "-B", binding, "c-sharp", binding_source, "--world", world,
-            "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated, "--check")
+            "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated, "--check", *diagnostic_arguments)
         receipt = json.loads(read_file(generated / "bindings.json", 16 * 1024 * 1024))
         project = output / "project"
         project.mkdir()
@@ -326,6 +330,10 @@ class Compiler:
                 script = '#!/bin/sh\nexec "$LSF_CAPTURED_PYTHON" -I -B "$LSF_CAPTURED_BINDING" "$@"\n'
             else:
                 script = "#!/bin/sh\nexec " + shlex.join([sys.executable, "-I", "-B", str(binding)]) + ' "$@"\n'
+            if join_cause:
+                # Both independent generation and the actual MSBuild call use
+                # the same closed selector; default wrapper bytes are unchanged.
+                script = script.removesuffix('\n') + ' --development-root-join-cause\n'
             if len(script.encode()) > 16384:
                 raise ValueError("binding wrapper path limit exceeded")
             wrapper.write_text(script, encoding="utf-8")
@@ -415,6 +423,8 @@ class Compiler:
             if port['finiteAndCancellableWaits'] == 'original-Task-WhenAny-Delay':
                 self.compiler_patches[-1]['selection'].update({key: port[key] for key in (
                     'finiteWaitCleanup', 'zeroTimeout', 'waitCancellation', 'publicWaitValidationAndExceptions')})
+            if 'aggregateTaskWait' in port:
+                self.compiler_patches[-1]['selection']['aggregateTaskWait'] = port['aggregateTaskWait']
             if managed:
                 self.compiler_patches.append({'name': managed_work.PROFILE, 'profile': managed_work.PROFILE,
                     'original': port['frameworkInput'], 'selected': port['derived'],

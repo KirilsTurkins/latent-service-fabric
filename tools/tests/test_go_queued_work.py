@@ -36,7 +36,7 @@ class QueuedWork(unittest.TestCase):
             self.assertEqual(selected['runtimeProfile'], queues.PROFILE)
             self.assertIn('vendor/lsf/sdk/go-guest/runtime/queue_bridge.go.in', files)
             self.assertIn(b'import latent:runtime/activation@0.1.0;', files['wit/world.wit'])
-        for profile in ('go-component-activation-v7', queues.PROFILE + '-extra'):
+        for profile in ('go-component-activation-v8', queues.PROFILE + '-extra'):
             with self.assertRaisesRegex(ValueError, 'profile-not-installed'):
                 selection({'runtimeProfile': profile})
 

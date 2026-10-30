@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_compiler_compatibility.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Final exact-source diagnostics programme additionally verifies the counterfactual captured source inventory differs in only one original root source path; existing limits, actual oracles and compiler-classification guards unchanged.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e7a335b61fc2bcd75a4adce4136f65b794662af277f6a75841c61a0ecf125d94"
+{"kind":"owner","path":"tools/qualify_compiler_compatibility.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reviewed whole679 finite owner, private deadline propagation and ordinary-default API presentation; original shared process ownership and runtime limits unchanged.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "d8ba4a797f16f97e19b8af37819cb4f503a56bacfef54d8cddaadaa26a0028c7"
 }

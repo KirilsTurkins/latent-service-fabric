@@ -92,7 +92,13 @@ int main(int argc, char** argv) {
          import.phase() == ImportLifecycle::Phase::Retiring;
   } else {
     ok = import.reserve(&cx) && import.beginLowering(&cx);
-    if (!std::strcmp(name, "destruction-before-owner-acknowledgement")) {
+    if (!std::strcmp(name,"cancelled-immediate-return-requires-disposal")) {
+      ok=ok && import.started(&cx,JOBS_SUBTASK_RETURNED) && import.cancel(&cx) &&
+         import.phase()==ImportLifecycle::Phase::Cancelled && import.hasReturnedResult() &&
+         import.hasPhysicalSubtask() && broker.tasks==1 && broker.result_live==1 && drops==0 &&
+         import.discardCompleted(&cx) && !import.hasPhysicalSubtask() && broker.tasks==0 &&
+         import.physicalRetirementAcknowledged(&cx);
+    } else if (!std::strcmp(name, "destruction-before-owner-acknowledgement")) {
       ok = ok && import.started(&cx, JOBS_SUBTASK_RETURNED) && import.beginLifting(&cx) &&
            import.liftCompleted(&cx);
       ImportLifecycle::Retirement retired;
@@ -119,7 +125,8 @@ int main(int argc, char** argv) {
         defer_cancel=true;
         ok=ok && import.cancel(&cx) && import.cancel(&cx) && cancel_calls==1 && drops==0 &&
            import.hasPhysicalSubtask() && broker.result_live==1 && readiness.dispatch(&cx,true) &&
-           import.observe(&cx) && import.cancel(&cx) && drops==1 && cancel_calls==1 &&
+           import.observe(&cx) && import.cancel(&cx) && drops==0 && cancel_calls==1 &&
+           import.discardCompleted(&cx) && drops==1 &&
            import.physicalRetirementAcknowledged(&cx);
       } else if (!std::strcmp(name, "eligible-work-polls-without-blocking")) {
         ok = ok && readiness.dispatch(&cx, false) && polls == 1 && waits == 0 &&
@@ -133,7 +140,9 @@ int main(int argc, char** argv) {
         ok = ok && import.cancel(&cx) && import.hasPhysicalSubtask() && broker.result_live == 1 &&
              readiness.dispatch(&cx, true) && import.observe(&cx) &&
              !import.beginLifting(&cx) && broker.result_live == 1 && import.cancel(&cx) &&
-             drops == 1 && import.physicalRetirementAcknowledged(&cx);
+             drops == 0 && import.phase() == ImportLifecycle::Phase::Cancelled &&
+             broker.tasks == 1 && import.discardCompleted(&cx) && drops == 1 &&
+             import.physicalRetirementAcknowledged(&cx);
       } else if (!std::strcmp(name, "terminal-cancel-before-result-drop")) {
         ok = ok && import.cancel(&cx) && drops == 1 && joined == 0 && broker.result_live == 1 &&
              import.physicalRetirementAcknowledged(&cx);

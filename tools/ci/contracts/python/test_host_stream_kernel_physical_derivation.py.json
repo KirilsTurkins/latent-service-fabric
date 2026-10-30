@@ -1,127 +1,30 @@
 {
-  "cases": [
-    "HostStreamKernelPhysicalDerivation.test_actual_gate_has_no_geometry_factory_or_production_promotion",
-    "HostStreamKernelPhysicalDerivation.test_actual_source_exposes_before_lookup_bulk_cache_and_shared_backing",
-    "HostStreamKernelPhysicalDerivation.test_all_five_original_copied_tokens_are_retained_after_object_return",
-    "HostStreamKernelPhysicalDerivation.test_changed_partial_duplicate_and_unknown_function_sources_refuse",
-    "HostStreamKernelPhysicalDerivation.test_clones_expansion_routes_and_deferred_lifetimes_are_not_extra_wire_bytes",
-    "HostStreamKernelPhysicalDerivation.test_every_frozen_function_is_exact_and_preserves_explicit_obligation",
-    "HostStreamKernelPhysicalDerivation.test_private_planner_does_not_add_a_table_ledger_refund_or_public_authentication",
-    "HostStreamKernelPhysicalDerivation.test_whole_graph_preimages_bind_historical_commit_not_running_kernel",
-    "HostStreamKernelPhysicalDerivation.test_whole_source_membership_and_wrong_preimage_fail_before_derivation"
-  ],
-  "guards": {
-    "HostStreamKernelPhysicalDerivation.test_actual_gate_has_no_geometry_factory_or_production_promotion": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:043d77c5bdfc526211dd5d806d33443ead35d5871a11b36c793f1b50d56df9bd",
-        "class:setup-sha256:fc838b23dc2d0fd9aa54e4b3204a64c6efa724815abf47a6583bb80998f39e63"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelPhysicalDerivation.test_actual_source_exposes_before_lookup_bulk_cache_and_shared_backing": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:043d77c5bdfc526211dd5d806d33443ead35d5871a11b36c793f1b50d56df9bd",
-        "class:setup-sha256:fc838b23dc2d0fd9aa54e4b3204a64c6efa724815abf47a6583bb80998f39e63"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelPhysicalDerivation.test_all_five_original_copied_tokens_are_retained_after_object_return": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:043d77c5bdfc526211dd5d806d33443ead35d5871a11b36c793f1b50d56df9bd",
-        "class:setup-sha256:fc838b23dc2d0fd9aa54e4b3204a64c6efa724815abf47a6583bb80998f39e63"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelPhysicalDerivation.test_changed_partial_duplicate_and_unknown_function_sources_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:043d77c5bdfc526211dd5d806d33443ead35d5871a11b36c793f1b50d56df9bd",
-        "class:setup-sha256:fc838b23dc2d0fd9aa54e4b3204a64c6efa724815abf47a6583bb80998f39e63"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelPhysicalDerivation.test_clones_expansion_routes_and_deferred_lifetimes_are_not_extra_wire_bytes": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:043d77c5bdfc526211dd5d806d33443ead35d5871a11b36c793f1b50d56df9bd",
-        "class:setup-sha256:fc838b23dc2d0fd9aa54e4b3204a64c6efa724815abf47a6583bb80998f39e63"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelPhysicalDerivation.test_every_frozen_function_is_exact_and_preserves_explicit_obligation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:043d77c5bdfc526211dd5d806d33443ead35d5871a11b36c793f1b50d56df9bd",
-        "class:setup-sha256:fc838b23dc2d0fd9aa54e4b3204a64c6efa724815abf47a6583bb80998f39e63"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelPhysicalDerivation.test_private_planner_does_not_add_a_table_ledger_refund_or_public_authentication": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:043d77c5bdfc526211dd5d806d33443ead35d5871a11b36c793f1b50d56df9bd",
-        "class:setup-sha256:fc838b23dc2d0fd9aa54e4b3204a64c6efa724815abf47a6583bb80998f39e63"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelPhysicalDerivation.test_whole_graph_preimages_bind_historical_commit_not_running_kernel": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:043d77c5bdfc526211dd5d806d33443ead35d5871a11b36c793f1b50d56df9bd",
-        "class:setup-sha256:fc838b23dc2d0fd9aa54e4b3204a64c6efa724815abf47a6583bb80998f39e63"
-      ],
-      "skipSites": []
-    },
-    "HostStreamKernelPhysicalDerivation.test_whole_source_membership_and_wrong_preimage_fail_before_derivation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:043d77c5bdfc526211dd5d806d33443ead35d5871a11b36c793f1b50d56df9bd",
-        "class:setup-sha256:fc838b23dc2d0fd9aa54e4b3204a64c6efa724815abf47a6583bb80998f39e63"
-      ],
-      "skipSites": []
-    }
+  "cases":["HostStreamKernelPhysicalDerivation.test_actual_gate_has_no_geometry_factory_or_production_promotion","HostStreamKernelPhysicalDerivation.test_actual_source_exposes_before_lookup_bulk_cache_and_shared_backing","HostStreamKernelPhysicalDerivation.test_all_five_original_copied_tokens_are_retained_after_object_return","HostStreamKernelPhysicalDerivation.test_changed_partial_duplicate_and_unknown_function_sources_refuse","HostStreamKernelPhysicalDerivation.test_clones_expansion_routes_and_deferred_lifetimes_are_not_extra_wire_bytes","HostStreamKernelPhysicalDerivation.test_every_frozen_function_is_exact_and_preserves_explicit_obligation","HostStreamKernelPhysicalDerivation.test_private_planner_does_not_add_a_table_ledger_refund_or_public_authentication","HostStreamKernelPhysicalDerivation.test_whole_graph_preimages_bind_historical_commit_not_running_kernel","HostStreamKernelPhysicalDerivation.test_whole_source_membership_and_wrong_preimage_fail_before_derivation"],
+  "guards":{
+    "HostStreamKernelPhysicalDerivation.test_actual_gate_has_no_geometry_factory_or_production_promotion":
+      "306745568f9d6341cbf4311ef526d26e586e0fdd9e13da95d9bef638a5b589e0",
+    "HostStreamKernelPhysicalDerivation.test_actual_source_exposes_before_lookup_bulk_cache_and_shared_backing":
+      "306745568f9d6341cbf4311ef526d26e586e0fdd9e13da95d9bef638a5b589e0",
+    "HostStreamKernelPhysicalDerivation.test_all_five_original_copied_tokens_are_retained_after_object_return":
+      "306745568f9d6341cbf4311ef526d26e586e0fdd9e13da95d9bef638a5b589e0",
+    "HostStreamKernelPhysicalDerivation.test_changed_partial_duplicate_and_unknown_function_sources_refuse":
+      "306745568f9d6341cbf4311ef526d26e586e0fdd9e13da95d9bef638a5b589e0",
+    "HostStreamKernelPhysicalDerivation.test_clones_expansion_routes_and_deferred_lifetimes_are_not_extra_wire_bytes":
+      "306745568f9d6341cbf4311ef526d26e586e0fdd9e13da95d9bef638a5b589e0",
+    "HostStreamKernelPhysicalDerivation.test_every_frozen_function_is_exact_and_preserves_explicit_obligation":
+      "306745568f9d6341cbf4311ef526d26e586e0fdd9e13da95d9bef638a5b589e0",
+    "HostStreamKernelPhysicalDerivation.test_private_planner_does_not_add_a_table_ledger_refund_or_public_authentication":
+      "306745568f9d6341cbf4311ef526d26e586e0fdd9e13da95d9bef638a5b589e0",
+    "HostStreamKernelPhysicalDerivation.test_whole_graph_preimages_bind_historical_commit_not_running_kernel":
+      "306745568f9d6341cbf4311ef526d26e586e0fdd9e13da95d9bef638a5b589e0",
+    "HostStreamKernelPhysicalDerivation.test_whole_source_membership_and_wrong_preimage_fail_before_derivation":
+      "306745568f9d6341cbf4311ef526d26e586e0fdd9e13da95d9bef638a5b589e0"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_physical_derivation.py",
-  "reviewReason": "Nine additive authenticated partial25-file/37-function allocation graph and physical retention controls. Retain every earlier case/core/recipe/C input. Original5 pre-free token copies stay; allocator-slot returns keep whole original records charged/nonreusable. Private disjoint arithmetic uses original 96/64KiB and fixed slots, no real geometry/factory/profile promotion. Two old-model RED plus18 supplementary C controls PASS; explicit model geometry/origin/cookie/lock, not Linux or physical evidence.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_physical_derivation.py",
+  "reviewReason":"Nine additive authenticated partial25-file/37-function allocation graph and physical retention controls. Retain every earlier case/core/recipe/C input. Original5 pre-free token copies stay; allocator-slot returns keep whole original records charged/nonreusable. Private disjoint arithmetic uses original 96/64KiB and fixed slots, no real geometry/factory/profile promotion. Two old-model RED plus18 supplementary C controls PASS; explicit model geometry/origin/cookie/lock, not Linux or physical evidence.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "306745568f9d6341cbf4311ef526d26e586e0fdd9e13da95d9bef638a5b589e0":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:043d77c5bdfc526211dd5d806d33443ead35d5871a11b36c793f1b50d56df9bd","class:setup-sha256:fc838b23dc2d0fd9aa54e4b3204a64c6efa724815abf47a6583bb80998f39e63"],"skipSites":[]}
+  }
 }

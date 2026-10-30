@@ -278,6 +278,13 @@ fn controlled_profile_rejects_pooling_and_absent_runtime_and_binds_compatibility
 #[test]
 fn child_total_start_capacity_survives_logical_completion_and_releases_only_after_store_drop() {
     let (budget, runtime) = owners(3, 4 * 1024 * 1024);
+    let before_invalid = budget.host_memory_bytes();
+    let invalid = StackContext::with_children(budget.clone(), runtime.clone(), 64 * 1024, 8192)
+        .err()
+        .unwrap();
+    assert_eq!(invalid.message, "native-child-table-bound");
+    assert_eq!(budget.host_memory_bytes(), before_invalid);
+    assert_eq!(runtime.snapshot().owners[6], 0);
     let task = runtime.register(OwnerKind::Task, None).unwrap();
     let second_task = runtime.register(OwnerKind::Task, None).unwrap();
     let context =
@@ -291,10 +298,16 @@ fn child_total_start_capacity_survives_logical_completion_and_releases_only_afte
     drop(task);
     let third_task = runtime.register(OwnerKind::Task, None).unwrap();
     let charged = budget.host_memory_bytes();
+    let original_refusal = context.reserve_child(third_task.token()).unwrap_err();
+    assert_eq!(original_refusal.code, PlatformErrorCode::ResourceExhausted);
+    let diagnostic =
+        latent_core::diagnostic::ActivationDiagnostic::from_error(&original_refusal).unwrap();
     assert_eq!(
-        context.reserve_child(third_task.token()).unwrap_err().code,
-        PlatformErrorCode::ResourceExhausted,
+        diagnostic.reason,
+        latent_core::diagnostic::DiagnosticReason::NativeThreadStartLimit
     );
+    assert_eq!(diagnostic.configured_bound, Some(2));
+    assert_eq!(diagnostic.calculated_requirement, Some(3));
     assert_eq!(budget.host_memory_bytes(), charged);
     assert_eq!(runtime.snapshot().owners[6], 3);
     assert!(context.after_store_dropped().is_err()); // Live mappings never refund.

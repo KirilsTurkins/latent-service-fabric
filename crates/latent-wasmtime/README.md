@@ -19,6 +19,17 @@ This is the implemented Wasm backend, not the native-SFI research backend. Exist
 | [src/surface.rs](src/surface.rs) | Exact dynamic export/import signatures and resource ownership validation. |
 | [src/values.rs](src/values.rs) | Bounded type-directed WIT-value JSON codec. |
 | [src/containment.rs](src/containment.rs) | Runtime resource accounting and shared epoch-worker ownership. |
+| [src/component_threading.rs](src/component_threading.rs) | Selected native-thread ABI authentication and original admission/stack integration. |
+
+The workspace selects the maintained [Wasmtime source extension](../vendor/wasmtime/README.latent.md),
+whose exact allocation cohort participates in engine/preparation identity. Its
+selected dynamic/native hooks charge actual Store/table/value/context/future
+backing before allocation. Retained values and byte owners may outlive a Store;
+their charges last through physical deallocation. This is not global allocator,
+node RSS or complete language/kernel memory accounting. The
+[engine guide](../../docs/runtime/wasmtime.md#selected-continuation-and-memory-profiles)
+separates this boundary from the explicit C/Rust cooperative profiles, whose
+creation remains disabled by default and whose receipts grant no authority.
 
 ## Execution and ownership
 
@@ -30,11 +41,18 @@ This is the implemented Wasm backend, not the native-SFI research backend. Exist
 
 ## Integration boundaries
 
+Network and streaming HTTP chunk replies use the private
+[byte-copy lowering owner](src/host/io_copy.rs). It delegates the existing
+canonical `list<u8>` ABI while retaining the actual prepaid immutable bytes
+through destination validation and lowering. Source-resource closure cannot
+refund a copy still held by the reply. Other variable-length reply graphs keep
+their separate accounting requirements.
+
 The Phase 0 facade retains echo framing over the shared backend; it is not a second product engine. `aot-test-timings`, `development-clock-fixture`, `development-test-host` and `java-guest-diagnostic` expose explicit measurement/fixture/diagnostic surfaces, not extra application authority. The external profile requires its actual admission/compiler/OS owners; its name alone cannot supply them. In-process Wasmtime isolation does not claim resistance to arbitrary engine/host compromise. Native AOT cache validity remains separate from permission to start a new activation.
 
 ## Dependencies and build
 
-Direct workspace dependencies: [latent-packaging](../latent-packaging/README.md), [latent-activation](../latent-activation/README.md), [latent-artifacts](../latent-artifacts/README.md), [latent-audit](../latent-audit/README.md), [latent-component-bindings](../latent-component-bindings/README.md), [latent-core](../latent-core/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-policy](../latent-policy/README.md), [latent-routing](../latent-routing/README.md), [latent-executor](../latent-executor/README.md), [latent-manifest](../latent-manifest/README.md), [latent-telemetry](../latent-telemetry/README.md).
+Direct workspace dependencies: [latent-component-threading](../latent-component-threading/README.md), [latent-packaging](../latent-packaging/README.md), [latent-activation](../latent-activation/README.md), [latent-artifacts](../latent-artifacts/README.md), [latent-audit](../latent-audit/README.md), [latent-component-bindings](../latent-component-bindings/README.md), [latent-core](../latent-core/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-policy](../latent-policy/README.md), [latent-routing](../latent-routing/README.md), [latent-executor](../latent-executor/README.md), [latent-manifest](../latent-manifest/README.md), [latent-telemetry](../latent-telemetry/README.md).
 
 Consumers with normal workspace dependency edges include [latentd](../../apps/latentd/README.md), [latent-portable-test-host](../../tools/portable-test-host/README.md). Optional features still gate the selected graph; target-specific and test edges are also declared in the manifests.
 
@@ -44,6 +62,7 @@ Cargo features (the manifest owns their exact expansion):
 | --- | --- |
 | `aot-test-timings` | No additional feature dependency. |
 | `development-clock-fixture` | No additional feature dependency. |
+| `development-local-service-fixture` | Explicit local-service refusal controls; no additional application authority. |
 | `development-test-host` | `latent-artifacts/development-test-host`, `latent-policy/development-test-host`, `development-clock-fixture` |
 | `java-guest-diagnostic` | No additional feature dependency. |
 
@@ -81,3 +100,7 @@ Integration targets: [tests/admission.rs](tests/admission.rs), [tests/angular_bu
 - [Phase 0 activation containment](../../docs/development/activation-containment.md)
 - [Workspace package index](../README.md)
 - [Architecture index](../../ARCHITECTURE.md)
+
+Blob chunk bytes now use the same private paid `ChunkBytes` canonical list lowering as networking and streaming HTTP. The reply owns its affine Vec and original blob request through both flat and indirect lowering, including realloc failure. WIT and the pinned `[u8]` ABI remain unchanged; the resource cannot materialize its original allowance twice. This does not fund arbitrary subsequent host-created copies or transitive provider heaps.
+
+Blob `write` lifts the existing zero-copy `WasmList<u8>` descriptor, borrows its slice under actual Store access, and calls the provider’s synchronous prepaid `write_from` bridge. Only the original admission-owned input buffer enters the writer future; neither the Store borrow nor a naked lifted Vec escapes. This adds no vendor/WIT change and preserves networking’s existing prepaid ingress path.

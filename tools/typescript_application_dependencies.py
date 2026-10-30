@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
 import re
 import shutil
 import sys
+import tarfile
 import tempfile
 from urllib.parse import unquote, urlsplit
 
@@ -128,6 +130,32 @@ def graph(lock: dict, installed: dict[str, dict], platform: dict) -> dict:
             'installScripts': 'never-executed', 'binLinks': False, 'networkResolution': 'explicit-capture-only'}
 
 
+def npm_archive_files(data: bytes) -> dict[str, bytes]:
+    """Map one original safe npm tar root without altering its payload bytes."""
+    files = archive_files(data, 'tar')  # Preserve every original entry/type/path/size check.
+    with tarfile.open(fileobj=io.BytesIO(data), mode='r:*') as archive:
+        roots = {entry.name.rstrip('/').partition('/')[0] for entry in archive}
+    if not files or len(roots) != 1:
+        raise DependencyError('npm-native-archive-package-prefix')
+    prefix = next(iter(roots)) + '/'
+    if any(not name.startswith(prefix) for name in files):
+        raise DependencyError('npm-native-archive-package-prefix')
+    relative = {name[len(prefix):]: content for name, content in files.items()}
+    if len(relative) != len(files) or any(not name for name in relative):
+        raise DependencyError('npm-native-archive-package-prefix')
+    return relative
+
+
+def check_unpacked_archive(data: bytes, installed: dict[str, bytes], location: str) -> None:
+    original = npm_archive_files(data)
+    if 'package.json' not in original:
+        raise DependencyError('npm-native-archive-package-json-missing')
+    prefix = location.removeprefix('node_modules/') + '/'
+    for name, content in original.items():
+        if installed.get(prefix + name) != content:
+            raise DependencyError('npm-unpacked-source-differs-from-original-archive')
+
+
 def cached_archive(cache: Path, integrity: str) -> bytes:
     try:
         algorithm, encoded = integrity.split()[0].split('-', 1)
@@ -143,9 +171,7 @@ def cached_archive(cache: Path, integrity: str) -> bytes:
         raise DependencyError('npm-original-package-archive-unavailable') from None
     if hashlib.new(algorithm, data).digest() != expected:
         raise DependencyError('npm-native-archive-integrity')
-    files = archive_files(data, 'tar')  # Reject every unsafe original archive entry.
-    if any(not name.startswith('package/') for name in files):
-        raise DependencyError('npm-native-archive-package-prefix')
+    npm_archive_files(data)
     return data
 
 
@@ -357,9 +383,7 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             if location not in installed or not row.get('integrity'):
                 continue
             payload = cached_archive(cache, row['integrity'])
-            for name, content in archive_files(payload, 'tar').items():
-                if files.get(location.removeprefix('node_modules/') + '/' + name.removeprefix('package/')) != content:
-                    raise DependencyError('npm-unpacked-source-differs-from-original-archive')
+            check_unpacked_archive(payload, files, location)
             reference = store.put(payload)
             identity = 'npm-archive/' + reference['digest'][7:]
             if identity in archive_ids:

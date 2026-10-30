@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - name: Authenticate and prepare the released image context
@@ -69,7 +69,7 @@ jobs:
           python3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/compression-qualification" --compression
       - name: Retain public container evidence
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: native-container-qualification
           path: |

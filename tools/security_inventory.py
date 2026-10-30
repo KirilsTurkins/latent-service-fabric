@@ -125,10 +125,10 @@ def reviewed_npm_derivation(repo: Path, entry: dict, manifest: dict, owner: dict
         require(digest(read_file(repo, path).replace(b"\r\n", b"\n")) == profile[field],
                 "npm-derivation-input-drift")
     source = decode_json(read_file(repo, "website/toolchain/source.json"))
-    require(source.get("schema") == 1 and source.get("profile") == "npm-11.19.1-lsf-bundle-v4"
+    require(source.get("schema") == 1 and source.get("profile") == "npm-11.19.1-lsf-bundle-v5"
             and source["base"]["name"] == "npm" and source["base"]["version"] == owner.get("version"),
             "npm-derivation-identity-drift")
-    archive = "file:../../target/website-package-manager/npm-11.19.1-lsf-bundle-v4.tar"
+    archive = "file:../../target/website-package-manager/npm-11.19.1-lsf-bundle-v5.tar"
     require(manifest.get("dependencies", {}).get("npm") == archive
             and owner.get("resolved") == archive and owner.get("integrity") == profile["integrity"]
             and re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", profile["integrity"]),
@@ -150,6 +150,8 @@ def npm_packages(repo: Path, entry: dict) -> list[Package]:
     bundled_prefix = None
     derived = False
     libraries = reviewed_npm_libraries(repo, entry, manifest, lock)
+    from tools.security_npm_sources import action_library_sources
+    libraries.update(action_library_sources(repo, entry, manifest, lock))
     require(entry.get("derived_bundle") is None or bundled is not None, "npm-derivation-without-bundle")
     if bundled is not None:
         require(isinstance(bundled, str) and re.fullmatch(r"(?:@[a-z0-9-]+/)?[a-z0-9-]+", bundled),
@@ -210,10 +212,11 @@ def reviewed_npm_libraries(repo: Path, entry: dict, manifest: dict, lock: dict) 
         require(digest(read_file(repo, path).replace(b"\r\n", b"\n")) == profile[field],
                 "npm-library-derivation-input-drift")
     rows = profile["libraries"]
-    require(isinstance(rows, dict) and set(rows) == {"braces", "http-cache-semantics"},
+    require(isinstance(rows, dict) and set(rows) == {"braces", "http-cache-semantics", "deepmerge"},
             "incomplete-npm-library-derivation")
     versions = {"braces": ("3.0.3", "braces-3.0.3-lsf-depth-v1"),
-                "http-cache-semantics": ("4.3.0", "http-cache-semantics-4.3.0-lsf-cache-v1")}
+                "http-cache-semantics": ("4.3.0", "http-cache-semantics-4.3.0-lsf-cache-v1"),
+                "deepmerge": ("4.3.1", "deepmerge-4.3.1-lsf-prototype-v1")}
     relative = "../" if entry["path"] == "website/package.json" else "../../"
     result = {}
     for name, row in rows.items():
@@ -334,10 +337,15 @@ def inventory(repo: Path, policy: Path = POLICY) -> tuple[list[Package], list[di
         covered.add(path)
     discovered = {path for path in paths if is_manifest(path)}
     require(discovered == covered, "unreviewed-or-missing-dependency-manifest")
+    from tools.security_actions import verify as verify_actions
+    records.extend(verify_actions(repo, paths))
     control_path = "controls/.github/security/requirements.txt"
     control_packages = pypi_packages(policy, "requirements.txt")
     packages.extend(Package(item.ecosystem, item.name, item.version, control_path) for item in control_packages)
     records.append({"path": control_path, "coverage": "OSV-scanner-controls", "packages": len(control_packages),
                     "sha256": digest(read_file(policy, "requirements.txt"))})
-    require(0 < len(packages) <= 5000, "sdk-package-count-limit")
+    # Preserve the original repository-graph ceiling; audited external action
+    # graphs have their own identical per-scan ceiling and a bounded total.
+    require(0 < sum(not item.path.startswith(".github/security/actions/") for item in packages) <= 5000
+            and len(packages) <= 20000, "sdk-package-count-limit")
     return sorted(set(packages)), records

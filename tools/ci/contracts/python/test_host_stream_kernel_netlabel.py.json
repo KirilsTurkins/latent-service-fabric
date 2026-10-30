@@ -1,192 +1,31 @@
-{
-  "cases": [
-    "KernelNetlabel.test_actual_old_label_producer_uses_generic_allocator_new_private_uses_existing_birth",
-    "KernelNetlabel.test_cipso_admission_precedes_copy_and_publication_with_original_policy_and_error_results",
-    "KernelNetlabel.test_complete_label_graph_is_validated_before_destructors_and_unknown_cache_poison_retains",
-    "KernelNetlabel.test_duplicate_unknown_changed_or_crlf_definition_and_whole_membership_refuse",
-    "KernelNetlabel.test_existing_options_require_same_live_context_and_published_state_before_replacement",
-    "KernelNetlabel.test_mls_category_values_and_original_failure_destructor_remain",
-    "KernelNetlabel.test_normal_dispatch_is_closed_owned_branch_and_original_body_remainder_is_identical",
-    "KernelNetlabel.test_original_options_free_sites_retain_real_rcu_or_normal_free",
-    "KernelNetlabel.test_original_root_blob_allocators_do_not_admit_new_child_kinds",
-    "KernelNetlabel.test_published_options_and_callback_retirement_have_distinct_closed_states",
-    "KernelNetlabel.test_readonly_parent_check_authenticates_origin_without_allocating_or_dereferencing_address",
-    "KernelNetlabel.test_real_security_mandatory_checks_and_uninstalled_profile_are_not_disabled",
-    "KernelNetlabel.test_sid_policy_lookup_rcu_and_label_semantics_are_preserved_without_strdup_fallback",
-    "KernelNetlabel.test_thirteen_whole_preimages_and_sixteen_definitions_bind_actual_maintained_archive"
-  ],
-  "guards": {
-    "KernelNetlabel.test_actual_old_label_producer_uses_generic_allocator_new_private_uses_existing_birth": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_cipso_admission_precedes_copy_and_publication_with_original_policy_and_error_results": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_complete_label_graph_is_validated_before_destructors_and_unknown_cache_poison_retains": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_duplicate_unknown_changed_or_crlf_definition_and_whole_membership_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_existing_options_require_same_live_context_and_published_state_before_replacement": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_mls_category_values_and_original_failure_destructor_remain": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_normal_dispatch_is_closed_owned_branch_and_original_body_remainder_is_identical": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_original_options_free_sites_retain_real_rcu_or_normal_free": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_original_root_blob_allocators_do_not_admit_new_child_kinds": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_published_options_and_callback_retirement_have_distinct_closed_states": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_readonly_parent_check_authenticates_origin_without_allocating_or_dereferencing_address": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_real_security_mandatory_checks_and_uninstalled_profile_are_not_disabled": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_sid_policy_lookup_rcu_and_label_semantics_are_preserved_without_strdup_fallback": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    },
-    "KernelNetlabel.test_thirteen_whole_preimages_and_sixteen_definitions_bind_actual_maintained_archive": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0",
-        "class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_netlabel.py",
-  "reviewReason": "Reviewed maintained Netlabel source: thirteen exact whole preimages, sixteen definitions and fourteen source controls preserving policy/normal paths, original owner capacities, typed deferred options and fail-unknown origin; uninstalled, no Linux or full allocation qualification.",
-  "schemaVersion": "latent.ci.contracts.v1"
-}
+{"cases":["KernelNetlabel.test_actual_old_label_producer_uses_generic_allocator_new_private_uses_existing_birth","KernelNetlabel.test_cipso_admission_precedes_copy_and_publication_with_original_policy_and_error_results","KernelNetlabel.test_complete_label_graph_is_validated_before_destructors_and_unknown_cache_poison_retains","KernelNetlabel.test_duplicate_unknown_changed_or_crlf_definition_and_whole_membership_refuse","KernelNetlabel.test_existing_options_require_same_live_context_and_published_state_before_replacement","KernelNetlabel.test_mls_category_values_and_original_failure_destructor_remain","KernelNetlabel.test_normal_dispatch_is_closed_owned_branch_and_original_body_remainder_is_identical","KernelNetlabel.test_original_options_free_sites_retain_real_rcu_or_normal_free","KernelNetlabel.test_original_root_blob_allocators_do_not_admit_new_child_kinds","KernelNetlabel.test_published_options_and_callback_retirement_have_distinct_closed_states","KernelNetlabel.test_readonly_parent_check_authenticates_origin_without_allocating_or_dereferencing_address","KernelNetlabel.test_real_security_mandatory_checks_and_uninstalled_profile_are_not_disabled","KernelNetlabel.test_sid_policy_lookup_rcu_and_label_semantics_are_preserved_without_strdup_fallback","KernelNetlabel.test_thirteen_whole_preimages_and_sixteen_definitions_bind_actual_maintained_archive"],"guards":{"KernelNetlabel.test_actual_old_label_producer_uses_generic_allocator_new_private_uses_existing_birth":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_cipso_admission_precedes_copy_and_publication_with_original_policy_and_error_results":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_complete_label_graph_is_validated_before_destructors_and_unknown_cache_poison_retains":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_duplicate_unknown_changed_or_crlf_definition_and_whole_membership_refuse":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_existing_options_require_same_live_context_and_published_state_before_replacement":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_mls_category_values_and_original_failure_destructor_remain":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_normal_dispatch_is_closed_owned_branch_and_original_body_remainder_is_identical":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_original_options_free_sites_retain_real_rcu_or_normal_free":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_original_root_blob_allocators_do_not_admit_new_child_kinds":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_published_options_and_callback_retirement_have_distinct_closed_states":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_readonly_parent_check_authenticates_origin_without_allocating_or_dereferencing_address":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_real_security_mandatory_checks_and_uninstalled_profile_are_not_disabled":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_sid_policy_lookup_rcu_and_label_semantics_are_preserved_without_strdup_fallback":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+,"KernelNetlabel.test_thirteen_whole_preimages_and_sixteen_definitions_bind_actual_maintained_archive":
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_netlabel.py","reviewReason":"Reviewed maintained Netlabel source: thirteen exact whole preimages, sixteen definitions and fourteen source controls preserving policy/normal paths, original owner capacities, typed deferred options and fail-unknown origin; uninstalled, no Linux or full allocation qualification.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "63db65b41f89f5f5f84be21947f1172ddc1db8a0bb67b5f065d32005dc946e29"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:4efdf8ebd41b742aa704637a313a41078600db10dcdfb1c72a4e4ac0908071d0","class:setup-sha256:943feaa89c7f825bc33fa5f3d1cf1a3676f3804a77d4ad07bd5920563d3a845f"],"skipSites":[]}}}

@@ -2,6 +2,11 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
+import sys
+
+if __package__ in {None, ''}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.dev_workflow.common import decode, digest, encode, integer, members, require, sha
 
@@ -30,12 +35,24 @@ CLASSIFICATIONS = {
     "surface-mismatch": "The final linked component disagrees with its declared WIT surface.",
     "stale-input": "Captured runtime, patch or compiler input identity does not match the selected input.",
 }
+C_DEPENDENCY_REFUSALS = {
+    'c-selected-target-not-maintained-profile': 'target-incompatible',
+    'c-static-archive-host-native-member': 'target-incompatible',
+    'c-wasm-linking-abi-unsupported': 'target-incompatible',
+    'c-wasm-static-member-is-not-relocatable-object': 'target-incompatible',
+    'c-static-archive-format-or-thin-archive-denied': 'target-incompatible',
+    'c-cpp-source-not-maintained-profile': 'target-incompatible',
+    'c-wasm-object-requires-unqualified-runtime-profile': 'unqualified-profile',
+    'c-static-archive-needs-current-observed-abi-profile-or-source-rebuild': 'unqualified-profile',
+    'c-executable-or-unobserved-build-options-denied': 'resolution-failure',
+}
 BLOCKERS = frozenset(CLASSIFICATIONS) - {
     "unsupported-eliminated", "unresolved-behavior", "optional-extension", "lifecycle-unproven",
 }
 PHASES = ("resolution", "compile", "link", "initialization", "invocation", "retirement")
 EVIDENCE = ("final-component", "compiler", "actual-component", "native-reference", "model", "not-evaluated")
-RESOURCES = ("tasks", "threads", "frames", "queues", "timers", "guest-memory", "native-memory", "provider", "fuel")
+RESOURCES = ("tasks", "threads", "frames", "queues", "timers", "guest-memory", "native-memory", "provider", "fuel",
+             "executors", "waits", "results", "native-owners", "thread-total-starts", "guest-stack")
 OBSERVED_OUTCOMES = frozenset({"denied-grant", "resource-exhausted", "deadline", "cancelled", "external-uncertain"})
 TOKEN = re.compile(r"[A-Za-z0-9_.:/@+\[\]-]{1,192}")
 
@@ -51,11 +68,11 @@ def token(value: str) -> str:
 def finding(classification: str, phase: str, evidence: str, *, operation: str | None = None,
             owner_issue: int | None = None, resource: str | None = None,
             package_digest: str | None = None, source_digest: str | None = None,
-            symbol: str | None = None, location: dict | None = None) -> dict:
+            symbol: str | None = None, location: dict | None = None, diagnostic: dict | None = None) -> dict:
     value = {"classification": classification, "phase": phase, "evidence": evidence}
     for key, item in (("operation", operation), ("ownerIssue", owner_issue), ("resource", resource),
                       ("packageDigest", package_digest), ("sourceDigest", source_digest),
-                      ("symbol", symbol), ("location", location)):
+                      ("symbol", symbol), ("location", location), ("diagnostic", diagnostic)):
         if item is not None:
             value[key] = item
     validate_finding(value)
@@ -64,7 +81,7 @@ def finding(classification: str, phase: str, evidence: str, *, operation: str | 
 
 def validate_finding(value: dict) -> None:
     members(value, {"classification", "phase", "evidence"}, {
-        "operation", "ownerIssue", "resource", "packageDigest", "sourceDigest", "symbol", "location"})
+        "operation", "ownerIssue", "resource", "packageDigest", "sourceDigest", "symbol", "location", "diagnostic"})
     require(value["classification"] in CLASSIFICATIONS and value["phase"] in PHASES
             and value["evidence"] in EVIDENCE, "compatibility-classification")
     for key in ("operation", "symbol"):
@@ -78,6 +95,13 @@ def validate_finding(value: dict) -> None:
     if "resource" in value:
         require(value["resource"] in RESOURCES, "compatibility-resource")
         require(value["classification"] == "resource-exhausted", "compatibility-resource-class")
+    if 'diagnostic' in value:
+        diagnostic = members(value['diagnostic'], {'origin', 'code'})
+        require(diagnostic['origin'] == 'c-application-dependencies'
+                and type(diagnostic['code']) is str and diagnostic['code'] in C_DEPENDENCY_REFUSALS
+                and value['classification'] == C_DEPENDENCY_REFUSALS[diagnostic['code']]
+                and value['evidence'] == 'model' and value['phase'] in {'compile', 'link'}
+                and value.get('ownerIssue') == 744, 'compatibility-c-dependency-refusal')
     if "location" in value:
         location = members(value["location"], {"path", "line", "column"})
         path = token(location["path"])
@@ -156,6 +180,8 @@ def validate(value: dict) -> dict:
     require(isinstance(value["findings"], list) and len(value["findings"]) <= MAX_FINDINGS, "compatibility-finding-limit")
     for item in value["findings"]:
         validate_finding(item)
+        require('diagnostic' not in item or value['language'] == 'c',
+                'compatibility-c-dependency-language')
         require(value["componentDigest"] is not None or item["evidence"] != "actual-component",
                 "compatibility-component-evidence")
     integer(value["omittedFindings"], 0, 10000000)
@@ -174,6 +200,10 @@ def present(value: dict) -> str:
         text = f"{item['classification']} [{item['phase']}; {item['evidence']}]: {CLASSIFICATIONS[item['classification']]}"
         if "operation" in item:
             text += " Operation: " + item["operation"] + "."
+        if item["classification"] == "resource-exhausted" and "resource" in item:
+            text += " Resource: " + item["resource"] + "."
+        if 'diagnostic' in item:
+            text += " Diagnostic: " + item['diagnostic']['origin'] + "/" + item['diagnostic']['code'] + "."
         if "ownerIssue" in item:
             text += " Implementation: #" + str(item["ownerIssue"]) + "."
         lines.append(text)
@@ -239,11 +269,21 @@ def main() -> int:
     require(not args.json or (args.context is None and args.outcomes is None), 'compatibility-sidecar-presentation-requires-text')
     with args.report.open("rb") as source:
         value = read(source.read(MAX_BYTES + 1))
+    from tools import guest_api_analysis
+    analysis_path = args.report.parent / guest_api_analysis.NAME
+    has_analysis = not args.json and (analysis_path.exists() or analysis_path.is_symlink())
+    context_path = args.context
+    if context_path is None and has_analysis:
+        context_path = args.report.parent / 'compatibility-context.json'
     selected = None
-    if args.context is not None:
+    if context_path is not None:
         from tools import guest_compatibility_context
-        with args.context.open('rb') as source:
-            selected = guest_compatibility_context.read(source.read(guest_compatibility_context.MAX_BYTES + 1), report=value)
+        if args.context is None:
+            from tools.rust_capsule_project import read_file
+            selected = guest_compatibility_context.read(read_file(context_path, guest_compatibility_context.MAX_BYTES), report=value)
+        else:
+            with context_path.open('rb') as source:
+                selected = guest_compatibility_context.read(source.read(guest_compatibility_context.MAX_BYTES + 1), report=value)
     outcomes = None
     if args.outcomes is not None:
         from tools import guest_compatibility_outcomes
@@ -253,6 +293,11 @@ def main() -> int:
     print(encode(value).decode().rstrip() if args.json else present(value), end="\n" if args.json else "")
     if selected is not None:
         print(guest_compatibility_context.present(selected), end='')
+    if has_analysis:
+        from tools.rust_capsule_project import read_file
+        analysis = guest_api_analysis.read(read_file(analysis_path, guest_api_analysis.MAX_BYTES),
+                                           args.report.parent, value, selected)
+        print(guest_api_analysis.present(analysis), end='')
     if outcomes is not None:
         print(guest_compatibility_outcomes.present(outcomes), end='')
     return 0

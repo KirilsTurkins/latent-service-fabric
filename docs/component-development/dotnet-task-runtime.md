@@ -13,6 +13,44 @@ timer waiting still uses the activation/monotonic clock. An HTTP
 declaration is unnecessary for task and timer progress. The compiler selects the
 existing activation adapter; it adds no network import, provider or grant.
 
+The current compiler source also selects the aggregate Task.WaitAll derivation
+inside that same managed finite path, with the authenticated async export and
+all four declarations still required. Its strict receipt binds 95 helpers, the
+nine original WaitAll preimages/remainders plus the guarded timer Pump and sixteen
+derived bodies (the fifteen existing identities remain exact); the final
+closed-filesystem/ILC reference chain retains that exact intermediate. There is
+no new application flag or automatic grant. All fourteen outcomes passed the fresh
+normal NativeAOT and signed-node
+[run40188795279](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40188795279/job/121155140690)
+at source18576f471ef817943b385d3ad5ab12d4dd6f89bb. The
+[source-bound receipt](../testing/evidence/dotnet-waitall-signed-2026-10-25.json)
+binds the actual component, intermediate/final CoreLib chain, 108 Git inputs and
+all fourteen ordered results. Outside this selected finite path, the original unsupported
+WaitAll contexts remain unsupported. WaitAny, general threads/monitors, whole
+runtime compatibility, physical ownership costs and production rollout are not
+qualified by this source change.
+
+The first normal NativeAOT programme at sourcee36c6708f9d5f54bbaa688494b1cf764e420da0b
+compiled, packaged and admitted the component and passed its first eight strict
+cases. [Run40184556525](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40184556525)
+then failed the nested single-wait timer case with public GuestTrap/unreachable;
+five later outcomes were not completed. Its private exception was unavailable,
+and that programme remains failed. Source inspection found the pinned timer pump
+reuses one static list across a live callback enumeration and nested pumping.
+The selected v2 derivation now detaches only a positive batch to a fresh original
+typed list before its original enumerator. Original callbacks, Clear/finally and
+FailFast remain intact. This adds managed allocation under the unchanged guest
+heap budget; it is not allocation-free or a cost qualification. The v2 fixture
+used by host controls is explicitly controlled data, not an observed v2 DLL or
+signed result. The later source18576 programme uses the actual v2 assembly and
+passes two-task ordering, original Polly8.6.3/Polly.Core8.6.3 errors, task/token
+cancellation, one finite deadline, zero query and nested single/aggregate waits.
+Its two root-stop negatives have original native pending witnesses, physical
+retirement and fresh recovery. Audit observation loss remains explicit; audit
+alone is not the pending barrier. The node and peer are reaped clean and all 23
+named final shutdown counts are zero. This covers the frozen ordinary calls,
+not every public WaitAll overload or arbitrary published-library behavior.
+
 The private `dotnet-stackful-task-wait-v1` derivation preserves the exact original
 CoreLib preimage, dispatch, ExecutionContext entry/restore and TaskAwaiter error
 paths. It limits nested joins to 32. With all four explicit task/timer declarations,
@@ -82,6 +120,40 @@ exercised helper/compiler source files and the full runtime-input digest match
 the integrated source. The identified historical native binaries are reused;
 this does not claim a rebuilt current host. Complete simultaneous reset/dispose
 races, shutdown/tenant fencing and managed CPU scheduling remain separate.
+
+## Qualification-private WaitAll reference
+
+At the reference's qualified source732c, the ordinary driver still selected its
+existing finite single-task implementation. That reference milestone did not
+promote `Task.WaitAll` into the normal path. The
+private `--aggregate-task-wait` tool variant retains the original nine public/core
+method remainders, countdown, completion actions and detach-finally, with one
+bounded aggregate-ready target and the existing depth32/context restoration.
+It adds no application scheduler, replacement completion task, authority or grant.
+
+All23 CLR reference controls passed the actual
+[run40180463429](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40180463429/job/121130229483)
+at source732c53e98570ad59428af546fb095f81d518e2fb. The
+[bounded receipt](../testing/evidence/dotnet-waitall-reference-2026-10-25.json)
+binds the authenticated128-member artifact,46 Git inputs,60 zero-exit commands,
+120 raw channels, three byte-identical old-mode DLL/receipt comparisons, the
+95-helper derivation and all23 exact outcomes. Actual SDK is10.0.100 and CLR is
+10.0.13; controller execution took69.298450009s within600s. Both target and context
+restoration, original exception/token identity, two-task completion ordering,
+one finite interval, no added infinite-wait clock reads and cleanup refusals are
+checked. The earlier four failed runs retain their original failed status.
+
+This is an explicit host reference: real CLR tasks/MRES/token/ExecutionContext and
+the host's private countdown counterpart run with controlled dispatch/clock ports.
+Three exact real ThrowHelpers translate four source enum constants by name to the
+actual CLR enum, rethrowing the original exception object. One pinned nonvirtual
+instance-call opcode is projected to a static DynamicMethod call only after
+proving its fresh nonnull countdown receiver; source/projected hashes and unchanged
+branch/local/EH scope are recorded. The production candidate IL stays unchanged.
+This does not execute pinned WASI polling/accounting or qualify native exception,
+physical-retirement, default NativeAOT, signed-component or whole-cost behavior.
+The later normal NativeAOT programme above is separate evidence; it does not
+relabel this historical CLR reference or its v1 candidate.
 
 [#746](https://github.com/KirilsTurkins/latent-service-fabric/issues/746) remains
 open. This finite queue/join programme does not establish compiler-safe CPU

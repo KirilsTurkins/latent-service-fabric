@@ -133,3 +133,32 @@ jobs also passed. These observations remain source-scoped when the public
 diagnostic projection changes; the corrected current head still needs its own
 native, watch, general CI and security gates before the final #682 checklist and
 merge. The dated evidence files keep their original partial-scope claims.
+
+
+## Historical immutable-resource qualification
+
+The following original observations retain their finite source and completion
+boundaries; they do not declare the whole dependency or runtime milestone complete.
+
+The original actual two-library build failed at TeaVM's unsupported JavaScript
+resource methods. The [pinned class-library model control](../testing/evidence/java-immutable-resource-model-2026-10-02.json)
+preserved all nine standard ClassLoader method owners and passed fresh-stream,
+exact-byte, missing-name and changed-preimage controls. The subsequent
+[two-library signed node control](../testing/evidence/java-two-library-resource-node-2026-10-02.json)
+captured Commons Text and Commons Codec independently, Text's Commons Lang
+dependency, and a newly compiled developer-owned JAR. Its ordinary library
+calls and `Arithmetic.class.getResourceAsStream("badge.txt")` remained unchanged.
+After the original local JAR was deleted, the full offline recipe compiled,
+validated and packaged the actual component with 135 captured resource names.
+
+The strict signer and enforced node passed ten successful calls, including a
+fresh resource read after grant denial, and two missing or withdrawn clock
+grant controls. Every invocation was reaped; normal deletion, dormant owner
+observations and clean node shutdown passed. These finite checks used the
+recorded source and independently qualified native tools, with explicit
+provenance for both. They are contributor qualification; installed frontend,
+isolated processors and the full hostile-input and runtime matrix still need
+their own actual checks. Issue #682 and issue #681 remain
+open until their full acceptance evidence passes.
+
+Current setup and the six printed steps remain in the [Java authoring guide](../component-development/java-authoring.md).

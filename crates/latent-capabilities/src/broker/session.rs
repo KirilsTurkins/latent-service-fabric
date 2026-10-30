@@ -11,12 +11,13 @@ use latent_policy::capability::{
 };
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
-    Arc, Mutex,
+    Arc, Mutex, Weak,
 };
 
 pub(in crate::broker) mod native_backing;
 pub(in crate::broker) mod native_handle;
 mod shared;
+pub(in crate::broker) use shared::{Prepared as PreparedShared, Shared, SharedWeak};
 pub(in crate::broker) type SessionCoreOwner = shared::Shared<SessionCore>;
 pub(in crate::broker) type StatsOwner = shared::Shared<Stats>;
 pub(in crate::broker) type HandleEntryOwner = shared::Shared<HandleEntry>;
@@ -142,6 +143,26 @@ pub struct SessionResourceTableReservation {
     _slot: Charge,
 }
 impl SessionResourceTableReservation {
+    /// Admit the exact future backing before its source-owned builder runs.
+    pub fn prepare_io_future<Make, F>(
+        &self,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedIoFuture<Make, F>, PlatformError>
+    where
+        Make: FnOnce() -> F,
+    {
+        self.with_session(|session| session.prepare_io_future(make))
+    }
+    /// Admit F before creating/moving effectful Args; factory itself stays private.
+    pub fn prepare_io_future_with<Make, F, Args>(
+        &self,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedIoFutureWith<Make, F, Args>, PlatformError>
+    where
+        Make: FnOnce(Args) -> F,
+    {
+        self.with_session(|session| session.prepare_io_future_with(make))
+    }
     /// Prepay table backing from this table's original activation ledger.
     /// The broker metadata reservation is a separate node/session bound.
     /// Retain the returned guard until the allocation is actually destroyed.
@@ -173,6 +194,7 @@ impl Drop for SessionResourceTableReservation {
 #[derive(Clone)]
 pub struct CapabilitySessionObserver {
     stats: StatsOwner,
+    owner: Weak<Inner>,
 }
 impl CapabilitySessionObserver {
     #[must_use]
@@ -203,6 +225,33 @@ impl CapabilitySessionObserver {
             && self.retained_handles() == 0
             && self.reserved_buffer_bytes() == 0
     }
+
+    fn retire_registry(&self) -> bool {
+        let Some(owner) = self.owner.upgrade() else {
+            return false;
+        };
+        let Ok(mut entries) = owner.sessions.try_lock() else {
+            return false;
+        };
+        // Stats is private to this published core/entry and held strongly here:
+        // its pointer cannot be reused while this observer still exists.
+        let Some(entry) = entries
+            .iter_mut()
+            .find(|entry| entry.stats.ptr_eq_shared(&self.stats))
+        else {
+            // Another session already replaced the original reusable entry.
+            return true;
+        };
+        if entry.core.strong_count() != 0 || !self.is_quiescent() {
+            return false;
+        }
+        let retired = std::mem::take(entry);
+        drop(entries);
+        // Destroy both actual Weak headers before their original billing drops.
+        // No ledger/destructor work is performed under the registry mutex.
+        drop(retired);
+        true
+    }
     /// The embedder calls this after destroying the guest future and Store.
     /// Queue owners, blocking jobs, streams and lowering/consumer leases all
     /// prevent reuse; a timeout response or finalized ledger is insufficient.
@@ -211,7 +260,7 @@ impl CapabilitySessionObserver {
         &self,
         outcome: Result<latent_executor::GuestOutcome, PlatformError>,
     ) -> latent_executor::ExecutionReport {
-        if self.is_quiescent() {
+        if self.is_quiescent() && self.retire_registry() {
             latent_executor::ExecutionReport::reusable(outcome)
         } else {
             latent_executor::ExecutionReport::quarantine(
@@ -520,6 +569,17 @@ impl SessionCore {
     }
 }
 impl CapabilitySession {
+    /// Retain an original runtime operation's closed resource refusal in the
+    /// existing activation journal before its frozen WIT error is returned.
+    /// A caught refusal remains an observation, never a later terminal cause.
+    pub fn observe_runtime_refusal(&self, error: &PlatformError) {
+        if let Some(diagnostic) = latent_core::diagnostic::ActivationDiagnostic::from_error(error)
+            .filter(latent_core::diagnostic::ActivationDiagnostic::is_runtime_resource_refusal)
+        {
+            self.core.observe_diagnostic(diagnostic);
+        }
+    }
+
     /// Verified web projections expose their own invocation context as core ABI.
     /// This does not authorize a provider or another activation's context.
     pub fn uses_core_web_context(&self, output_bytes: usize) -> Result<bool, PlatformError> {
@@ -595,6 +655,7 @@ impl CapabilitySession {
     pub fn observer(&self) -> CapabilitySessionObserver {
         CapabilitySessionObserver {
             stats: self.core.stats.clone(),
+            owner: Arc::downgrade(&self.core.owner),
         }
     }
     pub fn bind(
@@ -807,5 +868,28 @@ fn own_resource(resource: ResourceTarget<'_>) -> ResourceRequest {
             recovery_scope: recovery_scope.into(),
             result_policy: result_policy.into(),
         },
+    }
+}
+
+impl CapabilitySession {
+    /// Admit the exact future backing before its source-owned builder runs.
+    pub fn prepare_io_future<Make, F>(
+        &self,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedIoFuture<Make, F>, PlatformError>
+    where
+        Make: FnOnce() -> F,
+    {
+        crate::broker::io::PreparedIoFuture::new(&self.core.budget, make)
+    }
+    /// Admit F before creating/moving effectful Args; factory itself stays private.
+    pub fn prepare_io_future_with<Make, F, Args>(
+        &self,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedIoFutureWith<Make, F, Args>, PlatformError>
+    where
+        Make: FnOnce(Args) -> F,
+    {
+        crate::broker::io::PreparedIoFutureWith::new(&self.core.budget, make)
     }
 }

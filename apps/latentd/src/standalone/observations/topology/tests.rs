@@ -185,6 +185,52 @@ fn retired_compiler_workers_report_observed_zero_with_configuration_retained() {
     assert!(inventory.topology.available && inventory.topology.complete);
 }
 
+fn audit_fixture() -> NodeTopologyEntry {
+    let mut row = audit::entry(None);
+    assert_eq!(row.configured_count, 0);
+    assert_eq!(row.active_count, None);
+    assert_eq!(row.attributes["measurementStatus"], "not-configured");
+    assert!(!row.attributes.contains_key("audit_retained_records"));
+    let limits = latent_audit::AuditLimits {
+        maximum_records: 64,
+        ..latent_audit::AuditLimits::default()
+    };
+    let snapshot = latent_audit::AuditSnapshot {
+        retained_records: 62,
+        reserved_records: 2,
+        retained_bytes: 4096,
+        reserved_bytes: 32 * 1024,
+        queued_bytes: 16 * 1024,
+        node_metadata_maximum_bytes: 8 * 1024 * 1024,
+        node_metadata_reserved_bytes: 64 * 1024,
+        node_metadata_quarantined_reserved_bytes: 4096,
+        next_sequence: u64::MAX,
+        unknown_outcomes: u64::MAX,
+        previous_session_loss_unknown: true,
+        pending_attempts: 1,
+        ..latent_audit::AuditSnapshot::default()
+    };
+    row.configured_count = 1;
+    row.attributes = audit::measurements(limits, snapshot);
+    assert_eq!(row.attributes.len(), 28);
+    assert_eq!(row.attributes["maximumRecords"], "64");
+    assert_eq!(row.attributes["audit_retained_records"], "62");
+    assert_eq!(row.attributes["audit_reserved_records"], "2");
+    assert_eq!(row.attributes["audit_reserved_bytes"], "32768");
+    assert_eq!(row.attributes["audit_pending_attempts"], "1");
+    assert_eq!(
+        row.attributes["audit_unknown_outcomes"],
+        u64::MAX.to_string()
+    );
+    assert_eq!(row.attributes["audit_next_sequence"], u64::MAX.to_string());
+    assert_eq!(row.attributes["audit_previous_session_loss_unknown"], "1");
+    assert_eq!(
+        row.attributes["audit_node_metadata_quarantined_reserved_bytes"],
+        "4096"
+    );
+    row
+}
+
 struct AllOptionalRows {
     catalog: Arc<latent_artifacts::DirectoryArtifactRepository>,
     http: bool,
@@ -193,6 +239,12 @@ struct AllOptionalRows {
 impl NodeTopologySource for AllOptionalRows {
     fn snapshot(&self, writer: &mut NodeTopologyWriter<'_>) -> Result<bool, PlatformError> {
         let entries: [NodeTopologyEntry; capacity::CATALOG_ROWS] = [catalog::entry(&self.catalog)];
+        for entry in entries {
+            if !writer.push(&entry)? {
+                return Ok(false);
+            }
+        }
+        let entries: [NodeTopologyEntry; capacity::AUDIT_ROWS] = [audit_fixture()];
         for entry in entries {
             if !writer.push(&entry)? {
                 return Ok(false);
@@ -263,7 +315,7 @@ fn standalone_capacity_covers_every_optional_topology_row() {
     )
     .expect("bounded catalog");
     let catalog = Arc::new(catalog);
-    for (http, expected) in [(false, 33), (true, 38)] {
+    for (http, expected) in [(false, 34), (true, 39)] {
         let source = Arc::new(AllOptionalRows {
             catalog: catalog.clone(),
             http,
@@ -277,12 +329,11 @@ fn standalone_capacity_covers_every_optional_topology_row() {
         .expect("bounded old selection");
         assert_eq!(old.topology.entries.len(), 32);
         assert!(old.topology.available && !old.topology.complete);
-        if !http {
-            assert_eq!(
-                old.topology.entries.last().unwrap().name,
-                "canary-live-samples"
-            );
-        }
+        assert!(!old
+            .topology
+            .entries
+            .iter()
+            .any(|entry| entry.name == "canary-snapshot-owners"));
         assert!(old
             .health
             .reasons
@@ -296,7 +347,7 @@ fn standalone_capacity_covers_every_optional_topology_row() {
         )
         .snapshot_now()
         .expect("all fixed standalone rows");
-        assert_eq!(capacity::MAXIMUM_ENTRIES, 38);
+        assert_eq!(capacity::MAXIMUM_ENTRIES, 39);
         assert!(current.topology.available && current.topology.complete);
         assert_eq!(current.topology.entries.len(), expected);
         let names: std::collections::BTreeSet<_> = current
@@ -307,6 +358,7 @@ fn standalone_capacity_covers_every_optional_topology_row() {
             .collect();
         assert_eq!(names.len(), expected, "every fixed row is distinct");
         assert!(names.contains("publication-catalog"));
+        assert!(names.contains("audit-journal"));
         assert_eq!(names.contains("http-buffer-reservations"), http);
         assert!(names.contains("invocation-runtime-stack"));
         assert!(names.contains("control-runtime-stack"));
@@ -322,7 +374,7 @@ fn standalone_capacity_covers_every_optional_topology_row() {
             .iter()
             .any(|v| v == "topology-incomplete"));
         println!(
-            "TOPOLOGY_CAPACITY http={http} old=32 old_complete=false selected=38 rows={expected} complete=true retained={} cap=262144",
+            "TOPOLOGY_CAPACITY http={http} old=32 old_complete=false selected=39 rows={expected} complete=true retained={} cap=262144",
             current.retained_bytes
         );
     }
@@ -347,12 +399,12 @@ fn standalone_topology_precharges_exact_selected_vec_capacity() {
     assert!(current.topology.available && !current.topology.complete);
     assert!(old.topology.entries.is_empty() && current.topology.entries.is_empty());
     assert_eq!(old.topology.entries.capacity(), 32);
-    assert_eq!(current.topology.entries.capacity(), 38);
-    let extra = 6 * std::mem::size_of::<NodeTopologyEntry>();
+    assert_eq!(current.topology.entries.capacity(), 39);
+    let extra = 7 * std::mem::size_of::<NodeTopologyEntry>();
     assert_eq!(current.retained_bytes - old.retained_bytes, extra);
     assert!(current.retained_bytes <= 256 * 1024);
     println!(
-        "TOPOLOGY_PRECHARGE extra_slots=6 slot_bytes={} extra_bytes={extra} cap=262144",
+        "TOPOLOGY_PRECHARGE extra_slots=7 slot_bytes={} extra_bytes={extra} cap=262144",
         std::mem::size_of::<NodeTopologyEntry>()
     );
 }

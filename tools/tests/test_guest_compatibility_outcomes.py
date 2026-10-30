@@ -38,6 +38,59 @@ def rehash(value):
 
 
 class OutcomeReader(unittest.TestCase):
+    def test_rehashed_management_unavailable_reasons_refuse_hostile_JSON_types(self):
+        for reason in ([], {}, None, 1, True):
+            with self.subTest(reason=reason):
+                value, report, selected_context = capture()
+                value['cases'][0]['nodeDiagnostic'] = {'state': 'unavailable', 'reason': reason}
+                rehash(value)
+                with self.assertRaisesRegex(DevError, 'node-observation-unavailable'):
+                    outcomes.read(encode(value), report=report, selected_context=selected_context)
+
+    def test_retained_task_fact_does_not_rewrite_unrelated_terminal_cause_even_after_rehash(self):
+        value, report, selected_context = capture()
+        collector = outcomes.Capture(value['frontendSourceDigest'], report['componentDigest'], selected_context)
+        original = observation(code='guest-trap')
+        original['data']['resolvedRevision'] = {'releaseDigest': report['componentDigest']}
+        original['error']['details'] = []
+        collector.observe('caught-then-other-trap', original, True,
+            expected_revision=original['data']['resolvedRevision'])
+        tree = {'category': 'success', 'outcomeKnown': True, 'data': {'schemaVersion': 1,
+            'historyAvailable': True, 'nodes': [{'activationId': 'original-activation',
+            'targetService': 'examples/service', 'diagnosticIsTerminal': False,
+            'diagnostic': {'schemaVersion': 1, 'stage': 5, 'reason': 17,
+                'configuredBound': '16', 'calculatedRequirement': '17', 'message': 'private-payload'}}]}}
+        collector.observe_node('caught-then-other-trap', tree, 'original-activation', 'examples/service')
+        row = outcomes.read(encode(collector.snapshot()))['cases'][0]
+        self.assertEqual((row['cause'], row['resourceDimension']), ('unknown', 'unknown'))
+        self.assertEqual(row['nodeDiagnostic']['resourceDimension'], 'tasks')
+        self.assertFalse(row['nodeDiagnostic']['terminal'])
+        self.assertEqual(row['nodeDiagnostic']['implementationBinding'], 'unavailable')
+        # Even a same-ID/service record purporting to name another revision
+        # cannot bind this management API to the original implementation.
+        tree['data']['nodes'][0]['resolvedRevision'] = {'releaseDigest': digest(b'another implementation')}
+        retained = outcomes.node_observation(tree, 'original-activation', 'examples/service')
+        self.assertEqual(retained, row['nodeDiagnostic'])
+        forged = copy.deepcopy(retained); forged['implementationBinding'] = 'confirmed'
+        with self.assertRaises(ValueError): outcomes.validate_node_observation(forged)
+        self.assertNotIn('private-payload', encode(row).decode())
+        changed = collector.snapshot(); changed['cases'][0]['cause'] = 'resource-exhausted'; rehash(changed)
+        with self.assertRaisesRegex(DevError, 'cause-evidence'):
+            outcomes.read(encode(changed))
+        tree['data']['nodes'][0]['activationId'] = 'another-activation'
+        self.assertEqual(outcomes.node_observation(tree, 'original-activation', 'examples/service'),
+                         {'state': 'invalid-present'})
+
+    def test_original_typed_bucket_observations_distinguish_bytes_counts_and_stack(self):
+        for reason, dimension in ((17, 'tasks'), (18, 'queues'), (19, 'timers'),
+            (20, 'executors'), (21, 'waits'), (22, 'results'), (23, 'native-owners'),
+            (24, 'thread-total-starts'), (25, 'native-memory'), (26, 'guest-stack')):
+            with self.subTest(reason=reason):
+                projected = outcomes.original(observation(reason=reason))
+                self.assertEqual(projected['resourceDimension'], dimension)
+                self.assertEqual(projected['physicalRetirement'], 'unproven')
+        self.assertEqual(outcomes.original(observation(reason=12))['resourceDimension'], 'unknown')
+
     def test_engine_classification_round_trips_without_inventing_cause_or_retirement(self):
         for language in compatibility.LANGUAGES:
             report = compatibility.report(language, digest(b'source'), digest(b'component'),
@@ -272,7 +325,7 @@ class NodeDiagnosticPresentation(unittest.TestCase):
         self.assertNotIn('private', text)
 
     def test_absent_measurements_are_not_invented_and_missing_diagnostics_stay_distinct(self):
-        for fields in (None, {'stage': '3', 'reason': '4'}, {'stage': '3', 'reason': '17'}):
+        for fields in (None, {'stage': '3', 'reason': '4'}, {'stage': '3', 'reason': '27'}):
             with self.subTest(fields=fields):
                 result = observation()
                 result['error']['details'] = ([] if fields is None else
@@ -285,14 +338,14 @@ class NodeDiagnosticPresentation(unittest.TestCase):
                 self.assertNotIn('profile wasmtime', text)
                 self.assertEqual(value['cases'][0]['cause'], 'unknown')
                 expected = ('Node diagnostic: absent.' if fields is None else
-                    'Node diagnostic: invalid-present.' if fields['reason'] == '17' else
+                    'Node diagnostic: invalid-present.' if fields['reason'] == '27' else
                     'reason unsupported-engine-profile (4)')
                 self.assertIn(expected, text)
 
     def test_malformed_unknown_duplicate_and_private_details_supply_no_labels(self):
         valid = {'kind': 'activation.diagnostic.v1', 'fields': {'stage': '3', 'reason': '4'}}
         malformed = [dict(valid, fields={**valid['fields'], name: value}) for name, value in (
-            ('stage', '9'), ('reason', '17'), ('profile', '3'), ('stage', '03'),
+            ('stage', '9'), ('reason', '27'), ('profile', '3'), ('stage', '03'),
             ('configured_bound', str(2**64)), ('fixed_bytes', True), ('lifting_fuel', '-1'),
             ('profile_digest', 'private-key'), ('private-path', '/home/private'))]
         for details in ([[item] for item in malformed] + [[valid, valid], [valid]*17]):

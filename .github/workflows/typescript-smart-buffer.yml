@@ -1,0 +1,134 @@
+name: TypeScript unchanged published SmartBuffer qualification
+
+on:
+  push:
+    branches: ['feat/typescript-smart-buffer-20261025']
+    paths:
+      - '.github/workflows/typescript-smart-buffer.yml'
+      - 'tools/qualify_typescript_smart_buffer.py'
+      - 'tools/typescript_smart_buffer_fixture.py'
+      - 'tools/typescript_guest/standard_global_types.py'
+      - 'tools/tests/test_typescript_smart_buffer.py'
+      - 'tools/tests/test_typescript_standard_global_types_inline.py'
+      - 'sdk/typescript-guest/runtime/net.d.ts'
+      - 'sdk/typescript-guest/probes/smart-buffer/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typescript-smart-buffer-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  smart-buffer:
+    name: One normal component and six signed SmartBuffer cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Start the fixed aggregate setup and programme clock
+        run: python3 -c 'import os,time;open(os.environ["GITHUB_ENV"],"a").write("LSF_SMART_BUFFER_STARTED_NS="+str(time.time_ns())+"\n")'
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-node@c1136b2d97fe79ef645e9508b2048a222f50a170 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        with:
+          version: 1.254.0
+      - name: Fetch only the immutable normal inputs and classic declaration baseline
+        run: |
+          git fetch --no-tags --depth=1 origin 6d834e502beea33fbae9347fbaf23ff8c37223b3
+          git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
+          git fetch --no-tags --depth=1 origin 570ab481ad0d802704cf3c553f520eb1be20af04
+      - name: Install normal pinned tools and compiler isolation within the aggregate
+        run: |
+          python3 - <<'PY'
+          import os,sys,time
+          from pathlib import Path
+          from tools.build_process import run_bounded_result
+          from tools.build_observation import build_environment
+          root=Path(os.environ['RUNNER_TEMP'])/'typescript-smart-buffer-bootstrap'
+          root.mkdir(mode=0o700)
+          started=int(os.environ['LSF_SMART_BUFFER_STARTED_NS'])
+          commands=[
+            [sys.executable,'-m','pip','install','--requirement','tools/requirements.lock'],
+            ['sudo','apt-get','update'],
+            ['sudo','apt-get','install','--yes','bubblewrap'],
+            ['sudo','sysctl','-w','kernel.apparmor_restrict_unprivileged_userns=0'],
+            [sys.executable,'tools/typescript_capsule.py','install-tools',str(Path(os.environ['RUNNER_TEMP'])/'typescript-smart-buffer-tools')],
+          ]
+          for command in commands:
+            remaining=1200-(time.time_ns()-started)/1e9-10
+            if remaining<=0:raise RuntimeError('smart-buffer-bootstrap-deadline')
+            result=run_bounded_result(command,Path.cwd(),build_environment(root),timeout_seconds=min(300,remaining),max_output_bytes=4*1024**2)
+            sys.stdout.buffer.write(result.stdout);sys.stderr.buffer.write(result.stderr)
+            if result.returncode:raise RuntimeError('smart-buffer-bootstrap-command')
+          PY
+      - name: Validate prerequisites compile once and execute six fresh signed calls
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B tools/qualify_typescript_smart_buffer.py \
+            --tools "$RUNNER_TEMP/typescript-smart-buffer-tools" \
+            --output "$RUNNER_TEMP/typescript-smart-buffer-public"
+      - name: Retain only fixed public collector files
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: typescript-smart-buffer-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/typescript-smart-buffer-public/RESULT.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/FAILED.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/COMMANDS.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/INPUTS.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/PROJECT-SOURCE.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/CAPTURE.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/APPLICATION-LOCK.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/NPM-GRAPH.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/DEPENDENCY-MANIFEST.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/DEPENDENCY-LOCK.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/BUILD-LOGS.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/PUBLIC-MANIFEST.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/INVOCATIONS.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/RETIREMENTS.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/STARTUP.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/SHUTDOWN.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/source-controls.stdout.txt
+            ${{ runner.temp }}/typescript-smart-buffer-public/source-controls.stderr.txt
+            ${{ runner.temp }}/typescript-smart-buffer-public/normal-build.stdout.txt
+            ${{ runner.temp }}/typescript-smart-buffer-public/normal-build.stderr.txt
+            ${{ runner.temp }}/typescript-smart-buffer-public/BUILD-COMPLETE.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/BUILD-FAILED.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/build-observation.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/source-inputs.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/recipe-inputs.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/package-inputs.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/package-source.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/bindings.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/compiler-containment.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/typescript-runtime-selection.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/standard-runtime-selection.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/typescript-buffer-selection.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/typescript-standard-global-types.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/application-dependencies.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/npm-inputs.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/bundle-selected-inputs.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/compatibility-report.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/compatibility-context.json
+            ${{ runner.temp }}/typescript-smart-buffer-public/component.wasm
+            ${{ runner.temp }}/typescript-smart-buffer-public/application.mjs
+            ${{ runner.temp }}/typescript-smart-buffer-public/generated-bindings.js
+            ${{ runner.temp }}/typescript-smart-buffer-public/probe-main.ts
+            ${{ runner.temp }}/typescript-smart-buffer-public/probe-dependency.ts
+            ${{ runner.temp }}/typescript-smart-buffer-public/probe-world.wit

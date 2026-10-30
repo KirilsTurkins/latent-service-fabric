@@ -42,7 +42,7 @@ def matrix():
     pins = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
     return dict(formatVersion=1, id="lsf-host-abi-phase4-v1", world="latent:platform/capsule@0.5.0",
         digest=digest(identity), wasmtimeVersion=pins["rust"]["dependencies"]["wasmtime"],
-        guestGenerator="wit-bindgen@" + pins["rust"]["dependencies"]["wit-bindgen"], interfaces=interfaces)
+        guestGenerator="wit-bindgen@" + pins["contracts"]["wit-bindgen-cli"], interfaces=interfaces)
 
 
 def vectors():

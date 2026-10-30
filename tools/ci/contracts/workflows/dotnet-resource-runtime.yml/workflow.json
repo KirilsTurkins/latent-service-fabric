@@ -1,46 +1,46 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "dotnet-resource-runtime-${{ github.ref }}"
-    },
-    "name": "Managed resource callback lifecycle",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/dotnet-resource-runtime-20261020"
-        ],
-        "paths": [
-          ".github/workflows/dotnet-resource-runtime.yml"
-        ]
-      },
-      "workflow_dispatch": {
-        "inputs": {
-          "late_facilities": {
-            "default": false,
-            "description": "One fresh ordinary managed component for accepted callbacks after DisposeAsync",
-            "type": "boolean"
-          },
-          "replay_late_facilities": {
-            "default": false,
-            "description": "Reuse the exact completed df4 AOT package after its managed-profile reader repair",
-            "type": "boolean"
-          }
-        }
-      }
-    },
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "late-facilities",
-    "replay-late-facilities",
-    "resource-runtime"
-  ],
-  "reviewReason": "Reviewed exact df4 completed AOT package node-only continuation: same six late/fresh obligations and caps; no guest/native compilation; exact old jobs restored after only explicit default-false replay selector and job removal. Current managed-profile reader is bound to actual owner/private-IO/task-v2 receipts.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/dotnet-resource-runtime.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"dotnet-resource-runtime-${{ github.ref }}"
+},
+"name":"Managed resource callback lifecycle",
+"on":{
+"push":{
+"branches":[
+"feat/dotnet-resource-runtime-20261020"
+],
+"paths":[
+".github/workflows/dotnet-resource-runtime.yml"
+]
+},
+"workflow_dispatch":{
+"inputs":{
+"late_facilities":{
+"default":false,
+"description":"One fresh ordinary managed component for accepted callbacks after DisposeAsync",
+"type":"boolean"
+},
+"replay_late_facilities":{
+"default":false,
+"description":"Reuse the exact completed df4 AOT package after its managed-profile reader repair",
+"type":"boolean"
+}
+}
+}
+},
+"permissions":{
+"actions":"read",
+"contents":"read"
+}
+},
+"requiredJobs":[
+"late-facilities",
+"replay-late-facilities",
+"resource-runtime"
+],
+"reviewReason":"Reviewed exact df4 completed AOT package node-only continuation: same six late/fresh obligations and caps; no guest/native compilation; exact old jobs restored after only explicit default-false replay selector and job removal. Current managed-profile reader is bound to actual owner/private-IO/task-v2 receipts.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/dotnet-resource-runtime.yml"
 }

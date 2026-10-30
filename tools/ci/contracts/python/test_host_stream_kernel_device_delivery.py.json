@@ -1,140 +1,23 @@
-{
-  "cases": [
-    "KernelDeviceDeliverySource.test_capability_dispatch_preserves_actual_hook_order_and_finite_options",
-    "KernelDeviceDeliverySource.test_changed_duplicate_crlf_and_unknown_definitions_refuse",
-    "KernelDeviceDeliverySource.test_label_hook_pair_preflight_and_same_owner_finish_prevent_unowned_context_free",
-    "KernelDeviceDeliverySource.test_namespace_credential_audit_requires_admitted_original_work",
-    "KernelDeviceDeliverySource.test_netlink_scm_retains_credentials_and_guards_exact_zero_pid_file_cookie",
-    "KernelDeviceDeliverySource.test_original_rmem_and_congestion_thresholds_and_transfer_owner_remain_real",
-    "KernelDeviceDeliverySource.test_receiver_admits_before_copy_and_finishes_after_original_skb_free_and_wake",
-    "KernelDeviceDeliverySource.test_transfer_tail_never_dereferences_skb_or_changes_positive_delivery_to_error",
-    "KernelDeviceDeliverySource.test_unsupported_filter_is_not_a_silent_recipient_drop_or_callback",
-    "KernelDeviceDeliverySource.test_whole_original_parent_and_all_qualification_gates_stay_closed"
-  ],
-  "guards": {
-    "KernelDeviceDeliverySource.test_capability_dispatch_preserves_actual_hook_order_and_finite_options": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:440e54a9f2c8f083b5c24a777a789dbea707d4fd3f0f50f49863a7fa05cfa9b7",
-        "class:setup-sha256:e8fcb7e65faa35debc7b0721c9cf5ef4416aa51bbb068aa5269c2d3b2c72f60b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceDeliverySource.test_changed_duplicate_crlf_and_unknown_definitions_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:440e54a9f2c8f083b5c24a777a789dbea707d4fd3f0f50f49863a7fa05cfa9b7",
-        "class:setup-sha256:e8fcb7e65faa35debc7b0721c9cf5ef4416aa51bbb068aa5269c2d3b2c72f60b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceDeliverySource.test_label_hook_pair_preflight_and_same_owner_finish_prevent_unowned_context_free": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:440e54a9f2c8f083b5c24a777a789dbea707d4fd3f0f50f49863a7fa05cfa9b7",
-        "class:setup-sha256:e8fcb7e65faa35debc7b0721c9cf5ef4416aa51bbb068aa5269c2d3b2c72f60b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceDeliverySource.test_namespace_credential_audit_requires_admitted_original_work": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:440e54a9f2c8f083b5c24a777a789dbea707d4fd3f0f50f49863a7fa05cfa9b7",
-        "class:setup-sha256:e8fcb7e65faa35debc7b0721c9cf5ef4416aa51bbb068aa5269c2d3b2c72f60b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceDeliverySource.test_netlink_scm_retains_credentials_and_guards_exact_zero_pid_file_cookie": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:440e54a9f2c8f083b5c24a777a789dbea707d4fd3f0f50f49863a7fa05cfa9b7",
-        "class:setup-sha256:e8fcb7e65faa35debc7b0721c9cf5ef4416aa51bbb068aa5269c2d3b2c72f60b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceDeliverySource.test_original_rmem_and_congestion_thresholds_and_transfer_owner_remain_real": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:440e54a9f2c8f083b5c24a777a789dbea707d4fd3f0f50f49863a7fa05cfa9b7",
-        "class:setup-sha256:e8fcb7e65faa35debc7b0721c9cf5ef4416aa51bbb068aa5269c2d3b2c72f60b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceDeliverySource.test_receiver_admits_before_copy_and_finishes_after_original_skb_free_and_wake": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:440e54a9f2c8f083b5c24a777a789dbea707d4fd3f0f50f49863a7fa05cfa9b7",
-        "class:setup-sha256:e8fcb7e65faa35debc7b0721c9cf5ef4416aa51bbb068aa5269c2d3b2c72f60b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceDeliverySource.test_transfer_tail_never_dereferences_skb_or_changes_positive_delivery_to_error": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:440e54a9f2c8f083b5c24a777a789dbea707d4fd3f0f50f49863a7fa05cfa9b7",
-        "class:setup-sha256:e8fcb7e65faa35debc7b0721c9cf5ef4416aa51bbb068aa5269c2d3b2c72f60b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceDeliverySource.test_unsupported_filter_is_not_a_silent_recipient_drop_or_callback": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:440e54a9f2c8f083b5c24a777a789dbea707d4fd3f0f50f49863a7fa05cfa9b7",
-        "class:setup-sha256:e8fcb7e65faa35debc7b0721c9cf5ef4416aa51bbb068aa5269c2d3b2c72f60b"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceDeliverySource.test_whole_original_parent_and_all_qualification_gates_stay_closed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:440e54a9f2c8f083b5c24a777a789dbea707d4fd3f0f50f49863a7fa05cfa9b7",
-        "class:setup-sha256:e8fcb7e65faa35debc7b0721c9cf5ef4416aa51bbb068aa5269c2d3b2c72f60b"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_device_delivery.py",
-  "reviewReason": "Reviewed grouped recipient signal and mandatory security source; one exclusive object-only lane retains every historical command, case, configuration and physical qualification boundary.",
-  "schemaVersion": "latent.ci.contracts.v1"
-}
+{"cases":["KernelDeviceDeliverySource.test_capability_dispatch_preserves_actual_hook_order_and_finite_options","KernelDeviceDeliverySource.test_changed_duplicate_crlf_and_unknown_definitions_refuse","KernelDeviceDeliverySource.test_label_hook_pair_preflight_and_same_owner_finish_prevent_unowned_context_free","KernelDeviceDeliverySource.test_namespace_credential_audit_requires_admitted_original_work","KernelDeviceDeliverySource.test_netlink_scm_retains_credentials_and_guards_exact_zero_pid_file_cookie","KernelDeviceDeliverySource.test_original_rmem_and_congestion_thresholds_and_transfer_owner_remain_real","KernelDeviceDeliverySource.test_receiver_admits_before_copy_and_finishes_after_original_skb_free_and_wake","KernelDeviceDeliverySource.test_transfer_tail_never_dereferences_skb_or_changes_positive_delivery_to_error","KernelDeviceDeliverySource.test_unsupported_filter_is_not_a_silent_recipient_drop_or_callback","KernelDeviceDeliverySource.test_whole_original_parent_and_all_qualification_gates_stay_closed"],"guards":{"KernelDeviceDeliverySource.test_capability_dispatch_preserves_actual_hook_order_and_finite_options":
+  "deeb40abbbe61c4990e175235edea0a07f6f48bc86f6527c53e5e7dbd32274e9"
+,"KernelDeviceDeliverySource.test_changed_duplicate_crlf_and_unknown_definitions_refuse":
+  "deeb40abbbe61c4990e175235edea0a07f6f48bc86f6527c53e5e7dbd32274e9"
+,"KernelDeviceDeliverySource.test_label_hook_pair_preflight_and_same_owner_finish_prevent_unowned_context_free":
+  "deeb40abbbe61c4990e175235edea0a07f6f48bc86f6527c53e5e7dbd32274e9"
+,"KernelDeviceDeliverySource.test_namespace_credential_audit_requires_admitted_original_work":
+  "deeb40abbbe61c4990e175235edea0a07f6f48bc86f6527c53e5e7dbd32274e9"
+,"KernelDeviceDeliverySource.test_netlink_scm_retains_credentials_and_guards_exact_zero_pid_file_cookie":
+  "deeb40abbbe61c4990e175235edea0a07f6f48bc86f6527c53e5e7dbd32274e9"
+,"KernelDeviceDeliverySource.test_original_rmem_and_congestion_thresholds_and_transfer_owner_remain_real":
+  "deeb40abbbe61c4990e175235edea0a07f6f48bc86f6527c53e5e7dbd32274e9"
+,"KernelDeviceDeliverySource.test_receiver_admits_before_copy_and_finishes_after_original_skb_free_and_wake":
+  "deeb40abbbe61c4990e175235edea0a07f6f48bc86f6527c53e5e7dbd32274e9"
+,"KernelDeviceDeliverySource.test_transfer_tail_never_dereferences_skb_or_changes_positive_delivery_to_error":
+  "deeb40abbbe61c4990e175235edea0a07f6f48bc86f6527c53e5e7dbd32274e9"
+,"KernelDeviceDeliverySource.test_unsupported_filter_is_not_a_silent_recipient_drop_or_callback":
+  "deeb40abbbe61c4990e175235edea0a07f6f48bc86f6527c53e5e7dbd32274e9"
+,"KernelDeviceDeliverySource.test_whole_original_parent_and_all_qualification_gates_stay_closed":
+  "deeb40abbbe61c4990e175235edea0a07f6f48bc86f6527c53e5e7dbd32274e9"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_device_delivery.py","reviewReason":"Reviewed grouped recipient signal and mandatory security source; one exclusive object-only lane retains every historical command, case, configuration and physical qualification boundary.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "deeb40abbbe61c4990e175235edea0a07f6f48bc86f6527c53e5e7dbd32274e9"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:440e54a9f2c8f083b5c24a777a789dbea707d4fd3f0f50f49863a7fa05cfa9b7","class:setup-sha256:e8fcb7e65faa35debc7b0721c9cf5ef4416aa51bbb068aa5269c2d3b2c72f60b"],"skipSites":[]}}}

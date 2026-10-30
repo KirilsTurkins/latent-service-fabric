@@ -249,7 +249,9 @@
       "consumers": [
         "README.md",
         "docs/architecture/overview.md",
-        "docs/phase-2-delivery.md"
+        "docs/phase-2-delivery.md",
+        "ARCHITECTURE.md",
+        "docs/svg-style.md"
       ]
     },
     {
@@ -257,7 +259,40 @@
       "classification": "maintained-diagram",
       "owner": "hand-authored current activation diagram",
       "consumers": [
-        "docs/architecture/overview.md"
+        "docs/architecture/overview.md",
+        "ARCHITECTURE.md",
+        "docs/svg-style.md"
+      ]
+    },
+    {
+      "path": "docs/assets/standalone-architecture.svg",
+      "classification": "maintained-diagram",
+      "owner": "hand-authored shared-node and optional state architecture diagram",
+      "consumers": [
+        "docs/architecture/overview.md",
+        "ARCHITECTURE.md",
+        "docs/svg-style.md"
+      ]
+    },
+    {
+      "path": "docs/assets/activation-memory-ownership.svg",
+      "classification": "maintained-diagram",
+      "owner": "hand-authored selected physical memory ownership diagram",
+      "consumers": [
+        "docs/runtime/resource-budgets.md",
+        "ARCHITECTURE.md",
+        "docs/svg-style.md"
+      ]
+    },
+    {
+      "path": "docs/assets/transaction-command-recovery.svg",
+      "classification": "maintained-diagram",
+      "owner": "hand-authored successful command commitment and recovery diagram",
+      "consumers": [
+        "docs/architecture/state-and-effects.md",
+        "docs/operations/transaction-recovery.md",
+        "ARCHITECTURE.md",
+        "docs/svg-style.md"
       ]
     }
   ]

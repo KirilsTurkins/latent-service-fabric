@@ -173,6 +173,105 @@ class ProjectNotices(unittest.TestCase):
 
 
 class FrontendDistribution(unittest.TestCase):
+
+    @unittest.skipUnless(sys.platform == "linux", "The packaged node helper runs on Linux")
+    def test_packaged_helper_reads_compatibility_context_without_checkout_imports(self):
+        import subprocess
+        import textwrap
+        import zipfile
+        from tools.build_dev_frontend import helper
+
+        script = """
+            import copy
+            from pathlib import Path
+            import sys
+            sys.path.insert(0, sys.argv[1])
+            from tools import guest_compatibility as compatibility
+            from tools import guest_compatibility_context as context
+            from tools import guest_compatibility_outcomes as outcomes
+            from tools.dev_workflow import paths
+            from tools.dev_workflow.common import digest, encode
+
+            assert outcomes.__file__.startswith(sys.argv[1] + '/')
+            root = Path(sys.argv[2])
+            original_source = b'compiler-owned source inventory'
+            receipt = {'source': digest(b'frontend source'),
+                       'artifacts': {'component': digest(b'component')}}
+            descriptor = {'artifacts': {'component': 'out/component.wasm'}}
+            for language in ('rust', 'c', 'java', 'dotnet', 'go', 'typescript'):
+                source = root / language
+                paths.new_directory(source)
+                output = source / 'out'
+                paths.new_directory(output)
+                report = compatibility.report(language, digest(original_source),
+                    receipt['artifacts']['component'], 'lsf-host-abi-phase3-v4', [], [])
+                selected = context.create(report, [], {'state': 'absent'})
+                for name, raw in (('source-inputs.json', original_source),
+                                  ('compatibility-report.json', encode(report)),
+                                  ('compatibility-context.json', encode(selected))):
+                    paths.write_new(output / name, raw)
+                # This is the original post-deployment reader, not a mocked
+                # import or a checkout module satisfying the archive by accident.
+                collector = outcomes.from_build(source, descriptor, receipt)
+                assert collector.context_state == 'observed'
+                original = {'category': 'platform-failure', 'outcomeKnown': False,
+                            'error': {'code': 'unavailable'}, 'data': {}}
+                unchanged = copy.deepcopy(original)
+                collector.observe('original', original, True)
+                observed = collector.snapshot()
+                assert original == unchanged
+                assert observed['cases'][0]['outcomeKnown'] is False
+                assert (observed['authority'], observed['workerDrain'], observed['retrySafety']) == (
+                    'none', 'unproven', 'unknown')
+                (output / 'compatibility-context.json').write_bytes(b'{}')
+                assert outcomes.from_build(source, descriptor, receipt).context_state == 'invalid-present'
+                (output / 'compatibility-context.json').unlink()
+                assert outcomes.from_build(source, descriptor, receipt).context_state == 'absent'
+
+            # Exercise the lazy TypeScript closure too. Do not bundle an entire
+            # compiler distribution merely to read its closed module receipt.
+            from tools import guest_compatibility_context_build as materials
+            from tools.typescript_guest import buffer_profile
+            assert materials.__file__.startswith(sys.argv[1] + '/')
+            assert buffer_profile.__file__.startswith(sys.argv[1] + '/')
+            backend = {'digest': digest(b'backend'), 'size': 7}
+            declaration = {'digest': digest(b'declaration'), 'size': 11}
+            recipe = encode({buffer_profile.BACKEND: backend,
+                             buffer_profile.DECLARATION: declaration})
+            captured = encode({'vendor/lsf/' + buffer_profile.DECLARATION: declaration})
+            selection = buffer_profile.check_selection({'standardBufferModules': ['node:buffer'],
+                'standardBufferProfile': buffer_profile.PROFILE,
+                'standardBufferBackendDigest': backend['digest']}, backend['digest'])
+            result = materials.typescript_buffer_materials(encode(selection), recipe, captured)
+            assert len(result) == 3 and all(row['profile'] == buffer_profile.PROFILE for row in result)
+            selection['authority'] = 'invented'
+            try:
+                materials.typescript_buffer_materials(encode(selection), recipe, captured)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError('changed owner receipt was accepted')
+            assert materials.java_compiler_materials({}, 'fixture', digest(recipe)) == []
+            print('packaged-compatibility-ok')
+        """
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / 'helper.pyz'
+            helper(archive)
+            with zipfile.ZipFile(archive) as packed:
+                self.assertNotIn('tools/typescript_guest/node_buffer.mjs', packed.namelist())
+                self.assertNotIn('tools/typescript_capsule.py', packed.namelist())
+            selected = root / 'inputs'
+            selected.mkdir(mode=0o700)
+            # -I ignores PYTHONPATH, user site packages and the checkout working
+            # directory; -S also excludes site packages. Only the zip + stdlib
+            # may satisfy these imports in the real child interpreter.
+            completed = subprocess.run([sys.executable, '-I', '-S', '-c', textwrap.dedent(script),
+                str(archive), str(selected)], cwd=root, capture_output=True, timeout=30)
+            self.assertEqual(completed.returncode, 0, completed.stderr.decode(errors='replace'))
+            self.assertEqual(completed.stdout, b'packaged-compatibility-ok\n')
+            self.assertEqual(completed.stderr, b'')
+
     @unittest.skipUnless(sys.platform == "linux", "Candidate assembly runs on Linux")
     def test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly(self):
         import json
@@ -319,6 +418,55 @@ class LargeInventory(unittest.TestCase):
 
 
 class ManagedCompilerInputs(unittest.TestCase):
+    def test_original_bundle_failure_forwards_only_captured_locations_through_the_installed_recipe(self):
+        import io
+        import json
+        from tools import dev_guest_recipe, dev_tool_distribution
+        from tools.dev_workflow import diagnostics
+        repository = Path(__file__).resolve().parents[2]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project, output = root / 'project', root / 'output'
+            (project / 'src').mkdir(parents=True)
+            (project / 'src/main.ts').write_text('\n' * 14 + 'this is not valid source;\n')
+            (output / 'logs').mkdir(parents=True)
+            captured = root / 'unavailable-private-capture/src'
+            (output / 'diagnostic-source.json').write_bytes(common.encode({
+                'capturedSource': str(captured), 'requestedSource': str(project / 'src')}))
+            source = (project / 'src/main.ts').read_bytes()
+            (output / 'source-inputs.json').write_bytes(common.encode({'src/main.ts': {
+                'digest': common.digest(source), 'size': len(source)}}))
+            actual = (repository / 'tools/tests/fixtures/typescript-bundle-error.stderr').read_bytes()
+            (output / 'logs/09-bundle.stderr.txt').write_bytes(actual +
+                b'    src/main.ts:15:5:\n/private/compiler.js:2:3: error: PRIVATE-STACK\n'
+                b'../secret.ts:1:1: error: PRIVATE-ESCAPE\nsrc/unselected.ts:1:1: error: PRIVATE-FILE\n')
+            stdout, stderr = io.BytesIO(), io.BytesIO()
+            out_text, err_text = io.TextIOWrapper(stdout, encoding='utf-8'), io.TextIOWrapper(stderr, encoding='utf-8')
+            with patch.object(sys, 'argv', ['recipe', '--project', str(project), '--output', str(output), '--language', 'typescript']), \
+                    patch.object(sys, 'stdout', out_text), patch.object(sys, 'stderr', err_text), \
+                    patch.object(dev_guest_recipe, 'compile_managed', side_effect=ValueError('bundle failed')):
+                code = dev_guest_recipe.main()
+            out_text.flush(); err_text.flush()
+            self.assertEqual(code, 1)
+            self.assertEqual(json.loads(stdout.getvalue())['code'], 'compiler-input-or-build-failed')
+            forwarded = stderr.getvalue()
+            self.assertNotIn(b'PRIVATE-', forwarded)
+            self.assertNotIn(str(captured).encode(), forwarded)
+            rows = diagnostics.collect(b'', forwarded, project, project, {'src/main.ts'})
+            self.assertEqual(len(rows), 1)
+            self.assertEqual((rows[0]['path'], rows[0]['line'], rows[0]['column']), ('src/main.ts', 15, 5))
+            self.assertIn('Expected ";" but found "is"', rows[0]['message'])
+            # Unknown capture metadata yields no invented source diagnostic.
+            (output / 'source-inputs.json').write_bytes(common.encode({'src/other.ts': {}}))
+            absent = io.BytesIO(); absent_text = io.TextIOWrapper(absent, encoding='utf-8')
+            with patch.object(sys, 'stderr', absent_text):
+                dev_guest_recipe.diagnostics(output, 'typescript')
+            absent_text.flush(); self.assertEqual(absent.getvalue(), b'')
+            payload = root / 'payload'
+            dev_tool_distribution.recipe(payload, 'typescript')
+            self.assertEqual((payload / 'recipe/tools/dev_workflow/diagnostics.py').read_bytes(),
+                             (repository / 'tools/dev_workflow/diagnostics.py').read_bytes())
+
     def fixture(self, root):
         from tools.dev_managed_distribution import pack
         inputs, sdk = root / "input", root / "sdk"
@@ -832,6 +980,49 @@ if sys.argv[2]=='dispatch':
  else:raise AssertionError('original scenario admission fence missing')
 for name in ('tools.guest_compatibility_outcomes','tools.guest_compatibility','tools.guest_compatibility_context','tools.guest_runtime_receipts'):
  importlib.import_module(name)
+from tools import guest_compatibility as compatibility,guest_compatibility_context as context,guest_compatibility_outcomes as outcomes
+from tools.dev_workflow.common import digest,encode,HOST_ABI
+if sys.platform=='win32':
+ # This is a Linux helper: its Windows anchor owner is intentionally absent.
+ # Only fixture file reads use the host path here; Linux exercises the real owner.
+ from tools.dev_workflow import paths
+ def fixture_read(root,name,maximum=262144):
+  raw=(root/name).read_bytes();assert 0<len(raw)<=maximum;return raw
+ paths.read=fixture_read
+for language in compatibility.LANGUAGES:
+ source=pathlib.Path.cwd()/language;output=source/'build';output.mkdir(parents=True)
+ inputs=encode({});(output/'source-inputs.json').write_bytes(inputs)
+ report=compatibility.report(language,digest(inputs),digest(b'component'),HOST_ABI,[],[])
+ selected=context.create(report,[],{'state':'absent'})
+ (output/'compatibility-report.json').write_bytes(encode(report))
+ (output/'compatibility-context.json').write_bytes(encode(selected))
+ captured=outcomes.from_build(source,{'artifacts':{'component':'build/component.wasm'}},
+  {'source':digest(b'frontend'),'artifacts':{'component':report['componentDigest']}})
+ assert captured.context_state=='observed',language
+ assert captured.context==selected,language
+for name in ('tools.guest_compatibility_context_build','tools.guest_emitted_code',
+             'tools.guest_api_analysis','tools.guest_compiler_capture','tools.guest_compiler_edges',
+             'tools.typescript_guest.buffer_profile',
+             'tools.typescript_guest.net_profile','tools.typescript_guest.runtime_profile'):
+ importlib.import_module(name)
+# Exercise the actual selected Net lazy reader, not just unselected imports.
+from tools.guest_compatibility_context_build import typescript_net_materials
+from tools.typescript_guest import net_profile
+recipe={};captured={};identities={}
+for part,path in zip(context.NET_PARTS,(net_profile.BACKEND,net_profile.TRANSPORT,net_profile.BINDINGS,
+                                      net_profile.RESOLVER,net_profile.DECLARATION,net_profile.WIT)):
+ row={'digest':digest(part.encode()),'size':1};recipe[path]=row;identities[part]=row['digest']
+ if part in {'declaration','interface'}:captured['vendor/lsf/'+path]=row
+recipe['tools/typescript_guest/net_profile.py']={'digest':digest(b'selector'),'size':1}
+selection=net_profile.selected({'standardNetModules':['node:net'],'standardNetProfile':context.NET_PROFILE,
+                               'standardNetIdentities':identities},identities)
+materials=typescript_net_materials(encode(selection),encode(recipe),encode(captured))
+assert [row['name'] for row in materials]==list(context.NET_MATERIALS)
+assert all(row['profile']==context.NET_PROFILE for row in materials)
+selection['maximumSocketStates']=3
+try:typescript_net_materials(encode(selection),encode(recipe),encode(captured))
+except DevError as error:assert error.code=='compatibility-context-net-selection-drift'
+else:raise AssertionError('rehashed Net selection borrowed another implementation')
 for name,loaded in tuple(sys.modules.items()):
  if name.startswith('tools.') and getattr(loaded,'__file__',None):
   assert str(pathlib.Path(loaded.__file__)).startswith(str(archive)),name
@@ -855,14 +1046,18 @@ print('real-helper-runtime-imports-owned')
 
     def test_missing_captured_outcome_module_cannot_be_imported_from_checkout(self):
         import zipfile
-        root, helper = self.archive(); incomplete = root / 'incomplete.pyz'
-        with zipfile.ZipFile(helper) as source, zipfile.ZipFile(incomplete, 'x') as target:
-            for row in source.infolist():
-                if row.filename != 'tools/guest_compatibility_outcomes.py':
-                    target.writestr(row, source.read(row.filename))
-        result = self.probe(root, incomplete)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn(b'guest_compatibility_outcomes', result.stderr)
+        for missing in ('guest_compatibility_outcomes', 'guest_compatibility_context_build',
+                        'guest_emitted_code', 'typescript_guest/buffer_profile',
+                        'typescript_guest/net_profile', 'typescript_guest/runtime_profile'):
+            with self.subTest(missing=missing):
+                root, helper = self.archive(); incomplete = root / 'incomplete.pyz'
+                with zipfile.ZipFile(helper) as source, zipfile.ZipFile(incomplete, 'x') as target:
+                    for row in source.infolist():
+                        if row.filename != 'tools/' + missing + '.py':
+                            target.writestr(row, source.read(row.filename))
+                result = self.probe(root, incomplete)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(missing.split('/')[-1].encode(), result.stderr)
 
 
 if __name__ == "__main__":

@@ -32,11 +32,21 @@ records the earlier resource campaign; the C11 and facility receipts retain
 their own scope. Ordinary closed `fopen`/`tmpfile` behavior is documented in
 [packaged resources](../../docs/component-development/packaged-resources.md).
 
-The reactor has a 64 KiB stack, a finite memory maximum and no thread runtime.
+The base reactor has a 64 KiB stack, a finite memory maximum and no thread runtime.
 Zig's bundled libc supplies allocation. Component construction rejects ambient
 WASI imports: filesystem, sockets, environment and clocks are not automatically
 available. Applications do not create provider clients, grants or credentials.
 The ordinary host deployment policy remains the only source of authority.
+
+The separate [C runtime context](../../docs/development/c-runtime-context.md)
+and [authenticated thread preparation](../../docs/development/c-thread-preparation.md)
+paths target a finite cooperative context-144 profile. They require matching
+compiler/core, component graph and explicit host selection; the base recipe does
+not enable them. Their source/component evidence does not qualify arbitrary
+pthread/C11 libraries, standard networking or safe CPU-loop preemption.
+Ordinary libc clock, entropy and stdio ports have their own
+[standard-facility contract](../../docs/component-development/c-standard-facilities.md)
+and current capability grants.
 
 ## Owners and asynchronous calls
 

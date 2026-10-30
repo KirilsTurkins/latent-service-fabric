@@ -553,6 +553,30 @@ pub enum BudgetError {
 }
 
 impl BudgetError {
+    /// Project a refusal observed at an actual `reserve_host_memory` boundary.
+    /// The caller supplies the allocation origin; ordinary MemoryBytes errors
+    /// must keep using `to_platform_error` without guessing native versus guest.
+    #[must_use]
+    pub fn to_host_memory_error(&self) -> PlatformError {
+        let error = self.to_platform_error();
+        if let Self::Exhausted {
+            dimension: BudgetDimension::MemoryBytes,
+            limit,
+            consumed,
+            requested,
+        } = self
+        {
+            let mut observed = crate::diagnostic::ActivationDiagnostic::new(
+                crate::diagnostic::DiagnosticStage::Execution,
+                crate::diagnostic::DiagnosticReason::NativeMemoryExhausted,
+            );
+            observed.configured_bound = Some(*limit);
+            observed.calculated_requirement = consumed.checked_add(*requested);
+            return observed.attach(error);
+        }
+        error
+    }
+
     fn exhausted(dimension: BudgetDimension, limit: u64, consumed: u64, requested: u64) -> Self {
         debug_assert_ne!(dimension, BudgetDimension::WallTime);
         Self::Exhausted {

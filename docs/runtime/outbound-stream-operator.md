@@ -148,6 +148,11 @@ operator review. Changing the publication, endpoint, provider identity or privat
 client configuration fails closed under the existing owner. A new provider
 generation must be adopted explicitly as described below.
 
+Confirmation checks exact stamp types, canonical ASCII `u64` generations and
+the complete retained policy document. JSON boolean/number coercion or a partial
+match cannot clear the original pending intent. Malformed, changed or unknown
+observations remain unresolved; recovery never turns them into another apply.
+
 For management bearer replacement, keep the original client file available and
 byte exact, even if its token has expired. Prepare a separate protected CLI
 configuration that changes only the selected profile's token. Run the existing
@@ -176,6 +181,12 @@ matches that owner. No token or file path is copied into state or public output.
 Adoption sends no grant mutation, replays no pending request and grants no new
 authority. It neither revokes the old token nor rotates TLS credentials or a
 live stream provider; those remain separate administrator/node-owner actions.
+
+Provider-descriptor adoption likewise rechecks the original client and exact
+owner, journal and receipt bytes immediately before its local write, after the
+read-only policy observations. A replacement during those reads refuses the
+handoff. This is a local input fence, not a remote compare-and-swap or a guarantee
+that unrelated files cannot change after the check.
 
 The owning Linux x86-64 node built with `development-outbound-streams` supports
 protected reload. Keep the same owned configuration path and change only the

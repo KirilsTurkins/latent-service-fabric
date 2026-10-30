@@ -1,0 +1,80 @@
+name: Authenticated kernel Root observation
+on:
+  push:
+    branches: ['feat/kernel-native-return-vm-20261024']
+    paths:
+      - '.github/workflows/stream-kernel-return-vm.yml'
+      - 'crates/latent-streams/**'
+      - 'crates/latent-stream-factory-native/**'
+      - 'crates/latent-capabilities/src/broker/pools/**'
+      - 'tools/*host_stream_kernel*'
+      - 'tools/tests/test_kernel_return_observation_vm.py'
+      - 'tools/tests/fixtures/host_stream_kernel_return_vfs.json'
+      - 'tools/ci/suites.d/kernel-return-observation-vm.json'
+      - 'research/standard-outbound/linux-6.12-lineage/**'
+permissions:
+  contents: read
+concurrency:
+  group: stream-kernel-return-vm-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  authenticated-return:
+    name: Nineteen native controls then one fresh kernel and observation VM
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04-native-return
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-targets: false
+      - name: Check original and new source and closed observation refusal controls
+        run: >-
+          python3 -B -m unittest
+          tools.tests.test_host_stream_kernel_retirement_observation
+          tools.tests.test_kernel_native_constructor_vm
+          tools.tests.test_kernel_return_observation_vm -v
+      - name: Install normal compiler and isolated emulator prerequisites
+        run: |
+          sudo timeout --signal=TERM --kill-after=30s 180s apt-get update
+          sudo timeout --signal=TERM --kill-after=30s 900s apt-get install --yes --no-install-recommends gcc make flex bison bc libelf-dev libssl-dev binutils libc6-dev qemu-system-x86 seabios curl
+      - name: Native and C controls before one fresh bounded kernel and VM
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_return_vm.py
+          --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/stream-kernel-return-vm"
+      - name: Retain actual source products observations and failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: stream-kernel-return-vm-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/stream-kernel-return-vm/receipt.json
+            ${{ runner.temp }}/stream-kernel-return-vm/FAILED.json
+            ${{ runner.temp }}/stream-kernel-return-vm/commands.json
+            ${{ runner.temp }}/stream-kernel-return-vm/source-inputs.json
+            ${{ runner.temp }}/stream-kernel-return-vm/native-init
+            ${{ runner.temp }}/stream-kernel-return-vm/native-init.rejected.elf
+            ${{ runner.temp }}/stream-kernel-return-vm/constructor-init
+            ${{ runner.temp }}/stream-kernel-return-vm/constructor-init.c
+            ${{ runner.temp }}/stream-kernel-return-vm/constructor-initramfs.list
+            ${{ runner.temp }}/stream-kernel-return-vm/constructor-initramfs.cpio
+            ${{ runner.temp }}/stream-kernel-return-vm/native-return-initramfs.cpio
+            ${{ runner.temp }}/stream-kernel-return-vm/firmware/*.bin
+            ${{ runner.temp }}/stream-kernel-return-vm/kernel/selection.json
+            ${{ runner.temp }}/stream-kernel-return-vm/kernel/*.config
+            ${{ runner.temp }}/stream-kernel-return-vm/kernel/constructor-bzImage
+            ${{ runner.temp }}/stream-kernel-return-vm/kernel/objects/include/generated/autoconf.h
+            ${{ runner.temp }}/stream-kernel-return-vm/commands/logs/*.txt
+          if-no-files-found: warn
+          retention-days: 3

@@ -1,12 +1,7 @@
 version: 2
+# All version updates target development. GitHub security PRs must stay disabled
+# while the default branch is release; tools/security_settings.py enforces this.
 updates:
-  - package-ecosystem: cargo
-    directory: /
-    cooldown:
-      default-days: 7
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 0
   - package-ecosystem: cargo
     directory: /
     target-branch: development
@@ -16,13 +11,6 @@ updates:
       interval: weekly
     open-pull-requests-limit: 3
     labels: ["area:security", "area:tooling"]
-  - package-ecosystem: npm
-    directories: [/sdk/typescript-client, /examples/renderer-profile]
-    cooldown:
-      default-days: 7
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 0
   - package-ecosystem: npm
     directories: [/sdk/typescript-client, /examples/renderer-profile]
     target-branch: development
@@ -47,13 +35,6 @@ updates:
       interval: weekly
     open-pull-requests-limit: 3
     labels: ["area:security", "area:tooling"]
-  - package-ecosystem: pip
-    directory: /.github/security
-    cooldown:
-      default-days: 7
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 0
   - package-ecosystem: pip
     directory: /.github/security
     target-branch: development

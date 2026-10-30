@@ -1,114 +1,19 @@
-{
-  "cases": [
-    "CleanupDescendantSource.test_child_birth_uses_original_generations_parent_and_charge_before_write",
-    "CleanupDescendantSource.test_delay_preserves_runtime_enabled_condition_and_real_lock_init",
-    "CleanupDescendantSource.test_exact_whole_origins_and_unqualified_runtime_gates",
-    "CleanupDescendantSource.test_final_destructors_once_and_child_return_never_revive_or_replay_task",
-    "CleanupDescendantSource.test_private_credentials_retain_every_original_reference_and_error_action",
-    "CleanupDescendantSource.test_real_composite_size_and_registered_hook_error_dispatch_are_preserved",
-    "CleanupDescendantSource.test_sighand_retains_original_constructor_and_real_rcu_wrapper",
-    "CleanupDescendantSource.test_signal_keeps_original_timers_locks_audit_autogroup_and_error_order"
-  ],
-  "guards": {
-    "CleanupDescendantSource.test_child_birth_uses_original_generations_parent_and_charge_before_write": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7529e3bc7a88c083729c5d02ae7a4392d2c58c07dc433530a4dbf3e6b6a1bd0b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupDescendantSource.test_delay_preserves_runtime_enabled_condition_and_real_lock_init": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7529e3bc7a88c083729c5d02ae7a4392d2c58c07dc433530a4dbf3e6b6a1bd0b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupDescendantSource.test_exact_whole_origins_and_unqualified_runtime_gates": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7529e3bc7a88c083729c5d02ae7a4392d2c58c07dc433530a4dbf3e6b6a1bd0b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupDescendantSource.test_final_destructors_once_and_child_return_never_revive_or_replay_task": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7529e3bc7a88c083729c5d02ae7a4392d2c58c07dc433530a4dbf3e6b6a1bd0b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupDescendantSource.test_private_credentials_retain_every_original_reference_and_error_action": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7529e3bc7a88c083729c5d02ae7a4392d2c58c07dc433530a4dbf3e6b6a1bd0b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupDescendantSource.test_real_composite_size_and_registered_hook_error_dispatch_are_preserved": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7529e3bc7a88c083729c5d02ae7a4392d2c58c07dc433530a4dbf3e6b6a1bd0b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupDescendantSource.test_sighand_retains_original_constructor_and_real_rcu_wrapper": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7529e3bc7a88c083729c5d02ae7a4392d2c58c07dc433530a4dbf3e6b6a1bd0b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "CleanupDescendantSource.test_signal_keeps_original_timers_locks_audit_autogroup_and_error_order": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:7529e3bc7a88c083729c5d02ae7a4392d2c58c07dc433530a4dbf3e6b6a1bd0b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_cleanup_descendants.py",
-  "reviewReason": "Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.",
-  "schemaVersion": "latent.ci.contracts.v1"
-}
+{"cases":["CleanupDescendantSource.test_child_birth_uses_original_generations_parent_and_charge_before_write","CleanupDescendantSource.test_delay_preserves_runtime_enabled_condition_and_real_lock_init","CleanupDescendantSource.test_exact_whole_origins_and_unqualified_runtime_gates","CleanupDescendantSource.test_final_destructors_once_and_child_return_never_revive_or_replay_task","CleanupDescendantSource.test_private_credentials_retain_every_original_reference_and_error_action","CleanupDescendantSource.test_real_composite_size_and_registered_hook_error_dispatch_are_preserved","CleanupDescendantSource.test_sighand_retains_original_constructor_and_real_rcu_wrapper","CleanupDescendantSource.test_signal_keeps_original_timers_locks_audit_autogroup_and_error_order"],"guards":{"CleanupDescendantSource.test_child_birth_uses_original_generations_parent_and_charge_before_write":
+  "a0f0247a9a5fdbb1af6b44e04e08e3c45c3fc2a6ffc1f49b333802753e9875b8"
+,"CleanupDescendantSource.test_delay_preserves_runtime_enabled_condition_and_real_lock_init":
+  "a0f0247a9a5fdbb1af6b44e04e08e3c45c3fc2a6ffc1f49b333802753e9875b8"
+,"CleanupDescendantSource.test_exact_whole_origins_and_unqualified_runtime_gates":
+  "a0f0247a9a5fdbb1af6b44e04e08e3c45c3fc2a6ffc1f49b333802753e9875b8"
+,"CleanupDescendantSource.test_final_destructors_once_and_child_return_never_revive_or_replay_task":
+  "a0f0247a9a5fdbb1af6b44e04e08e3c45c3fc2a6ffc1f49b333802753e9875b8"
+,"CleanupDescendantSource.test_private_credentials_retain_every_original_reference_and_error_action":
+  "a0f0247a9a5fdbb1af6b44e04e08e3c45c3fc2a6ffc1f49b333802753e9875b8"
+,"CleanupDescendantSource.test_real_composite_size_and_registered_hook_error_dispatch_are_preserved":
+  "a0f0247a9a5fdbb1af6b44e04e08e3c45c3fc2a6ffc1f49b333802753e9875b8"
+,"CleanupDescendantSource.test_sighand_retains_original_constructor_and_real_rcu_wrapper":
+  "a0f0247a9a5fdbb1af6b44e04e08e3c45c3fc2a6ffc1f49b333802753e9875b8"
+,"CleanupDescendantSource.test_signal_keeps_original_timers_locks_audit_autogroup_and_error_order":
+  "a0f0247a9a5fdbb1af6b44e04e08e3c45c3fc2a6ffc1f49b333802753e9875b8"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_cleanup_descendants.py","reviewReason":"Additive reviewed finite cleanup constructor source controls and one 24-object hosted geometry/atomic programme; original four-object recipe and all earlier cases retained; no kernel link/boot, consumer selection or runtime/native qualification.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "a0f0247a9a5fdbb1af6b44e04e08e3c45c3fc2a6ffc1f49b333802753e9875b8"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7529e3bc7a88c083729c5d02ae7a4392d2c58c07dc433530a4dbf3e6b6a1bd0b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

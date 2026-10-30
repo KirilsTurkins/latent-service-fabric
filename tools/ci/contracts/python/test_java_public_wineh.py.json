@@ -1,0 +1,17 @@
+{"cases":["JavaPublicWinEH.test_actual_owned_pipe_collector_and_abort_cleanup","JavaPublicWinEH.test_admission_and_bounded_capture_failures_preserve_original_exception","JavaPublicWinEH.test_changed_real_materials_or_command_receipt_refuse_before_execution","JavaPublicWinEH.test_real_admission_replay_uses_original_argv_and_separate_output_only","JavaPublicWinEH.test_real_hosted_context_guards_and_named_source_identities","JavaPublicWinEH.test_sealed_ticket_checks_actual_files_and_rejects_retargeting","JavaPublicWinEH.test_synthetic_pinned_print_text_is_counted_and_unknown_formats_refuse"],"guards":{"JavaPublicWinEH.test_synthetic_pinned_print_text_is_counted_and_unknown_formats_refuse":
+  "1c27a5957e10143ed90507492574ecd5ba4fafda2ae11542a0afacaed98a766e"
+,"JavaPublicWinEH.test_real_hosted_context_guards_and_named_source_identities":
+  "1c27a5957e10143ed90507492574ecd5ba4fafda2ae11542a0afacaed98a766e"
+,"JavaPublicWinEH.test_real_admission_replay_uses_original_argv_and_separate_output_only":
+  "1c27a5957e10143ed90507492574ecd5ba4fafda2ae11542a0afacaed98a766e"
+,"JavaPublicWinEH.test_changed_real_materials_or_command_receipt_refuse_before_execution":
+  "1c27a5957e10143ed90507492574ecd5ba4fafda2ae11542a0afacaed98a766e"
+,"JavaPublicWinEH.test_sealed_ticket_checks_actual_files_and_rejects_retargeting":
+  "1c27a5957e10143ed90507492574ecd5ba4fafda2ae11542a0afacaed98a766e"
+,"JavaPublicWinEH.test_actual_owned_pipe_collector_and_abort_cleanup":
+  "1c27a5957e10143ed90507492574ecd5ba4fafda2ae11542a0afacaed98a766e"
+,"JavaPublicWinEH.test_admission_and_bounded_capture_failures_preserve_original_exception":
+  "1c27a5957e10143ed90507492574ecd5ba4fafda2ae11542a0afacaed98a766e"
+},"kind":"python","module":"tools/tests/test_java_public_wineh.py","reviewReason":"Preserve original five cases and every skip/decorator/base guard; reviewed fixture/import helpers now exercise sealed tickets and count-only pipes, adding two actual file/owned-process controls without compiler execution.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "1c27a5957e10143ed90507492574ecd5ba4fafda2ae11542a0afacaed98a766e"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:586698c104cbc786e35c1bd7bee2ea8d87beadfbbd5d7b2736aa36c46deb9d23","class:setup-sha256:7ab166febccc0c79d7d6088a8f178d325d7ad7d035d8781cfd12f76242b0558c"]}}}

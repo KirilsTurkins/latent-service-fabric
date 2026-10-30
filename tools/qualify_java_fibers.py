@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import sys
@@ -268,8 +269,8 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
     compiler.run("completable-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
                  "-d", output, *sources)
     expected = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;"
-        "resolved-reference-closure;unsupported-no-fallback;actual-coroutine-monitors=24;owned-callback-bodies=25;"
-        "bodies=181;actual-generated-callbacks=23;application-identity")
+        "resolved-reference-closure;unsupported-no-fallback;actual-coroutine-monitors=28;owned-callback-bodies=30;"
+        "bodies=188;actual-generated-callbacks=23;application-identity")
     observed = compiler.run("completable-model-control", "java", "-Xmx256m", "-cp",
                             str(output) + os.pathsep + classpath,
                             "dev.latent.guest.runtime.compiler.CompletableFutureModelControl").strip()
@@ -280,8 +281,8 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
     if fields != ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
                   "closed-read-write-references;absent-no-fallback;models=6"):
         raise ValueError("Java CompletableFuture field model control did not complete")
-    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 2, "modelMethodBodies": 181,
-            "coroutineMonitorBodies": 24, "ownedCallbackBodies": 25, "actualGeneratedCallbacks": 23,
+    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 3, "modelMethodBodies": 188,
+            "coroutineMonitorBodies": 28, "ownedCallbackBodies": 30, "actualGeneratedCallbacks": 23,
             "jarDigests": identities,
             "fieldReferences": "actual-declared-and-inherited-types-passed",
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
@@ -353,10 +354,115 @@ def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
             "sourceInputs": inputs, "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
 
 
+def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
+    """Real port source with a private host ledger, never injected guest bindings."""
+    private = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
+    ports = sorted((compiler.sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
+    controls = [private / name for name in ('ScheduledOwnerControl.java',
+        'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
+    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in (*ports, *controls)}
+    output.mkdir()
+    compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
+        '-d', output, *ports, *controls)
+    result = compiler.run('scheduled-source-control', 'java', '-Xmx256m', '-cp', output, 'ScheduledOwnerControl').strip()
+    expected = ('SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;'
+        'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;all-retired')
+    if result != expected: raise ValueError('Java scheduled source control did not complete')
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError('Java scheduled source control inputs changed')
+    return {'status': 'SDK-source-controls-passed', 'sourceInputs': inputs,
+        'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
+def scheduled_model_control(compiler: Compiler, output: Path) -> dict:
+    """Actual pinned TeaVM public/private class identities before component cost."""
+    classpath, identities = locked_model_classpath(compiler, include_platform=True, include_dependency_analysis=True)
+    sources = [*sorted((compiler.sdk / 'fibers/compiler/dev/latent/guest/runtime/compiler').glob('*.java')),
+        *sorted((compiler.sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java')),
+        compiler.sdk / 'fibers/conformance/compiler/ScheduledModelControl.java',
+        compiler.sdk / 'fibers/conformance/compiler/source-control/org/teavm/dependency/LambdaEmitterControlContext.java']
+    sources += [compiler.sdk / ('fibers/conformance/compiler/scheduled-source-control/' + name)
+        for name in ('dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
+    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in sources}
+    output.mkdir()
+    compiler.run('scheduled-model-compile', 'javac', '-proc:none', '--release', '25', '-cp', classpath,
+        '-d', output, *sources)
+    result = compiler.run('scheduled-model-control', 'java', '-Xmx256m', '-cp',
+        str(output) + os.pathsep + classpath, 'dev.latent.guest.runtime.compiler.ScheduledModelControl').strip()
+    if result != ('SCHEDULED_MODEL_CONTROL PASS standard-APIs;private-task;canonical-fields-and-methods;'
+                  'ordinary-constructor;no-fallback;constructed-identities=5;actual-generated-callbacks=3;models=8'):
+        raise ValueError('Java scheduled model control did not complete')
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError('Java scheduled model inputs changed')
+    return {'status': 'actual-locked-classlib-model-passed', 'models': 8,
+        'constructedIdentities': 5, 'actualGeneratedCallbacks': 3,
+        'jarDigests': identities, 'sourceInputs': inputs,
+        'portOrApplicationClassesInitialized': False, 'actualGuestBindingsUsed': False}
+
+
+def shutdown_now_source_control(compiler: Compiler, output: Path) -> dict:
+    """Run actual pool/future bodies; only this host control uses the old private ledger."""
+    fixture = compiler.sdk / 'fibers/conformance/shutdown-now'
+    ledger = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
+    ports = sorted((compiler.sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
+    controls = [fixture / 'Capsule.java', fixture / 'OwnerControl.java',
+        ledger / 'dev/latent/generated/Bindings.java', ledger / 'dev/latent/guest/runtime/Activation.java']
+    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in (*ports, *controls)}
+    output.mkdir()
+    # Same ordinary application logic as the real reference/component. Only
+    # these two standard API imports select the real SDK bodies for this JVM control.
+    text = read_file(fixture / 'Capsule.java').decode('utf-8')
+    for name in ('CompletableFuture', 'Executors'):
+        original = 'import java.util.concurrent.' + name + ';'
+        if text.count(original) != 1: raise ValueError('Java shutdownNow source import is ambiguous')
+        text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
+    selected = output / 'Capsule.java'
+    selected.write_bytes(text.encode('utf-8'))
+    compiler.run('shutdown-now-source-compile', 'javac', '-proc:none', '--release', '25',
+        '-d', output, selected, *ports, *controls[1:])
+    result = compiler.run('shutdown-now-source-control', 'java', '-Xmx256m', '-cp', output,
+        'dev.latent.app.OwnerControl').strip()
+    if result != 'SHUTDOWN_NOW_SOURCE_OWNER PASS observables=53':
+        raise ValueError('Java shutdownNow source ownership control did not complete')
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError('Java shutdownNow control inputs changed')
+    return {'status': 'SDK-source-controls-passed', 'sourceInputs': inputs, 'ownershipChecks': 53,
+        'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
+
+def future_queue_source_control(compiler: Compiler, output: Path) -> dict:
+    """Real FutureTask/pool bodies; the existing host ledger is never a guest input."""
+    fixture = compiler.sdk / 'fibers/conformance/future-queue'
+    ledger = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
+    ports = sorted((compiler.sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
+    controls = [fixture / 'Capsule.java', fixture / 'OwnerControl.java',
+        ledger / 'dev/latent/generated/Bindings.java', ledger / 'dev/latent/guest/runtime/Activation.java']
+    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in (*ports, *controls)}
+    output.mkdir()
+    text = read_file(fixture / 'Capsule.java').decode('utf-8')
+    for name in ('FutureTask', 'Executors', 'ScheduledThreadPoolExecutor'):
+        original = 'import java.util.concurrent.' + name + ';'
+        if text.count(original) != 1: raise ValueError('Java FutureTask source import is ambiguous')
+        text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
+    selected = output / 'Capsule.java'; selected.write_bytes(text.encode('utf-8'))
+    compiler.run('future-queue-source-compile', 'javac', '-proc:none', '--release', '25',
+        '-d', output, selected, *ports, *controls[1:])
+    result = compiler.run('future-queue-source-control', 'java', '-Xmx256m', '-cp', output,
+        'dev.latent.app.OwnerControl').strip()
+    if result != 'FUTURE_QUEUE_OWNER PASS checks=48':
+        raise ValueError('Java FutureTask queue ownership control did not complete')
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError('Java FutureTask queue inputs changed')
+    return {'status': 'SDK-source-controls-passed', 'sourceInputs': inputs, 'ownershipChecks': 48,
+        'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
 def recipe_inputs() -> dict[str, str]:
     from tools.java_capsule_build import RECIPE
     paths = [Path(__file__), *sorted((ROOT / "tools/java_guest").glob("*.py")),
              ROOT / "tools/java_fiber_library_inputs.py",
+             ROOT / "tools/data/java-public-wineh/e782-baseline.json",
+             ROOT / "tools/data/java-llvm-private-stores/supplement.json",
              ROOT / "tools/stage_runtime_wit.py", ROOT / "tools/rust_capsule_project.py",
              ROOT / "tools/build_observation.py", ROOT / "tools/build_process.py",
              ROOT / "tools/build_process_linux.py", ROOT / "tools/build_process_windows.py"]
@@ -365,10 +471,38 @@ def recipe_inputs() -> dict[str, str]:
 
 
 def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None,
-            read_only_cache: Path | None = None, fixture="threads"):
-    if fixture not in {"threads", "completable", "timers", "fiber-io", "worker-libraries"}: raise ValueError("unknown Java fiber fixture")
+            read_only_cache: Path | None = None, fixture="threads", observe_public_wineh=False,
+            derived_llvm_public=False, private_scalar_llvm_public=False, _deadline=None):
+    if _deadline is not None:
+        if (fixture not in {'worker-libraries', 'scheduled-library', 'shutdown-now', 'future-queue'} or type(_deadline) not in (int, float)
+                or not math.isfinite(_deadline) or _deadline <= time.monotonic() + 5):
+            raise ValueError('Java-worker-parent-deadline')
+        # Includes the existing process owner's five-second cleanup allowance.
+        _deadline = min(_deadline, time.monotonic() + 1200)
+    if fixture not in {"threads", "completable", "timers", "fiber-io", "worker-libraries", "scheduled-library", "shutdown-now", "future-queue"}: raise ValueError("unknown Java fiber fixture")
+    if type(observe_public_wineh) is not bool or observe_public_wineh and fixture != 'threads':
+        raise ValueError('WinEH observation requires only the fixed normal public fiber fixture')
+    if (type(derived_llvm_public) is not bool
+            or derived_llvm_public and fixture != 'threads'):
+        raise ValueError('Derived LLVM requires only the fixed public fiber compiler without replay')
+    if (type(private_scalar_llvm_public) is not bool
+            or private_scalar_llvm_public and (fixture != 'threads' or derived_llvm_public or observe_public_wineh)):
+        raise ValueError('Private scalar LLVM requires its distinct fixed public backend mode')
     if offline_cache is not None and read_only_cache is not None:
         raise ValueError("Java dependency cache selections are mutually exclusive")
+    admitted, derived_deadline = None, None
+    if derived_llvm_public:
+        from tools.java_guest import llvm_ssa_consumer as derived
+        derived_deadline = derived.deadline()
+        admitted = derived.inputs.prepare(derived_deadline)
+        if wasi_sdk.resolve(strict=True) != admitted.sdk:
+            raise ValueError('Derived LLVM requires its fixed authenticated input root')
+    if private_scalar_llvm_public:
+        from tools.java_guest import llvm_private_store_consumer as private_backend
+        derived_deadline = private_backend.deadline()
+        admitted = private_backend.inputs.prepare(derived_deadline)
+        if wasi_sdk.resolve(strict=True) != admitted.sdk:
+            raise ValueError('Private scalar LLVM requires its fixed authenticated input root')
     output = fresh(output)
     common = ROOT / "sdk/java-guest/fibers/conformance"
     selected = common if fixture == "threads" else common / fixture
@@ -386,14 +520,32 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
               "status": "running", "nodeExecution": "not-run", "sourceDigest": digest(source.read_bytes()),
               "fixture": fixture}
     report["recipeInputs"] = before
+    compiler = None
     try:
-        compiler = Compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache,
-                            read_only_cache=read_only_cache, timeout=1200)
+        selected_compiler = Compiler
+        extra = {}
+        if _deadline is not None:
+            extra['_deadline'] = _deadline
+        if observe_public_wineh:
+            from tools.java_guest.public_wineh import PublicWinEHCompiler
+            selected_compiler = PublicWinEHCompiler
+        if derived_llvm_public:
+            selected_compiler = (derived.CopyCostWinEHDiagnosticCompiler if observe_public_wineh
+                                 else derived.CopyCostPublicCompiler)
+            extra['admitted'] = admitted
+        if private_scalar_llvm_public:
+            selected_compiler = private_backend.PrivateScalarPublicCompiler
+            extra['admitted'] = admitted
+        compiler = selected_compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache,
+                            read_only_cache=read_only_cache, timeout=1200, **extra)
         library_jars, reference_jars = (), ()
-        if fixture == 'worker-libraries':
+        if fixture in {'worker-libraries', 'scheduled-library'}:
             from tools import java_fiber_library_inputs
+            capture_options = {'gradle': gradle}
+            if _deadline is not None:
+                capture_options['_deadline'] = _deadline
             library_jars, reference_jars, report['libraries'] = java_fiber_library_inputs.capture(
-                output / 'library-inputs', gradle=gradle)
+                output / 'library-inputs', **capture_options)
         control = output / "reference-jdk"
         control.mkdir()
         main = control / "Main.java"
@@ -408,12 +560,21 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         reference_options = ['-cp', os.pathsep.join(map(str, reference_jars))] if reference_jars else []
         compiler.run("reference-jdk-compile", "javac", "-proc:none", *reference_options, "-d", control, source, main, *reference_sources)
         report["reference"] = []
-        for iteration in range(3):
+        modes = 8 if fixture == 'scheduled-library' else 4
+        for iteration in range(1 if fixture in {'scheduled-library', 'shutdown-now', 'future-queue'} else 3):
             reference_classpath = os.pathsep.join(map(str, (control, *reference_jars)))
             result = compiler.run(f"reference-jdk-{iteration}", "java", "-cp", reference_classpath, "Main")
-            if result.strip() != "42 42 42 42": raise ValueError("reference-JDK fiber observable mismatch")
-            report["reference"].append({"iteration": iteration, "modes": [0, 1, 2, 3], "results": [42, 42, 42, 42]})
-        report["completableSource"] = completable_source_control(compiler, output / "completable-source")
+            expected = [41, 42, 42, 42] if fixture == 'future-queue' else [42] * modes
+            if result.strip() != ' '.join(map(str, expected)): raise ValueError("reference-JDK fiber observable mismatch")
+            report["reference"].append({"iteration": iteration, "modes": list(range(modes)), "results": expected})
+        if fixture == 'future-queue':
+            report['futureQueueSource'] = future_queue_source_control(compiler, output / 'future-queue-source')
+        elif fixture == 'scheduled-library':
+            report['scheduledSource'] = scheduled_source_control(compiler, output / 'scheduled-source')
+        else:
+            report["completableSource"] = completable_source_control(compiler, output / "completable-source")
+        if fixture == 'shutdown-now':
+            report['shutdownNowSource'] = shutdown_now_source_control(compiler, output / 'shutdown-now-source')
         if fixture == "timers":
             report["standardTimerSource"] = standard_timer_source_control(compiler, output / "standard-timer-source")
             report["standardTimerModel"] = standard_timer_model_control(compiler, output / "standard-timer-model")
@@ -421,21 +582,51 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         if library_jars: selection['application_classpath'] = library_jars
         component, report["record"] = compiler.compile(output / "src", wit.parent,
             "tests:caller/service@1.0.0", output / "build", activation_profile=True, **selection)
-        report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")
-        report["timeunitModel"] = timeunit_model_control(compiler, output / "timeunit-model")
-        report["waitFrameModel"] = wait_frame_model_control(compiler, output / "wait-frame-model")
-        report["completableModel"] = completable_model_control(compiler, output / "completable-model")
-        if fixture == 'worker-libraries':
+        if fixture in {'scheduled-library', 'future-queue'}:
+            report['scheduledModel'] = scheduled_model_control(compiler, output / 'scheduled-model')
+        elif fixture == 'shutdown-now':
+            report['completableModel'] = completable_model_control(compiler, output / 'completable-model')
+        else:
+            report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")
+            report["timeunitModel"] = timeunit_model_control(compiler, output / "timeunit-model")
+            report["waitFrameModel"] = wait_frame_model_control(compiler, output / "wait-frame-model")
+            report["completableModel"] = completable_model_control(compiler, output / "completable-model")
+        if fixture in {'worker-libraries', 'scheduled-library'}:
             java_fiber_library_inputs.check(output / 'library-inputs', report['libraries'])
         compiler.check_unchanged()
         report["sdkInputs"] = {name: digest(data) for name, data in compiler.original_sdk.items()}
         report["componentDigest"] = digest(read_file(component, 64 * 1024 * 1024))
         compiler.check_unchanged()
+        if derived_llvm_public:
+            from tools.java_guest.llvm_ssa_consumer import retain_products
+            report['derivedLlvm'] = compiler.qualification_record()
+            report['derivedPublicProducts'] = retain_products(output)
+            if time.monotonic() >= derived_deadline:
+                raise ValueError('Derived LLVM public compiler job deadline exceeded')
+        if private_scalar_llvm_public:
+            report['privateScalarLlvm'] = compiler.qualification_record()
+            report['derivedPublicProducts'] = private_backend.retain_products(output)
+            if time.monotonic() >= derived_deadline:
+                raise ValueError('Private scalar LLVM public compiler job deadline exceeded')
         if recipe_inputs() != before: raise ValueError("Java fiber qualification recipe changed during preparation")
+        if _deadline is not None and time.monotonic() >= _deadline:
+            raise ValueError('Java-worker-parent-deadline')
         report["commands"] = compiler.records
         (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
         report["status"] = "component-built-unqualified"
     except BaseException as error:
+        if fixture == "threads":
+            try:
+                from tools.java_guest.fiber_component_inputs import retain
+                retain(compiler, output)
+            except BaseException:
+                pass  # Failure-only retention must preserve the original compiler exception.
+            if observe_public_wineh and not derived_llvm_public:
+                try:
+                    from tools.java_guest.public_wineh import retain as retain_wineh
+                    retain_wineh(compiler, output)
+                except BaseException:
+                    pass  # Optional diagnostics cannot replace original failure.
         report.update(status="failed", reason=str(error))
         raise
     finally:
@@ -452,10 +643,19 @@ def main():
     caches = parser.add_mutually_exclusive_group()
     caches.add_argument("--offline-cache", type=Path)
     caches.add_argument("--read-only-cache", type=Path)
-    parser.add_argument("--fixture", choices=("threads", "completable", "timers", "fiber-io", "worker-libraries"), default="threads")
+    parser.add_argument("--fixture", choices=("threads", "completable", "timers", "fiber-io", "worker-libraries", "scheduled-library", "shutdown-now", "future-queue"), default="threads")
+    parser.add_argument('--observe-public-wineh', action='store_true',
+                        help='Fixed-public-only WinEH observation: historical postfailure, or explicit derived pre-Clang diagnostic only')
+    parser.add_argument('--derived-llvm-public', action='store_true',
+                        help='Only the fixed authenticated LLVM candidate and unchanged public compiler fixture')
+    parser.add_argument('--private-scalar-llvm-public', action='store_true',
+                        help='Only the independently qualified private-scalar backend and unchanged public C')
     args = parser.parse_args()
     prepare(args.output, args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache,
-            read_only_cache=args.read_only_cache, fixture=args.fixture)
+            read_only_cache=args.read_only_cache, fixture=args.fixture,
+            observe_public_wineh=args.observe_public_wineh,
+            derived_llvm_public=args.derived_llvm_public,
+            private_scalar_llvm_public=args.private_scalar_llvm_public)
 
 
 if __name__ == "__main__": main()

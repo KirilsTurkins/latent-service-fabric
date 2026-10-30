@@ -139,11 +139,15 @@ def remove_originals(directory: Path, expected_parent: Path):
     require(not directory.exists(), 'compiler-diagnostics-original-inputs-not-removed')
 
 
-def dotnet_sources(directory: Path):
+def dotnet_sources(directory: Path, *, sources: dict[str, bytes] | None = None):
     """Framework-only library projects; their CIL is captured, never host-loaded."""
     directory.mkdir(); child = directory/'child'; child.mkdir()
+    if sources is not None:
+        require(type(sources) is dict and set(sources) == {'Core.cs', 'Library.cs'}
+            and all(type(raw) is bytes and 0 < len(raw) <= 65536 for raw in sources.values()),
+            'compiler-diagnostics-fixed-library-source-bound')
     for name, folder in (('Core.cs', child), ('Library.cs', directory)):
-        (folder/name).write_bytes(read_file(ROOT/(SOURCE+'dotnet')/name))
+        (folder/name).write_bytes(read_file(ROOT/(SOURCE+'dotnet')/name) if sources is None else sources[name])
     common = ('<TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings>'
         '<Nullable>enable</Nullable><EnableDefaultCompileItems>false</EnableDefaultCompileItems>')
     (child/'Data.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>'+common
@@ -169,7 +173,8 @@ def dotnet_package(identity: str, assembly: bytes):
     return stream.getvalue()
 
 
-def dotnet_capture(app: Path, directory: Path, tools: Path, *, deadline: float):
+def dotnet_capture(app: Path, directory: Path, tools: Path, *, deadline: float,
+                   sources: dict[str, bytes] | None = None):
     from tools import dotnet_dependency_authoring as authoring
     from tools.dotnet_application_dependencies import resolve
     from tools.dotnet_guest.compiler import Compiler
@@ -177,7 +182,7 @@ def dotnet_capture(app: Path, directory: Path, tools: Path, *, deadline: float):
     from tools.rust_capsule_build import Commands
     import time
     parent = directory.parent.resolve(strict=True)
-    directory.mkdir(); library = dotnet_sources(directory/'library')
+    directory.mkdir(); library = dotnet_sources(directory/'library', sources=sources)
     (library/'global.json').write_bytes(read_file(app/'global.json'))
     feed = directory/'feed'; feed.mkdir(); evidence = directory/'evidence'; evidence.mkdir()
     original = snapshot(library); sdk = read_file(app/'sdk-lock.json')
@@ -185,6 +190,11 @@ def dotnet_capture(app: Path, directory: Path, tools: Path, *, deadline: float):
     require(remaining >= 120, 'compiler-diagnostics-original-capture-deadline')
     commands = Commands(library, evidence, build_environment(directory),
         deadline_seconds=remaining, command_seconds=120)
+    # This finite capture already has an admitted parent. Distribution setup
+    # and its loader probes cannot renew the original900s compilation phase.
+    compiler_deadline = min(deadline, commands.deadline)
+    commands.deadline = compiler_deadline - 5
+    commands._parent_deadline = compiler_deadline
     compiler = Compiler(tools, commands, app/'vendor/lsf', offline=True, captured=True)
     compiler.run('outside-diagnostic-library', compiler.dotnet, 'build', library/'Library.csproj', '-c', 'Release',
         '-p:RestoreConfigFile='+str(library/'nuget.config'), '-p:NuGetAudit=false', '-nodeReuse:false',
@@ -200,6 +210,9 @@ def dotnet_capture(app: Path, directory: Path, tools: Path, *, deadline: float):
         identities[identity] = {'assembly': digest(assembly), 'package': digest(raw)}
     authoring.edit(app, 'add', identity=DOTNET_IDS[0], version='1.0.0')
     candidate = directory/'candidate.json'
+    # The selected closure is exactly2 non-SDK packages: version10, restore600,
+    # two native content-hash helpers30 each, and original5s cleanup per child.
+    require(deadline - time.monotonic() > 700, 'compiler-diagnostics-original-resolver-capture-reserve')
     lock = resolve(app, candidate, dotnet=compiler.dotnet, tools=tools,
         policy={'sources': [{'name': 'outside', 'path': str(feed), 'patterns': list(DOTNET_IDS)}]})
     rows = {row['metadata']['package']: row for row in lock['artifacts']

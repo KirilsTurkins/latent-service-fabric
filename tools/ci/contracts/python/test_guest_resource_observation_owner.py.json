@@ -1,0 +1,18 @@
+{
+"storageCases":"guard-keys",
+"guards":{
+"ResourceObservationOwner.test_actual_client_failure_is_not_retried_and_cannot_replace_original_trap":
+      "680ba7313c260cf27a70f15ea71d4d4ab67d3f60dd9236381c0386a441c70d3a",
+"ResourceObservationOwner.test_original_absolute_deadline_caps_the_real_call_and_prevents_late_second_query":
+      "680ba7313c260cf27a70f15ea71d4d4ab67d3f60dd9236381c0386a441c70d3a",
+"ResourceObservationOwner.test_unissued_or_option_like_identity_and_overbound_selector_refuse_before_rpc":
+      "680ba7313c260cf27a70f15ea71d4d4ab67d3f60dd9236381c0386a441c70d3a"
+},
+"kind":"python",
+"module":"tools/tests/test_guest_resource_observation_owner.py",
+"reviewReason":"Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"680ba7313c260cf27a70f15ea71d4d4ab67d3f60dd9236381c0386a441c70d3a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6b8ac6653cbfc8f91309c9d9bc410f58212d27e6da23144a5db26acd630dee34","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
+}

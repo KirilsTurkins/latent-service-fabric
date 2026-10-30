@@ -101,6 +101,20 @@ def derive_async_bindgen(original: bytes) -> tuple[bytes,dict]:
         b'    pub lsf_async_imports: BTreeMap<(String, String), lsf_async::Descriptor>,','actual-descriptor-output')
     source=replace_once(source,b'        resource_imports,\n    })',
         b'        resource_imports,\n        lsf_async_imports: bindgen.lsf_async_imports,\n    })','descriptor-output-move')
+    # Bind each resource TypeId to the exact original compiler-owned canonical
+    # drop import, preserving its world/interface namespace and return count.
+    source=replace_once(source,b'    let mut resource_imports = Vec::new();',
+        b'    let mut resource_imports = Vec::new();\n'
+        b'    let mut lsf_resource_drops = BTreeMap::new();','original-resource-drop-map')
+    source=replace_once(source,b'        resource_imports.push((impt, format!("[resource-drop]{resource_name_kebab}"), 0));',
+        b'        lsf_resource_drops.insert(id,(impt.clone(),format!("[resource-drop]{resource_name_kebab}")));\n'
+        b'        resource_imports.push((impt, format!("[resource-drop]{resource_name_kebab}"), 0));',
+        'original-imported-resource-identity')
+    source=replace_once(source,b'    let finalization_registries = finalization_registries.concat();',
+        b'    for descriptor in bindgen.lsf_async_imports.values_mut() {\n'
+        b'        descriptor.bind_resource_drops(&lsf_resource_drops);\n'
+        b'    }\n'
+        b'    let finalization_registries = finalization_registries.concat();','bind-actual-resource-destructors')
     # Native helper access is compiler-local. Application modules never receive
     # a manual task pump, broker token or ambient capability.
     source=replace_once(source,b'            delete globalThis.$bindings;\n',
@@ -118,12 +132,36 @@ def derive_async_bindgen(original: bytes) -> tuple[bytes,dict]:
         let tracing_prefix = String::new();
 ''','real-native-await-callee')
     source=replace_once(source,b'        self.src.push_str(&f.src);\n        self.src.push_str("}");',
-        b'''        if lsf_async_call {
+        br'''        if lsf_async_call {
             let descriptor = lsf_async::descriptor(self.resolve, func, &self.sizes);
             uwriteln!(self.src, "const __lsfImportId = __lsfImports.reserve({}, {}, {}, {});",
                 descriptor.result_bytes, descriptor.parameter_bytes, descriptor.raw_result,
                 (0..nparams).map(|i| format!("arg{i}")).collect::<Vec<_>>().join(", "));
             uwriteln!(self.src, "const __lsfAwaitImport = async (...lowered) => __lsfImports.lift(await {original_callee}(__lsfImportId | 0, ...lowered));");
+            uwriteln!(self.src, "/* lsf-owned-result-transfer:{} */", if f.err == ErrHandling::ThrowResultErr { "wit-result" } else { "value" });
+            if let Some((key,slots))=descriptor.partial_slots() {
+                let mut entries=Vec::new();
+                let mut supported=true;
+                for (offset,resource) in slots {
+                    let table=&resource_map[&resource];
+                    if !table.imported {supported=false;break;}
+                    let ResourceData::Guest{resource_name,prefix,..}=&table.data else {
+                        supported=false;break;
+                    };
+                    let prefix=prefix.as_deref().unwrap_or("");
+                    let registry=format!("finalizationRegistry_import${prefix}{}",resource_name.to_lower_camel_case());
+                    let class=format!("import_{prefix}{}",resource_name.to_upper_camel_case());
+                    if !registry.bytes().chain(class.bytes()).all(|b|b.is_ascii_alphanumeric()||b==b'_'||b==b'$') {
+                        supported=false;break;
+                    }
+                    let resource=resource.index();
+                    entries.push(format!(r#"{{"offset":{offset},"resource":{resource},"registry":"{registry}","class":"{class}"}}"#));
+                }
+                if supported {
+                    uwriteln!(self.src,r#"/* lsf-own-plan-v2:{{"key":{key},"bytes":{},"raw":{},"slots":[{}]}} */"#,
+                        descriptor.result_bytes,descriptor.raw_result,entries.join(","));
+                }
+            }
             uwriteln!(self.src, "try {{");
         }
         self.src.push_str(&f.src);
@@ -132,7 +170,7 @@ def derive_async_bindgen(original: bytes) -> tuple[bytes,dict]:
         }
         self.src.push_str("}");''','preallocation-and-typed-lift-retirement')
     receipt={'status':'private-derived-bindgen-source','originalSha256':hashlib.sha256(original).hexdigest(),
-        'derivedSha256':hashlib.sha256(source).hexdigest(),'actualNativeDescriptorRequired':True,
+        'derivedSha256':hashlib.sha256(source).hexdigest(),'actualNativeDescriptorRequired':True,'privateImportBindingAbi':2,
         'originalTypedLoweringAndLiftingRetained':True,'splicerTrampolineStillRequired':True,
         'actualCompilerExecuted':False,'qualification':'unknown','signedLSFComponentQualified':False}
     return source,receipt
@@ -194,15 +232,48 @@ pub fn splice_with_async(
     block=source[start:end]
     block=block.replace(b'(*impt_name).clone()',b'native_name.clone()')
     source=source[:start]+block+source[end:]
+    source=replace_once(source,
+        b'''            let import_fn_fid = if let Some(existing) = module
+                .imports
+                .get_func((*impt_specifier).clone(), native_name.clone())
+            {''',
+        b'''            let import_fn_fid = if let Some(existing) = lsf_async_splice::import_function(
+                module, &((*impt_specifier).clone(), native_name.clone()))?
+            {''','stable-existing-import-function-identity')
     source=replace_once(source,b'            // create the native JS binding function\n',
         b'''            if let Some(descriptor)=descriptor {
                 let bigint=get_export_fid(module,&coreabi_from_bigint64);
-                import_fnids.push(lsf_async_splice::synthesize(module,impt_sig,descriptor,
-                    import_fn_fid,bigint,ctx_arg,vp_arg)?);
+                let disposer=lsf_async_splice::resource_disposer(module,descriptor,imports)?;
+                let pointer=import_fn_table_start_idx.checked_add(i32::try_from(imports.len())?)
+                    .and_then(|value|value.checked_add(i32::try_from(lsf_disposers.len()).ok()?))
+                    .context("native-disposer-table-index-overflow")?;
+                lsf_disposers.push(disposer);
+                let partial=if let Some((key,getter,dispose,count))=
+                    lsf_async_splice::partial_functions(module,descriptor,imports)? {
+                    let getter_pointer=pointer.checked_add(1).context("own-getter-table-overflow")?;
+                    let dispose_pointer=pointer.checked_add(2).context("own-disposer-table-overflow")?;
+                    lsf_disposers.push(getter);lsf_disposers.push(dispose);
+                    Some((key,getter_pointer,dispose_pointer,count))
+                } else {None};
+                import_fnids.push(lsf_async_splice::synthesize_with_partial(module,impt_sig,descriptor,
+                    import_fn_fid,bigint,ctx_arg,vp_arg,pointer,partial)?);
                 continue;
             }
             // create the native JS binding function
 ''','genuine-native-Promise-trampoline')
+    source=replace_once(source,b'    let mut import_fnids: Vec<FunctionID> = Vec::new();',
+        b'    if !async_imports.is_empty() { lsf_async_splice::validate_disposer_table_append(module)?; }\n'
+        b'    let mut import_fnids: Vec<FunctionID> = Vec::new();','authenticate-private-disposer-append-geometry')
+    source=replace_once(source,b'    let mut import_fnids: Vec<FunctionID> = Vec::new();',
+        b'    let mut import_fnids: Vec<FunctionID> = Vec::new();\n'
+        b'    let mut lsf_disposers: Vec<FunctionID> = Vec::new();','private-resource-disposer-functions')
+    source=replace_once(source,b'        table.initial += imports.len() as u64;',
+        b'        table.initial += (imports.len()+lsf_disposers.len()) as u64;','disposer-table-initial')
+    source=replace_once(source,b'        table.maximum = Some(table.maximum.unwrap() + imports.len() as u64);',
+        b'        table.maximum = Some(table.maximum.unwrap() + (imports.len()+lsf_disposers.len()) as u64);',
+        'disposer-table-maximum')
+    source=replace_once(source,b'            for fid in import_fnids {',
+        b'            for fid in import_fnids.into_iter().chain(lsf_disposers) {','private-disposer-table-membership')
     source=replace_once(source,
         b'        let arg_idx = args[0];\n',
         b'        let arg_idx = args[0];\n'
@@ -249,5 +320,5 @@ def derive_async_compiler_sources(original:dict[str,bytes],native:dict[str,bytes
             'crates/spidermonkey-embedding-splicer/src/lsf_async_splice.rs':native['async_import_splice.rs']}
     return result,{'originalSource':identity(original),'derivedSource':identity(result),
         'bindgenDerivation':bindgen_receipt,'spliceDerivation':splice_receipt,
-        'upstreamPublicSplicerWitChanged':False,'unknownProfilePromoted':False,
+        'privateImportBindingAbi':2,'upstreamPublicSplicerWitChanged':False,'unknownProfilePromoted':False,
         'actualCompilerExecuted':False,'qualification':'unknown','signedLSFComponentQualified':False}

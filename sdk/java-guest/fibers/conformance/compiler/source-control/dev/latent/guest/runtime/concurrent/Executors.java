@@ -14,10 +14,13 @@ public final class Executors {
     }
     static ExecutorService newDefaultAsyncPool() { return newCachedThreadPool(); }
     public static synchronized int pools() { return pools.size(); }
+    static boolean isManaged(java.util.concurrent.Executor executor) { return false; }
     public static java.util.concurrent.Executor rejected() {
-        return command -> {
-            CompletableFuture.rejectedBeforeAcceptance(command);
-            throw new java.util.concurrent.RejectedExecutionException("source-control-owned-rejection");
+        return new java.util.concurrent.Executor() {
+            @Override public void execute(Runnable command) {
+                CompletableFuture.rejectedBeforeAcceptance(command, this);
+                throw new java.util.concurrent.RejectedExecutionException("source-control-owned-rejection");
+            }
         };
     }
     public static synchronized void cleanup() throws Exception {

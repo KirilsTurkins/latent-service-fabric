@@ -1,8 +1,2 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_dotnet_task_runtime.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "One fresh finite Task.Wait programme using unchanged native .7 products. Exact four declarations select finite port; original16 task cases/order/commands/guards/bounds preserved, without old16 current qualification claim.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "44e3fb6db90ac35ce9713ccf05e47928d6019983ad8d9992bbcf8e83073db875"
-}
+{"kind":"owner","path":"tools/qualify_dotnet_task_runtime.py","reviewBoundary":"committed-fingerprint","reviewReason":"Replay the authenticated completed component pair with only the tenant-correct local_service target and six signed calls; preserve historical full/NORMAL definitions, all original grants, deadlines, logs and public bounds.","schemaVersion":"latent.ci.contracts.v1","sha256":
+        "907e4147d0660a2ce5c614eea564fc993cff44dd9b519aaf9627a45db146c08b"}

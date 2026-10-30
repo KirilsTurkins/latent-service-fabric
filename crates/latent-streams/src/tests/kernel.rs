@@ -10,14 +10,8 @@ use std::{
 use tokio::{io::AsyncReadExt, net::TcpListener};
 
 fn identity(fixture: &Fixture) -> [u64; 3] {
-    let connections: Vec<_> = fixture
-        .provider
-        .inner
-        .connections
-        .lock()
-        .unwrap()
-        .iter()
-        .filter_map(std::sync::Weak::upgrade)
+    let connections: Vec<_> = (0..crate::connection_registry::CAPACITY)
+        .filter_map(|index| fixture.provider.inner.connections.snapshot(index).unwrap())
         .collect();
     assert_eq!(connections.len(), 1);
     connections[0].kernel_reference_identity()

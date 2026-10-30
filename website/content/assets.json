@@ -35,6 +35,21 @@
       "path": "docs/assets/activation-lifecycle.svg",
       "kind": "illustration",
       "maxBytes": 65536
+    },
+    {
+      "path": "docs/assets/standalone-architecture.svg",
+      "kind": "illustration",
+      "maxBytes": 65536
+    },
+    {
+      "path": "docs/assets/activation-memory-ownership.svg",
+      "kind": "illustration",
+      "maxBytes": 65536
+    },
+    {
+      "path": "docs/assets/transaction-command-recovery.svg",
+      "kind": "illustration",
+      "maxBytes": 65536
     }
   ]
 }

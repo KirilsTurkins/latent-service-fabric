@@ -3,6 +3,7 @@
 use super::{fixture::Fixture, packages};
 use latent_activation::ActivationOutcome;
 use latent_artifacts::ArtifactRepository;
+use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage};
 use latent_core::{activation_runtime::RuntimeLimits, ActivationId, PlatformErrorCode, TenantId};
 use latent_executor::ExecutionBackend;
 use std::{future::Future, pin::Pin, sync::atomic::Ordering, task::Poll, time::Duration};
@@ -166,6 +167,18 @@ async fn signed_java_host_imports_suspend_only_their_owned_callers() {
 #[tokio::test]
 #[ignore = "requires two normally captured Java libraries and the explicit fiber I/O profile"]
 async fn signed_java_published_libraries_use_unchanged_default_workers() {
+    if std::env::var_os("LSF_JAVA_SCHEDULED_LIBRARIES_FIXTURE").is_some() {
+        assert!(std::env::var_os("LSF_JAVA_WORKER_LIBRARIES_FIXTURE").is_none());
+        signed_java_fiber_fixture(
+            "LSF_JAVA_SCHEDULED_LIBRARIES_FIXTURE",
+            include_bytes!(
+                "../../../../sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java"
+            ),
+            "java-scheduled-libraries",
+        )
+        .await;
+        return;
+    }
     signed_java_fiber_fixture(
         "LSF_JAVA_WORKER_LIBRARIES_FIXTURE",
         include_bytes!(
@@ -187,6 +200,28 @@ async fn signed_java_standard_timers_recur_cancel_and_drain_owned_workers() {
     .await;
 }
 
+#[tokio::test]
+#[ignore = "requires the pinned ordinary shutdownNow CompletableFuture component"]
+async fn signed_java_shutdown_now_withdraws_only_unstarted_callbacks() {
+    signed_java_fiber_fixture(
+        "LSF_JAVA_SHUTDOWN_NOW_FIXTURE",
+        include_bytes!("../../../../sdk/java-guest/fibers/conformance/shutdown-now/Capsule.java"),
+        "java-shutdown-now",
+    )
+    .await;
+}
+
+#[tokio::test]
+#[ignore = "requires the pinned normal FutureTask queue component and its one-Result fixture"]
+async fn signed_java_future_tasks_retain_result_ownership_across_queue_copies() {
+    signed_java_fiber_fixture(
+        "LSF_JAVA_FUTURE_QUEUE_FIXTURE",
+        include_bytes!("../../../../sdk/java-guest/fibers/conformance/future-queue/Capsule.java"),
+        "java-future-queue",
+    )
+    .await;
+}
+
 async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name: &str) {
     assert_eq!(
         std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(),
@@ -195,6 +230,22 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     let prepared = std::path::PathBuf::from(
         std::env::var_os(variable).expect("prepare the pinned Java fiber fixture"),
     );
+    if matches!(
+        name,
+        "java-scheduled-libraries" | "java-shutdown-now" | "java-future-queue"
+    ) {
+        assert!(prepared.is_absolute());
+        for (path, maximum) in [
+            ("src/Capsule.java", expected_source.len() as u64),
+            ("FIBERS-COMPILE.json", 8 * 1024 * 1024),
+            ("build/component.wasm", 64 * 1024 * 1024),
+            ("wit/service.wit", 1024 * 1024),
+        ] {
+            let metadata = std::fs::symlink_metadata(prepared.join(path)).unwrap();
+            assert!(metadata.file_type().is_file() && !metadata.file_type().is_symlink());
+            assert!(metadata.len() <= maximum);
+        }
+    }
     let source = std::fs::read(prepared.join("src/Capsule.java")).unwrap();
     assert_eq!(source.as_slice(), expected_source);
     let record: serde_json::Value =
@@ -243,6 +294,76 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
             false
         );
     }
+    if name == "java-scheduled-libraries" {
+        assert_eq!(record["fixture"], "scheduled-library");
+        assert_eq!(record["status"], "component-built-unqualified");
+        assert_eq!(
+            record["scheduledSource"]["status"],
+            "SDK-source-controls-passed"
+        );
+        assert_eq!(
+            record["scheduledSource"]["componentExecutionPerformed"],
+            false
+        );
+        assert_eq!(record["scheduledSource"]["actualGuestBindingsUsed"], false);
+        assert_eq!(
+            record["scheduledModel"]["status"],
+            "actual-locked-classlib-model-passed"
+        );
+        assert_eq!(record["scheduledModel"]["models"], 8);
+        assert_eq!(record["scheduledModel"]["constructedIdentities"], 5);
+        assert_eq!(record["scheduledModel"]["actualGeneratedCallbacks"], 3);
+        assert_eq!(
+            record["scheduledModel"]["portOrApplicationClassesInitialized"],
+            false
+        );
+        assert_eq!(record["scheduledModel"]["actualGuestBindingsUsed"], false);
+    }
+    let shutdown_now = name == "java-shutdown-now";
+    let future_queue = name == "java-future-queue";
+    if shutdown_now {
+        assert_eq!(record["fixture"], "shutdown-now");
+        assert_eq!(record["status"], "component-built-unqualified");
+        assert_eq!(
+            record["shutdownNowSource"]["status"],
+            "SDK-source-controls-passed"
+        );
+        assert_eq!(record["shutdownNowSource"]["ownershipChecks"], 53);
+        assert_eq!(
+            record["shutdownNowSource"]["componentExecutionPerformed"],
+            false
+        );
+        assert_eq!(
+            record["shutdownNowSource"]["actualGuestBindingsUsed"],
+            false
+        );
+        assert_eq!(
+            record["completableModel"]["status"],
+            "actual-locked-classlib-model-passed"
+        );
+    }
+    if future_queue {
+        assert_eq!(record["fixture"], "future-queue");
+        assert_eq!(record["status"], "component-built-unqualified");
+        assert_eq!(
+            record["futureQueueSource"]["status"],
+            "SDK-source-controls-passed"
+        );
+        assert_eq!(record["futureQueueSource"]["ownershipChecks"], 48);
+        assert_eq!(
+            record["futureQueueSource"]["componentExecutionPerformed"],
+            false
+        );
+        assert_eq!(
+            record["futureQueueSource"]["actualGuestBindingsUsed"],
+            false
+        );
+        assert_eq!(
+            record["scheduledModel"]["status"],
+            "actual-locked-classlib-model-passed"
+        );
+        assert_eq!(record["scheduledModel"]["models"], 8);
+    }
     let bytes = std::fs::read(prepared.join("build/component.wasm")).unwrap();
     assert_eq!(
         record["componentDigest"],
@@ -252,13 +373,43 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         record["sourceDigest"],
         latent_artifacts::package::artifact_blob_digest(&source).as_str()
     );
-    assert_eq!(record["reference"].as_array().unwrap().len(), 3);
+    let scheduled = name == "java-scheduled-libraries";
+    assert_eq!(
+        record["reference"].as_array().unwrap().len(),
+        if scheduled || shutdown_now || future_queue {
+            1
+        } else {
+            3
+        }
+    );
     for control in record["reference"].as_array().unwrap() {
-        assert_eq!(control["modes"], serde_json::json!([0, 1, 2, 3]));
-        assert_eq!(control["results"], serde_json::json!([42, 42, 42, 42]));
+        if scheduled {
+            assert_eq!(
+                control["modes"],
+                serde_json::json!([0, 1, 2, 3, 4, 5, 6, 7])
+            );
+            assert_eq!(
+                control["results"],
+                serde_json::json!([42, 42, 42, 42, 42, 42, 42, 42])
+            );
+        } else {
+            assert_eq!(control["modes"], serde_json::json!([0, 1, 2, 3]));
+            assert_eq!(
+                control["results"],
+                if future_queue {
+                    serde_json::json!([41, 42, 42, 42])
+                } else {
+                    serde_json::json!([42, 42, 42, 42])
+                }
+            );
+        }
     }
     let mut provenance_source = source.clone();
-    if name == "java-worker-libraries" {
+    if shutdown_now || future_queue {
+        provenance_source
+            .extend_from_slice(&std::fs::read(prepared.join("FIBERS-COMPILE.json")).unwrap());
+    }
+    if name == "java-worker-libraries" || scheduled {
         assert_eq!(record["libraries"]["sourceModified"], false);
         assert_eq!(record["libraries"]["externalExecutorInjected"], false);
         assert_eq!(
@@ -294,7 +445,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         queued_work: 8,
         waits: 8,
         timers: 2,
-        results: 8,
+        results: if future_queue { 1 } else { 8 },
         native_owners: 2,
     };
     let f = signed_runtime_with_limits(
@@ -337,14 +488,32 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         "{profile} signed-preparation-setup-micros={} stores-created=0 guest-activations=0",
         preparation_started.elapsed().as_micros()
     );
-    for iteration in 0..3 {
-        for mode in 0..4 {
-            let receipt = success(
-                f.manager
-                    .start(f.request(&format!("{name}-{iteration}-{mode}"), mode))
-                    .unwrap()
-                    .await,
-            );
+    for iteration in 0..if shutdown_now || future_queue {
+        1
+    } else if scheduled {
+        2
+    } else {
+        3
+    } {
+        for mode in 0..if scheduled { 8 } else { 4 } {
+            let requested_id = format!("{name}-{iteration}-{mode}");
+            let stores_before = f.backend.resource_snapshot().stores_created;
+            let actual = f
+                .manager
+                .start(f.request(&requested_id, mode))
+                .unwrap()
+                .await;
+            if matches!(
+                name,
+                "java-fibers"
+                    | "java-worker-libraries"
+                    | "java-scheduled-libraries"
+                    | "java-shutdown-now"
+                    | "java-future-queue"
+            ) {
+                assert_eq!(actual.activation_id.0, requested_id);
+            }
+            let receipt = success(actual);
             assert_eq!(
                 serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
                 [42]
@@ -356,6 +525,32 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 receipt.consumption
             );
             f.idle().await;
+            if matches!(
+                name,
+                "java-fibers"
+                    | "java-worker-libraries"
+                    | "java-scheduled-libraries"
+                    | "java-shutdown-now"
+                    | "java-future-queue"
+            ) {
+                let runtime = f.backend.resource_snapshot();
+                let broker = f.broker.snapshot();
+                assert!(runtime.stores_created > stores_before);
+                eprintln!(
+                    "LSF_JAVA_RETAINED={}",
+                    serde_json::json!({
+                        "activationId": requested_id, "iteration": iteration, "mode": mode,
+                        "value": 42, "cpuFuel": receipt.consumption.cpu_fuel,
+                        "reportedPeakMemoryBytes": receipt.consumption.peak_memory_bytes,
+                        "storesBefore": stores_before, "storesCreated": runtime.stores_created,
+                        "liveStores": runtime.live_stores,
+                        "activeReservations": f.backend.active_instance_reservations(),
+                        "brokerCalls": broker.calls, "brokerSessions": broker.sessions,
+                        "brokerHandles": broker.handles, "brokerResults": broker.results,
+                        "brokerBufferBytes": broker.buffer_bytes
+                    })
+                );
+            }
         }
     }
 }
@@ -586,16 +781,7 @@ async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_adm
         PlatformErrorCode::ResourceExhausted
     );
     f.idle().await;
-    let second = value(
-        f.manager
-            .start(f.request("second-generation", 14))
-            .unwrap()
-            .await,
-    );
-    assert_ne!(first, second);
-    f.idle().await;
-    // These memory observations differ only in runtime work. The activation
-    // and defaulted root IDs are both retained by the original context charge.
+    // Compare the same scalar result with equal-width original context IDs.
     let direct_request = f.request("lazy-no-concurrency", 15);
     let owned_request = f.request("native-runtime-work", 0);
     let mut native_exhausted = f.request("native-runtime-deny", 23);
@@ -603,22 +789,43 @@ async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_adm
         .map(|request| request.activation_id.as_ref().unwrap().0.len());
     assert_eq!(id_widths, [19; 3]);
     let direct = success(f.manager.start(direct_request).unwrap().await);
-    // Compare identical canonical result bytes/capacity: this baseline does
-    // no runtime imports, while mode23 catches its native-memory refusal.
+    // The full-grant mode21 above catches the exact third-native-owner Limit.
     assert_eq!(direct.output.as_ref(), b"[42]");
     f.idle().await;
     let owned = success(f.manager.start(owned_request).unwrap().await);
+    assert_eq!(owned.output.as_ref(), direct.output.as_ref());
     f.idle().await;
+    // Mode15 never calls an import. Its lazy-only ceiling cannot fund the
+    // newly paid native import transport, before a WIT refusal can be caught.
+    // Keep that outer failure distinct from mode21's successful API catch.
     native_exhausted.budget.memory_bytes = direct.consumption.peak_memory_bytes;
-    let exhausted = success(f.manager.start(native_exhausted).unwrap().await);
+    let ActivationOutcome::Failed {
+        error, consumption, ..
+    } = f.manager.start(native_exhausted).unwrap().await.outcome
+    else {
+        panic!("lazy budget must refuse native transport")
+    };
+    assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+    let diagnostic = ActivationDiagnostic::from_error(&error).unwrap();
     assert_eq!(
-        serde_json::from_slice::<Vec<u32>>(&exhausted.output).unwrap(),
-        [42]
+        (diagnostic.stage, diagnostic.reason),
+        (
+            DiagnosticStage::Execution,
+            DiagnosticReason::GuestMemoryExhausted
+        )
     );
     assert_eq!(
-        exhausted.consumption.peak_memory_bytes,
+        consumption.peak_memory_bytes,
         direct.consumption.peak_memory_bytes
     );
+    f.idle().await;
+    let second = value(
+        f.manager
+            .start(f.request("second-generation", 14))
+            .unwrap()
+            .await,
+    );
+    assert_ne!(first, second);
     f.idle().await;
     assert!(owned.consumption.peak_memory_bytes > direct.consumption.peak_memory_bytes);
     assert!(owned.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
@@ -821,4 +1028,229 @@ async fn root_deadline_does_not_complete_long_timer_and_cpu_loop_remains_contain
         42
     );
     f.idle().await;
+}
+
+mod owned_timer {
+    use super::super::fixture::ObservedReadWait;
+    use latent_core::{
+        ActivationBudget, BudgetProfile, ClockSample, EffectiveActivationBudget, PlatformErrorCode,
+        ResourceBudget,
+    };
+    use latent_executor::{OwnedPreparationWait, PreparationReadWait};
+    use std::{
+        future::{pending, Future},
+        mem::size_of,
+        pin::Pin,
+        sync::{
+            atomic::{AtomicU64, AtomicUsize, Ordering},
+            Arc,
+        },
+        task::{Context, Poll, Waker},
+        time::{Duration, Instant},
+    };
+
+    fn original(memory: u64) -> ActivationBudget {
+        let limits = ResourceBudget {
+            cpu_fuel: 1_000_000,
+            memory_bytes: memory,
+            wall_time_limit_millis: Some(30_000),
+            child_calls: 0,
+            outbound_requests: 0,
+            state_read_bytes: 0,
+            state_write_bytes: 0,
+            blob_read_bytes: 0,
+            blob_write_bytes: 0,
+            log_bytes: 0,
+            effect_count: 0,
+        };
+        let grant = EffectiveActivationBudget::admit_profile_at(
+            BudgetProfile::Phase3,
+            &limits,
+            &limits,
+            &limits,
+            None,
+            ClockSample::new(1000, Instant::now()),
+        )
+        .unwrap();
+        ActivationBudget::with_profile(grant, BudgetProfile::Phase3).unwrap()
+    }
+
+    struct PendingOwned {
+        budget: ActivationBudget,
+        drops: Arc<AtomicUsize>,
+        payload: [u8; 32],
+    }
+    impl Future for PendingOwned {
+        type Output = ();
+
+        fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<()> {
+            assert_eq!(self.payload[0], 42);
+            Poll::Pending
+        }
+    }
+    impl Drop for PendingOwned {
+        fn drop(&mut self) {
+            // This actual destructor must run while its complete Box charge is
+            // live. The frozen by-value field order supplies the subsequent
+            // Box-deallocation-before-reservation-drop source witness.
+            assert_eq!(self.budget.host_memory_bytes(), size_of::<Self>() as u64);
+            self.drops.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    #[test]
+    fn original_budget_refuses_before_factory_and_preserves_foreign_capacity() {
+        let budget = original(4096);
+        let foreign = original(4096);
+        let foreign_hold = foreign.reserve_host_memory(19).unwrap();
+        let full = budget.reserve_host_memory(4096).unwrap();
+        let calls = AtomicUsize::new(0);
+        let drops = Arc::new(AtomicUsize::new(0));
+        let result = OwnedPreparationWait::try_boxed(&budget, || {
+            calls.fetch_add(1, Ordering::SeqCst);
+            PendingOwned {
+                budget: budget.clone(),
+                drops: Arc::clone(&drops),
+                payload: [42; 32],
+            }
+        });
+        assert!(matches!(
+            result,
+            Err(ref error) if error.code == PlatformErrorCode::ResourceExhausted
+        ));
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+        assert_eq!(drops.load(Ordering::SeqCst), 0);
+        assert_eq!(budget.host_memory_bytes(), 4096);
+        assert_eq!(foreign.host_memory_bytes(), 19);
+        drop(full);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(foreign.host_memory_bytes(), 19);
+        drop(foreign_hold);
+    }
+
+    #[test]
+    fn pending_drop_keeps_original_charge_through_concrete_future_destruction() {
+        let budget = original(4096);
+        let drops = Arc::new(AtomicUsize::new(0));
+        let mut wait = OwnedPreparationWait::try_boxed(&budget, || PendingOwned {
+            budget: budget.clone(),
+            drops: Arc::clone(&drops),
+            payload: [42; 32],
+        })
+        .unwrap();
+        assert_eq!(budget.host_memory_bytes(), size_of::<PendingOwned>() as u64);
+        assert!(Pin::new(&mut wait)
+            .poll(&mut Context::from_waker(Waker::noop()))
+            .is_pending());
+        assert_eq!(drops.load(Ordering::SeqCst), 0);
+        drop(wait);
+        assert_eq!(drops.load(Ordering::SeqCst), 1);
+        assert_eq!(budget.host_memory_bytes(), 0);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn actual_sleep_pending_cancel_and_elapsed_keep_original_charge_until_drop() {
+        let budget = original(4096);
+        let timer = latent_node::CurrentnessReadTimer;
+        for cancel in [true, false] {
+            let deadline = tokio::time::Instant::now().into_std() + Duration::from_secs(1);
+            let mut wait = timer.wait_until_owned(deadline, &budget).unwrap();
+            assert_eq!(
+                budget.host_memory_bytes(),
+                size_of::<tokio::time::Sleep>() as u64
+            );
+            assert!(Pin::new(&mut wait)
+                .poll(&mut Context::from_waker(Waker::noop()))
+                .is_pending());
+            if cancel {
+                drop(wait);
+                assert_eq!(budget.host_memory_bytes(), 0);
+                tokio::time::advance(Duration::from_secs(2)).await;
+            } else {
+                tokio::time::advance(Duration::from_secs(1)).await;
+                (&mut wait).await;
+                assert_ne!(budget.host_memory_bytes(), 0);
+                drop(wait);
+                assert_eq!(budget.host_memory_bytes(), 0);
+            }
+        }
+    }
+
+    #[test]
+    fn unknown_owned_provider_refuses_without_legacy_fallback() {
+        struct Legacy(AtomicUsize);
+        impl PreparationReadWait for Legacy {
+            fn now(&self) -> Instant {
+                panic!("owned refusal must not consult the legacy clock");
+            }
+
+            fn wait_until(&self, _: Instant) -> latent_core::BoxFuture<'_, ()> {
+                self.0.fetch_add(1, Ordering::SeqCst);
+                Box::pin(pending())
+            }
+        }
+        let budget = original(4096);
+        let legacy = Legacy(AtomicUsize::new(0));
+        assert!(matches!(
+            legacy.wait_until_owned(Instant::now(), &budget),
+            Err(ref error) if error.code == PlatformErrorCode::Unavailable
+        ));
+        assert_eq!(legacy.0.load(Ordering::SeqCst), 0);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        drop(legacy.wait_until(Instant::now()));
+        assert_eq!(legacy.0.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn observed_inner_and_outer_refusals_and_pending_drop_preserve_originals() {
+        let sleep_bytes = size_of::<tokio::time::Sleep>() as u64;
+        assert!(sleep_bytes > 1);
+        for memory in [sleep_bytes - 1, sleep_bytes] {
+            let budget = original(memory);
+            let observer = ObservedReadWait {
+                active: AtomicU64::new(0),
+                entered: tokio::sync::Notify::new(),
+            };
+            assert!(matches!(
+                observer.wait_until_owned(
+                    tokio::time::Instant::now().into_std() + Duration::from_secs(1),
+                    &budget,
+                ),
+                Err(ref error) if error.code == PlatformErrorCode::ResourceExhausted
+            ));
+            assert_eq!(budget.host_memory_bytes(), 0);
+            assert_eq!(observer.active.load(Ordering::Acquire), 0);
+            let notified = observer.entered.notified();
+            tokio::pin!(notified);
+            assert!(notified
+                .as_mut()
+                .poll(&mut Context::from_waker(Waker::noop()))
+                .is_pending());
+        }
+        let budget = original(4096);
+        let foreign = original(4096);
+        let foreign_hold = foreign.reserve_host_memory(23).unwrap();
+        let observer = ObservedReadWait {
+            active: AtomicU64::new(0),
+            entered: tokio::sync::Notify::new(),
+        };
+        let mut wait = observer
+            .wait_until_owned(
+                tokio::time::Instant::now().into_std() + Duration::from_secs(1),
+                &budget,
+            )
+            .unwrap();
+        assert!(budget.host_memory_bytes() > sleep_bytes);
+        assert_eq!(observer.active.load(Ordering::Acquire), 0);
+        assert!(Pin::new(&mut wait)
+            .poll(&mut Context::from_waker(Waker::noop()))
+            .is_pending());
+        observer.entered.notified().await;
+        assert_eq!(observer.active.load(Ordering::Acquire), 1);
+        drop(wait);
+        assert_eq!(observer.active.load(Ordering::Acquire), 0);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(foreign.host_memory_bytes(), 23);
+        drop(foreign_hold);
+    }
 }

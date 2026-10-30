@@ -1,8 +1,8 @@
 {
-  "kind": "owner",
-  "path": "tools/typescript_late_compiler_inputs.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Select only the already successful current tracking compiler engine/splicer, authenticated with their original cancelled-run and successful-owning identities; preserve all budgets, six signed outcomes and baseline input pins, no engine or native rebuild.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1d654b0e7dcedd582f7d2e2036da914f14d49b164d5984d368655cfa79a2b6ea"
+"kind":"owner",
+"path":"tools/typescript_late_compiler_inputs.py",
+"reviewBoundary":"committed-fingerprint",
+"reviewReason":"Select only the already successful current tracking compiler engine/splicer, authenticated with their original cancelled-run and successful-owning identities; preserve all budgets, six signed outcomes and baseline input pins, no engine or native rebuild.",
+"schemaVersion":"latent.ci.contracts.v1",
+"sha256":"1d654b0e7dcedd582f7d2e2036da914f14d49b164d5984d368655cfa79a2b6ea"
 }

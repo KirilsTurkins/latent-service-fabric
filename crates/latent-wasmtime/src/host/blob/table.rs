@@ -120,7 +120,10 @@ impl Table {
         entry.rep = 0;
         Ok(true)
     }
-    pub(super) fn bytes(&mut self, rep: u32) -> Result<Vec<u8>, Error> {
+    pub(super) fn bytes(
+        &mut self,
+        rep: u32,
+    ) -> Result<latent_capabilities::broker::io::IoOutputCopy, Error> {
         let Some(Value::Chunk { value, delivered }) =
             &mut self.entry(u64::from(rep), Kind::Chunk)?.value
         else {
@@ -130,7 +133,7 @@ impl Table {
             return Err(Error::InvalidState);
         }
         *delivered = true;
-        Ok(value.bytes().to_vec())
+        value.copy_bytes()
     }
 }
 
@@ -149,6 +152,10 @@ mod tests {
         fn write(&mut self, _: u64, _: Vec<u8>) -> Result<BlobFuture<'_, u64>, Error> {
             Err(Error::InvalidState)
         }
+        fn write_from<'a>(&'a mut self, _: u64, _: &[u8]) -> Result<BlobFuture<'a, u64>, Error> {
+            Err(Error::InvalidState)
+        }
+
         fn seal(self: Box<Self>) -> Result<BlobFuture<'static, BlobSeal>, Error> {
             Err(Error::InvalidState)
         }
@@ -236,6 +243,14 @@ mod tests {
             fn write(&mut self, _: u64, _: Vec<u8>) -> Result<BlobFuture<'_, u64>, Error> {
                 Err(Error::InvalidState)
             }
+            fn write_from<'a>(
+                &'a mut self,
+                _: u64,
+                _: &[u8],
+            ) -> Result<BlobFuture<'a, u64>, Error> {
+                Err(Error::InvalidState)
+            }
+
             fn seal(self: Box<Self>) -> Result<BlobFuture<'static, BlobSeal>, Error> {
                 Err(Error::InvalidState)
             }

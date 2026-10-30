@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "compatibility_stack::actual_stack_overflow_keeps_original_typed_fact_and_new_store_fresh_result"
+      ],
+      "expectedIgnored": [
+        "compatibility_stack::actual_stack_overflow_keeps_original_typed_fact_and_new_store_fresh_result"
+      ],
+      "id": "latent-wasmtime.test.compatibility_stack",
+      "ignoredLeaves": [
+        "actual_stack_overflow_keeps_original_typed_fact_and_new_store_fresh_result"
+      ],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain and successful normal managed-host Cargo inventory",
+        "exact canonical WAT parsed with wasm-tools1.254.0 by compiler-diagnostic-controls; no signed language provenance"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/compatibility_stack.rs",
+      "target": "compatibility_stack",
+      "timeoutSeconds": 30
+    }
+  ]
+}

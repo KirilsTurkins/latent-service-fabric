@@ -18,6 +18,8 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
     private boolean cancelled;
     private Thread runner;
     private Activation.Lease owner;
+    private int queueCopies;
+    private boolean pendingRun;
 
     public FutureTask(Callable<V> callable) { this.callable = Objects.requireNonNull(callable); }
     public FutureTask(Runnable runnable, V result) {
@@ -29,8 +31,22 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
         owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Result);
         return true;
     }
-    synchronized void rejectAcceptance() {
-        if (runner == null && owner != null) { owner.close(); owner = null; }
+    synchronized boolean acceptQueueCopy() {
+        if (completed) return false;
+        if (queueCopies == Integer.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("activation-future-queue-copies");
+        accept();
+        queueCopies++;
+        return true;
+    }
+    synchronized void removeQueueCopy(boolean removed) {
+        if (queueCopies <= 0) throw new IllegalStateException("activation-future-queue-copy");
+        queueCopies--;
+        if (!removed && !completed && runner == null) pendingRun = true;
+        // A completed physical run owns its original finally. A subclass run
+        // which leaves its future pending is not proof of harmless idle work.
+        if (removed && queueCopies == 0 && runner == null && !pendingRun && owner != null) {
+            owner.close(); owner = null;
+        }
     }
     private void releaseIfPhysicalComplete() {
         if (runner == null && completed && owner != null) { owner.close(); owner = null; }

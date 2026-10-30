@@ -1,0 +1,237 @@
+{
+  "schemaVersion": "lsf.canonical-worker-function.public-evidence.v1",
+  "status": "passed-focused-native-controls",
+  "qualifiedSourceRevision": "1f8eb3411c87454d19fd543339cd6e9b07342b20",
+  "qualifiedSourceTree": "1c4f43b85b70dc9ef9b919e77d99c5c63bc2e771",
+  "developmentBase": "e107379a56a7822bfeabbd983d1c60dff0e42d5c",
+  "pullRequest": 1476,
+  "run": {
+    "id": 40259061940,
+    "jobId": 121367217106,
+    "attempt": 1,
+    "event": "push",
+    "branch": "feat/sdk-736-worker-function-20261026",
+    "conclusion": "success",
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40259061940"
+  },
+  "artifact": {
+    "id": 12624071541,
+    "name": "canonical-worker-function-1f8eb3411c87454d19fd543339cd6e9b07342b20",
+    "bytes": 1411068,
+    "sha256": "58ffb10d044c66c079116917e61758156b6811540b71c92aed09f44cb35e05f6",
+    "memberCount": 25,
+    "expandedBytes": 5157402,
+    "allMembersCRCAndSHA256Verified": true,
+    "records": {
+      "receipt.json": {
+        "bytes": 3114878,
+        "sha256": "7ca57de53fb82e84258d78d8c357bc8bbfa9f1e5826501d224ca2b1f1d8d8976"
+      },
+      "source-inputs.json": {
+        "bytes": 1462075,
+        "sha256": "e3acd0167d3cc9ed3c4edeb70a24909feb34215a7d2460bc438d26be4b39f0eb"
+      },
+      "commands.json": {
+        "bytes": 998,
+        "sha256": "60300b3c0f2b56872b7ace0e8c656698703703a5b1db408092df03cd93225518"
+      }
+    }
+  },
+  "source": {
+    "allBeforeAndAfterRowsExactQualifiedGitTree": true,
+    "rows": 8907,
+    "wasmtimeVersion": "48.0.7",
+    "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-memory-v13",
+    "maintainedFiles": 262,
+    "upstreamOriginalFiles": 250,
+    "implementationFilesReconstructed": 259,
+    "recordSha256": "81c6a7f4ea7949b2a15b0880f095ddadea338b458688afc39b0a07bddeb0b4b1",
+    "patchSha256": "04d6571a9ea051b7e9b1386667945b4771163f2c72d54a46fce173623af71300"
+  },
+  "controls": [
+    {
+      "case": "runtime::component::concurrent::worker_function::tests::worker_function_refuses_before_factory_and_ready_refunds_unused",
+      "stdout": {
+        "bytes": 394,
+        "sha256": "01a8027b7b2d4deccf1c754a68e889f0e56af6c1383702e61635e3f521c6e726"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 190
+    },
+    {
+      "case": "runtime::component::concurrent::worker_function::tests::worker_function_same_owner_survives_queue_drop_or_one_shot_call_and_none",
+      "stdout": {
+        "bytes": 412,
+        "sha256": "79a7811ec94f6eb4cb72939abb0d75136bad1c11a9dd10566aff8be2840954b5"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 190
+    },
+    {
+      "case": "runtime::component::concurrent::worker_function::tests::worker_function_confirmation_unwind_destroys_closure_before_refund",
+      "stdout": {
+        "bytes": 860,
+        "sha256": "6afa4620ece763e3c9762b61390855309d96fdd3b654cbff8107dedcdf689e74"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 190
+    },
+    {
+      "case": "runtime::component::concurrent::worker_function::tests::worker_function_call_or_destructor_unwind_retains_original_charge",
+      "stdout": {
+        "bytes": 1085,
+        "sha256": "9cfc0611d45835d73b284588d6fe3b3567bba9ea5e41ca79b4100da4d96a77e5"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 190
+    },
+    {
+      "case": "host::join_state_tests::canonical_worker_function_first_poll_refusal_and_same_budget_fresh_store",
+      "stdout": {
+        "bytes": 554,
+        "sha256": "c18122c38eba95e9fbe9d0508798435f9ad166b6a557a860541961c7a01677c2"
+      },
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 480
+    }
+  ],
+  "actualCanonicalMarker": "LSF_WORKER_FUNCTION_V1 refusal=memory-bytes requests=5 before-poll=true fresh=42 stores=2",
+  "commands": [
+    {
+      "stage": "build-private-controls",
+      "exitCode": 0,
+      "seconds": 73.992262
+    },
+    {
+      "stage": "private-rust-library-path",
+      "exitCode": 0,
+      "seconds": 0.01429
+    },
+    {
+      "stage": "list-four-private-controls",
+      "exitCode": 0,
+      "seconds": 0.013591
+    },
+    {
+      "stage": "private-case-0",
+      "exitCode": 0,
+      "seconds": 0.013529
+    },
+    {
+      "stage": "private-case-1",
+      "exitCode": 0,
+      "seconds": 0.013488
+    },
+    {
+      "stage": "private-case-2",
+      "exitCode": 0,
+      "seconds": 0.013428
+    },
+    {
+      "stage": "private-case-3",
+      "exitCode": 0,
+      "seconds": 0.013533
+    },
+    {
+      "stage": "build-canonical-control",
+      "exitCode": 0,
+      "seconds": 179.481515
+    },
+    {
+      "stage": "canonical-rust-library-path",
+      "exitCode": 0,
+      "seconds": 0.013983
+    },
+    {
+      "stage": "list-one-canonical-control",
+      "exitCode": 0,
+      "seconds": 0.013395
+    },
+    {
+      "stage": "execute-one-canonical-control",
+      "exitCode": 0,
+      "seconds": 0.023715
+    }
+  ],
+  "rawCommandChannels": 22,
+  "commandEvidenceBoundary": "Deterministic Git-bound owner recipe; retained command records contain stage/exit/time, not an independently captured argv ledger.",
+  "limits": {
+    "overallSeconds": 2400,
+    "buildCommandSeconds": 900,
+    "caseProcessSeconds": 60,
+    "listProcessSeconds": 30,
+    "cleanupReserveSeconds": 5
+  },
+  "activationLimits": {
+    "cpuFuel": 1000000000,
+    "memoryBytes": 67108864,
+    "wallTimeMilliseconds": 120000
+  },
+  "failedAttempt": {
+    "source": "743cf2c4ad7250a4c36d586472d83e2aa5754928",
+    "run": 40257187860,
+    "job": 121361450351,
+    "artifact": 12622882676,
+    "archive": {
+      "bytes": 929740,
+      "sha256": "c8ce18dd8ac435e332a42b01f34d0cb08922f71be5a3fd782180141553761cdb"
+    },
+    "memberCount": 5,
+    "allMembersCRCAndSHA256Verified": true,
+    "sourceRowsExactOriginalTree": 8907,
+    "stage": "build-private-controls",
+    "exitCode": 101,
+    "seconds": 61.613714,
+    "controlsExecuted": 0,
+    "cause": "E0308: separate existing stream callback still supplied the old Box type",
+    "correction": "Infallible Legacy adapter around the SAME original stream Box, with unchanged closure body/allocation point; no new admission/fallibility."
+  },
+  "scope": {
+    "owned": "selected first_poll completion-closure Box, exact factory-output layout as admission5 after pending-output admission4 before Running/poll; same owner through queue and one-shot invoke/drop",
+    "payloadLayoutOnly": true,
+    "whole736Qualified": false,
+    "fullVendorSuiteExecuted": false,
+    "fullRuntimeSuiteExecuted": false,
+    "signedLanguageQualified": false,
+    "allocatorRssCapClaimed": false,
+    "compilerImplicitInputsAttested": false,
+    "hermetic": false,
+    "remainingUnpaid": [
+      "separate Legacy stream callback Box",
+      "scheduler queue backing",
+      "FuturesUnordered nodes",
+      "other opaque/transitive or escaping-value backing"
+    ]
+  },
+  "previousQualificationsNotReplayed": [
+    "v11 four private inner-CallFuture controls plus request3",
+    "v12 four private pending-output controls plus request4",
+    "Java qualification"
+  ],
+  "localChecks": {
+    "initialAffectedProvenanceControls": 2,
+    "initialSeconds": 9.428,
+    "correctiveAffectedMaterialTamperControl": 1,
+    "correctiveSeconds": 7.284,
+    "cico": {
+      "baseline": 88,
+      "commands": 1328,
+      "owners": 390,
+      "replayedAfterUnchangedOwnerCorrection": false
+    },
+    "scopedFindings": 0,
+    "losslessStorage": "one affected metadata fragment; all12 expanded ordered cases/guards/skips/reviewReason unchanged",
+    "committedSourceTarBytes": 85975040,
+    "sourceTarCapBytes": 85983232
+  }
+}

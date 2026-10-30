@@ -29,7 +29,7 @@ Do not introduce hidden compilation, guest execution or ambient build commands h
 
 ## Dependencies and build
 
-Direct workspace dependencies: [latent-artifacts](../latent-artifacts/README.md), [latent-core](../latent-core/README.md), [latent-contracts](../latent-contracts/README.md), [latent-manifest](../latent-manifest/README.md).
+Direct workspace dependencies: [latent-component-threading](../latent-component-threading/README.md), [latent-artifacts](../latent-artifacts/README.md), [latent-core](../latent-core/README.md), [latent-contracts](../latent-contracts/README.md), [latent-manifest](../latent-manifest/README.md).
 
 Consumers with normal workspace dependency edges include [latent](../../apps/latent/README.md), [latent-policy](../latent-policy/README.md), [latent-wasmtime](../latent-wasmtime/README.md), [latent-control-store](../latent-control-store/README.md). Optional features still gate the selected graph; target-specific and test edges are also declared in the manifests.
 

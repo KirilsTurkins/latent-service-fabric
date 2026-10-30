@@ -1,36 +1,16 @@
 {
-  "cases": [
-    "TypeScriptLateFacilities.test_explicit_random_contract_keeps_original_runtime_and_cell_limits",
-    "TypeScriptLateFacilities.test_root_result_or_root_log_alone_cannot_qualify_the_callback"
-  ],
-  "guards": {
-    "TypeScriptLateFacilities.test_explicit_random_contract_keeps_original_runtime_and_cell_limits": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:badd3810cf27856befc38e8b9b4b3ade49d98a106f01ca411be2d4791e34c83b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptLateFacilities.test_root_result_or_root_log_alone_cannot_qualify_the_callback": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:badd3810cf27856befc38e8b9b4b3ade49d98a106f01ca411be2d4791e34c83b",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_typescript_resource_late.py",
-  "reviewReason": "One normal captured TypeScript component and six signed late/fresh facility outcomes using original native products and source-bound compiler inputs; preserve original Go/TypeScript baselines, ceilings and all positive pending/retirement oracles.",
-  "schemaVersion": "latent.ci.contracts.v1"
+"storageCases":"guard-keys",
+"guards":{
+"TypeScriptLateFacilities.test_explicit_random_contract_keeps_original_runtime_and_cell_limits":
+      "0bbeff93a4f45737b97d39f9c276a36c70386f676216432bbb9fb49ed08571e2",
+"TypeScriptLateFacilities.test_root_result_or_root_log_alone_cannot_qualify_the_callback":
+      "0bbeff93a4f45737b97d39f9c276a36c70386f676216432bbb9fb49ed08571e2"
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_resource_late.py",
+"reviewReason":"One normal captured TypeScript component and six signed late/fresh facility outcomes using original native products and source-bound compiler inputs; preserve original Go/TypeScript baselines, ceilings and all positive pending/retirement oracles.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"0bbeff93a4f45737b97d39f9c276a36c70386f676216432bbb9fb49ed08571e2":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:badd3810cf27856befc38e8b9b4b3ade49d98a106f01ca411be2d4791e34c83b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
 }

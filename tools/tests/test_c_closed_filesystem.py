@@ -77,7 +77,7 @@ class ClosedFilesystem(unittest.TestCase):
 
     def test_normal_compiler_admission_binds_port_and_refuses_changed_native_source(self):
         config = {'sdk': {'zig': '0.16.0'}, 'rust': {'dependencies': {'wit-bindgen': '0.62.0'}},
-                  'contracts': {'wasm-tools': '1.254.0'}}
+                  'contracts': {'wit-bindgen-cli': '0.62.0', 'wasm-tools': '1.254.0'}}
         installed = {name: self.root/name for name in ('zig', 'wit-bindgen', 'wasm-tools')}
         for tool in installed.values(): tool.write_bytes(b'fixture-tool')
         versions = {'zig': '0.16.0', 'wit-bindgen': 'wit-bindgen 0.62.0', 'wasm-tools': 'wasm-tools 1.254.0'}

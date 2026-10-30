@@ -1,539 +1,539 @@
 {
-  "schemaVersion": "latent.java.resource-runtime-retained.v1",
-  "source": "c27764d83e1be8b34cfe7351a30d221dec3a6dc8",
-  "run": 39467964642,
-  "job": 118784229071,
-  "artifact": {
-    "id": 12286920796,
-    "name": "java-resource-runtime-c27764d83e1be8b34cfe7351a30d221dec3a6dc8",
-    "size_in_bytes": 1411751,
-    "digest": "sha256:99b86646314325ab6c2380b568e59c04bba19e9c104cf82414687620ca21303c"
-  },
-  "members": [
-    {
-      "path": "java-resource-native/native-products.json",
-      "bytes": 21390,
-      "sha256": "sha256:05254405868cb99025cd1f59a0ae13b406fb201371aa1c7c4a6938ee34a1f719"
-    },
-    {
-      "path": "java-resource-native/source-inputs.json",
-      "bytes": 18937,
-      "sha256": "sha256:aeba42c6b06725317f75726e8f60bdc4da1f6d6120c121fd5ee8039f2f28a8ca"
-    },
-    {
-      "path": "java-resource-runtime/FAILED.json",
-      "bytes": 20967,
-      "sha256": "sha256:85286694eab140473683d45511024a317a6020d2e4d1e2131d0da12fd269cc5b"
-    },
-    {
-      "path": "java-resource-native/retrieval.json",
-      "bytes": 2530,
-      "sha256": "sha256:4e25ec33977ac68f231b09128824a28ee2d2241dbaf8c468f157166b2cc1192b"
-    },
-    {
-      "path": "java-resource-runtime/build/BUILD-COMPLETE.json",
-      "bytes": 29233,
-      "sha256": "sha256:8a06f3d973f0271f9aeba0b0e23ffd8f116ced13c2a134875edceb30a82801cf"
-    },
-    {
-      "path": "java-resource-runtime/build/application-dependencies.json",
-      "bytes": 6584,
-      "sha256": "sha256:beb071e60dd7f3d951d3970ecd70a2dd4e96c51e7730d25b332fae680b47b653"
-    },
-    {
-      "path": "java-resource-runtime/build/bindings.json",
-      "bytes": 22538,
-      "sha256": "sha256:0a37512f3b2f7e1058fb0b51a38f72cf3c01665fafb128b031ca02367315d86d"
-    },
-    {
-      "path": "java-resource-runtime/build/build-observation.json",
-      "bytes": 3789,
-      "sha256": "sha256:06c0ee994619d5b66da4a21526b73366ee11d030dcd4eb72bffc1c0f21d3ae81"
-    },
-    {
-      "path": "java-resource-runtime/build/capsule.json",
-      "bytes": 1467,
-      "sha256": "sha256:c1539b5e7e98874adb47f8ebd674574e9b79e5a8974ccd1455b87bf068c7aa68"
-    },
-    {
-      "path": "java-resource-runtime/build/compatibility-context.json",
-      "bytes": 3861,
-      "sha256": "sha256:f222a5209dd27ee2e6a9a17c927b9822e48846ba4ead82ff7767c812da81af1a"
-    },
-    {
-      "path": "java-resource-runtime/build/compatibility-inspection.json",
-      "bytes": 569,
-      "sha256": "sha256:d80ee22ed06800850ffc407f51fe0eff6923ab94667f4e8e42cde371232bb582"
-    },
-    {
-      "path": "java-resource-runtime/build/compatibility-reachability.json",
-      "bytes": 19275,
-      "sha256": "sha256:62c997c2f231409d127bd0330c0e8b7282570abca26ff93512d77b8c38b100ef"
-    },
-    {
-      "path": "java-resource-runtime/build/compatibility-report.json",
-      "bytes": 1252,
-      "sha256": "sha256:0769d29dbc8d85d8110c733906dcc3248e199ff1657b62e046ecd1f07c1f6743"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-inputs.json",
-      "bytes": 2952146,
-      "sha256": "sha256:29c22ac3ab80b4601d152d499fa4e7b959a5a7a99fa5587d2e0ed1aed1dce515"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/0-java-version.command.json",
-      "bytes": 188,
-      "sha256": "sha256:22c1c204f2e671e507f73ace98a0556a35412d9ffc6092d5d0c33ac59652d86f"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/0-java-version.log",
-      "bytes": 201,
-      "sha256": "sha256:dc52985e291a871cd813e0ec48efca3a22da113e8faae9101f126c3d6b16ce36"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/1-gradle-version.command.json",
-      "bytes": 163,
-      "sha256": "sha256:06986a5a22c89d9ae71ed210ba03c8dce5e6a82290aa4e0ea89027326d4dd5be"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/1-gradle-version.log",
-      "bytes": 805,
-      "sha256": "sha256:a3770da95435099fad7fc8145de5a7749c15ecd3918c5819a876e6b699328b4b"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/10-wit-bindings.command.json",
-      "bytes": 570,
-      "sha256": "sha256:8e1ad62b2a44b432bb0e9e276d883b3268b6b74fcf52fc37111ce7acb2c6b105"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/10-wit-bindings.log",
-      "bytes": 226,
-      "sha256": "sha256:42082da7fcf3d8cb5e374d2d855e478e142c44db2bd454122644fb668df347a1"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/11-bindings-metadata.command.json",
-      "bytes": 247,
-      "sha256": "sha256:d9325e50cb8b3ef26c661bb3858a131a719aedab6e72e8c711bba9fede863445"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/11-bindings-metadata.log",
-      "bytes": 3124,
-      "sha256": "sha256:ae2238857d0274eb72c5ad5e7819a70f119078c50f2a2bd3f1875c2b16f7ed47"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/12-wit-graph.command.json",
-      "bytes": 225,
-      "sha256": "sha256:6f71eb47fc6c5c33c531f4f8f438bc3037d9f0d602e57d31e9e3022c61c9323c"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/12-wit-graph.log",
-      "bytes": 15039,
-      "sha256": "sha256:7ecbb1268ad954da1cf8ced1cd2ff60eb74ca35fb5b11cf49ad96b4872e62215"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/13-wit-bindings.command.json",
-      "bytes": 577,
-      "sha256": "sha256:d89eea66b3f35c5d2aeb47e013b8db5549fa1473c3a06878f2218506932058f5"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/13-wit-bindings.log",
-      "bytes": 244,
-      "sha256": "sha256:1ac4fbefa5ffa6eb24d70d60ac49c4a843b5f0f1ec785fe513d1afec267e4482"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/14-bindings-metadata.command.json",
-      "bytes": 253,
-      "sha256": "sha256:0799370026710e51d981ae2eca8d2b53d3a1980b68692eee85a0576734c08916"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/14-bindings-metadata.log",
-      "bytes": 3124,
-      "sha256": "sha256:ae2238857d0274eb72c5ad5e7819a70f119078c50f2a2bd3f1875c2b16f7ed47"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/15-java-source-origins.command.json",
-      "bytes": 336,
-      "sha256": "sha256:7ddf2856e8248e3fff402cd16a066b45c4d25d15d4d641eff6200c5ddc82abe2"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/15-java-source-origins.log",
-      "bytes": 128,
-      "sha256": "sha256:c45dded9c54f641572c0e8337f110667e8cdcf3e99ac9fca2a04fe496a33ec26"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/16-java-owned-classes.command.json",
-      "bytes": 202,
-      "sha256": "sha256:e8517db9a1f8f3da4170c7d238a573ed6b48b909a006529397a40d325d7a69af"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/17-java-coroutine-patch.command.json",
-      "bytes": 6446,
-      "sha256": "sha256:434fa9d4c4e0ec10ea0813f9d47a4041a0c8204d3ddfb2468451aae279d7314b"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/17-java-coroutine-patch.log",
-      "bytes": 1,
-      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/16-java-owned-classes.log",
-      "bytes": 595,
-      "sha256": "sha256:ccf2f42224a85c813066c2fec9d107b8b8d0da620153ccc4a27edccd8395608e"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/18-java-coroutine-original-control.command.json",
-      "bytes": 6240,
-      "sha256": "sha256:a499e25aafb8a1b17ca99ef6b8cae59d16109d239b9cbb685709efc9b44df332"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/18-java-coroutine-original-control.log",
-      "bytes": 90,
-      "sha256": "sha256:01c538693a3632d25520419458df49878381435cf3447bbbf057656177ec326f"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/19-java-coroutine-corrected-control.command.json",
-      "bytes": 6122,
-      "sha256": "sha256:5bbce8a511c0c2bbc299bd408f058e7aaa6907483ee14e1d34e442b4749b116f"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/19-java-coroutine-corrected-control.log",
-      "bytes": 91,
-      "sha256": "sha256:4828f5d55aa6bab7d28b8266afd76eaca05911722b3338c1d23abc56c65b7d51"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/2-clang-version.command.json",
-      "bytes": 178,
-      "sha256": "sha256:8d89d3e3cdf1d2765fb8981549e2cbd4f0107e76111607d8b7e957d347696aca"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/2-clang-version.log",
-      "bytes": 313,
-      "sha256": "sha256:d3fa6f2e2ec1f904a494f0913372a855747f86af3961bcf5360dadf05b5eb488"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/20-java-to-c.command.json",
-      "bytes": 195,
-      "sha256": "sha256:35143a015038b63bf65e9375d75d35eda700bb1aa5cc3ece41c4a63eab4fc51e"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/20-java-to-c.log",
-      "bytes": 981,
-      "sha256": "sha256:515a1596d28bab4c804203ad42fa186f878867ffb435685d364f10e8eace3120"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/21-c-to-wasm.command.json",
-      "bytes": 1351,
-      "sha256": "sha256:7bbd230ff909642bd69e46f578852464f618b82890f101da16d758ff16fbf162"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/22-closed-runtime.command.json",
-      "bytes": 436,
-      "sha256": "sha256:aec10692a71afa8d7de289f83bde3fbf5b8a5de1ac9e2cca9c8f3578acdf71d6"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/21-c-to-wasm.log",
-      "bytes": 220230,
-      "sha256": "sha256:5ccd69dab74b6adf2524621d64a8f71b181af5db2a598f320729e86c10a8c719"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/22-closed-runtime.log",
-      "bytes": 1,
-      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/23-component-new.command.json",
-      "bytes": 398,
-      "sha256": "sha256:f307b360cd7167d50b09efde191f14a463f97f4959a94d54707a30791c4881af"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/23-component-new.log",
-      "bytes": 1,
-      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/24-component-validate.command.json",
-      "bytes": 267,
-      "sha256": "sha256:5d02a5f40fec317383b05aa045adb47b340866dfbcab41f884f0aa5a8cb0f54c"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/24-component-validate.log",
-      "bytes": 1,
-      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/25-component-surface.command.json",
-      "bytes": 230,
-      "sha256": "sha256:afb535df6265c950671b5df40954e0604c98e16f384161443c89650900d4e152"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/25-component-surface.log",
-      "bytes": 2897,
-      "sha256": "sha256:7962a9e184e9d4c53f1dcdf85077540228b5928d1042c808a13bd0f999797a97"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/26-expected-wit.command.json",
-      "bytes": 228,
-      "sha256": "sha256:b0dcb3c1c06f32ba11dd27de2fbd2a34ce86318cbb7679bd4fdb476ee2933a40"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/26-expected-wit.log",
-      "bytes": 15039,
-      "sha256": "sha256:7ecbb1268ad954da1cf8ced1cd2ff60eb74ca35fb5b11cf49ad96b4872e62215"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/27-compiled-wit.command.json",
-      "bytes": 239,
-      "sha256": "sha256:96a0548bacd12597d87e8fab07f256eb576a8083526da2647d288da20d89708a"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/27-compiled-wit.log",
-      "bytes": 13533,
-      "sha256": "sha256:1fab19d2337319350279abbd65ba73e96dece19e878139919879ee92eb30cafb"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/3-wit-bindgen-version.command.json",
-      "bytes": 177,
-      "sha256": "sha256:5d848cd4f79e32c79c7468133a668732cb0d3febb399096a82fa79cb0d72f17c"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/3-wit-bindgen-version.log",
-      "bytes": 24,
-      "sha256": "sha256:54a3b7f07a7f22e6db46237d76553a5024aa175f6e8966d2db7111e653d9cf42"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/4-wasm-tools-version.command.json",
-      "bytes": 158,
-      "sha256": "sha256:22e54a6ff333c33cdd6edd12a1fde503ada4b42f754dd536ae40a63e4e913fdb"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/4-wasm-tools-version.log",
-      "bytes": 43,
-      "sha256": "sha256:a9d05a8e1e1fd8ceb59716d851f535e44be83f11d8a2d6ff21b95fb6aafa39df"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/5-wit-graph.command.json",
-      "bytes": 238,
-      "sha256": "sha256:5d417fcd6ba937a3be62c3477ba6c48e508b8b99f53f4106f00be7b96f820d43"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/5-wit-graph.log",
-      "bytes": 41883,
-      "sha256": "sha256:5d5d27b6acbdb5d606bd21ac1a48355b6b9bcfe3b675ec3217279615cdec895a"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/6-wit-bindings.command.json",
-      "bytes": 447,
-      "sha256": "sha256:0b79297d010b7a26c2c4023c1689e1153dbb45cbbfb501ee0a46f72ac7499012"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/6-wit-bindings.log",
-      "bytes": 268,
-      "sha256": "sha256:1a4fba8f17ef0096db513187829e75ab9678d806e6587a0a000cea465ef2c498"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/7-bindings-metadata.command.json",
-      "bytes": 261,
-      "sha256": "sha256:50ccf2994e98fbd55c6b5d59606e9c80d6386027c7086028af2cbb04a9622e1b"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/7-bindings-metadata.log",
-      "bytes": 8431,
-      "sha256": "sha256:16ad67914b30acd8ddc8f7336d9e9e20d2be36f535756bb2dc329a2ab34b371b"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/8-activation-profile-wit.command.json",
-      "bytes": 238,
-      "sha256": "sha256:9376fc86028585d2e55ec5308322b1cb2508ef28a0e5111a959ae45aeef605c8"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/8-activation-profile-wit.log",
-      "bytes": 15039,
-      "sha256": "sha256:7ecbb1268ad954da1cf8ced1cd2ff60eb74ca35fb5b11cf49ad96b4872e62215"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/9-wit-graph.command.json",
-      "bytes": 225,
-      "sha256": "sha256:df0d74622680e836731933f21e874ed8874f283fa0b748d025488023a9868f86"
-    },
-    {
-      "path": "java-resource-runtime/build/compiler-logs/9-wit-graph.log",
-      "bytes": 15039,
-      "sha256": "sha256:7ecbb1268ad954da1cf8ced1cd2ff60eb74ca35fb5b11cf49ad96b4872e62215"
-    },
-    {
-      "path": "java-resource-runtime/build/component.wasm",
-      "bytes": 1898554,
-      "sha256": "sha256:1569a4ce8a15e61601b458f11dd1c332085f28db1f85954b9a000a6044946d8f"
-    },
-    {
-      "path": "java-resource-runtime/build/contracts.json",
-      "bytes": 674,
-      "sha256": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
-    },
-    {
-      "path": "java-resource-runtime/build/coroutine-compiler-preparation.json",
-      "bytes": 9157,
-      "sha256": "sha256:e2e44c0dc5494aeed9a2a9a62c462481e2bab30b2c68a66ca4144a896255d834"
-    },
-    {
-      "path": "java-resource-runtime/build/deployment.json",
-      "bytes": 887,
-      "sha256": "sha256:65a072863b1b1f038938f8712add25fcd86a210920abc9883b3a1b56dee7979e"
-    },
-    {
-      "path": "java-resource-runtime/build/diagnostic-source.json",
-      "bytes": 182,
-      "sha256": "sha256:4559cd6ac0fbdb3eac44ef824b72ad9752f207a5aec4dd2579915d5c3c42ae8c"
-    },
-    {
-      "path": "java-resource-runtime/build/java-classpath.json",
-      "bytes": 3843,
-      "sha256": "sha256:9dae9456ef82f35c5d0570a30634036de9594711c0b102269c6638a817bc0479"
-    },
-    {
-      "path": "java-resource-runtime/build/package/config.json",
-      "bytes": 3168,
-      "sha256": "sha256:55c737e39fda88e7dd1e5d6dc871100f98ff9dd9349d7d5900d31390f6efa241"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/capsule.json",
-      "bytes": 1103,
-      "sha256": "sha256:c4615d815b4ab60c3fc88a9d17013519bae754b5d9688150344d323da1a64465"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/compatibility-report.json",
-      "bytes": 1252,
-      "sha256": "sha256:0769d29dbc8d85d8110c733906dcc3248e199ff1657b62e046ecd1f07c1f6743"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/component.wasm",
-      "bytes": 1898554,
-      "sha256": "sha256:1569a4ce8a15e61601b458f11dd1c332085f28db1f85954b9a000a6044946d8f"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/contracts.json",
-      "bytes": 674,
-      "sha256": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/package/build-inputs.json",
-      "bytes": 3955,
-      "sha256": "sha256:b49a02f8279b2bc7313ac0c4914dd55494b8126d7a94314f94b2394a8419ae15"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/resource-index.json",
-      "bytes": 1804,
-      "sha256": "sha256:02f0223b3f10f9460fdb1dcc0a36c61c19d92f222e0a9bcfccd949a16c338a11"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/resources/objects/1148e711421df4cb092b5e2df5a54881fb8c41a6ea0cf5a77934a31bf0c6aa0b",
-      "bytes": 6,
-      "sha256": "sha256:1148e711421df4cb092b5e2df5a54881fb8c41a6ea0cf5a77934a31bf0c6aa0b"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/resources/objects/bd30ea2eb672671d471277934b6015b228dffb247e40aaa4dd9e48bb9ea1cfbd",
-      "bytes": 12,
-      "sha256": "sha256:bd30ea2eb672671d471277934b6015b228dffb247e40aaa4dd9e48bb9ea1cfbd"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/resources/objects/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "bytes": 0,
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/wit/deps/activation-runtime/package.wit",
-      "bytes": 2539,
-      "sha256": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/wit/deps/clock/package.wit",
-      "bytes": 139,
-      "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/wit/deps/log/package.wit",
-      "bytes": 418,
-      "sha256": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/wit/deps/random/package.wit",
-      "bytes": 272,
-      "sha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/wit/world.wit",
-      "bytes": 443,
-      "sha256": "sha256:7a500a2d85ac80b2a58f3c3af3850197693f8374c95634d1db4e43e7332ab221"
-    },
-    {
-      "path": "java-resource-runtime/build/package/layers/wit-lock.json",
-      "bytes": 1110,
-      "sha256": "sha256:72b4ba08c751f65b4a15c51c9aaa5028d6618703a6176feaa54c1c5e2b4e0016"
-    },
-    {
-      "path": "java-resource-runtime/build/package/manifest.json",
-      "bytes": 4149,
-      "sha256": "sha256:4a6bed84d76caf8d9e6fbca885b896b9a79044f3adccca0b05bf2890f12a962c"
-    },
-    {
-      "path": "java-resource-runtime/build/package-inputs.json",
-      "bytes": 1982,
-      "sha256": "sha256:029bd0003956ec02d850ce2bcba45770ac259b5526f4eb70acf0bee0511b57c8"
-    },
-    {
-      "path": "java-resource-runtime/build/package-source.json",
-      "bytes": 2839,
-      "sha256": "sha256:a7213d22b95eacfb7cf8bdf3962c4a2347e6187cfc2f98df85c10a729a974bb4"
-    },
-    {
-      "path": "java-resource-runtime/build/recipe-inputs.json",
-      "bytes": 9540,
-      "sha256": "sha256:c98dfd4374276f8e7d94cd13523ae527b11b92467d31c24f3621c48c890fc44b"
-    },
-    {
-      "path": "java-resource-runtime/build/resource-index.json",
-      "bytes": 1804,
-      "sha256": "sha256:02f0223b3f10f9460fdb1dcc0a36c61c19d92f222e0a9bcfccd949a16c338a11"
-    },
-    {
-      "path": "java-resource-runtime/build/runtime-profile.json",
-      "bytes": 974,
-      "sha256": "sha256:13793367ee003886c8941b30a95339e6387ddca3c8d502401137aa8d08860525"
-    },
-    {
-      "path": "java-resource-runtime/build/source-inputs.json",
-      "bytes": 35497,
-      "sha256": "sha256:09dc8139409a1b629874df1dd0537b1e8a054d0ae0b7468b14a9311319d24722"
-    },
-    {
-      "path": "java-resource-runtime/build/source-origins.json",
-      "bytes": 165,
-      "sha256": "sha256:6197dd42b13806c1a07bd708c44ed91c22933f94076c5a86c087c156e42e495b"
-    },
-    {
-      "path": "java-resource-runtime/build/surface.json",
-      "bytes": 289,
-      "sha256": "sha256:252a6bc1e6cab4686ad870a330776ebc8916753633bc18a8426da173773ffaf2"
-    },
-    {
-      "path": "java-resource-runtime/build/wit-lock.json",
-      "bytes": 1110,
-      "sha256": "sha256:72b4ba08c751f65b4a15c51c9aaa5028d6618703a6176feaa54c1c5e2b4e0016"
-    },
-    {
-      "path": "java-resource-runtime/commands/logs/00-outside-resource-runtime-javac.stderr.txt",
-      "bytes": 0,
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": "java-resource-runtime/commands/logs/00-outside-resource-runtime-javac.stdout.txt",
-      "bytes": 0,
-      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "path": "java-resource-runtime/compiler/compiler-cache-selection.json",
-      "bytes": 215,
-      "sha256": "sha256:438b4c8b6fd3bdde6760561b47393a9d4c1a33693f599416f089d3a5178c0df5"
-    }
-  ]
+"schemaVersion":"latent.java.resource-runtime-retained.v1",
+"source":"c27764d83e1be8b34cfe7351a30d221dec3a6dc8",
+"run":39467964642,
+"job":118784229071,
+"artifact":{
+"id":12286920796,
+"name":"java-resource-runtime-c27764d83e1be8b34cfe7351a30d221dec3a6dc8",
+"size_in_bytes":1411751,
+"digest":"sha256:99b86646314325ab6c2380b568e59c04bba19e9c104cf82414687620ca21303c"
+},
+"members":[
+{
+"path":"java-resource-native/native-products.json",
+"bytes":21390,
+"sha256":"sha256:05254405868cb99025cd1f59a0ae13b406fb201371aa1c7c4a6938ee34a1f719"
+},
+{
+"path":"java-resource-native/source-inputs.json",
+"bytes":18937,
+"sha256":"sha256:aeba42c6b06725317f75726e8f60bdc4da1f6d6120c121fd5ee8039f2f28a8ca"
+},
+{
+"path":"java-resource-runtime/FAILED.json",
+"bytes":20967,
+"sha256":"sha256:85286694eab140473683d45511024a317a6020d2e4d1e2131d0da12fd269cc5b"
+},
+{
+"path":"java-resource-native/retrieval.json",
+"bytes":2530,
+"sha256":"sha256:4e25ec33977ac68f231b09128824a28ee2d2241dbaf8c468f157166b2cc1192b"
+},
+{
+"path":"java-resource-runtime/build/BUILD-COMPLETE.json",
+"bytes":29233,
+"sha256":"sha256:8a06f3d973f0271f9aeba0b0e23ffd8f116ced13c2a134875edceb30a82801cf"
+},
+{
+"path":"java-resource-runtime/build/application-dependencies.json",
+"bytes":6584,
+"sha256":"sha256:beb071e60dd7f3d951d3970ecd70a2dd4e96c51e7730d25b332fae680b47b653"
+},
+{
+"path":"java-resource-runtime/build/bindings.json",
+"bytes":22538,
+"sha256":"sha256:0a37512f3b2f7e1058fb0b51a38f72cf3c01665fafb128b031ca02367315d86d"
+},
+{
+"path":"java-resource-runtime/build/build-observation.json",
+"bytes":3789,
+"sha256":"sha256:06c0ee994619d5b66da4a21526b73366ee11d030dcd4eb72bffc1c0f21d3ae81"
+},
+{
+"path":"java-resource-runtime/build/capsule.json",
+"bytes":1467,
+"sha256":"sha256:c1539b5e7e98874adb47f8ebd674574e9b79e5a8974ccd1455b87bf068c7aa68"
+},
+{
+"path":"java-resource-runtime/build/compatibility-context.json",
+"bytes":3861,
+"sha256":"sha256:f222a5209dd27ee2e6a9a17c927b9822e48846ba4ead82ff7767c812da81af1a"
+},
+{
+"path":"java-resource-runtime/build/compatibility-inspection.json",
+"bytes":569,
+"sha256":"sha256:d80ee22ed06800850ffc407f51fe0eff6923ab94667f4e8e42cde371232bb582"
+},
+{
+"path":"java-resource-runtime/build/compatibility-reachability.json",
+"bytes":19275,
+"sha256":"sha256:62c997c2f231409d127bd0330c0e8b7282570abca26ff93512d77b8c38b100ef"
+},
+{
+"path":"java-resource-runtime/build/compatibility-report.json",
+"bytes":1252,
+"sha256":"sha256:0769d29dbc8d85d8110c733906dcc3248e199ff1657b62e046ecd1f07c1f6743"
+},
+{
+"path":"java-resource-runtime/build/compiler-inputs.json",
+"bytes":2952146,
+"sha256":"sha256:29c22ac3ab80b4601d152d499fa4e7b959a5a7a99fa5587d2e0ed1aed1dce515"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/0-java-version.command.json",
+"bytes":188,
+"sha256":"sha256:22c1c204f2e671e507f73ace98a0556a35412d9ffc6092d5d0c33ac59652d86f"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/0-java-version.log",
+"bytes":201,
+"sha256":"sha256:dc52985e291a871cd813e0ec48efca3a22da113e8faae9101f126c3d6b16ce36"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/1-gradle-version.command.json",
+"bytes":163,
+"sha256":"sha256:06986a5a22c89d9ae71ed210ba03c8dce5e6a82290aa4e0ea89027326d4dd5be"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/1-gradle-version.log",
+"bytes":805,
+"sha256":"sha256:a3770da95435099fad7fc8145de5a7749c15ecd3918c5819a876e6b699328b4b"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/10-wit-bindings.command.json",
+"bytes":570,
+"sha256":"sha256:8e1ad62b2a44b432bb0e9e276d883b3268b6b74fcf52fc37111ce7acb2c6b105"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/10-wit-bindings.log",
+"bytes":226,
+"sha256":"sha256:42082da7fcf3d8cb5e374d2d855e478e142c44db2bd454122644fb668df347a1"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/11-bindings-metadata.command.json",
+"bytes":247,
+"sha256":"sha256:d9325e50cb8b3ef26c661bb3858a131a719aedab6e72e8c711bba9fede863445"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/11-bindings-metadata.log",
+"bytes":3124,
+"sha256":"sha256:ae2238857d0274eb72c5ad5e7819a70f119078c50f2a2bd3f1875c2b16f7ed47"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/12-wit-graph.command.json",
+"bytes":225,
+"sha256":"sha256:6f71eb47fc6c5c33c531f4f8f438bc3037d9f0d602e57d31e9e3022c61c9323c"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/12-wit-graph.log",
+"bytes":15039,
+"sha256":"sha256:7ecbb1268ad954da1cf8ced1cd2ff60eb74ca35fb5b11cf49ad96b4872e62215"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/13-wit-bindings.command.json",
+"bytes":577,
+"sha256":"sha256:d89eea66b3f35c5d2aeb47e013b8db5549fa1473c3a06878f2218506932058f5"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/13-wit-bindings.log",
+"bytes":244,
+"sha256":"sha256:1ac4fbefa5ffa6eb24d70d60ac49c4a843b5f0f1ec785fe513d1afec267e4482"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/14-bindings-metadata.command.json",
+"bytes":253,
+"sha256":"sha256:0799370026710e51d981ae2eca8d2b53d3a1980b68692eee85a0576734c08916"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/14-bindings-metadata.log",
+"bytes":3124,
+"sha256":"sha256:ae2238857d0274eb72c5ad5e7819a70f119078c50f2a2bd3f1875c2b16f7ed47"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/15-java-source-origins.command.json",
+"bytes":336,
+"sha256":"sha256:7ddf2856e8248e3fff402cd16a066b45c4d25d15d4d641eff6200c5ddc82abe2"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/15-java-source-origins.log",
+"bytes":128,
+"sha256":"sha256:c45dded9c54f641572c0e8337f110667e8cdcf3e99ac9fca2a04fe496a33ec26"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/16-java-owned-classes.command.json",
+"bytes":202,
+"sha256":"sha256:e8517db9a1f8f3da4170c7d238a573ed6b48b909a006529397a40d325d7a69af"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/17-java-coroutine-patch.command.json",
+"bytes":6446,
+"sha256":"sha256:434fa9d4c4e0ec10ea0813f9d47a4041a0c8204d3ddfb2468451aae279d7314b"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/17-java-coroutine-patch.log",
+"bytes":1,
+"sha256":"sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/16-java-owned-classes.log",
+"bytes":595,
+"sha256":"sha256:ccf2f42224a85c813066c2fec9d107b8b8d0da620153ccc4a27edccd8395608e"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/18-java-coroutine-original-control.command.json",
+"bytes":6240,
+"sha256":"sha256:a499e25aafb8a1b17ca99ef6b8cae59d16109d239b9cbb685709efc9b44df332"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/18-java-coroutine-original-control.log",
+"bytes":90,
+"sha256":"sha256:01c538693a3632d25520419458df49878381435cf3447bbbf057656177ec326f"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/19-java-coroutine-corrected-control.command.json",
+"bytes":6122,
+"sha256":"sha256:5bbce8a511c0c2bbc299bd408f058e7aaa6907483ee14e1d34e442b4749b116f"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/19-java-coroutine-corrected-control.log",
+"bytes":91,
+"sha256":"sha256:4828f5d55aa6bab7d28b8266afd76eaca05911722b3338c1d23abc56c65b7d51"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/2-clang-version.command.json",
+"bytes":178,
+"sha256":"sha256:8d89d3e3cdf1d2765fb8981549e2cbd4f0107e76111607d8b7e957d347696aca"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/2-clang-version.log",
+"bytes":313,
+"sha256":"sha256:d3fa6f2e2ec1f904a494f0913372a855747f86af3961bcf5360dadf05b5eb488"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/20-java-to-c.command.json",
+"bytes":195,
+"sha256":"sha256:35143a015038b63bf65e9375d75d35eda700bb1aa5cc3ece41c4a63eab4fc51e"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/20-java-to-c.log",
+"bytes":981,
+"sha256":"sha256:515a1596d28bab4c804203ad42fa186f878867ffb435685d364f10e8eace3120"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/21-c-to-wasm.command.json",
+"bytes":1351,
+"sha256":"sha256:7bbd230ff909642bd69e46f578852464f618b82890f101da16d758ff16fbf162"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/22-closed-runtime.command.json",
+"bytes":436,
+"sha256":"sha256:aec10692a71afa8d7de289f83bde3fbf5b8a5de1ac9e2cca9c8f3578acdf71d6"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/21-c-to-wasm.log",
+"bytes":220230,
+"sha256":"sha256:5ccd69dab74b6adf2524621d64a8f71b181af5db2a598f320729e86c10a8c719"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/22-closed-runtime.log",
+"bytes":1,
+"sha256":"sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/23-component-new.command.json",
+"bytes":398,
+"sha256":"sha256:f307b360cd7167d50b09efde191f14a463f97f4959a94d54707a30791c4881af"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/23-component-new.log",
+"bytes":1,
+"sha256":"sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/24-component-validate.command.json",
+"bytes":267,
+"sha256":"sha256:5d02a5f40fec317383b05aa045adb47b340866dfbcab41f884f0aa5a8cb0f54c"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/24-component-validate.log",
+"bytes":1,
+"sha256":"sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/25-component-surface.command.json",
+"bytes":230,
+"sha256":"sha256:afb535df6265c950671b5df40954e0604c98e16f384161443c89650900d4e152"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/25-component-surface.log",
+"bytes":2897,
+"sha256":"sha256:7962a9e184e9d4c53f1dcdf85077540228b5928d1042c808a13bd0f999797a97"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/26-expected-wit.command.json",
+"bytes":228,
+"sha256":"sha256:b0dcb3c1c06f32ba11dd27de2fbd2a34ce86318cbb7679bd4fdb476ee2933a40"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/26-expected-wit.log",
+"bytes":15039,
+"sha256":"sha256:7ecbb1268ad954da1cf8ced1cd2ff60eb74ca35fb5b11cf49ad96b4872e62215"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/27-compiled-wit.command.json",
+"bytes":239,
+"sha256":"sha256:96a0548bacd12597d87e8fab07f256eb576a8083526da2647d288da20d89708a"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/27-compiled-wit.log",
+"bytes":13533,
+"sha256":"sha256:1fab19d2337319350279abbd65ba73e96dece19e878139919879ee92eb30cafb"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/3-wit-bindgen-version.command.json",
+"bytes":177,
+"sha256":"sha256:5d848cd4f79e32c79c7468133a668732cb0d3febb399096a82fa79cb0d72f17c"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/3-wit-bindgen-version.log",
+"bytes":24,
+"sha256":"sha256:54a3b7f07a7f22e6db46237d76553a5024aa175f6e8966d2db7111e653d9cf42"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/4-wasm-tools-version.command.json",
+"bytes":158,
+"sha256":"sha256:22e54a6ff333c33cdd6edd12a1fde503ada4b42f754dd536ae40a63e4e913fdb"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/4-wasm-tools-version.log",
+"bytes":43,
+"sha256":"sha256:a9d05a8e1e1fd8ceb59716d851f535e44be83f11d8a2d6ff21b95fb6aafa39df"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/5-wit-graph.command.json",
+"bytes":238,
+"sha256":"sha256:5d417fcd6ba937a3be62c3477ba6c48e508b8b99f53f4106f00be7b96f820d43"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/5-wit-graph.log",
+"bytes":41883,
+"sha256":"sha256:5d5d27b6acbdb5d606bd21ac1a48355b6b9bcfe3b675ec3217279615cdec895a"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/6-wit-bindings.command.json",
+"bytes":447,
+"sha256":"sha256:0b79297d010b7a26c2c4023c1689e1153dbb45cbbfb501ee0a46f72ac7499012"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/6-wit-bindings.log",
+"bytes":268,
+"sha256":"sha256:1a4fba8f17ef0096db513187829e75ab9678d806e6587a0a000cea465ef2c498"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/7-bindings-metadata.command.json",
+"bytes":261,
+"sha256":"sha256:50ccf2994e98fbd55c6b5d59606e9c80d6386027c7086028af2cbb04a9622e1b"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/7-bindings-metadata.log",
+"bytes":8431,
+"sha256":"sha256:16ad67914b30acd8ddc8f7336d9e9e20d2be36f535756bb2dc329a2ab34b371b"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/8-activation-profile-wit.command.json",
+"bytes":238,
+"sha256":"sha256:9376fc86028585d2e55ec5308322b1cb2508ef28a0e5111a959ae45aeef605c8"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/8-activation-profile-wit.log",
+"bytes":15039,
+"sha256":"sha256:7ecbb1268ad954da1cf8ced1cd2ff60eb74ca35fb5b11cf49ad96b4872e62215"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/9-wit-graph.command.json",
+"bytes":225,
+"sha256":"sha256:df0d74622680e836731933f21e874ed8874f283fa0b748d025488023a9868f86"
+},
+{
+"path":"java-resource-runtime/build/compiler-logs/9-wit-graph.log",
+"bytes":15039,
+"sha256":"sha256:7ecbb1268ad954da1cf8ced1cd2ff60eb74ca35fb5b11cf49ad96b4872e62215"
+},
+{
+"path":"java-resource-runtime/build/component.wasm",
+"bytes":1898554,
+"sha256":"sha256:1569a4ce8a15e61601b458f11dd1c332085f28db1f85954b9a000a6044946d8f"
+},
+{
+"path":"java-resource-runtime/build/contracts.json",
+"bytes":674,
+"sha256":"sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+},
+{
+"path":"java-resource-runtime/build/coroutine-compiler-preparation.json",
+"bytes":9157,
+"sha256":"sha256:e2e44c0dc5494aeed9a2a9a62c462481e2bab30b2c68a66ca4144a896255d834"
+},
+{
+"path":"java-resource-runtime/build/deployment.json",
+"bytes":887,
+"sha256":"sha256:65a072863b1b1f038938f8712add25fcd86a210920abc9883b3a1b56dee7979e"
+},
+{
+"path":"java-resource-runtime/build/diagnostic-source.json",
+"bytes":182,
+"sha256":"sha256:4559cd6ac0fbdb3eac44ef824b72ad9752f207a5aec4dd2579915d5c3c42ae8c"
+},
+{
+"path":"java-resource-runtime/build/java-classpath.json",
+"bytes":3843,
+"sha256":"sha256:9dae9456ef82f35c5d0570a30634036de9594711c0b102269c6638a817bc0479"
+},
+{
+"path":"java-resource-runtime/build/package/config.json",
+"bytes":3168,
+"sha256":"sha256:55c737e39fda88e7dd1e5d6dc871100f98ff9dd9349d7d5900d31390f6efa241"
+},
+{
+"path":"java-resource-runtime/build/package/layers/capsule.json",
+"bytes":1103,
+"sha256":"sha256:c4615d815b4ab60c3fc88a9d17013519bae754b5d9688150344d323da1a64465"
+},
+{
+"path":"java-resource-runtime/build/package/layers/compatibility-report.json",
+"bytes":1252,
+"sha256":"sha256:0769d29dbc8d85d8110c733906dcc3248e199ff1657b62e046ecd1f07c1f6743"
+},
+{
+"path":"java-resource-runtime/build/package/layers/component.wasm",
+"bytes":1898554,
+"sha256":"sha256:1569a4ce8a15e61601b458f11dd1c332085f28db1f85954b9a000a6044946d8f"
+},
+{
+"path":"java-resource-runtime/build/package/layers/contracts.json",
+"bytes":674,
+"sha256":"sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+},
+{
+"path":"java-resource-runtime/build/package/layers/package/build-inputs.json",
+"bytes":3955,
+"sha256":"sha256:b49a02f8279b2bc7313ac0c4914dd55494b8126d7a94314f94b2394a8419ae15"
+},
+{
+"path":"java-resource-runtime/build/package/layers/resource-index.json",
+"bytes":1804,
+"sha256":"sha256:02f0223b3f10f9460fdb1dcc0a36c61c19d92f222e0a9bcfccd949a16c338a11"
+},
+{
+"path":"java-resource-runtime/build/package/layers/resources/objects/1148e711421df4cb092b5e2df5a54881fb8c41a6ea0cf5a77934a31bf0c6aa0b",
+"bytes":6,
+"sha256":"sha256:1148e711421df4cb092b5e2df5a54881fb8c41a6ea0cf5a77934a31bf0c6aa0b"
+},
+{
+"path":"java-resource-runtime/build/package/layers/resources/objects/bd30ea2eb672671d471277934b6015b228dffb247e40aaa4dd9e48bb9ea1cfbd",
+"bytes":12,
+"sha256":"sha256:bd30ea2eb672671d471277934b6015b228dffb247e40aaa4dd9e48bb9ea1cfbd"
+},
+{
+"path":"java-resource-runtime/build/package/layers/resources/objects/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+"bytes":0,
+"sha256":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+},
+{
+"path":"java-resource-runtime/build/package/layers/wit/deps/activation-runtime/package.wit",
+"bytes":2539,
+"sha256":"sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946"
+},
+{
+"path":"java-resource-runtime/build/package/layers/wit/deps/clock/package.wit",
+"bytes":139,
+"sha256":"sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+},
+{
+"path":"java-resource-runtime/build/package/layers/wit/deps/log/package.wit",
+"bytes":418,
+"sha256":"sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e"
+},
+{
+"path":"java-resource-runtime/build/package/layers/wit/deps/random/package.wit",
+"bytes":272,
+"sha256":"sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60"
+},
+{
+"path":"java-resource-runtime/build/package/layers/wit/world.wit",
+"bytes":443,
+"sha256":"sha256:7a500a2d85ac80b2a58f3c3af3850197693f8374c95634d1db4e43e7332ab221"
+},
+{
+"path":"java-resource-runtime/build/package/layers/wit-lock.json",
+"bytes":1110,
+"sha256":"sha256:72b4ba08c751f65b4a15c51c9aaa5028d6618703a6176feaa54c1c5e2b4e0016"
+},
+{
+"path":"java-resource-runtime/build/package/manifest.json",
+"bytes":4149,
+"sha256":"sha256:4a6bed84d76caf8d9e6fbca885b896b9a79044f3adccca0b05bf2890f12a962c"
+},
+{
+"path":"java-resource-runtime/build/package-inputs.json",
+"bytes":1982,
+"sha256":"sha256:029bd0003956ec02d850ce2bcba45770ac259b5526f4eb70acf0bee0511b57c8"
+},
+{
+"path":"java-resource-runtime/build/package-source.json",
+"bytes":2839,
+"sha256":"sha256:a7213d22b95eacfb7cf8bdf3962c4a2347e6187cfc2f98df85c10a729a974bb4"
+},
+{
+"path":"java-resource-runtime/build/recipe-inputs.json",
+"bytes":9540,
+"sha256":"sha256:c98dfd4374276f8e7d94cd13523ae527b11b92467d31c24f3621c48c890fc44b"
+},
+{
+"path":"java-resource-runtime/build/resource-index.json",
+"bytes":1804,
+"sha256":"sha256:02f0223b3f10f9460fdb1dcc0a36c61c19d92f222e0a9bcfccd949a16c338a11"
+},
+{
+"path":"java-resource-runtime/build/runtime-profile.json",
+"bytes":974,
+"sha256":"sha256:13793367ee003886c8941b30a95339e6387ddca3c8d502401137aa8d08860525"
+},
+{
+"path":"java-resource-runtime/build/source-inputs.json",
+"bytes":35497,
+"sha256":"sha256:09dc8139409a1b629874df1dd0537b1e8a054d0ae0b7468b14a9311319d24722"
+},
+{
+"path":"java-resource-runtime/build/source-origins.json",
+"bytes":165,
+"sha256":"sha256:6197dd42b13806c1a07bd708c44ed91c22933f94076c5a86c087c156e42e495b"
+},
+{
+"path":"java-resource-runtime/build/surface.json",
+"bytes":289,
+"sha256":"sha256:252a6bc1e6cab4686ad870a330776ebc8916753633bc18a8426da173773ffaf2"
+},
+{
+"path":"java-resource-runtime/build/wit-lock.json",
+"bytes":1110,
+"sha256":"sha256:72b4ba08c751f65b4a15c51c9aaa5028d6618703a6176feaa54c1c5e2b4e0016"
+},
+{
+"path":"java-resource-runtime/commands/logs/00-outside-resource-runtime-javac.stderr.txt",
+"bytes":0,
+"sha256":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+},
+{
+"path":"java-resource-runtime/commands/logs/00-outside-resource-runtime-javac.stdout.txt",
+"bytes":0,
+"sha256":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+},
+{
+"path":"java-resource-runtime/compiler/compiler-cache-selection.json",
+"bytes":215,
+"sha256":"sha256:438b4c8b6fd3bdde6760561b47393a9d4c1a33693f599416f089d3a5178c0df5"
+}
+]
 }

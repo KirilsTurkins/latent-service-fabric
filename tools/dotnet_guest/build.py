@@ -4,6 +4,7 @@ from __future__ import annotations
 from tools import guest_compatibility_context_build
 from tools.transaction_guest_project import packaging_arguments
 import json
+import math
 from pathlib import Path
 import tempfile
 import time
@@ -24,7 +25,7 @@ RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dot
     "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/runtime.py", "tools/dotnet_guest/composer.py",
     "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/entropy.py", "tools/dotnet_guest/outputs.py",
     "tools/dotnet_guest/managed_entropy.py", "tools/dotnet_guest/reachability.py",
-    "tools/dotnet_guest/http_errors.py", "tools/dotnet_guest/task_wait.py", "tools/dotnet_guest/closed_filesystem.py", "tools/dotnet_guest/resources.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
+    "tools/dotnet_guest/http_errors.py", "tools/dotnet_guest/task_wait.py", "tools/dotnet_guest/aggregate_task_wait.py", "tools/dotnet_guest/closed_filesystem.py", "tools/dotnet_guest/resources.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
     "tools/dotnet_guest/async_exports.py",
     "tools/dotnet_guest/internal_io.py",
     "tools/dotnet_guest/closed_io.py",
@@ -46,7 +47,17 @@ RECIPE += guest_dependency_inputs.RECIPE
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
           *, tools: Path, offline: bool = False, executable_approval: str | None = None,
-          compiler_methods: bool = False):
+          compiler_methods: bool = False, _deadline: float | None = None, _root_return_capture: tuple | None = None, _root_join_cause: bool = False, _root_return_commands=None):
+    if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
+                                 or _deadline <= time.monotonic() + 5):
+        raise ValueError('dotnet-build-original-owner-deadline')
+    if type(_root_join_cause) is not bool or (_root_join_cause and _root_return_capture is None):
+        raise ValueError('root-join-cause-requires-explicit-capture')
+    if _root_return_commands is not None and (_root_return_capture is None or not callable(_root_return_commands)):
+        raise ValueError('root-return-command-owner-requires-explicit-capture')
+    if _root_return_capture is not None and (type(_root_return_capture) is not tuple
+            or len(_root_return_capture) != 2 or not all(callable(item) for item in _root_return_capture)):
+        raise ValueError("dotnet-root-return-capture-selection")
     if type(compiler_methods) is not bool:
         raise ValueError('dotnet compiler method observations require an explicit boolean')
     project_path, output, tools = map(checked_path, (project_path, output, tools))
@@ -67,6 +78,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         guest_resources.select(files)
         source_inputs = inventory(files)
         recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
+        if _root_return_capture is not None:
+            recipe_files["tools/dotnet_root_return.py"] = read_file(ROOT / "tools/dotnet_root_return.py")
         recipe = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe)
@@ -76,7 +89,13 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path = work / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
-            commands = Commands(work, output, build_environment(temporary))
+            commands = (Commands(work, output, build_environment(temporary)) if _root_return_commands is None
+                        else _root_return_commands(work, output, build_environment(temporary)))
+            if _deadline is not None:
+                if _deadline <= time.monotonic() + 5:
+                    raise ValueError('compiler-setup-consumed-parent-cleanup-reserve')
+                commands.deadline = min(commands.deadline, _deadline - 5)
+                commands._parent_deadline = _deadline
             paths = {"contracts-tool": checked_path(contracts_tool)}
             if packager is not None:
                 paths["packager"] = checked_path(packager)
@@ -96,7 +115,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "compiler-inputs"
             verified = verify_inputs(observed.dependency_root, 'dotnet')
             compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline, captured=verified is not None,
-                **({'compiler_methods': True} if compiler_methods else {}))
+                compiler_methods=True)
+            if _root_join_cause:
+                compiler.development_root_join_cause = True
             write_json(output / "compiler-inputs.json", compiler.before)
             materials.extend(compiler.materials)
             write_json(output / 'compiler-patches-preparation.json', {'formatVersion': 1, 'patches': compiler.compiler_patches})
@@ -121,7 +142,18 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             write_json(output / "diagnostic-source.json", {
                 "capturedSource": str(temporary / "compiled/project/src"),
                 "requestedSource": str(project_path / "src")})
-            component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
+            try:
+                component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
+            except BaseException:
+                if _root_return_capture is not None:
+                    try:
+                        _root_return_capture[1](temporary / "compiled", output)
+                    except Exception as capture_error:
+                        write_json(output / "probe-inputs-unavailable.json", {"status": "unavailable",
+                            "reason": type(capture_error).__name__, "compilerSucceeded": False})
+                raise
+            if _root_return_capture is not None:
+                _root_return_capture[0](temporary / "compiled", output, generated["bindings"], compiler)
             # Native ports are derived inside the owned compiler workspace.
             # Bind the completed derivation and real linker observation rather
             # than the initial composer-only receipt written before approval.
@@ -173,7 +205,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("closed-runtime-coverage", read_file(output / "closed-runtime-coverage.json", 4 * 1024 * 1024)),
                 ("dependency-lock", files["vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json"]),
                 ("toolchain-config", files["global.json"])))
-            if compiler_methods:
+            if compiler.compiler_methods:
                 from tools.dotnet_guest import reachability
                 from tools import guest_runtime_receipts
                 observed_methods = getattr(compiler, 'reachability_observation', None)

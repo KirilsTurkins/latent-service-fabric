@@ -16,10 +16,23 @@ from tools import application_dependencies as dependencies
 from tools.phase3_resource_profile import ACTIVE_COUNTERS
 from tools.rust_capsule_project import ROOT, digest, read_file
 from tools.tests.test_sdk_scratch_probe import invocation
+from tools.tests.test_java_scratch_wiring import original_compiler_parent
 
 WALL = 1_800_000_000_000
 BEFORE = WALL-1
 AFTER = WALL+1
+
+
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
 
 
 class JavaResourceConformance(unittest.TestCase):
@@ -201,18 +214,57 @@ class JavaResourceConformance(unittest.TestCase):
 
     def test_resource_child_preserves_all_original_jobs_commands_and_deadlines(self):
         path = '.github/workflows/java-guest-feasibility.yml'
-        current = yaml.safe_load(read_file(ROOT/path))
+        current = yaml.safe_load(historical_checkout(read_file(ROOT/path)))
+        private = current[True]['workflow_dispatch']['inputs'].pop('public_fiber_private_scalar_llvm')
+        self.assertEqual(private['type'], 'boolean');self.assertIs(private['default'], False)
+        clause = " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)"
+        for name in ('compiler-component', 'dependency-ingestion', 'http-public-spi'):
+            self.assertEqual(current['jobs'][name]['if'].count(clause), 1)
+            current['jobs'][name]['if'] = current['jobs'][name]['if'].replace(clause, '', 1)
+        self.assertEqual(current['jobs']['public-fiber-assembly']['if'],
+            "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm || inputs.public_fiber_private_scalar_llvm) }}")
+        current['jobs']['public-fiber-assembly']['if'] = "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}"
+        derived = current[True]['workflow_dispatch']['inputs'].pop('public_fiber_derived_llvm')
+        self.assertEqual(derived['type'], 'boolean');self.assertIs(derived['default'], False)
+        for name, clause in (
+                ('compiler-component', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm)"),
+                ('dependency-ingestion', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm)"),
+                ('http-public-spi', ' && !inputs.public_fiber_derived_llvm')):
+            self.assertEqual(current['jobs'][name]['if'].count(clause), 1)
+            current['jobs'][name]['if'] = current['jobs'][name]['if'].replace(clause, '', 1)
+        self.assertEqual(current['jobs']['public-fiber-assembly']['if'],
+            "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}")
+        current['jobs']['public-fiber-assembly']['if'] = "${{ github.event_name == 'workflow_dispatch' && inputs.public_fiber_assembly }}"
+        public = current[True]['workflow_dispatch']['inputs'].pop('public_fiber_assembly')
+        self.assertEqual(public['type'], 'boolean');self.assertIs(public['default'], False)
+        assembly = current['jobs'].pop('public-fiber-assembly')
+        self.assertEqual(assembly['if'],
+            "${{ github.event_name == 'workflow_dispatch' && inputs.public_fiber_assembly }}")
+        self.assertEqual(current['jobs']['compiler-component']['if'],
+            "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) }}")
+        current['jobs']['compiler-component']['if'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}"
+        for name, clause in (
+                ('dependency-ingestion', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly)"),
+                ('http-public-spi', ' && !inputs.public_fiber_assembly')):
+            self.assertEqual(current['jobs'][name]['if'].count(clause), 1)
+            current['jobs'][name]['if'] = current['jobs'][name]['if'].replace(clause, '', 1)
         flag = current[True]['workflow_dispatch']['inputs'].pop('java_http_spi')
         self.assertEqual(flag['type'], 'boolean'); self.assertIs(flag['default'], False)
         spi = current['jobs'].pop('http-public-spi')
-        focused = yaml.safe_load(read_file(ROOT/'.github/workflows/java-http-fiber-lifecycle.yml'))
+        focused = yaml.safe_load(historical_checkout(read_file(ROOT/'.github/workflows/java-http-fiber-lifecycle.yml')))
         self.assertEqual(spi, focused['jobs']['http-public-spi'])
-        parent = current['jobs']['compiler-component']
+        parent = original_compiler_parent(self, current['jobs']['compiler-component'])
+        current['jobs']['compiler-component'] = parent
         self.assertEqual(parent.pop('if'), "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}")
         dependency = current['jobs']['dependency-ingestion']
         self.assertEqual(dependency['if'], "${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}")
         dependency['if'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals }}"
         steps = parent['steps']
+        retained = next(step for step in steps if step.get('name') ==
+            'Retain diagnostics, generated source and component candidates')
+        added = '${{ runner.temp }}/java-activation-fibers/build/component-inputs/**'
+        self.assertEqual(retained['with']['path'].splitlines().count(added), 1)
+        retained['with']['path'] = retained['with']['path'].replace(added + '\n', '', 1)
         index = next(i for i, step in enumerate(steps) if step.get('name') ==
             'Export only exact normal public prerequisites for the separate Java scratch packet')
         qualified = next(i for i, step in enumerate(steps) if step.get('name') ==
@@ -228,7 +280,7 @@ class JavaResourceConformance(unittest.TestCase):
             return hashlib.sha256(json.dumps(normalized(value),sort_keys=True,separators=(',',':')).encode()).hexdigest()
         self.assertEqual(fingerprint({key:value for key,value in current.items() if key != 'jobs'}),
             'af0a544a198c8b85f77c03c40b2791512abfc246ecd90800c0b92b0e0e02cf32')
-        expected = {'compiler-component': '218d365d543d4ca4f1b872aba93c6efaa1f73fd3272ef07ec1f0a1bc0b2878d6', 'dependency-ingestion': '321f9faceccf9dbd41a552de077947e9858e665f2ee4cc3322cf5ca4b27c9811', 'scratch-refusals': '5191c7232f3b9f822ebbd43f9abae51b8f058820e3665bfba571b68ba4a49b72'}
+        expected = {'compiler-component': 'b04c9c708e4f5e432f92ff8519fb32fc8e986058a63806e24bfeaaead5a9d05b', 'dependency-ingestion': '08232aca7d57e6665a3acde9419100240434ad1562c09125ba16c9ae632d0633', 'scratch-refusals': 'd0f71ccb34b80325c98274234f8590966bded6ebc555062bb3f63f54747697e9'}
         self.assertEqual({name:fingerprint(current['jobs'][name]) for name in expected},expected)
         job = current['jobs']['resource-conformance']
         self.assertEqual((job['needs'],job['timeout-minutes']),('compiler-component',20))

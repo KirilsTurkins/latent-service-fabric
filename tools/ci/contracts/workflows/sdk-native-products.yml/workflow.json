@@ -1,40 +1,45 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "sdk-native-products-${{ github.ref }}"
-    },
-    "name": "SDK current native products",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/sdk-current-native-products-20261020",
-          "diag/sdk-v7-native-products-20261020",
-          "feat/http-phase-nominal-semantics-20261020",
-          "fix/http-phase-unused-nominal-type-20261020",
-          "fix/http-phase-operational-authority-20261020",
-          "fix/runtime-wait-positive-observation-20261020"
-        ]
-      },
-      "workflow_dispatch": {
-        "inputs": {
-          "c-thread-profile-controls": {
-            "default": false,
-            "description": "Run the finite C proof, accounting and normal operator controls with these same products",
-            "type": "boolean"
-          }
-        }
-      }
-    },
-    "permissions": {
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "products"
-  ],
-  "reviewReason": "Reviewed default-false C profile controls append the original48+new7 parser cases and11 exact host accounting/operator cases; the original50Rust15Python commands, five products, default path, deadlines and quotas remain intact.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/sdk-native-products.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"sdk-native-products-${{ github.ref }}"
+},
+"name":"SDK current native products",
+"on":{
+"push":{
+"branches":[
+"feat/sdk-current-native-products-20261020",
+"diag/sdk-v7-native-products-20261020",
+"feat/http-phase-nominal-semantics-20261020",
+"fix/http-phase-unused-nominal-type-20261020",
+"fix/http-phase-operational-authority-20261020",
+"fix/runtime-wait-positive-observation-20261020"
+]
+},
+"workflow_dispatch":{
+"inputs":{
+"c-thread-profile-controls":{
+"default":false,
+"description":"Run the finite C proof, accounting and normal operator controls with these same products",
+"type":"boolean"
+},
+"compiler-diagnostic-controls":{
+"default":false,
+"description":"Require the original typed runtime-resource and actual engine trap classification controls",
+"type":"boolean"
+}
+}
+}
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"products"
+],
+"reviewReason":"Reviewed closed default-false compiler diagnostic selector preserves the exact original23 stages and bounds, adding typed operation and shared engine StackOverflow controls with mandatory zero skips.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/sdk-native-products.yml"
 }

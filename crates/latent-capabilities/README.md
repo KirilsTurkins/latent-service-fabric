@@ -16,6 +16,12 @@ The broker implements bounded call acceptance and accounting. Protocol crates ow
 | [src/broker/local_service.rs](src/broker/local_service.rs) | Trusted local-call port into the normal child activation lifecycle. |
 | [src/namespace/mod.rs](src/namespace/mod.rs) | Current namespace/result authority over existing policy and publication owners. |
 
+`IoOutputChunk::copy_bytes` materializes its prepaid copy once and returns an
+immutable `IoOutputCopy`. Retain that owner through consumption or canonical
+lowering; it keeps the original copy allowance and transfer alive after the
+source chunk closes. It provides borrowed bytes, without cloning or extracting
+an unowned `Vec`. Further caller-created copies require their own admission.
+
 ## Execution and ownership
 
 1. A trusted catalog compiler binds exact imports to installed providers, policy snapshots and publication dependencies.
@@ -24,6 +30,15 @@ The broker implements bounded call acceptance and accounting. Protocol crates ow
 4. Accepted work, chunks and results retain their original owners until physical retirement. Session close denies new work without refunding still-live resources.
 
 ## Integration boundaries
+
+Session registry entries, handle rows and copied call buffers keep their
+original memory owners through physical retirement. Post-Store cleanup removes
+only a closed, quiescent original entry with matching private identity; retained
+work, live cores or an unavailable fence keep capacity charged. See
+[registry retirement](../../docs/testing/local-service-registry-retirement.md)
+and [handle/buffer accounting](../../docs/testing/capability-handle-buffer-memory.md).
+This cleanup neither renews authority nor reconstructs a child budget from a
+descriptor.
 
 ABI recognition, provider installation and activation permission are three independent requirements. No I/O or await holds an authority fence. Only narrowly classified pre-effect bookkeeping contention may use its bounded wait path; provider/effect uncertainty does not authorize replay. Namespace DTOs and diagnostic inspection never substitute for current sealed authority.
 
@@ -70,3 +85,7 @@ Representative source tests (not a complete coverage inventory):
 - [Namespace persistence and current authority](../../docs/development/namespace-authority.md)
 - [Workspace package index](../README.md)
 - [Architecture index](../../ARCHITECTURE.md)
+
+Blob ranges use `IoCall::reserve_copy` before either local or S3 read. A `PreparedIoCopy` binds the exact source buffer, operation and original pool request; ordinary `reserve_scratch` remains logical-only. `BlobChunk::copy_bytes` moves that one reservation and the original `PoolCall` into `IoOutputCopy`, including valid empty ranges. Its Vec retires before the reservation; the source buffer independently retains the same operation/request if it outlives the copy. No extra Arc or erased owner Box is allocated for this handoff.
+
+Blob borrowed ingress uses the required `BlobWriter::write_from` method. `PoolAdmission::copy_input` allocates its original prepaid `IoBuffer` before copying the synchronous slice; the returned future cannot borrow that slice. The existing `write(Vec)` and logical `reserve_input` paths retain their caller-preallocated boundary and semantics. No network ingress allowance is charged twice.

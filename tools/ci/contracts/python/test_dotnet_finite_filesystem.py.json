@@ -1,49 +1,18 @@
 {
-  "cases": [
-    "FiniteFilesystemComposition.test_exact_counts_keep_unjoined_and_infinite_modes_and_refuse_arbitrary_count_or_port",
-    "FiniteFilesystemComposition.test_finite_chain_accepts_exact_tenth_helper_and_preserves_final_native_reference",
-    "FiniteFilesystemComposition.test_helper_count_requires_validated_mode_receipt_bytes_and_explicit_declarations"
-  ],
-  "guards": {
-    "FiniteFilesystemComposition.test_exact_counts_keep_unjoined_and_infinite_modes_and_refuse_arbitrary_count_or_port": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:da954e33461d90cbf6f04fcf5cea510391b0c65eddd78ae2fc3a583587ade71b",
-        "class:setup-sha256:bf5e3d10888e6caa5588bdcc9265ea30ba2341947b9fb5f1a85bd2625fc09e7f"
-      ],
-      "skipSites": []
-    },
-    "FiniteFilesystemComposition.test_finite_chain_accepts_exact_tenth_helper_and_preserves_final_native_reference": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:da954e33461d90cbf6f04fcf5cea510391b0c65eddd78ae2fc3a583587ade71b",
-        "class:setup-sha256:bf5e3d10888e6caa5588bdcc9265ea30ba2341947b9fb5f1a85bd2625fc09e7f"
-      ],
-      "skipSites": []
-    },
-    "FiniteFilesystemComposition.test_helper_count_requires_validated_mode_receipt_bytes_and_explicit_declarations": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:da954e33461d90cbf6f04fcf5cea510391b0c65eddd78ae2fc3a583587ade71b",
-        "class:setup-sha256:bf5e3d10888e6caa5588bdcc9265ea30ba2341947b9fb5f1a85bd2625fc09e7f"
-      ],
-      "skipSites": []
-    }
+  "storageCases":"guard-keys",
+  "guards":{
+    "FiniteFilesystemComposition.test_exact_counts_keep_unjoined_and_infinite_modes_and_refuse_arbitrary_count_or_port":
+      "7a568f7ab460bc9ff6b082cbfd5dc36fa852a7b3e539d27662a4ec691efa23e7",
+    "FiniteFilesystemComposition.test_finite_chain_accepts_exact_tenth_helper_and_preserves_final_native_reference":
+      "7a568f7ab460bc9ff6b082cbfd5dc36fa852a7b3e539d27662a4ec691efa23e7",
+    "FiniteFilesystemComposition.test_helper_count_requires_validated_mode_receipt_bytes_and_explicit_declarations":
+      "7a568f7ab460bc9ff6b082cbfd5dc36fa852a7b3e539d27662a4ec691efa23e7"
   },
-  "kind": "python",
-  "module": "tools/tests/test_dotnet_finite_filesystem.py",
-  "reviewReason": "Actual cb9 pre-ILC composition failure: derive exact unchanged method count from authenticated validated9/10 TaskWait helpers, keep44744 unjoined/44753 infinite exact; add source-equality barrier and four controls. Original18 outcomes/allexisting workflow steps/budgets remain.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_dotnet_finite_filesystem.py",
+  "reviewReason":"Actual cb9 pre-ILC composition failure: derive exact unchanged method count from authenticated validated9/10 TaskWait helpers, keep44744 unjoined/44753 infinite exact; add source-equality barrier and four controls. Original18 outcomes/allexisting workflow steps/budgets remain.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "7a568f7ab460bc9ff6b082cbfd5dc36fa852a7b3e539d27662a4ec691efa23e7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:da954e33461d90cbf6f04fcf5cea510391b0c65eddd78ae2fc3a583587ade71b","class:setup-sha256:bf5e3d10888e6caa5588bdcc9265ea30ba2341947b9fb5f1a85bd2625fc09e7f"],"skipSites":[]}
+  }
 }

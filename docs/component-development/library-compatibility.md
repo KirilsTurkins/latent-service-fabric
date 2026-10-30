@@ -55,6 +55,23 @@ and must match its loaded JAR and replacement classes. Invocation diagnostics
 recheck that receipt and the recipe before using the projection. These identities
 describe the compiler selection; API compatibility remains unknown.
 
+Selected TypeScript `buffer`/`node:buffer` builds also present the finite
+`lsf-node-buffer-v1` module profile as **SELECTED**, with qualification unknown
+and authority none. Its complete receipt/backend/declaration subgroup binds the
+selected sidecar to the recorded authoring recipe and captured SDK declaration.
+Invocation readers recheck those same identities against the original owner's
+`toolAndCompilerInputs` receipt and recipe entries before applying the context.
+This records module selection independently of package identity; it neither
+certifies an unchanged npm dependency nor installs a grant or global Buffer.
+Unselected captures retain the ordinary generic presentation.
+
+Native npm capture accepts one safe original tar root, including published
+type packages whose root is not named `package`. It retains original archive
+bytes and integrity, validates every header and maps the single root only for
+exact comparison with installed files and `package.json`. Mixed roots, unsafe
+paths, path collisions, unsupported entries and original count/byte limits remain
+refused. This capture-format support supplies no compiler or runtime evidence.
+
 The context also retains dependency identities from the exact captured source
 inventory. It displays each retained dependency's original archive and selected
 tree digests, and its captured version when the resolver recorded a bounded
@@ -299,3 +316,43 @@ refusal reports and bounded command diagnostics. The index-space decoder refuses
 unsupported forms or bounds; it never treats its own decoding as Wasm validation.
 The published record includes all 32 successful tool calls, source and original
 input hashes, and the two earlier control failures and their precise corrections.
+
+### Ordinary API and compiler observations
+
+Normal C, Rust, Go, Java, .NET and TypeScript builds automatically select bounded
+queries from their captured declarations and initializer/export anchors. The
+ordinary compatibility report reads the resulting `compatibility-api-analysis.json`
+sidecar without an application-authored query file or an analysis flag. Selected
+implementation identities are reconstructed from the original build owner;
+missing or unverifiable material stays unknown. This report grants no authority
+and does not make an arbitrary library eligible.
+
+C optimized translation units, Rust MIR and Go SSA can expose an exact controlled
+call edge. They do not establish global absence across other translation units,
+reflection, callbacks, initialization or unresolved calls. Java compiler graphs
+and .NET's original CIL plus both NativeAOT graphs retain their separate scopes.
+An observed API declaration or a missing wrapper is not proof of execution or
+API elimination. Ambiguous source declarations, stripped names, incomplete output
+and unmatched final component roots remain unavailable or unknown.
+
+Invocation errors retain their original diagnostic and terminal cause. A node
+management observation can describe an operation's configured and requested task,
+queue, timer or other resource count. Its activation-ID/service scope does not
+bind an implementation revision, prove a library caused the terminal failure,
+or prove physical retirement. Guest stack exhaustion is identified only from
+the engine's actual StackOverflow classification, not a generic unreachable trap.
+
+The fixed completion programme requires eight cells and one source-exact native
+prerequisite. Five passed cells retain their exact `cc8b88b18abda6e03fc3097d8af658f5e16022f6`
+or `723ffc6a304737b000af03ddb65499b30e0a25f4` execution receipts; current passive diagnostics are checked separately on their
+original components without rebuilding or invoking guests. Only the three remaining
+cells are executed again. Each executed cell captures its original dependency
+inputs once, then starts a separate 1,800-second compiler/node phase. Its workflow
+job also bounds setup and capture; 1,800 seconds is not a whole-programme claim.
+Initializer cases preserve the captured libraries: C constructors and Go package
+variables are eager language initialization, Rust LazyLock and TypeScript class
+static fields are initialized during invocation. Caught Unsupported permits
+initializer completion and is not labeled initializer failure or component start.
+The strict rollup requires actual results and fresh-store checks, while preserving
+the original source/profile of older signed and final-import evidence. Source
+controls and a configured workflow alone do not complete the runtime matrix.

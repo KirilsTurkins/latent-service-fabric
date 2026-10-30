@@ -156,11 +156,27 @@ def main() -> int:
     parser.add_argument('--rust-http-runtime', type=Path,
                         help='Assembly-only capture of prepared standard WASI HTTP inputs; '
                              'no installed-build qualification or node authority')
+    parser.add_argument('--java-compiler-input', type=Path, default=os.environ.get('LSF_DEV_JAVA_COMPILER_INPUT'),
+                        help='Verified prepared compiler inputs for the normal Java bundle; not an application option')
     args = parser.parse_args()
     require(args.typescript_runtime_inputs is None or args.language=='typescript',
             'typescript-runtime-inputs-require-typescript-builder')
     require(args.rust_http_runtime is None or args.language == 'rust',
             'rust-http-runtime-requires-rust-builder')
+    require(args.java_compiler_input is None or args.language == 'java',
+            'java-compiler-input-requires-java-builder')
+    java_profile = None
+    if args.language == 'java':
+        from tools.java_guest.compiler_profile import pin
+        java_profile = pin()
+        require(java_profile is not None or args.java_compiler_input is None,
+                'unqualified-prepared-java-compiler')
+        require(java_profile is None or args.java_compiler_input is not None,
+                'prepared-java-compiler-required')
+        if java_profile is not None:
+            from tools.java_guest.compiler_profile_distribution import check_input
+            args.java_compiler_input = args.java_compiler_input.absolute()
+            check_input(args.java_compiler_input)  # Before any host/native compiler cost.
     if args.typescript_runtime_inputs is not None:
         from tools.typescript_guest.runtime_bundle import validate
         validate(args.typescript_runtime_inputs)
@@ -260,7 +276,9 @@ def main() -> int:
         distribution.registry(payload, Path(environment["CARGO_HOME"]))
     compiler_sbom = None
     if args.language in {"java", "dotnet"}:
-        managed.prepare(payload, output, args.language, fetch_archive)
+        options = ({'prepared_java_compiler': args.java_compiler_input}
+                   if args.java_compiler_input is not None else {})
+        managed.prepare(payload, output, args.language, fetch_archive, **options)
         upstream.update(managed.sources(args.language))
     elif args.language == "go":
         compiler_sbom = dev_go_distribution.prepare(payload, output, fetch_archive, epoch)
@@ -329,6 +347,15 @@ def main() -> int:
             if package["SPDXID"] not in known:
                 extra.append(package)
         sbom["relationships"].extend(compiler_sbom["relationships"])
+    if java_profile is not None:
+        extra.append({'SPDXID': 'SPDXRef-tool-java-compiler-prepared', 'name': 'wasi-sdk',
+            'versionInfo': '29.0-' + java_profile['profile'], 'downloadLocation': 'NOASSERTION',
+            'filesAnalyzed': False, 'licenseDeclared': 'NOASSERTION', 'licenseConcluded': 'NOASSERTION',
+            'copyrightText': 'NOASSERTION', 'checksums': [{'algorithm': 'SHA256',
+                'checksumValue': java_profile['carrier']['sha256']}],
+            'comment': 'Authenticated prepared compiler/sysroot; Actions is an expiring build input, '
+                       'not an evergreen upstream. All installed bytes and provenance are in '
+                       'sdk/managed.zip and sdk/managed-inputs.json.'})
     for name, version, location, comment in (
         ("rust", distribution.RUST_VERSION, "https://static.rust-lang.org/dist/channel-rust-" + distribution.RUST_VERSION + ".toml",
          "Official installed compiler and stdlib; copyright manifests and license texts in licenses/rust."),
@@ -346,10 +373,13 @@ def main() -> int:
     sbom["relationships"].extend({"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES",
                                   "relatedSpdxElement": item["SPDXID"]} for item in extra)
     (payload / "sbom.spdx.json").write_bytes(encode(sbom))
-    (payload / "build-provenance.json").write_bytes(encode({"schemaVersion": "latent.dev.build-provenance.v1",
+    provenance = {"schemaVersion": "latent.dev.build-provenance.v1",
         "sourceCommit": commit, "sourceDirty": dirty, "target": "linux-x86_64", "hostAbi": args.host_abi, "protocol": PROTOCOL,
         "toolInventory": inventory["identity"], "pythonImage": PYTHON_IMAGE, "upstreamArchives": upstream,
-        "language": args.language, "ownerIssue": LANGUAGES[args.language], "qualification": "assembly-only", "publicRelease": False}))
+        "language": args.language, "ownerIssue": LANGUAGES[args.language], "qualification": "assembly-only", "publicRelease": False}
+    if java_profile is not None:
+        provenance['preparedJavaCompiler'] = java_profile
+    (payload / "build-provenance.json").write_bytes(encode(provenance))
     version = tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"]
     value = assemble(payload, output / "candidate", commit=commit, version=version, target="linux-x86_64", epoch=epoch,
                      executables=executables, host_abi=args.host_abi,

@@ -64,7 +64,7 @@ class CleanupNativeSource(unittest.TestCase):
         self.assertLess(text.index('reserve_stream_kernel_backing()?'),text.index('control_blocking_before('))
         self.assertLess(text.index('attempt.entered = true'),text.index('Some(open()?)'))
         self.assertIn('connected_retaining_on_error(resource)',text)
-        self.assertIn('cleanup_blocking_quarantined(connection',text)
+        self.assertIn('cleanup_stream_kernel_blocking_quarantined(connection',text)
         self.assertNotIn('.connected(resource)',text)
         self.assertNotIn('std::mem::forget',text)
 
@@ -74,17 +74,17 @@ class CleanupNativeSource(unittest.TestCase):
         names = set(native.PREFIX+name for name in re.findall(
             r'#\[(?:tokio::test[^\n]*|test)\]\s*(?:async )?fn ([a-z0-9_]+)\(',text))
         self.assertEqual(names,native.CASES)
-        self.assertEqual(len(names),10)
+        self.assertEqual(len(names),13)
         self.assertNotIn('#[ignore',text)
         self.assertIn('/proc/self/fd/',text)
         self.assertIn('recv_timeout',text)
 
     def test_missing_failed_ignored_or_extra_outcome_refuses(self):
         raw=('\n'.join('test '+name+' ... ok' for name in sorted(native.CASES))+
-            '\ntest result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out; finished in 1s\n').encode()
+            '\ntest result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 1s\n').encode()
         self.assertEqual(native.outcomes(raw),sorted(native.CASES))
-        for changed in (raw.replace(b'10 passed',b'9 passed'),raw.replace(b'0 ignored',b'1 ignored'),
-                raw.replace(b'30 filtered',b'31 filtered'),raw.replace(b'... ok',b'... FAILED',1),
+        for changed in (raw.replace(b'13 passed',b'12 passed'),raw.replace(b'0 ignored',b'1 ignored'),
+                raw.replace(b'31 filtered',b'32 filtered'),raw.replace(b'... ok',b'... FAILED',1),
                 raw+b'test extra ... ok\n'):
             with self.assertRaises(ValueError):
                 native.outcomes(changed)

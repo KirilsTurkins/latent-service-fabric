@@ -19,6 +19,10 @@ GUEST = "tools/angular-renderer-adapter"
 # lint; this does not grant another host loader or handwritten memory operation.
 STANDARD_STDIO = "sdk/rust-standard-stdio"
 STANDARD_STDIO_SHA256 = "e62d4a4f666199e96d10908125c7a8181657ead199942b2cc5049476a1ba0731"
+# Fixed protected factory ioctl only: reviewed OwnedFd adoption, no generic
+# syscall interface. Deny remains mandatory outside its one pinned FFI module.
+STREAM_FACTORY = "crates/latent-stream-factory-native"
+STREAM_FACTORY_SHA256 = "47233b07b205adfd04cfbd22b47632576cf564d56effd6e21e675defec1b88f7"
 GUEST_ALLOW = '#[allow(unsafe_code)] // Only wit-bindgen\'s generated canonical ABI and export.\nmod abi;'
 GUEST_ABI = '''#![allow(clippy::same_length_and_capacity, reason = "wit-bindgen consumes allocations transferred by the canonical ABI")]
 #[cfg(not(feature = "backend-http"))]
@@ -49,6 +53,11 @@ FIXED_RESULT_SHA256 = "250215cc98e4aa89d079b1d5434de202ee864eedc4ceb5d1d8dbc6b42
 # its affine ProviderCall drops. No host pointer, resource or raw access is added.
 RANDOM_RESULT = f"{CRATE}/src/host/random/completion.rs"
 RANDOM_RESULT_SHA256 = "4490c7099ef74dd0c5cb0ae0c7a280904f71f8f97f2b5c91a752b1c681443802"
+# Exact paid-copy wrapper only: both audited unsafe trait implementations
+# delegate the unchanged pinned list<u8> ABI while the original copy stays live.
+# Whole-file identity and the two item allowances/sites must all remain exact.
+STREAM_COPY_RESULT = f"{CRATE}/src/host/io_copy.rs"
+STREAM_COPY_RESULT_SHA256 = "032f6811f59841b185ae3805ec5a0a8b3f65cf36a0647b0006fa23c1e138a4e8"
 # The actual allocator-failure test must implement Wasmtime's unsafe trait,
 # but this exact item always refuses and creates no memory or native pointer.
 # Strip only this item at this test path; every other allowance/site is checked.
@@ -77,7 +86,7 @@ unsafe impl wasmtime::MemoryCreator for RefusingCreator {
 NATIVE_STACK = f"{CRATE}/src/native_stacks.rs"
 NATIVE_STACK_CHILD = f"{CRATE}/src/native_stacks/children.rs"
 NATIVE_STACK_WORKER = f"{CRATE}/src/native_stacks/workers.rs"
-NATIVE_STACK_CHILD_SHA256 = "b85f62e09afe12771c8e2634b3281743fed9817ec615ebb6fb0388905dadc840"
+NATIVE_STACK_CHILD_SHA256 = "d1814527adf59a2ca9c94f7b5dd9fbcd32b3c02d265863856a62ca3ada73a9a4"
 NATIVE_STACK_SHA256 = "baee4644bcb751ce7bb922df61c155e1ebde96ddcf1353c205df968704123244"
 NATIVE_STACK_WORKER_SHA256 = "8b42a5a426bb83b462f44dec140118326de19487f88e628f0c210cd442cad791"
 ALLOW = '''#[allow(
@@ -125,6 +134,8 @@ def validate(root: Path) -> list[str]:
             errors.extend(validate_guest(root))
         elif member == STANDARD_STDIO:
             errors.extend(validate_standard_stdio(root, workspace["lints"]["clippy"]))
+        elif member == STREAM_FACTORY:
+            errors.extend(validate_stream_factory(root, workspace["lints"]["clippy"]))
         elif lints != {"workspace": True}:
             errors.append(f"{member} must inherit workspace unsafe-code prohibition")
     if "#![deny(unsafe_code)]" not in (root / CRATE / "src/lib.rs").read_text(encoding="utf-8"):
@@ -157,6 +168,14 @@ def validate(root: Path) -> list[str]:
                 errors.append("audited random-result lowering changed; review pinned ABI, zeroization and physical output ownership")
             else:
                 source = ""
+        elif relative == STREAM_COPY_RESULT:
+            if (hashlib.sha256(source.encode("utf-8")).hexdigest() != STREAM_COPY_RESULT_SHA256
+                    or len(unsafe.findall(source)) != 2 or len(lowered.findall(source)) != 2
+                    or source.count("unsafe impl ComponentType for ChunkBytes") != 1
+                    or source.count("unsafe impl Lower for ChunkBytes") != 1):
+                errors.append("audited stream-copy lowering changed; review pinned ABI and physical copy ownership")
+            else:
+                source = ""
         elif relative == REFUSING_CREATOR_TEST:
             if source.count(REFUSING_CREATOR_IMPL) != 1:
                 errors.append("audited refusing memory creator test changed; review its sole always-error trait item")
@@ -177,6 +196,26 @@ def validate(root: Path) -> list[str]:
             # No unsafe allowance is granted to ordinary worker admission.
         if unsafe.search(source) or lowered.search(source):
             errors.append(f"unreviewed unsafe code or allowance in {relative}")
+    return errors
+
+
+def validate_stream_factory(root: Path, clippy: dict) -> list[str]:
+    errors = []
+    crate = root / STREAM_FACTORY
+    manifest = tomllib.loads((crate / "Cargo.toml").read_text(encoding="utf-8"))
+    package_keys = {"name", "version", "edition", "rust-version", "license", "authors", "description"}
+    if set(manifest) - {"package", "lints", "target", "dev-dependencies"} or set(manifest.get("package", {})) - package_keys:
+        errors.append("fixed stream factory must not add targets, build scripts, links or unreviewed Cargo fields")
+    if manifest.get("lints") != {"rust": {"unsafe_code": "deny"}, "clippy": clippy}:
+        errors.append("stream factory must retain deny and all workspace Clippy lints")
+    target = {'cfg(all(target_os = "linux", target_arch = "x86_64"))':
+        {"dependencies": {"rustix": {"version": "=1.1.5", "features": ["fs"]}}}}
+    if manifest.get("package", {}).get("name") != "latent-stream-factory-native" or manifest.get("target") != target:
+        errors.append("fixed stream factory identity or pinned rustix target changed; review its FD ownership ABI")
+    sources = sorted(path.relative_to(crate).as_posix() for path in crate.rglob("*.rs"))
+    source = (crate / "src/lib.rs").read_text(encoding="utf-8")
+    if sources != ["src/lib.rs"] or hashlib.sha256(source.encode("utf-8")).hexdigest() != STREAM_FACTORY_SHA256:
+        errors.append("audited fixed stream factory source changed; review its sole protected ioctl and OwnedFd lifetime")
     return errors
 
 

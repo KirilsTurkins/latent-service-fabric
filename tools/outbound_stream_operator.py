@@ -30,6 +30,20 @@ CEILING = {"operations": 128, "inputBytes": 1048576, "outputBytes": 1048576, "wa
 STAMP_FIELDS = ("tenant", "id", "recordKind", "generation", "contentDigest", "revoked")
 
 
+def _same_owned_policy(current, previous):
+    """Compare the complete retained identity without JSON bool/number coercion."""
+    if (not isinstance(current, dict) or not isinstance(previous, dict)
+            or not isinstance(previous.get("receipt"), dict)
+            or not isinstance(previous.get("document"), dict)
+            or not isinstance(current.get("document"), dict)):
+        return False
+    receipt = previous["receipt"]
+    return (all(type(receipt.get(field)) is (bool if field == "revoked" else str)
+                and type(current.get(field)) is type(receipt[field])
+                and current[field] == receipt[field] for field in STAMP_FIELDS)
+            and encode(current["document"]) == encode(previous["document"]))
+
+
 def _private_read(path, maximum=65536):
     path = Path(path).absolute()
     paths.private_root(path.parent)
@@ -404,10 +418,9 @@ class StreamOperator:
         if key in records:
             current = observed.get("data", {}).get("policy")
             previous = records[key]
-            require(observed["category"] == "success" and isinstance(current, dict)
-                    and all(current.get(field) == previous["receipt"].get(field) for field in STAMP_FIELDS)
-                    and current.get("document") == previous["document"], "stream-operator-policy-changed")
-            if current["document"] == document:
+            require(observed["category"] == "success" and _same_owned_policy(current, previous),
+                    "stream-operator-policy-changed")
+            if encode(current["document"]) == encode(document):
                 return record_id
             expected = current["generation"]
         else:
@@ -468,6 +481,13 @@ class StreamOperator:
         receipt; adoption neither rotates a provider nor grants authority.
         """
         with state.lock(self.root, "stream-operator.lock"):
+            names = ("stream-operator-owner.json", "operations.json", "stream-policy-receipts.json")
+
+            def snapshot():
+                return {name: _private_read(self.root / name, MAX_DOCUMENT)
+                        if (self.root / name).exists() else None for name in names}
+
+            before = snapshot()
             self._owned()
             require(self.journal.read()["pending"] is None,
                     "recover-original-operation-before-provider-adoption")
@@ -485,10 +505,10 @@ class StreamOperator:
                 current = observed.get("data", {}).get("policy")
                 expected = records[key]
                 require(observed.get("outcomeKnown") is True and observed.get("category") == "success"
-                        and isinstance(current, dict)
-                        and all(current.get(stamp) == expected["receipt"].get(stamp) for stamp in STAMP_FIELDS)
-                        and current.get("document") == expected["document"],
+                        and _same_owned_policy(current, expected),
                         "stream-operator-policy-changed")
+            self._owned()
+            require(snapshot() == before, "stream-operator-provider-adoption-state-changed")
             owner = {**self.owner, "provider": replacement}
             state.atomic(self.root, "stream-operator-owner.json", owner)
             self.owner = owner
@@ -542,10 +562,7 @@ class StreamOperator:
                 observed = read("policy", "--kind", kind, "get", "--id", self.owner[field])
                 current = observed.get("policy")
                 previous = records[kind + ":" + self.owner[field]]
-                require(isinstance(current, dict)
-                        and all(type(current.get(stamp)) is type(previous["receipt"][stamp])
-                                and current.get(stamp) == previous["receipt"][stamp] for stamp in STAMP_FIELDS)
-                        and encode(current.get("document")) == encode(previous["document"]),
+                require(_same_owned_policy(current, previous),
                         "stream-operator-policy-changed")
             self._owned()
             require(snapshot() == before, "stream-operator-client-adoption-state-changed")

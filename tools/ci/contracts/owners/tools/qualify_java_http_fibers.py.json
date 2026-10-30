@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_java_http_fibers.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Use one exact canonical Java HTTP WIT owner and derive only the historical activation import; retain all old guards and add exact-byte/tamper controls.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "38f9364c58b5c1ed1b77b58d9872b9b7bbd89e634647ae204e13485f4ff7c1ed"
+{"kind":"owner","path":"tools/qualify_java_http_fibers.py","reviewBoundary":"committed-fingerprint","reviewReason":"Use one exact canonical Java HTTP WIT owner and derive only the historical activation import; retain all old guards and add exact-byte/tamper controls.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "38f9364c58b5c1ed1b77b58d9872b9b7bbd89e634647ae204e13485f4ff7c1ed"
 }

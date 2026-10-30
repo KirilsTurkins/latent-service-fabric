@@ -1,0 +1,18 @@
+{
+"storageCases":"guard-keys",
+"guards":{
+"NormalFiberComponentInputs.test_fixed_normal_public_sources_and_only_failed_assembly_pair_are_retained":
+      "de221778d11ec38f2670cd9b51fb0ae16777bce633eb3f33c8f088c53b17f475",
+"NormalFiberComponentInputs.test_optional_exact_generated_c_and_c_only_refusals_preserve_both_wasm_inputs":
+      "de221778d11ec38f2670cd9b51fb0ae16777bce633eb3f33c8f088c53b17f475",
+"NormalFiberComponentInputs.test_other_stages_changed_sources_unsafe_pairs_and_capture_failures_preserve_original_failure":
+      "de221778d11ec38f2670cd9b51fb0ae16777bce633eb3f33c8f088c53b17f475"
+},
+"kind":"python",
+"module":"tools/tests/test_java_normal_fiber_component_inputs.py",
+"reviewReason":"Exercise independent optional bounded generated C capture while preserving all original Wasm capture controls.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"de221778d11ec38f2670cd9b51fb0ae16777bce633eb3f33c8f088c53b17f475":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:1b7ce2909cb09fd1876447f7fbaed2b41fb9b207ba37c89da913bec897506524","class:setup-sha256:22cbd7e9125f994b3baa41f4bbde89a0ca54e99fe9a103ba06eff63ef998da96"],"skipSites":[]}
+}
+}

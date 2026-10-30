@@ -66,6 +66,16 @@ const (
 	DiagnosticReasonDeadlineExceeded            DiagnosticReason = 14
 	DiagnosticReasonCancelled                   DiagnosticReason = 15
 	DiagnosticReasonHttpResponseRejected        DiagnosticReason = 16
+	DiagnosticReasonRuntimeTaskLimit            DiagnosticReason = 17
+	DiagnosticReasonRuntimeQueueLimit           DiagnosticReason = 18
+	DiagnosticReasonRuntimeTimerLimit           DiagnosticReason = 19
+	DiagnosticReasonRuntimeExecutorLimit        DiagnosticReason = 20
+	DiagnosticReasonRuntimeWaitLimit            DiagnosticReason = 21
+	DiagnosticReasonRuntimeResultLimit          DiagnosticReason = 22
+	DiagnosticReasonRuntimeNativeOwnerLimit     DiagnosticReason = 23
+	DiagnosticReasonNativeThreadStartLimit      DiagnosticReason = 24
+	DiagnosticReasonNativeMemoryExhausted       DiagnosticReason = 25
+	DiagnosticReasonGuestStackExhausted         DiagnosticReason = 26
 )
 
 type DiagnosticProfile int32

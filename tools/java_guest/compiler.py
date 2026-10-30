@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 import importlib.util
+import math
 import os
 import re
 from pathlib import Path
@@ -122,10 +123,27 @@ def read_only_dependency_cache(path: Path) -> Path:
 class Compiler:
     compiler_methods = False
 
+    def _wasi_compiler_version(self) -> str:
+        """Preserve official SDK29 and admit only a fully promoted fixed cohort."""
+        self.wasi_compiler_profile = None
+        if (self.wasi_sdk / "VERSION").read_text().splitlines() != [
+            "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
+            from tools.java_guest.compiler_profile import admit
+            selected = admit(self.wasi_sdk)
+            if selected is not None:
+                version, self.wasi_compiler_profile = selected
+                return version
+            raise ValueError("unreviewed WASI-SDK Java compiler")
+        return "21.1.4-wasi-sdk"
+
     def __init__(self, directory: Path, wasi_sdk: Path, *, gradle="gradle", sdk: Path | None = None,
                  platform: Path | None = None, config: dict | None = None, timeout=900,
                  offline_cache: Path | None = None, read_only_cache: Path | None = None,
-                 compiler_methods: bool = False):
+                 compiler_methods: bool = False, _deadline: float | None = None):
+        if _deadline is not None and (type(_deadline) not in (int, float) or not math.isfinite(_deadline)
+                                     or _deadline <= time.monotonic() + 5):
+            raise ValueError('Java-build-original-owner-deadline')
+        self._parent_deadline = _deadline
         if type(compiler_methods) is not bool:
             raise ValueError('Java compiler method observations require an explicit boolean')
         self.compiler_methods = compiler_methods
@@ -155,20 +173,22 @@ class Compiler:
             self.environment["GRADLE_RO_DEP_CACHE"] = str(selected_cache.parent)
             self.dependency_cache = selected_cache / "files-2.1"
         self.deadline = time.monotonic() + timeout
+        if _deadline is not None:
+            self.deadline = min(self.deadline, _deadline - 5)
         self.records = []
+        self.wasi_compiler_profile = None
         self.retained_bytes = 0
         self.paths = {}
         self.materials = []
         self.reachability_observation = None
         config = config or tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
-        if (self.wasi_sdk / "VERSION").read_text().splitlines() != [
-            "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
-            raise ValueError("unreviewed WASI-SDK Java compiler")
+        clang_version = self._wasi_compiler_version()
+        clang_path = 'bin/clang-21' if self.wasi_compiler_profile is not None else 'bin/clang'
         verify_version = source_module(self.sdk / "tools/feasibility.py").verify_version
         for name, selected, version in [
             ("java", "java", config["sdk"]["java"]), ("gradle", gradle, config["sdk"]["gradle"]),
-            ("clang", str(self.wasi_sdk / "bin/clang"), "21.1.4-wasi-sdk"),
-            ("wit-bindgen", "wit-bindgen", config["rust"]["dependencies"]["wit-bindgen"]),
+            ("clang", str(self.wasi_sdk / clang_path), clang_version),
+            ("wit-bindgen", "wit-bindgen", config["contracts"]["wit-bindgen-cli"]),
             ("wasm-tools", "wasm-tools", config["contracts"]["wasm-tools"]),
         ]:
             located = shutil.which(selected, path=self.environment.get("PATH"))
@@ -192,6 +212,8 @@ class Compiler:
         self.binding_digest = verify(self.run, self.sdk, self.platform, self.directory / "sdk-reference")
 
     def run(self, stage: str, tool: str, *arguments, cwd: Path | None = None) -> str:
+        if getattr(self, '_parent_deadline', None) is not None:
+            self.deadline = min(self.deadline, self._parent_deadline - 5)
         remaining = self.deadline - time.monotonic()
         if remaining <= 0: raise ValueError("Java build deadline exceeded")
         path = self.paths.get(tool, Path(tool))
@@ -201,7 +223,8 @@ class Compiler:
         failure = None
         try:
             result = run_bounded_result(argv, cwd or self.directory, self.environment,
-                                 timeout_seconds=min(remaining, 600), max_output_bytes=4 * 1024 * 1024)
+                                 timeout_seconds=min(remaining, 595 if getattr(self, '_parent_deadline', None) is not None else 600),
+                                 max_output_bytes=4 * 1024 * 1024)
             exit_code = result.returncode
             log = result.stdout + b"\n" + result.stderr
             self.retained_bytes += len(log)
@@ -222,6 +245,45 @@ class Compiler:
             # __init__ can fail before the caller receives the Compiler. Keep
             # each command's bounded exit/cleanup record beside its log anyway.
             write_json(self.directory / (str(len(self.records) - 1) + "-" + stage + ".command.json"), record)
+
+    def prepare_method_analysis(self, project, destination, origin_sources, application_source_names, *, required):
+        """Original strict activation inputs; passive-only failures stay unknown.
+
+        This catches expected failures of these TWO diagnostic preparatory
+        commands only. The original TeaVM/C/component commands remain outside.
+        No application initializer is executed by the passive metadata readers.
+        """
+        try:
+            origins = json.loads(self.run("java-source-origins", "java",
+                self.sdk / "fibers/analysis/SourceOrigins.java", origin_sources))
+            if (not isinstance(origins, dict) or set(origins) != {"schemaVersion", "sources"}
+                    or origins["schemaVersion"] != "lsf.java.source-origins.v1"
+                    or not isinstance(origins["sources"], list)):
+                raise ValueError("invalid Java source origin analysis")
+            source_packages = {}
+            for row in origins["sources"]:
+                if (not isinstance(row, dict) or set(row) != {"source", "package"}
+                        or not isinstance(row["source"], str)
+                        or row["source"] not in application_source_names or row["source"] in source_packages
+                        or not isinstance(row["package"], str)
+                        or any(char in row["package"] for char in "/\\\x00\r\n")):
+                    raise ValueError("invalid Java captured source origin")
+                source_packages[row["source"]] = row["package"]
+            if set(source_packages) != application_source_names:
+                raise ValueError("incomplete Java captured source origins")
+            write_json(destination / "source-origins.json", origins)
+            if required:
+                coroutine_patch.record_original_classpath(project)
+            self.run("java-owned-classes", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "classes", cwd=project)
+            return origins, source_packages
+        except BuildProcessError as error:
+            if required or error.reason not in {'command-output-limit', 'command-deadline'}:
+                raise  # Cancellation/cleanup/owner failures are never swallowed.
+            return None
+        except (ValueError, OSError):
+            if required:
+                raise  # The ORIGINAL activation attribution/checkpoint gate.
+            return None  # No dynamic error strings or unsupported-source verdict.
 
     def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
                 application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
@@ -379,34 +441,15 @@ class Compiler:
                 selected.parent.mkdir(parents=True, exist_ok=True)
                 selected.write_bytes(read_file(java_root / name))
                 application_source_names.add(name)
+        from tools.java_guest.class_origin import checkpoint_index
+        origins, source_packages = None, None
         if activation_profile or self.compiler_methods:
-            from tools.java_guest.class_origin import checkpoint_index
-            origins = json.loads(self.run("java-source-origins", "java",
-                self.sdk / "fibers/analysis/SourceOrigins.java", origin_sources))
-            if (not isinstance(origins, dict) or set(origins) != {"schemaVersion", "sources"}
-                    or origins["schemaVersion"] != "lsf.java.source-origins.v1"
-                    or not isinstance(origins["sources"], list)):
-                raise ValueError("invalid Java source origin analysis")
-            source_packages = {}
-            for row in origins["sources"]:
-                if (not isinstance(row, dict) or set(row) != {"source", "package"}
-                        or not isinstance(row["source"], str)
-                        or row["source"] not in application_source_names or row["source"] in source_packages
-                        or not isinstance(row["package"], str)
-                        or any(char in row["package"] for char in "/\\\x00\r\n")):
-                    raise ValueError("invalid Java captured source origin")
-                source_packages[row["source"]] = row["package"]
-            if set(source_packages) != application_source_names:
-                raise ValueError("incomplete Java captured source origins")
-            write_json(destination / "source-origins.json", origins)
-            if activation_profile:
-                coroutine_patch.record_original_classpath(project)
-        # javac metadata is read passively. This task was already required by
-        # the activation compiler; no application initializer is run here.
-        if activation_profile or self.compiler_methods:
-            self.run("java-owned-classes", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "classes", cwd=project)
+            selected_analysis = self.prepare_method_analysis(project, destination, origin_sources,
+                application_source_names, required=activation_profile)
+            if selected_analysis is not None:
+                origins, source_packages = selected_analysis
         method_queries = None
-        if self.compiler_methods:
+        if self.compiler_methods and source_packages is not None:
             try:
                 owned_classes = set(checkpoint_index(project / "build/classes/java/main", source_packages,
                                                      application_classpath).decode().splitlines())
@@ -466,6 +509,8 @@ class Compiler:
             raise ValueError("compiled Java component changed authoritative WIT semantics")
         details = {"bindings": bindings, "dependencies": retained, "platform": adaptation,
                    "semanticSurfaceDigest": digest(canonical(actual)), "closedFilesystem": filesystem_profile}
+        if getattr(self, 'wasi_compiler_profile', None) is not None:
+            details['wasiCompilerProfile'] = json.loads(self.wasi_compiler_profile)
         if coroutine_profile is not None:
             details['coroutineCompiler'] = coroutine_profile
         if http_phase_record is not None:
@@ -478,6 +523,9 @@ class Compiler:
         return component, details
 
     def check_unchanged(self):
+        if getattr(self, 'wasi_compiler_profile', None) is not None:
+            from tools.java_guest.compiler_profile import recheck
+            recheck(self.wasi_compiler_profile)
         if self.original_sdk != sdk_snapshot(self.sdk): raise ValueError("Java SDK changed during build")
         if self.compiler_inputs != tool_inventory(self.tool_roots): raise ValueError("Java compiler distribution changed during build")
         for item in self.materials:

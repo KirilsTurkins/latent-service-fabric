@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_go_http_tenants.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Measured v5 wait-for then context timer-start/next reader correction; retain all old tests/limits and replay exact authenticated original successful build without recompilation; failed original qualification retained.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f5238720c4f03e12d99c66cf15a4d7acb766eeb8bdebb1d539c3de95650f027a"
+{"kind":"owner","path":"tools/qualify_go_http_tenants.py","reviewBoundary":"committed-fingerprint","reviewReason":"Measured v5 wait-for then context timer-start/next reader correction; retain all old tests/limits and replay exact authenticated original successful build without recompilation; failed original qualification retained.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "f5238720c4f03e12d99c66cf15a4d7acb766eeb8bdebb1d539c3de95650f027a"
 }

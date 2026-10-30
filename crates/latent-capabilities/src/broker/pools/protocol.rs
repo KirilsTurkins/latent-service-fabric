@@ -3,6 +3,7 @@ use super::{
     Arc, Charge, Kind, PlatformError, PoolAdmission, PoolCall, ProviderClient, ProviderPools,
 };
 use crate::broker::{io::IoLease, network::StreamScope, session::SessionCoreOwner};
+use sha2::{Digest, Sha256};
 
 /// Retain after the actual protocol objects it accounts for. Dropping a waiter
 /// must never drop this charge while a socket/driver/parser still owns that state.
@@ -20,20 +21,122 @@ pub struct StreamKernelBacking {
     _pools: Arc<super::Inner>,
 }
 
+/// The exact original 512 KiB order-7 bank portion, never another allowance.
+/// Trusted adapters must retain this affine charge after possible entry until
+/// their original protected observation proves that bank physically returned.
+/// The remaining bootstrap/descriptor owner is independent and stays retained.
+pub struct StreamKernelBankCharge {
+    _metadata: ProviderMetadata,
+}
+
+impl StreamKernelBacking {
+    /// Partition the SAME atomic one-MiB admission before physical entry.
+    /// No counter changes here, allocation, size argument or refund proof.
+    pub fn partition_original_bank(&mut self) -> Result<StreamKernelBankCharge, PlatformError> {
+        let charge = self._metadata._charge.partition_stream_bank()?;
+        Ok(StreamKernelBankCharge {
+            _metadata: ProviderMetadata { _charge: charge },
+        })
+    }
+}
+
+/// One original node/bootstrap escrow, acquired BEFORE its native entry. This
+/// owns the same one-MiB charge as the old backing route, never an additional
+/// node allowance. No bank-only partition or refund API is exposed here.
+///
+/// Preparation can be dropped before entry. The trusted native adapter must
+/// move this whole value into its existing physical owner before possible entry
+/// and retain it in bounded quarantine until a complete node fence exists.
+pub struct StreamKernelNodeBacking {
+    original: StreamKernelBacking,
+    epoch: Arc<super::Epoch>,
+}
+
+impl StreamKernelNodeBacking {
+    /// A factory share is only this call-local borrow of the original owner;
+    /// it cannot escape into a caller stack or become a separately refundable
+    /// charge. Equality of configuration words cannot replace either identity.
+    pub fn checkpoint(
+        &self,
+        pools: &ProviderPools,
+        installed: &super::InstalledProvider,
+    ) -> Result<(), PlatformError> {
+        pools.inner.check()?;
+        if !Arc::ptr_eq(&self.original._pools, &pools.inner)
+            || !Arc::ptr_eq(&self.epoch, &installed.epoch)
+            || installed.is_retired()
+        {
+            return Err(super::denied());
+        }
+        Ok(())
+    }
+}
+
+impl ProviderPools {
+    /// Prepare the original whole envelope before any node state, actor-ref
+    /// storage, native open or child work. This is custody, NOT a compiled node
+    /// geometry/fit result, kernel identity or permission to enable IRQs.
+    pub fn reserve_stream_kernel_node_backing(
+        &self,
+        installed: &super::InstalledProvider,
+    ) -> Result<StreamKernelNodeBacking, PlatformError> {
+        self.inner.check()?;
+        {
+            let state = self.inner.state.try_lock().map_err(|_| super::busy())?;
+            let reference = installed.reference();
+            if installed.is_retired()
+                || reference.capability() != crate::broker::network::STREAM_CAPABILITY
+                || reference.profile() != crate::broker::network::STREAM_PROFILE
+                || !state
+                    .epochs
+                    .iter()
+                    .any(|epoch| Arc::ptr_eq(epoch, &installed.epoch))
+            {
+                return Err(super::denied());
+            }
+        }
+        let owner = StreamKernelNodeBacking {
+            original: self.reserve_stream_kernel_backing()?,
+            epoch: Arc::clone(&installed.epoch),
+        };
+        owner.checkpoint(self, installed)?;
+        Ok(owner)
+    }
+}
 /// Original accepted work retained by a private kernel factory owner. This is
 /// not a kernel identity, retirement certificate or provider-install permission.
 /// There is no constructor from strings, scope words, serialized claims or an
 /// arbitrary HostMemoryReservation. Keep it after the actual kernel handle.
 pub struct StreamKernelOwnership {
+    binding: [u64; 8],
+    deadline: std::time::Instant,
+    bytes: u64,
     // Rust drops fields in declaration order: actual memory/accounting owners
     // precede scope/request release and the final original I/O quiescence owner.
     memory: latent_core::budget::HostMemoryReservation,
     _scope: Arc<StreamScope>,
-    _request: Arc<super::admission::Request>,
+    _request: super::admission::RequestOwner,
     io: IoLease,
 }
 
 impl StreamKernelOwnership {
+    /// Private native framing of THIS original affine owner. These words are
+    /// not a grant, public handle, liveness check or retirement certificate.
+    /// There is no constructor from caller words or serialized identities.
+    #[must_use]
+    pub fn kernel_binding_words(&self) -> &[u64; 8] {
+        &self.binding
+    }
+    #[must_use]
+    pub fn deadline(&self) -> std::time::Instant {
+        self.deadline
+    }
+    /// Exact original occupancy reservation. A native adapter must match TCP
+    /// versus DNS before any constructor; a smaller owner cannot fund TCP.
+    #[must_use]
+    pub fn maximum_bytes(&self) -> u64 {
+        self.bytes
+    }
     /// Record actual physical allocation against the already-held original
     /// host reservation. This cannot change its size, identity or lifetime.
     pub fn confirm(&mut self) {
@@ -58,7 +161,10 @@ impl PoolCall {
         bytes: u64,
     ) -> Result<StreamKernelOwnership, PlatformError> {
         self.io.checkpoint()?;
+        let provider = self.stream_request().client.epoch.registration.reference();
         if !matches!(bytes, 65_536 | 98_304)
+            || provider.capability() != crate::broker::network::STREAM_CAPABILITY
+            || provider.profile() != crate::broker::network::STREAM_PROFILE
             || !scope.with_session(|original| {
                 self.io.with_session(|accepted| {
                     SessionCoreOwner::ptr_eq(&original.core, &accepted.core)
@@ -68,8 +174,60 @@ impl PoolCall {
             return Err(super::denied());
         }
         let memory = scope.reserve_host_memory(bytes)?;
+        // Reuse the existing checked, never-wrapping incarnation issuer. This
+        // is a new loan on the SAME accepted session, not a new activation or
+        // provider. No guest Random call or ambient entropy grant is involved.
+        let incarnation = crate::broker::session::next_incarnation()?;
+        let digest = scope.with_session(|session| {
+            let target = &session.core.plan.target;
+            let fields = [
+                target.tenant.0.as_str(),
+                target.service.0.as_str(),
+                target.revision.0.as_str(),
+                target.release.0.as_str(),
+                target.publication.as_str(),
+                session.core.activation_id.0.as_str(),
+                session.core.root_activation_id.0.as_str(),
+                provider.capability(),
+                provider.profile(),
+                provider.configuration_digest(),
+            ];
+            let mut hash = Sha256::new();
+            hash.update(b"lsf-stream-original-owner-v1\0");
+            for (index, field) in fields.into_iter().enumerate() {
+                hash.update([u8::try_from(index).expect("fixed scope field count")]);
+                hash.update(
+                    u64::try_from(field.len())
+                        .expect("bounded original identity")
+                        .to_le_bytes(),
+                );
+                hash.update(field.as_bytes());
+            }
+            hash.update(target.generation.0.to_le_bytes());
+            hash.update(provider.configuration_epoch().to_le_bytes());
+            hash.finalize()
+        });
+        let mut binding = [
+            incarnation,
+            self.stream_request().client.epoch.instance,
+            self.stream_request().sequence,
+            u64::from(self.stream_request().client.origin) + 1,
+            0,
+            0,
+            0,
+            0,
+        ];
+        for (word, encoded) in binding[4..].iter_mut().zip(digest.chunks_exact(8)) {
+            *word = u64::from_le_bytes(encoded.try_into().expect("fixed SHA256 words"));
+        }
+        if binding.contains(&0) {
+            return Err(super::capacity());
+        }
         self.io.checkpoint()?;
         Ok(StreamKernelOwnership {
+            binding,
+            deadline: self.io.deadline(),
+            bytes,
             memory,
             _scope: Arc::clone(scope),
             _request: self.retain_stream_request(),

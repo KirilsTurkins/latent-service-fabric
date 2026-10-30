@@ -1,0 +1,216 @@
+{
+  "artifact": {
+    "admissionFiles": 66,
+    "admissionIdentity": {
+      "bytes": 8382,
+      "sha256": "44f944ea041031f2f7ded8b66df31db6816698f3045298b7bd97cf0023389e25"
+    },
+    "allSafeCRCAndSHA256": true,
+    "archive": {
+      "bytes": 1738087,
+      "sha256": "31b255da12758ee4da688d8e899cf479ad10a2586fd1c151a5dc7281e756dfa2"
+    },
+    "expandedPublicBytes": 5757342,
+    "id": 12644313360,
+    "members": 67,
+    "name": "protected-stream-classdir-objects-5c1e8876a2495843b902595d961c8cc4f068901c"
+  },
+  "bounds": {
+    "aggregateLogsBytes": 16777216,
+    "applicationContexts": 4,
+    "automaticBaselineFetchFallback": false,
+    "bootstrapBytes": 1048576,
+    "checkoutDepth": 16,
+    "cleanupReserveSeconds": 5,
+    "combinedPerCommandOutputBytes": 4194304,
+    "compileCommandSeconds": 1200,
+    "exactBaselineTreeMandatory": true,
+    "infrastructureBytes": 196608,
+    "jobMinutes": 25,
+    "originalRecords": 256,
+    "ownedConcurrentChildren": 1,
+    "ownerSeconds": 1320,
+    "perObjectBytes": 16777216,
+    "physicalBankBytes": 524288,
+    "publicUnionBytes": 134217728
+  },
+  "branch": "test/sdk-738-classdir-objects-20261026",
+  "commands": {
+    "allZeroExitAndCleanupConfirmed": true,
+    "commandsDocument": {
+      "bytes": 3228,
+      "sha256": "b0842b3d16c617360ed3494f56700a12cda11921f545204abc7f112537b4d964"
+    },
+    "compileChannels": {
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 7390,
+        "sha256": "982c578cdeb4739a2d1a7a7c290b4ff5bd99710a081db60fe38eb6965737bc58"
+      }
+    },
+    "compileElapsedMillis": 8055.416720000011,
+    "count": 27,
+    "eighteenObjectCommandExecuted": false,
+    "rawAggregateBytes": 3157657,
+    "rawChannelCanonicalIdentity": {
+      "bytes": 5864,
+      "sha256": "fe567abc6938718425a4e66e2c18f032a8cb38cf2883bac5870313095680ab47"
+    },
+    "rawChannels": 54
+  },
+  "compiler": {
+    "actualVersionFirstLine": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "gcc": {
+      "bytes": 1023032,
+      "invocationPath": "/usr/bin/gcc",
+      "resolvedPath": "/usr/bin/x86_64-linux-gnu-gcc-13",
+      "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26"
+    },
+    "invocationPathPreserved": true,
+    "jobs": 2
+  },
+  "compositionPolicy": {
+    "compilerReplayForDocsStorageComposition": false,
+    "executedSourceRemains": "5c1e8876a2495843b902595d961c8cc4f068901c",
+    "fiftySourceBytesMustRemainExact": true,
+    "losslessContractStoragePreservesAllOrderedCasesAndGuards": true,
+    "newNativeCohortOutsideCTranslationUnits": true,
+    "noSelectedSourceOmissionOrCapIncrease": true
+  },
+  "configuration": {
+    "generatedAutoconf": {
+      "bytes": 57331,
+      "sha256": "815d672d934387b66191941ff52d7fb059c1974257556eb816559a13fec2d9eb"
+    },
+    "onlyPrivateFactorySymbolEnabled": true,
+    "original": {
+      "bytes": 143135,
+      "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+    },
+    "selected": {
+      "bytes": 143135,
+      "sha256": "0015c9ac3b9af98af1e4a0f88788321e96193ce6a387c5a6cec6eaa358cdc1d6"
+    }
+  },
+  "earlierEighteenObjectResult": {
+    "evidence": "protected-stream-normal-objects-2026-10-26.json",
+    "fourteenUnchangedObjectsFreshlyCompiled": false,
+    "job": 121498639038,
+    "run": 40301019517,
+    "source": "c6f901819ba5d84a5a0474f2e6bbcad8019b6dcd",
+    "status": "passed; immutable separate result",
+    "thisRunEighteenObjectJob": {
+      "job": 121530270020,
+      "status": "skipped"
+    }
+  },
+  "event": "push",
+  "gates": {
+    "booted": false,
+    "compiledUsefulFit": false,
+    "compilerImplicitInputsAttested": false,
+    "consumerSelected": false,
+    "hermetic": false,
+    "imageBuilt": false,
+    "kernelLinked": false,
+    "normalOperationsExecuted": false,
+    "physicalRootRetirementQualified": false,
+    "productionInstallation": false,
+    "whole738Complete": false
+  },
+  "inputBindings": {
+    "allSelectedGitBlobsIndependentlyVerified": true,
+    "baselineDerivedFiles": 327,
+    "baselineInputDocument": {
+      "bytes": 862389,
+      "sha256": "753e9befa4652cc240562130a529c5863b42f7832db8e36c506c8091da4e6dae"
+    },
+    "current50Bytes": 367882,
+    "current50CanonicalSHA256": "c0245686c1c5c5217c778215a151888a853d1ec21f15a2a372330ad7693aedca",
+    "current50Files": 50,
+    "currentBeforeAfterExact": true,
+    "currentDerivedCanonicalSHA256": "35b74d7f701dc9966d2c94d813d2be0af8a08d776b75ca265fc89f45b3e76641",
+    "currentDerivedFiles": 367,
+    "currentDerivedInputDocument": {
+      "bytes": 44851,
+      "sha256": "35b74d7f701dc9966d2c94d813d2be0af8a08d776b75ca265fc89f45b3e76641"
+    },
+    "currentGitMaterialCount": 2779,
+    "currentMaterialCanonicalIdentity": {
+      "bytes": 382426,
+      "sha256": "d46f3ef3d985a2df2ca325cc72905b811a6265d5e2a64719d8427f0d2fac31cb"
+    },
+    "currentSourceDocument": {
+      "bytes": 773131,
+      "sha256": "55ddca2964035fd12ab2b13afb178f3a29c1fd9fb2414fe80a03934bc41d5f81"
+    },
+    "currentWholeGitInventory": {
+      "bytes": 1566944,
+      "sha256": "fe999b68af7d3022bfcab8ef0d15b50bf2842a156e892e14372a809ac3df65bc"
+    },
+    "originalBaselineBeforeAfterExact": true,
+    "originalBaselineCommit": "013c3866942f1654b0effeebc93986b1c5268c2c",
+    "originalBaselineGitMaterials": 2725,
+    "originalBaselineMaterialCanonicalIdentity": {
+      "bytes": 373912,
+      "sha256": "2804d4ea947ccb2187096abbd35c93ae14d885aaa5f1745a04e649a034890505"
+    },
+    "originalBaselineTree": "ee776dfd184e4f3128561ba5213f95988962c98e"
+  },
+  "issue": 738,
+  "job": 121530268488,
+  "newPureControls": {
+    "executed": 2,
+    "passed": 2,
+    "scope": "exact fifty-source/default-forty-seven binding and four-object public allowlist",
+    "unchangedThreeControlsReplayed": false
+  },
+  "objectFormat": "ELF64 little-endian x86-64 ET_REL; ordinary undefined relocations allowed; no link performed",
+  "objects": {
+    "drivers/base/core.o": {
+      "bytes": 134600,
+      "sha256": "b8f9a92ba8dedd88d37b0863963dde18ed9a686f4a88c135570564a993505bb5"
+    },
+    "lib/kobject.o": {
+      "bytes": 29432,
+      "sha256": "e8c73d53c68541f83887d87ef290e6d9bd4859bbe143b6835394d4be4ee40e2a"
+    },
+    "net/core/net-sysfs.o": {
+      "bytes": 80432,
+      "sha256": "8adf86921c3a989ef59a9054b70d8d7ff4cfba55805bcc416e84140bbff30f04"
+    },
+    "net/factory.o": {
+      "bytes": 296184,
+      "sha256": "8a2af0194e74252759bd548209368ecf59e85a8f566fd5761dcc9a18fb44e08e"
+    }
+  },
+  "receiptIdentity": {
+    "bytes": 23444,
+    "sha256": "9fc21c54611b677af1016747459c2741690af6d3192f24107ad761ff77c98890"
+  },
+  "remaining": [
+    "complete class/kernfs/sysfs allocation/free source closure and original security descendants",
+    "compiled useful original arena/record geometry",
+    "actual selected kernel socket/RX/readiness/DNS/IPv6/TLS/stop/final-free qualification",
+    "linked/sealed image and finite node/provider/operator qualification before installation"
+  ],
+  "run": 40310522972,
+  "runURL": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40310522972",
+  "schemaVersion": 1,
+  "scope": "four changed class-directory translation units compiled; no link or runtime qualification",
+  "sourceCommit": "5c1e8876a2495843b902595d961c8cc4f068901c",
+  "sourceLifetimeChange": {
+    "exactOriginalClassTypeAndPositiveSubsystemReference": true,
+    "initializedPrivateCleanupIndependentOfNewConstructorAdmission": true,
+    "originalKobjectCachedNameAndParentPutTailsPreserved": true,
+    "poisonedUncertainClosedOrChangedOwnerRetentionPreserved": true,
+    "runtimeLifetimeProofClaimed": false,
+    "sameRecordInitializedWitnessBeforeFallibleNameBirth": true,
+    "typedClassAndNameBeforePublication": true
+  },
+  "sourceTree": "10f641f48ea900283281ea0fba98ff0db6adbe2e",
+  "workflow": ".github/workflows/stream-provider-objects.yml"
+}

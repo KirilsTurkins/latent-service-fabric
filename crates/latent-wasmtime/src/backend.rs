@@ -116,6 +116,10 @@ pub(crate) struct SharedRuntime {
     preparation: Arc<PreparationCounters>,
     pub(crate) preparation_observer: PreparationObserver,
     pub(crate) invocation_input_observer: InvocationInputObserver,
+    #[cfg(feature = "development-test-host")]
+    development_trap_observer: crate::development_trap_observer::DevelopmentTrapObserver,
+    #[cfg(feature = "development-test-host")]
+    development_join_cause: crate::development_trap_observer::DevelopmentJoinCauseObserver,
     preparation_context: Arc<PreparationContext>,
 }
 impl SharedRuntime {
@@ -202,6 +206,13 @@ impl SharedRuntime {
             preparation,
             preparation_observer,
             invocation_input_observer: InvocationInputObserver::new(),
+            #[cfg(feature = "development-test-host")]
+            development_trap_observer:
+                crate::development_trap_observer::DevelopmentTrapObserver::for_engine_configuration(
+                    config.development_numeric_trap_observation,
+                ),
+            #[cfg(feature = "development-test-host")]
+            development_join_cause: Default::default(),
             preparation_context,
             compiler,
         })
@@ -242,6 +253,29 @@ impl WasmtimeBackend {
             .as_ref()
             .map_or_else(Default::default, |pool| pool.observer().snapshot())
     }
+    /// Explicitly arm one fixed numeric original-error record for a test harness.
+    #[cfg(feature = "development-test-host")]
+    pub fn arm_development_trap_observation(
+        &self,
+    ) -> Result<crate::DevelopmentTrapGuard<'_>, PlatformError> {
+        self.shared.development_trap_observer.arm()
+    }
+
+    /// Explicit test-host arming for one of three closed diagnostic activations.
+    /// The caller supplies the actual signed component digest and exact export.
+    #[cfg(feature = "development-test-host")]
+    pub fn arm_development_join_cause_observation(
+        &self,
+        activation: &str,
+        component: &str,
+        contract: &str,
+        export: &str,
+    ) -> Result<crate::DevelopmentJoinCauseGuard<'_>, PlatformError> {
+        self.shared
+            .development_join_cause
+            .arm(activation, component, contract, export)
+    }
+
     /// Bounded stage observations that do not retain a runtime owner.
     #[must_use]
     pub fn preparation_observer(&self) -> PreparationObserver {
@@ -586,6 +620,17 @@ impl WasmtimeBackend {
         let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
         let store_guard = self.shared.resources.store();
+        #[cfg(feature = "development-test-host")]
+        let development_join_claim = self.shared.development_join_cause.claim(
+            &request.activation.activation_id.0,
+            runtime
+                .descriptor
+                .metadata
+                .get("component-digest")
+                .map(String::as_str),
+            &request.activation.target.contract.0,
+            &request.activation.target.function.0,
+        );
         let mut store = AccountedStore::new(self.invocation_store(
             request,
             &stop,
@@ -638,6 +683,28 @@ impl WasmtimeBackend {
         )
         .unwrap_or(u64::MAX);
         let codec_capacity_error = output.finish_lift(call_result.is_ok()).err();
+        #[cfg(feature = "development-test-host")]
+        self.shared.development_join_cause.capture(
+            development_join_claim,
+            call_result.is_ok(),
+            codec_capacity_error.is_none(),
+            &function.results,
+            if call_result.is_ok() && codec_capacity_error.is_none() {
+                output.as_slice()
+            } else {
+                &[]
+            },
+        );
+        #[cfg(feature = "development-test-host")]
+        self.shared
+            .development_trap_observer
+            .capture_borrow_admission(
+                store
+                    .data()
+                    .development_borrow_admission
+                    .as_ref()
+                    .and_then(crate::development_borrow_admission::Observer::snapshot),
+            );
         let lifecycle_error = store
             .data_mut()
             .runtime
@@ -663,6 +730,10 @@ impl WasmtimeBackend {
         // bytes, guest linear memory and native stacks still coexist.
         let (consumption, accounting_error) =
             invocation_accounting(&mut store, wall_time_micros, timing);
+        #[cfg(feature = "development-test-host")]
+        if let Err(error) = &call_result {
+            self.shared.development_trap_observer.capture(error);
+        }
         // Capture the execution winner before cleanup signals unfinished child
         // owners. Cleanup cancellation cannot replace an existing trap, resource
         // failure, or bounded lifecycle failure with a different terminal cause.

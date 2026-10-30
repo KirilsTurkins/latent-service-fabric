@@ -138,6 +138,19 @@ class SecurityFixtureTests(unittest.TestCase):
         self.assertTrue(any(package.path == "sdk/typescript-client/package-lock.json" for package in packages))
         self.assertTrue(any(package.path == "examples/renderer-profile/package-lock.json" for package in packages))
         self.assertTrue(any(package.path == "tools/requirements.lock" for package in packages))
+        # The real standalone cache must use the existing pinned isolated route.
+        from tools.security_inventory import cargo_inventory
+        from tools.security_common import digest
+        configuration = json.loads(read_file(POLICY, "inventory.json"))
+        manifest = "crates/vendor/wasmtime-cache/Cargo.toml"
+        entry = next(row for row in configuration["manifests"] if row["path"] == manifest)
+        self.assertIs(entry["isolated"], True)
+        self.assertEqual(entry["manifest_sha256"], digest(read_file(ROOT, manifest).replace(b"\r\n", b"\n")))
+        covered, cache = cargo_inventory(ROOT, entry)
+        self.assertEqual(covered, {manifest, "crates/vendor/wasmtime-cache/Cargo.lock"})
+        self.assertEqual((cache["coverage"], cache["members"]), ("RustSec", 0))
+        with self.assertRaisesRegex(SecurityError, "unreviewed-isolated-cargo-manifest"):
+            cargo_inventory(ROOT, {**entry, "manifest_sha256": "0" * 64})
 
     def test_source_repair_classifies_only_the_proved_braces_advisory(self) -> None:
         from tools.security_npm_sources import resolve_findings
@@ -180,17 +193,23 @@ class SecurityFixtureTests(unittest.TestCase):
 
     def test_legacy_release_absent_features_do_not_hide_partial_or_unknown_manifests(self) -> None:
         from tools.security_common import tracked_paths
-        optional = ("examples/renderer-profile/", ".github/security/", "website/", "tools/native-fixture/")
+        # SDK absence cannot remove the independently required action graph.
+        optional = ("examples/renderer-profile/", "website/", "tools/native-fixture/")
         legacy_paths = [path for path in tracked_paths(ROOT) if not path.startswith(optional)]
         with patch("tools.security_inventory.tracked_paths", return_value=legacy_paths):
             packages, records = inventory(ROOT)
         absent = {entry["path"] for entry in records if entry["coverage"] == "not-shipped-at-source-revision"}
-        self.assertEqual(absent, {"examples/renderer-profile/package.json", ".github/security/requirements.txt",
+        self.assertEqual(absent, {"examples/renderer-profile/package.json",
                              "website/package.json", "website/toolchain/package.json", "tools/native-fixture/Cargo.toml"})
         self.assertTrue(any(package.path == "controls/.github/security/requirements.txt" for package in packages))
         self.assertFalse(any(package.path.startswith("examples/renderer-profile/") for package in packages))
-        for partial in ("examples/renderer-profile/README.md", ".github/security/unexpected.json"):
+        for partial in ("examples/renderer-profile/README.md",):
             with self.subTest(partial=partial), patch("tools.security_inventory.tracked_paths", return_value=[*legacy_paths, partial]):
+                with self.assertRaisesRegex(SecurityError, "unreviewed-or-missing-dependency-manifest"):
+                    inventory(ROOT)
+        without_controls = [path for path in legacy_paths if not path.startswith(".github/security/")]
+        for partial in ([], [".github/security/unexpected.json"]):
+            with self.subTest(controls=partial), patch("tools.security_inventory.tracked_paths", return_value=[*without_controls, *partial]):
                 with self.assertRaisesRegex(SecurityError, "unreviewed-or-missing-dependency-manifest"):
                     inventory(ROOT)
         for partial in ("website/README.md", "tools/native-fixture/README.md"):
@@ -261,10 +280,10 @@ class SecurityFixtureTests(unittest.TestCase):
         self.assertEqual(len(packages), 144)
         values = {(row.name, row.version) for row in packages}
         self.assertIn(("npm", "11.19.1"), values)
-        self.assertIn(("ip-address", "10.7.2"), values)
+        self.assertIn(("ip-address", "10.7.4"), values)
         self.assertIn(("brace-expansion", "5.0.12"), values)
         self.assertIn(("balanced-match", "4.0.4"), values)
-        self.assertIn(("undici", "6.28.1"), values)
+        self.assertIn(("undici", "6.29.1"), values)
         self.assertIn(("http-cache-semantics", "4.3.0"), values)
         self.assertNotIn(("http-cache-semantics", "4.2.0"), values)
         self.assertNotIn(("ip-address", "10.5.0"), values)

@@ -1,0 +1,45 @@
+{
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"typescript-buffer-commonjs-${{ github.ref }}"
+},
+"name":"TypeScript published CommonJS Buffer qualification",
+"on":{
+"push":{
+"branches":[
+"feat/typescript-buffer-commonjs-20261024"
+],
+"paths":[
+".github/workflows/typescript-buffer-commonjs.yml",
+"tools/qualify_typescript_buffer.py",
+"tools/qualify_typescript_buffer_commonjs.py",
+"tools/typescript_buffer_commonjs_fixture.py",
+"tools/prepare_typescript_commonjs_inputs.py",
+"tools/typescript_guest/borrow_signed_inputs.py",
+"tools/typescript_guest/buffer_profile.py",
+"tools/typescript_guest/build.py",
+"tools/typescript_guest/compiler.py",
+"tools/captured_compiler_isolation.py",
+"tools/tests/test_typescript_module_layout.py",
+"tools/typescript_guest/standard_global_types.py",
+"tools/tests/test_typescript_standard_global_types.py",
+"tools/tests/fixtures/npm-types-node-26.6.5.*",
+"sdk/typescript-guest/probes/node-buffer-commonjs/**",
+"tools/tests/test_typescript_buffer_commonjs.py"
+]
+},
+"workflow_dispatch":null
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"signed-commonjs-buffer"
+],
+"reviewReason":"Require new captured standard-global declaration controls and keep original signed/namespace/runtime budgets",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/typescript-buffer-commonjs.yml"
+}

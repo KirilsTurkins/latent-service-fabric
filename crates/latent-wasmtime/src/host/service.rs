@@ -12,6 +12,8 @@ use latent_routing::InvocationTarget;
 use std::{sync::Arc, time::Instant};
 use wasmtime::{component::Linker, AsContextMut, StoreContextMut};
 mod outcome;
+#[cfg(feature = "development-local-service-fixture")]
+pub(super) mod refusal;
 
 const MAX_INPUT_BYTES: usize = 64 * 1024;
 const MAX_OUTPUT_BYTES: usize = 64 * 1024;
@@ -43,13 +45,23 @@ pub(crate) fn install(
                         synchronize(&mut store)?;
                         Ok::<_, wasmtime::Error>(invocation)
                     })?;
+                    #[cfg(feature = "development-local-service-fixture")]
+                    let mut refusal_stage = refusal::Stage::Setup;
                     let mut completion = match invocation {
                         Ok((dispatch, request)) => {
+                            #[cfg(feature = "development-local-service-fixture")]
+                            {
+                                refusal_stage = refusal::Stage::BrokerDispatch;
+                            }
                             let admitted = dispatch
                                 .dispatch(|call| {
                                     access.with(|mut access| {
                                         let mut store = access.as_context_mut();
                                         checkpoint(&mut store)?;
+                                        #[cfg(feature = "development-local-service-fixture")]
+                                        {
+                                            refusal_stage = refusal::Stage::ChildStart;
+                                        }
                                         let admitted = invoker.start(call, request);
                                         // Child admission reserves the original ledger before
                                         // the async guest can resume. Reflect that reservation
@@ -61,7 +73,13 @@ pub(crate) fn install(
                                 .await;
                             match admitted {
                                 Ok(admitted) => match admitted? {
-                                    Ok(invocation) => invocation.await,
+                                    Ok(invocation) => {
+                                        #[cfg(feature = "development-local-service-fixture")]
+                                        {
+                                            refusal_stage = refusal::Stage::ChildCompletion;
+                                        }
+                                        invocation.await
+                                    }
                                     Err(failure) => Err(failure),
                                 },
                                 Err(failure) => Err(failure),
@@ -90,7 +108,24 @@ pub(crate) fn install(
                                 drop(child);
                                 result
                             }
-                            Err(failure) => outcome::rejected(&failure),
+                            Err(failure) => {
+                                #[cfg(feature = "development-local-service-fixture")]
+                                {
+                                    let state = store.data_mut();
+                                    if state.local_service_refusals.pending() {
+                                        if let Some(record) = state.local_service_refusals.capture(
+                                            &state.context.activation_id.0,
+                                            refusal_stage,
+                                            &failure,
+                                            state.accounting.budget(),
+                                            state.clock.monotonic_now(),
+                                        ) {
+                                            refusal::emit(&record);
+                                        }
+                                    }
+                                }
+                                outcome::rejected(&failure)
+                            }
                         };
                         synchronize(&mut store)?;
                         store.data_mut().record_host_call(started);

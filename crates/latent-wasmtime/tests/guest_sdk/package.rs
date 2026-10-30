@@ -107,6 +107,41 @@ pub struct Signers {
     now: u64,
 }
 impl Signers {
+    /// Only the normal TypeScript package and this harness's unused echo callee.
+    /// Preserve their actual distinct build observations under one ephemeral key.
+    pub fn typescript_with_echo_fixture() -> Self {
+        let mut selected = Self::new(TYPESCRIPT_CAPSULE_BUILD_TYPE);
+        let mut document: serde_json::Value =
+            serde_json::from_slice(&selected.policy_document).unwrap();
+        assert_eq!(
+            document["builder"]["requirements"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            document["builder"]["requirements"][0]["buildType"],
+            TYPESCRIPT_CAPSULE_BUILD_TYPE
+        );
+        let mut echo = document["builder"]["requirements"][0].clone();
+        echo["buildType"] = json!(PROVENANCE_BUILD_TYPE);
+        document["builder"]["requirements"]
+            .as_array_mut()
+            .unwrap()
+            .push(echo);
+        document["builderRevocations"]["policyDigest"] = json!(BuilderPolicy::from_json(
+            &serde_json::to_vec(&document["builder"]).unwrap(),
+            ProvenanceLimits::default(),
+        )
+        .unwrap()
+        .digest()
+        .to_string());
+        selected.policy_document = serde_json::to_vec(&document).unwrap();
+        selected.policy = SupplyChainPolicy::from_json(&selected.policy_document).unwrap();
+        selected
+    }
+
     pub fn new(build_type: &str) -> Self {
         Self::with_tenant(build_type, None)
     }

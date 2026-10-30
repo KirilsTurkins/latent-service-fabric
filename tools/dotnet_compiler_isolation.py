@@ -308,8 +308,11 @@ def stage(compiler, workspace: Path) -> DotnetIsolation:
     # Hosted CPython binaries can retain an absolute RUNPATH to the original
     # tool cache. Resolve both ldd and namespace execution against the already
     # captured Python library, without exposing the original host directory.
+    deadline = getattr(compiler.commands, '_parent_deadline', None)
+    options = {} if deadline is None else {'_deadline': deadline}
     isolation = DotnetIsolation(workspace, tools, selected,
-                                loader_directories=(python_root / 'lib',), host_tool_path=host_tool_path)
+                                loader_directories=(python_root / 'lib',), host_tool_path=host_tool_path,
+                                **options)
     isolation.namespace_identity_files = {identity / name: '/etc/' + name for name in ('passwd', 'group', 'nsswitch.conf')}
     isolation.enable_children(helpers)
     isolation.receipt['distributionObserver'] = {'profile': 'dotnet-compiler-internal-links-v1', 'maximumEntries': 65536, 'maximumBytes': 4 * 1024**3}
