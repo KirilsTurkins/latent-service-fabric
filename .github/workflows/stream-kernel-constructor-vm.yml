@@ -1,0 +1,125 @@
+name: Stream actual constructor VM
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/kernel-no-begin-root-final-free-20261024']
+    paths:
+      - '.github/workflows/stream-kernel-constructor-vm.yml'
+      - 'tools/qualify_host_stream_kernel_vm.py'
+      - 'tools/host_stream_kernel_vm_image.py'
+      - 'tools/tests/test_host_stream_kernel_vm_image.py'
+      - 'tools/host_stream_kernel_constructor_failure.py'
+      - 'tools/tests/test_host_stream_kernel_constructor_failure.py'
+      - 'tools/host_stream_kernel_stack_alignment.py'
+      - 'tools/tests/test_host_stream_kernel_stack_alignment.py'
+      - 'tools/host_stream_kernel_vmap_extent.py'
+      - 'tools/tests/test_host_stream_kernel_vmap_extent.py'
+      - 'tools/host_stream_kernel_vmap_fit.py'
+      - 'tools/tests/test_host_stream_kernel_vmap_fit.py'
+      - 'tools/host_stream_kernel_task_identity_geometry.py'
+      - 'tools/tests/test_host_stream_kernel_task_identity_geometry.py'
+      - 'tools/host_stream_kernel_provider_task_reference.py'
+      - 'tools/tests/test_host_stream_kernel_provider_task_reference.py'
+      - 'tools/host_stream_kernel_root_final_free.py'
+      - 'tools/host_stream_kernel_late_fd_final_free.py'
+      - 'tools/host_stream_kernel_late_fd_vm.py'
+      - 'tools/host_stream_kernel_no_begin_root_final_free.py'
+      - 'tools/host_stream_kernel_no_begin_vm.py'
+      - 'tools/tests/test_host_stream_kernel_no_begin_root_final_free.py'
+      - 'tools/tests/test_kernel_no_begin_vm.py'
+      - 'tools/tests/fixtures/host_stream_kernel_no_begin_root_final_free.json'
+      - 'research/standard-outbound/linux-6.12-lineage/factory-cleanup-no-begin-root-final-free.c'
+      - 'tools/host_stream_kernel_cleanup_native_programme.py'
+      - 'tools/tests/test_host_stream_kernel_late_fd_final_free.py'
+      - 'tools/tests/test_kernel_late_fd_vm.py'
+      - 'tools/tests/fixtures/host_stream_kernel_late_fd_final_free.json'
+      - 'research/standard-outbound/linux-6.12-lineage/factory-cleanup-late-fd-final-free.c'
+      - 'tools/tests/test_host_stream_kernel_root_final_free.py'
+      - 'tools/tests/test_kernel_root_final_free_vm.py'
+      - 'tools/tests/fixtures/host_stream_kernel_root_final_free.json'
+      - 'research/standard-outbound/linux-6.12-lineage/factory-cleanup-root-final-free.c'
+      - 'research/standard-outbound/linux-6.12-lineage/constructor-vm-init.c'
+permissions:
+  contents: read
+concurrency:
+  group: stream-kernel-constructor-vm-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  constructor-vm:
+    name: Link one kernel and boot three isolated cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - name: Install existing locked recipe dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Check image boundaries and current native source projection
+        run: >-
+          python3 -B -m unittest
+          tools.tests.test_host_stream_kernel_vm_image
+          tools.tests.test_host_stream_kernel_cleanup_native
+          tools.tests.test_host_stream_kernel_constructor_failure
+          tools.tests.test_host_stream_kernel_stack_alignment
+          tools.tests.test_host_stream_kernel_vmap_extent
+          tools.tests.test_host_stream_kernel_vmap_fit
+          tools.tests.test_host_stream_kernel_task_identity_geometry
+          tools.tests.test_host_stream_kernel_provider_task_reference
+          tools.tests.test_host_stream_kernel_root_final_free
+          tools.tests.test_host_stream_kernel_late_fd_final_free
+          tools.tests.test_kernel_late_fd_vm
+          tools.tests.test_host_stream_kernel_no_begin_root_final_free
+          tools.tests.test_kernel_no_begin_vm
+          tools.tests.test_kernel_root_final_free_vm -v
+      - name: Install upstream compiler and isolated emulator prerequisites
+        run: |
+          sudo timeout --signal=TERM --kill-after=30s 180s apt-get update
+          sudo timeout --signal=TERM --kill-after=30s 900s apt-get install --yes --no-install-recommends gcc make flex bison bc libelf-dev libssl-dev binutils qemu-system-x86 seabios
+      - name: Acquire exact official maintained source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 \
+            https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.113.tar.xz \
+            --output "$RUNNER_TEMP/linux-6.12.113.tar.xz"
+          echo "e09b6727e5c521253f0d41694900b9c38fb7604db7d35238a8197aa9f7de2428  $RUNNER_TEMP/linux-6.12.113.tar.xz" | sha256sum --check --strict
+      - name: Link candidate kernel and exercise actual constructor in isolated VM
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_vm.py
+          --archive "$RUNNER_TEMP/linux-6.12.113.tar.xz"
+          --output "$RUNNER_TEMP/stream-kernel-constructor-vm"
+      - name: Retain bounded image identities, observations and original failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: stream-kernel-constructor-vm-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/stream-kernel-constructor-vm/qualification.json
+            ${{ runner.temp }}/stream-kernel-constructor-vm/FAILED.json
+            ${{ runner.temp }}/stream-kernel-constructor-vm/selection.json
+            ${{ runner.temp }}/stream-kernel-constructor-vm/commands.json
+            ${{ runner.temp }}/stream-kernel-constructor-vm/baseline.config
+            ${{ runner.temp }}/stream-kernel-constructor-vm/selected.config
+            ${{ runner.temp }}/stream-kernel-constructor-vm/source-fixture.config
+            ${{ runner.temp }}/stream-kernel-constructor-vm/constructor-bzImage
+            ${{ runner.temp }}/stream-kernel-constructor-vm/constructor-init
+            ${{ runner.temp }}/stream-kernel-constructor-vm/constructor-init.c
+            ${{ runner.temp }}/stream-kernel-constructor-vm/constructor-initramfs.list
+            ${{ runner.temp }}/stream-kernel-constructor-vm/constructor-initramfs.cpio
+            ${{ runner.temp }}/stream-kernel-constructor-vm/late/constructor-init
+            ${{ runner.temp }}/stream-kernel-constructor-vm/late/constructor-init.c
+            ${{ runner.temp }}/stream-kernel-constructor-vm/late/constructor-initramfs.list
+            ${{ runner.temp }}/stream-kernel-constructor-vm/late/constructor-initramfs.cpio
+            ${{ runner.temp }}/stream-kernel-constructor-vm/no-begin/constructor-init
+            ${{ runner.temp }}/stream-kernel-constructor-vm/no-begin/constructor-init.c
+            ${{ runner.temp }}/stream-kernel-constructor-vm/no-begin/constructor-initramfs.list
+            ${{ runner.temp }}/stream-kernel-constructor-vm/no-begin/constructor-initramfs.cpio
+            ${{ runner.temp }}/stream-kernel-constructor-vm/firmware/*
+            ${{ runner.temp }}/stream-kernel-constructor-vm/commands/logs/*.txt
+            ${{ runner.temp }}/stream-kernel-constructor-vm/objects/include/generated/autoconf.h
+          if-no-files-found: warn
+          retention-days: 3

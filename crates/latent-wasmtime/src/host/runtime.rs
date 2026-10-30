@@ -50,7 +50,7 @@ impl Table {
             + 64;
         let mut allocation = budget
             .reserve_host_memory(bytes)
-            .map_err(|e| e.to_platform_error())?;
+            .map_err(|e| e.to_host_memory_error())?;
         let mut owners = Vec::new();
         owners.try_reserve_exact(limits.total()).map_err(|_| {
             failure(
@@ -219,12 +219,48 @@ where
     let started = Instant::now();
     let mut call = match authorize(state, operation) {
         Ok(call) => call,
-        Err(error) => return Completion::new(Err(convert(error)), None),
+        Err(error) => {
+            #[cfg(feature = "development-test-host")]
+            observe_borrow_registration_refusal(state, operation, &error);
+            return Completion::new(Err(convert(error)), None);
+        }
     };
     let result = table(state).and_then(execute);
+    if let Err(error) = &result {
+        observe_runtime_refusal(state, error);
+    }
+    #[cfg(feature = "development-test-host")]
+    if let Err(error) = &result {
+        observe_borrow_registration_refusal(state, operation, error);
+    }
     let _ = call.record_provider_outcome(AuditProviderOutcome::HostCompleted);
     state.record_host_call(started);
     Completion::new(result.map_err(convert), Some(call))
+}
+
+pub(super) fn observe_runtime_refusal(state: &HostState, error: &PlatformError) {
+    if let Some(session) = &state.capabilities.session {
+        session.observe_runtime_refusal(error);
+    }
+}
+
+#[cfg(feature = "development-test-host")]
+fn observe_borrow_registration_refusal(
+    state: &mut HostState,
+    operation: &str,
+    error: &PlatformError,
+) {
+    if operation != "register" || state.development_borrow_admission.is_none() {
+        return;
+    }
+    let runtime = state.runtime.as_ref().map(|table| table.runtime.snapshot());
+    let remaining = state.accounting.budget().remaining_at(Instant::now());
+    let granted = state.accounting.budget().granted();
+    state
+        .development_borrow_admission
+        .as_mut()
+        .expect("selected original HostState")
+        .refused(error, runtime, state.runtime_limits, granted, &remaining);
 }
 
 #[expect(
@@ -233,12 +269,18 @@ where
 )]
 pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
     macro_rules! sync {
-        ($name:literal, $args:pat, $ty:ty, $execute:expr) => {
+        ($name:literal, $args:pat, $ty:ty, $execute:expr $(, $register_kind:expr)?) => {
             linker
                 .instance(CAPABILITY)?
                 .func_wrap_async($name, |mut store, $args: $ty| {
                     Box::new(async move {
                         super::service::checkpoint(&mut store)?;
+                        #[cfg(feature = "development-test-host")]
+                        {
+                            $(if let Some(observer) = &mut store.data_mut().development_borrow_admission {
+                                observer.prepare_register(owner_kind($register_kind));
+                            })?
+                        }
                         let result = synchronous(store.data_mut(), $name, $execute);
                         super::service::synchronize(&mut store)?;
                         Ok((result,))
@@ -260,7 +302,8 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
                 generation: value.generation,
                 id: value.id,
             })
-        }
+        },
+        kind
     );
     sync!("park", (owner,), (wit::Token,), |table| {
         table.runtime.park(token(owner))?;
@@ -520,6 +563,9 @@ fn prepare_wait(
     })();
     // A failed timer preparation has no pending producer, but its accepted
     // call still owns the fixed error result through actual canonical lowering.
+    if let Err(error) = &result {
+        observe_runtime_refusal(state, error);
+    }
     PreparedWait {
         result,
         failed_call: call,
@@ -574,6 +620,9 @@ fn prepare_timer_next(state: &mut HostState, token: RuntimeToken) -> PreparedWai
             call: call.take().expect("original accepted runtime call"),
         })
     })();
+    if let Err(error) = &result {
+        observe_runtime_refusal(state, error);
+    }
     PreparedWait {
         result,
         failed_call: call,
@@ -608,7 +657,10 @@ impl WaitingTimer {
                     // again. Keep the accepted call and original deadline;
                     // requested elapsed success still needs current authority.
                     self.wait
-                        .wait_until(self.call.deadline().min(now + STOP_OBSERVATION))
+                        .wait_until_owned(
+                            self.call.deadline().min(now + STOP_OBSERVATION),
+                            self.call.budget_accounting(),
+                        )?
                         .await;
                     continue;
                 }
@@ -653,10 +705,12 @@ impl WaitingTimer {
                 .requested
                 .min(self.call.deadline())
                 .min(now + STOP_OBSERVATION);
-            let mut wait = self.wait.wait_until(next);
+            let mut wait = self
+                .wait
+                .wait_until_owned(next, self.call.budget_accounting())?;
             std::future::poll_fn(|context| {
                 positive_timer_observer::poll_pending(
-                    wait.as_mut(),
+                    std::pin::Pin::new(&mut wait),
                     context,
                     &mut self.wait_observed,
                     || {

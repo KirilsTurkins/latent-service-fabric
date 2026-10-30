@@ -18,8 +18,10 @@ text/domain-error wire format. Applications use the generic factory described he
 
 Preparation verifies component bytes and digest association, manifest execution
 requirements, declared imports/exports, and supported exported signatures.
-Stateless components may declare single-threaded or reentrant execution;
-cooperative threading and persistent state models are not admitted.
+The default stateless profile admits single-threaded or reentrant execution,
+not arbitrary cooperative threading or persistent guest state. Explicit native
+thread profiles are separate host selections, described below; a manifest or
+custom section cannot enable one.
 The separately installed [transaction profile](host-abi-profile.md#explicit-transaction-profile)
 uses host-owned state and fresh command/query activations. Its protected store
 and signed operation admission do not make a persistent guest instance available
@@ -97,6 +99,49 @@ the [binding contract](capability-bindings.md) governs their authority.
 The base imports' disclosure policy, shared live budget,
 clock injection, and log acceptance contract are documented in
 [activation capabilities](capabilities.md).
+
+## Selected continuation and memory profiles
+
+The default engine leaves `owned_native_stacks` and `owned_native_threads`
+disabled. The host can select one of three closed `NativeThreadProfile` values:
+the original Rust context40 canonical-child profile, C context144 synchronous
+cooperative profile, or Rust context40 synchronous cooperative profile. The two
+cooperative selections also change the trusted runtime-compatibility profile.
+They require the exact authenticated original core, context/bootstrap and final
+component routing graph; unsupported shapes fail rather than becoming a generic
+thread facility. See [component transformation](../../crates/latent-component-threading/README.md),
+[C preparation](../development/c-thread-preparation.md) and
+[Rust owned-thread evidence](../testing/rust-owned-thread-native-source.md).
+
+These selections retain original Task/Native admission and physical stack
+ownership. They do not grant authority, qualify all pthread/std::thread/executor
+APIs, capture a durable continuation or enable arbitrary shared-memory Wasm
+threads. Language qualification remains specific to its source/profile.
+
+The workspace uses a [maintained Wasmtime 48.0.7 source package](../../crates/vendor/wasmtime/README.latent.md),
+not an interchangeable registry package with the same version string. Its
+selected `DynamicValueMemory` / `Func::call_async_with_memory` and native-memory
+hooks preadmit actual allocation layouts on ordinary accounted paths. The exact
+`DYNAMIC_VALUE_MEMORY_COHORT` participates in engine/preparation identity, so an
+older prepared or AOT entry cannot certify the changed implementation.
+
+Selected accounting covers value lifting/encoding, table and Store backing,
+registries, FuncRefs, resource metadata, context/host futures and reply owners.
+Retained output bytes use the separately maintained bytes owner path. Growth
+reserves old and replacement allocations while both exist. Values, headers,
+weak backing and returned frames keep their original charge until the actual
+allocation retires, including when it outlives Store destruction.
+
+This is a selected allocation contract, not a global allocator, node RSS bound
+or proof of every language/kernel/transport cost. Legacy/unselected embedding
+paths and fixed node services have different owners. The
+[host-codec programme](../testing/host-codec-original-memory.md),
+[handle/buffer checks](../testing/capability-handle-buffer-memory.md),
+[connected audit memory](../testing/audit-connected-memory.md),
+[local-service registry retirement](../testing/local-service-registry-retirement.md)
+and [JoinState change](../component-development/canonical-async-join-state-accounting.md)
+state their exact implementation and execution boundaries. Historical native
+tuples are not fresh qualification of every later cohort.
 
 ## Node policy and shared preparation
 

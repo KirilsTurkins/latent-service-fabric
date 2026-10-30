@@ -214,6 +214,28 @@ class TypeScriptRuntimeProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'engine-owned-activation-interface'):
             runtime.check_application_bindings(actual_graph('derived'), runtime.SELECTED_WORLD)
 
+    def test_actual_borrow_void_graph_preserves_omitted_result_without_hiding_type_drift(self):
+        # Lossless JSON representation of wasm-tools1.254.0 stdout from failed signed attempt.
+        # Original raw SHA256: 0a6ebfc7828ccc62bded871f6fcc26b07eba3312d8ddab8861142a0a0b324bf0 (prior Git blob).
+        # 40059928567/job120771018412, artifact12546483197; no runtime pass.
+        raw = (FIXTURES/'borrow-void-function.json').read_bytes()
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), 'cf8df91e1508a4ccb24563f9f2bdecf38df9332eb9eb12e9a34e8f1de48c40f9')
+        graph = json.loads(raw)
+        world = 'tests:typescript-import-borrow-probe/service@1.0.0'
+        identity = 'tests:typescript-import-borrow-gate/diagnostic@1.0.0'
+        actual = runtime.public_graph(graph, world)
+        self.assertIsNone(actual['imports'][identity]['functions']['intentional-trap']['result'])
+        diagnostic = next(row for row in graph['interfaces'] if row['name'] == 'diagnostic')
+        function = diagnostic['functions']['intentional-trap']
+        self.assertNotIn('result', function)
+        function['result'] = None
+        self.assertEqual(actual, runtime.public_graph(graph, world))
+        function['result'] = 'u32'
+        self.assertNotEqual(actual, runtime.public_graph(graph, world))
+        function['result'] = len(graph['types'])
+        with self.assertRaisesRegex(ValueError, 'unknown-type-reference'):
+            runtime.public_graph(graph, world)
+
     def test_actual_component_synthetic_root_keeps_versioned_interfaces_and_types(self):
         value = json.loads((FIXTURES/'actual-component-root.json').read_bytes())
         self.assertEqual(value['parser'], 'wasm-tools1.254.0')
@@ -418,14 +440,10 @@ class TypeScriptClockCompiledGraphTests(unittest.TestCase):
         value = json.loads(path.read_bytes())
         self.assertEqual(value['parser'], 'wasm-tools1.254.0')
         self.assertEqual(value['source'], 'e61134ed5e075b898e1385abe785663884787f72')
-        historical = {
-            'sdk/typescript-guest/activation/native_job_queue.h',
-            'sdk/typescript-guest/activation/promise_records.h',
-            'sdk/typescript-guest/activation/reaction_records.h',
-        }
+        # This compiled receipt belongs to its immutable source revision.
+        # Current SDK changes must not rewrite or invalidate historical inputs.
         for row in value['engineInput']['sdkInputs']:
-            source_path = (path.parent/'original-sdk-e611'/Path(row['path']).name
-                           if row['path'] in historical else ROOT/row['path'])
+            source_path = path.parent/'original-sdk-e611'/Path(row['path']).name
             raw = source_path.read_bytes()
             self.assertEqual(len(raw), row['size'])
             self.assertEqual(runtime.digest(raw), row['digest'])

@@ -1,62 +1,20 @@
 {
-  "cases": [
-    "PhaseCompiledGraphTests.test_actual_normal_emission_omits_only_unused_response_and_existing_readiness",
-    "PhaseCompiledGraphTests.test_changed_unused_source_type_and_additional_legacy_operations_still_refuse",
-    "PhaseCompiledGraphTests.test_every_remaining_nominal_type_and_phase_operation_is_mandatory",
-    "PhaseCompiledGraphTests.test_omission_requires_original_import_engine_and_splicer_envelope"
-  ],
-  "guards": {
-    "PhaseCompiledGraphTests.test_actual_normal_emission_omits_only_unused_response_and_existing_readiness": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:2f3d11db350e42faf52563b45ef6fb7730a4f7cc353e5b40315284056d5e6af0",
-        "class:setup-sha256:c93f11405c0a6e0fd7e15cfc3c36d6058e679af4055b695bdc59d3dec10d965d"
-      ],
-      "skipSites": []
-    },
-    "PhaseCompiledGraphTests.test_changed_unused_source_type_and_additional_legacy_operations_still_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:2f3d11db350e42faf52563b45ef6fb7730a4f7cc353e5b40315284056d5e6af0",
-        "class:setup-sha256:c93f11405c0a6e0fd7e15cfc3c36d6058e679af4055b695bdc59d3dec10d965d"
-      ],
-      "skipSites": []
-    },
-    "PhaseCompiledGraphTests.test_every_remaining_nominal_type_and_phase_operation_is_mandatory": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:2f3d11db350e42faf52563b45ef6fb7730a4f7cc353e5b40315284056d5e6af0",
-        "class:setup-sha256:c93f11405c0a6e0fd7e15cfc3c36d6058e679af4055b695bdc59d3dec10d965d"
-      ],
-      "skipSites": []
-    },
-    "PhaseCompiledGraphTests.test_omission_requires_original_import_engine_and_splicer_envelope": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:2f3d11db350e42faf52563b45ef6fb7730a4f7cc353e5b40315284056d5e6af0",
-        "class:setup-sha256:c93f11405c0a6e0fd7e15cfc3c36d6058e679af4055b695bdc59d3dec10d965d"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_typescript_phase_compiled_graph.py",
-  "reviewReason": "Retain original native build and thirteen controls; add exact emitted nominal-response omission control and four source-bound final-graph controls, with unchanged budgets and historical obligations.",
-  "schemaVersion": "latent.ci.contracts.v1"
+"storageCases":"guard-keys",
+"guards":{
+"PhaseCompiledGraphTests.test_actual_normal_emission_omits_only_unused_response_and_existing_readiness":
+      "a0a2b69e9c27d9a220a56e02698533ddc597f8b83ec396c4fd6b4599887cad69",
+"PhaseCompiledGraphTests.test_changed_unused_source_type_and_additional_legacy_operations_still_refuse":
+      "a0a2b69e9c27d9a220a56e02698533ddc597f8b83ec396c4fd6b4599887cad69",
+"PhaseCompiledGraphTests.test_every_remaining_nominal_type_and_phase_operation_is_mandatory":
+      "a0a2b69e9c27d9a220a56e02698533ddc597f8b83ec396c4fd6b4599887cad69",
+"PhaseCompiledGraphTests.test_omission_requires_original_import_engine_and_splicer_envelope":
+      "a0a2b69e9c27d9a220a56e02698533ddc597f8b83ec396c4fd6b4599887cad69"
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_phase_compiled_graph.py",
+"reviewReason":"Retain original native build and thirteen controls; add exact emitted nominal-response omission control and four source-bound final-graph controls, with unchanged budgets and historical obligations.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"a0a2b69e9c27d9a220a56e02698533ddc597f8b83ec396c4fd6b4599887cad69":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:2f3d11db350e42faf52563b45ef6fb7730a4f7cc353e5b40315284056d5e6af0","class:setup-sha256:c93f11405c0a6e0fd7e15cfc3c36d6058e679af4055b695bdc59d3dec10d965d"],"skipSites":[]}
+}
 }

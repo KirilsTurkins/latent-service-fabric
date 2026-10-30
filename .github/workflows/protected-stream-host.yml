@@ -1,0 +1,59 @@
+name: Protected stream host source controls
+on:
+  push:
+    branches: ['feat/protected-stream-custody-20261026', 'feat/sdk-owned-timer-box-20261027']
+permissions:
+  contents: read
+concurrency:
+  group: protected-stream-host-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  host-controls:
+    name: Bounded host source controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - name: Install normal pinned validator dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-targets: true
+      - name: Refuse incomplete or ignored focused outcomes
+        if: github.ref == 'refs/heads/feat/protected-stream-custody-20261026'
+        run: python3 -B -m unittest tools.tests.test_host_stream_protected -v
+      - name: Compile current source and execute exactly six host controls
+        if: github.ref == 'refs/heads/feat/protected-stream-custody-20261026'
+        run: >-
+          python3 -B tools/qualify_host_stream_protected.py
+          --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/protected-stream-host"
+      - name: Compile one current target and execute exactly five owned timer Box controls
+        if: github.ref == 'refs/heads/feat/sdk-owned-timer-box-20261027'
+        run: >-
+          python3 -B tools/qualify_host_stream_protected.py
+          --owned-timer-box
+          --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/protected-stream-host"
+      - name: Retain only finite public command channels and receipt
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: protected-stream-host-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/protected-stream-host/receipt.json
+            ${{ runner.temp }}/protected-stream-host/*.stdout.log
+            ${{ runner.temp }}/protected-stream-host/*.stderr.log
+          if-no-files-found: warn
+          retention-days: 3

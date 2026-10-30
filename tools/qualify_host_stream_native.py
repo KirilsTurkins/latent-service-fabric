@@ -27,6 +27,9 @@ CASES = frozenset(PREFIX+name for name in (
     'cleanup_panic_keeps_original_connection_after_lost_unit_result',
     'original_deadline_does_not_refund_a_blocked_native_constructor',
     'constructor_panic_retains_prepaid_backing_and_closes_real_fd',
+    'close_status_preserves_original_expiry_and_never_accepts_ready_as_retirement',
+    'real_file_close_transfer_keeps_exact_frame_and_refuses_short_or_error_reply',
+    'fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backing',
 ))
 INPUTS = (
     'Cargo.toml','Cargo.lock','rust-toolchain.toml',
@@ -54,7 +57,7 @@ def outcomes(raw):
     actual = [name.decode() for name in re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$',raw,re.M)]
     totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; '
         rb'(\d+) measured; (\d+) filtered out;', raw, re.M)
-    if len(actual) != 10 or set(actual) != CASES or totals != [(b'10',b'0',b'0',b'0',b'30')]:
+    if len(actual) != 13 or set(actual) != CASES or totals != [(b'13',b'0',b'0',b'0',b'31')]:
         raise ValueError('native-factory-missing-failed-or-extra-case')
     return sorted(actual)
 

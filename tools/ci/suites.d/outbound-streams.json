@@ -6,13 +6,16 @@
       "expectedCases": [
         "kernel::native::tests::abandoned_waiter_cannot_drop_running_job_or_late_returned_owner",
         "kernel::native::tests::cleanup_panic_keeps_original_connection_after_lost_unit_result",
+        "kernel::native::tests::close_status_preserves_original_expiry_and_never_accepts_ready_as_retirement",
         "kernel::native::tests::constructor_panic_retains_prepaid_backing_and_closes_real_fd",
         "kernel::native::tests::exhausted_node_allowance_refuses_before_any_open",
+        "kernel::native::tests::fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backing",
         "kernel::native::tests::fixed_wire_rejects_wrong_expiry_error_and_unknown_phase",
         "kernel::native::tests::original_deadline_does_not_refund_a_blocked_native_constructor",
         "kernel::native::tests::possible_failed_open_retains_original_node_charge",
         "kernel::native::tests::postopen_failure_closes_real_fd_without_refunding_backing",
         "kernel::native::tests::ready_owner_drop_closes_on_original_worker_and_retains_capacity",
+        "kernel::native::tests::real_file_close_transfer_keeps_exact_frame_and_refuses_short_or_error_reply",
         "kernel::native::tests::unavailable_cleanup_slot_keeps_fd_and_backing_without_inline_close",
         "tests::authority::genuine_http_only_authority_denies_opaque_bytes_before_dns_and_contact",
         "tests::currentness::a_policy_change_while_readable_is_pending_is_checked_before_syscall",
@@ -43,14 +46,18 @@
         "tests::tls::wrong_tls_hostname_fails_closed_without_cleartext_fallback",
         "tests::uncertainty::lost_mutation_reply_preserves_typed_uncertainty_and_never_replays",
         "tests::unimplemented_host_tls_is_never_silently_replaced_with_tcp",
-        "transport::tests::repeated_handshake_reads_share_one_original_encrypted_input_ceiling"
+        "transport::tests::private_wire_fault_keeps_uncertainty_without_ciphertext_as_plaintext_prefix",
+        "transport::tests::repeated_handshake_reads_share_one_original_encrypted_input_ceiling",
+        "kernel::native::node_bootstrap::controls::node_wire_refuses_old_ack_foreign_generation_and_funding_bits",
+        "kernel::native::node_bootstrap::controls::node_postopen_refusal_retains_original_whole_escrow",
+        "kernel::native::node_bootstrap::controls::node_abandoned_waiter_keeps_custody_after_real_worker_returns"
       ],
       "expectedIgnored": [],
       "id": "latent-streams.lib.latent-streams",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-streams/Cargo.toml",
-      "minimumCases": 40,
+      "minimumCases": 47,
       "mode": "libtest",
       "package": "latent-streams",
       "platforms": [
@@ -97,6 +104,32 @@
       "source": "tests/outbound_streams.rs",
       "target": "outbound_streams",
       "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "ffi::tests::fixed_descriptor_boundary_refuses_foreign_and_preserves_actual_ownership"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-stream-factory-native.lib.latent-stream-factory-native",
+      "ignoredLeaves": [],
+      "kind": "lib",
+      "manifest": "crates/latent-stream-factory-native/Cargo.toml",
+      "minimumCases": 1,
+      "mode": "libtest",
+      "package": "latent-stream-factory-native",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "src/lib.rs",
+      "target": "latent_stream_factory_native",
+      "timeoutSeconds": 120
     }
   ]
 }

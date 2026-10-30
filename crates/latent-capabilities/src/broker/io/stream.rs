@@ -1,8 +1,10 @@
 use super::{
-    capacity, denied, error, invalid, Charge, IoBuffer, Kind, Operation, PlatformError,
+    capacity, denied, error, invalid, Charge, IoBuffer, Kind, OperationOwner, PlatformError,
     PlatformErrorCode,
 };
-use std::sync::{Arc, Mutex};
+use super::{RunningCall, Shared};
+use std::alloc::Layout;
+use std::sync::Mutex;
 use tokio::sync::Notify;
 
 /// A terminal applies after already queued chunks have been consumed. Caller
@@ -36,12 +38,12 @@ impl IoStreamTerminal {
     }
 }
 pub(super) struct StreamLifetime {
-    operation: Arc<Operation>,
+    operation: OperationOwner,
     _metadata: Charge,
     _slot: Charge,
 }
 struct StreamState {
-    chunks: Box<[Option<IoBuffer>]>,
+    chunks: RunningCall<[Option<IoBuffer>]>,
     head: usize,
     length: usize,
     accepted_bytes: u64,
@@ -52,22 +54,29 @@ struct Stream {
     state: Mutex<StreamState>,
     readable: Notify,
     writable: Notify,
-    lifetime: Arc<StreamLifetime>,
+    lifetime: Shared<StreamLifetime>,
 }
 pub struct IoStreamWriter {
-    stream: Arc<Stream>,
+    stream: Shared<Stream>,
 }
 pub struct IoStreamReader {
-    stream: Arc<Stream>,
+    stream: Shared<Stream>,
 }
 
 pub(super) fn create(
-    op: &Arc<Operation>,
+    op: &OperationOwner,
     depth: usize,
 ) -> Result<(IoStreamWriter, IoStreamReader), PlatformError> {
     op.check()?;
     if depth == 0 || depth > op.runtime.limits.maximum_stream_chunks {
         return Err(invalid());
+    }
+    let shell_bytes = Shared::<Stream>::allocation_bytes()?
+        .checked_add(Shared::<StreamLifetime>::allocation_bytes()?)
+        .and_then(|n| n.checked_add(super::ALLOCATION_BOOKKEEPING as u64))
+        .ok_or_else(capacity)?;
+    if shell_bytes > 2048 {
+        return Err(capacity());
     }
     let slot = op.runtime.counters.acquire(Kind::Stream, 1)?;
     let metadata = depth
@@ -75,14 +84,30 @@ pub(super) fn create(
         .and_then(|n| n.checked_add(2048))
         .ok_or_else(capacity)?;
     let metadata = op.runtime.counters.acquire(Kind::Metadata, metadata)?;
+    let (stream_backing, lifetime_backing, ring_backing) = op.with_session(|session| {
+        let stream = Shared::<Stream>::reserve(&session.core.budget)?;
+        let lifetime = Shared::<StreamLifetime>::reserve(&session.core.budget)?;
+        let ring = super::reserve_allocation(
+            &session.core.budget,
+            Layout::array::<Option<IoBuffer>>(depth).map_err(|_| capacity())?,
+            false,
+        )?;
+        Ok::<_, PlatformError>((stream, lifetime, ring))
+    })?;
     // Fixed ring, with no hidden channel blocks or allocation on enqueue.
     let chunks: Vec<_> = std::iter::repeat_with(|| None).take(depth).collect();
     if chunks.capacity() != depth {
         return Err(capacity());
     }
-    let stream = Arc::new(Stream {
+    let chunks = RunningCall::from_box(chunks.into_boxed_slice(), ring_backing);
+    let lifetime = lifetime_backing.allocate(StreamLifetime {
+        operation: op.clone(),
+        _metadata: metadata,
+        _slot: slot,
+    });
+    let stream = stream_backing.allocate(Stream {
         state: Mutex::new(StreamState {
-            chunks: chunks.into_boxed_slice(),
+            chunks,
             head: 0,
             length: 0,
             accepted_bytes: 0,
@@ -91,15 +116,11 @@ pub(super) fn create(
         }),
         readable: Notify::new(),
         writable: Notify::new(),
-        lifetime: Arc::new(StreamLifetime {
-            operation: Arc::clone(op),
-            _metadata: metadata,
-            _slot: slot,
-        }),
+        lifetime,
     });
     Ok((
         IoStreamWriter {
-            stream: Arc::clone(&stream),
+            stream: stream.clone(),
         },
         IoStreamReader { stream },
     ))
@@ -157,14 +178,14 @@ impl IoStreamWriter {
     /// single affine writer preserves order; saturation cannot create workers.
     pub async fn write(&mut self, buffer: IoBuffer) -> Result<(), PlatformError> {
         let op = &self.stream.lifetime.operation;
-        if !Arc::ptr_eq(op, &buffer.operation) || buffer.stream.is_some() {
+        if !OperationOwner::ptr_eq(op, &buffer.operation) || buffer.stream.is_some() {
             return Err(denied());
         }
         if buffer.bytes().is_empty() {
             return Err(invalid());
         }
         let mut buffer = buffer.retain()?;
-        buffer.stream = Some(Arc::clone(&self.stream.lifetime));
+        buffer.stream = Some(self.stream.lifetime.clone());
         loop {
             let writable = self.stream.writable.notified();
             tokio::pin!(writable);
@@ -278,5 +299,71 @@ impl IoStreamReader {
 impl Drop for IoStreamReader {
     fn drop(&mut self) {
         self.stream.close_reader();
+    }
+}
+
+#[cfg(test)]
+mod native_tests {
+    use super::*;
+    use crate::broker::io::{
+        tests::{native_request, start},
+        IoLimits, IoRuntime, IoSnapshot,
+    };
+    use crate::broker::{tests::fixture::Fixture, CapabilityBrokerLimits};
+
+    #[tokio::test]
+    async fn native_ring_preparation_is_atomic_and_delivered_chunks_keep_lifetime() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "native-stream-ring");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let baseline = control.budget.host_memory_bytes();
+        let guards = control.budget.outstanding_reservations();
+        let depth = 4;
+        let shell = Shared::<Stream>::allocation_bytes().unwrap();
+        let lifetime = Shared::<StreamLifetime>::allocation_bytes().unwrap();
+        let ring = Layout::array::<Option<IoBuffer>>(depth).unwrap().size() as u64
+            + super::super::ALLOCATION_BOOKKEEPING as u64;
+        for needed in [shell, shell + lifetime, shell + lifetime + ring] {
+            let padding_bytes = request.budget.memory_bytes - baseline - needed + 1;
+            let padding = control.budget.reserve_host_memory(padding_bytes).unwrap();
+            let before = io.snapshot();
+            assert_eq!(
+                call.stream(depth).err().unwrap().code,
+                PlatformErrorCode::ResourceExhausted
+            );
+            assert_eq!(io.snapshot(), before);
+            assert_eq!(control.budget.host_memory_bytes(), baseline + padding_bytes);
+            assert_eq!(control.budget.outstanding_reservations(), guards + 1);
+            drop(padding);
+        }
+        let (mut writer, mut reader) = call.stream(depth).unwrap();
+        assert_eq!(
+            control.budget.host_memory_bytes(),
+            baseline + shell + lifetime + ring
+        );
+        let mut buffer = call.buffer(32, 16).unwrap();
+        buffer.spare_mut().unwrap()[..8].copy_from_slice(b"resident");
+        buffer.advance_written(8).unwrap();
+        writer.write(buffer).await.unwrap();
+        writer.finish(IoStreamTerminal::Eof);
+        let mut value = reader.read().await.unwrap().unwrap();
+        value.consume(3).unwrap();
+        assert_eq!(value.bytes(), b"ident");
+        reader.close();
+        let data = 32 + super::super::ALLOCATION_BOOKKEEPING as u64;
+        assert_eq!(
+            control.budget.host_memory_bytes(),
+            baseline + lifetime + data
+        );
+        assert_eq!(io.snapshot().streams, 1);
+        assert_eq!(io.snapshot().result_bytes, 32);
+        drop(value);
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(control.budget.outstanding_reservations(), guards);
+        let (writer, reader) = call.stream(depth).unwrap();
+        drop((writer, reader, call));
+        assert_eq!(io.snapshot(), IoSnapshot::default());
     }
 }

@@ -233,6 +233,56 @@ class PolicyRecovery(unittest.TestCase):
             self.assertTrue(error.exception.uncertain)
             self.assertEqual(self.controller.read()["pending"], operation)
 
+    def test_malformed_recovery_identity_and_noncanonical_generations_preserve_original_intent(self):
+        self.document["rules"] = [{"requireAudit": True}]
+        operation = self.controller.begin("policy", self.intent)
+        before = (self.root / "operations.json").read_bytes()
+        for field in ("revoked", "document-bool", "document-number", "unicode", "leading-zero", "overflow"):
+            response = copy.deepcopy(self.response(operation["id"]))
+            policy, receipt = response["data"]["policy"], response["data"]["receipt"]
+            if field == "revoked": policy[field] = 0
+            elif field == "document-bool": policy["document"]["rules"][0]["requireAudit"] = 1
+            elif field == "document-number": policy["document"]["formatVersion"] = 1.0
+            else:
+                receipt["generation"] = policy["generation"] = {
+                    "unicode": "\u0662", "leading-zero": "02", "overflow": str(2**64)}[field]
+            with self.assertRaises(common.DevError) as caught:
+                self.controller.recover(lambda *_: response)
+            self.assertTrue(caught.exception.uncertain)
+            self.assertEqual((self.root / "operations.json").read_bytes(), before)
+            self.assertEqual(self.controller.read()["pending"], operation)
+            self.assertFalse((self.root / "test-policy-receipts.json").exists())
+        self.controller.recover(lambda *_: self.response(operation["id"]))
+        self.assertIsNone(self.controller.read()["pending"])
+
+    def test_idempotent_policy_read_requires_exact_retained_stamp_and_document_types(self):
+        self.document["rules"] = [{"requireAudit": True}]
+        response = self.response("original")
+        original = copy.deepcopy(response["data"]["receipt"])
+        for field in ("revoked", "document-bool", "document-number", "missing-both-stamps", "numeric-both-stamps"):
+            receipt = copy.deepcopy(original)
+            policy = copy.deepcopy(response["data"]["policy"])
+            if field == "revoked": policy[field] = 0
+            elif field == "document-bool": policy["document"]["rules"][0]["requireAudit"] = 1
+            elif field == "document-number": policy["document"]["formatVersion"] = 1.0
+            elif field == "missing-both-stamps":
+                del receipt["revoked"];del policy["revoked"]
+            else: receipt["revoked"] = policy["revoked"] = 0
+            state.atomic(self.root, "test-policy-receipts.json", {"policy:test-allow": receipt})
+            before = {p.name: p.read_bytes() for p in self.root.iterdir() if p.is_file()}
+            client = Mock()
+            client.call.return_value = {**response, "data": {"policy": policy}}
+            with self.subTest(field=field), self.assertRaisesRegex(common.DevError, "test-policy-changed-no-overwrite"):
+                policy_operations.apply(self.root, client, self.controller, "test-allow", "policy", self.document)
+            self.assertEqual(client.call.call_count, 1)
+            self.assertEqual(client.call.call_args.args, ("policy", "--kind", "policy", "get", "--id", "test-allow"))
+            self.assertEqual({p.name: p.read_bytes() for p in self.root.iterdir() if p.is_file()}, before)
+        state.atomic(self.root, "test-policy-receipts.json", {"policy:test-allow": original})
+        client.call.return_value = response
+        self.assertEqual(policy_operations.apply(self.root, client, self.controller,
+                         "test-allow", "policy", self.document), "test-allow")
+        self.assertIsNone(self.controller.read()["pending"])
+
     def test_existing_unowned_or_changed_policy_is_never_applied(self):
         client = Mock()
         client.call.return_value = self.response("unowned")

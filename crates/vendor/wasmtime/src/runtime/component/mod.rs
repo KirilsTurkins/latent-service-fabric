@@ -129,6 +129,7 @@ pub use self::concurrent::{
 };
 pub use self::func::{
     ComponentNamedList, ComponentType, Func, HostOutput, Lift, Lower, TypedFunc, WasmList, WasmStr,
+    WasmStrUtf8,
 };
 pub use self::has_data::*;
 pub use self::instance::{Instance, InstancePre};
@@ -817,4 +818,4 @@ mod dynamic_memory;
 pub use dynamic_memory::DynamicValueMemory;
 
 /// Native source cohort for the maintained original-owner dynamic value extension.
-pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9";
+pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-memory-v10";

@@ -79,6 +79,57 @@ fn lazy_path_allocates_no_records_and_accepted_owners_share_finite_limits() {
 }
 
 #[test]
+fn actual_owner_refusals_name_only_the_original_bucket_without_refunding_live_owners() {
+    use crate::diagnostic::{ActivationDiagnostic, DiagnosticReason as R};
+    for (kind, reason) in [
+        (OwnerKind::Task, R::RuntimeTaskLimit),
+        (OwnerKind::ManagedIdleWorker, R::RuntimeTaskLimit),
+        (OwnerKind::Executor, R::RuntimeExecutorLimit),
+        (OwnerKind::QueuedWork, R::RuntimeQueueLimit),
+        (OwnerKind::Wait, R::RuntimeWaitLimit),
+        (OwnerKind::Timer, R::RuntimeTimerLimit),
+        (OwnerKind::Result, R::RuntimeResultLimit),
+        (OwnerKind::Native, R::RuntimeNativeOwnerLimit),
+    ] {
+        let runtime = runtime();
+        let first = runtime.register(kind, None).unwrap();
+        let second = runtime.register(kind, None).unwrap();
+        let before = runtime.snapshot();
+        let failure = runtime.register(kind, None).unwrap_err();
+        let observed = ActivationDiagnostic::from_error(&failure).unwrap();
+        assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
+        assert_eq!(observed.reason, reason);
+        assert_eq!(observed.configured_bound, Some(2));
+        assert_eq!(observed.calculated_requirement, Some(3));
+        assert_eq!(runtime.snapshot().owners, before.owners);
+        drop(first);
+        drop(second);
+        runtime.retire().unwrap();
+        assert_eq!(runtime.snapshot().owners, [0; 7]);
+    }
+}
+
+#[test]
+fn actual_native_reservation_refusal_keeps_original_budget_and_does_not_guess_other_dimensions() {
+    use crate::diagnostic::{ActivationDiagnostic, DiagnosticReason};
+    let runtime = runtime();
+    let budget = &runtime.inner.budget;
+    let before = budget.host_memory_bytes();
+    let limit = budget.granted().memory_bytes;
+    let failure = budget.reserve_host_memory(limit + 1).err().unwrap();
+    assert!(ActivationDiagnostic::from_error(&failure.to_platform_error()).is_none());
+    let observed = ActivationDiagnostic::from_error(&failure.to_host_memory_error()).unwrap();
+    assert_eq!(observed.reason, DiagnosticReason::NativeMemoryExhausted);
+    assert_eq!(observed.configured_bound, Some(limit));
+    assert!(observed.calculated_requirement.unwrap() > limit);
+    assert_eq!(budget.host_memory_bytes(), before);
+    let fuel = budget
+        .consume_cpu_fuel(budget.granted().cpu_fuel + 1)
+        .unwrap_err();
+    assert!(ActivationDiagnostic::from_error(&fuel.to_host_memory_error()).is_none());
+}
+
+#[test]
 fn continuations_require_live_original_generation_before_any_admission() {
     let foreign = runtime();
     let runtime = runtime();

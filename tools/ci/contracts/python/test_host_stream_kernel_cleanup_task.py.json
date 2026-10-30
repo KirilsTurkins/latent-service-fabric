@@ -1,153 +1,34 @@
 {
-  "cases": [
-    "CleanupTaskPrefix.test_capture_does_not_change_parent_gate_or_dispatch_existing_acpi_work",
-    "CleanupTaskPrefix.test_changed_fixture_or_source_refuses_before_parent_output_mutation",
-    "CleanupTaskPrefix.test_close_fence_precedes_task_claim_and_final_return_remains_possible",
-    "CleanupTaskPrefix.test_complete_batch_preflight_precedes_both_births_and_storage_initialization",
-    "CleanupTaskPrefix.test_failure_returns_only_never_published_task_view_and_retains_bank",
-    "CleanupTaskPrefix.test_full_affine_request_parent_task_and_actual_constructor_are_checked",
-    "CleanupTaskPrefix.test_geometry_reads_actual_extended_task_size_and_original_alignment",
-    "CleanupTaskPrefix.test_normal_kthreadd_and_original_worker_constructor_tokens_are_preserved",
-    "CleanupTaskPrefix.test_private_copy_keeps_original_architecture_copy_before_closed_stack_refusal",
-    "CleanupTaskPrefix.test_single_request_handoff_keeps_borrowed_completion_and_bank_on_interruption",
-    "CleanupTaskPrefix.test_source_origin_is_exact_and_all_execution_readiness_gates_are_false"
-  ],
-  "guards": {
-    "CleanupTaskPrefix.test_capture_does_not_change_parent_gate_or_dispatch_existing_acpi_work": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:419d1f9e38d68810dfe767411c5d760eebeb866142e530aa82b77889da577d8d",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "CleanupTaskPrefix.test_changed_fixture_or_source_refuses_before_parent_output_mutation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:419d1f9e38d68810dfe767411c5d760eebeb866142e530aa82b77889da577d8d",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "CleanupTaskPrefix.test_close_fence_precedes_task_claim_and_final_return_remains_possible": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:419d1f9e38d68810dfe767411c5d760eebeb866142e530aa82b77889da577d8d",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "CleanupTaskPrefix.test_complete_batch_preflight_precedes_both_births_and_storage_initialization": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:419d1f9e38d68810dfe767411c5d760eebeb866142e530aa82b77889da577d8d",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "CleanupTaskPrefix.test_failure_returns_only_never_published_task_view_and_retains_bank": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:419d1f9e38d68810dfe767411c5d760eebeb866142e530aa82b77889da577d8d",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "CleanupTaskPrefix.test_full_affine_request_parent_task_and_actual_constructor_are_checked": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:419d1f9e38d68810dfe767411c5d760eebeb866142e530aa82b77889da577d8d",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "CleanupTaskPrefix.test_geometry_reads_actual_extended_task_size_and_original_alignment": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:419d1f9e38d68810dfe767411c5d760eebeb866142e530aa82b77889da577d8d",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "CleanupTaskPrefix.test_normal_kthreadd_and_original_worker_constructor_tokens_are_preserved": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:419d1f9e38d68810dfe767411c5d760eebeb866142e530aa82b77889da577d8d",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "CleanupTaskPrefix.test_private_copy_keeps_original_architecture_copy_before_closed_stack_refusal": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:419d1f9e38d68810dfe767411c5d760eebeb866142e530aa82b77889da577d8d",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "CleanupTaskPrefix.test_single_request_handoff_keeps_borrowed_completion_and_bank_on_interruption": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:419d1f9e38d68810dfe767411c5d760eebeb866142e530aa82b77889da577d8d",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    },
-    "CleanupTaskPrefix.test_source_origin_is_exact_and_all_execution_readiness_gates_are_false": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:419d1f9e38d68810dfe767411c5d760eebeb866142e530aa82b77889da577d8d",
-        "class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"
-      ],
-      "skipSites": []
-    }
+  "cases":["CleanupTaskPrefix.test_capture_does_not_change_parent_gate_or_dispatch_existing_acpi_work","CleanupTaskPrefix.test_changed_fixture_or_source_refuses_before_parent_output_mutation","CleanupTaskPrefix.test_close_fence_precedes_task_claim_and_final_return_remains_possible","CleanupTaskPrefix.test_complete_batch_preflight_precedes_both_births_and_storage_initialization","CleanupTaskPrefix.test_failure_returns_only_never_published_task_view_and_retains_bank","CleanupTaskPrefix.test_full_affine_request_parent_task_and_actual_constructor_are_checked","CleanupTaskPrefix.test_geometry_reads_actual_extended_task_size_and_original_alignment","CleanupTaskPrefix.test_normal_kthreadd_and_original_worker_constructor_tokens_are_preserved","CleanupTaskPrefix.test_private_copy_keeps_original_architecture_copy_before_closed_stack_refusal","CleanupTaskPrefix.test_single_request_handoff_keeps_borrowed_completion_and_bank_on_interruption","CleanupTaskPrefix.test_source_origin_is_exact_and_all_execution_readiness_gates_are_false"],
+  "guards":{
+    "CleanupTaskPrefix.test_capture_does_not_change_parent_gate_or_dispatch_existing_acpi_work":
+      "f5e3c78ba0cd93d827d2ed7fefb89a1a019f45f3b50701e27fcbe5fba668c0e2",
+    "CleanupTaskPrefix.test_changed_fixture_or_source_refuses_before_parent_output_mutation":
+      "f5e3c78ba0cd93d827d2ed7fefb89a1a019f45f3b50701e27fcbe5fba668c0e2",
+    "CleanupTaskPrefix.test_close_fence_precedes_task_claim_and_final_return_remains_possible":
+      "f5e3c78ba0cd93d827d2ed7fefb89a1a019f45f3b50701e27fcbe5fba668c0e2",
+    "CleanupTaskPrefix.test_complete_batch_preflight_precedes_both_births_and_storage_initialization":
+      "f5e3c78ba0cd93d827d2ed7fefb89a1a019f45f3b50701e27fcbe5fba668c0e2",
+    "CleanupTaskPrefix.test_failure_returns_only_never_published_task_view_and_retains_bank":
+      "f5e3c78ba0cd93d827d2ed7fefb89a1a019f45f3b50701e27fcbe5fba668c0e2",
+    "CleanupTaskPrefix.test_full_affine_request_parent_task_and_actual_constructor_are_checked":
+      "f5e3c78ba0cd93d827d2ed7fefb89a1a019f45f3b50701e27fcbe5fba668c0e2",
+    "CleanupTaskPrefix.test_geometry_reads_actual_extended_task_size_and_original_alignment":
+      "f5e3c78ba0cd93d827d2ed7fefb89a1a019f45f3b50701e27fcbe5fba668c0e2",
+    "CleanupTaskPrefix.test_normal_kthreadd_and_original_worker_constructor_tokens_are_preserved":
+      "f5e3c78ba0cd93d827d2ed7fefb89a1a019f45f3b50701e27fcbe5fba668c0e2",
+    "CleanupTaskPrefix.test_private_copy_keeps_original_architecture_copy_before_closed_stack_refusal":
+      "f5e3c78ba0cd93d827d2ed7fefb89a1a019f45f3b50701e27fcbe5fba668c0e2",
+    "CleanupTaskPrefix.test_single_request_handoff_keeps_borrowed_completion_and_bank_on_interruption":
+      "f5e3c78ba0cd93d827d2ed7fefb89a1a019f45f3b50701e27fcbe5fba668c0e2",
+    "CleanupTaskPrefix.test_source_origin_is_exact_and_all_execution_readiness_gates_are_false":
+      "f5e3c78ba0cd93d827d2ed7fefb89a1a019f45f3b50701e27fcbe5fba668c0e2"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_cleanup_task.py",
-  "reviewReason": "Reviewed source-only private cleanup task and guarded stack constructor plus one four-TU object recipe; old lanes and limits unchanged; measurements compile-only and runtime installation gates stay false.",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_cleanup_task.py",
+  "reviewReason":"Reviewed source-only private cleanup task and guarded stack constructor plus one four-TU object recipe; old lanes and limits unchanged; measurements compile-only and runtime installation gates stay false.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "f5e3c78ba0cd93d827d2ed7fefb89a1a019f45f3b50701e27fcbe5fba668c0e2":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:419d1f9e38d68810dfe767411c5d760eebeb866142e530aa82b77889da577d8d","class:setup-sha256:4bb25f05feb5643f2fc94f44c2def00e5cf4beb85292f160546c45010063c99f"],"skipSites":[]}
+  }
 }

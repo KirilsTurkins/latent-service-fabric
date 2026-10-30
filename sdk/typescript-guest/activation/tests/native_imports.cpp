@@ -3,10 +3,14 @@
 // fixture does not qualify a real LSF host or signed Component Model guest.
 #include "../native_timers.h"
 #include "../native_imports.h"
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+#include "../native_import_partial.h"
+#endif
 #include "../promise_accounting.h"
 #include "../promise_hooks.h"
 #include "../reaction_records.h"
 #include "js/CompilationAndEvaluation.h"
+#include "js/CallAndConstruct.h"
 #include "js/Conversions.h"
 #include "js/GCAPI.h"
 #include "js/Initialization.h"
@@ -16,10 +20,42 @@
 #include <array>
 #include <cstdio>
 #include <cstring>
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+// Owning recipe supplies the exact pinned pre-feature header, unmodified.
+#define Imports BorrowBaselineImports
+#include "borrow-baseline-native-imports.h"
+#undef Imports
+namespace lsf::typescript::activation {
+struct ImportBorrowControls {
+  static const void* record(Imports& imports,uint32_t id) {return imports.find(id);}
+  static Token recordOwner(Imports& imports,uint32_t id) {return imports.find(id)->record_owner.token;}
+  static size_t recordBytes() {return sizeof(Imports::Record);}
+#ifdef LSF_TYPESCRIPT_OWNED_RESULT_CONTROLS
+  static size_t baselineRecordBytes() {return sizeof(BorrowBaselineImports::Record);}
+  static size_t recordAlignment() {return alignof(Imports::Record);}
+  static size_t baselineRecordAlignment() {return alignof(BorrowBaselineImports::Record);}
+#endif
+  static ImportBorrowObserver* observer(JSContext* cx,Imports& imports,uint32_t id) {
+    auto* item=imports.find(id);if(!item)return nullptr;
+    std::unique_ptr<ImportBorrowObserver>* link=nullptr;
+    return imports.observerLink(cx,id,item->record_owner.token,link)?link->get():nullptr;
+  }
+  static bool refuseCycle(JSContext* cx,Imports& imports,uint32_t id) {
+    auto* item=observer(cx,imports,id);
+    if(!item || imports.observer_count_!=1 || item->following)return false;
+    item->following.reset(item); // deliberate fixture-only invariant corruption
+    std::unique_ptr<ImportBorrowObserver>* ignored=nullptr;
+    const bool refused=!imports.observerLink(cx,0,Token{},ignored);
+    (void)item->following.release(); // restore unique ownership before teardown
+    return refused;
+  }
+};
+}
+#endif
 
 using namespace lsf::typescript::activation;
 namespace {
-struct Owner { bool live = false; uint8_t kind = 0; bool parked = false; };
+struct Owner { bool live = false; uint8_t kind = 0; bool parked = false; bool managed_promise = false; };
 struct Timer { bool live = false; uint64_t period = 0; };
 struct Wait {
   bool live = false, joined = false, cancel_requested = false;
@@ -39,12 +75,51 @@ bool closed = false, effects = true, set_live = false, immediate_return = false;
 bool compiler_phase = false;
 bool block_import = false;
 unsigned imported_starts = 0, imported_lifts = 0;
+unsigned imported_finishes = 0, imported_disposals = 0;
 bool defer_cancel = false, refuse_stop = false, refuse_native_ack = false, refuse_task_ack = false;
 unsigned starts = 0, stops = 0, drops = 0, set_drops = 0, waits_entered = 0;
 unsigned callback_entries = 0, native_admissions = 0, native_acknowledgements = 0;
 unsigned host_calls = 0;
+unsigned cancel_requests = 0;
 bool host_in_gc = false, in_gc = false;
 uint64_t observed_period = 0;
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+bool admitting_promise=false,expected_quarantine=false,capturing_observer_owner=false;
+std::array<bool,256> expected_retained{};
+uint64_t refuse_owner=0,record_owner_id=0,result_owner_id=0,lowering_owner_id=0,observer_owner_id=0;
+unsigned exact_refusals=0;
+const void* record_address=nullptr;
+const void* observer_address=nullptr;
+bool record_destroyed=false,observer_destroyed=false,drop_order_valid=true;
+void note_deleted(void* pointer) {
+  if(pointer && pointer==record_address)record_destroyed=true;
+  if(pointer && pointer==observer_address)observer_destroyed=true;
+}
+void note_settle(uint64_t id) {
+  if(id && (id==record_owner_id || id==result_owner_id || id==lowering_owner_id))
+    drop_order_valid=drop_order_valid && record_destroyed;
+  if(id && id==observer_owner_id)
+    drop_order_valid=drop_order_valid && record_destroyed && observer_destroyed;
+}
+#endif
+
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+const void* partial_node_address=nullptr;
+const void* partial_record_address=nullptr;
+uint64_t partial_node_owner=0,partial_record_owner=0;
+bool partial_node_deleted=false,partial_record_deleted=false,partial_physical_order=true;
+PartialOwnLifts* partial_ack_instance=nullptr;
+JSContext* partial_ack_context=nullptr;
+bool partial_ack_reenter=false,partial_ack_observed=false;
+void partial_note_deleted(void* pointer) {
+  if(pointer==partial_node_address)partial_node_deleted=true;
+  if(pointer==partial_record_address)partial_record_deleted=true;
+}
+void partial_note_settle(uint64_t id) {
+  if(id==partial_record_owner)partial_physical_order=partial_physical_order&&partial_record_deleted;
+  if(id==partial_node_owner)partial_physical_order=partial_physical_order&&partial_record_deleted&&partial_node_deleted;
+}
+#endif
 
 bool valid(const latent_runtime_activation_token_t* token) {
   return token && token->generation == 1 && token->id < next_owner && owners[token->id].live;
@@ -84,6 +159,22 @@ void ready(jobs_event_t* event) {
 }
 }
 
+#if defined(LSF_TYPESCRIPT_BORROW_CONTROLS) || defined(LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS)
+// Linker-only observation AFTER all members, including persistent roots, have
+// destructed. Forward to the real selected allocator; never substitute free.
+// The diagnostic compiles with -fno-sized-deallocation and --wrap=_ZdlPv.
+extern "C" void __real__ZdlPv(void*) noexcept;
+extern "C" void __wrap__ZdlPv(void* pointer) noexcept {
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+  note_deleted(pointer);
+#endif
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+  partial_note_deleted(pointer);
+#endif
+  __real__ZdlPv(pointer);
+}
+#endif
+
 extern "C" {
 bool latent_runtime_activation_register(latent_runtime_activation_owner_kind_t kind,
     latent_runtime_activation_token_t* parent, latent_runtime_activation_token_t* output,
@@ -95,6 +186,14 @@ bool latent_runtime_activation_register(latent_runtime_activation_owner_kind_t k
     return failed(error, LATENT_RUNTIME_ACTIVATION_ERROR_RESOURCE_EXHAUSTED);
   const auto id = next_owner++;
   owners[id] = {true, kind, false}; ++counts[kind];
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+  owners[id].managed_promise=admitting_promise;
+  if(capturing_observer_owner && !admitting_promise && kind==LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE) {
+    if(observer_owner_id)__builtin_trap();
+    observer_owner_id=id;
+    expected_retained[id]=true; // exact admitted node token, before Promise admission can fail
+  }
+#endif
   if (kind == LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE) ++native_admissions;
   *output = {1, id}; return true;
 }
@@ -114,6 +213,24 @@ bool latent_runtime_activation_settle(latent_runtime_activation_token_t* owner,
                                      latent_runtime_activation_error_t* error) {
   note_host();
   if (!valid(owner)) return failed(error, LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_TOKEN);
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+  note_settle(owner->id);
+  if(owner->id==refuse_owner) {
+    ++exact_refusals;
+    return failed(error,LATENT_RUNTIME_ACTIVATION_ERROR_UNAVAILABLE);
+  }
+#endif
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+  partial_note_settle(owner->id);
+  if(partial_ack_reenter && owner->id==partial_node_owner) {
+    partial_ack_reenter=false;partial_ack_observed=true;
+    if(!partial_ack_instance || !partial_ack_context || partial_ack_instance->collect(partial_ack_context))
+      __builtin_trap();
+    // Real original payer refuses ACK after nested collection is refused.
+    // No source counter/ticket is reset or fabricated as complete.
+    return failed(error,LATENT_RUNTIME_ACTIVATION_ERROR_UNAVAILABLE);
+  }
+#endif
   auto& actual = owners[owner->id];
   if ((actual.kind == LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE && refuse_native_ack) ||
       (actual.kind == LATENT_RUNTIME_ACTIVATION_OWNER_KIND_TASK && refuse_task_ack))
@@ -161,6 +278,7 @@ bool latent_runtime_activation_timer_stop(latent_runtime_activation_token_t* tim
 }
 jobs_subtask_status_t jobs_subtask_cancel(jobs_subtask_t handle) {
   note_host();
+  ++cancel_requests;
   if (!handle || handle >= next_wait || !waits[handle].live) return 15;
   auto& wait = waits[handle]; wait.cancel_requested = true;
   if (wait.state != JOBS_SUBTASK_RETURNED && !defer_cancel)
@@ -210,11 +328,14 @@ static PromiseRecords* promise_records;
 static ReactionRecords* reaction_records;
 static Timers* timer_runtime;
 static Imports* import_runtime;
+// Scalar-only fixture: no canonical resource handle is produced or dropped.
+static bool scalar_disposer(uint32_t) { ++imported_disposals; return true; }
 static bool imported_global(JSContext* cx,unsigned argc,JS::Value* vp) {
   auto args=JS::CallArgsFromVp(argc,vp);uint32_t id=0;
   if(!import_runtime->reserve(cx,4,0,ImportRawResult::I32,JS::HandleValueArray::empty(),id))return false;
   auto* result=static_cast<uint32_t*>(import_runtime->resultBuffer(id));
-  if(!result || !import_runtime->beginLowering(cx,id))return false;
+  if(!result || !import_runtime->setDisposer(cx,id,scalar_disposer,4) ||
+     !import_runtime->beginLowering(cx,id))return false;
   const auto wait_id=next_wait++;
   if(wait_id>=waits.size())return false;
   waits[wait_id]={true,false,false,JOBS_SUBTASK_STARTED,0,nullptr,result};
@@ -229,7 +350,28 @@ static bool lift_imported(JSContext* cx,unsigned argc,JS::Value* vp) {
   const auto id=static_cast<uint32_t>(args[0].toInt32());
   if(!import_runtime->liftValue(cx,id,args.rval()))return false;
   ++imported_lifts;
-  return import_runtime->liftCompleted(cx,id);
+  return import_runtime->delivered(cx,id) && import_runtime->liftCompleted(cx,id);
+}
+// Fixture-only entry for the real manager's retired-finally no-op. Snapshot
+// every diagnostic owner/drop/ACK counter around EACH actual native call.
+static bool finish_imported(JSContext* cx,unsigned argc,JS::Value* vp) {
+  auto args=JS::CallArgsFromVp(argc,vp);
+  if(argc!=1 || !args[0].isInt32())return false;
+  const auto id=static_cast<uint32_t>(args[0].toInt32());
+  const auto owners_before=counts;
+  const auto drops_before=drops,acks_before=native_acknowledgements;
+  const auto disposals_before=imported_disposals;
+  const auto admissions_before=native_admissions,calls_before=host_calls;
+  const auto pending_before=import_runtime->hasPending();
+  if(!import_runtime->liftCompleted(cx,id))return false;
+  if(counts!=owners_before || drops!=drops_before || imported_disposals!=disposals_before ||
+     native_acknowledgements!=acks_before ||
+     native_admissions!=admissions_before || host_calls!=calls_before ||
+     import_runtime->hasPending()!=pending_before) {
+    JS_ReportErrorASCII(cx,"diagnostic-retired-finish-changed-native-ownership");return false;
+  }
+  ++imported_finishes;
+  args.rval().setUndefined();return true;
 }
 static bool release_imported(JSContext*,unsigned argc,JS::Value* vp) {
   auto args=JS::CallArgsFromVp(argc,vp);block_import=false;args.rval().setUndefined();return true;
@@ -247,8 +389,15 @@ static bool shared_drain(JSContext* cx,JobQueue& queue,Timers& timers,Imports& i
   return false;
 }
 static bool before_promise(JSContext* cx, void** output) {
-  return promise_records->checkpoint(cx) && reaction_records->checkpoint(cx) &&
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+  const bool previous=admitting_promise;admitting_promise=true;
+#endif
+  const bool accepted=promise_records->checkpoint(cx) && reaction_records->checkpoint(cx) &&
          promise_records->beforeAllocate(cx, output);
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+  admitting_promise=previous;
+#endif
+  return accepted;
 }
 static bool before_reaction(JSContext* cx, void** output) {
   return promise_records->checkpoint(cx) && reaction_records->checkpoint(cx) &&
@@ -321,7 +470,406 @@ static bool drain(JSContext* cx, JobQueue& queue, Timers& timers) {
 }
 static void collect(JSContext* cx) { in_gc = true; JS_GC(cx); in_gc = false; }
 
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+static bool borrow_refusal(JSContext* cx,BrokerAccounting& jobs,BrokerPromiseAccounting& native,
+                           ReadinessSet& readiness,const char* selected) {
+  const bool promise_denied=!std::strcmp(selected,"borrow-refusal-observer-Promise-admission");
+  const bool cycle=!std::strcmp(selected,"borrow-refusal-bounded-cycle");
+  const bool work=!std::strcmp(selected,"borrow-refusal-original-work-ack");
+  Token root;
+  if(!jobs.currentContinuation(root))return false;
+  bool passed=false;
+  {
+    // This manager is physically destroyed before JSContext destruction, while
+    // the exact refused broker tokens remain paid. No fake refund/reset follows.
+    Imports held(jobs,native,readiness);
+    uint32_t id=0;JS::RootedObject handle(cx),original(cx),released(cx);
+    const auto first=next_owner;
+    if(!held.reserve(cx,4,4,ImportRawResult::I32,JS::HandleValueArray::empty(),id))return false;
+    record_address=ImportBorrowControls::record(held,id);
+    record_owner_id=ImportBorrowControls::recordOwner(held,id).id;
+    uint64_t work_owner=0,queued_owner=0;
+    for(uint64_t owner=first;owner<next_owner;++owner) {
+      if(owners[owner].managed_promise)continue;
+      if(owners[owner].kind==LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT) {
+        if(result_owner_id)return false;
+        result_owner_id=owner;
+      }
+      if(owners[owner].kind==LATENT_RUNTIME_ACTIVATION_OWNER_KIND_TASK) {
+        if(work_owner)return false;
+        work_owner=owner;
+      }
+      if(owners[owner].kind==LATENT_RUNTIME_ACTIVATION_OWNER_KIND_QUEUED_WORK) {
+        if(queued_owner)return false;
+        queued_owner=owner;
+      }
+      if(owners[owner].kind==LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE &&
+         owner!=record_owner_id) {
+        if(lowering_owner_id)return false;
+        lowering_owner_id=owner;
+      }
+    }
+    if(!record_owner_id || !result_owner_id || !lowering_owner_id || !work_owner || !queued_owner)return false;
+    const bool result_ack=!std::strcmp(selected,"borrow-refusal-original-result-ack");
+    const bool native_ack=!std::strcmp(selected,"borrow-refusal-original-native-ack");
+    const bool record_ack=!std::strcmp(selected,"borrow-refusal-original-record-ack");
+    const bool observer_ack=!std::strcmp(selected,"borrow-refusal-observer-owner-ack");
+    if(!(promise_denied || cycle || work || result_ack || native_ack || record_ack || observer_ack))return false;
+    // Derive expectations from known original tokens and the unchanged release
+    // sequence BEFORE inducing refusal. Never bless the observed post-failure
+    // state: both premature refunds and unexpected retained owners must fail.
+    expected_retained.fill(false);
+    if(work)expected_retained[work_owner]=true;
+    if(promise_denied || cycle || work || result_ack)expected_retained[result_owner_id]=true;
+    if(promise_denied || cycle || work || result_ack || native_ack)expected_retained[lowering_owner_id]=true;
+    if(!observer_ack)expected_retained[record_owner_id]=true;
+    // The exact accepted queued token must retire on started()/park or on the
+    // original Reserved-import finally, including either pre-dispatch refusal.
+    expected_retained[queued_owner]=false;
+    const auto admitted=native_admissions;
+    if(promise_denied)limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=
+      counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]+1; // node fits; Promise does not
+    // Capture the exact observer owner as the fixture broker admits it, before
+    // watchBorrow allocates the node/root or attempts the managed Promise.
+    capturing_observer_owner=true;
+    const bool watched=held.watchBorrow(cx,id,&handle);
+    capturing_observer_owner=false;
+    limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=8;
+    auto* observer=ImportBorrowControls::observer(cx,held,id);
+    if(!observer || !observer_owner_id || observer->allocation_owner.token.id!=observer_owner_id)return false;
+    observer_address=observer;
+    if(promise_denied) {
+      if(watched || handle || !JS_IsExceptionPending(cx) || native_admissions!=admitted+1 ||
+         !observer->quarantined || observer->handle)return false;
+      // The generated finally still runs. Quarantine prevents a partial
+      // observer/Promise admission failure from becoming a release proof.
+      if(held.liftCompleted(cx,id))return false;
+    } else {
+      if(!watched || !held.observeBorrow(cx,handle,false,&released))return false;
+      if(cycle) {
+        if(!ImportBorrowControls::refuseCycle(cx,held,id) || !JS_IsExceptionPending(cx) ||
+           held.liftCompleted(cx,id))return false;
+      } else {
+        auto* result=static_cast<uint32_t*>(held.resultBuffer(id));
+        if(!result || !held.parameterBuffer(id) || !held.setDisposer(cx,id,scalar_disposer,4) ||
+           !held.beginLowering(cx,id))return false;
+        const auto wait_id=next_wait++;
+        if(wait_id>=waits.size())return false;
+        waits[wait_id]={true,false,false,JOBS_SUBTASK_STARTED,0,nullptr,result};
+        ++counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT];
+        if(!held.started(cx,id,(wait_id<<4)|JOBS_SUBTASK_STARTED,&original))return false;
+        if(work)refuse_owner=work_owner;
+        else if(result_ack)refuse_owner=result_owner_id;
+        else if(native_ack)refuse_owner=lowering_owner_id;
+        else if(record_ack)refuse_owner=record_owner_id;
+        else if(observer_ack)refuse_owner=observer_owner_id;
+        else return false;
+        if(held.observeBorrow(cx,handle,true,&released) || !JS_IsExceptionPending(cx) ||
+           JS::GetPromiseState(original)!=JS::PromiseState::Rejected || exact_refusals!=1 ||
+           !owners[refuse_owner].live || drops!=1 || cancel_requests!=1)return false;
+        if(work && record_destroyed)return false;
+        if(!work && !record_destroyed)return false;
+        if((refuse_owner==observer_owner_id)!=observer_destroyed)return false;
+      }
+      if(JS::GetPromiseState(released)!=JS::PromiseState::Pending)return false;
+    }
+    const auto calls=host_calls;
+    JS_ClearPendingException(cx);
+    if(held.turn(cx) || !JS_IsExceptionPending(cx) || host_calls!=calls || !held.hasPending())return false;
+    JS_ClearPendingException(cx);
+    refuse_owner=0;
+    if(!readiness.retire(cx))return false;
+    for(uint64_t owner=1;owner<next_owner;++owner)
+      if((owners[owner].live && !owners[owner].managed_promise && owner!=root.id)!=expected_retained[owner])return false;
+    expected_quarantine=true;
+    passed=drop_order_valid;
+  }
+  // The original record and observer have now actually destructed. They still
+  // cannot refund any of the failed/unknown ownership captured above.
+  for(uint64_t owner=1;owner<next_owner;++owner)
+    if((owners[owner].live && !owners[owner].managed_promise && owner!=root.id)!=expected_retained[owner])passed=false;
+  return passed && record_destroyed && observer_destroyed;
+}
+#endif
+
+
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+namespace lsf::typescript::activation {
+struct PartialOwnLiftControls {
+  static const void* node(PartialOwnLifts& p,uint32_t id) {return p.find(id);}
+  static Token owner(PartialOwnLifts& p,uint32_t id) {return p.find(id)->owner.token;}
+  static const void* record(PartialOwnLifts& p,uint32_t id) {return p.imports_.find(id);}
+  static Token recordOwner(PartialOwnLifts& p,uint32_t id) {return p.imports_.find(id)->record_owner.token;}
+  static Token failedOwner(PartialOwnLifts& p) {return p.failed_owner_.token;}
+  static size_t nodeBytes() {return sizeof(PartialOwnLifts::Lift);}
+  static size_t planBytes() {return sizeof(PartialOwnLifts::Plan);}
+  static size_t slotBytes() {return sizeof(PartialOwnLifts::Slot);}
+  static bool inFlight(PartialOwnLifts& p,uint32_t id) {return p.find(id)->attaching!=0;}
+};
+}
+namespace {
+bool partial_initializing=true,partial_refuse_drop=false;
+uint32_t* partial_frame=nullptr;
+uint32_t partial_next_handle=42;
+std::array<bool,256> partial_handles{};
+std::array<uint32_t,256> partial_handle_identity{};
+std::array<uint32_t,5> partial_dropped{};
+unsigned partial_drop_count=0;
+bool partial_init(JSContext*) {return partial_initializing;}
+uint64_t partial_getter(uint32_t slot) {return slot<2 ? (uint64_t(slot*4)<<32)|3 : UINT64_MAX;}
+bool partial_drop_frame(uint32_t address,uint32_t low,uint32_t high) {
+  if(!partial_frame || address!=static_cast<uint32_t>(reinterpret_cast<uintptr_t>(partial_frame)) ||
+      high || (low&~3u))return false;
+  for(unsigned index=0;index<2;++index)if(!(low&(1u<<index))) {
+    if(partial_drop_count>=partial_dropped.size())return false;
+    const auto handle=partial_frame[index];
+    const auto slot=handle&0x7fffffffu;
+    if(slot>=partial_handles.size() || !partial_handles[slot] || partial_handle_identity[slot]!=handle)return false;
+    partial_handles[slot]=false;partial_dropped[partial_drop_count++]=handle;
+    if(partial_refuse_drop)return false; // Ambiguous destructor consumed handle first.
+  }
+  return true;
+}
+bool partial_drop_all(uint32_t address) {return partial_drop_frame(address,0,0);}
+
+bool partial_dispose(JSContext* cx,unsigned argc,JS::Value* vp) {
+  auto args=JS::CallArgsFromVp(argc,vp);
+  if(argc!=1 || !args[0].isInt32())return false;
+  const auto handle=static_cast<uint32_t>(args[0].toInt32());
+  const auto slot=handle&0x7fffffffu;
+  if(slot>=partial_handles.size() || !partial_handles[slot] || partial_handle_identity[slot]!=handle || partial_drop_count>=partial_dropped.size()) {
+    JS_ReportErrorASCII(cx,"fixture-double-drop");return false;
+  }
+  partial_handles[slot]=false;partial_dropped[partial_drop_count++]=handle;
+  args.rval().setUndefined();return true;
+}
+bool partial_explicit_dispose(JSContext* cx,JS::HandleObject wrapper) {
+  JS::RootedValue key(cx),function(cx),receiver(cx,JS::ObjectValue(*wrapper)),ignored(cx);
+  if(!evaluate(cx,"symbolDispose",&key) || !key.isSymbol())return false;
+  JS::RootedId id(cx,JS::PropertyKey::Symbol(key.toSymbol()));
+  return JS_GetPropertyById(cx,wrapper,id,&function) &&
+    JS::Call(cx,receiver,function,JS::HandleValueArray::empty(),&ignored);
+}
+
+// These are fixture canonical-drop doubles; the real emitted Wasm getter/drop
+// is covered separately by compiler controls, not claimed from this C function.
+bool partial_bind(JSContext* cx,PartialOwnLifts& partial,JS::HandleObject prototype,JS::HandleId symbol) {
+  return partial.begin(cx,2,1,2) && partial.bind(cx,12,8,2,0,0,3,prototype,symbol) &&
+    partial.bind(cx,12,8,2,1,4,3,prototype,symbol) && partial.seal(cx);
+}
+bool partial_call(JSContext* cx,Imports& imports,PartialOwnLifts& partial,uint32_t& id,
+                  JS::MutableHandleObject promise) {
+  if(!imports.reserve(cx,8,0,ImportRawResult::Pointer,JS::HandleValueArray::empty(),id) ||
+      !imports.setDisposer(cx,id,partial_drop_all,8) ||
+      !partial.prepare(cx,id,12,partial_getter,partial_drop_frame,2))return false;
+  partial_node_address=PartialOwnLiftControls::node(partial,id);
+  partial_record_address=PartialOwnLiftControls::record(partial,id);
+  partial_node_owner=PartialOwnLiftControls::owner(partial,id).id;
+  partial_record_owner=PartialOwnLiftControls::recordOwner(partial,id).id;
+  partial_node_deleted=partial_record_deleted=false;
+  partial_frame=static_cast<uint32_t*>(imports.resultBuffer(id));
+  if(!partial_frame)return false; // Reserved-only API; never write a null Wasm address.
+  partial_frame[0]=partial_next_handle++;partial_frame[1]=partial_next_handle++;
+  if(partial_frame[0]==42)partial_frame[0]|=0x80000000u;
+  for(unsigned index=0;index<2;++index) {
+    const auto slot=partial_frame[index]&0x7fffffffu;
+    partial_handles[slot]=true;partial_handle_identity[slot]=partial_frame[index];
+  }
+  if(!imports.beginLowering(cx,id) ||
+      !imports.started(cx,id,JOBS_SUBTASK_RETURNED,promise) || !imports.turn(cx))return false;
+  JS::RootedValue raw(cx);
+  return imports.liftValue(cx,id,&raw);
+}
+}
+static int partial_main(int argc,char** argv) {
+  if(argc!=2)return 2;
+  const char* name=argv[1];
+  const bool positive=!std::strcmp(name,"partial-own-transfer-reuse-and-ACK-refusal");
+  const bool refusal=!std::strcmp(name,"partial-own-original-native-refusal");
+  const bool uncertain=!std::strcmp(name,"partial-own-foreign-stale-duplicate-and-cancel");
+  const bool destructor=!std::strcmp(name,"partial-own-destructor-refusal-never-replays");
+  if(!(positive||refusal||uncertain||destructor))return 2;
+  JS::Prefs::set_use_js_microtask_queue(false);
+  if(!JS_Init())return 3;
+  JSContext* cx=JS_NewContext(32*1024*1024);if(!cx)return 4;
+  // Failure-only, fixed numeric fixture stages. No exception conversion, JS
+  // call, GC, payload/handle, raw pointer or stack inspection is performed.
+  auto failed = [&](unsigned stage) {
+    if (positive) std::fprintf(stderr,
+      "LSFPARTIALFAIL1 stage=%u counts=%u,%u,%u,%u,%u,%u,%u,%u jsPending=%u drops=%u admissions=%u acks=%u flags=%u\n",
+      stage,counts[0],counts[1],counts[2],counts[3],counts[4],counts[5],counts[6],counts[7],
+      unsigned(JS_IsExceptionPending(cx)),partial_drop_count,native_admissions,native_acknowledgements,
+      unsigned(partial_ack_observed) | unsigned(partial_node_deleted)<<1 |
+        unsigned(partial_record_deleted)<<2 | unsigned(partial_physical_order)<<3);
+    return 10;
+  };
+  int result=1;unsigned retained=0;
+  // Sweep/finalize hook owners outlive JS_DestroyContext, as in the original
+  // diagnostic. Only the per-manager persistent plan roots die before it.
+  BrokerAccounting jobs(allowed,snapshot_allowed);
+  BrokerPromiseAccounting native(phase,jobs);
+  PromiseRecords promises(native);ReactionRecords reactions(native,jobs);
+  ReadinessSet readiness(native);JobQueue queue(jobs,transfer);
+  promise_records=&promises;reaction_records=&reactions;job_broker=&jobs;
+  {
+    if(!js::UseInternalJobQueues(cx)||!JS::InitSelfHostedCode(cx))return 5;
+    JS::SetJobQueue(cx,&queue);
+    static const JSClass global_class={"LSFPartialOwnControls",JSCLASS_GLOBAL_FLAGS,&JS::DefaultGlobalClassOps};
+    JS::RealmOptions options;
+    JS::RootedObject global(cx,JS_NewGlobalObject(cx,&global_class,nullptr,JS::FireOnNewGlobalHook,options));
+    if(!global)return 6;
+    JSAutoRealm realm(cx,global);
+    if(!JS::InitRealmStandardClasses(cx))return 7;
+    static const JS::ActivationPromiseHooks hooks{
+      before_promise,PromiseRecords::allocationFailed,PromiseRecords::created,settled_promise,
+      before_reaction,ReactionRecords::allocationFailed,ReactionRecords::created,reaction_record,
+      before_reaction,ReactionRecords::allocationFailed,ReactionRecords::created,reaction_record};
+    if(!JS_AddWeakPointerZonesCallback(cx,weak_sweep,nullptr)||
+        !JS_AddFinalizeCallback(cx,collection_end,nullptr)||!JS::SetActivationPromiseHooks(cx,&hooks))return 8;
+    JS::RootedValue value(cx),symbol_value(cx);JS::RootedObject prototype(cx),promise(cx),first(cx);
+    // A real native object/symbol/prototype, kept in this original Store.
+    if(!JS_DefineFunction(cx,global,"partialDispose",partial_dispose,1,0))return 9;
+    if(!evaluate(cx,"const symbolRscHandle=Symbol('handle');const symbolDispose=Symbol.dispose || Symbol.for('dispose');"
+        "class ExplicitOwner {constructor(){throw new Error('not called')}"
+        "[symbolDispose](){const h=this[symbolRscHandle];if(h===undefined)return;"
+        "this[symbolRscHandle]=undefined;partialDispose(h);}};ExplicitOwner.prototype;",&value) ||
+        !value.isObject())return 9;
+    prototype=&value.toObject();
+    if(!evaluate(cx,"symbolRscHandle",&symbol_value) || !symbol_value.isSymbol())return 9;
+    JS::RootedId symbol(cx,JS::PropertyKey::Symbol(symbol_value.toSymbol()));
+    if(!jobs.beginRoot(cx))return 9;
+    {
+      Imports imports(jobs,native,readiness);
+      const auto before_zero=native_admissions;
+      {
+        PartialOwnLifts zero(imports,partial_init);
+        if(!zero.begin(cx,2,0,0) || !zero.seal(cx) || zero.hasPending() || native_admissions!=before_zero)return failed(1);
+      }
+      PartialOwnLifts partial(imports,partial_init);
+      if(!partial_bind(cx,partial,prototype,symbol))return failed(2);
+      partial_initializing=false;
+      uint32_t id=0;
+      if(refusal) {
+        if(!imports.reserve(cx,8,0,ImportRawResult::Pointer,JS::HandleValueArray::empty(),id) ||
+            !imports.setDisposer(cx,id,partial_drop_all,8))return failed(3);
+        const auto admitted=native_admissions;
+        limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE];
+        const bool denied=!partial.prepare(cx,id,12,partial_getter,partial_drop_frame,2);
+        limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=8;
+        result=denied && !PartialOwnLiftControls::node(partial,id) &&
+          native_admissions==admitted && imports.hasPending() && partial_drop_count==0 ? 0:1;
+        JS_ClearPendingException(cx);
+        // No handoff is assumed after refusal; the original scope stays closed.
+      } else {
+        if(!partial_call(cx,imports,partial,id,&promise))return failed(4);
+        const Token sidecar=PartialOwnLiftControls::owner(partial,id);
+        if(!partial.attach(cx,id,0,&first))return failed(5);
+        JS::RootedValue handle(cx);
+        if(!JS_GetPropertyById(cx,first,symbol,&handle)||!handle.isInt32()||static_cast<uint32_t>(handle.toInt32())!=0x8000002au)return failed(6);
+        if(positive) {
+          // The second canonical OWN slot is the ONLY failed-lift remainder.
+          if(!partial.finish(cx,id) || partial_drop_count!=1 || partial_dropped[0]!=43 ||
+              imports.hasPending() || partial.hasPending() || owners[sidecar.id].live ||
+              counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]!=0)return failed(7);
+          if(!JS_GetPropertyById(cx,first,symbol,&handle)||static_cast<uint32_t>(handle.toInt32())!=0x8000002au)return failed(8);
+          // Stale finish cannot destroy or refund the already transferred first.
+          if(!partial.finish(cx,id) || partial_drop_count!=1)return failed(9);
+          promise=nullptr;collect(cx);
+          if(!promises.checkpoint(cx)||!reactions.checkpoint(cx))return failed(10);
+          uint32_t fresh=0;
+          JS::RootedObject fresh_first(cx),fresh_second(cx);
+          if(!partial_call(cx,imports,partial,fresh,&promise) || fresh<=id ||
+              !partial.attach(cx,fresh,0,&fresh_first) || !partial.attach(cx,fresh,1,&fresh_second) ||
+              !partial.deliveredGuard(cx,fresh) || !imports.delivered(cx,fresh) ||
+              !partial.finish(cx,fresh) || imports.hasPending() || partial.hasPending() ||
+              partial_drop_count!=1)return failed(11);
+          if(!partial_explicit_dispose(cx,first) || !partial_explicit_dispose(cx,first) ||
+              !partial_explicit_dispose(cx,fresh_first) || !partial_explicit_dispose(cx,fresh_second) ||
+              partial_drop_count!=4 || partial_dropped[1]!=0x8000002au || partial_dropped[2]!=44 || partial_dropped[3]!=45)
+            return failed(12);
+          first=nullptr;fresh_first=nullptr;fresh_second=nullptr;promise=nullptr;
+          collect(cx);
+          if(!promises.checkpoint(cx)||!reactions.checkpoint(cx))return failed(13);
+          // Full positive phases released every original Native/Result owner
+          // before this separate, intentionally ambiguous late ACK boundary.
+          if(counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE] ||
+              counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT])return failed(14);
+          uint32_t ambiguous=0;JS::RootedObject retained_wrapper(cx);
+          if(!partial_call(cx,imports,partial,ambiguous,&promise) ||
+              !partial.attach(cx,ambiguous,0,&retained_wrapper))return failed(15);
+          const Token original_ack_owner=PartialOwnLiftControls::owner(partial,ambiguous);
+          partial_ack_instance=&partial;partial_ack_context=cx;partial_ack_reenter=true;
+          const bool refused=!partial.finish(cx,ambiguous);
+          JS_ClearPendingException(cx);
+          const bool no_replay=!partial.finish(cx,ambiguous);
+          JS_ClearPendingException(cx);
+          if(!refused || !no_replay || !partial_ack_observed || !partial_node_deleted ||
+              !partial_record_deleted || !partial_physical_order || imports.hasPending() ||
+              !partial.hasPending() || !owners[original_ack_owner.id].live ||
+              PartialOwnLiftControls::failedOwner(partial).id!=original_ack_owner.id ||
+              partial_drop_count!=5 || partial_dropped[4]!=47 || !partial_handles[46])return failed(16);
+          const bool sealed=!partial.begin(cx,2,0,0);
+          JS_ClearPendingException(cx);
+          result=(host_in_gc||!sealed)?1:0;
+          partial_ack_instance=nullptr;partial_ack_context=nullptr;
+        } else if(uncertain) {
+          // A second actual result uses the SAME original payer/grants. Its
+          // malformed duplicate OWN handles must fail BEFORE any wrapper gets
+          // either handle; neither the original nor its alias is dropped.
+          uint32_t malformed=0;JS::RootedObject malformed_promise(cx),rejected_duplicate(cx);
+          if(!partial_call(cx,imports,partial,malformed,&malformed_promise))return failed(17);
+          const Token duplicate_owner=PartialOwnLiftControls::owner(partial,malformed);
+          partial_frame[1]=partial_frame[0];
+          const bool duplicate_frame=!partial.attach(cx,malformed,0,&rejected_duplicate);
+          JS_ClearPendingException(cx);
+          if(!duplicate_frame || rejected_duplicate || partial_drop_count || !owners[duplicate_owner.id].live)return failed(18);
+          Imports foreign(jobs,native,readiness);PartialOwnLifts other(foreign,partial_init);
+          JS::RootedObject rejected(cx);
+          const bool foreign_denied=!other.attach(cx,id,1,&rejected);
+          JS_ClearPendingException(cx);
+          const bool repeated=!partial.attach(cx,id,0,&rejected);
+          JS_ClearPendingException(cx);
+          const bool cannot_bless=!partial.deliveredGuard(cx,id);
+          JS_ClearPendingException(cx);
+          partial.cancel(id);
+          const bool held=!partial.finish(cx,id);
+          JS_ClearPendingException(cx);
+          const bool late=!partial.attach(cx,id,1,&rejected);
+          JS_ClearPendingException(cx);
+          result=duplicate_frame&&foreign_denied&&repeated&&cannot_bless&&held&&late&&imports.hasPending()&&partial.hasPending()&&
+            owners[sidecar.id].live&&owners[duplicate_owner.id].live&&partial_drop_count==0 ? 0:1;
+        } else {
+          partial_refuse_drop=true;
+          const bool failed=!partial.finish(cx,id);
+          JS_ClearPendingException(cx);
+          const auto attempted=partial_drop_count;
+          const bool no_replay=!partial.finish(cx,id);
+          JS_ClearPendingException(cx);
+          result=failed&&no_replay&&attempted==1&&partial_dropped[0]==43&&
+            partial_drop_count==attempted&&owners[sidecar.id].live&&imports.hasPending()&&partial.hasPending()?0:1;
+        }
+      }
+      first=nullptr;promise=nullptr;value.setUndefined();symbol_value.setUndefined();
+      JS_ClearPendingException(cx);collect(cx);
+      if(!promises.checkpoint(cx)||!reactions.checkpoint(cx))return 11;
+      if(!jobs.settleRoot(cx)||!readiness.retire(cx))return 11;
+      for(auto count:counts)retained+=count;
+      if(positive && (retained!=1 || counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]!=1))result=1;
+      if(!positive && !retained)result=1;
+      std::printf("{\"case\":\"%s\",\"status\":%d,\"retainedOwners\":%u,\"canonicalDrops\":%u,"
+        "\"sidecarBytes\":%zu,\"planBytes\":%zu,\"slotBytes\":%zu,\"hostcallInGC\":%s}\n",
+        name,result,retained,partial_drop_count,PartialOwnLiftControls::nodeBytes(),
+        PartialOwnLiftControls::planBytes(),PartialOwnLiftControls::slotBytes(),host_in_gc?"true":"false");
+    } // Metadata roots and exact runtime nodes die BEFORE JSContext destruction.
+  }
+  JS_DestroyContext(cx);JS_ShutDown();return result;
+}
+#endif
+
 int main(int argc, char** argv) {
+#ifdef LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS
+  return partial_main(argc,argv);
+#endif
   if (argc != 2) return 2;
   JS::Prefs::set_use_js_microtask_queue(false);
   if (!JS_Init()) return 3;
@@ -364,11 +912,95 @@ int main(int argc, char** argv) {
         !JS_DefineFunction(cx, global, "rootDone", root_done, 0, 0) ||
         !JS_DefineFunction(cx, global, "ordinaryImported", imported_global, 0, 0) ||
         !JS_DefineFunction(cx, global, "liftImported", lift_imported, 1, 0) ||
+        !JS_DefineFunction(cx, global, "finishImported", finish_imported, 1, 0) ||
         !JS_DefineFunction(cx, global, "releaseImported", release_imported, 0, 0)) return 8;
     if (!jobs.beginRoot(cx)) return 9;
     JS::RootedValue output(cx);
     const char* selected = argv[1];
-    if (!std::strcmp(selected,"missing-import-record-reports-and-preserves-error")) {
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+    if(!std::strncmp(selected,"borrow-refusal-",15)) {
+      status=borrow_refusal(cx,jobs,native,readiness,selected)?0:1;
+    } else
+#endif
+    if (!std::strcmp(selected,"borrow-observer-blocked-cancel-awaits-actual-drop")) {
+      // Real SpiderMonkey Promises/accounting; canonical intrinsics below are
+      // explicit fixture doubles. Signed Component Model evidence is separate.
+      uint32_t id=0;
+      JS::RootedObject handle(cx),again(cx),original(cx),released(cx),repeated(cx);
+      if(!imports.reserve(cx,4,0,ImportRawResult::I32,JS::HandleValueArray::empty(),id))return 10;
+      const auto admitted=native_admissions;
+      if(!imports.watchBorrow(cx,id,&handle))return 10;
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+      record_address=ImportBorrowControls::record(imports,id);
+      record_owner_id=ImportBorrowControls::recordOwner(imports,id).id;
+      auto* observer=ImportBorrowControls::observer(cx,imports,id);
+      if(!observer)return 10;
+      observer_address=observer;observer_owner_id=observer->allocation_owner.token.id;
+#endif
+      const auto observed_admissions=native_admissions;
+      if(!imports.watchBorrow(cx,id,&again) || again.get()!=handle.get() ||
+         native_admissions!=observed_admissions || observed_admissions<admitted+2)return 10;
+      auto* result=static_cast<uint32_t*>(imports.resultBuffer(id));
+      if(!result || !imports.setDisposer(cx,id,scalar_disposer,4) ||
+         !imports.beginLowering(cx,id))return 10;
+      const auto wait_id=next_wait++;
+      waits[wait_id]={true,false,false,JOBS_SUBTASK_STARTED,0,nullptr,result};
+      ++counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT];
+      if(!imports.started(cx,id,(wait_id<<4)|JOBS_SUBTASK_STARTED,&original) ||
+         !imports.observeBorrow(cx,handle,false,&released))return 10;
+      defer_cancel=true;
+      if(!imports.observeBorrow(cx,handle,true,&repeated) || repeated.get()!=released.get() ||
+         !imports.observeBorrow(cx,handle,true,&repeated) ||
+         !imports.liftCompleted(cx,id))return 10; // original generated finally
+      const bool held=JS::GetPromiseState(original)==JS::PromiseState::Rejected &&
+        JS::GetPromiseState(released)==JS::PromiseState::Pending &&
+        cancel_requests==1 && drops==0 && waits[wait_id].live && waits[wait_id].imported_result==result &&
+        counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==1 && imports.hasPending();
+      if(!readiness.dispatch(cx,true) || !imports.turn(cx))return 10;
+      status=held && drops==1 && cancel_requests==1 && !imports.hasPending() &&
+        JS::GetPromiseState(released)==JS::PromiseState::Fulfilled &&
+        imports.observeBorrow(cx,handle,true,&repeated) && repeated.get()==released.get() && cancel_requests==1 ? 0:1;
+      defer_cancel=false;
+    } else if (!std::strcmp(selected,"borrow-observer-rejects-foreign-and-unregistered-handles")) {
+      uint32_t id=0;
+      JS::RootedObject handle(cx),promise(cx),plain(cx,JS_NewPlainObject(cx));
+      if(!plain || !imports.reserve(cx,0,0,ImportRawResult::None,JS::HandleValueArray::empty(),id) ||
+         !imports.watchBorrow(cx,id,&handle))return 10;
+      bool refused=!imports.observeBorrow(cx,plain,true,&promise) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      Imports foreign(jobs,native,readiness);
+      refused=refused && !foreign.observeBorrow(cx,handle,true,&promise) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      NativeOwner control_owner;
+      if(!native.beforeAllocate(cx,control_owner))return 10;
+      {
+        ImportBorrowObserver forged(cx,id,Token{jobs.generation(),999});
+        if(!forged.initialize(cx,&imports,id,Token{jobs.generation(),999}))return 10;
+        refused=refused && !imports.observeBorrow(cx,forged.handle,true,&promise) && JS_IsExceptionPending(cx);
+        JS_ClearPendingException(cx);
+      }
+      {
+        // A branded but released handle from another epoch must fail BEFORE
+        // the released fast path, even with this exact manager and context.
+        ImportBorrowObserver stale(cx,id,Token{jobs.generation()+1,999});
+        if(!stale.initialize(cx,&imports,id,Token{jobs.generation()+1,999}) ||
+           !ImportBorrowObserver::acknowledge(cx,stale.handle))return 10;
+        refused=refused && !imports.observeBorrow(cx,stale.handle,false,&promise) && JS_IsExceptionPending(cx);
+        JS_ClearPendingException(cx);
+      }
+      if(!native.acknowledgeRetirement(cx,control_owner))return 10;
+      status=refused && cancel_requests==0 && imports.cancel(cx,id) ? 0:1;
+    } else if (!std::strcmp(selected,"borrow-observer-native-denial-precedes-node-and-Promise")) {
+      uint32_t id=0;JS::RootedObject handle(cx);
+      if(!imports.reserve(cx,0,0,ImportRawResult::None,JS::HandleValueArray::empty(),id))return 10;
+      const auto admitted=native_admissions;
+      limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE];
+      const bool refused=!imports.watchBorrow(cx,id,&handle) && JS_IsExceptionPending(cx) &&
+        !handle && native_admissions==admitted && next_wait==1 && imports.hasPending();
+      JS_ClearPendingException(cx);
+      limits[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE]=8;
+      status=refused && imports.cancelAll(cx) && !imports.hasPending() ? 0:1;
+    } else if (!std::strcmp(selected,"missing-import-record-reports-and-preserves-error")) {
       void* buffer = nullptr;
       JS::RootedObject promise(cx);
       bool reported = !imports.beginLowering(cx,999) && JS_IsExceptionPending(cx);
@@ -414,6 +1046,40 @@ int main(int argc, char** argv) {
       const bool retained=counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==1 &&
                           counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT]==1;
       status=retained && shared_drain(cx,queue,timers,imports,readiness) && imported_lifts==0?0:1;
+    } else if (!std::strcmp(selected,"retired-import-finally-preserves-cancellation-no-double-ack")) {
+      // Default non-deferred cancellation retires the real import record before
+      // the rejected Promise's genuine async finally is allowed to execute.
+      if(!evaluate(cx,"globalThis.cancelMessage='';globalThis.root=(async()=>{try{await ordinaryImported();}finally{finishImported(1);finishImported(1);}})().catch(error=>{cancelMessage=String(error);rootDone();});",&output))return 10;
+      if(!imports.cancel(cx,1))return 10;
+      const bool retired_before_finally=!imports.hasPending() && imported_finishes==0 &&
+          imported_starts==1 && imported_lifts==0 && drops==1 &&
+          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT]==0 &&
+          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==0;
+      status=retired_before_finally && shared_drain(cx,queue,timers,imports,readiness) &&
+          imported_finishes==2 && imported_lifts==0 && drops==1 &&
+          expect(cx,"cancelMessage==='activation-runtime-import-cancelled'")?0:1;
+    } else if (!std::strcmp(selected,"resolved-carrier-cancel-preserves-public-rejection-and-fresh-reuse")) {
+      if(!evaluate(cx,"globalThis.cancelMessage='';globalThis.freshAnswer=0;globalThis.root=(async()=>{try{try{globalThis.carrier=ordinaryImported();const id=await carrier;liftImported(id);}finally{finishImported(1);finishImported(1);}}catch(error){cancelMessage=String(error);}globalThis.carrier=null;freshAnswer=liftImported(await ordinaryImported());rootDone();})();",&output))return 10;
+      JS::RootedValue carrier_value(cx);
+      if(!JS_GetProperty(cx,global,"carrier",&carrier_value) || !carrier_value.isObject())return 10;
+      JS::RootedObject carrier(cx,&carrier_value.toObject());
+      // Advance the actual import's readiness and carrier resolution, but do
+      // not run any queued JS reaction/typed lift before real cancellation.
+      if(!readiness.dispatch(cx,true) || !imports.turn(cx))return 10;
+      const bool resolved_before_cancel=JS::GetPromiseState(carrier)==JS::PromiseState::Fulfilled &&
+          imported_lifts==0 && imported_finishes==0 && imported_disposals==0 &&
+          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==1;
+      if(!imports.cancel(cx,1))return 10;
+      const bool retired_before_lift=JS::GetPromiseState(carrier)==JS::PromiseState::Fulfilled &&
+          !imports.hasPending() && imported_finishes==0 && imported_disposals==1 &&
+          imported_lifts==0 && drops==1 && counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==0 &&
+          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT]==0;
+      status=resolved_before_cancel && retired_before_lift &&
+          shared_drain(cx,queue,timers,imports,readiness) && imported_starts==2 &&
+          imported_lifts==1 && imported_finishes==2 && imported_disposals==1 && drops==2 &&
+          !imports.hasPending() && counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==0 &&
+          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT]==0 &&
+          expect(cx,"cancelMessage==='activation-runtime-import-cancelled'&&freshAnswer===42")?0:1;
     } else if (!std::strcmp(selected,"typed-import-lift-finally-preserves-original-error")) {
       if(!evaluate(cx,"globalThis.message='';globalThis.root=ordinaryImported().then(id=>{try{const value=liftImported(id);if(value===42)throw new Error('original lift consumer failure');}finally{}}).catch(error=>{message=error.message;rootDone();});",&output))return 10;
       status=shared_drain(cx,queue,timers,imports,readiness) && imported_lifts==1 &&
@@ -603,12 +1269,47 @@ int main(int argc, char** argv) {
     if (!reactions.checkpoint(cx) || !promises.checkpoint(cx)) return 11;
     effects = true; compiler_phase = false;
     unsigned total = 0; for (auto count : counts) total += count;
-    if (total || timers.hasPending() || imports.hasPending() || !queue.empty() || set_live || host_in_gc) status = 1;
+#ifdef LSF_TYPESCRIPT_BORROW_CONTROLS
+    if(expected_quarantine) {
+      for(uint64_t owner=1;owner<next_owner;++owner)
+        if(owners[owner].live!=expected_retained[owner])status=1;
+      if(!total || !drop_order_valid)status=1;
+    } else
+#endif
+    if(total)status=1;
+    if (timers.hasPending() || imports.hasPending() || !queue.empty() || set_live || host_in_gc) status = 1;
+#if defined(LSF_TYPESCRIPT_OWNED_RESULT_CONTROLS)
+    std::printf("{\"case\":\"%s\",\"status\":%d,\"owners\":%u,\"expectedQuarantine\":%s,"
+                "\"subtaskDrops\":%u,\"cancelRequests\":%u,\"exactAckRefusals\":%u,"
+                "\"recordDestroyed\":%s,\"observerDestroyed\":%s,\"dropOrderValid\":%s,"
+                "\"managerBytes\":%zu,\"baselineManagerBytes\":%zu,\"recordBytes\":%zu,"
+                "\"baselineRecordBytes\":%zu,\"recordAlignment\":%zu,\"baselineRecordAlignment\":%zu,"
+                "\"observerBytes\":%zu,\"importStarts\":%u,\"importLifts\":%u,\"importFinishes\":%u,"
+                "\"importDisposals\":%u,\"nativeAdmissions\":%u,\"nativeAcknowledgements\":%u,\"hostcallInGC\":%s}\n",
+        selected,status,total,expected_quarantine?"true":"false",drops,cancel_requests,exact_refusals,
+        record_destroyed?"true":"false",observer_destroyed?"true":"false",drop_order_valid?"true":"false",
+        sizeof(Imports),sizeof(BorrowBaselineImports),ImportBorrowControls::recordBytes(),
+        ImportBorrowControls::baselineRecordBytes(),ImportBorrowControls::recordAlignment(),
+        ImportBorrowControls::baselineRecordAlignment(),sizeof(ImportBorrowObserver),
+        imported_starts,imported_lifts,imported_finishes,imported_disposals,
+        native_admissions,native_acknowledgements,host_in_gc?"true":"false");
+#elif defined(LSF_TYPESCRIPT_BORROW_CONTROLS)
+    std::printf("{\"case\":\"%s\",\"status\":%d,\"owners\":%u,\"expectedQuarantine\":%s,"
+                "\"subtaskDrops\":%u,\"cancelRequests\":%u,\"exactAckRefusals\":%u,"
+                "\"recordDestroyed\":%s,\"observerDestroyed\":%s,\"dropOrderValid\":%s,"
+                "\"managerBytes\":%zu,\"baselineManagerBytes\":%zu,\"fixedManagerDeltaBytes\":%zu,"
+                "\"recordBytes\":%zu,\"observerBytes\":%zu,\"hostcallInGC\":%s}\n",
+        selected,status,total,expected_quarantine?"true":"false",drops,cancel_requests,exact_refusals,
+        record_destroyed?"true":"false",observer_destroyed?"true":"false",drop_order_valid?"true":"false",
+        sizeof(Imports),sizeof(BorrowBaselineImports),sizeof(Imports)-sizeof(BorrowBaselineImports),
+        ImportBorrowControls::recordBytes(),sizeof(ImportBorrowObserver),host_in_gc?"true":"false");
+#else
     std::printf("{\"case\":\"%s\",\"status\":%d,\"owners\":%u,\"starts\":%u,\"stops\":%u,"
                 "\"subtaskDrops\":%u,\"setDrops\":%u,\"idleWaits\":%u,\"nativeAdmissions\":%u,"
                 "\"nativeAcknowledgements\":%u,\"hostcallInGC\":%s}\n",
         selected, status, total, starts, stops, drops, set_drops, waits_entered,
         native_admissions, native_acknowledgements, host_in_gc ? "true" : "false");
+#endif
   }
   JS_DestroyContext(cx); JS_ShutDown(); return status;
 }

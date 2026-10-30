@@ -1,0 +1,11 @@
+{"cases":["KernelConstructorVmImages.test_bzimage_checks_linux_protocol_bits_before_recording_an_image","KernelConstructorVmImages.test_real_boot_configuration_is_required_without_rewriting_missing_options","KernelConstructorVmImages.test_static_init_rejects_dynamic_writable_code_and_declared_unbacked_ranges","KernelConstructorVmImages.test_success_label_cannot_replace_complete_physical_counter_observations"],"guards":{"KernelConstructorVmImages.test_bzimage_checks_linux_protocol_bits_before_recording_an_image":
+  "a7be5f0e4dd44b11d6cd92862450f4f61623c64dae4cb761ce8ae34f452af0b6"
+,"KernelConstructorVmImages.test_real_boot_configuration_is_required_without_rewriting_missing_options":
+  "a7be5f0e4dd44b11d6cd92862450f4f61623c64dae4cb761ce8ae34f452af0b6"
+,"KernelConstructorVmImages.test_static_init_rejects_dynamic_writable_code_and_declared_unbacked_ranges":
+  "a7be5f0e4dd44b11d6cd92862450f4f61623c64dae4cb761ce8ae34f452af0b6"
+,"KernelConstructorVmImages.test_success_label_cannot_replace_complete_physical_counter_observations":
+  "a7be5f0e4dd44b11d6cd92862450f4f61623c64dae4cb761ce8ae34f452af0b6"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_vm_image.py","reviewReason":"Add isolated bounded real kernel constructor image and exact physical child observations; preserve production refusal and Root final-free gate","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "a7be5f0e4dd44b11d6cd92862450f4f61623c64dae4cb761ce8ae34f452af0b6"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:2dd22388a0954867c5ad90c7d1de118fbc2913f9644098c79f36969429aa9365","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

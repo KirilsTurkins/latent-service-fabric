@@ -267,7 +267,9 @@ def install(generated: Path, output: Path, receipt: dict, *, check: bool = False
 
 
 def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: str,
-             *, check: bool = False) -> dict:
+             *, check: bool = False, development_root_join_cause: bool = False) -> dict:
+    if type(development_root_join_cause) is not bool:
+        raise BindingError("invalid-development-join-cause-selector")
     source = source.resolve(strict=True)
     if output.is_symlink():
         raise BindingError("unowned-binding-output")
@@ -332,6 +334,15 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
                 if root_source.exists():
                     raise BindingError('reserved-managed-root-source')
                 root_source.write_text(managed_root, encoding='utf-8', newline='\n')
+        join_cause = None
+        if development_root_join_cause:
+            if not expected_exports or observed_exports != 1 or managed_root is None:
+                raise BindingError('dotnet-join-cause-requires-exact-managed-probe')
+            candidate = generated / support.JOIN_CAUSE_FILE
+            if not candidate.is_file() or candidate.is_symlink():
+                raise BindingError('dotnet-join-cause-missing-normal-helper')
+            selected, join_cause = support.diagnostic_join_cause(candidate.name, read_bytes(candidate).decode('utf-8'))
+            candidate.write_text(selected, encoding='utf-8', newline='\n')
         metadata = list(generated.glob("*_component_type.wit"))
         if len(metadata) != 1:
             raise BindingError("missing-unique-component-type")
@@ -359,6 +370,8 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
         if expected_exports:
             receipt['asyncExportBridge'] = {'profile': support.PROFILE, 'exports': observed_exports,
                                            'managedTaskSchedulingQualified': False}
+        if join_cause is not None:
+            receipt['developmentJoinCause'] = join_cause
         install(generated, output, receipt, check=check)
         return receipt
 
@@ -372,11 +385,14 @@ def main() -> int:
     parser.add_argument("--with-wit-results", action="store_true", required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--check", action="store_true", help="regenerate and fail on drift without editing output")
+    parser.add_argument("--development-root-join-cause", action="store_true",
+                        help="closed auxiliary Join-cause fixture; never retirement qualification")
     args = parser.parse_args()
     try:
         generate(args.wit, args.out_dir, args.world,
                  os.environ.get("LSF_WIT_BINDGEN", "wit-bindgen"),
-                 os.environ.get("LSF_WASM_TOOLS", "wasm-tools"), check=args.check)
+                 os.environ.get("LSF_WASM_TOOLS", "wasm-tools"), check=args.check,
+                 development_root_join_cause=args.development_root_join_cause)
         return 0
     except (ValueError, OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
         parser.exit(1, f".NET guest bindings failed: {error}\n")

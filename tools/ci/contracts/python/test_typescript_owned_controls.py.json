@@ -1,0 +1,30 @@
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "TypeScriptOwnedControlsTests.test_actual_rust_source_inventory_requires_all_thirteen_successes":
+      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
+    "TypeScriptOwnedControlsTests.test_emitted_core_inventory_refuses_missing_extra_or_changed_contract":
+      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
+    "TypeScriptOwnedControlsTests.test_exact_source_inventory_rejects_skips_missing_and_extra_cases":
+      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
+    "TypeScriptOwnedControlsTests.test_monotonic_deadline_clips_every_stage_and_refuses_late_success":
+      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
+    "TypeScriptOwnedControlsTests.test_native_evidence_requires_new_record_abi_and_real_cancel_counters":
+      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
+    "TypeScriptOwnedControlsTests.test_native_refusal_evidence_cannot_turn_retained_owners_into_refund":
+      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
+    "TypeScriptOwnedControlsTests.test_partial_own_exact_rows_and_names_cannot_bless_refund_or_cross_profile":
+      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
+    "TypeScriptOwnedControlsTests.test_workflow_requires_same_source_and_owning_workflow_head":
+      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba",
+    "TypeScriptOwnedControlsTests.test_z_prepared_fixture_refuses_wrong_origin_prefix_and_compiled_source_drift":
+      "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_typescript_owned_controls.py",
+  "reviewReason":"Closed9c626 prepared compiler/engine reuse; fresh current fixture and four native cases, no producer qualification.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "c9772c03cd1d4206af4755560a071028dc7bc07657dddf99799d0a99bf9fe1ba":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:9012dadbfef5ab083be978437c0bce09505a4abedffd495facf27193da0ccbdf","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+  }
+}

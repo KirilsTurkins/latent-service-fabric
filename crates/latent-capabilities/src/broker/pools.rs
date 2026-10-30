@@ -17,19 +17,26 @@ use tokio::sync::Notify;
 use zeroize::Zeroizing;
 
 mod admission;
+pub(in crate::broker) use admission::RequestOwner;
 mod ingress;
 pub use ingress::IngressRequest;
 mod deferred;
 pub use deferred::DeferredRequest;
 mod protocol;
-pub use protocol::{ProviderMetadata, StreamKernelBacking, StreamKernelOwnership};
+pub use protocol::{
+    ProviderMetadata, StreamKernelBacking, StreamKernelBankCharge, StreamKernelNodeBacking,
+    StreamKernelOwnership,
+};
 mod client;
 mod control;
 mod limits;
 mod maintenance;
 pub use admission::{PoolAdmission, PoolCall, PoolReady};
 pub use client::{ConnectionReservation, PooledConnection, ProviderClient};
-pub use control::{CleanupFuture, CleanupResult, ProviderJob};
+pub use control::{
+    CleanupFuture, CleanupResult, ProviderJob, StreamKernelCloseJob, StreamKernelCloseObservation,
+    StreamKernelCloseReceipt,
+};
 use limits::{Charge, Kind, Quotas};
 pub use limits::{ProviderPoolLimits, ProviderPoolSnapshot};
 pub use maintenance::{MaintenanceRequest, ProviderMaintenance};
@@ -51,6 +58,9 @@ pub(super) struct Inner {
     broker: Arc<ActivationCapabilityBroker>,
     io: Arc<IoRuntime>,
     quotas: Arc<Quotas>,
+    // The SAME one fixed request Vec; per-slot locks let Request::drop retire
+    // only its original weak row without taking the caller/pool state lock.
+    requests: Vec<Mutex<admission::RequestSlot>>,
     state: Mutex<State>,
     maintenance: Mutex<()>,
     changed: Arc<Notify>,
@@ -66,7 +76,6 @@ struct State {
     retained_epochs: Vec<Weak<Epoch>>,
     clients: Vec<Arc<dyn ErasedClient>>,
     retained_clients: Vec<Weak<dyn ErasedClient>>,
-    requests: Vec<Weak<admission::Request>>,
     tenants: Vec<Weak<admission::Tenant>>,
     last_tenant: String,
 }
@@ -132,6 +141,7 @@ trait ErasedClient: Any + Send + Sync {
     fn core(&self) -> &Arc<client::ClientCore>;
     fn as_any(self: Arc<Self>) -> Arc<dyn Any + Send + Sync>;
     fn maintain(&self, now: Instant, closed: bool);
+    fn progress_stream_quarantine(&self);
 }
 impl ProviderPools {
     pub fn limits(&self) -> Result<ProviderPoolLimits, PlatformError> {
@@ -150,6 +160,9 @@ impl ProviderPools {
             Kind::Metadata,
             8192 + slots * 128 + limits.maximum_clients * 128 + limits.maximum_configurations * 128,
         )?;
+        if std::mem::size_of::<Mutex<admission::RequestSlot>>() > 128 {
+            return Err(capacity());
+        }
         // A fresh registry cannot bypass live lowering or the retained resources
         // of an older registry on the same broker generation.
         broker
@@ -161,6 +174,9 @@ impl ProviderPools {
             broker,
             io,
             quotas,
+            requests: std::iter::repeat_with(|| Mutex::new(admission::RequestSlot::default()))
+                .take(slots)
+                .collect(),
             state: Mutex::new(State {
                 next_instance: 0,
                 next_request: 0,
@@ -168,7 +184,6 @@ impl ProviderPools {
                 retained_epochs: Vec::with_capacity(limits.maximum_configurations),
                 clients: Vec::with_capacity(limits.maximum_clients),
                 retained_clients: Vec::with_capacity(limits.maximum_clients),
-                requests: std::iter::repeat_with(Weak::new).take(slots).collect(),
                 tenants: std::iter::repeat_with(Weak::new).take(slots).collect(),
                 last_tenant: String::with_capacity(256),
             }),
@@ -310,6 +325,33 @@ impl ProviderPools {
     }
     pub fn snapshot(&self) -> Result<ProviderPoolSnapshot, PlatformError> {
         self.inner.snapshot()
+    }
+    /// Existing paid stream maintenance drives original retained clients, even
+    /// after epoch retirement. No new client/table/admission/deadline is minted.
+    pub fn maintain_stream_quarantine(&self, provider: &InstalledProvider, _now: Instant) {
+        let reference = provider.epoch.registration.reference();
+        if reference.capability() != super::network::STREAM_CAPABILITY
+            || reference.profile() != super::network::STREAM_PROFILE
+        {
+            return;
+        }
+        let count = match self.inner.state.try_lock() {
+            Ok(state) => state.retained_clients.len(),
+            Err(_) => return,
+        };
+        for index in 0..count {
+            let client = {
+                let Ok(state) = self.inner.state.try_lock() else {
+                    return;
+                };
+                state.retained_clients.get(index).and_then(Weak::upgrade)
+            };
+            if let Some(client) =
+                client.filter(|client| Arc::ptr_eq(&client.core().epoch, &provider.epoch))
+            {
+                client.progress_stream_quarantine();
+            }
+        }
     }
     pub fn retire(&self) {
         self.inner.retire();

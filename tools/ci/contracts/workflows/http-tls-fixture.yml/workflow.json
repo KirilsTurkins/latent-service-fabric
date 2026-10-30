@@ -1,37 +1,37 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "http-tls-fixture-${{ github.ref }}"
-    },
-    "name": "Controlled HTTP TLS fixture",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/http-tls-fixture-20261020",
-          "feat/http-tls-process-peer-20261020"
-        ],
-        "paths": [
-          ".github/workflows/http-tls-fixture.yml",
-          "tools/standard_http/tls_peer.py",
-          "tools/http_tls_peer_reference.py",
-          "tools/qualify_http_tls_peer.py",
-          "tools/tests/test_http_tls_peer.py",
-          "tools/standard_http/process_peer.py",
-          "tools/http_tls_process_reference.py"
-        ]
-      },
-      "workflow_dispatch": null
-    },
-    "permissions": {
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "fixture"
-  ],
-  "reviewReason": "Extend the existing finite TLS peer reference lane to the owned peer subprocess; preserve the original six TLS controls and original test/qualification commands, bounds and public-only artifact policy.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/http-tls-fixture.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"http-tls-fixture-${{ github.ref }}"
+},
+"name":"Controlled HTTP TLS fixture",
+"on":{
+"push":{
+"branches":[
+"feat/http-tls-fixture-20261020",
+"feat/http-tls-process-peer-20261020"
+],
+"paths":[
+".github/workflows/http-tls-fixture.yml",
+"tools/standard_http/tls_peer.py",
+"tools/http_tls_peer_reference.py",
+"tools/qualify_http_tls_peer.py",
+"tools/tests/test_http_tls_peer.py",
+"tools/standard_http/process_peer.py",
+"tools/http_tls_process_reference.py"
+]
+},
+"workflow_dispatch":null
+},
+"permissions":{
+"contents":"read"
+}
+},
+"requiredJobs":[
+"fixture"
+],
+"reviewReason":"Extend the existing finite TLS peer reference lane to the owned peer subprocess; preserve the original six TLS controls and original test/qualification commands, bounds and public-only artifact policy.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/http-tls-fixture.yml"
 }

@@ -334,7 +334,12 @@ fn classify_runtime_failure(
         metadata.insert("trap".to_owned(), label.to_owned());
         return Ok(GuestOutcome::Trapped {
             trap: GuestTrap {
-                diagnostic: None,
+                diagnostic: matches!(trap, Trap::StackOverflow).then(|| {
+                    latent_core::diagnostic::ActivationDiagnostic::new(
+                        latent_core::diagnostic::DiagnosticStage::Execution,
+                        latent_core::diagnostic::DiagnosticReason::GuestStackExhausted,
+                    )
+                }),
                 code: "guest-trap".to_owned(),
                 message: bounded_text(&format!("guest trapped: {label}"), MAX_DIAGNOSTIC_BYTES),
                 guest_backtrace: Vec::new(),
@@ -360,6 +365,11 @@ fn classify_runtime_failure(
         },
         consumption,
     })
+}
+
+#[cfg(feature = "development-test-host")]
+pub(crate) fn development_trap_label(trap: &Trap) -> &'static str {
+    trap_label(trap)
 }
 
 fn trap_label(trap: &Trap) -> &'static str {
@@ -528,6 +538,30 @@ mod tests {
             );
             assert!(trap.guest_backtrace.is_empty());
             assert_eq!(actual, consumption());
+        }
+    }
+
+    #[test]
+    fn only_the_actual_engine_stack_overflow_produces_stack_exhaustion_diagnostic() {
+        use latent_core::diagnostic::DiagnosticReason;
+        for engine_trap in [
+            Trap::StackOverflow,
+            Trap::UnreachableCodeReached,
+            Trap::MemoryOutOfBounds,
+        ] {
+            let outcome =
+                classify_runtime_failure(None, false, Some(&engine_trap), consumption()).unwrap();
+            let GuestOutcome::Trapped { trap, .. } = outcome else {
+                panic!("engine trap must retain its original trap outcome");
+            };
+            if matches!(engine_trap, Trap::StackOverflow) {
+                assert_eq!(
+                    trap.diagnostic.unwrap().reason,
+                    DiagnosticReason::GuestStackExhausted
+                );
+            } else {
+                assert!(trap.diagnostic.is_none());
+            }
         }
     }
 

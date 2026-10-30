@@ -5,6 +5,7 @@ use super::{
 };
 use latent_capabilities::broker::{
     blob::{BlobChunk, BlobSeal},
+    pools::PoolAdmission,
     SessionResourceTableReservation,
 };
 use latent_core::BudgetDimension;
@@ -102,7 +103,7 @@ pub(super) struct Reader {
     pub _metadata: ProviderMetadata,
 }
 impl BlobWriter for Writer {
-    fn write(&mut self, offset: u64, bytes: Vec<u8>) -> Result<BlobFuture<'_, u64>> {
+    fn write<'a>(&'a mut self, offset: u64, bytes: Vec<u8>) -> Result<BlobFuture<'a, u64>> {
         let data = self.data.as_ref().ok_or(BlobError::InvalidState)?;
         if offset != data.written as u64
             || bytes.capacity() > PROTOCOL_PAGE_BYTES
@@ -125,19 +126,82 @@ impl BlobWriter for Writer {
         if !bytes.is_empty() {
             cost = cost.with_charge(BudgetDimension::BlobWriteBytes, bytes.len() as u64)?;
         }
-        let mut data = self.data.take().expect("validated writer");
-        Ok(Box::pin(async move {
-            let mut call = self.inner.dispatch(admission, "write", cost).await?;
-            let _memory = memory;
-            call.io().checkpoint()?;
-            let count = data.append(&bytes)?;
-            drop(bytes);
-            finish(&mut call, AuditProviderOutcome::HostCompleted).await?;
-            self.data = Some(data);
-            Ok(count)
-        }))
+        let prepared = self.binding.prepare_io_future_with(
+            move |(this, admission, mut data): (&'a mut Self, PoolAdmission, Staging)| async move {
+                let mut call = this.inner.dispatch(admission, "write", cost).await?;
+                let _memory = memory;
+                call.io().checkpoint()?;
+                let count = data.append(&bytes)?;
+                drop(bytes);
+                finish(&mut call, AuditProviderOutcome::HostCompleted).await?;
+                this.data = Some(data);
+                Ok(count)
+            },
+        )?;
+        let data = self.data.take().expect("validated writer");
+        Ok(prepared.finish((self, admission, data)))
+    }
+    fn write_from<'a>(&'a mut self, offset: u64, source: &[u8]) -> Result<BlobFuture<'a, u64>> {
+        let data = self.data.as_ref().ok_or(BlobError::InvalidState)?;
+        if offset != data.written as u64
+            || source.len() > PROTOCOL_PAGE_BYTES
+            || data
+                .written
+                .checked_add(source.len())
+                .is_none_or(|n| n > data.stage.maximum)
+        {
+            return Err(BlobError::InvalidRange);
+        }
+        let admission = self
+            .binding
+            .with_session(|session| self.inner.admit(session))?;
+        let prepared = self.binding.prepare_io_future_with(
+            move |(this, admission, mut data, input, cost): (
+                &'a mut Self,
+                PoolAdmission,
+                Staging,
+                latent_capabilities::broker::io::IoBuffer,
+                CapabilityCallCost,
+            )| async move {
+                let mut call = this.inner.dispatch(admission, "write", cost).await?;
+                call.io().checkpoint()?;
+                let count = data.append(input.bytes())?;
+                drop(input); // ProtocolPages now owns the separately scoped copy.
+                finish(&mut call, AuditProviderOutcome::HostCompleted).await?;
+                this.data = Some(data);
+                Ok(count)
+            },
+        )?;
+        let input = admission.copy_input(source, 512)?;
+        let mut cost = CapabilityCallCost::new(8)
+            .with_typed_input_bytes(input.bytes().len() + 16)
+            .with_typed_request_digest(CapabilityRequestDigest::from_parts(&[
+                b"s3-blob-write-v1",
+                &offset.to_le_bytes(),
+                input.bytes(),
+            ])?);
+        if !input.bytes().is_empty() {
+            cost = cost.with_charge(BudgetDimension::BlobWriteBytes, input.bytes().len() as u64)?;
+        }
+        let data = self.data.take().expect("validated writer");
+        Ok(prepared.finish((self, admission, data, input, cost)))
     }
     fn seal(mut self: Box<Self>) -> Result<BlobFuture<'static, BlobSeal>> {
+        if self.data.is_none() {
+            return Err(BlobError::InvalidState);
+        }
+        let prepared = self.binding.prepare_io_future_with(
+            move |(this, admission, data, digest, cost): (
+                Box<Self>,
+                PoolAdmission,
+                Staging,
+                String,
+                CapabilityCallCost,
+            )| async move {
+                let call = this.inner.dispatch(admission, "seal", cost).await?;
+                seal::run(this.inner.clone(), call, data, digest).await
+            },
+        )?;
         let mut data = self.data.take().ok_or(BlobError::InvalidState)?;
         data.prepare()?;
         let admission = self.binding.with_session(|s| self.inner.admit(s))?;
@@ -158,14 +222,11 @@ impl BlobWriter for Writer {
                 &(data.written as u64).to_le_bytes(),
             ])?)
             .with_charge(BudgetDimension::OutboundRequests, requests as u64)?;
-        Ok(Box::pin(async move {
-            let call = self.inner.dispatch(admission, "seal", cost).await?;
-            seal::run(self.inner.clone(), call, data, digest).await
-        }))
+        Ok(prepared.finish((self, admission, data, digest, cost)))
     }
 }
 impl BlobReader for Reader {
-    fn read(&mut self, offset: u64, length: u32) -> Result<BlobFuture<'_, BlobChunk>> {
+    fn read<'a>(&'a mut self, offset: u64, length: u32) -> Result<BlobFuture<'a, BlobChunk>> {
         let record = self.record.as_ref().ok_or(BlobError::InvalidState)?;
         if length as usize > PROTOCOL_PAGE_BYTES
             || offset
@@ -194,25 +255,34 @@ impl BlobReader for Reader {
                 .with_charge(BudgetDimension::OutboundRequests, requests)?
                 .with_charge(BudgetDimension::BlobReadBytes, u64::from(length))?;
         }
-        let record = self.record.take().expect("validated reader");
-        Ok(Box::pin(async move {
-            let mut call = self.inner.dispatch(admission, "read", cost).await?;
-            let mut buffer = call.io().buffer((length as usize).max(1), 512)?;
-            let copy = call.io().reserve_scratch((length as usize).max(1), 512)?;
-            let value =
-                remote::read(&self.inner, &call, &record, offset, length, &mut buffer).await;
-            finish(
-                &mut call,
-                if value.is_ok() {
-                    AuditProviderOutcome::HostCompleted
-                } else {
-                    AuditProviderOutcome::Rejected
+        let prepared =
+            self.binding.prepare_io_future_with(
+                move |(this, admission, record): (
+                    &'a mut Self,
+                    PoolAdmission,
+                    inventory::Record,
+                )| async move {
+                    let mut call = this.inner.dispatch(admission, "read", cost).await?;
+                    let mut buffer = call.io().buffer((length as usize).max(1), 512)?;
+                    let copy = call.io().reserve_copy((length as usize).max(1), 512)?;
+                    let value =
+                        remote::read(&this.inner, &call, &record, offset, length, &mut buffer)
+                            .await;
+                    finish(
+                        &mut call,
+                        if value.is_ok() {
+                            AuditProviderOutcome::HostCompleted
+                        } else {
+                            AuditProviderOutcome::Rejected
+                        },
+                    )
+                    .await?;
+                    value?;
+                    this.record = Some(record);
+                    BlobChunk::new(buffer, copy, call)
                 },
-            )
-            .await?;
-            value?;
-            self.record = Some(record);
-            BlobChunk::new(buffer, copy, call)
-        }))
+            )?;
+        let record = self.record.take().expect("validated reader");
+        Ok(prepared.finish((self, admission, record)))
     }
 }

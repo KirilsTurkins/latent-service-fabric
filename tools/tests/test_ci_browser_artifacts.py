@@ -112,7 +112,7 @@ class BrowserArtifactTests(unittest.TestCase):
     def test_missing_evidence_is_still_fatal_after_execution(self) -> None:
         self.assertEqual(self.upload["with"]["if-no-files-found"], "error")
         self.assertNotIn("continue-on-error", self.upload)
-        self.assertRegex(self.upload["uses"], r"^actions/upload-artifact@[0-9a-f]{40}$")
+        self.assertRegex(self.upload["uses"], r"^KirilsTurkins/lsf-upload-artifact@[0-9a-f]{40}$")
         self.assertEqual(self.upload["with"]["path"].splitlines(), [
             "${{ runner.temp }}/browser-boundary/build-receipt.json",
             "${{ runner.temp }}/browser-boundary/browser-receipt.json",

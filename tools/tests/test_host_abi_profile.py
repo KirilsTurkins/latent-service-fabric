@@ -86,7 +86,7 @@ class HostAbiProfileTests(unittest.TestCase):
         else:
             self.assertEqual(version, 6 if native_profile else 5, "new active ABI profiles require explicit review")
             self.assertEqual(dependencies["wasmtime"]["version"], "=" + matrix["wasmtimeVersion"])
-            self.assertEqual("wit-bindgen@" + dependencies["wit-bindgen"].lstrip("="), matrix["guestGenerator"])
+            self.assertEqual("wit-bindgen@" + tomllib.loads((ROOT / "tools/toolchain.toml").read_text())["contracts"]["wit-bindgen-cli"], matrix["guestGenerator"])
 
     def test_active_and_historical_generator_mismatches_are_rejected(self):
         dependencies = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))["workspace"]["dependencies"]

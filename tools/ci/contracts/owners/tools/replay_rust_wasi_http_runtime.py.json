@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/replay_rust_wasi_http_runtime.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Authenticate original8f compile and unchanged64 programme with exact empty-list API correction; no compilation",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "013220e6ac200945a8c6951a45d85a9f85fe230cb6b88fba34b3f4b4e6e5535f"
+{"kind":"owner","path":"tools/replay_rust_wasi_http_runtime.py","reviewBoundary":"committed-fingerprint","reviewReason":"Authenticate original8f compile and unchanged64 programme with exact empty-list API correction; no compilation","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "013220e6ac200945a8c6951a45d85a9f85fe230cb6b88fba34b3f4b4e6e5535f"
 }

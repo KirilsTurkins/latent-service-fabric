@@ -76,6 +76,8 @@ class Compiler:
         from tools.typescript_guest.activation_engine import engine_input_paths
         selection(runtime_profile)
         self.runtime_profile = runtime_profile
+        self.application_modules = None
+        self.standard_global_provider = self.standard_global_types_receipt = None
         self.engine, self.engine_original, self.engine_before = None, None, None
         self.engine_metadata = None
         self.runtime_observation = None
@@ -137,7 +139,7 @@ class Compiler:
             self.tools = staged
             self.recipe = isolated_workspace / "compiler-recipe"
             self.recipe.mkdir()
-            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs", "entropy.mjs", "clock_app.mjs"):
+            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "import_cancellation.mjs", "borrow_probe.mjs", "fetch.mjs", "console.mjs", "activation_module.mjs", "entropy.mjs", "clock_app.mjs", "node_buffer.mjs", "buffer_builtin.mjs", "buffer_globals.mjs", "buffer_global_initializer.mjs", "node_net.mjs", "node_net_transport.mjs", "node_net_bindings.mjs", "net_builtin.mjs"):
                 (self.recipe / name).write_bytes(read_file(ROOT / "tools/typescript_guest" / name))
         modules = self.tools / "node_modules"
         self.jco = modules / "@bytecodealliance/jco/dist/jco.js"
@@ -175,14 +177,32 @@ class Compiler:
             inputs = {"typescript-compiler": self.tools}
             if self.engine is not None:
                 inputs['typescript-runtime-engine'] = self.engine.parent
-            self.isolation = Isolation(isolated_workspace, selected_tools, inputs)
+            deadline = getattr(commands, '_parent_deadline', None)
+            options = {} if deadline is None else {'_deadline': deadline}
+            self.isolation = Isolation(isolated_workspace, selected_tools, inputs, **options)
             self.isolation.protect_inputs(self.recipe)
 
     def run(self, stage, tool, *arguments):
         if self.isolation is None:
             return self.commands.run(stage, tool, *arguments)
+        if stage == 'typecheck' and self.application_modules is not None:
+            return self.commands.run(stage, *self.isolation.wrap(Path(tool), [str(value) for value in arguments],
+                self.commands.root, self.commands.environment, typecheck_node_modules=True))
         return self.commands.run(stage, *self.isolation.wrap(Path(tool), [str(value) for value in arguments],
                                                            self.commands.root, self.commands.environment))
+
+    def prepare_application_modules(self, closure):
+        from tools.typescript_application_dependencies import bundle_configuration
+        if self.isolation is None or self.application_modules is not None:
+            raise ValueError('captured-typescript-module-layout-requires-fresh-isolation')
+        if closure.work.resolve(strict=True) != self.commands.root.resolve(strict=True):
+            raise ValueError('captured-typescript-module-layout-project-mismatch')
+        self.isolation.select_typecheck_node_modules(closure)
+        self.application_modules = bundle_configuration(closure)
+        from tools.typescript_guest.runtime_profile import NATIVE_PROFILES
+        if self.runtime_profile in NATIVE_PROFILES:
+            from tools.typescript_guest import standard_global_types
+            self.standard_global_provider = standard_global_types.select(closure)
 
     def identity(self, tools=None):
         # npm's .bin links are launch conveniences, never compiler inputs: use
@@ -206,8 +226,14 @@ class Compiler:
                 raise ValueError("compiler dependency closure limit")
         return {"files": rows, "bytes": total}
 
-    def compile(self, work: Path, world: str, output: Path, *, application_modules: dict | None = None):
+    def compile(self, work: Path, world: str, output: Path, *, application_modules: dict | None = None,
+                diagnostic_profile: str | None = None):
         from tools.typescript_guest import runtime_profile as runtime
+        from tools.typescript_guest import borrow_probe_profile
+        borrow_probe = borrow_probe_profile.validate(diagnostic_profile, work, world,
+                                                     self.runtime_profile, application_modules)
+        if application_modules is not None and 'borrowProbeProfile' in application_modules:
+            raise ValueError('application-cannot-select-private-borrow-probe')
         output.mkdir()
         command, wasm = self, self.wasm
         source = work / "wit"
@@ -301,6 +327,20 @@ class Compiler:
         # Preserve raw generated declarations separately from the reviewed
         # compiler spelling projection and compare both independent outputs.
         write_json(output / "raw-generated-bindings.json", tree_identity(generated))
+        runtime_declaration = clock_declaration = None
+        if self.runtime_profile in runtime.NATIVE_PROFILES:
+            from tools.typescript_guest import standard_global_types
+            runtime_declaration = read_file(ROOT/standard_global_types.RUNTIME)
+            if self.runtime_profile in runtime.CLOCK_PROFILES:
+                clock_declaration = read_file(ROOT/standard_global_types.CLOCK)
+            runtime_declaration, clock_declaration, self.standard_global_types_receipt = standard_global_types.compose(
+                self.standard_global_provider, runtime_declaration, clock_declaration)
+            if self.standard_global_types_receipt is not None:
+                write_json(output/standard_global_types.RECEIPT, self.standard_global_types_receipt)
+                # Retain attempted declarations even when the strict TSC stage
+                # fails. This unknown selection is never successful build proof.
+                if self.commands.output != output:
+                    write_json(self.commands.output/standard_global_types.RECEIPT, self.standard_global_types_receipt)
         for directory in (generated, second):
             for path in sorted(directory.rglob("*.d.ts")):
                 original = path.read_text(encoding="utf-8")
@@ -308,12 +348,15 @@ class Compiler:
                 if adapted != original:
                     path.write_text(adapted, encoding="utf-8")
             if self.runtime_profile in runtime.NATIVE_PROFILES:
-                (directory/'activation-runtime-globals.d.ts').write_bytes(
-                    read_file(ROOT/'sdk/typescript-guest/activation/runtime-globals.d.ts'))
+                (directory/'activation-runtime-globals.d.ts').write_bytes(runtime_declaration)
                 if self.runtime_profile in runtime.CLOCK_PROFILES:
-                    (directory/'clock-runtime-globals.d.ts').write_bytes(
-                        read_file(ROOT/'sdk/typescript-guest/activation/clock-globals.d.ts'))
+                    (directory/'clock-runtime-globals.d.ts').write_bytes(clock_declaration)
         imports = import_identities(binding_graph, binding_world)
+        if borrow_probe:
+            if set(imports) != {borrow_probe_profile.ORIGINAL, borrow_probe_profile.GATE, borrow_probe_profile.DIAGNOSTIC}:
+                raise ValueError('compiler-owned-borrow-probe-import-graph')
+            for directory in (generated, second):
+                borrow_probe_profile.declarations(directory)
         from tools.typescript_guest import fetch_profile
         from tools.typescript_guest import console_profile
         if fetch_profile.selected(self.runtime_profile, imports):
@@ -334,6 +377,13 @@ class Compiler:
             console_configuration = console_profile.configuration({}, application_graph, application_world, standard)
             for directory in (generated, second):
                 (directory/'console-runtime-globals.d.ts').write_bytes(declaration)
+        from tools.typescript_guest import buffer_profile, net_profile
+        buffer_declaration = read_file(ROOT/buffer_profile.DECLARATION)
+        for directory in (generated, second):
+            (directory/'buffer-runtime.d.ts').write_bytes(buffer_declaration)
+        net_declaration = read_file(ROOT/net_profile.DECLARATION)
+        for directory in (generated, second):
+            (directory/'net-runtime.d.ts').write_bytes(net_declaration)
         first_identity = tree_identity(generated)
         if first_identity != tree_identity(second):
             raise ValueError("generated binding drift between identical inputs")
@@ -345,16 +395,18 @@ class Compiler:
         missing = [name for name in imports if name not in paths]
         if missing:
             raise ValueError("unsupported or colliding generated WIT import identities: " + ", ".join(missing))
+        paths['buffer'] = paths['node:buffer'] = ['./generated/buffer-runtime.d.ts']
+        paths['net'] = paths['node:net'] = ['./generated/net-runtime.d.ts']
         # Compiler-generated wrappers use stackful calls: asynchronous host WIT
         # still suspends in Wasmtime, never a hidden JavaScript event loop.
         config = {"compilerOptions": {"target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler",
                   "strict": True, "noEmit": True, "lib": ["ES2022"], "types": [], "paths": paths},
                   "include": ["src/**/*.ts", "generated/**/*.d.ts"]}
+        if application_modules != self.application_modules:
+            raise ValueError('captured-typescript-module-layout-not-prepared')
         if application_modules is not None:
-            config["compilerOptions"]["paths"]["*"] = ["./" + application_modules["moduleRoot"] + "/*"]
             config["compilerOptions"]["customConditions"] = application_modules["conditions"]
         write_json(work / "tsconfig.json", config)
-        command.run("typecheck", self.node, self.tsc, "--project", work / "tsconfig.json")
         allowed = output / "imports.json"
         write_json(allowed, imports)
         bundle = output / "application.mjs"
@@ -377,6 +429,18 @@ class Compiler:
                                                               'component', 'wit', contract, '--json')))
         entropy_configuration = entropy_profile.configuration(
             {**configured, **(console_configuration or {})}, application_graph, application_world, standard_random)
+        standard_net = None
+        if self.runtime_profile == runtime.IMPORT_PROFILE and net_profile.INTERFACE in runtime.public_graph(application_graph, application_world)['imports']:
+            if read_file(work/'vendor/lsf'/net_profile.WIT) != read_file(ROOT/net_profile.WIT):
+                raise ValueError('captured TypeScript stream interface differs from the maintained profile')
+            standard_net = semantic(json.loads(command.run('standard-net-types', wasm, 'component', 'wit',
+                work/'vendor/lsf/wit/platform/network', '--json')))
+        entropy_configuration = net_profile.configuration(entropy_configuration, application_graph, application_world,
+            standard_net, runtime_profile=self.runtime_profile)
+        if 'standardNetProfile' in entropy_configuration:
+            entropy_configuration['standardNetIdentities'] = net_profile.identities(ROOT)
+        if borrow_probe:
+            entropy_configuration['borrowProbeProfile'] = borrow_probe_profile.PROFILE
         write_json(bundle_configuration, entropy_configuration)
         if self.isolation is not None:
             self.isolation.protect_inputs(work)
@@ -384,6 +448,28 @@ class Compiler:
                     work, work / "src/main.ts", bundle, allowed, bundle_configuration,
                     self.tools / "node_modules/acorn/dist/acorn.mjs")
         bundled = json.loads(read_file(output / 'application.mjs.inputs.json', 8 * 1024 * 1024))
+        buffer_selection = buffer_profile.check_selection(bundled, digest(read_file(ROOT/buffer_profile.BACKEND)),
+            buffer_profile.global_identities(ROOT))
+        buffer_profile.verify_captured_declaration(buffer_selection, buffer_declaration,
+            lambda: read_file(work/'vendor/lsf'/buffer_profile.DECLARATION))
+        if buffer_selection is not None:
+            write_json(output/'typescript-buffer-selection.json', buffer_selection)
+        if buffer_selection is not None and buffer_selection['globalBufferInstalled']:
+            global_path = buffer_profile.GLOBAL_RECIPE['declaration']
+            declaration = read_file(ROOT/global_path)
+            buffer_profile.prepare_global_declarations(buffer_selection, declaration,
+                lambda: read_file(work/'vendor/lsf'/global_path), (generated, second),
+                provided_node=self.standard_global_provider is not None)
+            if tree_identity(generated) != tree_identity(second):
+                raise ValueError('selected global Buffer declarations changed between identical inputs')
+        # The bounded bundler prepass only selects declarations/owned modules.
+        # Strict typechecking still precedes all componentization and admission.
+        command.run("typecheck", self.node, self.tsc, "--project", work / "tsconfig.json")
+        net_selection = net_profile.selected(bundled, net_profile.identities(ROOT))
+        if net_selection is not None:
+            if borrow_probe or read_file(work/'vendor/lsf'/net_profile.DECLARATION) != net_declaration:
+                raise ValueError('captured TypeScript net declarations or private probe profile differ')
+            write_json(output/'typescript-net-selection.json', net_selection)
         if bundled['standardEntropyProfile'] != entropy_configuration['standardEntropyProfile']:
             raise ValueError('typescript-standard-entropy-selection-drift')
         write_json(output / 'typescript-entropy-selection.json', {
@@ -403,6 +489,10 @@ class Compiler:
         if self.source_splicer is not None:
             arguments.extend((self.source_splicer/'spidermonkey-embedding-splicer.js',
                               self.tools/'node_modules/acorn/dist/acorn.mjs'))
+        if borrow_probe:
+            arguments.append(borrow_probe_profile.PROFILE)
+        if net_selection is not None:
+            arguments.append("--node-net-selection=" + str(output/'typescript-net-selection.json'))
         command.run("componentize", self.node, self.recipe / "componentize.mjs", *arguments)
         bare, embedded, component = (output / name for name in ("bare.wasm", "embedded.wasm", "component.wasm"))
         command.run("strip-projection", wasm, "strip", "--delete", "^component-type", output / "core.wasm", "-o", bare)

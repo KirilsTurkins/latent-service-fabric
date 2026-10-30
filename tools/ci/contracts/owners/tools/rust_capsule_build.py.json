@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/rust_capsule_build.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Compose deterministic selected-thread remap with lazy Rust-only recipe resolution, preserving the exact45 authenticated host decision materials and complete selected source closure.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8fbcb10eb7e7b2a2fc39834f0b94600fad2364c9b326bcc9db030418cf891b61"
+{"kind":"owner","path":"tools/rust_capsule_build.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review Rust wit-bindgen 0.63.0 macro compatibility and separate 0.62.0 CLI selection; preserve existing execution commands and qualification cases.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "e63540cd434a3cd61a8daa7860962d7ba5499683726b3c3a94bfec94e5570d64"
 }

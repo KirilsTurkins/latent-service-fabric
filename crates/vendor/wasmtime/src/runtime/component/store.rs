@@ -94,7 +94,7 @@ pub struct RuntimeInstance {
 impl ComponentStoreData {
     pub fn new(engine: &Engine, memory: NativeMemory) -> ComponentStoreData {
         ComponentStoreData {
-            instances: NativeMap::new(memory),
+            instances: NativeMap::new(memory.clone()),
             trapped: false,
             num_component_instances: 0,
             component_host_table: Default::default(),
@@ -103,7 +103,7 @@ impl ComponentStoreData {
             task_state: if engine.tunables().concurrency_support {
                 #[cfg(feature = "component-model-async")]
                 {
-                    ComponentTaskState::Concurrent(Default::default())
+                    ComponentTaskState::Concurrent(ConcurrentState::new(memory))
                 }
                 #[cfg(not(feature = "component-model-async"))]
                 {

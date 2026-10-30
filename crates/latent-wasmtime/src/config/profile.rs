@@ -85,6 +85,10 @@ impl WasmtimeConfig {
         ]);
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);
+        #[cfg(feature = "development-test-host")]
+        if self.development_numeric_trap_observation {
+            fields.insert("development-numeric-trap-frames".into(), "16".into());
+        }
         if self.owned_native_stacks {
             fields.insert(
                 "native-stack-accounting".into(),
@@ -200,6 +204,13 @@ impl WasmtimeConfig {
                     "fixed-v1:{}:{}",
                     readings.monotonic_nanos, readings.wall_unix_millis
                 ),
+            );
+        }
+        #[cfg(feature = "development-local-service-fixture")]
+        if self.development_local_service_refusals {
+            fields.insert(
+                "development-local-service-refusals".into(),
+                "first-per-activation-v1".into(),
             );
         }
         self.context_policy.append_profile_fields(&mut fields);

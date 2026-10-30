@@ -78,6 +78,174 @@ fn fixed_wire_rejects_wrong_expiry_error_and_unknown_phase() {
     assert!(status(&bad, 123).is_err());
 }
 
+#[test]
+fn close_status_preserves_original_expiry_and_never_accepts_ready_as_retirement() {
+    let expiry = ReadyExpiry(123);
+    assert_eq!(
+        close_status(&frame(CLOSED, 123), expiry).unwrap(),
+        StreamKernelCloseObservation::RequestAccepted
+    );
+    for phase in [0, 1, READY, 3, 5, u32::MAX] {
+        assert!(close_status(&frame(phase, 123), expiry).is_err());
+    }
+    assert!(close_status(&frame(CLOSED, 124), expiry).is_err());
+    for offset in [0, 4, 12] {
+        let mut wrong = frame(CLOSED, 123);
+        wrong[offset] ^= 1;
+        assert!(close_status(&wrong, expiry).is_err());
+    }
+    // Actual shared ABI decoder, not a custom-kernel or refund claim.
+    let mut returned = [0; retirement::WIRE_BYTES];
+    for (offset, value) in [(0, 0x4c53_4652u32), (4, 1), (8, 1), (16, 63), (20, 1)] {
+        returned[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+    }
+    for (offset, value) in [(24, 1u64), (32, 2), (40, 123)] {
+        returned[offset..offset + 8].copy_from_slice(&value.to_le_bytes());
+    }
+    assert!(retirement::terminal(&returned, expiry));
+    for offset in [0, 4, 8, 12, 16, 20, 24, 32, 40] {
+        let mut wrong = returned;
+        wrong[offset] ^= 1;
+        assert!(!retirement::terminal(&wrong, expiry));
+    }
+    assert!(!retirement::terminal(&returned, ReadyExpiry(124)));
+}
+
+#[test]
+fn real_file_close_transfer_keeps_exact_frame_and_refuses_short_or_error_reply() {
+    use std::io::{Read, Seek, SeekFrom};
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("fixed-close-wire");
+    for (reply, expected) in [
+        (
+            frame(CLOSED, 123).to_vec(),
+            StreamKernelCloseObservation::RequestAccepted,
+        ),
+        (
+            frame(READY, 123).to_vec(),
+            StreamKernelCloseObservation::Uncertain,
+        ),
+        (
+            frame(CLOSED, 124).to_vec(),
+            StreamKernelCloseObservation::Uncertain,
+        ),
+        (
+            frame(CLOSED, 123)[..12].to_vec(),
+            StreamKernelCloseObservation::Uncertain,
+        ),
+    ] {
+        let mut content = vec![0; FRAME_BYTES];
+        content.extend_from_slice(&reply);
+        std::fs::write(&path, content).unwrap();
+        let mut file = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&path)
+            .unwrap();
+        assert_eq!(close_request(&mut file, ReadyExpiry(123)), expected);
+        assert_eq!(
+            file.stream_position().unwrap(),
+            (FRAME_BYTES + reply.len()) as u64
+        );
+        file.seek(SeekFrom::Start(0)).unwrap();
+        let mut request = [0; FRAME_BYTES];
+        file.read_exact(&mut request).unwrap();
+        assert_eq!(request, frame(CLOSE, 123));
+    }
+    let mut readonly = File::open(&path).unwrap();
+    assert_eq!(
+        close_request(&mut readonly, ReadyExpiry(123)),
+        StreamKernelCloseObservation::Uncertain
+    );
+    assert_eq!(readonly.stream_position().unwrap(), 0);
+}
+
+#[tokio::test]
+async fn fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backing() {
+    let fixture = Fixture::new(config());
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("fixed-close-owner");
+    let mut content = vec![0; FRAME_BYTES];
+    content.extend_from_slice(&frame(CLOSED, 123));
+    std::fs::write(&path, content).unwrap();
+    let original = path.clone();
+    let (send, receive) = tokio::sync::oneshot::channel();
+    // Private real-file seam only; this control does not claim kernel READY.
+    let owner = start_initialized_with(
+        Arc::clone(&fixture.pools),
+        &fixture.provider.inner.installed,
+        Instant::now() + Duration::from_secs(5),
+        None,
+        BankReturn::RetainWhole,
+        move || {
+            std::fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .open(path)
+                .map_err(|_| error(StreamErrorCode::IoFailed))
+        },
+        move |resource, _| {
+            let file = resource.descriptor.as_ref().unwrap();
+            send.send(descriptor(file)).unwrap();
+            Ok(Some(ReadyExpiry(123)))
+        },
+    )
+    .await
+    .unwrap();
+    let link = receive.await.unwrap();
+    let ready = stable_snapshot(&fixture.pools).await;
+    let receipt = owner.close().unwrap().wait().await.unwrap();
+    assert_eq!(
+        receipt.observation(),
+        StreamKernelCloseObservation::RequestAccepted
+    );
+    assert_ne!(std::fs::read_link(link).ok(), Some(original.clone()));
+    let held = stable_snapshot(&fixture.pools).await;
+    assert_eq!(held.connections, 1);
+    assert_eq!(held.failed_cleanup, 1);
+    assert_eq!(held.cleanup_jobs, ready.cleanup_jobs + 1);
+    assert!(held.metadata_bytes >= 1024 * 1024);
+    assert_eq!(
+        &std::fs::read(original).unwrap()[..FRAME_BYTES],
+        &frame(CLOSE, 123)
+    );
+    drop(receipt);
+    // Receipt consumption can beat the original sender/worker tail. Its shared
+    // billing must remain until that tail returns; lock access is not completion.
+    let retained = tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let retained = stable_snapshot(&fixture.pools).await;
+            assert_eq!(retained.connections, 1);
+            assert_eq!(retained.failed_cleanup, 1);
+            assert!(retained.metadata_bytes >= 1024 * 1024);
+            if retained.cleanup_jobs == ready.cleanup_jobs {
+                break retained;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+    })
+    .await
+    .expect("original sender/worker tail must return while backing stays held");
+    assert_eq!(retained.cleanup_jobs, ready.cleanup_jobs);
+    assert!(retained.metadata_bytes < held.metadata_bytes);
+    assert_eq!(retained.connections, 1);
+    assert_eq!(retained.failed_cleanup, 1);
+
+    // An observer attempt is prepaid before entry. This foreign regular file
+    // is refused BEFORE ioctl; abandonment still does not refund its owner.
+    let before_observer = stable_snapshot(&fixture.pools).await;
+    let mut observer =
+        retirement::Owner::reserve(&fixture.pools, Instant::now() + Duration::from_secs(1))
+            .unwrap();
+    let foreign = File::open(directory.path().join("fixed-close-owner")).unwrap();
+    assert!(observer.mint(&foreign, ReadyExpiry(123)).is_err());
+    observer.abandon();
+    let abandoned = stable_snapshot(&fixture.pools).await;
+    assert!(abandoned.metadata_bytes >= before_observer.metadata_bytes + 4096);
+    assert_eq!(abandoned.connections, 1);
+    drop(observer); // Only this BEFORE-ioctl refusal can drop its local metadata.
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn exhausted_node_allowance_refuses_before_any_open() {
     let fixture = Fixture::new(config());
@@ -88,20 +256,18 @@ async fn exhausted_node_allowance_refuses_before_any_open() {
     }
     let before = stable_snapshot(&fixture.pools).await;
     let flag = Arc::clone(&entered);
-    assert!(
-        start_with(
-            Arc::clone(&fixture.pools),
-            &fixture.provider.inner.installed,
-            Instant::now() + Duration::from_secs(5),
-            move || {
-                flag.store(true, Ordering::Release);
-                File::open("/dev/null").map_err(|_| error(StreamErrorCode::IoFailed))
-            },
-            |_, _| Ok(())
-        )
-        .await
-        .is_err()
-    );
+    assert!(start_with(
+        Arc::clone(&fixture.pools),
+        &fixture.provider.inner.installed,
+        Instant::now() + Duration::from_secs(5),
+        move || {
+            flag.store(true, Ordering::Release);
+            File::open("/dev/null").map_err(|_| error(StreamErrorCode::IoFailed))
+        },
+        |_, _| Ok(())
+    )
+    .await
+    .is_err());
     assert!(!entered.load(Ordering::Acquire));
     assert_eq!(stable_snapshot(&fixture.pools).await, before);
     drop(holds);
@@ -112,22 +278,20 @@ async fn possible_failed_open_retains_original_node_charge() {
     let fixture = Fixture::new(config());
     let before = stable_snapshot(&fixture.pools).await;
     let inspect = Arc::clone(&fixture.pools);
-    assert!(
-        start_with(
-            Arc::clone(&fixture.pools),
-            &fixture.provider.inner.installed,
-            Instant::now() + Duration::from_secs(5),
-            move || {
-                let admitted = blocking_snapshot(&inspect);
-                assert!(admitted.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
-                assert_eq!(admitted.connections, before.connections + 1);
-                Err(error(StreamErrorCode::Unsupported))
-            },
-            |_, _| panic!("failed open cannot initialize")
-        )
-        .await
-        .is_err()
-    );
+    assert!(start_with(
+        Arc::clone(&fixture.pools),
+        &fixture.provider.inner.installed,
+        Instant::now() + Duration::from_secs(5),
+        move || {
+            let admitted = blocking_snapshot(&inspect);
+            assert!(admitted.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
+            assert_eq!(admitted.connections, before.connections + 1);
+            Err(error(StreamErrorCode::Unsupported))
+        },
+        |_, _| panic!("failed open cannot initialize")
+    )
+    .await
+    .is_err());
     quarantined(&fixture.pools).await;
     let retained = stable_snapshot(&fixture.pools).await;
     assert_eq!(retained.connections, before.connections + 1);
@@ -142,22 +306,20 @@ async fn postopen_failure_closes_real_fd_without_refunding_backing() {
     let original = path.clone();
     let (send, receive) = tokio::sync::oneshot::channel();
     let before = stable_snapshot(&fixture.pools).await;
-    assert!(
-        start_with(
-            Arc::clone(&fixture.pools),
-            &fixture.provider.inner.installed,
-            Instant::now() + Duration::from_secs(5),
-            move || { File::create(path).map_err(|_| error(StreamErrorCode::IoFailed)) },
-            move |file, _| {
-                let link = descriptor(file);
-                assert_eq!(std::fs::read_link(&link).unwrap(), original);
-                send.send(link).unwrap();
-                Err(error(StreamErrorCode::Unsupported))
-            }
-        )
-        .await
-        .is_err()
-    );
+    assert!(start_with(
+        Arc::clone(&fixture.pools),
+        &fixture.provider.inner.installed,
+        Instant::now() + Duration::from_secs(5),
+        move || { File::create(path).map_err(|_| error(StreamErrorCode::IoFailed)) },
+        move |file, _| {
+            let link = descriptor(file);
+            assert_eq!(std::fs::read_link(&link).unwrap(), original);
+            send.send(link).unwrap();
+            Err(error(StreamErrorCode::Unsupported))
+        }
+    )
+    .await
+    .is_err());
     let link = receive.await.unwrap();
     quarantined(&fixture.pools).await;
     assert_ne!(
@@ -167,9 +329,72 @@ async fn postopen_failure_closes_real_fd_without_refunding_backing() {
     let retained = stable_snapshot(&fixture.pools).await;
     assert_eq!(retained.connections, 1);
     assert!(retained.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
+    partitioned_bank_retention_control().await;
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn partitioned_bank_retention_control() {
+    for accepted_close in [false, true] {
+        let fixture = Fixture::new(config());
+        let before = stable_snapshot(&fixture.pools).await;
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("partitioned-no-observer");
+        let original = path.clone();
+        let mut content = vec![0; FRAME_BYTES];
+        content.extend_from_slice(&frame(CLOSED, 123));
+        std::fs::write(&path, content).unwrap();
+        let (send, receive) = tokio::sync::oneshot::channel();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let observation = retirement::Owner::reserve(&fixture.pools, deadline).unwrap();
+        let result = start_initialized_with(
+            Arc::clone(&fixture.pools),
+            &fixture.provider.inner.installed,
+            deadline,
+            Some(observation),
+            BankReturn::ReclaimFixedBank,
+            move || {
+                std::fs::OpenOptions::new()
+                    .read(true)
+                    .write(true)
+                    .open(path)
+                    .map_err(|_| error(StreamErrorCode::IoFailed))
+            },
+            move |resource, _| {
+                send.send(descriptor(resource.descriptor.as_ref().unwrap()))
+                    .unwrap();
+                if accepted_close {
+                    // The existing ordinary-file seam cannot mint a protected
+                    // observation File or actual READY/Root-return proof.
+                    Ok(Some(ReadyExpiry(123)))
+                } else {
+                    Err(error(StreamErrorCode::Unsupported))
+                }
+            },
+        )
+        .await;
+        let link = receive.await.unwrap();
+        if accepted_close {
+            let receipt = result.unwrap().close().unwrap().wait().await.unwrap();
+            assert_eq!(
+                receipt.observation(),
+                StreamKernelCloseObservation::RequestAccepted
+            );
+            drop(receipt);
+        } else {
+            assert!(result.is_err());
+        }
+        quarantined(&fixture.pools).await;
+        assert_ne!(std::fs::read_link(link).ok(), Some(original));
+        let retained = stable_snapshot(&fixture.pools).await;
+        assert_eq!(retained.connections, 1);
+        assert_eq!(retained.failed_cleanup, 1);
+        assert!(retained.metadata_bytes >= before.metadata_bytes + 1024 * 1024 + 4096);
+    }
+}
+
+// Keep maintenance on this task's runtime thread so it cannot contend for the
+// admission mutex during synchronous Drop. The real close still runs on the
+// original blocking-worker table; refusal/retained-FD behavior is tested below.
+#[tokio::test]
 async fn ready_owner_drop_closes_on_original_worker_and_retains_capacity() {
     let fixture = Fixture::new(config());
     let directory = tempfile::tempdir().unwrap();
@@ -191,9 +416,23 @@ async fn ready_owner_drop_closes_on_original_worker_and_retains_capacity() {
     .unwrap();
     let link = receive.await.unwrap();
     assert_eq!(std::fs::read_link(&link).unwrap(), original);
-    assert_eq!(stable_snapshot(&fixture.pools).await.failed_cleanup, 0);
+    let ready = stable_snapshot(&fixture.pools).await;
+    assert_eq!(ready.failed_cleanup, 0);
+    assert_eq!(ready.cleanup_jobs, before.cleanup_jobs + 1);
     drop(owner);
-    quarantined(&fixture.pools).await;
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let snapshot = stable_snapshot(&fixture.pools).await;
+            // The quarantined connection retains its original maintenance
+            // permit; only the additional physical close job must retire.
+            if snapshot.failed_cleanup == 1 && snapshot.cleanup_jobs == ready.cleanup_jobs {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+    })
+    .await
+    .expect("original close worker must finish while retaining its connection");
     assert_ne!(std::fs::read_link(link).ok(), Some(original));
     let retained = stable_snapshot(&fixture.pools).await;
     assert_eq!(retained.connections, 1);
@@ -351,20 +590,18 @@ async fn constructor_panic_retains_prepaid_backing_and_closes_real_fd() {
     let path = directory.path().join("constructor-panic-owner");
     let original = path.clone();
     let (send, receive) = tokio::sync::oneshot::channel();
-    assert!(
-        start_with(
-            Arc::clone(&fixture.pools),
-            &fixture.provider.inner.installed,
-            Instant::now() + Duration::from_secs(5),
-            move || File::create(path).map_err(|_| error(StreamErrorCode::IoFailed)),
-            move |file, _| {
-                send.send(descriptor(file)).unwrap();
-                panic!("constructor unwound after actual open");
-            }
-        )
-        .await
-        .is_err()
-    );
+    assert!(start_with(
+        Arc::clone(&fixture.pools),
+        &fixture.provider.inner.installed,
+        Instant::now() + Duration::from_secs(5),
+        move || File::create(path).map_err(|_| error(StreamErrorCode::IoFailed)),
+        move |file, _| {
+            send.send(descriptor(file)).unwrap();
+            panic!("constructor unwound after actual open");
+        }
+    )
+    .await
+    .is_err());
     let link = receive.await.unwrap();
     quarantined(&fixture.pools).await;
     assert_ne!(std::fs::read_link(link).ok(), Some(original));

@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/phase3_security.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Authenticate selected Wasmtime48.0.7 security patch and coupled current identities; preserve all historical evidence, feature/capability/limit/skip obligations and exact native source guard.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "944653e5e1b91e44c3bb919a1d73aa2325ad54b3c3b8dd79a76ea359c350eb9a"
+{"kind":"owner","path":"tools/phase3_security.py","reviewBoundary":"committed-fingerprint","reviewReason":"Authenticate selected Wasmtime48.0.7 security patch and coupled current identities; preserve all historical evidence, feature/capability/limit/skip obligations and exact native source guard.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "944653e5e1b91e44c3bb919a1d73aa2325ad54b3c3b8dd79a76ea359c350eb9a"
 }

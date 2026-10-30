@@ -3,6 +3,7 @@ import copy
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 from tools.dev_workflow.common import digest, encode
 from tools.dotnet_guest import reachability as r
@@ -32,6 +33,87 @@ GRAPH = (b'<DirectedGraph xmlns="http://schemas.microsoft.com/vs/2009/dgml"><Nod
 
 
 class ScannerMethods(unittest.TestCase):
+    def test_real_reference_selection_binds_the_original_closed_port_CoreLib_and_rechecks_material(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve(); project = root / 'project'; project.mkdir()
+            packages = root / 'packages'; packages.mkdir()
+            app = project / 'Application.dll'; app.write_bytes(b'application metadata input')
+            derived = project / 'closed/System.Private.CoreLib.dll'; derived.parent.mkdir()
+            derived.write_bytes(b'actual selected CoreLib bytes')
+            facade = packages / 'System.Runtime.dll'; facade.write_bytes(b'actual selected facade bytes')
+            checks = []
+            port = SimpleNamespace(assembly=derived, identity={'digest': digest(derived.read_bytes())},
+                                   recheck=lambda: checks.append('original-port'))
+            compiler = SimpleNamespace(filesystem_port=port, package_cache=packages)
+            response = ''.join('-r:"' + path.as_posix() + '"\n' for path in (derived, facade)).encode()
+            self.assertEqual(r.cil_inputs(compiler, project, response, [app]),
+                ([app, derived, facade], 1, port.identity['digest']))
+            self.assertEqual(checks, ['original-port'])
+            with self.assertRaisesRegex(ValueError, 'CoreLib-response-binding'):
+                r.cil_inputs(compiler, project, response + ('-r:"' + derived.as_posix() + '"\n').encode(), [app])
+            derived.write_bytes(b'different CoreLib bytes')
+            with self.assertRaisesRegex(ValueError, 'CoreLib-response-binding'):
+                r.cil_inputs(compiler, project, response, [app])
+
+    def test_cil_reference_projection_requires_exact_current_api_callee_and_never_certifies_elimination(self):
+        corelib, token = digest(b'current derived CoreLib'), 0x06000123
+        target = digest((corelib + ':' + str(token)).encode())[7:]
+        signature = digest(bytes((0, 0, 14)))
+        raw = {'schemaVersion': 'lsf.dotnet.cil-references.v1', 'corelibDigest': corelib,
+            'scope': 'captured-input-call-operands', 'forwarding': 'exact-selected-ILC-assembly-identities',
+            'indirectDispatch': 'unknown', 'apiSupport': 'unknown', 'runtimeExecution': 'not-observed',
+            'unknownReferences': 1, 'omittedEdges': 0, 'bodiesInspected': 2, 'bodyBytesInspected': 100,
+            'edges': [{'sourceId': 'a' * 64, 'bodyDigest': digest(b'actual source IL body'), 'offset': 4,
+                'operation': 'ldftn', 'targetId': target, 'targetAssemblyDigest': corelib,
+                'targetSignatureDigest': signature}],
+            'apiBodies': [{'api': 'System.IO.Path.GetTempFileName', 'id': target, 'assemblyDigest': corelib,
+                'signatureDigest': signature, 'bodyDigest': digest(b'actual API IL body'), 'metadataToken': token}]}
+        methods = [{'id': target, 'assemblyDigest': corelib, 'signatureDigest': signature}]
+        observed = r.cil_observation(raw, corelib, methods)
+        self.assertEqual(observed['edges'][0]['targetId'], observed['apiBodies'][0]['id'])
+        self.assertEqual((observed['apiSupport'], observed['runtimeExecution'], observed['unknownReferences']),
+                         ('unknown', 'not-observed', 1))
+        for change in ('assembly', 'signature', 'operand', 'body-bound'):
+            altered = copy.deepcopy(raw)
+            if change == 'assembly': altered['apiBodies'][0]['assemblyDigest'] = digest(b'foreign CoreLib')
+            elif change == 'signature': altered['apiBodies'][0]['signatureDigest'] = digest(b'other signature')
+            elif change == 'operand': altered['edges'][0]['operation'] = []
+            else: altered['bodyBytesInspected'] = 8 * 1024 * 1024 + 1
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                r.cil_observation(altered, corelib, methods)
+
+    def test_completed_codegen_graph_is_bound_separately_without_api_elimination_credit(self):
+        positive = GRAPH.replace(b'</Nodes>', b'<Node Id="2" Label="Outside_Worker__Callback"/></Nodes>')
+        value = r.scanner(GRAPH, queries())
+        value['compiledMethods'] = r.compiled_methods(positive, queries())
+        value.update({name: digest(name.encode()) for name in ('responseDigest', 'metadataToolSourceDigest', 'metadataToolDigest')})
+        identities = {name: digest(name.encode()) for name in ('source', 'component', 'compiler', 'recipe', 'graph')}
+        bound = r.bind(value, **identities)
+        self.assertEqual(bound['methods'][1]['state'], 'not-retained')
+        self.assertEqual(bound['compiledMethods']['methods'][1]['state'], 'codegen-node-observed')
+        self.assertEqual(bound['compiledMethods']['apiElimination'], 'not-established')
+        self.assertNotEqual(bound['scannerDigest'], bound['compiledMethods']['graphDigest'])
+        changed = copy.deepcopy(bound)
+        changed['compiledMethods']['methods'][1]['id'] = 'd' * 64
+        changed['compiledMethods']['identity'] = digest(encode({key: val for key, val in changed['compiledMethods'].items()
+            if key != 'identity'}))
+        changed['identity'] = digest(encode({key: val for key, val in changed.items() if key != 'identity'}))
+        with self.assertRaisesRegex(ValueError, 'codegen-query-identity'): r.validate(changed)
+        with self.assertRaises(ValueError): r.compiled_methods(positive[:-1], queries())
+
+    def test_actual_codegen_response_selects_one_owned_graph_and_rejects_outside_or_duplicate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            project = root / 'project'; project.mkdir()
+            selected = project / 'Entry.codegen.dgml.xml'; selected.write_bytes(GRAPH)
+            response = ('--dgmllog:"' + str(selected).replace('\\', '/') + '"\n').encode()
+            self.assertEqual(r.codegen_input(project, response), selected)
+            self.assertEqual(r.codegen_input(project, b'--dgmllog:Entry.codegen.dgml.xml\n'), selected)
+            with self.assertRaisesRegex(ValueError, 'codegen-selection'): r.codegen_input(project, response * 2)
+            outside = root / 'outside.codegen.dgml.xml'; outside.write_bytes(GRAPH)
+            with self.assertRaisesRegex(ValueError, 'codegen-location'):
+                r.codegen_input(project, ('--dgmllog:"' + str(outside).replace('\\', '/') + '"\n').encode())
+
     def test_actual_response_paths_select_only_original_captured_transitive_references(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); project = root / 'project'; (project / 'obj').mkdir(parents=True)

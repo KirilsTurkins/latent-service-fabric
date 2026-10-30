@@ -1,0 +1,16 @@
+{
+"storageCases":"guard-keys",
+"guards":{
+"SmartBufferControls.test_exact_published_fixture_and_actual_strict_types":
+      "bb300707779b680edac66bada7a8fa24684db448a40d98be4ba597207fb0a22f",
+"SmartBufferControls.test_original_graph_bindings_and_public_only_collector":
+      "bb300707779b680edac66bada7a8fa24684db448a40d98be4ba597207fb0a22f"
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_smart_buffer.py",
+"reviewReason":"Add explicit captured-provider/pinnedstrictTSC and closedpublishedSmartBuffer/provenance/public-retention controls; genericmissingcapture may skip but the owningprogramme requires allthree with zeroskips; allpriorcaseguards unchanged.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"bb300707779b680edac66bada7a8fa24684db448a40d98be4ba597207fb0a22f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:fad611c44839a26f2220cce30383354e6a33861e525941fdf766d4e595fd3995","class:setup-sha256:8c9dc804f9be93c0aaf40c5c71ebe1e3af5c96de7fde6c97d4aea508ac4af5e7","class:skip:self.skipTest('explicit normal SmartBuffer capture required; owning programme refuses skips')"],"skipSites":[]}
+}
+}

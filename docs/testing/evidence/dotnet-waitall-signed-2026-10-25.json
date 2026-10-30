@@ -1,0 +1,781 @@
+{
+  "schemaVersion": "latent.dotnet.waitall.signed-evidence.v1",
+  "status": "passed",
+  "scope": "normal managed finite NativeAOT selection; fourteen exact signed outcomes",
+  "source": {
+    "commit": "18576f471ef817943b385d3ad5ab12d4dd6f89bb",
+    "tree": "05ad4c635c3f824e9eca2478786a4f6cb0ddb1d3",
+    "executedGitMaterialCount": 108,
+    "executedGitMaterialsCanonicalSha256": "sha256:554a9046accf873a9dbf218c142fedc77fe5e99fa5dd0bdcab9c55fab05348c4",
+    "allExecutedGitMaterialsVerified": true
+  },
+  "workflow": {
+    "run": 40188795279,
+    "job": 121155140690,
+    "attempt": 1,
+    "event": "push",
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40188795279/job/121155140690",
+    "artifact": 12597577629,
+    "archive": {
+      "bytes": 8424231,
+      "sha256": "sha256:a024b2ecf2377cb7ea77e3dd5f9a68c098d524d7e9c4337e0c186f1d9b08909f"
+    },
+    "safeCrcMembers": 405,
+    "admittedPayloadMembers": 404,
+    "uploadUnionBytes": 30380102
+  },
+  "rawReceipts": {
+    "programme/qualified.json": {
+      "bytes": 51873,
+      "sha256": "sha256:aea8bee909ac478723babc4d8f74b5f3ffd27101a00bd63c27919dc45d525f1c"
+    },
+    "programme/node/qualified.json": {
+      "bytes": 552686,
+      "sha256": "sha256:780ce29da6d23746a2c22f7f069d4c8548912d692c63be1d2630cc8a11802ca1"
+    },
+    "programme/build/task-wait-port.json": {
+      "bytes": 19748,
+      "sha256": "sha256:198634a4776400ca3127a65bec70e9bbb5baf998e2f50a7dddbb1b9e98e6c3de"
+    },
+    "programme/build/closed-filesystem-port.json": {
+      "bytes": 2553,
+      "sha256": "sha256:2c559f4067109c127c0d61c36da68e3b3c07f007cb3f04ea9fd099d3c8e7f069"
+    },
+    "programme/build/BUILD-COMPLETE.json": {
+      "bytes": 5807,
+      "sha256": "sha256:dd44195f7c47caf2fe3863c03816a1dfdc08d5da3c8d9f6451bd30cc867ecfe4"
+    },
+    "programme/build/compiler-patches.json": {
+      "bytes": 30244,
+      "sha256": "sha256:27e9bf1965df93308bc214530d65bd4f51d9472d88938c83315316ceef41a4be"
+    },
+    "programme/build/source-inputs.json": {
+      "bytes": 24366,
+      "sha256": "sha256:2be4bc81d00aaf022fb56b0414679d09f4a99d8d769d95554a237b765a0d13f9"
+    },
+    "programme/build/recipe-inputs.json": {
+      "bytes": 8718,
+      "sha256": "sha256:4b11faa422bf16085134dcbcdfd5fcc60e3924218333e0cf5a08bdcd3b89addc"
+    },
+    "programme/build/runtime-profile.json": {
+      "bytes": 3391,
+      "sha256": "sha256:99b9f0f206f30c02bbd2c572b6179cb2cc0e2c09bd8b00593d7f660660953fdd"
+    },
+    "programme/build/package-inputs.json": {
+      "bytes": 1201,
+      "sha256": "sha256:323a5b20c49820a6cd4bd673fe4949ba6ed2863c94714048e61e65e783d6754a"
+    },
+    "programme/build/build-observation.json": {
+      "bytes": 8456,
+      "sha256": "sha256:46d0ac36fba82b5b33ff50c359019e0f6ad84c346d0e5ed4f04a0b6c828c9a2a"
+    },
+    "native/retrieval.json": {
+      "bytes": 2532,
+      "sha256": "sha256:b5dab992fda7d6b8876937bf87768b435e53ec6765d37b9193fdc5cf32f28d43"
+    },
+    "tools/INSTALL-COMPLETE.json": {
+      "bytes": 2111,
+      "sha256": "sha256:c6612aec819f11857090705ee9ae51f0c6c0c60d0b3f1b2456d7883b28230d66"
+    }
+  },
+  "build": {
+    "actualSdk": "10.0.100",
+    "guestComponentsCompiled": 1,
+    "nativeProductsBuilt": 0,
+    "engineRebuilt": false,
+    "component": {
+      "sha256": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+      "bytes": 4096785
+    },
+    "taskWaitCoreLib": {
+      "name": "task-wait-derived-corelib",
+      "digest": "sha256:0dd2af803bce9b68adefe0fd5b14e1e0a1e553e47856867fbedc8680b2ef222d",
+      "size": 5621248
+    },
+    "finalClosedFilesystemCoreLib": {
+      "name": "closed-filesystem-derived-corelib",
+      "digest": "sha256:bc449bac32313b547de63b4b852f1ff619ca91b22a24cc36f3526fa09df7e348",
+      "size": 5620736
+    },
+    "runtimeInputs": {
+      "sha256": "sha256:7f3e2a5e05e6295e0cbc7e8e6d44051a07964752f1c974152f587fada3b7f8f2",
+      "bytes": 6729
+    },
+    "generatedHelpers": 95,
+    "unchangedOriginalMethods": 44709,
+    "generatedFields": 54,
+    "modifiedOriginalMethods": 36,
+    "aggregateRewrittenBodies": 16,
+    "aggregateRewrittenBodiesCanonicalSha256": "sha256:cc3451419495d0c75cf70ccd99908a0bca26240e51781a66b8f2431d72d0862c",
+    "pumpBodyIdentity": "c0764f8a2d3cbcd5eafb2b1ea85b8ed1d188ea701abdc409974e5b02620eeb55",
+    "closedFilesystemUnchangedBaseMethods": 44839,
+    "finalCoreLibReferenceChain": "normal strict task-wait receipt -> closed-filesystem receipt -> final ILC reference",
+    "rawDerivationQualificationFlagsAreNotPromoted": true
+  },
+  "nativeReuse": {
+    "source": "fe1653b42602270005d8f9935c021d7bd7a7412a",
+    "run": 40180739956,
+    "job": 121131080926,
+    "artifact": 12593859879,
+    "archiveBytes": 71053947,
+    "archiveSha256": "sha256:16014d6ec1a9757d6f1975fdc3813f826b14d626872e87736b3ec5510cb3c8f5",
+    "normalSourceAndProductValidatorsUnchanged": true
+  },
+  "publishedPackages": {
+    "polly.core/8.6.3": {
+      "archive": {
+        "digest": "sha256:e972912ebc10f2760bc14361c3cfbfe59e84bdf20b860b9bd939fa07a5d2c48c",
+        "size": 826595
+      },
+      "selectedTargets": {
+        "net10.0": {
+          "compile": {
+            "lib/net8.0/Polly.Core.dll": {
+              "related": ".pdb;.xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/Polly.Core.dll": {
+              "related": ".pdb;.xml"
+            }
+          }
+        },
+        "net10.0/wasi-wasm": {
+          "compile": {
+            "lib/net8.0/Polly.Core.dll": {
+              "related": ".pdb;.xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/Polly.Core.dll": {
+              "related": ".pdb;.xml"
+            }
+          }
+        }
+      },
+      "executableAssets": []
+    },
+    "polly/8.6.3": {
+      "archive": {
+        "digest": "sha256:922a22762e8f2968147bbba3fab4fc93907a13bae8da220ca3ad1c2eb68524bd",
+        "size": 766807
+      },
+      "selectedTargets": {
+        "net10.0": {
+          "compile": {
+            "lib/net6.0/Polly.dll": {
+              "related": ".pdb;.xml"
+            }
+          },
+          "runtime": {
+            "lib/net6.0/Polly.dll": {
+              "related": ".pdb;.xml"
+            }
+          }
+        },
+        "net10.0/wasi-wasm": {
+          "compile": {
+            "lib/net6.0/Polly.dll": {
+              "related": ".pdb;.xml"
+            }
+          },
+          "runtime": {
+            "lib/net6.0/Polly.dll": {
+              "related": ".pdb;.xml"
+            }
+          }
+        }
+      },
+      "executableAssets": []
+    }
+  },
+  "fixtureSource": {
+    "path": "tools/fixtures/dotnet-aggregate-task-waits/PublishedTasks.cs",
+    "identity": {
+      "sha256": "sha256:d89d984e7634c33b4e5f265bae29ad0a12ee368572a8f37e44b5e79b0b208111",
+      "bytes": 7881
+    },
+    "ordinaryApis": true,
+    "applicationSchedulerReplacement": false,
+    "httpDeclaration": false
+  },
+  "bounds": {
+    "provider": {
+      "tasks": 8,
+      "executors": 2,
+      "queuedWork": 8,
+      "waits": 16,
+      "timers": 8,
+      "results": 8,
+      "native": 8
+    },
+    "cpuFuel": 1000000000,
+    "memoryBytes": 134217728,
+    "wallSeconds": 120,
+    "rootNegativeSeconds": 3,
+    "explicitDeclarationsAndOperatorGrants": [
+      "ACTIVATION",
+      "CLOCK",
+      "WALL",
+      "RANDOM"
+    ],
+    "automaticGrant": false
+  },
+  "cases": [
+    {
+      "index": 1,
+      "mode": "waitall-two-incomplete",
+      "exitCode": 0,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "aggregate-task-wait:waitall-two-incomplete|original-results-observed"
+        }
+      ],
+      "publicErrorCode": null,
+      "cpuFuel": "51355618",
+      "peakMemoryBytes": "57987512",
+      "wallTimeMicros": "45804",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:947be1611e25c0bec6888273363bb44e278fbe8db7cf569965a4e1e6ac5497e1"
+    },
+    {
+      "index": 2,
+      "mode": "waitall-reverse-completion",
+      "exitCode": 0,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "aggregate-task-wait:waitall-reverse-completion|original-results-observed"
+        }
+      ],
+      "publicErrorCode": null,
+      "cpuFuel": "51356260",
+      "peakMemoryBytes": "57567664",
+      "wallTimeMicros": "44557",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:0343009b2bba15136de90370d6d8894f3ee601a9ccab3c04d9b078bdfd6f6d4a"
+    },
+    {
+      "index": 3,
+      "mode": "waitall-polly-multiple-errors",
+      "exitCode": 0,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "aggregate-task-wait:waitall-polly-multiple-errors|original-results-observed"
+        }
+      ],
+      "publicErrorCode": null,
+      "cpuFuel": "51745036",
+      "peakMemoryBytes": "57633206",
+      "wallTimeMicros": "36168",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:b51a91c7c4190ae255ec1f206a33bf131beb17c933df8fc6f2a369291ddd70e5"
+    },
+    {
+      "index": 4,
+      "mode": "waitall-task-own-cancellation",
+      "exitCode": 0,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "aggregate-task-wait:waitall-task-own-cancellation|original-results-observed"
+        }
+      ],
+      "publicErrorCode": null,
+      "cpuFuel": "55752447",
+      "peakMemoryBytes": "57567670",
+      "wallTimeMicros": "69254",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:9e41e1f6700bcf25cc3a6ba07a08d1236ad12eeb5b30abc2ea1f31c9d86336e7"
+    },
+    {
+      "index": 5,
+      "mode": "waitall-entry-token-precedence",
+      "exitCode": 0,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "aggregate-task-wait:waitall-entry-token-precedence|original-results-observed"
+        }
+      ],
+      "publicErrorCode": null,
+      "cpuFuel": "51310460",
+      "peakMemoryBytes": "57921992",
+      "wallTimeMicros": "16540",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:d68e28199088603fc4738d2d6f32f582ef6392fa6b722ea23d996c784ce19b3b"
+    },
+    {
+      "index": 6,
+      "mode": "waitall-later-wait-cancel",
+      "exitCode": 0,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "aggregate-task-wait:waitall-later-wait-cancel|original-results-observed"
+        }
+      ],
+      "publicErrorCode": null,
+      "cpuFuel": "51432913",
+      "peakMemoryBytes": "57567662",
+      "wallTimeMicros": "35629",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:01fd49307d19382d713f696e3311be47187e4336a7d9c718447b104b5613ef52"
+    },
+    {
+      "index": 7,
+      "mode": "waitall-one-finite-deadline",
+      "exitCode": 0,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "aggregate-task-wait:waitall-one-finite-deadline|original-results-observed"
+        }
+      ],
+      "publicErrorCode": null,
+      "cpuFuel": "51367231",
+      "peakMemoryBytes": "57567666",
+      "wallTimeMicros": "285202",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:9d3a4892e83c90cd866af13248fedb5b4a8b72c46f4a411d6c621ed4189d1084"
+    },
+    {
+      "index": 8,
+      "mode": "waitall-zero-query",
+      "exitCode": 0,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "aggregate-task-wait:waitall-zero-query|original-results-observed"
+        }
+      ],
+      "publicErrorCode": null,
+      "cpuFuel": "51318076",
+      "peakMemoryBytes": "57502112",
+      "wallTimeMicros": "15656",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:47fb755b7a14c079c7e4a2c720c6be489c0aef44b1ad206024c6012ab0ef9e54"
+    },
+    {
+      "index": 9,
+      "mode": "waitall-nested-single",
+      "exitCode": 0,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "aggregate-task-wait:waitall-nested-single|original-results-observed"
+        }
+      ],
+      "publicErrorCode": null,
+      "cpuFuel": "51653726",
+      "peakMemoryBytes": "57567654",
+      "wallTimeMicros": "83910",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:5a26cad1c090fc91e521e5db7ece4eeffed435f34eb667d250b7ca112afba369"
+    },
+    {
+      "index": 10,
+      "mode": "waitall-nested-aggregate",
+      "exitCode": 0,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "aggregate-task-wait:waitall-nested-aggregate|original-results-observed"
+        }
+      ],
+      "publicErrorCode": null,
+      "cpuFuel": "51389423",
+      "peakMemoryBytes": "57987516",
+      "wallTimeMicros": "46138",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:46bb8942857c226c690bb7094fbaa5c542c594fd9a800c163ee7301267034bdd"
+    },
+    {
+      "index": 11,
+      "mode": "root-cancel",
+      "exitCode": 4,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": null,
+      "publicErrorCode": "cancelled",
+      "cpuFuel": "51243431",
+      "peakMemoryBytes": "57567248",
+      "wallTimeMicros": "91662",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:98f38b86e06ccf53c4df3e0d20a459fad441743b3c034467ebdbd14942b76fb8",
+      "originalPendingWitness": {
+        "activation": "node-stop-pending",
+        "physicalOwners": {
+          "execution-cell-leases": 1,
+          "guest-invocations": 1,
+          "guest-stores": 1,
+          "guest-host-states": 1,
+          "guest-component-instances": 1
+        },
+        "providerCallRetained": true,
+        "positiveTimer": {
+          "activation": "node-stop-pending",
+          "records": [
+            {
+              "mode": "pending",
+              "event": "wait-pending",
+              "sequence": 1,
+              "tasks": 2,
+              "waits": 1,
+              "timers": 3
+            }
+          ],
+          "nativeObserver": {
+            "formatVersion": 1,
+            "qualification": false,
+            "records": [
+              {
+                "mode": "pending",
+                "event": "wait-pending",
+                "sequence": 1,
+                "tasks": 2,
+                "waits": 1,
+                "timers": 3
+              }
+            ],
+            "status": "observed",
+            "invalidMarkerCount": 0,
+            "overflow": false,
+            "scope": "two-public-node-stop-fixture-activations-only",
+            "managedProfileLimits": {
+              "tasks": 8,
+              "waits": 16,
+              "timers": 8
+            },
+            "goProgrammeExecutionClaimed": false
+          },
+          "positivePoint": "original runtime wait-for read-wait future returned Poll::Pending"
+        },
+        "audit": {
+          "waitForGrantCorrelated": false,
+          "droppedObservations": [
+            784
+          ],
+          "explicitLoss": true
+        },
+        "auditAloneIsBarrierEvidence": false
+      }
+    },
+    {
+      "index": 12,
+      "mode": "waitall-two-incomplete",
+      "exitCode": 0,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "aggregate-task-wait:waitall-two-incomplete|original-results-observed"
+        }
+      ],
+      "publicErrorCode": null,
+      "cpuFuel": "51355618",
+      "peakMemoryBytes": "57567656",
+      "wallTimeMicros": "38636",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:25227e759fc53472e3bdbe611b0742081cffbaed6ef6d823ccb7ad62ddb8f3e9"
+    },
+    {
+      "index": 13,
+      "mode": "root-deadline",
+      "exitCode": 4,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": null,
+      "publicErrorCode": "deadline-exceeded",
+      "cpuFuel": "51243431",
+      "peakMemoryBytes": "57567248",
+      "wallTimeMicros": "3002755",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:c30c3ffee6e0e24f5f9654a91de3bc9e6cd2daef5d07bb3ef8ec65fd2a83fa75",
+      "originalPendingWitness": {
+        "activation": "node-stop-drain",
+        "physicalOwners": {
+          "execution-cell-leases": 1,
+          "guest-invocations": 1,
+          "guest-stores": 1,
+          "guest-host-states": 1,
+          "guest-component-instances": 1
+        },
+        "providerCallRetained": true,
+        "positiveTimer": {
+          "activation": "node-stop-drain",
+          "records": [
+            {
+              "mode": "drain",
+              "event": "wait-pending",
+              "sequence": 2,
+              "tasks": 2,
+              "waits": 1,
+              "timers": 3
+            }
+          ],
+          "nativeObserver": {
+            "formatVersion": 1,
+            "qualification": false,
+            "records": [
+              {
+                "mode": "drain",
+                "event": "wait-pending",
+                "sequence": 2,
+                "tasks": 2,
+                "waits": 1,
+                "timers": 3
+              }
+            ],
+            "status": "observed",
+            "invalidMarkerCount": 0,
+            "overflow": false,
+            "scope": "two-public-node-stop-fixture-activations-only",
+            "managedProfileLimits": {
+              "tasks": 8,
+              "waits": 16,
+              "timers": 8
+            },
+            "goProgrammeExecutionClaimed": false
+          },
+          "positivePoint": "original runtime wait-for read-wait future returned Poll::Pending"
+        },
+        "audit": {
+          "waitForGrantCorrelated": false,
+          "droppedObservations": [
+            903
+          ],
+          "explicitLoss": true
+        },
+        "auditAloneIsBarrierEvidence": false
+      }
+    },
+    {
+      "index": 14,
+      "mode": "waitall-two-incomplete",
+      "exitCode": 0,
+      "outcomeKnown": true,
+      "processReaped": true,
+      "decoded": [
+        {
+          "ok": "aggregate-task-wait:waitall-two-incomplete|original-results-observed"
+        }
+      ],
+      "publicErrorCode": null,
+      "cpuFuel": "51355618",
+      "peakMemoryBytes": "57567656",
+      "wallTimeMicros": "46241",
+      "allEightEffectCountersZero": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bf6133ed66bf603772e6ee8f450ca861bba0e570b06b726794380ef54f56a8b8",
+        "releaseDigest": "sha256:dba0ad2ae87c593f5dd76b607b20a8817c90b57d13c92c82bef481e2c0e55116",
+        "revisionId": "revision-v1:sha256:c131090bc2dcfd9ff2684c01ac8cc71f30cd92df6940df7e160746496d426002",
+        "routeGeneration": "10"
+      },
+      "rawCaseCanonicalSha256": "sha256:406ec71feb214d2773041a646bf6dd7de120ed543c16d24f7e4a23f0a45a6293"
+    }
+  ],
+  "retirement": {
+    "nodeProcessId": 9888,
+    "nodeReaped": true,
+    "nodeClean": true,
+    "twentyThreeNamedShutdownCounts": {
+      "activeConnections": 0,
+      "activeRpcs": 0,
+      "activeControlJobs": 0,
+      "activeActivations": 0,
+      "cancellationRegistrations": 0,
+      "observerCorrelations": 0,
+      "quotaReservations": 0,
+      "queuedReservations": 0,
+      "reservedCpuFuel": 0,
+      "reservedMemoryBytes": 0,
+      "activeLeases": 0,
+      "queuedActivations": 0,
+      "quarantinedCells": 0,
+      "activeBackendInvocations": 0,
+      "instanceReservations": 0,
+      "preparingComponents": 0,
+      "preparingSourceBytes": 0,
+      "preparingMetadataBytes": 0,
+      "liveStores": 0,
+      "liveHostStates": 0,
+      "liveInstances": 0,
+      "liveTemporaryBuffers": 0,
+      "liveCancellationProbes": 0
+    },
+    "peer": {
+      "counts": {
+        "requests": 0,
+        "authorized": 0,
+        "unexpected": 0,
+        "holds": 0,
+        "closedHolds": 0
+      },
+      "closed": true,
+      "reaped": true,
+      "exitCode": 0
+    },
+    "nativeWaitObservations": {
+      "formatVersion": 1,
+      "qualification": false,
+      "records": [
+        {
+          "mode": "pending",
+          "event": "wait-pending",
+          "sequence": 1,
+          "tasks": 2,
+          "waits": 1,
+          "timers": 3
+        },
+        {
+          "mode": "drain",
+          "event": "wait-pending",
+          "sequence": 2,
+          "tasks": 2,
+          "waits": 1,
+          "timers": 3
+        }
+      ],
+      "status": "observed",
+      "invalidMarkerCount": 0,
+      "overflow": false,
+      "scope": "two-public-node-stop-fixture-activations-only",
+      "managedProfileLimits": {
+        "tasks": 8,
+        "waits": 16,
+        "timers": 8
+      },
+      "goProgrammeExecutionClaimed": false
+    },
+    "auditLossIsExplicit": true,
+    "auditAloneIsBarrierEvidence": false,
+    "scope": "original native pending witnesses, per-case guarded retirement and named final shutdown counts; not all retained telemetry/cache owners"
+  },
+  "history": {
+    "reference": {
+      "source": "732c53e98570ad59428af546fb095f81d518e2fb",
+      "run": 40180463429,
+      "outcomes": 23,
+      "kind": "qualification-private CLR reference; not this NativeAOT result",
+      "evidence": "dotnet-waitall-reference-2026-10-25.json"
+    },
+    "failedNormalV1": {
+      "source": "e36c6708f9d5f54bbaa688494b1cf764e420da0b",
+      "run": 40184556525,
+      "artifact": 12596295328,
+      "archiveBytes": 8310164,
+      "archiveSha256": "sha256:6ade75369c51d57dac5daf33e00fef3f16776e2563410185f95ada0d28ba7687",
+      "status": "failed",
+      "strictPassingOutcomes": 8,
+      "failedMode": "waitall-nested-single",
+      "publicFailure": "guest-trap/unreachable",
+      "privateException": "unavailable",
+      "remainingOutcomesNotCompleted": 5,
+      "sourceFinding": "shared timer-pump enumeration can be mutated by nested pumping; actual failed instruction remains unknown"
+    },
+    "v1RawFixturePreserved": true,
+    "v2ControlledHostFixtureIsNotObservedAssemblyEvidence": true
+  },
+  "limitations": {
+    "fullTicketQualification": false,
+    "exhaustiveNativeWaitAllOverloadQualification": false,
+    "generalThreadsOrMonitors": false,
+    "waitAny": false,
+    "cpuPreemptionWithoutYields": false,
+    "wholeOwnershipCostQualification": false,
+    "productionRollout": false,
+    "unsupportedContextsRemainUnsupported": true,
+    "managedBatchAllocationChargedToUnchangedHeap": true
+  }
+}

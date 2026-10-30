@@ -148,8 +148,12 @@ async fn optional_identity_presence_and_zero_wall_deadline_are_not_normalized() 
 #[tokio::test]
 async fn refused_initial_connection_is_not_implicitly_retried() {
     let peer = Peer::start().await;
-    let config = peer.config();
-    let address = peer.address;
+    let mut config = peer.config();
+    // Keep the destination port owned while its first connection is refused.
+    let socket = tokio::net::TcpSocket::new_v4().unwrap();
+    socket.bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let address = socket.local_addr().unwrap();
+    config.endpoint = address;
     peer.stop().await;
     let client = RpcClient::new(config).unwrap();
     let error = client
@@ -161,7 +165,9 @@ async fn refused_initial_connection_is_not_implicitly_retried() {
         .unwrap_err();
     assert_eq!(error.category, FailureCategory::TRANSPORT);
     assert!(!error.dispatched);
-    let listener = tokio::net::TcpListener::bind(address).await.unwrap();
+    // Start listening on that same socket, with no release/rebind window.
+    let listener = socket.listen(1).unwrap();
+    assert_eq!(listener.local_addr().unwrap(), address);
     let error = client
         .invoke(
             request("not-retried", "success"),

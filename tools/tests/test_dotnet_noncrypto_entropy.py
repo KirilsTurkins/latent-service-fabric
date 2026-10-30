@@ -191,6 +191,7 @@ class SeparateEntropySelection(unittest.TestCase):
             class Compiler:
                 def __init__(self, tools, commands, vendor, **keywords):
                     self.commands, self.materials, self.before = commands, [], {}
+                    self.compiler_methods, self.reachability_observation = keywords['compiler_methods'], None
                     self.compiler_patches, self.generated_materials = [original], []
                     self.wasm, self.rechecked = native, False
                     instances.append(self)

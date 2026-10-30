@@ -124,7 +124,7 @@ fn recovery_snapshot_and_reconciliation_wait_for_memory_fence() {
     terminal.reason = AuditReason::ReceiptUnavailable;
     terminal.receipt_digest = None;
     let ticket = while_fenced(&handle, |owner| {
-        owner.reconcile(pending[0].sequence, terminal)
+        owner.reconcile(pending.first().unwrap().sequence(), terminal)
     })
     .unwrap();
     ticket.blocking_wait().unwrap();
@@ -185,7 +185,7 @@ fn two_observations_exhaust_32k_control_queue_until_actual_writer_drain() {
     let (records, bytes, next) = store.summary();
     // Delay starting the real writer, so its two prepaid observations cannot
     // race this capacity assertion. No sleeps, production hooks or extra quota.
-    let shared = Arc::new(Shared {
+    let shared = SharedOwner::unaccounted(Shared {
         limits,
         state: Mutex::new(State {
             waiting: false,
@@ -205,7 +205,7 @@ fn two_observations_exhaust_32k_control_queue_until_actual_writer_drain() {
             begin: None,
         }),
         wake: Condvar::new(),
-        pages: Arc::new(PageBudget {
+        pages: SharedOwner::unaccounted(PageBudget {
             state: Mutex::new((0, 0)),
             owners: limits.maximum_query_owners,
             bytes: limits.maximum_total_page_bytes,
@@ -213,6 +213,8 @@ fn two_observations_exhaust_32k_control_queue_until_actual_writer_drain() {
         dropped: AtomicU64::new(0),
         unavailable: AtomicU64::new(0),
         finished: AtomicBool::new(false),
+        quarantined_metadata: std::sync::atomic::AtomicUsize::new(0),
+        metadata: None,
     });
     let handle = AuditHandle {
         shared: shared.clone(),
@@ -362,10 +364,13 @@ fn query_notification_follows_command_retirement_with_response_lease_still_live(
     assert_eq!(handle.snapshot().queued_bytes, 0);
 }
 
-fn deferred_journal(path: &Path, limits: AuditLimits) -> (Store, Arc<Shared>, AuditHandle) {
+pub(super) fn deferred_journal(
+    path: &Path,
+    limits: AuditLimits,
+) -> (Store, SharedOwner<Shared>, AuditHandle) {
     let store = Store::open(path, limits).unwrap();
     let (records, bytes, next) = store.summary();
-    let shared = Arc::new(Shared {
+    let shared = SharedOwner::unaccounted(Shared {
         limits,
         state: Mutex::new(State {
             waiting: false,
@@ -385,7 +390,7 @@ fn deferred_journal(path: &Path, limits: AuditLimits) -> (Store, Arc<Shared>, Au
             begin: None,
         }),
         wake: Condvar::new(),
-        pages: Arc::new(PageBudget {
+        pages: SharedOwner::unaccounted(PageBudget {
             state: Mutex::new((0, 0)),
             owners: limits.maximum_query_owners,
             bytes: limits.maximum_total_page_bytes,
@@ -393,6 +398,8 @@ fn deferred_journal(path: &Path, limits: AuditLimits) -> (Store, Arc<Shared>, Au
         dropped: AtomicU64::new(0),
         unavailable: AtomicU64::new(0),
         finished: AtomicBool::new(false),
+        quarantined_metadata: std::sync::atomic::AtomicUsize::new(0),
+        metadata: None,
     });
     let handle = AuditHandle {
         shared: shared.clone(),

@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import ast
+import base64
+import importlib.metadata
 import json
 from pathlib import Path
 import platform
@@ -29,6 +31,8 @@ def collect(output: Path) -> dict:
     require(isinstance(entries, tuple) and len(entries) == 1 and isinstance(entries[0], list),
             "frontend-collection-format")
     libraries, packages = [], {}
+    inventory = output / "python-inventory.json"
+    value = json.loads(inventory.read_bytes())
     stdlib = Path(sysconfig.get_path("stdlib")).resolve()
     python_library = (Path(sysconfig.get_config_var("LIBDIR")) / sysconfig.get_config_var("LDLIBRARY")).resolve()
     for entry in entries[0]:
@@ -46,12 +50,16 @@ def collect(output: Path) -> dict:
         require(digest(source.read_bytes()) == checksum, "frontend-native-library-changed")
         if source == python_library or source.is_relative_to(stdlib / "lib-dynload"):
             owner = "CPython"
-        else:
-            require(source.is_relative_to("/usr/lib") or source.is_relative_to("/lib"),
-                    "frontend-native-library-owner-unknown")
+        elif source.is_relative_to("/usr/lib") or source.is_relative_to("/lib"):
             owner = package_owner(Path(original), source)
             if owner not in packages:
                 packages[owner] = package_terms(owner, output)
+        else:
+            # A native extension from an exact frontend wheel is neither
+            # CPython nor a distro library. Attribute only an identical RECORD
+            # member of the already pinned/licensed frontend inventory.
+            owner = wheel_owner(source, checksum, value["packages"])
+            require(owner is not None, "frontend-native-library-owner-unknown")
         libraries.append({"path": "bin/_internal/" + name, "sha256": checksum, "owner": owner})
         require(len(libraries) <= 128 and len(packages) <= 32, "frontend-native-inventory-limit")
     require(libraries and packages, "frontend-native-inventory-empty")
@@ -67,11 +75,38 @@ def collect(output: Path) -> dict:
                    "hostRequirements": {"os": "linux", "architecture": "x86_64", "libc": family,
                                         "minimumLibcVersion": version},
                    "buildOsRelease": Path("/etc/os-release").read_text()}
-    inventory = output / "python-inventory.json"
-    value = json.loads(inventory.read_bytes())
     value.update(observation)
     inventory.write_bytes(encode(value))
     return observation
+
+
+
+def wheel_owner(source: Path, checksum: str, packages: list) -> str | None:
+    """Exact pinned-wheel RECORD attribution; no directory-based exception."""
+    require(isinstance(packages, list) and len(packages) <= 32, "frontend-wheel-package-bound")
+    owners = []
+    for package in packages:
+        require(isinstance(package, dict) and isinstance(package.get("name"), str)
+                and isinstance(package.get("version"), str)
+                and isinstance(package.get("wheelSha256"), str) and len(package["wheelSha256"]) == 64
+                and isinstance(package.get("licenses"), list) and package["licenses"],
+                "frontend-wheel-inventory-required")
+        distribution = importlib.metadata.distribution(package["name"])
+        require(distribution.version == package["version"], "frontend-wheel-version-changed")
+        entries = distribution.files or []
+        require(len(entries) <= 4096, "frontend-wheel-record-bound")
+        for entry in entries:
+            located = Path(distribution.locate_file(entry))
+            if located.resolve() != source:
+                continue
+            recorded = entry.hash
+            require(recorded is not None and recorded.mode == "sha256" and entry.size == source.stat().st_size,
+                    "frontend-wheel-record-required")
+            expected = base64.urlsafe_b64encode(bytes.fromhex(checksum.removeprefix("sha256:"))).rstrip(b"=").decode("ascii")
+            require(recorded.value == expected, "frontend-wheel-record-digest-mismatch")
+            owners.append(package["name"] + "==" + package["version"])
+    require(len(owners) <= 1, "frontend-ambiguous-wheel-library-owner")
+    return owners[0] if owners else None
 
 
 def package_owner(original: Path, resolved: Path) -> str:

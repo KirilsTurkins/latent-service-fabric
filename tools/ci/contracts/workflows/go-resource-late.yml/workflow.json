@@ -1,38 +1,38 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "go-resource-late-${{ github.ref }}"
-    },
-    "name": "Go accepted late resource callback completion",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/go-resource-late-completion-20261021"
-        ],
-        "paths": [
-          ".github/workflows/go-resource-late.yml",
-          "tools/go_resource_runtime_fixture.py",
-          "tools/go_resource_runtime_build.py",
-          "tools/qualify_go_resource_runtime.py",
-          "tools/resource_runtime_node.py",
-          "tools/qualify_typescript_resource_runtime.py",
-          "tools/go_resource_late.py",
-          "tools/tests/test_go_resource_late.py"
-        ]
-      },
-      "workflow_dispatch": {}
-    },
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "joined-resources"
-  ],
-  "reviewReason": "Add a separate six-outcome Go facility late-callback programme: one fresh normal component on exact357e products, running AfterFunc Stop(false), actual independent resource/LOG/clock/entropy completion checked with the original encoded LogBytes ledger, two independent tenants and exact physical/provider retirement. Preserve default original13 programme and its positive pending requirement; new lane makes no pending/after-retired callback claim. No host/engine rebuild.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/go-resource-late.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"go-resource-late-${{ github.ref }}"
+},
+"name":"Go accepted late resource callback completion",
+"on":{
+"push":{
+"branches":[
+"feat/go-resource-late-completion-20261021"
+],
+"paths":[
+".github/workflows/go-resource-late.yml",
+"tools/go_resource_runtime_fixture.py",
+"tools/go_resource_runtime_build.py",
+"tools/qualify_go_resource_runtime.py",
+"tools/resource_runtime_node.py",
+"tools/qualify_typescript_resource_runtime.py",
+"tools/go_resource_late.py",
+"tools/tests/test_go_resource_late.py"
+]
+},
+"workflow_dispatch":{}
+},
+"permissions":{
+"actions":"read",
+"contents":"read"
+}
+},
+"requiredJobs":[
+"joined-resources"
+],
+"reviewReason":"Add a separate six-outcome Go facility late-callback programme: one fresh normal component on exact357e products, running AfterFunc Stop(false), actual independent resource/LOG/clock/entropy completion checked with the original encoded LogBytes ledger, two independent tenants and exact physical/provider retirement. Preserve default original13 programme and its positive pending requirement; new lane makes no pending/after-retired callback claim. No host/engine rebuild.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/go-resource-late.yml"
 }

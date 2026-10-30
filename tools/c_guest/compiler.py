@@ -39,9 +39,11 @@ class Compiler:
         self.isolation = None
         self.paths: dict[str, Path] = {}
         self.materials: dict[str, dict] = {}
+        self.compiler_edges = None
+        self.compiler_edge_sources = {}
         config = config or tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
         versions = {"zig": config["sdk"]["zig"],
-                    "wit-bindgen": config["rust"]["dependencies"]["wit-bindgen"],
+                    "wit-bindgen": config["contracts"]["wit-bindgen-cli"],
                     "wasm-tools": config["contracts"]["wasm-tools"]}
         if installed is not None and set(installed) != set(versions):
             raise ValueError("explicit C compiler selection must name exactly the required tools")
@@ -127,7 +129,9 @@ class Compiler:
 
     def enable_captured_isolation(self, workspace: Path) -> dict:
         from tools.captured_compiler_isolation import Isolation
-        self.isolation = Isolation(workspace, self.paths, {"zig-compiler-and-sysroot": self.paths["zig"].parent})
+        deadline = getattr(self.commands, '_parent_deadline', None)
+        options = {} if deadline is None else {'_deadline': deadline}
+        self.isolation = Isolation(workspace, self.paths, {"zig-compiler-and-sysroot": self.paths["zig"].parent}, **options)
         if self.commands is not None:
             self.isolation.protect_inputs(self.commands.root)
         return self.isolation.receipt
@@ -204,6 +208,8 @@ class Compiler:
         if threaded:
             from tools.c_guest import threading
             threading.selected({'threadingProfile': threading_profile})
+        if runtime_profile == standard_facilities.FETCH_PROFILE and not threaded:
+            raise ValueError('c-libfetch-http-requires-cooperative-threading')
         if threaded and ('c-threading-transformer' not in self.paths or static_libraries):
             raise ValueError('c-threading-requires-transformer-and-no-static-archives')
         if embed_directories and (language_standard != 'c23' or len(embed_directories) > 64):
@@ -229,6 +235,7 @@ class Compiler:
                 defines = threading.linked_defines(defines, timed_clock=True)
             else:
                 defines = threading.linked_defines(defines)
+        defines = standard_facilities.compiler_defines(runtime_profile, defines)
         self.validate_static_libraries(static_libraries, destination)
         core, component = destination / "core.wasm", destination / "component.wasm"
         command = ["cc", "-std=" + language_standard, "-target", "wasm32-wasi", "-O2",
@@ -236,6 +243,9 @@ class Compiler:
                    "-Wl,--no-entry", "-Wl,--export-memory", "-Wl,-z,stack-size=65536",
                    f"-Wl,--max-memory={memory_bytes}", "-I", str(generated),
                    "-I", str(self.sdk / "include"), *map(str, sources)]
+        if runtime_profile == standard_facilities.FETCH_PROFILE:
+            # Zig maps this to wasm-ld -s: omit debug/name metadata, not code.
+            command.append('-Wl,--strip-debug')
         thread_flags = []
         if threaded:
             # The post-link template-copy body is deliberately opaque to its
@@ -279,6 +289,17 @@ class Compiler:
             self.isolation.receipt["preprocessorInputs"] = sorted(
                 {row["path"]: row for row in observed}.values(), key=lambda row: row["path"])
         self.run("zig", *command)
+        if runtime_profile == standard_facilities.FETCH_PROFILE and self.commands is not None:
+            from tools.rust_capsule_project import read_file
+            payload = read_file(core, 64 * 1024 * 1024)
+            observation = {'formatVersion': 1, 'size': len(payload), 'digest': digest(payload),
+                           'headerHex': payload[:8].hex(),
+                           'originalEnvelopeBytes': 20 + len(public.encode('utf-8')) + len(payload),
+                           'maximumEnvelopeBytes': 1024 * 1024,
+                           'linkerFlags': ['-Wl,--strip-debug']}
+            (self.commands.output / 'c-original-core.json').write_text(
+                json.dumps(observation, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+            (self.commands.output / 'c-original-core.wasm').write_bytes(payload)
         encoded_core = core
         if threaded:
             derived = destination / 'c-threading'
@@ -322,7 +343,43 @@ class Compiler:
                 'derivation': destination / 'c-threading/derivation.json',
                 'publicExport': public, 'finalComponent': component}
         self.check_unchanged()
+        if self.compiler_edges is not None:
+            link_inputs = [*sources, *static_libraries, generated / 'probe.c', generated / 'probe_component_type.o']
+            if trap:
+                link_inputs.append(self.sdk / 'src/trap.c')
+            self.observe_compiler_edges(command, destination, link_inputs)
         return component, lock
+
+    def observe_compiler_edges(self, original, destination, link_inputs):
+        """Passive per-TU O2 metadata under this original finite compiler owner.
+
+        Keep every original compile option. Remove only its link inputs/output
+        and linker-only options; the original component argv above is untouched.
+        A missing/large/unmapped witness is unavailable, never support.
+        """
+        from tools.rust_capsule_project import read_file
+        paths = {str(path) for path in link_inputs}
+        selected = sorted({row['source'] for row in self.compiler_edges.queries})
+        options, at = [], 0
+        while at < len(original):
+            value = str(original[at])
+            if value == '-o': at += 2; continue
+            if value in paths or value.startswith('-Wl,'):
+                at += 1; continue
+            options.append(value); at += 1
+        for index, name in enumerate(selected):
+            try:
+                source = self.compiler_edge_sources[name]
+                witness = destination / ('compiler-edge-%04d.ll' % index)
+                # Zig's IR-only driver adds an otherwise unused -c internally.
+                # Keep that bounded warning visible without making it fatal;
+                # normal component argv and every other -Werror stay unchanged.
+                self.run('zig', *options, '-S', '-emit-llvm',
+                    '-Wno-error=unused-command-line-argument', str(source), '-o', str(witness))
+                self.compiler_edges.retain_unit(name, read_file(witness, 4 * 1024 * 1024))
+            except Exception:
+                self.compiler_edges.fail_unit(name)
+        self.check_unchanged()
 
 
 def safe_output(output: Path) -> Path:

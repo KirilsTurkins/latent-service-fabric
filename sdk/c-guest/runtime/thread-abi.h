@@ -53,6 +53,8 @@ __attribute__((import_module("$root"),import_name("[thread-new-indirect-v0]")))
 uint32_t lsf_c_thread_new(uint32_t table_index,struct lsf_c_thread *context);
 __attribute__((import_module("$root"),import_name("[thread-yield-then-promote]")))
 uint32_t lsf_c_thread_switch(uint32_t thread);
+__attribute__((import_module("$root"),import_name("[thread-yield]")))
+uint32_t lsf_c_thread_yield(void);
 
 /* Root entry must be stacklessly attached before calling these ordinary C
  * bodies. The compiler owns the immutable pre-constructor template and exact

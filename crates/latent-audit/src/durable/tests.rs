@@ -302,7 +302,8 @@ fn durable_attempt_outcome_reopen_and_page_lease() {
         .blocking_wait()
         .unwrap();
     assert_eq!(page.records().len(), 2);
-    let (_, _, _, lease) = page.into_parts();
+    let lease = page.response_lease();
+    drop(page);
     assert_eq!(handle.snapshot().query_owners, 1);
     let lease2 = lease.clone();
     drop(lease);
@@ -528,7 +529,7 @@ fn recovered_pending_reserves_terminal_and_unknown_is_durable() {
     terminal.reason = AuditReason::ReceiptUnavailable;
     terminal.receipt_digest = None;
     handle
-        .reconcile(pending[0].sequence, terminal)
+        .reconcile(pending.first().unwrap().sequence(), terminal)
         .unwrap()
         .blocking_wait()
         .unwrap();

@@ -56,7 +56,7 @@ def write_json(path: Path, value: object) -> None:
 
 def wit_bindgen_version() -> str:
     config = tomllib.loads((ROOT / "tools/toolchain.toml").read_text(encoding="utf-8"))
-    return config["rust"]["dependencies"]["wit-bindgen"]
+    return config["contracts"]["wit-bindgen-cli"]
 
 
 def check_tools(*, include_c: bool = True) -> None:
@@ -72,7 +72,7 @@ def check_tools(*, include_c: bool = True) -> None:
         TOOL_PATHS[tool] = Path(located).resolve(strict=True)
         TOOL_MATERIALS[tool] = file_identity(TOOL_PATHS[tool], tool)
     for tool, version in (("wasm-tools", config["contracts"]["wasm-tools"]),
-                          ("wit-bindgen", config["rust"]["dependencies"]["wit-bindgen"]),
+                          ("wit-bindgen", config["contracts"]["wit-bindgen-cli"]),
                           ("zig", config["sdk"]["zig"])):
         if tool == "zig" and not include_c:
             continue

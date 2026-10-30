@@ -1,348 +1,64 @@
 {
-  "cases": [
-    "KernelDeviceFirmwareSource.test_actual_association_body_is_preserved_and_no_hook_policy_is_silently_skipped",
-    "KernelDeviceFirmwareSource.test_actual_owned_birth_check_precedes_all_device_dereferences",
-    "KernelDeviceFirmwareSource.test_actual_reference_chain_and_iterator_lifetime_are_authenticated",
-    "KernelDeviceFirmwareSource.test_admission_and_invalidation_share_original_delete_mutex",
-    "KernelDeviceFirmwareSource.test_all_enablement_firmware_and_runtime_gates_stay_closed",
-    "KernelDeviceFirmwareSource.test_all_private_includes_follow_actual_static_dependencies",
-    "KernelDeviceFirmwareSource.test_companion_keeps_original_identity_and_root_hid_policy",
-    "KernelDeviceFirmwareSource.test_constructor_unlock_precedes_work_schedule_and_failure_stays_owned",
-    "KernelDeviceFirmwareSource.test_descriptor_original_generation_parent_and_whole_extent_gate_every_dereference",
-    "KernelDeviceFirmwareSource.test_exact_sixty_six_whole_members_and_all_nineteen_original_definitions_remain",
-    "KernelDeviceFirmwareSource.test_finite_walk_counts_before_upstream_filters_non_acpi_children",
-    "KernelDeviceFirmwareSource.test_known_queue_closure_refuses_before_any_descriptor_or_reference_admission",
-    "KernelDeviceFirmwareSource.test_missing_changed_duplicate_crlf_and_wrong_definition_refuse",
-    "KernelDeviceFirmwareSource.test_no_new_allocator_fallback_synthetic_owner_or_aml_stub_in_private_path",
-    "KernelDeviceFirmwareSource.test_one_real_child_work_reservation_precedes_exact_queue_dispatch",
-    "KernelDeviceFirmwareSource.test_only_private_setup_call_gains_closed_error_propagation",
-    "KernelDeviceFirmwareSource.test_original_ambiguity_really_enters_sta_instead_of_being_called_pure",
-    "KernelDeviceFirmwareSource.test_original_deletion_callbacks_errors_requeue_and_put_are_preserved",
-    "KernelDeviceFirmwareSource.test_original_device_iterator_preserves_reference_exit_and_stops_before_advance",
-    "KernelDeviceFirmwareSource.test_original_hook_writers_use_the_same_write_semaphore",
-    "KernelDeviceFirmwareSource.test_original_queue_lifecycle_preserved_and_destroy_has_no_private_lock",
-    "KernelDeviceFirmwareSource.test_real_put_outside_all_private_locks_precedes_child_and_parent_return",
-    "KernelDeviceFirmwareSource.test_revocation_is_not_lifetime_retirement_or_pool_reuse",
-    "KernelDeviceFirmwareSource.test_same_original_try_locks_cover_hook_lookup_and_association",
-    "KernelDeviceFirmwareSource.test_scan_admission_refuses_unknown_init_and_rechecks_actual_state_after_lock",
-    "KernelDeviceFirmwareSource.test_single_walk_preserves_unique_match_and_refuses_second_before_aml"
-  ],
-  "guards": {
-    "KernelDeviceFirmwareSource.test_actual_association_body_is_preserved_and_no_hook_policy_is_silently_skipped": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_actual_owned_birth_check_precedes_all_device_dereferences": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_actual_reference_chain_and_iterator_lifetime_are_authenticated": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_admission_and_invalidation_share_original_delete_mutex": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_all_enablement_firmware_and_runtime_gates_stay_closed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_all_private_includes_follow_actual_static_dependencies": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_companion_keeps_original_identity_and_root_hid_policy": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_constructor_unlock_precedes_work_schedule_and_failure_stays_owned": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_descriptor_original_generation_parent_and_whole_extent_gate_every_dereference": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_exact_sixty_six_whole_members_and_all_nineteen_original_definitions_remain": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_finite_walk_counts_before_upstream_filters_non_acpi_children": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_known_queue_closure_refuses_before_any_descriptor_or_reference_admission": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_missing_changed_duplicate_crlf_and_wrong_definition_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_no_new_allocator_fallback_synthetic_owner_or_aml_stub_in_private_path": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_one_real_child_work_reservation_precedes_exact_queue_dispatch": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_only_private_setup_call_gains_closed_error_propagation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_original_ambiguity_really_enters_sta_instead_of_being_called_pure": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_original_deletion_callbacks_errors_requeue_and_put_are_preserved": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_original_device_iterator_preserves_reference_exit_and_stops_before_advance": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_original_hook_writers_use_the_same_write_semaphore": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_original_queue_lifecycle_preserved_and_destroy_has_no_private_lock": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_real_put_outside_all_private_locks_precedes_child_and_parent_return": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_revocation_is_not_lifetime_retirement_or_pool_reuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_same_original_try_locks_cover_hook_lookup_and_association": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_scan_admission_refuses_unknown_init_and_rechecks_actual_state_after_lock": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    },
-    "KernelDeviceFirmwareSource.test_single_walk_preserves_unique_match_and_refuses_second_before_aml": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740",
-        "class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"
-      ],
-      "skipSites": []
-    }
+  "storageCases":"guard-keys",
+  "guards":{
+    "KernelDeviceFirmwareSource.test_actual_association_body_is_preserved_and_no_hook_policy_is_silently_skipped":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_actual_owned_birth_check_precedes_all_device_dereferences":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_actual_reference_chain_and_iterator_lifetime_are_authenticated":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_admission_and_invalidation_share_original_delete_mutex":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_all_enablement_firmware_and_runtime_gates_stay_closed":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_all_private_includes_follow_actual_static_dependencies":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_companion_keeps_original_identity_and_root_hid_policy":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_constructor_unlock_precedes_work_schedule_and_failure_stays_owned":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_descriptor_original_generation_parent_and_whole_extent_gate_every_dereference":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_exact_sixty_six_whole_members_and_all_nineteen_original_definitions_remain":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_finite_walk_counts_before_upstream_filters_non_acpi_children":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_known_queue_closure_refuses_before_any_descriptor_or_reference_admission":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_missing_changed_duplicate_crlf_and_wrong_definition_refuse":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_no_new_allocator_fallback_synthetic_owner_or_aml_stub_in_private_path":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_one_real_child_work_reservation_precedes_exact_queue_dispatch":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_only_private_setup_call_gains_closed_error_propagation":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_original_ambiguity_really_enters_sta_instead_of_being_called_pure":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_original_deletion_callbacks_errors_requeue_and_put_are_preserved":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_original_device_iterator_preserves_reference_exit_and_stops_before_advance":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_original_hook_writers_use_the_same_write_semaphore":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_original_queue_lifecycle_preserved_and_destroy_has_no_private_lock":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_real_put_outside_all_private_locks_precedes_child_and_parent_return":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_revocation_is_not_lifetime_retirement_or_pool_reuse":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_same_original_try_locks_cover_hook_lookup_and_association":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_scan_admission_refuses_unknown_init_and_rechecks_actual_state_after_lock":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02",
+    "KernelDeviceFirmwareSource.test_single_walk_preserves_unique_match_and_refuses_second_before_aml":
+      "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02"
   },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_device_firmware.py",
-  "reviewReason": "Reviewed cached ACPI reference and prepaid cleanup continuation source; exclusive37object compile preserves all prior profiles cases commands security and bounds; no runtime installed or shared-queue physical qualification",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_device_firmware.py",
+  "reviewReason":"Reviewed cached ACPI reference and prepaid cleanup continuation source; exclusive37object compile preserves all prior profiles cases commands security and bounds; no runtime installed or shared-queue physical qualification",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "4486614620b3cb7995ebc4dcca9fbff5f6402e02324bccb601b79d7bff671f02":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:27d2a9d777baa8d70524dafd65e10a7a424c7d1646b6229347bc8bbbfe732740","class:setup-sha256:5eb7aafd863d5a807135b1bdf32800038801b6187949a2dc0dc35571be1a0a33"],"skipSites":[]}
+  }
 }

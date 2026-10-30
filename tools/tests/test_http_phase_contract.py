@@ -86,7 +86,10 @@ class HttpPhaseContract(unittest.TestCase):
         self.assertIn('"latent:http/phase-timing@0.4.0"',supported)
         self.assertIn('latent_core::PHASE3_HOST_ABI_CURRENT',supported)
         control=(ROOT/'crates/latent-capabilities/src/broker/io.rs').read_text()
-        self.assertIn('operation: Weak<Operation>',control)
+        self.assertIn('type OperationWeak = SharedWeak<Operation>;',control)
+        stop = re.search(r'pub struct IoStopHandle\s*\{([^}]*)\}', control).group(1)
+        self.assertEqual(re.findall(r'(\w+)\s*:\s*([^,]+)', stop),
+            [('operation', 'OperationWeak')])
         for name in ('streaming.rs','streaming/exchange.rs'):
             operation=(ROOT/'crates/latent-http/src'/name).read_text()
             retained=operation.index('let original_owner =')

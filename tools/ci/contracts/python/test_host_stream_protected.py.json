@@ -1,0 +1,18 @@
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "FocusedStreamHostOwner.test_other_registered_case_cannot_satisfy_selected_case_or_missing_totals":
+      "b651f4ffa59579a7f16abce59e174c0838ff755bdf94154481461046ca295596",
+    "FocusedStreamHostOwner.test_six_closed_case_ids_require_original_single_green_nonignored_outcome":
+      "b651f4ffa59579a7f16abce59e174c0838ff755bdf94154481461046ca295596",
+    "OwnedTimerBoxOwner.test_closed_five_timer_ids_require_single_exact_nonignored_result":
+      "b651f4ffa59579a7f16abce59e174c0838ff755bdf94154481461046ca295596"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_protected.py",
+  "reviewReason":"Review five native owned-timer Box controls on the original activation budget; unknown implementations refuse, generic waits and historical six controls remain, full driver/transitive/Go accounting stays unqualified.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "b651f4ffa59579a7f16abce59e174c0838ff755bdf94154481461046ca295596":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:5654cf41ee353935e6e67739c517473c548e5696948883d45152c8378da44e0b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

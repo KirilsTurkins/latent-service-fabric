@@ -21,10 +21,10 @@ jobs:
       matrix:
         language: [go, typescript]
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install controller requirements and check closed producer scope
@@ -38,7 +38,7 @@ jobs:
           gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/12255531553 > "$RUNNER_TEMP/resource-native-producer.json"
           python3 -B tools/qualify_resource_tenants.py --verify-native-producer "$RUNNER_TEMP/resource-native-producer.json"
       - name: Restore the one successful current normal native producer
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: sdk-native-products-a4f05f3f243889cc7ba7a0404bdc76afec32d3c2
           run-id: 39400186766
@@ -53,7 +53,7 @@ jobs:
           python3 -B tools/qualify_resource_tenants.py --language go --verify-original-producer "$RUNNER_TEMP/resource-original-producer.json"
       - name: Restore original go public component and compile records
         if: matrix.language == 'go'
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: go-embedded-resource-reference-ba710b00000d7ea946f85dcf66148a98de19f800
           run-id: 39390308334
@@ -68,7 +68,7 @@ jobs:
           python3 -B tools/qualify_resource_tenants.py --language typescript --verify-original-producer "$RUNNER_TEMP/resource-original-producer.json"
       - name: Restore original typescript public component and compile records
         if: matrix.language == 'typescript'
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: embedded-resource-typescript-192c7b92faa7c8e0d222c62c1cbcf5d0e25cb0b5
           run-id: 39394464486
@@ -82,7 +82,7 @@ jobs:
             --output "$RUNNER_TEMP/resource-tenants"
       - name: Retain bounded public results and explicit original compile ancestry
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: resource-tenants-${{ matrix.language }}-${{ github.sha }}
           retention-days: 3

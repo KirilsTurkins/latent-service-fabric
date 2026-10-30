@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -332,6 +333,15 @@ static void basic_and_ownership(void) {
     memset(opaque, 0xa5, sizeof(opaque));
     memset(&value, 0xa5, sizeof(value));
     wait_for(owner, &record);
+    if (record.failed || record.generation != UINT64_MAX
+        || memcmp(record.identity, "copy-before-return", sizeof("copy-before-return")) != 0) {
+        fprintf(stderr, "C_TRANSPORT_OWNERSHIP_FAILURE failed=%u category=%" PRId32
+            " grpc_present=%u grpc=%" PRId32 " dispatched=%u outcome=%" PRId32
+            " generation_equal=%u identity_equal=%u\n",
+            (unsigned)record.failed, record.category, (unsigned)record.grpc_present, record.grpc,
+            (unsigned)record.dispatched, record.outcome, (unsigned)(record.generation == UINT64_MAX),
+            (unsigned)(memcmp(record.identity, "copy-before-return", sizeof("copy-before-return")) == 0));
+    }
     assert(!record.failed && record.generation == UINT64_MAX && strcmp(record.identity, "copy-before-return") == 0);
     assert(record.payload_length == 5 && record.payload[2] == 255 && record.payload[4] == 128);
     latent_transport_usage retained = latent_transport_get_usage(owner);

@@ -142,7 +142,8 @@ def prepare_compiler(goroot: Path, destination: Path) -> Path:
 def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
             *, sdk: Path | None = None, activation: bool = False, checkpoints: bool = False, timers: bool = False,
             initializers: bool = False, http_context: bool = False, standard_log: bool = False,
-            managed_idle: bool = False, network_context: bool = False, queued_work: bool = False) -> Path:
+            managed_idle: bool = False, network_context: bool = False, queued_work: bool = False,
+            bounded_stacks: bool = False) -> Path:
     goroot, destination = checked_roots(goroot, destination)
     sources = checked_sources(goroot, PREIMAGES)
     if type(standard_log) is not bool:
@@ -153,6 +154,8 @@ def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
         raise ValueError('Go-managed-idle-requires-complete-activation-profile')
     if type(queued_work) is not bool or queued_work and not (activation and checkpoints and timers and initializers and managed_idle):
         raise ValueError('Go-queued-work-requires-complete-managed-profile')
+    if type(bounded_stacks) is not bool or bounded_stacks and not (activation and checkpoints and timers and initializers and managed_idle and queued_work):
+        raise ValueError('Go-bounded-stacks-requires-complete-queued-profile')
     sources['net/net_fake.go'] = closed_network_source(
         checked_sources(goroot, {'net/net_fake.go': FAKE_NETWORK_SHA256})['net/net_fake.go'])
     if standard_log:
@@ -217,6 +220,9 @@ def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
     if queued_work:
         from tools.go_guest.queues import runtime_sources as queue_sources
         queue_sources(sources, sdk)
+    if bounded_stacks:
+        from tools.go_guest.stacks import runtime_sources as stack_sources
+        stack_sources(goroot, sources, sdk)
     destination.mkdir(parents=True)
     replacements = {}
     if activation_source is not None:

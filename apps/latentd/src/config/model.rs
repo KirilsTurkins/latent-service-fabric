@@ -37,6 +37,12 @@ pub struct NodeConfig {
     #[cfg(feature = "development-test-node")]
     #[serde(default, deserialize_with = "super::development_preparation::present")]
     pub development_preparation: Option<super::DevelopmentPreparationProfile>,
+    #[cfg(feature = "development-test-node")]
+    #[serde(
+        default,
+        deserialize_with = "super::development::local_service_present"
+    )]
+    pub development_local_service_observation: Option<super::LocalServiceObservation>,
     #[serde(default, deserialize_with = "super::renderer::present")]
     pub renderer_profile: Option<latent_manifest::RendererProfile>,
     #[serde(default)]

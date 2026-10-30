@@ -1,34 +1,55 @@
-use super::{unavailable, Result};
+use super::{
+    memory::{AuditArc, AuditCallMemory},
+    unavailable, Result,
+};
 use std::{
     future::Future,
     pin::Pin,
-    sync::{Arc, Condvar, Mutex},
+    sync::{Condvar, Mutex},
     task::{Context, Poll, Waker},
 };
 struct Value<T> {
     value: Option<Result<T>>,
     waker: Option<Waker>,
 }
+type Channel<T> = (Mutex<Value<T>>, Condvar);
 pub(super) struct Reply<T> {
-    inner: Arc<(Mutex<Value<T>>, Condvar)>,
+    inner: AuditArc<Channel<T>>,
 }
 pub(super) struct Ticket<T> {
-    inner: Arc<(Mutex<Value<T>>, Condvar)>,
+    state: TicketState<T>,
 }
-pub(super) fn channel<T>() -> (Reply<T>, Ticket<T>) {
-    let inner = Arc::new((
-        Mutex::new(Value {
-            value: None,
-            waker: None,
-        }),
-        Condvar::new(),
-    ));
-    (
+enum TicketState<T> {
+    Pending(AuditArc<Channel<T>>),
+    Ready(Option<Result<T>>),
+}
+// No projection ever exposes a pinned T; ready values may move out on poll.
+impl<T> Unpin for Ticket<T> {}
+pub(super) fn channel<T>(memory: &AuditCallMemory) -> Result<(Reply<T>, Ticket<T>)> {
+    let prepared = memory.prepare_arc::<Channel<T>>(256)?;
+    let inner = prepared.allocate(
+        (
+            Mutex::new(Value {
+                value: None,
+                waker: None,
+            }),
+            Condvar::new(),
+        ),
+        0,
+    );
+    Ok((
         Reply {
             inner: inner.clone(),
         },
-        Ticket { inner },
-    )
+        Ticket {
+            state: TicketState::Pending(inner),
+        },
+    ))
+}
+pub(super) fn failed<T>(error: latent_core::PlatformError) -> Ticket<T> {
+    Ticket {
+        state: TicketState::Ready(Some(Err(error))),
+    }
 }
 impl<T> Reply<T> {
     pub fn send(self, result: Result<T>) {
@@ -68,8 +89,13 @@ impl<T> Drop for Reply<T> {
 impl<T> Future for Ticket<T> {
     type Output = Result<T>;
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let mut v = self
-            .inner
+        let inner = match &mut self.get_mut().state {
+            TicketState::Ready(value) => {
+                return Poll::Ready(value.take().expect("completed audit ticket polled twice"))
+            }
+            TicketState::Pending(inner) => inner,
+        };
+        let mut v = inner
             .0
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -83,12 +109,16 @@ impl<T> Future for Ticket<T> {
 }
 impl<T> Ticket<T> {
     fn blocking(self) -> Result<T> {
-        let mut v = self.inner.0.lock().map_err(|_| unavailable())?;
+        let inner = match self.state {
+            TicketState::Ready(mut value) => return value.take().expect("ready audit ticket"),
+            TicketState::Pending(inner) => inner,
+        };
+        let mut v = inner.0.lock().map_err(|_| unavailable())?;
         loop {
             if let Some(result) = v.value.take() {
                 return result;
             }
-            v = self.inner.1.wait(v).map_err(|_| unavailable())?;
+            v = inner.1.wait(v).map_err(|_| unavailable())?;
         }
     }
 }
@@ -107,5 +137,5 @@ macro_rules! public_ticket {
     };
 }
 public_ticket!(AuditBeginTicket, super::AuditAttempt);
-public_ticket!(AuditAppendTicket, super::DurableAuditAck);
+public_ticket!(AuditAppendTicket, super::OwnedDurableAuditAck);
 public_ticket!(AuditQueryTicket, super::AuditPage);

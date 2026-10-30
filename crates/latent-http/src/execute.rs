@@ -6,8 +6,7 @@ use crate::{
     HttpError,
 };
 use latent_capabilities::broker::{
-    http::{HttpCompletion, HttpRequest, HttpResponse, HTTP_CAPABILITY},
-    io::IoMemory,
+    http::{HttpCompletion, HttpOwnedRequest, HttpResponse, HTTP_CAPABILITY},
     pools::{PoolAdmission, PoolCall, ProviderClient},
     AuditProviderOutcome, CapabilityCallCost,
 };
@@ -20,9 +19,8 @@ pub(crate) mod response;
 /// Field order also protects an unpolled or cancelled invocation: owned typed
 /// input and its selector drop before their original staged-byte reservation.
 pub(crate) struct RequestOwner {
-    pub request: HttpRequest,
     pub destination: Destination,
-    pub memory: Arc<IoMemory>,
+    pub request: HttpOwnedRequest,
     pub logical: usize,
 }
 
@@ -64,7 +62,6 @@ pub(crate) async fn run(
             &client,
             &mut input.request,
             &input.destination,
-            &input.memory,
             credentials_allowed,
         )
         .await;
@@ -121,12 +118,12 @@ pub(crate) async fn run(
         if next.origin != input.destination.origin {
             // Strip every guest header, including application-specific secrets.
             // Never reintroduce credentials if a chain later returns to origin.
-            input.request.headers.clear();
-            input.request.body_media_type = None;
-            input.request.idempotency_key = None;
+            input.request.clear_sensitive_headers();
             credentials_allowed = false;
         }
-        input.request.url = next.url.as_str().to_owned();
+        input
+            .request
+            .replace_redirect_url(next.url.as_str().to_owned());
         let size = crate::headers::validate(
             &input.request,
             &inner.config.destinations[next.index],
@@ -134,12 +131,15 @@ pub(crate) async fn run(
         )?;
         let next_client = inner.client(next.index)?;
         let next_admission = inner.pools.admit_followup(&next_client, &call)?;
-        let next_memory = Arc::new(next_admission.reserve_input(size.retained, 4096)?);
+        let next_memory = input
+            .request
+            .memory()
+            .followup(&next_admission, size.retained, 4096)?;
         // No wait can hold the old running permit (including a one-slot pool).
         drop(locations);
         drop(response);
         drop(call);
-        input.memory = next_memory;
+        input.request.install_followup(next_memory)?;
         admission = next_admission;
         client = next_client;
         input.destination = next;
@@ -151,9 +151,8 @@ async fn exchange(
     inner: &Inner,
     call: &mut PoolCall,
     client: &Arc<ProviderClient<Network>>,
-    request: &mut HttpRequest,
+    request: &mut HttpOwnedRequest,
     destination: &Destination,
-    memory: &Arc<IoMemory>,
     credentials_allowed: bool,
 ) -> Result<HttpResponse, HttpError> {
     let mut wrote = None;
@@ -162,13 +161,8 @@ async fn exchange(
         let _headers = call
             .io()
             .reserve_scratch(2 * inner.config.limits.maximum_header_bytes + 8192, 1024)?;
-        let wire = request::build(
-            inner,
-            request,
-            destination,
-            Arc::clone(memory),
-            credentials_allowed,
-        )?;
+        let wire = request::build(inner, request, destination, credentials_allowed)?;
+        let memory = request.memory();
         let configured = &inner.config.destinations[destination.index];
         let answers = inner
             .resolver
@@ -189,7 +183,7 @@ async fn exchange(
         };
         connection.wrote.store(false, Ordering::Release);
         wrote = Some(Arc::clone(&connection.wrote));
-        connection.input = Some(Arc::clone(memory));
+        connection.input = Some(memory.clone());
         let reply = call
             .io()
             .wait_for(network::drive(
@@ -220,7 +214,7 @@ async fn exchange(
                 .await;
         let reusable = matches!(ready, std::task::Poll::Ready(Ok(())))
             && connection.driver.is_some()
-            && Arc::strong_count(memory) == 2;
+            && memory.strong_count() == 2;
         if reusable {
             connection.input = None;
             let _ = socket.park();

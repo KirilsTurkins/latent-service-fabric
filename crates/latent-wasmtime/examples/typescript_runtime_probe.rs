@@ -9,6 +9,10 @@ use std::{
 use wasmtime::component::{Component, Linker, Val};
 use wasmtime::{Config, Engine, Store, StoreLimits, StoreLimitsBuilder};
 
+#[path = "typescript_runtime_probe/backing_controls.rs"]
+mod backing_controls;
+#[path = "typescript_runtime_probe/owned_results.rs"]
+mod owned_results;
 #[path = "typescript_runtime_probe/service_memory.rs"]
 mod service_memory;
 
@@ -25,8 +29,26 @@ async fn main() -> wasmtime::Result<()> {
     let path = std::env::args()
         .nth(1)
         .ok_or_else(|| wasmtime::Error::msg("component path required"))?;
+    let owned_backing = if std::env::args().nth(3).as_deref() == Some("sdk-owned-results") {
+        let mut extra = std::env::args().skip(4);
+        let backing = match extra.next().as_deref() {
+            None => false,
+            Some("late-backing") => true,
+            _ => wasmtime::bail!("unsupported canonical fixture selection"),
+        };
+        wasmtime::ensure!(extra.next().is_none(), "extra canonical fixture argument");
+        backing
+    } else {
+        false
+    };
     let mut config = Config::new();
     config.wasm_component_model_async(true).consume_fuel(true);
+    if matches!(
+        std::env::args().nth(3).as_deref(),
+        Some("sdk-owned-results" | "sdk-late-backing")
+    ) {
+        config.wasm_component_model_more_async_builtins(true);
+    }
     config.wasm_backtrace_max_frames(std::num::NonZeroUsize::new(128));
     let optimization = std::env::args().nth(2).unwrap_or_else(|| "speed".into());
     config.cranelift_opt_level(match optimization.as_str() {
@@ -36,6 +58,9 @@ async fn main() -> wasmtime::Result<()> {
     });
     println!("diagnostic compiler optimization: {optimization}");
     let engine = Engine::new(&config)?;
+    if std::env::args().nth(3).as_deref() == Some("sdk-backing-core") {
+        return backing_controls::run(&engine, std::path::Path::new(&path));
+    }
     let started = Instant::now();
     let component = Component::from_file(&engine, path)?;
     println!(
@@ -49,6 +74,10 @@ async fn main() -> wasmtime::Result<()> {
         return sdk_blob(&engine, &component).await;
     }
     match std::env::args().nth(3).as_deref() {
+        Some("sdk-owned-results") => {
+            return owned_results::run(&engine, &component, owned_backing).await;
+        }
+        Some("sdk-late-backing") => return owned_results::run_backing(&engine, &component).await,
         Some("sdk-service-memory") => return service_memory::run(&engine, &component, true).await,
         Some("sdk-callee-memory") => return service_memory::run(&engine, &component, false).await,
         Some("sdk-dotnet-secrets") => return sdk_dotnet_secrets(&engine, &component).await,
@@ -153,7 +182,9 @@ async fn main() -> wasmtime::Result<()> {
             Val::S64(value)
         );
     }
-    println!("TypeScript async and signed scalar boundaries passed; signed admission and SDK qualification remain required");
+    println!(
+        "TypeScript async and signed scalar boundaries passed; signed admission and SDK qualification remain required"
+    );
     Ok(())
 }
 

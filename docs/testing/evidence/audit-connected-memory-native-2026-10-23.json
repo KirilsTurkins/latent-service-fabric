@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "latent.audit.memory.observation.v1",
+  "status": "native-controls-and-shipping-check-passed",
+  "date": "2026-10-23",
+  "sourceRevision": "6c6f1c55ee04edb21fbbd40ba1eac564cdf545c8",
+  "origin": {
+    "workflow": ".github/workflows/audit-memory-owner.yml",
+    "event": "workflow_dispatch",
+    "run": 39928633730,
+    "job": 120331132165,
+    "artifact": 12490782496,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39928633730/job/120331132165",
+    "archiveSha256": "sha256:8b3b961ac56e85400c3e415b787bcf9a1a019db9c7b5cc92600354dbc8a27bb9",
+    "archiveBytes": 56010,
+    "members": 43,
+    "expandedBytes": 182891
+  },
+  "actual": {
+    "controlCount": 25,
+    "controlGroups": 8,
+    "ignoredControls": 0,
+    "argvStages": 19,
+    "retainedStreams": 38,
+    "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "controls": {
+      "original-node-bank": [
+        "node_metadata::tests::original_node_metadata_identity_exact_ceiling_refusal_and_rollback_are_shared",
+        "node_metadata::tests::original_node_metadata_prepares_both_real_arc_allocations_before_payload_birth",
+        "node_metadata::tests::original_node_metadata_weak_headers_stay_paid_without_reviving_payload",
+        "node_metadata::tests::original_node_metadata_concurrent_last_strong_and_weak_refund_once",
+        "node_metadata::tests::original_node_fixed_and_transient_observations_conserve_one_admission_bank"
+      ],
+      "retired-envelope-reuse": [
+        "budget::host_memory::tests::original_native_envelope_reuses_only_retired_storage_without_refunding_capacity"
+      ],
+      "unobserved-retirement-refusal": [
+        "budget::host_memory::tests::native_envelope_refuses_unobserved_retirement_before_mutating_original_ledger"
+      ],
+      "audit-owned-graph": [
+        "durable::memory::tests::audit_original_envelope_precedes_copy_and_abandoned_preparation_does_not_invent_storage",
+        "durable::memory::tests::audit_original_arc_last_concurrent_clones_keep_payload_and_billing_headers_paid",
+        "durable::memory::tests::audit_original_box_unwind_destroys_actual_payload_before_any_physical_refund",
+        "durable::memory::tests::audit_confirmation_failure_unwind_keeps_payload_paid_and_refunds_once",
+        "durable::memory::tests::audit_borrowed_graph_bound_keeps_original_json_limits_and_measures_canonical_capacity"
+      ],
+      "audit-node-worker": [
+        "durable::worker::node_memory_tests::audit_default_fixed_backing_fits_the_original_eight_mib_node_ceiling",
+        "durable::worker::node_memory_tests::audit_funded_birth_refuses_before_filesystem_on_capacity_or_ceiling_mismatch",
+        "durable::worker::node_memory_tests::page_record_preflight_accounts_actual_original_graph_before_decode_and_rolls_back_refusal",
+        "durable::worker::node_memory_tests::live::funded_pending_and_returned_ack_retain_original_transient_memory_until_real_drop",
+        "durable::worker::node_memory_tests::live::funded_read_only_page_clones_share_backing_and_keep_node_capacity_after_close",
+        "durable::worker::node_memory_tests::live::funded_unjoined_worker_retains_exact_original_quarantine_after_body_completion",
+        "durable::worker::node_memory_tests::live::activation_audit_custody_never_moves_to_equal_foreign_budget_or_persistent_node_history",
+        "durable::worker::node_memory_tests::live::funded_observation_capacity_refusal_preserves_original_state_and_lossy_drop_counter",
+        "durable::worker::node_memory_tests::live::funded_pending_read_only_views_share_actual_graph_through_teardown_and_last_clone"
+      ],
+      "original-broker-node-bank": [
+        "broker::ownership::node_metadata_tests::original_node_bank_and_logical_broker_metadata_are_distinct_conserved_observations",
+        "broker::ownership::node_metadata_tests::original_metadata_swap_refuses_mismatched_ceiling_and_prior_or_retained_zero_charge"
+      ],
+      "required-before-copy-refusal": [
+        "broker::tests::audit::required_audit_native_refusal_precedes_dispatch_and_preserves_all_original_owners"
+      ],
+      "audit-ack-error-retirement": [
+        "durable::worker::run::tests::ack_admission_refusal_repairs_original_pending_finish_and_actual_abandon_drains"
+      ]
+    },
+    "shippingConsumerCheck": [
+      "latent-wire",
+      "latent",
+      "latentd"
+    ],
+    "source": {
+      "sha256": "sha256:72461fc27a2c228a305470f07c4f4e075320617b3f35695afd42984835bd1801",
+      "files": 3711,
+      "bytes": 33929796,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "sourceMaterials": 154
+  },
+  "independentVerification": {
+    "exactListAndResults": true,
+    "everyCommandAndStreamIdentity": true,
+    "sourceAndMaterialsMatchFrozenGitBlobs": true,
+    "freshWindowsPhysicalSourceScan": false
+  },
+  "earlierFailure": {
+    "run": 39927617231,
+    "job": 120327783545,
+    "sourceRevision": "f89e8a078ea7db513062911645c5224495acef7a",
+    "reason": "New read-only pending view fixture requested an idle state while intentionally retaining one live pending attempt and terminal reservation. Only that initial idle premise was replaced with exact live-state assertions; all final retirement assertions remain.",
+    "actualPassingControlsBeforeFailure": 20
+  },
+  "qualification": {
+    "signedGuestQualification": false,
+    "fullAllocationClosureQualified": false,
+    "guestSourceCompiled": false,
+    "historical193ProductsRebuilt": false,
+    "opaqueTransportCachesQualified": false,
+    "osWorkerStacksQualified": false
+  }
+}

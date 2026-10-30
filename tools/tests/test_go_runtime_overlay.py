@@ -480,7 +480,10 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes((runtime.ROOT / name).read_bytes())
             engine = root / PATHS[1]
-            engine.write_text(engine.read_text().replace('wasm_backtrace_max_frames(None)', 'changed_config()'))
+            original = engine.read_text()
+            changed = original.replace('wasm_backtrace_max_frames(backtrace_limit)', 'changed_config()')
+            self.assertNotEqual(changed, original)
+            engine.write_text(changed)
             before = {name: (root / name).read_bytes() for name in PATHS}
             with self.assertRaisesRegex(ValueError, 'source-drift'):
                 overlay_sources(root, output)

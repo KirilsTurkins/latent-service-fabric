@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "lsf.kernel-late-fd-root-source.v1",
+  "sourceHead": "eef89f053e7729c314235471a5ec984b0541a474",
+  "upstreamCommit": "7fdb7c1824a1f9979d648d7ae28ac446bcee9c6e",
+  "parentDerived": {
+    "net/factory.c": {
+      "bytes": 34471,
+      "sha256": "7a82893a0247c6f110b49a9c82697565ca1b3c5bd497abd303c64ce1ba39310a"
+    },
+    "net/factory-cleanup-root-final-free.c": {
+      "bytes": 13111,
+      "sha256": "8740dd04b219187f04d2d4803dcd30ef5a486015239e38b55380b3c1a5504b9e"
+    },
+    "kernel/kthread.c": {
+      "bytes": 46764,
+      "sha256": "8efc5f462f12c6b5ffa9ac9ffc729df62e3adb25cd68e69c4eec92ef8c48d58d"
+    },
+    "include/net/lsf_stream_cleanup_provider_executor.h": {
+      "bytes": 6087,
+      "sha256": "d28779502d15de4c88413fc4d4144fb431d83d69d9340bc05916c5077e7b189e"
+    }
+  },
+  "kthreadd": {
+    "bytes": 2468,
+    "sha256": "faf0d7c0ce7feeb4d73299b547f5e6a0d1aff5393e1901b0a3ae733a8d1ca53a",
+    "text": "int kthreadd(void *unused)\n{\n\tstruct task_struct *tsk = current;\n\n\t/* Setup a clean context for our children to inherit. */\n\tset_task_comm(tsk, \"kthreadd\");\n\tignore_signals(tsk);\n\tset_cpus_allowed_ptr(tsk, housekeeping_cpumask(HK_TYPE_KTHREAD));\n\tset_mems_allowed(node_states[N_MEMORY]);\n\n\tcurrent->flags |= PF_NOFREEZE;\n\tcgroup_init_kthreadd();\n\n\tfor (;;) {\n\t\tset_current_state(TASK_INTERRUPTIBLE);\n\t\tif (list_empty(&kthread_create_list)\n#ifdef CONFIG_LSF_STREAM_FACTORY\n\t\t    && !READ_ONCE(lsf_cleanup_pending)\n\t\t    && !lsf_factory_cleanup_retire_pending()\n\t\t    && !lsf_prepaid_cleanup_irq_pending()\n\t\t    && !lsf_factory_cleanup_final_pending()\n\t\t    && !lsf_factory_cleanup_request_pending()\n#endif\n\t\t   )\n\t\t\tschedule();\n\t\t__set_current_state(TASK_RUNNING);\n\n\t\tspin_lock(&kthread_create_lock);\n\t\twhile (!list_empty(&kthread_create_list)\n#ifdef CONFIG_LSF_STREAM_FACTORY\n\t\t       || lsf_cleanup_pending || lsf_factory_cleanup_retire_pending()\n\t\t       || lsf_prepaid_cleanup_irq_pending()\n\t\t       || lsf_factory_cleanup_final_pending()\n\t\t       || lsf_factory_cleanup_request_pending()\n#endif\n\t\t      ) {\n#ifdef CONFIG_LSF_STREAM_FACTORY\n\t\t\tif (lsf_factory_cleanup_request_pending()) {\n\t\t\t\tspin_unlock(&kthread_create_lock);\n\t\t\t\tlsf_factory_cleanup_request_drain();\n\t\t\t\tspin_lock(&kthread_create_lock);\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tif (lsf_factory_cleanup_final_pending()) {\n\t\t\t\tspin_unlock(&kthread_create_lock);\n\t\t\t\tlsf_factory_cleanup_final_drain();\n\t\t\t\tspin_lock(&kthread_create_lock);\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tif (lsf_prepaid_cleanup_irq_pending()) {\n\t\t\t\tspin_unlock(&kthread_create_lock);\n\t\t\t\tlsf_prepaid_cleanup_irq_drain();\n\t\t\t\tspin_lock(&kthread_create_lock);\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tif (lsf_factory_cleanup_retire_pending()) {\n\t\t\t\tspin_unlock(&kthread_create_lock);\n\t\t\t\tlsf_prepaid_cleanup_retire_one();\n\t\t\t\tspin_lock(&kthread_create_lock);\n\t\t\t\tcontinue;\n\t\t\t}\n\t\t\tif (lsf_cleanup_pending) {\n\t\t\t\tstruct lsf_cleanup_request *owned = lsf_cleanup_pending;\n\t\t\t\tWRITE_ONCE(lsf_cleanup_pending, NULL);\n\t\t\t\tspin_unlock(&kthread_create_lock);\n\t\t\t\tlsf_cleanup_dispatch_kthread(owned);\n\t\t\t\tspin_lock(&kthread_create_lock);\n\t\t\t\tcontinue;\n\t\t\t}\n#endif\n\t\t\tstruct kthread_create_info *create;\n\n\t\t\tcreate = list_entry(kthread_create_list.next,\n\t\t\t\t\t    struct kthread_create_info, list);\n\t\t\tlist_del_init(&create->list);\n\t\t\tspin_unlock(&kthread_create_lock);\n\n\t\t\tcreate_kthread(create);\n\n\t\t\tspin_lock(&kthread_create_lock);\n\t\t}\n\t\tspin_unlock(&kthread_create_lock);\n\t}\n\n\treturn 0;\n}\n"
+  },
+  "actualLateFdCollection": false,
+  "nativeQuotaRelease": false,
+  "productionInstallation": false
+}

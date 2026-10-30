@@ -112,25 +112,27 @@ impl BlobInvoker for LocalBlobProvider {
         let cost = CapabilityCallCost::new(8)
             .with_typed_input_bytes(media_type.len() + 9)
             .with_typed_request_digest(digest);
-        Ok(Box::pin(async move {
-            let call = execute::dispatch(&inner, admission, "create", cost).await?;
-            let root = inner.store.clone();
-            let completed = execute::run(&inner, call, "create", move |call| {
-                let _memory = memory;
-                let result = root
-                    .create(&tenant, &media_type, expected_size, &|| checkpoint(call))
-                    .map_err(map);
-                drop(media_type);
-                result
-            })
-            .await?;
-            let data = completed.value?;
-            Ok(Box::new(handles::Writer {
-                data: Some(data),
-                inner,
-                binding,
-            }) as Box<dyn BlobWriter>)
-        }))
+        let prepared =
+            admission.prepare_io_future_with(move |admission: PoolAdmission| async move {
+                let call = execute::dispatch(&inner, admission, "create", cost).await?;
+                let root = inner.store.clone();
+                let completed = execute::run(&inner, call, "create", move |call| {
+                    let _memory = memory;
+                    let result = root
+                        .create(&tenant, &media_type, expected_size, &|| checkpoint(call))
+                        .map_err(map);
+                    drop(media_type);
+                    result
+                })
+                .await?;
+                let data = completed.value?;
+                Ok(Box::new(handles::Writer {
+                    data: Some(data),
+                    inner,
+                    binding,
+                }) as Box<dyn BlobWriter>)
+            })?;
+        Ok(prepared.finish(admission))
     }
     fn open(
         &self,
@@ -149,32 +151,34 @@ impl BlobInvoker for LocalBlobProvider {
         let cost = CapabilityCallCost::new(8)
             .with_typed_input_bytes(reference.digest.len() + reference.media_type.len() + 8)
             .with_typed_request_digest(reference_digest(b"blob-open-v1", &reference)?);
-        Ok(Box::pin(async move {
-            let call = execute::dispatch(&inner, admission, "open", cost).await?;
-            let root = inner.store.clone();
-            let completed = execute::run(&inner, call, "open", move |call| {
-                let _memory = memory;
-                let reference = crate::BlobReference {
-                    digest: latent_core::BlobDigest(reference.digest),
-                    size_bytes: reference.size,
-                    media_type: reference.media_type,
-                    tenant,
-                    metadata: latent_core::Metadata::new(),
-                };
-                let result = root
-                    .open_read(&reference.tenant, &reference, &|| checkpoint(call))
-                    .map_err(map);
-                drop(reference);
-                result
-            })
-            .await?;
-            let data = completed.value?;
-            Ok(Box::new(handles::Reader {
-                data: Some(data),
-                inner,
-                binding,
-            }) as Box<dyn BlobReader>)
-        }))
+        let prepared =
+            admission.prepare_io_future_with(move |admission: PoolAdmission| async move {
+                let call = execute::dispatch(&inner, admission, "open", cost).await?;
+                let root = inner.store.clone();
+                let completed = execute::run(&inner, call, "open", move |call| {
+                    let _memory = memory;
+                    let reference = crate::BlobReference {
+                        digest: latent_core::BlobDigest(reference.digest),
+                        size_bytes: reference.size,
+                        media_type: reference.media_type,
+                        tenant,
+                        metadata: latent_core::Metadata::new(),
+                    };
+                    let result = root
+                        .open_read(&reference.tenant, &reference, &|| checkpoint(call))
+                        .map_err(map);
+                    drop(reference);
+                    result
+                })
+                .await?;
+                let data = completed.value?;
+                Ok(Box::new(handles::Reader {
+                    data: Some(data),
+                    inner,
+                    binding,
+                }) as Box<dyn BlobReader>)
+            })?;
+        Ok(prepared.finish(admission))
     }
 }
 fn text(value: &str) -> Result<(), BlobError> {

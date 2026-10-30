@@ -1,5 +1,5 @@
 {
-  "cases":["DotnetFrontendDependencies.test_inner_capture_cannot_bypass_outer_approval","DotnetFrontendDependencies.test_outer_reviewed_capture_is_verified_before_compiler_without_original_source","DotnetFrontendDependencies.test_tampered_outer_cas_is_rejected_before_language_compiler"],
+  "storageCases":"guard-keys",
   "guards":{
     "DotnetFrontendDependencies.test_inner_capture_cannot_bypass_outer_approval":
       "ab4816973f1a760028f2cd5a1007035170aaabcb31cc138e18ecd0fc7200fb8d",

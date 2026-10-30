@@ -2,7 +2,8 @@
 use crate::streaming::wire::RequestBody;
 use crate::{destination::canonical, dns::Answers, HttpDestination, HttpError};
 use latent_capabilities::broker::{
-    io::{IoBuffer, IoMemory},
+    http::HttpInputMemory,
+    io::IoBuffer,
     pools::{
         ConnectionReservation, PoolCall, PooledConnection, ProviderClient, ProviderMetadata,
         ProviderPools,
@@ -43,7 +44,7 @@ pub(crate) struct HttpConnection {
     pub driver: Option<Driver>,
     pub peer: SocketAddr,
     pub wrote: Arc<AtomicBool>,
-    pub input: Option<Arc<IoMemory>>,
+    pub input: Option<HttpInputMemory>,
     reason: Option<crate::reason::Capture>,
     _memory: ProviderMetadata,
 }
@@ -71,16 +72,6 @@ impl HttpConnection {
         reason.finish(status).map(Some)
     }
 }
-pub(crate) struct OwnedRequestBody {
-    pub bytes: Vec<u8>,
-    pub _memory: Arc<IoMemory>,
-}
-impl AsRef<[u8]> for OwnedRequestBody {
-    fn as_ref(&self) -> &[u8] {
-        &self.bytes
-    }
-}
-
 pub(crate) async fn connect(
     pools: &ProviderPools,
     client: &Arc<ProviderClient<Network>>,

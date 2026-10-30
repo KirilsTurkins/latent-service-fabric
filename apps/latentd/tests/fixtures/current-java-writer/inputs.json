@@ -70,8 +70,8 @@
     },
     {
       "path": "transaction-profile.json",
-      "bytes": 9418,
-      "sha256": "1c1d8aad840be4a5c33a5d82dfe5a9aebcf27bffedada4b5fcdc83b8f177936a"
+      "bytes": 6474,
+      "sha256": "4be7fd44ed03e9b26f6887cab65ecc2afa1c8a3497082905b1d8d1ab01436af5"
     },
     {
       "path": "wit-lock.json",
@@ -99,7 +99,7 @@
       "sha256": "6642bc853129a8d1c84322eb9af59964bc7cbb8641a95ff4feae8837c1c7f539"
     }
   ],
-  "copiedBytes": 1085218,
+  "copiedBytes": 1082274,
   "compilerExecutedForTests": false,
   "keysCopied": false,
   "guestExecutionQualified": false,

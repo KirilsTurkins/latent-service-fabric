@@ -19,6 +19,7 @@ class Compiler:
         self.root, self.sdk, self.commands = root, sdk, commands
         self.source_root = source_root
         self.application_closure, self.isolation = application_closure, None
+        self.compiler_edges = None
         self.pins = json.loads(read_file(sdk / "toolchain.lock.json"))
         self.paths = {}
         for name in ("go", "componentize-go", "wasm-tools"):
@@ -83,7 +84,9 @@ class Compiler:
                     with path.open("rb") as source:
                         if source.read(4) == b"\x7fELF":
                             selected_tools["go-helper/" + path.relative_to(self.goroot).as_posix()] = path
-            self.isolation = Isolation(root.parent, selected_tools, {"go-compiler-and-runtime": self.goroot})
+            deadline = getattr(commands, '_parent_deadline', None)
+            options = {} if deadline is None else {'_deadline': deadline}
+            self.isolation = Isolation(root.parent, selected_tools, {"go-compiler-and-runtime": self.goroot}, **options)
             self.isolation.enable_children(self.goroot / "bin")
             environment["GOROOT"] = str(self.goroot)
             self.isolation.protect_inputs(commands.root)
@@ -102,10 +105,11 @@ class Compiler:
         activation = runtime_profile in PROFILES
         checkpoints = runtime_profile in CHECKPOINT_PROFILES
         timers = runtime_profile in TIMER_PROFILES
-        from tools.go_guest.activation import INITIALIZER_PROFILES, MANAGED_PROFILES, QUEUE_PROFILE
+        from tools.go_guest.activation import INITIALIZER_PROFILES, MANAGED_PROFILES, QUEUE_PROFILES, STACK_PROFILE
         initializers = runtime_profile in INITIALIZER_PROFILES
         managed_idle = runtime_profile in MANAGED_PROFILES
-        queued_work = runtime_profile == QUEUE_PROFILE
+        queued_work = runtime_profile in QUEUE_PROFILES
+        bounded_stacks = runtime_profile == STACK_PROFILE
         if checkpoints and 'go-checkpoints' not in self.paths:
             raise ValueError('go-checkpoint-parser-not-prepared-before-compiler-containment')
         output.mkdir()
@@ -144,6 +148,8 @@ class Compiler:
         if not sources or self.application_closure is None and any(not name.endswith(".go") for name in sources):
             raise ValueError("Go application source must contain only captured .go files")
         replaced, source_locations, directories, application_source_paths = set(), {}, {}, set()
+        package_names = {}
+        compiler_edge_sources = {}
         for name, data in sources.items():
             if not name.endswith(".go") or name.endswith("_test.go"):
                 continue
@@ -161,6 +167,7 @@ class Compiler:
             if relative in directories and directories[relative] != destination:
                 raise ValueError("selected-Go-source-directory-has-colliding-packages")
             directories[relative] = destination
+            package_names[relative] = package[1]
         for name, data in sources.items():
             relative = Path(name).parent.as_posix()
             destination = directories.get(relative)
@@ -188,6 +195,7 @@ class Compiler:
                 raise ValueError("duplicate-or-generated-Go-application-filename")
             target.write_bytes(data)
             application_source_paths.add(target)
+            compiler_edge_sources['src/' + name] = target
             if self.source_root is not None:
                 source_locations[str(target)] = str(self.source_root / name)
                 source_locations[target.relative_to(generated).as_posix()] = str(self.source_root / name)
@@ -233,7 +241,7 @@ class Compiler:
                                    generated / "vendor/go.bytecodealliance.org/pkg", sdk=self.sdk,
                                    activation=activation, checkpoints=checkpoints, timers=timers, initializers=initializers,
                                    http_context=http_context, standard_log=standard_log, managed_idle=managed_idle,
-                                   network_context=network_context, queued_work=queued_work)
+                                   network_context=network_context, queued_work=queued_work, bounded_stacks=bounded_stacks)
             self.commands.environment["GOFLAGS"] = "-mod=vendor -overlay=" + str(overlay_path)
             if selected_module is not None and selected_module["tags"]:
                 self.commands.environment["GOFLAGS"] += " -tags=" + ",".join(selected_module["tags"])
@@ -285,7 +293,58 @@ class Compiler:
             adapter = output / "closed-runtime.wasm"
             self.run("closed-runtime", "wasm-tools", "parse", self.sdk / "runtime/deny-wasi.wat", "-o", adapter)
             component = output / "component.wasm"
-            self.run("component-build", "componentize-go", *arguments, "build", "--go", self.paths["go"], "--adapt", adapter, "-o", component)
+            original_flags = self.commands.environment['GOFLAGS']
+            original_ssa = self.commands.environment.get('GOSSADIR')
+            witnesses = None
+            if self.compiler_edges is not None and self.compiler_edges.queries:
+                witnesses = output / 'compiler-edge-witnesses'; witnesses.mkdir()
+                groups, roots = {}, {}
+                module_identity = selected_module['module'] if selected_module is not None else 'wit_component'
+                for query in self.compiler_edges.queries:
+                    path = compiler_edge_sources[query['source']]
+                    source_directory = Path(query['source']).relative_to('src').parent.as_posix()
+                    if package_names.get(source_directory) == 'main':
+                        # Go's -p main exception is outside this ordinary
+                        # non-main package/name binding. Keep it unavailable.
+                        self.compiler_edges.failed(query['id']); continue
+                    package = module_identity + '/' + path.parent.relative_to(generated).as_posix()
+                    if re.fullmatch('[A-Za-z0-9_./-]+', package) is None:
+                        self.compiler_edges.failed(query['id']); continue
+                    try:
+                        # Actual normal module selection + actual staged
+                        # package path, never an application query manifest.
+                        self.compiler_edges.bind_go_root(query['id'], package)
+                    except ValueError:
+                        self.compiler_edges.failed(query['id'])
+                    roots.setdefault(query['root'], set()).add(package)
+                    groups.setdefault(package, set()).add(query['root'])
+                flags = []
+                for package, names in sorted(groups.items()):
+                    unique = sorted(name for name in names if len(roots[name]) == 1)
+                    if unique:
+                        flags.append('-gcflags=' + package + '=-d=' + ','.join(
+                            'ssa/late_deadcode/dump=' + name for name in unique))
+                for query in self.compiler_edges.queries:
+                    if len(roots.get(query['root'], ())) != 1:
+                        self.compiler_edges.failed(query['id'])
+                self.commands.environment['GOFLAGS'] += ' ' + ' '.join(flags)
+                self.commands.environment['GOSSADIR'] = str(witnesses)
+            try:
+                self.run("component-build", "componentize-go", *arguments, "build", "--go", self.paths["go"], "--adapt", adapter, "-o", component)
+            finally:
+                self.commands.environment['GOFLAGS'] = original_flags
+                if original_ssa is None: self.commands.environment.pop('GOSSADIR', None)
+                else: self.commands.environment['GOSSADIR'] = original_ssa
+            if witnesses is not None:
+                for query in self.compiler_edges.queries:
+                    if query['id'] in self.compiler_edges.failures: continue
+                    try:
+                        matches = list(witnesses.glob(query['root'] + '_*__late_deadcode.dump'))
+                        if len(matches) != 1:
+                            raise ValueError('compiler-query-Go-SSA-selection')
+                        self.compiler_edges.retain(query['id'], read_file(matches[0], 1024 * 1024))
+                    except (OSError, ValueError):
+                        self.compiler_edges.failed(query['id'])
             self.run("component-validate", "wasm-tools", "validate", "--features", "all", component)
             surface = self.run("component-wit", "wasm-tools", "component", "wit", component)
             if "import wasi:" in surface:

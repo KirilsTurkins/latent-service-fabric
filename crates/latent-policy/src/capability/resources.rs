@@ -60,12 +60,44 @@ impl HttpOrigin {
     }
 }
 
+// The pinned IpAddr Display emits at most eight four-digit hex groups and
+// seven colons. IPv4 and IPv4-mapped forms are shorter (15 and 22 bytes).
+struct CanonicalIpText {
+    bytes: [u8; 39],
+    used: usize,
+}
+
+impl CanonicalIpText {
+    fn new() -> Self {
+        Self {
+            bytes: [0; 39],
+            used: 0,
+        }
+    }
+
+    fn as_bytes(&self) -> &[u8] {
+        &self.bytes[..self.used]
+    }
+}
+
+impl std::fmt::Write for CanonicalIpText {
+    fn write_str(&mut self, value: &str) -> std::fmt::Result {
+        let end = self.used.checked_add(value.len()).ok_or(std::fmt::Error)?;
+        let destination = self.bytes.get_mut(self.used..end).ok_or(std::fmt::Error)?;
+        destination.copy_from_slice(value.as_bytes());
+        self.used = end;
+        Ok(())
+    }
+}
+
 fn canonical_host(host: &str) -> bool {
     if host.is_empty() || host.len() > 253 {
         return false;
     }
     if let Ok(address) = host.parse::<std::net::IpAddr>() {
-        return address.to_string() == host;
+        let mut text = CanonicalIpText::new();
+        return std::fmt::write(&mut text, format_args!("{address}")).is_ok()
+            && text.as_bytes() == host.as_bytes();
     }
     host.split('.').all(|label| {
         !label.is_empty()
@@ -242,6 +274,14 @@ pub enum ResourceTarget<'a> {
 }
 
 impl ResourceTarget<'_> {
+    /// Validate only the closed target grammar, without allocating a JSON DTO.
+    /// This is not a policy decision, provider installation, or execution grant.
+    /// Serialized explanation inputs retain their separate document bounds.
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.valid()
+    }
+
     pub(super) fn valid(&self) -> bool {
         match self {
             Self::Context | Self::Clock | Self::Random => true,
@@ -570,5 +610,119 @@ mod stream_tests {
                 endpoint: &self::endpoint()
             }
         ));
+    }
+
+    #[test]
+    fn canonical_ip_stack_spelling_preserves_original_display_and_host_gates() {
+        use std::net::IpAddr;
+
+        // The allocated Display oracle belongs only to this ordinary semantic
+        // control; it is not an activation-memory or allocator measurement.
+        for (input, canonical) in [
+            ("0.0.0.0", "0.0.0.0"),
+            ("127.0.0.1", "127.0.0.1"),
+            ("255.255.255.255", "255.255.255.255"),
+            ("::", "::"),
+            ("::1", "::1"),
+            ("0:0:0:0:0:0:0:1", "::1"),
+            ("2001:0DB8:0000:0000:0000:0000:0000:0001", "2001:db8::1"),
+            ("2001:db8:0:1:1:1:1:1", "2001:db8:0:1:1:1:1:1"),
+            ("2001:db8::1:1:1:1:1", "2001:db8:0:1:1:1:1:1"),
+            ("2001:0:0:1:0:0:1:1", "2001::1:0:0:1:1"),
+            ("2001:0:0:1::1:1", "2001::1:0:0:1:1"),
+            ("1:1:1:1:1:1:0:0", "1:1:1:1:1:1::"),
+            ("0:0:1:1:1:1:1:1", "::1:1:1:1:1:1"),
+            ("::192.0.2.128", "::c000:280"),
+            ("::ffff:c000:280", "::ffff:192.0.2.128"),
+            ("::ffff:255.255.255.255", "::ffff:255.255.255.255"),
+            (
+                "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+                "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+            ),
+        ] {
+            let address: IpAddr = input.parse().unwrap();
+            let original = address.to_string();
+            assert_eq!(original, canonical, "{input}");
+            let mut text = CanonicalIpText::new();
+            std::fmt::write(&mut text, format_args!("{address}")).unwrap();
+            assert_eq!(text.as_bytes(), canonical.as_bytes(), "{input}");
+            assert!(text.used <= 39);
+            assert!(canonical_host(canonical), "{canonical}");
+            assert_eq!(canonical_host(input), original == input, "{input}");
+        }
+        assert_eq!("255.255.255.255".len(), 15);
+        assert_eq!("::ffff:255.255.255.255".len(), 22);
+        assert_eq!("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff".len(), 39);
+
+        for host in ["localhost", "example.test", "a-b.example", "127.00.0.1"] {
+            assert!(canonical_host(host), "{host}");
+        }
+        let domain = format!(
+            "{}.{}.{}.{}",
+            "a".repeat(63),
+            "b".repeat(63),
+            "c".repeat(63),
+            "d".repeat(61)
+        );
+        assert_eq!(domain.len(), 253);
+        assert!(canonical_host(&domain));
+        assert!(!canonical_host(&(domain + "d")));
+        assert!(!canonical_host(&"a".repeat(64)));
+        for host in ["", "UPPER.example", "a..example", "-a.example", "[::1]"] {
+            assert!(!canonical_host(host), "{host}");
+        }
+        let mapped = "::ffff:192.0.2.128";
+        assert!(ResourceTarget::Http {
+            origin: &HttpOrigin {
+                scheme: "http".into(),
+                host: mapped.into(),
+                port: 80,
+            },
+            method: "GET",
+            path: "/",
+        }
+        .is_valid());
+        assert!(StreamEndpoint {
+            host: mapped.into(),
+            ..endpoint()
+        }
+        .validate()
+        .is_err());
+        assert!(StreamEndpoint {
+            host: "127.00.0.1".into(),
+            ..endpoint()
+        }
+        .validate()
+        .is_err());
+    }
+
+    #[test]
+    fn canonical_ip_fixed_writer_refuses_whole_overflowing_chunks() {
+        use std::fmt::Write;
+        use std::net::IpAddr;
+
+        let longest = "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff";
+        let address: IpAddr = longest.parse().unwrap();
+        let mut exact = CanonicalIpText::new();
+        write!(&mut exact, "{address}").unwrap();
+        assert_eq!(exact.used, 39);
+        assert_eq!(exact.as_bytes(), longest.as_bytes());
+        let bytes = exact.bytes;
+        assert!(exact.write_str("x").is_err());
+        assert_eq!(exact.used, 39);
+        assert_eq!(exact.bytes, bytes);
+
+        let mut split = CanonicalIpText::new();
+        split.write_str("::").unwrap();
+        split.write_str("ffff:").unwrap();
+        split.write_str("255.255.255.255").unwrap();
+        assert_eq!(split.as_bytes(), b"::ffff:255.255.255.255");
+        let bytes = split.bytes;
+        let used = split.used;
+        assert!(split.write_str("012345678901234567").is_err());
+        assert_eq!(split.used, used);
+        assert_eq!(split.bytes, bytes);
+        split.write_str("01234567890123456").unwrap();
+        assert_eq!(split.used, 39);
     }
 }

@@ -1,0 +1,524 @@
+{
+  "schemaVersion": "latent.java.checkpoint-context.compiler-observation.v1",
+  "scope": "JVM-only compiler/control observation for partial #741 and #679; no guest/native/runtime or whole-criterion qualification",
+  "source": {
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "branch": "feat/java-checkpoint-context-20261023",
+    "commit": "91c596a89dca0404db176b9a72887f1d5237dad9",
+    "tree": "e40b04fa4b8f0d8bfc12b052bc36d8c51062e2d3"
+  },
+  "owning": {
+    "workflow": "Java checkpoint context compiler control",
+    "workflowPath": ".github/workflows/java-checkpoint-context.yml",
+    "runId": 39999341426,
+    "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39999341426",
+    "jobId": 120571063369,
+    "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39999341426/job/120571063369",
+    "conclusion": "success",
+    "artifactId": 12521816054,
+    "artifactBytes": 5821,
+    "artifactSha256": "465a191c2fa962246cd61bad1b7e39f690ffc1969f7433aa88c112a5988ba8a6",
+    "artifactGitHubDigest": "sha256:465a191c2fa962246cd61bad1b7e39f690ffc1969f7433aa88c112a5988ba8a6",
+    "allArtifactMembersCrcVerified": true,
+    "artifactMembers": {
+      "result.json": {
+        "bytes": 8115,
+        "sha256": "f221c48bf1c7ccd0f3af124cc6450e6faf6d6b9ca780e24eea75f53bb14a90f2"
+      },
+      "commands.json": {
+        "bytes": 492,
+        "sha256": "e3012eeeea38e8f987bebf427a7ec058487a59aa12a4394a2d0089a98a84142a"
+      },
+      "commands/logs/00-checkpoint-context-jdk.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/00-checkpoint-context-jdk.stdout.txt": {
+        "bytes": 190,
+        "sha256": "2ea09eaf7b3c2db5256b076f18d3758d1f2a5746384c9f6b58a2c5d244864971"
+      },
+      "commands/logs/01-checkpoint-context-control-compile.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/01-checkpoint-context-control-compile.stdout.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/02-checkpoint-context-finder-compile.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/02-checkpoint-context-finder-compile.stdout.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/03-checkpoint-context-original.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commands/logs/04-checkpoint-context-corrected.stderr.txt": {
+        "bytes": 1164,
+        "sha256": "9aff3209776c187d4477bac1a0f8880dd68dfdccaf95080b8f3ab1eca20cef22"
+      },
+      "commands/logs/03-checkpoint-context-original.stdout.txt": {
+        "bytes": 185,
+        "sha256": "b9bee004fa279d8c787544d7610905305732cae5c0ea324a81bc676fcba8c31a"
+      },
+      "commands/logs/04-checkpoint-context-corrected.stdout.txt": {
+        "bytes": 186,
+        "sha256": "24a8bd1f1cf672b53a547847d227d48c1baa1d0bc84cb685adbbd7dbf74d2bb6"
+      }
+    }
+  },
+  "observation": {
+    "status": "passed",
+    "scope": "jvm-only-compiler-control",
+    "componentExecutionPerformed": false,
+    "nativeExecutionPerformed": false,
+    "compilerSources": {
+      "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java": {
+        "sha256": "sha256:fc7253b0e968b1d9d961a14f72ae3a7a1d32ffdd61eb3d9be4e9c3e16c79b278",
+        "bytes": 873
+      },
+      "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/MonitorContinuations.java": {
+        "sha256": "sha256:4820f3b9a4a76c22b6c6110488c98f7094fae05f4d4c628513206491b057a587",
+        "bytes": 10375
+      },
+      "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java": {
+        "sha256": "sha256:b1bf408e2ad9ea8b7f26e15c4512934db21d1114bcf0a3a45f2615d72618ba18",
+        "bytes": 12822
+      },
+      "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java": {
+        "sha256": "sha256:7f5c0b54e8ec17ac62f79224914105da4085cb8f73792c025cb27786240006f4",
+        "bytes": 1334
+      },
+      "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java": {
+        "sha256": "sha256:ff3318393a22fac68998cf7ba6e219e71f454e6e5bf53162ae583f07a5609161",
+        "bytes": 9183
+      },
+      "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/StandardTimerMethods.java": {
+        "sha256": "sha256:5673a2bd563b1727ccbebe0fcefbb7b02eb05a481f0b1288580b22b70db9a125",
+        "bytes": 3328
+      },
+      "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/SynchronizedMethods.java": {
+        "sha256": "sha256:c8942a70c5f6b0dd789474f7238eb0db2e2dce9ff02561d52c6e9d4b858f202e",
+        "bytes": 3528
+      },
+      "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java": {
+        "sha256": "sha256:e8e69c388a711c5630c0adc8b4f10e2ab913f27dacb5bc524ab1ac67e23bbc98",
+        "bytes": 3945
+      },
+      "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java": {
+        "sha256": "sha256:33f89cb353b7a2a01049d883094872a5d8ff60e6ee48bef39da42f45221a9e81",
+        "bytes": 4229
+      },
+      "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java": {
+        "sha256": "sha256:e0f0c8a78d0b51b46c9d671c93e085717750934af415aa9a46d18e710c3b64f8",
+        "bytes": 7510
+      },
+      "sdk/java-guest/fibers/conformance/compiler/CheckpointContextControl.java": {
+        "sha256": "sha256:f51059f2a557eb2ba3ae8998a8f6ea09797bbc73557111b1876022b8d8b32d5b",
+        "bytes": 21950
+      },
+      "sdk/java-guest/fibers/compiler-patch/AsyncMethodFinder.java": {
+        "sha256": "sha256:510b04fa6db5c0a47dc9656643bb3b1af0a104ed66cfb32786b88f93bbb4740d",
+        "bytes": 10518
+      },
+      "tools/java_guest/coroutine_patch.py": {
+        "sha256": "sha256:62a9fdea061a8825dace1011e6326429710e1fde05ede38f7c6ce61f7d0c8f80",
+        "bytes": 44029
+      },
+      "tools/qualify_java_checkpoint_context.py": {
+        "sha256": "sha256:fdb163f77496270a4f1003a48ce0e9deeb803d7c72e177078e7ae2c2d5910590",
+        "bytes": 9488
+      },
+      "sdk/java-guest/feasibility/dependencies.lock.json": {
+        "sha256": "sha256:4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4",
+        "bytes": 16525
+      },
+      "sdk/java-guest/feasibility/gradle/verification-metadata.xml": {
+        "sha256": "sha256:2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30",
+        "bytes": 46640
+      }
+    },
+    "controls": [
+      {
+        "mode": "original",
+        "result": "CHECKPOINT_CONTEXT_CONTROL PASS original;direct;multihop;shared;virtual;class-unmanaged;managed-cycle;pinned-managed-entry;altered-entry-negatives;unresolved;bound;real-late-completion"
+      },
+      {
+        "mode": "corrected",
+        "result": "CHECKPOINT_CONTEXT_CONTROL PASS corrected;direct;multihop;shared;virtual;class-unmanaged;managed-cycle;pinned-managed-entry;altered-entry-negatives;unresolved;bound;real-late-completion"
+      }
+    ],
+    "lockedModelJars": [
+      {
+        "path": "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar",
+        "sha256": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410"
+      },
+      {
+        "path": "org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar",
+        "sha256": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df"
+      },
+      {
+        "path": "org/teavm/teavm-extension-apis/0.15.0/teavm-extension-apis-0.15.0.jar",
+        "sha256": "9e867f3760b1c8d86cdb18ec70e429c23fd933021c8c3bb0cc0b727eac3202c0"
+      },
+      {
+        "path": "org/teavm/teavm-extension-spi-util/0.15.0/teavm-extension-spi-util-0.15.0.jar",
+        "sha256": "d94e8d4478c4186d18b657cb67654851d38b9f51d372dc7e7e54e0f3a24347c9"
+      },
+      {
+        "path": "org/teavm/teavm-extension-spi/0.15.0/teavm-extension-spi-0.15.0.jar",
+        "sha256": "d30bc018e3d857d585c4887e8863fe40f4d20293b3286293eda5af2b97266b49"
+      },
+      {
+        "path": "org/teavm/teavm-interop/0.15.0/teavm-interop-0.15.0.jar",
+        "sha256": "5c8511d71ae6f6d2ca913130393b64a959303e521727b2d9c1a9b1e14519216f"
+      },
+      {
+        "path": "org/teavm/teavm-metaprogramming-api/0.15.0/teavm-metaprogramming-api-0.15.0.jar",
+        "sha256": "00f053ad35ff78312e48eebbf4e1c6cf5f7a1e759b2432ba0b60d6f111bb3bdd"
+      },
+      {
+        "path": "org/teavm/teavm-platform/0.15.0/teavm-platform-0.15.0.jar",
+        "sha256": "999d369ab15aa83c17987d048ba59560759169891de7e13a5a1c2bd93dd060a8"
+      },
+      {
+        "path": "org/teavm/teavm-relocated-libs-asm-analysis/0.15.0/teavm-relocated-libs-asm-analysis-0.15.0.jar",
+        "sha256": "6bb5ef62ab00d557061d9b04dc4571f711fbe11d339783e55029b37b75d5159c"
+      },
+      {
+        "path": "org/teavm/teavm-relocated-libs-asm-commons/0.15.0/teavm-relocated-libs-asm-commons-0.15.0.jar",
+        "sha256": "d49685681db5039075f2fde01568f2bb6df14a99ef88d39b29df8e701e12e140"
+      },
+      {
+        "path": "org/teavm/teavm-relocated-libs-asm-tree/0.15.0/teavm-relocated-libs-asm-tree-0.15.0.jar",
+        "sha256": "6b475fd62b8ddedfa0808c0c412c311f000a80a13123b6ba07f5da531164fd5b"
+      },
+      {
+        "path": "org/teavm/teavm-relocated-libs-asm-util/0.15.0/teavm-relocated-libs-asm-util-0.15.0.jar",
+        "sha256": "a41247ca7f023959712be0e713d3f2f5687b4dfeda6b112b2d976494d52cdc57"
+      },
+      {
+        "path": "org/teavm/teavm-relocated-libs-asm/0.15.0/teavm-relocated-libs-asm-0.15.0.jar",
+        "sha256": "400496e463dddd878fed2b9b25a66deca2126f71bb68e41f82244b4315006018"
+      },
+      {
+        "path": "org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar",
+        "sha256": "7b82fedf747e0bf5d7a50acece86a8a684901e469165a3c5621c653128df4cd6"
+      },
+      {
+        "path": "org/teavm/teavm-relocated-libs-rhino/0.15.0/teavm-relocated-libs-rhino-0.15.0.jar",
+        "sha256": "49cedc9bfcdd44d30b8bc8d1d46d78fb7f8f2044b8c85c9c3f1ece33e94ee7e9"
+      }
+    ],
+    "finderClasses": {
+      "org/teavm/model/util/AsyncMethodFinder$AsyncInstructionReader.class": {
+        "sha256": "sha256:431c8acd31088ea13c486b93d9296d269ac5129a3c080f3dcb34d9a5eb24d366",
+        "bytes": 448
+      },
+      "org/teavm/model/util/AsyncMethodFinder$CallStack.class": {
+        "sha256": "sha256:fb1554aa18b867d4f9f17ca1686c77bf24d6ee9381d207fed6fbba8e08f21aee",
+        "bytes": 1278
+      },
+      "org/teavm/model/util/AsyncMethodFinder.class": {
+        "sha256": "sha256:6e173de6a7953205bbb224744d575ee59c5abc4b9f398a65b80fe5bf6d8672e4",
+        "bytes": 16478
+      }
+    },
+    "correctedSource": {
+      "sha256": "sha256:0c23715f0aca29f91700a1a004373da098b935713eab06cfacf7ec60afcd9e85",
+      "bytes": 26458
+    },
+    "compilerOverlay": {
+      "originalCore": {
+        "sha256": "sha256:501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df",
+        "bytes": 2956367
+      },
+      "selectedCore": {
+        "sha256": "sha256:c0d31284d8acad3b6990d352695d19f4395debf402c3266d8c43b2a07de7c32d",
+        "bytes": 2936377
+      },
+      "replacedClasses": [
+        "org/teavm/model/util/AsyncMethodFinder$AsyncInstructionReader.class",
+        "org/teavm/model/util/AsyncMethodFinder$CallStack.class",
+        "org/teavm/model/util/AsyncMethodFinder.class"
+      ],
+      "unchangedEntries": 1874,
+      "unchangedFiberClass": {
+        "bytes": 9799,
+        "sha256": "88c9972155df3fad727253caf68f7359534a0639386571b2eb5680fa17fee605"
+      }
+    },
+    "jdk": {
+      "java": {
+        "sha256": "sha256:7380ce48ed5013735d2c8414db54adb8f981e7933ff594bd36f3baccddaafba3",
+        "bytes": 16264
+      },
+      "javac": {
+        "sha256": "sha256:86d10cd1c73e976f364291f3c3d10bb167f0bafdd6eb4c9c6dc44bddeffcc45e",
+        "bytes": 16360
+      },
+      "version": "openjdk 25.0.4.1 2026-08-18 LTS\nOpenJDK Runtime Environment Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS, mixed mode, sharing)\n"
+    }
+  },
+  "commandObservations": [
+    {
+      "stage": "checkpoint-context-jdk",
+      "exitCode": 0,
+      "seconds": 0.023425
+    },
+    {
+      "stage": "checkpoint-context-control-compile",
+      "exitCode": 0,
+      "seconds": 0.808479
+    },
+    {
+      "stage": "checkpoint-context-finder-compile",
+      "exitCode": 0,
+      "seconds": 0.627451
+    },
+    {
+      "stage": "checkpoint-context-original",
+      "exitCode": 0,
+      "seconds": 0.184864
+    },
+    {
+      "stage": "checkpoint-context-corrected",
+      "exitCode": 0,
+      "seconds": 0.278785
+    }
+  ],
+  "qualifiedRecipeSources": {
+    ".github/workflows/java-checkpoint-context.yml": {
+      "bytes": 1681,
+      "sha256": "2dcc75b6a42c5e3b91b13d9bf24d47644fa8f34d8d44c14f569b51135745e3ad"
+    },
+    "tools/toolchain.toml": {
+      "bytes": 1044,
+      "sha256": "01b56f4c2e976f575f903ad066a00b210249601662f6f118cec71e61ff5f6480"
+    },
+    "tools/requirements.lock": {
+      "bytes": 121,
+      "sha256": "2a01b73e0eefb60d9595be1ddc90d519d9a8a64296a3471f065ac7c07e63ad47"
+    },
+    "tools/qualify_java_fibers.py": {
+      "bytes": 32747,
+      "sha256": "1288e71f8de3fadf6c0249bd1870af55b761b769e827a7c14ca115f3dff22f34"
+    },
+    "tools/rust_capsule_build.py": {
+      "bytes": 49509,
+      "sha256": "8fbcb10eb7e7b2a2fc39834f0b94600fad2364c9b326bcc9db030418cf891b61"
+    },
+    "tools/java_guest/compiler.py": {
+      "bytes": 31570,
+      "sha256": "ece99fb112e72288830b4b7ad7095f973925cbfac4f447dbfb070cf5345cc4b0"
+    },
+    "tools/java_guest/compiler_diagnostics.py": {
+      "bytes": 5942,
+      "sha256": "d7481f8e1d07275c2330f51f80e7853a934457474ea7b6d0775b0c1aed652b5a"
+    },
+    "tools/tests/test_java_checkpoint_context.py": {
+      "bytes": 8317,
+      "sha256": "57e979dd2097447cf42453d5b16c63c0866860bc561dc32aa91a42fdfd7686a5"
+    },
+    "tools/tests/test_java_compiler_diagnostics.py": {
+      "bytes": 9551,
+      "sha256": "6edf6723e1ac4511755a540c72f666ee29e490d59c4af4b315bbda6ff8a4a672"
+    },
+    "sdk/java-guest/tools/dependencies.py": {
+      "bytes": 6562,
+      "sha256": "770a90fc706bdbe961fb25757784b8b6d0826f1a194cc95da91a6f06fd01a9b1"
+    },
+    "sdk/java-guest/tools/feasibility.py": {
+      "bytes": 12327,
+      "sha256": "429b4e36a7628c5eb2b70eb9e04b204a9096fa94f787ee64ea2c303c33995e9c"
+    }
+  },
+  "selectedLockedJars": [
+    {
+      "path": "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar",
+      "sha256": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410",
+      "size": 17718996,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar",
+      "sha256": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df",
+      "size": 2956367,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-extension-apis/0.15.0/teavm-extension-apis-0.15.0.jar",
+      "sha256": "9e867f3760b1c8d86cdb18ec70e429c23fd933021c8c3bb0cc0b727eac3202c0",
+      "size": 13264,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-extension-spi-util/0.15.0/teavm-extension-spi-util-0.15.0.jar",
+      "sha256": "d94e8d4478c4186d18b657cb67654851d38b9f51d372dc7e7e54e0f3a24347c9",
+      "size": 1845,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-extension-spi/0.15.0/teavm-extension-spi-0.15.0.jar",
+      "sha256": "d30bc018e3d857d585c4887e8863fe40f4d20293b3286293eda5af2b97266b49",
+      "size": 16527,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-interop/0.15.0/teavm-interop-0.15.0.jar",
+      "sha256": "5c8511d71ae6f6d2ca913130393b64a959303e521727b2d9c1a9b1e14519216f",
+      "size": 12599,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-metaprogramming-api/0.15.0/teavm-metaprogramming-api-0.15.0.jar",
+      "sha256": "00f053ad35ff78312e48eebbf4e1c6cf5f7a1e759b2432ba0b60d6f111bb3bdd",
+      "size": 13884,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-platform/0.15.0/teavm-platform-0.15.0.jar",
+      "sha256": "999d369ab15aa83c17987d048ba59560759169891de7e13a5a1c2bd93dd060a8",
+      "size": 101636,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-analysis/0.15.0/teavm-relocated-libs-asm-analysis-0.15.0.jar",
+      "sha256": "6bb5ef62ab00d557061d9b04dc4571f711fbe11d339783e55029b37b75d5159c",
+      "size": 34800,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-commons/0.15.0/teavm-relocated-libs-asm-commons-0.15.0.jar",
+      "sha256": "d49685681db5039075f2fde01568f2bb6df14a99ef88d39b29df8e701e12e140",
+      "size": 73343,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-tree/0.15.0/teavm-relocated-libs-asm-tree-0.15.0.jar",
+      "sha256": "6b475fd62b8ddedfa0808c0c412c311f000a80a13123b6ba07f5da531164fd5b",
+      "size": 51412,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-util/0.15.0/teavm-relocated-libs-asm-util-0.15.0.jar",
+      "sha256": "a41247ca7f023959712be0e713d3f2f5687b4dfeda6b112b2d976494d52cdc57",
+      "size": 94715,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm/0.15.0/teavm-relocated-libs-asm-0.15.0.jar",
+      "sha256": "400496e463dddd878fed2b9b25a66deca2126f71bb68e41f82244b4315006018",
+      "size": 126383,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar",
+      "sha256": "7b82fedf747e0bf5d7a50acece86a8a684901e469165a3c5621c653128df4cd6",
+      "size": 1509391,
+      "platform": "any"
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-rhino/0.15.0/teavm-relocated-libs-rhino-0.15.0.jar",
+      "sha256": "49cedc9bfcdd44d30b8bc8d1d46d78fb7f8f2044b8c85c9c3f1ece33e94ee7e9",
+      "size": 1426826,
+      "platform": "any"
+    }
+  ],
+  "selectedLockedJarTotalBytes": 24151988,
+  "pinnedProofSources": {
+    "core/src/main/java/org/teavm/runtime/Fiber.java": {
+      "url": "https://raw.githubusercontent.com/konsoletyper/teavm/ee91b03e616c4b45401cd11fb0cd7eb0daf6649b/core/src/main/java/org/teavm/runtime/Fiber.java",
+      "bytes": 10983,
+      "sha256": "57c9379d4b8ffbaad7be8bfe63112c18b1b31b5c1cddcb740214b201f94637d1"
+    },
+    "core/src/main/java/org/teavm/model/PreOptimizingClassHolderSource.java": {
+      "url": "https://raw.githubusercontent.com/konsoletyper/teavm/ee91b03e616c4b45401cd11fb0cd7eb0daf6649b/core/src/main/java/org/teavm/model/PreOptimizingClassHolderSource.java",
+      "bytes": 2219,
+      "sha256": "ebe28c67e90187d3eb95be4df0444ad5891da016a65c59c0778995879bc6a281"
+    },
+    "core/src/main/java/org/teavm/model/instructions/EmptyInstruction.java": {
+      "url": "https://raw.githubusercontent.com/konsoletyper/teavm/ee91b03e616c4b45401cd11fb0cd7eb0daf6649b/core/src/main/java/org/teavm/model/instructions/EmptyInstruction.java",
+      "bytes": 849,
+      "sha256": "36a467b028f2d8d96baf5a7d555b62b423c50abf0c3247f10c2ac3410c159717"
+    },
+    "core/src/main/java/org/teavm/model/InstructionReadVisitor.java": {
+      "url": "https://raw.githubusercontent.com/konsoletyper/teavm/ee91b03e616c4b45401cd11fb0cd7eb0daf6649b/core/src/main/java/org/teavm/model/InstructionReadVisitor.java",
+      "bytes": 6909,
+      "sha256": "d9ee3b38f513a4d72a7eb69feff30007dc9894136e524d2c7709974eaac80705"
+    },
+    "core/src/main/java/org/teavm/ast/decompilation/StatementGenerator.java": {
+      "url": "https://raw.githubusercontent.com/konsoletyper/teavm/ee91b03e616c4b45401cd11fb0cd7eb0daf6649b/core/src/main/java/org/teavm/ast/decompilation/StatementGenerator.java",
+      "bytes": 27034,
+      "sha256": "04529697e241a35b0b12701a65156596b6d986f378aabaad91fd8a4990ba57c3"
+    }
+  },
+  "bodyProof": "Real parsed pinned private Fiber.start body and baseline receive the same pinned PreOptimizingClassHolderSource pass; bounded concrete opcode/operand/phi/CFG equality, flags and same physical compiler JAR are mandatory. This receipt records raw Fiber class and pass-source identities; no standalone serialized IR/body digest was produced. Exact-position operandless NOPs pass; unknown-instruction self comparison and altered/empty/handler bodies refuse.",
+  "preservedFailedCampaigns": [
+    {
+      "run": 39994053599,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39994053599",
+      "sourceHead": "3a3d8b77bcba1d0e07b927e10dc56076c9965b92",
+      "conclusion": "failure",
+      "artifact": 12517824981,
+      "archiveBytes": 3269,
+      "archiveSha256": "8c0bf619432e34ad78df18602508d5edcfa3edfdbae34ac019c0e64509f1ffbc",
+      "actualCause": "Patched Finder javac used array syntax for pinned List API; no JVM control ran."
+    },
+    {
+      "run": 39995465826,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39995465826",
+      "sourceHead": "c83f141516a0cd2a684efb42f4e76cad6694cee2",
+      "conclusion": "failure",
+      "artifact": 12520130144,
+      "archiveBytes": 3728,
+      "archiveSha256": "8a48c30913bd68a63c97611d2cd9ea3e779edaeca76e0ef27fd35d10e941faed",
+      "actualCause": "Both javac stages passed; original JVM analyzer linkage lacked existing locked extension API/runtime closure."
+    },
+    {
+      "run": 39996684010,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39996684010",
+      "sourceHead": "f51cc43dd1ee5f800a8502db5d88981d512a87ea",
+      "conclusion": "failure",
+      "artifact": 12520665587,
+      "archiveBytes": 3789,
+      "archiveSha256": "c60189be4a3f6831c55441e6532935528f64e8730237f77958584a49d892b058",
+      "actualCause": "Both javac stages passed; original JVM late-completion fixture attempted prohibited first class linkage during completion."
+    },
+    {
+      "run": 39997356260,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39997356260",
+      "sourceHead": "04a3c9803ec688d9c3d8c3b2c1c3009bd4b97e6a",
+      "conclusion": "failure",
+      "artifact": 12520956037,
+      "archiveBytes": 4138,
+      "archiveSha256": "157974b51898422644bac5171754eecc84f413e1a2fe808c7fd3bf1183150130",
+      "actualCause": "Original JVM mode passed; corrected actual pinned managed entry refused as unresolved."
+    },
+    {
+      "run": 39998380366,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39998380366",
+      "sourceHead": "9d4c417bbf93f6d61e5f0c90f31342ffe249e5ce",
+      "conclusion": "failure",
+      "artifact": 12520747632,
+      "archiveBytes": 4296,
+      "archiveSha256": "616c3b2796e80f96653c7146204e0079c76df38b8bbb184c2f0fd35a0ec55d3c",
+      "actualCause": "Original JVM mode passed; finite corrected diagnostic identified two real operandless EmptyInstruction NOPs refused by exact comparison; mandatory positive remained failed."
+    }
+  ],
+  "boundaries": [
+    "All managed-entry/unsafe/late-completion checks are host JVM compiler-model controls.",
+    "No C target, guest/component build, native host, signed execution, runtime scheduling or GC qualification ran.",
+    "Production diagnostic recognizer controls are source tests, separate from these actual JVM observations.",
+    "No whole #741 or #679 acceptance criterion is claimed complete."
+  ],
+  "rawObservation": {
+    "bytes": 8115,
+    "sha256": "f221c48bf1c7ccd0f3af124cc6450e6faf6d6b9ca780e24eea75f53bb14a90f2",
+    "representation": "All observation fields are exact; lockedModelJars is losslessly represented as path/sha256 rows to distinguish public artifact digests from credential-looking map assignments."
+  }
+}

@@ -1,7 +1,14 @@
 # Rust standard runtime source port
 
-This infrastructure source experiment implements the `std::time` platform
-clock calls beneath ordinary `Instant::now` and `SystemTime::now`. It replaces
+This directory contains the maintained source ports and compiler experiments
+for selected ordinary Rust standard-library paths. The owned sysroot and
+explicit standard-runtime selection below cover clocks and closed or bounded
+logging stdio; later sections describe entropy, TLS and threading work at their
+own source and qualification boundaries. It is not a complete Rust OS platform
+or an automatically selected executor.
+
+The original clock PAL implements the `std::time` platform
+calls beneath ordinary `Instant::now` and `SystemTime::now`. It replaces
 the pinned Rust 1.97.1 unsupported time selector with an LSF clock PAL for
 `wasm32-unknown-unknown`. It preserves the upstream time representation,
 checked arithmetic and epoch limits, and uses the exact synchronous canonical
@@ -17,17 +24,18 @@ The exact upstream [MIT](upstream/LICENSE-MIT) and
 [Apache-2.0](upstream/LICENSE-APACHE) texts accompany the original preimages;
 LSF overlays do not replace their attribution.
 
-The profile is **unqualified source**, with no automatic builder selection yet.
-It needs a rebuilt authenticated sysroot, owned clock-world component metadata
-and genuine signed ordinary Rust component evidence before the maintained
-builder may select it. `no_std`/`alloc` sources remain unchanged. Networking
-authority is separate.
+Source extraction alone does not qualify a profile. The rebuilt sysroot,
+explicit builder selection and finite signed clock/stdio observations below
+are separate from the early PAL reference tests. `no_std`/`alloc` sources remain
+unchanged, and networking authority is separate. For selected ordinary HTTP,
+use the [WASI HTTP runtime](../../docs/testing/rust-wasi-http-runtime.md).
 
-Logical threads, TLS isolation, synchronization/channel parking, sleep/timers,
-default executors/reactors and compiler checkpoints still require real ports.
-The original failed thread creation and sleep behavior remains intact; the
-single-thread `Cell` mutex is preserved and never described as concurrent.
-No signed component or default Tokio/Rayon compatibility is claimed.
+Logical threads, TLS, synchronization and compiler checkpoints have additional
+closed-profile experiments; use the [runtime matrix](../../docs/component-development/runtime-capabilities.md)
+and [C/Rust continuation preparation](../../docs/runtime/wasmtime.md#selected-continuation-and-memory-profiles)
+to find their exact boundaries. Neither a source overlay nor a successful
+clock or stdio component qualifies general `std::thread`, default Tokio/Rayon,
+CPU-loop fairness or a durable continuation.
 
 The next source slice in `tls.rs` selects the unchanged pinned key-based std
 TLS storage beneath ordinary `thread_local!`, including its alignment,

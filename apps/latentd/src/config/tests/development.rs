@@ -118,3 +118,51 @@ fn developer_fixture_consent_values_and_profile_fail_closed() {
     config.security_profile = latent_wasmtime::ExecutionIsolationProfile::ExternalCapsule;
     assert!(config.derive().is_err());
 }
+
+#[cfg(not(feature = "development-test-node"))]
+#[test]
+fn ordinary_node_rejects_local_service_refusal_observation() {
+    let mut value: Value = serde_json::from_str(&super::document()).unwrap();
+    value["developmentLocalServiceObservation"] = json!({"formatVersion":1,"consent":true,
+        "purpose":"disposable-local-service-refusal-observation"});
+    assert!(serde_json::from_value::<super::NodeConfig>(value).is_err());
+}
+
+#[cfg(feature = "development-test-node")]
+#[test]
+fn local_service_refusal_observation_requires_exact_consent_and_existing_local_provider() {
+    let (_directory, mut config) = super::config();
+    let selected = json!({"formatVersion":1,"consent":true,
+        "purpose":"disposable-local-service-refusal-observation"});
+    let observation: super::super::development::LocalServiceObservation =
+        serde_json::from_value(selected.clone()).unwrap();
+    assert!(observation.check(&config).is_err());
+    config.providers = Some(serde_json::from_value(json!({"formatVersion":1,"bindings":[],
+        "localService":{"identity":{"id":"local","tenant":"examples","service":"examples/callee","epoch":1},
+        "deployment":"callee","contract":"examples:callee/api@1.0.0"}})).unwrap());
+    observation.check(&config).unwrap();
+    for (key, value) in [
+        ("formatVersion", json!(2)),
+        ("consent", json!(false)),
+        ("purpose", json!("production")),
+    ] {
+        let mut changed = selected.clone();
+        changed[key] = value;
+        let changed: super::super::development::LocalServiceObservation =
+            serde_json::from_value(changed).unwrap();
+        assert!(changed.check(&config).is_err());
+    }
+    for value in [
+        json!(null),
+        json!([]),
+        json!({"formatVersion":1,"consent":true,
+        "purpose":"disposable-local-service-refusal-observation","extra":"private"}),
+    ] {
+        assert!(
+            serde_json::from_value::<super::super::development::LocalServiceObservation>(value)
+                .is_err()
+        );
+    }
+    config.security_profile = latent_wasmtime::ExecutionIsolationProfile::ExternalCapsule;
+    assert!(observation.check(&config).is_err());
+}

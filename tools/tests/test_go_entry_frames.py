@@ -33,7 +33,14 @@ class PrivateEntryFrames(unittest.TestCase):
             self.assertIn('WasmBacktraceDetails::Disable', engine)
             self.assertNotIn('WasmBacktraceDetails::Enable', engine)
             self.assertEqual(engine.replace('wasm_backtrace_max_frames(std::num::NonZeroUsize::new(32))',
-                'wasm_backtrace_max_frames(None)').encode(), originals[frames.PATHS[1]])
+                frames.host.backtrace_call(originals[frames.PATHS[1]].decode())).encode(), originals[frames.PATHS[1]])
+            for call in ('wasm_backtrace_max_frames(None)', 'wasm_backtrace_max_frames(backtrace_limit)'):
+                self.assertEqual(frames.host.private_backtrace_source(call),
+                    'wasm_backtrace_max_frames(std::num::NonZeroUsize::new(32))')
+            for changed in ('unknown', 'wasm_backtrace_max_frames(None)' * 2,
+                    'wasm_backtrace_max_frames(None); wasm_backtrace_max_frames(backtrace_limit)'):
+                with self.assertRaisesRegex(ValueError, 'source-drift'):
+                    frames.host.private_backtrace_source(changed)
             observer = read_file(overlays[0][0]).decode()
             self.assertEqual(observer.replace(frames.OBSERVER, '').encode(), originals[frames.PATHS[0]])
             self.assertIn('take(32)', frames.OBSERVER)

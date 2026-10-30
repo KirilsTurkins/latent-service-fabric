@@ -11,6 +11,15 @@ from tools.build_snapshot import digest
 from tools.c_static_symbols import MAX_SYMBOL_BYTES, MAX_SYMBOLS, strong_symbols
 
 
+class CDependencyError(DependencyError):
+    """A concrete maintained C input refusal; never an inferred guest operation."""
+    origin = 'c-application-dependencies'
+
+    def __init__(self, code):
+        super().__init__(code)
+        self.code = code
+
+
 def unsigned(data: bytes, offset: int) -> tuple[int, int]:
     value = 0
     for shift in range(0, 35, 7):
@@ -27,7 +36,7 @@ def unsigned(data: bytes, offset: int) -> tuple[int, int]:
 
 def wasm_object(payload: bytes) -> dict:
     if not payload.startswith(b"\0asm\x01\0\0\0"):
-        raise DependencyError("c-static-archive-host-native-member")
+        raise CDependencyError("c-static-archive-host-native-member")
     offset, linking, features, definitions = 8, None, {}, []
     while offset < len(payload):
         section = payload[offset]; offset += 1
@@ -49,7 +58,7 @@ def wasm_object(payload: bytes) -> dict:
                     raise DependencyError("c-wasm-object-malformed")
                 linking, content = unsigned(payload, content)
                 if linking != 2:
-                    raise DependencyError("c-wasm-linking-abi-unsupported")
+                    raise CDependencyError("c-wasm-linking-abi-unsupported")
                 definitions = strong_symbols(payload[content:end])
             elif name == "target_features":
                 count, content = unsigned(payload, content)
@@ -70,16 +79,16 @@ def wasm_object(payload: bytes) -> dict:
                     raise DependencyError("c-wasm-object-malformed")
         offset = end
     if linking is None:
-        raise DependencyError("c-wasm-static-member-is-not-relocatable-object")
+        raise CDependencyError("c-wasm-static-member-is-not-relocatable-object")
     if any(features.get(name) == "+" for name in ("atomics", "memory64", "shared-mem")):
-        raise DependencyError("c-wasm-object-requires-unqualified-runtime-profile")
+        raise CDependencyError("c-wasm-object-requires-unqualified-runtime-profile")
     return {"digest": digest(payload), "size": len(payload), "linkingVersion": linking,
             "targetFeatures": features, "strongSymbols": definitions}
 
 
 def archive_members(data: bytes, *, validator=None) -> list[dict]:
     if not data.startswith(b"!<arch>\n"):
-        raise DependencyError("c-static-archive-format-or-thin-archive-denied")
+        raise CDependencyError("c-static-archive-format-or-thin-archive-denied")
     offset, long_names, members, seen, symbols, symbol_bytes = 8, b"", [], set(), set(), 0
     while offset < len(data):
         if offset + 60 > len(data):
@@ -158,14 +167,14 @@ def selected(closure: Closure | None, *, compiler_digest: str, runtime_digest: s
     if closure is None:
         return Inputs((), (), (), (), {"formatVersion": 1, "artifacts": []})
     if closure.lock["selection"].get("target", "wasm32-wasi") != "wasm32-wasi":
-        raise DependencyError("c-selected-target-not-maintained-profile")
+        raise CDependencyError("c-selected-target-not-maintained-profile")
     for item in closure.lock["artifacts"]:
         if item["role"] not in {"application", "resource"}:
             continue
         root = closure.work / item["mount"]
         options = item["metadata"]
         if set(options) & {"buildCommand", "configure", "compilerOptions", "generator", "plugins"}:
-            raise DependencyError("c-executable-or-unobserved-build-options-denied")
+            raise CDependencyError("c-executable-or-unobserved-build-options-denied")
         selected_sources = options.get("cSources", [])
         selected_includes = options.get("includeDirectories", [])
         selected_defines = options.get("defines", {})
@@ -202,13 +211,15 @@ def selected(closure: Closure | None, *, compiler_digest: str, runtime_digest: s
                         "compilerDistributionDigest": compiler_distribution_digest,
                         "runtimeDigest": runtime_digest, "checkpointProfile": "closed-synchronous-v1", "members": members}
             if compiler_distribution_digest is None or profile != expected:
-                raise DependencyError("c-static-archive-needs-current-observed-abi-profile-or-source-rebuild")
+                raise CDependencyError("c-static-archive-needs-current-observed-abi-profile-or-source-rebuild")
             archives.append(root)
             receipts.append({"id": item["id"], "archive": profile, "profileAuthority": "reviewed-source-build-policy"})
         else:
             observed = {row["path"] for row in item["files"]}
             for name in selected_sources:
                 name = path_name(name)
+                if name in observed and name.endswith(('.cc', '.cpp', '.cxx', '.c++', '.C')):
+                    raise CDependencyError('c-cpp-source-not-maintained-profile')
                 if not name.endswith(".c") or name not in observed:
                     raise DependencyError("c-source-not-in-captured-closure")
                 sources.append(root / name)

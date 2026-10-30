@@ -5,12 +5,9 @@ wit_bindgen::generate!({
     path: "../../sdk/dotnet-guest/runtime/wit",
     world: "runtime-logging",
     generate_all,
-    async: [
-        "export:wasi:io/poll@0.2.6#poll",
-        "export:wasi:io/poll@0.2.6#[method]pollable.block",
-        "export:latent:dotnet-retirement/owner@0.1.0#drain",
-        "-export:wasi:io/streams@0.2.6#[method]input-stream.blocking-read",
-        "-export:wasi:io/streams@0.2.6#[method]output-stream.blocking-flush",
+    sync: [
+        "export:wasi:io/streams@0.2.6#[method]input-stream.blocking-read",
+        "export:wasi:io/streams@0.2.6#[method]output-stream.blocking-flush",
     ],
 });
 

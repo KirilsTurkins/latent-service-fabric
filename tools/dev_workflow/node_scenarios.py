@@ -8,6 +8,32 @@ from . import build, node_cancellation, node_deployment, node_fixtures, node_inv
 from .common import decode, digest, members, require
 
 
+def _collect_node_observations(collector, client, selectors, deadline):
+    """After original timed scenarios, inspect at most eight issued roots once."""
+    from tools import guest_compatibility_outcomes
+    import re
+    require(len(selectors) <= guest_compatibility_outcomes.MAX_NODE_OBSERVATIONS,
+            'compatibility-node-selector-bound')
+    for case, activation, service in selectors:
+        observed, reason = None, None
+        remaining = deadline - time.monotonic()
+        if type(activation) is not str or re.fullmatch('[A-Za-z0-9][A-Za-z0-9_.-]{0,127}', activation) is None:
+            reason = 'original-identifier-unavailable'
+        elif remaining <= 5:
+            reason = 'observation-deadline'
+        else:
+            try:
+                # process.run owns up to five seconds of cleanup OUTSIDE its
+                # child timeout. Reserve that inside the original deadline.
+                execution = min(2, remaining - 5)
+                rpc_millis = max(1, min(1500, int(execution * 1000)))
+                observed = client.call('--rpc-timeout-ms', str(rpc_millis), 'activation', 'tree', activation,
+                                       '--page-size', '1', timeout=execution)
+            except Exception:
+                reason = 'history-unavailable'
+        collector.observe_node(case, observed, activation, service, unavailable=reason)
+
+
 def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=None):
     from tools import guest_compatibility_outcomes
     from .helper import client, deploy, installation
@@ -35,6 +61,7 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
     manifest = decode(paths.read(source, descriptor["artifacts"]["capsule"]))
     ceilings = manifest["execution"]["limits"]
     deployment_recoveries = []
+    node_selectors = []
     def controls(case):
         execution = case["execution"]
         return (installed is not None and not execution.get("cancelBeforeStart", False)
@@ -67,8 +94,10 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
         state.atomic(root, "test-budget.json", budget)
         cancellation = None
         original_client_reaped = False
+        issued_activation = None
         def call(activation):
-            nonlocal cancellation, original_client_reaped
+            nonlocal cancellation, original_client_reaped, issued_activation
+            issued_activation = activation
             if execution is not None and execution.get("cancelWhenRunning", False):
                 cancellation = node_cancellation.Cancellation(root, cli, activation, deadline)
             result = cli.call("invoke", "--service", case["service"], "--contract", case["contract"],
@@ -88,6 +117,17 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
             compatibility_outcomes.observe(case["id"], result, original_client_reaped, expected_revision=revision)
         if cancellation is not None:
             result["data"]["cancellation"] = cancellation.finish(result)
+        if compatibility_outcomes is not None:
+            if issued_activation is None or not original_client_reaped:
+                compatibility_outcomes.observe_node(case['id'], None, None, case['service'],
+                                                    unavailable='original-identifier-unavailable')
+            elif len(node_selectors) >= guest_compatibility_outcomes.MAX_NODE_OBSERVATIONS:
+                compatibility_outcomes.observe_node(case['id'], None, issued_activation, case['service'],
+                                                    unavailable='observation-limit')
+            else:
+                # This fixed tiny selector list is not a result/authority
+                # ledger. Read-only queries run AFTER the timed scenarios.
+                node_selectors.append((case['id'], issued_activation, case['service']))
         return result
     layout, current = installation(root)
     node = decode(paths.read(layout.node.parent, layout.node.name))
@@ -129,6 +169,8 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
         "profile": node["securityProfile"], "os": "linux", "architecture": platform.machine(), "kernel": platform.release()},
         supported=supported,
         initialized_fixtures=initialized, execution_controls=controls, expected_revision=lambda: revision)
+    if compatibility_outcomes is not None:
+        _collect_node_observations(compatibility_outcomes, cli, node_selectors, deadline)
     for peer in (name for name in ("http", "events") if name in fixture_runtime):
         actual = service.request(root, "status")
         after = actual.get("fixtures", {}).get(peer, {})

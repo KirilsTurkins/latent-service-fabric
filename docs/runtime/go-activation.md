@@ -20,17 +20,21 @@ tuple rather than inferred from version order.
 | `go-component-activation-v3` | Adds original standard timer heap, callbacks/rearm/context deadlines; [hosted timer job117698091612](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39135166555/job/117698091612) passed its finite timer campaign after the historical failures below. |
 | `go-component-activation-v4` | Moves linked module initialization into the first admitted async root; the eight initializer and thirteen published retry-worker calls passed [job117706598344](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39138076044/job/117706598344), with their original source/limits. |
 | `go-component-activation-v5` | Adds eight source-pinned maintenance capacity reservations, not eight observed live workers; actual [synchronization33](../development/go-synchronization.md), [cross-tenant admission12](../development/go-runtime-admission.md), [queued-owner34/20guests](../development/go-runtime-queued-ownership.md) and [timer43/native17](../development/go-managed-timers.md) retain separate bounded evidence. |
+| `go-component-activation-v6` | Adds an independent QueuedWork reservation before goroutine allocation/publication, retaining parked work until actual destruction; [25 attempts, including 19 entered calls](../testing/evidence/go-queued-work-signed-2026-10-21.json) retain their original source and limits. |
+| `go-component-activation-v7` | Inherits v6 and adds a fixed 1 MiB single-stack ceiling before allocation/copy/growth in pinned Go 1.27.3; [seven signed attempts](../development/go-stack-ceiling-v7.md) qualify that finite ceiling, not an independent aggregate stack/GC/native-byte ledger. |
 
-The v1-v3 startup restrictions below apply to those selections, not the v4/v5
+The v1-v3 startup restrictions below apply to those selections, not the v4-v7
 first-admitted-root initializer path. Providers, publication grants, owner
 ceilings and request bounds remain explicit for every selection. Standard
 HTTP through the selected typed profile has its own
 [finite qualification](../development/go-standard-http-candidate.md);
 ordinary low-level `net`/DNS/TLS is not enabled by this profile table. Full
 stack/GC/result/queue costs, every late-wake/race and supported kernel/TLS
-accounting remain separate requirements. The new
-[live node-stop programme](../development/go-node-stop.md) is source-prepared;
-it receives no execution credit until its owning lane passes.
+accounting remain separate requirements. The
+[live node-stop programme](../development/go-node-stop.md#positive-timer-consumer-with-distinct-v7-products)
+passed six guest invocations and four clean node stops at its recorded consumer
+source `41e8084a` with native producer `77bf`; this historical result does not
+qualify later native changes or complete #742/#736.
 
 Set `runtimeProfile` to `go-component-activation-v1` in `capsule-project.json`.
 For captured dependencies, select that same profile in the captured native
@@ -67,7 +71,7 @@ The generated async entry closes admission after the ordinary handler returns,
 waits for every accepted sibling to exit, then seals the result. A sibling panic,
 unknown parked work, denied admission or unconfirmed settlement cannot produce
 success. A finite list of pinned runtime GC housekeeping entry points is
-separate from application tasks. Under v1-v3, pre-entry initializer goroutines are rejected; v4/v5 admit them
+separate from application tasks. Under v1-v3, pre-entry initializer goroutines are rejected; v4-v7 admit them
 inside the original async root as described below.
 Application finalizer and cleanup registration is rejected, including during
 initialization. Only the exact pinned runtime Pinner leak-check and `os.file`

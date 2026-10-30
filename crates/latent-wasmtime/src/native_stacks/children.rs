@@ -60,11 +60,17 @@ impl StackContext {
         // A previous start may have reused a cached worker without consuming its
         // pending stack permit. Retain it until actual Store destruction.
         if children.accepted >= children.maximum {
-            return Err(crate::containment::platform_error(
+            let mut observed = latent_core::diagnostic::ActivationDiagnostic::new(
+                latent_core::diagnostic::DiagnosticStage::Execution,
+                latent_core::diagnostic::DiagnosticReason::NativeThreadStartLimit,
+            );
+            observed.configured_bound = Some(children.maximum as u64);
+            observed.calculated_requirement = Some(children.accepted as u64 + 1);
+            return Err(observed.attach(crate::containment::platform_error(
                 PlatformErrorCode::ResourceExhausted,
                 "native-child-total-start-capacity",
                 false,
-            ));
+            )));
         }
         let owner = self
             .runtime
@@ -72,7 +78,7 @@ impl StackContext {
         let memory = self
             .budget
             .reserve_host_memory(self.mapped as u64)
-            .map_err(|error| error.to_platform_error())?;
+            .map_err(|error| error.to_host_memory_error())?;
         if let Some(pending) = children.pending.take() {
             children.retained.push(pending);
         }

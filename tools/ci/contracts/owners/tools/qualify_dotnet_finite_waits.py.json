@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_dotnet_finite_waits.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Actual cb9 pre-ILC composition failure: derive exact unchanged method count from authenticated validated9/10 TaskWait helpers, keep44744 unjoined/44753 infinite exact; add source-equality barrier and four controls. Original18 outcomes/allexisting workflow steps/budgets remain.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fbc7885ec9d27133580e2962b77bf09e50ac5d0f6d00d71b4843704e5c615d6d"
+{"kind":"owner","path":"tools/qualify_dotnet_finite_waits.py","reviewBoundary":"committed-fingerprint","reviewReason":"Promote only the existing declaration-guarded managed finite selection to the authenticated 95-helper aggregate derivation; retain old modes/evidence and all limits, and add one normal Polly NativeAOT component with fourteen signed outcomes, source-exact v10 product reuse and bounded public evidence.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "f338d039b48191e79f644300540358d38c71a4320fd8b6e7a7843c07afd5e334"
 }

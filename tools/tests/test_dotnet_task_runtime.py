@@ -130,5 +130,134 @@ class ManagedTaskProgramme(unittest.TestCase):
                     self.assertFalse(result['dotnetTaskRuntime']['cpuPreemptionQualified'])
 
 
+class RootReturnNormalControls(unittest.TestCase):
+    def test_marker_parser_requires_real_close_pending_and_original_bounds(self):
+        from tools.dotnet_root_return import positive_sequence
+        from tools.phase2_operator_process import WorkflowError
+        prefix = b'LSF-GO-NODE-STOP-TIMER-V1|'
+        lines = [b'pending|root-close|1|2|0|0', b'pending|wait-pending|2|2|1|1',
+                 b'drain|root-close|3|1|1|1', b'drain|wait-pending|4|1|1|1']
+        encode = lambda values: b'\n'.join(prefix+x for x in values)+b'\n'
+        self.assertEqual([r['sequence'] for r in positive_sequence(encode(lines))], [1, 2, 3, 4])
+        for bad in (lines[:1]+[b'pending|wait-pending|1|2|1|1']+lines[2:],
+                    [b'pending|root-close|1|1|0|0']+lines[1:],
+                    lines[:3]+[b'drain|wait-pending|4|1|17|1'],
+                    lines[:3]+[b'drain|wait-pending|2|1|1|1'],
+                    lines[:1]+[b'pending|wait-pending|0|2|1|1']+lines[2:],
+                    lines[:3]+[b'drain|next-entered|4|1|1|1'],
+                    lines+[b'overflow'], lines+[b'foreign|root-close|5|1|0|0']):
+            with self.subTest(bad=bad), self.assertRaises((WorkflowError, ValueError)):
+                positive_sequence(encode(bad))
+        with self.assertRaises((WorkflowError, ValueError)):
+            positive_sequence(b'x'*262145)
+
+    def test_exact_normal_programme_preserves_caps_and_only_two_observer_ids(self):
+        from tools import dotnet_root_return as selected
+        self.assertEqual([(t, m) for t, m, _ in selected.STEPS], [
+            ('examples', 1), ('foreign', 2), ('examples', 3), ('foreign', 4), ('examples', 5),
+            ('foreign', 6), ('examples', 8), ('foreign', 6), ('examples', 9), ('foreign', 6), ('examples', 6)])
+        self.assertEqual(len({a for _, _, a in selected.STEPS}), 11)
+        self.assertEqual([(m, a) for _, m, a in selected.STEPS if a.startswith('node-stop-')],
+            [(1, 'node-stop-pending'), (2, 'node-stop-drain')])
+        self.assertEqual(selected.OWNER_CAPS, {'tasks': 8, 'executors': 2, 'queuedWork': 8,
+            'waits': 16, 'timers': 8, 'results': 8, 'nativeOwners': 8})
+        self.assertNotIn(7, [m for _, m, _ in selected.STEPS])
+        self.assertEqual(len(selected.STEPS)+len(selected.PROFILES), 15)
+
+
+    def test_retention_closes17_and_keeps_component_before_shape_refusal(self):
+        import hashlib
+        import json
+        from tools import dotnet_root_return as selected
+        from tools.phase2_operator_process import WorkflowError
+        self.assertEqual(len(selected.PROBE_SOURCES), 17)
+        for count, extra in ((17, False), (16, False), (17, True)):
+            with self.subTest(count=count, unsafe_extra=extra), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary); compiled = root/'compiled'; generated = compiled/'generated'
+                generated.mkdir(parents=True); output = root/'output'; output.mkdir()
+                # Parser-only fixture bytes, never a real compiled programme.
+                component = b'\0asm\x0d\0\x01\0'; (compiled/'component.wasm').write_bytes(component)
+                outputs = {}
+                for name in selected.PROBE_SOURCES[:count]:
+                    raw = ('// parser control '+name).encode(); (generated/name).write_bytes(raw)
+                    outputs[name] = hashlib.sha256(raw).hexdigest()
+                if extra: outputs['../outside.cs'] = '0'*64
+                if count == 17 and not extra:
+                    names, records = selected.stage_probe_sources(compiled, output, {'outputs': outputs}, compiler_returned=True)
+                    self.assertEqual(tuple(names), selected.PROBE_SOURCES); self.assertEqual(len(records), 17)
+                else:
+                    with self.assertRaises(WorkflowError):
+                        selected.stage_probe_sources(compiled, output, {'outputs': outputs}, compiler_returned=True)
+                report = json.loads((output/'probe-capture-inventory.json').read_bytes())
+                self.assertEqual(report['csharpCount'], count+int(extra))
+                self.assertFalse(report['captureComplete'])
+                self.assertEqual((output/'component.wasm').read_bytes(), component)
+                self.assertEqual(len(list((output/'probe-inputs').glob('*.cs'))), count)
+                self.assertFalse((output/'outside.cs').exists())
+
+
+
+
+class RootReturnSupplementalControls(unittest.TestCase):
+    def test_pinned_flat_u32_auxiliary_has_complete_normal_inverse(self):
+        from tools.dotnet_guest import async_exports as a
+        from tools.rust_capsule_project import ROOT
+        normal = (ROOT/'sdk/dotnet-guest/tests/fixtures/root-join-cause/ProbeInterop.normal.cs.fixture').read_text()
+        selected, receipt = a.diagnostic_join_cause(a.JOIN_CAUSE_FILE, normal)
+        self.assertEqual(selected.replace(a.JOIN_CAUSE_SELECTED, a.JOIN_CAUSE_NORMAL), normal)
+        self.assertEqual(receipt['normalSha256'], a.JOIN_CAUSE_NORMAL_SHA256)
+        self.assertFalse(receipt['physicalRetirementQualified'])
+        self.assertFalse(receipt['originalTrapQualified'])
+        # All-feature inventory and ordinary Go builds share the same ignored
+        # test registration; unavailable diagnostic prerequisites must refuse.
+        rust = (ROOT/'crates/latent-wasmtime/tests/local_service.rs').read_text()
+        signature = 'async fn dotnet_join_cause_borrows_one_word_before_unchanged_native_finalization() {'
+        prefix, body = rust.split(signature)
+        attributes = prefix.rsplit('\n\n', 1)[1]
+        self.assertNotIn('#[cfg', attributes)
+        self.assertIn('#[tokio::test(', attributes)
+        self.assertIn('#[ignore = "Requires a separately reviewed NORMAL+auxiliary signed .NET fixture owner"]', attributes)
+        condition = (r'feature = "development-test-host",\s*'
+                     r'target_os = "linux",\s*target_arch = "x86_64"')
+        self.assertRegex(body, r'^\s*#\[cfg\(all\(\s*'+condition+r'\s*\)\)\]\s*\{')
+        self.assertRegex(body, r'#\[cfg\(not\(all\(\s*'+condition+
+            r'\s*\)\)\)\]\s*\{\s*panic!\(\s*'
+            r'"requires the reviewed development-test-host Linux x86_64 fixture"\s*\);\s*\}\s*\}\s*$')
+        self.assertEqual(body.count('feature = "development-test-host"'), 2)
+        # The signed fixture must use the capsule's tenant at every native edge.
+        self.assertIn('capsule.metadata.tenant.expect("captured capsule tenant")', body)
+        self.assertIn('Signers::for_tenant(DOTNET_CAPSULE_BUILD_TYPE, &tenant)', body)
+        self.assertIn('.admit_package(&tenant, upload,', body)
+        self.assertIn('Fixture::with_named_activation_runtime(', body)
+        self.assertNotIn('TenantId("tenant-a"', body)
+        self.assertIn('let service = ServiceId(capsule.metadata.name);', body)
+        self.assertIn('caller: service.clone()', body)
+        self.assertIn('callee: service', body)
+        self.assertNotIn('..Default::default()', body)
+        from tools import dotnet_root_return as replay
+        from tools.phase2_operator_process import WorkflowError
+        import hashlib
+        translated = replay.JOIN_REPLAY_FIXTURE_TRANSLATION
+        self.assertEqual(translated['path'], 'crates/latent-wasmtime/tests/local_service/fixture.rs')
+        fixture = (ROOT/translated['path']).read_bytes()
+        actual_blob = hashlib.sha1(b'blob '+str(len(fixture)).encode()+b'\0'+fixture).hexdigest()
+        self.assertEqual(actual_blob, translated['currentGitBlob'])
+        self.assertNotEqual(translated['currentGitBlob'], translated['producerGitBlob'])
+        self.assertEqual(replay.JOIN_REPLAY['artifact'], 12759125468)
+        self.assertEqual(replay.JOIN_REPLAY['bytes'], 15120874)
+        self.assertEqual(len(replay.JOIN_REPLAY_COMPONENTS), 2)
+        self.assertEqual(len(replay.JOIN_REPLAY_WIT), 4)
+        # Reject an untrusted carrier before reading its central metadata.
+        with tempfile.TemporaryDirectory() as temporary:
+            bad = Path(temporary)/'untrusted.zip'; bad.write_bytes(b'not the admitted artifact')
+            with self.assertRaisesRegex(WorkflowError, 'join-replay-official-archive'):
+                replay.join_replay_extract(bad, Path(temporary)/'never-staged', 0)
+            self.assertFalse((Path(temporary)/'never-staged').exists())
+        for name, text in [("other.cs", ""), (a.JOIN_CAUSE_FILE, ""),
+                           (a.JOIN_CAUSE_FILE, a.JOIN_CAUSE_NORMAL)]:
+            with self.assertRaisesRegex(ValueError, 'unreviewed-normal-helper'):
+                a.diagnostic_join_cause(name, text)
+
+
 if __name__ == '__main__':
     unittest.main()

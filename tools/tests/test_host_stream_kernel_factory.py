@@ -101,21 +101,34 @@ class HostStreamKernelFactory(unittest.TestCase):
 
     def test_native_ownership_is_original_accepted_session_io_and_fixed_allowance(self):
         raw = (ROOT / "crates/latent-capabilities/src/broker/pools/protocol.rs").read_text()
-        for item in ("io: IoLease", "Arc<super::admission::Request>", "Arc<StreamScope>",
+        for item in ("io: IoLease", "_request: super::admission::RequestOwner", "Arc<StreamScope>",
                      "SessionCoreOwner::ptr_eq(&original.core, &accepted.core)", "65_536 | 98_304",
                      "io: self.io.lease()", "self.retain_stream_request()",
                      "scope.reserve_host_memory(bytes)?"):
             self.assertIn(item, raw)
         self.assertNotIn("Deserialize", raw)
+        admission = (ROOT / "crates/latent-capabilities/src/broker/pools/admission.rs").read_text()
+        self.assertIn("pub(in crate::broker) type RequestOwner = Shared<Request>;", admission)
+        self.assertIn("use crate::broker::session::{PreparedShared, SessionCoreOwner, Shared, SharedWeak};", admission)
+        self.assertIn("pub(super) fn retain_stream_request(&self) -> RequestOwner {\n        self.request.clone()\n    }", admission)
         backing = raw[raw.index("pub fn reserve_stream_kernel_backing("):]
         self.assertIn("self.reserve_protocol_metadata(1024 * 1024)?", backing)
 
     def test_actual_quarantine_selects_original_io_owner_without_double_reservation(self):
         raw = (ROOT / "crates/latent-streams/src/connection.rs").read_text()
-        reserve = raw[raw.index("impl SocketMemory {"):raw.index("struct Connecting {")]
+        start = raw.index("impl SocketMemory {")
+        reserve = raw[start:raw.index("\n}\n", start) + len("\n}\n")]
         self.assertIn("if mode.retains_unproved()", reserve)
         self.assertIn("call.reserve_stream_kernel_ownership(scope, bytes)", reserve)
         self.assertIn("scope.reserve_host_memory(bytes).map(Self::Logical)", reserve)
+        self.assertIn(".map(Self::Kernel)", reserve)
+        self.assertEqual(reserve.count("reserve_stream_kernel_ownership("), 1)
+        self.assertEqual(reserve.count("reserve_host_memory("), 1)
+        self.assertLess(reserve.index("if mode.retains_unproved()"),
+                        reserve.index("call.reserve_stream_kernel_ownership(scope, bytes)"))
+        self.assertLess(reserve.index("call.reserve_stream_kernel_ownership(scope, bytes)"),
+                        reserve.index("} else {"))
+        self.assertLess(reserve.index("} else {"), reserve.index("scope.reserve_host_memory(bytes)"))
         self.assertIn(".quarantine(value)", raw)
         self.assertIn("original.quarantine()", raw)
 
@@ -167,6 +180,107 @@ class HostStreamKernelFactory(unittest.TestCase):
                     owners.capture(["cargo"], {}, 600, out, "broker-owners")
                 self.assertIs(original.exception, failure)
 
+
+class NodeBootstrapSource(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import importlib.abc
+        import importlib.util
+        source = OWNED / "node-bootstrap/projector.py"
+        raw = source.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != "87cacbf53b33d24e616fae4010fce80f7415a8a5a2cdb6490ee0b5eaa78959a7":
+            raise AssertionError("node-projector-captured-identity")
+        path = str(source)
+        class Captured(importlib.abc.SourceLoader):
+            def get_filename(self, fullname):
+                if fullname != "_lsf_node_bootstrap_projector":
+                    raise ValueError("node-module-name")
+                return path
+            def get_data(self, requested):
+                if requested != path:
+                    raise ValueError("node-module-source-only")
+                return raw
+        loader = Captured()
+        spec = importlib.util.spec_from_file_location("_lsf_node_bootstrap_projector", path, loader=loader)
+        cls.module = importlib.util.module_from_spec(spec)
+        loader.exec_module(cls.module)
+        cls.loader = loader
+        cls.c_source = cls.module.materials(ROOT)[cls.module.MATERIAL_NAME]
+
+    def test_material_reader_bounds_and_wrong_length_hash_short_circuit(self):
+        module = self.module
+        with patch.object(module.hashlib, "sha256", side_effect=AssertionError("must not hash")):
+            self.assertFalse(module._bound(b"", module.MATERIAL_PIN))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / module.MATERIAL_PATH
+            path.parent.mkdir(parents=True)
+            path.write_bytes(self.c_source)
+            self.assertEqual(module.materials(root)[module.MATERIAL_NAME], self.c_source)
+            path.write_bytes(self.c_source[:-1])
+            with patch.object(Path, "open", side_effect=AssertionError("no oversized/open read")):
+                with self.assertRaisesRegex(ValueError, "node-material-kind-length"):
+                    module.materials(root)
+            path.write_bytes(bytes([self.c_source[0] ^ 1]) + self.c_source[1:])
+            with self.assertRaisesRegex(ValueError, "node-material-identity"):
+                module.materials(root)
+            path.write_bytes(self.c_source)
+            with patch.object(Path, "is_symlink", return_value=True):
+                with self.assertRaisesRegex(ValueError, "node-material-kind-length"):
+                    module.materials(root)
+
+    def test_compiled_fops_choice_has_exact_ordinary_inverse_and_no_runtime_selector(self):
+        module = self.module
+        old = b"/* unchanged ordinary body */\n" + module.ANCHOR + b'    .name = "lsf-stream-factory",\n' + module.OLD_FOPS + b"};\n"
+        selected = module.edit_factory(old)
+        self.assertEqual(module.inverse_factory(selected), old)
+        self.assertTrue(selected.startswith(module.PREFIX))
+        self.assertLess(selected.index(module.INCLUDE), selected.index(module.ANCHOR))
+        self.assertEqual(selected.count(b".fops = &lsf_factory_node_operations"), 1)
+        self.assertEqual(selected.count(b".fops = &lsf_factory_operations"), 1)
+        with self.assertRaisesRegex(ValueError, "node-profile-before"):
+            module.edit_factory(selected)
+        with self.assertRaisesRegex(ValueError, "node-input-set"):
+            module.transform({})
+        with self.assertRaisesRegex(ValueError, "node-module-name"):
+            self.loader.get_filename("alternate")
+        with self.assertRaisesRegex(ValueError, "node-module-source-only"):
+            self.loader.get_data(str(OWNED / "node-bootstrap/__pycache__/projector.pyc"))
+
+    def test_actual_initial_header_precharge_and_unqualified_release_cuts(self):
+        module = self.module
+        module.node_body_obligations(self.c_source)
+        for mutation in (
+            self.c_source.replace(b"if (!lsf_factory_selected_consumer())", b"if (0)", 1),
+            self.c_source.replace(b"error = lsf_cleanup_observers_prebank_enter();", b"error = 0;", 1),
+            self.c_source.replace(b"error = -EIO;", b"error = 0;", 1),
+            self.c_source.replace(b"*record = (struct lsf_prepaid_view)", b"/* unpaid header */", 1),
+            self.c_source.replace(b"node->state = LSF_NODE_RETAINED;\n        spin_lock_irqsave",
+                b"node->state = LSF_NODE_RETAINED;\n        __free_pages(factory.pages, LSF_BACKING_ORDER);\n        spin_lock_irqsave", 1),
+        ):
+            self.assertNotEqual(mutation, self.c_source)
+            with self.assertRaises(ValueError):
+                module.node_body_obligations(mutation)
+        self.assertIn(b"sizeof(struct lsf_node_parent)", self.c_source)
+        self.assertNotIn(b"lsf_factory_device_initialize(", self.c_source)
+        self.assertNotIn(b"LSF_NODE_FUNDING_APPROVED", self.c_source)
+
+    def test_actual_rust_entry_moves_one_escrow_and_old_ack_never_refunds_node(self):
+        raw = (ROOT / "crates/latent-streams/src/kernel/native.rs").read_text()
+        node = raw[raw.index("pub(crate) mod node_bootstrap {"):]
+        production = node[:node.index("    #[cfg(test)]\n    mod controls")]
+        start = production[production.index("    pub(crate) async fn start("):]
+        self.assertLess(start.index("profile.check()?"), start.index("reserve_stream_kernel_node_backing("))
+        self.assertEqual(production.count("reserve_stream_kernel_node_backing("), 1)
+        self.assertNotIn("start_initialized_with(", production)
+        self.assertNotIn("reserve_stream_kernel_backing(", production)
+        self.assertLess(production.index("attempt.entered = true"), production.index("value.descriptor = Some(open()?)"))
+        close = production[production.index("    fn close_retained("):production.index("    async fn enter_with")]
+        self.assertNotIn("StreamKernelCloseObservation::KernelRootReturned", close)
+        self.assertNotIn("partition_original_bank(", close)
+        self.assertIn("value.phase = Phase::Retained", close)
+        self.assertIn("connection.quarantine()", production)
+        self.assertIn("No production constructor exists in this source slice", production)
 
 if __name__ == "__main__":
     unittest.main()

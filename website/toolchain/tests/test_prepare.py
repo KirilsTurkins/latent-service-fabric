@@ -57,7 +57,7 @@ class PreparationTests(unittest.TestCase):
                      ('package/node_modules/cssesc/package.json', {'name': 'cssesc', 'version': '3.0.0'}),
                      ('package/node_modules/util-deprecate/package.json', {'name': 'util-deprecate', 'version': '1.0.2'})]
         self.patches = []
-        for name, old, new in [('ip-address', '10.5.0', '10.7.2'), ('undici', '6.28.0', '6.28.1'),
+        for name, old, new in [('ip-address', '10.5.0', '10.7.4'), ('undici', '6.28.0', '6.29.1'),
                                ('http-cache-semantics', '4.2.0', '4.3.0'),
                                ('postcss-selector-parser', '7.1.4', '7.1.6'),
                                ('brace-expansion', '5.0.9', '5.0.12')]:
@@ -267,18 +267,20 @@ class PreparationTests(unittest.TestCase):
             for pin, raw in self.patches:
                 (cache / f'{pin["name"]}-{pin["version"]}.tgz').write_bytes(raw)
             repairs = []
-            library = None
+            libraries = []
             for name, version, profile, names, dependencies in [
                 ('braces', '3.0.3', 'braces-3.0.3-lsf-depth-v1',
                  ['lib/utils.js', 'lib/compile.js', 'lib/expand.js', 'lib/stringify.js', 'lib/parse.js'],
                  {'fill-range': '^7.1.1'}),
-                ('http-cache-semantics', '4.3.0', 'http-cache-semantics-4.3.0-lsf-cache-v1', ['index.js'], {})]:
+                ('http-cache-semantics', '4.3.0', 'http-cache-semantics-4.3.0-lsf-cache-v1', ['index.js'], {}),
+                ('deepmerge', '4.3.1', 'deepmerge-4.3.1-lsf-prototype-v1',
+                 ['index.js', 'dist/cjs.js', 'dist/umd.js'], {})]:
                 pin, raw = next(((pin, raw) for pin, raw in self.patches if pin['name'] == name), (None, None))
                 if pin is None:
                     raw = archive([('package/package.json', {'name': name, 'version': version, 'dependencies': dependencies})]
                                   + [('package/' + path, b'patched bytes') for path in names])
                     pin = {'name': name, 'version': version, 'integrity': prepare.integrity(raw)}
-                    library = pin
+                    libraries.append(pin)
                     (cache / f'{name}-{version}.tgz').write_bytes(raw)
                 document = {'schema': 1, 'profile': profile, 'name': name, 'version': version,
                             'upstreamIntegrity': pin['integrity'], 'files': [
@@ -293,12 +295,23 @@ class PreparationTests(unittest.TestCase):
                 repairs.append({'path': 'repairs/' + name + '.json', 'sha256': hashlib.sha256(encoded).hexdigest()})
             config = {'schema': 1, 'profile': prepare.PROFILE,
                       'base': {'name': 'npm', 'version': '11.19.1', 'integrity': prepare.integrity(base)},
-                      'patches': [pin for pin, _ in self.patches], 'libraries': [library], 'repairs': repairs}
+                      'patches': [pin for pin, _ in self.patches], 'libraries': libraries, 'repairs': repairs}
             (root / 'source.json').write_text(json.dumps(config))
             target = root / 'generated.tar'
             with patch.multiple(prepare, ROOT=root, HERE=root, CACHE=cache, OUTPUT=target):
                 actual = prepare.prepare(offline=True, refresh=True)
                 original = target.read_bytes()
+                self.assertEqual([pin['name'] for pin in libraries], ['braces', 'deepmerge'])
+                self.assertEqual(len(repairs), 3)
+                deepmerge = root / 'deepmerge-4.3.1-lsf-prototype-v1.tar'
+                with tarfile.open(fileobj=io.BytesIO(deepmerge.read_bytes()), mode='r:') as reader:
+                    self.assertEqual(set(reader.getnames()), {
+                        'package/package.json', 'package/index.js', 'package/dist/cjs.js', 'package/dist/umd.js'})
+                    for name in ('index.js', 'dist/cjs.js', 'dist/umd.js'):
+                        self.assertEqual(reader.extractfile('package/' + name).read(), b'repaired bytes')
+                    self.assertEqual(json.loads(reader.extractfile('package/package.json').read()),
+                                     {'name': 'deepmerge', 'version': '4.3.1', 'dependencies': {}})
+                original_libraries = {path: path.read_bytes() for path in root.glob('*.tar') if path != target}
                 row = {'resolved': 'file:../../target/website-package-manager/' + prepare.PROFILE + '.tar',
                        'integrity': actual}
                 (root / 'package-lock.json').write_text(json.dumps({'packages': {'node_modules/npm': row}}))
@@ -318,6 +331,7 @@ class PreparationTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'reviewed package lock'):
                     prepare.prepare(offline=True)
                 self.assertEqual(target.read_bytes(), original)
+                self.assertTrue(all(path.read_bytes() == raw for path, raw in original_libraries.items()))
 
 
 class TransportTests(unittest.TestCase):

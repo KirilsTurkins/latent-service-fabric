@@ -1,0 +1,11 @@
+{"cases":["ProviderTaskReferenceSource.test_actual_consume_guards_refuse_cross_owner_missing_and_double_custody","ProviderTaskReferenceSource.test_association_retains_early_exit_and_both_original_stack_return_orders","ProviderTaskReferenceSource.test_exact_failed_source_projection_and_actual_kthread_error_propagation","ProviderTaskReferenceSource.test_original_foreign_reap_and_last_task_use_worker_finish_order"],"guards":{"ProviderTaskReferenceSource.test_actual_consume_guards_refuse_cross_owner_missing_and_double_custody":
+  "be39d88c8e8959e60136f4927de0777b5ff5e2cd7fe789c43d65d66e2425abf3"
+,"ProviderTaskReferenceSource.test_association_retains_early_exit_and_both_original_stack_return_orders":
+  "be39d88c8e8959e60136f4927de0777b5ff5e2cd7fe789c43d65d66e2425abf3"
+,"ProviderTaskReferenceSource.test_exact_failed_source_projection_and_actual_kthread_error_propagation":
+  "be39d88c8e8959e60136f4927de0777b5ff5e2cd7fe789c43d65d66e2425abf3"
+,"ProviderTaskReferenceSource.test_original_foreign_reap_and_last_task_use_worker_finish_order":
+  "be39d88c8e8959e60136f4927de0777b5ff5e2cd7fe789c43d65d66e2425abf3"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_provider_task_reference.py","reviewReason":"Consume the original provider association Task reference exactly once after original stop_put; preserve early-exit protection, existing stop states and final-return assertions; append four source controls.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "be39d88c8e8959e60136f4927de0777b5ff5e2cd7fe789c43d65d66e2425abf3"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:d96782ed14aea243e896c914241fec518ec5bc414eb35c818a35faf8cc14cd17","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

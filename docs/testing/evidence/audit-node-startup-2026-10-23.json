@@ -1,0 +1,281 @@
+{
+  "schemaVersion": "latent.audit.node-startup.observation.v1",
+  "date": "2026-10-23",
+  "status": "passed",
+  "sourceRevision": "277c8104499d414053573bce066b5e9091e74a20",
+  "origin": {
+    "workflow": ".github/workflows/audit-node-startup.yml",
+    "event": "push",
+    "run": 39931902934,
+    "job": 120341964917,
+    "artifact": 12492391812,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39931902934/job/120341964917",
+    "archiveSha256": "sha256:dd8ca4d94042dd6512bfab9127d9fe4b87507c786bbabeb397bcd1fce4892322",
+    "archiveBytes": 56326844,
+    "members": 32,
+    "expandedBytes": 265877240
+  },
+  "source": {
+    "sha256": "sha256:e3667a208dd0ef57c95aa37f47eba95288cd024979f31f1051b5975339c81e15",
+    "files": 3712,
+    "bytes": 33932830,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "sourceMaterials": 158,
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "argvStages": 5,
+  "retainedStreams": 10,
+  "actualControl": "durable::worker::node_bank_policy_tests::original_node_bank_keeps_its_ceiling_across_derived_journal_policies_and_prebirth_refusal",
+  "products": {
+    "latent": {
+      "sha256": "sha256:9f4db9594b1e9a5e6cf1d8dbedcb6f830748368b3ca1e8ec5bc635559694f116",
+      "bytes": 72212720
+    },
+    "latentd": {
+      "sha256": "sha256:28739f4d9ac7ae3c3507011b97620c21e932b53d57584379bcd57856dbe9a0fd",
+      "bytes": 193434168
+    }
+  },
+  "outcomes": [
+    {
+      "label": "two-records-audit-only",
+      "records": 2,
+      "providers": false,
+      "status": "passed",
+      "ready": true,
+      "emptyTenantAuditQuery": true,
+      "cliCalls": 2,
+      "nodeReaped": true,
+      "shutdown": {
+        "clean": true,
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "providers": null
+      }
+    },
+    {
+      "label": "two-records-provider",
+      "records": 2,
+      "providers": true,
+      "status": "passed",
+      "ready": true,
+      "emptyTenantAuditQuery": true,
+      "cliCalls": 2,
+      "nodeReaped": true,
+      "shutdown": {
+        "clean": true,
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "providers": {
+          "clean": true,
+          "controlOwners": 0,
+          "connections": 0,
+          "pendingRequests": 0,
+          "runningRequests": 0,
+          "workers": 0,
+          "cleanupJobs": 0,
+          "failedCleanup": 0,
+          "sessions": 0,
+          "handles": 0,
+          "calls": 0,
+          "results": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "blobStages": 0,
+          "blobHandles": 0,
+          "blobWork": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "streamOwners": 0,
+          "streamConnections": 0,
+          "streamPendingOperations": 0,
+          "streamRetainedChunks": 0,
+          "streamMaintenanceOwners": 0
+        }
+      }
+    },
+    {
+      "label": "lowered-provider",
+      "records": 1024,
+      "providers": true,
+      "status": "passed",
+      "ready": true,
+      "emptyTenantAuditQuery": true,
+      "cliCalls": 2,
+      "nodeReaped": true,
+      "shutdown": {
+        "clean": true,
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "providers": {
+          "clean": true,
+          "controlOwners": 0,
+          "connections": 0,
+          "pendingRequests": 0,
+          "runningRequests": 0,
+          "workers": 0,
+          "cleanupJobs": 0,
+          "failedCleanup": 0,
+          "sessions": 0,
+          "handles": 0,
+          "calls": 0,
+          "results": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "blobStages": 0,
+          "blobHandles": 0,
+          "blobWork": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "streamOwners": 0,
+          "streamConnections": 0,
+          "streamPendingOperations": 0,
+          "streamRetainedChunks": 0,
+          "streamMaintenanceOwners": 0
+        }
+      }
+    },
+    {
+      "label": "default-provider",
+      "records": 4096,
+      "providers": true,
+      "status": "passed",
+      "ready": true,
+      "emptyTenantAuditQuery": true,
+      "cliCalls": 2,
+      "nodeReaped": true,
+      "shutdown": {
+        "clean": true,
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "providers": {
+          "clean": true,
+          "controlOwners": 0,
+          "connections": 0,
+          "pendingRequests": 0,
+          "runningRequests": 0,
+          "workers": 0,
+          "cleanupJobs": 0,
+          "failedCleanup": 0,
+          "sessions": 0,
+          "handles": 0,
+          "calls": 0,
+          "results": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "blobStages": 0,
+          "blobHandles": 0,
+          "blobWork": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "streamOwners": 0,
+          "streamConnections": 0,
+          "streamPendingOperations": 0,
+          "streamRetainedChunks": 0,
+          "streamMaintenanceOwners": 0
+        }
+      }
+    },
+    {
+      "label": "oversized-fixed-refusal",
+      "records": 16384,
+      "providers": true,
+      "status": "passed",
+      "exitCode": 1,
+      "refusal": {
+        "status": "observed",
+        "qualification": false,
+        "report": {
+          "schemaVersion": "latent.startup-failure-observation.v1",
+          "startupSucceeded": false,
+          "terminalFailure": {
+            "owner": "platform",
+            "reason": "resource-exhausted"
+          },
+          "observations": [
+            {
+              "stage": "auditCatalog",
+              "failure": {
+                "owner": "platform",
+                "reason": "resource-exhausted"
+              }
+            }
+          ],
+          "truncated": false,
+          "shutdown": null
+        }
+      },
+      "journalRootAbsentAssertedByProducer": true
+    }
+  ],
+  "independentVerification": {
+    "allCommandsAndStreamHashes": true,
+    "exactBankControlListAndResult": true,
+    "sourceAndMaterialsMatchFrozenGitBlobs": true,
+    "freshWindowsPhysicalSourceScan": false,
+    "allRetainedProductBytes": true,
+    "laterCatalogueOnlyHead": "4d1cb5a628058d04691455ade1ef427f7aba3928",
+    "laterHeadNativeSourceByteExact": true
+  },
+  "historicalStartupFailure": {
+    "runs": [
+      39928421995,
+      39928422057
+    ],
+    "retainedPublicFailure": "node-startup-exit-unavailable",
+    "rawNodeStderrRetained": false,
+    "preciseHistoricalTerminalBranch": "not-observed",
+    "sourceDefect": "The record-derived journal metadata policy was incorrectly substituted for the original8MiB node/broker bank; small journal policy also incorrectly limited whole-node-funded serial scratch.",
+    "repair": "Separate explicit original-node-bank admission from validated journal policy, preserving the old strict journal-only API and exact broker bank/ceiling binding."
+  },
+  "qualification": {
+    "signedGuestQualification": false,
+    "guestSourceCompiled": false,
+    "historical193ProductsRebuilt": false,
+    "fullAllocationClosureQualified": false,
+    "opaqueTransportCachesQualified": false,
+    "osStackCachesQualified": false
+  }
+}

@@ -20,6 +20,18 @@ from tools.rust_capsule_project import ROOT, read_json, snapshot
 from tools.standard_http.peer import Peer
 
 
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
+
+
 class DotnetHttpMixed(unittest.TestCase):
     def test_tenant_configuration_preserves_limits_and_uses_independent_http_not_aliases(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -89,7 +101,7 @@ class DotnetHttpMixed(unittest.TestCase):
 
     def test_manual_only_selector_restores_entire_previous_workflow_without_any_step_changes(self):
         from tools.ci_lane_inventory import workflow_model
-        value = workflow_model((ROOT/'.github/workflows/dotnet-published-http.yml').read_text())
+        value = workflow_model(historical_checkout((ROOT/'.github/workflows/dotnet-published-http.yml').read_text()))
         diagnostic = value['on']['workflow_dispatch']['inputs'].pop('periodic_diagnostic')
         self.assertEqual(diagnostic['type'], 'boolean');self.assertIs(diagnostic['default'], False)
         diagnostic_job = value['jobs'].pop('periodic-diagnostic')
@@ -115,7 +127,7 @@ class DotnetHttpMixed(unittest.TestCase):
         value['jobs']['published-http']['if'] = "github.event_name == 'workflow_dispatch' && inputs.fresh_component"
         value['jobs']['exact-component']['if'] = "github.event_name != 'workflow_dispatch' || !inputs.fresh_component"
         self.assertEqual(hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
-            '3cfb841dfe77016d6f85f3d4ad7c5e74eb67b2171e2d49ab257848c58ac7cac2')
+            'be7b04874a1e666ffe5816c7908b9e0af681a03bc3057c585c62f9cfccad8441')
 
     def test_project_keeps_normal_sdk_authoritative_wit_and_all_original_limits(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -269,5 +269,105 @@ class StandardConsole(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'native-tuple-mismatch'): inherited(root)
 
 
+    def test_late_workflow_preserves_all_programmes_and_authenticates_before_mode_restore(self):
+        from tools.ci_lane_inventory import workflow_model
+        from tools.rust_capsule_project import ROOT
+        import ast
+        model = workflow_model((ROOT / '.github/workflows/dotnet-guest.yml').read_text(encoding='utf-8'))
+        jobs = model['jobs']
+        self.assertEqual({name: jobs[name]['timeout-minutes'] for name in
+            ('toolchain', 'ordinary-runtime', 'published-tasks', 'scratch-refusals')},
+            {'toolchain': 75, 'ordinary-runtime': 25, 'published-tasks': 20, 'scratch-refusals': 20})
+        for name in ('ordinary-runtime', 'published-tasks', 'scratch-refusals'):
+            self.assertEqual(jobs[name]['needs'], 'toolchain')
+            self.assertNotIn('if', jobs[name])
+        self.assertTrue(all(not step.get('continue-on-error', False)
+            for job in jobs.values() for step in job['steps']))
+        normal = jobs['toolchain']['steps']
+        base = next(i for i, step in enumerate(normal) if step.get('name') ==
+            'Qualify captured projects, all SDK owners, enforced node and printed guide')
+        self.assertIn('dotnet-capsule-authoring', normal[base]['run'])
+        for offset, label in ((1, 'published'), (3, 'scratch')):
+            self.assertEqual(normal[base + offset]['run'],
+                'python3 tools/qualify_sdk_scratch.py --export-bundle --language dotnet '
+                '--native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring" '
+                f'--output "$RUNNER_TEMP/dotnet-{label}-prepared"')
+            self.assertEqual(normal[base + offset + 1]['with']['name'],
+                'dotnet-' + label + '-prepared-${{ github.sha }}')
+        late = jobs['ordinary-runtime']['steps']
+        old_commands = [
+            'python3 -m unittest tools.tests.test_dotnet_standard_console',
+            'python3 tools/qualify_dotnet_standard_console.py --output "$RUNNER_TEMP/dotnet-standard-console" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"',
+            'python3 -m unittest tools.tests.test_dotnet_secure_entropy -v',
+            'python3 -m unittest tools.tests.test_dotnet_managed_entropy -v',
+            'python3 tools/qualify_dotnet_standard_entropy.py --output "$RUNNER_TEMP/dotnet-standard-entropy" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"',
+            'python3 -m unittest tools.tests.test_dotnet_task_runtime tools.tests.test_dotnet_task_wait -v',
+            'python3 tools/qualify_dotnet_task_runtime.py --output "$RUNNER_TEMP/dotnet-task-runtime" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"',
+        ]
+        observed = [line for step in late for line in step.get('run', '').splitlines()
+            if line in old_commands]
+        self.assertEqual(observed, old_commands)
+        self.assertFalse(any(line in step.get('run', '').splitlines()
+            for step in normal for line in old_commands))
+        download = next(step for step in late if step.get('uses', '').startswith('KirilsTurkins/lsf-download-artifact@'))
+        self.assertEqual(download['with'], {'name': 'dotnet-published-prepared-${{ github.sha }}',
+            'path': '${{ runner.temp }}/dotnet-capsule-authoring'})
+        auth_index, auth = next((i, step) for i, step in enumerate(late)
+            if step.get('name') == 'Authenticate normal products before restoring exact executable modes')
+        first_programme = next(i for i, step in enumerate(late)
+            if old_commands[0] in step.get('run', '').splitlines())
+        self.assertLess(auth_index, first_programme)
+        code = auth['run'].split("python3 - <<'PY'\n", 1)[1].rsplit('\nPY', 1)[0]
+        def authenticated_mode_restore(source):
+            body = ast.parse(source).body
+            def require(condition):
+                if not condition:
+                    raise ValueError('normal-bundle-authenticated-mode-restoration')
+            def only(kind, predicate):
+                found = [(i, node) for i, node in enumerate(body)
+                    if isinstance(node, kind) and predicate(node)]
+                require(len(found) == 1)
+                return found[0]
+            root_i, root = only(ast.Assign, lambda n: ast.unparse(n.targets[0]) == 'root')
+            auth_i, auth = only(ast.Assign, lambda n:
+                ast.unparse(n.targets[0]) == '(binaries, companions, before)')
+            names_i, names = only(ast.Assign, lambda n: ast.unparse(n.targets[0]) == 'names')
+            guard_i, guard = only(ast.If, lambda n: ast.unparse(n.test) == 'set(binaries) != set(names)')
+            mode_i, mode = only(ast.For, lambda n: ast.unparse(n.target) == 'name')
+            reauth_i, reauth = only(ast.If, lambda n: ast.unparse(n.test) == 'inherited(root)[2] != before')
+            require(root_i < auth_i < names_i < guard_i < mode_i < reauth_i)
+            require(ast.unparse(root.value) == "Path(os.environ['RUNNER_TEMP']) / 'dotnet-capsule-authoring'")
+            require(ast.unparse(auth.value) == 'inherited(root)')
+            require(ast.literal_eval(names.value) == (
+                'latent', 'latentd', 'package', 'capsule_contracts', 'capsule_authoring'))
+            require(ast.unparse(mode.iter) == 'names' and not mode.orelse)
+            require(len(mode.body) == 1 and ast.unparse(mode.body[0]) == 'binaries[name].chmod(448)')
+            for refusal, reason in ((guard, 'native-products'), (reauth, 'native-changed')):
+                require(not refusal.orelse and len(refusal.body) == 1)
+                require(isinstance(refusal.body[0], ast.Raise))
+                require(ast.unparse(refusal.body[0].exc) == "RuntimeError('dotnet-late-normal-" + reason + "')")
+            # These are the six inspected operations and three fixed imports;
+            # reject an additional filesystem operation or alternate authenticator.
+            require(len(body) == 9 and [ast.unparse(n) for n in body[:3]] == [
+                'import os', 'from pathlib import Path',
+                'from tools.qualify_dotnet_standard_console import inherited'])
+        authenticated_mode_restore(code)
+        for changed in (
+            code.replace('binaries, companions, before = inherited(root)',
+                'binaries, companions, before = unchecked(root)'),
+            code.replace("'capsule_authoring')", "'capsule_authoring', 'extra')"),
+            code.replace('chmod(0o700)', 'chmod(0o777)'),
+            code.replace('if inherited(root)[2] != before:', 'if False:'),
+            code.replace('binaries, companions, before = inherited(root)\n', '')
+                + '\nbinaries, companions, before = inherited(root)\n',
+        ):
+            self.assertNotEqual(changed, code)
+            with self.assertRaisesRegex(ValueError, 'authenticated-mode-restoration'):
+                authenticated_mode_restore(changed)
+        for prefix in ('dotnet-standard-console/', 'dotnet-standard-entropy/', 'dotnet-task-runtime/'):
+            self.assertTrue(any(prefix in step.get('with', {}).get('path', '') and step.get('if') == 'always()' for step in late))
+
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -18,6 +18,7 @@ tokio = { workspace = true, features = ["net", "signal", "io-util"] }
 tonic.workspace = true
 latent-activation = { path = "../../crates/latent-activation" }
 latent-artifacts = { path = "../../crates/latent-artifacts" }
+latent-audit = { path = "../../crates/latent-audit" }
 latent-control-store = { path = "../../crates/latent-control-store" }
 latent-core = { path = "../../crates/latent-core" }
 latent-manifest = { path = "../../crates/latent-manifest" }

@@ -36,6 +36,12 @@ def complete_inventory(phase="baseline"):
     rows += [{"name": name + "-stack", "kind": "byte", "ownership": "node-fixed",
               "configuredCount": str(2 * 2162688), "activeCount": str(2162688), "attributes": {}}
              for name in FIXED_RUNTIME_ROWS]
+    audit = next(row for row in rows if row["name"] == "audit-journal")
+    audit.update(kind="store", attributes={
+        "profile": "audit-capacity-v1", "measurementStatus": "available",
+        "maximumRecords": "512", "maximumDiskBytes": "8388608",
+        "maximumQueuedOperations": "8", "maximumQueryOwners": "2",
+    })
     warm = phase in ("baseline", "dormant")
     return {
         "queueDepth": "0", "routeGeneration": "2" if phase == "baseline" else
@@ -124,6 +130,40 @@ def complete_receipt():
 
 
 class Phase2ResourceTests(unittest.TestCase):
+    def test_audit_capacity_row_preserves_unknown_liveness_and_frozen_limits(self):
+        value = complete_receipt()
+        original = copy.deepcopy(value)
+        validate_receipt(value)
+        self.assertEqual(value, original)
+        for field, bad in (("kind", "thread"), ("ownership", "activation-scoped"),
+                           ("configuredCount", "0"), ("configuredCount", "2"),
+                           ("activeCount", "0"), ("activeCount", "1")):
+            inventory = complete_inventory()
+            row = next(row for row in inventory["topology"]["entries"] if row["name"] == "audit-journal")
+            row[field] = bad
+            with self.subTest(field=field, value=bad), self.assertRaises(WorkflowError):
+                quiet(inventory)
+        for field, bad in (("profile", "unknown"), ("measurementStatus", "not-configured"),
+                           ("maximumRecords", "513"), ("maximumDiskBytes", "8388609"),
+                           ("maximumQueuedOperations", "9"), ("maximumQueryOwners", "3"),
+                           ("maximumRecords", None), ("maximumRecords", True)):
+            inventory = complete_inventory()
+            row = next(row for row in inventory["topology"]["entries"] if row["name"] == "audit-journal")
+            row["attributes"][field] = bad
+            with self.subTest(field=field, value=bad), self.assertRaises(WorkflowError):
+                quiet(inventory)
+
+    def test_audit_topology_addition_does_not_admit_duplicate_or_arbitrary_rows(self):
+        for name, reason in (("audit-journal", "inventory-duplicate-row"),
+                             ("unreviewed-owner", "inventory-fixed-rows")):
+            inventory = complete_inventory()
+            row = copy.deepcopy(next(row for row in inventory["topology"]["entries"]
+                                     if row["name"] == "audit-journal"))
+            row["name"] = name
+            inventory["topology"]["entries"].append(row)
+            with self.subTest(name=name), self.assertRaisesRegex(WorkflowError, reason):
+                quiet(inventory)
+
     def test_fixed_load_sampler_is_recorded_without_hiding_other_descriptor_growth(self):
         value = complete_receipt()
         observed = value["samples"][7]["os"]
@@ -295,7 +335,7 @@ class Phase2ResourceTests(unittest.TestCase):
                 quiet(value)
 
     def test_consistently_missing_fixed_owner_rows_cannot_fake_complete_topology(self):
-        for missing in ("wasmtime-compiler", "publication-catalog"):
+        for missing in ("wasmtime-compiler", "publication-catalog", "audit-journal"):
             value = complete_receipt()
             for sample in value["samples"]:
                 sample["inventory"]["topology"]["entries"] = [

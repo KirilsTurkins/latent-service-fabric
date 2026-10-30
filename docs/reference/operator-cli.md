@@ -2,8 +2,10 @@
 
 `latent` builds and inspects local packages, transfers exact package bytes through
 OCI, and manages the [standalone Linux node](standalone-node.md). Node commands
-connect once and send one generated gRPC request. Local paths never name the
-node's catalogs, and the CLI does not execute components locally.
+connect once and send one generated gRPC request. In RPC commands, local paths
+never name the node's catalogs. The explicit local audit-maintenance commands
+below instead require stopped-owner filesystem access. The CLI does not execute
+components locally.
 Install the released CLI with [native installation](../installation.md). For
 day-to-day capsule creation, build, test and watch, use
 [`latent-dev` and `latent-dev-workspace`](../how-to/developer-commands.md).
@@ -138,6 +140,44 @@ operator effect actions through the configured transaction runtime. Follow
 [transaction recovery](../operations/transaction-recovery.md) for the sequence
 and authority requirements. It is outside alpha.5 and retains its separate
 acceptance gates; clustering remains planned.
+
+## Local audit maintenance and archive commands
+
+These **current-development** Linux commands are not in the released alpha.4 or
+alpha.5 CLI. They operate through effective-UID ownership of private filesystem
+paths, not through tenant RPC credentials. Stop the whole node and its restart
+supervisor before journal maintenance. Every invocation requires
+`--local-operator` and accepts `--deadline-seconds 1..120` (default 60). The
+deadline is cooperative; a blocked physical I/O owner is not reported as released.
+
+| Command, in addition to `--local-operator` | Behavior |
+| --- | --- |
+| `audit maintenance status --journal DIR` | Reads verified stopped-epoch identity, sequence, retained counts and pending attempts; does not reserve future capacity. |
+| `audit maintenance rollover --journal DIR --archives DIR --expected-epoch EPOCH --operation-id OP` | Seals an epoch and opens its linked successor, or resumes the original interrupted operation. |
+| `audit maintenance custody --archives DIR --journal-id ID` | Verifies the finite local archive suffix and labels external history availability separately. |
+| `audit maintenance transfer --journal DIR --archives DIR --destination DIR --epoch EPOCH --expected-seal HEX --operation-id OP` | Copies and durably verifies the oldest local archive before releasing its local capacity. |
+| `audit archive verify --archive DIR --epoch EPOCH` | Verifies one selected sealed epoch, not all historical observation coverage. |
+| `audit archive query --archive DIR --epoch EPOCH --scope tenant --tenant TENANT` | Reads one bounded offline tenant-scope page as the filesystem owner. For node scope use `--scope node` and omit `--tenant`. |
+
+Maintenance rejects `--tenant`. Archive verification also rejects it; archive
+query requires it only for tenant scope. These commands reject `--config`,
+`--profile`, `--endpoint`, `--connect-timeout-ms`, `--rpc-timeout-ms` and
+`--phase4`; they do not connect to a node. Offline scope filters grant no RPC
+authority. Live `audit query` retains its existing authenticated authorization.
+
+Journal/epoch/maintenance-operation identities use 32 lowercase hexadecimal
+characters. `--expected-seal` is exactly 64 lowercase hexadecimal characters,
+without a `sha256:` prefix. Retain original identities and paths before mutation;
+resume interrupted maintenance with those same selectors, never a new retry ID.
+Archive query additionally accepts `--actor`, `--from-unix-millis`,
+`--to-unix-millis`, `--page-token`, `--page-size 1..128` (default 128), and
+`--maximum-bytes 32768..262144` (default 65536). Tokens stay within one epoch and
+scope; there is no automatic pagination or cursor restart.
+
+Follow the [audit-journal lifecycle](../operations/audit-journal-lifecycle.md)
+for exclusive ownership, finite custody, version-2 mode markers and interruption
+recovery. The [static-site renewal runbook](../operations/static-evidence-renewal.md)
+connects maintenance to live evidence renewal without conflating their authority.
 
 ## Credentials and limits
 

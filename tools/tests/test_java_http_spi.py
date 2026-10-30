@@ -9,6 +9,7 @@ from tools import java_http_spi_fixture as fixture, java_http_spi_node as node
 from tools import qualify_java_http_spi as campaign
 from tools.phase2_operator_process import WorkflowError
 from tools.rust_capsule_project import ROOT, read_json, digest
+from tools.tests.test_java_scratch_wiring import original_compiler_parent
 
 
 def response(mode, selected):
@@ -165,7 +166,64 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         name = '.github/workflows/java-guest-feasibility.yml'
         old = yaml.safe_load(subprocess.check_output(['git', 'show',
             'aa56bdebad8c12f20acce4ec4ecfeca73cf554be:'+name], cwd=ROOT, text=True))
+        # Apply only the exact reviewed action identity migrations; every other
+        # baseline field is still compared after the existing selector inversion.
+        java_steps = [step for job in old['jobs'].values() for step in job.get('steps', [])
+                      if step.get('uses', '').startswith('actions/setup-java@')]
+        self.assertTrue(java_steps)
+        for step in java_steps:
+            self.assertEqual(step['uses'], 'actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6')
+            step['uses'] = 'KirilsTurkins/lsf-setup-java@f041d6677134ada73c077d0c012bd78164b251a7'
+        action_migrations = {
+            'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1': 'KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8',
+            'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97': 'KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140',
+            'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333': 'KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f',
+            'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9': 'KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9',
+            'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6': 'KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477',
+            'bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613': 'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53',
+        }
+        migrated = set()
+        for job in old['jobs'].values():
+            for step in job.get('steps', []):
+                reference = step.get('uses')
+                if reference in action_migrations:
+                    step['uses'] = action_migrations[reference]
+                    migrated.add(reference)
+        self.assertEqual(migrated, set(action_migrations))
         selected = yaml.safe_load((ROOT/name).read_text())
+        private = selected[True]['workflow_dispatch']['inputs'].pop('public_fiber_private_scalar_llvm')
+        self.assertEqual(private['type'], 'boolean');self.assertIs(private['default'], False)
+        clause = " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)"
+        for name in ('compiler-component', 'dependency-ingestion', 'http-public-spi'):
+            self.assertEqual(selected['jobs'][name]['if'].count(clause), 1)
+            selected['jobs'][name]['if'] = selected['jobs'][name]['if'].replace(clause, '', 1)
+        self.assertEqual(selected['jobs']['public-fiber-assembly']['if'],
+            "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm || inputs.public_fiber_private_scalar_llvm) }}")
+        selected['jobs']['public-fiber-assembly']['if'] = "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}"
+        derived = selected[True]['workflow_dispatch']['inputs'].pop('public_fiber_derived_llvm')
+        self.assertEqual(derived['type'], 'boolean');self.assertIs(derived['default'], False)
+        for name, clause in (
+                ('compiler-component', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm)"),
+                ('dependency-ingestion', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm)"),
+                ('http-public-spi', ' && !inputs.public_fiber_derived_llvm')):
+            self.assertEqual(selected['jobs'][name]['if'].count(clause), 1)
+            selected['jobs'][name]['if'] = selected['jobs'][name]['if'].replace(clause, '', 1)
+        self.assertEqual(selected['jobs']['public-fiber-assembly']['if'],
+            "${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm) }}")
+        selected['jobs']['public-fiber-assembly']['if'] = "${{ github.event_name == 'workflow_dispatch' && inputs.public_fiber_assembly }}"
+        public = selected[True]['workflow_dispatch']['inputs'].pop('public_fiber_assembly')
+        self.assertEqual(public['type'], 'boolean');self.assertIs(public['default'], False)
+        assembly = selected['jobs'].pop('public-fiber-assembly')
+        self.assertEqual(assembly['if'],
+            "${{ github.event_name == 'workflow_dispatch' && inputs.public_fiber_assembly }}")
+        self.assertEqual(selected['jobs']['compiler-component']['if'],
+            "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) }}")
+        selected['jobs']['compiler-component']['if'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.java_http_spi }}"
+        for name, clause in (
+                ('dependency-ingestion', " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly)"),
+                ('http-public-spi', ' && !inputs.public_fiber_assembly')):
+            self.assertEqual(selected['jobs'][name]['if'].count(clause), 1)
+            selected['jobs'][name]['if'] = selected['jobs'][name]['if'].replace(clause, '', 1)
         flag = selected[True]['workflow_dispatch']['inputs'].pop('java_http_spi')
         self.assertEqual(flag['type'], 'boolean');self.assertIs(flag['default'], False)
         job = selected['jobs'].pop('http-public-spi')
@@ -180,7 +238,15 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         self.assertEqual(selected['jobs']['dependency-ingestion']['if'],
             "${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}")
         selected['jobs']['dependency-ingestion']['if'] = old['jobs']['dependency-ingestion']['if']
+        selected['jobs']['compiler-component'] = original_compiler_parent(
+            self, selected['jobs']['compiler-component'])
         steps = selected['jobs']['compiler-component']['steps']
+        retained = next(step for step in steps if step.get('name') ==
+            'Retain diagnostics, generated source and component candidates')
+        added = '${{ runner.temp }}/java-activation-fibers/build/component-inputs/**'
+        self.assertEqual(retained['with']['path'].splitlines().count(added), 1)
+        self.assertNotIn(added, str(old))
+        retained['with']['path'] = retained['with']['path'].replace(added + '\n', '', 1)
         index = next(i for i, step in enumerate(steps) if step.get('name') ==
             'Export only exact normal public prerequisites for the separate Java scratch packet')
         qualified = next(i for i, step in enumerate(steps) if step.get('name') ==

@@ -4,13 +4,34 @@ import { builtinModules } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { activationModule } from './activation_module.mjs';
+import { bufferBuiltin, BUFFER_PROFILE } from './buffer_builtin.mjs';
+import { bufferGlobalReferences, bufferGlobalBuiltin, BUFFER_GLOBAL_PROFILE, BUFFER_GLOBAL_PRIVATE } from './buffer_globals.mjs';
+import { netBuiltin, NET_PROFILE, NET_PRIVATE } from './net_builtin.mjs';
+import { borrowProbeConfiguration, borrowProbeBuiltin } from './borrow_probe.mjs';
 
 const [esbuildPath, projectPath, input, output, importsPath, configurationPath, parserPath] = process.argv.slice(2);
 const { build } = await import(pathToFileURL(esbuildPath));
 const project = await realpath(projectPath);
 const imports = new Set(JSON.parse(await readFile(importsPath, 'utf8')));
 const configuration = configurationPath ? JSON.parse(await readFile(configurationPath, 'utf8')) : {};
+if (Object.keys(configuration).some(name => name.startsWith('standardBuffer')))
+  throw new Error('application-cannot-override-standard-buffer-backend');
+const bufferSource = await readFile(new URL('./node_buffer.mjs', import.meta.url), 'utf8');
+const bufferBackend = bufferBuiltin(bufferSource);
+const bufferDigest = 'sha256:' + createHash('sha256').update(bufferSource).digest('hex');
+const bufferGlobalSource = await readFile(new URL('./buffer_globals.mjs', import.meta.url));
+const bufferGlobalInitializer = await readFile(new URL('./buffer_global_initializer.mjs', import.meta.url), 'utf8');
+const bufferGlobal = bufferGlobalBuiltin(bufferGlobalInitializer);
+const standardNet = configuration.standardNetProfile === NET_PROFILE;
+if (Object.keys(configuration).some(name => name.startsWith('standardNet') &&
+    !['standardNetProfile', 'standardNetIdentities'].includes(name)) ||
+    configuration.standardNetProfile !== undefined && (!standardNet ||
+      configuration.runtimeProfile !== 'spidermonkey-activation-promises-clocks-imports-v1' ||
+      !imports.has('latent:network/streams@0.1.0') || !configuration.standardNetIdentities || !parserPath))
+  throw new Error('standard-node-net-requires-exact-stream-profile');
+const netBackend = netBuiltin(await readFile(new URL('./node_net.mjs', import.meta.url), 'utf8'), standardNet);
 const captured = !!configuration.moduleRoot;
+const borrowProbe = borrowProbeConfiguration(configuration, imports);
 const phaseFetch = configuration.standardFetchProfile === 'lsf-fetch-phase-buffered-v2';
 const standardFetch = phaseFetch || configuration.standardFetchProfile === 'lsf-fetch-buffered-v1';
 const fetchInterface = phaseFetch ? 'latent:http/phase-timing@0.4.0' : 'latent:http/streaming@0.3.0';
@@ -84,7 +105,7 @@ if (standardConsole) {
   guard += consoleBackend;
 }
 const footer = '__lsfSnapshotActive = false;';
-const result = await build({
+const options = {
   absWorkingDir: project, entryPoints: [input], outfile: output,
   bundle: true, format: 'esm', platform: 'neutral', target: 'es2022',
   conditions: configuration.conditions || [], mainFields: configuration.mainFields || ['module', 'main'],
@@ -99,7 +120,17 @@ const result = await build({
       if (args.kind === 'dynamic-import' || args.kind.startsWith('require') && !captured) {
         return { errors: [{ text: 'dynamic module loading or uncaptured CommonJS is unsupported' }] };
       }
+      if (args.path === borrowProbeBuiltin) {
+        return borrowProbe ? {path: args.path, external: true} :
+          {errors: [{text: 'compiler-owned-borrow-probe-not-selected'}]};
+      }
+      const ownedNet = netBackend.resolve(args);
+      if (ownedNet) return ownedNet;
+      const ownedGlobal = bufferGlobal.resolve(args);
+      if (ownedGlobal) return ownedGlobal;
       if (imports.has(args.path)) return { path: args.path, external: true };
+      const ownedBuffer = bufferBackend.resolve(args.path);
+      if (ownedBuffer) return ownedBuffer;
       if (args.path.startsWith('node:') || builtins.has(args.path)) {
         return { errors: [{ text: 'standard-runtime-module-not-installed:' + args.path + ':' + (configuration.runtimeProfile || 'spidermonkey-public-sync-v1') }] };
       }
@@ -111,6 +142,9 @@ const result = await build({
       }
       return undefined;
     });
+    builder.onLoad({ filter: /.*/, namespace: 'lsf-owned-node-net' }, args => netBackend.load(args));
+    builder.onLoad({ filter: /.*/, namespace: 'lsf-owned-node-buffer' }, args => bufferBackend.load(args));
+    builder.onLoad({ filter: /.*/, namespace: 'lsf-owned-buffer-global' }, args => bufferGlobal.load(args));
     builder.onLoad({ filter: /.*/ }, async args => {
       const path = await realpath(args.path);
       const suffixes = captured ? ['.ts', '.js', '.mjs', '.cjs', '.json', '.txt', '.bin'] : ['.ts', '.js', '.mjs'];
@@ -120,10 +154,40 @@ const result = await build({
       return undefined;
     });
   } }],
-});
+};
+let result = await build(options);
+let globalReferences = [];
+if (parserPath) {
+  const {parse} = await import(pathToFileURL(parserPath));
+  const original = result.outputFiles.find(file => file.path === resolve(output));
+  if (!original || original.contents.byteLength > 32 * 1024 * 1024)
+    throw new Error('buffer-global-selection-output-bound');
+  globalReferences = bufferGlobalReferences(original.text, parse);
+  if (globalReferences.length) {
+    // Selection is data-only. Final code retains real global reads/writes;
+    // injected exported aliases would change reassignment semantics.
+    bufferGlobal.enable();
+    result = await build({...options, inject: [BUFFER_GLOBAL_PRIVATE]});
+    const final = result.outputFiles.find(file => file.path === resolve(output));
+    if (!final || final.contents.byteLength > 32 * 1024 * 1024 ||
+        JSON.stringify(bufferGlobalReferences(final.text, parse)) !== JSON.stringify(globalReferences))
+      throw new Error('buffer-global-selection-input-drift');
+    const name = Object.keys(result.metafile.outputs).find(name => resolve(project, name) === resolve(output));
+    bufferGlobal.verify(result.metafile, name);
+  }
+}
 const inputs = [];
 let total = 0;
+if (bufferBackend.selection().length && !Object.hasOwn(result.metafile.inputs, 'lsf-owned-node-buffer:node:buffer'))
+  throw new Error('compiler-owned-buffer-input-missing');
 for (const name of Object.keys(result.metafile.inputs)) {
+  if (name === 'lsf-owned-node-buffer:node:buffer') {
+    if (JSON.stringify(bufferBackend.selection()) !== '["node:buffer"]')
+      throw new Error('compiler-owned-buffer-input-identity');
+    continue; // Authenticated compiler recipe input, not an application capture.
+  }
+  if (name === 'lsf-owned-node-net:node:net') continue; // Compiler-owned recipe input.
+  if (name === 'lsf-owned-buffer-global:' + BUFFER_GLOBAL_PRIVATE) continue;
   const path = await realpath(resolve(project, name));
   if (!insideProject(path)) throw new Error('bundle-input-outside-captured-source');
   const bytes = await readFile(path);
@@ -134,6 +198,8 @@ for (const name of Object.keys(result.metafile.inputs)) {
 }
 const application = result.outputFiles.find(file => file.path === resolve(output));
 if (!application || application.contents.byteLength > 32 * 1024 * 1024) throw new Error('bundle-output-limit');
+const outputName = Object.keys(result.metafile.outputs).find(name => resolve(project, name) === application.path);
+const netModules = standardNet ? netBackend.selection(result.metafile, outputName) : [];
 let applicationText = application.text, deferred;
 if (standardConsole) {
   const { parse } = await import(pathToFileURL(parserPath));
@@ -143,6 +209,25 @@ if (standardConsole) {
   deferred = activationModule(applicationText.slice(guard.length, -footer.length - 1),
     configuration.activationExports, parse);
   applicationText = guard + deferred.source + footer + '\n';
+}
+if (netModules.length) {
+  if (!applicationText.endsWith(footer + '\n')) throw new Error('node-net-snapshot-footer-shape');
+  const {parse} = await import(pathToFileURL(parserPath));
+  const tree = parse(applicationText, {ecmaVersion: 2022, sourceType: 'module'});
+  const nodes = [tree];
+  for (let count = 0; nodes.length; ++count) {
+    if (count > 1000000) throw new Error('node-net-snapshot-syntax-bound');
+    const node = nodes.pop();
+    if (node.type === 'Identifier' && node.name === '__lsfNetSnapshotTransport')
+      throw new Error('node-net-snapshot-binding-reserved');
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) { for (const child of value) if (child?.type) nodes.push(child); }
+      else if (value?.type) nodes.push(value);
+    }
+  }
+  applicationText = applicationText.slice(0, -footer.length - 1) +
+    'import * as __lsfNetSnapshotTransport from ' + JSON.stringify(NET_PRIVATE) + ';\n' +
+    '__lsfNetSnapshotTransport.assertEmpty();\n' + footer + '\n';
 }
 if (parserPath) {
   const { parse } = await import(pathToFileURL(parserPath));
@@ -189,6 +274,16 @@ await writeFile(output + '.inputs.json', JSON.stringify({
   snapshotGuardDigest: 'sha256:' + createHash('sha256').update(guard).digest('hex'),
   standardEntropyProfile: entropyProfile,
   standardEntropyBackendDigest: 'sha256:' + createHash('sha256').update(entropyBackend).digest('hex'),
+  ...(bufferBackend.selection().length ? {standardBufferProfile: BUFFER_PROFILE,
+    standardBufferBackendDigest: bufferDigest, standardBufferModules: bufferBackend.selection()} : {}),
+  ...(globalReferences.length ? {standardBufferGlobalProfile: BUFFER_GLOBAL_PROFILE,
+    standardBufferGlobalReferences: globalReferences,
+    standardBufferGlobalIdentities: {
+      selector: 'sha256:' + createHash('sha256').update(bufferGlobalSource).digest('hex'),
+      initializer: 'sha256:' + createHash('sha256').update(bufferGlobalInitializer).digest('hex'),
+    }} : {}),
+  ...(netModules.length ? {standardNetProfile: NET_PROFILE, standardNetModules: netModules,
+    standardNetIdentities: configuration.standardNetIdentities} : {}),
   ...(standardFetch ? {standardFetchProfile: configuration.standardFetchProfile,
     standardFetchBackendDigest: 'sha256:' + createHash('sha256').update(backend).digest('hex')} : {}),
   ...(standardConsole ? {standardConsoleProfile: configuration.standardConsoleProfile,

@@ -1,6 +1,6 @@
 use crate::{HttpError, HttpProviderConfig};
 pub(crate) use latent_network::canonical;
-use latent_policy::capability::HttpOrigin;
+use latent_policy::capability::{HttpOrigin, ResourceTarget};
 use url::{Host, Url};
 
 pub(crate) struct Destination {
@@ -51,11 +51,13 @@ pub(crate) fn parse(raw: &str, config: &HttpProviderConfig) -> Result<Destinatio
         .ok_or(HttpError::PermissionDenied)?;
     // This is the same normalized path sent on the wire. The closed policy's
     // initial profile rejects encoded separators/dot ambiguity and '%' paths.
-    let target =
-        serde_json::json!({"kind":"http","origin":origin,"method":"GET","path":url.path()});
-    latent_policy::capability::ResourceRequest::parse(
-        &serde_json::to_vec(&target).map_err(|_| HttpError::InvalidUrl)?,
-    )
-    .map_err(|_| HttpError::InvalidUrl)?;
+    let target = ResourceTarget::Http {
+        origin: &origin,
+        method: "GET",
+        path: url.path(),
+    };
+    if !target.is_valid() {
+        return Err(HttpError::InvalidUrl);
+    }
     Ok(Destination { url, origin, index })
 }

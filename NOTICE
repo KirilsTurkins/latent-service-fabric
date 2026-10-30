@@ -15,6 +15,15 @@ The following entries identify copied upstream source and validation data.
 They apply when that material is included; source experiments and test fixtures
 are not a statement that a binary distribution includes or enables them.
 
+LLVM SjLj compiler source backport
+  tools/data/java-llvm-ssa/patch.json contains four pinned LLVM source
+  preimages and the separately identified upstream utility backport/caller
+  adoption. Copyright The LLVM Project Contributors.
+  Terms: Apache-2.0 WITH LLVM-exception. The original text is retained as
+  tools/data/java-llvm-ssa/LICENSE.txt. The manifest records original and
+  modified identities and upstream commits; no compiler qualification is
+  implied by retaining these sources.
+
 Rust standard library
   Original source preimages in sdk/rust-standard-runtime/upstream/std are from
   rust-lang/rust commit 8bab26f4f68e0e26f0bb7960be334d5b520ea452.
@@ -25,11 +34,37 @@ Rust standard library
   profile's README.md; the upstream preimages remain unchanged.
 
 rustls parser source
-  sdk/host-stream-tls/rustls-bounds retains a bounded patch for rustls 0.23.45.
+  sdk/host-stream-tls/rustls-bounds retains the original rustls 0.23.45
+  parser derivation. sdk/host-stream-tls/rustls-0.23.46-bounds retains the
+  separately captured 0.23.46 derivation selected by crates/vendor/rustls-outbound.
   Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com>.
   Terms: Apache-2.0 OR ISC OR MIT. LICENSE-APACHE, LICENSE-ISC and LICENSE-MIT
   are retained in that directory. PATCH.json records the upstream archive,
   original and modified file identities, and LSF's changes.
+
+Wasmtime runtime source
+  crates/vendor/wasmtime contains the crates.io Wasmtime 48.0.7 source package
+  and separately identified LSF value/native-memory admission changes.
+  Attribution: The Wasmtime Project Developers.
+  Terms: Apache-2.0 WITH LLVM-exception. The unmodified LICENSE and original
+  archive/file identities are retained with UPSTREAM.latent.json;
+  README.latent.md and latent-dynamic-memory.patch describe the LSF changes.
+  Other locked Wasmtime packages retain their separate upstream identities.
+
+bytes retained-owner source
+  crates/vendor/bytes contains the bytes 1.12.1 source package with the
+  separately identified retained-owner change.
+  Copyright (c) 2018 Carl Lerche.
+  Terms: MIT. The original LICENSE and UPSTREAM.json are retained alongside
+  the LSF patch. A matching crate version does not erase the patch identity.
+
+WASI HTTP interface inputs
+  sdk/wasi-http-runtime retains selected original wasip2 1.0.4+wasi-0.2.12
+  manifests and WIT interfaces, with a separately identified LSF async I/O
+  projection. upstream-source.json records the original archive/file identities
+  and selected changes. Terms: Apache-2.0 OR MIT. The exact LICENSE-APACHE
+  and LICENSE-MIT texts remain under sdk/wasi-http-runtime/upstream.
+  These copied inputs are separate from the LSF-owned adapter implementation.
 
 StarlingMonkey text-codec fixtures
   tools/tests/fixtures/typescript_text_codec contains original native codec
@@ -74,3 +109,7 @@ shared-monorepo license donors for exact native dependency versions. Compiler
 and system-image builders retain their separate upstream notices and package
 inventories; static font preparation retains the selected font's license.
 This file is an attribution index, not an exhaustive dependency inventory.
+
+The maintained C libfetch HTTP profile includes the FreeBSD libfetch URL/API
+frontend by Dag-Erling Smorgrav, under BSD-3-Clause. Exact upstream source
+identities and original license notices accompany the maintained source port.

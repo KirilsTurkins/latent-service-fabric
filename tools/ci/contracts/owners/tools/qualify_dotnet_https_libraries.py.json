@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_dotnet_https_libraries.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Use5 independent TLS nodes so each of4 refused clients proves a distinct handshake; keep11 trusted cases, originalcaps and immutableguest/native.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2042e56cd98bcccaa582fc8e7372225bc5583020b9917aa74a83e458dac0a951"
+{"kind":"owner","path":"tools/qualify_dotnet_https_libraries.py","reviewBoundary":"committed-fingerprint","reviewReason":"Use5 independent TLS nodes so each of4 refused clients proves a distinct handshake; keep11 trusted cases, originalcaps and immutableguest/native.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "2042e56cd98bcccaa582fc8e7372225bc5583020b9917aa74a83e458dac0a951"
 }

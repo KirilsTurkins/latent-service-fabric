@@ -12,9 +12,10 @@ renderer. It does not embed Node, a browser, or application-owned host threads.
 The explicit source-owned async-import runtime can automatically install the
 [buffered fetch candidate](../../docs/component-development/typescript-fetch-candidate.md)
 under ordinary dependency global lookups when streaming HTTP is declared.
-This implementation candidate has native semantic controls; signed default-client
-and provider qualification remain open under #691. The synchronous profile below
-retains its existing boundaries.
+The [runtime capability matrix](../../docs/component-development/runtime-capabilities.md)
+links the finite signed Fetch-client and runtime programmes. Each retains its
+original source and provider identities; it does not qualify every dependency
+or promote the synchronous profile below to an asynchronous runtime.
 
 The explicit [transactional aggregate template](../../docs/component-development/transactional-authoring.md)
 adds `state.Command`, `state.Query`, `state.Page` and the logical `intents.Intent`
@@ -33,7 +34,7 @@ typechecks the application, bundles captured modules, uses the locked maintained
 ComponentizeJS compiler and packages the actual component. Tool, dependency and
 source observations are retained.
 
-The generator supplies a synchronous JavaScript ABI. The builder checks its
+The base profile's generator supplies a synchronous JavaScript ABI. The builder checks its
 projected type graph and restores the original async WIT. Wasmtime suspends the
 activation across host calls; no application process waits for a provider.
 Return ordinary contract values, not promises. Each activation owns its guest
@@ -61,10 +62,18 @@ Ordinary `Math.random()` uses one fresh `u64-value` draw only when the exact
 map to `[0, 1)`; this API is noncryptographic. Without that declaration it throws
 a concrete unsupported error, with no deterministic or ambient fallback.
 Application snapshot-time draws throw before a host call; engine bootstrap is
-unchanged. See the [finite entropy contract](../../docs/component-development/typescript-standard-entropy.md). Disabled timers such as `setTimeout` trap rather than schedule work.
-Effects require configured, declared LSF imports and host grants. Dynamic
-imports, Node built-ins, `require`, npm dependencies and application compiler
-configuration overrides are outside this captured-source profile.
+unchanged. See the [finite entropy contract](../../docs/component-development/typescript-standard-entropy.md).
+The base profile rejects timers such as `setTimeout`; the explicit activation
+runtime has separately bounded [timer and Promise semantics](../../docs/testing/typescript-runtime-semantics.md).
+Effects require configured, declared LSF imports and host grants.
+
+Ordinary npm dependencies use [capture and exact review](../../docs/component-development/typescript-dependencies.md).
+Selected [Buffer modules](../../docs/component-development/typescript-buffer-profile.md),
+[net.Socket](../../docs/component-development/typescript-node-net.md) and the
+[published delay library](../../docs/component-development/typescript-published-delay.md)
+have their own finite profiles and evidence. They do not install a Node process
+or arbitrary Node built-ins. Dynamic loading and application compiler configuration
+overrides remain outside the maintained build contract.
 Relative JavaScript source modules require matching `.d.ts` declarations;
 untyped imports fail the strict TypeScript check. TypeScript source modules
 can be imported directly within the captured project.

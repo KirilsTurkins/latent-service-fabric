@@ -1,0 +1,44 @@
+# Captured private npm removal continuation
+
+The original TypeScript job timed out after building all four private-package
+components. Its initial, offline rebuild and update node programmes each passed
+thirty invocations, including three private-package cases, and clean physical
+shutdown. Their runtime origin remains `a8cd4fbb71d7766e886ab518542ca398237debb6`.
+The original job remains cancelled.
+
+The focused continuation signs only the existing removed-package component and
+four existing companions. It uses the separately authenticated five native
+products from `b422af24d86344ac7abb8b8fa56c3782aab63915`, whose producer ran 193
+native controls. The new receipt distinguishes guest, packaging-tool, runtime
+host and consumer source identities. The earlier three programmes are neither
+replayed nor attributed to this newer host.
+
+Acquisition selects 72 fixed members from the cancelled job's archive, checks
+ZIP CRC and exact per-member hashes, and preserves the official whole-archive
+digest as metadata. A 144-byte public WIT layer omitted by the old upload is
+recovered from the exact original Git blob and checked against the original
+package inventory. The five original deployment files retain their examples
+tenant, exact service/component association and empty grants before signing.
+No component, capture, generator, deployment or build marker changes.
+
+Ten focused controls check provenance refusal, archive bounds, static-layer
+recovery and required physical retirement. Acquisition streams one MiB at a time
+and refuses before any request exceeding the original 512-request/128-MiB limits.
+Only Azure's transient `503 ServerBusy` (including its exact egress-limit reason)
+permits at most three attempts of the same range, with two/eight-second backoff.
+Failed attempts remain charged to both limits and share the original 30-second
+request deadline; other HTTP errors propagate immediately. This follows the
+[Azure error contract](https://learn.microsoft.com/en-us/rest/api/storageservices/common-rest-api-error-codes).
+The [hosted programme](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39932466967/job/120343827553)
+passed all ten controls, then signed the retained packages and executed thirty
+actual invocations, including three fresh removed-package cases. All invocation
+processes were reaped; the node shut down cleanly and was reaped. Nine provider
+idle observations had all eighteen active counters at zero; retained node
+infrastructure counters are separate. Twenty-five idle inventory observations
+and two active cancellation/disconnect observations met the original bounds.
+
+The [verified receipt](evidence/typescript-private-removed-signed-2026-10-23.json)
+binds the source, eleven consumer materials, separate guest/native origins and
+the complete 274-member runtime artifact. Earlier failed attempts remain recorded.
+No guest or native compilation ran. Full ticket qualification and release
+publication remain false.

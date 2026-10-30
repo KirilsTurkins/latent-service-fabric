@@ -138,6 +138,36 @@ pub fn go_network_runtime(bytes: Vec<u8>, source: &str) -> PackageBundle {
     )
     .unwrap()
 }
+#[allow(
+    dead_code,
+    reason = "only the dedicated signed TypeScript borrow gate selects this exact fixture"
+)]
+pub fn typescript_borrow_probe(bytes: Vec<u8>, source: &str) -> PackageBundle {
+    try_build_in_package(
+        "caller",
+        bytes,
+        source,
+        "tests:typescript-import-borrow-probe/api@1.0.0",
+        vec![function(
+            "run",
+            true,
+            vec![
+                json!({"name":"mode","value_type":"U32","documentation":null}),
+                json!({"name":"port","value_type":"U16","documentation":null}),
+            ],
+            json!("String"),
+        )],
+        &[
+            ACTIVATION,
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            latent_capabilities::broker::network::STREAM_CAPABILITY,
+        ],
+        "tests:typescript-import-borrow-probe",
+    )
+    .unwrap()
+}
+
 fn managed_activation_runtime(bytes: Vec<u8>, source: &str, random: bool) -> PackageBundle {
     let mut imports = vec![
         ACTIVATION,

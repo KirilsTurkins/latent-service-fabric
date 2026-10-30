@@ -68,7 +68,7 @@ class OrdinaryCapturedClients(unittest.TestCase):
         world=read_file(self.app/'wit/world.wit').decode()
         self.assertEqual(world.count('greet: async func(name: string) -> result<string, string>;'),1)
         code=read_file(self.app/'src/lib.rs').decode()
-        self.assertIn('world: "service", async: false, with:',code)
+        self.assertIn('world: "service", sync: true, with:',code)
         self.assertIn('fn greet(',code)
         self.assertNotIn('async fn',code)
         self.assertNotIn('.await',code)

@@ -35,7 +35,7 @@ class IllustrationPaletteTests(unittest.TestCase):
         for entry in inventory["snapshots"]:
             self.assertEqual(hashlib.sha256(palette_tool.read_bytes(palette_tool.ROOT, entry["path"])).hexdigest(), entry["sha256"])
         self.assertEqual(len(outputs), 0)
-        self.assertEqual(len(inventory["maintained"]), 2)
+        self.assertEqual(len(inventory["maintained"]), 5)
         for entry in inventory["maintained"]:
             content = palette_tool.read_bytes(palette_tool.ROOT, entry["path"])
             svg = ElementTree.fromstring(content)

@@ -18,6 +18,10 @@ automatically or upgrade an existing toolkit installation.
 | --- | --- |
 | Add an application library, capture a private dependency or build offline | [Add application libraries](../how-to/add-application-libraries.md), with separate recipes for all six languages |
 | Use immutable application data | [Packaged resources](../component-development/packaged-resources.md); standard lookup support depends on the language profile |
+| Choose an ordinary library API and its runtime | [Guest API matrix](../component-development/runtime-capabilities.md) and [compatibility diagnostics](../component-development/library-compatibility.md); a captured dependency is not runtime qualification |
+| Use standard console output, entropy or filesystem errors | The [standard facilities contract](../component-development/standard-facilities.md) and each language's selected profile |
+| Use ordinary HTTP clients | [Rust WASI HTTP](../testing/rust-wasi-http-runtime.md), [Go HTTP](../development/go-http-tenant-catalogue.md), [Java HTTP phases](../testing/java-http-phase-timing.md), [TypeScript Fetch](../component-development/typescript-fetch-candidate.md) and [.NET HTTP](../development/dotnet-published-http.md) |
+| Use the selected TypeScript Node-style modules | [Buffer](../component-development/typescript-buffer-profile.md), [net.Socket](../component-development/typescript-node-net.md) and [published delay](../component-development/typescript-published-delay.md); these are finite ports, not a Node server |
 | Generate source with an approved build tool | [Library workflow](../how-to/add-application-libraries.md#approve-executable-build-inputs), including Java annotation processors |
 | Compile ordinary Java HTTP registration | [Java HttpServer](../component-development/java-httpserver.md) and [captured server declarations](../component-development/server-source.md) |
 | Check an HTTP or typed-service composition before dispatch | [Inspect a composition](../how-to/inspect-a-composition.md), then inspect actual target preparation and authorized activation diagnostics |
@@ -25,6 +29,9 @@ automatically or upgrade an existing toolkit installation.
 | Recover a command or inspect its deferred effect after response loss | [Transaction recovery](../operations/transaction-recovery.md) |
 | Serve a custom static 404 or inspect capture headroom | [Static sites](../component-development/static-sites.md) and [static publication](../operations/static-release-workflow.md) |
 | Select and reproduce a contributor check | [Local tests](../development/local-tests.md), [deterministic tests](../development/deterministic-tests.md) and [CI command ownership](../testing/ci-command-contracts.md) |
+| Investigate C/Rust cooperative component execution | [Selected Wasmtime profiles](../runtime/wasmtime.md#selected-continuation-and-memory-profiles), [C context](../development/c-runtime-context.md) and [component-threading source](../../crates/latent-component-threading/README.md) |
+| Check host allocations and physical cleanup | [Host codec memory](../testing/host-codec-original-memory.md), [capability buffers](../testing/capability-handle-buffer-memory.md), [Audit owners](../testing/audit-connected-memory.md) and [local-service registry retirement](../testing/local-service-registry-retirement.md) |
+| Prepare a protected outbound-stream installation | [Operator workflow](../runtime/outbound-stream-operator.md), [accepted design](../reference/standalone-streams.md) and [kernel accounting](../runtime/outbound-stream-kernel-accounting.md); design acceptance does not enable a production provider |
 
 ## Runtime and state boundaries
 
@@ -34,6 +41,20 @@ every API in it runs. Consult [library compatibility](../component-development/l
 and the language guide before choosing threading, timers, sockets or HTTP.
 The Rust standard runtime, TypeScript runtime, Java continuation profiles and
 .NET clock/resource paths have different executed coverage and remaining work.
+
+The matrix is a versioned evidence snapshot, not a live feature switch. Later
+profile-specific records include [finite managed Task waits](../testing/dotnet-finite-task-waits.md),
+[TypeScript Buffer qualification](../component-development/typescript-buffer-qualification.md)
+and [canonical JoinState accounting](../component-development/canonical-async-join-state-accounting.md).
+Read their actual source identities rather than combining independent receipts
+into a claim that every current runtime/profile combination passed.
+
+The maintained Wasmtime source now includes selected allocation-admission hooks;
+the engine source cohort is part of compatibility identity alongside its version.
+Capability handles, output bytes, native work and audit buffers may retain original
+owners after a guest returns or its Store is destroyed. Logical completion never
+refunds backing that is still physically retained. The [resource budget guide](../runtime/resource-budgets.md)
+distinguishes these owners from terminal consumption reports.
 
 Transactional applications select `lsf-host-abi-phase4-v1` explicitly. They need
 the configured protected store, signed transaction companion, namespace and
@@ -58,6 +79,7 @@ remain open. Current installed recovery still needs complete terminal/pending
 native and packaged qualification. Neither historical compiler receipts nor
 alpha.5 qualify that work.
 
-Maintainers can use the [post-release documentation audit](../development/documentation-audit-2026-10-14.md)
-for the exact release tree, merged PR inventory, corrected claims and retained
-acceptance boundaries. [The roadmap](../roadmap.md) lists the remaining phases.
+The [25 October documentation audit](../development/documentation-audit-2026-10-25.md)
+records the 455 merged changes since the previous audit and the inspected source
+head. The [original post-release audit](../development/documentation-audit-2026-10-14.md)
+retains its release baseline. [The roadmap](../roadmap.md) lists the remaining phases.

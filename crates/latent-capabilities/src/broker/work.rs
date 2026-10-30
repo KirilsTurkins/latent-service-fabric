@@ -129,7 +129,7 @@ impl Drop for WorkLifetime {
     }
 }
 struct Work {
-    audit: Option<Box<super::audit::CallAudit>>,
+    audit: Option<super::audit::CallAuditOwner>,
     required_audit: bool,
     input_size: usize,
     pending_budget: Option<BudgetReservationGroup>,
@@ -263,7 +263,7 @@ impl Drop for ResultLifetime {
     }
 }
 pub struct OwnedCapabilityResponse {
-    audit: Option<Box<super::audit::CallAudit>>,
+    audit: Option<super::audit::CallAuditOwner>,
     deadline: Instant,
     bytes: NativeBuffer,
     pub(super) session: SessionCoreOwner,
@@ -315,10 +315,10 @@ impl ProviderCall {
     pub(super) fn session_core(&self) -> SessionCoreOwner {
         self.work.as_ref().expect("affine call").session.clone()
     }
-    pub(super) fn take_audit(&mut self) -> Option<Box<super::audit::CallAudit>> {
+    pub(super) fn take_audit(&mut self) -> Option<super::audit::CallAuditOwner> {
         self.work.as_mut().expect("affine call").audit.take()
     }
-    pub(super) fn restore_audit(&mut self, audit: Box<super::audit::CallAudit>) {
+    pub(super) fn restore_audit(&mut self, audit: super::audit::CallAuditOwner) {
         let work = self.work.as_mut().expect("affine call");
         debug_assert!(work.audit.is_none());
         work.audit = Some(audit);
@@ -763,29 +763,29 @@ impl CapabilitySession {
         cost.validate_minimum(operation, &binding.provider.minimum_call_charges)?;
         let budget_reservation = cost.reserve(&self.core.budget)?;
         let input = NativeBuffer::copy(&self.core.budget, input)?;
+        let prepared = if cost.typed_input_bytes != 0 && cost.typed_request_digest.is_none() {
+            if let Some(configuration) = &self.core.owner.audit {
+                configuration.note_dropped();
+            }
+            None // Optional diagnostics cannot assert a digest of omitted typed inputs.
+        } else {
+            super::audit::CallAudit::prepare(&self.core, row.binding, operation, required_audit)?
+        };
         let id = super::session::next_incarnation()?;
-        let audit = if self.core.owner.audit.is_some() || required_audit {
-            if cost.typed_input_bytes != 0 && cost.typed_request_digest.is_none() {
-                if let Some(configuration) = &self.core.owner.audit {
-                    configuration.note_dropped();
-                }
-                None // Optional diagnostics must never assert a digest of omitted typed inputs.
-            } else {
-                super::audit::CallAudit::prepare(
-                    &self.core,
-                    row.binding,
+        let audit = if let Some(prepared) = prepared {
+            prepared.capture(
+                &self.core,
+                row.binding,
+                operation,
+                resource,
+                super::audit::request_digest(
                     operation,
                     resource,
-                    super::audit::request_digest(
-                        operation,
-                        resource,
-                        &input,
-                        cost.typed_request_digest,
-                    ),
-                    required_audit,
-                    id,
-                )?
-            }
+                    &input,
+                    cost.typed_request_digest,
+                ),
+                id,
+            )?
         } else {
             None
         };

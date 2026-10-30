@@ -1,78 +1,78 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "c-thread-ready-runtime-${{ github.ref }}"
-    },
-    "name": "Ready-aware ordinary C owned thread lifecycle",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/c-thread-runtime-consumer-20261021",
-          "feat/c-owned-sync-20261022"
-        ],
-        "paths": [
-          ".github/workflows/c-thread-runtime.yml",
-          "tools/host_codec_owned_reply_native_products.py",
-          "tools/host_codec_owned_reply_native_products_reader.py",
-          "tools/tests/test_host_codec_owned_reply_native_products.py",
-          "tools/tests/test_host_codec_owned_reply_native_products_reader.py",
-          "tools/tests/test_c_thread_owned_reply_runtime.py",
-          "tools/host_codec_linear_memory_native_products.py",
-          "tools/host_codec_linear_memory_native_products_reader.py",
-          "tools/tests/test_host_codec_linear_memory_native_products.py",
-          "tools/tests/test_host_codec_linear_memory_native_products_reader.py",
-          "tools/tests/test_c_thread_ready_runtime.py",
-          "tools/tests/test_c_thread_linear_memory_native_source.py",
-          "tools/c_thread_linear_memory_native_source.py",
-          "sdk/c-guest/runtime/thread-abi.h",
-          "tools/qualify_c_thread_runtime.py",
-          "tools/c_thread_runtime_fixture.py",
-          "tools/c_thread_runtime_node.py",
-          "tools/c_thread_native_products.py",
-          "tools/c_thread_native_source.py",
-          "tools/activation_stack_native_products.py",
-          "tools/c_thread_package_native_products.py",
-          "tools/c_thread_admission_native_products.py",
-          "tools/host_codec_native_products.py",
-          "tools/host_codec_native_products_reader.py",
-          "tools/tests/test_host_codec_native_products_reader.py",
-          "tools/tests/test_c_thread_admission_native_products.py",
-          "tools/tests/fixtures/c-thread-admission-f244-records.json",
-          "tools/activation_stack_native_source.py",
-          "tools/c_guest/threading.py",
-          "tools/c_guest/compiler.py",
-          "tools/c_guest/threading_compatibility.py",
-          "sdk/c-guest/runtime/tls-keys.c",
-          "sdk/c-guest/runtime/threads.c",
-          "sdk/c-guest/runtime/template-copy.c",
-          "sdk/c-guest/runtime/synchronization.c",
-          "tools/c_sync_source_controls.py",
-          "tools/tests/fixtures/c-sync-reference.c",
-          "tools/tests/fixtures/c-sync-reference.cjs",
-          "docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json",
-          "tools/tests/test_c_threading_profile.py",
-          "tools/tests/test_c_threading_compatibility.py",
-          "tools/fixtures/c-thread-runtime/**",
-          "tools/tests/test_c_thread_runtime.py",
-          "tools/tests/test_c_thread_native_products.py",
-          "tools/tests/test_activation_stack_native_products.py",
-          "tools/tests/test_activation_stack_native_source.py",
-          "tools/tests/test_sdk_native_products_reader.py"
-        ]
-      },
-      "workflow_dispatch": null
-    },
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "ordinary-c-threads"
-  ],
-  "reviewReason": "Preserve exact native128 source triggers, permissions and required job while adding the C synchronization feature branch and source paths.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/c-thread-runtime.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"c-thread-ready-runtime-${{ github.ref }}"
+},
+"name":"Ready-aware ordinary C owned thread lifecycle",
+"on":{
+"push":{
+"branches":[
+"feat/c-thread-runtime-consumer-20261021",
+"feat/c-owned-sync-20261022"
+],
+"paths":[
+".github/workflows/c-thread-runtime.yml",
+"tools/host_codec_owned_reply_native_products.py",
+"tools/host_codec_owned_reply_native_products_reader.py",
+"tools/tests/test_host_codec_owned_reply_native_products.py",
+"tools/tests/test_host_codec_owned_reply_native_products_reader.py",
+"tools/tests/test_c_thread_owned_reply_runtime.py",
+"tools/host_codec_linear_memory_native_products.py",
+"tools/host_codec_linear_memory_native_products_reader.py",
+"tools/tests/test_host_codec_linear_memory_native_products.py",
+"tools/tests/test_host_codec_linear_memory_native_products_reader.py",
+"tools/tests/test_c_thread_ready_runtime.py",
+"tools/tests/test_c_thread_linear_memory_native_source.py",
+"tools/c_thread_linear_memory_native_source.py",
+"sdk/c-guest/runtime/thread-abi.h",
+"tools/qualify_c_thread_runtime.py",
+"tools/c_thread_runtime_fixture.py",
+"tools/c_thread_runtime_node.py",
+"tools/c_thread_native_products.py",
+"tools/c_thread_native_source.py",
+"tools/activation_stack_native_products.py",
+"tools/c_thread_package_native_products.py",
+"tools/c_thread_admission_native_products.py",
+"tools/host_codec_native_products.py",
+"tools/host_codec_native_products_reader.py",
+"tools/tests/test_host_codec_native_products_reader.py",
+"tools/tests/test_c_thread_admission_native_products.py",
+"tools/tests/fixtures/c-thread-admission-f244-records.json",
+"tools/activation_stack_native_source.py",
+"tools/c_guest/threading.py",
+"tools/c_guest/compiler.py",
+"tools/c_guest/threading_compatibility.py",
+"sdk/c-guest/runtime/tls-keys.c",
+"sdk/c-guest/runtime/threads.c",
+"sdk/c-guest/runtime/template-copy.c",
+"sdk/c-guest/runtime/synchronization.c",
+"tools/c_sync_source_controls.py",
+"tools/tests/fixtures/c-sync-reference.c",
+"tools/tests/fixtures/c-sync-reference.cjs",
+"docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json",
+"tools/tests/test_c_threading_profile.py",
+"tools/tests/test_c_threading_compatibility.py",
+"tools/fixtures/c-thread-runtime/**",
+"tools/tests/test_c_thread_runtime.py",
+"tools/tests/test_c_thread_native_products.py",
+"tools/tests/test_activation_stack_native_products.py",
+"tools/tests/test_activation_stack_native_source.py",
+"tools/tests/test_sdk_native_products_reader.py"
+]
+},
+"workflow_dispatch":null
+},
+"permissions":{
+"actions":"read",
+"contents":"read"
+}
+},
+"requiredJobs":[
+"ordinary-c-threads"
+],
+"reviewReason":"Preserve exact native128 source triggers, permissions and required job while adding the C synchronization feature branch and source paths.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/c-thread-runtime.yml"
 }

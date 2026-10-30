@@ -57,7 +57,7 @@ class GoEmbeddedReplay(unittest.TestCase):
         self.assertEqual(set(document['jobs']),{'resources'})
         job = document['jobs']['resources']; self.assertEqual(job['timeout-minutes'],20)
         steps = job['steps']
-        download = next(step for step in steps if step.get('uses','').startswith('actions/download-artifact@'))
+        download = next(step for step in steps if step.get('uses','').startswith('KirilsTurkins/lsf-download-artifact@'))
         self.assertEqual(download['with']['run-id'],39373374237)
         self.assertEqual(download['with']['name'],'go-scratch-prepared-'+replay.producer.PRODUCER_HEAD)
         commands = '\n'.join(step.get('run','') for step in steps)

@@ -2,7 +2,8 @@
 
 Ordinary `fmt`, `log` and stdout/stderr writes can use the explicitly declared
 [bounded standard logging profile](../../docs/component-development/go-standard-logging.md).
-The signed campaign is pending; buffered/async logger drain remains unqualified.
+Its guide records the source-bound normal27/logging35 signed programmes;
+buffered/async logger drain remains unqualified.
 
 For an application tutorial, use [Creating a compiler profile](../../docs/component-development/creating-a-capsule.md)
 and select your language. The language profile below describes compiler and
@@ -37,7 +38,9 @@ version; this security update does not claim a new signed guest qualification.
 
 The opt-in [maintenance worker profile](../../docs/development/go-managed-idle.md)
 reserves finite original-ledger capacity for the pinned runtime's internal
-workers and fences retirement. Its signed qualification is tracked separately.
+workers and fences retirement. Its signed programmes retain their original
+runtime/native tuples; live-node-stop and the complete cost/fairness matrix
+remain separate requirements.
 
 ## Typed contracts
 
@@ -50,9 +53,12 @@ version-locked and hashed; application sources are captured before compilation
 and checked again afterward.
 
 The project includes the actual `go.mod` and `go.sum` used to assemble the
-generated `wit_component` module. They pin `go.bytecodealliance.org/pkg v0.2.3`;
-application dependency additions and `replace` directives are rejected. Run
-the capsule builder, not a standalone `go build` of the ungenerated source.
+generated component module. The SDK pins `go.bytecodealliance.org/pkg v0.2.3`;
+application modules and local replacements use the separate
+[native lock, capture and review workflow](../../docs/component-development/go-dependencies.md).
+That workflow cannot replace the SDK runtime dependency or fall back to an
+ambient module cache. Run the capsule builder, not a standalone `go build`
+of the ungenerated source.
 
 WIT `u64` and `s64` are Go `uint64` and `int64`, not floating-point numbers.
 Strings preserve UTF-8, including embedded NUL. Lists and records retain their
@@ -84,22 +90,26 @@ not a substitute implementation of those providers.
 
 ## Ownership, concurrency and cancellation
 
-The supported profile is Linux x86-64 compilation to single-threaded Wasm with
+The base profile is Linux x86-64 compilation to single-threaded Wasm with
 the exact patched Go compiler, ordinary Go source and the reviewed dependency
 graph. The examples exercise typed functions, generics, strings, slices,
 channels, goroutines, garbage collection and `runtime.KeepAlive`. Pure
 computation uses the Go standard library available for this target. `time` and
 runtime entropy cross the explicit LSF clock/random bridges; they gain no
 authority from a standard-library import. Filesystem access, sockets, process
-creation, dynamic libraries, CGo and arbitrary third-party module graphs are
-outside this profile. Unsupported ambient WASI operations fail closed; use the
+creation, dynamic libraries and CGo are outside this profile. Captured modules
+still need compatible APIs; dependency capture does not qualify an arbitrary
+module graph. Unsupported ambient WASI operations fail closed; use the
 typed LSF capabilities for host effects. This is not unrestricted native Go.
 In the default `go-component-async-v1` profile, `time.Sleep` and timer-backed
 standard-library polling are not component waits: the closed adapter rejects
 `poll_oneoff`. The explicit [Go activation profile](../../docs/runtime/go-activation.md)
 adds compiler-owned bounded goroutines, result drain and ordinary `time.Sleep`
-through shared host readiness. Timer/After/Ticker APIs and safe-point preemption
-remain outside that finite slice. No profile introduces a busy-wait workaround.
+through shared host readiness. Later [runtime admission and timer programmes](../../docs/development/go-runtime-admission.md)
+and [ordinary HTTP clients](../../docs/development/go-http-tenant-catalogue.md)
+retain their exact selected profiles. The older Sleep slice does not qualify
+all Timer/After/Ticker combinations or safe-point preemption. No profile
+introduces a busy-wait workaround.
 
 Owners contain private, shared state. Copying a wrapper does not create a
 second host resource. A pending operation borrows its owner; closing, consuming

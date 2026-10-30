@@ -1,39 +1,39 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "go-queued-work-${{ github.ref }}"
-    },
-    "name": "Go independently owned queued-work qualification",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/go-queue-owner-profile-20261021"
-        ],
-        "paths": [
-          ".github/workflows/go-queued-work.yml",
-          "tools/qualify_go_queued_work.py",
-          "tools/go_queue_node.py",
-          "tools/go_guest/**",
-          "sdk/go-guest/runtime/queue_bridge.go.in",
-          "tools/go_resource_runtime_fixture.py",
-          "tools/go_resource_runtime_build.py",
-          "tools/resource_runtime_node.py",
-          "tools/qualify_typescript_resource_runtime.py"
-        ]
-      },
-      "workflow_dispatch": {}
-    },
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "queued-work"
-  ],
-  "reviewReason": "New owning one-component Go v6 independent original queued-work differential; existing workflows unchanged",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/go-queued-work.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"go-queued-work-${{ github.ref }}"
+},
+"name":"Go independently owned queued-work qualification",
+"on":{
+"push":{
+"branches":[
+"feat/go-queue-owner-profile-20261021"
+],
+"paths":[
+".github/workflows/go-queued-work.yml",
+"tools/qualify_go_queued_work.py",
+"tools/go_queue_node.py",
+"tools/go_guest/**",
+"sdk/go-guest/runtime/queue_bridge.go.in",
+"tools/go_resource_runtime_fixture.py",
+"tools/go_resource_runtime_build.py",
+"tools/resource_runtime_node.py",
+"tools/qualify_typescript_resource_runtime.py"
+]
+},
+"workflow_dispatch":{}
+},
+"permissions":{
+"actions":"read",
+"contents":"read"
+}
+},
+"requiredJobs":[
+"queued-work"
+],
+"reviewReason":"New owning one-component Go v6 independent original queued-work differential; existing workflows unchanged",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/go-queued-work.yml"
 }

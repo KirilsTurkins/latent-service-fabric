@@ -1,8 +1,3 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_go_closed_network.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "db6f621c8f1fc3afa7c748cbcdd00d3be85d45cc3411826ff65d2a3d3229b950"
+{"kind":"owner","path":"tools/qualify_go_closed_network.py","reviewBoundary":"committed-fingerprint","reviewReason":"Fix actual current CI failures: Go 1.27.3 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "db6f621c8f1fc3afa7c748cbcdd00d3be85d45cc3411826ff65d2a3d3229b950"
 }

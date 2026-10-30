@@ -1,0 +1,56 @@
+name: Connected Audit original node startup
+on:
+  push:
+    branches: ['feat/audit-owner-memory-20261023']
+    paths: ['.github/workflows/audit-node-startup.yml']
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: audit-node-startup-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  audit-startup:
+    name: Original node startup and five finite audit boundaries
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Install locked Python dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Refuse altered controls or discarded prebuild failures
+        run: python3 -B -m unittest tools.tests.test_audit_node_startup -v
+      - name: Build only current CLI and node and observe finite startup boundaries
+        run: >-
+          python3 -B tools/qualify_audit_node_startup.py
+          --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/audit-node-startup"
+      - name: Retain exact source inputs and bounded actual compiler/control failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: audit-node-startup-${{ github.sha }}
+          path: ${{ runner.temp }}/audit-node-startup/
+          if-no-files-found: error
+          retention-days: 7

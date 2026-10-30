@@ -146,11 +146,13 @@ internal static class TaskWait
         return method;
     }
 
-    internal static int Run(string[] args, bool finiteSelected = false, bool managedSelected = false)
+    internal static int Run(string[] args, bool finiteSelected = false, bool managedSelected = false,
+        bool aggregateSelected = false)
     {
         try
         {
-            Require((!managedSelected || finiteSelected) && args.Length == 3 && args.All(value => value.Length is > 0 and <= 4096));
+            Require((!managedSelected || finiteSelected) && (!aggregateSelected || managedSelected)
+                && args.Length == 3 && args.All(value => value.Length is > 0 and <= 4096));
             var original = Path.GetFullPath(args[0]);
             var output = Path.GetFullPath(args[1]);
             var receipt = Path.GetFullPath(args[2]);
@@ -330,10 +332,29 @@ internal static class TaskWait
                 }
                 managedReceipt = managed.Receipt;
             }
+            object? aggregateReceipt = null;
+            Dictionary<string, string>? aggregateRemainders = null;
+            string? aggregateTimerPumpOriginal = null;
+            if (aggregateSelected)
+            {
+                var aggregate = AggregateTaskWait.Install(module, pe);
+                foreach (var method in aggregate.Changed)
+                {
+                    var key = originalMap.Single(item => item.Value == method).Key;
+                    // CheckPollables already owns the scoped zero-pollable
+                    // cleanup. The new predicate retains that exact edge.
+                    if (modifiedBodies.ContainsKey(key))
+                        Require(method.DeclaringType.FullName == "System.Threading.WasiEventLoop" && method.Name == "CheckPollables");
+                    modifiedBodies[key] = BodyIdentity(method);
+                }
+                aggregateReceipt = aggregate.Receipt;
+                aggregateRemainders = aggregate.Remainders;
+                aggregateTimerPumpOriginal = aggregate.TimerPumpOriginal;
+            }
             var generatedHelpers = Methods(module).Where(item => !originalMap.ContainsKey(item.Key))
                 .ToDictionary(item => item.Value.FullName, item => BodyIdentity(item.Value));
-            Require(generatedHelpers.Count == (managedSelected ? 91 : finiteSelected ? 10 : 9)
-                && timerMethods.Length == 3 && modifiedBodies.Count == (managedSelected ? 26 : 4));
+            Require(generatedHelpers.Count == (aggregateSelected ? 95 : managedSelected ? 91 : finiteSelected ? 10 : 9)
+                && timerMethods.Length == 3 && modifiedBodies.Count == (aggregateSelected ? 36 : managedSelected ? 26 : 4));
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
             using (var written = ModuleDefinition.ReadModule(output))
             {
@@ -347,10 +368,16 @@ internal static class TaskWait
                         : BodyIdentity(methods[name], name == waitKey ? prologue.Length : 0) == identity));
                 foreach (var (name, identity) in generatedHelpers)
                     Require(BodyIdentity(methods.Values.Single(method => method.FullName == name)) == identity);
+                if (aggregateRemainders is not null)
+                {
+                    AggregateTaskWait.VerifyRemainders(written, aggregateRemainders);
+                    AggregateTaskWait.VerifyDerivedLayout(written);
+                    AggregateTaskWait.VerifyTimerPump(written, aggregateTimerPumpOriginal!);
+                }
                 var fields = written.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName).ToHashSet();
                 var addedFields = module.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName)
                     .Where(name => !originalFields.Contains(name)).ToHashSet();
-                Require(addedFields.Count == (managedSelected ? 49 : 5) && fields.Count == originalFields.Count + addedFields.Count &&
+                Require(addedFields.Count == (aggregateSelected ? 54 : managedSelected ? 49 : 5) && fields.Count == originalFields.Count + addedFields.Count &&
                     fields.Except(addedFields).ToHashSet().SetEquals(originalFields) && addedFields.IsSubsetOf(fields));
             }
             Require(FileDigest(original, 8 * 1024 * 1024) == SourceDigest);
@@ -369,7 +396,7 @@ internal static class TaskWait
                 timerDriver = "TimerQueue.SetNextTimer-only", timerDriverIdle = "Timer.ActiveCount==0",
                 timerDriverCancellation = "original-CancellationTokenSource-CancelAndDispose",
                 timerDriverIdentity = "original-task-reference-and-epoch", timerDriverCallbacks = "original-queued-user-callbacks-preserved",
-                timerDriverScheduledToFire = "untouched", timerDriverCacheCleanup = false,
+                timerDriverScheduledToFire = aggregateSelected ? "positive-batch-detachment-before-original-enumerator" : "untouched", timerDriverCacheCleanup = false,
                 timerDriverRegistrationContext = "no-new-capture-original-flow-restored",
                 timerDriverModifiedOriginalMethods = 3, timerDriverOriginalBodies = timerOriginalBodies,
                 zeroCacheLifetime = "CheckPollables-original-Poll-call-only", zeroCacheDetach = "before-original-Poll",
@@ -380,6 +407,8 @@ internal static class TaskWait
                 .ToDictionary(property => property.Name, property => property.Value);
             if (managedReceipt is not null)
                 record.Add("managedAcceptedWork", JsonSerializer.SerializeToElement(managedReceipt));
+            if (aggregateReceipt is not null)
+                record.Add("aggregateTaskWait", JsonSerializer.SerializeToElement(aggregateReceipt));
             if (finiteSelected)
             {
                 foreach (var (name, value) in new[] {

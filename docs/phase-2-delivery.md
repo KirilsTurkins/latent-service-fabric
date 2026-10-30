@@ -9,7 +9,7 @@ If this is your first time using LSF, begin with [Run your first node](start/fir
 That guide creates a node and calls a small echo service. Continue here when you
 want to deliver your own application or manage a new version.
 
-[![Prepare a package, sign and admit it, then call the service or open its HTTP route.](assets/package-delivery.svg)](assets/package-delivery.svg)
+[![Review captured inputs, sign and admit the package, then check current authority for guest execution or static-file delivery.](assets/package-delivery.svg)](assets/package-delivery.svg)
 
 [Open the delivery diagram at full size](assets/package-delivery.svg).
 

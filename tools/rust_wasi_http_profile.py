@@ -170,7 +170,11 @@ def shape(graph, value, *, type_index=False, depth=0, work=None):
 def verify_compiled_core(raw: bytes, cores: list[bytes]):
     """Certify encoder metadata processing while preserving every other byte."""
     from tools.dotnet_guest.internal_io import integer
-    marker = 'component-type:wit-bindgen:0.62.0:latent:rust-http-runtime@0.1.0:client:encoded world'
+    generators = {
+        f'component-type:wit-bindgen:{version}:latent:rust-http-runtime@0.1.0:client:encoded world':
+            [('wit-component', encoder), ('wit-bindgen-rust', version)]
+        for version, encoder in (('0.62.0', '0.259.0'), ('0.63.0', '0.262.0'))
+    }
 
     def string(data, position):
         size, position = integer(data, position)
@@ -196,7 +200,7 @@ def verify_compiled_core(raw: bytes, cores: list[bytes]):
             if kind == 0:
                 name, payload = string(data[:end], position)
                 if name == 'producers' or name.startswith('component-type:'):
-                    if name not in ('producers', marker) or name in metadata:
+                    if (name != 'producers' and name not in generators) or name in metadata:
                         raise ValueError('rust-http-core-unknown-or-duplicate-metadata')
                     metadata[name] = data[payload:end]
                 else:
@@ -233,9 +237,13 @@ def verify_compiled_core(raw: bytes, cores: list[bytes]):
         return {'originalCoreExact': True, 'originalSha256': digest(raw)}
     expected = [('language', [('Rust', '')]), ('processed-by', [
         ('rustc', '1.97.1 (8bab26f4f 2026-07-14)')])]
+    markers = set(metadata) & generators.keys()
+    if len(markers) != 1:
+        raise ValueError('rust-http-core-original-metadata')
+    marker = next(iter(markers))
     if set(metadata) != {marker, 'producers'} or producers(metadata['producers']) != expected:
         raise ValueError('rust-http-core-original-metadata')
-    expected[1][1].extend([('wit-component', '0.259.0'), ('wit-bindgen-rust', '0.62.0')])
+    expected[1][1].extend(generators[marker])
     matches = []
     for core in cores:
         after, observed = split(core)

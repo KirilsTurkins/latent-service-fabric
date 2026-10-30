@@ -1,0 +1,556 @@
+{
+  "actualRun": {
+    "artifact": {
+      "all13CrcsPassed": true,
+      "bytes": 1379060,
+      "expiresAt": "2026-10-29T00:33:55Z",
+      "id": 12619109676,
+      "members": [
+        {
+          "bytes": 3098849,
+          "path": "receipt.json",
+          "sha256": "572d9eaef2b00703deb7473c7ec864a90b833ef67bce22c7f0bb6652c56f34db"
+        },
+        {
+          "bytes": 1462173,
+          "path": "source-inputs.json",
+          "sha256": "47dfae1cbf6b72bdfcafe6b4f976b1235d930faeb9a0cefe3ff7d88215bd35e3"
+        },
+        {
+          "bytes": 427,
+          "path": "commands.json",
+          "sha256": "efe8c2e58a65e972d5886de749583f666cc540374d29253219de97c27caf4b06"
+        },
+        {
+          "bytes": 679,
+          "path": "commands/logs/00-input-controls.stderr.txt",
+          "sha256": "847e8b512b1e6822579d3dc5a125a7f11345334a08ce3367d9278081937f0f21"
+        },
+        {
+          "bytes": 0,
+          "path": "commands/logs/00-input-controls.stdout.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 20331,
+          "path": "commands/logs/01-build-harness.stderr.txt",
+          "sha256": "d8e21487513e75b5d63b74d6fb310b5f65b6f92a7cd0afa976ae106d77c1850f"
+        },
+        {
+          "bytes": 312936,
+          "path": "commands/logs/01-build-harness.stdout.txt",
+          "sha256": "1941492552342f01e9fb020b6681c6ce1475ebd30aaee94dfaccacf750b9f9dd"
+        },
+        {
+          "bytes": 0,
+          "path": "commands/logs/02-rust-library-path.stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 105,
+          "path": "commands/logs/02-rust-library-path.stdout.txt",
+          "sha256": "7675ece60101aa9118dc7df3c8865c010dc07858e7fb4b48536a3376fa3b9ed0"
+        },
+        {
+          "bytes": 0,
+          "path": "commands/logs/03-list-exact-case.stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 111,
+          "path": "commands/logs/03-list-exact-case.stdout.txt",
+          "sha256": "ba6f4a6b8df66d4314663451f9f724bd0fb064f17983a7c3c554d7146fb59ef1"
+        },
+        {
+          "bytes": 0,
+          "path": "commands/logs/04-execute-exact-case.stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 7849,
+          "path": "commands/logs/04-execute-exact-case.stdout.txt",
+          "sha256": "70aa7e2289d0ecd9103be0d305afd7d4cfb1b8e846c02a5a6312d9ad05c31e2c"
+        }
+      ],
+      "name": "java-retained-fibers-9f4d763b5b4eda8f6e9c62f70bf03175487c4dca",
+      "sha256": "0b48b84d963e7d269bbba3e0a18be8b3ed2773d94a8a494fc5355cb7162d4392"
+    },
+    "attempt": 1,
+    "conclusion": "success",
+    "event": "push",
+    "jobId": 121337416839,
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "runId": 40249285866,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40249285866"
+  },
+  "commands": [
+    {
+      "exitCode": 0,
+      "seconds": 0.411284,
+      "stage": "input-controls"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 233.020523,
+      "stage": "build-harness"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.015251,
+      "stage": "rust-library-path"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.01494,
+      "stage": "list-exact-case"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 65.506668,
+      "stage": "execute-exact-case"
+    }
+  ],
+  "normalSignedRuntime": {
+    "activationLimits": {
+      "cells": 1,
+      "cpuFuel": 10000000000,
+      "executors": 3,
+      "memoryBytes": 67108864,
+      "nativeOwners": 2,
+      "outboundRequests": 0,
+      "queuedWork": 8,
+      "results": 8,
+      "tasks": 5,
+      "timers": 2,
+      "waits": 8,
+      "wallTimeMilliseconds": 120000
+    },
+    "case": "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
+    "iterations": 3,
+    "modes": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "normalNativeHarness": {
+      "built": true,
+      "cargoBuildFinishedSuccess": true,
+      "cargoConfig": ".cargo/managed-guest.toml",
+      "executableBytesRetained": false,
+      "measuredExecutable": {
+        "digest": "sha256:3f013b91e5b3c2637e0abc9dbcb78024ee934b9bb4a6fcc972a4f11cd84aeacb",
+        "name": "local-service-java-retained",
+        "size": 133611040
+      },
+      "package": "latent-wasmtime",
+      "target": "local_service",
+      "targetSource": "crates/latent-wasmtime/tests/local_service.rs"
+    },
+    "observation": {
+      "calls": [
+        {
+          "activationId": "java-fibers-0-0",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 10166713,
+          "iteration": 0,
+          "liveStores": 0,
+          "mode": 0,
+          "reportedPeakMemoryBytes": 9549672,
+          "storesBefore": 0,
+          "storesCreated": 1,
+          "value": 42
+        },
+        {
+          "activationId": "java-fibers-0-1",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 8727434,
+          "iteration": 0,
+          "liveStores": 0,
+          "mode": 1,
+          "reportedPeakMemoryBytes": 9549999,
+          "storesBefore": 1,
+          "storesCreated": 2,
+          "value": 42
+        },
+        {
+          "activationId": "java-fibers-0-2",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5708210,
+          "iteration": 0,
+          "liveStores": 0,
+          "mode": 2,
+          "reportedPeakMemoryBytes": 9549999,
+          "storesBefore": 2,
+          "storesCreated": 3,
+          "value": 42
+        },
+        {
+          "activationId": "java-fibers-0-3",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5852146,
+          "iteration": 0,
+          "liveStores": 0,
+          "mode": 3,
+          "reportedPeakMemoryBytes": 9549952,
+          "storesBefore": 3,
+          "storesCreated": 4,
+          "value": 42
+        },
+        {
+          "activationId": "java-fibers-1-0",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 10161725,
+          "iteration": 1,
+          "liveStores": 0,
+          "mode": 0,
+          "reportedPeakMemoryBytes": 9549672,
+          "storesBefore": 4,
+          "storesCreated": 5,
+          "value": 42
+        },
+        {
+          "activationId": "java-fibers-1-1",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 8727434,
+          "iteration": 1,
+          "liveStores": 0,
+          "mode": 1,
+          "reportedPeakMemoryBytes": 9549999,
+          "storesBefore": 5,
+          "storesCreated": 6,
+          "value": 42
+        },
+        {
+          "activationId": "java-fibers-1-2",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5708210,
+          "iteration": 1,
+          "liveStores": 0,
+          "mode": 2,
+          "reportedPeakMemoryBytes": 9549999,
+          "storesBefore": 6,
+          "storesCreated": 7,
+          "value": 42
+        },
+        {
+          "activationId": "java-fibers-1-3",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5852146,
+          "iteration": 1,
+          "liveStores": 0,
+          "mode": 3,
+          "reportedPeakMemoryBytes": 9549952,
+          "storesBefore": 7,
+          "storesCreated": 8,
+          "value": 42
+        },
+        {
+          "activationId": "java-fibers-2-0",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 10186665,
+          "iteration": 2,
+          "liveStores": 0,
+          "mode": 0,
+          "reportedPeakMemoryBytes": 9549672,
+          "storesBefore": 8,
+          "storesCreated": 9,
+          "value": 42
+        },
+        {
+          "activationId": "java-fibers-2-1",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 8727434,
+          "iteration": 2,
+          "liveStores": 0,
+          "mode": 1,
+          "reportedPeakMemoryBytes": 9549999,
+          "storesBefore": 9,
+          "storesCreated": 10,
+          "value": 42
+        },
+        {
+          "activationId": "java-fibers-2-2",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5708210,
+          "iteration": 2,
+          "liveStores": 0,
+          "mode": 2,
+          "reportedPeakMemoryBytes": 9549999,
+          "storesBefore": 10,
+          "storesCreated": 11,
+          "value": 42
+        },
+        {
+          "activationId": "java-fibers-2-3",
+          "activeReservations": 0,
+          "brokerBufferBytes": 0,
+          "brokerCalls": 0,
+          "brokerHandles": 0,
+          "brokerResults": 0,
+          "brokerSessions": 0,
+          "cpuFuel": 5889184,
+          "iteration": 2,
+          "liveStores": 0,
+          "mode": 3,
+          "reportedPeakMemoryBytes": 9549999,
+          "storesBefore": 11,
+          "storesCreated": 12,
+          "value": 42
+        }
+      ],
+      "case": "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
+      "failed": 0,
+      "filteredOut": 51,
+      "ignored": 0,
+      "passed": 1,
+      "setupMicroseconds": 55593615,
+      "stdout": {
+        "bytes": 7849,
+        "sha256": "70aa7e2289d0ecd9103be0d305afd7d4cfb1b8e846c02a5a6312d9ad05c31e2c"
+      }
+    },
+    "originalIdleAssertions": "Fixture::idle retains its activation quota, cancellation, scheduler, Store and broker owner assertions; only the seven explicit public counters are raw numeric observations.",
+    "ownerLimits": {
+      "buildCommandSeconds": 900,
+      "caseProcessSeconds": 1800,
+      "cleanupReserveSeconds": 5,
+      "listProcessSeconds": 30,
+      "overallSeconds": 2400
+    },
+    "reportedFuelRange": [
+      5708210,
+      10186665
+    ],
+    "reportedPeakMemoryRange": [
+      9549672,
+      9549999
+    ],
+    "runtimePath": "Existing packages::java_activation_runtime, normal fixture signing/catalog admission, prepare_ready_from_repository and manager.start. No application executor, custom component executor or guessed publication/Store identity."
+  },
+  "observedTools": [
+    {
+      "digest": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "name": "cargo",
+      "size": 42839824
+    },
+    {
+      "digest": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "name": "rustc",
+      "size": 645000
+    },
+    {
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "name": "wasm-tools",
+      "size": 20231696
+    }
+  ],
+  "qualifiedSource": {
+    "baseDevelopmentRevision": "0f4be2888bbf0caca3da5f971d95d50bda37c65f",
+    "branch": "feat/java-retained-fibers-runtime-20261026",
+    "nativeBackingCohort": "v11",
+    "revision": "9f4d763b5b4eda8f6e9c62f70bf03175487c4dca",
+    "tree": "43aa787241b041b3b0c8eee1ba0248cf9658da11",
+    "workflow": ".github/workflows/java-retained-fibers.yml"
+  },
+  "retainedComponent": {
+    "compilerEvidence": "java-private-scalar-compiler-2026-10-25.json",
+    "fixedInputs": {
+      "FIBERS-COMPILE.json": {
+        "bytes": 278426,
+        "sha256": "c10b0902e1aa8dd9bf285bc03b9ed8236f7558de127a513d912a6c76806a3dbc"
+      },
+      "build/component.wasm": {
+        "bytes": 10282099,
+        "sha256": "d6336d4667db6a01d4f6fd18dfb53850b0d27a7ab96d828660b98dfeb64f469c"
+      },
+      "src/Capsule.java": {
+        "bytes": 12668,
+        "sha256": "6a2f7a5a13b3295761b0f18989e47cc7ff106a7c9546c559492247fcd36430c8"
+      },
+      "wit/service.wit": {
+        "bytes": 340,
+        "sha256": "14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236"
+      }
+    },
+    "javaComponentRecompiled": false,
+    "llvmBuilt": false,
+    "originalArchive": {
+      "bytes": 2578267,
+      "sha256": "70304aae3dd82275536dcacc05a7960ef13b70de18b5ea6681c6c1e6e76c62a0"
+    },
+    "originalArtifact": 12612853018,
+    "originalCompileRecord": {
+      "nodeExecution": "not-run",
+      "qualification": "pending",
+      "status": "component-built-unqualified",
+      "unchanged": true
+    },
+    "originalJob": 121283781554,
+    "originalRun": 40231419998,
+    "originalSourceRevision": "9871d6b54520bc2bd4fcd920f2d59d9ee0efd995",
+    "originalSourceTree": "cf936ae4f48c2e581978c05088eb16599da0ded3"
+  },
+  "schemaVersion": "lsf.java-retained-fibers.evidence.v1",
+  "scope": {
+    "allSevenZeroAfterEveryCall": true,
+    "compilerImplicitInputsAttested": false,
+    "entireIssue741Closed": false,
+    "fullCostModelQualified": false,
+    "fullJavaProfileQualified": false,
+    "hermetic": false,
+    "javaComponentRecompiled": false,
+    "llvmCompilerRebuilt": false,
+    "nativeHarnessBuildPerformed": true,
+    "rawTwelveRowsExactlyProjected": true,
+    "remainingAcceptance": "Whole named Java subset and scheduling/EH/GC-root coverage; complete timer, accounting and retirement failure/race matrix; two unchanged published worker/timer clients; separately gated standard socket/DNS/stream substrate; full profile/provenance and hostile-input acceptance. This finite public-fixture receipt does not close those criteria.",
+    "sevenSampledIdleCounterNames": [
+      "liveStores",
+      "activeReservations",
+      "brokerCalls",
+      "brokerSessions",
+      "brokerHandles",
+      "brokerResults",
+      "brokerBufferBytes"
+    ],
+    "storesCreatedProgression": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "twelveActualUniqueActivationIds": true
+  },
+  "sourceControls": {
+    "passed": 3,
+    "skipped": 0,
+    "stderr": {
+      "bytes": 679,
+      "sha256": "847e8b512b1e6822579d3dc5a125a7f11345334a08ce3367d9278081937f0f21"
+    }
+  },
+  "sourceEvidence": {
+    "allGitBlobsMatchedQualifiedTree": true,
+    "checkoutTransforms": [
+      {
+        "basis": "tools/intellij.cmd: text: set\ntools/intellij.cmd: eol: crlf",
+        "checkoutBytes": {
+          "bytes": 922,
+          "sha256": "7d96a1573b04fb4c7aa3add1ec47fd5ba8a2c827dda142e6b2098843b33f45e4"
+        },
+        "gitBlob": {
+          "bytes": 894,
+          "sha256": "fcaca9e75d7d09ebd0863ca252222a1e1b7ac3f78bd1efb465f94b5209545049"
+        },
+        "path": "tools/intellij.cmd"
+      }
+    ],
+    "inputBytes": 78413847,
+    "inputCount": 8908,
+    "inventoryCanonicalSha256": "a8a2d1f05b3b767de78b636dead23fc2ca5d841a734a610ecaba021c6b20ecd8",
+    "inventoryCanonicalization": "UTF-8 JSON; sorted keys; compact separators; ensure_ascii=true; no trailing newline",
+    "nativeBackingProvenanceSource": {
+      "bytes": 42466,
+      "sha256": "1d71fad3f9fbc0a436378cc97fb6461e9b93a9ea876e78fd965d4772e369aaa2"
+    },
+    "selection": {
+      "additionalCompileTimeSources": [
+        "sdk/java-guest/fibers/conformance/Capsule.java",
+        "sdk/java-guest/fibers/conformance/completable/Capsule.java",
+        "sdk/java-guest/fibers/conformance/fiber-io/Capsule.java",
+        "sdk/java-guest/fibers/conformance/worker-libraries/Capsule.java",
+        "sdk/java-guest/fibers/conformance/timers/Capsule.java",
+        "sdk/go-guest/runtime/synchronization-conformance/main.go",
+        "sdk/go-guest/runtime/managed-idle-conformance/main.go",
+        "sdk/go-guest/runtime/published-conformance/main.go",
+        "sdk/go-guest/runtime/initializers-conformance/main.go",
+        "sdk/go-guest/runtime/timers-conformance/main.go",
+        "sdk/go-guest/runtime/checkpoints-conformance/main.go",
+        "sdk/go-guest/runtime/conformance/main.go",
+        "sdk/rust-standard-runtime/owned-child-fixture/core.wat",
+        "sdk/rust-standard-runtime/owned-child-fixture/world.wit"
+      ],
+      "fixedInputReader": {
+        "bytes": 7599,
+        "sha256": "37ba81a46e52ed7bded0d1f959ff4ec22be6df4d73bfec3279a45630f942eb1a"
+      },
+      "focusedOwner": {
+        "bytes": 11823,
+        "sha256": "e730a8651cb457690b8124e914a93d19a62ff701eacbd00543cc1a436aa1db91"
+      },
+      "normalSourceAllowlistOwner": {
+        "bytes": 13601,
+        "sha256": "0f5a899b52906bfa4153af1f709d9eefc620661a022a3ff75046fdb3d7edd5a4"
+      },
+      "workflow": {
+        "bytes": 3099,
+        "sha256": "7c9e7d4734ced01a3cd506eaa51c30fdb76a576ff691ff0fee411ccdcc443a24"
+      }
+    },
+    "sourceBeforeEqualsAfter": true
+  },
+  "status": "passed-selected-public-fibers"
+}

@@ -4,12 +4,22 @@ name: Stream native factory descriptor ownership
 on:
   workflow_dispatch:
   push:
-    branches: ['feat/stream-kernel-native-factory-owner-20261023']
+    branches: ['feat/stream-kernel-native-factory-owner-20261023', 'feat/kernel-native-constructor-vm-20261024', 'feat/kernel-native-close-20261024']
     paths:
       - '.github/workflows/stream-native-factory-owner.yml'
       - 'crates/latent-streams/**'
       - 'crates/latent-capabilities/src/broker/pools/control.rs'
+      - 'crates/latent-capabilities/src/broker/pools.rs'
+      - 'crates/latent-capabilities/src/broker/pools/tests.rs'
+      - 'crates/latent-capabilities/src/broker/pools/tests/close_observation.rs'
       - 'tools/qualify_host_stream_native.py'
+      - 'tools/qualify_host_stream_kernel_native_vm.py'
+      - 'tools/host_stream_kernel_native_vm.py'
+      - 'tools/host_stream_kernel_native_vm_inputs.py'
+      - 'tools/tests/test_kernel_native_constructor_vm.py'
+      - 'tools/ci/suites.json'
+      - 'tools/ci/suites.d/outbound-streams.json'
+      - 'research/standard-outbound/linux-6.12-lineage/native-constructor-vm-init.c'
 permissions:
   contents: read
 concurrency:
@@ -17,18 +27,19 @@ concurrency:
   cancel-in-progress: false
 jobs:
   native-owner:
-    name: Ten actual descriptor and original node quota controls
+    if: github.ref_name != 'feat/kernel-native-constructor-vm-20261024' && github.ref_name != 'feat/kernel-native-close-20261024'
+    name: Thirteen actual descriptor and original node quota controls
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -45,11 +56,68 @@ jobs:
           --output "$RUNNER_TEMP/stream-native-factory-owner"
       - name: Retain actual outcomes and compiler failures
         if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-native-factory-owner-${{ github.sha }}
           path: |
             ${{ runner.temp }}/stream-native-factory-owner/*.log
             ${{ runner.temp }}/stream-native-factory-owner/receipt.json
+          if-no-files-found: warn
+          retention-days: 3
+  native-kernel-vm:
+    if: github.ref_name == 'feat/kernel-native-constructor-vm-20261024' || github.ref_name == 'feat/kernel-native-close-20261024'
+    name: Actual native close observation in the qualified isolated kernel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04-native-constructor-static
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-targets: false
+      - name: Check closed image source bindings and real observation refusal controls
+        run: python3 -B -m unittest tools.tests.test_kernel_native_constructor_vm -v
+      - name: Install only the normal host linker and isolated emulator
+        run: |
+          sudo timeout --signal=TERM --kill-after=30s 180s apt-get update
+          sudo timeout --signal=TERM --kill-after=30s 600s apt-get install --yes --no-install-recommends gcc binutils libc6-dev qemu-system-x86
+      - name: Compile the real native caller and join it to the immutable qualified kernel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/qualify_host_stream_kernel_native_vm.py
+          --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/stream-native-kernel-vm"
+      - name: Retain the actual inputs observations and original failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: stream-native-kernel-vm-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/stream-native-kernel-vm/receipt.json
+            ${{ runner.temp }}/stream-native-kernel-vm/FAILED.json
+            ${{ runner.temp }}/stream-native-kernel-vm/commands.json
+            ${{ runner.temp }}/stream-native-kernel-vm/native-source-inputs.json
+            ${{ runner.temp }}/stream-native-kernel-vm/native-init
+            ${{ runner.temp }}/stream-native-kernel-vm/native-init.rejected.elf
+            ${{ runner.temp }}/stream-native-kernel-vm/constructor-init
+            ${{ runner.temp }}/stream-native-kernel-vm/constructor-init.c
+            ${{ runner.temp }}/stream-native-kernel-vm/native-constructor-initramfs.cpio
+            ${{ runner.temp }}/stream-native-kernel-vm/kernel/original-image.zip
+            ${{ runner.temp }}/stream-native-kernel-vm/kernel/origin.json
+            ${{ runner.temp }}/stream-native-kernel-vm/commands/logs/*.txt
           if-no-files-found: warn
           retention-days: 3

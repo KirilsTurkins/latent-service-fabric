@@ -124,6 +124,13 @@ parent without a cleanup receipt conservatively quarantines its own cell; this
 does not prevent its node-owned child from completing cleanup. No later refund
 silently unquarantines that parent cell.
 
+After Store destruction, the host can retire a closed, quiescent service
+registry entry only when its actual calls, handles, results and buffers have
+retired. The original statistics identity fences address/identifier reuse;
+retained or contended owners remain charged. This is physical cleanup, not a
+new invocation grant or evidence that all descendants have stopped. Follow the
+[registry retirement contract and controls](../testing/local-service-registry-retirement.md).
+
 ## Validation
 
 Required [capability audit](capability-audit.md) is admitted before child creation.

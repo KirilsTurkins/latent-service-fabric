@@ -11,6 +11,8 @@ description = "Bounded Wasmtime Component Model runtime with a retained Phase 0 
 # Off by default; timing observations cannot authorize compilation or loading.
 aot-test-timings = []
 development-clock-fixture = []
+# Explicit disposable local-service observation; absent from ordinary builds.
+development-local-service-fixture = []
 development-test-host = ["latent-artifacts/development-test-host", "latent-policy/development-test-host", "development-clock-fixture"]
 
 # Retains the standalone compiler diagnostic; node installation is separately explicit.
@@ -63,7 +65,7 @@ zeroize = { version = "=1.9.1", features = ["alloc"] }
 [target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
 close_fds = "=0.3.2"
 landlock = "=0.4.7"
-libc = "=0.2.190"
+libc = "=0.2.191"
 rustix = { version = "=1.1.5", features = ["process", "thread", "fs", "pipe", "mm", "param", "event"] }
 seccompiler = "=0.5.0"
 
@@ -85,7 +87,7 @@ latent-admission = { path = "../latent-admission" }
 latent-control-store = { path = "../latent-control-store" }
 tempfile.workspace = true
 wasm-encoder.workspace = true
-wit-parser = { version = "=0.259.0", default-features = false, features = ["std"] }
+wit-parser = { version = "=0.262.0", default-features = false, features = ["std"] }
 latent-node = { path = "../latent-node" }
 latent-scheduler = { path = "../latent-scheduler" }
 tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }
@@ -94,7 +96,7 @@ tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }
 rustix = { version = "=1.1.5", features = ["time"] }
 rcgen = { version = "=0.14.10", default-features = false, features = ["crypto", "ring"] }
 rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
-tokio-rustls = { version = "=0.26.5", default-features = false, features = ["ring", "tls12"] }
+tokio-rustls = { version = "=0.26.6", default-features = false, features = ["ring", "tls12"] }
 
 [target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dev-dependencies]
 memmap2 = "=0.9.11"

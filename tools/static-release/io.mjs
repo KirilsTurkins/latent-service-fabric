@@ -4,6 +4,7 @@ import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import {canonical, digest, requireValue} from './model.mjs';
+import {inventoryHeadroom} from './audit-capacity.mjs';
 
 const MAXIMUM = 1024 * 1024;
 export async function readJson(name, protectedFile = false) {
@@ -53,9 +54,10 @@ export async function locked(journal, action) {
 }
 
 export class NativeClient {
-  constructor({cli, config, profile, tenant, endpoint, directory, deadlineSeconds = 120}) {
+  constructor({cli, config, profile, tenant, endpoint, directory, node, auditOptions = {}, deadlineSeconds = 120}) {
     requireValue(Number.isInteger(deadlineSeconds) && deadlineSeconds >= 1 && deadlineSeconds <= 600, 'deadline-bound');
-    Object.assign(this, {cli, config, profile, tenant, endpoint, directory});
+    Object.assign(this, {cli, config, profile, tenant, endpoint, directory, node});
+    this.auditOptions = {...auditOptions};
     this.deadline = performance.now() + deadlineSeconds * 1000;
     this.calls = 0;
   }
@@ -88,6 +90,12 @@ export class NativeClient {
         } catch { reject(new Error('command-response-invalid')); }
       });
     });
+  }
+  async auditPreflight(routePairs) {
+    // Read through the authenticated native CLI on every call; never reuse a
+    // prior invocation's snapshot or claim a future reservation from this read.
+    const envelope = await this.call(['node', 'get', this.node]);
+    return inventoryHeadroom(envelope, this.node, {...this.auditOptions, routePairs});
   }
   async apply(manifest, attempt) {
     const name = path.join(this.directory, attempt.id + '.json');

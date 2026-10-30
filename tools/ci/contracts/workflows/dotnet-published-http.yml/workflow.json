@@ -1,58 +1,58 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "dotnet-published-http-${{ github.ref }}"
-    },
-    "name": "Published managed HTTP clients",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/dotnet-published-http-20261020"
-        ],
-        "paths": [
-          ".github/workflows/dotnet-published-http.yml"
-        ]
-      },
-      "workflow_dispatch": {
-        "inputs": {
-          "fresh_component": {
-            "default": false,
-            "description": "Compile a new component instead of replaying the authenticated successful build",
-            "type": "boolean"
-          },
-          "mixed_content": {
-            "default": false,
-            "description": "One fresh default HttpClient content and accepted-work component without a native rebuild",
-            "type": "boolean"
-          },
-          "owner_capacity": {
-            "default": false,
-            "description": "One fresh managed owner capacity component on the authenticated native6fd products",
-            "type": "boolean"
-          },
-          "periodic_diagnostic": {
-            "default": false,
-            "description": "One diagnostic-only normal AOT with closed original TimerHandler cause projection",
-            "type": "boolean"
-          }
-        }
-      }
-    },
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "exact-component",
-    "mixed-content",
-    "owner-capacity",
-    "periodic-diagnostic",
-    "published-http"
-  ],
-  "reviewReason": "Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/dotnet-published-http.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"dotnet-published-http-${{ github.ref }}"
+},
+"name":"Published managed HTTP clients",
+"on":{
+"push":{
+"branches":[
+"feat/dotnet-published-http-20261020"
+],
+"paths":[
+".github/workflows/dotnet-published-http.yml"
+]
+},
+"workflow_dispatch":{
+"inputs":{
+"fresh_component":{
+"default":false,
+"description":"Compile a new component instead of replaying the authenticated successful build",
+"type":"boolean"
+},
+"mixed_content":{
+"default":false,
+"description":"One fresh default HttpClient content and accepted-work component without a native rebuild",
+"type":"boolean"
+},
+"owner_capacity":{
+"default":false,
+"description":"One fresh managed owner capacity component on the authenticated native6fd products",
+"type":"boolean"
+},
+"periodic_diagnostic":{
+"default":false,
+"description":"One diagnostic-only normal AOT with closed original TimerHandler cause projection",
+"type":"boolean"
+}
+}
+}
+},
+"permissions":{
+"actions":"read",
+"contents":"read"
+}
+},
+"requiredJobs":[
+"exact-component",
+"mixed-content",
+"owner-capacity",
+"periodic-diagnostic",
+"published-http"
+],
+"reviewReason":"Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/dotnet-published-http.yml"
 }

@@ -1,166 +1,27 @@
-{
-  "cases": [
-    "KernelProtocol.test_actual_original_lsm_allocator_is_a_general_allocation_counterexample",
-    "KernelProtocol.test_blob_original_rcu_callback_copies_owner_before_hooks_and_returns_after_hooks",
-    "KernelProtocol.test_complete_consumer_and_kernel_qualification_remain_unavailable",
-    "KernelProtocol.test_current_passive_netns_memcg_cgroup_and_owner_cleanup_remain_original",
-    "KernelProtocol.test_fixed_birth_record_kind_and_deferred_owner_do_not_add_a_new_registration_table",
-    "KernelProtocol.test_private_inet_requires_real_static_tcp_family_and_keeps_full_error_tail",
-    "KernelProtocol.test_private_inode_preserves_actual_initialization_and_original_nofs_priority",
-    "KernelProtocol.test_private_protocol_preserves_security_module_and_failed_allocation_cleanup",
-    "KernelProtocol.test_private_security_allocators_preserve_original_hook_and_error_bodies_exactly",
-    "KernelProtocol.test_return_classification_never_reads_an_unproven_pointer_or_calls_a_fallback_allocator",
-    "KernelProtocol.test_six_whole_sources_and_all_twenty_one_definitions_bind_maintained_commit",
-    "KernelProtocol.test_unknown_full_or_partial_sources_duplicate_or_line_ending_drift_refuse"
-  ],
-  "guards": {
-    "KernelProtocol.test_actual_original_lsm_allocator_is_a_general_allocation_counterexample": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10",
-        "class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"
-      ],
-      "skipSites": []
-    },
-    "KernelProtocol.test_blob_original_rcu_callback_copies_owner_before_hooks_and_returns_after_hooks": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10",
-        "class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"
-      ],
-      "skipSites": []
-    },
-    "KernelProtocol.test_complete_consumer_and_kernel_qualification_remain_unavailable": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10",
-        "class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"
-      ],
-      "skipSites": []
-    },
-    "KernelProtocol.test_current_passive_netns_memcg_cgroup_and_owner_cleanup_remain_original": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10",
-        "class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"
-      ],
-      "skipSites": []
-    },
-    "KernelProtocol.test_fixed_birth_record_kind_and_deferred_owner_do_not_add_a_new_registration_table": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10",
-        "class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"
-      ],
-      "skipSites": []
-    },
-    "KernelProtocol.test_private_inet_requires_real_static_tcp_family_and_keeps_full_error_tail": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10",
-        "class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"
-      ],
-      "skipSites": []
-    },
-    "KernelProtocol.test_private_inode_preserves_actual_initialization_and_original_nofs_priority": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10",
-        "class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"
-      ],
-      "skipSites": []
-    },
-    "KernelProtocol.test_private_protocol_preserves_security_module_and_failed_allocation_cleanup": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10",
-        "class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"
-      ],
-      "skipSites": []
-    },
-    "KernelProtocol.test_private_security_allocators_preserve_original_hook_and_error_bodies_exactly": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10",
-        "class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"
-      ],
-      "skipSites": []
-    },
-    "KernelProtocol.test_return_classification_never_reads_an_unproven_pointer_or_calls_a_fallback_allocator": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10",
-        "class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"
-      ],
-      "skipSites": []
-    },
-    "KernelProtocol.test_six_whole_sources_and_all_twenty_one_definitions_bind_maintained_commit": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10",
-        "class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"
-      ],
-      "skipSites": []
-    },
-    "KernelProtocol.test_unknown_full_or_partial_sources_duplicate_or_line_ending_drift_refuse": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10",
-        "class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"
-      ],
-      "skipSites": []
-    }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_host_stream_kernel_protocol.py",
-  "reviewReason": "Reviewed maintained Linux private protocol and composite-LSM source prefix: six exact whole preimages, 21 definitions, 12 source controls preserving original init/security/error/module/netns ownership, fixed birth records and independent blob RCU; no kernel build, installed consumer, complete allocation or final-free qualification.",
-  "schemaVersion": "latent.ci.contracts.v1"
-}
+{"cases":["KernelProtocol.test_actual_original_lsm_allocator_is_a_general_allocation_counterexample","KernelProtocol.test_blob_original_rcu_callback_copies_owner_before_hooks_and_returns_after_hooks","KernelProtocol.test_complete_consumer_and_kernel_qualification_remain_unavailable","KernelProtocol.test_current_passive_netns_memcg_cgroup_and_owner_cleanup_remain_original","KernelProtocol.test_fixed_birth_record_kind_and_deferred_owner_do_not_add_a_new_registration_table","KernelProtocol.test_private_inet_requires_real_static_tcp_family_and_keeps_full_error_tail","KernelProtocol.test_private_inode_preserves_actual_initialization_and_original_nofs_priority","KernelProtocol.test_private_protocol_preserves_security_module_and_failed_allocation_cleanup","KernelProtocol.test_private_security_allocators_preserve_original_hook_and_error_bodies_exactly","KernelProtocol.test_return_classification_never_reads_an_unproven_pointer_or_calls_a_fallback_allocator","KernelProtocol.test_six_whole_sources_and_all_twenty_one_definitions_bind_maintained_commit","KernelProtocol.test_unknown_full_or_partial_sources_duplicate_or_line_ending_drift_refuse"],"guards":{"KernelProtocol.test_actual_original_lsm_allocator_is_a_general_allocation_counterexample":
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+,"KernelProtocol.test_blob_original_rcu_callback_copies_owner_before_hooks_and_returns_after_hooks":
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+,"KernelProtocol.test_complete_consumer_and_kernel_qualification_remain_unavailable":
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+,"KernelProtocol.test_current_passive_netns_memcg_cgroup_and_owner_cleanup_remain_original":
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+,"KernelProtocol.test_fixed_birth_record_kind_and_deferred_owner_do_not_add_a_new_registration_table":
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+,"KernelProtocol.test_private_inet_requires_real_static_tcp_family_and_keeps_full_error_tail":
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+,"KernelProtocol.test_private_inode_preserves_actual_initialization_and_original_nofs_priority":
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+,"KernelProtocol.test_private_protocol_preserves_security_module_and_failed_allocation_cleanup":
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+,"KernelProtocol.test_private_security_allocators_preserve_original_hook_and_error_bodies_exactly":
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+,"KernelProtocol.test_return_classification_never_reads_an_unproven_pointer_or_calls_a_fallback_allocator":
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+,"KernelProtocol.test_six_whole_sources_and_all_twenty_one_definitions_bind_maintained_commit":
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+,"KernelProtocol.test_unknown_full_or_partial_sources_duplicate_or_line_ending_drift_refuse":
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+},"kind":"python","module":"tools/tests/test_host_stream_kernel_protocol.py","reviewReason":"Reviewed maintained Linux private protocol and composite-LSM source prefix: six exact whole preimages, 21 definitions, 12 source controls preserving original init/security/error/module/netns ownership, fixed birth records and independent blob RCU; no kernel build, installed consumer, complete allocation or final-free qualification.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "76f0e6a05ab311cf80301f4d80a69c8818dcc3697407e3d8293f554a80701129"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6afe327d08055379993cd63f8221591405481c4d1414ff76fe97f97feacf2d10","class:setup-sha256:f94d53f57db374f6a93b292f875d69d8b7b58a6d67a94e335cb7c101d909858d"],"skipSites":[]}}}

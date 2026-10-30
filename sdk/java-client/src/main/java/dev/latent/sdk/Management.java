@@ -60,6 +60,16 @@ public final class Management {
         public static final DiagnosticReason DEADLINE_EXCEEDED = new DiagnosticReason(14);
         public static final DiagnosticReason CANCELLED = new DiagnosticReason(15);
         public static final DiagnosticReason HTTP_RESPONSE_REJECTED = new DiagnosticReason(16);
+        public static final DiagnosticReason RUNTIME_TASK_LIMIT = new DiagnosticReason(17);
+        public static final DiagnosticReason RUNTIME_QUEUE_LIMIT = new DiagnosticReason(18);
+        public static final DiagnosticReason RUNTIME_TIMER_LIMIT = new DiagnosticReason(19);
+        public static final DiagnosticReason RUNTIME_EXECUTOR_LIMIT = new DiagnosticReason(20);
+        public static final DiagnosticReason RUNTIME_WAIT_LIMIT = new DiagnosticReason(21);
+        public static final DiagnosticReason RUNTIME_RESULT_LIMIT = new DiagnosticReason(22);
+        public static final DiagnosticReason RUNTIME_NATIVE_OWNER_LIMIT = new DiagnosticReason(23);
+        public static final DiagnosticReason NATIVE_THREAD_START_LIMIT = new DiagnosticReason(24);
+        public static final DiagnosticReason NATIVE_MEMORY_EXHAUSTED = new DiagnosticReason(25);
+        public static final DiagnosticReason GUEST_STACK_EXHAUSTED = new DiagnosticReason(26);
     }
 
     public record DiagnosticProfile(int value) {

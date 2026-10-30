@@ -162,7 +162,14 @@ def dependencies(repo: Path) -> tuple[list[Finding], dict]:
     from tools.security_npm_sources import resolve_findings, verify_sources
 
     packages, records = inventory(repo)
-    findings, observations = query_osv(packages)
+    action_prefix = ".github/security/actions/"
+    findings, observations = query_osv([item for item in packages if not item.path.startswith(action_prefix)])
+    # Keep the existing per-graph count and deadline limits while extending
+    # coverage to complete action build graphs, including development tools.
+    for path in sorted({item.path for item in packages if item.path.startswith(action_prefix)}):
+        current, receipts = query_osv([item for item in packages if item.path == path])
+        findings.extend(current)
+        observations.extend(receipts)
     configuration = decode_json(read_file(POLICY, "inventory.json"))
     repairs = verify_sources(repo, packages, configuration)
     remaining, remediated = resolve_findings(findings, observations, repairs)

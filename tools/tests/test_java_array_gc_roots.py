@@ -32,7 +32,11 @@ class PinnedArrayTypeWorklistTests(unittest.TestCase):
                 'array-control-primitive-root-or-reference-root-lost'):
             self.assertIn(required, text)
         main = read_file(ROOT/'sdk/java-guest/fibers/compiler-patch/Check.java').decode()
-        self.assertLess(main.index('ArrayTypeCheck.check(args[0]);'), main.index('System.out.println('))
+        array_check = 'ArrayTypeCheck.check(args[0]);'
+        legacy_print = r'System.out.println("{\"schemaVersion\":\"latent.java.coroutine-phi-control.v1\",\"mode\":\"'
+        self.assertEqual(main.count(array_check), 1)
+        self.assertEqual(main.count(legacy_print), 1)
+        self.assertLess(main.index(array_check), main.index(legacy_print))
         self.assertEqual(patch.TYPE_CLASSES, frozenset(patch.TYPE_ROOT+name for name in (
             'TypeInferer.class', 'TypeInferer$1.class', 'TypeInferer$2.class',
             'TypeInferer$InferenceKind.class', 'TypeInferer$InferenceType.class')))

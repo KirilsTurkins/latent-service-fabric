@@ -1,0 +1,11 @@
+{"cases":["KernelBankReclamation.test_actual_uart_reader_requires_partial_charge_retention_and_exact_reuse","KernelBankReclamation.test_complete_member_hashes_refuse_missing_added_and_changed_products_before_decode","KernelBankReclamation.test_normal_cargo_inventory_cannot_substitute_old_target_or_relaxed_profile","KernelBankReclamation.test_successful_origin_cannot_be_replaced_by_failed_expired_or_other_image"],"guards":{"KernelBankReclamation.test_actual_uart_reader_requires_partial_charge_retention_and_exact_reuse":
+  "b883ba13636b2f8d229fe93bbaaddeba266ea9293e55399c8e8003f50fba3641"
+,"KernelBankReclamation.test_complete_member_hashes_refuse_missing_added_and_changed_products_before_decode":
+  "b883ba13636b2f8d229fe93bbaaddeba266ea9293e55399c8e8003f50fba3641"
+,"KernelBankReclamation.test_normal_cargo_inventory_cannot_substitute_old_target_or_relaxed_profile":
+  "b883ba13636b2f8d229fe93bbaaddeba266ea9293e55399c8e8003f50fba3641"
+,"KernelBankReclamation.test_successful_origin_cannot_be_replaced_by_failed_expired_or_other_image":
+  "b883ba13636b2f8d229fe93bbaaddeba266ea9293e55399c8e8003f50fba3641"
+},"kind":"python","module":"tools/tests/test_kernel_bank_reclamation_vm.py","reviewReason":"Four finite provenance, member-integrity, raw-observation and normal-Cargo refusal controls; no existing cases replaced.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
+  "b883ba13636b2f8d229fe93bbaaddeba266ea9293e55399c8e8003f50fba3641"
+:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ff6ac964977773df4c78b75ccbb227b6bc21eb3a339259d06facd77ff18923a5","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

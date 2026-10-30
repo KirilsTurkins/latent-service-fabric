@@ -33,7 +33,7 @@ class SecurityWorkflowTests(unittest.TestCase):
         self.assertEqual(self.rustsec["on"]["workflow_call"]["inputs"]["controls-ref"]["required"], "true")
         self.assertEqual(self.baseline["jobs"]["rustsec"]["with"]["controls-ref"], "${{ github.sha }}")
         checkouts = {step["with"]["path"]: step["with"] for step in self.rustsec["jobs"]["audit"]["steps"]
-                     if step.get("uses", "").startswith("actions/checkout@")}
+                     if step.get("uses", "").startswith("KirilsTurkins/lsf-checkout@")}
         self.assertEqual(checkouts["controls"]["ref"], "${{ inputs.controls-ref }}")
         self.assertEqual(checkouts["source"]["ref"], "${{ inputs.source-ref }}")
         with patch("tools.security_scope.changed_paths", side_effect=AssertionError("must not need a changed lock")):
@@ -72,10 +72,10 @@ class SecurityWorkflowTests(unittest.TestCase):
                     self.assertLessEqual(int(job["timeout-minutes"]), 8)
                 for step in job.get("steps", []):
                     self.assertNotIn("continue-on-error", step)
-                    if step.get("uses", "").startswith("actions/checkout@"):
+                    if step.get("uses", "").startswith("KirilsTurkins/lsf-checkout@"):
                         self.assertEqual(step["with"]["persist-credentials"], "false")
                     serialized = json.dumps(step)
-                    for forbidden in ("pull_request_target", "secrets.", "upload-artifact", "rust-cache", "actions/cache",
+                    for forbidden in ("pull_request_target", "secrets.", "upload-artifact", "rust-cache", "actions/cache", "KirilsTurkins/lsf-cache",
                                       "cargo build", "cargo test", "cargo install", "npm install", "npm ci", "python3 source/"):
                         self.assertNotIn(forbidden, serialized)
 

@@ -1,7 +1,7 @@
 //! Fixed Store-local resources; no number can create or extend authority.
 use latent_capabilities::broker::{
     http::HttpError,
-    io::IoOutputChunk,
+    io::{IoOutputChunk, IoOutputCopy},
     streaming_http::{HttpBody, HttpUpload, StreamingHttpError as Error},
     CapabilitySession, SessionResourceTableReservation,
 };
@@ -191,7 +191,7 @@ impl Table {
         entry.state.store(0, Ordering::Release);
         Ok(())
     }
-    pub(super) fn chunk_bytes(&mut self, rep: u32) -> Result<Vec<u8>, Error> {
+    pub(super) fn chunk_bytes(&mut self, rep: u32) -> Result<IoOutputCopy, Error> {
         let Some(Value::Chunk { value, delivered }) = &mut self.entry(rep, Kind::Chunk)?.value
         else {
             return Err(Error::InvalidState);
@@ -199,8 +199,9 @@ impl Table {
         if *delivered {
             return Err(Error::InvalidState);
         }
+        let bytes = value.copy_bytes()?;
         *delivered = true;
-        Ok(value.bytes().to_vec())
+        Ok(bytes)
     }
     pub(super) fn trailers(&mut self, rep: u32) -> Result<Vec<super::wit::Header>, Error> {
         let Some(Value::Body {
@@ -228,6 +229,7 @@ impl Table {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use latent_capabilities::broker::io::IoFuture;
     use std::sync::{atomic::AtomicUsize, Arc};
     struct Upload(Arc<AtomicUsize>);
     impl Drop for Upload {
@@ -236,13 +238,11 @@ mod tests {
         }
     }
     impl HttpUpload for Upload {
-        fn write(&mut self, _: Vec<u8>) -> latent_core::BoxFuture<'_, Result<(), Error>> {
-            Box::pin(async { Err(Error::InvalidState) })
+        fn write(&mut self, _: Vec<u8>) -> IoFuture<'_, Result<(), Error>> {
+            IoFuture::failed(Error::InvalidState)
         }
-        fn finish(
-            self: Box<Self>,
-        ) -> latent_core::BoxFuture<'static, Result<Box<dyn HttpBody>, Error>> {
-            Box::pin(async { Err(Error::InvalidState) })
+        fn finish(self: Box<Self>) -> IoFuture<'static, Result<Box<dyn HttpBody>, Error>> {
+            IoFuture::failed(Error::InvalidState)
         }
     }
     fn table() -> Table {

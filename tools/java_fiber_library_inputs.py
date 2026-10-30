@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import math
+import time
 
 from tools.application_dependencies import prepare, verify_inputs
 from tools.build_snapshot import digest
@@ -20,35 +22,47 @@ LIBRARIES = {
 }
 
 
-def capture(output: Path, *, gradle: str) -> tuple[tuple[Path, ...], tuple[Path, ...], dict]:
+def capture(output: Path, *, gradle: str, _deadline=None) -> tuple[tuple[Path, ...], tuple[Path, ...], dict]:
     """Resolve explicitly, review exact bytes, then materialize the sealed closure.
 
     The source fixture exercises library workers at execution time. No library
     class is initialized here; JDK reference execution is a later explicit step.
     """
+    def check_time():
+        if _deadline is not None and (type(_deadline) not in (int, float)
+                or not math.isfinite(_deadline) or _deadline <= time.monotonic() + 5):
+            raise ValueError('Java-worker-capture-parent-deadline')
+    check_time()
     root = fresh(output)
     application = create(root / 'application', 'greeting')
     sdk = read_file(application / 'sdk-lock.json')
     for coordinate in LIBRARIES:
         edit(application, 'add', coordinate=coordinate)
     candidate = root / 'candidate.json'
-    lock = resolve(application, candidate, gradle=gradle)
+    options = {'gradle': gradle}
+    if _deadline is not None:
+        options['_deadline'] = _deadline
+    lock = resolve(application, candidate, **options)
+    check_time()
     application_artifacts = [row for row in lock['artifacts'] if row['role'] == 'application'
                              and row['metadata'].get('assetType') != 'maven-resolution-metadata']
     observed = {row['id']: row['original']['digest'] for row in application_artifacts}
     if observed != LIBRARIES:
         raise ValueError('Java worker libraries require the exact reviewed original Maven archives')
     review(application, candidate, digest(read_file(candidate, 8 * 1024 * 1024)))
+    check_time()
     if verify_inputs(application, 'java') is None:
         raise ValueError('Java worker libraries require normal accepted dependency inputs')
     work = fresh(root / 'offline-inputs')
     receipts = fresh(root / 'receipts')
     closure = prepare(application, work, receipts, 'java')
+    check_time()
     jars, selected = classpath(closure, root / 'selected-application-jars')
     originals = tuple(work / row['mount'] for row in application_artifacts)
     if read_file(application / 'sdk-lock.json') != sdk:
         raise ValueError('Java worker library capture changed the SDK lock')
     closure.check_unchanged()
+    check_time()
     write_json(receipts / 'java-classpath.json', selected)
     report = {
         'status': 'captured-not-executed', 'sourceModified': False, 'externalExecutorInjected': False,

@@ -10,7 +10,8 @@ use latent_core::{
 };
 use latent_executor::ExecutionCancellation;
 use std::future::Future;
-use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 use std::time::Instant;
 use wasmtime::component::{Component, Instance, Linker};
@@ -142,6 +143,14 @@ fn engine() -> Engine {
     Engine::new(&config).unwrap()
 }
 fn store(engine: &Engine, original: &ActivationBudget, empty: bool) -> Store<HostState> {
+    store_with_observations(engine, original, empty, None)
+}
+fn store_with_observations(
+    engine: &Engine,
+    original: &ActivationBudget,
+    empty: bool,
+    observed: Option<&Arc<super::native_store_tests::Observations>>,
+) -> Store<HostState> {
     let state = state(original, empty);
     let mut store = if original.profile() == BudgetProfile::Phase1 {
         Store::new(engine, state)
@@ -149,7 +158,10 @@ fn store(engine: &Engine, original: &ActivationBudget, empty: bool) -> Store<Hos
         Store::try_new_with_memory_binding(
             engine,
             state,
-            crate::native_tables::binding(original).unwrap(),
+            match observed {
+                Some(observed) => super::native_store_tests::binding(original, observed).unwrap(),
+                None => crate::native_tables::binding(original).unwrap(),
+            },
         )
         .unwrap()
     };
@@ -289,7 +301,8 @@ struct Padding {
 async fn actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_grant() {
     let engine = engine();
     let original = ledger(BudgetProfile::Phase3);
-    let mut first = store(&engine, &original, false);
+    let observed = Arc::new(super::native_store_tests::Observations::default());
+    let mut first = store_with_observations(&engine, &original, false, Some(&observed));
     let instance = instantiate(&engine, &mut first).await;
     let function = instance
         .get_typed_func::<(), (String,)>(&mut first, "activation-id")
@@ -298,31 +311,75 @@ async fn actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_
         function.call_async(&mut first, ()).await.unwrap().0,
         "context-owned"
     );
-    // Warm the identical call path, then pad physically allocated backing. Fixed
-    // linear pages are the actual limiter observation, not a guessed prefix sum.
+    // Warm ONLY real shared headers/resource table capacity under the SAME grant.
+    // WARM source: channel, RawLower, RawLift, GuestTask, WaitableSet,
+    // GuestThread, GuestCall queue, StartImplicit, HostTask. Legacy block_on creates no
+    // HostFuture/outer scheduler Task. This second call binds exact layouts.
+    let baseline = original.host_memory_bytes();
+    let before = super::native_store_tests::allocation_rows(&observed).len();
+    assert_eq!(
+        function.call_async(&mut first, ()).await.unwrap().0,
+        "context-owned"
+    );
+    let warmed = super::native_store_tests::allocation_rows(&observed);
+    let call = &warmed[before..];
+    assert_eq!(call.len(), 9);
+    assert!(call
+        .iter()
+        .all(|r| r.bytes > 0 && r.admitted && r.confirmed && r.released));
+    assert_eq!(original.host_memory_bytes(), baseline);
+    let expected: Vec<_> = call.iter().map(|r| r.bytes).collect();
+    let host_task_bytes = call[8].bytes;
+    let next = warmed.len();
     let reply = super::policy::reply_string_charge("context-owned").unwrap() as u64
         + crate::native_tables::OWNER_ESCROW as u64;
     let linear = first.data().limiter.peak_memory_bytes();
-    let consumed = original.host_memory_bytes() + linear;
-    let bytes = MIB - consumed - reply + 1 - crate::native_tables::OWNER_ESCROW as u64;
-    let mut owner = crate::native_tables::reserve(&original, bytes as usize)
-        .unwrap()
-        .unwrap();
-    let allocation = vec![0u8; bytes as usize];
-    assert_eq!(allocation.capacity(), bytes as usize);
-    owner.allocated();
-    let padding = Padding {
-        _bytes: allocation,
-        _owner: owner,
-    };
-    let consumed = original.host_memory_bytes() + linear;
-    assert_eq!(consumed + reply, MIB + 1);
+    let padding = Arc::new(Mutex::new(None::<Padding>));
+    let consumed = Arc::new(AtomicU64::new(0));
+    let kept = padding.clone();
+    let kept_consumed = consumed.clone();
+    let invocation = original.clone();
+    // Actual HostTask is the LAST Wasmtime allocation before owned_reply.
+    // RawLower has physically retired before core guest entry (make_call).
+    // Including this real HostTask request avoids denying an earlier owner.
+    observed.before_request(next + 9, move |bytes| {
+        assert_eq!(bytes, host_task_bytes);
+        let task = bytes as u64 + crate::native_tables::OWNER_ESCROW as u64;
+        let bytes = MIB - invocation.host_memory_bytes() - linear - task - reply + 1
+            - crate::native_tables::OWNER_ESCROW as u64;
+        let mut owner = crate::native_tables::reserve(&invocation, bytes as usize)
+            .unwrap()
+            .unwrap();
+        let allocation = vec![0u8; bytes as usize];
+        assert_eq!(allocation.capacity(), bytes as usize);
+        owner.allocated();
+        *kept.lock().unwrap() = Some(Padding {
+            _bytes: allocation,
+            _owner: owner,
+        });
+        kept_consumed.store(
+            invocation.host_memory_bytes() + linear + task,
+            Ordering::SeqCst,
+        );
+    });
     let error = function.call_async(&mut first, ()).await.unwrap_err();
-    denial(&error, MIB, consumed, reply);
+    let actual_consumed = consumed.load(Ordering::SeqCst);
+    assert_eq!(actual_consumed + reply, MIB + 1);
+    denial(&error, MIB, actual_consumed, reply);
+    assert_eq!(
+        &super::native_store_tests::requests(&observed)[next..],
+        expected
+    );
+    let actual = super::native_store_tests::allocation_rows(&observed);
+    assert!(actual[next..].iter().all(|r| r.admitted && r.confirmed));
     drop(error);
-    drop(padding);
+    drop(padding.lock().unwrap().take());
     drop(first);
+    assert!(super::native_store_tests::allocation_rows(&observed)
+        .iter()
+        .all(|r| r.released));
     assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
     let mut fresh = store(&engine, &original, false);
     let fresh_instance = instantiate(&engine, &mut fresh).await;
     assert_eq!(id(fresh_instance, &mut fresh).await, "context-owned");

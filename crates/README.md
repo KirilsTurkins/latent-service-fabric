@@ -1,6 +1,6 @@
 # Workspace package index
 
-The root [Cargo workspace](../Cargo.toml) contains **53 Rust packages**: 42 libraries under `crates/`, three applications, two Rust SDK packages and six tool packages. Every member has a package README linked below. This index covers workspace members; independently built application examples and language-runtime projects retain their own guides.
+The root [Cargo workspace](../Cargo.toml) contains **55 Rust packages**: 43 libraries under `crates/`, three applications, three Rust SDK/compiler-support packages and six tool packages. Every member has a package README linked below. This index covers workspace members; independently built application examples and captured upstream sources retain their own guides and provenance.
 
 Use [the package architecture walkthrough](../docs/development/workspace-packages.md) for end-to-end flows, ownership boundaries and test selection. Package READMEs map concrete modules, implementation status, lifetimes, dependency/feature gates, source tests and related specifications. The manifest and implementation remain the authority for exact signatures and limits.
 
@@ -16,7 +16,7 @@ An interface trait is not an installed service. In particular, workflows, remote
 | [`latent-manifest`](latent-manifest/README.md) | Typed capsule, deployment, binding and trigger documents, bounded JSON codecs and semantic validation. |
 | [`latent-contracts`](latent-contracts/README.md) | Structural contract descriptors and bounded compatibility/binding analysis. |
 | [`latent-component-bindings`](latent-component-bindings/README.md) | Single build-generated Rust binding owner for LSF's authoritative WIT worlds. |
-| [`latent-component-threading`](latent-component-threading/README.md) | Bounded post-link transforms and complete component-routing authentication for the explicit Rust continuation source profile; engine thread creation remains disabled. |
+| [`latent-component-threading`](latent-component-threading/README.md) | Bounded post-link transforms and routing authentication for explicitly selected Rust and C continuation profiles; receipts do not authorize runtime work. |
 | [`latent-rpc`](latent-rpc/README.md) | Build-generated Protobuf messages, Tonic clients/servers and descriptor-set ownership, plus checked platform-error and transaction conversions. |
 
 ## Packages, trust and publication
@@ -52,6 +52,7 @@ An interface trait is not an installed service. In particular, workflows, remote
 | [`latent-vault`](latent-vault/README.md) | Linux x86-64 Vault KV-v2 secret provider using explicit references and bounded shared plaintext ownership. |
 | [`latent-http`](latent-http/README.md) | Shared configured buffered/streaming HTTP provider plus a restricted transport for trusted protocol adapters. |
 | [`latent-streams`](latent-streams/README.md) | Bounded outbound TCP/TLS stream implementation for explicit qualification. |
+| [`latent-stream-factory-native`](latent-stream-factory-native/README.md) | Fixed Linux ioctl/descriptor boundary for the selected trusted stream-factory image; admission and physical retirement remain caller-owned. |
 | [`latent-nats`](latent-nats/README.md) | Shared bounded TLS JetStream publication, explicit pull triggers and a qualified deferred event adapter. |
 | [`latent-blobs`](latent-blobs/README.md) | Immutable large-value storage with staged writers, ranged readers and explicit transfer ownership. |
 | [`latent-ingress`](latent-ingress/README.md) | Protocol adaptation and concrete bounded buffered HTTP application values. |
@@ -104,6 +105,7 @@ An interface trait is not an installed service. In particular, workflows, remote
 | --- | --- |
 | [`latent-sdk`](../sdk/rust/README.md) | External Rust client SDK for standalone invocation, management and additive transaction/dispatcher operations. |
 | [`latent-guest`](../sdk/rust-guest/README.md) | Typed Rust capability and ownership helpers inside a WebAssembly component. |
+| [`latent-standard-stdio`](../sdk/rust-standard-stdio/README.md) | Compiler-owned wasm32 bridge from the selected Rust stdio PAL to typed bounded LOG calls. |
 
 ## Build, test and measurement tools
 
@@ -119,13 +121,18 @@ An interface trait is not an installed service. In particular, workflows, remote
 ## Isolated package projects
 
 Two additional tracked Rust packages declare independent workspaces and locks.
-They are outside the root's 52-member build/test selection; their READMEs explain
+They are outside the root's 55-member build/test selection; their READMEs explain
 the consuming qualification or source investigation.
 
 | Package | Responsibility |
 | --- | --- |
 | [latent-native-vm-fixture](../tools/native-fixture/README.md) | Explicit synthetic public test trust/package generator for the authenticated native VM runner. |
-| [latent-rust-std-stack-source-transform](../sdk/rust-standard-runtime/stack-transform/README.md) | Source-only post-link shadow-stack/owned-entry experiment, not selected by the maintained guest builder. |
+| [latent-rust-std-stack-source-transform](../sdk/rust-standard-runtime/stack-transform/README.md) | Independently locked facade over the shared source transform; selected runtime integration has its own exact profile and qualification. |
+
+Vendored Wasmtime, bytes and rustls, and the captured wasip2 sources used by the
+Rust HTTP adapter, are dependency inputs rather than additional LSF workspace
+members. Their original license/provenance records remain separate from runtime
+support claims; see [NOTICE](../NOTICE).
 
 ## Working on a package
 

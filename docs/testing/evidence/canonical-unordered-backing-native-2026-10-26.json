@@ -1,0 +1,612 @@
+{
+  "schemaVersion": "lsf.canonical-unordered-backing.public-evidence.v1",
+  "status": "passed-focused-native-controls",
+  "qualifiedSourceRevision": "a32624956270c6e18f3f108b831574e22368704b",
+  "qualifiedSourceTree": "bd007fb312e29a780363cecc29204c89a54705f8",
+  "developmentBase": "3c99a920efbd19c5b37cd0754f94daf7bef69784",
+  "pullRequest": 1495,
+  "run": {
+    "id": 40294127180,
+    "jobId": 121475927203,
+    "attempt": 1,
+    "event": "push",
+    "branch": "feat/sdk-736-futures-unordered-20261026",
+    "conclusion": "success",
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/40294127180"
+  },
+  "artifact": {
+    "id": 12638196966,
+    "name": "canonical-unordered-backing-a32624956270c6e18f3f108b831574e22368704b",
+    "bytes": 1430451,
+    "sha256": "465b7530ca5ff0c5c188830f61f2c579bd55434d750b3bc8402aac6444ccf4c4",
+    "memberCount": 67,
+    "expandedBytes": 5200177,
+    "allMembersCRCAndSHA256Verified": true,
+    "records": {
+      "receipt.json": {
+        "bytes": 3139120,
+        "sha256": "ccd099da4624fbde064bd7ba3e3ef417527ab483b6f1bd838600fed1abbf4aa1"
+      },
+      "source-inputs.json": {
+        "bytes": 1466615,
+        "sha256": "091582b408bea39ae7034377395f4f2ac95817a63e0132bb1fc78dbeb131b637"
+      },
+      "commands.json": {
+        "bytes": 2741,
+        "sha256": "ab7040b6bfb095f7e4f247d982b7d2c53dce8e2ee466712771e3bdc5baeedbc5"
+      }
+    }
+  },
+  "source": {
+    "rows": 8932,
+    "gitArchiveRows": 8931,
+    "beforeAndAfterEqual": true,
+    "allRowsMatchedIndependentGitReview": true,
+    "rawGitMatches": 8931,
+    "maintainedWasmtimeFiles": 273,
+    "nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-memory-v15",
+    "recordSha256": "9a2536a7d95696fe63115cc96ed2b905f99a9b3b0746fa337c58cc24594204a3",
+    "patchSha256": "101bfa91c824ab8ee3a2c1ca54273e0f49e059dcc126a0d9e1f6eec0fe8172eb",
+    "declaredCheckoutTransforms": [
+      {
+        "path": "tools/intellij.cmd",
+        "transform": "Git LF to declared checkout CRLF"
+      }
+    ],
+    "compiledSourceArchiveBytes": 85975040,
+    "sourceArchiveCapBytes": 85983232
+  },
+  "execution": {
+    "newPrivateControls": 6,
+    "canonicalCases": 8,
+    "canonicalRefusalScenarios": 9,
+    "affectedOrdinaryCases": 6,
+    "totalControls": 20,
+    "passed": 20,
+    "failed": 0,
+    "ignored": 0,
+    "zeroExitCommands": 32,
+    "rawCommandChannels": 64,
+    "listedButNotExecuted": [
+      "host::join_state_tests::canonical_upstream_queue_nodes_refuse_before_guest_and_same_budget_fresh_store"
+    ],
+    "outcomes": [
+      {
+        "case": "runtime::component::concurrent::host_futures::tests::paid_header_exact_layout_refusal_confirmation_and_last_weak_refund",
+        "stdoutMember": "commands/logs/03-private-case-0.stdout.txt",
+        "stdout": {
+          "bytes": 854,
+          "sha256": "ff1112a8445e46c59026bc794caf983a674f1b17060428ebe38762597c2c21ae"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 200
+      },
+      {
+        "case": "runtime::component::concurrent::host_futures::tests::paid_header_raw_token_and_destructor_unwind_retain_same_charge",
+        "stdoutMember": "commands/logs/04-private-case-1.stdout.txt",
+        "stdout": {
+          "bytes": 845,
+          "sha256": "fff318e87ff1d10df10687f12966a0f50c64ad420f0150fd6a12c2309892b841"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 200
+      },
+      {
+        "case": "runtime::component::concurrent::host_futures::tests::paid_unordered_escaped_waker_keeps_task_and_last_weak_queue_backing",
+        "stdoutMember": "commands/logs/05-private-case-2.stdout.txt",
+        "stdout": {
+          "bytes": 396,
+          "sha256": "c0d9a9401acd6d250a767c9f4fa5de364b4a12f05fc96b86d00feca0e8bbcc10"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 200
+      },
+      {
+        "case": "runtime::component::concurrent::host_futures::tests::paid_unordered_prepared_unused_and_wake_publish_make_no_new_admission",
+        "stdoutMember": "commands/logs/06-private-case-3.stdout.txt",
+        "stdout": {
+          "bytes": 400,
+          "sha256": "f4076e61f3a94e75d72301d8cd2aaaa95bdbbb5889afbec8f97265d0ef35b8df"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 200
+      },
+      {
+        "case": "runtime::component::concurrent::host_futures::tests::paid_unordered_lazy_each_initialization_refusal_and_none_keep_original",
+        "stdoutMember": "commands/logs/07-private-case-4.stdout.txt",
+        "stdout": {
+          "bytes": 721,
+          "sha256": "a74bc37edce0224e30b557fd1bc3edddbf8d46f5b787cc55b1b8bb38c853a7ab"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 200
+      },
+      {
+        "case": "runtime::component::concurrent::host_futures::tests::paid_unordered_future_unwind_retains_original_queue_and_task_charges",
+        "stdoutMember": "commands/logs/08-private-case-5.stdout.txt",
+        "stdout": {
+          "bytes": 871,
+          "sha256": "0a672ab328eef7da543700fdbbf7bec5e825a84786fcb90937374eff1d458b6e"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 200
+      },
+      {
+        "case": "host::join_state_tests::canonical_join_state_first_poll_refusal_and_same_budget_fresh_store",
+        "stdoutMember": "commands/logs/12-canonical-case-0.stdout.txt",
+        "stdout": {
+          "bytes": 776,
+          "sha256": "38d59cb3da3fce3ad25a0c1119e188cec52dcecfe72c0a8ccc9cf3fa484a3458"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485,
+        "admissions": [
+          {
+            "scope": "host",
+            "localOwner": 2,
+            "globalRequest": 6,
+            "prefixQueueNodes": 2,
+            "prefixSharedHeaders": 2,
+            "observedBytes": [
+              120,
+              120,
+              120,
+              80,
+              56,
+              80
+            ]
+          }
+        ]
+      },
+      {
+        "case": "host::join_state_tests::canonical_call_future_first_poll_refusal_and_same_budget_fresh_store",
+        "stdoutMember": "commands/logs/13-canonical-case-1.stdout.txt",
+        "stdout": {
+          "bytes": 783,
+          "sha256": "fc54b268d3152e099dbb439d0823591c07f08129b7123ae0274e58b1f95d681b"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485,
+        "admissions": [
+          {
+            "scope": "host",
+            "localOwner": 3,
+            "globalRequest": 7,
+            "prefixQueueNodes": 2,
+            "prefixSharedHeaders": 2,
+            "observedBytes": [
+              120,
+              120,
+              120,
+              80,
+              56,
+              80,
+              48
+            ]
+          }
+        ]
+      },
+      {
+        "case": "host::join_state_tests::canonical_pending_future_first_poll_refusal_and_same_budget_fresh_store",
+        "stdoutMember": "commands/logs/14-canonical-case-2.stdout.txt",
+        "stdout": {
+          "bytes": 797,
+          "sha256": "70cdfd5bc2ff05cf104c64dd1f6bcf0e29c8d5b17f8612bc504331b2b7c6bb72"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485,
+        "admissions": [
+          {
+            "scope": "host",
+            "localOwner": 4,
+            "globalRequest": 8,
+            "prefixQueueNodes": 2,
+            "prefixSharedHeaders": 2,
+            "observedBytes": [
+              120,
+              120,
+              120,
+              80,
+              56,
+              80,
+              48,
+              176
+            ]
+          }
+        ]
+      },
+      {
+        "case": "host::join_state_tests::canonical_worker_function_first_poll_refusal_and_same_budget_fresh_store",
+        "stdoutMember": "commands/logs/15-canonical-case-3.stdout.txt",
+        "stdout": {
+          "bytes": 804,
+          "sha256": "5904d9bc1af5610819acc2d223a21a3f0daceb9f83345c255c3c540b931e3343"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485,
+        "admissions": [
+          {
+            "scope": "host",
+            "localOwner": 5,
+            "globalRequest": 9,
+            "prefixQueueNodes": 2,
+            "prefixSharedHeaders": 2,
+            "observedBytes": [
+              120,
+              120,
+              120,
+              80,
+              56,
+              80,
+              48,
+              176,
+              72
+            ]
+          }
+        ]
+      },
+      {
+        "case": "host::join_state_tests::canonical_completion_queue_node_refusal_and_same_budget_fresh_store",
+        "stdoutMember": "commands/logs/16-canonical-case-4.stdout.txt",
+        "stdout": {
+          "bytes": 796,
+          "sha256": "2b3da62539e372152045c11fb980572e8aebaafafde4aa7ef97570dbeed1bef2"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485,
+        "admissions": [
+          {
+            "scope": "host",
+            "localOwner": 6,
+            "globalRequest": 10,
+            "prefixQueueNodes": 2,
+            "prefixSharedHeaders": 2,
+            "observedBytes": [
+              120,
+              120,
+              120,
+              80,
+              56,
+              80,
+              48,
+              176,
+              72,
+              120
+            ]
+          }
+        ]
+      },
+      {
+        "case": "host::join_state_tests::canonical_push_future_queue_node_refusal_and_same_budget_fresh_store",
+        "stdoutMember": "commands/logs/17-canonical-case-5.stdout.txt",
+        "stdout": {
+          "bytes": 804,
+          "sha256": "05e3013de7e00fe36f310eecd0d2f2b41b77582e1b9e7dafd03eb02b442d0094"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485,
+        "admissions": [
+          {
+            "scope": "host",
+            "localOwner": 7,
+            "globalRequest": 11,
+            "prefixQueueNodes": 2,
+            "prefixSharedHeaders": 2,
+            "observedBytes": [
+              120,
+              120,
+              120,
+              80,
+              56,
+              80,
+              48,
+              176,
+              72,
+              120,
+              120
+            ]
+          }
+        ]
+      },
+      {
+        "case": "host::join_state_tests::canonical_unordered_initialization_refusal_and_same_budget_fresh_store",
+        "stdoutMember": "commands/logs/18-canonical-case-6.stdout.txt",
+        "stdout": {
+          "bytes": 1220,
+          "sha256": "ed7cf5432a763f8b317433b7827fc5e6a58666ba8bc44bd1fa0e9ee883140b88"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485,
+        "admissions": [
+          {
+            "scope": "initialization",
+            "localOwner": 1,
+            "globalRequest": 3,
+            "prefixQueueNodes": 2,
+            "prefixSharedHeaders": 0,
+            "observedBytes": [
+              120,
+              120,
+              120
+            ]
+          },
+          {
+            "scope": "initialization",
+            "localOwner": 2,
+            "globalRequest": 4,
+            "prefixQueueNodes": 2,
+            "prefixSharedHeaders": 0,
+            "observedBytes": [
+              120,
+              120,
+              120,
+              80
+            ]
+          }
+        ]
+      },
+      {
+        "case": "host::join_state_tests::canonical_unordered_task_first_poll_refusal_and_same_budget_fresh_store",
+        "stdoutMember": "commands/logs/19-canonical-case-7.stdout.txt",
+        "stdout": {
+          "bytes": 818,
+          "sha256": "5364c1a1421bf00a56ed5373275e88068dbb2db463ae18f3c520601a5ec684fc"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485,
+        "admissions": [
+          {
+            "scope": "host",
+            "localOwner": 8,
+            "globalRequest": 12,
+            "prefixQueueNodes": 2,
+            "prefixSharedHeaders": 2,
+            "observedBytes": [
+              120,
+              120,
+              120,
+              80,
+              56,
+              80,
+              48,
+              176,
+              72,
+              120,
+              120,
+              120
+            ]
+          }
+        ]
+      },
+      {
+        "case": "host::native_host_future_tests::actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while_pending",
+        "stdoutMember": "commands/logs/21-main-case-0.stdout.txt",
+        "stdout": {
+          "bytes": 378,
+          "sha256": "e02ee0dfe425082876de5ca5ccdcd8fa373d686bb5dc12293283c05431c34199"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485
+      },
+      {
+        "case": "host::native_host_future_tests::actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse",
+        "stdoutMember": "commands/logs/23-main-case-1.stdout.txt",
+        "stdout": {
+          "bytes": 368,
+          "sha256": "ecdde91c1e847899390aa7640ecc8c3514a5be945aa214eee444513eb01d73a7"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485
+      },
+      {
+        "case": "host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires",
+        "stdoutMember": "commands/logs/25-main-case-2.stdout.txt",
+        "stdout": {
+          "bytes": 352,
+          "sha256": "b402d6cde8da0f7c9375111af041a5283fe0ff1aa7d346368b2da6a692a10a04"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485
+      },
+      {
+        "case": "host::native_context_reply_tests::actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_grant",
+        "stdoutMember": "commands/logs/27-main-case-3.stdout.txt",
+        "stdout": {
+          "bytes": 376,
+          "sha256": "4b8b7295cb9768c8beeb5463d41e7ccf96acb2028747aa6c80484e018e82a5e6"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485
+      },
+      {
+        "case": "host::native_host_future_tests::actual_host_future_cancellation_cannot_credit_another_live_store",
+        "stdoutMember": "commands/logs/29-main-case-4.stdout.txt",
+        "stdout": {
+          "bytes": 766,
+          "sha256": "5dae1cfbc13874a5ad40e4ffb6ae0f3742088b63793374132e60d45ffd5febd6"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485
+      },
+      {
+        "case": "host::native_store_tests::actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_live_store",
+        "stdoutMember": "commands/logs/31-main-case-5.stdout.txt",
+        "stdout": {
+          "bytes": 575,
+          "sha256": "2f8a9c5e068094f113d09fc1db2699399cf1a6ec3689c9d5824a0103e868be4e"
+        },
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filteredOut": 485
+      }
+    ],
+    "cancellationObservations": [
+      {
+        "store": "a",
+        "taskBytes": 120,
+        "readyQueueBytes": 80,
+        "originalOwnerEscrowBytes": 256,
+        "retainedAfterStoreDropBytes": 712,
+        "lateWakeAdditionalAdmissions": 0,
+        "foreignStoreBytesAndReservationsUnchanged": true,
+        "finalOriginalChargesZero": true
+      },
+      {
+        "store": "b",
+        "taskBytes": 120,
+        "readyQueueBytes": 80,
+        "originalOwnerEscrowBytes": 256,
+        "retainedAfterStoreDropBytes": 712,
+        "lateWakeAdditionalAdmissions": 0,
+        "foreignStoreBytesAndReservationsUnchanged": true,
+        "finalOriginalChargesZero": true
+      },
+      {
+        "case": "cancelled-lift",
+        "warmSharedHeaders": 2,
+        "warmSharedChargeBytes": 712,
+        "guestFuelUnchanged": true,
+        "originalPostCancellationAndForeignStoreAssertionsPreserved": true
+      }
+    ],
+    "commandLedgerScope": "Stage, exit and elapsed time with raw stdout/stderr. Argv is bound through the exact source owner, not an independent argv ledger."
+  },
+  "compiledLayouts": {
+    "queueEntryBytes": 120,
+    "queueEntryAlignment": 8,
+    "joinStateBytes": 80,
+    "taskHeaderBytes": 120,
+    "taskHeaderAlignment": 8,
+    "readyQueueHeaderBytes": 80,
+    "readyQueueHeaderAlignment": 8
+  },
+  "limits": {
+    "jobMinutes": 45,
+    "cargoBuildJobs": 2,
+    "overallSeconds": 2400,
+    "buildCommandSeconds": 900,
+    "caseProcessSeconds": 60,
+    "listProcessSeconds": 30,
+    "cleanupReserveSeconds": 5,
+    "canonicalActivation": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 67108864,
+      "wallTimeMilliseconds": 120000
+    },
+    "affectedOrdinaryHostMemoryGrantBytes": 1048576,
+    "affectedOrdinaryWallMilliseconds": 120000,
+    "affectedOrdinaryGrantedCpuFuel": 1000000000,
+    "cancelledLiftInstalledGuestFuel": 1000000
+  },
+  "ownershipScope": [
+    "Private sized Header Layout is reserved before allocation; strong/weak tokens keep the same charge until last-weak deallocation returns.",
+    "Raw weak paths do not reference destroyed payloads; destructor unwind intentionally retains the same original header/charge.",
+    "Escaped wakers retain Task and weak ReadyToRunQueue backing through real physical deallocation, without fallible wake allocation.",
+    "Lazy stub/ready initialization and prepared Task headers precede effects at all six producers; None retains original FuturesUnordered.",
+    "Callback host-local owners2..7 are globals6..11 after two queue entries and two lazy headers; new Task is host-local8/global12.",
+    "Initialization refusals at globals3/4 preserve guest fuel and fresh42; the original upstream1/2 case was only listed, not replayed.",
+    "Four affected callbackless/owned-reply cases verify original Box global4, shared-header lifetime and one repeated warmed GuestCall queue.",
+    "Two additional cancellation cases retain escaped Task/ready-weak charges until actual late wake with foreign Store bytes/reservations unchanged, and warm real shared headers without guest fuel before preserving every original lift cancellation assertion."
+  ],
+  "historical18Pass": {
+    "source": "4eca00b9a061503f1312bb41d8174aa544d5da2f",
+    "tree": "c10403a922b257e99a938cb8445c6773e5303c17",
+    "run": 40289570243,
+    "jobId": 121461178503,
+    "artifactId": 12635567462,
+    "archive": {
+      "bytes": 1428016,
+      "sha256": "a2350524b76be5a6707dafa0d390c42c3b747d4b0dd5d2fbf03af8e49d042372"
+    },
+    "passed": 18,
+    "failed": 0,
+    "ignored": 0,
+    "commands": 28,
+    "scope": "Six new private, eight canonical and four affected ordinary cases at their original source; not a claim that the broader suite passed."
+  },
+  "broaderCiAtHistorical18Source": {
+    "source": "4eca00b9a061503f1312bb41d8174aa544d5da2f",
+    "run": 40289574137,
+    "jobId": 121463953636,
+    "passed": 481,
+    "failed": 2,
+    "ignored": 11,
+    "failedCaseIds": [
+      "host::native_host_future_tests::actual_host_future_cancellation_cannot_credit_another_live_store",
+      "host::native_store_tests::actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_live_store"
+    ],
+    "cause": "Two existing cancellation oracles omitted correctly retained escaped-waker/shared-header charges.",
+    "correction": "Test-only real late-wake cleanup and real empty-driver warmup; production source unchanged from the historical eighteen-pass source. Both cases execute in the current twenty-control result."
+  },
+  "priorFailedAttempt": {
+    "source": "ce233c9840eb70511bce2ce38864332e3e8f664d",
+    "run": 40282915067,
+    "jobId": 121439956463,
+    "artifactId": 12634645256,
+    "artifact": {
+      "bytes": 933470,
+      "sha256": "75c48228e84bf1425193aaabf2eab73e73674cda0fbf63fc3d46e4e28e674400"
+    },
+    "members": 5,
+    "controlsExecuted": 0,
+    "buildExitCode": 101,
+    "cargoErrorCodes": [
+      "E0599"
+    ],
+    "cause": "Private HostFutureSet adapter lacked is_empty used by the existing concurrent driver.",
+    "correction": "An eight-line Legacy/Paid(None)/Paid(Some) is_empty adapter; other runtime/control semantics unchanged. The same eighteen controls ran once on corrected source."
+  },
+  "qualificationFlags": {
+    "fullCostModelQualified": false,
+    "fullVendorSuiteExecuted": false,
+    "fullRuntimeSuiteExecuted": false,
+    "signedJavaScriptExecuted": false,
+    "compilerImplicitInputsAttested": false,
+    "hermetic": false
+  },
+  "remainingGaps": [
+    "Legacy future/stream callback Boxes",
+    "other scheduler maps and collections",
+    "transitive or escaping backing outside these declared headers",
+    "whole allocator/RSS cost model and whole #736 closure"
+  ]
+}

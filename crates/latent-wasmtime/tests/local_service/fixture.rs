@@ -124,6 +124,32 @@ impl latent_executor::PreparationReadWait for ObservedReadWait {
             .await;
         })
     }
+
+    fn wait_until_owned<'a>(
+        &'a self,
+        deadline: Instant,
+        budget: &latent_core::ActivationBudget,
+    ) -> Result<latent_executor::OwnedPreparationWait<'a>, PlatformError> {
+        struct Active<'a>(&'a AtomicU64);
+        impl Drop for Active<'_> {
+            fn drop(&mut self) {
+                self.0.fetch_sub(1, Ordering::AcqRel);
+            }
+        }
+        // Retain both real allocations on the same original budget. If the
+        // observation wrapper refuses, its still-unpolled inner sleep drops.
+        let wait = latent_executor::PreparationReadWait::wait_until_owned(
+            &latent_node::CurrentnessReadTimer,
+            deadline,
+            budget,
+        )?;
+        latent_executor::OwnedPreparationWait::try_boxed(budget, || async move {
+            self.active.fetch_add(1, Ordering::AcqRel);
+            let _active = Active(&self.active);
+            self.entered.notify_one();
+            wait.await;
+        })
+    }
 }
 pub struct RuntimeIdentities {
     pub tenant: TenantId,
@@ -168,6 +194,11 @@ pub struct Fixture {
     _root: tempfile::TempDir,
 }
 impl Fixture {
+    /// Original immutable factory configuration, observed without changing admission.
+    pub fn engine_profile(&self) -> &latent_wasmtime::WasmtimeEngineProfile {
+        self._factory.profile()
+    }
+
     pub async fn new(cells: u32, foreign: bool, permit_target: bool) -> Self {
         Self::with_audit(cells, foreign, permit_target, None).await
     }
@@ -330,6 +361,8 @@ impl Fixture {
             Some(admission),
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             None,
+            false,
+            false,
         )
         .await
         .unwrap()
@@ -356,6 +389,8 @@ impl Fixture {
             None,
             None,
             None,
+            false,
+            false,
         )
         .await
     }
@@ -411,6 +446,89 @@ impl Fixture {
         )
         .await
     }
+    /// Explicit factory-time numeric capture for the signed borrow diagnostic only.
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub async fn with_runtime_outbound_streams_and_numeric_trap_observation(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        configuration: latent_streams::StreamProviderConfig,
+    ) -> Self {
+        Self::try_with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            None,
+            Some((limits, 120_000, None)),
+            None,
+            None,
+            Some(Box::new(configuration)),
+            true,
+            false,
+        )
+        .await
+        .unwrap()
+    }
+    /// Closed Go v7 test programme: retain the actual v6 queue16 baseline and
+    /// explicitly configure the shared numeric observer before factory creation.
+    /// The normal package/deployment/request supply the effective1b fuel budget;
+    /// the generic test factory/policy10b upper ceilings remain unchanged.
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub async fn with_go_stack_ceiling_runtime(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+    ) -> Self {
+        assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
+        Self::try_with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            Some(RuntimeIdentities {
+                tenant: TenantId("tests".into()),
+                ..RuntimeIdentities::default()
+            }),
+            Some((
+                latent_core::activation_runtime::RuntimeLimits {
+                    tasks: 16,
+                    executors: 2,
+                    queued_work: 16,
+                    waits: 4,
+                    timers: 2,
+                    results: 2,
+                    native_owners: 2,
+                },
+                120_000,
+                None,
+            )),
+            None,
+            None,
+            None,
+            true,
+            true,
+        )
+        .await
+        .unwrap()
+    }
     #[expect(
         clippy::too_many_arguments,
         reason = "one explicit real catalog, broker and node ownership composition for integration tests"
@@ -449,6 +567,8 @@ impl Fixture {
             None,
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             outbound_streams,
+            false,
+            false,
         )
         .await
         .unwrap()
@@ -480,11 +600,21 @@ impl Fixture {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))] outbound_streams: Option<
             Box<latent_streams::StreamProviderConfig>,
         >,
+        numeric_capture: bool,
+        go_stack_ceiling: bool,
     ) -> Result<Self, PlatformError> {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         let stream_enabled = outbound_streams.is_some();
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
         let stream_enabled = false;
+        if go_stack_ceiling {
+            assert!(
+                provided.is_some()
+                    && activation_runtime.is_some()
+                    && additional_runtime_tenant.is_none()
+                    && !stream_enabled
+            );
+        }
         let root = tempfile::tempdir().unwrap();
         let identities = identities.unwrap_or_default();
         assert_eq!(
@@ -559,6 +689,15 @@ impl Fixture {
             epoch_tick_interval_millis: 1,
             ..Default::default()
         };
+        #[cfg(feature = "development-test-host")]
+        {
+            config.development_numeric_trap_observation = numeric_capture;
+        }
+        #[cfg(not(feature = "development-test-host"))]
+        assert!(
+            !numeric_capture && !go_stack_ceiling,
+            "numeric observation requires the test-host feature"
+        );
         if owned_native_threads {
             // Same finite 4 MiB activation grant; this WAT mechanism needs no
             // language stack. Keep explicit native stacks below that ceiling.
@@ -717,7 +856,26 @@ impl Fixture {
             .manifest
             .execution
             .resource_budget_ceiling;
-        store.apply(target.clone()).await.unwrap();
+        if go_stack_ceiling {
+            // Both normal publications belong to caller; the second is only
+            // preadmitted for the later caller repoint. There is no callee
+            // service in this closed zero-child programme.
+            for package in [&caller, &callee] {
+                let manifest = JsonManifestCodec::default()
+                    .decode_capsule(package.blob("capsule.json").unwrap())
+                    .unwrap();
+                assert_eq!(manifest.metadata.name, caller_service);
+                assert_eq!(manifest.execution.resource_budget_ceiling.child_calls, 0);
+                assert!(package
+                    .surface()
+                    .unwrap()
+                    .imports()
+                    .iter()
+                    .all(|import| import.as_ref() != SERVICE_INVOCATION_CAPABILITY));
+            }
+        } else {
+            store.apply(target.clone()).await.unwrap();
+        }
         if let Some(other) = &additional_runtime_tenant {
             let mut other_consumer = consumer.clone();
             // Deployment IDs are global; tenant-scoped services still need distinct objects.
@@ -734,7 +892,7 @@ impl Fixture {
             );
             store.apply(other_consumer).await.unwrap();
         }
-        store.apply(consumer).await.unwrap();
+        store.apply(consumer.clone()).await.unwrap();
         let policies = Arc::new(
             PolicyStore::open(
                 &root.path().join("policies"),
@@ -806,19 +964,58 @@ impl Fixture {
                 minimum_call_charges: &[],
             })
             .unwrap();
-        let scopes = [
+        let stack_caller_services = [caller_service];
+        let stack_callee_services = [callee_service];
+        let mut scopes = vec![
             guest_runtime::Scope {
-                services: &[caller_service],
+                services: &stack_caller_services,
                 publications: std::slice::from_ref(&caller_publication),
                 principal: ("user", "alice"),
             },
             // Local invocation derives its own service principal.
             guest_runtime::Scope {
-                services: &[callee_service],
+                services: &stack_callee_services,
                 publications: std::slice::from_ref(&callee_publication),
                 principal: ("service", &caller_principal),
             },
         ];
+        if go_stack_ceiling {
+            // Authorize only the second already-admitted publication for the
+            // same original caller/user BEFORE either initializer can execute.
+            // The later normal deployment repoint needs no permission reset.
+            scopes.push(guest_runtime::Scope {
+                services: &stack_caller_services,
+                publications: std::slice::from_ref(&callee_publication),
+                principal: ("user", "alice"),
+            });
+            println!(
+                "GO_STACK_POLICIES {}",
+                json!({
+                    "callerPublication":caller_publication.as_str(),
+                    "ordinaryPublication":callee_publication.as_str(),
+                    "callerRelease":packages::release(&caller).0,
+                    "ordinaryRelease":packages::release(&callee).0,
+                    "scopes":scopes.iter().map(|scope|json!({"services":scope.services,
+                        "publications":scope.publications.iter().map(PublicationId::as_str).collect::<Vec<_>>(),
+                        "principalKind":scope.principal.0,"principal":scope.principal.1})).collect::<Vec<_>>(),
+                    "grants":consumer.grants.iter().map(|grant|json!({
+                        "capability":grant.capability.0,"policy":grant.policy.0,
+                        "operations":grant.operations,"constraints":grant.constraints})).collect::<Vec<_>>(),
+                    "effectivePackageBudget":{"cpuFuel":consumer.resources.cpu_fuel,
+                        "memoryBytes":consumer.resources.memory_bytes,
+                        "wallTimeLimitMillis":consumer.resources.wall_time_limit_millis,
+                        "childCalls":consumer.resources.child_calls,"outboundRequests":consumer.resources.outbound_requests,
+                        "stateReadBytes":consumer.resources.state_read_bytes,"stateWriteBytes":consumer.resources.state_write_bytes,
+                        "blobReadBytes":consumer.resources.blob_read_bytes,"blobWriteBytes":consumer.resources.blob_write_bytes,
+                        "logBytes":consumer.resources.log_bytes,"effectCount":consumer.resources.effect_count},
+                    "factoryFuelUpperCeiling":config.maximum_fuel,
+                    "factoryMemoryUpperCeiling":config.maximum_memory_bytes,
+                    "runtimeLimits":config.activation_runtime.map(|limits|json!({
+                        "tasks":limits.tasks,"executors":limits.executors,"queuedWork":limits.queued_work,
+                        "waits":limits.waits,"timers":limits.timers,"results":limits.results,"native":limits.native_owners})),
+                })
+            );
+        }
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         let streams = outbound_streams.map(|configuration| {
             Box::new(streams::Owners::install(
@@ -863,8 +1060,26 @@ impl Fixture {
             "apiVersion":"latent.dev/v1alpha1","kind":"Binding","metadata":{"name":"local-call","tenant":tenant},
             "spec":{"consumer":{"service":caller_service,"contract":SERVICE_INVOCATION_CAPABILITY},"provider":{"service":callee_service,"contract":callee_contract,"route":"callee"},"mode":"isolated-local"}})).unwrap()).unwrap(),
             provider_binding_id: "installed".into(), allowed_modes: vec![BindingMode::IsolatedLocal], restriction_json: br#"{"operations":[]}"#.to_vec() };
-        let mut definitions = vec![definition];
-        definitions.extend(guest_runtime.definitions(tenant, &[caller_service, callee_service]));
+        let mut definitions = if caller_service == callee_service
+            && [&caller, &callee].iter().all(|package| {
+                package
+                    .surface()
+                    .unwrap()
+                    .imports()
+                    .iter()
+                    .all(|import| import.as_ref() != SERVICE_INVOCATION_CAPABILITY)
+            }) {
+            vec![]
+        } else {
+            vec![definition]
+        };
+        let runtime_services = [caller_service, callee_service];
+        let runtime_services = if caller_service == callee_service {
+            &runtime_services[..1]
+        } else {
+            &runtime_services[..]
+        };
+        definitions.extend(guest_runtime.definitions(tenant, runtime_services));
         if let Some(other) = &additional_runtime_tenant {
             definitions.extend(guest_runtime.definitions(&other.0, &[caller_service]));
         }

@@ -1,35 +1,35 @@
 {
-  "kind": "workflow",
-  "policy": {
-    "concurrency": {
-      "cancel-in-progress": false,
-      "group": "rust-wasi-http-limits-${{ github.ref }}"
-    },
-    "name": "Rust ordinary HTTP isolated owner limits",
-    "on": {
-      "push": {
-        "branches": [
-          "feat/rust-http-runtime-limits-20261021"
-        ],
-        "paths": [
-          ".github/workflows/rust-wasi-http-limits.yml",
-          "tools/qualify_rust_wasi_http_limits.py",
-          "tools/rust_wasi_http_limit_node.py",
-          "tools/tests/test_rust_wasi_http_limits.py",
-          "tools/tests/fixtures/rust-http-limit-model-inputs.json"
-        ]
-      },
-      "workflow_dispatch": null
-    },
-    "permissions": {
-      "actions": "read",
-      "contents": "read"
-    }
-  },
-  "requiredJobs": [
-    "individual-limits"
-  ],
-  "reviewReason": "Disable persisted checkout credentials after actual scoped artipacked finding; public pinned fetch, nine attempts, all commands/caps unchanged.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/rust-wasi-http-limits.yml"
+"kind":"workflow",
+"policy":{
+"concurrency":{
+"cancel-in-progress":false,
+"group":"rust-wasi-http-limits-${{ github.ref }}"
+},
+"name":"Rust ordinary HTTP isolated owner limits",
+"on":{
+"push":{
+"branches":[
+"feat/rust-http-runtime-limits-20261021"
+],
+"paths":[
+".github/workflows/rust-wasi-http-limits.yml",
+"tools/qualify_rust_wasi_http_limits.py",
+"tools/rust_wasi_http_limit_node.py",
+"tools/tests/test_rust_wasi_http_limits.py",
+"tools/tests/fixtures/rust-http-limit-model-inputs.json"
+]
+},
+"workflow_dispatch":null
+},
+"permissions":{
+"actions":"read",
+"contents":"read"
+}
+},
+"requiredJobs":[
+"individual-limits"
+],
+"reviewReason":"Disable persisted checkout credentials after actual scoped artipacked finding; public pinned fetch, nine attempts, all commands/caps unchanged.",
+"schemaVersion":"latent.ci.contracts.v1",
+"workflow":".github/workflows/rust-wasi-http-limits.yml"
 }

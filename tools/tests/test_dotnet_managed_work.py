@@ -118,13 +118,14 @@ class ManagedWorkContractTests(unittest.TestCase):
         control = controls.TaskWaitPortTests(); control.setUp(); self.addCleanup(control.doCleanups)
         control.declared = DECLARED
         def run(stage, *arguments):
-            self.assertEqual(arguments[2], '--managed-task-wait')
+            self.assertEqual(arguments[2], '--aggregate-task-wait')
             arguments[-2].write_bytes(b'explicit-managed-tool-control')
-            value = json.loads(FIXTURE.read_text()); value['outputDigest'] = digest(b'explicit-managed-tool-control')
+            value = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-v2-controlled.json').read_text())
+            value['outputDigest'] = digest(b'explicit-managed-tool-control')
             write_json(arguments[-1], value)
         control.run_tool = run
         port = control.prepare(managed=True); control.references(port)
-        self.assertEqual(port.validated_helper_count(),77)
+        self.assertEqual(port.validated_helper_count(),95)
         self.assertEqual(port.finish(control.project,control.evidence)['selection']['requiredDeclarations'],sorted(DECLARED))
 
     def test_required_content_task_keeps_original_transport_error_channel(self):
