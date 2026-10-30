@@ -18,8 +18,8 @@ from tools.rust_capsule_build import BUILD_TYPE, Commands, package_inputs, selec
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, read_json, write_json
 from tools.rust_thread_callback_paths import section, unsigned
 
-SOURCE = '79911762b366381d7dc61da12d1b5e9aba2b3222'
-RUN = 41094795688
+SOURCE = '9d9b4001bdefa57b6938c613d0fea13f8e638f83'
+RUN = 41113065282
 HISTORICAL_PINS = {
     'application-source-and-capture.tar.gz': (20761985, 'c6d9ef4e2eb48af53b7685065e406dd5ff8403c5b003c45383680c6afb68a085'),
     'source-inputs.json': (9204, '645f05410a943a1383462ce2eef5a30145c1f6953de74154b3e0b5c62174057e'),
@@ -38,15 +38,21 @@ PRIOR_PINS = {
     'raw-core.wasm': (262760, '32d45c689b53d41e6a4797e4a293c3a41ad5a3e7219407632101cf3858a18468'),
     'observation.json': (5427, '86110a34ac5235bb70058f02b9c89c93ef322c209235e86badade5501c863b69'),
 }
-PINS = {
+LATEST_PREVIOUS_PINS = {
     'application-source-and-capture.tar.gz': (20962606, '782a8fd8c59baf0125493d70866b1eda47dfbb7bb32c259f85ca445e9e0956d4'),
     'source-inputs.json': (9348, '414381e4c607ca3acae3fdbe424d20105420a4ca49994cbdfefc126f1f0be3f2'),
     'raw-core.wasm': (262561, '1016bc74d96585be6943d2b1396cf79ebd8f1fa66828a321d2ee251827431bcc'),
     'observation.json': (5426, 'cf773f3995fa25fd43bba4183683dc8202759c805f8ca8b5e971068a9a2da4f9'),
 }
-COMPONENT_SHA = 'sha256:b7f7664a7a7cf07aac18628ed86124b03b50ef85c82ce1cfc66d9321e3e709f9'
-WRAPPED = {'bytes': 513900,
-           'sha256': 'sha256:c6d1156c12cc8464682e49ccc1763c1c68a5347266d1e71efa2b7b786f2cefc5'}
+PINS = {
+    'application-source-and-capture.tar.gz': (20966554, 'c1f67326b3cc0e3b1399ba0eeeb4b5ef05741874d9fc4bcacfe03e22dac52203'),
+    'source-inputs.json': (9348, 'e7c36ea2ce9deb88b24aae2f797ced711e3a5a3b183a34c4ed2106d0b6de20e0'),
+    'raw-core.wasm': (262853, 'ae5b68cec5fa2d68cdd65eb669844e0d2dd75d8a3fc7563d8fc0a272866b9c7b'),
+    'observation.json': (5427, 'bd887733bf8360aeb85dfea8163067339a085f7f4fa5e95dac06e5ee3a11676a'),
+}
+COMPONENT_SHA = 'sha256:1f49c19d412b36f9a28c6e867298f5f149df40452a2b179fad7eee46578f3a8f'
+WRAPPED = {'bytes': 514484,
+           'sha256': 'sha256:c88f911cf1304ae9daba6e738bd4fc5128fb4e0b491d7143558905a70f04cdcf'}
 PROFILE = 'rust-context40-sync-cooperative-v1'
 SOURCE_IMPORTS = ('latent:runtime/activation@0.1.0', 'latent:runtime-native/threads@0.1.0',
                   'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0')
@@ -105,7 +111,7 @@ def original_files(artifact: Path) -> tuple[dict[str, bytes], dict]:
 def wrap_original(original: bytes, component: bytes) -> bytes:
     """Untrusted preimage framing only; the selected native host recomputes it."""
     require(digest(original) == 'sha256:' + PINS['raw-core.wasm'][1]
-            and digest(component) == COMPONENT_SHA and len(component) == 251294,
+            and digest(component) == COMPONENT_SHA and len(component) == 251586,
             'rust-thread-original-component-pair')
     name = b'latent-rust-original-core-v1'
     payload = unsigned(len(name)) + name + b'LSFRPR01' + len(original).to_bytes(4, 'little') + original
@@ -175,6 +181,8 @@ def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> d
             for name, (size, sha) in PREVIOUS_PINS.items()},
         'priorCompilerArtifactMembers': {name: {'bytes': size, 'sha256': 'sha256:' + sha}
             for name, (size, sha) in PRIOR_PINS.items()},
+        'latestPreviousCompilerArtifactMembers': {name: {'bytes': size, 'sha256': 'sha256:' + sha}
+            for name, (size, sha) in LATEST_PREVIOUS_PINS.items()},
         'originalSourceDigest': digest(inventory(files)), 'projectedPublicWitDigest': digest(projected),
         'originalPublicWitDigest': digest(ORIGINAL_WIT), 'publicEffect': 'async',
         'originalDeclaredImports': list(SOURCE_IMPORTS), 'finalRequiredImports': list(IMPORTS),

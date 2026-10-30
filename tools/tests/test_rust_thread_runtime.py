@@ -11,7 +11,10 @@ class RustThreadRuntimeTests(unittest.TestCase):
     def test_retained_original_pair_refuses_foreign_core_envelope_and_double_framing(self):
         self.assertEqual(package.PREVIOUS_PINS['raw-core.wasm'],
                          package.HISTORICAL_PINS['raw-core.wasm'])
+        self.assertEqual(package.LATEST_PREVIOUS_PINS['raw-core.wasm'],
+                         (262561, '1016bc74d96585be6943d2b1396cf79ebd8f1fa66828a321d2ee251827431bcc'))
         self.assertNotEqual(package.PINS['raw-core.wasm'], package.PREVIOUS_PINS['raw-core.wasm'])
+        self.assertNotEqual(package.PINS['raw-core.wasm'], package.LATEST_PREVIOUS_PINS['raw-core.wasm'])
         self.assertNotEqual(package.PINS['source-inputs.json'], package.PREVIOUS_PINS['source-inputs.json'])
         base = ROOT / 'crates/latent-component-threading/src/rust_catalogue'
         original = (base / 'reviewed-original-core.wasm').read_bytes()

@@ -304,6 +304,24 @@ the original synchronous pre-component core remains
 `sha256:e7d643d2b2593158ba1a40fdd4fc9f4613123064d056f9bf39fa3adbaeb324d7`.
 These are identity corrections, not runtime results or expansions of a limit.
 
+Replacement compiler run
+[`41113065282`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41113065282)
+at exact source `9d9b4001bdefa57b6938c613d0fea13f8e638f83` passed all 29 native controls,
+all 76 source-mechanism controls, owned-sysroot construction, the unchanged
+application compile, independent source/native derivation and normal-component
+proof. Its sole artifact `13004447135` is 53,113,028 compressed bytes with
+ZIP SHA-256
+`b7df73bbe827a016e45b1681db7304054a6d941c7d1844ebde87063417a58c37`.
+The exact original core is 262,853 bytes with digest
+`sha256:ae5b68cec5fa2d68cdd65eb669844e0d2dd75d8a3fc7563d8fc0a272866b9c7b`;
+the 251,586-byte normal component is
+`sha256:1f49c19d412b36f9a28c6e867298f5f149df40452a2b179fad7eee46578f3a8f`.
+Those two exact hosted members are now the reviewed runtime preimages. Their
+framed authenticated pair is 514,484 bytes with digest
+`sha256:c88f911cf1304ae9daba6e738bd4fc5128fb4e0b491d7143558905a70f04cdcf`.
+This run performed no signed invocation and grants no runtime success; the next
+hosted gate must execute all five signed calls against this exact pair.
+
 Other validation includes source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
 the actual registry, wait, TLS and lifecycle bodies with explicit reference

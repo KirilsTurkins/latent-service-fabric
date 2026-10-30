@@ -169,6 +169,19 @@
       "toolSha256": "cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
       "hostedConfirmation": false
     },
+    "hostedSource": {
+      "run": 41113065282,
+      "job": 124260142818,
+      "head": "9d9b4001bdefa57b6938c613d0fea13f8e638f83",
+      "artifact": 13004447135,
+      "artifactZipSha256": "b7df73bbe827a016e45b1681db7304054a6d941c7d1844ebde87063417a58c37",
+      "platform": "ubuntu-24.04-x86_64-container",
+      "componentDigest": "sha256:1f49c19d412b36f9a28c6e867298f5f149df40452a2b179fad7eee46578f3a8f",
+      "originalCoreDigest": "sha256:ae5b68cec5fa2d68cdd65eb669844e0d2dd75d8a3fc7563d8fc0a272866b9c7b",
+      "sourceControlsPassed": 76,
+      "nativeControlsPassed": 29,
+      "hostedConfirmation": true
+    },
     "previousHostedSource": {
       "run": 41089948823,
       "head": "18c4bdbadd292159c567f9da399a42ac651fe5e0",
