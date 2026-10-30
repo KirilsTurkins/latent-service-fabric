@@ -8,6 +8,21 @@ from tools.phase2_operator_process import WorkflowError
 
 
 class RustThreadRuntimeTests(unittest.TestCase):
+    def test_native_reader_uses_current_catalogue_and_retains_failed_runtime_origin(self):
+        from tools import rust_thread_native_products as native
+
+        self.assertEqual(native.SOURCE, '9c0097fc4dee24c57e0cffbdf1963e47772b2ffc')
+        self.assertEqual(native.RUN, 41116286833)
+        self.assertEqual(native.ARTIFACT['id'], 13008060664)
+        self.assertEqual(native.FAILED_RUNTIME_SOURCE,
+                         '79911762b366381d7dc61da12d1b5e9aba2b3222')
+        self.assertEqual(native.FAILED_RUNTIME_RUN, 41096399674)
+        self.assertNotEqual(native.ARTIFACT, native.FAILED_RUNTIME_ARTIFACT)
+        workflow = (ROOT / '.github/workflows/rust-thread-runtime.yml').read_text()
+        self.assertIn('git fetch --no-tags --depth=1 origin ' + native.SOURCE, workflow)
+        self.assertNotIn('git fetch --no-tags --depth=1 origin ' + native.FAILED_RUNTIME_SOURCE,
+                         workflow)
+
     def test_retained_original_pair_refuses_foreign_core_envelope_and_double_framing(self):
         self.assertEqual(package.PREVIOUS_PINS['raw-core.wasm'],
                          package.HISTORICAL_PINS['raw-core.wasm'])

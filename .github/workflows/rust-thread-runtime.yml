@@ -31,7 +31,7 @@ jobs:
       - name: Fetch the two exact original compiler and native source events
         run: |
           git fetch --no-tags --depth=1 origin 9d9b4001bdefa57b6938c613d0fea13f8e638f83
-          git fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222
+          git fetch --no-tags --depth=1 origin 9c0097fc4dee24c57e0cffbdf1963e47772b2ffc
       - name: Install locked Python dependencies and check finite replay and policy refusals
         run: |
           python3 -m pip install --requirement tools/requirements.lock
