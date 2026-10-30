@@ -31,17 +31,20 @@ class HostCatalogueTests(unittest.TestCase):
                 'crates/latent-component-threading/src/rust_catalogue')
         origin = json.loads((base / 'origin.json').read_text(encoding='utf-8'))
         envelope = origin['normalComponentEnvelope']
-        component = (base / 'reviewed-normal-component.wasm').read_bytes()
+        component = (base / 'catalogue-normal-component.wasm').read_bytes()
         shell = (base / 'normal-component-shell.bin').read_bytes()
         self.assertEqual(envelope['toolSha256'],
                          'cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6')
-        self.assertEqual(envelope['hostedSource'], {
-            'run': 41089948823,
-            'head': '18c4bdbadd292159c567f9da399a42ac651fe5e0',
-            'artifact': 12993363449,
-            'platform': 'ubuntu-24.04-x86_64',
-            'failedStageAfterComponentEncoding': 'native-normal-component-proof',
+        self.assertEqual(envelope['candidateSource'], {
+            'compilerRun': 41109207452,
+            'compilerHead': 'a9809cab6aa3021b29014bd8b80dd15922c93265',
+            'compilerArtifact': 13003202462,
+            'platform': 'ubuntu-24.04-x86_64-container',
+            'toolReleaseAsset': 'wasm-tools-1.254.0-x86_64-linux.tar.gz',
+            'toolSha256': 'cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6',
+            'hostedConfirmation': False,
         })
+        self.assertEqual(envelope['previousHostedSource']['run'], 41089948823)
         self.assertEqual(envelope['componentBytes'], len(component))
         self.assertEqual(envelope['componentDigest'],
                          'sha256:' + hashlib.sha256(component).hexdigest())

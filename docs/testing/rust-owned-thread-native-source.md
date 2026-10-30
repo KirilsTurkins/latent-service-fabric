@@ -4,13 +4,15 @@ This draft adds a distinct `rust-context40-sync-cooperative-v1` host profile.
 The ordinary Rust builder remains closed. Signed execution of the captured
 default ThreadPool application and runtime qualification are still pending.
 
-The compiled host catalogue borrows 175,996 original body bytes and fixes all
-1,225 function/data records and 5,325 actual relocation referents. Its origin is
-the independently verified compiler observation at
-`28059f343bbd954e3e6614c5a24593897cc0c294`, run 39877020838. The earlier ec11
-failure remains a distinct historical event; the original object image is
-byte-identical. Guest JSON, names, producer strings and supplied rlibs never
-select or replace this catalogue.
+The current compiled host catalogue borrows 177,210 original body bytes and
+fixes all 1,222 function/data records and 5,312 actual relocation referents. Its
+origin is the independently verified compiler observation at
+`a9809cab6aa3021b29014bd8b80dd15922c93265`, run 41109207452, artifact
+13003202462. That run compiled the original application but refused the stale
+catalogue before component encoding or guest execution. Earlier observations,
+including `28059f3` and the `ec11` failure, remain distinct historical events.
+Guest JSON, names, producer strings and supplied rlibs never select or replace
+this catalogue.
 
 Before any allocating component reader, the verifier compares raw framing
 against the immutable normal encoder envelope. It then recomputes the complete

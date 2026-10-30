@@ -270,8 +270,22 @@ admission before each actual System allocation, remain under the unchanged
 linear-memory and owner limits, free before settlement and must leave a null TLS
 table. The ten focused controls now cover fixed-root entries, dynamically owned
 contexts, a 64-key inline-plus-overflow case and refusal of the 65th key under
-the original two-owner bound. A fresh compiler/native/signed hosted result is
-still required before runtime acceptance.
+the original two-owner bound.
+
+Hosted compiler run
+[41109207452](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41109207452)
+at exact source `a9809cab6aa3021b29014bd8b80dd15922c93265` passed the
+10 TLS, 11 wait, 8 synchronization and 76 source-mechanism controls, built the
+owned sysroot and compiled the unchanged application. Its sole artifact
+`13003202462` is bound by ZIP SHA-256
+`22d2c3ab01c98d422159effe2ced1ae4b2dc3d62cdff67e734cdb8fab8a59d53`.
+The native verifier then refused the stale immutable catalogue before component
+encoding or guest execution. The retained original graph has the same 1,222
+definitions and exactly three additional real relocation referents (5,312
+total). The refreshed catalogue borrows 177,210 original body bytes with digest
+`sha256:979aefc58089be437b59c6879431d86017332097c5e8ea55e5e9d8a673540bc3`.
+It grants no runtime authority. A fresh normal-component proof and signed hosted
+result are still required before runtime acceptance.
 
 Other validation includes source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise

@@ -38,6 +38,7 @@ CRATE_SOURCES = tuple(CRATE + 'src/' + name for name in (
     'rust_catalogue/normal-component-shell.bin', 'rust_catalogue/original-wit-metadata.bin',
     'rust_catalogue/adapted-wit-metadata.bin',
     'rust_catalogue/original-producers.bin', 'rust_catalogue/encoded-producers.bin',
+    'rust_catalogue/catalogue-original-core.wasm', 'rust_catalogue/catalogue-normal-component.wasm',
     'rust_catalogue/reviewed-original-core.wasm', 'rust_catalogue/reviewed-normal-component.wasm'))
 RECIPE = tuple(dict.fromkeys((
     'tools/compile_rust_owned_thread_inputs.py', WORKFLOW, '.cargo/config.toml',
