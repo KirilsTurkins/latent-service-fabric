@@ -101,7 +101,10 @@ mod tests {
             .instruction(&Instruction::End);
         code.function(&function);
         module.section(&code);
-        let engine = wasmtime::Engine::default();
+        // Use the actual owning runtime engine policy, not Wasmtime's default:
+        // ordinary nodes disable backtraces and this explicit feature fixes the
+        // diagnostic node to eight numeric frames.
+        let engine = crate::WasmtimeConfig::default().runtime_engine().unwrap();
         let module = wasmtime::Module::new(&engine, module.finish()).unwrap();
         let mut store = wasmtime::Store::new(&engine, ());
         let instance = wasmtime::Instance::new(&mut store, &module, &[]).unwrap();

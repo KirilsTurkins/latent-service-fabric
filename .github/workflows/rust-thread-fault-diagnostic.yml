@@ -2,7 +2,12 @@ name: Numeric original Rust ThreadPool fault diagnostic
 on:
   push:
     branches: ['diag/rust-thread-frames-20261023']
-    paths: ['.github/workflows/rust-thread-fault-diagnostic.yml']
+    paths:
+      - '.github/workflows/rust-thread-fault-diagnostic.yml'
+      - 'crates/latent-wasmtime/src/config/engine.rs'
+      - 'crates/latent-wasmtime/src/rust_thread_fault.rs'
+      - 'tools/diagnose_rust_thread_fault.py'
+      - 'tools/rust_thread_fault_frames.py'
   workflow_dispatch:
 permissions:
   contents: read
