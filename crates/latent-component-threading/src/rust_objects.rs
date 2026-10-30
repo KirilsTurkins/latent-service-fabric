@@ -1937,14 +1937,14 @@ mod tests {
         let (targets, sites) = callback_plan(&module, &proof).unwrap();
         assert_eq!(sites.iter().filter(|site| site.fallback).count(), 1);
         let sealed = seal_original_callbacks(ORIGINAL).unwrap();
-        // Exact independently retained Python production derivation from the
-        // authenticated a9809ca event. This is an emission comparison, not execution.
+        // Exact independently retained Python production derivation from run
+        // 41109207452, artifact 13003202462. This compares emissions, not execution.
         assert_eq!(
             Sha256::digest(&sealed)
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "85e67b8fe9ad9a888b3543b26f63261f906e70a03caec9d2c4ca5f0bf4a7cfa8"
+            "34eb2f704cae5a3f480a8975b3ca4e66b59311b65716118041c3cb1d72dfa182"
         );
         let sealed_module = Original::parse(&sealed).unwrap();
         for (index, function) in module.table.iter().enumerate() {
@@ -1989,7 +1989,7 @@ mod tests {
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "e7d643d2b2593158ba1a40fdd4fc9f4613123064d056f9bf39fa3adbaeb324d7"
+            "a1fd0ce4d9f557c88b2ff0df9ac0e7b99b25586bd6ddb2529f368339183faa27"
         );
         assert_eq!(receipt.original_panic_function, 527);
         assert_eq!(receipt.root.canonical_system_panic_trap, Some(528));
