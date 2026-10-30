@@ -27,6 +27,15 @@ an entire physical Arc allocation. The fixed tables are finite implementation
 bounds, not replacement resource grants. Pure root calls and uncontended sync
 do not bootstrap a concurrency runtime.
 
+The bounded Wait registry also owns 32 fixed intrusive node slots in the
+component's original linear memory. A slot is reserved before Wait/Timer
+admission, initialized only after admission, removed before logical settlement,
+and reused only after the node is no longer registered. This avoids inventing a
+separate Native owner and System allocation for every temporary wait while
+retaining the original Wait/Timer limits, identities and admission failures.
+The compiler programme runs the 11 wait-driver controls and eight synchronization
+controls, in addition to the ten TLS controls, before producing any sysroot.
+
 Join waits for actual TLS completion and the separately authenticated final
 frame/stack boundary, rather than a filled Packet alone. Ordinary waits use the
 engine's eligible queue; only the known newly created Ready child uses explicit

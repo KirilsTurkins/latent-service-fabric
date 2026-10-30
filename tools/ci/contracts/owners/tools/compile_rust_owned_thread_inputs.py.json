@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_rust_owned_thread_inputs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Run the ten bounded native TLS admission and block-retirement controls before producing the repaired owned-thread sysroot; retain all existing source, command and artifact bounds.",
+  "reviewReason": "Run the ten bounded native TLS controls, eleven production wait-driver controls and eight synchronization controls before producing the repaired owned-thread sysroot; retain all existing source, command and artifact bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b703116b3dc86a94b1f53dac1f5b5f29de2dfa38dc2effefb717c4eb8a0eeb49"
+  "sha256": "cd2b552e70f99d30782bb18dd16cc941c13649a9564e41e9d34cc3a28f8dfe41"
 }
