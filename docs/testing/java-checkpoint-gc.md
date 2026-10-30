@@ -185,6 +185,12 @@ continuation resumes, C exception lowering can therefore publish an undefined
 reference temporary into an otherwise live heap object. TeaVM repaired this in
 commit `ae0630dd286cf57bcb4ec175696ae8010e42588c`. The private compiler derivation
 now applies those exact four lines to the hash-pinned 0.15.0 source and replaces
-only `VolatileDefinitionFinder.class` in addition to the eleven already bound
-compiler classes. Application/library paths, GC order, capabilities and limits
-remain unchanged. Successful signed execution is still required.
+both compiler outputs for that source,
+`VolatileDefinitionFinder.class` and its anonymous visitor
+`VolatileDefinitionFinder$1.class`, in addition to the eleven already bound
+compiler classes. Run `41105074552` failed closed before compiler or guest
+execution because the replacement closure originally named only the outer
+class even though the repaired assignment visitor compiles into `$1`. The
+13-class closure now requires both exact outputs and rejects every missing or
+unexpected companion. Application/library paths, GC order, capabilities and
+limits remain unchanged. Successful signed execution is still required.

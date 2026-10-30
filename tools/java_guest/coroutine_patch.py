@@ -629,7 +629,8 @@ TYPE_CLASSES = frozenset(TYPE_ROOT + name for name in (
     'TypeInferer.class', 'TypeInferer$1.class', 'TypeInferer$2.class',
     'TypeInferer$InferenceKind.class', 'TypeInferer$InferenceType.class'))
 VOLATILE_ROOT = 'org/teavm/backend/c/analyze/'
-VOLATILE_CLASS = VOLATILE_ROOT + 'VolatileDefinitionFinder.class'
+VOLATILE_CLASSES = frozenset(VOLATILE_ROOT + name for name in (
+    'VolatileDefinitionFinder.class', 'VolatileDefinitionFinder$1.class'))
 VOLATILE_SOURCE_SHA256 = 'b8f854640f7cedccb4cd0dddc4993b86259fafc52f0b2ca822d1a432561d90b1'
 VOLATILE_BEFORE = '''                            mutatedVars.computeIfAbsent(tryCatch, k -> new IntHashSet())
                                     .add(definition.getVariableIndex());
@@ -641,7 +642,7 @@ VOLATILE_AFTER = '''                            mutatedVars.computeIfAbsent(tryC
                                         .add(definition.getVariableIndex());
                             }
                         } else {'''
-PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES | ASYNC_CLASSES | frozenset((VOLATILE_CLASS,))
+PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES | ASYNC_CLASSES | VOLATILE_CLASSES
 CONTROL = CLASS_ROOT + 'Check.class'
 ARRAY_CONTROL = TYPE_ROOT + 'ArrayTypeCheck.class'
 CONTROLS = frozenset((CONTROL, ARRAY_CONTROL)) | MONITOR_CONTROLS
@@ -782,7 +783,8 @@ def jar_entries(path: Path) -> dict[str, bytes]:
                 and name.endswith('.class')} != TYPE_CLASSES
             or {name for name in result if name.startswith(TYPE_ROOT + 'AsyncMethodFinder')
                 and name.endswith('.class')} != ASYNC_CLASSES
-            or VOLATILE_CLASS not in result):
+            or {name for name in result if name.startswith(VOLATILE_ROOT + 'VolatileDefinitionFinder')
+                and name.endswith('.class')} != VOLATILE_CLASSES):
         raise ValueError('coroutine-patch-class-closure')
     return result
 

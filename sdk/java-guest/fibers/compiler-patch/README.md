@@ -118,15 +118,20 @@ nested protected body remains live in an outer handler, its reference temporary
 must be backed up on entry to that outer handler as well as at its inner
 definition. Otherwise a parked continuation can resume with an undefined C
 reference and publish it into a live heap field. The published HPPC imports are
-relocated exactly as for the other pinned sources. This twelfth replacement
-class changes no Java application bytecode, GC algorithm, capability, resource
+relocated exactly as for the other pinned sources. These two replacement class
+outputs change no Java application bytecode, GC algorithm, capability, resource
 limit, or exception policy; the compiler source hash, corrected hash, class
 bytes, selected JAR and loaded JAR remain bound in the existing receipts.
 
+The source's changed assignment visitor is an anonymous class, so javac emits
+both `VolatileDefinitionFinder.class` and `VolatileDefinitionFinder$1.class`.
+Both exact outputs are replacement inputs; accepting only the outer class would
+leave the repaired visitor bytecode behind. The finite compiler closure requires
+all 13 replacement classes and refuses missing or additional companions.
 
 The structural-copy-cost observation is default-off and qualification-only. Its
 fixed public Java/WIT pair must authenticate before preparation, and its JVM
-property is set only after the replacement JAR and all twelve loaded classes
+property is set only after the replacement JAR and all thirteen loaded classes
 pass the existing identity fence. It adds no replacement companion class.
 Production weights do not depend on method names. For the observed public
 `pools` method, one copy of the actual pre-normalization Program runs the real

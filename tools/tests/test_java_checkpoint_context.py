@@ -22,7 +22,7 @@ class CheckpointContext(unittest.TestCase):
             coroutine_patch.CHECKPOINT_FIND_AFTER, coroutine_patch.CHECKPOINT_FIND_BEFORE).replace(
             coroutine_patch.ASYNC_AFTER, coroutine_patch.ASYNC_BEFORE), raw.decode())
         self.assertLess(fixed.index('validateCheckpointCallers();'), fixed.index('hasAsyncMethods = findAsyncMethods();'))
-        self.assertEqual(len(coroutine_patch.PATCH_CLASSES), 12)
+        self.assertEqual(len(coroutine_patch.PATCH_CLASSES), 13)
         self.assertEqual(len(coroutine_patch.ASYNC_CLASSES), 3)
         self.assertNotIn('asyncMethods', coroutine_patch.CHECKPOINT_VALIDATION.split('MethodReference checkpoint', 1)[1])
         self.assertIn('pending.size() == 65536', fixed)
@@ -48,7 +48,10 @@ class CheckpointContext(unittest.TestCase):
         self.assertEqual(restored.encode(), raw)
         self.assertEqual(fixed.count('for (var outerTryCatch : outerTryCatches)'), 1)
         self.assertIn('definitionsToBackupOnEntry.computeIfAbsent(outerTryCatch', fixed)
-        self.assertIn(coroutine_patch.VOLATILE_CLASS, coroutine_patch.PATCH_CLASSES)
+        self.assertEqual(coroutine_patch.VOLATILE_CLASSES & coroutine_patch.PATCH_CLASSES,
+            coroutine_patch.VOLATILE_CLASSES)
+        self.assertIn(coroutine_patch.VOLATILE_ROOT + 'VolatileDefinitionFinder$1.class',
+            coroutine_patch.PATCH_CLASSES)
         with self.assertRaisesRegex(ValueError, 'unreviewed-teavm-volatile-definition-source'):
             coroutine_patch.corrected_volatile_source(raw+b'\n')
 
