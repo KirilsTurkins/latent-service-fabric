@@ -20,7 +20,7 @@ fn visit(
     error: &wasmtime::Error,
     mut sink: impl FnMut(Frame),
 ) -> usize {
-    if !matches!(authentication, Authentication::Verified(_))
+    if !matches!(authentication, Authentication::Disabled)
         || error.downcast_ref::<wasmtime::Trap>().is_none()
     {
         return 0;
@@ -55,7 +55,7 @@ fn emit(authentication: &Authentication, error: &wasmtime::Error, sink: &mut imp
 }
 
 pub(crate) fn record(authentication: &Authentication, error: &wasmtime::Error) {
-    if !matches!(authentication, Authentication::Verified(_)) {
+    if !matches!(authentication, Authentication::Disabled) {
         return;
     }
     emit(authentication, error, &mut std::io::stderr().lock());
@@ -109,7 +109,10 @@ mod tests {
         let original = error.downcast_ref::<wasmtime::WasmBacktrace>().unwrap();
         // The owning diagnostic engine itself retains at most eight frames.
         assert_eq!(original.frames().len(), MAX_FRAMES);
-        let proof = Authentication::Verified([0x11; 32]);
+        // The signed Java component deliberately selects no native-thread
+        // profile. Native-thread proofs belong to the separately qualified
+        // Rust and C routes and must not select this diagnostic observer.
+        let proof = Authentication::Disabled;
         let mut output = std::io::Cursor::new([0_u8; 1024]);
         emit(&proof, &error, &mut output);
         let used = usize::try_from(output.position()).unwrap();
@@ -126,7 +129,7 @@ mod tests {
         }));
         assert!(!text.contains("private-name"));
         for other in [
-            Authentication::Disabled,
+            Authentication::Verified([0x11; 32]),
             Authentication::CVerified([0x11; 32]),
             Authentication::RustSyncVerified([0x11; 32]),
         ] {
