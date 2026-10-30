@@ -279,12 +279,12 @@ __attribute__((noinline)) static void teavm_monitor_root_trap_unknown_class(void
     teavm_monitor_root_trap_kind = INT32_C(6);
     __builtin_trap();
 }
-static int32_t teavm_monitor_root_has_known_class(void* teavm_monitor) {
-    TeaVM_Class* teavm_monitor_class = meth_otr_RuntimeClass_getClass(teavm_monitor);
+static int32_t teavm_gc_candidate_has_known_class(void* teavm_candidate) {
+    TeaVM_Class* teavm_candidate_class = meth_otr_RuntimeClass_getClass(teavm_candidate);
     int32_t teavm_class_index;
     for (teavm_class_index = INT32_C(0); teavm_class_index < teavm_classReferencesCount;
             ++teavm_class_index) {
-        if (teavm_classReferences[teavm_class_index] == teavm_monitor_class) {
+        if (teavm_classReferences[teavm_class_index] == teavm_candidate_class) {
             return INT32_C(1);
         }
     }
@@ -320,7 +320,7 @@ static int32_t teavm_monitor_root_has_known_class(void* teavm_monitor) {
         '        if (TEAVM_FIELD(teavm_monitor, cls_otr_FreeChunk, fld_classReference) == INT32_C(0)) {\n'
         '            teavm_monitor_root_trap_free_chunk();\n'
         '        }\n'
-        '        if (!teavm_monitor_root_has_known_class(teavm_monitor)) {\n'
+        '        if (!teavm_gc_candidate_has_known_class(teavm_monitor)) {\n'
         '            teavm_monitor_root_trap_unknown_class();\n'
         '        }\n'
         '    }\n'
@@ -331,6 +331,61 @@ static int32_t teavm_monitor_root_has_known_class(void* teavm_monitor) {
     body = body.replace(array_return,
         '    return teavm_marked_monitor | meth_otr_GC_markArray(teavm_local_2, teavm_local_1);')
     adapted = original[:start] + diagnostics + body + original[end:]
+
+    start, end, body = _generated_function(adapted, 'meth_otr_GC_enqueueMark')
+    marked = '    if ((!meth_otr_GC_isMarked(teavm_local_1))) {\n'
+    if body.count(marked) != 1:
+        raise ValueError('unreviewed-teavm-enqueued-root-mark')
+    enqueued_diagnostics = '''static volatile int32_t teavm_enqueued_root_trap_kind;
+__attribute__((noinline)) static void teavm_enqueued_root_trap_below_heap(void) {
+    teavm_enqueued_root_trap_kind = INT32_C(1);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_enqueued_root_trap_past_heap(void) {
+    teavm_enqueued_root_trap_kind = INT32_C(2);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_enqueued_root_trap_truncated_header(void) {
+    teavm_enqueued_root_trap_kind = INT32_C(3);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_enqueued_root_trap_misaligned(void) {
+    teavm_enqueued_root_trap_kind = INT32_C(4);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_enqueued_root_trap_free_chunk(void) {
+    teavm_enqueued_root_trap_kind = INT32_C(5);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(void) {
+    teavm_enqueued_root_trap_kind = INT32_C(6);
+    __builtin_trap();
+}
+'''
+    validation = (
+        '    if ((uintptr_t) teavm_local_1 < (uintptr_t) teavm_gc_heapAddress) {\n'
+        '        teavm_enqueued_root_trap_below_heap();\n'
+        '    }\n'
+        '    if ((uintptr_t) teavm_local_1 >= (uintptr_t) TEAVM_ADDRESS_ADD(\n'
+        '            teavm_gc_heapAddress, teavm_gc_availableBytes)) {\n'
+        '        teavm_enqueued_root_trap_past_heap();\n'
+        '    }\n'
+        '    if ((uintptr_t) TEAVM_ADDRESS_ADD(teavm_local_1, sizeof(TeaVM_Object)) >\n'
+        '            (uintptr_t) TEAVM_ADDRESS_ADD(teavm_gc_heapAddress, teavm_gc_availableBytes)) {\n'
+        '        teavm_enqueued_root_trap_truncated_header();\n'
+        '    }\n'
+        '    if ((((uintptr_t) teavm_local_1 - (uintptr_t) teavm_gc_heapAddress) &\n'
+        '            (INT32_C(8) - INT32_C(1))) != 0) {\n'
+        '        teavm_enqueued_root_trap_misaligned();\n'
+        '    }\n'
+        '    if (TEAVM_FIELD(teavm_local_1, cls_otr_FreeChunk, fld_classReference) == INT32_C(0)) {\n'
+        '        teavm_enqueued_root_trap_free_chunk();\n'
+        '    }\n'
+        '    if (!teavm_gc_candidate_has_known_class(teavm_local_1)) {\n'
+        '        teavm_enqueued_root_trap_unknown_class();\n'
+        '    }\n')
+    body = body.replace(marked, validation + marked)
+    adapted = adapted[:start] + enqueued_diagnostics + body + adapted[end:]
 
     start, end, body = _generated_function(adapted, 'meth_otr_GC_updatePointers')
     opening = 'void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {\n'
@@ -350,7 +405,7 @@ static int32_t teavm_monitor_root_has_known_class(void* teavm_monitor) {
     if value == selected:
         raise ValueError('unreviewed-teavm-monitor-root-closure')
     return [(path, value)], {
-        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v2',
+        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v3',
         'upstreamIssue': MONITOR_ROOT_ISSUE,
         'path': 'c/o/t/r/GC.c',
         'upstreamSha256': hashlib.sha256(raw).hexdigest(),
@@ -360,6 +415,8 @@ static int32_t teavm_monitor_root_has_known_class(void* teavm_monitor) {
         'rewriteRelocatedMonitor': True,
         'boundedPackedMonitorValidityTraps': True,
         'packedMonitorValidityTrapKinds': 6,
+        'boundedEnqueuedReferenceValidityTraps': True,
+        'enqueuedReferenceValidityTrapKinds': 6,
     }
 
 

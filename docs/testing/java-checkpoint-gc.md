@@ -118,7 +118,7 @@ effect or external byte was recorded. The exact component is
 `sha256:77c34e8e7d5b893310d0afbe5517fcfbe2ef55730f5fa1c0bdad7348a3f0de22`.
 No signed GC case passed.
 
-The retained generated collector exposes the remaining cause. TeaVM stores an
+The retained generated collector exposed a concrete first hypothesis. TeaVM stores an
 inflated `Object.Monitor` only as a tagged pointer in the object's header hash.
 `GC.markObjectData` follows class-layout fields but not that header pointer, and
 `GC.updatePointers` likewise never rewrites it after compaction. A collection
@@ -127,7 +127,7 @@ its notify listener and continuation. Root's later `notifyAll()` then cannot
 deliver that wake. This is the same still-open TeaVM C-backend defect reported
 as [`konsoletyper/teavm#1330`](https://github.com/konsoletyper/teavm/issues/1330).
 
-The second repair changes only those two generated collector boundaries. It
+The second candidate repair changes only those two generated collector boundaries. It
 marks the unpacked monitor together with every live object or array, preserves
 the young-generation result, and repacks the pointer returned by the existing
 relocation table before ordinary field/array pointer updates. Exact generated
@@ -144,10 +144,27 @@ sufficient. Construction and both grant denials passed, but the first signed
 `GC.markObjectData` from its mark queue and fail while reading the queued
 candidate's class. No signed GC case passed.
 
-Profile `teavm-0.15-c-packed-monitor-gc-root-v2` therefore adds only bounded,
+Profile `teavm-0.15-c-packed-monitor-gc-root-v2` therefore added only bounded,
 fail-closed validity traps before a packed monitor candidate is enqueued. Six
 distinct no-output trap sites distinguish below-heap, past-heap, truncated,
 misaligned, free-chunk and unknown-class candidates. They do not discard a bad
 edge, manufacture a wake, change collection, raise a limit or qualify runtime
-success. A new hosted exact-head run must retain the numeric trap and exact
-generated-source identities before the remaining collector repair is chosen.
+success.
+
+Exact-head diagnostic run
+[`41091472466`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41091472466)
+at `6afd60eb3b0bb6d8654b51af45272730c91a710e` disproved that hypothesis. The
+packed-monitor candidate passed all six checks; none of their distinct trap
+frames fired. The eventual memory-out-of-bounds frame is still
+`GC.markObjectData`, but its exact offset is the ordinary class lookup after
+monitor validation. The caller offset is the static-root phase of `GC.mark`, so
+an invalid object reference has already entered the mark queue. Construction
+and both grant denials still passed; the first signed `gc` case trapped after
+28,147,480 fuel at a 9,791,504-byte peak with zero effects. No signed case
+passed.
+
+Profile `teavm-0.15-c-packed-monitor-gc-root-v3` adds the same six bounded,
+fail-closed checks at `GC.enqueueMark`. A bad reference now traps before queue
+insertion, preserving the exact caller frame that supplied it. This is
+diagnostic only: it does not discard the reference, change the application,
+alter collection order, raise a limit or claim runtime qualification.

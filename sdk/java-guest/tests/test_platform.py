@@ -100,6 +100,17 @@ void untouched(void) { value = TEAVM_ALIGN(value, sizeof(void*)); }
     }
     return meth_otr_GC_markArray(teavm_local_2, teavm_local_1);
 }
+int32_t meth_otr_GC_enqueueMark(void* teavm_local_1) {
+    if ((teavm_local_1 == NULL)) {
+        return INT32_C(0);
+    }
+    if ((!meth_otr_GC_isMarked(teavm_local_1))) {
+        meth_otr_GC_doEnqueueMark(teavm_local_1);
+        return INT32_C(1);
+    }
+    return ((TEAVM_FIELD(teavm_local_1, TeaVM_Object, header) & INT32_C(1073741824))
+        ? INT32_C(0) : INT32_C(1));
+}
 void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
     if ((TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType) == NULL)) {
         meth_otr_GC_updatePointersInObject(teavm_local_1, teavm_local_2);
@@ -111,11 +122,13 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
             original = gc.read_bytes()
             outputs, receipt = platform.monitor_root_outputs(root)
             self.assertEqual(receipt['upstreamIssue'], platform.MONITOR_ROOT_ISSUE)
-            self.assertEqual(receipt['profile'], 'teavm-0.15-c-packed-monitor-gc-root-v2')
+            self.assertEqual(receipt['profile'], 'teavm-0.15-c-packed-monitor-gc-root-v3')
             self.assertTrue(receipt['markPackedMonitor'])
             self.assertTrue(receipt['rewriteRelocatedMonitor'])
             self.assertTrue(receipt['boundedPackedMonitorValidityTraps'])
             self.assertEqual(receipt['packedMonitorValidityTrapKinds'], 6)
+            self.assertTrue(receipt['boundedEnqueuedReferenceValidityTraps'])
+            self.assertEqual(receipt['enqueuedReferenceValidityTrapKinds'], 6)
             self.assertEqual(gc.read_bytes(), original)
             adapted = dict(outputs)[gc].decode()
             self.assertIn('meth_otr_GC_enqueueMark(teavm_monitor)', adapted)
@@ -124,9 +137,14 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
             for kind in ('below_heap', 'past_heap', 'truncated_header', 'misaligned',
                     'free_chunk', 'unknown_class'):
                 self.assertEqual(adapted.count('teavm_monitor_root_trap_' + kind), 2)
-            self.assertIn('teavm_monitor_root_has_known_class(teavm_monitor)', adapted)
+            self.assertIn('teavm_gc_candidate_has_known_class(teavm_monitor)', adapted)
+            self.assertIn('teavm_gc_candidate_has_known_class(teavm_local_1)', adapted)
             self.assertIn('teavm_classReferencesCount', adapted)
             self.assertEqual(adapted.count('teavm_monitor_root_trap_kind = INT32_C('), 6)
+            for kind in ('below_heap', 'past_heap', 'truncated_header', 'misaligned',
+                    'free_chunk', 'unknown_class'):
+                self.assertEqual(adapted.count('teavm_enqueued_root_trap_' + kind), 2)
+            self.assertEqual(adapted.count('teavm_enqueued_root_trap_kind = INT32_C('), 6)
 
     def test_packed_monitor_repair_refuses_unknown_collector_shapes(self):
         with tempfile.TemporaryDirectory() as directory:

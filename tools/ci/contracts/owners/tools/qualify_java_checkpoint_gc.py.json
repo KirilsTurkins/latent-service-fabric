@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require the reviewed packed-monitor validity profile and six fail-closed numeric diagnostic categories while preserving exact compiler identities, limits, denials, assertions, and runtime qualification.",
+  "reviewReason": "Bind the fail-closed enqueued-reference diagnostic to the retained exact-head stale-root evidence without changing limits or success criteria.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "03b6c6a355676d5ab9badcb163c00e9aff0ca7b9178c1c65a8e5806a6ece7099"
+  "sha256": "40744635b504c42cbc8bc11ac544566826e3e0524a36d9a7976d3db3ab649a36"
 }
