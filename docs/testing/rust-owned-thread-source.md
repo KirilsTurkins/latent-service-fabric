@@ -335,6 +335,29 @@ then passed all 200 source-bound controls at
 execution, but binds the next signed gate to an executable compiled with the
 same repaired catalogue.
 
+The bounded diagnostic at exact head
+`fb0e126a357468afd6538da2e5ee7a80e4f0a513` then reached guest execution with
+the repaired component and trapped at function 279 offset 79. That byte is the
+`unreachable` in the unchanged `ThreadInit::init` failure branch. Its compiled
+predecessor shows the selected logical context's `CURRENT` handle was empty,
+but Rust's persistent `ThreadId` still came from the target-native
+`#[thread_local]` branch and held the root ID. On this no-atomics wasm target,
+canonical threads share linear-memory statics, so that native TLS selection is
+not a logical-thread boundary; `set_current` correctly rejected changing the
+already-set root ID.
+
+The source-matched compiler repair keeps `ThreadInit::init`, `set_current`, the
+application and the executor unchanged. Only this explicit
+`rust-context40-sync-cooperative-v1` sysroot selects the existing 32-bit
+`local_pointer!` ThreadId storage, which routes both halves through the same
+context-owned TLS table as `CURRENT`. Every other target retains the exact
+upstream native-TLS condition. The upstream `current.rs` preimage is pinned as
+10,501 bytes with SHA-256
+`1084535565799fa30c42320309fa2cf4d95aacdfb022ce301b17b0a299e52109`;
+focused selector/capture controls prove the transform is one reversible cfg
+edit. A hosted sysroot/application/component build and real signed execution
+are still required; this source diagnosis is not a passing ThreadPool result.
+
 Other validation includes source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
 the actual registry, wait, TLS and lifecycle bodies with explicit reference
