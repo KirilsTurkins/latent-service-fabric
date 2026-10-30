@@ -1,34 +1,34 @@
 {
   "schemaVersion": "latent.rust.trusted-original-catalogue.v1",
   "origin": {
-    "run": 39877020838,
-    "head": "28059f343bbd954e3e6614c5a24593897cc0c294",
-    "artifact": 12469845581,
-    "artifactZipSha256": "76e11dc5d099d353d027b5e946ec7624f5c7bc90110f4844fc9aff387f2afdc6",
-    "compilerDistributionDigest": "sha256:16017bec70a8df1c23e841a42b08f8719f18d59f5f18310647bb61ed0d4201ca",
-    "sysrootIdentity": "sha256:8b2b96e015168624bb2fd0b5f26eebf7b06496ba60d8f3d2968a32f2687086b4",
-    "sourceRecipeDigest": "sha256:83e448b26a5fd718f7d93d7c425d19b3286e19ac41510e000cd9c69885856b35",
-    "originRawCoreDigest": "sha256:583e2353a8405db569e61cb3269b3643aff39374c1e2d83cc970cc033604edec",
+    "run": 41052945511,
+    "head": "777bf46e80e74945b286415d2c7276ee239a164b",
+    "artifact": 12976325543,
+    "artifactZipSha256": "69de48e6ff9b2affcaa6144e39daad604450cf02bd5ddade67f50a67a82dbabf",
+    "compilerDistributionDigest": "sha256:b8bbac71d7992a25a49b78726c4337dbcf0a6194700d42a444019b0ae19cda3f",
+    "sysrootIdentity": "sha256:f215f013eaf2549b9e16c15cfb3928c2321c92332c43fe277298e8c94ad3e66a",
+    "sourceRecipeDigest": "sha256:3ebe668572beff225133fdbb266a99b3190082793d37161b2e036865241c2167",
+    "originRawCoreDigest": "sha256:32d45c689b53d41e6a4797e4a293c3a41ad5a3e7219407632101cf3858a18468",
     "sourceProfile": "lsf-rust-std-owned-thread-built-source-v1",
     "compilerRust": "1.97.1",
     "compilerCommit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
     "threadSourcePathRemap": {
-      "sourceRoot": "/tmp/lsf-rust-clock-std-z79y0c6j/library",
+      "sourceRoot": "/tmp/lsf-rust-clock-std-mlkjw2_2/library",
       "mappedRoot": "/lsf/rust/library",
-      "argument": "--remap-path-prefix=/tmp/lsf-rust-clock-std-z79y0c6j/library=/lsf/rust/library"
+      "argument": "--remap-path-prefix=/tmp/lsf-rust-clock-std-mlkjw2_2/library=/lsf/rust/library"
     },
-    "owningStatus": "passed-original-app-and-guarded-core-compile; 72-source-and-12-emitted-guard-controls",
+    "owningStatus": "passed-10-native-tls-controls-76-source-controls-12-emitted-guards-and-original-app-compile; stale-catalogue-refused-before-runtime",
     "newApplicationStackGeometryClaimed": true,
     "actualOriginalLinkerLayout": {
-      "stackLow": 26256,
-      "stackHigh": 1140368,
-      "activeDataHigh": 25544,
+      "stackLow": 26304,
+      "stackHigh": 1140416,
+      "activeDataHigh": 25584,
       "initialMemoryBytes": 1179648
     },
     "actualGuestExecuted": false
   },
-  "originalBodyImageDigest": "sha256:0e583a4f40eac6933d78354a1432817a1a02a023425d29540b7bd2f7255ec2e0",
-  "originalBodyImageBytes": 175996,
+  "originalBodyImageDigest": "sha256:c21c25cc65288ba74852886903b81695906ab08ee152ad3df102f3cfea6d0130",
+  "originalBodyImageBytes": 176196,
   "libraries": [
     {
       "label": "libcore-93c73edb509ba1e1.rlib",
@@ -97,38 +97,38 @@
     },
     {
       "label": "libstd.rlib",
-      "digest": "sha256:34b3998b937ce594a680daca58c66c5ffbe82812bdd10c20819fcace897dd080",
-      "bytes": 9222662
+      "digest": "sha256:49584d032a1ff8d1e89bd45f0188c9ea0fca9d5e678ecad79823cf1ed8f66e50",
+      "bytes": 9229856
     },
     {
       "label": "captured-futures-executor.rlib",
-      "digest": "sha256:29b13d59800bb5fec1fc7caf88ae7388817e945d1c924a48ea3b9fab342fcc9c",
+      "digest": "sha256:72cb26eab5c6045ef8c8cbf5ae809464edf008993a0c56461e2370ec02713fa3",
       "bytes": 301150
     }
   ],
   "generationGrantsAuthority": false,
   "runtimeQualified": false,
-  "nodeCount": 1225,
-  "referenceCount": 5325,
+  "nodeCount": 1226,
+  "referenceCount": 5323,
   "normalComponentEnvelope": {
     "tool": "wasm-tools",
     "version": "1.254.0",
     "toolSha256": "3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd",
-    "componentDigest": "sha256:74247ff2b0aeb0a1c2f6fb3fbf3fef31bb0c427b724c58d675e0b73be5c74dd5",
-    "componentBytes": 251090,
-    "derivedCoreDigest": "sha256:e3ee64a72d7a75e229a4f07edf58b3e4907ae4e1e974609fc51c2fae4e5f91fd",
+    "componentDigest": "sha256:31b303a38b19750ca5d3ab45a3b4b981706950f3b1d1544ee518a35f6956b374",
+    "componentBytes": 251409,
+    "derivedCoreDigest": "sha256:cc65ef0a737f30dbb719852fb8209d43663c6c3496e8d16de3e888bf58fd8c96",
     "actualGuestExecuted": false,
     "nativeVerifierExecuted": false,
     "files": [
       {
         "name": "normal-component-shell.bin",
         "bytes": 4422,
-        "digest": "sha256:9764efdf4970070a220cb38229face5dae6a4a7e6c995df4e52d5f93ea2900ca"
+        "digest": "sha256:9602d9ffab9e41776c5479ae09d8411ea1ee7ca1a6e22848c1e779ebbaa49e34"
       },
       {
         "name": "original-wit-metadata.bin",
         "bytes": 1420,
-        "digest": "sha256:556d1bc3d01ae7464035014638eae013f5abe3cf0415cc648ba12011b51212d9"
+        "digest": "sha256:d46e07b3b6b15e7b6d2f9bef3d1ab0fe1fc2baeb886e77eba09c76f6b3df58a3"
       },
       {
         "name": "original-producers.bin",
@@ -138,15 +138,15 @@
       {
         "name": "encoded-producers.bin",
         "bytes": 107,
-        "digest": "sha256:26a5a9f7c8a21d15974656d9a48fcc1eed8c8d926f0b3297b5e1a1efafe5bb78"
+        "digest": "sha256:69f3074c7d609279bfd822f32c19bd1ddca984aa7dbdfc2b7fb19f763c9cd776"
       },
       {
         "name": "adapted-wit-metadata.bin",
         "bytes": 1420,
-        "digest": "sha256:48282a8476bc01df993efdd01f51360a2d9244a2b3c096f5d1130be853a47925"
+        "digest": "sha256:14bae97e29b1064d917330e77a459d068214ae6857d5fe6ff2298bdbecc7b826"
       }
     ],
-    "originalSyncCoreDigest": "sha256:ba2014e3f4d14c428b93c100a011afbb2f7995436e858108292dbbd70a720519",
+    "originalSyncCoreDigest": "sha256:24f72880c6921c01472455abece927d3210276bede1fe3bdd9468036c4b3b137",
     "publicEffect": "explicit-async-WIT-ordinary-synchronous-core-ABI",
     "metadataAdaptation": {
       "originalBytes": 1420,
@@ -154,7 +154,7 @@
       "changedOffset": 1244,
       "originalByte": 64,
       "adaptedByte": 67,
-      "adaptedDigest": "sha256:48282a8476bc01df993efdd01f51360a2d9244a2b3c096f5d1130be853a47925",
+      "adaptedDigest": "sha256:14bae97e29b1064d917330e77a459d068214ae6857d5fe6ff2298bdbecc7b826",
       "completeParsedGraphDifference": "only examples:greeting/api@1.0.0#greet async flag",
       "instructionDataImportExportsChanged": false,
       "hostSyncTaskSemanticsChanged": false
