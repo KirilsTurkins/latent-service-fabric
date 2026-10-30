@@ -199,6 +199,12 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
         commands.run('native-sync-run', native_sync, '--test-threads=1')
         summary['nativeWaitControls'] = 11
         summary['nativeSyncControls'] = 8
+        # The bounded evidence keeps the exact build/list/run logs and control
+        # counts.  The three native runner executables are transient products,
+        # not compiler inputs or runtime products, so do not duplicate them in
+        # the retained compiler-input artifact after their tests have run.
+        for native_control in (native_tls, native_wait, native_sync):
+            native_control.unlink()
         summary['stage'] = 'tool-build'
         cargo = commands.run('rust-context-build', tools['cargo'], 'build', '--locked',
             '--package', 'latent-component-threading', '--bin', 'rust-context', '--message-format=json')
