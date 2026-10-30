@@ -16,10 +16,13 @@ from tools.phase2_operator_process import require
 
 SOURCE = 'b422af24d86344ac7abb8b8fa56c3782aab63915'
 RUN = 39884205952
-JOB = 120188455407
+HISTORICAL_JOB = 120188455407
+JOB = 124001233201
 BRANCH = 'feat/rust-sync-profile-20261023'
-ARTIFACT = {'id': 12472447074, 'size_in_bytes': 70987235, 'digest': 'sha256:5a4c0f0cc2ebf8f307ad7d657323ed4c53afc61cd9bb2bc318d564e9b23a4e58'}
-RECEIPTS = {'native-products.json': {'bytes': 135023, 'sha256': 'sha256:9172517704fd93fd1e5311b2ac9a12aa2df4d7ff9e255804b27a47fb9276c5aa'}, 'source-inputs.json': {'bytes': 24881, 'sha256': 'sha256:c24f170cb7890fa25b363a0219138d3629149849e4d7cc299ad53313948da6da'}}
+HISTORICAL_ARTIFACT = {'id': 12472447074, 'size_in_bytes': 70987235, 'digest': 'sha256:5a4c0f0cc2ebf8f307ad7d657323ed4c53afc61cd9bb2bc318d564e9b23a4e58'}
+ARTIFACT = {'id': 12969252228, 'size_in_bytes': 70987125, 'digest': 'sha256:3a3cc9c4ceb585bb51e5780f09b34339f72feaf6a2ecaabf1e359932745bb066'}
+HISTORICAL_RECEIPTS = {'native-products.json': {'bytes': 135023, 'sha256': 'sha256:9172517704fd93fd1e5311b2ac9a12aa2df4d7ff9e255804b27a47fb9276c5aa'}, 'source-inputs.json': {'bytes': 24881, 'sha256': 'sha256:c24f170cb7890fa25b363a0219138d3629149849e4d7cc299ad53313948da6da'}}
+RECEIPTS = {'native-products.json': {'bytes': 135020, 'sha256': 'sha256:3f030c32826880b7338982e4162fbd0d50ed86ae187b0677ea71c771521b48be'}, 'source-inputs.json': HISTORICAL_RECEIPTS['source-inputs.json']}
 PRODUCER_SHA256 = '165497353226b386a9cc66e198b06e556248b672a91edbdba52c040b56603d5c'
 ALLOCATION_COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-memory-v9'
 COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-session-core-stats-c-canonical-system-stack-native-only-cumulative-retirement-physical-result-owner-box-handle-owned-text-call-buffers-rust-context40-authenticated-original-memory-v16'

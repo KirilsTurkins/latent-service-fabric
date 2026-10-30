@@ -10,13 +10,13 @@
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -50,7 +50,7 @@
       {
         "if": "always()",
         "name": "Retain bounded public signing, invocation and physical retirement evidence",
-        "uses": "actions/upload-artifact",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "if-no-files-found": "error",
           "name": "rust-thread-runtime-${{ github.sha }}",
@@ -63,7 +63,8 @@
   },
   "jobId": "signed-default-pools",
   "kind": "job",
-  "reviewReason": "Bind five ordinary signed calls to immutable original compiler and 193-control native products",
+  "reviewReason": "Align this draft workflow with development's approved patched Action sources; command bodies, evidence, limits, and required outcomes remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-thread-runtime.yml"
 }
+

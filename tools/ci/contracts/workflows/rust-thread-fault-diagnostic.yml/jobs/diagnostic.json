@@ -12,13 +12,13 @@
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout",
+        "uses": "KirilsTurkins/lsf-checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python",
+        "uses": "KirilsTurkins/lsf-setup-python",
         "with": {
           "python-version": "3.13.5"
         }
@@ -27,7 +27,7 @@
         "uses": "dtolnay/rust-toolchain"
       },
       {
-        "uses": "Swatinem/rust-cache",
+        "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
           "cache-all-crates": false,
           "cache-bin": false,
@@ -62,7 +62,7 @@
       {
         "if": "always()",
         "name": "Retain source, diagnostic node, real command logs and numeric-only fault rows",
-        "uses": "actions/upload-artifact",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "if-no-files-found": "error",
           "name": "rust-thread-fault-${{ github.sha }}",
@@ -75,7 +75,8 @@
   },
   "jobId": "diagnostic",
   "kind": "job",
-  "reviewReason": "Finite off-default numeric fault diagnostic; one authentic trap control and one rebuilt node, four original helpers and unchanged guest retained; no qualification or timing equivalence claim.",
+  "reviewReason": "Align this draft workflow with development's approved patched Action sources; command bodies, evidence, limits, and required outcomes remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-thread-fault-diagnostic.yml"
 }
+

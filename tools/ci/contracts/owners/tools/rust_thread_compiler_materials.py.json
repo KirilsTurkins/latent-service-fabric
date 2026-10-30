@@ -2,7 +2,8 @@
   "kind": "owner",
   "path": "tools/rust_thread_compiler_materials.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Finite signed Rust consumer owner source fingerprint",
+  "reviewReason": "Bind the exact second producer attempt while retaining the expired historical artifact identity and unchanged selected-member hashes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b723828155fafb4ff06bf867712ab5a993f24dbc97c029a56b01196c9e378a1c"
+  "sha256": "163c0cbdf6923de0957a621ed074e10f0c9a1418ffd30b3a095e6ac791ea3502"
 }
+
