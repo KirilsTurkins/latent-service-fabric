@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the fail-closed enqueued-reference diagnostic to the retained exact-head stale-root evidence without changing limits or success criteria.",
+  "reviewReason": "Bind bounded parent-class and field-offset frames to the retained exact-head unknown-class field edge without changing limits, collection behavior, or success criteria.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "40744635b504c42cbc8bc11ac544566826e3e0524a36d9a7976d3db3ab649a36"
+  "sha256": "4cae884c36c4351e29bb98633daec7b08b6290126747b7063eafbab70e6cc349"
 }

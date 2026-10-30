@@ -111,6 +111,25 @@ int32_t meth_otr_GC_enqueueMark(void* teavm_local_1) {
     return ((TEAVM_FIELD(teavm_local_1, TeaVM_Object, header) & INT32_C(1073741824))
         ? INT32_C(0) : INT32_C(1));
 }
+int32_t meth_otr_GC_markFields(void* teavm_local_1, void* teavm_local_2) {
+    void* teavm_local_3;
+    int32_t teavm_local_4;
+    int32_t teavm_local_5;
+    int32_t teavm_local_6;
+    int32_t teavm_local_7;
+    teavm_local_3 = TEAVM_FIELD(teavm_local_1, TeaVM_Class, layout);
+    teavm_local_4 = INT32_C(0);
+    teavm_local_5 = ((int32_t) *(int16_t*) teavm_local_3);
+    while (1) {
+        teavm_local_6 = TEAVM_TO_SHORT((teavm_local_5 - INT32_C(1)));
+        if ((teavm_local_5 <= INT32_C(0))) break;
+        teavm_local_3 = TEAVM_ADDRESS_ADD(teavm_local_3, INT32_C(2));
+        teavm_local_7 = ((int32_t) *(int16_t*) teavm_local_3);
+        teavm_local_4 = (teavm_local_4 | meth_otr_GC_enqueueMark((*(void**) TEAVM_ADDRESS_ADD(teavm_local_2, teavm_local_7))));
+        teavm_local_5 = teavm_local_6;
+    }
+    return teavm_local_4;
+}
 void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
     if ((TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType) == NULL)) {
         meth_otr_GC_updatePointersInObject(teavm_local_1, teavm_local_2);
@@ -122,13 +141,16 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
             original = gc.read_bytes()
             outputs, receipt = platform.monitor_root_outputs(root)
             self.assertEqual(receipt['upstreamIssue'], platform.MONITOR_ROOT_ISSUE)
-            self.assertEqual(receipt['profile'], 'teavm-0.15-c-packed-monitor-gc-root-v3')
+            self.assertEqual(receipt['profile'], 'teavm-0.15-c-packed-monitor-gc-root-v4')
             self.assertTrue(receipt['markPackedMonitor'])
             self.assertTrue(receipt['rewriteRelocatedMonitor'])
             self.assertTrue(receipt['boundedPackedMonitorValidityTraps'])
             self.assertEqual(receipt['packedMonitorValidityTrapKinds'], 6)
             self.assertTrue(receipt['boundedEnqueuedReferenceValidityTraps'])
             self.assertEqual(receipt['enqueuedReferenceValidityTrapKinds'], 6)
+            self.assertTrue(receipt['boundedFieldEdgeIdentityFrames'])
+            self.assertEqual(receipt['fieldEdgeParentClassIndexMaximum'], 4095)
+            self.assertEqual(receipt['fieldEdgeOffsetMaximum'], 255)
             self.assertEqual(gc.read_bytes(), original)
             adapted = dict(outputs)[gc].decode()
             self.assertIn('meth_otr_GC_enqueueMark(teavm_monitor)', adapted)
@@ -145,6 +167,17 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
                     'free_chunk', 'unknown_class'):
                 self.assertEqual(adapted.count('teavm_enqueued_root_trap_' + kind), 2)
             self.assertEqual(adapted.count('teavm_enqueued_root_trap_kind = INT32_C('), 6)
+            self.assertIn('teavm_gc_candidate_is_valid_unknown_class(teavm_field_edge_candidate)', adapted)
+            self.assertIn('teavm_gc_known_class_index(teavm_local_1)', adapted)
+            self.assertIn('teavm_field_edge_diagnose(teavm_field_edge_parent, teavm_local_7)', adapted)
+            self.assertEqual(adapted.count('__attribute__((noinline)) static void teavm_field_edge_field_low_'), 16)
+            self.assertEqual(adapted.count('__attribute__((noinline)) static void teavm_field_edge_field_high_'), 16)
+            self.assertEqual(adapted.count('__attribute__((noinline)) static void teavm_field_edge_parent_low_'), 16)
+            self.assertEqual(adapted.count('__attribute__((noinline)) static void teavm_field_edge_parent_mid_'), 16)
+            self.assertEqual(adapted.count('__attribute__((noinline)) static void teavm_field_edge_parent_high_'), 16)
+            self.assertIn('teavm_field_edge_field_low_f();', adapted)
+            self.assertIn('teavm_field_edge_field_high_f(teavm_field);', adapted)
+            self.assertIn('teavm_field_edge_parent_low_f(teavm_parent, teavm_field);', adapted)
 
     def test_packed_monitor_repair_refuses_unknown_collector_shapes(self):
         with tempfile.TemporaryDirectory() as directory:

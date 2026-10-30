@@ -232,6 +232,71 @@ def _generated_function(original: str, function: str) -> tuple[int, int, str]:
     return signatures[0].start(), end, original[signatures[0].start():end]
 
 
+def _field_edge_diagnostics() -> str:
+    """Encode one bad parent-class index and field offset in bounded frames."""
+    lines = [
+        'static volatile int32_t teavm_field_edge_trap_value;',
+        '__attribute__((noinline)) static void teavm_field_edge_trap_out_of_range(void) {',
+        '    teavm_field_edge_trap_value = INT32_C(-2);',
+        '    __builtin_trap();',
+        '}',
+    ]
+    for digit in range(16):
+        lines.extend((
+            f'__attribute__((noinline)) static void teavm_field_edge_field_low_{digit:x}(void) {{',
+            f'    teavm_field_edge_trap_value = INT32_C({digit});',
+            '    if (teavm_field_edge_trap_value != INT32_C(-1)) {',
+            '        __builtin_trap();',
+            '    }',
+            '}',
+        ))
+    for prefix, shift, callee in (
+            ('field_high', 0, 'field_low'),
+            ('parent_low', 4, 'field_high'),
+            ('parent_mid', 0, 'parent_low'),
+            ('parent_high', 4, 'parent_mid')):
+        for digit in range(16):
+            argument = ('teavm_field' if prefix in ('field_high', 'parent_low')
+                        else 'teavm_parent')
+            passed = ('' if prefix == 'field_high' else
+                      'teavm_field' if prefix == 'parent_low' else
+                      'teavm_parent, teavm_field')
+            signature = ('int32_t teavm_field' if prefix == 'field_high' else
+                         'int32_t teavm_parent, int32_t teavm_field')
+            lines.append(
+                f'__attribute__((noinline)) static void teavm_field_edge_{prefix}_{digit:x}({signature}) {{')
+            lines.append(f'    switch (({argument} >> INT32_C({shift})) & INT32_C(15)) {{')
+            for next_digit in range(16):
+                lines.append(
+                    f'        case INT32_C({next_digit}): teavm_field_edge_{callee}_{next_digit:x}({passed}); break;')
+            lines.extend((
+                '        default: teavm_field_edge_trap_out_of_range();',
+                '    }',
+                f'    teavm_field_edge_trap_value = INT32_C({digit});',
+                '}',
+            ))
+    lines.extend((
+        '__attribute__((noinline)) static void teavm_field_edge_diagnose(',
+        '        int32_t teavm_parent, int32_t teavm_field) {',
+        '    if (teavm_parent < INT32_C(0) || teavm_parent > INT32_C(4095)',
+        '            || teavm_field < INT32_C(0) || teavm_field > INT32_C(255)) {',
+        '        teavm_field_edge_trap_out_of_range();',
+        '    }',
+        '    switch ((teavm_parent >> INT32_C(8)) & INT32_C(15)) {',
+    ))
+    for digit in range(16):
+        lines.append(
+            f'        case INT32_C({digit}): teavm_field_edge_parent_high_{digit:x}(teavm_parent, teavm_field); break;')
+    lines.extend((
+        '        default: teavm_field_edge_trap_out_of_range();',
+        '    }',
+        '    teavm_field_edge_trap_value = INT32_C(-3);',
+        '}',
+        '',
+    ))
+    return '\n'.join(lines)
+
+
 def monitor_root_outputs(generated: Path, overrides: dict[Path, bytes] | None = None) -> tuple[list, dict]:
     """Keep packed Object.Monitor references live and relocation-correct.
 
@@ -289,6 +354,30 @@ static int32_t teavm_gc_candidate_has_known_class(void* teavm_candidate) {
         }
     }
     return INT32_C(0);
+}
+static int32_t teavm_gc_candidate_is_valid_unknown_class(void* teavm_candidate) {
+    if (teavm_candidate == NULL
+            || (uintptr_t) teavm_candidate < (uintptr_t) teavm_gc_heapAddress
+            || (uintptr_t) teavm_candidate >= (uintptr_t) TEAVM_ADDRESS_ADD(
+                teavm_gc_heapAddress, teavm_gc_availableBytes)
+            || (uintptr_t) TEAVM_ADDRESS_ADD(teavm_candidate, sizeof(TeaVM_Object)) >
+                (uintptr_t) TEAVM_ADDRESS_ADD(teavm_gc_heapAddress, teavm_gc_availableBytes)
+            || (((uintptr_t) teavm_candidate - (uintptr_t) teavm_gc_heapAddress)
+                & (INT32_C(8) - INT32_C(1))) != 0
+            || TEAVM_FIELD(teavm_candidate, cls_otr_FreeChunk, fld_classReference) == INT32_C(0)) {
+        return INT32_C(0);
+    }
+    return !teavm_gc_candidate_has_known_class(teavm_candidate);
+}
+static int32_t teavm_gc_known_class_index(void* teavm_class) {
+    int32_t teavm_class_index;
+    for (teavm_class_index = INT32_C(0); teavm_class_index < teavm_classReferencesCount;
+            ++teavm_class_index) {
+        if (teavm_classReferences[teavm_class_index] == teavm_class) {
+            return teavm_class_index;
+        }
+    }
+    return INT32_C(-1);
 }
 '''
     declaration = '    void* teavm_local_2;\n'
@@ -387,6 +476,26 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
     body = body.replace(marked, validation + marked)
     adapted = adapted[:start] + enqueued_diagnostics + body + adapted[end:]
 
+    start, end, body = _generated_function(adapted, 'meth_otr_GC_markFields')
+    declaration = '    int32_t teavm_local_7;\n'
+    edge = ('        teavm_local_4 = (teavm_local_4 | meth_otr_GC_enqueueMark('
+            '(*(void**) TEAVM_ADDRESS_ADD(teavm_local_2, teavm_local_7))));\n')
+    if body.count(declaration) != 1 or body.count(edge) != 1:
+        raise ValueError('unreviewed-teavm-field-edge-mark')
+    body = body.replace(declaration, declaration
+        + '    void* teavm_field_edge_candidate;\n'
+        + '    int32_t teavm_field_edge_parent;\n')
+    body = body.replace(edge,
+        '        teavm_field_edge_candidate = (*(void**) TEAVM_ADDRESS_ADD(\n'
+        '            teavm_local_2, teavm_local_7));\n'
+        '        if (teavm_gc_candidate_is_valid_unknown_class(teavm_field_edge_candidate)) {\n'
+        '            teavm_field_edge_parent = teavm_gc_known_class_index(teavm_local_1);\n'
+        '            teavm_field_edge_diagnose(teavm_field_edge_parent, teavm_local_7);\n'
+        '        }\n'
+        '        teavm_local_4 = (teavm_local_4 |\n'
+        '            meth_otr_GC_enqueueMark(teavm_field_edge_candidate));\n')
+    adapted = adapted[:start] + _field_edge_diagnostics() + body + adapted[end:]
+
     start, end, body = _generated_function(adapted, 'meth_otr_GC_updatePointers')
     opening = 'void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {\n'
     branch = '    if ((TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType) == NULL)) {'
@@ -405,7 +514,7 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
     if value == selected:
         raise ValueError('unreviewed-teavm-monitor-root-closure')
     return [(path, value)], {
-        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v3',
+        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v4',
         'upstreamIssue': MONITOR_ROOT_ISSUE,
         'path': 'c/o/t/r/GC.c',
         'upstreamSha256': hashlib.sha256(raw).hexdigest(),
@@ -417,6 +526,9 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
         'packedMonitorValidityTrapKinds': 6,
         'boundedEnqueuedReferenceValidityTraps': True,
         'enqueuedReferenceValidityTrapKinds': 6,
+        'boundedFieldEdgeIdentityFrames': True,
+        'fieldEdgeParentClassIndexMaximum': 4095,
+        'fieldEdgeOffsetMaximum': 255,
     }
 
 

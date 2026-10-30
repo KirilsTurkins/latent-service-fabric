@@ -194,3 +194,32 @@ class even though the repaired assignment visitor compiles into `$1`. The
 13-class closure now requires both exact outputs and rejects every missing or
 unexpected companion. Application/library paths, GC order, capabilities and
 limits remain unchanged. Successful signed execution is still required.
+
+Exact-head run
+[`41109634746`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41109634746)
+at `87f79d417903b1794a99e4e5397fc266209a3555` proved that structural repair is
+present but did not qualify execution. Its only artifact is `13004985825`, with
+archive digest
+`sha256:9db4440ef81ea0e5dbea0f385ec3d0384e29400318657616bd186b9e996bfc0c`.
+Construction and both grant-denial controls passed. The first signed `gc` call
+then trapped with zero effects after 5,117,411 fuel at a 10,211,360-byte peak;
+no signed GC case and no collection passed. The component identity is
+`sha256:53f9238a43e73ca46892f0f70f16f43a0cf818452b055a832f934fb0e64436d5`.
+Its exact frames map to `teavm_enqueued_root_trap_unknown_class`,
+`GC.enqueueMark`, `GC.markObject`, `GC.markObjectData`, `GC.mark`, and
+`GC.doCollectGarbage`. The enqueue caller is still an inlined `GC.markFields`
+edge: an aligned, in-heap, non-free reference stored in a live object's
+compiler-described field has a header class outside TeaVM's known class table.
+That excludes the packed-monitor repair and a direct static root again; it does
+not show that the nested-handler patch repaired runtime execution.
+
+Profile `teavm-0.15-c-packed-monitor-gc-root-v4` leaves all earlier fail-closed
+checks in place and adds a bounded identity-only diagnostic at that exact field
+edge. For an already valid unknown-class reference, noinline frame names encode
+the parent class-table index in three hexadecimal digits and the field offset
+in two, with strict maxima of 4095 and 255. Out-of-range values trap separately.
+The candidate is still passed to the unchanged `GC.enqueueMark` path otherwise;
+the diagnostic neither drops an edge nor changes GC order, heap size, fuel,
+capabilities, assertions, ownership, retirement, or the application/library
+path. A hosted rerun is required to identify the producer before any further
+runtime/compiler repair is justified.
