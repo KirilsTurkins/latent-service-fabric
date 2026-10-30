@@ -151,7 +151,7 @@ def build_evidence(artifact):
                 monitor['inputSha256'] if name=='c/o/t/r/GC.c' else file_identity(
                     artifact/'gc-root-generated'/name,1024**2)['sha256'].removeprefix('sha256:'))
             for name in alignment_runtime), 'java-checkpoint-exact-upstream-heap-alignment-repair')
-    require(monitor['profile']=='teavm-0.15-c-packed-monitor-gc-root-v4'
+    require(monitor['profile']=='teavm-0.15-c-packed-monitor-gc-root-v5'
         and monitor['upstreamIssue']=='konsoletyper/teavm#1330'
         and monitor['path']=='c/o/t/r/GC.c'
         and monitor['upstreamSha256']==alignment_files['c/o/t/r/GC.c']['upstreamSha256']
@@ -164,6 +164,8 @@ def build_evidence(artifact):
         and monitor['packedMonitorValidityTrapKinds']==6
         and monitor['boundedEnqueuedReferenceValidityTraps'] is True
         and monitor['enqueuedReferenceValidityTrapKinds']==6
+        and monitor['dynamicArrayClassesAcceptedByValidityTraps'] is True
+        and monitor['dynamicArrayClassCountMaximum']==4096
         and monitor['boundedFieldEdgeIdentityFrames'] is True
         and monitor['fieldEdgeParentClassIndexMaximum']==4095
         and monitor['fieldEdgeOffsetMaximum']==255,

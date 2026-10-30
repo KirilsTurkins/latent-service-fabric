@@ -223,3 +223,31 @@ the diagnostic neither drops an edge nor changes GC order, heap size, fuel,
 capabilities, assertions, ownership, retirement, or the application/library
 path. A hosted rerun is required to identify the producer before any further
 runtime/compiler repair is justified.
+
+Exact-head run
+[`41114652058`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41114652058)
+at `4798219e49dde156398bbc68bf9f0a73fc31f51a` reached that identity probe.
+Artifact `13005339444` has archive digest
+`sha256:046b16e438d5b6f1f129c15352be2e0c63f991462d28653f40af4d1f62491758`;
+its component is
+`sha256:dba97def8eff249049f5c2d4a94ddc861abb823f73014738849db8e9c935c947`.
+The numeric frame chain encoded parent class index `0x0bd` (189) and field
+offset `0x14` (20). Exact component inspection maps that class and field to
+`java.util.WeakHashMap.elementData`, whose value is an `Entry[]`.
+
+That result disproves the v4 diagnostic's static-table premise rather than
+proving a stale map edge. TeaVM creates reference-array class descriptors in
+its bounded dynamic class pool; they are deliberately absent from
+`teavm_classReferences`. Consequently a valid `Entry[]` satisfied every heap,
+alignment and allocation check but was labelled unknown solely because v4
+searched the static table. The first signed case still failed, with no
+collection or signed success, and the historical result remains failure
+evidence.
+
+Profile `teavm-0.15-c-packed-monitor-gc-root-v5` corrects only that diagnostic
+predicate. It accepts a class descriptor found either in the static table or
+among the existing `teavm_arrayClassCount()` / `teavm_arrayClass()` entries,
+with a fail-closed 4096-entry iteration bound. It still does not drop or rewrite
+the candidate, alter the collector, raise a runtime limit, or qualify the
+application. Another exact-head hosted run must continue beyond this false
+positive and retain the next real failure or signed outcome.

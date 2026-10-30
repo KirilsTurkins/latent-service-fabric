@@ -319,7 +319,9 @@ def monitor_root_outputs(generated: Path, overrides: dict[Path, bytes] | None = 
     original = selected.decode('utf-8')
 
     start, end, body = _generated_function(original, 'meth_otr_GC_markObjectData')
-    diagnostics = '''static volatile int32_t teavm_monitor_root_trap_kind;
+    diagnostics = '''extern int teavm_arrayClassCount(void);
+extern TeaVM_Class* teavm_arrayClass(int32_t index);
+static volatile int32_t teavm_monitor_root_trap_kind;
 __attribute__((noinline)) static void teavm_monitor_root_trap_below_heap(void) {
     teavm_monitor_root_trap_kind = INT32_C(1);
     __builtin_trap();
@@ -350,6 +352,17 @@ static int32_t teavm_gc_candidate_has_known_class(void* teavm_candidate) {
     for (teavm_class_index = INT32_C(0); teavm_class_index < teavm_classReferencesCount;
             ++teavm_class_index) {
         if (teavm_classReferences[teavm_class_index] == teavm_candidate_class) {
+            return INT32_C(1);
+        }
+    }
+    int32_t teavm_dynamic_class_count = teavm_arrayClassCount();
+    if (teavm_dynamic_class_count < INT32_C(0)
+            || teavm_dynamic_class_count > INT32_C(4096)) {
+        return INT32_C(0);
+    }
+    for (teavm_class_index = INT32_C(0); teavm_class_index < teavm_dynamic_class_count;
+            ++teavm_class_index) {
+        if (teavm_arrayClass(teavm_class_index) == teavm_candidate_class) {
             return INT32_C(1);
         }
     }
@@ -514,7 +527,7 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
     if value == selected:
         raise ValueError('unreviewed-teavm-monitor-root-closure')
     return [(path, value)], {
-        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v4',
+        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v5',
         'upstreamIssue': MONITOR_ROOT_ISSUE,
         'path': 'c/o/t/r/GC.c',
         'upstreamSha256': hashlib.sha256(raw).hexdigest(),
@@ -526,6 +539,8 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
         'packedMonitorValidityTrapKinds': 6,
         'boundedEnqueuedReferenceValidityTraps': True,
         'enqueuedReferenceValidityTrapKinds': 6,
+        'dynamicArrayClassesAcceptedByValidityTraps': True,
+        'dynamicArrayClassCountMaximum': 4096,
         'boundedFieldEdgeIdentityFrames': True,
         'fieldEdgeParentClassIndexMaximum': 4095,
         'fieldEdgeOffsetMaximum': 255,
