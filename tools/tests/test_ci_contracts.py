@@ -1090,11 +1090,11 @@ class RepositoryMigrationTests(unittest.TestCase):
                 self.assertEqual(value['jobIf'], 'success()', key)
                 value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}"
             if value['workflow'] == '.github/workflows/c-guest-authoring.yml' and value['job'] == 'runtime':
-                # Only the explicit historical-products replay skips this old
-                # complete job. Its normal/default commands and all other
-                # execution fields retain the immutable historical obligation.
+                # The reviewed libfetch fixture branch and explicit replay
+                # exclude this job; normal PR refs and all other branches keep
+                # every original command, step guard and execution field.
                 self.assertEqual(value['jobIf'], 'success()', key)
-                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}"
+                value['jobIf'] = "${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}"
             if value['workflow'] == '.github/workflows/java-guest-feasibility.yml' and value['job'] == 'compiler-component':
                 self.assertEqual(value['jobIf'], 'success()', key)
                 # Only these explicit manual modes exclude the unchanged full
