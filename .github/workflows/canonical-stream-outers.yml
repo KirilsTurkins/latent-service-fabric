@@ -42,7 +42,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -137,7 +137,7 @@ jobs:
           --output "$RUNNER_TEMP/canonical-stream-outers"
       - name: Retain four source-bound canonical IP outcomes
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: ${{ github.ref_name == 'feat/sdk-736-unstarted-host-drop-20261029' && 'unstarted-host-drop' || github.ref_name == 'feat/sdk-736-guest-start-memory-20261029' && 'guest-start-memory' || github.ref_name == 'test/sdk-736-host-memory-baseline-20261029' && 'host-memory-baseline' || github.ref_name == 'feat/sdk-736-callback-memory-20261028' && 'callback-memory' || github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028' && 'call-result-channel-memory' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' && 'resource-table-memory' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' && 'call-parameter-closure-memory' || (github.ref_name == 'test/sdk-738-node-bootstrap-custody-20261028' || github.ref_name == 'test/sdk-738-node-capacity-facts-20261029') && 'node-bootstrap-custody' || github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 'canonical-lift-result' || 'canonical-ip-format' }}-${{ github.sha }}
           path: |
