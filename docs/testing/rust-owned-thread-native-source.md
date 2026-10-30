@@ -52,9 +52,9 @@ The additive `rust_thread_native_products.py` reader freezes that completed
 origin and retains the historical 188-control reader unchanged. Neither
 receipt records a signed Rust guest invocation.
 
-The later runtime repair extends that same source-bound programme without
+The later runtime repair extended that same source-bound programme without
 relabeling the historical receipt. [Run 41066971526](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41066971526)
-passed all 200 cases and 91 command records at exact source
+passed all 200 cases and 91 command records at its exact source
 `2259601ab19702eafd56c39bcb43f769cdb47fa5`. The seven added cases cover both
 previously omitted host-future controls, all three omitted activation-runtime
 controls and the two session-retirement controls, including post-Store registry
@@ -64,3 +64,18 @@ Independent download verified the exact source and material snapshot, both
 receipt hashes, all five emitted binaries and the final passing command. This
 native event still compiles and tests host controls only; it does not itself
 claim a signed guest call or ThreadPool completion.
+
+After the wait-node and retained-input repairs, exact-head
+[run 41096399674](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41096399674)
+again passed all 200 cases and 91 command records at
+`79911762b366381d7dc61da12d1b5e9aba2b3222`. Its sole artifact `12998565138`
+is 74,662,330 compressed bytes with SHA-256
+`c6c4c063cc8fb73b7e2c649bf19adf2a2c832c63ded8e153d59a76324ed19265`.
+Independent download verified the exact source/material snapshot, the
+136,235-byte native-products receipt
+(`3dde2dc307780b27e60c13e5b226f2e87b7c7c29bfd57c83c6c8918930560ed4`),
+the 25,052-byte source-inputs receipt
+(`3220fc2a3bfacf77cd6becc070486861e8a46746ac631a7433ab7a5dffb099bf`),
+all five product identities and the final passing command. Its record explicitly
+keeps `signedQualification` and `guestSourceCompiled` false: this is the native
+origin for the pending signed campaign, not a successful ThreadPool result.
