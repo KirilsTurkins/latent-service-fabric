@@ -18,9 +18,11 @@ from tools.rust_thread_runtime_package import SOURCE, RUN, PINS
 
 HISTORICAL_ARTIFACT = {'id': 12469845581, 'size_in_bytes': 52246859,
     'digest': 'sha256:76e11dc5d099d353d027b5e946ec7624f5c7bc90110f4844fc9aff387f2afdc6'}
-ARTIFACT = {'id': 12968677962, 'size_in_bytes': 52244511,
+PREVIOUS_ARTIFACT = {'id': 12968677962, 'size_in_bytes': 52244511,
     'digest': 'sha256:feae6e80f418041ca48d5dce1c82456903d1d77cf5e93d1878e2ed0bd36a6138'}
-JOB = 124001219301
+ARTIFACT = {'id': 12978203439, 'size_in_bytes': 55102784,
+    'digest': 'sha256:6570db47d0c9657b3375d66c0ddd720cbc2c05fcce61b48d3d2b9ae7ff47dbf2'}
+JOB = 124073347987
 PREFIX = 'application-diagnostic/'
 
 
@@ -28,7 +30,7 @@ def prepare(output: Path) -> dict:
     run, job = api(f'actions/runs/{RUN}'), api(f'actions/jobs/{JOB}')
     require(run['id'] == RUN and run['path'] == '.github/workflows/rust-owned-thread-inputs.yml'
             and run['event'] == 'workflow_dispatch' and run['head_sha'] == SOURCE
-            and run['head_branch'] == 'feat/rust-authenticated-object-graph-20261023'
+            and run['head_branch'] == 'feat/rust-thread-runtime-20261023'
             and run['status'] == 'completed' and run['conclusion'] == 'success'
             and job['id'] == JOB and job['run_id'] == RUN and job['head_sha'] == SOURCE
             and job['name'] == 'Compile exact Rust context utility and owned thread sysroot'
@@ -60,7 +62,7 @@ def prepare(output: Path) -> dict:
     identities = {}
     with zipfile.ZipFile(remote) as archive:
         rows = archive.infolist()
-        require(len(rows) == 87 and len({row.filename.casefold() for row in rows}) == 87,
+        require(len(rows) == 114 and len({row.filename.casefold() for row in rows}) == 114,
                 'rust-thread-retained-compiler-archive-index')
         # Only these four names can be extracted; all are fixed by the independently
         # verified immutable compiler event. No executable from this archive runs.
@@ -82,7 +84,8 @@ def prepare(output: Path) -> dict:
             identities[name] = actual
     record = {'schemaVersion': 'latent.rust.thread-retained-compiler.v1',
         'source': SOURCE, 'run': RUN, 'job': JOB, 'artifact': ARTIFACT,
-        'producerAttempt': 2, 'historicalArtifact': HISTORICAL_ARTIFACT,
+        'producerAttempt': 1, 'historicalArtifact': HISTORICAL_ARTIFACT,
+        'previousArtifact': PREVIOUS_ARTIFACT,
         'archiveDigestVerification': 'official-metadata-only-selected-members-hash-verified',
         'wholeArchiveRetained': False, 'selected': identities,
         'rangeBytes': remote.transferred, 'rangeRequests': remote.requests,
