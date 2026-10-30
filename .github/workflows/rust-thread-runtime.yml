@@ -31,7 +31,7 @@ jobs:
       - name: Fetch the two exact original compiler and native source events
         run: |
           git fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222
-          git fetch --no-tags --depth=1 origin 9106147f83a2e19c8b1be16b9eb5d55e39512bde
+          git fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222
       - name: Install locked Python dependencies and check finite replay and policy refusals
         run: |
           python3 -m pip install --requirement tools/requirements.lock
@@ -43,12 +43,12 @@ jobs:
       - name: Retain only four original compiler members with exact preimage pins
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/rust_thread_compiler_materials.py --output "$RUNNER_TEMP/rust910614-materials"
+        run: python3 -B tools/rust_thread_compiler_materials.py --output "$RUNNER_TEMP/rust410947-materials"
       - name: Sign one retained component and run all five ordinary public calls
         run: >-
           python3 -B tools/qualify_rust_thread_runtime.py
           --prepared "$RUNNER_TEMP/rust200-native"
-          --compiler-materials "$RUNNER_TEMP/rust910614-materials"
+          --compiler-materials "$RUNNER_TEMP/rust410947-materials"
           --output "$RUNNER_TEMP/rust-thread-runtime"
       - name: Retain bounded public signing, invocation and physical retirement evidence
         if: always()
@@ -60,6 +60,6 @@ jobs:
             ${{ runner.temp }}/rust200-native/retrieval.json
             ${{ runner.temp }}/rust200-native/native-products.json
             ${{ runner.temp }}/rust200-native/source-inputs.json
-            ${{ runner.temp }}/rust910614-materials/retrieval.json
+            ${{ runner.temp }}/rust410947-materials/retrieval.json
           if-no-files-found: error
           retention-days: 7

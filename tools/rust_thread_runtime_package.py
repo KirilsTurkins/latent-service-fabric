@@ -18,8 +18,8 @@ from tools.rust_capsule_build import BUILD_TYPE, Commands, package_inputs, selec
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, read_json, write_json
 from tools.rust_thread_callback_paths import section, unsigned
 
-SOURCE = '9106147f83a2e19c8b1be16b9eb5d55e39512bde'
-RUN = 41058624633
+SOURCE = '79911762b366381d7dc61da12d1b5e9aba2b3222'
+RUN = 41094795688
 HISTORICAL_PINS = {
     'application-source-and-capture.tar.gz': (20761985, 'c6d9ef4e2eb48af53b7685065e406dd5ff8403c5b003c45383680c6afb68a085'),
     'source-inputs.json': (9204, '645f05410a943a1383462ce2eef5a30145c1f6953de74154b3e0b5c62174057e'),
@@ -32,11 +32,17 @@ PREVIOUS_PINS = {
     'raw-core.wasm': HISTORICAL_PINS['raw-core.wasm'],
     'observation.json': (4521, 'fb43d1bcfe2d3d5f31bedcbe3e889f9a4e60389b7bc7bfe9034ecad94923da9d'),
 }
-PINS = {
+PRIOR_PINS = {
     'application-source-and-capture.tar.gz': (20967082, '0fc010b42fa347a494c4f0590a1e75ce46e0d0a181bf07c9f62201e06d9492ca'),
     'source-inputs.json': (9348, '13cf42650a10c4e8659ef9bf4216a39e19a190e27b327f6f8f9b76073272b52c'),
-    'raw-core.wasm': (262561, '1016bc74d96585be6943d2b1396cf79ebd8f1fa66828a321d2ee251827431bcc'),
+    'raw-core.wasm': (262760, '32d45c689b53d41e6a4797e4a293c3a41ad5a3e7219407632101cf3858a18468'),
     'observation.json': (5427, '86110a34ac5235bb70058f02b9c89c93ef322c209235e86badade5501c863b69'),
+}
+PINS = {
+    'application-source-and-capture.tar.gz': (20962606, '782a8fd8c59baf0125493d70866b1eda47dfbb7bb32c259f85ca445e9e0956d4'),
+    'source-inputs.json': (9348, '414381e4c607ca3acae3fdbe424d20105420a4ca49994cbdfefc126f1f0be3f2'),
+    'raw-core.wasm': (262561, '1016bc74d96585be6943d2b1396cf79ebd8f1fa66828a321d2ee251827431bcc'),
+    'observation.json': (5426, 'cf773f3995fa25fd43bba4183683dc8202759c805f8ca8b5e971068a9a2da4f9'),
 }
 COMPONENT_SHA = 'sha256:b7f7664a7a7cf07aac18628ed86124b03b50ef85c82ce1cfc66d9321e3e709f9'
 WRAPPED = {'bytes': 513900,
@@ -167,6 +173,8 @@ def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> d
             for name, (size, sha) in HISTORICAL_PINS.items()},
         'previousCompilerArtifactMembers': {name: {'bytes': size, 'sha256': 'sha256:' + sha}
             for name, (size, sha) in PREVIOUS_PINS.items()},
+        'priorCompilerArtifactMembers': {name: {'bytes': size, 'sha256': 'sha256:' + sha}
+            for name, (size, sha) in PRIOR_PINS.items()},
         'originalSourceDigest': digest(inventory(files)), 'projectedPublicWitDigest': digest(projected),
         'originalPublicWitDigest': digest(ORIGINAL_WIT), 'publicEffect': 'async',
         'originalDeclaredImports': list(SOURCE_IMPORTS), 'finalRequiredImports': list(IMPORTS),

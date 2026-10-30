@@ -23,7 +23,7 @@
       },
       {
         "name": "Fetch the two exact original compiler and native source events",
-        "run": "git fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222\ngit fetch --no-tags --depth=1 origin 9106147f83a2e19c8b1be16b9eb5d55e39512bde\n"
+        "run": "git fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222\ngit fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222\n"
       },
       {
         "name": "Install locked Python dependencies and check finite replay and policy refusals",
@@ -41,11 +41,11 @@
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Retain only four original compiler members with exact preimage pins",
-        "run": "python3 -B tools/rust_thread_compiler_materials.py --output \"$RUNNER_TEMP/rust910614-materials\""
+        "run": "python3 -B tools/rust_thread_compiler_materials.py --output \"$RUNNER_TEMP/rust410947-materials\""
       },
       {
         "name": "Sign one retained component and run all five ordinary public calls",
-        "run": "python3 -B tools/qualify_rust_thread_runtime.py --prepared \"$RUNNER_TEMP/rust200-native\" --compiler-materials \"$RUNNER_TEMP/rust910614-materials\" --output \"$RUNNER_TEMP/rust-thread-runtime\""
+        "run": "python3 -B tools/qualify_rust_thread_runtime.py --prepared \"$RUNNER_TEMP/rust200-native\" --compiler-materials \"$RUNNER_TEMP/rust410947-materials\" --output \"$RUNNER_TEMP/rust-thread-runtime\""
       },
       {
         "if": "always()",
@@ -54,7 +54,7 @@
         "with": {
           "if-no-files-found": "error",
           "name": "rust-thread-runtime-${{ github.sha }}",
-          "path": "${{ runner.temp }}/rust-thread-runtime/**\n${{ runner.temp }}/rust200-native/retrieval.json\n${{ runner.temp }}/rust200-native/native-products.json\n${{ runner.temp }}/rust200-native/source-inputs.json\n${{ runner.temp }}/rust910614-materials/retrieval.json\n",
+          "path": "${{ runner.temp }}/rust-thread-runtime/**\n${{ runner.temp }}/rust200-native/retrieval.json\n${{ runner.temp }}/rust200-native/native-products.json\n${{ runner.temp }}/rust200-native/source-inputs.json\n${{ runner.temp }}/rust410947-materials/retrieval.json\n",
           "retention-days": 7
         }
       }
