@@ -6,10 +6,17 @@ default ThreadPool application and runtime qualification are still pending.
 
 The current compiled host catalogue borrows 177,210 original body bytes and
 fixes all 1,222 function/data records and 5,312 actual relocation referents. Its
-origin is the independently verified compiler observation at
+generation origin is the independently verified compiler observation at
 `a9809cab6aa3021b29014bd8b80dd15922c93265`, run 41109207452, artifact
 13003202462. That run compiled the original application but refused the stale
-catalogue before component encoding or guest execution. Earlier observations,
+catalogue before component encoding or guest execution. Exact-head run
+41113065282 at `9d9b4001bdefa57b6938c613d0fea13f8e638f83` subsequently passed all 29
+native and 76 source controls plus the independent normal-component proof. Its
+sole artifact 13004447135 is bound by ZIP SHA-256
+`b7df73bbe827a016e45b1681db7304054a6d941c7d1844ebde87063417a58c37`.
+The reviewed original/component pair now exactly matches that artifact, while
+both events remain recorded separately. Neither event executed a signed guest.
+Earlier observations,
 including `28059f3` and the `ec11` failure, remain distinct historical events.
 Guest JSON, names, producer strings and supplied rlibs never select or replace
 this catalogue.

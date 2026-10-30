@@ -22,9 +22,11 @@ EARLIER_ARTIFACT = {'id': 12968677962, 'size_in_bytes': 52244511,
     'digest': 'sha256:feae6e80f418041ca48d5dce1c82456903d1d77cf5e93d1878e2ed0bd36a6138'}
 PREVIOUS_ARTIFACT = {'id': 12978203439, 'size_in_bytes': 55102784,
     'digest': 'sha256:6570db47d0c9657b3375d66c0ddd720cbc2c05fcce61b48d3d2b9ae7ff47dbf2'}
-ARTIFACT = {'id': 12996890774, 'size_in_bytes': 53110361,
+PRIOR_ARTIFACT = {'id': 12996890774, 'size_in_bytes': 53110361,
     'digest': 'sha256:1adc79551de5dfd54255c9fba50346a18161eeec3d01c2c097f06e69b8251e86'}
-JOB = 124197667917
+ARTIFACT = {'id': 13004447135, 'size_in_bytes': 53113028,
+    'digest': 'sha256:b7df73bbe827a016e45b1681db7304054a6d941c7d1844ebde87063417a58c37'}
+JOB = 124260142818
 PREFIX = 'application-diagnostic/'
 
 
@@ -88,6 +90,7 @@ def prepare(output: Path) -> dict:
         'source': SOURCE, 'run': RUN, 'job': JOB, 'artifact': ARTIFACT,
         'producerAttempt': 1, 'historicalArtifact': HISTORICAL_ARTIFACT,
         'earlierArtifact': EARLIER_ARTIFACT, 'previousArtifact': PREVIOUS_ARTIFACT,
+        'priorArtifact': PRIOR_ARTIFACT,
         'archiveDigestVerification': 'official-metadata-only-selected-members-hash-verified',
         'wholeArchiveRetained': False, 'selected': identities,
         'rangeBytes': remote.transferred, 'rangeRequests': remote.requests,
