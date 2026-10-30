@@ -23,7 +23,7 @@
       },
       {
         "name": "Fetch the two exact original compiler and native source events",
-        "run": "git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915\ngit fetch --no-tags --depth=1 origin 28059f343bbd954e3e6614c5a24593897cc0c294\n"
+        "run": "git fetch --no-tags --depth=1 origin 2259601ab19702eafd56c39bcb43f769cdb47fa5\ngit fetch --no-tags --depth=1 origin 9106147f83a2e19c8b1be16b9eb5d55e39512bde\n"
       },
       {
         "name": "Install locked Python dependencies and check finite replay and policy refusals",
@@ -33,19 +33,19 @@
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
-        "name": "Authenticate five exact native products and the complete 193-control origin",
-        "run": "python3 -B tools/rust_thread_native_products.py --output \"$RUNNER_TEMP/rust193-native\""
+        "name": "Authenticate five exact native products and the complete 200-control origin",
+        "run": "python3 -B tools/rust_thread_native_products.py --output \"$RUNNER_TEMP/rust200-native\""
       },
       {
         "env": {
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Retain only four original compiler members with exact preimage pins",
-        "run": "python3 -B tools/rust_thread_compiler_materials.py --output \"$RUNNER_TEMP/rust28059-materials\""
+        "run": "python3 -B tools/rust_thread_compiler_materials.py --output \"$RUNNER_TEMP/rust910614-materials\""
       },
       {
         "name": "Sign one retained component and run all five ordinary public calls",
-        "run": "python3 -B tools/qualify_rust_thread_runtime.py --prepared \"$RUNNER_TEMP/rust193-native\" --compiler-materials \"$RUNNER_TEMP/rust28059-materials\" --output \"$RUNNER_TEMP/rust-thread-runtime\""
+        "run": "python3 -B tools/qualify_rust_thread_runtime.py --prepared \"$RUNNER_TEMP/rust200-native\" --compiler-materials \"$RUNNER_TEMP/rust910614-materials\" --output \"$RUNNER_TEMP/rust-thread-runtime\""
       },
       {
         "if": "always()",
@@ -54,7 +54,7 @@
         "with": {
           "if-no-files-found": "error",
           "name": "rust-thread-runtime-${{ github.sha }}",
-          "path": "${{ runner.temp }}/rust-thread-runtime/**\n${{ runner.temp }}/rust193-native/retrieval.json\n${{ runner.temp }}/rust193-native/native-products.json\n${{ runner.temp }}/rust193-native/source-inputs.json\n${{ runner.temp }}/rust28059-materials/retrieval.json\n",
+          "path": "${{ runner.temp }}/rust-thread-runtime/**\n${{ runner.temp }}/rust200-native/retrieval.json\n${{ runner.temp }}/rust200-native/native-products.json\n${{ runner.temp }}/rust200-native/source-inputs.json\n${{ runner.temp }}/rust910614-materials/retrieval.json\n",
           "retention-days": 7
         }
       }
@@ -63,7 +63,7 @@
   },
   "jobId": "signed-default-pools",
   "kind": "job",
-  "reviewReason": "Align this draft workflow with development's approved patched Action sources; command bodies, evidence, limits, and required outcomes remain unchanged.",
+  "reviewReason": "Use exact repaired native and compiler evidence for signed ThreadPool execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-thread-runtime.yml"
 }

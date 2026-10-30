@@ -25,7 +25,7 @@
   "requiredJobs": [
     "signed-default-pools"
   ],
-  "reviewReason": "One narrow initial publication and manual finite signed Rust ThreadPool consumer; compiler history is reused unchanged",
+  "reviewReason": "Use exact repaired native and compiler evidence for signed ThreadPool execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-thread-runtime.yml"
 }
