@@ -209,6 +209,32 @@ its distribution receipt is not reused. Normal builder, native catalogue,
 canonical-body, checkpoint and runtime qualification flags remain false.
 No normal component, signed Rust guest or runtime ThreadPool was executed.
 
+The current retained compiler origin is
+[run 41058624633](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41058624633)
+at exact source `9106147f83a2e19c8b1be16b9eb5d55e39512bde`. Its job
+`124073347987` passed and produced sole artifact `12978203439`, 55,102,784
+compressed bytes with SHA-256
+`6570db47d0c9657b3375d66c0ddd720cbc2c05fcce61b48d3d2b9ae7ff47dbf2`.
+The retained four-member reader verified the 262,760-byte original core
+(`sha256:32d45c689b53d41e6a4797e4a293c3a41ad5a3e7219407632101cf3858a18468`)
+and 514,214-byte wrapped component
+(`sha256:ad791f7486361d73f69b4b4a7b0bc57f5b5094d63cc3d5d2beddef560f9003dd`).
+No executable from that compiler artifact is invoked during retrieval, and the
+compiler observation alone still establishes no signed runtime result.
+
+The first signed call reached that unchanged application/library path but
+overflowed its stack. Bounded frames isolated the primary failure to TLS owner
+admission: the eighth separately allocated TLS entry exhausted the unchanged
+Native-owner bound, and panic bookkeeping recursively attempted another TLS
+entry. The repair changes only compiler/runtime TLS storage: up to 32 entries
+share one admitted System allocation and one Native owner, admission still
+precedes allocation, Wasm linear-memory accounting is unchanged, cleanup still
+deallocates and settles the physical owner, and completion still requires a
+null TLS table. A 33-key bound case and the existing ten Native-owner controls
+close both the amortized and refusal paths. The complete repaired host control
+origin is separately retained in `rust-owned-thread-native-source.md`; a real
+signed execution remains the acceptance gate.
+
 Other validation includes source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
 the actual registry, wait, TLS and lifecycle bodies with explicit reference
