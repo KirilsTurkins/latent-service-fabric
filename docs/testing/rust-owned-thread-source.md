@@ -287,6 +287,23 @@ total). The refreshed catalogue borrows 177,210 original body bytes with digest
 It grants no runtime authority. A fresh normal-component proof and signed hosted
 result are still required before runtime acceptance.
 
+Hosted compiler run
+[41111550257](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41111550257)
+at exact source `07919b3e50adda76cc4bab551fa470d0b9b10379` retained artifact
+`13003802395` with ZIP digest
+`sha256:bf30a5c3cbec28efd4232713de07c77b6bf96ff0916f05ebf5ce5b00dbce64f6`.
+All 29 native controls passed and 75 of 76 source-mechanism controls passed;
+the final control refused before compilation and guest execution because its
+fixed callback-isolated-core identity still named the previous catalogue. The
+independent Python production emission already retained by artifact 13003202462
+is `sha256:34eb2f704cae5a3f480a8975b3ca4e66b59311b65716118041c3cb1d72dfa182`.
+The Rust verifier now binds that exact emission and the separately retained
+complete source-derived core
+`sha256:a1fd0ce4d9f557c88b2ff0df9ac0e7b99b25586bd6ddb2529f368339183faa27`;
+the original synchronous pre-component core remains
+`sha256:e7d643d2b2593158ba1a40fdd4fc9f4613123064d056f9bf39fa3adbaeb324d7`.
+These are identity corrections, not runtime results or expansions of a limit.
+
 Other validation includes source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
 the actual registry, wait, TLS and lifecycle bodies with explicit reference
