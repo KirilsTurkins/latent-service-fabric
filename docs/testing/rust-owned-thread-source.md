@@ -322,6 +322,19 @@ framed authenticated pair is 514,484 bytes with digest
 This run performed no signed invocation and grants no runtime success; the next
 hosted gate must execute all five signed calls against this exact pair.
 
+The first such gate, signed run
+[`41115657241`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41115657241),
+refused before guest entry because its older native executable still embedded
+the original-object catalogue from `79911762b366381d7dc61da12d1b5e9aba2b3222`.
+It could not authenticate this repaired component pair and reported
+`corrupt-artifact` with zero fuel, zero peak memory and zero effects. Current-head
+native producer run
+[`41116286833`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41116286833)
+then passed all 200 source-bound controls at
+`9c0097fc4dee24c57e0cffbdf1963e47772b2ffc`; that producer result is not guest
+execution, but binds the next signed gate to an executable compiled with the
+same repaired catalogue.
+
 Other validation includes source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
 the actual registry, wait, TLS and lifecycle bodies with explicit reference

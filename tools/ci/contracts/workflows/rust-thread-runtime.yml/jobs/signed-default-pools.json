@@ -23,7 +23,7 @@
       },
       {
         "name": "Fetch the two exact original compiler and native source events",
-        "run": "git fetch --no-tags --depth=1 origin 9d9b4001bdefa57b6938c613d0fea13f8e638f83\ngit fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222\n"
+        "run": "git fetch --no-tags --depth=1 origin 9d9b4001bdefa57b6938c613d0fea13f8e638f83\ngit fetch --no-tags --depth=1 origin 9c0097fc4dee24c57e0cffbdf1963e47772b2ffc\n"
       },
       {
         "name": "Install locked Python dependencies and check finite replay and policy refusals",
@@ -63,7 +63,7 @@
   },
   "jobId": "signed-default-pools",
   "kind": "job",
-  "reviewReason": "Use the exact hosted-confirmed inline-TLS compiler artifact with the unchanged native origin for signed ThreadPool execution.",
+  "reviewReason": "Use the exact hosted-confirmed inline-TLS compiler artifact with its current source-matched native origin for signed ThreadPool execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-thread-runtime.yml"
 }

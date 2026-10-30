@@ -88,3 +88,26 @@ the 25,052-byte source-inputs receipt
 all five product identities and the final passing command. Its record explicitly
 keeps `signedQualification` and `guestSourceCompiled` false: this is the native
 origin for the pending signed campaign, not a successful ThreadPool result.
+
+Signed runtime run
+[`41115657241`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41115657241)
+subsequently authenticated that native origin and the current compiler artifact,
+but it refused before guest entry with `corrupt-artifact`. The native executable's
+compiled original-object catalogue came from `79911762b366381d7dc61da12d1b5e9aba2b3222`
+and therefore could not authenticate the repaired component pair from
+`9d9b4001bdefa57b6938c613d0fea13f8e638f83`. Its zero fuel, zero memory and zero
+effects are preserved as pre-execution evidence, not a ThreadPool result.
+
+The replacement current-head native producer
+[`41116286833`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41116286833)
+passed the same 200 controls and 91 commands at exact source
+`9c0097fc4dee24c57e0cffbdf1963e47772b2ffc`. Its sole artifact `13008060664`
+is 74,661,519 compressed bytes with ZIP SHA-256
+`0a6b8e76fc984e347125c1c5892f81d452593ea776b1b194534d70434040e046`.
+Independent download verified the 136,240-byte native-products receipt
+(`dcafd3864e22e5f7ff59fc4808de189fffc99691fb07600b79b7a0fef6f09526`),
+the 25,052-byte source-inputs receipt
+(`c0eed219a9bc8f5bbda5df03a815bb755fa28608d43eb8bbf912d156242846ac`)
+and all five source-bound product identities. This producer event still executes
+no signed guest; it only supplies executables whose catalogue and runtime source
+include the repaired Rust component identities for the next exact signed run.
