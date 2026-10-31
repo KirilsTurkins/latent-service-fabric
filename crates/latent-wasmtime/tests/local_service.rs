@@ -316,7 +316,7 @@ async fn dotnet_original_v3_fault_and_quiescence_use_bounded_numeric_observation
                 denied.principal.kind = kind;
                 let denied_receipt = f.manager.start(denied).unwrap().await;
                 match denied_receipt.outcome {
-                    latent_core::ActivationOutcome::Failed { error, .. } => {
+                    latent_activation::ActivationOutcome::Failed { error, .. } => {
                         assert_eq!(error.code, latent_core::PlatformErrorCode::PermissionDenied);
                     }
                     _ => panic!("foreign diagnostic principal was not refused"),

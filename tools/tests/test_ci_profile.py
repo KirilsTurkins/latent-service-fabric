@@ -14,6 +14,65 @@ from tools import ci_profile as profile
 
 
 class ClassificationTests(unittest.TestCase):
+    def test_sparse_profile_and_result_checkouts_load_complete_catalogue(self) -> None:
+        import hashlib
+        import sys
+        from tools.ci_lane_inventory import workflow_model
+
+        root = profile.registry.ROOT
+        model = workflow_model((root / ".github/workflows/ci.yml").read_text())
+        expected = hashlib.sha256(json.dumps(profile.registry.load(), sort_keys=True).encode()).hexdigest()
+        environment = {**os.environ, "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+                       "GIT_TERMINAL_PROMPT": "0", "GIT_NO_LAZY_FETCH": "1"}
+        environment.pop("PYTHONPATH", None)
+        environment.pop("PYTHONHOME", None)
+        for job in ("profile", "result"):
+            with self.subTest(job=job), tempfile.TemporaryDirectory() as temporary:
+                checkout = next(step for step in model["jobs"][job]["steps"]
+                                if "sparse-checkout" in step.get("with", {}))
+                patterns = checkout["with"]["sparse-checkout"]
+                self.assertIn("/tools/ci_suite_cases.py", patterns.splitlines())
+                self.assertIn("/tools/ci/suites.cases.d/", patterns.splitlines())
+                sparse = Path(temporary) / "checkout"
+                def run(*arguments, input=None, status=0):
+                    result = subprocess.run(arguments, cwd=sparse if sparse.exists() else root,
+                                            input=input, env=environment, capture_output=True,
+                                            text=True, timeout=30)
+                    self.assertEqual(result.returncode, status, result.stdout + result.stderr)
+                    return result.stdout + result.stderr
+                # Local shared objects, no network and no full working-tree fallback.
+                run("git", "clone", "--quiet", "--shared", "--no-checkout", str(root), str(sparse))
+                run("git", "sparse-checkout", "set", "--no-cone", "--stdin", input=patterns)
+                run("git", "checkout", "--quiet", "--detach", "HEAD")
+                observed = run(sys.executable, "-I", "-c",
+                               "import hashlib,json,sys; from pathlib import Path; "
+                               "sys.path.insert(0,str(Path.cwd())); "
+                               "from tools import ci_suite_inventory as registry; "
+                               "print(hashlib.sha256(json.dumps(registry.load(),sort_keys=True).encode()).hexdigest())")
+                self.assertEqual(observed.strip(), expected)
+                if job == "profile":
+                    event = Path(temporary) / "event.json"
+                    event.write_text("{}\n")
+                    output = Path(temporary) / "outputs.txt"
+                    summary = Path(temporary) / "summary.md"
+                    result = run(sys.executable, "-I", "tools/ci_profile.py", "--event-name", "workflow_dispatch",
+                                 "--event-path", str(event), "--github-output", str(output),
+                                 "--github-step-summary", str(summary))
+                    self.assertIn("CI profile: full", result)
+                    self.assertIn("profile=full\n", output.read_text())
+                else:
+                    outputs = profile.Decision("full", "workflow-dispatch", 0).outputs()
+                    required = json.loads(outputs["expected_jobs"])
+                    results = {name: {"result": "success" if name in required else "skipped"}
+                               for name in profile.registry.ALL_JOBS}
+                    results["profile"]["outputs"] = outputs
+                    environment["CI_JOB_RESULTS"] = json.dumps(results)
+                    self.assertIn("Required CI jobs passed:", run(sys.executable, "-I", "tools/ci_result.py"))
+                    results["docs"]["result"] = "failure"
+                    environment["CI_JOB_RESULTS"] = json.dumps(results)
+                    self.assertIn("unexpected-job-result:docs:failure",
+                                  run(sys.executable, "-I", "tools/ci_result.py", status=1))
+
     def test_website_sources_use_only_the_site_and_documentation_jobs(self) -> None:
         for path in ("website/package-lock.json", "website/docusaurus.config.ts", "website/src/pages/index.tsx",
                      "website/plugins/examples/remark.mjs", "website/src/css/theme.css", "website/content/coverage.json",
