@@ -21,6 +21,7 @@
           ".github/workflows/rust-owned-thread-inputs.yml",
           "tools/compile_rust_owned_thread_inputs.py",
           "tools/compile_rust_owned_thread_application.py",
+          "tools/build_snapshot.py",
           "crates/latent-component-threading/**",
           "sdk/rust-standard-runtime/**"
         ]
@@ -37,7 +38,7 @@
   "requiredJobs": [
     "compiler-inputs"
   ],
-  "reviewReason": "Include the existing application compiler and exact native catalogue in branch push coverage; manual diagnostic selection stays default false.",
+  "reviewReason": "Also run the existing exact compiler/application programme for its shared committed-source capture dependency; preserve both branches, manual default, required job, read-only permissions and every execution gate.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-owned-thread-inputs.yml"
 }

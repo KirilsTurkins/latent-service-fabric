@@ -12,6 +12,7 @@ on:
       - .github/workflows/rust-owned-thread-inputs.yml
       - tools/compile_rust_owned_thread_inputs.py
       - tools/compile_rust_owned_thread_application.py
+      - tools/build_snapshot.py
       - crates/latent-component-threading/**
       - sdk/rust-standard-runtime/**
 permissions:
