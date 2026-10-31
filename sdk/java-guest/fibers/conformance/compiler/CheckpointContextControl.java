@@ -420,6 +420,25 @@ public final class CheckpointContextControl {
 
     private static void directProgressControls(ClassHolder unmanagedLoop, boolean corrected) {
         final String refusal = "java-checkpoint-nonsuspendable-progress-741";
+        var speculative = new Inputs();
+        var absent = ref("control.SpeculativeManaged", "absent");
+        owner(speculative.source, absent.getClassName());
+        isolatedProgress(speculative, absent, corrected, null);
+        for (int kind = 0; kind < 4; ++kind) {
+            var excluded = new Inputs();
+            var missing = ref(kind == 2 ? "org.teavm.runtime.GC" : "control.MissingProgress",
+                    kind == 0 ? "<clinit>" : "absent");
+            if (kind != 3) {
+                var cls = owner(excluded.source, missing.getClassName());
+                if (kind == 1) cls.getAnnotations().add(new AnnotationHolder("org.teavm.interop.Unmanaged"));
+            }
+            isolatedProgress(excluded, missing, corrected, "java-checkpoint-unresolved-741");
+        }
+        var transitive = new Inputs();
+        var unresolvedEntry = ref("control.TransitiveMissingProgress", "<clinit>");
+        owner(transitive.source, absent.getClassName());
+        transitive.caller(unresolvedEntry, absent);
+        isolatedProgress(transitive, unresolvedEntry, corrected, "java-checkpoint-unresolved-741");
         var unmanaged = new Inputs();
         unmanaged.source.putClassHolder(ModelUtils.copyClass(unmanagedLoop));
         isolatedProgress(unmanaged, ref(unmanagedLoop.getName(), "loop"), corrected, refusal);

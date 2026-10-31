@@ -910,7 +910,18 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             ClassReader cls = classSource.get(reference.getClassName());
             MethodReader method = cls == null ? null : cls.getMethod(reference.getDescriptor());
             if (method == null) {
-                throw checkpointRefusal("java-checkpoint-unresolved-741");
+                // linkMethod records missing declarations in reachedMethods
+                // before it checks isMissing(). An ordinary absent method on
+                // a known managed class has no body/annotation to classify;
+                // its normal missing-method diagnostic remains the compiler's.
+                // Never defer an unknown class or an excluded root. Missing
+                // callees reached from an excluded context still refuse below.
+                if (cls == null || reference.getName().equals("<clinit>")
+                        || progressRuntimeClassIdentity(cls.getName()) != null
+                        || cls.getAnnotations().get("org.teavm.interop.Unmanaged") != null) {
+                    throw checkpointRefusal("java-checkpoint-unresolved-741");
+                }
+                continue;
             }
             if (progressRuntimeClassIdentity(cls.getName()) != null
                     || reference.getName().equals("<clinit>")
