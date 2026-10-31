@@ -394,3 +394,5 @@ fn native_unconfirmed_reference_head_never_acts_as_an_empty_catalog() {
     );
     assert_eq!(bytes(&roots[1].0), before);
 }
+
+mod tombstones;

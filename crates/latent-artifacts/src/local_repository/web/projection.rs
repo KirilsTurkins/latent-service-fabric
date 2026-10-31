@@ -24,7 +24,10 @@ impl DirectoryArtifactRepository {
             .entries
             .get(id)
             .filter(|entry| {
-                tenant.is_none_or(|tenant| entry.record.publication.scope.tenant() == Some(tenant))
+                !entry.deleted
+                    && tenant.is_none_or(|tenant| {
+                        entry.record.publication.scope.tenant() == Some(tenant)
+                    })
             })
             .ok_or_else(|| error(PlatformErrorCode::NotFound, "publication not found"))?;
         let projection = entry
@@ -45,7 +48,7 @@ impl DirectoryArtifactRepository {
         Ok(state
             .entries
             .get(&reference.id)
-            .is_some_and(|entry| entry.record.publication == *reference))
+            .is_some_and(|entry| !entry.deleted && entry.record.publication == *reference))
     }
 
     pub(in crate::local_repository) fn web_execution_eligibility(

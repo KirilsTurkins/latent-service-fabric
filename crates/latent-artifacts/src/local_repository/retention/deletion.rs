@@ -1,4 +1,5 @@
-//! Coherent negative checks. No tombstones, content unlink, or audit mutation.
+//! Coherent negative checks held through the durable tombstone commit.
+mod commit;
 use super::{
     busy, check_time, checked, conflict, corrupt, deadline, failure, model, storage, uncertain,
     DirectoryArtifactRepository, Duration, PlatformError, PlatformErrorCode,
@@ -39,7 +40,7 @@ impl DirectoryArtifactRepository {
 
     /// Inspect a prospective deletion under the actual native commit/read owners.
     /// This is advisory only: it creates no durable receipt, reservation, permit,
-    /// tombstone or refund. Committed-history deletion remains unavailable.
+    /// tombstone or refund. The tombstone commit repeats all checks.
     pub fn inspect_publication_deletion(
         &self,
         request: &PublicationDeletionRequest,
@@ -48,18 +49,34 @@ impl DirectoryArtifactRepository {
         request.validate()?;
         model::encode(request, model::MAX_REQUEST)?;
         let deadline = deadline(timeout)?;
-        let _work = self.admission_work.try_lock().map_err(|_| busy())?;
         let mut assessment = None;
+        self.with_deletion_selection(request, deadline, &mut |_, reference_revision| {
+            assessment = Some(PublicationDeletionAssessment {
+                request: request.clone(),
+                reference_revision,
+            });
+            Ok(())
+        })?;
+        assessment.ok_or_else(uncertain)
+    }
+
+    fn with_deletion_selection(
+        &self,
+        request: &PublicationDeletionRequest,
+        deadline: std::time::Instant,
+        action: &mut dyn FnMut(&mut super::RetentionState, u64) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        check_time(deadline)?;
+        let _work = self.admission_work.try_lock().map_err(|_| busy())?;
         self.life_store().with_exclusive(&mut |_| {
             let _epoch = self.web.epoch.write()?;
             let writer = self.publish_lock.try_lock().map_err(|_| busy())?;
             if writer.pending.is_some() {
                 return Err(uncertain());
             }
-            let state = self.retention.try_lock().map_err(|_| busy())?;
+            let mut state = self.retention.try_lock().map_err(|_| busy())?;
             let head = checked(&state)?;
-            // Validate the entire exact selection before reporting anything about
-            // pins/readers/routes, including when a foreign target follows a local one.
+            // Validate every scoped identity before disclosing pins or references.
             for target in &request.targets {
                 check_time(deadline)?;
                 if self.retention_generation(&target.publication)? != target.expected_generation {
@@ -72,7 +89,7 @@ impl DirectoryArtifactRepository {
             let publications: Vec<_> = request
                 .targets
                 .iter()
-                .map(|target| target.publication.clone())
+                .map(|t| t.publication.clone())
                 .collect();
             for publication in &publications {
                 check_time(deadline)?;
@@ -82,16 +99,7 @@ impl DirectoryArtifactRepository {
                         "publication-deletion-retention-pin",
                     ));
                 }
-                let terminal =
-                    if let Some(record) = self.life_store().record_publication(&publication.id)? {
-                        matches!(
-                            record.state,
-                            ReleaseLifecycleState::Retired | ReleaseLifecycleState::Revoked
-                        )
-                    } else {
-                        self.web.terminal_for_deletion(publication)?
-                    };
-                if !terminal {
+                if !self.terminal_publication(publication)? {
                     return Err(failure(
                         PlatformErrorCode::StateConflict,
                         "publication-deletion-requires-terminal-publication",
@@ -116,24 +124,44 @@ impl DirectoryArtifactRepository {
             {
                 return Err(reference_unavailable());
             }
+            let mut called = false;
             references.with_unreferenced_publications(
                 &self.lifecycle_authority(),
                 &publications,
-                &mut |reference_revision| {
-                    if assessment.is_some() {
+                &mut |revision| {
+                    if called {
                         return Err(corrupt());
                     }
+                    called = true;
                     check_time(deadline)?;
-                    assessment = Some(PublicationDeletionAssessment {
-                        request: request.clone(),
-                        reference_revision,
-                    });
-                    Ok(())
+                    action(&mut state, revision)
                 },
             )?;
-            check_time(deadline)
-        })?;
-        assessment.ok_or_else(uncertain)
+            // A successful commit cannot be retroactively reported as a definite
+            // deadline rejection. The action owns its precommit/time checks.
+            if called {
+                Ok(())
+            } else {
+                Err(uncertain())
+            }
+        })
+    }
+
+    fn terminal_publication(
+        &self,
+        publication: &crate::PublicationRef,
+    ) -> Result<bool, PlatformError> {
+        if let Some(record) = self.life_store().record_publication(&publication.id)? {
+            if record.scope != publication.scope {
+                return Err(super::unavailable_target());
+            }
+            Ok(matches!(
+                record.state,
+                ReleaseLifecycleState::Retired | ReleaseLifecycleState::Revoked
+            ))
+        } else {
+            self.web.terminal_for_deletion(publication)
+        }
     }
 }
 

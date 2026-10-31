@@ -78,8 +78,11 @@ Representative source tests (not a complete coverage inventory):
 
 `bind_publication_reference_authority` attaches this actual `Arc`-owned native
 control store to the matching artifact lifecycle owner. The standalone composes
-this binding at startup. Read-only deletion assessment holds the native writer
+this binding at startup. Read-only assessment and durable tombstone commit hold the native writer
 and current catalog while checking a budgeted deployment inverse index, stored
 HTTP targets, and retained rollout base/candidate targets. Missing, foreign,
 dropped or unconfirmed owners fail closed; reference absence is not deletion
-permission. See the [retention and assessment contract](../../docs/reference/publication-retention-pins.md).
+permission. Tombstones remove visibility without unlinking content or refunding
+capacity; physical cleanup and operator integration are separate remaining work.
+Native tests also refuse an older control catalog that references tombstoned
+history. See the [retention and assessment contract](../../docs/reference/publication-retention-pins.md).

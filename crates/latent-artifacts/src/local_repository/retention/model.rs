@@ -1,4 +1,5 @@
 mod lexical;
+mod tombstones;
 use super::{
     capacity, conflict, corrupt, unavailable_target, LifecycleScope, PlatformError, PublicationRef,
     PublicationRetentionAction, PublicationRetentionPin, PublicationRetentionReceipt,
@@ -6,10 +7,12 @@ use super::{
     MAX_PUBLICATION_RETENTION_RECEIPTS,
 };
 use serde::{Deserialize, Serialize};
+use tombstones::DeletionHistory;
 
 pub(super) const MAX_HEAD: usize = 4 * 1024 * 1024;
 pub(super) const MAX_REQUEST: usize = 64 * 1024;
 pub(super) const MAX_INTENT: usize = MAX_HEAD + 4096;
+pub(super) const DELETION_MARKER: &[u8] = b"lsf-release-lifecycle-deletion-v1\n";
 pub(super) const MARKER: &[u8] = b"lsf-release-lifecycle-retention-v1\n";
 const VERSION: u32 = 1;
 
@@ -22,6 +25,8 @@ pub(super) struct Head {
     pub revision: u64,
     pub pins: Vec<PublicationRetentionPin>,
     pub receipts: Vec<PublicationRetentionReceipt>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deletion: Option<DeletionHistory>,
 }
 impl Head {
     pub fn empty(mode: [u8; 32]) -> Self {
@@ -32,6 +37,7 @@ impl Head {
             revision: 0,
             pins: Vec::new(),
             receipts: Vec::new(),
+            deletion: None,
         }
     }
     pub fn validate(&self, mode: [u8; 32]) -> Result<(), PlatformError> {
@@ -43,6 +49,16 @@ impl Head {
             || (self.revision != 0 && self.receipts.is_empty())
         {
             return Err(corrupt());
+        }
+        if let Some(deletion) = &self.deletion {
+            deletion.validate()?;
+            if self
+                .pins
+                .iter()
+                .any(|pin| deletion.contains(&pin.publication.id))
+            {
+                return Err(corrupt());
+            }
         }
         for pin in &self.pins {
             pin.publication.scope.validate().map_err(|_| corrupt())?;
@@ -103,6 +119,13 @@ impl Head {
         let mut next = self.clone();
         next.revision = self.revision.checked_add(1).ok_or_else(capacity)?;
         for target in &request.targets {
+            if self
+                .deletion
+                .as_ref()
+                .is_some_and(|d| d.contains(&target.publication.id))
+            {
+                return Err(unavailable_target());
+            }
             let index = next
                 .pins
                 .binary_search_by(|pin| pin.publication.id.cmp(&target.publication.id));
@@ -169,6 +192,7 @@ pub(super) fn encode<T: Serialize>(value: &T, maximum: usize) -> Result<Vec<u8>,
         maximum,
     };
     serde_json::to_writer(&mut writer, value).map_err(|_| capacity())?;
+    lexical::check(&writer.bytes)?;
     Ok(writer.bytes)
 }
 pub(super) fn decode<T>(bytes: &[u8], maximum: usize) -> Result<T, PlatformError>

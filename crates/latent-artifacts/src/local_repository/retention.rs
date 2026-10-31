@@ -31,7 +31,7 @@ pub(super) fn check_format(root: &Path, promoted: bool) -> Result<(), PlatformEr
     storage::load(root, promoted, false).map(|_| ())
 }
 pub(super) fn is_marker(bytes: &[u8]) -> bool {
-    bytes == model::MARKER
+    bytes == model::MARKER || bytes == model::DELETION_MARKER
 }
 
 impl DirectoryArtifactRepository {
@@ -44,6 +44,8 @@ impl DirectoryArtifactRepository {
             DevelopmentRetentionFault::AfterHead => 2,
             DevelopmentRetentionFault::AfterIntentRemoval => 3,
             DevelopmentRetentionFault::AfterFormatPromotion => 4,
+            DevelopmentRetentionFault::AfterDeletionFormatPromotion => 5,
+            DevelopmentRetentionFault::AfterDeletionVisibility => 6,
         };
         storage::FAIL.with(|value| value.set(number));
     }
@@ -62,6 +64,7 @@ impl DirectoryArtifactRepository {
                 return Err(corrupt());
             }
         }
+        self.restore_publication_tombstones(&head)?;
         let bytes = if stored { exposure(&head)? } else { (0, 0) };
         self.index
             .write()
@@ -224,6 +227,7 @@ impl DirectoryArtifactRepository {
                 return Err(conflict());
             }
             let next = head.next(request)?;
+            storage::validate_transition(head, &next)?;
             let (metadata, physical) = exposure(&next)?;
             self.index
                 .try_read()
@@ -260,7 +264,14 @@ impl DirectoryArtifactRepository {
     }
     fn retention_generation(&self, reference: &PublicationRef) -> Result<u64, PlatformError> {
         if let Some(record) = self.life_store().record_publication(&reference.id)? {
-            if record.scope != reference.scope {
+            if record.scope != reference.scope
+                || self
+                    .index
+                    .try_read()
+                    .map_err(|_| busy())?
+                    .exact(reference)?
+                    .is_none()
+            {
                 return Err(unavailable_target());
             }
             return Ok(record.generation);

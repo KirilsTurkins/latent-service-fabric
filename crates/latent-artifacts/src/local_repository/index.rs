@@ -48,6 +48,7 @@ pub(super) struct CatalogIndex {
     by_reference: BTreeMap<ArtifactReference, Rows>,
     by_scoped_reference: BTreeMap<(LifecycleScope, ArtifactReference), Rows>,
     pending_reservations: BTreeMap<PublicationId, usize>,
+    deleted: BTreeMap<PublicationId, Box<IndexedEntry>>,
     by_tenant: BTreeMap<TenantId, Rows>,
     by_service: BTreeMap<TenantId, BTreeMap<ServiceId, Rows>>,
     pub(super) accounted_bytes: usize,
@@ -66,6 +67,7 @@ impl Default for CatalogIndex {
             by_reference: BTreeMap::new(),
             by_scoped_reference: BTreeMap::new(),
             pending_reservations: BTreeMap::new(),
+            deleted: BTreeMap::new(),
             by_tenant: BTreeMap::new(),
             by_service: BTreeMap::new(),
             accounted_bytes: REPOSITORY_ACCOUNTED_BYTES,
@@ -123,7 +125,10 @@ impl CatalogIndex {
         Ok(())
     }
     pub(super) fn capacity_entries(&self) -> usize {
-        self.by_publication.len() + self.pending_reservations.len() + self.web_entries
+        self.by_publication.len()
+            + self.pending_reservations.len()
+            + self.deleted.len()
+            + self.web_entries
     }
 
     /// One aggregate metadata budget for capsule and componentless web rows.
@@ -138,6 +143,7 @@ impl CatalogIndex {
             .by_publication
             .len()
             .checked_add(self.pending_reservations.len())
+            .and_then(|n| n.checked_add(self.deleted.len()))
             .and_then(|n| n.checked_add(entries))
             .is_none_or(|n| n > config.max_index_entries)
             || self
@@ -223,7 +229,7 @@ impl CatalogIndex {
     }
 
     pub(super) fn remove_pending(&mut self, id: &PublicationId) {
-        let Some(entry) = self.by_publication.remove(id) else {
+        let Some(entry) = self.take_visible(id) else {
             return;
         };
         let reserved = entry.retained_base
@@ -236,6 +242,32 @@ impl CatalogIndex {
                 .as_ref()
                 .map_or(0, crate::ReleaseEligibility::retained_bytes);
         self.pending_reservations.insert(id.clone(), reserved);
+    }
+
+    pub(super) fn check_tombstone_generation(&self, count: usize) -> Result<(), PlatformError> {
+        self.generation
+            .checked_add(count as u64)
+            .map(|_| ())
+            .ok_or_else(|| resource_exhausted("artifact-catalog-generation-exhausted"))
+    }
+
+    pub(super) fn tombstone(&mut self, id: &PublicationId) {
+        if let Some(entry) = self.take_visible(id) {
+            self.deleted.insert(id.clone(), entry);
+            // Cursors from before deletion cannot continue against a new view.
+            self.generation += 1;
+        }
+    }
+    /// Only original-operation recovery may use this retained private metadata.
+    pub(super) fn historical_entry(&self, reference: &PublicationRef) -> Option<&IndexedEntry> {
+        self.by_publication
+            .get(&reference.id)
+            .or_else(|| self.deleted.get(&reference.id))
+            .filter(|e| e.publication.scope == reference.scope)
+            .map(Box::as_ref)
+    }
+    fn take_visible(&mut self, id: &PublicationId) -> Option<Box<IndexedEntry>> {
+        let entry = self.by_publication.remove(id)?;
         let scope = &entry.publication.scope;
         let descriptor = &entry.value.descriptor;
         remove_row(&mut self.by_component, &descriptor.release_digest, id);
@@ -259,6 +291,7 @@ impl CatalogIndex {
                 }
             }
         }
+        Some(entry)
     }
 
     pub(super) fn rows(&self, tenant: &TenantId, service: Option<&ServiceId>) -> Option<&Rows> {
@@ -276,6 +309,9 @@ impl CatalogIndex {
         config: DirectoryArtifactRepositoryConfig,
     ) -> Result<(), PlatformError> {
         publication.scope.validate()?;
+        if self.deleted.contains_key(&publication.id) {
+            return Err(crate::publication_retention::unavailable_target());
+        }
         if manifest
             .metadata
             .tenant
@@ -311,7 +347,10 @@ impl CatalogIndex {
         config: DirectoryArtifactRepositoryConfig,
     ) -> Result<(), PlatformError> {
         if !self.pending_reservations.contains_key(id)
-            && self.by_publication.len() + self.pending_reservations.len() + self.web_entries
+            && self.by_publication.len()
+                + self.pending_reservations.len()
+                + self.deleted.len()
+                + self.web_entries
                 >= config.max_index_entries
         {
             return Err(resource_exhausted("catalog index entry limit reached"));

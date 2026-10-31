@@ -131,10 +131,11 @@ real publisher and builder signatures with corrected embedded inventories and
 identical packages in two tenants. These are functional tests, with no guest
 invocations or 100k load campaign.
 
-## Retention pin foundation
+## Retention pins and native visibility tombstones
 
 The native repository has a [bounded durable pin foundation](publication-retention-pins.md)
-for issue #662. It provides no public deletion command and does not relax the
-committed-history retention contract. Pins are independent of execution and
+for issue #662, plus a native durable visibility-removal stage with original
+operation receipts. It provides no public deletion command, does not unlink
+committed payload/history files, and does not refund their capacity. Pins are independent of execution and
 serving eligibility; clearing one does not reclaim content. The guide distinguishes
 the implemented native owner from the remaining deletion and operator scope.

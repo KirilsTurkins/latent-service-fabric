@@ -40,7 +40,11 @@ impl DirectoryArtifactRepository {
         if let Some(operation) = self.replay(&request, preflight)? {
             let publication = self.operation_publication_ref(&operation)?;
             let release = self
-                .publication_catalog_entry(&publication)?
+                .index
+                .read()
+                .map_err(lock_error)?
+                .historical_entry(&publication)
+                .map(|entry| entry.value.clone())
                 .ok_or_else(|| corrupt("committed-publication-history-missing"))?;
             return Ok(ManagedPublicationReceipt {
                 publication,

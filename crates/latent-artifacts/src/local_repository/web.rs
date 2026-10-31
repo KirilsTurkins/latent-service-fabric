@@ -44,6 +44,35 @@ pub(super) struct WebCatalog {
     pub(super) after_payload_staged: std::sync::Mutex<Option<Box<dyn FnOnce() + Send>>>,
 }
 impl WebCatalog {
+    /// Hold the private web index across durable visibility removal. The outer
+    /// caller already holds the shared lifecycle and web writer epochs.
+    pub(super) fn with_tombstones(
+        &self,
+        publications: &[PublicationRef],
+        action: &mut dyn FnMut() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        let mut state = self.state.try_write().map_err(|_| busy())?;
+        for reference in publications {
+            if let Some(entry) = state.entries.get(&reference.id) {
+                if entry.record.publication != *reference
+                    || entry.deleted
+                    || !matches!(
+                        entry.record.state,
+                        ReleaseLifecycleState::Retired | ReleaseLifecycleState::Revoked
+                    )
+                {
+                    return Err(corrupt("publication-deletion-web-authority-changed"));
+                }
+            }
+        }
+        action()?;
+        for reference in publications {
+            if let Some(entry) = state.entries.get_mut(&reference.id) {
+                entry.deleted = true;
+            }
+        }
+        Ok(())
+    }
     pub(super) fn terminal_for_deletion(
         &self,
         publication: &PublicationRef,
@@ -70,7 +99,7 @@ impl WebCatalog {
         state
             .entries
             .get(&reference.id)
-            .filter(|entry| entry.record.publication.scope == reference.scope)
+            .filter(|entry| !entry.deleted && entry.record.publication.scope == reference.scope)
             .map(|entry| entry.record.generation)
             .ok_or_else(crate::publication_retention::unavailable_target)
     }
@@ -102,6 +131,7 @@ struct State {
 }
 #[derive(Clone)]
 struct Entry {
+    deleted: bool,
     record: WebLifecycleRecord,
     completion: ArtifactBlobDigest,
     layout: Arc<CheckedWebLayout>,
@@ -165,7 +195,7 @@ impl State {
         reference.scope.validate()?;
         self.entries
             .get(&reference.id)
-            .filter(|entry| entry.record.publication == *reference)
+            .filter(|entry| !entry.deleted && entry.record.publication == *reference)
             .ok_or_else(|| error(PlatformErrorCode::NotFound, "web-publication-not-found"))
     }
     fn check_receipt(

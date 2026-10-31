@@ -87,3 +87,14 @@ The [retention decision](../../adr/0050-plan-capacity-before-deleting-publicatio
 defines the future deletion protocol. Current orphan cleanup retains committed
 publications, shared content and live preparation sources. Do not remove catalog
 directories, rows, lock files or format markers by hand.
+
+
+### Native tombstone foundation is not an operator cleanup command
+
+Development includes [durable native visibility tombstones](../reference/publication-retention-pins.md)
+for terminal, unreferenced publications. This removes visibility but deliberately
+retains all content/history files and their capacity charges. The authenticated
+CLI/audit adapter and physical reclamation lifecycle remain pending in #662.
+The stopped coupled backup/expansion workflow above remains the supported
+capacity-maintenance workflow; do not call a trusted-host API with a no-op audit
+callback or manually remove tombstoned directories to free space.

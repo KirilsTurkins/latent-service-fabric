@@ -80,9 +80,15 @@ pub(super) fn load(
         }
         return Ok(None); // interrupted empty initialization, no committed pins
     };
+    let deletion_mode = required(&root.join("LIFECYCLE_MODE"), 64)? == model::DELETION_MARKER;
     let saved: Saved = decode(&head_bytes, MAX_HEAD)?;
     saved.validate(authority)?;
-    if (initialized.is_none() || !promoted) && saved.head.revision != 0 {
+    if saved.head.deletion.is_some() && !deletion_mode {
+        return Err(corrupt());
+    }
+    if (initialized.is_none() || !promoted)
+        && (saved.head.revision != 0 || saved.head.deletion.is_some())
+    {
         return Err(corrupt());
     }
     if promoted && initialized.is_none() {
@@ -95,11 +101,11 @@ pub(super) fn load(
         }
         let intent: Intent = decode(&bytes, MAX_INTENT)?;
         intent.next.validate(authority)?;
-        let receipt = intent.next.head.receipts.last().ok_or_else(corrupt)?;
+        if intent.next.head.deletion.is_some() && !deletion_mode {
+            return Err(corrupt());
+        }
         if digest(&head_bytes) == intent.old {
-            if head.next(&receipt.request).map_err(|_| corrupt())? != intent.next.head
-                || fence(root, &head)? != receipt.request.expected_catalog_fence
-            {
+            if fence(root, &head)? != head.successor_fence(&intent.next.head)? {
                 return Err(corrupt());
             }
         } else if head != intent.next.head {
@@ -126,6 +132,22 @@ pub(super) fn load(
     Ok(Some(head))
 }
 
+/// Check both durable envelopes before audit/preflight and before any write.
+/// The parser ceilings apply to envelopes as well as their inner HEAD.
+pub(super) fn validate_transition(old: &Head, next: &Head) -> Result<(), PlatformError> {
+    let old_bytes = encode(&Saved::new(old.clone())?, MAX_HEAD)?;
+    let next = Saved::new(next.clone())?;
+    encode(&next, MAX_HEAD)?;
+    encode(
+        &Intent {
+            old: digest(&old_bytes),
+            next,
+        },
+        MAX_INTENT,
+    )?;
+    Ok(())
+}
+
 pub(super) fn persist(
     root: &Path,
     old: &Head,
@@ -135,6 +157,13 @@ pub(super) fn persist(
     check_time(deadline)?;
     let path = directory(root);
     initialize(root, old)?;
+    if next.deletion.is_some() {
+        let marker = root.join("LIFECYCLE_MODE");
+        if required(&marker, 64)? != model::DELETION_MARKER {
+            atomic(&marker, model::DELETION_MARKER)?;
+        }
+        fault(5)?;
+    }
     check_time(deadline)?;
     let old_bytes = encode(&Saved::new(old.clone())?, MAX_HEAD)?;
     if required(&path.join("HEAD"), MAX_HEAD)? != old_bytes {
@@ -181,7 +210,7 @@ fn initialize(root: &Path, old: &Head) -> Result<(), PlatformError> {
     }
     let marker = root.join("LIFECYCLE_MODE");
     let previous = required(&marker, 64)?;
-    if previous != MARKER {
+    if previous != MARKER && previous != model::DELETION_MARKER {
         if previous != b"lsf-release-lifecycle-v1\n" || old.revision != 0 {
             return Err(corrupt());
         }
@@ -289,7 +318,7 @@ fn remove(path: &Path) -> Result<(), PlatformError> {
 }
 #[cfg(any(test, feature = "development-test-host"))]
 thread_local! {pub(super) static FAIL:std::cell::Cell<u8>=const{std::cell::Cell::new(0)};}
-fn fault(point: u8) -> Result<(), PlatformError> {
+pub(super) fn fault(point: u8) -> Result<(), PlatformError> {
     #[cfg(any(test, feature = "development-test-host"))]
     if FAIL.with(|value| {
         if value.get() == point {

@@ -1,4 +1,4 @@
-//! Read-only deletion admission. An assessment is never a mutation or replay grant.
+//! Exact deletion admission and durable visibility removal. Payload reclamation is separate.
 use crate::{
     LifecycleAuthorityHandle, LifecycleScope, PublicationRef, PublicationRetentionFence,
     PublicationRetentionTarget, ReleaseActor,
@@ -31,7 +31,7 @@ impl PublicationDeletionRequest {
 
 /// One coherent observation under native reader, lifecycle and reference fences.
 /// It changes no disk state, reserves no deletion/audit capacity, and promises
-/// nothing about a later operation. The mutation path remains unavailable.
+/// nothing about a later operation. The tombstone commit rechecks every fence.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PublicationDeletionAssessment {
     pub request: PublicationDeletionRequest,
@@ -54,4 +54,42 @@ pub trait PublicationReferenceAuthority: Send + Sync {
         publications: &[PublicationRef],
         action: &mut dyn FnMut(u64) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError>;
+}
+
+/// Finite negative-authority history. Exhaustion refuses new deletion; tombstones
+/// are never evicted to make a publication ID reusable.
+pub const MAX_PUBLICATION_TOMBSTONES: usize = 1024;
+pub const MAX_PUBLICATION_DELETION_RECEIPTS: usize = 64;
+
+/// Logical deletion has committed, but no publication or shared-blob bytes have
+/// been unlinked or refunded. This is deliberately not a reclamation receipt.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PublicationDeletionStage {
+    VisibilityRemoved,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PublicationDeletionReceipt {
+    pub request: PublicationDeletionRequest,
+    pub revision: u64,
+    pub reference_revision: u64,
+    pub stage: PublicationDeletionStage,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PublicationDeletionResult {
+    pub receipt: PublicationDeletionReceipt,
+    /// A retained original receipt was returned; no mutation was executed.
+    pub replay: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PublicationDeletionLookup {
+    Found(PublicationDeletionReceipt),
+    /// Absence or eviction proves neither nonexecution nor permission to replay.
+    Unknown,
+    /// Reopen the complete installation and query the original operation ID.
+    Uncertain,
 }

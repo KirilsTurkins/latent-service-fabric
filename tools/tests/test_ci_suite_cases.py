@@ -210,6 +210,7 @@ class SuiteCaseFragmentTests(unittest.TestCase):
         for name, owner, count in (
             ("publication-reader-exclusion.json", "latent-artifacts.lib.latent-artifacts", 4),
             ("publication-reference-exclusion.json", "latent-control-store.lib.latent-control-store", 12),
+            ("publication-tombstones.json", "latent-control-store.lib.latent-control-store", 20),
         ):
             extra = registry.read_json(ROOT / "tools/ci/suites.cases.d" / name)
             self.assertEqual(extra["suiteId"], owner)

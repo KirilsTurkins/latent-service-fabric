@@ -12,7 +12,7 @@ Storage integrity, admission evidence and current release eligibility remain sep
 | [src/local_repository/mod.rs](src/local_repository/mod.rs) | DirectoryArtifactRepository, bounded indexes, recovery, publication storage and exact metadata/component reads. |
 | [src/admission.rs](src/admission.rs) | Sealed admission authority, upload and recheck ports. |
 | [src/lifecycle.rs](src/lifecycle.rs) | Publication/release state, live eligibility, revocation and management preconditions. |
-| [src/publication_retention.rs](src/publication_retention.rs) | Bounded durable negative-only rollback pins and original-operation recovery; not committed-history deletion. |
+| [src/publication_retention.rs](src/publication_retention.rs) | Bounded durable negative-only rollback pins and original-operation recovery; not physical history reclamation. |
 | [src/preparation.rs](src/preparation.rs) | Owned source identity and bounded preparation reads. |
 | [src/raw_cache.rs](src/raw_cache.rs) | Finite raw-byte cache, pins, eviction and actual reclamation. |
 | [src/web.rs](src/web.rs) | Componentless web artifact/publication metadata and selection contracts. |
@@ -78,8 +78,12 @@ Integration targets: [tests/package_adversarial.rs](tests/package_adversarial.rs
 
 ## Publication deletion admission
 
-The native retention owner also exposes a read-only exact-selection assessment
+The native retention owner exposes a read-only exact-selection assessment
 against its bound control-store authority and physical read/preparation owners.
-It does not delete content or create a mutation receipt. Borrowed preparation
+Assessment does not delete content or create a mutation receipt. The separate
+`tombstone_publications` native stage rechecks those owners through a durable
+negative-authority commit, removes public visibility, and preserves original
+receipts. It retains all payload/history files and charges; physical reclamation,
+operator CLI and audit integration remain outstanding. Borrowed preparation
 sources are explicit `Clone` owners, no longer `Copy`; quiesce all source clones
 before maintenance. See the [retention and assessment contract](../../docs/reference/publication-retention-pins.md).

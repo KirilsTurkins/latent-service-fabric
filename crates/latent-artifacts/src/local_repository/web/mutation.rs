@@ -90,6 +90,7 @@ impl DirectoryArtifactRepository {
             evidence_revision: None,
         };
         let entry = Entry {
+            deleted: false,
             projection: super::projection::Projection::new(&record.publication, &value.layout)?,
             record,
             completion,

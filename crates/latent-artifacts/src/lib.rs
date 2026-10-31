@@ -25,7 +25,9 @@ pub use lifecycle::DevelopmentTestArtifact;
 pub mod web;
 pub use publication::PublicationRef;
 pub use publication_deletion::{
-    PublicationDeletionAssessment, PublicationDeletionRequest, PublicationReferenceAuthority,
+    PublicationDeletionAssessment, PublicationDeletionLookup, PublicationDeletionReceipt,
+    PublicationDeletionRequest, PublicationDeletionResult, PublicationDeletionStage,
+    PublicationReferenceAuthority, MAX_PUBLICATION_DELETION_RECEIPTS, MAX_PUBLICATION_TOMBSTONES,
 };
 pub use publication_management::PublicationOperationReceipt;
 #[cfg(feature = "development-test-host")]

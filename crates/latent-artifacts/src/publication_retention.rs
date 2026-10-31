@@ -171,4 +171,6 @@ pub enum DevelopmentRetentionFault {
     AfterHead,
     AfterIntentRemoval,
     AfterFormatPromotion,
+    AfterDeletionFormatPromotion,
+    AfterDeletionVisibility,
 }

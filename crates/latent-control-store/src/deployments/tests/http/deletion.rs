@@ -75,3 +75,5 @@ fn native_static_http_reference_blocks_deletion_after_revocation_and_reopen() {
         .is_ok());
     assert!(repo.select_web_publication(&publication).is_err());
 }
+
+mod tombstones;
