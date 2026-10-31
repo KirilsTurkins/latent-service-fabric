@@ -217,3 +217,44 @@ class Q35NodeBootSourceControls(unittest.TestCase):
         with self.assertRaises(ValueError):owner.node_compose({}, {}, captured)
         # A forged borrowed/funding marker is not an alternate success profile.
         with self.assertRaises(ValueError):owner.node_serial(owner.NATIVE_PASS+b'\n')
+        # Tar link closure is pure metadata; no host symlink privilege is used.
+        root_name = 'qemu-11.1.2'
+        rows = {root_name: {'type': '5', 'link': ''},
+            root_name+'/data': {'type': '5', 'link': ''},
+            root_name+'/data/value': {'type': '0', 'link': ''},
+            root_name+'/alias': {'type': '2', 'link': 'data/value'},
+            root_name+'/nested': {'type': '5', 'link': ''},
+            root_name+'/nested/link': {'type': '2', 'link': '../alias'},
+            root_name+'/hard': {'type': '1', 'link': root_name+'/data/value'}}
+        targets = owner.node_qemu_link_targets(rows, 10**12)
+        self.assertEqual(targets, {root_name+name: root_name+'/data/value'
+            for name in ('/alias', '/nested/link', '/hard')})
+        for link in ('/opt/X11/include', '../../outside', 'missing', 'roms/edk2/unused', chr(92)+'outside'):
+            changed = copy.deepcopy(rows); changed[root_name+'/alias']['link'] = link
+            with self.subTest(link=link), self.assertRaises(ValueError):
+                owner.node_qemu_link_targets(changed, 10**12)
+        changed = copy.deepcopy(rows); changed[root_name+'/alias']['link'] = 'nested/link'
+        with self.assertRaisesRegex(ValueError, 'node-qemu-link-cycle'):
+            owner.node_qemu_link_targets(changed, 10**12)
+        for target in ('data', 'alias'):
+            changed = copy.deepcopy(rows); changed[root_name+'/hard']['link'] = root_name+'/'+target
+            with self.subTest(hard=target), self.assertRaises(ValueError):
+                owner.node_qemu_link_targets(changed, 10**12)
+        changed = copy.deepcopy(rows); changed[root_name+'/alias/child'] = {'type': '0', 'link': ''}
+        with self.assertRaisesRegex(ValueError, 'node-qemu-no-link-ancestor'):
+            owner.node_qemu_link_targets(changed, 10**12)
+        changed = {root_name: rows[root_name], root_name+'/data/value': rows[root_name+'/data/value']}
+        for index in range(17):
+            changed[root_name+'/link'+str(index)] = {'type': '2',
+                'link': 'link'+str(index+1) if index < 16 else 'data/value'}
+        with self.assertRaisesRegex(ValueError, 'node-qemu-link-depth'):
+            owner.node_qemu_link_targets(changed, 10**12)
+        changed[root_name+'/link0']['link'] = 'link2'
+        self.assertEqual(owner.node_qemu_link_targets(changed, 10**12)[root_name+'/link0'],
+            root_name+'/data/value')
+        with self.assertRaisesRegex(ValueError, 'node-qemu-preflight-deadline'):
+            owner.node_qemu_link_targets(rows, 0)
+        for raw in ('/outside', root_name+'/../escape', root_name+'//alias',
+                root_name+'/roms/edk2/../../escape', root_name+'/./alias', root_name+chr(92)+'alias'):
+            with self.subTest(name=raw), self.assertRaises(ValueError):
+                owner.node_qemu_source_name(raw)

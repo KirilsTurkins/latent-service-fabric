@@ -299,51 +299,108 @@ def node_boot_argv(qemu,kernel,initramfs,firmware):
         '-initrd',str(initramfs),'-append','console=ttyS0 panic=1 rdinit=/init maxcpus=1 nr_cpus=1')
 
 
+def node_qemu_source_name(raw):
+    name = raw.rstrip('/')
+    parts = name.split('/')
+    require(name and '\\' not in name and ':' not in name and
+        all(p not in ('', '..', '.') for p in parts) and parts[0] == 'qemu-11.1.2',
+        'node-qemu-safe-member')
+    return name
+
+
+def node_qemu_link_target(name,kind,target):
+    require(target and not target.startswith('/') and '\\' not in target and ':' not in target,
+        'node-qemu-relative-link')
+    base = name.split('/')[:-1] if kind == '2' else []
+    for part in target.split('/'):
+        if part == '..':
+            require(len(base) > 1,'node-qemu-contained-link'); base.pop()
+        elif part not in ('', '.'):
+            base.append(part)
+    return node_qemu_source_name('/'.join(base))
+
+
+def node_qemu_link_targets(rows,deadline):
+    import time
+    require(type(rows) is dict and len(rows) <= 65536,'node-qemu-source-entry-bound')
+    targets = {}
+    for name,row in rows.items():
+        require(time.monotonic() < deadline,'node-qemu-preflight-deadline')
+        require(node_qemu_source_name(name) == name and row['type'] in ('0','5','1','2'),
+            'node-qemu-safe-member')
+        parts = name.split('/')
+        require(not any(rows.get('/'.join(parts[:i]),{}).get('type') in ('1','2')
+            for i in range(1,len(parts))), 'node-qemu-no-link-ancestor')
+        if row['type'] not in ('1','2'):
+            continue
+        current,seen = name,set()
+        for _ in range(17):  # At most sixteen links and one terminal member.
+            require(time.monotonic() < deadline,'node-qemu-preflight-deadline')
+            require(current in rows,'node-qemu-known-link-target')
+            require(current not in seen,'node-qemu-link-cycle'); seen.add(current)
+            selected = rows[current]
+            if selected['type'] in ('0','5'):
+                require(row['type'] != '1' or selected['type'] == '0','node-qemu-hardlink-file')
+                targets[name] = current
+                break
+            require(selected['type'] in ('1','2') and
+                (row['type'] != '1' or selected['type'] == '1'),'node-qemu-link-type')
+            current = node_qemu_link_target(current,selected['type'],selected['link'])
+        else:
+            require(False,'node-qemu-link-depth')
+    return targets
+
+
 def node_qemu_extract(archive,directory,deadline):
-    # Signed release source, not a GitHub-generated archive or ambient binary.
-    # Full preflight precedes any extraction. The new tool-source envelope is
-    # private and separate from unchanged16MiB/512-entry C research capture.
     import tarfile
     import time
-    from pathlib import PurePosixPath
     require(not directory.exists(),'node-qemu-fresh-extract')
-    rows,total = {},0
-    with tarfile.open(archive,'r:xz') as bundle:
+    # This signed release has85084 headers. Only the separately built edk2
+    # firmware-SOURCE subtree is excluded; pc-bios signed blobs stay selected.
+    # Its absolute macOS X11 link is never materialized or followed.
+    excluded_root = 'qemu-11.1.2/roms/edk2'
+    rows,total,headers,excluded,excluded_bytes = {},0,0,0,0
+    # CPython3.13.5 stream=True disables TarFile's otherwise unbounded member
+    # cache. Retain ONLY selected TarInfo entries under the existing65536 cap.
+    with tarfile.open(archive,'r:xz',stream=True) as bundle:
         members = []
         for member in bundle:
             require(time.monotonic() < deadline,'node-qemu-preflight-deadline')
-            name = member.name.rstrip('/')
-            parts = PurePosixPath(name).parts
-            require(name and not name.startswith('/') and '\\' not in name and
-                all(p not in ('','..','.') for p in parts) and parts[0] == 'qemu-11.1.2' and
-                name not in rows and not member.mode & 0o7000 and
+            headers += 1
+            require(headers <= 85084,'node-qemu-signed-header-count')
+            name = node_qemu_source_name(member.name)  # BEFORE exclusion/PAX names.
+            require(not member.mode & 0o7000 and
                 (member.isfile() or member.isdir() or member.issym() or member.islnk()),
                 'node-qemu-safe-member')
-            require(len(rows) < 65536 and 0 <= member.size <= 128*1024**2,
-                'node-qemu-source-entry-bound')
+            require(0 <= member.size <= 128*1024**2,'node-qemu-source-entry-bound')
             total += member.size
             require(total <= 2*1024**3,'node-qemu-source-byte-bound')
-            if member.issym() or member.islnk():
-                target = member.linkname
-                require(target and not target.startswith('/') and '\\' not in target,
-                    'node-qemu-relative-link')
-                base = list(parts[:-1]) if member.issym() else []
-                for part in PurePosixPath(target).parts:
-                    if part == '..':
-                        require(len(base) > 1,'node-qemu-contained-link'); base.pop()
-                    elif part != '.':base.append(part)
-                require(base and base[0] == 'qemu-11.1.2','node-qemu-link-root')
+            if name == excluded_root or name.startswith(excluded_root+'/'):
+                excluded += 1; excluded_bytes += member.size
+                require(excluded <= 41834,'node-qemu-excluded-header-count')
+                continue
+            require(len(rows) < 65536 and name not in rows,'node-qemu-source-entry-bound')
             rows[name] = {'bytes':member.size,'type':member.type.decode('ascii'),
                 'link':member.linkname,'mode':member.mode}
             members.append(member)
-        for name in rows:
-            require(not any(rows.get('/'.join(PurePosixPath(name).parts[:i]),{}).get('type') in ('1','2')
-                for i in range(1,len(PurePosixPath(name).parts))), 'node-qemu-no-link-ancestor')
+        require(headers == 85084 and excluded == 41834,'node-qemu-signed-projection-counts')
+        links = node_qemu_link_targets(rows,deadline)
         require(time.monotonic() < deadline,'node-qemu-extract-deadline')
         directory.mkdir(mode=0o700)
-        for member in members:
-            require(time.monotonic() < deadline,'node-qemu-extract-deadline')
-            bundle.extract(member,directory,filter='data')
+        # Real files/directories precede links. Hardlink chains can reference
+        # only an already extracted selected regular file, with no cache lookup.
+        for linked in (False,True):
+            for member in members:
+                require(time.monotonic() < deadline,'node-qemu-extract-deadline')
+                if (member.issym() or member.islnk()) != linked:
+                    continue
+                if member.islnk():
+                    member = member.replace(linkname=links[member.name.rstrip('/')],deep=False)
+                bundle.extract(member,directory,filter='data')
     require(time.monotonic() < deadline,'node-qemu-extract-deadline')
     return directory/'qemu-11.1.2',{'members':rows,'expandedBytes':total,
-        'maximumEntries':65536,'maximumBytes':2*1024**3,'maximumFileBytes':128*1024**2}
+        'observedArchiveHeaders':headers,'excludedSubtree':excluded_root,
+        'excludedHeaders':excluded,'excludedExpandedBytes':excluded_bytes,
+        'materializedEntries':len(rows),'materializedExpandedBytes':total-excluded_bytes,
+        'maximumMaterializedEntries':65536,'maximumBytes':2*1024**3,
+        'maximumFileBytes':128*1024**2,'selectedLinks':links,'maximumLinkDepth':16}
