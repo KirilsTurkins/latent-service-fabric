@@ -514,8 +514,19 @@ class CHttpClientControls(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, '^c-libucl-exact-ordinary-result$'):
                 fixture.libucl_result(row, 'normal')
 
-        fixture.unseen_result({'exitCode': 0, 'decoded': [{'ok': 'card:7:5:57:2650795109'}]}, 'normal')
-        for row in ({'exitCode': False, 'decoded': [{'ok': 'card:7:5:57:2650795109'}]},
+        from tools.standard_http.vectors import DOMAIN, json_bytes
+        body = json_bytes(DOMAIN)
+        checksum = 2166136261
+        for byte in body:
+            checksum = ((checksum ^ byte) * 16777619) & 0xffffffff
+        self.assertEqual(fixture.CARD_RESOURCE, b'id=7\nname=caf\xc3\xa9\n')
+        self.assertIn(b'uint32_t checksum = UINT32_C(2166136261);', fixture.CARD_LIBRARY)
+        self.assertIn(b'checksum = (checksum ^ body[i]) * UINT32_C(16777619);', fixture.CARD_LIBRARY)
+        expected_card = 'card:7:5:' + str(len(body)) + ':' + str(checksum)
+        self.assertEqual(expected_card, 'card:7:5:57:1776131770')
+        fixture.unseen_result({'exitCode': 0, 'decoded': [{'ok': expected_card}]}, 'normal')
+        for row in ({'exitCode': False, 'decoded': [{'ok': expected_card}]},
+                    {'exitCode': 0, 'decoded': [{'ok': 'card:7:5:57:2650795109'}]},
                     {'exitCode': 0, 'decoded': [{'ok': 'wrong-domain'}]}):
             with self.assertRaisesRegex(ValueError, '^c-card-exact-ordinary-result$'):
                 fixture.unseen_result(row, 'normal')

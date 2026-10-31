@@ -218,6 +218,7 @@ CARD_CASES = ('normal',)
 
 
 def unseen_result(row: dict, case: str) -> None:
+    # The captured card library uses unsigned-byte FNV-1a, unlike the libfetch fixture.
     if (type(row.get('exitCode')) is not int or case != 'normal'
-            or (row['exitCode'], row.get('decoded')) != (0, [{'ok': 'card:7:5:57:2650795109'}])):
+            or (row['exitCode'], row.get('decoded')) != (0, [{'ok': 'card:7:5:57:1776131770'}])):
         raise ValueError('c-card-exact-ordinary-result')
