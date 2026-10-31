@@ -169,6 +169,192 @@ mod join_cause_package;
 mod support;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "Requires the immutable normal v3 .NET package and reviewed numeric observation owner"]
+async fn dotnet_original_v3_fault_and_quiescence_use_bounded_numeric_observation() {
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    {
+        use latent_activation::ActivationOutcome;
+        use latent_artifacts::ArtifactRepository;
+        use latent_core::{ContractId, FunctionId, PlatformErrorCode, ServiceId};
+        use latent_manifest::ManifestCodec;
+        use latent_signing::DOTNET_CAPSULE_BUILD_TYPE;
+
+        const COMPONENT: &str =
+            "sha256:9c20e7025c9a2672ee256d93fb51efd631b609064953a11dc2491a94639552af";
+        const NORMAL: &str = "dotnet-root-return-normal";
+        assert_eq!(
+            std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(),
+            Ok("dotnet")
+        );
+        let mut complete = true;
+        // These are original normal cases. There is no auxiliary guest, catch,
+        // CoreLib overlay, exception observation or replay inside either call.
+        for (mode, activation) in [
+            (9, "ac7-fault-unattributed"),
+            (8, "ac7-opaque-unattributed"),
+        ] {
+            let bundle = join_cause_package::bundle(&join_cause_package::input(NORMAL));
+            let observation = join_cause_package::observation(NORMAL);
+            assert_eq!(packages::release(&bundle).0, COMPONENT);
+            assert_eq!(observation.component_digest, COMPONENT);
+            let capsule = latent_manifest::JsonManifestCodec::default()
+                .decode_capsule(bundle.blob("capsule.json").unwrap())
+                .unwrap();
+            let tenant = capsule.metadata.tenant.expect("original capsule tenant");
+            let service = ServiceId(capsule.metadata.name);
+            let ceiling = capsule.execution.resource_budget_ceiling;
+            assert_eq!(ceiling.cpu_fuel, 1_000_000_000);
+            assert_eq!(ceiling.memory_bytes, 128 * 1024 * 1024);
+            assert_eq!(ceiling.wall_time_limit_millis, Some(120_000));
+            assert_eq!(ceiling.child_calls, 0);
+            assert_eq!(ceiling.outbound_requests, 0);
+            let signers =
+                join_cause_package::Signers::for_tenant(DOTNET_CAPSULE_BUILD_TYPE, &tenant);
+            let temporary = tempfile::tempdir().unwrap();
+            let upload = signers.upload_for_tenant(&bundle, &observation, &tenant);
+            let catalog = join_cause_package::catalog(
+                temporary.path(),
+                signers.policy,
+                Some(128 * 1024 * 1024),
+            );
+            catalog
+                .admit_package(&tenant, upload, &mut |_| Ok(()))
+                .await
+                .unwrap();
+            let callee = join_cause_package::bundle(&join_cause_package::input(NORMAL));
+            assert_eq!(callee.layout().digest(), bundle.layout().digest());
+            // The existing once-per-backend observer is never reset/rearmed.
+            let f = fixture::Fixture::with_named_numeric_activation_runtime(
+                (catalog, bundle, callee),
+                latent_core::activation_runtime::RuntimeLimits {
+                    tasks: 8,
+                    executors: 2,
+                    queued_work: 8,
+                    waits: 16,
+                    timers: 8,
+                    results: 8,
+                    native_owners: 8,
+                },
+                120_000,
+                fixture::RuntimeIdentities {
+                    tenant,
+                    caller: service.clone(),
+                    callee: service,
+                },
+            )
+            .await;
+            let grants: std::collections::BTreeSet<_> = f
+                .target
+                .grants
+                .iter()
+                .map(|grant| grant.capability.0.as_str())
+                .collect();
+            assert_eq!(
+                grants,
+                std::collections::BTreeSet::from([
+                    "latent:clock/monotonic@0.1.0",
+                    "latent:clock/wall@0.1.0",
+                    "latent:random/random@0.1.0",
+                    "latent:runtime/activation@0.1.0",
+                ])
+            );
+            let mut request = f.request(activation, mode);
+            request.target.contract = ContractId("examples:greeting/api@1.0.0".into());
+            request.target.function = FunctionId("probe".into());
+            request.budget = ceiling.clone();
+            assert_eq!(f.backend.resource_snapshot().stores_created, 0);
+            let guard = f.backend.arm_development_trap_observation().unwrap();
+            let receipt = f.manager.start(request).unwrap().await;
+            let snapshot = guard.snapshot().unwrap();
+            drop(guard);
+            // Retain the actual observation even when its later completeness
+            // assertion fails. No missing frame or different trap is accepted.
+            let diagnostic = serde_json::to_string(&serde_json::json!({
+                "mode":mode,"component":COMPONENT,"observation":snapshot,
+                "runtimeQualification":false,"originalFaultCauseQualified":false,
+                "opaqueCauseQualified":false,"fullAC7Qualified":false,"full746Qualified":false,
+            }))
+            .unwrap();
+            assert!(diagnostic.len() <= 8192);
+            println!("DOTNET_ORIGINAL_V3_TRAP {diagnostic}");
+            assert_eq!(
+                receipt.resolved_revision.as_ref().unwrap().release.0,
+                COMPONENT
+            );
+            let consumption = match &receipt.outcome {
+                ActivationOutcome::Failed {
+                    error, consumption, ..
+                } => {
+                    assert_eq!(error.code, PlatformErrorCode::GuestTrap);
+                    consumption
+                }
+                _ => panic!("original normal negative must remain a guest trap"),
+            };
+            assert!(consumption.cpu_fuel > 0 && consumption.cpu_fuel <= ceiling.cpu_fuel);
+            assert!(
+                consumption.peak_memory_bytes > 0
+                    && consumption.peak_memory_bytes <= ceiling.memory_bytes
+            );
+            assert!(consumption.wall_time_micros <= 120_000_000);
+            assert_eq!(consumption.outbound_requests, 0);
+            assert_eq!(consumption.effect_count, 0);
+            assert_eq!(consumption.log_bytes, 0);
+            assert_eq!(consumption.child_calls, 0);
+            assert_eq!(consumption.state_read_bytes, 0);
+            assert_eq!(consumption.state_write_bytes, 0);
+            assert_eq!(consumption.blob_read_bytes, 0);
+            assert_eq!(consumption.blob_write_bytes, 0);
+            f.idle().await;
+            let state = f.backend.resource_snapshot();
+            assert_eq!(state.stores_created, 1);
+            assert_eq!(state.active_invocations, 0);
+            assert_eq!(state.live_stores, 0);
+            assert_eq!(state.live_component_instances, 0);
+            assert_eq!(state.live_host_states, 0);
+            assert_eq!(f.backend.active_instance_reservations(), 0);
+            let quota = f.quotas.usage().unwrap();
+            assert_eq!(quota.active_activations, 0);
+            assert_eq!(quota.queued_activations, 0);
+            assert_eq!(quota.reserved_cpu_fuel, 0);
+            assert_eq!(quota.reserved_memory_bytes, 0);
+            println!(
+                "DOTNET_ORIGINAL_V3_IDLE {}",
+                serde_json::json!({
+                    "mode":mode,"newStores":state.stores_created,"liveStores":state.live_stores,
+                    "liveInstances":state.live_component_instances,"activeActivations":quota.active_activations,
+                    "reservedFuel":quota.reserved_cpu_fuel,"reservedMemory":quota.reserved_memory_bytes,
+                    "cpuFuel":consumption.cpu_fuel,"peakMemoryBytes":consumption.peak_memory_bytes,
+                    "physicalRetirementQualified":false,"nativeAccountingComplete":false,
+                })
+            );
+            complete &= snapshot.observed_errors == 1
+                && !snapshot.ambiguous
+                && snapshot.trap_kind == Some("unreachable-code")
+                && !snapshot.missing_backtrace
+                && snapshot.engine_frame_cap == Some(16)
+                && (1..=16).contains(&snapshot.observed_frames)
+                && snapshot.frames.iter().flatten().count() == snapshot.observed_frames;
+            // Fixture/manager/backend/factory owners are dropped before the
+            // next mode creates its distinct original once-arm observer.
+        }
+        assert!(
+            complete,
+            "both original numeric observations must be complete"
+        );
+    }
+    #[cfg(not(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    )))]
+    panic!("requires the reviewed development-test-host Linux x86_64 fixture");
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "Requires a separately reviewed NORMAL+auxiliary signed .NET fixture owner"]
 async fn dotnet_join_cause_borrows_one_word_before_unchanged_native_finalization() {
     #[cfg(all(

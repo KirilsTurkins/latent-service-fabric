@@ -299,6 +299,41 @@ impl Fixture {
         )
         .await
     }
+    /// Disposable original-component observation only. Each caller creates a
+    /// fresh backend because the existing numeric observer can arm only once.
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub async fn with_named_numeric_activation_runtime(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+        identities: RuntimeIdentities,
+    ) -> Self {
+        Self::try_with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            Some(identities),
+            Some((limits, call_wall_millis, None)),
+            None,
+            None,
+            None,
+            true,
+            false,
+        )
+        .await
+        .unwrap()
+    }
     /// Two authenticated tenants share the same node scheduler/backend/cell.
     /// Existing single-tenant fixtures keep the original construction path.
     pub async fn with_two_tenant_activation_runtime(
