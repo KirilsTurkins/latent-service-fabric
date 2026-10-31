@@ -289,6 +289,54 @@ class StandardFacilities(unittest.TestCase):
         self.assertNotIn('wasi:', clock_text)
         self.assertEqual((source / 'world.wit').read_bytes(), original)
 
+        # Exercise the real command builder, stopping before any external tool.
+        # A client that calls no clock/entropy API still has this exact profile.
+        from unittest.mock import patch
+        from tools.c_guest.compiler import Compiler
+        from tools.tests.test_c_threading_profile import graph
+        from tools.c_guest.threading import PROFILE as threading_profile
+        class CommandCaptured(Exception):
+            pass
+        source = self.root / 'unused-standard-api.c'
+        source.write_bytes(b'int ordinary_library_value;\n')
+        compiler = Compiler.__new__(Compiler)
+        compiler.paths = {'zig': self.root / 'zig',
+                          'c-threading-transformer': self.root / 'transformer'}
+        compiler.sdk, compiler.platform = ROOT / 'sdk/c-guest', None
+        compiler.commands, compiler.isolation = None, None
+        compiler.validate_static_libraries = lambda *args: None
+        compiler.select_threading_clock_inputs = lambda: None
+        calls = []
+        def run(tool, *arguments):
+            if tool == 'zig':
+                calls.append(arguments)
+                raise CommandCaptured()
+            self.assertEqual((tool, arguments[:2]), ('wasm-tools', ('component', 'wit')))
+            return json.dumps(graph())
+        compiler.run = run
+        def generate(_run, _wit, _world, destination, _platform, *, sync_core_abi=False):
+            self.assertTrue(sync_core_abi)
+            destination.mkdir()
+            return destination, {'source': 'controlled-binding-boundary'}
+        expected = ('-Wl,--undefined=__imported_wasi_snapshot_preview1_clock_time_get',
+                    '-Wl,--undefined=__imported_wasi_snapshot_preview1_random_get')
+        lowering = (ROOT / 'sdk/c-guest/src/standard-clock-entropy.c').read_text()
+        for symbol in expected:
+            self.assertIn('int32_t ' + symbol.split('=', 1)[1] + '(', lowering)
+        for ordinal, selected in enumerate(sorted(facilities.SUPPORTED)):
+            with self.subTest(selected=selected), patch('tools.c_guest.compiler.generate', generate):
+                with self.assertRaises(CommandCaptured):
+                    compiler.compile([source], self.root / 'unused-wit', 'service',
+                        self.root / ('command-' + str(ordinal)), runtime_profile=selected, memory_bytes=32 * 1024 * 1024,
+                        threading_profile=threading_profile)
+            command = calls[-1]
+            self.assertEqual(tuple(item for item in command if item.startswith('-Wl,--undefined=')),
+                             expected if selected == expanded else ())
+            self.assertIn('-Wl,--max-memory=33554432', command)
+            self.assertIn('-Wl,-z,stack-size=135168', command)
+            self.assertNotIn('--allow-undefined', command)
+            self.assertFalse(any(item.startswith('-Wl,--export=__imported_wasi_') for item in command))
+
     def test_libfetch_unthreaded_build_refuses_before_binding_generation_or_output(self):
         from unittest import mock
         from tools.c_guest.compiler import Compiler
