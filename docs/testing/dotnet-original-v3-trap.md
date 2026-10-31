@@ -70,3 +70,11 @@ may differ; every other build-observation field, including package-input and
 derivation-asset identities, must equal the retained normal observation.
 This is packaging-only reuse, not a claim that the raw BUILD package and neutral
 package are identical or that a new runtime/trap cause has been qualified.
+
+The original-v3 observation also selects the ordinary node's shared clock
+registration and full activation configuration document before constructing
+bindings or the engine. Clock behavior remains the same system-backed,
+activation-origin/clamped monotonic and Unix wall-clock implementation. The
+activation identity derives from the actual original owner limits and host ABI,
+not a profile-name-only fixture hash. Generic fixture registrations remain
+unchanged; all original provider/policy digest assertions remain strict.

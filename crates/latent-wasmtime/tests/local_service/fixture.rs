@@ -330,6 +330,7 @@ impl Fixture {
             None,
             true,
             false,
+            false,
         )
         .await
         .unwrap()
@@ -359,13 +360,24 @@ impl Fixture {
             "sha256:9c20e7025c9a2672ee256d93fb51efd631b609064953a11dc2491a94639552af"
         );
         assert_eq!(provided.1.layout().digest(), provided.2.layout().digest());
-        let mut value = Self::with_named_numeric_activation_runtime(
-            provided,
-            limits,
-            call_wall_millis,
-            identities,
+        let mut value = Self::try_with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            Some(identities),
+            Some((limits, call_wall_millis, None)),
+            None,
+            None,
+            None,
+            true,
+            false,
+            true,
         )
-        .await;
+        .await
+        .unwrap();
         assert_eq!(value.backend.resource_snapshot().stores_created, 0);
         value._guest_runtime.configure_original_dotnet_v3_authority(
             &value.policies,
@@ -503,6 +515,7 @@ impl Fixture {
             None,
             false,
             false,
+            false,
         )
         .await
         .unwrap()
@@ -529,6 +542,7 @@ impl Fixture {
             None,
             None,
             None,
+            false,
             false,
             false,
         )
@@ -615,6 +629,7 @@ impl Fixture {
             Some(Box::new(configuration)),
             true,
             false,
+            false,
         )
         .await
         .unwrap()
@@ -665,6 +680,7 @@ impl Fixture {
             None,
             true,
             true,
+            false,
         )
         .await
         .unwrap()
@@ -709,6 +725,7 @@ impl Fixture {
             outbound_streams,
             false,
             false,
+            false,
         )
         .await
         .unwrap()
@@ -742,6 +759,7 @@ impl Fixture {
         >,
         numeric_capture: bool,
         go_stack_ceiling: bool,
+        original_provider_configuration: bool,
     ) -> Result<Self, PlatformError> {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         let stream_enabled = outbound_streams.is_some();
@@ -1165,7 +1183,35 @@ impl Fixture {
                 &configuration,
             ))
         });
-        let guest_runtime = if let Some((_, call_wall_millis, native)) = activation_runtime {
+        let guest_runtime = if original_provider_configuration {
+            #[cfg(all(
+                feature = "development-test-host",
+                target_os = "linux",
+                target_arch = "x86_64"
+            ))]
+            {
+                let (limits, call_wall_millis, native) =
+                    activation_runtime.expect("original v3 runtime");
+                assert!(numeric_capture && runtime_clocks && runtime_random && native.is_none());
+                assert!(
+                    !go_stack_ceiling && additional_runtime_tenant.is_none() && !stream_enabled
+                );
+                guest_runtime::Runtime::original_dotnet_v3_scoped(
+                    &broker,
+                    &policies,
+                    tenant,
+                    &scopes,
+                    call_wall_millis,
+                    limits,
+                )
+            }
+            #[cfg(not(all(
+                feature = "development-test-host",
+                target_os = "linux",
+                target_arch = "x86_64"
+            )))]
+            panic!("normal v3 configuration requires the exact test-host observation");
+        } else if let Some((_, call_wall_millis, native)) = activation_runtime {
             guest_runtime::Runtime::activation_scoped_with_native(
                 &broker,
                 &policies,

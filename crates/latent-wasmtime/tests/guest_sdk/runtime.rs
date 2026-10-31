@@ -269,9 +269,72 @@ impl Runtime {
         (clocks, random): (bool, bool),
         native: bool,
     ) -> Self {
+        Self::activation_scoped_with_configuration(
+            broker,
+            policies,
+            tenant,
+            scopes,
+            call_wall_millis,
+            (clocks, random),
+            (native, None),
+        )
+    }
+
+    /// Use the normal provider configuration only for the original v3 observation.
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub fn original_dotnet_v3_scoped(
+        broker: &ActivationCapabilityBroker,
+        policies: &PolicyStore,
+        tenant: &str,
+        scopes: &[Scope<'_>],
+        call_wall_millis: u64,
+        limits: latent_core::activation_runtime::RuntimeLimits,
+    ) -> Self {
+        assert_eq!(tenant, "examples");
+        limits.validate().unwrap();
+        Self::activation_scoped_with_configuration(
+            broker,
+            policies,
+            tenant,
+            scopes,
+            call_wall_millis,
+            (true, true),
+            (false, Some(limits)),
+        )
+    }
+
+    fn activation_scoped_with_configuration(
+        broker: &ActivationCapabilityBroker,
+        policies: &PolicyStore,
+        tenant: &str,
+        scopes: &[Scope<'_>],
+        call_wall_millis: u64,
+        (clocks, random): (bool, bool),
+        (native, normal_configuration): (
+            bool,
+            Option<latent_core::activation_runtime::RuntimeLimits>,
+        ),
+    ) -> Self {
         let mut owner = Self::default();
         let profile = latent_core::activation_runtime::PROFILE;
-        let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
+        let digest = if let Some(limits) = normal_configuration {
+            let document =
+                latent_capabilities::broker::scalar_configuration::activation_configuration(
+                    json!({"tasks":limits.tasks,"executors":limits.executors,
+                    "queuedWork":limits.queued_work,"waits":limits.waits,"timers":limits.timers,
+                    "results":limits.results,"nativeOwners":limits.native_owners}),
+                    false,
+                );
+            latent_artifacts::package::artifact_blob_digest(&serde_json::to_vec(&document).unwrap())
+        } else {
+            latent_artifacts::package::artifact_blob_digest(profile.as_bytes())
+        };
+        let normal_restriction = normal_configuration
+            .map(|_| serde_json::to_vec(&json!({"operations": ACTIVATION_OPERATIONS})).unwrap());
         // Exercise the same per-operation fuel requirements as ordinary
         // protected node installation, including fixed and pending results.
         let charges = ACTIVATION_OPERATIONS.map(|operation| ProviderBudgetRequirement {
@@ -285,7 +348,9 @@ impl Runtime {
                 profile,
                 configuration_digest: digest.as_str(),
                 configuration_epoch: 1,
-                restriction_json: br#"{"operations":[]}"#,
+                restriction_json: normal_restriction
+                    .as_deref()
+                    .unwrap_or(br#"{"operations":[]}"#),
                 minimum_call_charges: &charges,
             })
             .unwrap();
@@ -314,20 +379,29 @@ impl Runtime {
         if clocks {
             for (capability, profile, operation) in CLOCKS {
                 let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
-                let registration = broker
-                    .register_provider(ProviderConfiguration {
-                        capability,
-                        profile,
-                        configuration_digest: digest.as_str(),
-                        configuration_epoch: 1,
-                        restriction_json: br#"{"operations":[]}"#,
-                        minimum_call_charges: &[ProviderBudgetRequirement {
-                            operation,
-                            dimension: BudgetDimension::CpuFuel,
-                            minimum: 100,
-                        }],
-                    })
-                    .unwrap();
+                let registration = if normal_configuration.is_some() {
+                    latent_capabilities::broker::scalar_configuration::register_clock(
+                        broker,
+                        1,
+                        capability == CLOCKS[0].0,
+                    )
+                    .unwrap()
+                } else {
+                    broker
+                        .register_provider(ProviderConfiguration {
+                            capability,
+                            profile,
+                            configuration_digest: digest.as_str(),
+                            configuration_epoch: 1,
+                            restriction_json: br#"{"operations":[]}"#,
+                            minimum_call_charges: &[ProviderBudgetRequirement {
+                                operation,
+                                dimension: BudgetDimension::CpuFuel,
+                                minimum: 100,
+                            }],
+                        })
+                        .unwrap()
+                };
                 owner.add(registration.reference(), operation);
                 owner.clocks.push(registration);
             }
