@@ -41,7 +41,8 @@ NAMES = frozenset(('teavm-classlib', 'teavm-core', 'teavm-extension-apis',
     'teavm-relocated-libs-hppc', 'teavm-relocated-libs-rhino'))
 EXPECTED = (';direct;multihop;shared;virtual;class-unmanaged;managed-cycle;pinned-managed-entry;altered-entry-negatives;'
     'unresolved;bound;real-late-completion')
-COMPILER_EXPECTED = ';finite;initializer;unmanaged;managed'
+COMPILER_EXPECTED = (';finite;initializer;unmanaged;managed;recursion;runtime-initializer;'
+    'class-object-helper;string-copy-body')
 
 
 def selected(lock):
@@ -129,7 +130,8 @@ def qualify(output):
     sources = sorted((SDK/'fibers/compiler/dev/latent/guest/runtime/compiler').glob('*.java'))
     raw_finder = SDK/'fibers/compiler-patch/AsyncMethodFinder.java'
     observed = [*sources, CONTROL, COMPILER_CONTROL, raw_finder, ROOT/'tools/java_guest/coroutine_patch.py',
-        Path(__file__).resolve(), SDK/'feasibility/dependencies.lock.json',
+        Path(__file__).resolve(), ROOT/'tools/tests/test_java_checkpoint_context.py',
+        ROOT/'tools/tests/test_java_checkpoint_compiler.py', SDK/'feasibility/dependencies.lock.json',
         SDK/'feasibility/gradle/verification-metadata.xml']
     before = {p.relative_to(ROOT).as_posix(): file_identity(p) for p in observed}
     report = {'status': 'started', 'scope': 'jvm-only-compiler-control',
@@ -147,6 +149,8 @@ def qualify(output):
         require(remaining >= 60, 'java-checkpoint-probe-deadline')
         commands = Commands(ROOT, fresh(output/'commands'), os.environ.copy(),
             deadline_seconds=remaining, command_seconds=60)
+        commands.run('checkpoint-context-source-controls', sys.executable, '-B', '-m', 'unittest',
+            'tools.tests.test_java_checkpoint_context', 'tools.tests.test_java_checkpoint_compiler')
         version = commands.run('checkpoint-context-jdk', java, '--version').decode()
         pins = tomllib.loads(read_file(ROOT/'tools/toolchain.toml').decode())
         source_module(SDK/'tools/feasibility.py').verify_version('java-version', version, pins['sdk']['java'])

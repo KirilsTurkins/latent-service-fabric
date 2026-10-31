@@ -3,7 +3,19 @@ package org.teavm.dependency;
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.interop.Unmanaged;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformerContext;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.PreOptimizingClassHolderSource;
+import org.teavm.model.Program;
+import org.teavm.model.ReferenceCache;
+import org.teavm.model.ValueType;
+import org.teavm.model.instructions.EmptyInstruction;
+import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.vm.TeaVMBuilder;
 import org.teavm.vm.TeaVMOptimizationLevel;
 
@@ -32,8 +44,8 @@ public final class CheckpointCompilerControl {
 
         @Override
         public void analyzeBeforeOptimizations(ListableClassReaderSource source) {
-            // Exercise the real owning call, after dependency completion and
-            // normal JCL/C transformations. Do not substitute a synthetic graph.
+            // Invoke the real owner after dependency completion and normal
+            // JCL/C transformations. Do not substitute a synthetic call graph.
             super.analyzeBeforeOptimizations(source);
             analyzed = true;
             throw new AnalysisComplete();
@@ -44,9 +56,7 @@ public final class CheckpointCompilerControl {
         private static final int[] VALUES = new int[256];
         private static int result;
         static {
-            for (int index = 0; index < VALUES.length; ++index) {
-                VALUES[index] = index;
-            }
+            for (int index = 0; index < VALUES.length; ++index) VALUES[index] = index;
         }
         public static void main(String[] arguments) {
             result = VALUES[arguments.length & 255];
@@ -82,35 +92,72 @@ public final class CheckpointCompilerControl {
         private static volatile boolean ready;
         public static void main(String[] arguments) {
             while (!ready) {
-                // This control checks exclusion, not managed runtime fairness.
+                // This checks exclusion, not managed runtime fairness.
             }
         }
     }
 
-    private static void diagnose(org.teavm.vm.TeaVM vm) {
-        // This executable accepts only the four fixed fixture entry points.
-        // Failure-only observations stay here, never in the production finder.
-        // No application IR, source text, or arbitrary input is emitted.
-        var source = vm.getDependencyClassSource();
-        int visited = 0, printed = 0;
-        for (var reference : vm.getMethods()) {
-            require(++visited <= 65536, "checkpoint-control-diagnostic-work-bound");
-            var cls = source.get(reference.getClassName());
-            var method = cls == null ? null : cls.getMethod(reference.getDescriptor());
-            if (method == null && printed++ < 32) {
-                var implementation = vm.getDependencyInfo().getMethodImplementation(reference);
-                System.err.println("CHECKPOINT_COMPILER_MISSING " + reference
-                        + ";class=" + (cls != null)
-                        + ";implementation=" + (implementation == null ? "absent" : implementation.getReference()));
-            }
+    public static final class RecursiveInitializer {
+        private static int result = recurse(0);
+        private static int recurse(int value) {
+            return recurse(value + 1);
+        }
+        public static void main(String[] arguments) {
+            result += arguments.length;
         }
     }
 
-    private static void check(String entry, boolean corrected, boolean unsafe) {
+    private static void loop(MethodHolder method) {
+        Program program = new Program();
+        for (int index = 0; index <= method.parameterCount(); ++index) program.createVariable();
+        var block = program.createBasicBlock();
+        var jump = new JumpInstruction();
+        jump.setTarget(block);
+        block.add(jump);
+        method.setProgram(program);
+    }
+
+    private static boolean mutate(ClassHolder cls, String mutation) {
+        if (mutation.equals("runtime-initializer") && cls.getName().equals("org.teavm.runtime.Allocator")) {
+            var descriptor = new MethodDescriptor("<clinit>", ValueType.VOID);
+            require(cls.getMethod(descriptor) == null, "checkpoint-control-original-initializer-absent");
+            var method = new MethodHolder(descriptor);
+            method.getModifiers().add(ElementModifier.STATIC);
+            loop(method);
+            cls.addMethod(method);
+            return true;
+        }
+        if (mutation.equals("class-object-helper") && cls.getName().equals("java.lang.Class")) {
+            var method = cls.getMethod(new MethodDescriptor("createClass",
+                    ValueType.object("org.teavm.runtime.reflect.ClassInfo"), ValueType.object("java.lang.Class")));
+            require(method != null, "checkpoint-control-class-object-helper-present");
+            loop(method);
+            return true;
+        }
+        if (mutation.equals("string-copy-body") && cls.getName().equals("java.lang.String")) {
+            var method = cls.getMethod(new MethodDescriptor("<init>", ValueType.arrayOf(ValueType.CHARACTER),
+                    ValueType.VOID));
+            require(method != null && method.getProgram() != null, "checkpoint-control-string-copy-body-present");
+            method.getProgram().basicBlockAt(0).getFirstInstruction().insertPrevious(new EmptyInstruction());
+            return true;
+        }
+        return false;
+    }
+
+    private static void check(String entry, boolean corrected, boolean unsafe, String mutation) {
         var target = new ProbeTarget();
-        var vm = new TeaVMBuilder(target).build();
+        var references = new ReferenceCache();
+        var builder = new TeaVMBuilder(target).setReferenceCache(references);
+        // Match TeaVMTool's maintained non-incremental input preparation.
+        builder.setClassSource(new PreOptimizingClassHolderSource(new ClasspathClassHolderSource(
+                builder.getResourceProvider(), references, builder.getClassLoader())));
+        var vm = builder.build();
         vm.setOptimizationLevel(TeaVMOptimizationLevel.FULL);
         vm.installPlugins();
+        boolean[] changed = { false };
+        vm.add((ClassHolder cls, ClassHolderTransformerContext context) -> {
+            changed[0] |= mutate(cls, mutation);
+        });
         vm.setEntryPoint(entry);
         boolean refused = false;
         try {
@@ -122,12 +169,11 @@ public final class CheckpointCompilerControl {
             require(target.analyzed, "checkpoint-control-real-c-analysis-completed");
         } catch (IllegalStateException failure) {
             if (!(corrected && unsafe && REFUSAL.equals(failure.getMessage()))) {
-                diagnose(vm);
-                failure.printStackTrace(System.err);
-                throw new AssertionError("checkpoint-control-unexpected-compiler-refusal");
+                throw new AssertionError("checkpoint-control-unexpected-compiler-refusal", failure);
             }
             refused = true;
         }
+        require(mutation.isEmpty() || changed[0], "checkpoint-control-mutation-was-applied");
         require(vm.getProblemProvider().getSevereProblems().isEmpty(),
                 "checkpoint-control-no-hidden-compiler-errors");
         require(refused == (corrected && unsafe), "checkpoint-control-progress-verdict");
@@ -137,11 +183,15 @@ public final class CheckpointCompilerControl {
         require(arguments.length == 1 && (arguments[0].equals("original")
                 || arguments[0].equals("corrected")), "checkpoint-compiler-control-mode");
         boolean corrected = arguments[0].equals("corrected");
-        check(Finite.class.getName(), corrected, false);
-        check(InitializerPolling.class.getName(), corrected, true);
-        check(UnmanagedPolling.class.getName(), corrected, true);
-        check(ManagedPolling.class.getName(), corrected, false);
+        check(Finite.class.getName(), corrected, false, "");
+        check(InitializerPolling.class.getName(), corrected, true, "");
+        check(UnmanagedPolling.class.getName(), corrected, true, "");
+        check(ManagedPolling.class.getName(), corrected, false, "");
+        check(RecursiveInitializer.class.getName(), corrected, true, "");
+        for (String mutation : new String[] { "runtime-initializer", "class-object-helper", "string-copy-body" }) {
+            check(Finite.class.getName(), corrected, true, mutation);
+        }
         System.out.println("CHECKPOINT_COMPILER_CONTROL PASS " + arguments[0]
-                + ";finite;initializer;unmanaged;managed");
+                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body");
     }
 }

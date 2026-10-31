@@ -66,6 +66,8 @@ public final class CheckpointContextControl {
         final MutableClassHolderSource source = new MutableClassHolderSource();
         final DefaultCallGraph graph = new DefaultCallGraph();
         final Set<MethodReference> reachable = new HashSet<>();
+        final Set<MethodReference> unused = new HashSet<>();
+        final Set<MethodReference> called = new HashSet<>();
 
         Inputs() {
             owner(source, "java.lang.Object");
@@ -91,7 +93,21 @@ public final class CheckpointContextControl {
         @Override public boolean isPrecise() { return true; }
         @Override public Collection<FieldReference> getReachableFields() { throw new AssertionError("unused-fields"); }
         @Override public FieldDependencyInfo getField(FieldReference field) { throw new AssertionError("unused-field"); }
-        @Override public MethodDependencyInfo getMethod(MethodReference method) { throw new AssertionError("unused-method"); }
+        @Override public MethodDependencyInfo getMethod(MethodReference method) {
+            if (!unused.contains(method)) return null;
+            return new MethodDependencyInfo() {
+                @Override public ValueDependencyInfo[] getVariables() { return new ValueDependencyInfo[0]; }
+                @Override public int getVariableCount() { return 0; }
+                @Override public ValueDependencyInfo getVariable(int index) { throw new AssertionError("unused-variable"); }
+                @Override public int getParameterCount() { return 0; }
+                @Override public ValueDependencyInfo getResult() { return null; }
+                @Override public ValueDependencyInfo getThrown() { return null; }
+                @Override public MethodReference getReference() { return method; }
+                @Override public boolean isUsed() { return false; }
+                @Override public boolean isCalled() { return called.contains(method); }
+                @Override public boolean isMissing() { return true; }
+            };
+        }
         @Override public MethodDependencyInfo getMethodImplementation(MethodReference method) {
             throw new AssertionError("unused-implementation");
         }
@@ -424,6 +440,18 @@ public final class CheckpointContextControl {
         var absent = ref("control.SpeculativeManaged", "absent");
         owner(speculative.source, absent.getClassName());
         isolatedProgress(speculative, absent, corrected, null);
+        var symbolic = new Inputs();
+        var symbolicEntry = ref("control.UnusedUnknown", "entry");
+        symbolic.unused.add(symbolicEntry);
+        isolatedProgress(symbolic, symbolicEntry, corrected, null);
+        symbolic.called.add(symbolicEntry);
+        isolatedProgress(symbolic, symbolicEntry, corrected, "java-checkpoint-unresolved-741");
+        symbolic.called.clear();
+        var usedCaller = ref("control.UsedUnknownCaller", "<clinit>");
+        symbolic.caller(usedCaller, symbolicEntry);
+        // A direct executable edge still needs a body even if its dependency
+        // record is speculative. The root filter must not weaken the closure.
+        isolatedProgress(symbolic, usedCaller, corrected, "java-checkpoint-unresolved-741");
         for (int kind = 0; kind < 4; ++kind) {
             var excluded = new Inputs();
             var missing = ref(kind == 2 ? "org.teavm.runtime.GC" : "control.MissingProgress",

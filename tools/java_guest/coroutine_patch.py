@@ -907,9 +907,21 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             if (++work > 65536 || reference == null) {
                 throw checkpointRefusal("java-checkpoint-analysis-bound-741");
             }
+            org.teavm.dependency.MethodDependencyInfo linked = dependency.getMethod(reference);
+            // Reachable methods also includes speculative links that have never
+            // been called or used. They are not executable progress roots.
+            if (linked != null && !linked.isUsed() && !linked.isCalled()) {
+                continue;
+            }
             ClassReader cls = classSource.get(reference.getClassName());
             MethodReader method = cls == null ? null : cls.getMethod(reference.getDescriptor());
             if (method == null) {
+                // CTarget speculatively links Allocator.<clinit> even when the
+                // exact pinned class declares no initializer. Authenticate the
+                // absence and complete layout; never waive a real initializer.
+                if (pinnedAbsentRuntimeInitializer(cls, reference)) {
+                    continue;
+                }
                 // linkMethod records missing declarations in reachedMethods
                 // before it checks isMissing(). An ordinary absent method on
                 // a known managed class has no body/annotation to classify;
@@ -961,20 +973,28 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 if (!finiteRuntimeMethod(cls, method)) {
                     throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
                 }
-                // The exact runtime certificate is compositional and includes
-                // its helper preconditions. Do not replace valid frame names
-                // with unconstrained null arguments through a call SCC.
+                // The pinned runtime certificate bounds its own loops and
+                // internal ABI helpers. Ordinary Java callees still need the
+                // same transitive progress proof as application code.
+                try {
+                    if (closedRuntimeCalls(method.getProgram())) {
+                        continue;
+                    }
+                } catch (Exception unavailable) {
+                    throw checkpointRefusal("java-checkpoint-unresolved-741");
+                }
+            }
+            if (!runtime && method.getProgram() == null && progressNativePrimitive(method)) {
                 continue;
             }
-            if (method.getProgram() == null && progressNativePrimitive(method)) {
-                continue;
-            }
-            if (method.hasModifier(ElementModifier.SYNCHRONIZED)
-                    || method.getAnnotations().get("org.teavm.interop.Async") != null) {
+            if (!runtime && (method.hasModifier(ElementModifier.SYNCHRONIZED)
+                    || method.getAnnotations().get("org.teavm.interop.Async") != null)) {
                 throw checkpointRefusal("java-checkpoint-nonsuspendable-context-741");
             }
-            MethodReference delegate = method.getProgram() == null ? progressNativeDelegate(cls, method) : null;
-            if (method.getProgram() == null ? delegate == null : !finiteCountedLoops(method.getProgram())) {
+            MethodReference delegate = !runtime && method.getProgram() == null
+                    ? progressNativeDelegate(cls, method) : null;
+            if (!runtime && (method.getProgram() == null ? delegate == null
+                    : !finiteCountedLoops(method.getProgram()))) {
                 throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
             }
             if (delegate != null) {
@@ -1004,6 +1024,9 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                         throw checkpointRefusal("java-checkpoint-unresolved-741");
                     }
                     MethodReference target = callee.getMethod();
+                    if (runtime && progressRuntimeClassIdentity(target.getClassName()) != null) {
+                        continue; // Independently checked, source-bound ABI roots.
+                    }
                     if (target.getName().equals("<clinit>")) {
                         if (!dependency.getReachableMethods().contains(target)) {
                             throw checkpointRefusal("java-checkpoint-unresolved-741");
@@ -1042,7 +1065,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                     cyclic |= target == component[0];
                 }
             }
-            if (!cyclic) {
+            if (!cyclic || pinnedStringCopyCycle(component, pending)) {
                 continue;
             }
             // Generic recursive calls have no inferred depth argument. Only
@@ -1056,6 +1079,48 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                     throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
                 }
             }
+        }
+    }
+
+    private boolean pinnedStringCopyCycle(int[] component, java.util.List<MethodReference> methods) {
+        org.teavm.model.ValueType object = org.teavm.model.ValueType.object("java.lang.Object");
+        org.teavm.model.ValueType integer = org.teavm.model.ValueType.INTEGER;
+        MethodReference constructor = new MethodReference("java.lang.String", "<init>",
+                org.teavm.model.ValueType.arrayOf(org.teavm.model.ValueType.CHARACTER),
+                org.teavm.model.ValueType.VOID);
+        MethodReference copy = new MethodReference("java.lang.System", "arraycopy", object, integer,
+                object, integer, integer, org.teavm.model.ValueType.VOID);
+        if (component.length != 2 || !(methods.get(component[0]).equals(constructor)
+                && methods.get(component[1]).equals(copy) || methods.get(component[1]).equals(constructor)
+                && methods.get(component[0]).equals(copy))) {
+            return false;
+        }
+        // Error-message materialization creates this apparent cycle. The exact
+        // char[] constructor always copies a non-null array into its freshly
+        // allocated equal-length char[] at offset zero. That nested arraycopy
+        // cannot take the error/string-materialization branch again. All other
+        // Java callees remain in the ordinary bounded closure above.
+        try {
+            return pinnedProgressPlatformMethod(constructor, "org.teavm.classlib.java.lang.TString", true)
+                    && pinnedProgressPlatformMethod(copy, "org.teavm.classlib.java.lang.TSystem", true);
+        } catch (Exception unavailable) {
+            return false;
+        }
+    }
+
+    private boolean pinnedAbsentRuntimeInitializer(ClassReader actual, MethodReference reference) {
+        if (actual == null || progressRuntimeClassIdentity(actual.getName()) == null
+                || !reference.getDescriptor().equals(new org.teavm.model.MethodDescriptor("<clinit>",
+                        org.teavm.model.ValueType.VOID))
+                || actual.getMethod(reference.getDescriptor()) != null) {
+            return false;
+        }
+        try {
+            org.teavm.model.ClassHolder original = originalProgressClass(actual.getName());
+            return original != null && original.getMethod(reference.getDescriptor()) == null
+                    && progressLayout(actual.getName(), new java.util.HashSet<>());
+        } catch (Exception unavailable) {
+            return false;
         }
     }
 
@@ -1198,15 +1263,15 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                     return false;
                 }
                 org.teavm.dependency.ReferenceResolver resolver = new org.teavm.dependency.ReferenceResolver(
-                        classSource, platforms, diagnostics);
+                        dependency.getClassSource(), platforms, diagnostics);
                 resolver.use(expected.getReference());
                 resolver.resolve(expected, program);
                 if (!diagnostics.getSevereProblems().isEmpty()) {
                     return false;
                 }
-                new org.teavm.model.transformation.ClassInitInsertion(classSource).apply(expected, program);
+                new org.teavm.model.transformation.ClassInitInsertion(dependency.getClassSource()).apply(expected, program);
             }
-            return progressLayouts(actualClass, expected, program) && closedRuntimeCalls(program)
+            return progressLayouts(actualClass, expected, program)
                     && sameProgressBody(program, actualMethod.getProgram());
         } catch (Exception unavailable) {
             return false; // Missing proof is an explicit unsupported classification.
@@ -1333,7 +1398,9 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             return false;
         }
         org.teavm.model.ClassHolder baseline = originalProgressClass(name);
-        ClassReader actual = classSource.get(name);
+        // Native ABI types may be absent from the executable class view. The
+        // unfiltered transformed declaration still must match its pinned layout.
+        ClassReader actual = dependency.getClassSource().get(name);
         if (baseline == null || actual == null) {
             return false; // A required semantic layout is never treated as optional.
         }
@@ -1515,6 +1582,18 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
     }
 
     private MethodReference progressNativeDelegate(ClassReader cls, MethodReader method) {
+        MethodReference classObject = new MethodReference("org.teavm.runtime.reflect.ClassInfo", "classObject",
+                org.teavm.model.ValueType.object("java.lang.Class"));
+        if (method.getReference().equals(classObject) && method.hasModifier(ElementModifier.NATIVE)
+                && !method.hasModifier(ElementModifier.STATIC) && pinnedClassMetadataMethod(method)) {
+            // The owned C helper is a cache lookup and at most one call to
+            // Class.createClass. Prove that Java helper transitively, rather
+            // than granting every reflective/initialization native a pass.
+            MethodReference target = new MethodReference("java.lang.Class", "createClass",
+                    org.teavm.model.ValueType.object("org.teavm.runtime.reflect.ClassInfo"),
+                    org.teavm.model.ValueType.object("java.lang.Class"));
+            return dependency.getReachableMethods().contains(target) ? target : null;
+        }
         org.teavm.model.AnnotationReader declaration = method.getAnnotations().get("org.teavm.interop.DelegateTo");
         if (!method.hasModifier(ElementModifier.NATIVE) || declaration == null
                 || method.getAnnotations().get("org.teavm.interop.Import") != null) {
@@ -1576,13 +1655,25 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 return "be7d539a56499183397f76e5f416cdf6fc5eea85df127c3d2da857787b956327";
             case "org.teavm.classlib.java.lang.TDouble":
                 return "a5d1be085669ed38036ca649f481cf11721a6921528af0ea4edf913c3e13e52f";
+            case "org.teavm.runtime.reflect.ClassInfo":
+                return "8ce9a2e2d304c3b8cf0f5ae81a1d8644931a00e2316057ca0b6f2ab634394d18";
+            case "org.teavm.runtime.reflect.ReflectionInfo":
+                return "a746e0d136e4d2d9ba83a3be093d0b2c1616eec58419402d01b7fcb483aaab5a";
+            case "org.teavm.classlib.java.lang.TString":
+                return "f8920b4fd19dfa052d65646bf146065f90656c01e2feb4a8d72eb2e07cdabd67";
+            case "org.teavm.classlib.java.lang.TSystem":
+                return "6a433de9184331e5497d1e5a42aa5ba6fe4ff2e9c63f9b7c29312d3e00b7a746";
             default: return null;
         }
     }
 
-    private boolean closedRuntimeCalls(org.teavm.model.Program program) throws Exception {
-        if (program == null) {
+    private boolean closedRuntimeCalls(ProgramReader reader) throws Exception {
+        if (reader == null) {
             return true; // The fixed ABI's declared native primitives have their finite argument.
+        }
+        org.teavm.model.Program program = boundedProgressProgram(reader);
+        if (program == null) {
+            return false;
         }
         for (org.teavm.model.BasicBlock block : program.getBasicBlocks()) {
             for (org.teavm.model.Instruction instruction : block) {
@@ -1649,9 +1740,10 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             org.teavm.model.ClassHolder cls = source.get(reference.getClassName());
             if (cls != null) {
                 new org.teavm.backend.c.analyze.CDependencyListener().transformClass(cls, null);
+                new org.teavm.classlib.impl.string.DefaultStringTransformer().transformClass(cls, null);
             }
             org.teavm.model.MethodHolder expected = cls == null ? null : cls.getMethod(reference.getDescriptor());
-            ClassReader actualClass = classSource.get(reference.getClassName());
+            ClassReader actualClass = dependency.getClassSource().get(reference.getClassName());
             MethodReader actual = actualClass == null ? null : actualClass.getMethod(reference.getDescriptor());
             if (expected != null && actual != null) {
                 if (completeDeclaration && !sameProgressMetadata(cls, actualClass)) {
@@ -1668,11 +1760,11 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 }
                 if (expected.getProgram() != null) {
                     org.teavm.dependency.ReferenceResolver resolver = new org.teavm.dependency.ReferenceResolver(
-                            classSource, new String[] { org.teavm.interop.Platforms.C,
+                            dependency.getClassSource(), new String[] { org.teavm.interop.Platforms.C,
                                     org.teavm.interop.Platforms.LOW_LEVEL, org.teavm.interop.Platforms.OWN_GC }, diagnostics);
                     resolver.use(expected.getReference());
                     resolver.resolve(expected, expected.getProgram());
-                    new org.teavm.model.transformation.ClassInitInsertion(classSource).apply(expected, expected.getProgram());
+                    new org.teavm.model.transformation.ClassInitInsertion(dependency.getClassSource()).apply(expected, expected.getProgram());
                 }
                 result = diagnostics.getSevereProblems().isEmpty() && sameProgressMetadata(left, right)
                         && sameProgressBody(expected.getProgram(), actual.getProgram());
@@ -1682,7 +1774,72 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         return result;
     }
 
+    private boolean progressClassMetadataPrimitive(MethodReader method) {
+        String owner = "org.teavm.runtime.reflect.ClassInfo";
+        if (!method.getReference().getClassName().equals(owner)
+                || !method.hasModifier(ElementModifier.NATIVE)
+                || method.hasModifier(ElementModifier.STATIC)
+                || method.getAnnotations().get("org.teavm.interop.Unmanaged") == null
+                || method.getAnnotations().get("org.teavm.interop.Intrinsified") == null) {
+            return false;
+        }
+        org.teavm.model.ValueType integer = org.teavm.model.ValueType.INTEGER;
+        org.teavm.model.ValueType info = org.teavm.model.ValueType.object(owner);
+        org.teavm.model.MethodDescriptor shape;
+        switch (method.getName()) {
+            case "modifiers": case "primitiveKind": case "superinterfaceCount":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(), integer);
+                break;
+            case "itemType": case "declaringClass": case "enclosingClass": case "parent":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(), info);
+                break;
+            case "name": case "simpleName":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(),
+                        org.teavm.model.ValueType.object("org.teavm.runtime.StringInfo"));
+                break;
+            case "superinterface":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(), integer, info);
+                break;
+            case "arrayLength":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(),
+                        org.teavm.model.ValueType.object("java.lang.Object"), integer);
+                break;
+            case "isSuperTypeOf":
+                // Calls the owned compiler-generated finite type predicate,
+                // not a Java callback or application class initializer.
+                shape = new org.teavm.model.MethodDescriptor(method.getName(), info,
+                        org.teavm.model.ValueType.BOOLEAN);
+                break;
+            case "reflection":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(),
+                        org.teavm.model.ValueType.object("org.teavm.runtime.reflect.ClassReflectionInfo"));
+                break;
+            default: return false; // No allocation, initialization or reflective callbacks.
+        }
+        if (!method.getDescriptor().equals(shape)) {
+            return false;
+        }
+        return pinnedClassMetadataMethod(method);
+    }
+
+    private boolean pinnedClassMetadataMethod(MethodReader method) {
+        try {
+            String owner = "org.teavm.runtime.reflect.ClassInfo";
+            String parent = "org.teavm.runtime.reflect.ReflectionInfo";
+            org.teavm.model.ClassHolder baseline = originalProgressClass(parent);
+            ClassReader actual = dependency.getClassSource().get(parent);
+            return baseline != null && actual != null && sameProgressMetadata(baseline, actual)
+                    && progressLayout("org.teavm.runtime.RuntimeClass", new java.util.HashSet<>())
+                    && pinnedProgressPlatformMethod(method.getReference(), owner, true);
+        } catch (Exception unavailable) {
+            return false;
+        }
+    }
+
     private boolean progressNativePrimitive(MethodReader method) {
+        if (progressClassMetadataPrimitive(method)) {
+            return true;
+        }
         // These exact C operations are bounded word operations, not a general
         // approval for native methods declared by numeric-looking classes.
         org.teavm.model.ValueType integer = org.teavm.model.ValueType.INTEGER;
@@ -1693,6 +1850,13 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         String owner = method.getReference().getClassName(), name = method.getName(), donor;
         org.teavm.model.MethodDescriptor shape = null;
         switch (owner) {
+            case "java.lang.Object":
+                donor = "org.teavm.classlib.java.lang.TObject";
+                if (name.equals("getClassInfo")) {
+                    shape = new org.teavm.model.MethodDescriptor(name,
+                            org.teavm.model.ValueType.object("org.teavm.runtime.reflect.ClassInfo"));
+                }
+                break;
             case "java.lang.Integer":
                 donor = "org.teavm.classlib.java.lang.TInteger";
                 if (name.equals("divideUnsigned") || name.equals("remainderUnsigned") || name.equals("compareUnsigned")) {
