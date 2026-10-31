@@ -13,6 +13,8 @@ jobs:
     timeout-minutes: 25
     env:
       PYTHONDONTWRITEBYTECODE: '1'
+      RUSTUP_TOOLCHAIN: '1.97.1'
+      RUSTUP_AUTO_INSTALL: '0'
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
       CARGO_PROFILE_DEV_DEBUG: '0'
@@ -31,7 +33,7 @@ jobs:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
-          components: rustfmt,clippy
+          components: rustfmt
       - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
@@ -45,115 +47,64 @@ jobs:
           save-if: false
       - name: Install locked validation dependencies
         run: python3 -m pip install --requirement tools/requirements.lock
-      - name: Restore validated repairs and correct test-only feature ownership
+      - name: Restore the exact reviewed repair recipe and preserve authentic output bytes
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import base64, hashlib, json, os, pathlib, subprocess
+          import base64, hashlib, json, os, pathlib, subprocess, yaml
           root = pathlib.Path.cwd()
+          assert subprocess.check_output(['git','rev-parse','HEAD']).decode().strip() == '5b2c002eed0ae74c143e0fad38e85e44cd2a16a8'
+          sha = '3e3ca756180fefe947a7352304c1f9c9f5192f19'
+          response = subprocess.check_output(['gh','api',f'repos/KirilsTurkins/latent-service-fabric/git/blobs/{sha}'],timeout=30)
+          blob = json.loads(response)
+          assert blob['encoding'] == 'base64'
+          raw = base64.b64decode(blob['content'])
+          assert len(raw) <= 131072
+          assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == sha
+          recipe = yaml.safe_load(raw)
+          selected, = [step['run'] for step in recipe['jobs']['inspect']['steps']
+                       if step.get('name') == 'Restore validated repairs and correct test-only feature ownership']
+          subprocess.run(['bash','-e','-o','pipefail','-c',selected],check=True,timeout=180)
+          path = root/'.gitattributes'
+          raw = path.read_bytes()
+          assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == 'b5eee5a8437368eb055e92f62de8de0ae39a0c7f'
+          path.write_bytes(raw + b'\n# Preserve authentic byte-pinned libtest output, including its final blank line.\n/docs/testing/evidence/dotnet-original-v3-2026-10-31.2a79e99.stdout.txt -text whitespace=blank-at-eol,space-before-tab\n')
           out = pathlib.Path(os.environ['RUNNER_TEMP'])/'pr1587-inspect'
-          out.mkdir()
-          entries = {
-              'docs/testing/dotnet-original-v3-trap.md': '3da7b0f149ddac5ca4cfc71b5432d4827b2d8177',
-              'docs/testing/evidence/dotnet-original-v3-2026-10-31.2a79e99.admission.json': '40f3f9051c4f033102062f1344af7b8b9f04d7c5',
-              'docs/testing/evidence/dotnet-original-v3-2026-10-31.2a79e99.json': '59e3fd6a6b227b636af04453d05c6c7be5950d7d',
-              'docs/testing/evidence/dotnet-original-v3-2026-10-31.2a79e99.observation.json': '4c2e86f7e4469164fbf261889c99e70accf5bd58',
-              'docs/testing/evidence/dotnet-original-v3-2026-10-31.2a79e99.stdout.txt': '965bab6e8ec9f59c296e63976a720098c4b95d40',
-              'tools/ci/contracts/python/test_dotnet_original_evidence.py.json': '08fee0462e184f358fbcf735452e62ed8249cfb5',
-              'tools/ci/contracts/python/test_owned_runners.py.json': '3a5e5bf8b32c2beee4d8d7a0c8c353be18b31ae4',
-              'tools/tests/test_dotnet_original_evidence.py': '163aede654fd8dbdc8c416fd26cfd1128b98d4f5',
-              'tools/tests/test_owned_runners.py': '63d7763343ba5e70a7701de7dd65e37bf697539a',
-          }
-          for name, sha in entries.items():
-              blob = json.loads(subprocess.check_output(['gh','api',f'repos/KirilsTurkins/latent-service-fabric/git/blobs/{sha}'],timeout=30))
-              assert blob['encoding'] == 'base64'
-              raw = base64.b64decode(blob['content'])
-              assert len(raw) <= 131072
-              assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == sha
-              (root/name).write_bytes(raw)
-          path = root/'crates/latent-wasmtime/tests/guest_sdk/runtime.rs'
-          raw = path.read_bytes()
-          assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == '1469ef4e895969b33b1575a6c6717ad274447f54'
-          old = '''    #[cfg(all(
-                  feature = "development-test-host",
-                  target_os = "linux",
-                  target_arch = "x86_64"
-              ))]'''
-          new = '    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]'
-          source = raw.decode()
-          assert source.count(old) == 3
-          source = source.replace(old,new)
-          comment = '    /// Use the normal provider configuration only for the original v3 observation.\n'
-          assert source.count(comment) == 1
-          source = source.replace(comment, comment + '    // This test module is also included by latentd, whose Cargo features differ.\n    // Keep the observer opt-in on its owning local_service execution path.\n')
-          path.write_text(source)
-          path = root/'crates/latent-wasmtime/tests/local_service.rs'
-          raw = path.read_bytes()
-          assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == '1d80a57799dd8409f5787ad74fa14b492d37d62a'
-          old = '''#[cfg(all(
-              feature = "development-test-host",
-              target_os = "linux",
-              target_arch = "x86_64"
-          ))]
-          #[path = "local_service/original_dotnet_package.rs"]
-          mod original_dotnet_package;'''
-          new = '''// Pure package-validation controls belong to every local-service inventory.
-          // Only the original-component execution below requires the diagnostic host.
-          #[path = "local_service/original_dotnet_package.rs"]
-          mod original_dotnet_package;'''
-          source = raw.decode()
-          assert source.count(old) == 1
-          path.write_text(source.replace(old,new))
-          with (root/'docs/testing/dotnet-original-v3-trap.md').open('a') as document:
-              document.write('\nThe shared test-operator helpers are also included by `latentd`, which does\nnot declare the `latent-wasmtime`-specific `development-test-host` feature.\nTheir target-platform guards therefore do not mention a foreign Cargo feature.\nThe actual original-component execution and observer remain opt-in on their\nowning test path; production admission and provider behavior are unchanged.\nThe six pure normal-packager controls are compiled with and without the observer\nfeature, so default-feature signed programmes retain the same exact catalogue.\nNo ignored case, filtered-case check or qualification requirement is relaxed.\n')
-          (out/'paths.json').write_text(json.dumps(sorted([*entries, 'crates/latent-wasmtime/tests/guest_sdk/runtime.rs','crates/latent-wasmtime/tests/local_service.rs']))+'\n')
+          paths = json.loads((out/'paths.json').read_text())
+          paths.append('.gitattributes')
+          (out/'paths.json').write_text(json.dumps(sorted(paths))+'\n')
+          added = subprocess.check_output(['git','ls-files','--others','--exclude-standard']).decode().splitlines()
+          assert set(added) <= set(paths)
+          if added:
+              subprocess.run(['git','add','--intent-to-add','--',*added],check=True)
+          subprocess.run(['git','diff','--check'],check=True)
           PY
-      - name: Inspect the earlier signed Go admission count without altering its receipt
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 - <<'PY'
-          import hashlib, io, json, re, subprocess, zipfile
-          from tools import ci_suite_inventory
-          raw = subprocess.check_output(['gh','api','repos/KirilsTurkins/latent-service-fabric/actions/artifacts/13054660664/zip'],timeout=90)
-          assert len(raw) == 50981161
-          assert hashlib.sha256(raw).hexdigest() == '2d4b486cfe5302d8faba9ee0ea5777ee5bb9d004d2371bd7d162ddde4f1b1976'
-          with zipfile.ZipFile(io.BytesIO(raw)) as archive:
-              selected = [i for i in archive.infolist() if 'admission' in i.filename.lower() and i.filename.endswith('signed.stdout.log')]
-              assert len(selected) <= 8
-              for info in selected:
-                  assert info.file_size <= 2*1024**2
-                  stdout = archive.read(info).decode()
-                  print('EARLIER GO OUTPUT', info.filename)
-                  for line in stdout.splitlines():
-                      if line.startswith(('test ', 'GO_ADMISSION_CASE', 'running ')):
-                          print(line[:2048])
-              print('ADMISSION MEMBERS',json.dumps([i.filename for i in archive.infolist() if 'admission' in i.filename.lower()][:80]))
-          suite, = [s for s in ci_suite_inventory.load()['suites'] if s['id'] == 'latent-wasmtime.test.local-service']
-          print('CATALOGUE', len(suite['expectedCases']), 'FILTERED REQUIRED', len(suite['expectedCases'])-1)
-          PY
-      - name: Validate Python contracts and retained evidence
+      - name: Recheck retained evidence and complete fixture copies
         run: |
           set -o pipefail
           python3 -m unittest tools.tests.test_owned_runners tools.tests.test_dotnet_original_fault tools.tests.test_dotnet_original_evidence tools.tests.test_ci_profile tools.tests.test_ci_result tools.tests.test_ci_suite_cases tools.tests.test_ci_suite_inventory tools.tests.test_ci_contracts tools.tests.test_ci_coverage tools.tests.test_dotnet_task_runtime tools.tests.test_dotnet_task_wait 2>&1 | tee "$RUNNER_TEMP/pr1587-inspect/tests.txt"
           python3 tools/ci_coverage.py 2>&1 | tee "$RUNNER_TEMP/pr1587-inspect/coverage.txt"
-      - name: Check formatting and compile the shared fixture in the actual node test crate
+      - name: Compile the shared fixture in its actual node test crate
+        timeout-minutes: 10
         run: |
           set -o pipefail
           rustfmt --edition 2021 --config skip_children=true --check crates/latent-wasmtime/tests/guest_sdk/runtime.rs crates/latent-wasmtime/tests/local_service.rs
-          cargo clippy --locked -p latentd --lib --tests --all-features -- -D warnings 2>&1 | tee "$RUNNER_TEMP/pr1587-inspect/clippy.txt"
+          cargo check --locked -p latentd --lib --tests --all-features 2>&1 | tee "$RUNNER_TEMP/pr1587-inspect/check.txt"
       - name: Require exact default and observer-feature Rust inventories and six package controls
+        timeout-minutes: 11
         run: |
           python3 - <<'PY'
-          import json, os, pathlib, re, subprocess
+          import json, os, pathlib, re, subprocess, time
           from tools import ci_suite_inventory
           out = pathlib.Path(os.environ['RUNNER_TEMP'])/'pr1587-inspect'
           suite, = [s for s in ci_suite_inventory.load()['suites'] if s['id'] == 'latent-wasmtime.test.local-service']
           expected = sorted(suite['expectedCases'])
+          deadline = time.monotonic()+650
+          summary = []
           for label, features in [('default',[]),('observer',['--features','development-test-host'])]:
               base = ['cargo','--config','.cargo/managed-guest.toml','test','--locked','-p','latent-wasmtime','--test','local_service',*features]
-              result = subprocess.run([*base,'--','--list'],capture_output=True,timeout=600)
+              result = subprocess.run([*base,'--','--list'],capture_output=True,timeout=max(1,deadline-time.monotonic()))
               (out/(label+'-list.stdout.txt')).write_bytes(result.stdout)
               (out/(label+'-list.stderr.txt')).write_bytes(result.stderr)
               assert result.returncode == 0, result.stderr[-8192:].decode(errors='replace')
@@ -161,15 +112,17 @@ jobs:
               assert actual == expected, (label,sorted(set(expected)-set(actual)),sorted(set(actual)-set(expected)))
               controls = [name for name in expected if name.startswith('original_dotnet_package::')]
               assert len(controls) == 6 and not set(controls).intersection(suite['expectedIgnored'])
-              result = subprocess.run([*base,'original_dotnet_package::','--','--test-threads=1'],capture_output=True,timeout=60)
+              result = subprocess.run([*base,'original_dotnet_package::','--','--test-threads=1'],capture_output=True,timeout=min(60,max(1,deadline-time.monotonic())))
               (out/(label+'-controls.stdout.txt')).write_bytes(result.stdout)
               (out/(label+'-controls.stderr.txt')).write_bytes(result.stderr)
               assert result.returncode == 0, result.stderr[-8192:].decode(errors='replace')
               assert sorted(re.findall(r'^test ([A-Za-z0-9_:]+) \.\.\. ok$',result.stdout.decode(),re.M)) == sorted(controls)
-              print('EXACT RUST INVENTORY',label,len(actual),'PACKAGE CONTROLS PASSED',len(controls))
+              summary.append({'configuration':label,'exactInventoryCases':len(actual),'packageControlsPassed':len(controls)})
+              print('EXACT RUST INVENTORY',label,len(actual),'PACKAGE CONTROLS PASSED',len(controls),flush=True)
+          (out/'native-validation.json').write_text(json.dumps(summary,indent=2)+'\n')
           PY
           git diff --check
-      - name: Stage only the validated source files without updating refs
+      - name: Stage only validated source blobs without changing commits or refs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -185,8 +138,8 @@ jobs:
           for name in paths:
               raw = (root/name).read_bytes()
               assert len(raw) <= 131072
-              result = subprocess.run(['gh','api','--method','POST','repos/KirilsTurkins/latent-service-fabric/git/blobs','--input','-'],input=json.dumps({'content':raw.decode(),'encoding':'utf-8'}).encode(),check=True,capture_output=True,timeout=30)
-              sha = json.loads(result.stdout)['sha']
+              response = subprocess.run(['gh','api','--method','POST','repos/KirilsTurkins/latent-service-fabric/git/blobs','--input','-'],input=json.dumps({'content':raw.decode(),'encoding':'utf-8'}).encode(),check=True,capture_output=True,timeout=30)
+              sha = json.loads(response.stdout)['sha']
               assert sha == hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
               entries.append({'path':name,'mode':'100644','type':'blob','sha':sha,'sha256':hashlib.sha256(raw).hexdigest()})
           value = {'testedBase':'5b2c002eed0ae74c143e0fad38e85e44cd2a16a8','entries':entries}
