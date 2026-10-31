@@ -268,8 +268,8 @@ class ScratchQualification(unittest.TestCase):
 
     def test_c_child_reuses_exact_normal_bundle_and_pinned_compiler_without_native_build(self):
         from tools.ci_lane_inventory import workflow_model
-        from tools.tests.test_c_closed_filesystem_qualification import original_libfetch_workflow
-        model = workflow_model(original_libfetch_workflow(
+        from tools.tests.test_c_closed_filesystem_qualification import original_libucl_workflow
+        model = workflow_model(original_libucl_workflow(
             (qualifier.ROOT/'.github/workflows/c-guest-authoring.yml').read_text()))
         jobs = model['jobs']
         selector = model['on']['workflow_dispatch']['inputs']['qualify-scratch-refusals']

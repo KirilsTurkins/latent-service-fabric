@@ -8,6 +8,7 @@ on:
       - 'tools/dotnet_original_fault.py'
       - 'crates/latent-wasmtime/tests/local_service.rs'
       - 'crates/latent-wasmtime/tests/local_service/fixture.rs'
+      - 'crates/latent-wasmtime/tests/guest_sdk/runtime.rs'
   workflow_dispatch:
 
 permissions:

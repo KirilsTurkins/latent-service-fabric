@@ -38,6 +38,24 @@ def original_libfetch_workflow(value):
     return value
 
 
+def original_libucl_workflow(value):
+    """Authenticate/invert only the paired-client route before the old inverse."""
+    if hashlib.sha256(value.encode()).hexdigest() != '4c748a13eca74ecb1cadb638f0b890d2bd32a6cdd82f9501140038e092d2d73c':
+        raise AssertionError('historical-workflow-exact-libucl-source-required')
+    for current, previous, count in ((', feat/sdk-690-c-libucl-http-20261029', '', 1), (" && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029'", '', 5), (" || github.ref == 'refs/heads/feat/sdk-690-c-libucl-http-20261029'", '', 1)):
+        if value.count(current) != count:
+            raise AssertionError('historical-workflow-exact-libucl-selector-required')
+        value = value.replace(current, previous)
+    for start, end in (('      - name: Execute both unchanged HTTP clients on the same normal expanded profile\n', '      - name: Retain bounded C standard runtime proof including failures\n'), ('            ${{ runner.temp }}/c-libucl-http/qualified.json\n', '            ${{ runner.temp }}/c-standard-facilities/qualified.json\n')):
+        if value.count(start) != 1 or value.count(end) != 1:
+            raise AssertionError('historical-workflow-exact-libucl-block-required')
+        first = value.index(start); last = value.index(end, first)
+        value = value[:first] + value[last:]
+    if hashlib.sha256(value.encode()).hexdigest() != 'e8a8c440b002c785b001d6d9d1f4038d4ff929f9b620029eedd318a25c1e2781':
+        raise AssertionError('historical-workflow-original-libfetch-source-required')
+    return original_libfetch_workflow(value)
+
+
 class ClosedFilesystemQualification(unittest.TestCase):
     def test_actual_c_standard_error_projection_uses_closed_attribution_tokens(self):
         from tools import guest_compatibility as compatibility
@@ -133,7 +151,7 @@ class ClosedFilesystemQualification(unittest.TestCase):
                             AssertionError, '^historical-workflow-exact-current-security-actions-required$'):
                         historical_security_actions(encode(invalid))
         from tools.ci_lane_inventory import workflow_model
-        model = workflow_model(original_libfetch_workflow((gate.ROOT/'.github/workflows/c-guest-authoring.yml').read_text()))
+        model = workflow_model(original_libucl_workflow((gate.ROOT/'.github/workflows/c-guest-authoring.yml').read_text()))
         selector = model['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']
         self.assertEqual(selector['type'], 'boolean'); self.assertIs(selector['default'], False)
         jobs = copy.deepcopy(model['jobs'])

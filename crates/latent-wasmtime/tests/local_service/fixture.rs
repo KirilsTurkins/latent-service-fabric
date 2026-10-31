@@ -334,6 +334,107 @@ impl Fixture {
         .await
         .unwrap()
     }
+
+    /// Exact original .NET-v3 authority only; old numeric/general fixtures remain unchanged.
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub async fn with_original_dotnet_v3_numeric_runtime(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+        identities: RuntimeIdentities,
+    ) -> Self {
+        assert_eq!(identities.tenant.0, "examples");
+        assert_eq!(identities.caller.0, "my-greeting");
+        assert_eq!(identities.caller, identities.callee);
+        assert_eq!(
+            packages::release(&provided.1).0,
+            "sha256:9c20e7025c9a2672ee256d93fb51efd631b609064953a11dc2491a94639552af"
+        );
+        assert_eq!(provided.1.layout().digest(), provided.2.layout().digest());
+        let mut value = Self::with_named_numeric_activation_runtime(
+            provided,
+            limits,
+            call_wall_millis,
+            identities,
+        )
+        .await;
+        assert_eq!(value.backend.resource_snapshot().stores_created, 0);
+        value._guest_runtime.configure_original_dotnet_v3_authority(
+            &value.policies,
+            &value.identities.tenant.0,
+            &value.target.publication,
+        );
+        // Plans own sealed policy snapshots. Recompile the same definitions
+        // against the updated original policies before any Store exists.
+        let definitions = value.store.binding_definitions().unwrap();
+        let mut providers = vec![ConfiguredBindingProvider {
+            tenant: value.identities.tenant.clone(),
+            service: value.identities.callee.clone(),
+            reference: value._provider.reference(),
+            local_deployment: Some(DeploymentId("callee".into())),
+        }];
+        providers.extend(value._guest_runtime.providers(&value.identities.tenant.0));
+        assert_eq!(providers.len(), 5);
+        let (generation, transaction) = value.store.binding_version().unwrap();
+        let update = value
+            .store
+            .prepare_binding_update(
+                generation,
+                transaction,
+                definitions.clone(),
+                value.broker.clone(),
+                providers,
+                latent_control_store::bindings::BindingLimits::default(),
+            )
+            .await
+            .unwrap();
+        value.store.commit_binding_update(update).unwrap();
+        let current_version = value.store.binding_version().unwrap();
+        assert_ne!(current_version, (generation, transaction));
+        assert_eq!(value.store.binding_inventory().0, current_version.0);
+        assert_eq!(value.target.service.0, "my-greeting");
+        let definition_fields = |values: Vec<BindingDefinition>| {
+            values
+                .into_iter()
+                .map(|definition| {
+                    (
+                        JsonManifestCodec::default()
+                            .encode_binding(&definition.manifest)
+                            .unwrap(),
+                        definition.provider_binding_id,
+                        definition.allowed_modes,
+                        definition.restriction_json,
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            definition_fields(value.store.binding_definitions().unwrap()),
+            definition_fields(definitions)
+        );
+        assert_eq!(value.backend.resource_snapshot().stores_created, 0);
+        value
+    }
+
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub fn original_dotnet_v3_authority_snapshot(&self) -> serde_json::Value {
+        assert_eq!(self.backend.resource_snapshot().stores_created, 0);
+        self._guest_runtime
+            .original_dotnet_v3_authority_snapshot(&self.policies, &self.identities.tenant.0)
+    }
+
     /// Two authenticated tenants share the same node scheduler/backend/cell.
     /// Existing single-tenant fixtures keep the original construction path.
     pub async fn with_two_tenant_activation_runtime(

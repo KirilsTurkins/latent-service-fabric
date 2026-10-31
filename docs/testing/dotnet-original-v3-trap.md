@@ -34,3 +34,26 @@ and 128 MiB public artifact union. Source cleanliness, tool/executable identitie
 the original archive and package inputs are checked after execution. All whole
 ticket, AC7, original-cause, physical-retirement and native-accounting qualification
 flags remain false; the existing fifteen-outcome receipt stays unchanged.
+
+The first diagnostic at `9798e4606694294aae224131deb8ad806f25f1f5` preserved the
+component but used the generic fixture's scalar-only random authority. Its two
+traces reached the entropy adapter's refused bytes request and panic. They do
+not establish either original normal failure's cause and remain historical
+nonqualifying evidence (run 41204762325, artifact 13044212623).
+
+The closed original-v3 helper now checks the original eight provider-binding and
+policy payloads from the authenticated normal archive (examples controls 007-014).
+It reuses all four original test provider owners and matches their profile,
+configuration digest, epoch, operation lists, resource ceilings, administrator
+workflow-operator principal and the original deployment service `my-greeting`.
+The unchanged capsule display name is `examples/my-greeting`; it is not substituted
+for the original deployment identity. Only the new scratch publication ID changes
+the original policy scope. No raw policy digest equality across publication IDs
+is claimed.
+
+After updating the eight test policy records, the helper recompiles and commits
+the same binding definitions with the same existing provider references. This
+refreshes the sealed policy snapshots before any Store or activation session.
+It reads back all four actual provider references and current sealed documents,
+checks the binding generation and all definition fields, and requires zero
+created Stores throughout setup. General fixtures retain their prior behavior.

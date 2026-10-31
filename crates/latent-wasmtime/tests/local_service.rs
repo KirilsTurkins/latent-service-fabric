@@ -205,7 +205,10 @@ async fn dotnet_original_v3_fault_and_quiescence_use_bounded_numeric_observation
                 .decode_capsule(bundle.blob("capsule.json").unwrap())
                 .unwrap();
             let tenant = capsule.metadata.tenant.expect("original capsule tenant");
-            let service = ServiceId(capsule.metadata.name);
+            assert_eq!(capsule.metadata.name, "examples/my-greeting");
+            // Original normal deployment 006 selects this tenant-local service.
+            // Capsule display metadata is not the deployment service identity.
+            let service = ServiceId("my-greeting".to_owned());
             let ceiling = capsule.execution.resource_budget_ceiling;
             assert_eq!(ceiling.cpu_fuel, 1_000_000_000);
             assert_eq!(ceiling.memory_bytes, 128 * 1024 * 1024);
@@ -228,7 +231,7 @@ async fn dotnet_original_v3_fault_and_quiescence_use_bounded_numeric_observation
             let callee = join_cause_package::bundle(&join_cause_package::input(NORMAL));
             assert_eq!(callee.layout().digest(), bundle.layout().digest());
             // The existing once-per-backend observer is never reset/rearmed.
-            let f = fixture::Fixture::with_named_numeric_activation_runtime(
+            let f = fixture::Fixture::with_original_dotnet_v3_numeric_runtime(
                 (catalog, bundle, callee),
                 latent_core::activation_runtime::RuntimeLimits {
                     tasks: 8,
@@ -262,7 +265,21 @@ async fn dotnet_original_v3_fault_and_quiescence_use_bounded_numeric_observation
                     "latent:runtime/activation@0.1.0",
                 ])
             );
+            // These eight retained normal policy/binding payloads, not a capability
+            // ID set alone, define the observation's exact effective authority.
+            let mut expected: serde_json::Value = serde_json::from_str(r#"[{"capability":"latent:clock/monotonic@0.1.0","providerProfile":"activation-monotonic-v1","configurationDigest":"sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0","configurationEpoch":1,"configuredOperations":["now-nanos"],"providerBinding":{"capability":"latent:clock/monotonic@0.1.0","configurationDigest":"sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0","configurationEpoch":1,"formatVersion":1,"providerProfile":"activation-monotonic-v1","restriction":{"operations":["now-nanos"]},"tenant":"examples"},"policy":{"formatVersion":1,"rules":[{"capability":"latent:clock/monotonic@0.1.0","ceiling":{"inputBytes":0,"operations":4096,"outputBytes":32768,"wallTimeMillis":5000},"effect":"allow","id":"root-return","operations":["now-nanos"],"principals":[{"kind":"administrator","subject":"workflow-operator"}],"publications":["publication:sha256:c60eb29b5def50ba91e21bd0e48ed33455b3345b8807ed01a1972cdb1f36633f"],"resources":{"kind":"clock"},"services":["my-greeting"]}],"tenant":"examples"}},{"capability":"latent:clock/wall@0.1.0","providerProfile":"activation-wall-v1","configurationDigest":"sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618","configurationEpoch":1,"configuredOperations":["now-unix-millis"],"providerBinding":{"capability":"latent:clock/wall@0.1.0","configurationDigest":"sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618","configurationEpoch":1,"formatVersion":1,"providerProfile":"activation-wall-v1","restriction":{"operations":["now-unix-millis"]},"tenant":"examples"},"policy":{"formatVersion":1,"rules":[{"capability":"latent:clock/wall@0.1.0","ceiling":{"inputBytes":0,"operations":4096,"outputBytes":32768,"wallTimeMillis":5000},"effect":"allow","id":"root-return","operations":["now-unix-millis"],"principals":[{"kind":"administrator","subject":"workflow-operator"}],"publications":["publication:sha256:c60eb29b5def50ba91e21bd0e48ed33455b3345b8807ed01a1972cdb1f36633f"],"resources":{"kind":"clock"},"services":["my-greeting"]}],"tenant":"examples"}},{"capability":"latent:random/random@0.1.0","providerProfile":"system-random-v1","configurationDigest":"sha256:5ac9d285e9e91c6dd6603d5f5e234395dcd0c369db4ce756762b29b66e43e1ac","configurationEpoch":1,"configuredOperations":["bytes"],"providerBinding":{"capability":"latent:random/random@0.1.0","configurationDigest":"sha256:5ac9d285e9e91c6dd6603d5f5e234395dcd0c369db4ce756762b29b66e43e1ac","configurationEpoch":1,"formatVersion":1,"providerProfile":"system-random-v1","restriction":{"operations":["bytes"]},"tenant":"examples"},"policy":{"formatVersion":1,"rules":[{"capability":"latent:random/random@0.1.0","ceiling":{"inputBytes":8,"operations":16,"outputBytes":4096,"wallTimeMillis":5000},"effect":"allow","id":"root-return","operations":["bytes"],"principals":[{"kind":"administrator","subject":"workflow-operator"}],"publications":["publication:sha256:c60eb29b5def50ba91e21bd0e48ed33455b3345b8807ed01a1972cdb1f36633f"],"resources":{"kind":"random"},"services":["my-greeting"]}],"tenant":"examples"}},{"capability":"latent:runtime/activation@0.1.0","providerProfile":"activation-owned-v1","configurationDigest":"sha256:721628a550bc1fd08ab22f600570d794d50bf678b7a6089ae79d8dac0592f818","configurationEpoch":1,"configuredOperations":["register","park","wake","settle","close","observe","wait-for","wait-until","timer-start","timer-next","timer-stop"],"providerBinding":{"capability":"latent:runtime/activation@0.1.0","configurationDigest":"sha256:721628a550bc1fd08ab22f600570d794d50bf678b7a6089ae79d8dac0592f818","configurationEpoch":1,"formatVersion":1,"providerProfile":"activation-owned-v1","restriction":{"operations":["register","park","wake","settle","close","observe","wait-for","wait-until","timer-start","timer-next","timer-stop"]},"tenant":"examples"},"policy":{"formatVersion":1,"rules":[{"capability":"latent:runtime/activation@0.1.0","ceiling":{"inputBytes":0,"operations":4096,"outputBytes":32768,"wallTimeMillis":5000},"effect":"allow","id":"root-return","operations":["register","park","wake","settle","close","observe","wait-for","wait-until","timer-start","timer-next","timer-stop"],"principals":[{"kind":"administrator","subject":"workflow-operator"}],"publications":["publication:sha256:c60eb29b5def50ba91e21bd0e48ed33455b3345b8807ed01a1972cdb1f36633f"],"resources":{"kind":"clock"},"services":["my-greeting"]}],"tenant":"examples"}}]"#).unwrap();
+            for row in expected.as_array_mut().unwrap() {
+                for rule in row["policy"]["rules"].as_array_mut().unwrap() {
+                    // Fresh scratch signing/publication may change only this scope ID.
+                    rule["publications"] = serde_json::json!([f.target.publication.as_str()]);
+                }
+            }
+            assert_eq!(f.original_dotnet_v3_authority_snapshot(), expected);
             let mut request = f.request(activation, mode);
+            request.principal.kind = latent_core::PrincipalKind::Administrator;
+            request.principal.subject = "workflow-operator".to_owned();
+            assert_eq!(request.principal.tenant.as_ref().unwrap().0, "examples");
+            assert!(request.principal.service.is_none() && request.principal.claims.is_empty());
             request.target.contract = ContractId("examples:greeting/api@1.0.0".into());
             request.target.function = FunctionId("probe".into());
             request.budget = ceiling.clone();
