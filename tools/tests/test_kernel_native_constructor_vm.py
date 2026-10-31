@@ -190,8 +190,13 @@ class Q35NodeBootSourceControls(unittest.TestCase):
         # This is the actual shared geometry material, with all ordinary
         # function bodies unchanged. The final image uses normal rodata layout.
         projector_path = owner.ROOT / owner.NODE_PROJECTOR
-        projector = {'__file__': str(projector_path)}
-        exec(compile(projector_path.read_bytes(), str(projector_path), 'exec'), projector)
+        from importlib.util import spec_from_file_location, module_from_spec
+        spec = spec_from_file_location('lsf_node_geometry_projector', projector_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        projector = vars(module)
         geometry = (owner.ROOT / 'research/standard-outbound/linux-6.12-lineage/node-irq-geometry/geometry.c').read_bytes()
         placed = projector['geometry_for_link'](geometry)
         self.assertEqual(placed, geometry.replace(b'__section(".lsf_node_geometry")',
