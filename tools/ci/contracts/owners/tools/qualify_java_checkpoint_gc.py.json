@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require the bounded misaligned field-edge diagnostic profile without changing runtime qualification limits.",
+  "reviewReason": "Require unchanged GC enqueue diagnostics inside the original unmarked-reference branch; preserve immortal marked objects and runtime limits.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "edc19ca3d744481706af826be2bc15decdb37cb1f9d9a237a82933ac26986fdb"
+  "sha256": "0b74f9dd2176673c2ff9aec481b482882c2f3e90793a87e4f9d053e243dac8a1"
 }

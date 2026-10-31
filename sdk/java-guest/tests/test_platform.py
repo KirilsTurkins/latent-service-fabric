@@ -141,7 +141,7 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
             original = gc.read_bytes()
             outputs, receipt = platform.monitor_root_outputs(root)
             self.assertEqual(receipt['upstreamIssue'], platform.MONITOR_ROOT_ISSUE)
-            self.assertEqual(receipt['profile'], 'teavm-0.15-c-packed-monitor-gc-root-v8')
+            self.assertEqual(receipt['profile'], 'teavm-0.15-c-packed-monitor-gc-root-v9')
             self.assertTrue(receipt['markPackedMonitor'])
             self.assertTrue(receipt['rewriteRelocatedMonitor'])
             self.assertTrue(receipt['boundedPackedMonitorValidityTraps'])
@@ -149,6 +149,7 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
             self.assertTrue(receipt['boundedEnqueuedReferenceValidityTraps'])
             self.assertEqual(receipt['enqueuedReferenceValidityTrapKinds'], 6)
             self.assertTrue(receipt['preMarkedBelowHeapReferencesAccepted'])
+            self.assertTrue(receipt['validityChecksOnlyForUnmarkedReferences'])
             self.assertTrue(receipt['dynamicArrayClassesAcceptedByValidityTraps'])
             self.assertEqual(receipt['dynamicArrayClassCountMaximum'], 4096)
             self.assertTrue(receipt['boundedFieldEdgeIdentityFrames'])
@@ -177,6 +178,21 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
                     'free_chunk', 'unknown_class'):
                 self.assertEqual(adapted.count('teavm_enqueued_root_trap_' + kind), 2)
             self.assertEqual(adapted.count('teavm_enqueued_root_trap_kind = INT32_C('), 6)
+            enqueue = platform._generated_function(adapted, 'meth_otr_GC_enqueueMark')[2]
+            marked = '    if ((!meth_otr_GC_isMarked(teavm_local_1))) {\n'
+            prefix, queued = enqueue.split(marked)
+            self.assertEqual(prefix, 'int32_t meth_otr_GC_enqueueMark(void* teavm_local_1) {\n'
+                '    if ((teavm_local_1 == NULL)) {\n'
+                '        return INT32_C(0);\n'
+                '    }\n')
+            for kind in ('below_heap', 'past_heap', 'truncated_header', 'misaligned',
+                    'free_chunk', 'unknown_class'):
+                # Every original guard stays inside the original unmarked branch,
+                # before real queue publication; static marked refs keep its fast path.
+                self.assertLess(queued.index('teavm_enqueued_root_trap_' + kind + '();'),
+                    queued.index('meth_otr_GC_doEnqueueMark(teavm_local_1);'))
+            self.assertIn('        if ((((uintptr_t) teavm_local_1 - ', queued)
+            self.assertIn('            teavm_enqueued_root_trap_misaligned();\n', queued)
             self.assertIn('teavm_gc_candidate_is_valid_unknown_class(teavm_field_edge_candidate)', adapted)
             self.assertIn('teavm_gc_known_class_index(teavm_local_1)', adapted)
             self.assertIn('teavm_field_edge_diagnose(teavm_field_edge_parent, teavm_local_7)', adapted)

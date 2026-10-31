@@ -495,7 +495,10 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
         '    if (!teavm_gc_candidate_has_known_class(teavm_local_1)) {\n'
         '        teavm_enqueued_root_trap_unknown_class();\n'
         '    }\n')
-    body = body.replace(marked, validation + marked)
+    # Immortal static objects take the original marked fast path. Apply the
+    # managed-heap diagnostics only to references that will really queue.
+    body = body.replace(marked, marked + ''.join(
+        '    ' + line for line in validation.splitlines(keepends=True)))
     adapted = adapted[:start] + enqueued_diagnostics + body + adapted[end:]
 
     start, end, body = _generated_function(adapted, 'meth_otr_GC_markFields')
@@ -557,7 +560,7 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
     if value == selected:
         raise ValueError('unreviewed-teavm-monitor-root-closure')
     return [(path, value)], {
-        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v8',
+        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v9',
         'upstreamIssue': MONITOR_ROOT_ISSUE,
         'path': 'c/o/t/r/GC.c',
         'upstreamSha256': hashlib.sha256(raw).hexdigest(),
@@ -570,6 +573,7 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
         'boundedEnqueuedReferenceValidityTraps': True,
         'enqueuedReferenceValidityTrapKinds': 6,
         'preMarkedBelowHeapReferencesAccepted': True,
+        'validityChecksOnlyForUnmarkedReferences': True,
         'dynamicArrayClassesAcceptedByValidityTraps': True,
         'dynamicArrayClassCountMaximum': 4096,
         'boundedFieldEdgeIdentityFrames': True,
