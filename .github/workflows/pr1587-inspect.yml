@@ -1,0 +1,52 @@
+name: PR 1587 inspection
+on:
+  push:
+    branches: [diag/dotnet-original-v3-trap-20261031]
+    paths: [.github/workflows/pr1587-inspect.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/diag/dotnet-original-v3-trap-20261031'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+          ref: 5b2c002eed0ae74c143e0fad38e85e44cd2a16a8
+      - name: Retain exact tested sources and failure logs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1587-inspect'
+          out.mkdir()
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+          assert head == '5b2c002eed0ae74c143e0fad38e85e44cd2a16a8'
+          subprocess.run(['git', 'archive', '--format=tar.gz', '--output=' + str(out / 'source.tar.gz'), head], check=True, timeout=60)
+          repo = 'repos/KirilsTurkins/latent-service-fabric'
+          summary = {'sourceCommit': head, 'runs': []}
+          for run in (41231644021, 41231644036, 41231643933, 41231643943, 41231644001):
+              command = ['gh', 'api', f'{repo}/actions/runs/{run}/jobs?per_page=100']
+              data = json.loads(subprocess.check_output(command, timeout=30))
+              assert data['total_count'] <= 100
+              jobs = []
+              for job in data['jobs']:
+                  jobs.append({'id': job['id'], 'name': job['name'], 'conclusion': job['conclusion'], 'failedSteps': [s['name'] for s in job['steps'] if s['conclusion'] == 'failure']})
+              summary['runs'].append({'id': run, 'jobs': jobs})
+              logs = subprocess.check_output(['gh', 'api', f'{repo}/actions/runs/{run}/logs'], timeout=60)
+              assert len(logs) <= 32 * 1024**2
+              (out / f'{run}-logs.zip').write_bytes(logs)
+          summary['sourceArchiveSha256'] = hashlib.sha256((out / 'source.tar.gz').read_bytes()).hexdigest()
+          (out / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        if: always()
+        with:
+          name: pr1587-inspection-${{ github.sha }}
+          path: ${{ runner.temp }}/pr1587-inspect/
+          retention-days: 2
+          if-no-files-found: error
