@@ -156,10 +156,13 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
     }
 }
 ''', newline='\n')
+            (gc.parent / 'Fiber.h').write_text('typedef struct cls_otr_Fiber {\n    struct TeaVM_Object parent;\n    TeaVM_Array* fld_intValues;\n    int32_t fld_intTop;\n    TeaVM_Array* fld_longValues;\n    int32_t fld_longTop;\n    TeaVM_Array* fld_floatValues;\n    int32_t fld_floatTop;\n    TeaVM_Array* fld_doubleValues;\n    int32_t fld_doubleTop;\n    TeaVM_Array* fld_objectValues;\n    int32_t fld_objectTop;\n    int32_t fld_state;\n    void* fld_runner;\n    void* fld_result;\n    void* fld_exception;\n    int8_t fld_isPendingResume;\n    int8_t fld_daemon;\n} cls_otr_Fiber;\n', newline='\n')
+            (gc.parent / 'Fiber@dPendingCall.h').write_text('typedef struct cls_otr_Fiber_PendingCall {\n    struct TeaVM_Object parent;\n    void* fld_value;\n    void* fld_next;\n    void* fld_previous;\n    void* fld_callback;\n} cls_otr_Fiber_PendingCall;\n', newline='\n')
+            (gc.parent / 'Fiber@dAsyncCallbackImpl.h').write_text('typedef struct cls_otr_Fiber_AsyncCallbackImpl {\n    struct TeaVM_Object parent;\n    void* fld_pendingCall;\n    void* fld_javaThread;\n    void* fld_fiber;\n} cls_otr_Fiber_AsyncCallbackImpl;\n', newline='\n')
             original = gc.read_bytes()
             outputs, receipt = platform.monitor_root_outputs(root)
             self.assertEqual(receipt['upstreamIssue'], platform.MONITOR_ROOT_ISSUE)
-            self.assertEqual(receipt['profile'], 'teavm-0.15-c-packed-monitor-gc-root-v10')
+            self.assertEqual(receipt['profile'], 'teavm-0.15-c-packed-monitor-gc-root-v11')
             self.assertTrue(receipt['markPackedMonitor'])
             self.assertTrue(receipt['rewriteRelocatedMonitor'])
             self.assertTrue(receipt['boundedPackedMonitorValidityTraps'])
@@ -177,6 +180,13 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
             self.assertTrue(receipt['arrayItemClassStaticTableOnly'])
             self.assertEqual(receipt['arrayItemIndexMaximum'], 255)
             self.assertTrue(receipt['unavailableArrayItemIdentityUsesOriginalGuard'])
+            self.assertTrue(receipt['boundedObjectArrayOwnerLengthIdentityFrames'])
+            self.assertEqual(receipt['arrayOwnerFlagsMaximum'], 15)
+            self.assertEqual(receipt['arrayOwnerLengthMaximum'], 255)
+            self.assertEqual(receipt['arrayOwnerSources'], ['currentFiber', 'directLastPendingFiber'])
+            self.assertEqual(receipt['arrayOwnerUnavailableFlags'], [4, 8])
+            self.assertTrue(receipt['arrayOwnerTrapOnly'])
+            self.assertTrue(receipt['arrayOwnerOtherShapesUseItemIdentity'])
             self.assertEqual(receipt['fieldEdgeParentClassIndexMaximum'], 4095)
             self.assertEqual(receipt['fieldEdgeOffsetMaximum'], 255)
             self.assertEqual(gc.read_bytes(), original)
@@ -244,6 +254,26 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
             self.assertIn('&& !meth_otr_GC_isMarked(teavm_array_edge_candidate)', array)
             self.assertLess(array.index('teavm_array_edge_unmarked_below_heap_diagnose('),
                 array.index(edge))
+            self.assertIn('teavm_array_owner_flags_length_diagnose(', array)
+            self.assertLess(array.index('teavm_array_owner_flags_length_diagnose('),
+                array.index('teavm_array_edge_unmarked_below_heap_diagnose('))
+            self.assertIn('== (TeaVM_Class*) &jl_Object_Cls', array)
+            self.assertIn('TeaVM_Array, size) <= INT32_C(255)', array)
+            owner = platform._generated_function(adapted, 'teavm_array_owner_flags')[2]
+            self.assertNotIn('while', owner)
+            self.assertNotIn('for (', owner)
+            self.assertIn('sfld_otr_Fiber_current', owner)
+            self.assertIn('sfld_otr_Fiber_lastPendingCall', owner)
+            self.assertIn('sizeof(cls_otr_Fiber_PendingCall)', owner)
+            self.assertIn('sizeof(cls_otr_Fiber_AsyncCallbackImpl)', owner)
+            self.assertEqual(owner.count('teavm_array_owner_has_type('), 4)
+            # A changed named field cannot silently become a different owner.
+            header = gc.parent / 'Fiber@dAsyncCallbackImpl.h'
+            reviewed = header.read_bytes()
+            header.write_bytes(reviewed.replace(b'fld_fiber', b'fld_other', 1))
+            with self.assertRaisesRegex(ValueError, '^unreviewed-teavm-array-owner-header$'):
+                platform.monitor_root_outputs(root)
+            header.write_bytes(reviewed)
             # An unreviewed item source must be refused before a diagnostic
             # can attach a misleading class/index identity to the original call.
             gc.write_bytes(original.replace(edge.encode(),

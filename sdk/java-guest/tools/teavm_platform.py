@@ -300,6 +300,10 @@ def _field_edge_diagnostics() -> str:
         '        int32_t teavm_item_class, int32_t teavm_index) {',
         '    teavm_field_edge_diagnose(teavm_item_class, teavm_index);',
         '}',
+        '__attribute__((noinline)) static void teavm_array_owner_flags_length_diagnose(',
+        '        int32_t teavm_flags_length, int32_t teavm_index) {',
+        '    teavm_field_edge_diagnose(teavm_flags_length, teavm_index);',
+        '}',
         '__attribute__((noinline)) static void teavm_field_edge_misaligned_diagnose(',
         '        int32_t teavm_parent, int32_t teavm_field) {',
         '    teavm_field_edge_diagnose(teavm_parent, teavm_field);',
@@ -307,6 +311,24 @@ def _field_edge_diagnostics() -> str:
         '',
     ))
     return '\n'.join(lines)
+
+
+def _array_owner_header_layouts(generated: Path) -> None:
+    # Pinned TeaVM 0.15 named fields, including every field and its order.
+    # Diagnostics must not guess layouts or make an untyped heap traversal.
+    layouts = {
+        'Fiber.h': ('cls_otr_Fiber', '    struct TeaVM_Object parent;\n    TeaVM_Array* fld_intValues;\n    int32_t fld_intTop;\n    TeaVM_Array* fld_longValues;\n    int32_t fld_longTop;\n    TeaVM_Array* fld_floatValues;\n    int32_t fld_floatTop;\n    TeaVM_Array* fld_doubleValues;\n    int32_t fld_doubleTop;\n    TeaVM_Array* fld_objectValues;\n    int32_t fld_objectTop;\n    int32_t fld_state;\n    void* fld_runner;\n    void* fld_result;\n    void* fld_exception;\n    int8_t fld_isPendingResume;\n    int8_t fld_daemon;'),
+        'Fiber@dPendingCall.h': ('cls_otr_Fiber_PendingCall', '    struct TeaVM_Object parent;\n    void* fld_value;\n    void* fld_next;\n    void* fld_previous;\n    void* fld_callback;'),
+        'Fiber@dAsyncCallbackImpl.h': ('cls_otr_Fiber_AsyncCallbackImpl', '    struct TeaVM_Object parent;\n    void* fld_pendingCall;\n    void* fld_javaThread;\n    void* fld_fiber;'),
+    }
+    for name, (struct, fields) in layouts.items():
+        path = generated / 'c/o/t/r' / name
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > 65536:
+            raise ValueError('unreviewed-teavm-array-owner-header')
+        text = path.read_bytes().decode('utf-8')
+        declaration = 'typedef struct ' + struct + ' {\n' + fields + '\n} ' + struct + ';'
+        if text.count('typedef struct ' + struct + ' {') != 1 or text.count(declaration) != 1:
+            raise ValueError('unreviewed-teavm-array-owner-header')
 
 
 def monitor_root_outputs(generated: Path, overrides: dict[Path, bytes] | None = None) -> tuple[list, dict]:
@@ -567,11 +589,23 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
         '                    && teavm_array_edge_item_class <= INT32_C(4095)\n'
         '                    && teavm_local_5 >= INT32_C(0)\n'
         '                    && teavm_local_5 <= INT32_C(255)) {\n'
+        '                if (TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType)\n'
+        '                            == (TeaVM_Class*) &jl_Object_Cls\n'
+        '                        && TEAVM_FIELD(teavm_local_2, TeaVM_Array, size) >= INT32_C(0)\n'
+        '                        && TEAVM_FIELD(teavm_local_2, TeaVM_Array, size) <= INT32_C(255)) {\n'
+        '                    teavm_array_owner_flags_length_diagnose(\n'
+        '                        (teavm_array_owner_flags(teavm_local_2) << INT32_C(8))\n'
+        '                            | TEAVM_FIELD(teavm_local_2, TeaVM_Array, size), teavm_local_5);\n'
+        '                }\n'
         '                teavm_array_edge_unmarked_below_heap_diagnose(\n'
         '                    teavm_array_edge_item_class, teavm_local_5);\n'
         '            }\n'
         '        }\n' + edge)
     adapted = adapted[:start] + body + adapted[end:]
+
+    _array_owner_header_layouts(generated)
+    owner_start, _, _ = _generated_function(adapted, 'meth_otr_GC_markArray')
+    adapted = adapted[:owner_start] + '#include "Fiber.h"\n#include "Fiber@dPendingCall.h"\n#include "Fiber@dAsyncCallbackImpl.h"\nstatic int32_t teavm_array_owner_has_type(void* teavm_candidate,\n        TeaVM_Class* teavm_expected, uintptr_t teavm_bytes) {\n    uintptr_t teavm_start = (uintptr_t) teavm_gc_heapAddress;\n    uintptr_t teavm_end = (uintptr_t) TEAVM_ADDRESS_ADD(\n        teavm_gc_heapAddress, teavm_gc_availableBytes);\n    uintptr_t teavm_address = (uintptr_t) teavm_candidate;\n    if (teavm_candidate == NULL || teavm_address < teavm_start\n            || teavm_address >= teavm_end || teavm_bytes > teavm_end - teavm_address\n            || ((teavm_address - teavm_start) & (INT32_C(8) - INT32_C(1))) != 0) {\n        return INT32_C(0);\n    }\n    return meth_otr_RuntimeClass_getClass(teavm_candidate) == teavm_expected;\n}\nstatic int32_t teavm_array_owner_flags(void* teavm_array) {\n    int32_t teavm_flags = INT32_C(0);\n    void* teavm_fiber = sfld_otr_Fiber_current;\n    void* teavm_pending;\n    void* teavm_callback;\n    if (teavm_array_owner_has_type(teavm_fiber, (TeaVM_Class*) &otr_Fiber_Cls,\n            sizeof(cls_otr_Fiber))) {\n        if (TEAVM_FIELD(teavm_fiber, cls_otr_Fiber, fld_objectValues) == teavm_array) {\n            teavm_flags |= INT32_C(1);\n        }\n    } else {\n        teavm_flags |= INT32_C(4);\n    }\n    teavm_pending = sfld_otr_Fiber_lastPendingCall;\n    if (!teavm_array_owner_has_type(teavm_pending,\n            (TeaVM_Class*) &otr_Fiber_PendingCall_Cls, sizeof(cls_otr_Fiber_PendingCall))) {\n        return teavm_flags | INT32_C(8);\n    }\n    teavm_callback = TEAVM_FIELD(teavm_pending, cls_otr_Fiber_PendingCall, fld_callback);\n    if (!teavm_array_owner_has_type(teavm_callback,\n            (TeaVM_Class*) &otr_Fiber_AsyncCallbackImpl_Cls, sizeof(cls_otr_Fiber_AsyncCallbackImpl))) {\n        return teavm_flags | INT32_C(8);\n    }\n    teavm_fiber = TEAVM_FIELD(teavm_callback, cls_otr_Fiber_AsyncCallbackImpl, fld_fiber);\n    if (!teavm_array_owner_has_type(teavm_fiber,\n            (TeaVM_Class*) &otr_Fiber_Cls, sizeof(cls_otr_Fiber))) {\n        return teavm_flags | INT32_C(8);\n    }\n    if (TEAVM_FIELD(teavm_fiber, cls_otr_Fiber, fld_objectValues) == teavm_array) {\n        teavm_flags |= INT32_C(2);\n    }\n    return teavm_flags;\n}\n' + adapted[owner_start:]
 
     start, end, body = _generated_function(adapted, 'meth_otr_GC_updatePointers')
     opening = 'void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {\n'
@@ -591,7 +625,7 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
     if value == selected:
         raise ValueError('unreviewed-teavm-monitor-root-closure')
     return [(path, value)], {
-        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v10',
+        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v11',
         'upstreamIssue': MONITOR_ROOT_ISSUE,
         'path': 'c/o/t/r/GC.c',
         'upstreamSha256': hashlib.sha256(raw).hexdigest(),
@@ -613,6 +647,14 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
         'boundedUnmarkedBelowHeapArrayItemIdentityFrames': True,
         'arrayItemClassStaticTableOnly': True,
         'arrayItemIndexMaximum': 255,
+        'boundedObjectArrayOwnerLengthIdentityFrames': True,
+        'arrayOwnerHeaderLayoutProfile': 'teavm-0.15-fiber-pending-call-callback-v1',
+        'arrayOwnerFlagsMaximum': 15,
+        'arrayOwnerLengthMaximum': 255,
+        'arrayOwnerSources': ['currentFiber', 'directLastPendingFiber'],
+        'arrayOwnerUnavailableFlags': [4, 8],
+        'arrayOwnerTrapOnly': True,
+        'arrayOwnerOtherShapesUseItemIdentity': True,
         'unavailableArrayItemIdentityUsesOriginalGuard': True,
         'fieldEdgeParentClassIndexMaximum': 4095,
         'fieldEdgeOffsetMaximum': 255,

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require bounded static-item-class and exact original-loop array-index diagnostics; unavailable identity retains the original guard and limits.",
+  "reviewReason": "Require authenticated named Fiber owner and bounded Object-array length diagnostics on the original failure branch; original enqueue, profiles and limits remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "029f641ba4066c656dd2bec9fd4c9a0552b985b33dbf47f295227ea66bca1e7f"
+  "sha256": "da089d951536c5073fd5ac825f3b7db6b38c8d25ee77488eac75c5ee66c65808"
 }
