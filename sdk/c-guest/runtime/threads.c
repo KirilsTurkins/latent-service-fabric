@@ -132,6 +132,14 @@ void __lsf_c_owned_thread_entry(struct lsf_c_thread *thread) {
     (void)thread;__builtin_trap();
 }
 
+/* The selected PAL needs one original entry table slot even when an ordinary
+ * application never calls pthread_create/thrd_create. This immutable address
+ * lives in the original paid static image; it neither calls nor exports entry.
+ */
+__attribute__((used))
+static void (*const lsf_c_owned_entry_address)(struct lsf_c_thread *) =
+    __lsf_c_owned_thread_entry;
+
 static int create(struct lsf_c_thread **out,void *(*pthread_start)(void *),
                   int (*c11_start)(void *),void *argument,unsigned api) {
     struct lsf_c_thread *caller=current(),*root=caller->root;
