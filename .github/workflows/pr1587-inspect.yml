@@ -4,44 +4,290 @@ on:
     branches: [diag/dotnet-original-v3-trap-20261031]
     paths: [.github/workflows/pr1587-inspect.yml]
 permissions:
-  contents: read
+  contents: write
   actions: read
 jobs:
   inspect:
     if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/diag/dotnet-original-v3-trap-20261031'
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
           ref: 5b2c002eed0ae74c143e0fad38e85e44cd2a16a8
-      - name: Retain exact tested sources and failure logs
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - name: Inspect existing failures without rerunning qualification
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import io, json, os, pathlib, re, subprocess, zipfile
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1587-inspect'
+          out.mkdir()
+          summary = []
+          for run in (41231644021, 41231644036, 41231643933, 41231643943, 41231644001):
+              repo = 'repos/KirilsTurkins/latent-service-fabric'
+              data = json.loads(subprocess.check_output(['gh', 'api', f'{repo}/actions/runs/{run}/jobs?per_page=100'], timeout=30))
+              assert data['total_count'] <= 100
+              failed = [dict(id=j['id'], name=j['name'], failedSteps=[s['name'] for s in j['steps'] if s['conclusion']=='failure']) for j in data['jobs'] if j['conclusion']=='failure']
+              summary.append({'run': run, 'failed': failed})
+              raw = subprocess.check_output(['gh', 'api', f'{repo}/actions/runs/{run}/logs'], timeout=60)
+              assert len(raw) <= 32*1024**2
+              with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                  for info in archive.infolist():
+                      if info.file_size > 8*1024**2 or '/' in info.filename:
+                          continue
+                      lines = archive.read(info).decode('utf-8', errors='replace').splitlines()
+                      matches = [i for i,line in enumerate(lines) if re.search(r'^(?:.{0,32})(?:FAIL:|ERROR:)|error\[E|AssertionError:|##\[error\]|CI coverage failed|validation failed', line, re.I)]
+                      if matches:
+                          print('FAILURE LOG', run, info.filename)
+                          indices = set()
+                          for i in matches[-12:]:
+                              indices.update(range(max(0,i-3), min(len(lines), i+12)))
+                          for i in sorted(indices):
+                              print(lines[i][:1600])
+          (out/'failures.json').write_text(json.dumps(summary, indent=2)+'\n')
+          print('FAILED JOBS', json.dumps(summary))
+          PY
+      - name: Install locked validation dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Apply reviewed fixture repair and authenticate retained evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, io, json, os, pathlib, subprocess, zipfile
+          from tools import ci_contracts
+          root = pathlib.Path.cwd()
+          path = root/'tools/tests/test_owned_runners.py'
+          source = path.read_text()
+          old = """    fragments = source.with_suffix('.d')
+              if fragments.exists():
+                  copied = destination.with_suffix('.d')
+                  copied.mkdir()
+                  for fragment in sorted(fragments.iterdir()):
+                      (copied / fragment.name).write_bytes(fragment.read_bytes())"""
+          new = """    # Both whole-suite owners and additive cases are part of the catalogue.
+              for suffix in ('.d', '.cases.d'):
+                  fragments = source.with_suffix(suffix)
+                  if fragments.exists():
+                      copied = destination.with_suffix(suffix)
+                      copied.mkdir()
+                      for fragment in sorted(fragments.iterdir()):
+                          (copied / fragment.name).write_bytes(fragment.read_bytes())"""
+          assert source.count(old) == 1
+          source = source.replace(old, new)
+          old = """        source = ROOT / 'tools/ci/suites.d'
+                  if source.exists():
+                      self.assertEqual(
+                          {path.name: path.read_bytes() for path in source.iterdir()},
+                          {path.name: path.read_bytes() for path in destination.with_suffix('.d').iterdir()})"""
+          new = """        for suffix in ('.d', '.cases.d'):
+                      source = (ROOT / 'tools/ci/suites.json').with_suffix(suffix)
+                      copied = destination.with_suffix(suffix)
+                      self.assertEqual(copied.exists(), source.exists())
+                      if source.exists():
+                          self.assertEqual(
+                              {path.name: path.read_bytes() for path in source.iterdir()},
+                              {path.name: path.read_bytes() for path in copied.iterdir()})"""
+          assert source.count(old) == 1
+          path.write_text(source.replace(old,new))
+          repo = 'repos/KirilsTurkins/latent-service-fabric'
+          raw = subprocess.check_output(['gh','api',repo+'/actions/artifacts/13053659402/zip'], timeout=60)
+          assert len(raw) == 1281439
+          assert hashlib.sha256(raw).hexdigest() == 'e05333c1a16b529289d3b34181124756697157cb285cd8633720c335af7dfa8b'
+          selected = ['ADMISSION.json','observation-result.json','commands/logs/12-execute-1.stdout.txt']
+          directory = root/'docs/testing/evidence'
+          stem = 'dotnet-original-v3-2026-10-31.2a79e99'
+          receipts = {}
+          with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+              admission = json.loads(archive.read('ADMISSION.json'))
+              assert admission['productExecutionPermission'] is False
+              seen = set()
+              for entry in admission['files']:
+                  assert entry['path'] not in seen
+                  seen.add(entry['path'])
+                  value = archive.read(entry['path'])
+                  assert len(value) == entry['bytes']
+                  assert 'sha256:'+hashlib.sha256(value).hexdigest() == entry['sha256']
+              assert sum(entry['bytes'] for entry in admission['files']) == admission['bytes']
+              for name, suffix in zip(selected, ['admission.json','observation.json','stdout.txt']):
+                  value = archive.read(name)
+                  filename = stem+'.'+suffix
+                  (directory/filename).write_bytes(value)
+                  receipts[name] = {'file': filename, 'bytes': len(value), 'sha256': hashlib.sha256(value).hexdigest()}
+          manifest = {'schemaVersion':'latent.dotnet.original-v3-retained-evidence.v1', 'runId':41231638834, 'jobId':124626901570, 'artifactId':13053659402, 'sourceCommit':'2a79e99443c534cdbbb5ef97ef608b591e416d2f', 'artifactBytes':len(raw), 'artifactSha256':hashlib.sha256(raw).hexdigest(), 'workflowPassed':True, 'receipts':receipts}
+          (directory/(stem+'.json')).write_text(json.dumps(manifest,indent=2)+'\n')
+          test = '''"""Retained original-v3 observations, not runtime or cause qualification."""
+          import hashlib
+          import json
+          from pathlib import Path
+          import unittest
+          from tools import dotnet_original_fault as observer
+
+
+          class OriginalDotnetEvidenceTests(unittest.TestCase):
+              def test_retained_receipts_match_the_authenticated_artifact_members(self):
+                  directory = Path(__file__).resolve().parents[2] / 'docs/testing/evidence'
+                  manifest = json.loads((directory / 'dotnet-original-v3-2026-10-31.2a79e99.json').read_bytes())
+                  self.assertEqual((manifest['runId'], manifest['jobId'], manifest['artifactId']),
+                                   (41231638834, 124626901570, 13053659402))
+                  self.assertEqual(manifest['sourceCommit'], '2a79e99443c534cdbbb5ef97ef608b591e416d2f')
+                  self.assertEqual(manifest['artifactBytes'], 1281439)
+                  self.assertEqual(manifest['artifactSha256'], 'e05333c1a16b529289d3b34181124756697157cb285cd8633720c335af7dfa8b')
+                  self.assertIs(manifest['workflowPassed'], True)
+                  expected = {
+                      'ADMISSION.json': (7945, '34daf848797a777ce8983986954b6912745b2906e31a01eaf61bba6e05e5a9d4'),
+                      'observation-result.json': (12382, 'fe3bdea0785bb6fdbe0f966e4ad009b4e96fdaebec9156207e11f4afea12e3c4'),
+                      'commands/logs/12-execute-1.stdout.txt': (3549, 'd9064cd2cb1757c81d04a4ed801b5158c1f325a204f60b4db6678b25f818772a'),
+                  }
+                  self.assertEqual(set(manifest['receipts']), set(expected))
+                  content = {}
+                  for name, (size, digest) in expected.items():
+                      row = manifest['receipts'][name]
+                      self.assertEqual(Path(row['file']).name, row['file'])
+                      raw = (directory / row['file']).read_bytes()
+                      self.assertEqual((row['bytes'], row['sha256']), (size, digest))
+                      self.assertEqual((len(raw), hashlib.sha256(raw).hexdigest()), (size, digest))
+                      content[name] = raw
+                  admission = json.loads(content['ADMISSION.json'])
+                  self.assertIs(admission['productExecutionPermission'], False)
+                  members = {row['path']: row for row in admission['files']}
+                  self.assertEqual(len(members), len(admission['files']))
+                  for name in expected.keys() - {'ADMISSION.json'}:
+                      self.assertEqual((members[name]['bytes'], members[name]['sha256']),
+                                       (expected[name][0], 'sha256:' + expected[name][1]))
+                  receipt = json.loads(content['observation-result.json'])
+                  self.assertEqual(receipt['sourceRevision'], manifest['sourceCommit'])
+                  self.assertEqual(receipt['observations'], observer.observations(content['commands/logs/12-execute-1.stdout.txt']))
+
+              def test_retained_observation_preserves_identity_bounds_and_nonqualification(self):
+                  directory = Path(__file__).resolve().parents[2] / 'docs/testing/evidence'
+                  receipt = json.loads((directory / 'dotnet-original-v3-2026-10-31.2a79e99.observation.json').read_bytes())
+                  self.assertEqual(receipt['status'], 'captured-nonqualifying')
+                  self.assertEqual(receipt['original']['origin'], observer.ORIGINAL)
+                  self.assertEqual(receipt['original']['component'], observer.COMPONENT)
+                  self.assertEqual(receipt['ownerCaps'], observer.OWNER_CAPS)
+                  for flag in ('runtimeQualification', 'full746Qualified', 'fullAC7Qualified',
+                               'originalFaultCauseQualified', 'opaqueCauseQualified',
+                               'physicalRetirementQualified', 'nativeAccountingComplete',
+                               'guestCompilerCorelibRebuilt', 'auxiliaryRewritePerformed',
+                               'normal15OutcomeReceiptChanged', 'hermetic', 'implicitCompilerInputsAttested'):
+                      self.assertIs(receipt[flag], False, flag)
+                  self.assertIs(receipt['sourceBeforeEqualsAfter'], True)
+                  self.assertIs(receipt['diagnosticIoMayPerturbTimingAndTerminalObservation'], True)
+                  self.assertEqual(receipt['limits'], dict(absoluteSeconds=1320, commandSeconds=600,
+                      cleanupReserveSeconds=5, jobs=2, commandCount=128,
+                      diagnosticBytes=16777216, publicBytes=134217728))
+                  self.assertLessEqual(receipt['commandCount'], receipt['limits']['commandCount'])
+                  self.assertLessEqual(receipt['diagnosticBytes'], receipt['limits']['diagnosticBytes'])
+                  traps = [row['observation']['observation'] for row in receipt['observations'] if row['kind'] == 'DOTNET_ORIGINAL_V3_TRAP']
+                  self.assertEqual(len(traps), 2)
+                  for trap in traps:
+                      self.assertEqual(trap['observedFrames'], 12)
+                      self.assertIs(trap['mayBeTruncated'], False)
+                  left, right = [trap['frames'] for trap in traps]
+                  self.assertEqual(left[:9], right[:9])
+                  self.assertEqual(left[10:], right[10:])
+                  self.assertEqual((left[9]['function'], right[9]['function']), (1314, 1314))
+                  self.assertEqual((left[9]['functionOffset'], right[9]['functionOffset']), (1109, 1413))
+          '''
+          (root/'tools/tests/test_dotnet_original_evidence.py').write_text(test)
+          actual = ci_contracts.python_expectations(root)
+          name = 'tools/tests/test_owned_runners.py'
+          path = root/'tools/ci/contracts/python/test_owned_runners.py.json'
+          physical = json.loads(path.read_bytes())
+          prior = ci_contracts.semantic_record(physical)
+          assert prior['cases'] == actual[name]['cases']
+          for case in prior['cases']:
+              old, new = prior['guards'][case], actual[name]['guards'][case]
+              assert {k:v for k,v in old.items() if k != 'fixtureGuards'} == {k:v for k,v in new.items() if k != 'fixtureGuards'}
+              assert [s for s in old['fixtureGuards'] if not s.startswith('module:setup-sha256:')] == [s for s in new['fixtureGuards'] if not s.startswith('module:setup-sha256:')]
+          prior.update(actual[name])
+          prior['reviewReason'] = 'Copy both validated whole-suite and additive-case fragment families into synthetic runner catalogues. Retain every case, skip predicate, class fixture and execution guard; only the module helper setup fingerprint changes.'
+          value = ci_contracts.shared_python_record(prior) if physical['schemaVersion'] == ci_contracts.PYTHON_STORAGE_SCHEMA else prior
+          if 'storageCases' in physical:
+              value = ci_contracts.case_key_python_record(value)
+          path.write_text(json.dumps(value, separators=(',',':'))+'\n')
+          name = 'tools/tests/test_dotnet_original_evidence.py'
+          value = ci_contracts.record('python', 'Add two unignored controls binding retained original v3 observations to exact successful diagnostic artifact members and all unchanged nonqualification boundaries.', module=name, **actual[name])
+          value = ci_contracts.shared_python_record(value)
+          (root/'tools/ci/contracts/python/test_dotnet_original_evidence.py.json').write_text(json.dumps(value, separators=(',',':'))+'\n')
+          with (root/'docs/testing/dotnet-original-v3-trap.md').open('a') as out:
+              out.write('''
+          ## Captured original observations at `2a79e99`
+
+          Run [41231638834](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41231638834)
+          completed successfully at `2a79e99443c534cdbbb5ef97ef608b591e416d2f`.
+          Artifact 13053659402 is 1,281,439 bytes with SHA-256
+          `e05333c1a16b529289d3b34181124756697157cb285cd8633720c335af7dfa8b`.
+          The retained [evidence manifest](evidence/dotnet-original-v3-2026-10-31.2a79e99.json)
+          binds byte-identical admission, observation and execution-output records.
+          Both original modes executed after the three negative admission controls.
+
+          Each mode recorded exactly one `unreachable-code` error with twelve numeric
+          frames, below the sixteen-frame cap, and no truncation or missing backtrace.
+          The traces have the same function sequence. Their only frame difference is
+          zero-based frame 9, function 1314: function offset 1109 (module offset 566031)
+          for mode 9 and function offset 1413 (module offset 566335) for mode 8. The
+          common top frame is function 3273 at module offset 1133740. These are numeric
+          observations, not a symbol mapping or proof of either original cause.
+
+          | Mode | Consumed fuel | Peak accounted memory (bytes) | New Stores |
+          | --- | ---: | ---: | ---: |
+          | 9, unhandled fault | 54,183,312 | 56,871,047 | 1 |
+          | 8, opaque quiescence | 53,851,343 | 56,870,125 | 1 |
+
+          Each idle record has zero live Stores, live instances, active activations,
+          reserved fuel and reserved memory. Logical idle is not evidence of physical
+          owner retirement or complete native accounting. The original guest, compiler,
+          CoreLib, original limits and normal fifteen-outcome receipt remain unchanged.
+          Runtime qualification, both original-cause flags, AC7 and whole-ticket closure
+          remain false. The diagnostic is not hermetic, and its I/O can perturb timing
+          and terminal observation. The successful run does not remove those limits.
+
+          The synthetic owned-runner catalogue now copies both `suites.d` and
+          `suites.cases.d` before exercising prepared tests. Its regression compares
+          the complete effective catalogue and the exact bytes of both fragment families;
+          it does not drop additive cases or weaken any selected test requirement.
+          ''')
+          PY
+      - name: Validate exact proposed source and evidence
+        run: |
+          set -o pipefail
+          python3 -m unittest tools.tests.test_owned_runners tools.tests.test_dotnet_original_fault tools.tests.test_dotnet_original_evidence tools.tests.test_ci_profile tools.tests.test_ci_result tools.tests.test_ci_suite_cases tools.tests.test_ci_suite_inventory tools.tests.test_ci_contracts tools.tests.test_ci_coverage tools.tests.test_dotnet_task_runtime tools.tests.test_dotnet_task_wait 2>&1 | tee "$RUNNER_TEMP/pr1587-inspect/tests.txt"
+          python3 tools/ci_coverage.py 2>&1 | tee "$RUNNER_TEMP/pr1587-inspect/coverage.txt"
+          git diff --check
+      - name: Stage exact validated source blobs without commits or ref changes
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
           import hashlib, json, os, pathlib, subprocess
-          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1587-inspect'
-          out.mkdir()
-          head = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
-          assert head == '5b2c002eed0ae74c143e0fad38e85e44cd2a16a8'
-          subprocess.run(['git', 'archive', '--format=tar.gz', '--output=' + str(out / 'source.tar.gz'), head], check=True, timeout=60)
-          repo = 'repos/KirilsTurkins/latent-service-fabric'
-          summary = {'sourceCommit': head, 'runs': []}
-          for run in (41231644021, 41231644036, 41231643933, 41231643943, 41231644001):
-              command = ['gh', 'api', f'{repo}/actions/runs/{run}/jobs?per_page=100']
-              data = json.loads(subprocess.check_output(command, timeout=30))
-              assert data['total_count'] <= 100
-              jobs = []
-              for job in data['jobs']:
-                  jobs.append({'id': job['id'], 'name': job['name'], 'conclusion': job['conclusion'], 'failedSteps': [s['name'] for s in job['steps'] if s['conclusion'] == 'failure']})
-              summary['runs'].append({'id': run, 'jobs': jobs})
-              logs = subprocess.check_output(['gh', 'api', f'{repo}/actions/runs/{run}/logs'], timeout=60)
-              assert len(logs) <= 32 * 1024**2
-              (out / f'{run}-logs.zip').write_bytes(logs)
-          summary['sourceArchiveSha256'] = hashlib.sha256((out / 'source.tar.gz').read_bytes()).hexdigest()
-          (out / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+          root = pathlib.Path.cwd()
+          changed = subprocess.check_output(['git','diff','--name-only']).decode().splitlines()
+          added = subprocess.check_output(['git','ls-files','--others','--exclude-standard']).decode().splitlines()
+          paths = sorted(changed+added)
+          expected = ['tools/tests/test_owned_runners.py','tools/tests/test_dotnet_original_evidence.py','tools/ci/contracts/python/test_owned_runners.py.json','tools/ci/contracts/python/test_dotnet_original_evidence.py.json','docs/testing/dotnet-original-v3-trap.md']
+          stem = 'docs/testing/evidence/dotnet-original-v3-2026-10-31.2a79e99'
+          expected += [stem+suffix for suffix in ('.json','.admission.json','.observation.json','.stdout.txt')]
+          assert paths == sorted(expected), paths
+          entries = []
+          for name in paths:
+              raw = (root/name).read_bytes()
+              assert len(raw) <= 131072
+              response = subprocess.run(['gh','api','--method','POST','repos/KirilsTurkins/latent-service-fabric/git/blobs','--input','-'], input=json.dumps({'content':raw.decode(),'encoding':'utf-8'}).encode(), check=True, capture_output=True, timeout=30)
+              sha = json.loads(response.stdout)['sha']
+              assert sha == hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
+              entries.append({'path':name,'mode':'100644','type':'blob','sha':sha,'sha256':hashlib.sha256(raw).hexdigest()})
+          value = {'testedBase':'5b2c002eed0ae74c143e0fad38e85e44cd2a16a8','entries':entries}
+          (pathlib.Path(os.environ['RUNNER_TEMP'])/'pr1587-inspect/objects.json').write_text(json.dumps(value,indent=2)+'\n')
+          print('VALIDATED SOURCE OBJECTS',json.dumps(value))
           PY
       - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         if: always()
