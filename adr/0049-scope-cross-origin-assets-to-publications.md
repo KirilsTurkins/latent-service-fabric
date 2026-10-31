@@ -1,15 +1,20 @@
 # ADR-0049: Scope cross-origin assets to explicit publications
 
-- Status: Accepted design; native implementation pending
+- Status: Accepted; native implementation qualified on the #660 implementation branch
 - Context: first integration feedback #627
 
 ## Decision and availability
 
 Introduce a separate opt-in `cross-origin-assets-v1` profile for admitted static
-assets. The current `same-origin-v1` profile remains the default. This ADR and
-the executable browser experiment establish feasibility; they do **not** enable
-CORS in released or development nodes. The [native implementation follow-up](https://github.com/KirilsTurkins/latent-service-fabric/issues/660) must pass
-the same cases against actual signed publications and native ingress.
+assets. The current `same-origin-v1` profile remains the default. The native
+implementation for [#660](https://github.com/KirilsTurkins/latent-service-fabric/issues/660)
+uses `httpIngress.crossOriginAssets`; this is not an additional `profile` field.
+Its [qualification record](../docs/testing/cross-origin-static-assets.md) covers
+actual signed publications, native TLS ingress and browser/lifecycle checks.
+The [operator guide](../docs/operations/cross-origin-static-assets.md) describes
+the usable configuration. This is an implementation-branch/development boundary,
+not support in the published alpha.5 toolkit or production/cloud qualification.
+The original separate-peer experiment remains feasibility evidence only.
 
 An operator grant binds one canonical HTTPS serving authority, an existing
 tenant, an exact immutable publication ID, an exact HTTPS caller-origin list and
@@ -27,8 +32,10 @@ There are no new listeners, guest policy overrides or background proxy processes
 
 ## Bounds and normalization
 
-- Configuration defaults to an empty list and is a closed document of at most
-  64 KiB. At most 32 grants contain at most 16 distinct origins each. Duplicate
+- Configuration defaults to an empty list; the closed compact effective grant
+  array, including defaulted credential fields, is at most 64 KiB. The separate
+  node-configuration bound still applies. At most 32 grants contain at most 16
+  distinct origins each. Duplicate
   authority/tenant/publication grants fail configuration validation.
 - Origins must be the exact ASCII serialization of a normalized HTTPS origin,
   at most 512 bytes: no user information, path, query, fragment, whitespace,
@@ -140,8 +147,10 @@ and publication selection, final lifecycle checks, per-response headers and
 private cache revalidation as one change. Real-node tests must show unchanged
 strict defaults, cross-tenant/publication rejection, grant removal, revocation,
 restart behavior, errors/HEAD/304, disconnect ownership and bounded capacity.
-The current supported alternative is same-origin static hosting and a separately
-authorized application API, not a header-stripping CORS proxy.
+These native gates passed in the implementation-branch qualification recorded
+above. The separate-peer experiment is not substituted for them. Same-origin
+static hosting and a separately authorized application API remain alternatives;
+a header-stripping CORS proxy is not an alternative authority.
 
 The design follows the [Fetch CORS and credentials model](https://fetch.spec.whatwg.org/#cors-protocol-and-credentials)
 and [Fetch Metadata request fields](https://www.w3.org/TR/fetch-metadata/).

@@ -43,6 +43,21 @@ initializer, mode-marker, clock-binding and readiness stages to locate the
 refusal. Typed initializer errors remain visible alongside the original returned
 platform error, with the same startup deadline and physical cleanup.
 
+## Publication-scoped cross-origin assets
+
+The native HTTP owner supports default-empty `httpIngress.crossOriginAssets`
+grants for exact HTTPS authority/tenant/publication/caller-origin tuples under
+`public-origins`. Provisional browser admission selects only current non-document
+static assets; GET/HEAD and bounded OPTIONS never activate a capsule or fall back
+to HTML. Existing read, output, deadline and disconnect owners retain their
+capacity until actual retirement. Output rechecks publication authority, including
+HEAD/304 and preflight; removing configuration grants requires stop/restart.
+
+Use the [operator guide](../../docs/operations/cross-origin-static-assets.md) and
+[qualification record](../../docs/testing/cross-origin-static-assets.md). This is
+not released alpha.5 behavior, session authentication or production TLS approval.
+Bearer and ordinary same-origin behavior are unchanged.
+
 ## Dependencies and build
 
 Direct workspace dependencies: [latent-activation](../../crates/latent-activation/README.md), [latent-admission](../../crates/latent-admission/README.md), [latent-artifacts](../../crates/latent-artifacts/README.md), [latent-audit](../../crates/latent-audit/README.md), [latent-blobs](../../crates/latent-blobs/README.md), [latent-control-store](../../crates/latent-control-store/README.md), [latent-core](../../crates/latent-core/README.md), [latent-capabilities](../../crates/latent-capabilities/README.md), [latent-commit](../../crates/latent-commit/README.md), [latent-executor](../../crates/latent-executor/README.md), [latent-effects](../../crates/latent-effects/README.md), [latent-ingress](../../crates/latent-ingress/README.md), [latent-http](../../crates/latent-http/README.md), [latent-manifest](../../crates/latent-manifest/README.md), [latent-nats](../../crates/latent-nats/README.md), [latent-node](../../crates/latent-node/README.md), [latent-protected-files](../../crates/latent-protected-files/README.md), [latent-policy](../../crates/latent-policy/README.md), [latent-routing](../../crates/latent-routing/README.md), [latent-rollout](../../crates/latent-rollout/README.md), [latent-rpc](../../crates/latent-rpc/README.md), [latent-scheduler](../../crates/latent-scheduler/README.md), [latent-secrets](../../crates/latent-secrets/README.md), [latent-state](../../crates/latent-state/README.md), [latent-streams](../../crates/latent-streams/README.md), [latent-telemetry](../../crates/latent-telemetry/README.md), [latent-wasmtime](../../crates/latent-wasmtime/README.md), [latent-wire](../../crates/latent-wire/README.md).

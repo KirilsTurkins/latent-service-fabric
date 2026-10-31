@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "latent.ci.suite-case-fragment.v1",
+  "suiteId": "latentd.lib.latentd",
+  "expectedCases": [
+    "config::http::cross_origin::tests::cross_origin_configuration_enforces_all_three_independent_bounds",
+    "config::http::cross_origin::tests::cross_origin_configuration_is_closed_default_empty_and_https_public_only",
+    "config::http::cross_origin::tests::cross_origin_grants_reject_duplicates_foreign_ownership_and_bad_publications",
+    "config::http::cross_origin::tests::cross_origin_origins_require_exact_ascii_https_serialization",
+    "standalone::http::assets::cross_origin::metadata::tests::cross_origin_final_grant_requires_exact_publication_tenant_authority_and_credentials",
+    "standalone::http::assets::cross_origin::metadata::tests::cross_origin_metadata_rejects_opaque_origins_navigation_no_cors_and_duplicates",
+    "standalone::http::assets::cross_origin::metadata::tests::cross_origin_preflight_is_bounded_conditional_only_and_never_credentialed",
+    "standalone::http::assets::cross_origin::metadata::tests::cross_origin_provisional_admission_preserves_defaults_and_allows_only_subresources",
+    "standalone::http::assets::cross_origin::response::tests::cors_headers_are_exact_private_and_repeated_on_every_authorized_status",
+    "standalone::http::assets::cross_origin::tests::cross_origin_native_credentials_origin_variants_and_strict_defaults_do_not_mix",
+    "standalone::http::assets::cross_origin::tests::cross_origin_native_preflight_selects_exact_method_and_never_html_or_fallback",
+    "standalone::http::assets::cross_origin::tests::cross_origin_native_static_get_head_304_and_errors_share_exact_current_authority",
+    "standalone::http::assets::cross_origin::tests::lifecycle::cross_origin_native_disconnect_retains_the_actual_blocking_read_owner_until_completion",
+    "standalone::http::assets::cross_origin::tests::lifecycle::cross_origin_native_grant_removal_restart_and_new_publication_never_inherit_permission",
+    "standalone::http::assets::cross_origin::tests::lifecycle::cross_origin_native_read_capacity_has_no_queue_or_activation_fallback",
+    "standalone::http::assets::cross_origin::tests::lifecycle::cross_origin_native_revocation_denies_cached_bodies_conditionals_and_preflights",
+    "standalone::http::assets::cross_origin::tests::lifecycle::cross_origin_preflight_output_rechecks_revocation_on_every_write_poll"
+  ]
+}

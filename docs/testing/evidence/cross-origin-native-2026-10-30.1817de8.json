@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "latent.cross-origin.native-evidence.v1",
+  "date": "2026-10-30",
+  "pullRequest": 1561,
+  "issue": 660,
+  "headCommit": "1817de81d59cfdd1811dab3b9ce0741de8f01b5b",
+  "testedCommit": "0e6fc761b8f6751a30e4d8a6301f75495db66315",
+  "developmentCommit": "26966f822eaafcfad7749836e749b3ac25c5a9e8",
+  "runId": 41058876134,
+  "jobId": 124073873211,
+  "artifactId": 12978249187,
+  "artifactSha256": "fed49edbb1d82ac9068828000902a28f1d226e80efdeac7fcefbdf758d56249b",
+  "qualificationPassed": true,
+  "workflowPassed": true,
+  "nativeRustCases": 19,
+  "browserCases": 19,
+  "browserObservations": 73,
+  "wireObservations": 13,
+  "nativeRuntimeQualified": true,
+  "productionTlsQualified": false,
+  "testIdentityOnly": true,
+  "receipts": {
+    "qualification.json": {
+      "file": "cross-origin-native-2026-10-30.1817de8.qualification.json.gz",
+      "bytes": 39908,
+      "sha256": "abda078f31ffe8c0654a82ac2896a1c93120b56a5b8686237d9e2a37892c070a",
+      "gzipSha256": "f8be8ff3ea440db8f6388b6f05452860d2b10fb49445315da1ea92ff171d277b"
+    },
+    "browser-network.json": {
+      "file": "cross-origin-native-2026-10-30.1817de8.browser.json.gz",
+      "bytes": 61704,
+      "sha256": "881421e1c0939ab279b80b75a18c4c8dab4bd5067d4fe03534180f0a570147d9",
+      "gzipSha256": "858b3b282b00eeec0da70b0c38a03722785c25a592abb9e5e672f18b4d579987"
+    }
+  },
+  "nativeTestsLogSha256": "1a2304114cf340675c9a4cbcdb621cadded9af62717a754799f3409938714240"
+}

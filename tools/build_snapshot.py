@@ -61,7 +61,10 @@ class SnapshotError(RuntimeError):
 # source cap by 124,537 bytes. One finite build-source MiB retains every input;
 # the 83 MiB archive, 4 MiB file and 4,096-directory caps stay independent.
 # This is build provenance capture, not activation/native/guest runtime capacity.
-MAX_SOURCE_FILES = 8992
+# Development's cross-origin native/browser lane brings its selected tree to
+# 8,991 files. Retain its next fixed 256-file block when composing this branch;
+# the separately reviewed 77 MiB source cap above remains unchanged.
+MAX_SOURCE_FILES = 9248
 
 
 @dataclass(frozen=True)
