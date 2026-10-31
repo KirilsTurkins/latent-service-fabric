@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_rust_thread_fault.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Finite off-default numeric fault diagnostic; accept only an authenticated unreachable guest trap with retained bounded numeric frames, one rebuilt node, four original helpers and unchanged guest; no qualification or timing equivalence claim.",
+  "reviewReason": "Finite off-default numeric fault diagnostic, with a source-bound native root-retirement wakeup control before the diagnostic node build. Retained guest and four historical helpers remain unchanged; original nonempty fault-frame gate and all runtime qualification refusals remain mandatory.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c6d6ae213cd3ab55d4070d991ed3a4c944ca2c77433ab0ecc30dba2cb49b72f0"
+  "sha256": "123c05e5b823358c72364bdac65afecabfc2ad2333a68a81693090c81f572708"
 }

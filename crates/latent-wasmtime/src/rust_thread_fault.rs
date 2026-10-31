@@ -50,7 +50,9 @@ fn trap_code(authentication: &Authentication, error: &wasmtime::Error) -> Option
     if !matches!(authentication, Authentication::RustSyncVerified(_)) {
         return None;
     }
-    error.downcast_ref::<wasmtime::Trap>().map(|trap| *trap as u8)
+    error
+        .downcast_ref::<wasmtime::Trap>()
+        .map(|trap| *trap as u8)
 }
 
 fn emit(authentication: &Authentication, error: &wasmtime::Error, sink: &mut impl Write) {

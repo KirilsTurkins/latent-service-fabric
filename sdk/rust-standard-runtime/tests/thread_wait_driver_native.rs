@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
-pub use std::{cell, mem, ptr, time};
+pub use std::{array, cell, io, mem, ptr, time};
 pub mod alloc {
     pub use std::alloc::{GlobalAlloc, Layout, System};
 }
@@ -109,6 +109,7 @@ unsafe extern "C" fn register(kind: u32, present: u32, generation: u64, parent: 
     });
     call(match kind {
         4 => "admit-wait",
+        2 => "admit-executor",
         _ => panic!("unexpected owner"),
     });
     unsafe {
@@ -119,8 +120,11 @@ unsafe extern "C" fn register(kind: u32, present: u32, generation: u64, parent: 
 unsafe extern "C" fn settle(generation: u64, id: u64, out: *mut u8) {
     assert_eq!(generation, ROOT.generation);
     let kind = PORTS.with(|p| p.borrow_mut().owners.remove(&id).unwrap());
-    assert_eq!(kind, Kind::Wait as u32);
-    call("settle-wait");
+    call(match kind {
+        4 => "settle-wait",
+        2 => "settle-executor",
+        _ => panic!("unexpected settled owner"),
+    });
     unsafe {
         success(out);
     }
@@ -257,6 +261,7 @@ fn early_untimed_notification_never_resumes_a_running_thread() {
         ["admit-wait", "park-task", "wake-task", "settle-wait"]
     );
     assert_retired();
+    last_executor_retirement_notifies_the_already_prepared_root_wait();
 }
 #[test]
 fn untimed_wait_uses_exact_explicit_canonical_suspension_after_park() {
@@ -415,4 +420,131 @@ fn canonical_cancelled_result_cannot_become_a_successful_notified_wait() {
         "authoritative root liveness recheck retained"
     );
     assert_retired();
+}
+
+// Exercise the production executor-root registry together with the production
+// WaitQueue, fixed wait registry, driver and affine Owner. Only Runtime storage,
+// canonical operations and the pool callback are explicit native test ports.
+// This does not run the captured executor, Wasmtime or a signed component.
+#[path = "../executor_root.rs"]
+mod executor_root;
+mod executor_control {
+    pub(crate) struct Control;
+    impl Control {
+        pub(crate) fn new() -> Self {
+            panic!("captured Control admission is outside this Source-port control")
+        }
+        pub(crate) fn worker_tls_drained(&self, _: u32) -> Result<(), ()> {
+            panic!("no captured worker in this control")
+        }
+        pub(crate) fn worker_frames_exited(&self, _: u32) -> Result<(), ()> {
+            panic!("no captured worker in this control")
+        }
+    }
+}
+struct RootRuntime {
+    executors: cell::UnsafeCell<executor_root::Registry>,
+    completed: wait::WaitQueue,
+}
+std::thread_local! {
+    static ROOT_RUNTIME: cell::Cell<*mut RootRuntime> = const { cell::Cell::new(ptr::null_mut()) };
+}
+fn existing() -> *mut RootRuntime {
+    ROOT_RUNTIME.get()
+}
+fn ensure_runtime() -> io::Result<()> {
+    assert!(!existing().is_null(), "explicit native root storage required");
+    Ok(())
+}
+fn completed_queue() -> &'static wait::WaitQueue {
+    assert!(!existing().is_null());
+    // The fixture guard retains this allocation until all actual waits retire.
+    unsafe { &*ptr::addr_of!((*existing()).completed) }
+}
+fn io_error(error: owner::Error) -> io::Error {
+    io::Error::other(format!("native owner port: {error:?}"))
+}
+fn allocation_error(error: owner::AllocationError) -> io::Error {
+    io::Error::other(format!("native allocation port: {error:?}"))
+}
+struct RootStorage(Box<RootRuntime>);
+impl RootStorage {
+    fn install() -> Self {
+        assert!(existing().is_null());
+        let mut value = Box::new(RootRuntime {
+            executors: cell::UnsafeCell::new(executor_root::Registry::new()),
+            completed: wait::WaitQueue::new(),
+        });
+        ROOT_RUNTIME.set(ptr::addr_of_mut!(*value));
+        Self(value)
+    }
+}
+impl Drop for RootStorage {
+    fn drop(&mut self) {
+        assert_eq!(existing(), ptr::addr_of_mut!(*self.0));
+        ROOT_RUNTIME.set(ptr::null_mut());
+    }
+}
+struct RootPool(cell::Cell<executor_root::Progress>);
+impl Drop for RootPool {
+    fn drop(&mut self) {
+        call("drop-pool");
+    }
+}
+unsafe fn root_pool_progress(pointer: ptr::NonNull<()>) -> executor_root::Progress {
+    unsafe { pointer.cast::<RootPool>().as_ref() }.0.get()
+}
+unsafe fn root_pool_release(pointer: ptr::NonNull<()>) {
+    // Deliberately no changed()/wake here. The registry owns publication of
+    // its own removal; a final pool destructor need not cause another event.
+    drop(unsafe { std::sync::Arc::from_raw(pointer.cast::<RootPool>().as_ptr()) });
+}
+fn last_executor_retirement_notifies_the_already_prepared_root_wait() {
+    reset();
+    let storage = RootStorage::install();
+    let pool = std::sync::Arc::new(RootPool(cell::Cell::new(executor_root::Progress::Pending)));
+    let weak = std::sync::Arc::downgrade(&pool);
+    let pointer = ptr::NonNull::new(std::sync::Arc::into_raw(pool.clone()).cast_mut().cast()).unwrap();
+    unsafe {
+        executor_root::register(
+            pointer,
+            executor_root::Callbacks {
+                progress: root_pool_progress,
+                release: root_pool_release,
+            },
+        )
+        .unwrap();
+    }
+    // Drain's first check observes pending work. Its second check, after
+    // prepare(None), is the last observer to retire the now-finished pool.
+    assert!(unsafe { executor_root::progress_all() }.is_none());
+    let waiter = completed_queue().prepare(None);
+    pool.0.set(executor_root::Progress::Releasable);
+    drop(pool);
+    assert!(unsafe { executor_root::progress_all() }.is_none());
+    assert!(weak.upgrade().is_none(), "the original pool value was dropped");
+    assert!(unsafe { &*storage.0.executors.get() }.is_empty());
+    // A faulty implementation can return through this explicit test callback
+    // instead of hanging/aborting, but the exact call assertion below rejects
+    // that spurious suspension. It is not a replacement production wake.
+    PORTS.with(|p| p.borrow_mut().suspend = Some(notify(completed_queue())));
+    assert!(waiter.wait());
+    assert_eq!(
+        calls(),
+        [
+            "admit-executor",
+            "admit-wait",
+            "drop-pool",
+            "settle-executor",
+            "park-task",
+            "wake-task",
+            "settle-wait"
+        ]
+    );
+    let stamp = unsafe { executor_root::progress_all() }.expect("fresh empty-registry check");
+    assert!(executor_root::unchanged(stamp));
+    assert_retired();
+    assert!(driver::quiescent());
+    reset();
+    drop(storage);
 }

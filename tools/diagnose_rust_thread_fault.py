@@ -28,10 +28,18 @@ from tools.rust_thread_runtime_package import prepare
 from tools.rust_thread_runtime_node import run
 
 CASE = 'rust_thread_fault::tests::rust_thread_fault_visits_only_eight_numeric_original_frames_for_authenticated_rust'
+WAIT_CASE = 'early_untimed_notification_never_resumes_a_running_thread'
+WAIT_SOURCE = 'sdk/rust-standard-runtime/tests/thread_wait_driver_native.rs'
+# Bind the complete source-port regression, not just its test harness. These
+# sources are NOT substituted into the immutable retained guest component.
+WAIT_RECIPE = (WAIT_SOURCE, *(f'sdk/rust-standard-runtime/{name}.rs' for name in (
+    'executor_root', 'runtime_owner', 'thread_wait_driver', 'thread_wait',
+    'thread_wait_registry')))
 RECIPE = ('.github/workflows/rust-thread-fault-diagnostic.yml',
           'tools/diagnose_rust_thread_fault.py', 'tools/rust_thread_fault_frames.py',
           'tools/rust_thread_runtime_node.py', 'tools/rust_thread_runtime_package.py',
-          'tools/rust_thread_compiler_materials.py', 'tools/rust_thread_native_products.py')
+          'tools/rust_thread_compiler_materials.py', 'tools/rust_thread_native_products.py',
+          *WAIT_RECIPE)
 
 
 def inputs():
@@ -70,6 +78,18 @@ def diagnose(prepared: Path, compiler_materials: Path, output: Path, revision: s
                 'rust-thread-diagnostic-exact-source')
         compiler = stages.run('rust-version', 'rustc', '--version').decode().strip()
         require(compiler.startswith('rustc 1.97.1 ('), 'rust-thread-diagnostic-rust-pin')
+        # Exercise the actual root registry, affine owner and fixed Wait driver
+        # together. The explicit Source callback is not a captured executor or
+        # engine/signed-guest qualification, and cannot change the fault gate.
+        stage = 'native-root-retirement-wakeup-control'
+        wait_control = build / 'root-retirement-wakeup-control'
+        stages.run('root-wait-build', 'rustc', '--edition=2024', '--test',
+                   ROOT / WAIT_SOURCE, '-o', wait_control)
+        exact_list(stages.run('root-wait-list', wait_control, WAIT_CASE, '--exact', '--list'),
+                   (WAIT_CASE,))
+        exact_result(stages.run('root-wait-run', wait_control, WAIT_CASE, '--exact',
+                                '--test-threads=1'), (WAIT_CASE,))
+        record['nativeRootRetirementWakeupControl'] = WAIT_CASE
         cargo = ('cargo', '--config', ROOT / '.cargo/managed-guest.toml')
         stage = 'one-real-numeric-original-trap-control'
         test = (*cargo, 'test', '--locked', '-p', 'latent-wasmtime', '--lib',
