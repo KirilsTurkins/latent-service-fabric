@@ -1,6 +1,7 @@
-"""One bounded JVM-only compiler-context probe using the existing locked model JARs.
+"""Bounded JVM compiler-context and real TeaVM C-frontend progress controls.
 
-No C target, guest/component compiler, native host, signing or runtime replay runs.
+The real frontend stops after the owning finder. No C output, guest/component
+compiler, native host, signing or runtime replay runs.
 """
 from __future__ import annotations
 
@@ -30,6 +31,7 @@ from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
 
 SDK = ROOT/'sdk/java-guest'
 CONTROL = SDK/'fibers/conformance/compiler/CheckpointContextControl.java'
+COMPILER_CONTROL = SDK/'fibers/conformance/compiler/CheckpointCompilerControl.java'
 # Include the core POM's complete runtime closure for the real dependency analyzer,
 # including extension-spi's API/util dependencies, not only javac's model surface.
 NAMES = frozenset(('teavm-classlib', 'teavm-core', 'teavm-extension-apis',
@@ -39,6 +41,7 @@ NAMES = frozenset(('teavm-classlib', 'teavm-core', 'teavm-extension-apis',
     'teavm-relocated-libs-hppc', 'teavm-relocated-libs-rhino'))
 EXPECTED = (';direct;multihop;shared;virtual;class-unmanaged;managed-cycle;pinned-managed-entry;altered-entry-negatives;'
     'unresolved;bound;real-late-completion')
+COMPILER_EXPECTED = ';finite;initializer;unmanaged;managed'
 
 
 def selected(lock):
@@ -101,7 +104,7 @@ def qualify(output):
     cache = output/'model-cache';cache.mkdir()
     sources = sorted((SDK/'fibers/compiler/dev/latent/guest/runtime/compiler').glob('*.java'))
     raw_finder = SDK/'fibers/compiler-patch/AsyncMethodFinder.java'
-    observed = [*sources, CONTROL, raw_finder, ROOT/'tools/java_guest/coroutine_patch.py',
+    observed = [*sources, CONTROL, COMPILER_CONTROL, raw_finder, ROOT/'tools/java_guest/coroutine_patch.py',
         Path(__file__).resolve(), SDK/'feasibility/dependencies.lock.json',
         SDK/'feasibility/gradle/verification-metadata.xml']
     before = {p.relative_to(ROOT).as_posix(): file_identity(p) for p in observed}
@@ -125,7 +128,7 @@ def qualify(output):
         source_module(SDK/'tools/feasibility.py').verify_version('java-version', version, pins['sdk']['java'])
         model = output/'model';model.mkdir()
         commands.run('checkpoint-context-control-compile', javac, '--release', '25', '-proc:none',
-            '-encoding', 'UTF-8', '-cp', tooling, '-d', model, *sources, CONTROL)
+            '-encoding', 'UTF-8', '-cp', tooling, '-d', model, *sources, CONTROL, COMPILER_CONTROL)
         corrected = output/'corrected';corrected.mkdir()
         source = output/'AsyncMethodFinder.java'
         source.write_bytes(corrected_async_source(read_file(raw_finder)))
@@ -139,6 +142,9 @@ def qualify(output):
         replacement = output/'teavm-core-context-probe.jar'
         replacement_identity = overlay(Path(core[0]), corrected, replacement)
         results = []
+        compiler_results = []
+        # Retain partial observations if a later real compiler control refuses.
+        report.update(controls=results, compilerControls=compiler_results)
         for mode, origin in (('original', core[0]), ('corrected', replacement)):
             selected_tooling = [str(origin), *[p for p in tooling.split(os.pathsep) if p != core[0]]]
             classpath = os.pathsep.join([str(model), *selected_tooling])
@@ -146,9 +152,14 @@ def qualify(output):
                 'org.teavm.dependency.CheckpointContextControl', mode, origin).decode().strip()
             require(result == 'CHECKPOINT_CONTEXT_CONTROL PASS '+mode+EXPECTED, 'java-checkpoint-context-control')
             results.append({'mode': mode, 'result': result})
+            compiler_result = commands.run('checkpoint-compiler-'+mode, java, '-Xmx256m', '-cp', classpath,
+                'org.teavm.dependency.CheckpointCompilerControl', mode).decode().strip()
+            require(compiler_result == 'CHECKPOINT_COMPILER_CONTROL PASS '+mode+COMPILER_EXPECTED,
+                'java-checkpoint-real-compiler-control')
+            compiler_results.append({'mode': mode, 'result': compiler_result})
         require(before == {p.relative_to(ROOT).as_posix(): file_identity(p) for p in observed},
             'java-checkpoint-source-unchanged')
-        report.update(status='passed', controls=results, lockedModelJars=identities,
+        report.update(status='passed', lockedModelJars=identities,
             finderClasses=compiled, correctedSource=file_identity(source), compilerOverlay=replacement_identity,
             jdk={'java': file_identity(java), 'javac': file_identity(javac), 'version': version})
     except Exception:
