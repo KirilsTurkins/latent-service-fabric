@@ -27,18 +27,18 @@ jobs:
           shared-key: host-correctness
           cache-workspace-crates: false
           save-if: false
-      - name: Execute source-bound artifact tests
+      - name: Execute source-bound artifact and reference-owner tests
         run: |
           mkdir -p target/publication-workbench
           git rev-parse HEAD > target/publication-workbench/source-commit.txt
           cargo test --locked -p latent-artifacts --all-features --all-targets > target/publication-workbench/tests.log 2>&1
+          cargo test --locked -p latent-control-store --all-features --lib > target/publication-workbench/control-tests.log 2>&1
       - name: Retain reproducible offline compiler inputs
+        if: always()
         run: |
           set -euo pipefail
-          toolchain="$(dirname "$(dirname "$(rustup which rustc)")")"
-          tar -C "$toolchain" -czf target/publication-workbench/rust-toolchain.tar.gz .
+          mkdir -p target/publication-workbench
           tar -C "${CARGO_HOME:-$HOME/.cargo}" -czf target/publication-workbench/cargo-registry.tar.gz registry
-          git archive --format=tar.gz HEAD Cargo.toml Cargo.lock rust-toolchain.toml .cargo .gitattributes api wit > target/publication-workbench/source-complement.tar.gz
           rustc -vV > target/publication-workbench/rustc.txt
           cargo -vV > target/publication-workbench/cargo.txt
           sha256sum target/publication-workbench/*.tar.gz > target/publication-workbench/SHA256SUMS
