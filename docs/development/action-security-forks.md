@@ -1,10 +1,17 @@
 # Action security forks
 
-These forks were rebuilt and qualified on Linux with Node 24.19.0. Full npm graphs, including development tools, have zero OSV findings at the recorded revisions. Upstream licenses and history are retained. Tool-version inputs and workflow permissions are preserved.
+The original fork set was rebuilt and qualified on Linux with Node 24.19.0. The
+2026-10-30 source-repair revisions for setup-java, setup-node, setup-python and
+upload-artifact passed locked installation, the installed-source verifier and an
+unchanged distribution rebuild locally with Node 24.19.0; GitHub did not register
+hosted workflows on those forks. LSF independently reconstructs the exact repaired
+deepmerge archive before crediting GHSA-gcqx-w48m-w2h4 on only the four bound locks.
+Upstream licenses and history are retained. Tool-version inputs, workflow
+permissions and committed runtime distributions are preserved.
 
 | Upstream | Fork commit | Contribution |
 | --- | --- | --- |
-| `actions/setup-java` | [f041d6677134](https://github.com/KirilsTurkins/lsf-setup-java/commit/f041d6677134ada73c077d0c012bd78164b251a7) | [PR](https://github.com/actions/setup-java/pull/1296) |
+| `actions/setup-java` | [5d910981b146](https://github.com/KirilsTurkins/lsf-setup-java/commit/5d910981b146bc2d4fd97fa349210f3e3d454039) | [PR](https://github.com/actions/setup-java/pull/1296) |
 | `Swatinem/rust-cache` | [476b290465f7](https://github.com/KirilsTurkins/lsf-rust-cache/commit/476b290465f7c84db317df6e6a6e2d3c12ea3477) | [PR](https://github.com/Swatinem/rust-cache/pull/396) |
 | `actions/attest-build-provenance` | [16b356100dfe](https://github.com/KirilsTurkins/lsf-attest-build-provenance/commit/16b356100dfe77222eebe783b5e26a565b76055a) | [PR](https://github.com/KirilsTurkins/lsf-attest-build-provenance/pull/1); upstream creation blocked: pull request create failed: GraphQL: KirilsTurkins does not have the correct permissions to execute `CreatePullRequest` (createPullRequest) |
 | `actions/cache` | [2ff27e45011b](https://github.com/KirilsTurkins/lsf-cache/commit/2ff27e45011b8bcf31ef566ae84c1c923c8aea69) | [PR](https://github.com/actions/cache/pull/1804) |
@@ -13,10 +20,10 @@ These forks were rebuilt and qualified on Linux with Node 24.19.0. Full npm grap
 | `actions/download-artifact` | [f073ba9e3801](https://github.com/KirilsTurkins/lsf-download-artifact/commit/f073ba9e3801be93f933866d4c9a748e42157e5f) | [PR](https://github.com/actions/download-artifact/pull/496) |
 | `actions/setup-dotnet` | [f5bcdac7f269](https://github.com/KirilsTurkins/lsf-setup-dotnet/commit/f5bcdac7f26977ef44527f837688dd86faf648ec) | [PR](https://github.com/actions/setup-dotnet/pull/795) |
 | `actions/setup-go` | [3f9b437aa6b8](https://github.com/KirilsTurkins/lsf-setup-go/commit/3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e) | [PR](https://github.com/actions/setup-go/pull/805) |
-| `actions/setup-node` | [c1136b2d97fe](https://github.com/KirilsTurkins/lsf-setup-node/commit/c1136b2d97fe79ef645e9508b2048a222f50a170) | [PR](https://github.com/actions/setup-node/pull/1653) |
-| `actions/setup-python` | [50257733267e](https://github.com/KirilsTurkins/lsf-setup-python/commit/50257733267ef69f611231aad6b77a62adca7140) | [PR](https://github.com/actions/setup-python/pull/1381) |
-| `actions/upload-artifact` | [01d82cc6ae71](https://github.com/KirilsTurkins/lsf-upload-artifact/commit/01d82cc6ae713563e8d04f36a17af500cf82a6a9) | [PR](https://github.com/actions/upload-artifact/pull/825) |
-| `actions/upload-pages-artifact` | [f6fd45bb134f](https://github.com/KirilsTurkins/lsf-upload-pages-artifact/commit/f6fd45bb134f6855d391ed2198e9b3d57d305a05) | [PR](https://github.com/actions/upload-pages-artifact/pull/166) |
+| `actions/setup-node` | [fdae00b14e85](https://github.com/KirilsTurkins/lsf-setup-node/commit/fdae00b14e855eb751452bc70c64dde286270415) | [PR](https://github.com/actions/setup-node/pull/1653) |
+| `actions/setup-python` | [14de4ddb0286](https://github.com/KirilsTurkins/lsf-setup-python/commit/14de4ddb02861c1e098a1a260a2de7a6b45b68fb) | [PR](https://github.com/actions/setup-python/pull/1381) |
+| `actions/upload-artifact` | [5c42799caf30](https://github.com/KirilsTurkins/lsf-upload-artifact/commit/5c42799caf30eda69cb2db5da0be2400c47cef16) | [PR](https://github.com/actions/upload-artifact/pull/825) |
+| `actions/upload-pages-artifact` | [78e399e92cd7](https://github.com/KirilsTurkins/lsf-upload-pages-artifact/commit/78e399e92cd7485cca2752423a3eb0ccf404df77) | [PR](https://github.com/actions/upload-pages-artifact/pull/166) |
 | `bufbuild/buf-setup-action` | [7e1d5f1d4a4a](https://github.com/KirilsTurkins/lsf-buf-setup-action/commit/7e1d5f1d4a4a7d82b1ff79968166c4f50a66ce57) | [PR](https://github.com/KirilsTurkins/lsf-buf-setup-action/pull/1); upstream creation blocked: Upstream repository is archived and read-only. |
 | `bytecodealliance/actions` | [9244ec9f4725](https://github.com/KirilsTurkins/lsf-bytecodealliance-actions/commit/9244ec9f4725400c84054e3e6ec97514cadddf53) | [PR](https://github.com/bytecodealliance/actions/pull/24) |
 | `mlugg/setup-zig` | [e064b42fa88a](https://github.com/KirilsTurkins/lsf-setup-zig/commit/e064b42fa88ad0859d8b54838b44f672ffd5ea7a) | [PR](https://github.com/KirilsTurkins/lsf-setup-zig/pull/1); upstream creation blocked: Upstream has disabled pull requests. |

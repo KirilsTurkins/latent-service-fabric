@@ -20,8 +20,12 @@ from tools.rust_capsule_project import ROOT, read_json, snapshot
 from tools.standard_http.peer import Peer
 
 
+from tools.tests.test_sdk_scratch_qualification import historical_security_actions
+
+
 def historical_checkout(value):
     """Authenticate the current action before the exact historical pin inverse."""
+    value = historical_security_actions(value)
     prefix = 'KirilsTurkins/lsf-checkout@'
     current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
     previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'

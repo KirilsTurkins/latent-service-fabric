@@ -11,8 +11,12 @@ from tools.phase3_resource_identity import file_identity
 from tools.tests.test_sdk_scratch_qualification import ordinary, replace_json
 
 
+from tools.tests.test_sdk_scratch_qualification import historical_security_actions
+
+
 def historical_checkout(value):
     """Authenticate the current action before the exact historical pin inverse."""
+    value = historical_security_actions(value)
     prefix = 'KirilsTurkins/lsf-checkout@'
     current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
     previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
@@ -36,7 +40,7 @@ def original_libfetch_workflow(value):
 
 def original_libucl_workflow(value):
     """Authenticate/invert only the paired-client route before the old inverse."""
-    if hashlib.sha256(value.encode()).hexdigest() != 'cfe78d91e5b92f7556b7cfef9b582571222ddbba722b2c7755b4c7e2be54a4c4':
+    if hashlib.sha256(value.encode()).hexdigest() != '4c748a13eca74ecb1cadb638f0b890d2bd32a6cdd82f9501140038e092d2d73c':
         raise AssertionError('historical-workflow-exact-libucl-source-required')
     for current, previous, count in ((', feat/sdk-690-c-libucl-http-20261029', '', 1), (" && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029'", '', 5), (" || github.ref == 'refs/heads/feat/sdk-690-c-libucl-http-20261029'", '', 1)):
         if value.count(current) != count:
@@ -47,7 +51,7 @@ def original_libucl_workflow(value):
             raise AssertionError('historical-workflow-exact-libucl-block-required')
         first = value.index(start); last = value.index(end, first)
         value = value[:first] + value[last:]
-    if hashlib.sha256(value.encode()).hexdigest() != 'a3d926d95d19a1afba49a9c4919c407e3798e298b8ecc7134a2dec31571be7ee':
+    if hashlib.sha256(value.encode()).hexdigest() != 'e8a8c440b002c785b001d6d9d1f4038d4ff929f9b620029eedd318a25c1e2781':
         raise AssertionError('historical-workflow-original-libfetch-source-required')
     return original_libfetch_workflow(value)
 
@@ -135,6 +139,17 @@ class ClosedFilesystemQualification(unittest.TestCase):
             current.prepared(self.root, 'c')
 
     def test_default_off_replay_preserves_all_original_job_bodies_and_bounds(self):
+        from tools.tests.test_sdk_scratch_qualification import SECURITY_ACTION_PIN_INVERSES
+        for action, current_sha, previous_sha in SECURITY_ACTION_PIN_INVERSES:
+            current = action + '@' + current_sha
+            previous = action + '@' + previous_sha
+            for encode in (str, str.encode):
+                self.assertEqual(historical_security_actions(encode(current)), encode(previous))
+                for invalid in (previous, current + '\n' + previous, action + '@' + '0' * 40,
+                        action + '@unreviewed', current + '0', current + 'suffix'):
+                    with self.subTest(action=action, invalid=invalid), self.assertRaisesRegex(
+                            AssertionError, '^historical-workflow-exact-current-security-actions-required$'):
+                        historical_security_actions(encode(invalid))
         from tools.ci_lane_inventory import workflow_model
         model = workflow_model(original_libucl_workflow((gate.ROOT/'.github/workflows/c-guest-authoring.yml').read_text()))
         selector = model['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']

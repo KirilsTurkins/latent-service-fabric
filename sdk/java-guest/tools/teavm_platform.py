@@ -121,6 +121,613 @@ SPILL_DECLARATION = re.compile(
 SPILL_TYPES = {'volatile void*', 'volatile int32_t', 'volatile int64_t',
                'volatile float', 'volatile double'}
 
+CLASS_SIZE_ALIGNMENT = re.compile(
+    r'(?m)^(\s+\.size = \(int32_t\) \(intptr_t\) TEAVM_ALIGN\(sizeof\([A-Za-z_][A-Za-z0-9_]*\), )'
+    r'sizeof\(void\*\)(\),\s*)$')
+HEAP_ALIGNMENT_FIX = 'konsoletyper/teavm#1281@c197880e951b8ecb6c6ee5bffa7c16563be790f3'
+HEAP_ALIGNMENT_RUNTIME = {
+    'c/o/t/r/Allocator.c': 'meth_otr_Allocator_allocateArray',
+    'c/o/t/r/GC.c': 'meth_otr_GC_objectSize_0',
+}
+MONITOR_ROOT_ISSUE = 'konsoletyper/teavm#1330'
+
+
+def _aligned_runtime_function(original: str, function: str) -> str:
+    signatures = list(re.finditer(
+        r'(?m)^[^\r\n{};]*\b' + re.escape(function) + r'\([^;\r\n]*\) \{\r?$', original))
+    if len(signatures) != 1:
+        raise ValueError('unreviewed-teavm-heap-alignment-function')
+    closing = re.search(r'(?m)^}\r?$', original[signatures[0].end():])
+    if closing is None:
+        raise ValueError('unreviewed-teavm-heap-alignment-function')
+    end = signatures[0].end() + closing.end()
+    body = original[signatures[0].start():end]
+    candidates = [line for line in body.splitlines(keepends=True)
+                  if 'TEAVM_ALIGN' in line and 'sizeof(void*)' in line]
+    if len(candidates) != 1 or candidates[0].count('sizeof(void*)') != 1:
+        raise ValueError('unreviewed-teavm-heap-alignment-runtime')
+    corrected = candidates[0].replace('sizeof(void*)', 'INT32_C(8)')
+    return original[:signatures[0].start()] + body.replace(candidates[0], corrected) + original[end:]
+
+
+def heap_alignment_outputs(generated: Path, overrides: dict[Path, bytes] | None = None) -> tuple[list, dict]:
+    """Backport TeaVM's reviewed eight-byte 32-bit heap layout repair.
+
+    The application and class library stay unchanged. This changes only the
+    four generated expressions and bundled heap tracer fixed upstream by
+    TeaVM #1281, after the exact pinned compiler has produced C.
+    """
+    overrides = {} if overrides is None else overrides
+    if type(overrides) is not dict:
+        raise ValueError('unreviewed-teavm-heap-alignment-overrides')
+    classes = generated / 'c'
+    if classes.is_symlink() or not classes.is_dir():
+        raise ValueError('unreviewed-teavm-generated-classes')
+    outputs, identities = [], []
+    seen_runtime = set()
+    entries = total_bytes = scanned = class_sizes = 0
+    for path in classes.rglob('*'):
+        entries += 1
+        if entries > 65536 or path.is_symlink():
+            raise ValueError('unreviewed-teavm-generated-classes')
+        if path.suffix != '.c':
+            continue
+        if not path.is_file() or path.stat().st_size > 16 * 1024 * 1024:
+            raise ValueError('unreviewed-teavm-generated-class')
+        scanned += 1
+        total_bytes += path.stat().st_size
+        if scanned > 16384 or total_bytes > 256 * 1024 * 1024:
+            raise ValueError('teavm-generated-class-size-limit')
+        raw = path.read_bytes()
+        selected = overrides.get(path, raw)
+        if type(selected) is not bytes or path in overrides and hashlib.sha256(raw).digest() == hashlib.sha256(selected).digest():
+            raise ValueError('unreviewed-teavm-heap-alignment-overrides')
+        original = selected.decode('utf-8')
+        adapted, count = CLASS_SIZE_ALIGNMENT.subn(r'\g<1>8\g<2>', original)
+        class_sizes += count
+        relative = path.relative_to(generated).as_posix()
+        if relative in HEAP_ALIGNMENT_RUNTIME:
+            adapted = _aligned_runtime_function(adapted, HEAP_ALIGNMENT_RUNTIME[relative])
+            seen_runtime.add(relative)
+        if adapted == original:
+            continue
+        value = adapted.encode('utf-8')
+        outputs.append((path, value))
+        identities.append({'path': relative, 'upstreamSha256': hashlib.sha256(raw).hexdigest(),
+            'adaptedSha256': hashlib.sha256(value).hexdigest(), 'classSizeAlignments': count,
+            'runtimeArrayAlignment': relative in HEAP_ALIGNMENT_RUNTIME})
+    if seen_runtime != set(HEAP_ALIGNMENT_RUNTIME) or class_sizes <= 0:
+        raise ValueError('unreviewed-teavm-heap-alignment-closure')
+
+    heaptrace = generated / 'heaptrace.c'
+    if heaptrace.is_symlink() or not heaptrace.is_file() or heaptrace.stat().st_size > 65536:
+        raise ValueError('unreviewed-teavm-heap-alignment-heaptrace')
+    heaptrace_raw = heaptrace.read_bytes()
+    heaptrace_source = heaptrace_raw.decode('utf-8')
+    before = '    size = TEAVM_ALIGN(size, sizeof(void*));'
+    after = '    size = TEAVM_ALIGN(size, 8);'
+    if heaptrace_source.count(before) != 1:
+        raise ValueError('unreviewed-teavm-heap-alignment-heaptrace')
+    heaptrace_value = heaptrace_source.replace(before, after).encode('utf-8')
+    outputs.append((heaptrace, heaptrace_value))
+    identities.append({'path': 'heaptrace.c', 'upstreamSha256': hashlib.sha256(heaptrace_raw).hexdigest(),
+        'adaptedSha256': hashlib.sha256(heaptrace_value).hexdigest(), 'classSizeAlignments': 0,
+        'runtimeArrayAlignment': True})
+    outputs.sort(key=lambda item: item[0].relative_to(generated).as_posix())
+    identities.sort(key=lambda item: item['path'])
+    return outputs, {'profile': 'teavm-0.15-wasm32-eight-byte-heap-alignment-v1',
+        'upstreamFix': HEAP_ALIGNMENT_FIX, 'scannedClasses': scanned,
+        'classSizeAlignments': class_sizes, 'files': identities}
+
+
+def _generated_function(original: str, function: str) -> tuple[int, int, str]:
+    signatures = list(re.finditer(
+        r'(?m)^[^\r\n{};]*\b' + re.escape(function) + r'\([^;\r\n]*\) \{\r?$', original))
+    if len(signatures) != 1:
+        raise ValueError('unreviewed-teavm-monitor-root-function')
+    closing = re.search(r'(?m)^}\r?$', original[signatures[0].end():])
+    if closing is None:
+        raise ValueError('unreviewed-teavm-monitor-root-function')
+    end = signatures[0].end() + closing.end()
+    return signatures[0].start(), end, original[signatures[0].start():end]
+
+
+def _field_edge_diagnostics() -> str:
+    """Encode one bad parent-class index, field offset and reason in bounded frames."""
+    lines = [
+        'static volatile int32_t teavm_field_edge_trap_value;',
+        '__attribute__((noinline)) static void teavm_field_edge_trap_out_of_range(void) {',
+        '    teavm_field_edge_trap_value = INT32_C(-2);',
+        '    __builtin_trap();',
+        '}',
+    ]
+    for digit in range(16):
+        lines.extend((
+            f'__attribute__((noinline)) static void teavm_field_edge_field_low_{digit:x}(void) {{',
+            f'    teavm_field_edge_trap_value = INT32_C({digit});',
+            '    if (teavm_field_edge_trap_value != INT32_C(-1)) {',
+            '        __builtin_trap();',
+            '    }',
+            '}',
+        ))
+    for prefix, shift, callee in (
+            ('field_high', 0, 'field_low'),
+            ('parent_low', 4, 'field_high'),
+            ('parent_mid', 0, 'parent_low'),
+            ('parent_high', 4, 'parent_mid')):
+        for digit in range(16):
+            argument = ('teavm_field' if prefix in ('field_high', 'parent_low')
+                        else 'teavm_parent')
+            passed = ('' if prefix == 'field_high' else
+                      'teavm_field' if prefix == 'parent_low' else
+                      'teavm_parent, teavm_field')
+            signature = ('int32_t teavm_field' if prefix == 'field_high' else
+                         'int32_t teavm_parent, int32_t teavm_field')
+            lines.append(
+                f'__attribute__((noinline)) static void teavm_field_edge_{prefix}_{digit:x}({signature}) {{')
+            lines.append(f'    switch (({argument} >> INT32_C({shift})) & INT32_C(15)) {{')
+            for next_digit in range(16):
+                lines.append(
+                    f'        case INT32_C({next_digit}): teavm_field_edge_{callee}_{next_digit:x}({passed}); break;')
+            lines.extend((
+                '        default: teavm_field_edge_trap_out_of_range();',
+                '    }',
+                f'    teavm_field_edge_trap_value = INT32_C({digit});',
+                '}',
+            ))
+    lines.extend((
+        '__attribute__((noinline)) static void teavm_field_edge_diagnose(',
+        '        int32_t teavm_parent, int32_t teavm_field) {',
+        '    if (teavm_parent < INT32_C(0) || teavm_parent > INT32_C(4095)',
+        '            || teavm_field < INT32_C(0) || teavm_field > INT32_C(255)) {',
+        '        teavm_field_edge_trap_out_of_range();',
+        '    }',
+        '    switch ((teavm_parent >> INT32_C(8)) & INT32_C(15)) {',
+    ))
+    for digit in range(16):
+        lines.append(
+            f'        case INT32_C({digit}): teavm_field_edge_parent_high_{digit:x}(teavm_parent, teavm_field); break;')
+    lines.extend((
+        '        default: teavm_field_edge_trap_out_of_range();',
+        '    }',
+        '    teavm_field_edge_trap_value = INT32_C(-3);',
+        '}',
+        '__attribute__((noinline)) static void teavm_field_edge_unmarked_below_heap_diagnose(',
+        '        int32_t teavm_parent, int32_t teavm_field) {',
+        '    teavm_field_edge_diagnose(teavm_parent, teavm_field);',
+        '}',
+        '__attribute__((noinline)) static void teavm_array_edge_unmarked_below_heap_diagnose(',
+        '        int32_t teavm_item_class, int32_t teavm_index) {',
+        '    teavm_field_edge_diagnose(teavm_item_class, teavm_index);',
+        '}',
+        '__attribute__((noinline)) static void teavm_array_owner_flags_length_diagnose(',
+        '        int32_t teavm_flags_length, int32_t teavm_index) {',
+        '    teavm_field_edge_diagnose(teavm_flags_length, teavm_index);',
+        '}',
+        '__attribute__((noinline)) static void teavm_field_edge_misaligned_diagnose(',
+        '        int32_t teavm_parent, int32_t teavm_field) {',
+        '    teavm_field_edge_diagnose(teavm_parent, teavm_field);',
+        '}',
+        '',
+    ))
+    return '\n'.join(lines)
+
+
+def _array_owner_header_layouts(generated: Path) -> list[str]:
+    # TeaVM 0.15 Linker removes unreachable fields before ClassGenerator emits
+    # the remaining declarations in source order. Accept only those reviewed
+    # ordered subsets; absent classes/read fields make that owner unavailable.
+    layouts = {
+        'Fiber.h': ('cls_otr_Fiber', ('    struct TeaVM_Object parent;', '    TeaVM_Array* fld_intValues;', '    int32_t fld_intTop;', '    TeaVM_Array* fld_longValues;', '    int32_t fld_longTop;', '    TeaVM_Array* fld_floatValues;', '    int32_t fld_floatTop;', '    TeaVM_Array* fld_doubleValues;', '    int32_t fld_doubleTop;', '    TeaVM_Array* fld_objectValues;', '    int32_t fld_objectTop;', '    int32_t fld_state;', '    void* fld_runner;', '    void* fld_result;', '    void* fld_exception;', '    int8_t fld_isPendingResume;', '    int8_t fld_daemon;'), '    TeaVM_Array* fld_objectValues;'),
+        'Fiber@dPendingCall.h': ('cls_otr_Fiber_PendingCall', ('    struct TeaVM_Object parent;', '    void* fld_value;', '    void* fld_next;', '    void* fld_previous;', '    void* fld_callback;'), '    void* fld_callback;'),
+        'Fiber@dAsyncCallbackImpl.h': ('cls_otr_Fiber_AsyncCallbackImpl', ('    struct TeaVM_Object parent;', '    void* fld_pendingCall;', '    void* fld_javaThread;', '    void* fld_fiber;'), '    void* fld_fiber;'),
+    }
+    available = {}
+    globals_available = {'sfld_otr_Fiber_current': False, 'sfld_otr_Fiber_lastPendingCall': False}
+    for name, (struct, reviewed, required) in layouts.items():
+        path = generated / 'c/o/t/r' / name
+        if path.is_symlink():
+            raise ValueError('unreviewed-teavm-array-owner-header')
+        if not path.exists():
+            available[name] = False
+            continue
+        if not path.is_file() or path.stat().st_size > 65536:
+            raise ValueError('unreviewed-teavm-array-owner-header')
+        text = path.read_bytes().decode('utf-8').replace('\r\n', '\n')
+        opening = 'typedef struct ' + struct + ' {\n'
+        closing = '\n} ' + struct + ';'
+        if text.count(opening) != 1 or text.count(closing) != 1:
+            raise ValueError('unreviewed-teavm-array-owner-header')
+        start = text.index(opening) + len(opening)
+        end = text.index(closing)
+        if end < start:
+            raise ValueError('unreviewed-teavm-array-owner-header')
+        fields = text[start:end].splitlines()
+        if not fields or fields[0] != reviewed[0] or any(field not in reviewed for field in fields):
+            raise ValueError('unreviewed-teavm-array-owner-header')
+        indices = [reviewed.index(field) for field in fields]
+        if indices != sorted(set(indices)):
+            raise ValueError('unreviewed-teavm-array-owner-header')
+        available[name] = required in fields
+        if name == 'Fiber.h':
+            for symbol in globals_available:
+                declaration = 'extern void* ' + symbol + ';'
+                if symbol in text and (text.count(symbol) != 1 or text.splitlines().count(declaration) != 1):
+                    raise ValueError('unreviewed-teavm-array-owner-header')
+                globals_available[symbol] = declaration in text.splitlines()
+    paths = []
+    if available['Fiber.h'] and globals_available['sfld_otr_Fiber_current']:
+        paths.append('currentFiber')
+    if (available['Fiber.h'] and globals_available['sfld_otr_Fiber_lastPendingCall']
+            and available['Fiber@dPendingCall.h'] and available['Fiber@dAsyncCallbackImpl.h']):
+        paths.append('directLastPendingFiber')
+    return paths
+
+
+def _array_owner_diagnostics(paths: list[str]) -> str:
+    # Never include or access a type/field removed by the pinned linker. The
+    # GC programme independently requires both paths in its owning receipt.
+    lines = []
+    if paths:
+        lines.append('#include "Fiber.h"\n')
+    if 'directLastPendingFiber' in paths:
+        lines.extend(('#include "Fiber@dPendingCall.h"\n',
+                      '#include "Fiber@dAsyncCallbackImpl.h"\n'))
+    if paths:
+        lines.append('static int32_t teavm_array_owner_has_type(void* teavm_candidate,\n        TeaVM_Class* teavm_expected, uintptr_t teavm_bytes) {\n    uintptr_t teavm_start = (uintptr_t) teavm_gc_heapAddress;\n    uintptr_t teavm_end = (uintptr_t) TEAVM_ADDRESS_ADD(\n        teavm_gc_heapAddress, teavm_gc_availableBytes);\n    uintptr_t teavm_address = (uintptr_t) teavm_candidate;\n    if (teavm_candidate == NULL || teavm_address < teavm_start\n            || teavm_address >= teavm_end || teavm_bytes > teavm_end - teavm_address\n            || ((teavm_address - teavm_start) & (INT32_C(8) - INT32_C(1))) != 0) {\n        return INT32_C(0);\n    }\n    return meth_otr_RuntimeClass_getClass(teavm_candidate) == teavm_expected;\n}\n')
+    lines.append('static int32_t teavm_array_owner_flags(void* teavm_array) {\n'
+                 '    int32_t teavm_flags = INT32_C(0);\n')
+    if paths:
+        lines.append('    void* teavm_fiber;\n')
+    else:
+        lines.append('    (void) teavm_array;\n')
+    if 'directLastPendingFiber' in paths:
+        lines.append('    void* teavm_pending;\n    void* teavm_callback;\n')
+    if 'currentFiber' in paths:
+        lines.append('    teavm_fiber = sfld_otr_Fiber_current;\n')
+        lines.append('    if (teavm_array_owner_has_type(teavm_fiber, (TeaVM_Class*) &otr_Fiber_Cls,\n            sizeof(cls_otr_Fiber))) {\n        if (TEAVM_FIELD(teavm_fiber, cls_otr_Fiber, fld_objectValues) == teavm_array) {\n            teavm_flags |= INT32_C(1);\n        }\n    } else {\n        teavm_flags |= INT32_C(4);\n    }\n')
+    else:
+        lines.append('    teavm_flags |= INT32_C(4);\n')
+    if 'directLastPendingFiber' in paths:
+        lines.append('    teavm_pending = sfld_otr_Fiber_lastPendingCall;\n    if (!teavm_array_owner_has_type(teavm_pending,\n            (TeaVM_Class*) &otr_Fiber_PendingCall_Cls, sizeof(cls_otr_Fiber_PendingCall))) {\n        return teavm_flags | INT32_C(8);\n    }\n    teavm_callback = TEAVM_FIELD(teavm_pending, cls_otr_Fiber_PendingCall, fld_callback);\n    if (!teavm_array_owner_has_type(teavm_callback,\n            (TeaVM_Class*) &otr_Fiber_AsyncCallbackImpl_Cls, sizeof(cls_otr_Fiber_AsyncCallbackImpl))) {\n        return teavm_flags | INT32_C(8);\n    }\n    teavm_fiber = TEAVM_FIELD(teavm_callback, cls_otr_Fiber_AsyncCallbackImpl, fld_fiber);\n    if (!teavm_array_owner_has_type(teavm_fiber,\n            (TeaVM_Class*) &otr_Fiber_Cls, sizeof(cls_otr_Fiber))) {\n        return teavm_flags | INT32_C(8);\n    }\n    if (TEAVM_FIELD(teavm_fiber, cls_otr_Fiber, fld_objectValues) == teavm_array) {\n        teavm_flags |= INT32_C(2);\n    }\n')
+    else:
+        lines.append('    teavm_flags |= INT32_C(8);\n')
+    lines.append('    return teavm_flags;\n}\n')
+    return ''.join(lines)
+
+
+def monitor_root_outputs(generated: Path, overrides: dict[Path, bytes] | None = None) -> tuple[list, dict]:
+    """Keep packed Object.Monitor references live and relocation-correct.
+
+    TeaVM stores a monitor only in the tagged object-header hash. The 0.15 C
+    collector visits generated class layouts but neither marks that header
+    reference nor rewrites it after compaction. Patch only those two generated
+    collector boundaries; application, class library and monitor queues remain
+    unchanged.
+    """
+    overrides = {} if overrides is None else overrides
+    if type(overrides) is not dict:
+        raise ValueError('unreviewed-teavm-monitor-root-overrides')
+    path = generated / 'c/o/t/r/GC.c'
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > 16 * 1024 * 1024:
+        raise ValueError('unreviewed-teavm-monitor-root-source')
+    raw = path.read_bytes()
+    selected = overrides.get(path, raw)
+    if type(selected) is not bytes or path in overrides and selected == raw:
+        raise ValueError('unreviewed-teavm-monitor-root-overrides')
+    original = selected.decode('utf-8')
+
+    start, end, body = _generated_function(original, 'meth_otr_GC_markObjectData')
+    diagnostics = '''extern int teavm_arrayClassCount(void);
+extern TeaVM_Class* teavm_arrayClass(int32_t index);
+static volatile int32_t teavm_monitor_root_trap_kind;
+__attribute__((noinline)) static void teavm_monitor_root_trap_below_heap(void) {
+    teavm_monitor_root_trap_kind = INT32_C(1);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_monitor_root_trap_past_heap(void) {
+    teavm_monitor_root_trap_kind = INT32_C(2);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_monitor_root_trap_truncated_header(void) {
+    teavm_monitor_root_trap_kind = INT32_C(3);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_monitor_root_trap_misaligned(void) {
+    teavm_monitor_root_trap_kind = INT32_C(4);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_monitor_root_trap_free_chunk(void) {
+    teavm_monitor_root_trap_kind = INT32_C(5);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_monitor_root_trap_unknown_class(void) {
+    teavm_monitor_root_trap_kind = INT32_C(6);
+    __builtin_trap();
+}
+static int32_t teavm_gc_candidate_has_known_class(void* teavm_candidate) {
+    TeaVM_Class* teavm_candidate_class = meth_otr_RuntimeClass_getClass(teavm_candidate);
+    int32_t teavm_class_index;
+    for (teavm_class_index = INT32_C(0); teavm_class_index < teavm_classReferencesCount;
+            ++teavm_class_index) {
+        if (teavm_classReferences[teavm_class_index] == teavm_candidate_class) {
+            return INT32_C(1);
+        }
+    }
+    int32_t teavm_dynamic_class_count = teavm_arrayClassCount();
+    if (teavm_dynamic_class_count < INT32_C(0)
+            || teavm_dynamic_class_count > INT32_C(4096)) {
+        return INT32_C(0);
+    }
+    for (teavm_class_index = INT32_C(0); teavm_class_index < teavm_dynamic_class_count;
+            ++teavm_class_index) {
+        if (teavm_arrayClass(teavm_class_index) == teavm_candidate_class) {
+            return INT32_C(1);
+        }
+    }
+    return INT32_C(0);
+}
+static int32_t teavm_gc_candidate_is_valid_unknown_class(void* teavm_candidate) {
+    if (teavm_candidate == NULL
+            || (uintptr_t) teavm_candidate < (uintptr_t) teavm_gc_heapAddress
+            || (uintptr_t) teavm_candidate >= (uintptr_t) TEAVM_ADDRESS_ADD(
+                teavm_gc_heapAddress, teavm_gc_availableBytes)
+            || (uintptr_t) TEAVM_ADDRESS_ADD(teavm_candidate, sizeof(TeaVM_Object)) >
+                (uintptr_t) TEAVM_ADDRESS_ADD(teavm_gc_heapAddress, teavm_gc_availableBytes)
+            || (((uintptr_t) teavm_candidate - (uintptr_t) teavm_gc_heapAddress)
+                & (INT32_C(8) - INT32_C(1))) != 0
+            || TEAVM_FIELD(teavm_candidate, cls_otr_FreeChunk, fld_classReference) == INT32_C(0)) {
+        return INT32_C(0);
+    }
+    return !teavm_gc_candidate_has_known_class(teavm_candidate);
+}
+static int32_t teavm_gc_known_class_index(void* teavm_class) {
+    int32_t teavm_class_index;
+    for (teavm_class_index = INT32_C(0); teavm_class_index < teavm_classReferencesCount;
+            ++teavm_class_index) {
+        if (teavm_classReferences[teavm_class_index] == teavm_class) {
+            return teavm_class_index;
+        }
+    }
+    return INT32_C(-1);
+}
+'''
+    declaration = '    void* teavm_local_2;\n'
+    class_read = '    teavm_local_2 = meth_otr_RuntimeClass_getClass(teavm_local_1);\n'
+    object_return = '        return meth_otr_GC_markObject(teavm_local_2, teavm_local_1);'
+    array_return = '    return meth_otr_GC_markArray(teavm_local_2, teavm_local_1);'
+    if any(body.count(value) != 1 for value in (declaration, class_read, object_return, array_return)):
+        raise ValueError('unreviewed-teavm-monitor-root-mark')
+    body = body.replace(declaration, declaration
+        + '    void* teavm_monitor;\n    int32_t teavm_marked_monitor;\n')
+    body = body.replace(class_read,
+        '    teavm_monitor = TEAVM_UNPACK_MONITOR(TEAVM_FIELD(teavm_local_1, TeaVM_Object, hash));\n'
+        '    if (teavm_monitor != NULL) {\n'
+        '        if ((uintptr_t) teavm_monitor < (uintptr_t) teavm_gc_heapAddress) {\n'
+        '            teavm_monitor_root_trap_below_heap();\n'
+        '        }\n'
+        '        if ((uintptr_t) teavm_monitor >= (uintptr_t) TEAVM_ADDRESS_ADD(\n'
+        '                teavm_gc_heapAddress, teavm_gc_availableBytes)) {\n'
+        '            teavm_monitor_root_trap_past_heap();\n'
+        '        }\n'
+        '        if ((uintptr_t) TEAVM_ADDRESS_ADD(teavm_monitor, sizeof(TeaVM_Object)) >\n'
+        '                (uintptr_t) TEAVM_ADDRESS_ADD(teavm_gc_heapAddress, teavm_gc_availableBytes)) {\n'
+        '            teavm_monitor_root_trap_truncated_header();\n'
+        '        }\n'
+        '        if ((((uintptr_t) teavm_monitor - (uintptr_t) teavm_gc_heapAddress) &\n'
+        '                (INT32_C(8) - INT32_C(1))) != 0) {\n'
+        '            teavm_monitor_root_trap_misaligned();\n'
+        '        }\n'
+        '        if (TEAVM_FIELD(teavm_monitor, cls_otr_FreeChunk, fld_classReference) == INT32_C(0)) {\n'
+        '            teavm_monitor_root_trap_free_chunk();\n'
+        '        }\n'
+        '        if (!teavm_gc_candidate_has_known_class(teavm_monitor)) {\n'
+        '            teavm_monitor_root_trap_unknown_class();\n'
+        '        }\n'
+        '    }\n'
+        '    teavm_marked_monitor = teavm_monitor != NULL\n'
+        '        ? meth_otr_GC_enqueueMark(teavm_monitor) : INT32_C(0);\n' + class_read)
+    body = body.replace(object_return,
+        '        return teavm_marked_monitor | meth_otr_GC_markObject(teavm_local_2, teavm_local_1);')
+    body = body.replace(array_return,
+        '    return teavm_marked_monitor | meth_otr_GC_markArray(teavm_local_2, teavm_local_1);')
+    adapted = original[:start] + diagnostics + body + original[end:]
+
+    start, end, body = _generated_function(adapted, 'meth_otr_GC_enqueueMark')
+    marked = '    if ((!meth_otr_GC_isMarked(teavm_local_1))) {\n'
+    if body.count(marked) != 1:
+        raise ValueError('unreviewed-teavm-enqueued-root-mark')
+    enqueued_diagnostics = '''static volatile int32_t teavm_enqueued_root_trap_kind;
+__attribute__((noinline)) static void teavm_enqueued_root_trap_below_heap(void) {
+    teavm_enqueued_root_trap_kind = INT32_C(1);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_enqueued_root_trap_past_heap(void) {
+    teavm_enqueued_root_trap_kind = INT32_C(2);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_enqueued_root_trap_truncated_header(void) {
+    teavm_enqueued_root_trap_kind = INT32_C(3);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_enqueued_root_trap_misaligned(void) {
+    teavm_enqueued_root_trap_kind = INT32_C(4);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_enqueued_root_trap_free_chunk(void) {
+    teavm_enqueued_root_trap_kind = INT32_C(5);
+    __builtin_trap();
+}
+__attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(void) {
+    teavm_enqueued_root_trap_kind = INT32_C(6);
+    __builtin_trap();
+}
+'''
+    validation = (
+        '    if ((uintptr_t) teavm_local_1 < (uintptr_t) teavm_gc_heapAddress\n'
+        '            && !meth_otr_GC_isMarked(teavm_local_1)) {\n'
+        '        teavm_enqueued_root_trap_below_heap();\n'
+        '    }\n'
+        '    if ((uintptr_t) teavm_local_1 >= (uintptr_t) TEAVM_ADDRESS_ADD(\n'
+        '            teavm_gc_heapAddress, teavm_gc_availableBytes)) {\n'
+        '        teavm_enqueued_root_trap_past_heap();\n'
+        '    }\n'
+        '    if ((uintptr_t) TEAVM_ADDRESS_ADD(teavm_local_1, sizeof(TeaVM_Object)) >\n'
+        '            (uintptr_t) TEAVM_ADDRESS_ADD(teavm_gc_heapAddress, teavm_gc_availableBytes)) {\n'
+        '        teavm_enqueued_root_trap_truncated_header();\n'
+        '    }\n'
+        '    if ((((uintptr_t) teavm_local_1 - (uintptr_t) teavm_gc_heapAddress) &\n'
+        '            (INT32_C(8) - INT32_C(1))) != 0) {\n'
+        '        teavm_enqueued_root_trap_misaligned();\n'
+        '    }\n'
+        '    if (TEAVM_FIELD(teavm_local_1, cls_otr_FreeChunk, fld_classReference) == INT32_C(0)) {\n'
+        '        teavm_enqueued_root_trap_free_chunk();\n'
+        '    }\n'
+        '    if (!teavm_gc_candidate_has_known_class(teavm_local_1)) {\n'
+        '        teavm_enqueued_root_trap_unknown_class();\n'
+        '    }\n')
+    # Immortal static objects take the original marked fast path. Apply the
+    # managed-heap diagnostics only to references that will really queue.
+    body = body.replace(marked, marked + ''.join(
+        '    ' + line for line in validation.splitlines(keepends=True)))
+    adapted = adapted[:start] + enqueued_diagnostics + body + adapted[end:]
+
+    start, end, body = _generated_function(adapted, 'meth_otr_GC_markFields')
+    declaration = '    int32_t teavm_local_7;\n'
+    edge = ('        teavm_local_4 = (teavm_local_4 | meth_otr_GC_enqueueMark('
+            '(*(void**) TEAVM_ADDRESS_ADD(teavm_local_2, teavm_local_7))));\n')
+    if body.count(declaration) != 1 or body.count(edge) != 1:
+        raise ValueError('unreviewed-teavm-field-edge-mark')
+    body = body.replace(declaration, declaration
+        + '    void* teavm_field_edge_candidate;\n'
+        + '    int32_t teavm_field_edge_parent;\n')
+    body = body.replace(edge,
+        '        teavm_field_edge_candidate = (*(void**) TEAVM_ADDRESS_ADD(\n'
+        '            teavm_local_2, teavm_local_7));\n'
+        '        if (teavm_field_edge_candidate != NULL\n'
+        '                && (uintptr_t) teavm_field_edge_candidate <\n'
+        '                    (uintptr_t) teavm_gc_heapAddress\n'
+        '                && !meth_otr_GC_isMarked(teavm_field_edge_candidate)) {\n'
+        '            teavm_field_edge_parent = teavm_gc_known_class_index(teavm_local_1);\n'
+        '            teavm_field_edge_unmarked_below_heap_diagnose(\n'
+        '                teavm_field_edge_parent, teavm_local_7);\n'
+        '        }\n'
+        '        if (teavm_field_edge_candidate != NULL\n'
+        '                && (uintptr_t) teavm_field_edge_candidate >=\n'
+        '                    (uintptr_t) teavm_gc_heapAddress\n'
+        '                && (uintptr_t) teavm_field_edge_candidate <\n'
+        '                    (uintptr_t) TEAVM_ADDRESS_ADD(\n'
+        '                        teavm_gc_heapAddress, teavm_gc_availableBytes)\n'
+        '                && (((uintptr_t) teavm_field_edge_candidate -\n'
+        '                    (uintptr_t) teavm_gc_heapAddress) &\n'
+        '                    (INT32_C(8) - INT32_C(1))) != 0) {\n'
+        '            teavm_field_edge_parent = teavm_gc_known_class_index(teavm_local_1);\n'
+        '            teavm_field_edge_misaligned_diagnose(\n'
+        '                teavm_field_edge_parent, teavm_local_7);\n'
+        '        }\n'
+        '        if (teavm_gc_candidate_is_valid_unknown_class(teavm_field_edge_candidate)) {\n'
+        '            teavm_field_edge_parent = teavm_gc_known_class_index(teavm_local_1);\n'
+        '            teavm_field_edge_diagnose(teavm_field_edge_parent, teavm_local_7);\n'
+        '        }\n'
+        '        teavm_local_4 = (teavm_local_4 |\n'
+        '            meth_otr_GC_enqueueMark(teavm_field_edge_candidate));\n')
+    adapted = adapted[:start] + _field_edge_diagnostics() + body + adapted[end:]
+
+    start, end, body = _generated_function(adapted, 'meth_otr_GC_markArray')
+    declaration = '    int32_t teavm_local_5;\n'
+    edge = ('        teavm_local_4 = (teavm_local_4 | '
+            'meth_otr_GC_enqueueMark((*(void**) teavm_local_3)));\n')
+    if body.count(declaration) != 1 or body.count(edge) != 1:
+        raise ValueError('unreviewed-teavm-array-item-mark')
+    body = body.replace(declaration, declaration
+        + '    void* teavm_array_edge_candidate;\n'
+        + '    int32_t teavm_array_edge_item_class;\n')
+    body = body.replace(edge,
+        '        teavm_array_edge_candidate = (*(void**) teavm_local_3);\n'
+        '        if (teavm_array_edge_candidate != NULL\n'
+        '                && (uintptr_t) teavm_array_edge_candidate <\n'
+        '                    (uintptr_t) teavm_gc_heapAddress\n'
+        '                && !meth_otr_GC_isMarked(teavm_array_edge_candidate)) {\n'
+        '            teavm_array_edge_item_class = teavm_gc_known_class_index(\n'
+        '                TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType));\n'
+        '            if (teavm_array_edge_item_class >= INT32_C(0)\n'
+        '                    && teavm_array_edge_item_class <= INT32_C(4095)\n'
+        '                    && teavm_local_5 >= INT32_C(0)\n'
+        '                    && teavm_local_5 <= INT32_C(255)) {\n'
+        '                if (TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType)\n'
+        '                            == (TeaVM_Class*) &jl_Object_Cls\n'
+        '                        && TEAVM_FIELD(teavm_local_2, TeaVM_Array, size) >= INT32_C(0)\n'
+        '                        && TEAVM_FIELD(teavm_local_2, TeaVM_Array, size) <= INT32_C(255)) {\n'
+        '                    teavm_array_owner_flags_length_diagnose(\n'
+        '                        (teavm_array_owner_flags(teavm_local_2) << INT32_C(8))\n'
+        '                            | TEAVM_FIELD(teavm_local_2, TeaVM_Array, size), teavm_local_5);\n'
+        '                }\n'
+        '                teavm_array_edge_unmarked_below_heap_diagnose(\n'
+        '                    teavm_array_edge_item_class, teavm_local_5);\n'
+        '            }\n'
+        '        }\n' + edge)
+    adapted = adapted[:start] + body + adapted[end:]
+
+    owner_paths = _array_owner_header_layouts(generated)
+    owner_start, _, _ = _generated_function(adapted, 'meth_otr_GC_markArray')
+    adapted = adapted[:owner_start] + _array_owner_diagnostics(owner_paths) + adapted[owner_start:]
+
+    start, end, body = _generated_function(adapted, 'meth_otr_GC_updatePointers')
+    opening = 'void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {\n'
+    branch = '    if ((TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType) == NULL)) {'
+    if body.count(opening) != 1 or body.count(branch) != 1:
+        raise ValueError('unreviewed-teavm-monitor-root-relocation')
+    body = body.replace(opening, opening
+        + '    int32_t teavm_monitor_hash;\n    void* teavm_monitor;\n'
+        + '    teavm_monitor_hash = TEAVM_FIELD(teavm_local_2, TeaVM_Object, hash);\n'
+        + '    teavm_monitor = TEAVM_UNPACK_MONITOR(teavm_monitor_hash);\n'
+        + '    if (teavm_monitor != NULL) {\n'
+        + '        TEAVM_FIELD(teavm_local_2, TeaVM_Object, hash) =\n'
+        + '            TEAVM_PACK_MONITOR(meth_otr_GC_updatePointer(teavm_monitor));\n'
+        + '    }\n')
+    adapted = adapted[:start] + body + adapted[end:]
+    value = adapted.encode('utf-8')
+    if value == selected:
+        raise ValueError('unreviewed-teavm-monitor-root-closure')
+    return [(path, value)], {
+        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v12',
+        'upstreamIssue': MONITOR_ROOT_ISSUE,
+        'path': 'c/o/t/r/GC.c',
+        'upstreamSha256': hashlib.sha256(raw).hexdigest(),
+        'inputSha256': hashlib.sha256(selected).hexdigest(),
+        'adaptedSha256': hashlib.sha256(value).hexdigest(),
+        'markPackedMonitor': True,
+        'rewriteRelocatedMonitor': True,
+        'boundedPackedMonitorValidityTraps': True,
+        'packedMonitorValidityTrapKinds': 6,
+        'boundedEnqueuedReferenceValidityTraps': True,
+        'enqueuedReferenceValidityTrapKinds': 6,
+        'preMarkedBelowHeapReferencesAccepted': True,
+        'validityChecksOnlyForUnmarkedReferences': True,
+        'dynamicArrayClassesAcceptedByValidityTraps': True,
+        'dynamicArrayClassCountMaximum': 4096,
+        'boundedFieldEdgeIdentityFrames': True,
+        'boundedUnmarkedBelowHeapFieldEdgeIdentityFrames': True,
+        'boundedMisalignedFieldEdgeIdentityFrames': True,
+        'boundedUnmarkedBelowHeapArrayItemIdentityFrames': True,
+        'arrayItemClassStaticTableOnly': True,
+        'arrayItemIndexMaximum': 255,
+        'boundedObjectArrayOwnerLengthIdentityFrames': True,
+        'arrayOwnerHeaderLayoutProfile': 'teavm-0.15-fiber-pending-call-callback-dce-v2',
+        'arrayOwnerHeaderDceOrderedSubsets': True,
+        'arrayOwnerAvailablePaths': owner_paths,
+        'arrayOwnerMissingPathUsesUnavailableFlag': True,
+        'arrayOwnerFlagsMaximum': 15,
+        'arrayOwnerLengthMaximum': 255,
+        'arrayOwnerSources': ['currentFiber', 'directLastPendingFiber'],
+        'arrayOwnerUnavailableFlags': [4, 8],
+        'arrayOwnerTrapOnly': True,
+        'arrayOwnerOtherShapesUseItemIdentity': True,
+        'unavailableArrayItemIdentityUsesOriginalGuard': True,
+        'fieldEdgeParentClassIndexMaximum': 4095,
+        'fieldEdgeOffsetMaximum': 255,
+    }
+
 
 def reference_spills(original: str, *, array_references: bool = False) -> tuple[str, int]:
     # TeaVM 0.15 saves Java locals across setjmp/longjmp in teavm_spill_N.
@@ -200,6 +807,11 @@ def adapt(generated: Path) -> dict:
     # VariableType categories. Its array saves need the same pointer qualifier.
     # Keep the historical v1 helper boundary; the maintained compiler selects v2.
     spill_outputs, spill_receipt = reference_spill_outputs(generated, array_references=True)
+    spill_map = dict(spill_outputs)
+    alignment_outputs, alignment_receipt = heap_alignment_outputs(generated, spill_map)
+    alignment_paths = {path for path, _value in alignment_outputs}
+    monitor_outputs, monitor_receipt = monitor_root_outputs(generated, dict(alignment_outputs))
+    monitor_paths = {path for path, _value in monitor_outputs}
     memory = originals['memory.c'].replace('#if TEAVM_UNIX\n', '#if TEAVM_UNIX && !defined(LSF_TEAVM_WASM)\n', 1)
     memory = memory.replace('#if defined(__EMSCRIPTEN__)', MEMORY, 1)
     outputs = {'fiber.c': FIBER, 'time.c': CLOCK, 'memory.c': memory, 'file.c': FILESYSTEM,
@@ -207,9 +819,19 @@ def adapt(generated: Path) -> dict:
     for name, value in outputs.items():
         (generated / name).write_text(value, encoding='utf-8', newline='\n')
     for path, value in spill_outputs:
+        if path in alignment_paths:
+            continue
+        path.write_bytes(value)
+    for path, value in alignment_outputs:
+        if path in monitor_paths:
+            continue
+        path.write_bytes(value)
+    for path, value in monitor_outputs:
         path.write_bytes(value)
     receipt = {name: {'upstreamSha256': PREIMAGES[name],
                      'adaptedSha256': hashlib.sha256(value.encode()).hexdigest()}
                for name, value in outputs.items()}
     receipt['referenceSpills'] = spill_receipt
+    receipt['heapAlignment'] = alignment_receipt
+    receipt['monitorRoots'] = monitor_receipt
     return receipt

@@ -55,7 +55,9 @@ class CThreadingProfile(unittest.TestCase):
             self.assertNotIn(b'pthread_create', files['src/main.c'])
             runtime = files['vendor/lsf/sdk/c-guest/runtime/threads.c']
             self.assertEqual(runtime.count(b'__attribute__((used))\n'
-                b'static int create('), 1)
+                b'static int (*const lsf_c_owned_creation_address)(struct lsf_c_thread **,\n'
+                b'    void *(*)(void *),int (*)(void *),void *,unsigned) = create;'), 1)
+            self.assertNotIn(b'__attribute__((used))\nstatic int create(', runtime)
             self.assertEqual(runtime.count(b'void __lsf_c_owned_thread_entry(struct lsf_c_thread *thread) {\n'
                 b'    (void)thread;__builtin_trap();\n}'), 1)
             self.assertNotIn(b'lsf_c_owned_entry_address', runtime)

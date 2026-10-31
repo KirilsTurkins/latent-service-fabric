@@ -117,6 +117,59 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(expected, contracts.assemble(dict(reversed(list(fragments.items())))))
         self.assertNotIn("workflowIdentities", expected)
         coverage.validate(self.root)
+        # Physical owner banks preserve the exact old virtual identity model.
+        bank_path = self.root / contracts.DIRECTORY / "owner-banks/source.json"
+        bank_path.parent.mkdir()
+        selected = [name for name, row in fragments.items() if row["kind"] == "owner"]
+        leaves = [fragments[name] for name in selected]
+        self.assertTrue(leaves)
+        bank = {"schemaVersion": contracts.OWNER_BANK_SCHEMA, "records": leaves}
+        for name in selected:
+            (self.root / contracts.DIRECTORY / name).unlink()
+        # The fixture's now-empty owners/tools chain no longer has a file.
+        (self.root / contracts.DIRECTORY / "owners/tools").rmdir()
+        (self.root / contracts.DIRECTORY / "owners").rmdir()
+        bank_path.write_text(json.dumps(bank))
+        self.assertEqual(contracts.fragments(self.root), fragments)
+        self.assertEqual(list(contracts.fragments(self.root)), list(fragments))
+        self.assertEqual(contracts.load(self.root), expected)
+        variants = [dict(bank, extra=True), dict(bank, schemaVersion="unknown"), dict(bank, records=[]),
+                    dict(bank, records={}), dict(bank, records=[None]),
+                    dict(bank, records=[leaves[0], dict(leaves[0], kind="python")]),
+                    dict(bank, records=[dict(leaves[0], sha256="invalid")]),
+                    dict(bank, records=[leaves[0]] * (contracts.MAX_BANK_OWNERS + 1)),
+                    dict(bank, records=[leaves[0], leaves[0]])]
+        for malformed in variants:
+            bank_path.write_text(json.dumps(malformed))
+            with self.subTest(bank=malformed), self.assertRaises(ValueError):
+                contracts.fragments(self.root)
+        for nonobject in ([], None, 0, "owner"):
+            bank_path.write_text(json.dumps(nonobject))
+            with self.subTest(nonobject=nonobject), self.assertRaisesRegex(ValueError, "contract-object-required"):
+                contracts.fragments(self.root)
+        bank_path.write_text(json.dumps(bank))
+        with patch.object(contracts, "MAX_FRAGMENTS", len(fragments) - 1):
+            with self.assertRaisesRegex(ValueError, "contract-fragment-limit"):
+                contracts.fragments(self.root)
+        with patch.object(registry, "MAX_BYTES", bank_path.stat().st_size - 1):
+            with self.assertRaisesRegex(ValueError, "contract-byte-limit"):
+                contracts.fragments(self.root)
+        # A bank and standalone leaf may not claim the same identity.
+        duplicate = self.root / contracts.DIRECTORY / selected[0]
+        duplicate.parent.mkdir(parents=True)
+        duplicate.write_text(json.dumps(leaves[0]))
+        with self.assertRaisesRegex(ValueError, "duplicate-contract-identity"):
+            contracts.fragments(self.root)
+        duplicate.unlink()
+        duplicate.parent.rmdir(); duplicate.parent.parent.rmdir()
+        # The physical path remains closed independently of record semantics.
+        wrong = bank_path.with_name("Bad.json")
+        bank_path.rename(wrong)
+        with self.assertRaisesRegex(ValueError, "owner-bank-fields-or-path"):
+            contracts.fragments(self.root)
+        wrong.rename(bank_path)
+        self.assertEqual(contracts.load(self.root), expected)
+        coverage.validate(self.root)
 
     def test_shared_python_storage_preserves_order_values_and_semantic_hashes(self):
         original = contracts.fragments(self.root)["python/test_alpha.py.json"]

@@ -132,7 +132,6 @@ void __lsf_c_owned_thread_entry(struct lsf_c_thread *thread) {
     (void)thread;__builtin_trap();
 }
 
-__attribute__((used))
 static int create(struct lsf_c_thread **out,void *(*pthread_start)(void *),
                   int (*c11_start)(void *),void *argument,unsigned api) {
     struct lsf_c_thread *caller=current(),*root=caller->root;
@@ -184,6 +183,14 @@ static int create(struct lsf_c_thread **out,void *(*pthread_start)(void *),
     require(current()==caller && thread->creation_started==2 && thread->phase==LSF_C_RUNNING);
     *out=thread;return 0;
 }
+
+/* Retain the complete original creation ABI even without an application child:
+ * this static address owns the original body, native import and entry address.
+ * It is part of the original paid image, not a call or a public export.
+ */
+__attribute__((used))
+static int (*const lsf_c_owned_creation_address)(struct lsf_c_thread **,
+    void *(*)(void *),int (*)(void *),void *,unsigned) = create;
 
 int pthread_create(pthread_t *restrict out,const pthread_attr_t *restrict attr,
                    void *(*start)(void *),void *restrict argument) {
