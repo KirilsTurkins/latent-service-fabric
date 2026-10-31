@@ -33,8 +33,17 @@ jobs:
                   if not name:
                       continue
                   path = root / name
-                  if path.is_file() and not path.is_symlink() and path.stat().st_size <= 2 * 1024**2:
-                      archive.add(path, arcname=name, recursive=False)
+                  if not path.is_file() or path.is_symlink() or path.stat().st_size > 2 * 1024**2:
+                      continue
+                  data = path.read_bytes()
+                  if b'\0' in data:
+                      continue
+                  try:
+                      data.decode('utf-8')
+                  except UnicodeDecodeError:
+                      continue
+                  archive.add(path, arcname=name, recursive=False)
+          print('Source archive bytes:', (output / 'source.tar.gz').stat().st_size)
           assert (output / 'source.tar.gz').stat().st_size <= 128 * 1024**2
           PY
           cargo fmt --all
