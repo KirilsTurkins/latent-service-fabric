@@ -221,16 +221,12 @@ where
         Ok(call) => call,
         Err(error) => {
             #[cfg(feature = "development-test-host")]
-            observe_synchronous_refusal(state, operation, &error);
-            #[cfg(feature = "development-test-host")]
             observe_borrow_registration_refusal(state, operation, &error);
             return Completion::new(Err(convert(error)), None);
         }
     };
     let result = table(state).and_then(execute);
     if let Err(error) = &result {
-        #[cfg(feature = "development-test-host")]
-        observe_synchronous_refusal(state, operation, error);
         observe_runtime_refusal(state, error);
     }
     #[cfg(feature = "development-test-host")]
@@ -240,19 +236,6 @@ where
     let _ = call.record_provider_outcome(AuditProviderOutcome::HostCompleted);
     state.record_host_call(started);
     Completion::new(result.map_err(convert), Some(call))
-}
-
-#[cfg(feature = "development-test-host")]
-fn observe_synchronous_refusal(state: &HostState, operation: &str, error: &PlatformError) {
-    if let Some(session) = &state.capabilities.session {
-        state.capabilities.observe_host_admission_refusal(
-            session,
-            crate::development_trap_observer::DevelopmentHostAdmissionEdge::RuntimeSynchronous,
-            CAPABILITY,
-            operation,
-            error.code,
-        );
-    }
 }
 
 pub(super) fn observe_runtime_refusal(state: &HostState, error: &PlatformError) {

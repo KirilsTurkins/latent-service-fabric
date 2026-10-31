@@ -93,6 +93,46 @@ def _source_pin(raw: bytes) -> dict | None:
     for row in value['notices'].values():
         digest_row(row, 1024 * 1024)
     supplied = value['buildInput']
+    if type(supplied) is dict and supplied.get('kind') == 'managed-compiler-custody-v1':
+        need(set(supplied) == {'kind', 'origin', 'transport', 'files', 'compilerOnlyInventory'},
+             'managed-custody-input')
+        origin = supplied['origin']
+        need(type(origin) is dict and set(origin) == {'originalBuildInput', 'sourceProfile', 'admission'},
+             'managed-custody-origin')
+        original = origin['originalBuildInput']
+        need(type(original) is dict and set(original) == {'kind', 'artifactId', 'archive', 'expiresAt'}
+             and original['kind'] == 'prepared-compiler-inputs'
+             and type(original['artifactId']) is int and original['artifactId'] == producer['artifact']
+             and original['archive'] == producer['archive']
+             and type(original['expiresAt']) is str
+             and re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z', original['expiresAt']),
+             'managed-custody-original-input')
+        for name in ('sourceProfile', 'admission'):
+            digest_row(origin[name], MAXIMUM)
+        transport = supplied['transport']
+        need(type(transport) is dict
+             and set(transport) == {'artifactId', 'name', 'run', 'head', 'archive', 'expiresAt'}
+             and all(type(transport[name]) is int and transport[name] > 0 for name in ('artifactId', 'run'))
+             and type(transport['name']) is str
+             and re.fullmatch(r'java-compiler-custody-[0-9a-f]{40}-[1-9][0-9]{0,5}', transport['name'])
+             and sha(transport['head'], 40)
+             and transport['name'].startswith('java-compiler-custody-' + transport['head'] + '-')
+             and type(transport['expiresAt']) is str
+             and re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z', transport['expiresAt']),
+             'managed-custody-transport')
+        digest_row(transport['archive'], 2 * 1024 ** 3)
+        files = supplied['files']
+        need(type(files) is dict and set(files) == {
+            'managed.zip', 'managed-inputs.json', 'source-managed-inputs.json', 'custody.json'},
+             'managed-custody-files')
+        for name, maximum in (('managed.zip', 2 * 1024 ** 3), ('managed-inputs.json', 16 * 1024 ** 2),
+                              ('source-managed-inputs.json', 16 * 1024 ** 2), ('custody.json', MAXIMUM)):
+            digest_row(files[name], maximum)
+        need(type(supplied['compilerOnlyInventory']) is str
+             and re.fullmatch(r'sha256:[0-9a-f]{64}', supplied['compilerOnlyInventory']),
+             'managed-custody-inventory')
+        need(identity(version_bytes(value)) == value['version'], 'version-identity')
+        return value
     need(type(supplied) is dict and set(supplied) == {'kind', 'artifactId', 'archive', 'expiresAt'}
          and supplied['kind'] == 'prepared-compiler-inputs'
          and type(supplied['artifactId']) is int and supplied['artifactId'] == producer['artifact']

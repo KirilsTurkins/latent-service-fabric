@@ -1,9 +1,18 @@
-{"cases":["JavaJoinedRuntime.test_java_secure_random_grants_only_bytes_and_retains_original_scalar_limits","JavaJoinedRuntime.test_missing_optional_duplicate_or_foreign_imports_refuse_before_configuration","JavaJoinedRuntime.test_original_fiber_io_capacity_two_tenant_aliases_and_no_implicit_authority"],"guards":{"JavaJoinedRuntime.test_java_secure_random_grants_only_bytes_and_retains_original_scalar_limits":
-  "faefb81a3715cd0bef93f7a5ce8b07d9dcfbfb1999641e0a0f2069440b40f3b9"
-,"JavaJoinedRuntime.test_missing_optional_duplicate_or_foreign_imports_refuse_before_configuration":
-  "faefb81a3715cd0bef93f7a5ce8b07d9dcfbfb1999641e0a0f2069440b40f3b9"
-,"JavaJoinedRuntime.test_original_fiber_io_capacity_two_tenant_aliases_and_no_implicit_authority":
-  "faefb81a3715cd0bef93f7a5ce8b07d9dcfbfb1999641e0a0f2069440b40f3b9"
-},"kind":"python","module":"tools/tests/test_java_joined_runtime.py","reviewReason":"Preserve existing Java fiber-I/O capacities and explicit two-tenant byte-entropy/resource authority; no implicit grants","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "faefb81a3715cd0bef93f7a5ce8b07d9dcfbfb1999641e0a0f2069440b40f3b9"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:cc713e1feb6b892ff10e6d2756ee6f3b2f823a616f627779808738e2ded639cd","class:setup-sha256:609267780ba3e0fd56be7f50a0d151ead19697c58d508a422df8f56653f7e99d"],"skipSites":[]}}}
+{
+"storageCases":"guard-keys",
+"guards":{
+"JavaJoinedRuntime.test_java_secure_random_grants_only_bytes_and_retains_original_scalar_limits":
+      "faefb81a3715cd0bef93f7a5ce8b07d9dcfbfb1999641e0a0f2069440b40f3b9",
+"JavaJoinedRuntime.test_missing_optional_duplicate_or_foreign_imports_refuse_before_configuration":
+      "faefb81a3715cd0bef93f7a5ce8b07d9dcfbfb1999641e0a0f2069440b40f3b9",
+"JavaJoinedRuntime.test_original_fiber_io_capacity_two_tenant_aliases_and_no_implicit_authority":
+      "faefb81a3715cd0bef93f7a5ce8b07d9dcfbfb1999641e0a0f2069440b40f3b9"
+},
+"kind":"python",
+"module":"tools/tests/test_java_joined_runtime.py",
+"reviewReason":"Preserve existing Java fiber-I/O capacities and explicit two-tenant byte-entropy/resource authority; no implicit grants",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"faefb81a3715cd0bef93f7a5ce8b07d9dcfbfb1999641e0a0f2069440b40f3b9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:cc713e1feb6b892ff10e6d2756ee6f3b2f823a616f627779808738e2ded639cd","class:setup-sha256:609267780ba3e0fd56be7f50a0d151ead19697c58d508a422df8f56653f7e99d"],"skipSites":[]}
+}
+}

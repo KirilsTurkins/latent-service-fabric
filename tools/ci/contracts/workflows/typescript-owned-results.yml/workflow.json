@@ -1,37 +1,40 @@
 {
-"kind":"workflow",
-"policy":{
-"concurrency":{
-"cancel-in-progress":false,
-"group":"typescript-owned-results-${{ github.ref }}"
-},
-"name":"TypeScript owned result native prerequisites",
-"on":{
-"push":{
-"branches":[
-"feat/typescript-owned-result-disposal-compose-20261024"
-],
-"paths":[
-".github/workflows/typescript-owned-results.yml",
-"tools/qualify_typescript_owned_results.py",
-"tools/typescript_guest/**",
-"tools/tests/test_typescript_*owned*.py",
-"tools/tests/test_typescript_native_await.py",
-"tools/tests/test_typescript_native_task_meta.py",
-"tools/tests/test_typescript_import_cancellation.py",
-"sdk/typescript-guest/activation/**"
-]
-},
-"workflow_dispatch":null
-},
-"permissions":{
-"contents":"read"
-}
-},
-"requiredJobs":[
-"native-prerequisites"
-],
-"reviewReason":"Add a bounded development feature owning campaign for fresh normal OWN compiler/engine, actual Rust/native prerequisites and new ABI measurements; all existing workflows and historical obligations remain unchanged.",
-"schemaVersion":"latent.ci.contracts.v1",
-"workflow":".github/workflows/typescript-owned-results.yml"
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "typescript-owned-results-${{ github.ref }}"
+    },
+    "name": "TypeScript owned result native prerequisites",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/typescript-owned-result-disposal-compose-20261024",
+          "feat/sdk-745-partial-own-20261029"
+        ],
+        "paths": [
+          ".github/workflows/typescript-owned-results.yml",
+          "tools/qualify_typescript_owned_results.py",
+          "tools/typescript_guest/**",
+          "tools/tests/test_typescript_*owned*.py",
+          "tools/tests/test_typescript_native_await.py",
+          "tools/tests/test_typescript_native_task_meta.py",
+          "tools/tests/test_typescript_native_carrier_scheduling.py",
+          "tools/tests/test_typescript_node_net.py",
+          "tools/tests/test_typescript_import_cancellation.py",
+          "sdk/typescript-guest/activation/**"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "native-prerequisites"
+  ],
+  "reviewReason": "Closed9c626 prepared compiler/engine reuse; fresh current fixture and four native cases, no producer qualification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-owned-results.yml"
 }

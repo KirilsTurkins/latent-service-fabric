@@ -1,13 +1,6 @@
-{"cases":["KernelReturnObservation.test_actual_ordinary_function_bodies_reject_each_changed_allocator_or_security_hook","KernelReturnObservation.test_actual_reader_requires_both_fd_roles_and_independent_kernel_orders","KernelReturnObservation.test_current_whole_projection_changes_only_three_files_and_retains_old_vfs_lifetimes","KernelReturnObservation.test_normal_cargo_inventory_cannot_substitute_old_example_or_changed_source_profile","KernelReturnObservation.test_success_text_or_missing_observer_never_replaces_typed_return_and_original_quarantine"],"guards":{"KernelReturnObservation.test_actual_ordinary_function_bodies_reject_each_changed_allocator_or_security_hook":
-  "320bfcde0ec206fcba0b24ad8d9e1f8067ccd4133a62246b5221a249cbff5c1d"
-,"KernelReturnObservation.test_actual_reader_requires_both_fd_roles_and_independent_kernel_orders":
-  "320bfcde0ec206fcba0b24ad8d9e1f8067ccd4133a62246b5221a249cbff5c1d"
-,"KernelReturnObservation.test_current_whole_projection_changes_only_three_files_and_retains_old_vfs_lifetimes":
-  "320bfcde0ec206fcba0b24ad8d9e1f8067ccd4133a62246b5221a249cbff5c1d"
-,"KernelReturnObservation.test_normal_cargo_inventory_cannot_substitute_old_example_or_changed_source_profile":
-  "320bfcde0ec206fcba0b24ad8d9e1f8067ccd4133a62246b5221a249cbff5c1d"
-,"KernelReturnObservation.test_success_text_or_missing_observer_never_replaces_typed_return_and_original_quarantine":
-  "320bfcde0ec206fcba0b24ad8d9e1f8067ccd4133a62246b5221a249cbff5c1d"
-},"kind":"python","module":"tools/tests/test_kernel_return_observation_vm.py","reviewReason":"Add five closed observation and actual-body source controls; preserve every old Python case and execution guard. No compiler/native/VM execution credited.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "320bfcde0ec206fcba0b24ad8d9e1f8067ccd4133a62246b5221a249cbff5c1d"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:3f1ec8627c90450b3d8d311dbccda4736f1c42732a5ff7b835ab879893e71ffa","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{"storageCases":"guard-keys","guards":{"KernelReturnObservation.test_actual_ordinary_function_bodies_reject_each_changed_allocator_or_security_hook":
+      "320bfcde0ec206fcba0b24ad8d9e1f8067ccd4133a62246b5221a249cbff5c1d","KernelReturnObservation.test_actual_reader_requires_both_fd_roles_and_independent_kernel_orders":
+      "320bfcde0ec206fcba0b24ad8d9e1f8067ccd4133a62246b5221a249cbff5c1d","KernelReturnObservation.test_current_whole_projection_changes_only_three_files_and_retains_old_vfs_lifetimes":
+      "320bfcde0ec206fcba0b24ad8d9e1f8067ccd4133a62246b5221a249cbff5c1d","KernelReturnObservation.test_normal_cargo_inventory_cannot_substitute_old_example_or_changed_source_profile":
+      "320bfcde0ec206fcba0b24ad8d9e1f8067ccd4133a62246b5221a249cbff5c1d","KernelReturnObservation.test_success_text_or_missing_observer_never_replaces_typed_return_and_original_quarantine":
+      "320bfcde0ec206fcba0b24ad8d9e1f8067ccd4133a62246b5221a249cbff5c1d"},"kind":"python","module":"tools/tests/test_kernel_return_observation_vm.py","reviewReason":"Add five closed observation and actual-body source controls; preserve every old Python case and execution guard. No compiler/native/VM execution credited.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"320bfcde0ec206fcba0b24ad8d9e1f8067ccd4133a62246b5221a249cbff5c1d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:3f1ec8627c90450b3d8d311dbccda4736f1c42732a5ff7b835ab879893e71ffa","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

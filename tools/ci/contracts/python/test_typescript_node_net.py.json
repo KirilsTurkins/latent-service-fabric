@@ -1,69 +1,75 @@
-{"schemaVersion":"latent.ci.contracts.v2","kind":"python","reviewReason":"Retain all prior Socket controls and skip predicates, add accepted-close/EOF/original-rejection guards and bind the one eight-case signed published-client programme without changing runtime funding.","module":"tools/tests/test_typescript_node_net.py","cases":["NodeNetOwningControls.test_normal_owning_project_keeps_exact_no_gate_sources_and_original_limits","NodeNetOwningControls.test_owning_records_require_all_actual_cases_and_precise_unclosed_attribution","NodeNetOwningControls.test_unknown_or_cross_programme_inputs_refuse_before_filesystem_or_process","TypeScriptNodeNet.test_accepted_close_fence_is_lazy_exact_owned_and_refuses_open_siblings","TypeScriptNodeNet.test_accepted_destroy_join_waits_distinct_cancel_and_borrow_ack_then_close_tail","TypeScriptNodeNet.test_ack_or_consuming_close_refusal_never_certifies_empty_registry","TypeScriptNodeNet.test_actual_ack_observation_faults_never_certify_release_or_empty_registry","TypeScriptNodeNet.test_actual_captured_initializer_and_export_guard_fail_closed","TypeScriptNodeNet.test_actual_generated_close_join_keeps_undefined_rejection_through_original_task_exit","TypeScriptNodeNet.test_actual_generated_handoff_captures_resolver_before_application_mutation","TypeScriptNodeNet.test_actual_generated_root_awaits_accepted_end_eof_ack_close_and_notification_tail","TypeScriptNodeNet.test_actual_initializer_join_retains_reentrant_and_distinct_cancel_notification_tails","TypeScriptNodeNet.test_actual_lowering_and_original_resolve_callbacks_cannot_admit_sockets","TypeScriptNodeNet.test_actual_pinned_bundle_graph_dce_private_resolution_and_snapshot","TypeScriptNodeNet.test_callback_join_user_throws_escape_original_and_caught_emit_is_not_poison","TypeScriptNodeNet.test_captured_failed_read_or_copy_still_waits_original_ack_before_cleanup","TypeScriptNodeNet.test_captured_read_and_copy_ack_are_awaited_once_after_success","TypeScriptNodeNet.test_destroy_keeps_registry_until_original_borrow_ack_and_consuming_close","TypeScriptNodeNet.test_empty_write_callbacks_are_deferred_pump_restarts_and_record_limit_is_finite","TypeScriptNodeNet.test_falsey_write_ack_fault_is_failure_and_nonfalsey_identity_is_original","TypeScriptNodeNet.test_held_read_allows_sibling_partial_write_copy_then_normal_close","TypeScriptNodeNet.test_one_ack_observer_removes_unused_reaction_and_captures_setup_resolver","TypeScriptNodeNet.test_paused_end_actual_data_retains_chunk_and_refuses_instead_of_fabricating_eof","TypeScriptNodeNet.test_pinned_typescript_ordinary_socket_declaration_and_unsupported_refusal","TypeScriptNodeNet.test_port_limit_foreign_tokens_and_immutable_same_registry_check","TypeScriptNodeNet.test_real_node_reference_empty_write_and_reentrant_close_observables","TypeScriptNodeNet.test_selection_types_and_legacy_unselected_capture","TypeScriptNodeNet.test_uncertain_write_never_replays_and_preserves_known_prefix","TypeScriptNodeNet.test_unconnected_and_destroyed_public_state_matches_normal_node_logical_state","TypeScriptNodeNet.test_zero_progress_waits_real_writable_hint_and_backpressure_drains"],"guards":{"TypeScriptNodeNet.test_captured_read_and_copy_ack_are_awaited_once_after_success":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_captured_failed_read_or_copy_still_waits_original_ack_before_cleanup":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_actual_ack_observation_faults_never_certify_release_or_empty_registry":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_one_ack_observer_removes_unused_reaction_and_captures_setup_resolver":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_falsey_write_ack_fault_is_failure_and_nonfalsey_identity_is_original":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_callback_join_user_throws_escape_original_and_caught_emit_is_not_poison":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_actual_initializer_join_retains_reentrant_and_distinct_cancel_notification_tails":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_real_node_reference_empty_write_and_reentrant_close_observables":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_held_read_allows_sibling_partial_write_copy_then_normal_close":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_destroy_keeps_registry_until_original_borrow_ack_and_consuming_close":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_ack_or_consuming_close_refusal_never_certifies_empty_registry":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_port_limit_foreign_tokens_and_immutable_same_registry_check":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_uncertain_write_never_replays_and_preserves_known_prefix":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_zero_progress_waits_real_writable_hint_and_backpressure_drains":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_actual_captured_initializer_and_export_guard_fail_closed":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_actual_lowering_and_original_resolve_callbacks_cannot_admit_sockets":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_actual_generated_root_awaits_accepted_end_eof_ack_close_and_notification_tail":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_accepted_close_fence_is_lazy_exact_owned_and_refuses_open_siblings":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_actual_generated_close_join_keeps_undefined_rejection_through_original_task_exit":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_accepted_destroy_join_waits_distinct_cancel_and_borrow_ack_then_close_tail":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_paused_end_actual_data_retains_chunk_and_refuses_instead_of_fabricating_eof":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_actual_generated_handoff_captures_resolver_before_application_mutation":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_empty_write_callbacks_are_deferred_pump_restarts_and_record_limit_is_finite":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_unconnected_and_destroyed_public_state_matches_normal_node_logical_state":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_selection_types_and_legacy_unselected_capture":
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-,"TypeScriptNodeNet.test_actual_pinned_bundle_graph_dce_private_resolution_and_snapshot":
-  "09b5c910d8c074db4bd006f2f89ae93531b4d6be0b746c876e76c53086700a6e"
-,"TypeScriptNodeNet.test_pinned_typescript_ordinary_socket_declaration_and_unsupported_refusal":
-  "e412c5c587b4a12239a041f767c19145d5f65e8235d30b7239041001b55c6658"
-,"NodeNetOwningControls.test_normal_owning_project_keeps_exact_no_gate_sources_and_original_limits":
-  "b664f358bd73a5a43078ab8eb635a41d99bff1fd304670705ca2e8dfba23c46a"
-,"NodeNetOwningControls.test_owning_records_require_all_actual_cases_and_precise_unclosed_attribution":
-  "b664f358bd73a5a43078ab8eb635a41d99bff1fd304670705ca2e8dfba23c46a"
-,"NodeNetOwningControls.test_unknown_or_cross_programme_inputs_refuse_before_filesystem_or_process":
-  "b664f358bd73a5a43078ab8eb635a41d99bff1fd304670705ca2e8dfba23c46a"
-},"guardDefinitions":{
-  "e9bd913af6c06160c4cdb31d22df52a4c8958c95ecb148c67e700c50630628e2"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d","class:setup-sha256:cd68d5cb60129de589b594db6cf7f4b8f286d9f09b9898e606ceafc963d905ff","class:skip:self.skipTest('Node required for host-only Socket controls')"]},
-  "09b5c910d8c074db4bd006f2f89ae93531b4d6be0b746c876e76c53086700a6e"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":["self.skipTest('Explicit normal pinned frontend required for actual bundler control')","skip-control-sha256:b7da914beb585aef89e882661233451e17e807c3b3d9c114e69d0ee5cc1f9ab8"],"fixtureGuards":["module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d","class:setup-sha256:cd68d5cb60129de589b594db6cf7f4b8f286d9f09b9898e606ceafc963d905ff","class:skip:self.skipTest('Node required for host-only Socket controls')"]},
-  "e412c5c587b4a12239a041f767c19145d5f65e8235d30b7239041001b55c6658"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":["self.skipTest('Explicit normal pinned frontend required for actual TSC control')","skip-control-sha256:f569736bd68c14edcd6eb527fdb68cc34dc039afba094f93b9ea8bf3bc92796b"],"fixtureGuards":["module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d","class:setup-sha256:cd68d5cb60129de589b594db6cf7f4b8f286d9f09b9898e606ceafc963d905ff","class:skip:self.skipTest('Node required for host-only Socket controls')"]},
-  "b664f358bd73a5a43078ab8eb635a41d99bff1fd304670705ca2e8dfba23c46a"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d","class:setup-sha256:8d446adf6fe1b1d9e0bb403e7f24211180dbe4bb8697e67653959a79f05df501"]}}}
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Retain all prior Socket controls and skip predicates, add accepted-close/EOF/original-rejection guards and bind the one eight-case signed published-client programme without changing runtime funding. Review ABI2 strict zero-plan initialization companions and exact generated static OWN handoff controls; retain all historical case IDs, literal skip predicates and non-hash execution guard fields. Refresh only helper AST and changed skip-control body identities.",
+  "module":"tools/tests/test_typescript_node_net.py",
+  "cases":["NodeNetOwningControls.test_normal_owning_project_keeps_exact_no_gate_sources_and_original_limits","NodeNetOwningControls.test_owning_records_require_all_actual_cases_and_precise_unclosed_attribution","NodeNetOwningControls.test_unknown_or_cross_programme_inputs_refuse_before_filesystem_or_process","TypeScriptNodeNet.test_accepted_close_fence_is_lazy_exact_owned_and_refuses_open_siblings","TypeScriptNodeNet.test_accepted_destroy_join_waits_distinct_cancel_and_borrow_ack_then_close_tail","TypeScriptNodeNet.test_ack_or_consuming_close_refusal_never_certifies_empty_registry","TypeScriptNodeNet.test_actual_ack_observation_faults_never_certify_release_or_empty_registry","TypeScriptNodeNet.test_actual_captured_initializer_and_export_guard_fail_closed","TypeScriptNodeNet.test_actual_generated_close_join_keeps_undefined_rejection_through_original_task_exit","TypeScriptNodeNet.test_actual_generated_handoff_captures_resolver_before_application_mutation","TypeScriptNodeNet.test_actual_generated_root_awaits_accepted_end_eof_ack_close_and_notification_tail","TypeScriptNodeNet.test_actual_initializer_join_retains_reentrant_and_distinct_cancel_notification_tails","TypeScriptNodeNet.test_actual_lowering_and_original_resolve_callbacks_cannot_admit_sockets","TypeScriptNodeNet.test_actual_pinned_bundle_graph_dce_private_resolution_and_snapshot","TypeScriptNodeNet.test_callback_join_user_throws_escape_original_and_caught_emit_is_not_poison","TypeScriptNodeNet.test_captured_failed_read_or_copy_still_waits_original_ack_before_cleanup","TypeScriptNodeNet.test_captured_read_and_copy_ack_are_awaited_once_after_success","TypeScriptNodeNet.test_destroy_keeps_registry_until_original_borrow_ack_and_consuming_close","TypeScriptNodeNet.test_empty_write_callbacks_are_deferred_pump_restarts_and_record_limit_is_finite","TypeScriptNodeNet.test_falsey_write_ack_fault_is_failure_and_nonfalsey_identity_is_original","TypeScriptNodeNet.test_held_read_allows_sibling_partial_write_copy_then_normal_close","TypeScriptNodeNet.test_one_ack_observer_removes_unused_reaction_and_captures_setup_resolver","TypeScriptNodeNet.test_paused_end_actual_data_retains_chunk_and_refuses_instead_of_fabricating_eof","TypeScriptNodeNet.test_pinned_typescript_ordinary_socket_declaration_and_unsupported_refusal","TypeScriptNodeNet.test_port_limit_foreign_tokens_and_immutable_same_registry_check","TypeScriptNodeNet.test_real_node_reference_empty_write_and_reentrant_close_observables","TypeScriptNodeNet.test_selection_types_and_legacy_unselected_capture","TypeScriptNodeNet.test_uncertain_write_never_replays_and_preserves_known_prefix","TypeScriptNodeNet.test_unconnected_and_destroyed_public_state_matches_normal_node_logical_state","TypeScriptNodeNet.test_zero_progress_waits_real_writable_hint_and_backpressure_drains"],
+  "guards":{
+    "NodeNetOwningControls.test_normal_owning_project_keeps_exact_no_gate_sources_and_original_limits":
+      "b664f358bd73a5a43078ab8eb635a41d99bff1fd304670705ca2e8dfba23c46a",
+    "NodeNetOwningControls.test_owning_records_require_all_actual_cases_and_precise_unclosed_attribution":
+      "b664f358bd73a5a43078ab8eb635a41d99bff1fd304670705ca2e8dfba23c46a",
+    "NodeNetOwningControls.test_unknown_or_cross_programme_inputs_refuse_before_filesystem_or_process":
+      "b664f358bd73a5a43078ab8eb635a41d99bff1fd304670705ca2e8dfba23c46a",
+    "TypeScriptNodeNet.test_accepted_close_fence_is_lazy_exact_owned_and_refuses_open_siblings":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_accepted_destroy_join_waits_distinct_cancel_and_borrow_ack_then_close_tail":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_ack_or_consuming_close_refusal_never_certifies_empty_registry":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_actual_ack_observation_faults_never_certify_release_or_empty_registry":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_actual_captured_initializer_and_export_guard_fail_closed":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_actual_generated_close_join_keeps_undefined_rejection_through_original_task_exit":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_actual_generated_handoff_captures_resolver_before_application_mutation":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_actual_generated_root_awaits_accepted_end_eof_ack_close_and_notification_tail":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_actual_initializer_join_retains_reentrant_and_distinct_cancel_notification_tails":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_actual_lowering_and_original_resolve_callbacks_cannot_admit_sockets":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_actual_pinned_bundle_graph_dce_private_resolution_and_snapshot":
+      "40c741b13b42e99c6a2194f4398cc17f74aab815f48e5c555ac157d35de6d655",
+    "TypeScriptNodeNet.test_callback_join_user_throws_escape_original_and_caught_emit_is_not_poison":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_captured_failed_read_or_copy_still_waits_original_ack_before_cleanup":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_captured_read_and_copy_ack_are_awaited_once_after_success":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_destroy_keeps_registry_until_original_borrow_ack_and_consuming_close":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_empty_write_callbacks_are_deferred_pump_restarts_and_record_limit_is_finite":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_falsey_write_ack_fault_is_failure_and_nonfalsey_identity_is_original":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_held_read_allows_sibling_partial_write_copy_then_normal_close":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_one_ack_observer_removes_unused_reaction_and_captures_setup_resolver":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_paused_end_actual_data_retains_chunk_and_refuses_instead_of_fabricating_eof":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_pinned_typescript_ordinary_socket_declaration_and_unsupported_refusal":
+      "398a47e9065d15b3661afeea39825251fd499eba1956911e909243e8b55a3a21",
+    "TypeScriptNodeNet.test_port_limit_foreign_tokens_and_immutable_same_registry_check":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_real_node_reference_empty_write_and_reentrant_close_observables":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_selection_types_and_legacy_unselected_capture":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_uncertain_write_never_replays_and_preserves_known_prefix":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_unconnected_and_destroyed_public_state_matches_normal_node_logical_state":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b",
+    "TypeScriptNodeNet.test_zero_progress_waits_real_writable_hint_and_backpressure_drains":
+      "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b"
+  },
+  "guardDefinitions":{
+    "b664f358bd73a5a43078ab8eb635a41d99bff1fd304670705ca2e8dfba23c46a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d","class:setup-sha256:8d446adf6fe1b1d9e0bb403e7f24211180dbe4bb8697e67653959a79f05df501"]},
+    "265fe63a454444e7a8fb67a2be9070ce19f032e10a833c4b2c2f1c8b0ecb575b":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d","class:setup-sha256:fbaf457667057e79e6e887280aec6b1c487a7c84fa28032f76c0b165a482ddcf","class:skip:self.skipTest('Node required for host-only Socket controls')"]},
+    "40c741b13b42e99c6a2194f4398cc17f74aab815f48e5c555ac157d35de6d655":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":["self.skipTest('Explicit normal pinned frontend required for actual bundler control')","skip-control-sha256:3066a35687a9a9f55c0628b47136dd96662171bfc7fd6fed753814c592b99b57"],"fixtureGuards":["module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d","class:setup-sha256:fbaf457667057e79e6e887280aec6b1c487a7c84fa28032f76c0b165a482ddcf","class:skip:self.skipTest('Node required for host-only Socket controls')"]},
+    "398a47e9065d15b3661afeea39825251fd499eba1956911e909243e8b55a3a21":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":["self.skipTest('Explicit normal pinned frontend required for actual TSC control')","skip-control-sha256:f569736bd68c14edcd6eb527fdb68cc34dc039afba094f93b9ea8bf3bc92796b"],"fixtureGuards":["module:setup-sha256:e9cf45c6932ce524675c24e90ba035a9d89562d3afa459b0adc243a40344ff3d","class:setup-sha256:fbaf457667057e79e6e887280aec6b1c487a7c84fa28032f76c0b165a482ddcf","class:skip:self.skipTest('Node required for host-only Socket controls')"]}
+  }
+}

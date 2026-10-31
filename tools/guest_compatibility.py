@@ -35,6 +35,17 @@ CLASSIFICATIONS = {
     "surface-mismatch": "The final linked component disagrees with its declared WIT surface.",
     "stale-input": "Captured runtime, patch or compiler input identity does not match the selected input.",
 }
+C_DEPENDENCY_REFUSALS = {
+    'c-selected-target-not-maintained-profile': 'target-incompatible',
+    'c-static-archive-host-native-member': 'target-incompatible',
+    'c-wasm-linking-abi-unsupported': 'target-incompatible',
+    'c-wasm-static-member-is-not-relocatable-object': 'target-incompatible',
+    'c-static-archive-format-or-thin-archive-denied': 'target-incompatible',
+    'c-cpp-source-not-maintained-profile': 'target-incompatible',
+    'c-wasm-object-requires-unqualified-runtime-profile': 'unqualified-profile',
+    'c-static-archive-needs-current-observed-abi-profile-or-source-rebuild': 'unqualified-profile',
+    'c-executable-or-unobserved-build-options-denied': 'resolution-failure',
+}
 BLOCKERS = frozenset(CLASSIFICATIONS) - {
     "unsupported-eliminated", "unresolved-behavior", "optional-extension", "lifecycle-unproven",
 }
@@ -57,11 +68,11 @@ def token(value: str) -> str:
 def finding(classification: str, phase: str, evidence: str, *, operation: str | None = None,
             owner_issue: int | None = None, resource: str | None = None,
             package_digest: str | None = None, source_digest: str | None = None,
-            symbol: str | None = None, location: dict | None = None) -> dict:
+            symbol: str | None = None, location: dict | None = None, diagnostic: dict | None = None) -> dict:
     value = {"classification": classification, "phase": phase, "evidence": evidence}
     for key, item in (("operation", operation), ("ownerIssue", owner_issue), ("resource", resource),
                       ("packageDigest", package_digest), ("sourceDigest", source_digest),
-                      ("symbol", symbol), ("location", location)):
+                      ("symbol", symbol), ("location", location), ("diagnostic", diagnostic)):
         if item is not None:
             value[key] = item
     validate_finding(value)
@@ -70,7 +81,7 @@ def finding(classification: str, phase: str, evidence: str, *, operation: str | 
 
 def validate_finding(value: dict) -> None:
     members(value, {"classification", "phase", "evidence"}, {
-        "operation", "ownerIssue", "resource", "packageDigest", "sourceDigest", "symbol", "location"})
+        "operation", "ownerIssue", "resource", "packageDigest", "sourceDigest", "symbol", "location", "diagnostic"})
     require(value["classification"] in CLASSIFICATIONS and value["phase"] in PHASES
             and value["evidence"] in EVIDENCE, "compatibility-classification")
     for key in ("operation", "symbol"):
@@ -84,6 +95,13 @@ def validate_finding(value: dict) -> None:
     if "resource" in value:
         require(value["resource"] in RESOURCES, "compatibility-resource")
         require(value["classification"] == "resource-exhausted", "compatibility-resource-class")
+    if 'diagnostic' in value:
+        diagnostic = members(value['diagnostic'], {'origin', 'code'})
+        require(diagnostic['origin'] == 'c-application-dependencies'
+                and type(diagnostic['code']) is str and diagnostic['code'] in C_DEPENDENCY_REFUSALS
+                and value['classification'] == C_DEPENDENCY_REFUSALS[diagnostic['code']]
+                and value['evidence'] == 'model' and value['phase'] in {'compile', 'link'}
+                and value.get('ownerIssue') == 744, 'compatibility-c-dependency-refusal')
     if "location" in value:
         location = members(value["location"], {"path", "line", "column"})
         path = token(location["path"])
@@ -162,6 +180,8 @@ def validate(value: dict) -> dict:
     require(isinstance(value["findings"], list) and len(value["findings"]) <= MAX_FINDINGS, "compatibility-finding-limit")
     for item in value["findings"]:
         validate_finding(item)
+        require('diagnostic' not in item or value['language'] == 'c',
+                'compatibility-c-dependency-language')
         require(value["componentDigest"] is not None or item["evidence"] != "actual-component",
                 "compatibility-component-evidence")
     integer(value["omittedFindings"], 0, 10000000)
@@ -182,6 +202,8 @@ def present(value: dict) -> str:
             text += " Operation: " + item["operation"] + "."
         if item["classification"] == "resource-exhausted" and "resource" in item:
             text += " Resource: " + item["resource"] + "."
+        if 'diagnostic' in item:
+            text += " Diagnostic: " + item['diagnostic']['origin'] + "/" + item['diagnostic']['code'] + "."
         if "ownerIssue" in item:
             text += " Implementation: #" + str(item["ownerIssue"]) + "."
         lines.append(text)

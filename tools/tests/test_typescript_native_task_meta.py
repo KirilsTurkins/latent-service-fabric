@@ -39,7 +39,7 @@ class TypeScriptNativeTaskMetaTests(unittest.TestCase):
 async function execute(source,mode) {
  const events=[],pending=Promise.withResolvers(),reason={owned:true};let allocation=1024,ctx,runtime;
  const memory=new WebAssembly.Memory({initial:1}),view=new DataView(memory.buffer);
- const bridge={delivered(_id,value){return value;},reserve(...args){events.push(['reserve',...args.slice(0,3)]);return 7;},
+ const bridge={beginOwnPlans(...v){assert.deepEqual(v,[2,0,0]);},delivered(_id,value){return value;},reserve(...args){events.push(['reserve',...args.slice(0,3)]);return 7;},
   lift(id){events.push(['lift',id]);assert.equal(runtime.meta(),null);if(mode==='lift-failure')throw reason;return 512;},
   finish(id){events.push(['finish',id]);assert.equal(runtime.meta(),null);}};
  const native=(...args)=>{events.push(['native',...args]);assert(runtime.meta()?.taskID);return pending.promise;};
@@ -71,7 +71,7 @@ for(const mode of ['success','native-failure','typed-failure','lift-failure']) {
 async function execute(source) {
  const pending=Promise.withResolvers();let calls=0,ctx,runtime,allocation=1024;
  const memory=new WebAssembly.Memory({initial:1}),view=new DataView(memory.buffer);
- const bridge={delivered(_id,value){return value;},reserve(){return 7;},lift(){assert.equal(runtime.meta(),null);return 512;},finish(){assert.equal(runtime.meta(),null);}};
+ const bridge={beginOwnPlans(...v){assert.deepEqual(v,[2,0,0]);},delivered(_id,value){return value;},reserve(){return 7;},lift(){assert.equal(runtime.meta(),null);return 512;},finish(){assert.equal(runtime.meta(),null);}};
  ctx=vm.createContext({$bindings:[memory,(_p,_o,_a,n)=>{const p=allocation;allocation+=n;return p;},()=>{calls++;assert(runtime.state().isExclusivelyLocked());return pending.promise;},...Array(10).fill(null)],
   contentGlobal:{TextEncoder,TextDecoder,Promise,__lsfAsyncImportBridge:bridge},defineBuiltinModule(){}});
  runtime=vm.runInContext(source+';({invoke:import_latent_http_streaming_0_3_0$open,meta:()=>CURRENT_TASK_META[1],state:()=>getOrCreateAsyncState(1)});',ctx);

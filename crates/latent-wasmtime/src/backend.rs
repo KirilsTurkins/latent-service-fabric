@@ -123,44 +123,6 @@ pub(crate) struct SharedRuntime {
     preparation_context: Arc<PreparationContext>,
 }
 impl SharedRuntime {
-    #[cfg(feature = "development-test-host")]
-    pub(crate) fn capture_development_task_return(
-        &self,
-        slot: usize,
-        session_live: bool,
-        event: wasmtime::component::DevelopmentTaskReturnEvent,
-    ) {
-        self.development_join_cause
-            .capture_task_return(slot, session_live, event);
-    }
-    #[cfg(feature = "development-test-host")]
-    pub(crate) fn reject_development_task_return(
-        &self,
-        slot: usize,
-        reason: crate::DevelopmentJoinRejectReason,
-    ) {
-        self.development_join_cause.reject_task_return(slot, reason);
-    }
-    #[cfg(feature = "development-test-host")]
-    pub(crate) fn capture_development_host_admission_refusal(
-        &self,
-        slot: usize,
-        edge: crate::development_trap_observer::DevelopmentHostAdmissionEdge,
-        operation: crate::development_trap_observer::DevelopmentHostOperation,
-        code: PlatformErrorCode,
-        session_closed: bool,
-    ) {
-        if self
-            .development_join_cause
-            .first_host_admission_refusal(slot)
-        {
-            use std::io::Write;
-            // Closed borrowed scalars only; no JSON graph, error or message is retained.
-            let _ = writeln!(&mut std::io::stderr().lock(),
-                "DOTNET_JOIN_HOST_ADMISSION {{\"slot\":{},\"edge\":\"{}\",\"operation\":\"{}\",\"code\":\"{}\",\"sessionClosed\":{}}}",
-                slot, edge.wire_name(), operation.wire_name(), code.wire_code(), session_closed);
-        }
-    }
     pub(crate) fn native_aot_snapshot(
         &self,
     ) -> Result<Option<crate::NativeAotSnapshot>, PlatformError> {
@@ -312,19 +274,6 @@ impl WasmtimeBackend {
         self.shared
             .development_join_cause
             .arm(activation, component, contract, export)
-    }
-    /// Separate explicit canonical TaskReturn-stage witness, not call success.
-    #[cfg(feature = "development-test-host")]
-    pub fn arm_development_task_return_observation(
-        &self,
-        activation: &str,
-        component: &str,
-        contract: &str,
-        export: &str,
-    ) -> Result<crate::DevelopmentTaskReturnGuard<'_>, PlatformError> {
-        self.shared
-            .development_join_cause
-            .arm_task_return(activation, component, contract, export)
     }
 
     /// Bounded stage observations that do not retain a runtime owner.
@@ -682,22 +631,6 @@ impl WasmtimeBackend {
             &request.activation.target.contract.0,
             &request.activation.target.function.0,
         );
-        #[cfg(feature = "development-test-host")]
-        if self
-            .shared
-            .development_join_cause
-            .task_return_enabled(development_join_claim)
-        {
-            if let Some(slot) = development_join_claim {
-                output.attach_development_task_return(
-                    Arc::clone(&self.shared),
-                    slot,
-                    capabilities
-                        .as_ref()
-                        .map(latent_capabilities::broker::CapabilitySession::observer),
-                );
-            }
-        }
         let mut store = AccountedStore::new(self.invocation_store(
             request,
             &stop,
@@ -706,13 +639,6 @@ impl WasmtimeBackend {
             ownership.transaction,
             runtime.surface.hostcall_fuel,
         )?);
-        #[cfg(feature = "development-test-host")]
-        {
-            store
-                .data_mut()
-                .capabilities
-                .development_host_admission_scope = output.development_host_admission_scope();
-        }
         *native_stack_observer = store
             .data()
             .runtime
@@ -757,24 +683,6 @@ impl WasmtimeBackend {
         )
         .unwrap_or(u64::MAX);
         let codec_capacity_error = output.finish_lift(call_result.is_ok()).err();
-        #[cfg(feature = "development-test-host")]
-        if let Some(trap) = call_result
-            .as_ref()
-            .err()
-            .and_then(|e| e.downcast_ref::<wasmtime::Trap>())
-        {
-            match trap {
-                wasmtime::Trap::TaskCancelOrReturnTwice => self
-                    .shared
-                    .development_join_cause
-                    .native_task_return_failure(development_join_claim, true),
-                wasmtime::Trap::TaskReturnInvalid => self
-                    .shared
-                    .development_join_cause
-                    .native_task_return_failure(development_join_claim, false),
-                _ => {}
-            }
-        }
         #[cfg(feature = "development-test-host")]
         self.shared.development_join_cause.capture(
             development_join_claim,

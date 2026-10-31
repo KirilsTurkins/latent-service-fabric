@@ -1,9 +1,18 @@
-{"cases":["GlobalBufferQualificationControls.test_aggregate_clock_deducts_setup_and_clips_original_process_bounds","GlobalBufferQualificationControls.test_normal_project_exact_sources_limits_and_actual_strict_types","GlobalBufferQualificationControls.test_public_collector_retains_unsigned_logs_and_refuses_private_or_unknown_names"],"guards":{"GlobalBufferQualificationControls.test_aggregate_clock_deducts_setup_and_clips_original_process_bounds":
-  "7ffb584d21b6b8d14782280e4c4d720bbf91cd3a68f7c037c0d1a323e85af422"
-,"GlobalBufferQualificationControls.test_normal_project_exact_sources_limits_and_actual_strict_types":
-  "7ffb584d21b6b8d14782280e4c4d720bbf91cd3a68f7c037c0d1a323e85af422"
-,"GlobalBufferQualificationControls.test_public_collector_retains_unsigned_logs_and_refuses_private_or_unknown_names":
-  "7ffb584d21b6b8d14782280e4c4d720bbf91cd3a68f7c037c0d1a323e85af422"
-},"kind":"python","module":"tools/tests/test_typescript_buffer_globals_qualification.py","reviewReason":"Add three finite real strict-TSC fixture, public-only artifact retention and original deadline/actual CLI identity controls for the four-call global Buffer owner; no guest execution or runtime qualification claimed.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "7ffb584d21b6b8d14782280e4c4d720bbf91cd3a68f7c037c0d1a323e85af422"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f1e7d1b7a979814eb6a3b91664a796ead10d8b9403eba17b2cbdfcb56110e875","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+"storageCases":"guard-keys",
+"guards":{
+"GlobalBufferQualificationControls.test_aggregate_clock_deducts_setup_and_clips_original_process_bounds":
+      "7ffb584d21b6b8d14782280e4c4d720bbf91cd3a68f7c037c0d1a323e85af422",
+"GlobalBufferQualificationControls.test_normal_project_exact_sources_limits_and_actual_strict_types":
+      "7ffb584d21b6b8d14782280e4c4d720bbf91cd3a68f7c037c0d1a323e85af422",
+"GlobalBufferQualificationControls.test_public_collector_retains_unsigned_logs_and_refuses_private_or_unknown_names":
+      "7ffb584d21b6b8d14782280e4c4d720bbf91cd3a68f7c037c0d1a323e85af422"
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_buffer_globals_qualification.py",
+"reviewReason":"Add three finite real strict-TSC fixture, public-only artifact retention and original deadline/actual CLI identity controls for the four-call global Buffer owner; no guest execution or runtime qualification claimed.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"7ffb584d21b6b8d14782280e4c4d720bbf91cd3a68f7c037c0d1a323e85af422":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f1e7d1b7a979814eb6a3b91664a796ead10d8b9403eba17b2cbdfcb56110e875","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
+}

@@ -1,9 +1,18 @@
-{"schemaVersion":"latent.ci.contracts.v2","kind":"python","reviewReason":"Reviewed exact action identity fingerprint updates only; test cases, selectors, assertions, skips and bounds are retained. New action-graph refusal canaries are added.","module":"tools/tests/test_compiler_compatibility_workflows.py","cases":["CompilerWorkflow.test_completion_requires_exact_eight_cells_and_original_native_and_process_bounds","CompilerWorkflow.test_new_workflow_is_branch_scoped_and_keeps_old_resource_workflows_and_fixtures_exact","CompilerWorkflow.test_pinned_native_acquisition_token_scope_and_public_artifact_selection_are_exact"],"guards":{"CompilerWorkflow.test_new_workflow_is_branch_scoped_and_keeps_old_resource_workflows_and_fixtures_exact":
-  "0dce9d43697ce5c78dc2aa6e8df3a849ef959bb263dcd009a6b9d62d23bbaa3e"
-,"CompilerWorkflow.test_pinned_native_acquisition_token_scope_and_public_artifact_selection_are_exact":
-  "0dce9d43697ce5c78dc2aa6e8df3a849ef959bb263dcd009a6b9d62d23bbaa3e"
-,"CompilerWorkflow.test_completion_requires_exact_eight_cells_and_original_native_and_process_bounds":
-  "0dce9d43697ce5c78dc2aa6e8df3a849ef959bb263dcd009a6b9d62d23bbaa3e"
-},"guardDefinitions":{
-  "0dce9d43697ce5c78dc2aa6e8df3a849ef959bb263dcd009a6b9d62d23bbaa3e"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:92b47c31546dc6886742d2878303601159754f026dbfbf6d0882021e0a5d6201","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}}}
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Reviewed exact action identity fingerprint updates only; test cases, selectors, assertions, skips and bounds are retained. New action-graph refusal canaries are added. Authenticate the exact repaired checkout inverse before historical workflow/source hashes; all original case IDs and non-setup guards retained.",
+  "module":"tools/tests/test_compiler_compatibility_workflows.py",
+  "cases":["CompilerWorkflow.test_completion_requires_exact_eight_cells_and_original_native_and_process_bounds","CompilerWorkflow.test_new_workflow_is_branch_scoped_and_keeps_old_resource_workflows_and_fixtures_exact","CompilerWorkflow.test_pinned_native_acquisition_token_scope_and_public_artifact_selection_are_exact"],
+  "guards":{
+    "CompilerWorkflow.test_new_workflow_is_branch_scoped_and_keeps_old_resource_workflows_and_fixtures_exact":
+      "4a9d4e8970c0ad20ef3daa572b354c5d3aaac6f3dd5a9b7cd86b9fba91f4bf95",
+    "CompilerWorkflow.test_pinned_native_acquisition_token_scope_and_public_artifact_selection_are_exact":
+      "4a9d4e8970c0ad20ef3daa572b354c5d3aaac6f3dd5a9b7cd86b9fba91f4bf95",
+    "CompilerWorkflow.test_completion_requires_exact_eight_cells_and_original_native_and_process_bounds":
+      "4a9d4e8970c0ad20ef3daa572b354c5d3aaac6f3dd5a9b7cd86b9fba91f4bf95"
+  },
+  "guardDefinitions":{
+    "4a9d4e8970c0ad20ef3daa572b354c5d3aaac6f3dd5a9b7cd86b9fba91f4bf95":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a378b3bde506ee125fb91a70580e805fddc7ec42d6b591e11a3cafc77c18de8f","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+  }
+}

@@ -1,13 +1,6 @@
-{"cases":["GoCatalogueFreeBuildTests.test_catalogue_or_unselected_extra_data_is_rejected_even_with_valid_original_inventory","GoCatalogueFreeBuildTests.test_real_static_recipe_closure_excludes_catalogue_and_preserves_exact_source","GoCatalogueFreeBuildTests.test_removed_recipe_or_changed_source_cannot_pass_verified_stage","GoCatalogueFreeBuildTests.test_source_path_and_second_physical_link_fail_before_compiler_execution","GoCatalogueFreeBuildTests.test_staged_cli_imports_only_its_own_closure_without_checkout_pythonpath"],"guards":{"GoCatalogueFreeBuildTests.test_catalogue_or_unselected_extra_data_is_rejected_even_with_valid_original_inventory":
-  "438a89778b555d01a06971079b5f03a57af73b40d6a3e3407a3085b4a44263ce"
-,"GoCatalogueFreeBuildTests.test_real_static_recipe_closure_excludes_catalogue_and_preserves_exact_source":
-  "438a89778b555d01a06971079b5f03a57af73b40d6a3e3407a3085b4a44263ce"
-,"GoCatalogueFreeBuildTests.test_removed_recipe_or_changed_source_cannot_pass_verified_stage":
-  "438a89778b555d01a06971079b5f03a57af73b40d6a3e3407a3085b4a44263ce"
-,"GoCatalogueFreeBuildTests.test_source_path_and_second_physical_link_fail_before_compiler_execution":
-  "438a89778b555d01a06971079b5f03a57af73b40d6a3e3407a3085b4a44263ce"
-,"GoCatalogueFreeBuildTests.test_staged_cli_imports_only_its_own_closure_without_checkout_pythonpath":
-  "438a89778b555d01a06971079b5f03a57af73b40d6a3e3407a3085b4a44263ce"
-},"kind":"python","module":"tools/tests/test_go_catalogue_free_build.py","reviewReason":"Qualify exact maintained Go recipe staging with catalogue/reference data absent, reject source/manifest/catalogue/path/hardlink drift before compiler work, preserve normal build function and capturedSDK; sourcepreparationonly, no guest claim.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "438a89778b555d01a06971079b5f03a57af73b40d6a3e3407a3085b4a44263ce"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:16aca960a0582d05c8344ebad9acbe786072c5138a9e6b07d223d6eb48cef971","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{"storageCases":"guard-keys","guards":{"GoCatalogueFreeBuildTests.test_catalogue_or_unselected_extra_data_is_rejected_even_with_valid_original_inventory":
+      "438a89778b555d01a06971079b5f03a57af73b40d6a3e3407a3085b4a44263ce","GoCatalogueFreeBuildTests.test_real_static_recipe_closure_excludes_catalogue_and_preserves_exact_source":
+      "438a89778b555d01a06971079b5f03a57af73b40d6a3e3407a3085b4a44263ce","GoCatalogueFreeBuildTests.test_removed_recipe_or_changed_source_cannot_pass_verified_stage":
+      "438a89778b555d01a06971079b5f03a57af73b40d6a3e3407a3085b4a44263ce","GoCatalogueFreeBuildTests.test_source_path_and_second_physical_link_fail_before_compiler_execution":
+      "438a89778b555d01a06971079b5f03a57af73b40d6a3e3407a3085b4a44263ce","GoCatalogueFreeBuildTests.test_staged_cli_imports_only_its_own_closure_without_checkout_pythonpath":
+      "438a89778b555d01a06971079b5f03a57af73b40d6a3e3407a3085b4a44263ce"},"kind":"python","module":"tools/tests/test_go_catalogue_free_build.py","reviewReason":"Qualify exact maintained Go recipe staging with catalogue/reference data absent, reject source/manifest/catalogue/path/hardlink drift before compiler work, preserve normal build function and capturedSDK; sourcepreparationonly, no guest claim.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"438a89778b555d01a06971079b5f03a57af73b40d6a3e3407a3085b4a44263ce":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:16aca960a0582d05c8344ebad9acbe786072c5138a9e6b07d223d6eb48cef971","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

@@ -1,9 +1,18 @@
-{"cases":["TypeScriptNativeTaskMetaTests.test_actual_open_success_rejection_and_typed_failure_keep_task_meta_and_cleanup","TypeScriptNativeTaskMetaTests.test_real_contended_metadata_wait_releases_then_relocks_before_native_carrier","TypeScriptNativeTaskMetaTests.test_unknown_wrapper_unfused_calls_and_local_capture_are_refused"],"guards":{"TypeScriptNativeTaskMetaTests.test_actual_open_success_rejection_and_typed_failure_keep_task_meta_and_cleanup":
-  "10e8d9c5bccd6ab336af7e8c87e88e3758eeb8a54c5b8640dc06af88930ceb85"
-,"TypeScriptNativeTaskMetaTests.test_real_contended_metadata_wait_releases_then_relocks_before_native_carrier":
-  "10e8d9c5bccd6ab336af7e8c87e88e3758eeb8a54c5b8640dc06af88930ceb85"
-,"TypeScriptNativeTaskMetaTests.test_unknown_wrapper_unfused_calls_and_local_capture_are_refused":
-  "10e8d9c5bccd6ab336af7e8c87e88e3758eeb8a54c5b8640dc06af88930ceb85"
-},"kind":"python","module":"tools/tests/test_typescript_native_task_meta.py","reviewReason":"Reviewed source-only OWN-result disposal controls; preserve all existing cases, authenticate original compiler bindings, and allow only host-test Node Acorn fallback while actual owning execution continues to require its pinned compiler parser.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "10e8d9c5bccd6ab336af7e8c87e88e3758eeb8a54c5b8640dc06af88930ceb85"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9d5cdfbd57da631b4198345af65aa9f90e69762c89d0e868eaa5901c835a52e2","class:setup-sha256:eb1f595371b9b48fb98cb49526f185940d60efdba9717fd665d7a57fee2b5a53","class:skip:self.skipTest('Node is required for source-only generated binding controls')"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "TypeScriptNativeTaskMetaTests.test_actual_open_success_rejection_and_typed_failure_keep_task_meta_and_cleanup":
+      "10e8d9c5bccd6ab336af7e8c87e88e3758eeb8a54c5b8640dc06af88930ceb85",
+    "TypeScriptNativeTaskMetaTests.test_real_contended_metadata_wait_releases_then_relocks_before_native_carrier":
+      "10e8d9c5bccd6ab336af7e8c87e88e3758eeb8a54c5b8640dc06af88930ceb85",
+    "TypeScriptNativeTaskMetaTests.test_unknown_wrapper_unfused_calls_and_local_capture_are_refused":
+      "10e8d9c5bccd6ab336af7e8c87e88e3758eeb8a54c5b8640dc06af88930ceb85"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_typescript_native_task_meta.py",
+  "reviewReason":"Reviewed source-only OWN-result disposal controls; preserve all existing cases, authenticate original compiler bindings, and allow only host-test Node Acorn fallback while actual owning execution continues to require its pinned compiler parser.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "10e8d9c5bccd6ab336af7e8c87e88e3758eeb8a54c5b8640dc06af88930ceb85":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9d5cdfbd57da631b4198345af65aa9f90e69762c89d0e868eaa5901c835a52e2","class:setup-sha256:eb1f595371b9b48fb98cb49526f185940d60efdba9717fd665d7a57fee2b5a53","class:skip:self.skipTest('Node is required for source-only generated binding controls')"],"skipSites":[]}
+  }
+}

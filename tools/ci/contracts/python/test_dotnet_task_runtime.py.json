@@ -1,9 +1,9 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Append one strict canonical TaskReturn-stage parser control; preserve all nine prior case IDs and guard contexts. The separate early witness cannot qualify the failed post-call oracle, original trap, or physical retirement.",
+  "reviewReason":"Append one measured whole-normal-helper inverse/refusal control for the separately selected Join-cause auxiliary; preserve all eight original cases and guards. No compiler/runtime execution or cause qualification from this parser control.",
   "module":"tools/tests/test_dotnet_task_runtime.py",
-  "cases":["ManagedTaskProgramme.test_async_activation_declaration_preserves_sdk_and_adds_no_network_or_grants","ManagedTaskProgramme.test_each_runtime_grant_is_omitted_independently_and_refuses_before_guest_entry","ManagedTaskProgramme.test_every_case_requires_known_reaped_bounded_zero_effect_execution_and_retirement","ManagedTaskProgramme.test_failed_activation_binding_never_adds_grants_or_deploys","ManagedTaskProgramme.test_wrong_language_combined_campaign_or_nonboolean_selector_refuses_before_inputs","RootReturnNormalControls.test_exact_normal_programme_preserves_caps_and_only_two_observer_ids","RootReturnNormalControls.test_marker_parser_requires_real_close_pending_and_original_bounds","RootReturnNormalControls.test_retention_closes17_and_keeps_component_before_shape_refusal","RootReturnSupplementalControls.test_pinned_flat_u32_auxiliary_has_complete_normal_inverse","RootReturnSupplementalControls.test_task_return_stage_parser_never_qualifies_the_failed_old_oracle"],
+  "cases":["ManagedTaskProgramme.test_async_activation_declaration_preserves_sdk_and_adds_no_network_or_grants","ManagedTaskProgramme.test_each_runtime_grant_is_omitted_independently_and_refuses_before_guest_entry","ManagedTaskProgramme.test_every_case_requires_known_reaped_bounded_zero_effect_execution_and_retirement","ManagedTaskProgramme.test_failed_activation_binding_never_adds_grants_or_deploys","ManagedTaskProgramme.test_wrong_language_combined_campaign_or_nonboolean_selector_refuses_before_inputs","RootReturnNormalControls.test_exact_normal_programme_preserves_caps_and_only_two_observer_ids","RootReturnNormalControls.test_marker_parser_requires_real_close_pending_and_original_bounds","RootReturnNormalControls.test_retention_closes17_and_keeps_component_before_shape_refusal","RootReturnSupplementalControls.test_pinned_flat_u32_auxiliary_has_complete_normal_inverse"],
   "guards":{
     "ManagedTaskProgramme.test_async_activation_declaration_preserves_sdk_and_adds_no_network_or_grants":
       "2afb1ab5e1a0a82162a0e807683e70ee0d0ec39e4f85c7e8b1702638359f13fe",
@@ -22,8 +22,6 @@
     "RootReturnNormalControls.test_retention_closes17_and_keeps_component_before_shape_refusal":
       "2afb1ab5e1a0a82162a0e807683e70ee0d0ec39e4f85c7e8b1702638359f13fe",
     "RootReturnSupplementalControls.test_pinned_flat_u32_auxiliary_has_complete_normal_inverse":
-      "2afb1ab5e1a0a82162a0e807683e70ee0d0ec39e4f85c7e8b1702638359f13fe",
-    "RootReturnSupplementalControls.test_task_return_stage_parser_never_qualifies_the_failed_old_oracle":
       "2afb1ab5e1a0a82162a0e807683e70ee0d0ec39e4f85c7e8b1702638359f13fe"
   },
   "guardDefinitions":{

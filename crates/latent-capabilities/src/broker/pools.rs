@@ -24,7 +24,8 @@ mod deferred;
 pub use deferred::DeferredRequest;
 mod protocol;
 pub use protocol::{
-    ProviderMetadata, StreamKernelBacking, StreamKernelBankCharge, StreamKernelOwnership,
+    ProviderMetadata, StreamKernelBacking, StreamKernelBankCharge, StreamKernelNodeBacking,
+    StreamKernelOwnership,
 };
 mod client;
 mod control;

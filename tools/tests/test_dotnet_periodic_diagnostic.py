@@ -23,7 +23,7 @@ class PeriodicDiagnosticTests(unittest.TestCase):
         # comparison; retain the original Git blob and every other model field.
         pins={
             'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6':'KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477',
-            'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1':'KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9',
+            'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1':'KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8',
             'actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68':'KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec',
             'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97':'KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140',
             'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9':'KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9',

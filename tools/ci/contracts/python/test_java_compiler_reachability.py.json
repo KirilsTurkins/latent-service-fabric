@@ -1,25 +1,12 @@
-{"cases":["CompilerMethods.test_actual_javac_metadata_contains_initializer_constructor_native_and_callback_without_loading_it","CompilerMethods.test_all_methods_are_counted_but_only_sixty_four_queries_are_retained","CompilerMethods.test_both_normal_cli_diagnostic_options_are_default_false_and_explicit_selection_only","CompilerMethods.test_completed_marker_must_bind_every_exact_query_once","CompilerMethods.test_native_not_retained_does_not_claim_api_unsupported_or_execution","CompilerMethods.test_normal_builder_preserves_the_selected_option_at_the_actual_compiler_constructor","CompilerMethods.test_passive_source_origin_or_class_refusal_is_unknown_but_required_gate_and_owner_failures_stay_hard","CompilerMethods.test_project_class_queries_use_passive_source_ownership_not_a_package_name_allowlist","CompilerMethods.test_rehashed_report_cannot_turn_compiler_presence_into_api_support_or_execution","CompilerMethods.test_transitive_captured_jar_identity_and_same_class_ambiguity_are_preserved","CompilerMethods.test_truncated_class_or_changed_magic_fails_before_query_generation"],"guards":{"CompilerMethods.test_actual_javac_metadata_contains_initializer_constructor_native_and_callback_without_loading_it":
-  "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"
-,"CompilerMethods.test_all_methods_are_counted_but_only_sixty_four_queries_are_retained":
-  "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"
-,"CompilerMethods.test_both_normal_cli_diagnostic_options_are_default_false_and_explicit_selection_only":
-  "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"
-,"CompilerMethods.test_completed_marker_must_bind_every_exact_query_once":
-  "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"
-,"CompilerMethods.test_native_not_retained_does_not_claim_api_unsupported_or_execution":
-  "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"
-,"CompilerMethods.test_normal_builder_preserves_the_selected_option_at_the_actual_compiler_constructor":
-  "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"
-,"CompilerMethods.test_passive_source_origin_or_class_refusal_is_unknown_but_required_gate_and_owner_failures_stay_hard":
-  "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"
-,"CompilerMethods.test_project_class_queries_use_passive_source_ownership_not_a_package_name_allowlist":
-  "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"
-,"CompilerMethods.test_rehashed_report_cannot_turn_compiler_presence_into_api_support_or_execution":
-  "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"
-,"CompilerMethods.test_transitive_captured_jar_identity_and_same_class_ambiguity_are_preserved":
-  "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"
-,"CompilerMethods.test_truncated_class_or_changed_magic_fails_before_query_generation":
-  "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"
-},"kind":"python","module":"tools/tests/test_java_compiler_reachability.py","reviewReason":"Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4","class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')","class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133","class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"],"skipSites":[]}}}
+{"storageCases":"guard-keys","guards":{"CompilerMethods.test_actual_javac_metadata_contains_initializer_constructor_native_and_callback_without_loading_it":
+      "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175","CompilerMethods.test_all_methods_are_counted_but_only_sixty_four_queries_are_retained":
+      "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175","CompilerMethods.test_both_normal_cli_diagnostic_options_are_default_false_and_explicit_selection_only":
+      "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175","CompilerMethods.test_completed_marker_must_bind_every_exact_query_once":
+      "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175","CompilerMethods.test_native_not_retained_does_not_claim_api_unsupported_or_execution":
+      "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175","CompilerMethods.test_normal_builder_preserves_the_selected_option_at_the_actual_compiler_constructor":
+      "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175","CompilerMethods.test_passive_source_origin_or_class_refusal_is_unknown_but_required_gate_and_owner_failures_stay_hard":
+      "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175","CompilerMethods.test_project_class_queries_use_passive_source_ownership_not_a_package_name_allowlist":
+      "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175","CompilerMethods.test_rehashed_report_cannot_turn_compiler_presence_into_api_support_or_execution":
+      "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175","CompilerMethods.test_transitive_captured_jar_identity_and_same_class_ambiguity_are_preserved":
+      "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175","CompilerMethods.test_truncated_class_or_changed_magic_fails_before_query_generation":
+      "2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175"},"kind":"python","module":"tools/tests/test_java_compiler_reachability.py","reviewReason":"Whole679 reviewed finite source controls: all original cases, bases, decorators and skip sites retained; explicit fixture-only guard changes bind reviewed helper/source setup. Actual compiler/node qualification is separate.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"2b80205b54f2de1fd209eab38611a5dd4c208874277c3c8ac417e57948969175":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:381035cc59290179a0f8fafa9040a748cdcc931a90db04bb1f8a3613c7d7fab4","class:raise:raise unittest.SkipTest('JDK is required for passive actual-class metadata controls')","class:setup-sha256:33d07d8c3e6ceaa215c029e9335d3cf17039321c677e888af565768100620133","class:skip:unittest.SkipTest('JDK is required for passive actual-class metadata controls')"],"skipSites":[]}}}

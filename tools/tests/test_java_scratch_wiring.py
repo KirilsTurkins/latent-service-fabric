@@ -13,7 +13,7 @@ def signature(value):
 
 
 def model():
-    return workflow_model((ROOT/'.github/workflows/java-guest-feasibility.yml').read_bytes().decode('utf-8'))
+    return workflow_model(historical_checkout((ROOT/'.github/workflows/java-guest-feasibility.yml').read_bytes()).decode('utf-8'))
 
 
 def original_compiler_parent(test, parent):
@@ -53,6 +53,18 @@ def original_compiler_parent(test, parent):
         step['run'] = step['run'].replace(selected,
             '--wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"', 1)
     return parent
+
+
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
 
 
 class JavaScratchWiring(unittest.TestCase):

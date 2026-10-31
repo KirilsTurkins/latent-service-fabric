@@ -322,156 +322,13 @@ pub struct DevelopmentJoinCauseSnapshot {
     pub cause: Option<DevelopmentJoinCause>,
 }
 
-/// First closed refusal; it is diagnostic and cannot authorize a cause.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub enum DevelopmentJoinRejectReason {
-    ClaimRepeated,
-    ComponentMismatch,
-    ContractMismatch,
-    ExportMismatch,
-    CallFailed,
-    LiftFailed,
-    WrongShape,
-    UnknownWord,
-    DuplicateCapture,
-    SessionUnavailable,
-    SessionClosed,
-    NativeDuplicateReturn,
-    NativeInvalidReturn,
-    HostAdmissionRefusal,
-}
-
-#[derive(Clone, Copy)]
-pub(crate) enum DevelopmentHostAdmissionEdge {
-    Bind,
-    ClockAdmission,
-    RuntimeSynchronous,
-}
-impl DevelopmentHostAdmissionEdge {
-    pub(crate) fn wire_name(self) -> &'static str {
-        match self {
-            Self::Bind => "bind",
-            Self::ClockAdmission => "clock-admission",
-            Self::RuntimeSynchronous => "runtime-synchronous",
-        }
-    }
-}
-#[derive(Clone, Copy)]
-pub(crate) enum DevelopmentHostOperation {
-    Register,
-    Park,
-    Wake,
-    Settle,
-    Close,
-    Observe,
-    WaitFor,
-    WaitUntil,
-    TimerStart,
-    TimerNext,
-    TimerStop,
-    MonotonicNow,
-    WallNow,
-    RandomU64,
-    Other,
-}
-impl DevelopmentHostOperation {
-    pub(crate) fn from_import(capability: &str, operation: &str) -> Self {
-        match (capability, operation) {
-            ("latent:runtime/activation@0.1.0", operation) => match operation {
-                "register" => Self::Register,
-                "park" => Self::Park,
-                "wake" => Self::Wake,
-                "settle" => Self::Settle,
-                "close" => Self::Close,
-                "observe" => Self::Observe,
-                "wait-for" => Self::WaitFor,
-                "wait-until" => Self::WaitUntil,
-                "timer-start" => Self::TimerStart,
-                "timer-next" => Self::TimerNext,
-                "timer-stop" => Self::TimerStop,
-                _ => Self::Other,
-            },
-            ("latent:clock/monotonic@0.1.0", "now-nanos") => Self::MonotonicNow,
-            ("latent:clock/wall@0.1.0", "now-unix-millis") => Self::WallNow,
-            ("latent:random/random@0.1.0", "u64-value") => Self::RandomU64,
-            _ => Self::Other,
-        }
-    }
-    pub(crate) fn wire_name(self) -> &'static str {
-        match self {
-            Self::Register => "activation-register",
-            Self::Park => "activation-park",
-            Self::Wake => "activation-wake",
-            Self::Settle => "activation-settle",
-            Self::Close => "activation-close",
-            Self::Observe => "activation-observe",
-            Self::WaitFor => "activation-wait-for",
-            Self::WaitUntil => "activation-wait-until",
-            Self::TimerStart => "activation-timer-start",
-            Self::TimerNext => "activation-timer-next",
-            Self::TimerStop => "activation-timer-stop",
-            Self::MonotonicNow => "monotonic-now",
-            Self::WallNow => "wall-now",
-            Self::RandomU64 => "random-u64",
-            Self::Other => "other",
-        }
-    }
-}
-
 #[derive(Clone, Copy, Default)]
 struct JoinCauseSlot {
     armed_once: bool,
     enabled: bool,
     component: [u8; 32],
     observation: DevelopmentJoinCauseSnapshot,
-    rejection: Option<DevelopmentJoinRejectReason>,
-    task_return_enabled: bool,
-    task_return: DevelopmentJoinCauseSnapshot,
 }
-
-// Prove the added unit variant changes neither original slot storage nor alignment.
-const _: () = {
-    use std::mem::{align_of, size_of};
-    #[allow(dead_code)]
-    enum OriginalReject {
-        A,
-        B,
-        C,
-        D,
-        E,
-        F,
-        G,
-        H,
-        I,
-        J,
-        K,
-        L,
-        M,
-    }
-    #[allow(dead_code)]
-    struct OriginalSlot {
-        armed_once: bool,
-        enabled: bool,
-        component: [u8; 32],
-        observation: DevelopmentJoinCauseSnapshot,
-        rejection: Option<OriginalReject>,
-        task_return_enabled: bool,
-        task_return: DevelopmentJoinCauseSnapshot,
-    }
-    assert!(size_of::<DevelopmentJoinRejectReason>() == size_of::<OriginalReject>());
-    assert!(align_of::<DevelopmentJoinRejectReason>() == align_of::<OriginalReject>());
-    assert!(
-        size_of::<Option<DevelopmentJoinRejectReason>>() == size_of::<Option<OriginalReject>>()
-    );
-    assert!(
-        align_of::<Option<DevelopmentJoinRejectReason>>() == align_of::<Option<OriginalReject>>()
-    );
-    assert!(size_of::<JoinCauseSlot>() == size_of::<OriginalSlot>());
-    assert!(align_of::<JoinCauseSlot>() == align_of::<OriginalSlot>());
-    assert!(size_of::<Mutex<[JoinCauseSlot; 3]>>() == size_of::<Mutex<[OriginalSlot; 3]>>());
-    assert!(align_of::<Mutex<[JoinCauseSlot; 3]>>() == align_of::<Mutex<[OriginalSlot; 3]>>());
-};
 
 #[derive(Default)]
 pub(crate) struct DevelopmentJoinCauseObserver {
@@ -483,11 +340,6 @@ pub(crate) struct DevelopmentJoinCauseObserver {
 pub struct DevelopmentJoinCauseGuard<'a> {
     observer: &'a DevelopmentJoinCauseObserver,
     slot: usize,
-}
-
-/// Separate canonical TaskReturn-stage witness; never an outer-call success.
-pub struct DevelopmentTaskReturnGuard<'a> {
-    original: DevelopmentJoinCauseGuard<'a>,
 }
 
 fn join_cause_refused() -> PlatformError {
@@ -576,21 +428,7 @@ impl DevelopmentJoinCauseObserver {
             || contract != "examples:greeting/api@1.0.0"
             || export != "probe"
         {
-            selected
-                .rejection
-                .get_or_insert(if selected.observation.claims != 1 {
-                    DevelopmentJoinRejectReason::ClaimRepeated
-                } else if component.and_then(join_cause_digest) != Some(selected.component) {
-                    DevelopmentJoinRejectReason::ComponentMismatch
-                } else if contract != "examples:greeting/api@1.0.0" {
-                    DevelopmentJoinRejectReason::ContractMismatch
-                } else {
-                    DevelopmentJoinRejectReason::ExportMismatch
-                });
             selected.observation.invalid = true;
-            if selected.task_return_enabled {
-                selected.task_return.invalid = true;
-            }
             return None;
         }
         Some(slot)
@@ -630,25 +468,6 @@ impl DevelopmentJoinCauseObserver {
             _ => None,
         };
         if selected.observation.invalid || selected.observation.cause.is_some() || cause.is_none() {
-            selected
-                .rejection
-                .get_or_insert(if selected.observation.cause.is_some() {
-                    DevelopmentJoinRejectReason::DuplicateCapture
-                } else if !call_ok {
-                    DevelopmentJoinRejectReason::CallFailed
-                } else if !lift_ok {
-                    DevelopmentJoinRejectReason::LiftFailed
-                } else if matches!(
-                    (types, values),
-                    (
-                        [wasmtime::component::Type::U32],
-                        [wasmtime::component::Val::U32(_)]
-                    )
-                ) {
-                    DevelopmentJoinRejectReason::UnknownWord
-                } else {
-                    DevelopmentJoinRejectReason::WrongShape
-                });
             selected.observation.invalid = true;
             return;
         }
@@ -657,156 +476,12 @@ impl DevelopmentJoinCauseObserver {
 }
 
 impl DevelopmentJoinCauseGuard<'_> {
-    pub fn rejection(&self) -> Result<Option<DevelopmentJoinRejectReason>, PlatformError> {
-        self.observer
-            .slots
-            .lock()
-            .map(|slots| slots[self.slot].rejection)
-            .map_err(|_| join_cause_refused())
-    }
     pub fn snapshot(&self) -> Result<DevelopmentJoinCauseSnapshot, PlatformError> {
         self.observer
             .slots
             .lock()
             .map(|slots| slots[self.slot].observation)
             .map_err(|_| join_cause_refused())
-    }
-}
-
-impl DevelopmentJoinCauseObserver {
-    pub(crate) fn arm_task_return(
-        &self,
-        activation: &str,
-        component: &str,
-        contract: &str,
-        export: &str,
-    ) -> Result<DevelopmentTaskReturnGuard<'_>, PlatformError> {
-        let original = self.arm(activation, component, contract, export)?;
-        self.slots.lock().map_err(|_| join_cause_refused())?[original.slot].task_return_enabled =
-            true;
-        Ok(DevelopmentTaskReturnGuard { original })
-    }
-
-    pub(crate) fn task_return_enabled(&self, claim: Option<usize>) -> bool {
-        let Some(slot) = claim else { return false };
-        self.slots.lock().is_ok_and(|slots| {
-            let Some(selected) = slots.get(slot) else {
-                return false;
-            };
-            selected.enabled
-                && selected.task_return_enabled
-                && selected.observation.claims == 1
-                && !selected.observation.invalid
-        })
-    }
-
-    pub(crate) fn first_host_admission_refusal(&self, slot: usize) -> bool {
-        let Ok(mut slots) = self.slots.lock() else {
-            return false;
-        };
-        let Some(selected) = slots.get_mut(slot) else {
-            return false;
-        };
-        if !selected.enabled
-            || !selected.task_return_enabled
-            || selected.observation.claims != 1
-            || selected.observation.invalid
-            || selected.observation.cause.is_some()
-            || selected.rejection.is_some()
-        {
-            return false;
-        }
-        selected.rejection = Some(DevelopmentJoinRejectReason::HostAdmissionRefusal);
-        true
-    }
-
-    pub(crate) fn reject_task_return(&self, slot: usize, reason: DevelopmentJoinRejectReason) {
-        let Ok(mut slots) = self.slots.lock() else {
-            return;
-        };
-        let Some(selected) = slots.get_mut(slot) else {
-            return;
-        };
-        if selected.enabled && selected.task_return_enabled {
-            selected.rejection.get_or_insert(reason);
-            selected.task_return.invalid = true;
-        }
-    }
-
-    pub(crate) fn native_task_return_failure(&self, claim: Option<usize>, duplicate: bool) {
-        if let Some(slot) = claim {
-            self.reject_task_return(
-                slot,
-                if duplicate {
-                    DevelopmentJoinRejectReason::NativeDuplicateReturn
-                } else {
-                    DevelopmentJoinRejectReason::NativeInvalidReturn
-                },
-            );
-        }
-    }
-
-    pub(crate) fn capture_task_return(
-        &self,
-        slot: usize,
-        session_live: bool,
-        event: wasmtime::component::DevelopmentTaskReturnEvent,
-    ) {
-        use wasmtime::component::DevelopmentTaskReturnEvent as Event;
-        let Ok(mut slots) = self.slots.lock() else {
-            return;
-        };
-        let Some(selected) = slots.get_mut(slot) else {
-            return;
-        };
-        if !selected.enabled || !selected.task_return_enabled {
-            return;
-        }
-        selected.task_return.claims = selected.task_return.claims.saturating_add(1);
-        let cause = match event {
-            Event::Quiescence => Some(DevelopmentJoinCause::Quiescence),
-            Event::OriginalFault => Some(DevelopmentJoinCause::OriginalFault),
-            Event::Unexpected => Some(DevelopmentJoinCause::Unexpected),
-            Event::WrongShape | Event::UnknownWord => None,
-        };
-        let reject = if !session_live {
-            Some(DevelopmentJoinRejectReason::SessionClosed)
-        } else if selected.observation.claims != 1 || selected.observation.invalid {
-            Some(DevelopmentJoinRejectReason::ClaimRepeated)
-        } else if selected.task_return.claims != 1 || selected.task_return.cause.is_some() {
-            Some(DevelopmentJoinRejectReason::DuplicateCapture)
-        } else if cause.is_none() {
-            Some(if event == Event::WrongShape {
-                DevelopmentJoinRejectReason::WrongShape
-            } else {
-                DevelopmentJoinRejectReason::UnknownWord
-            })
-        } else {
-            None
-        };
-        if let Some(reason) = reject {
-            selected.rejection.get_or_insert(reason);
-            selected.task_return.invalid = true;
-        } else if !selected.task_return.invalid {
-            selected.task_return.cause = cause;
-        }
-    }
-}
-
-impl DevelopmentTaskReturnGuard<'_> {
-    pub fn snapshot(&self) -> Result<DevelopmentJoinCauseSnapshot, PlatformError> {
-        self.original
-            .observer
-            .slots
-            .lock()
-            .map(|slots| slots[self.original.slot].task_return)
-            .map_err(|_| join_cause_refused())
-    }
-    pub fn post_call_snapshot(&self) -> Result<DevelopmentJoinCauseSnapshot, PlatformError> {
-        self.original.snapshot()
-    }
-    pub fn rejection(&self) -> Result<Option<DevelopmentJoinRejectReason>, PlatformError> {
-        self.original.rejection()
     }
 }
 impl Drop for DevelopmentJoinCauseGuard<'_> {
@@ -852,96 +527,6 @@ mod join_cause_tests {
         assert_eq!(result.cause, Some(DevelopmentJoinCause::OriginalFault));
         drop(guard);
         assert!(observer.arm(ID, DIGEST, CONTRACT, "probe").is_err());
-
-        let early = DevelopmentJoinCauseObserver::default();
-        let guard = early
-            .arm_task_return(ID, DIGEST, CONTRACT, "probe")
-            .unwrap();
-        let claim = early.claim(ID, Some(DIGEST), CONTRACT, "probe");
-        assert!(early.task_return_enabled(claim));
-        early.capture_task_return(
-            claim.unwrap(),
-            true,
-            wasmtime::component::DevelopmentTaskReturnEvent::OriginalFault,
-        );
-        // A successful earlier typed lift never makes the failed outer call valid.
-        early.capture(claim, false, true, &[Type::U32], &[]);
-        assert!(guard.post_call_snapshot().unwrap().invalid);
-        assert_eq!(
-            guard.rejection().unwrap(),
-            Some(DevelopmentJoinRejectReason::CallFailed)
-        );
-        assert_eq!(
-            guard.snapshot().unwrap().cause,
-            Some(DevelopmentJoinCause::OriginalFault)
-        );
-        assert!(!guard.snapshot().unwrap().invalid);
-        early.capture_task_return(
-            claim.unwrap(),
-            true,
-            wasmtime::component::DevelopmentTaskReturnEvent::Unexpected,
-        );
-        assert!(guard.snapshot().unwrap().invalid);
-        assert_eq!(
-            guard.snapshot().unwrap().cause,
-            Some(DevelopmentJoinCause::OriginalFault)
-        );
-        assert_eq!(
-            guard.rejection().unwrap(),
-            Some(DevelopmentJoinRejectReason::CallFailed)
-        );
-        drop(guard);
-        assert!(!early.task_return_enabled(claim));
-
-        let admission = DevelopmentJoinCauseObserver::default();
-        assert!(!admission.first_host_admission_refusal(0));
-        let guard = admission
-            .arm_task_return(ID, DIGEST, CONTRACT, "probe")
-            .unwrap();
-        assert!(!admission.first_host_admission_refusal(1));
-        let claim = admission.claim(ID, Some(DIGEST), CONTRACT, "probe");
-        assert!(admission.first_host_admission_refusal(claim.unwrap()));
-        assert!(!admission.first_host_admission_refusal(claim.unwrap()));
-        assert_eq!(
-            guard.snapshot().unwrap(),
-            DevelopmentJoinCauseSnapshot::default()
-        );
-        admission.capture(claim, false, true, &[Type::U32], &[]);
-        assert!(guard.post_call_snapshot().unwrap().invalid);
-        assert_eq!(
-            guard.rejection().unwrap(),
-            Some(DevelopmentJoinRejectReason::HostAdmissionRefusal)
-        );
-        assert_eq!(
-            guard.snapshot().unwrap(),
-            DevelopmentJoinCauseSnapshot::default()
-        );
-        drop(guard);
-        assert!(!admission.first_host_admission_refusal(claim.unwrap()));
-
-        let repeated = DevelopmentJoinCauseObserver::default();
-        let guard = repeated
-            .arm_task_return(ID, DIGEST, CONTRACT, "probe")
-            .unwrap();
-        let claim = repeated.claim(ID, Some(DIGEST), CONTRACT, "probe");
-        repeated.capture_task_return(
-            claim.unwrap(),
-            true,
-            wasmtime::component::DevelopmentTaskReturnEvent::OriginalFault,
-        );
-        assert!(!guard.snapshot().unwrap().invalid);
-        assert!(repeated
-            .claim(ID, Some(DIGEST), CONTRACT, "probe")
-            .is_none());
-        assert!(guard.snapshot().unwrap().invalid);
-        assert_eq!(
-            guard.snapshot().unwrap().cause,
-            Some(DevelopmentJoinCause::OriginalFault)
-        );
-        assert_eq!(
-            guard.rejection().unwrap(),
-            Some(DevelopmentJoinRejectReason::ClaimRepeated)
-        );
     }
 
     #[test]
@@ -963,79 +548,6 @@ mod join_cause_tests {
             assert!(result.invalid);
             assert!(result.cause.is_none());
         }
-        for event in [
-            wasmtime::component::DevelopmentTaskReturnEvent::WrongShape,
-            wasmtime::component::DevelopmentTaskReturnEvent::UnknownWord,
-        ] {
-            let observer = DevelopmentJoinCauseObserver::default();
-            let guard = observer
-                .arm_task_return(ID, DIGEST, CONTRACT, "probe")
-                .unwrap();
-            let claim = observer.claim(ID, Some(DIGEST), CONTRACT, "probe");
-            observer.capture_task_return(claim.unwrap(), true, event);
-            assert!(guard.snapshot().unwrap().invalid);
-            assert!(guard.snapshot().unwrap().cause.is_none());
-            let first_reason = guard.rejection().unwrap();
-            observer.capture_task_return(
-                claim.unwrap(),
-                true,
-                wasmtime::component::DevelopmentTaskReturnEvent::OriginalFault,
-            );
-            assert_eq!(guard.snapshot().unwrap().claims, 2);
-            assert!(guard.snapshot().unwrap().invalid);
-            assert!(guard.snapshot().unwrap().cause.is_none());
-            assert_eq!(guard.rejection().unwrap(), first_reason);
-        }
-        {
-            let observer = DevelopmentJoinCauseObserver::default();
-            let guard = observer
-                .arm_task_return(ID, DIGEST, CONTRACT, "probe")
-                .unwrap();
-            let claim = observer.claim(ID, Some(DIGEST), CONTRACT, "probe");
-            observer.capture_task_return(
-                claim.unwrap(),
-                false,
-                wasmtime::component::DevelopmentTaskReturnEvent::OriginalFault,
-            );
-            assert_eq!(guard.snapshot().unwrap().claims, 1);
-            assert!(guard.snapshot().unwrap().invalid);
-            assert!(guard.snapshot().unwrap().cause.is_none());
-            assert_eq!(
-                guard.rejection().unwrap(),
-                Some(DevelopmentJoinRejectReason::SessionClosed)
-            );
-        }
-        for unavailable in [
-            DevelopmentJoinRejectReason::SessionUnavailable,
-            DevelopmentJoinRejectReason::SessionClosed,
-        ] {
-            let observer = DevelopmentJoinCauseObserver::default();
-            let guard = observer
-                .arm_task_return(ID, DIGEST, CONTRACT, "probe")
-                .unwrap();
-            let claim = observer.claim(ID, Some(DIGEST), CONTRACT, "probe");
-            observer.reject_task_return(claim.unwrap(), unavailable);
-            observer.capture_task_return(
-                claim.unwrap(),
-                true,
-                wasmtime::component::DevelopmentTaskReturnEvent::OriginalFault,
-            );
-            assert!(guard.snapshot().unwrap().invalid);
-            assert!(guard.snapshot().unwrap().cause.is_none());
-            assert_eq!(guard.rejection().unwrap(), Some(unavailable));
-        }
-        let observer = DevelopmentJoinCauseObserver::default();
-        let guard = observer
-            .arm_task_return(ID, DIGEST, CONTRACT, "probe")
-            .unwrap();
-        let claim = observer.claim(ID, None, CONTRACT, "probe");
-        assert!(claim.is_none());
-        assert!(!observer.task_return_enabled(claim));
-        assert!(guard.post_call_snapshot().unwrap().invalid);
-        assert_eq!(
-            guard.rejection().unwrap(),
-            Some(DevelopmentJoinRejectReason::ComponentMismatch)
-        );
     }
 
     #[test]
@@ -1056,42 +568,6 @@ mod join_cause_tests {
                     invalid: false,
                     cause: Some(cause),
                 }
-            );
-        }
-        for (event, cause) in [
-            (
-                wasmtime::component::DevelopmentTaskReturnEvent::Quiescence,
-                DevelopmentJoinCause::Quiescence,
-            ),
-            (
-                wasmtime::component::DevelopmentTaskReturnEvent::OriginalFault,
-                DevelopmentJoinCause::OriginalFault,
-            ),
-            (
-                wasmtime::component::DevelopmentTaskReturnEvent::Unexpected,
-                DevelopmentJoinCause::Unexpected,
-            ),
-        ] {
-            let observer = DevelopmentJoinCauseObserver::default();
-            let guard = observer
-                .arm_task_return(ID, DIGEST, CONTRACT, "probe")
-                .unwrap();
-            let claim = observer.claim(ID, Some(DIGEST), CONTRACT, "probe");
-            observer.capture_task_return(claim.unwrap(), true, event);
-            assert_eq!(
-                guard.snapshot().unwrap(),
-                DevelopmentJoinCauseSnapshot {
-                    claims: 1,
-                    invalid: false,
-                    cause: Some(cause),
-                }
-            );
-            observer.native_task_return_failure(claim, true);
-            assert!(guard.snapshot().unwrap().invalid);
-            assert_eq!(guard.snapshot().unwrap().cause, Some(cause));
-            assert_eq!(
-                guard.rejection().unwrap(),
-                Some(DevelopmentJoinRejectReason::NativeDuplicateReturn)
             );
         }
     }

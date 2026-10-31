@@ -1,13 +1,6 @@
-{"cases":["GoNodeStopRestartTests.test_already_elapsed_floor_does_not_sleep_and_native_failure_is_not_retried","GoNodeStopRestartTests.test_existing_future_floor_must_elapse_before_the_single_native_start","GoNodeStopRestartTests.test_failure_to_retain_start_evidence_closes_the_still_owned_new_node","GoNodeStopRestartTests.test_malformed_duplicate_bool_missing_and_unbounded_floors_never_spawn","GoNodeStopRestartTests.test_original_deadline_clock_regression_and_floor_replacement_never_launch"],"guards":{"GoNodeStopRestartTests.test_already_elapsed_floor_does_not_sleep_and_native_failure_is_not_retried":
-  "d5c94d5dad39ab8f2424bb7902d3d6b28a8991ea0b3369dded502bd648124a88"
-,"GoNodeStopRestartTests.test_existing_future_floor_must_elapse_before_the_single_native_start":
-  "d5c94d5dad39ab8f2424bb7902d3d6b28a8991ea0b3369dded502bd648124a88"
-,"GoNodeStopRestartTests.test_failure_to_retain_start_evidence_closes_the_still_owned_new_node":
-  "d5c94d5dad39ab8f2424bb7902d3d6b28a8991ea0b3369dded502bd648124a88"
-,"GoNodeStopRestartTests.test_malformed_duplicate_bool_missing_and_unbounded_floors_never_spawn":
-  "d5c94d5dad39ab8f2424bb7902d3d6b28a8991ea0b3369dded502bd648124a88"
-,"GoNodeStopRestartTests.test_original_deadline_clock_regression_and_floor_replacement_never_launch":
-  "d5c94d5dad39ab8f2424bb7902d3d6b28a8991ea0b3369dded502bd648124a88"
-},"kind":"python","module":"tools/tests/test_go_node_stop_restart.py","reviewReason":"Respect the stopped original authority durable anti-rollback clock floor before exactly one replacement start. Consume the existing startup watchdog/client deadline, retain scalar floor evidence, fail on malformed/regressed/changed state, and preserve original timer/signal/native limits and default programme.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "d5c94d5dad39ab8f2424bb7902d3d6b28a8991ea0b3369dded502bd648124a88"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:294290b4b1c49efe605c899fb88fb2bc3b07a5b3413972e849a20c30a49810a4","class:setup-sha256:499a9a964eb995f3387c4c76e4753140522de05924384db038cda8f24a230367"],"skipSites":[]}}}
+{"storageCases":"guard-keys","guards":{"GoNodeStopRestartTests.test_already_elapsed_floor_does_not_sleep_and_native_failure_is_not_retried":
+      "d5c94d5dad39ab8f2424bb7902d3d6b28a8991ea0b3369dded502bd648124a88","GoNodeStopRestartTests.test_existing_future_floor_must_elapse_before_the_single_native_start":
+      "d5c94d5dad39ab8f2424bb7902d3d6b28a8991ea0b3369dded502bd648124a88","GoNodeStopRestartTests.test_failure_to_retain_start_evidence_closes_the_still_owned_new_node":
+      "d5c94d5dad39ab8f2424bb7902d3d6b28a8991ea0b3369dded502bd648124a88","GoNodeStopRestartTests.test_malformed_duplicate_bool_missing_and_unbounded_floors_never_spawn":
+      "d5c94d5dad39ab8f2424bb7902d3d6b28a8991ea0b3369dded502bd648124a88","GoNodeStopRestartTests.test_original_deadline_clock_regression_and_floor_replacement_never_launch":
+      "d5c94d5dad39ab8f2424bb7902d3d6b28a8991ea0b3369dded502bd648124a88"},"kind":"python","module":"tools/tests/test_go_node_stop_restart.py","reviewReason":"Respect the stopped original authority durable anti-rollback clock floor before exactly one replacement start. Consume the existing startup watchdog/client deadline, retain scalar floor evidence, fail on malformed/regressed/changed state, and preserve original timer/signal/native limits and default programme.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"d5c94d5dad39ab8f2424bb7902d3d6b28a8991ea0b3369dded502bd648124a88":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:294290b4b1c49efe605c899fb88fb2bc3b07a5b3413972e849a20c30a49810a4","class:setup-sha256:499a9a964eb995f3387c4c76e4753140522de05924384db038cda8f24a230367"],"skipSites":[]}}}

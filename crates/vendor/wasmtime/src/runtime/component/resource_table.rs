@@ -1,9 +1,11 @@
 use super::Resource;
 use crate::prelude::*;
+use crate::runtime::native_memory::{self, Memory, NativeVec};
 use alloc::collections::{BTreeMap, BTreeSet};
 use core::any::Any;
 use core::fmt;
 use core::mem;
+use core::ops::{Deref, DerefMut};
 
 #[derive(Debug)]
 /// Errors returned by operations on `ResourceTable`
@@ -17,6 +19,8 @@ pub enum ResourceTableError {
     /// Resource cannot be deleted because child resources exist in the table. Consult wit docs for
     /// the particular resource to see which methods may return child resources.
     HasChildren,
+    /// The original native allocation factory refused backing before allocation.
+    Allocation(Error),
 }
 
 impl fmt::Display for ResourceTableError {
@@ -26,17 +30,208 @@ impl fmt::Display for ResourceTableError {
             Self::NotPresent => write!(f, "resource not present"),
             Self::WrongType => write!(f, "resource is of another type"),
             Self::HasChildren => write!(f, "resource has children"),
+            Self::Allocation(error) => write!(f, "resource allocation refused: {error}"),
         }
     }
 }
 
-impl core::error::Error for ResourceTableError {}
+impl core::error::Error for ResourceTableError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match self {
+            Self::Allocation(error) => Some(error.as_ref()),
+            _ => None,
+        }
+    }
+}
 
 /// The `ResourceTable` type maps a `Resource<T>` to its `T`.
 pub struct ResourceTable {
-    entries: Vec<Entry>,
+    entries: EntryStorage,
+    memory: Memory,
     free_head: Option<usize>,
     max_capacity: usize,
+}
+
+// The paid branch exposes only a slice: no caller can grow or detach its Vec.
+// The legacy branch retains the original Vec allocation behavior.
+#[derive(Debug)]
+enum EntryStorage {
+    Legacy(Vec<Entry>),
+    Accounted(NativeVec<Entry>),
+}
+impl Deref for EntryStorage {
+    type Target = [Entry];
+    fn deref(&self) -> &[Entry] {
+        match self {
+            Self::Legacy(entries) => entries,
+            Self::Accounted(entries) => entries,
+        }
+    }
+}
+impl DerefMut for EntryStorage {
+    fn deref_mut(&mut self) -> &mut [Entry] {
+        match self {
+            Self::Legacy(entries) => entries,
+            Self::Accounted(entries) => entries,
+        }
+    }
+}
+impl EntryStorage {
+    fn push(&mut self, entry: Entry) -> Result<(), ResourceTableError> {
+        match self {
+            Self::Legacy(entries) => {
+                entries.push(entry);
+                Ok(())
+            }
+            Self::Accounted(entries) => entries.push(entry).map_err(ResourceTableError::Allocation),
+        }
+    }
+}
+
+// The Box is the first field, so even destructor unwind destroys/deallocates it
+// before the separate original ticket. Typed delete moves out of the sole Box,
+// physically freeing its backing before refund; the returned T owns no Box here.
+struct ResourceValue {
+    value: Box<dyn Any + Send>,
+    allocation: Option<Box<dyn crate::NativeAllocation>>,
+}
+impl ResourceValue {
+    fn new<T: Any + Send>(value: T, memory: &Memory) -> Result<Self, ResourceTableError> {
+        let mut allocation = native_memory::reserve(memory, size_of::<T>())
+            .map_err(ResourceTableError::Allocation)?;
+        // Keep the pending ticket outside the Box until confirmation returns.
+        // If allocated() unwinds, this later local deallocates before the ticket.
+        let value = Box::new(value);
+        if let Some(allocation) = allocation.as_mut() {
+            allocation.allocated();
+        }
+        Ok(Self { value, allocation })
+    }
+    fn into_typed<T: Any>(self) -> Result<T, ResourceTableError> {
+        let Self { value, allocation } = self;
+        let result = match value.downcast::<T>() {
+            Ok(value) => Ok(*value),
+            Err(value) => {
+                drop(value);
+                Err(ResourceTableError::WrongType)
+            }
+        };
+        drop(allocation);
+        result
+    }
+    fn as_ref(&self) -> &(dyn Any + Send) {
+        self.value.as_ref()
+    }
+    fn as_mut(&mut self) -> &mut (dyn Any + Send) {
+        self.value.as_mut()
+    }
+}
+impl Deref for ResourceValue {
+    type Target = dyn Any + Send;
+    fn deref(&self) -> &Self::Target {
+        self.as_ref()
+    }
+}
+impl DerefMut for ResourceValue {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.as_mut()
+    }
+}
+impl fmt::Debug for ResourceValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.value.fmt(f)
+    }
+}
+
+#[derive(Debug)]
+enum Children {
+    Legacy(BTreeSet<u32>),
+    Accounted(NativeVec<u32>),
+}
+impl Children {
+    fn new(memory: Memory) -> Self {
+        match memory {
+            None => Self::Legacy(BTreeSet::new()),
+            // NativeVec's exact zero-capacity constructor neither reserves nor
+            // allocates: checked Layout::array::<u32>(0) has zero size.
+            memory => Self::Accounted(
+                NativeVec::with_capacity(0, memory)
+                    .expect("zero-capacity children cannot allocate"),
+            ),
+        }
+    }
+    fn is_empty(&self) -> bool {
+        match self {
+            Self::Legacy(values) => values.is_empty(),
+            Self::Accounted(values) => values.is_empty(),
+        }
+    }
+    fn contains(&self, child: &u32) -> bool {
+        match self {
+            Self::Legacy(values) => values.contains(child),
+            Self::Accounted(values) => values.binary_search(child).is_ok(),
+        }
+    }
+    fn prepare_add(&self) -> Result<Option<NativeVec<u32>>, ResourceTableError> {
+        match self {
+            Self::Legacy(_) => Ok(None),
+            Self::Accounted(values) => values
+                .prepare_capacity(
+                    values
+                        .len()
+                        .checked_add(1)
+                        .ok_or(ResourceTableError::Full)?,
+                )
+                .map_err(ResourceTableError::Allocation),
+        }
+    }
+    fn insert_prepared(&mut self, prepared: Option<NativeVec<u32>>, child: u32) {
+        debug_assert!(!self.contains(&child));
+        match self {
+            Self::Legacy(values) => {
+                assert!(prepared.is_none());
+                values.insert(child);
+            }
+            Self::Accounted(values) => {
+                values.commit_capacity(prepared);
+                match values.binary_search(&child) {
+                    Ok(_) => {}
+                    Err(index) => values.insert_reserved(index, child),
+                }
+            }
+        }
+    }
+    fn remove(&mut self, child: &u32) -> bool {
+        match self {
+            Self::Legacy(values) => values.remove(child),
+            Self::Accounted(values) => {
+                let found = values.binary_search(child).is_ok();
+                if found {
+                    values.retain_mut(|value| value != child);
+                }
+                found
+            }
+        }
+    }
+    fn iter(&self) -> ChildrenIter<'_> {
+        match self {
+            Self::Legacy(values) => ChildrenIter::Legacy(values.iter()),
+            Self::Accounted(values) => ChildrenIter::Accounted(values.iter()),
+        }
+    }
+}
+enum ChildrenIter<'a> {
+    Legacy(alloc::collections::btree_set::Iter<'a, u32>),
+    Accounted(core::slice::Iter<'a, u32>),
+}
+impl<'a> Iterator for ChildrenIter<'a> {
+    type Item = &'a u32;
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Legacy(values) => values.next(),
+            Self::Accounted(values) => values.next(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -83,24 +278,25 @@ const DEFAULT_MAX_CAPACITY: usize = 1_000_000;
 #[derive(Debug)]
 struct TableEntry {
     /// The entry in the table, as a boxed dynamically-typed object
-    entry: Box<dyn Any + Send>,
+    entry: ResourceValue,
     /// The index of the parent of this entry, if it has one.
     parent: Option<u32>,
     /// The indices of any children of this entry.
-    children: BTreeSet<u32>,
+    children: Children,
 }
 
 impl TableEntry {
-    fn new(entry: Box<dyn Any + Send>, parent: Option<u32>) -> Self {
+    fn new(entry: ResourceValue, parent: Option<u32>, memory: Memory) -> Self {
         Self {
             entry,
             parent,
-            children: BTreeSet::new(),
+            children: Children::new(memory),
         }
     }
-    fn add_child(&mut self, child: u32) {
-        debug_assert!(!self.children.contains(&child));
-        self.children.insert(child);
+    fn add_child(&mut self, child: u32) -> Result<(), ResourceTableError> {
+        let prepared = self.children.prepare_add()?;
+        self.children.insert_prepared(prepared, child);
+        Ok(())
     }
     fn remove_child(&mut self, child: u32) {
         let was_removed = self.children.remove(&child);
@@ -144,7 +340,25 @@ impl ResourceTable {
     /// Create an empty table with at least the specified capacity.
     pub fn with_capacity(capacity: usize) -> Self {
         ResourceTable {
-            entries: Vec::with_capacity(capacity),
+            entries: EntryStorage::Legacy(Vec::with_capacity(capacity)),
+            memory: None,
+            free_head: None,
+            max_capacity: DEFAULT_MAX_CAPACITY,
+        }
+    }
+
+    /// Bind only an empty internal table to its original Store-selected factory.
+    /// No existing resource or backing allocation is adopted after construction.
+    pub(crate) fn with_native_memory(memory: Memory) -> Self {
+        if memory.is_none() {
+            return Self::new();
+        }
+        Self {
+            entries: EntryStorage::Accounted(
+                NativeVec::with_capacity(0, memory.clone())
+                    .expect("zero-capacity table cannot allocate"),
+            ),
+            memory,
             free_head: None,
             max_capacity: DEFAULT_MAX_CAPACITY,
         }
@@ -156,7 +370,8 @@ impl ResourceTable {
     where
         T: Send + 'static,
     {
-        let idx = self.push_(TableEntry::new(Box::new(entry), None))?;
+        let value = ResourceValue::new(entry, &self.memory)?;
+        let idx = self.push_(TableEntry::new(value, None, self.memory.clone()))?;
         Ok(Resource::new_own(idx))
     }
 
@@ -184,9 +399,12 @@ impl ResourceTable {
                 &mut self.entries[ix],
                 Entry::Occupied {
                     entry: TableEntry {
-                        entry: Box::new(Tombstone),
+                        entry: ResourceValue {
+                            value: Box::new(Tombstone),
+                            allocation: None,
+                        },
                         parent: None,
-                        children: BTreeSet::new(),
+                        children: Children::new(self.memory.clone()),
                     },
                 },
             ) {
@@ -225,7 +443,7 @@ impl ResourceTable {
                 .len()
                 .try_into()
                 .map_err(|_| ResourceTableError::Full)?;
-            self.entries.push(Entry::Occupied { entry: e });
+            self.entries.push(Entry::Occupied { entry: e })?;
             Ok(ix)
         }
     }
@@ -270,8 +488,14 @@ impl ResourceTable {
     {
         let parent = parent.rep();
         self.occupied(parent)?;
-        let child = self.push_(TableEntry::new(Box::new(entry), Some(parent)))?;
-        self.occupied_mut(parent)?.add_child(child);
+        // Stage the parent's complete child-index replacement before creating
+        // or publishing the resource. A refusal leaves both relationships intact.
+        let prepared = self.occupied(parent)?.children.prepare_add()?;
+        let value = ResourceValue::new(entry, &self.memory)?;
+        let child = self.push_(TableEntry::new(value, Some(parent), self.memory.clone()))?;
+        self.occupied_mut(parent)?
+            .children
+            .insert_prepared(prepared, child);
         Ok(Resource::new_own(child))
     }
 
@@ -281,10 +505,19 @@ impl ResourceTable {
         child: Resource<T>,
         parent: Resource<U>,
     ) -> Result<(), ResourceTableError> {
-        let entry = self.occupied_mut(child.rep())?;
-        assert!(entry.parent.is_none());
-        entry.parent = Some(parent.rep());
-        self.occupied_mut(parent.rep())?.add_child(child.rep());
+        if self.memory.is_none() {
+            let entry = self.occupied_mut(child.rep())?;
+            assert!(entry.parent.is_none());
+            entry.parent = Some(parent.rep());
+            self.occupied_mut(parent.rep())?.add_child(child.rep())?;
+        } else {
+            assert!(self.occupied(child.rep())?.parent.is_none());
+            let prepared = self.occupied(parent.rep())?.children.prepare_add()?;
+            self.occupied_mut(child.rep())?.parent = Some(parent.rep());
+            self.occupied_mut(parent.rep())?
+                .children
+                .insert_prepared(prepared, child.rep());
+        }
         Ok(())
     }
 
@@ -351,10 +584,7 @@ impl ResourceTable {
     {
         debug_assert!(resource.owned());
         let entry = self.delete_entry(resource.rep(), debug)?;
-        match entry.entry.downcast() {
-            Ok(t) => Ok(*t),
-            Err(_e) => Err(ResourceTableError::WrongType),
-        }
+        entry.entry.into_typed()
     }
 
     fn delete_entry(&mut self, key: u32, debug: bool) -> Result<TableEntry, ResourceTableError> {
@@ -383,7 +613,7 @@ impl ResourceTable {
         map.into_iter().map(move |(k, v)| {
             let item = self
                 .occupied_mut(k)
-                .map(|e| Box::as_mut(&mut e.entry))
+                .map(|e| e.entry.as_mut())
                 // Safety: extending the lifetime of the mutable reference.
                 .map(|item| unsafe { &mut *(item as *mut dyn Any) });
             (item, v)
@@ -499,4 +729,252 @@ fn test_max_capacity() {
     }
 
     table.push(()).unwrap();
+}
+
+#[cfg(all(test, feature = "std", feature = "cranelift"))]
+mod native_memory_tests {
+    use super::*;
+    use crate::{AsContextMut, Engine, NativeAllocation, NativeMemory, Store};
+    use alloc::sync::Arc;
+    use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+    use std::sync::Mutex;
+
+    #[derive(Default)]
+    struct State {
+        requests: Mutex<Vec<usize>>,
+        retired: Mutex<Vec<usize>>,
+        issued: AtomicUsize,
+        active: AtomicUsize,
+        confirmations: AtomicUsize,
+        drops: AtomicUsize,
+        deny_request: AtomicUsize,
+        confirmation_panic: AtomicBool,
+    }
+    struct TestMemory(Arc<State>);
+    struct Allocation {
+        state: Arc<State>,
+        id: usize,
+    }
+    impl NativeAllocation for Allocation {
+        fn allocated(&mut self) {
+            self.state.confirmations.fetch_add(1, Ordering::SeqCst);
+            assert!(
+                !self.state.confirmation_panic.load(Ordering::SeqCst),
+                "resource-confirmation-unwind"
+            );
+        }
+    }
+    impl Drop for Allocation {
+        fn drop(&mut self) {
+            self.state.retired.lock().unwrap().push(self.id);
+            self.state.active.fetch_sub(1, Ordering::SeqCst);
+        }
+    }
+    #[derive(Debug)]
+    struct Denied;
+    impl fmt::Display for Denied {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("resource-original-Store-admission")
+        }
+    }
+    impl std::error::Error for Denied {}
+    impl NativeMemory for TestMemory {
+        fn reserve(&self, bytes: usize) -> crate::Result<Box<dyn NativeAllocation>> {
+            let mut requests = self.0.requests.lock().unwrap();
+            requests.push(bytes);
+            if requests.len() == self.0.deny_request.load(Ordering::SeqCst) {
+                return Err(Error::new(Denied));
+            }
+            let id = self.0.issued.fetch_add(1, Ordering::SeqCst) + 1;
+            self.0.active.fetch_add(1, Ordering::SeqCst);
+            Ok(Box::new(Allocation {
+                state: self.0.clone(),
+                id,
+            }))
+        }
+    }
+    fn original_table() -> (Store<()>, ResourceTable, Arc<State>) {
+        let state = Arc::new(State::default());
+        let mut store =
+            Store::try_new_with_memory(&Engine::default(), (), Arc::new(TestMemory(state.clone())))
+                .unwrap();
+        let table = ResourceTable::with_native_memory(store.as_context_mut().0.native_memory());
+        state.requests.lock().unwrap().clear();
+        (store, table, state)
+    }
+    fn refused<T>(result: Result<T, ResourceTableError>) {
+        match result {
+            Err(ResourceTableError::Allocation(error)) => {
+                assert!(error.downcast_ref::<Denied>().is_some())
+            }
+            _ => panic!("original allocation refusal was not retained"),
+        }
+    }
+    struct Probe {
+        state: Arc<State>,
+        box_ticket: usize,
+        panic: bool,
+    }
+    impl Drop for Probe {
+        fn drop(&mut self) {
+            if self.box_ticket != 0 {
+                assert!(
+                    !self
+                        .state
+                        .retired
+                        .lock()
+                        .unwrap()
+                        .contains(&self.box_ticket),
+                    "resource Box ticket retired before its value destructor"
+                );
+            }
+            self.state.drops.fetch_add(1, Ordering::SeqCst);
+            assert!(!self.panic, "resource-destructor-unwind");
+        }
+    }
+    fn probe(state: &Arc<State>, panic: bool) -> Probe {
+        Probe {
+            state: state.clone(),
+            box_ticket: state.issued.load(Ordering::SeqCst) + 1,
+            panic,
+        }
+    }
+
+    #[test]
+    fn original_store_box_and_entry_refusals_leave_no_published_resource() {
+        let (store, mut table, state) = original_table();
+        let baseline = state.active.load(Ordering::SeqCst);
+        let confirmations = state.confirmations.load(Ordering::SeqCst);
+        state.deny_request.store(1, Ordering::SeqCst);
+        refused(table.push(51u64));
+        assert!(table.is_empty());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(state.confirmations.load(Ordering::SeqCst), confirmations);
+        assert_eq!(*state.requests.lock().unwrap(), [size_of::<u64>()]);
+        state.requests.lock().unwrap().clear();
+        state.deny_request.store(2, Ordering::SeqCst);
+        refused(table.push(52u64));
+        assert!(table.is_empty());
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        assert_eq!(
+            *state.requests.lock().unwrap(),
+            [size_of::<u64>(), size_of::<Entry>()]
+        );
+        state.deny_request.store(0, Ordering::SeqCst);
+        let resource = table.push(53u64).unwrap();
+        assert_eq!(resource.rep(), 0);
+        assert_eq!(*table.get(&resource).unwrap(), 53);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline + 2);
+        drop(table);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn typed_and_wrong_type_delete_retire_only_physical_boxes() {
+        let (store, mut table, state) = original_table();
+        let resource = table.push(probe(&state, false)).unwrap();
+        let mut value = table.delete(resource).unwrap();
+        assert!(state.retired.lock().unwrap().contains(&value.box_ticket));
+        value.box_ticket = 0; // T is now an unboxed returned value, not paid Box backing.
+        let wrong = table.push(probe(&state, false)).unwrap();
+        let key = wrong.rep();
+        assert!(matches!(
+            table.delete(Resource::<u64>::new_own(key)),
+            Err(ResourceTableError::WrongType)
+        ));
+        assert!(matches!(
+            table.get(&wrong),
+            Err(ResourceTableError::NotPresent)
+        ));
+        assert_eq!(state.drops.load(Ordering::SeqCst), 1);
+        drop(table);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+        // This legitimate typed return outlives its table and Store without
+        // retaining a nonexistent Box allocation or manufacturing a new Box.
+        drop(value);
+        assert_eq!(state.drops.load(Ordering::SeqCst), 2);
+    }
+
+    #[test]
+    fn child_capacity_refusal_is_atomic_and_reused_indices_stay_sorted() {
+        let (store, mut table, state) = original_table();
+        let parent = table.push(99u64).unwrap();
+        state.requests.lock().unwrap().clear();
+        let active = state.active.load(Ordering::SeqCst);
+        let confirmed = state.confirmations.load(Ordering::SeqCst);
+        state.deny_request.store(1, Ordering::SeqCst);
+        refused(table.push_child(3u32, &parent));
+        assert_eq!(table.entries.len(), 1);
+        assert_eq!(table.iter_children(&parent).unwrap().count(), 0);
+        assert_eq!(state.active.load(Ordering::SeqCst), active);
+        assert_eq!(state.confirmations.load(Ordering::SeqCst), confirmed);
+        assert_eq!(*state.requests.lock().unwrap(), [size_of::<u32>()]);
+        state.deny_request.store(0, Ordering::SeqCst);
+        let first = table.push_child(3u32, &parent).unwrap();
+        let second = table.push_child(5u32, &parent).unwrap();
+        let resident = table.push(8u32).unwrap();
+        state.requests.lock().unwrap().clear();
+        state.deny_request.store(1, Ordering::SeqCst);
+        refused(table.add_child(
+            Resource::<u32>::new_own(resident.rep()),
+            Resource::<u64>::new_own(parent.rep()),
+        ));
+        assert!(table.occupied(resident.rep()).unwrap().parent.is_none());
+        assert_eq!(table.iter_children(&parent).unwrap().count(), 2);
+        state.deny_request.store(0, Ordering::SeqCst);
+        table
+            .add_child(
+                Resource::<u32>::new_own(resident.rep()),
+                Resource::<u64>::new_own(parent.rep()),
+            )
+            .unwrap();
+        assert!(matches!(
+            table.delete(Resource::<u64>::new_own(parent.rep())),
+            Err(ResourceTableError::HasChildren)
+        ));
+        let reused = second.rep();
+        assert_eq!(table.delete(second).unwrap(), 5);
+        let middle = table.push_child(7u32, &parent).unwrap();
+        assert_eq!(middle.rep(), reused);
+        let values = table
+            .iter_children(&parent)
+            .unwrap()
+            .map(|value| *value.downcast_ref::<u32>().unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(values, [3, 7, 8]);
+        table.delete(first).unwrap();
+        table.delete(middle).unwrap();
+        table.delete(resident).unwrap();
+        assert_eq!(table.delete(parent).unwrap(), 99);
+        drop(table);
+        drop(store);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn confirmation_and_destructor_unwind_keep_original_owner_until_physical_drop() {
+        let (store, mut table, state) = original_table();
+        let baseline = state.active.load(Ordering::SeqCst);
+        state.confirmation_panic.store(true, Ordering::SeqCst);
+        assert!(catch_unwind(AssertUnwindSafe(|| table.push(probe(&state, false)))).is_err());
+        state.confirmation_panic.store(false, Ordering::SeqCst);
+        assert!(table.is_empty());
+        assert_eq!(state.drops.load(Ordering::SeqCst), 1);
+        assert_eq!(state.active.load(Ordering::SeqCst), baseline);
+        table.push(probe(&state, true)).unwrap();
+        // Each original ticket, including the table's metadata buffer, owns
+        // its payer independently of the Store and releases after real cleanup.
+        drop(store);
+        assert!(catch_unwind(AssertUnwindSafe(|| drop(table))).is_err());
+        assert_eq!(state.drops.load(Ordering::SeqCst), 2);
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+        let mut legacy = ResourceTable::with_capacity(1);
+        let zst = legacy.push(()).unwrap();
+        assert_eq!(legacy.delete(zst).unwrap(), ());
+        assert_eq!(state.active.load(Ordering::SeqCst), 0);
+    }
 }

@@ -1,5 +1,5 @@
 {
-"cases":["TrackingComponent.test_changed_archive_refuses_before_creating_any_output","TrackingComponent.test_missing_signing_sources_restore_only_exact_archived_wit_layers","TrackingComponent.test_unsuccessful_or_mixed_producers_never_qualify"],
+"storageCases":"guard-keys",
 "guards":{
 "TrackingComponent.test_changed_archive_refuses_before_creating_any_output":
       "15915bd83bd479298824486ad6717dcd2040f3e4dc0f351debaf994f8fa1b364",

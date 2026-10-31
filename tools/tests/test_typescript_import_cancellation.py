@@ -43,7 +43,8 @@ const captured=fuseNativeImportAwaits(anchor+'\\n'+fixture.source.replace('\\n  
 const changed=borrowReleaseHandoff(captured,parse,[{{binding:'import_latent_http_streaming_0_3_0$open',alias:'open'}}]);
 assert.equal(changed.split('__lsfBorrowArm(import_latent_http_streaming_0_3_0$open, __lsfImportId);').length,2);
 const oldFn=parse(captured,{{ecmaVersion:'latest',sourceType:'module'}}).body[1];
-const newFn=parse(changed,{{ecmaVersion:'latest',sourceType:'module'}}).body.at(-1);
+const matches=parse(changed,{{ecmaVersion:'latest',sourceType:'module'}}).body.filter(node=>node.type==='FunctionDeclaration'&&node.id?.name===oldFn.id.name);
+assert.equal(matches.length,1);const newFn=matches[0];
 const erase=node=>Array.isArray(node)?node.map(erase):node&&typeof node==='object'?Object.fromEntries(Object.entries(node).filter(([key])=>!['start','end'].includes(key)).map(([key,value])=>[key,erase(value)])):node;
 const arm=newFn.body.body[2].block.body.shift();
 assert.equal(arm.expression.callee.name,'__lsfBorrowArm');

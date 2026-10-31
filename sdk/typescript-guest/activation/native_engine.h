@@ -38,5 +38,13 @@ bool cancel_import(JSContext* cx, uint32_t id);
 bool watch_import_borrow(JSContext* cx, uint32_t id, JS::MutableHandleObject handle);
 bool observe_import_borrow(JSContext* cx, JS::HandleObject handle, bool cancel,
                            JS::MutableHandleObject promise);
+bool begin_import_own_plans(JSContext*, uint32_t version, uint32_t plans, uint32_t slots);
+bool bind_import_own_slot(JSContext*, uint32_t key, uint32_t bytes, uint32_t count,
+    uint32_t index, uint32_t offset, uint32_t resource, JS::HandleObject prototype, JS::HandleId symbol);
+bool seal_import_own_plans(JSContext*);
+bool prepare_import_own_lift(JSContext*, uint32_t id, uint32_t key, uint32_t getter,
+    uint32_t disposer, uint32_t count);
+bool attach_import_own(JSContext*, uint32_t id, uint32_t slot, JS::MutableHandleObject);
+bool uncertain_import_own(JSContext*, uint32_t id);
 bool install_import_bridge(JSContext* cx,JS::HandleObject global);
 } // namespace lsf::typescript::activation

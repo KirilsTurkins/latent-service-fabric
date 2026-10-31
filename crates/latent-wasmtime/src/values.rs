@@ -10,8 +10,6 @@ mod typed;
 use latent_core::{DeclaredError, PlatformError, PlatformErrorCode};
 use wasmtime::component::{Type, Val};
 
-#[cfg(feature = "development-test-host")]
-pub(crate) use memory::LiftMemory;
 pub(crate) use memory::{LiftMemoryError, OwnedValues};
 pub(crate) use signature::{validate_host_signature, validate_signature};
 

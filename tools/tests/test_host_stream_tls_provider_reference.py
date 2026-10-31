@@ -13,13 +13,21 @@ from tools import qualify_host_stream_tls_provider as reference
 class BoundedTlsProviderReference(unittest.TestCase):
     def test_real_catalogue_keeps_public_refusal_and_activates_all_four_tls_controls(self):
         row = reference.suite_contract(reference.provider.ROOT)
-        self.assertEqual(len(row["expectedCases"]), 44)
-        self.assertEqual(row["minimumCases"], 44)
+        self.assertEqual(len(row["expectedCases"]), 47)
+        self.assertEqual(row["minimumCases"], 47)
         self.assertEqual(len(reference.TLS_CASES), 4)
         self.assertIn(reference.DENIAL, row["expectedCases"])
         self.assertEqual(row["timeoutSeconds"], 900)
         self.assertEqual(row["expectedIgnored"], [])
         self.assertEqual(row["ignoredLeaves"], [])
+        self.assertEqual(row["expectedCases"][-3:], ['kernel::native::node_bootstrap::controls::node_wire_refuses_old_ack_foreign_generation_and_funding_bits', 'kernel::native::node_bootstrap::controls::node_postopen_refusal_retains_original_whole_escrow', 'kernel::native::node_bootstrap::controls::node_abandoned_waiter_keeps_custody_after_real_worker_returns'])
+        # Exact ordered old44 + Node3, including same-cardinality substitutions.
+        for changed in (row["expectedCases"][:-1] + ["kernel::native::unknown_node_substitute"],
+                        [row["expectedCases"][1], row["expectedCases"][0], *row["expectedCases"][2:]],
+                        [*row["expectedCases"][:-3], *reversed(row["expectedCases"][-3:])]):
+            with patch.object(reference.registry, "load", return_value={"suites": [dict(row, expectedCases=changed)]}), \
+                    self.assertRaisesRegex(ValueError, "suite-contract"):
+                reference.suite_contract(reference.provider.ROOT)
         self.assertEqual(len(reference.NATIVE_CLOSE_CASES), 3)
         self.assertTrue(reference.NATIVE_CLOSE_CASES <= set(row["expectedCases"]))
         for missing in reference.NATIVE_CLOSE_CASES:
@@ -68,7 +76,7 @@ class BoundedTlsProviderReference(unittest.TestCase):
     def test_only_all_exact_named_zero_filtered_successes_are_evidence(self):
         cases = set(reference.suite_contract(reference.provider.ROOT)["expectedCases"])
         raw = ("\n".join("test " + name + " ... ok" for name in sorted(cases))
-               + "\ntest result: ok. 44 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.0s\n").encode()
+               + "\ntest result: ok. 47 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.0s\n").encode()
         self.assertEqual(reference.outcomes(raw, cases), sorted(cases))
         first = sorted(cases)[0].encode()
         for changed in (raw.replace(first, b"unknown"), raw.replace(b" ... ok", b" ... FAILED", 1),

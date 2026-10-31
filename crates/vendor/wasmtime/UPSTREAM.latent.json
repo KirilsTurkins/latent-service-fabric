@@ -4,7 +4,7 @@
 "registryArchive": "https://static.crates.io/crates/wasmtime/wasmtime-48.0.7.crate",
 "registrySha256": "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6",
 "license": "Apache-2.0 WITH LLVM-exception",
-"nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v22-task-return-witness-cache-repair",
+"nativeCohort": "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v28-unstarted-host-drop-cache-repair",
 "originalFiles": [
 {
 "path": ".cargo_vcs_info.json",
@@ -1410,4 +1410,42 @@
 }
 }
 }
+,
+  "callResultChannelUpstream": {
+    "name": "futures-channel",
+    "version": "0.3.34",
+    "registryArchive": "https://static.crates.io/crates/futures-channel/futures-channel-0.3.34.crate",
+    "registrySha256": "b1f9e3d69d39e4862ffed03ed071a76f9a13ba1d9109d355b0f0aa6b15e393c4",
+    "license": "MIT OR Apache-2.0",
+    "scope": "Only maintained call-result channel header: five original Inner bodies and nonblocking Lock; same declared prepaid Arc layout. None delegates original dependency. Payload/Waker transitive allocations and panic quarantine completion remain unqualified.",
+    "originalFiles": [
+      {
+        "path": "src/oneshot.rs",
+        "bytes": 17843,
+        "sha256": "1e4e33c75d72b5d11cc23710e2a08099e04b72bf2368b68e7c1eb0beb6fc03fa"
+      },
+      {
+        "path": "src/lock.rs",
+        "bytes": 3148,
+        "sha256": "38655a797456ea4f67d132c42055cf74f18195e875c3b337fc81a12901f79292"
+      },
+      {
+        "path": "LICENSE-MIT",
+        "bytes": 1094,
+        "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd"
+      },
+      {
+        "path": "LICENSE-APACHE",
+        "bytes": 10874,
+        "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+      }
+    ],
+    "licenseFiles": [
+      "src/runtime/component/concurrent/host_futures/LICENSE-MIT",
+      "src/runtime/component/concurrent/host_futures/LICENSE-APACHE"
+    ],
+    "maintainedSource": "src/runtime/component/concurrent/host_futures/call_result_channel.rs"
+  }
+,
+  "patchContextLines": 1
 }

@@ -1,6 +1,8 @@
 //! Public stream controls using the ORIGINAL ActivationBudget adapter.
 //! Grant: 1MiB / 1B fuel / 5s wall. Not the private64MiB/120s ceiling.
-use super::native_store_tests::{core_answer, requests, store, Observations, CORE, MIB, OWNER};
+use super::native_store_tests::{
+    allocation_rows, core_answer, requests, store, Observations, CORE, MIB, OWNER,
+};
 use super::native_table_tests::{budget, denial};
 use std::future::Future;
 use std::pin::Pin;
@@ -488,6 +490,50 @@ impl<D: 'static> StreamProducer<D> for EscapingProducer {
     }
 }
 
+// Native ConcurrentState::new_transmit inserts exactly State/write/read.
+// Each now owns its full typed Box; NativeVec's cold entry capacities are
+// EXACTLY 1/2/3, not Vec's unaccounted geometric growth. Exercise and retire
+// that cold path explicitly before testing allocation-free handle conversion.
+const TRANSMIT_VALUES: usize = 3;
+pub(super) fn warm_transmit_storage(
+    first: &mut Store<super::native_store_tests::Data>,
+    original: &latent_core::ActivationBudget,
+    observed: &Observations,
+) {
+    let before = requests(observed).len();
+    let baseline = original.host_memory_bytes();
+    let (producer, _) = gates();
+    let mut reader = StreamReader::new(&mut *first, Producer(producer.clone())).unwrap();
+    let rows = allocation_rows(observed);
+    let created = &rows[before..];
+    // Shared producer cell + two factories, then Box/entry backing per value.
+    assert_eq!(created.len(), 3 + 2 * TRANSMIT_VALUES);
+    assert!(created.iter().enumerate().all(|(index, row)| {
+        row.admitted && row.confirmed && (row.released == (index == 4 || index == 6))
+    }));
+    // Exact old/new overlap ends after moving entries: capacities1 and2 retire,
+    // capacity3 is kept for free-list reuse. Both handle Boxes have same T.
+    assert_eq!(created[6].bytes, 2 * created[4].bytes);
+    assert_eq!(created[8].bytes, TRANSMIT_VALUES * created[4].bytes);
+    assert_eq!(created[5].bytes, created[7].bytes);
+    reader.close(&mut *first).unwrap();
+    assert_eq!(producer.polls.load(SeqCst), 0);
+    assert_eq!(producer.drops.load(SeqCst), 1);
+    let retired = allocation_rows(observed);
+    for (index, row) in retired[before..].iter().enumerate() {
+        assert!(row.admitted && row.confirmed);
+        assert_eq!(
+            row.released,
+            index != 8,
+            "only exact entry backing survives close"
+        );
+    }
+    assert_eq!(
+        original.host_memory_bytes(),
+        baseline + created[8].bytes as u64 + OWNER
+    );
+}
+
 #[tokio::test]
 async fn actual_producer_stream_conversion_reuses_budget_and_preserves_owning_escape() {
     let engine = engine();
@@ -500,18 +546,19 @@ async fn actual_producer_stream_conversion_reuses_budget_and_preserves_owning_es
     let foreign_requests = requests(&other);
     let mut first = store(&engine, &original, &observed).unwrap();
     warm(&mut first).await;
+    warm_transmit_storage(&mut first, &original, &observed);
     let baseline = original.host_memory_bytes();
     // Repeat create -> ordinary Err -> close on the SAME reusable budget.
     for _ in 0..16 {
         let (producer, _) = gates();
         let before = requests(&observed).len();
         let mut reader = StreamReader::new(&mut first, EscapingProducer(producer.clone())).unwrap();
-        assert_eq!(requests(&observed).len(), before + 3);
+        assert_eq!(requests(&observed).len(), before + 3 + TRANSMIT_VALUES);
         let live = original.host_memory_bytes();
         for _ in 0..4 {
             reader = reader.try_into::<()>(&mut first).err().unwrap();
             assert_eq!(original.host_memory_bytes(), live);
-            assert_eq!(requests(&observed).len(), before + 3);
+            assert_eq!(requests(&observed).len(), before + 3 + TRANSMIT_VALUES);
         }
         reader.close(&mut first).unwrap();
         assert_eq!(producer.drops.load(SeqCst), 1);
@@ -577,17 +624,18 @@ async fn actual_producer_future_any_roundtrip_and_pending_completion_preserve_cu
             continue;
         };
         warm(&mut first).await;
+        warm_transmit_storage(&mut first, &original, &observed);
         let baseline = original.host_memory_bytes();
         let (producer, _consumer) = gates();
         let before = requests(&observed).len();
         let reader =
             wasmtime::component::FutureReader::new(&mut first, future_value(&producer)).unwrap();
-        assert_eq!(requests(&observed).len(), before + 4);
+        assert_eq!(requests(&observed).len(), before + 4 + TRANSMIT_VALUES);
         let live = original.host_memory_bytes();
         let any = reader.try_into_future_any(&mut first).unwrap();
         let mut reader = wasmtime::component::FutureReader::<u8>::try_from_future_any(any).unwrap();
         assert_eq!(original.host_memory_bytes(), live);
-        assert_eq!(requests(&observed).len(), before + 4);
+        assert_eq!(requests(&observed).len(), before + 4 + TRANSMIT_VALUES);
         reader.close(&mut first).unwrap();
         assert_eq!(producer.drops.load(SeqCst), 1);
         assert_eq!(original.host_memory_bytes(), baseline);
@@ -700,6 +748,7 @@ async fn actual_producer_factory_conversion_and_pending_lifetime_preserve_budget
     let foreign_requests = requests(&other);
     let mut first = store(&engine, &original, &observed).unwrap();
     warm(&mut first).await;
+    warm_transmit_storage(&mut first, &original, &observed);
     let baseline = original.host_memory_bytes();
     for _ in 0..16 {
         let (producer, _) = gates();
@@ -707,14 +756,14 @@ async fn actual_producer_factory_conversion_and_pending_lifetime_preserve_budget
         let mut reader = StreamReader::new(&mut first, EscapingProducer(producer.clone())).unwrap();
         assert_eq!(
             requests(&observed).len(),
-            before + 3,
-            "shared, produce factory, conversion factory"
+            before + 3 + TRANSMIT_VALUES,
+            "shared, two factories, three typed resource Boxes; existing entry backing"
         );
         let live = original.host_memory_bytes();
         for _ in 0..4 {
             reader = reader.try_into::<()>(&mut first).err().unwrap();
             assert_eq!(original.host_memory_bytes(), live);
-            assert_eq!(requests(&observed).len(), before + 3);
+            assert_eq!(requests(&observed).len(), before + 3 + TRANSMIT_VALUES);
         }
         reader.close(&mut first).unwrap();
         assert_eq!(producer.polls.load(SeqCst), 0);
@@ -740,6 +789,7 @@ async fn actual_producer_factory_conversion_and_pending_lifetime_preserve_budget
     for mode in 0..3 {
         let mut first = store(&engine, &original, &observed).unwrap();
         warm(&mut first).await;
+        warm_transmit_storage(&mut first, &original, &observed);
         let baseline = original.host_memory_bytes();
         let (producer, consumer) = gates();
         producer.ready.store(mode != 1, SeqCst);
@@ -749,8 +799,8 @@ async fn actual_producer_factory_conversion_and_pending_lifetime_preserve_budget
             wasmtime::component::FutureReader::new(&mut first, future_value(&producer)).unwrap();
         assert_eq!(
             requests(&observed).len(),
-            before + 4,
-            "local adapter body, shared, two factories"
+            before + 4 + TRANSMIT_VALUES,
+            "local adapter, shared, two factories, three typed resource Boxes"
         );
         reader
             .pipe(&mut first, FutureSink(consumer.clone()))

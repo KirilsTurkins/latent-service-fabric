@@ -323,6 +323,18 @@ class StreamOuterOwnerReader(unittest.TestCase):
             with self.assertRaises(ValueError):
                 owner.http_ip_format_result(b'', case)
 
+        for case in owner.LIFT_RESULT_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.lift_result_result(raw, case)['passed'], 1)
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case'),
+                raw.replace(b'0 measured', b'1 measured'), b''):
+                with self.assertRaises(ValueError):
+                    owner.lift_result_result(changed, case)
+        with self.assertRaises(ValueError):
+            owner.lift_result_result(b'', 'unknown::case')
+
     def test_private_fixture_identity_is_bounded_and_changes_are_observed(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / 'fixture.wasm'
@@ -335,6 +347,240 @@ class StreamOuterOwnerReader(unittest.TestCase):
             first = owner.fixture_identity(path)
             path.write_bytes(b'\0asm' + b'\x01' * 12)
             self.assertNotEqual(owner.fixture_identity(path), first)
+
+
+class TaskNodeBootstrapOwner(unittest.TestCase):
+    def test_four_exact_results_and_all_source_tool_process_roots_are_closed(self):
+        self.assertEqual(len(owner.NODE_BOOTSTRAP_CASES), 4)
+        self.assertEqual(len(owner.NODE_BOOTSTRAP_STAGES), 23)
+        self.assertEqual(len(set(owner.NODE_BOOTSTRAP_STAGES)), 23)
+        self.assertEqual(owner.NODE_BOOTSTRAP_STAGES[:3], ('source-head', 'source-clean', 'source-input-paths'))
+        self.assertEqual(owner.NODE_BOOTSTRAP_STAGES[-3:], ('source-input-paths-after', 'source-clean-after', 'source-head-after'))
+        for case in owner.NODE_BOOTSTRAP_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            observed = owner.node_bootstrap_result(raw, case)
+            self.assertEqual((observed['passed'], observed['ignored']), (1, 0))
+            self.assertIn('scope', observed)
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case')):
+                with self.assertRaises(ValueError):
+                    owner.node_bootstrap_result(changed, case)
+        with self.assertRaises(ValueError):
+            owner.node_bootstrap_result(b'', 'unregistered::node')
+
+
+class TaskStoreCallMemoryOwner(unittest.TestCase):
+    def test_four_exact_results_and_all21_roots_reject_skips_duplicates_and_other_cases(self):
+        self.assertEqual(len(owner.CALL_MEMORY_CASES), 4)
+        self.assertEqual(len(set(owner.CALL_MEMORY_CASES)), 4)
+        self.assertEqual(len(owner.CALL_MEMORY_STAGES), 21)
+        self.assertEqual(len(set(owner.CALL_MEMORY_STAGES)), 21)
+        self.assertEqual(owner.CALL_MEMORY_STAGES[:3],
+            ('source-head', 'source-clean', 'source-input-paths'))
+        self.assertEqual(owner.CALL_MEMORY_STAGES[-3:],
+            ('source-input-paths-after', 'source-clean-after', 'source-head-after'))
+        self.assertEqual(owner.CALL_MEMORY_STAGES[8:10],
+            ('build-private', 'private-rust-library-path'))
+        for index, case in enumerate(owner.CALL_MEMORY_CASES):
+            self.assertEqual(owner.CALL_MEMORY_STAGES[10 + index * 2:12 + index * 2],
+                (f'private-list-{index}', f'private-case-{index}'))
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            observed = owner.call_memory_result(raw, case)
+            self.assertEqual((observed['passed'], observed['ignored']), (1, 0))
+            self.assertEqual(observed['scope'],
+                'original-Store-parameter-and-typed-closure-counter-owner')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case'),
+                    raw.replace(b'0 measured', b'1 measured'), b''):
+                with self.assertRaises(ValueError):
+                    owner.call_memory_result(changed, case)
+        for other in (*owner.LIFT_RESULT_CASES, *owner.NODE_BOOTSTRAP_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(b'', other)
+
+
+class TaskTableMemoryOwner(unittest.TestCase):
+    def test_exact_resource_cases_share21_roots_and_reject_other_profiles(self):
+        self.assertEqual(len(owner.RESOURCE_TABLE_CASES), 4)
+        self.assertEqual(len(set(owner.RESOURCE_TABLE_CASES)), 4)
+        self.assertEqual(len(owner.CALL_MEMORY_STAGES), 21)
+        for case in owner.RESOURCE_TABLE_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.resource_table_result(raw, case)['scope'],
+                'original-Store-resource-box-table-and-child-index-counter-owner')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case'),
+                    raw.replace(b'0 measured', b'1 measured'), b''):
+                with self.assertRaises(ValueError):
+                    owner.resource_table_result(changed, case)
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(raw, case)
+        for case in (*owner.CALL_MEMORY_CASES, *owner.LIFT_RESULT_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.resource_table_result(b'', case)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', owner.CALL_MEMORY_CASES[0], _resource_table='yes')
+
+
+class TaskWireCallResultOwner(unittest.TestCase):
+    def test_four_channel_results_keep21_roots_and_exclude_other_profiles(self):
+        self.assertEqual(len(owner.CALL_RESULT_CHANNEL_CASES), 4)
+        self.assertEqual(len(set(owner.CALL_RESULT_CHANNEL_CASES)), 4)
+        self.assertEqual(len(owner.CALL_MEMORY_STAGES), 21)
+        for case in owner.CALL_RESULT_CHANNEL_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.call_result_channel_result(raw, case)['scope'],
+                'original-Store-call-result-header-counter-owner-with-explicit-payload-unwind-retention')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case'),
+                    raw.replace(b'0 measured', b'1 measured'), b''):
+                with self.assertRaises(ValueError):
+                    owner.call_result_channel_result(changed, case)
+            with self.assertRaises(ValueError):
+                owner.resource_table_result(raw, case)
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(raw, case)
+        for case in (*owner.RESOURCE_TABLE_CASES, *owner.CALL_MEMORY_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.call_result_channel_result(b'', case)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', owner.CALL_RESULT_CHANNEL_CASES[0],
+                _resource_table=True, _call_result_channel=True)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', owner.CALL_RESULT_CHANNEL_CASES[0], _call_result_channel='yes')
+
+
+class TaskZBorrowedCallbackOwner(unittest.TestCase):
+    def test_four_callback_results_reject_skips_duplicates_and_other_profiles(self):
+        self.assertEqual(len(owner.CALLBACK_CASES), 4)
+        self.assertEqual(len(set(owner.CALLBACK_CASES)), 4)
+        self.assertEqual(len(owner.CALL_MEMORY_STAGES), 21)
+        for case in owner.CALLBACK_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.callback_result(raw, case)['scope'],
+                'original-Store-borrowed-callback-counter-owner')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(case.encode(), b'wrong::case'),
+                    raw.replace(b'0 measured', b'1 measured'), b''):
+                with self.assertRaises(ValueError):
+                    owner.callback_result(changed, case)
+            for reader in (owner.call_memory_result, owner.resource_table_result, owner.call_result_channel_result):
+                with self.assertRaises(ValueError):
+                    reader(raw, case)
+        for case in (*owner.CALL_MEMORY_CASES, *owner.RESOURCE_TABLE_CASES,
+                *owner.CALL_RESULT_CHANNEL_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.callback_result(b'', case)
+        for flags in ({'_resource_table': True}, {'_call_result_channel': True}):
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(b'', owner.CALLBACK_CASES[0], _callback_memory=True, **flags)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', owner.CALLBACK_CASES[0], _callback_memory='yes')
+
+
+class TaskZZHostMemoryBaselineOwner(unittest.TestCase):
+    def test_exact_eleven_names_and_results_refuse_missing_duplicate_skipped_or_cross_profile(self):
+        cases = owner.HOST_BASELINE_CASES
+        self.assertEqual((len(cases), len(set(cases))), (11, 11))
+        self.assertEqual((len(owner.HOST_BASELINE_STAGES), len(set(owner.HOST_BASELINE_STAGES))), (25, 25))
+        self.assertEqual(owner.HOST_BASELINE_STAGES[10], 'host-baseline-list')
+        self.assertEqual(owner.HOST_BASELINE_STAGES[11:22], tuple(f'private-case-{i}' for i in range(11)))
+        suite = owner.artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'latent_wasmtime',
+            'src/lib.rs', 'host::', frozenset(cases), True)
+        listing = ''.join(f'{case}: test\n' for case in cases).encode() + b'\n11 tests, 0 benchmarks\n'
+        owner.artifacts.validate_listing(listing, suite)
+        for changed in (listing.replace((cases[0] + ': test\n').encode(), b''),
+                listing.replace(cases[0].encode(), cases[1].encode()),
+                listing.replace(cases[0].encode(), b'host::unselected'),
+                listing.replace(b'11 tests', b'12 tests')):
+            with self.assertRaises(owner.artifacts.ArtifactError):
+                owner.artifacts.validate_listing(changed, suite)
+        for case in cases:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.call_memory_result(raw, case, _host_baseline=True)['passed'], 1)
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(b'0 measured', b'1 measured')):
+                with self.assertRaises(ValueError):
+                    owner.call_memory_result(changed, case, _host_baseline=True)
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(raw, case)
+        for flags in ({'_callback_memory': True}, {'_resource_table': True}, {'_call_result_channel': True}):
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(b'', cases[0], _host_baseline=True, **flags)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', cases[0], _host_baseline='yes')
+
+
+class TaskZZZGuestStartMemoryOwner(unittest.TestCase):
+    def test_four_start_results_keep21_roots_and_refuse_skips_duplicates_or_cross_profile(self):
+        self.assertEqual((len(owner.GUEST_START_CASES), len(set(owner.GUEST_START_CASES))), (4, 4))
+        self.assertEqual(len(owner.CALL_MEMORY_STAGES), 21)
+        for case in owner.GUEST_START_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.guest_start_result(raw, case)['scope'],
+                'original-Store-guest-start-header-transaction-and-lifetime-counter-owner')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(b'0 measured', b'1 measured'),
+                    raw.replace(case.encode(), b'wrong::case'), b''):
+                with self.assertRaises(ValueError):
+                    owner.guest_start_result(changed, case)
+            for reader in (owner.call_memory_result, owner.resource_table_result,
+                    owner.call_result_channel_result, owner.callback_result):
+                with self.assertRaises(ValueError):
+                    reader(raw, case)
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(raw, case, _host_baseline=True)
+        for case in (*owner.CALL_MEMORY_CASES, *owner.RESOURCE_TABLE_CASES,
+                *owner.CALL_RESULT_CHANNEL_CASES, *owner.CALLBACK_CASES,
+                *owner.HOST_BASELINE_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.guest_start_result(b'', case)
+        for flags in ({'_resource_table': True}, {'_call_result_channel': True},
+                {'_callback_memory': True}, {'_host_baseline': True}):
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(b'', owner.GUEST_START_CASES[0], _guest_start=True, **flags)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', owner.GUEST_START_CASES[0], _guest_start='yes')
+
+
+class TaskZZZZUnstartedHostDropOwner(unittest.TestCase):
+    def test_unstarted_drop_results_keep21_roots_and_refuse_skips_duplicates_or_cross_profile(self):
+        self.assertEqual((len(owner.UNSTARTED_HOST_DROP_CASES), len(set(owner.UNSTARTED_HOST_DROP_CASES))), (4, 4))
+        self.assertEqual(len(owner.CALL_MEMORY_STAGES), 21)
+        for case in owner.UNSTARTED_HOST_DROP_CASES:
+            raw = (f'test {case} ... ok\n\ntest result: ok. 1 passed; 0 failed; '
+                '0 ignored; 0 measured; 17 filtered out; finished in 0.01s\n').encode()
+            self.assertEqual(owner.unstarted_host_drop_result(raw, case)['scope'],
+                'original-Store-unstarted-host-future-drop-lifetime-owner')
+            for changed in (raw + raw, raw.replace(b'0 ignored', b'1 ignored'),
+                    raw.replace(b'1 passed', b'0 passed'), raw.replace(b'0 measured', b'1 measured'),
+                    raw.replace(case.encode(), b'wrong::case'), b''):
+                with self.assertRaises(ValueError):
+                    owner.unstarted_host_drop_result(changed, case)
+            for reader in (owner.call_memory_result, owner.resource_table_result,
+                    owner.call_result_channel_result, owner.callback_result, owner.guest_start_result):
+                with self.assertRaises(ValueError):
+                    reader(raw, case)
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(raw, case, _host_baseline=True)
+        for case in (*owner.CALL_MEMORY_CASES, *owner.RESOURCE_TABLE_CASES,
+                *owner.CALL_RESULT_CHANNEL_CASES, *owner.CALLBACK_CASES,
+                *owner.HOST_BASELINE_CASES, *owner.GUEST_START_CASES, 'unknown::case'):
+            with self.assertRaises(ValueError):
+                owner.unstarted_host_drop_result(b'', case)
+        for flags in ({'_resource_table': True}, {'_call_result_channel': True},
+                {'_callback_memory': True}, {'_host_baseline': True}, {'_guest_start': True}):
+            with self.assertRaises(ValueError):
+                owner.call_memory_result(b'', owner.UNSTARTED_HOST_DROP_CASES[0], _unstarted_host_drop=True, **flags)
+        with self.assertRaises(ValueError):
+            owner.call_memory_result(b'', owner.UNSTARTED_HOST_DROP_CASES[0], _unstarted_host_drop='yes')
 
 
 if __name__ == '__main__':

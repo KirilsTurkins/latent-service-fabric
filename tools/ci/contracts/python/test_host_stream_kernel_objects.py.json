@@ -1,167 +1,167 @@
 {
-"storageCases":"guard-keys",
-"guards":{
-"KernelAuditObjectSelection.test_audit_and_auditsyscall_must_already_be_enabled_without_overrides":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelAuditObjectSelection.test_audit_selection_refuses_local_build_before_archive_or_output":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelAuditObjectSelection.test_exclusive_audit_job_retains_closed_inputs_targets_and_original_bounds":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelAuditObjectSelection.test_twenty_objects_keep_all_sixty_one_avc_definitions_and_add_eight":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelAuditObjectSelection.test_unknown_and_mixed_audit_profiles_refuse_before_acquisition":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelAvcObjectSelection.test_avc_selection_refuses_local_build_before_archive_or_output":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelAvcObjectSelection.test_exclusive_avc_job_uses_only_closed_inputs_and_original_build_bounds":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelAvcObjectSelection.test_sixteen_objects_preserve_all_fifty_two_sidcache_definitions_and_add_nine":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelAvcObjectSelection.test_unknown_or_mixed_avc_profiles_refuse_before_acquisition":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelBindObjectSelection.test_bind_selection_refuses_local_build_before_archive_or_output":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelBindObjectSelection.test_dependent_profile_requires_original_audit_netlabel_and_sidcache_configuration":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelBindObjectSelection.test_exclusive_bind_job_retains_closed_inputs_targets_and_original_bounds":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelBindObjectSelection.test_twenty_two_objects_keep_all_sixty_nine_audit_definitions_and_add_six":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelBindObjectSelection.test_unknown_and_mixed_bind_profiles_refuse_before_acquisition":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelDeviceObjectSelection.test_all_ten_previous_profiles_and_job_bodies_remain_exact":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelDeviceObjectSelection.test_device_config_preserves_actual_security_and_truthfully_unselected_iov_of":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelDeviceObjectSelection.test_device_job_has_ten_closed_inputs_same_deadlines_security_and_all_products":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelDeviceObjectSelection.test_device_receipt_never_substitutes_source_compile_for_runtime_or_bootstrap":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelDeviceObjectSelection.test_exact_extracted_nine_names_are_anchored_bounded_authenticated_before_use":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelDeviceObjectSelection.test_thirty_two_objects_preserve_all_ninety_nine_and_add_only_real_pci_name_functions":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelDeviceObjectSelection.test_unknown_mixed_and_local_device_profiles_refuse_before_any_archive_read":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelFirmwareObjectSelection.test_all_eleven_old_profiles_and_complete_job_bodies_remain_exact":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelFirmwareObjectSelection.test_exclusive_firmware_job_retains_all_artifacts_and_original_build_security_bounds":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelFirmwareObjectSelection.test_firmware_receipt_separates_source_from_real_acpi_queue_or_kernel_execution":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelFirmwareObjectSelection.test_fixed_thirteen_post_extraction_members_are_anchored_and_fully_authenticated":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelFirmwareObjectSelection.test_thirty_seven_objects_preserve_121_and_add_real_reference_and_acpi_functions":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelFirmwareObjectSelection.test_unknown_mixed_and_local_firmware_profiles_refuse_before_archive_access":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelNetlabelObjectSelection.test_default_six_object_floor_is_identical_and_selector_accepts_only_real_boolean":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelNetlabelObjectSelection.test_netlabel_must_already_be_enabled_no_configuration_override_is_added":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelNetlabelObjectSelection.test_netlabel_twelve_objects_retain_all_old_symbols_and_require_all_twenty_one_new_globals":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelNetlabelObjectSelection.test_optin_object_profile_still_refuses_local_build_before_archive_access":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelNetportObjectSelection.test_actual_netport_and_connect_hooks_compile_with_all_forty_private_globals":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelNetportObjectSelection.test_mixed_profiles_refuse_before_linux_checks_archive_output_or_build":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelNetportObjectSelection.test_netport_is_exclusive_boolean_and_both_historical_selections_remain_exact":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelNetportObjectSelection.test_netport_optin_refuses_local_build_before_any_source_acquisition":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelObjectSelection.test_actual_upstream_mixed_case_symbol_names_stay_exact_and_cannot_bypass_comparison":
-      "82ac47b8b6b754f43089f3caae303c13b36de215131c95e956e05d8d0de51d4a",
-"KernelObjectSelection.test_archive_snapshot_authenticates_all_bytes_in_an_independent_fresh_file":
-      "82ac47b8b6b754f43089f3caae303c13b36de215131c95e956e05d8d0de51d4a",
-"KernelObjectSelection.test_config_parser_rejects_duplicate_malformed_empty_and_oversize_symbols":
-      "82ac47b8b6b754f43089f3caae303c13b36de215131c95e956e05d8d0de51d4a",
-"KernelObjectSelection.test_disabled_or_previously_enabled_private_bodies_never_count_as_compile":
-      "82ac47b8b6b754f43089f3caae303c13b36de215131c95e956e05d8d0de51d4a",
-"KernelObjectSelection.test_exact_optin_preserves_every_original_config_including_memcg":
-      "82ac47b8b6b754f43089f3caae303c13b36de215131c95e956e05d8d0de51d4a",
-"KernelObjectSelection.test_failed_owned_process_keeps_partial_streams_and_never_masks_primary_failure":
-      "82ac47b8b6b754f43089f3caae303c13b36de215131c95e956e05d8d0de51d4a",
-"KernelObjectSelection.test_local_execution_refuses_before_archive_read_or_build":
-      "82ac47b8b6b754f43089f3caae303c13b36de215131c95e956e05d8d0de51d4a",
-"KernelObjectSelection.test_six_real_objects_require_private_constructor_and_blob_symbols":
-      "82ac47b8b6b754f43089f3caae303c13b36de215131c95e956e05d8d0de51d4a",
-"KernelPacketObjectSelection.test_all_nine_old_profiles_and_job_bodies_remain_exact":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelPacketObjectSelection.test_exclusive_packet_job_preserves_original_config_bounds_and_all_artifacts":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelPacketObjectSelection.test_packet_receipt_cannot_claim_kernel_packet_dma_or_final_free_execution":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelPacketObjectSelection.test_twenty_seven_objects_retain_all_eighty_seven_and_add_twelve_real_functions":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelPacketObjectSelection.test_unknown_mixed_and_local_packet_profiles_refuse_before_archive_or_build":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRecipientObjectSelection.test_13_anchored_same_archive_inputs_authenticate_full105_before_any_derive":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRecipientObjectSelection.test_56_objects_preserve_all_48_201_and_require_243_distinct_globals":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRecipientObjectSelection.test_closed_recipient_mode_rejects_mixed_unknown_and_local_before_source_read":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRecipientObjectSelection.test_entire_new_fixture_context_restores_on_failure_and_refuses_mutable_recipe":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRecipientObjectSelection.test_new_job_is_exclusive_preserves_old13_and_retains_all56_original_bounds":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRecipientObjectSelection.test_original_enabled_wait_tracing_and_non_rt_configs_are_required_without_override":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRecipientObjectSelection.test_wait_uses_authenticated_maintained_containing_tu_without_invented_prologue":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRegistrationObjectSelection.test_config_requires_original_security_and_closed_callback_profile_without_overrides":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRegistrationObjectSelection.test_exclusive_workflow_has_original_bounds_all48_artifacts_and_closed_env_not_shell_inputs":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRegistrationObjectSelection.test_fixture_context_authenticates_once_returns_fresh_nested_copies_and_restores_functions":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRegistrationObjectSelection.test_fixture_context_restores_on_original_failure_and_refuses_source_drift":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRegistrationObjectSelection.test_forty_eight_objects_preserve_all_37_145_and_require_201_actual_globals":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRegistrationObjectSelection.test_mixed_unknown_and_local_registration_refuse_before_acquisition":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRegistrationObjectSelection.test_twenty_fixed_same_archive_paths_authenticate_full92_and_preserve_read_bounds":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRouteCacheObjectSelection.test_all_eight_previous_profiles_retain_their_exact_symbol_oracles":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRouteCacheObjectSelection.test_all_eight_prior_job_bodies_remain_exact_with_only_closed_cache_exclusion":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRouteCacheObjectSelection.test_cache_keeps_same_twenty_four_targets_and_all_eighty_one_original_functions":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRouteCacheObjectSelection.test_exclusive_cache_job_keeps_closed_eight_inputs_config_and_original_bounds":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRouteCacheObjectSelection.test_unknown_mixed_and_local_cache_selection_refuses_before_archive_or_build":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRouteObjectSelection.test_actual_route_configuration_keeps_xfrm_and_refuses_allocating_tracker_or_lwt":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRouteObjectSelection.test_all_seven_original_job_bodies_remain_exact_except_exclusive_if":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRouteObjectSelection.test_route_job_retains_seven_closed_inputs_all_targets_and_original_limits":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRouteObjectSelection.test_twenty_four_objects_keep_all_seventy_five_bind_oracles_and_add_six":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelRouteObjectSelection.test_unknown_mixed_and_local_route_modes_refuse_before_source_or_build":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelSidcacheObjectSelection.test_fifteen_objects_keep_all_forty_netport_globals_and_add_twelve_real_definitions":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelSidcacheObjectSelection.test_focused_owning_job_preserves_original_time_tools_security_and_artifact_bounds":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelSidcacheObjectSelection.test_only_one_real_boolean_profile_can_reach_source_or_build":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelSidcacheObjectSelection.test_original_cache_256_entry_configuration_is_required_without_override":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b",
-"KernelSidcacheObjectSelection.test_sidcache_profile_refuses_local_build_before_any_archive_or_output":
-      "9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b"
-},
-"kind":"python",
-"module":"tools/tests/test_host_stream_kernel_objects.py",
-"reviewReason":"Correct the owning target to the exact maintained scheduler containing translation unit; authenticate its three complete original files, preserve all56 objects243 oracles and existing bodies/configuration/bounds, and retain the original failed standalone-wait attempt.",
-"schemaVersion":"latent.ci.contracts.v2",
-"guardDefinitions":{
-"9a6c62e3be3c3bce1c8cac9b398510384fcfd4cbae55c9e650d4809a3bef794b":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-"82ac47b8b6b754f43089f3caae303c13b36de215131c95e956e05d8d0de51d4a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:8c3a1a157d677b26d9012a028aee600c73959f6f05da5c92128b72f982e7b681","class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"],"skipSites":[]}
-}
+  "storageCases":"guard-keys",
+  "guards":{
+    "KernelAuditObjectSelection.test_audit_and_auditsyscall_must_already_be_enabled_without_overrides":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelAuditObjectSelection.test_audit_selection_refuses_local_build_before_archive_or_output":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelAuditObjectSelection.test_exclusive_audit_job_retains_closed_inputs_targets_and_original_bounds":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelAuditObjectSelection.test_twenty_objects_keep_all_sixty_one_avc_definitions_and_add_eight":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelAuditObjectSelection.test_unknown_and_mixed_audit_profiles_refuse_before_acquisition":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelAvcObjectSelection.test_avc_selection_refuses_local_build_before_archive_or_output":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelAvcObjectSelection.test_exclusive_avc_job_uses_only_closed_inputs_and_original_build_bounds":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelAvcObjectSelection.test_sixteen_objects_preserve_all_fifty_two_sidcache_definitions_and_add_nine":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelAvcObjectSelection.test_unknown_or_mixed_avc_profiles_refuse_before_acquisition":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelBindObjectSelection.test_bind_selection_refuses_local_build_before_archive_or_output":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelBindObjectSelection.test_dependent_profile_requires_original_audit_netlabel_and_sidcache_configuration":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelBindObjectSelection.test_exclusive_bind_job_retains_closed_inputs_targets_and_original_bounds":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelBindObjectSelection.test_twenty_two_objects_keep_all_sixty_nine_audit_definitions_and_add_six":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelBindObjectSelection.test_unknown_and_mixed_bind_profiles_refuse_before_acquisition":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelDeviceObjectSelection.test_all_ten_previous_profiles_and_job_bodies_remain_exact":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelDeviceObjectSelection.test_device_config_preserves_actual_security_and_truthfully_unselected_iov_of":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelDeviceObjectSelection.test_device_job_has_ten_closed_inputs_same_deadlines_security_and_all_products":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelDeviceObjectSelection.test_device_receipt_never_substitutes_source_compile_for_runtime_or_bootstrap":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelDeviceObjectSelection.test_exact_extracted_nine_names_are_anchored_bounded_authenticated_before_use":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelDeviceObjectSelection.test_thirty_two_objects_preserve_all_ninety_nine_and_add_only_real_pci_name_functions":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelDeviceObjectSelection.test_unknown_mixed_and_local_device_profiles_refuse_before_any_archive_read":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelFirmwareObjectSelection.test_all_eleven_old_profiles_and_complete_job_bodies_remain_exact":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelFirmwareObjectSelection.test_exclusive_firmware_job_retains_all_artifacts_and_original_build_security_bounds":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelFirmwareObjectSelection.test_firmware_receipt_separates_source_from_real_acpi_queue_or_kernel_execution":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelFirmwareObjectSelection.test_fixed_thirteen_post_extraction_members_are_anchored_and_fully_authenticated":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelFirmwareObjectSelection.test_thirty_seven_objects_preserve_121_and_add_real_reference_and_acpi_functions":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelFirmwareObjectSelection.test_unknown_mixed_and_local_firmware_profiles_refuse_before_archive_access":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelNetlabelObjectSelection.test_default_six_object_floor_is_identical_and_selector_accepts_only_real_boolean":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelNetlabelObjectSelection.test_netlabel_must_already_be_enabled_no_configuration_override_is_added":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelNetlabelObjectSelection.test_netlabel_twelve_objects_retain_all_old_symbols_and_require_all_twenty_one_new_globals":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelNetlabelObjectSelection.test_optin_object_profile_still_refuses_local_build_before_archive_access":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelNetportObjectSelection.test_actual_netport_and_connect_hooks_compile_with_all_forty_private_globals":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelNetportObjectSelection.test_mixed_profiles_refuse_before_linux_checks_archive_output_or_build":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelNetportObjectSelection.test_netport_is_exclusive_boolean_and_both_historical_selections_remain_exact":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelNetportObjectSelection.test_netport_optin_refuses_local_build_before_any_source_acquisition":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelObjectSelection.test_actual_upstream_mixed_case_symbol_names_stay_exact_and_cannot_bypass_comparison":
+      "e0cc2434129f4a9f76f11827455ea564aa7faad89e9d2e76fdfa84bc6edbf6cb",
+    "KernelObjectSelection.test_archive_snapshot_authenticates_all_bytes_in_an_independent_fresh_file":
+      "e0cc2434129f4a9f76f11827455ea564aa7faad89e9d2e76fdfa84bc6edbf6cb",
+    "KernelObjectSelection.test_config_parser_rejects_duplicate_malformed_empty_and_oversize_symbols":
+      "e0cc2434129f4a9f76f11827455ea564aa7faad89e9d2e76fdfa84bc6edbf6cb",
+    "KernelObjectSelection.test_disabled_or_previously_enabled_private_bodies_never_count_as_compile":
+      "e0cc2434129f4a9f76f11827455ea564aa7faad89e9d2e76fdfa84bc6edbf6cb",
+    "KernelObjectSelection.test_exact_optin_preserves_every_original_config_including_memcg":
+      "e0cc2434129f4a9f76f11827455ea564aa7faad89e9d2e76fdfa84bc6edbf6cb",
+    "KernelObjectSelection.test_failed_owned_process_keeps_partial_streams_and_never_masks_primary_failure":
+      "e0cc2434129f4a9f76f11827455ea564aa7faad89e9d2e76fdfa84bc6edbf6cb",
+    "KernelObjectSelection.test_local_execution_refuses_before_archive_read_or_build":
+      "e0cc2434129f4a9f76f11827455ea564aa7faad89e9d2e76fdfa84bc6edbf6cb",
+    "KernelObjectSelection.test_six_real_objects_require_private_constructor_and_blob_symbols":
+      "e0cc2434129f4a9f76f11827455ea564aa7faad89e9d2e76fdfa84bc6edbf6cb",
+    "KernelPacketObjectSelection.test_all_nine_old_profiles_and_job_bodies_remain_exact":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelPacketObjectSelection.test_exclusive_packet_job_preserves_original_config_bounds_and_all_artifacts":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelPacketObjectSelection.test_packet_receipt_cannot_claim_kernel_packet_dma_or_final_free_execution":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelPacketObjectSelection.test_twenty_seven_objects_retain_all_eighty_seven_and_add_twelve_real_functions":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelPacketObjectSelection.test_unknown_mixed_and_local_packet_profiles_refuse_before_archive_or_build":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRecipientObjectSelection.test_13_anchored_same_archive_inputs_authenticate_full105_before_any_derive":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRecipientObjectSelection.test_56_objects_preserve_all_48_201_and_require_243_distinct_globals":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRecipientObjectSelection.test_closed_recipient_mode_rejects_mixed_unknown_and_local_before_source_read":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRecipientObjectSelection.test_entire_new_fixture_context_restores_on_failure_and_refuses_mutable_recipe":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRecipientObjectSelection.test_new_job_is_exclusive_preserves_old13_and_retains_all56_original_bounds":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRecipientObjectSelection.test_original_enabled_wait_tracing_and_non_rt_configs_are_required_without_override":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRecipientObjectSelection.test_wait_uses_authenticated_maintained_containing_tu_without_invented_prologue":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRegistrationObjectSelection.test_config_requires_original_security_and_closed_callback_profile_without_overrides":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRegistrationObjectSelection.test_exclusive_workflow_has_original_bounds_all48_artifacts_and_closed_env_not_shell_inputs":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRegistrationObjectSelection.test_fixture_context_authenticates_once_returns_fresh_nested_copies_and_restores_functions":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRegistrationObjectSelection.test_fixture_context_restores_on_original_failure_and_refuses_source_drift":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRegistrationObjectSelection.test_forty_eight_objects_preserve_all_37_145_and_require_201_actual_globals":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRegistrationObjectSelection.test_mixed_unknown_and_local_registration_refuse_before_acquisition":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRegistrationObjectSelection.test_twenty_fixed_same_archive_paths_authenticate_full92_and_preserve_read_bounds":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRouteCacheObjectSelection.test_all_eight_previous_profiles_retain_their_exact_symbol_oracles":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRouteCacheObjectSelection.test_all_eight_prior_job_bodies_remain_exact_with_only_closed_cache_exclusion":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRouteCacheObjectSelection.test_cache_keeps_same_twenty_four_targets_and_all_eighty_one_original_functions":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRouteCacheObjectSelection.test_exclusive_cache_job_keeps_closed_eight_inputs_config_and_original_bounds":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRouteCacheObjectSelection.test_unknown_mixed_and_local_cache_selection_refuses_before_archive_or_build":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRouteObjectSelection.test_actual_route_configuration_keeps_xfrm_and_refuses_allocating_tracker_or_lwt":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRouteObjectSelection.test_all_seven_original_job_bodies_remain_exact_except_exclusive_if":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRouteObjectSelection.test_route_job_retains_seven_closed_inputs_all_targets_and_original_limits":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRouteObjectSelection.test_twenty_four_objects_keep_all_seventy_five_bind_oracles_and_add_six":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelRouteObjectSelection.test_unknown_mixed_and_local_route_modes_refuse_before_source_or_build":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelSidcacheObjectSelection.test_fifteen_objects_keep_all_forty_netport_globals_and_add_twelve_real_definitions":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelSidcacheObjectSelection.test_focused_owning_job_preserves_original_time_tools_security_and_artifact_bounds":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelSidcacheObjectSelection.test_only_one_real_boolean_profile_can_reach_source_or_build":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelSidcacheObjectSelection.test_original_cache_256_entry_configuration_is_required_without_override":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6",
+    "KernelSidcacheObjectSelection.test_sidcache_profile_refuses_local_build_before_any_archive_or_output":
+      "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_host_stream_kernel_objects.py",
+  "reviewReason":"Correct the owning target to the exact maintained scheduler containing translation unit; authenticate its three complete original files, preserve all56 objects243 oracles and existing bodies/configuration/bounds, and retain the original failed standalone-wait attempt. Authenticate the exact repaired checkout inverse before historical workflow/source hashes; all original case IDs and non-setup guards retained.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "4f82766e83fb4415e7f1fb2c949f41f400c3e6e8ee57b1ae6ff7055f03c32fc6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:4647ebd8c9723622c6109b84c9a889659b9f0d97bdf078d36cd278f33fd5c0a6","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
+    "e0cc2434129f4a9f76f11827455ea564aa7faad89e9d2e76fdfa84bc6edbf6cb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:4647ebd8c9723622c6109b84c9a889659b9f0d97bdf078d36cd278f33fd5c0a6","class:setup-sha256:439d80192a5f2614e2e519872f78b6e6ff97179d4f3c8d1acead1f0502fd7b61"]}
+  }
 }

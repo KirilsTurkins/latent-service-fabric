@@ -1,5 +1,5 @@
 {
-"cases":["AdversarialHttpEvidence.test_missing_duplicate_denied_target_or_forwarded_credentials_fail_peer_oracle","AdversarialHttpEvidence.test_referer_selection_does_not_change_original_configuration_or_credentials","AdversarialHttpEvidence.test_secondary_grant_authorizes_only_the_exact_get_target","AdversarialHttpEvidence.test_uncertainty_wrong_revision_unreaped_or_excess_consumption_cannot_pass","AdversarialHttpEvidence.test_unchanged_custom_transport_keeps_exact_utf8_domain_payload"],
+"storageCases":"guard-keys",
 "guards":{
 "AdversarialHttpEvidence.test_missing_duplicate_denied_target_or_forwarded_credentials_fail_peer_oracle":
       "d77c59b7611dea8c16a95ddc707ae9b3576162b4ed1adc730158ac66ef1ca411",

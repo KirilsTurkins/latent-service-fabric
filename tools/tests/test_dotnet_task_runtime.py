@@ -163,6 +163,41 @@ class RootReturnNormalControls(unittest.TestCase):
             'waits': 16, 'timers': 8, 'results': 8, 'nativeOwners': 8})
         self.assertNotIn(7, [m for _, m, _ in selected.STEPS])
         self.assertEqual(len(selected.STEPS)+len(selected.PROFILES), 15)
+        import copy
+        import json
+        from unittest.mock import patch
+        from tools.dotnet_guest import managed_work, task_wait
+        from tools.phase2_operator_process import WorkflowError
+        port = {'profile': task_wait.PROFILE,
+            'managedAcceptedWork': copy.deepcopy(managed_work.PREFETCH_REWRITE_RECEIPT),
+            'generatedHelperCount': 96, 'completion': 'actual-task-only',
+            'finiteAndCancellableWaits': 'original-Task-WhenAny-Delay',
+            'completeOriginalWaitRemainderPreserved': True,
+            'nativeAotReferenceBinding': {'responseFiles': [{'controlled': 'parser-only'}]}}
+        with tempfile.TemporaryDirectory() as temporary:
+            artifact = Path(temporary)
+            path = artifact / 'task-wait-port.json'
+            path.write_text(json.dumps(port))
+            self.assertEqual(selected.current_managed_port(artifact), port)
+            for changed in ('dated', 'readiness', 'count', 'bool-count', 'response', 'remainder'):
+                bad = copy.deepcopy(port)
+                if changed == 'dated': bad['managedAcceptedWork'] = copy.deepcopy(managed_work.TIMER_REWRITE_RECEIPT)
+                elif changed == 'readiness': bad['managedAcceptedWork']['readiness'] = 'unproved'
+                elif changed == 'count': bad['generatedHelperCount'] = 95
+                elif changed == 'bool-count': bad['generatedHelperCount'] = True
+                elif changed == 'response': bad['nativeAotReferenceBinding']['responseFiles'] *= 2
+                else: bad['completeOriginalWaitRemainderPreserved'] = 1
+                path.write_text(json.dumps(bad))
+                with self.subTest(changed=changed), self.assertRaises((ValueError, WorkflowError)):
+                    selected.current_managed_port(artifact)
+            for event, ref in (('workflow_dispatch', 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028'),
+                               ('push', 'refs/heads/development'), ('push', 'refs/heads/test/sdk-dotnet-join-cause-20261027')):
+                untouched = artifact / 'must-not-exist'
+                with self.subTest(event=event, ref=ref), patch.dict(selected.os.environ,
+                        {'GITHUB_EVENT_NAME': event, 'GITHUB_REF': ref}), \
+                        self.assertRaisesRegex(WorkflowError, 'root-return-current-closed-push'):
+                    selected.qualify_current_products(untouched, artifact / 'unexecuted-tools', '0' * 40)
+                self.assertFalse(untouched.exists())
 
 
     def test_retention_closes17_and_keeps_component_before_shape_refusal(self):
@@ -212,8 +247,7 @@ class RootReturnSupplementalControls(unittest.TestCase):
         # test registration; unavailable diagnostic prerequisites must refuse.
         rust = (ROOT/'crates/latent-wasmtime/tests/local_service.rs').read_text()
         signature = 'async fn dotnet_join_cause_borrows_one_word_before_unchanged_native_finalization() {'
-        prefix, remaining = rust.split(signature, 1)
-        body = remaining.split('\n#[tokio::test(', 1)[0]
+        prefix, body = rust.split(signature)
         attributes = prefix.rsplit('\n\n', 1)[1]
         self.assertNotIn('#[cfg', attributes)
         self.assertIn('#[tokio::test(', attributes)
@@ -258,41 +292,6 @@ class RootReturnSupplementalControls(unittest.TestCase):
                            (a.JOIN_CAUSE_FILE, a.JOIN_CAUSE_NORMAL)]:
             with self.assertRaisesRegex(ValueError, 'unreviewed-normal-helper'):
                 a.diagnostic_join_cause(name, text)
-
-    def test_task_return_stage_parser_never_qualifies_the_failed_old_oracle(self):
-        import copy
-        import json
-        from tools import dotnet_root_return as selected
-        from tools.phase2_operator_process import WorkflowError
-        rows = []
-        for auxiliary in (False, True):
-            for mode, cause in ((8, 'quiescence'), (9, 'originalFault'), (10, 'unexpected')):
-                rows.append({'component': selected.JOIN_REPLAY_COMPONENTS[int(auxiliary)],
-                    'mode': mode, 'auxiliary': auxiliary, 'stage': 'canonicalTaskReturnBeforeScopeExit',
-                    'taskReturnWitness': {'claims': 1, 'invalid': False, 'cause': cause} if auxiliary else None,
-                    'postCallObservation': {'claims': 1, 'invalid': True, 'cause': None} if auxiliary else None,
-                    'rejection': 'callFailed' if auxiliary else None,
-                    'terminalOutcome': 'guest-trap', 'outerInvocationSucceeded': False,
-                    'canonicalTaskReturnCauseEvidence': auxiliary and mode != 10,
-                    'oldPostCallProgrammeQualified': False, 'originalTrapQualified': False,
-                    'physicalRetirementQualified': False})
-        def encoded(items):
-            return ''.join('DOTNET_JOIN_TASK_RETURN '+json.dumps(r)+'\n' for r in items).encode()
-        self.assertEqual(selected.join_task_return_observations(encoded(rows), selected.JOIN_REPLAY_COMPONENTS), rows)
-        # Parser fixtures are not guest executions or evidence. Every mutation
-        # below must refuse, including laundering a failed old post-call model.
-        for field, value in [('oldPostCallProgrammeQualified', True),
-                             ('outerInvocationSucceeded', True), ('rejection', ['callFailed'])]:
-            bad = copy.deepcopy(rows); bad[4][field] = value
-            with self.assertRaises(WorkflowError):
-                selected.join_task_return_observations(encoded(bad), selected.JOIN_REPLAY_COMPONENTS)
-        for change in ({'invalid': True}, {'claims': 2}, {'cause': 'unknown'}):
-            bad = copy.deepcopy(rows); bad[4]['taskReturnWitness'].update(change)
-            with self.assertRaises(WorkflowError):
-                selected.join_task_return_observations(encoded(bad), selected.JOIN_REPLAY_COMPONENTS)
-        bad = copy.deepcopy(rows); bad[5]['canonicalTaskReturnCauseEvidence'] = True
-        with self.assertRaises(WorkflowError):
-            selected.join_task_return_observations(encoded(bad), selected.JOIN_REPLAY_COMPONENTS)
 
 
 if __name__ == '__main__':

@@ -1,17 +1,8 @@
-{"cases":["JavaJoinedOwners.test_audit_loss_never_replaces_native_physical_or_provider_retention","JavaJoinedOwners.test_caught_callback_error_remains_a_success_value_and_root_trap_stays_terminal","JavaJoinedOwners.test_closed_native_reader_rejects_unknown_duplicate_overflow_and_foreign_profile_counts","JavaJoinedOwners.test_current_mode_cannot_borrow_the_other_public_activation_pending_event","JavaJoinedOwners.test_rehashed_profile_checkpoint_and_resource_substitution_cannot_borrow_observed_build","JavaJoinedOwners.test_stale_before_invocation_observation_is_refused_and_read_deadline_restored","JavaJoinedOwners.test_timer_and_fallback_wait_paths_require_actual_positive_host_wait_and_original_root"],"guards":{"JavaJoinedOwners.test_audit_loss_never_replaces_native_physical_or_provider_retention":
-  "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b"
-,"JavaJoinedOwners.test_caught_callback_error_remains_a_success_value_and_root_trap_stays_terminal":
-  "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b"
-,"JavaJoinedOwners.test_closed_native_reader_rejects_unknown_duplicate_overflow_and_foreign_profile_counts":
-  "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b"
-,"JavaJoinedOwners.test_current_mode_cannot_borrow_the_other_public_activation_pending_event":
-  "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b"
-,"JavaJoinedOwners.test_rehashed_profile_checkpoint_and_resource_substitution_cannot_borrow_observed_build":
-  "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b"
-,"JavaJoinedOwners.test_stale_before_invocation_observation_is_refused_and_read_deadline_restored":
-  "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b"
-,"JavaJoinedOwners.test_timer_and_fallback_wait_paths_require_actual_positive_host_wait_and_original_root":
-  "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b"
-},"kind":"python","module":"tools/tests/test_java_joined_owners.py","reviewReason":"Explicit skip-context review: retain all7testnames/bases/decorators/skips; onlyhelper fixture now uses the actual public coroutine preparation and one positive control additionally refuses private workfile existence. Hosted c277 failure/publicartifact prove exact output contract.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6fa176f0bff6a6901fb73b1d622ed3050d4302c4362ab603cc97c4da6d04bf84","class:setup-sha256:987b168c919c94074d983f2e86d0c59a0dbcb0e098989161071fe58fe1ac379c"],"skipSites":[]}}}
+{"storageCases":"guard-keys","guards":{"JavaJoinedOwners.test_audit_loss_never_replaces_native_physical_or_provider_retention":
+      "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b","JavaJoinedOwners.test_caught_callback_error_remains_a_success_value_and_root_trap_stays_terminal":
+      "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b","JavaJoinedOwners.test_closed_native_reader_rejects_unknown_duplicate_overflow_and_foreign_profile_counts":
+      "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b","JavaJoinedOwners.test_current_mode_cannot_borrow_the_other_public_activation_pending_event":
+      "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b","JavaJoinedOwners.test_rehashed_profile_checkpoint_and_resource_substitution_cannot_borrow_observed_build":
+      "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b","JavaJoinedOwners.test_stale_before_invocation_observation_is_refused_and_read_deadline_restored":
+      "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b","JavaJoinedOwners.test_timer_and_fallback_wait_paths_require_actual_positive_host_wait_and_original_root":
+      "cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b"},"kind":"python","module":"tools/tests/test_java_joined_owners.py","reviewReason":"Explicit skip-context review: retain all7testnames/bases/decorators/skips; onlyhelper fixture now uses the actual public coroutine preparation and one positive control additionally refuses private workfile existence. Hosted c277 failure/publicartifact prove exact output contract.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"cee7278b780dc1b30291dfeefa48960e6848ad047a4c9b726c41cd2ecea9dd9b":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6fa176f0bff6a6901fb73b1d622ed3050d4302c4362ab603cc97c4da6d04bf84","class:setup-sha256:987b168c919c94074d983f2e86d0c59a0dbcb0e098989161071fe58fe1ac379c"],"skipSites":[]}}}

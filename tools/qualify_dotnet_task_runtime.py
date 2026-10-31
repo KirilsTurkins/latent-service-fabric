@@ -105,15 +105,13 @@ if __name__ == '__main__':
     if '--join-cause-replay' in sys.argv[1:]:
         parser = argparse.ArgumentParser(description='Closed retained-component Join-cause replay')
         parser.add_argument('--join-cause-replay', action='store_true', required=True)
-        parser.add_argument('--task-return-witness', action='store_true')
         for name in ('output', 'replay-archive'):
             parser.add_argument('--'+name, type=Path, required=True)
         parser.add_argument('--source-commit', required=True)
         arguments = parser.parse_args()
         from tools.dotnet_root_return import qualify_join_cause_replay
         print(json.dumps(qualify_join_cause_replay(arguments.output.resolve(),
-            arguments.replay_archive.resolve(), arguments.source_commit,
-            task_return_witness=arguments.task_return_witness)))
+            arguments.replay_archive.resolve(), arguments.source_commit)))
         raise SystemExit(0)
     if '--join-cause' in sys.argv[1:]:
         parser = argparse.ArgumentParser(description='Closed auxiliary Join-cause fixture')
@@ -125,6 +123,17 @@ if __name__ == '__main__':
         from tools.dotnet_root_return import qualify_join_cause
         print(json.dumps(qualify_join_cause(arguments.output.resolve(), arguments.tools.resolve(),
                                            arguments.source_commit)))
+        raise SystemExit(0)
+    if '--root-return-current' in sys.argv[1:]:
+        parser = argparse.ArgumentParser(description='Closed current-products NORMAL root-return fixture')
+        parser.add_argument('--root-return-current', action='store_true', required=True)
+        for name in ('output', 'tools'):
+            parser.add_argument('--' + name, type=Path, required=True)
+        parser.add_argument('--source-commit', required=True)
+        arguments = parser.parse_args()
+        from tools.dotnet_root_return import qualify_current_products
+        print(json.dumps(qualify_current_products(arguments.output.resolve(), arguments.tools.resolve(),
+                                                 arguments.source_commit)))
         raise SystemExit(0)
     if '--root-return' in sys.argv[1:]:
         parser = argparse.ArgumentParser(description='Closed NORMAL root-return fixture')

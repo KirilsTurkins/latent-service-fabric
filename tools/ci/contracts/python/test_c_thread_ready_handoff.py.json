@@ -1,5 +1,5 @@
 {
-"cases":["CThreadReadyHandoff.test_executed_fixed_reader_controller_and_workflow_are_source_bound","CThreadReadyHandoff.test_fixed_source_refusal_precedes_any_normal_guest_compiler_execution","CThreadReadyHandoff.test_only_fixed_native_route_and_explicit_diagnostic_metadata_change_original_run"],
+"storageCases":"guard-keys",
 "guards":{
 "CThreadReadyHandoff.test_executed_fixed_reader_controller_and_workflow_are_source_bound":
       "95d73d74c3adaef7b597b41a3502a641c3027e3240cd31fc982a2ca9d6f60426",

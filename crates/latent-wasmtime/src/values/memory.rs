@@ -163,53 +163,6 @@ impl OwnedValues {
             .as_ref()
             .map(|memory| Arc::clone(memory) as Arc<dyn DynamicValueMemory>)
     }
-    #[cfg(feature = "development-test-host")]
-    pub(crate) fn attach_development_task_return(
-        &self,
-        shared: Arc<crate::backend::SharedRuntime>,
-        slot: usize,
-        session: Option<latent_capabilities::broker::CapabilitySessionObserver>,
-    ) {
-        let Some(memory) = &self.lift_memory else {
-            return;
-        };
-        let Some(session) = session else {
-            shared.reject_development_task_return(
-                slot,
-                crate::DevelopmentJoinRejectReason::SessionUnavailable,
-            );
-            return;
-        };
-        let Ok(mut sink) = memory.task_return.lock() else {
-            return;
-        };
-        if sink.is_some() {
-            shared.reject_development_task_return(
-                slot,
-                crate::DevelopmentJoinRejectReason::DuplicateCapture,
-            );
-            return;
-        }
-        *sink = Some(TaskReturnSink {
-            shared,
-            slot,
-            session,
-        });
-        memory
-            .task_return_enabled
-            .store(true, std::sync::atomic::Ordering::Release);
-    }
-    #[cfg(feature = "development-test-host")]
-    pub(crate) fn development_host_admission_scope(&self) -> Option<Arc<LiftMemory>> {
-        self.lift_memory
-            .as_ref()
-            .filter(|memory| {
-                memory
-                    .task_return_enabled
-                    .load(std::sync::atomic::Ordering::Acquire)
-            })
-            .map(Arc::clone)
-    }
     pub(crate) fn begin_lift(&mut self) {
         self.memory.conservative_on_drop = self.lift_memory.is_none();
     }
@@ -345,56 +298,15 @@ const LIFT_SCOPE_BYTES: usize = 256;
 const _: () = assert!(
     size_of::<LiftMemory>() + 2 * size_of::<usize>() + ALLOCATION_METADATA <= LIFT_SCOPE_BYTES
 );
-#[cfg(feature = "development-test-host")]
-const _: () = assert!(size_of::<Option<Arc<LiftMemory>>>() == size_of::<usize>());
-#[cfg(feature = "development-test-host")]
-struct TaskReturnSink {
-    shared: Arc<crate::backend::SharedRuntime>,
-    slot: usize,
-    session: latent_capabilities::broker::CapabilitySessionObserver,
-}
-pub(crate) struct LiftMemory {
-    // These original-call references retire before the original scope refund.
-    #[cfg(feature = "development-test-host")]
-    task_return: Mutex<Option<TaskReturnSink>>,
-    #[cfg(feature = "development-test-host")]
-    task_return_enabled: std::sync::atomic::AtomicBool,
+struct LiftMemory {
     memory: Mutex<Escrow>,
     budget: ActivationBudget,
 }
 impl LiftMemory {
-    #[cfg(feature = "development-test-host")]
-    pub(crate) fn host_admission_refusal(
-        &self,
-        actual: &latent_capabilities::broker::CapabilitySession,
-        edge: crate::development_trap_observer::DevelopmentHostAdmissionEdge,
-        operation: crate::development_trap_observer::DevelopmentHostOperation,
-        code: latent_core::PlatformErrorCode,
-    ) {
-        let Ok(sink) = self.task_return.lock() else {
-            return;
-        };
-        let Some(sink) = &*sink else {
-            return;
-        };
-        if actual.is_observed_by(&sink.session) {
-            sink.shared.capture_development_host_admission_refusal(
-                sink.slot,
-                edge,
-                operation,
-                code,
-                sink.session.is_closed(),
-            );
-        }
-    }
     fn new(budget: &ActivationBudget) -> Result<Arc<Self>, PlatformError> {
         let mut memory = Escrow::new(Some(budget));
         memory.add(LIFT_SCOPE_BYTES)?;
         let owner = Arc::new(Self {
-            #[cfg(feature = "development-test-host")]
-            task_return: Mutex::new(None),
-            #[cfg(feature = "development-test-host")]
-            task_return_enabled: std::sync::atomic::AtomicBool::new(false),
             memory: Mutex::new(memory),
             budget: budget.clone(),
         });
@@ -407,27 +319,6 @@ impl LiftMemory {
     }
 }
 impl DynamicValueMemory for LiftMemory {
-    #[cfg(feature = "development-test-host")]
-    fn development_task_return_enabled(&self) -> bool {
-        self.task_return_enabled
-            .load(std::sync::atomic::Ordering::Acquire)
-    }
-    #[cfg(feature = "development-test-host")]
-    fn development_task_return(&self, event: wasmtime::component::DevelopmentTaskReturnEvent) {
-        if !self.development_task_return_enabled() {
-            return;
-        }
-        let Ok(sink) = self.task_return.lock() else {
-            return;
-        };
-        if let Some(sink) = &*sink {
-            sink.shared.capture_development_task_return(
-                sink.slot,
-                !sink.session.is_closed(),
-                event,
-            );
-        }
-    }
     fn reserve(&self, bytes: usize) -> wasmtime::Result<()> {
         self.memory
             .lock()
@@ -459,7 +350,6 @@ impl DynamicValueMemory for LiftMemory {
         }
     }
     fn fork(&self) -> wasmtime::Result<Arc<dyn DynamicValueMemory>> {
-        // A parameter copy gets a new original owner, NEVER the root result sink.
         Self::new(&self.budget)
             .map(|memory| memory as Arc<dyn DynamicValueMemory>)
             .map_err(|error| wasmtime::Error::new(LiftMemoryError(error)))
