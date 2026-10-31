@@ -90,8 +90,9 @@ def main(argv=None):
     profile.add_argument('--compiled-resources', action='store_true')
     profile.add_argument('--libfetch-http', action='store_true')
     profile.add_argument('--libucl-http', action='store_true')
+    profile.add_argument('--outside-capture', action='store_true')
     args = parser.parse_args(argv)
-    if args.libfetch_http or args.libucl_http:
+    if args.libfetch_http or args.libucl_http or args.outside_capture:
         return qualify_http(args)
     require(sys.platform == 'linux' and sys.version_info >= (3, 13) and os.geteuid() != 0,
             'c-standard-unprivileged-linux-python313-required')
@@ -196,6 +197,8 @@ HTTP_MATERIALS = (
     '.github/workflows/c-guest-authoring.yml',
     'sdk/c-guest/runtime-fixtures/libfetch/probe.c',
     'sdk/c-guest/runtime-fixtures/libfetch/world.wit',
+    'tools/c_catalogue_free_build.py', 'tools/dev_tool_distribution.py',
+    'wit/host-abi-phase3-v5.json',
 )
 
 
@@ -368,9 +371,64 @@ def http_routing_controls(commands, pins):
         commands.deadline, commands.command_seconds = original_deadline, original_seconds
 
 
+def outside_capture_evidence(project, artifact, variant):
+    """Bind the actual normal source/resource capture, without borrowing a run."""
+    from tools import c_thread_runtime_fixture as fixture, guest_resources
+    from tools.application_dependencies import LOCK, MANIFEST
+    from tools.build_snapshot import digest
+    require(type(variant) is int and variant in (0, 1), 'c-outside-closed-identity-variant')
+    identities = (('shop-floor/price-card', 'shop-floor/card-policy'),
+                  ('warehouse/bin-label-reader', 'warehouse/label-policy'))[variant]
+    lock_raw = read_file(project / LOCK, guest_resources.MAX_DEPENDENCY_LOCK)
+    lock = json.loads(lock_raw)
+    rows = lock['artifacts']
+    require(len(rows) == 2 and [row['id'] for row in rows] == list(identities)
+            and [row['role'] for row in rows] == ['application', 'resource']
+            and rows[0]['dependencies'] == [identities[1]] and rows[1]['dependencies'] == []
+            and lock['executableInputs'] == [] and lock['transformations'] == []
+            and not (project.parent / ('outside-card-' + str(variant))).exists(),
+            'c-outside-originals-removed-and-captured-identity-graph')
+    expected = ({'card_client.c': fixture.CARD_LIBRARY, 'card_client.h': fixture.CARD_HEADER},
+                {'expected-card.txt': fixture.CARD_RESOURCE})
+    for row, files in zip(rows, expected):
+        require({item['path']: (item['digest'], item['size']) for item in row['files']} ==
+                {name: (digest(data), len(data)) for name, data in files.items()},
+                'c-outside-original-library-resource-bytes')
+    resources = read_json(artifact / 'c-resources.json')
+    identity = digest(fixture.CARD_RESOURCE)
+    selected = [{'path': 'configuration/card-policy.txt',
+                 'source': 'dependencies/card-policy/expected-card.txt', 'mediaType': 'text/plain',
+                 'owner': identities[1], 'digest': identity, 'size': len(fixture.CARD_RESOURCE)}]
+    require(resources['resources'] == selected and resources['runtimeFilesystem'] == 'not-installed',
+            'c-outside-actual-immutable-resource-selection')
+    objects = {'resources/objects/' + identity[7:]: read_file(
+        artifact / 'resources/objects' / identity[7:], guest_resources.MAX_FILE)}
+    verified = guest_resources.verify(read_file(artifact / guest_resources.INDEX, guest_resources.MAX_DOCUMENT), objects,
+        source_digest=digest(read_file(artifact / 'source-inputs.json')),
+        component_digest=digest(read_file(artifact / 'component.wasm', 64 * 1024**2)),
+        dependency_lock_digest=digest(lock_raw), dependency_lock=lock_raw)
+    require(verified['count'] == 1 and objects['resources/objects/' + identity[7:]] == fixture.CARD_RESOURCE
+            and len(verified['resources']) == 1
+            and all(row['origin'] == 'dependency' and row['owner'] == identities[1]
+                    and row['path'] == selected[0]['path'] and row['digest'] == identity
+                    for row in verified['resources']), 'c-outside-source-component-lock-resource-binding')
+    inputs = read_json(artifact / 'compiler-inputs.json')
+    require(any(row['path'].replace('\\', '/').endswith('/' + selected[0]['source'])
+                and row['digest'] == identity and row['size'] == len(fixture.CARD_RESOURCE)
+                for row in inputs['preprocessorInputs']), 'c-outside-actual-embed-preprocessor-membership')
+    return {'identityVariant': variant, 'artifactIds': list(identities),
+            'manifest': file_identity(project / MANIFEST), 'lock': file_identity(project / LOCK),
+            'trees': [row['treeDigest'] for row in rows], 'originalsRemoved': True,
+            'resourceIndex': file_identity(artifact / guest_resources.INDEX),
+            'compiledResource': selected[0], 'preprocessorMembership': True,
+            'independentlyMaintainedClient': False, 'qualificationBorrowed': False}
+
+
 def qualify_http(args):
     import time
-    expanded = args.libucl_http
+    outside = getattr(args, 'outside_capture', False)
+    require(type(outside) is bool, 'c-http-closed-outside-selection')
+    expanded = args.libucl_http or outside
     require(type(expanded) is bool, 'c-http-closed-client-selection')
     runtime_profile = FETCH_STANDARD_PROFILE if expanded else FETCH_PROFILE
     from tools import c_thread_runtime_fixture as fixture, c_thread_runtime_node as node
@@ -393,16 +451,21 @@ def qualify_http(args):
     commands.deadline = parent - 5
     commands.environment.update(CARGO_TARGET_DIR=os.environ.get('CARGO_TARGET_DIR', str(ROOT / 'target')),
         CARGO_BUILD_JOBS='2', CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0', CARGO_INCREMENTAL='0')
-    result = {'schemaVersion': 'latent.c.http-pair.qualification.v1' if expanded else 'latent.c.libfetch.qualification.v1',
+    result = {'schemaVersion': 'latent.c.outside-capture.qualification.v1' if outside else
+                              'latent.c.http-pair.qualification.v1' if expanded else 'latent.c.libfetch.qualification.v1',
               'status': 'incomplete',
-              'scope': 'two-current-http-clients-same-expanded-profile' if expanded else
+              'scope': 'two-normal-outside-capture-identity-variants' if outside else
+                       'two-current-http-clients-same-expanded-profile' if expanded else
                        'one-authentic-libfetch-client-five-signed-cells', 'full690Qualified': False,
               'fullCCostModelQualified': False, 'publisherAuthenticated': False, 'releasePublished': False,
               'limits': {'parentSeconds': 1320, 'commandSeconds': 900, 'cleanupReserveSeconds': 5,
-                         'jobs': 2, 'cells': 10 if expanded else 5,
+                         'jobs': 2, 'cells': 2 if outside else 10 if expanded else 5,
                          'components': 2 if expanded else 1}, 'setupSeconds': elapsed}
     if expanded:
         result['independentClientCount'] = 0
+    if outside:
+        result['limits'].update(perOwnerCommandRetentionBytes=16 * 1024**2, clientCalls=384,
+                               clientRetentionBytes=4 * 1024**2, clientSeconds=240)
     stage = 'source'
     try:
         head = commands.run('libfetch-head', 'git', 'rev-parse', 'HEAD', 'HEAD^{tree}').decode().splitlines()
@@ -424,7 +487,87 @@ def qualify_http(args):
         result['routingControls'] = http_routing_controls(commands, pins)
         stage = 'one-c-component'
         sdk_source = inventory(c_capsule_project.sdk_inputs(ROOT, threading=True))
-        if expanded:
+        if outside:
+            from tools import c_catalogue_free_build as isolated
+            standalone_root, standalone_source = isolated.stage(ROOT, output / 'standalone-sdk')
+            result['standaloneBuildSource'] = standalone_source
+            installed = {'zig': args.zig.resolve(strict=True), 'wit-bindgen': args.wit_bindgen.resolve(strict=True),
+                         'wasm-tools': args.wasm_tools.resolve(strict=True)}
+            tools = {name: file_identity(path, 512 * 1024**2) for name, path in installed.items()}
+            result['sdkInputsBefore'] = json.loads(sdk_source)
+            prepared, variants = [], []
+            result['outsideVariants'] = variants
+            for variant in (0, 1):
+                stage = 'build-outside-identity-' + str(variant)
+                project = fixture.prepare_unseen_library(output / ('project-outside-' + str(variant)), variant)
+                source = inventory(snapshot(project))
+                require(read_json(project / 'sdk-lock.json')['sdk'] == json.loads(sdk_source)
+                        and read_json(project / 'capsule-project.json')['runtimeProfile'] == runtime_profile
+                        and read_json(project / 'capsule-project.json')['languageStandard'] == 'c23',
+                        'c-outside-same-complete-sdk-normal-c23-profile')
+                artifact = output / ('build-outside-' + str(variant))
+                commands.run('outside-normal-build-' + str(variant), sys.executable, '-I', '-B',
+                    standalone_root / isolated.SELF, '--project', project, '--output', artifact,
+                    '--contracts-tool', native_paths['capsule_contracts'], '--packager', native_paths['package'],
+                    '--zig', installed['zig'], '--wit-bindgen', installed['wit-bindgen'],
+                    '--wasm-tools', installed['wasm-tools'], '--repository',
+                    'https://github.com/KirilsTurkins/latent-service-fabric',
+                    '--expect-source-digest', standalone_source['inventoryDigest'], '--deadline', repr(parent))
+                isolated_build = read_json(artifact / isolated.PROOF)
+                require(isolated.verify(standalone_root, standalone_source['inventoryDigest']) == standalone_source
+                        and isolated_build['sourceInventory'] == standalone_source
+                        and isolated_build['sourceInventoryBeforeAfterEqual'] is True
+                        and isolated_build['normalBuilderRoot'] == str(standalone_root.resolve())
+                        and isolated_build['isolatedPython'] is True
+                        and isolated_build['bytecodeWritesDisabled'] is True
+                        and isolated_build['docsPresent'] is False
+                        and isolated_build['catalogueReaderPresent'] is False,
+                        'c-outside-actual-normal-parent-builder-has-no-catalogue')
+                for name, expected in tools.items():
+                    actual = isolated_build['toolsBeforeAfter'][name]
+                    require(actual['digest'] == expected['sha256'] and actual['size'] == expected['bytes'],
+                            'c-outside-same-actual-compiler-tool')
+                for name, selected in (('contracts-tool', 'capsule_contracts'), ('packager', 'package')):
+                    actual, expected = isolated_build['toolsBeforeAfter'][name], native['binaries'][selected]
+                    require(actual['digest'].removeprefix('sha256:') == expected.get(
+                            'actualExecutableSha256', expected.get('sha256', '')).removeprefix('sha256:')
+                            and actual['size'] == expected['bytes'], 'c-outside-same-actual-native-helper')
+                build = http_build_evidence(artifact, source, runtime_profile=runtime_profile)
+                selection = read_json(artifact / 'standard-runtime-selection.json')
+                variants.append({'build': build, 'capture': outside_capture_evidence(project, artifact, variant),
+                    'catalogueFreeBuild': file_identity(artifact / isolated.PROOF),
+                    'runtimeProfile': runtime_profile, 'runtimeInputsDigest': selection['originalRuntimeInputsDigest']})
+                prepared.append((project, source, artifact))
+            require(variants[0]['capture']['trees'] == variants[1]['capture']['trees']
+                    and variants[0]['capture']['artifactIds'] != variants[1]['capture']['artifactIds']
+                    and variants[0]['capture']['manifest'] != variants[1]['capture']['manifest']
+                    and variants[0]['capture']['lock'] != variants[1]['capture']['lock']
+                    and variants[0]['runtimeInputsDigest'] == variants[1]['runtimeInputsDigest'],
+                    'c-outside-only-identity-graph-varies-same-original-files-and-runtime')
+            node_deadline = min(commands.deadline, time.monotonic() + 300)
+            client_deadline = min(node_deadline, time.monotonic() + 240)
+            counters = {'calls': 0, 'controlAttempts': 0, 'retainedBytes': 0}
+            for variant, (row, (project, source, artifact)) in enumerate(zip(variants, prepared)):
+                stage = 'signed-outside-identity-' + str(variant)
+                row['node'] = node.run_http(artifact, native_paths, output / ('node-outside-' + str(variant)),
+                    deadline=node_deadline, runtime_profile=runtime_profile, client_kind='outside-card',
+                    client_state=counters, client_deadline=client_deadline)
+                require(row['node']['status'] == 'passed' and len(row['node']['cases']) == 1
+                        and row['node']['client'] == 'outside-card' and row['node']['independentClientCount'] == 0,
+                        'c-outside-current-domain-and-retirement-required')
+            require(variants[0]['node']['native'] == variants[1]['node']['native'], 'c-outside-same-current-native')
+            for captured_project, captured_source, artifact in prepared:
+                require(captured_source == inventory(snapshot(captured_project)), 'c-outside-all-inputs-unchanged')
+            result.update(sharedClientCounters=counters, outsideCaptureVariants=2,
+                catalogueAbsenceQualified=True,
+                independentClientCount=0, identityComparison={'sdk': json.loads(sdk_source), 'tools': tools,
+                    'nativeTuple': native, 'runtimeInputsDigest': variants[0]['runtimeInputsDigest'],
+                    'pairReceiptBorrowed': False, 'pairExecutionAuthenticated': False})
+            # Count recorded completed roots; no command-count limit is installed.
+            result['completedCommandRoots'] = {'ownerBeforeFinalFence': len(commands.records),
+                'builds': [len(read_json(artifact / 'BUILD-COMPLETE.json')['commands']) for _, _, artifact in prepared],
+                'nodes': [len(row['node']['commands']) for row in variants]}
+        elif expanded:
             installed = {'zig': args.zig.resolve(strict=True), 'wit-bindgen': args.wit_bindgen.resolve(strict=True),
                          'wasm-tools': args.wasm_tools.resolve(strict=True)}
             tools = {name: file_identity(path, 512 * 1024**2) for name, path in installed.items()}
@@ -502,10 +645,14 @@ def qualify_http(args):
                 'c-libfetch-all-original-inputs-unchanged')
         commands.run('libfetch-still-clean', 'git', 'diff', '--exit-code', 'HEAD', '--')
         require(time.monotonic() < commands.deadline, 'c-libfetch-original-deadline')
+        if outside:
+            counts = result['completedCommandRoots']
+            counts['owner'] = len(commands.records)
+            counts['total'] = counts['owner'] + sum(counts['builds']) + sum(counts['nodes'])
         result.update(status='passed', commands=commands.records)
         write_json(output / 'qualified.json', result)
-        print(json.dumps({'status': 'passed', 'cells': 10 if expanded else 5,
-                          'independentClientCount': 2 if expanded else 1, 'full690Qualified': False}))
+        print(json.dumps({'status': 'passed', 'cells': 2 if outside else 10 if expanded else 5,
+                          'independentClientCount': 0 if outside else 2 if expanded else 1, 'full690Qualified': False}))
         return 0
     except BaseException as error:
         result.update(status='failed', stage=stage, reason=type(error).__name__, commands=commands.records)

@@ -514,6 +514,70 @@ class CHttpClientControls(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, '^c-libucl-exact-ordinary-result$'):
                 fixture.libucl_result(row, 'normal')
 
+        fixture.unseen_result({'exitCode': 0, 'decoded': [{'ok': 'card:7:5:57:2650795109'}]}, 'normal')
+        for row in ({'exitCode': False, 'decoded': [{'ok': 'card:7:5:57:2650795109'}]},
+                    {'exitCode': 0, 'decoded': [{'ok': 'wrong-domain'}]}):
+            with self.assertRaisesRegex(ValueError, '^c-card-exact-ordinary-result$'):
+                fixture.unseen_result(row, 'normal')
+        captures = []
+        with tempfile.TemporaryDirectory() as directory:
+            for variant in (0, 1):
+                project = fixture.prepare_unseen_library(Path(directory) / ('variant-' + str(variant)), variant)
+                value = json.loads((project / 'capsule-project.json').read_bytes())
+                self.assertEqual(value['languageStandard'], 'c23')
+                self.assertEqual(value['runtimeProfile'], 'c-libfetch-clock-entropy-v1')
+                lock = json.loads((project / 'latent.dependencies.lock.json').read_bytes())
+                self.assertEqual([row['role'] for row in lock['artifacts']], ['application', 'resource'])
+                self.assertEqual(lock['executableInputs'], [])
+                self.assertEqual(lock['transformations'], [])
+                self.assertFalse((Path(directory) / ('outside-card-' + str(variant))).exists())
+                captures.append(lock)
+        self.assertEqual([row['treeDigest'] for row in captures[0]['artifacts']],
+                         [row['treeDigest'] for row in captures[1]['artifacts']])
+        self.assertNotEqual([row['id'] for row in captures[0]['artifacts']],
+                            [row['id'] for row in captures[1]['artifacts']])
+        self.assertNotEqual(captures[0]['manifestDigest'], captures[1]['manifestDigest'])
+        from tools import c_catalogue_free_build as isolated
+        import os, subprocess, sys
+        with tempfile.TemporaryDirectory() as directory:
+            source, staged = isolated.stage(node.ROOT, Path(directory) / 'installed')
+            self.assertEqual(isolated.verify(source, staged['inventoryDigest']), staged)
+            self.assertFalse((source / 'docs').exists())
+            self.assertFalse((source / 'tools/compatibility_catalogue.py').exists())
+            self.assertEqual((source / isolated.V5).read_bytes(), (node.ROOT / isolated.V5).read_bytes())
+            result = subprocess.run([sys.executable, '-I', '-B', str(source / isolated.SELF), '--help'],
+                cwd=directory, env={**os.environ, 'PYTHONPATH': str(Path(directory) / 'absent')},
+                capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+            self.assertIn(b'--expect-source-digest', result.stdout)
+            self.assertFalse(list(source.rglob('*.pyc')))
+            self.assertEqual(isolated.verify(source, staged['inventoryDigest']), staged)
+            for name, code in (('docs', 'c-outside-source-docs-present'),
+                               ('tools/compatibility_catalogue.py', 'c-outside-source-catalogue-reader-present')):
+                path = source / name
+                if name == 'docs': path.mkdir()
+                else: path.write_bytes(b'# unselected reference reader\n')
+                try:
+                    with self.assertRaisesRegex(ValueError, '^' + code + '$'):
+                        isolated.verify(source, staged['inventoryDigest'])
+                finally:
+                    if name == 'docs': path.rmdir()
+                    else: path.unlink()
+            path = source / isolated.V5
+            original = path.read_bytes(); path.unlink()
+            try:
+                with self.assertRaisesRegex(ValueError, '^c-outside-source-normal-recipe-incomplete$'):
+                    isolated.verify(source, staged['inventoryDigest'])
+            finally:
+                path.write_bytes(original)
+            path = source / 'tools/c_capsule_build.py'
+            original = path.read_bytes(); path.write_bytes(original + b'\n# changed\n')
+            try:
+                with self.assertRaisesRegex(ValueError, '^c-outside-source-mutated$'):
+                    isolated.verify(source, staged['inventoryDigest'])
+            finally:
+                path.write_bytes(original)
+
 
         from tools.c_guest.standard_facilities import FETCH_PROFILE, FETCH_STANDARD_PROFILE
         import time
@@ -523,6 +587,9 @@ class CHttpClientControls(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, '^c-http-exact-client$'):
                 node.run_http(Path('absent'), {}, output, deadline=deadline,
                               runtime_profile=FETCH_PROFILE, client_kind='libucl')
+            with self.assertRaisesRegex(RuntimeError, '^c-http-exact-client$'):
+                node.run_http(Path('absent'), {}, output, deadline=deadline,
+                              runtime_profile=FETCH_PROFILE, client_kind='outside-card')
             self.assertFalse(output.exists())
             for bad in ({'calls': 384, 'controlAttempts': 0, 'retainedBytes': 0},
                         {'calls': False, 'controlAttempts': 0, 'retainedBytes': 0},
