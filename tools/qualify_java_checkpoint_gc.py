@@ -151,7 +151,7 @@ def build_evidence(artifact):
                 monitor['inputSha256'] if name=='c/o/t/r/GC.c' else file_identity(
                     artifact/'gc-root-generated'/name,1024**2)['sha256'].removeprefix('sha256:'))
             for name in alignment_runtime), 'java-checkpoint-exact-upstream-heap-alignment-repair')
-    require(monitor['profile']=='teavm-0.15-c-packed-monitor-gc-root-v11'
+    require(monitor['profile']=='teavm-0.15-c-packed-monitor-gc-root-v12'
         and monitor['upstreamIssue']=='konsoletyper/teavm#1330'
         and monitor['path']=='c/o/t/r/GC.c'
         and monitor['upstreamSha256']==alignment_files['c/o/t/r/GC.c']['upstreamSha256']
@@ -175,7 +175,10 @@ def build_evidence(artifact):
         and monitor['arrayItemClassStaticTableOnly'] is True
         and monitor['arrayItemIndexMaximum']==255
         and monitor['boundedObjectArrayOwnerLengthIdentityFrames'] is True
-        and monitor['arrayOwnerHeaderLayoutProfile']=='teavm-0.15-fiber-pending-call-callback-v1'
+        and monitor['arrayOwnerHeaderLayoutProfile']=='teavm-0.15-fiber-pending-call-callback-dce-v2'
+        and monitor['arrayOwnerHeaderDceOrderedSubsets'] is True
+        and monitor['arrayOwnerAvailablePaths']==['currentFiber','directLastPendingFiber']
+        and monitor['arrayOwnerMissingPathUsesUnavailableFlag'] is True
         and monitor['arrayOwnerFlagsMaximum']==15
         and monitor['arrayOwnerLengthMaximum']==255
         and monitor['arrayOwnerSources']==['currentFiber','directLastPendingFiber']
