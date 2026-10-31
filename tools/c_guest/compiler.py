@@ -251,7 +251,7 @@ class Compiler:
             # The selected profile declares all three clock/entropy interfaces.
             # Retain their captured lowerings even when this client uses none;
             # the strict final-surface inspection must still match that WIT.
-            command.extend('-Wl,--undefined=' + name for name in (
+            command.extend('-Wl,-u,' + name for name in (
                 '__imported_wasi_snapshot_preview1_clock_time_get',
                 '__imported_wasi_snapshot_preview1_random_get'))
         thread_flags = []

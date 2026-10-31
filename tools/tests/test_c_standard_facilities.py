@@ -318,11 +318,11 @@ class StandardFacilities(unittest.TestCase):
             self.assertTrue(sync_core_abi)
             destination.mkdir()
             return destination, {'source': 'controlled-binding-boundary'}
-        expected = ('-Wl,--undefined=__imported_wasi_snapshot_preview1_clock_time_get',
-                    '-Wl,--undefined=__imported_wasi_snapshot_preview1_random_get')
+        expected = ('-Wl,-u,__imported_wasi_snapshot_preview1_clock_time_get',
+                    '-Wl,-u,__imported_wasi_snapshot_preview1_random_get')
         lowering = (ROOT / 'sdk/c-guest/src/standard-clock-entropy.c').read_text()
         for symbol in expected:
-            self.assertIn('int32_t ' + symbol.split('=', 1)[1] + '(', lowering)
+            self.assertIn('int32_t ' + symbol.split(',', 2)[2] + '(', lowering)
         for ordinal, selected in enumerate(sorted(facilities.SUPPORTED)):
             with self.subTest(selected=selected), patch('tools.c_guest.compiler.generate', generate):
                 with self.assertRaises(CommandCaptured):
@@ -330,11 +330,12 @@ class StandardFacilities(unittest.TestCase):
                         self.root / ('command-' + str(ordinal)), runtime_profile=selected, memory_bytes=32 * 1024 * 1024,
                         threading_profile=threading_profile)
             command = calls[-1]
-            self.assertEqual(tuple(item for item in command if item.startswith('-Wl,--undefined=')),
+            self.assertEqual(tuple(item for item in command if item.startswith('-Wl,-u,')),
                              expected if selected == expanded else ())
             self.assertIn('-Wl,--max-memory=33554432', command)
             self.assertIn('-Wl,-z,stack-size=135168', command)
             self.assertNotIn('--allow-undefined', command)
+            self.assertFalse(any(item.startswith('-Wl,--undefined') for item in command))
             self.assertFalse(any(item.startswith('-Wl,--export=__imported_wasi_') for item in command))
 
     def test_libfetch_unthreaded_build_refuses_before_binding_generation_or_output(self):
