@@ -1,0 +1,36 @@
+name: PR 1587 workspace validation
+
+on:
+  push:
+    branches: [diag/dotnet-original-v3-trap-20261031]
+    paths: ['.github/workflows/pr1587-workspace-validation.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          toolchain: '1.97.1'
+          components: rustfmt
+      - name: Capture tracked source and formatter changes only
+        run: |
+          mkdir -p "$RUNNER_TEMP/pr1587-workspace"
+          git rev-parse HEAD > "$RUNNER_TEMP/pr1587-workspace/source-revision.txt"
+          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/pr1587-workspace/source.tar.gz"
+          test "$(stat --format=%s "$RUNNER_TEMP/pr1587-workspace/source.tar.gz")" -le 134217728
+          cargo fmt --all
+          git diff --binary > "$RUNNER_TEMP/pr1587-workspace/formatting.patch"
+      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        with:
+          name: pr1587-workspace-${{ github.sha }}
+          path: ${{ runner.temp }}/pr1587-workspace/
+          if-no-files-found: error
+          retention-days: 1
