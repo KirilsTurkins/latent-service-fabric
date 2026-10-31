@@ -124,6 +124,17 @@ if __name__ == '__main__':
         print(json.dumps(qualify_join_cause(arguments.output.resolve(), arguments.tools.resolve(),
                                            arguments.source_commit)))
         raise SystemExit(0)
+    if '--root-return-current' in sys.argv[1:]:
+        parser = argparse.ArgumentParser(description='Closed current-products NORMAL root-return fixture')
+        parser.add_argument('--root-return-current', action='store_true', required=True)
+        for name in ('output', 'tools'):
+            parser.add_argument('--' + name, type=Path, required=True)
+        parser.add_argument('--source-commit', required=True)
+        arguments = parser.parse_args()
+        from tools.dotnet_root_return import qualify_current_products
+        print(json.dumps(qualify_current_products(arguments.output.resolve(), arguments.tools.resolve(),
+                                                 arguments.source_commit)))
+        raise SystemExit(0)
     if '--root-return' in sys.argv[1:]:
         parser = argparse.ArgumentParser(description='Closed NORMAL root-return fixture')
         parser.add_argument('--root-return', action='store_true', required=True)

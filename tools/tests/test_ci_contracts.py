@@ -117,6 +117,59 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(expected, contracts.assemble(dict(reversed(list(fragments.items())))))
         self.assertNotIn("workflowIdentities", expected)
         coverage.validate(self.root)
+        # Physical owner banks preserve the exact old virtual identity model.
+        bank_path = self.root / contracts.DIRECTORY / "owner-banks/source.json"
+        bank_path.parent.mkdir()
+        selected = [name for name, row in fragments.items() if row["kind"] == "owner"]
+        leaves = [fragments[name] for name in selected]
+        self.assertTrue(leaves)
+        bank = {"schemaVersion": contracts.OWNER_BANK_SCHEMA, "records": leaves}
+        for name in selected:
+            (self.root / contracts.DIRECTORY / name).unlink()
+        # The fixture's now-empty owners/tools chain no longer has a file.
+        (self.root / contracts.DIRECTORY / "owners/tools").rmdir()
+        (self.root / contracts.DIRECTORY / "owners").rmdir()
+        bank_path.write_text(json.dumps(bank))
+        self.assertEqual(contracts.fragments(self.root), fragments)
+        self.assertEqual(list(contracts.fragments(self.root)), list(fragments))
+        self.assertEqual(contracts.load(self.root), expected)
+        variants = [dict(bank, extra=True), dict(bank, schemaVersion="unknown"), dict(bank, records=[]),
+                    dict(bank, records={}), dict(bank, records=[None]),
+                    dict(bank, records=[leaves[0], dict(leaves[0], kind="python")]),
+                    dict(bank, records=[dict(leaves[0], sha256="invalid")]),
+                    dict(bank, records=[leaves[0]] * (contracts.MAX_BANK_OWNERS + 1)),
+                    dict(bank, records=[leaves[0], leaves[0]])]
+        for malformed in variants:
+            bank_path.write_text(json.dumps(malformed))
+            with self.subTest(bank=malformed), self.assertRaises(ValueError):
+                contracts.fragments(self.root)
+        for nonobject in ([], None, 0, "owner"):
+            bank_path.write_text(json.dumps(nonobject))
+            with self.subTest(nonobject=nonobject), self.assertRaisesRegex(ValueError, "contract-object-required"):
+                contracts.fragments(self.root)
+        bank_path.write_text(json.dumps(bank))
+        with patch.object(contracts, "MAX_FRAGMENTS", len(fragments) - 1):
+            with self.assertRaisesRegex(ValueError, "contract-fragment-limit"):
+                contracts.fragments(self.root)
+        with patch.object(registry, "MAX_BYTES", bank_path.stat().st_size - 1):
+            with self.assertRaisesRegex(ValueError, "contract-byte-limit"):
+                contracts.fragments(self.root)
+        # A bank and standalone leaf may not claim the same identity.
+        duplicate = self.root / contracts.DIRECTORY / selected[0]
+        duplicate.parent.mkdir(parents=True)
+        duplicate.write_text(json.dumps(leaves[0]))
+        with self.assertRaisesRegex(ValueError, "duplicate-contract-identity"):
+            contracts.fragments(self.root)
+        duplicate.unlink()
+        duplicate.parent.rmdir(); duplicate.parent.parent.rmdir()
+        # The physical path remains closed independently of record semantics.
+        wrong = bank_path.with_name("Bad.json")
+        bank_path.rename(wrong)
+        with self.assertRaisesRegex(ValueError, "owner-bank-fields-or-path"):
+            contracts.fragments(self.root)
+        wrong.rename(bank_path)
+        self.assertEqual(contracts.load(self.root), expected)
+        coverage.validate(self.root)
 
     def test_shared_python_storage_preserves_order_values_and_semantic_hashes(self):
         original = contracts.fragments(self.root)["python/test_alpha.py.json"]
@@ -989,6 +1042,19 @@ class RepositoryMigrationTests(unittest.TestCase):
     def test_every_historical_obligation_and_current_expectation_is_accounted_for(self):
         legacy = contracts.read_json(ROOT / "tools/ci/history/commands-v1.json")
         data = contracts.load(ROOT)
+        from tools.tests.test_c_closed_filesystem_qualification import original_libucl_workflow
+        from tools.ci_lane_inventory import workflow_model
+        c_path = '.github/workflows/c-guest-authoring.yml'
+        c_text = (ROOT / c_path).read_text()
+        current_c = workflow_model(c_text)
+        previous_c = workflow_model(original_libucl_workflow(c_text))
+        current_guard = current_c['jobs']['runtime']['if']
+        self.assertEqual(current_guard,
+            "${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}")
+        for command in data['after'].values():
+            if command['workflow'] == c_path and command['job'] == 'runtime':
+                self.assertEqual(command['jobIf'], current_guard)
+                command['jobIf'] = previous_c['jobs']['runtime']['if']
         for field in ("before", "baselineRevision"):
             self.assertEqual(data[field], legacy[field], field)
         self.assertEqual(set(data["coverage"]), set(legacy["coverage"]))
@@ -1066,7 +1132,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         for key, original in legacy["after"].items():
             value = dict(original)
             if value["workflow"] == ".github/workflows/dotnet-guest.yml" and value["job"] == "toolchain":
-                # Only the two reviewed closed root-return fixture branches exclude this job.
+                # Only the three reviewed closed .NET fixture branches exclude this job.
                 # No status override is introduced: ordinary branches retain
                 # GitHub's implicit success() and every original command field.
                 self.assertEqual(value["jobIf"], "success()", key)
@@ -1074,7 +1140,9 @@ class RepositoryMigrationTests(unittest.TestCase):
                     "github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' "
                     "&& github.head_ref != 'test/sdk-dotnet-root-return-20261027' "
                     "&& github.ref != 'refs/heads/test/sdk-dotnet-join-cause-20261027' "
-                    "&& github.head_ref != 'test/sdk-dotnet-join-cause-20261027'")
+                    "&& github.head_ref != 'test/sdk-dotnet-join-cause-20261027' "
+                    "&& github.ref != 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028' "
+                    "&& github.head_ref != 'feat/sdk-dotnet-prefetched-readiness-review-20261028'")
             if value['workflow'] == '.github/workflows/developer-tools.yml' and value['job'] in {'contracts', 'guest-tools', 'wsl-image'}:
                 # Only the closed default-false data-only mode skips these
                 # jobs. Every existing ordinary command remains mandatory.
@@ -1090,11 +1158,11 @@ class RepositoryMigrationTests(unittest.TestCase):
                 self.assertEqual(value['jobIf'], 'success()', key)
                 value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}"
             if value['workflow'] == '.github/workflows/c-guest-authoring.yml' and value['job'] == 'runtime':
-                # The reviewed libfetch fixture branch and explicit replay
-                # exclude this job; normal PR refs and all other branches keep
-                # every original command, step guard and execution field.
+                # Only the explicit historical-products replay skips this old
+                # complete job. Its normal/default commands and all other
+                # execution fields retain the immutable historical obligation.
                 self.assertEqual(value['jobIf'], 'success()', key)
-                value['jobIf'] = "${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}"
+                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}"
             if value['workflow'] == '.github/workflows/java-guest-feasibility.yml' and value['job'] == 'compiler-component':
                 self.assertEqual(value['jobIf'], 'success()', key)
                 # Only these explicit manual modes exclude the unchanged full

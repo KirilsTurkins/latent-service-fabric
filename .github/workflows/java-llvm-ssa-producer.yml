@@ -36,7 +36,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install the hash-locked Linux lit timeout dependency
@@ -52,7 +52,7 @@ jobs:
         run: python3 -B tools/qualify_java_llvm_ssa.py --admit-upload --output "$RUNNER_TEMP/java-llvm-ssa-producer"
       - name: Retain finite compiler products and actual test observations
         if: always() && steps.retention.outcome == 'success'
-        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-llvm-ssa-producer-${{ github.sha }}
           retention-days: 3

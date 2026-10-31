@@ -15,6 +15,13 @@ from the explicit malformed-header wire client. Its tests cover event order,
 redaction, bounds and cleanup. Native Rust controls cover strict defaults, exact
 selection, revocation, disconnect/read-owner retention and capacity refusal.
 
+The [development integration note](../../docs/testing/cross-origin-static-assets.md#development-integration-31-october-2026)
+records the current merge baseline and distinguishes it from the earlier green
+receipts. Native CORS tests remain in the normal effective suite inventory via
+`tools/ci/suites.cases.d/cross-origin-assets.json`; the dedicated native/browser
+campaign is unchanged. Workflow action pins must match the current reviewed
+dependency graph, not the versions recorded by an older qualification.
+
 ## Original separate-peer feasibility experiment
 
 This contributor experiment implements the contract in

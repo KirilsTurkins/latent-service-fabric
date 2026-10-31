@@ -1,26 +1,26 @@
 {
   "cases":["LlvmSsaConsumer.test_actual_archive_hash_and_metadata_gate_refuse_before_product_extraction","LlvmSsaConsumer.test_actual_workflow_selector_refuses_mixed_or_nonboolean_modes_before_acquisition","LlvmSsaConsumer.test_default_official_gate_does_not_admit_derived_or_unknown_distribution","LlvmSsaConsumer.test_original_public_job_defaults_and_complete_command_recipe_remain_exact","LlvmSsaConsumer.test_real_small_core_framing_counts_imports_bodies_and_fixed_pools_name","LlvmSsaConsumer.test_small_actual_carrier_extraction_preserves_members_and_detects_real_material_changes","LlvmSsaConsumer.test_unfilled_tuple_refuses_before_output_network_or_compiler"],
   "guards":{
-    "LlvmSsaConsumer.test_actual_archive_hash_and_metadata_gate_refuse_before_product_extraction":
-      "6c13f035af905e0bcce04aed7de14d8a530abd642aea7a97bc8a0d8515027073",
-    "LlvmSsaConsumer.test_actual_workflow_selector_refuses_mixed_or_nonboolean_modes_before_acquisition":
-      "6c13f035af905e0bcce04aed7de14d8a530abd642aea7a97bc8a0d8515027073",
-    "LlvmSsaConsumer.test_default_official_gate_does_not_admit_derived_or_unknown_distribution":
-      "6c13f035af905e0bcce04aed7de14d8a530abd642aea7a97bc8a0d8515027073",
-    "LlvmSsaConsumer.test_original_public_job_defaults_and_complete_command_recipe_remain_exact":
-      "6c13f035af905e0bcce04aed7de14d8a530abd642aea7a97bc8a0d8515027073",
     "LlvmSsaConsumer.test_real_small_core_framing_counts_imports_bodies_and_fixed_pools_name":
-      "6c13f035af905e0bcce04aed7de14d8a530abd642aea7a97bc8a0d8515027073",
-    "LlvmSsaConsumer.test_small_actual_carrier_extraction_preserves_members_and_detects_real_material_changes":
-      "6c13f035af905e0bcce04aed7de14d8a530abd642aea7a97bc8a0d8515027073",
+      "58037673fe3b9de33fe14915481c9752e937018ef42ea26849fcd5e62b022564",
+    "LlvmSsaConsumer.test_original_public_job_defaults_and_complete_command_recipe_remain_exact":
+      "58037673fe3b9de33fe14915481c9752e937018ef42ea26849fcd5e62b022564",
+    "LlvmSsaConsumer.test_actual_workflow_selector_refuses_mixed_or_nonboolean_modes_before_acquisition":
+      "58037673fe3b9de33fe14915481c9752e937018ef42ea26849fcd5e62b022564",
     "LlvmSsaConsumer.test_unfilled_tuple_refuses_before_output_network_or_compiler":
-      "6c13f035af905e0bcce04aed7de14d8a530abd642aea7a97bc8a0d8515027073"
+      "58037673fe3b9de33fe14915481c9752e937018ef42ea26849fcd5e62b022564",
+    "LlvmSsaConsumer.test_default_official_gate_does_not_admit_derived_or_unknown_distribution":
+      "58037673fe3b9de33fe14915481c9752e937018ef42ea26849fcd5e62b022564",
+    "LlvmSsaConsumer.test_small_actual_carrier_extraction_preserves_members_and_detects_real_material_changes":
+      "58037673fe3b9de33fe14915481c9752e937018ef42ea26849fcd5e62b022564",
+    "LlvmSsaConsumer.test_actual_archive_hash_and_metadata_gate_refuse_before_product_extraction":
+      "58037673fe3b9de33fe14915481c9752e937018ef42ea26849fcd5e62b022564"
   },
   "kind":"python",
   "module":"tools/tests/test_java_llvm_ssa_consumer.py",
-  "reviewReason":"Reviewed synthetic carrier copied-notice identity binding only; same seven cases, module/decorator/base/skip guards and all production R7 source/license pins unchanged. Authenticate the exact repaired checkout inverse before historical workflow/source hashes; all original case IDs and non-setup guards retained.",
+  "reviewReason":"Reviewed synthetic carrier copied-notice identity binding only; same seven cases, module/decorator/base/skip guards and all production R7 source/license pins unchanged. Authenticate the exact repaired checkout inverse before historical workflow/source hashes; all original case IDs and non-setup guards retained. Authenticate five reviewed action-pin inverses before unchanged historical guards.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
-    "6c13f035af905e0bcce04aed7de14d8a530abd642aea7a97bc8a0d8515027073":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:9194dfa1618a9e51ad45f0874081174bf1ea14edcf01c75de10a68f5df92663c","class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"]}
+    "58037673fe3b9de33fe14915481c9752e937018ef42ea26849fcd5e62b022564":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:0edc6caa13a3b02fe8655e1a9baa178d5869f1453aaf2af4c235cec3ce74a3b8","class:setup-sha256:1cdaba399add9eaeb86bf037cbce768085eea5fdce83970e7ab1de1d9b59ff19"]}
   }
 }

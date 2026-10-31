@@ -133,6 +133,7 @@ def recipe(payload: Path, language: str, *, rust_http_runtime: bool = False) -> 
         from tools.c_guest.threading_compatibility import RECIPE as C_THREADING_COMPATIBILITY_RECIPE
         names.update(C_THREADING_RECIPE)
         names.update(C_THREADING_COMPATIBILITY_RECIPE)
+        names.add(guest_compatibility_build.HOST_MANIFESTS['lsf-host-abi-phase3-v5'])
         names.update(c_capsule_project.authoring_inputs(ROOT))
     if language in {"java", "dotnet", "go", "typescript"}:
         names.add("tools/dev_managed_tools.py")

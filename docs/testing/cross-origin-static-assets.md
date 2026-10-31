@@ -79,6 +79,33 @@ execution-cell lease for the static campaign. All six node stops were clean and
 reaped; shared HTTP/read buffers and owners retired. Browser and caller-listener
 cleanup completed. These observations do not imply a global process-RSS bound.
 
+## Development integration, 31 October 2026
+
+The continuation merges development
+`94f646b66d23ad774f3747f9e5e75581f4e1eeb5` into the existing CORS branch. It retains
+the newer C/libucl preservation controls and Java GC test registration rather
+than restoring their older branch copies. Native CORS implementation sources and
+all historical receipts above remain unchanged.
+
+The 17 added native CORS cases are registered in the bounded
+[owner-local case fragment](../../tools/ci/suites.cases.d/cross-origin-assets.json).
+The [suite loader](ci-suite-inventory.md#additive-case-fragments-and-merge-review)
+combines them with development's current catalogue and checks exact discovery.
+This keeps both branches' cases without replacing shared recipes, resource limits
+or ignore states. The dedicated `cross_origin` campaign remains mandatory and
+unchanged; additive registration does not substitute for running it.
+
+The workflow also uses development's reviewed Python, Node and upload-artifact
+pins, as bound by `.github/security/actions.json` and the
+[action-pin guide](../development/workflow-action-pins.md). No security exception
+or command/timeout relaxation is introduced by this merge. The operator schema,
+restart-based grant removal, renewal and exact-publication opt-in procedures in
+the [operator guide](../operations/cross-origin-static-assets.md) do not change.
+
+The recorded successful runs are still evidence only for their exact source
+identities. Fresh standard CI, security and native qualification results on the
+merged head are required; merging later code does not extend those older passes.
+
 ## Reproduce the maintained campaign
 
 Use the pinned [contributor toolchain](../development/toolchain.md) on Linux

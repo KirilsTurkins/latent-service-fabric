@@ -133,6 +133,18 @@ CHECKOUT_PROFILE = "checkout-deepmerge-source-v1"
 CHECKOUT_REFERENCE = "KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8"
 CHECKOUT_PREFIX = ".github/security/actions/checkout/"
 CHECKOUT_ARCHIVE = "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar"
+ACTION_PROFILE = "deepmerge-action-source-v1"
+ACTION_VERIFIER_SOURCE = ".lsf-source/verify-installed-deepmerge.mjs"
+ACTION_REFERENCES = {
+    ".github/security/actions/setup-java/":
+        "KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039",
+    ".github/security/actions/setup-node/":
+        "KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415",
+    ".github/security/actions/setup-python/":
+        "KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb",
+    ".github/security/actions/upload-artifact/":
+        "KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16",
+}
 
 
 def source_identity(raw: bytes) -> dict:
@@ -140,26 +152,33 @@ def source_identity(raw: bytes) -> dict:
             "gitBlob": hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()}
 
 
-def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> tuple[dict, dict] | None:
+def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> dict | None:
     """Recognize one published action graph; registry-only historical graphs stay ordinary."""
     if entry.get("source_repair") is None:
         return None
-    require(entry["source_repair"] == CHECKOUT_PROFILE
-            and entry["path"] == CHECKOUT_PREFIX + "package.json"
-            and entry["lock"] == CHECKOUT_PREFIX + "package-lock.json",
+    profile = entry["source_repair"]
+    prefixes = [prefix for prefix in ACTION_REFERENCES if entry["path"] == prefix + "package.json"
+                and entry["lock"] == prefix + "package-lock.json"]
+    require((profile == CHECKOUT_PROFILE
+             and entry["path"] == CHECKOUT_PREFIX + "package.json"
+             and entry["lock"] == CHECKOUT_PREFIX + "package-lock.json")
+            or (profile == ACTION_PROFILE and len(prefixes) == 1),
             "unreviewed-action-source-profile")
     target = lock["packages"].get("node_modules/deepmerge", {})
     if target.get("resolved", "").startswith("https://registry.npmjs.org/"):
         return None
     policy = decode_json(read_file(POLICY, "action-source-repairs.json"))
-    require(set(policy) == {"schema", "profile", "action", "source_role", "bindings", "assets", "advisories", "runtime_bundle"}
+    require(set(policy) == {"schema", "profile", "action", "source_role", "additional_actions",
+                            "bindings", "assets", "advisories", "runtime_bundle"}
             and policy["schema"] == 1 and policy["profile"] == CHECKOUT_PROFILE
             and policy["action"] == CHECKOUT_REFERENCE and policy["source_role"] == "development-build-tool"
             and set(policy["bindings"]) == {"manifest", "lock", "metadata"}
             and set(policy["assets"]) == {"archive", "repair", "declaration", "verifier", "workflow", "upstream", "build"},
             "invalid-action-source-policy")
     material = {}
-    for key, row in (policy["bindings"] | policy["assets"]).items():
+    rows = policy["bindings"] | policy["assets"] if profile == CHECKOUT_PROFILE else {
+        key: policy["assets"][key] for key in ("archive", "repair", "declaration", "upstream")}
+    for key, row in rows.items():
         require(set(row) == {"snapshot", "source", "role", "bytes", "sha256", "gitBlob"}
                 and row["snapshot"].startswith(CHECKOUT_PREFIX if key in policy["bindings"]
                                                else ".github/security/actions/checkout-source/"),
@@ -168,8 +187,9 @@ def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> tu
         require(source_identity(raw) == {field: row[field] for field in ("bytes", "sha256", "gitBlob")},
                 "action-source-input-drift")
         material[key] = raw
-    require(policy["bindings"]["manifest"]["snapshot"] == entry["path"]
-            and policy["bindings"]["lock"]["snapshot"] == entry["lock"]
+    require((profile != CHECKOUT_PROFILE
+             or (policy["bindings"]["manifest"]["snapshot"] == entry["path"]
+                 and policy["bindings"]["lock"]["snapshot"] == entry["lock"]))
             and owner.get("devDependencies", {}).get("deepmerge") == CHECKOUT_ARCHIVE
             and "deepmerge" not in owner.get("overrides", {}) and target.get("version") == "4.3.1"
             and target.get("resolved") == CHECKOUT_ARCHIVE
@@ -177,24 +197,59 @@ def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> tu
             and [path for path in lock["packages"] if path.rsplit("node_modules/", 1)[-1] == "deepmerge"]
                 == ["node_modules/deepmerge"], "unlocked-action-source-graph")
     actions = decode_json(read_file(repo, ".github/security/actions.json"))["actions"]
-    action = actions.get(CHECKOUT_REFERENCE, {})
-    expected = [{"snapshot": row["snapshot"], "source": row["source"],
-                 "sha256": row["sha256"], "source_sha256": row["sha256"]}
-                for row in policy["bindings"].values()]
-    require(action.get("repository") == "KirilsTurkins/lsf-checkout"
-            and action.get("revision") == CHECKOUT_REFERENCE.split("@")[1]
-            and action.get("kind") == "npm" and isinstance(action.get("files"), list)
-            and sorted(action["files"], key=lambda row: row["source"])
-                == sorted(expected, key=lambda row: row["source"])
-            and action.get("metadata") == expected[2], "action-source-revision-drift")
-    return policy, material
+    if profile == CHECKOUT_PROFILE:
+        reference = CHECKOUT_REFERENCE
+        action = actions.get(reference, {})
+        expected = [{"snapshot": row["snapshot"], "source": row["source"],
+                     "sha256": row["sha256"], "source_sha256": row["sha256"]}
+                    for row in policy["bindings"].values()]
+        require(action.get("repository") == "KirilsTurkins/lsf-checkout"
+                and action.get("revision") == reference.split("@")[1]
+                and action.get("kind") == "npm" and isinstance(action.get("files"), list)
+                and sorted(action["files"], key=lambda row: row["source"])
+                    == sorted(expected, key=lambda row: row["source"])
+                and action.get("metadata") == expected[2], "action-source-revision-drift")
+        return {"policy": policy, "material": material, "reference": reference, "checkout": True}
+
+    additional = policy["additional_actions"]
+    require(set(additional) == {"profile", "source_role", "references", "verifier"}
+            and additional["profile"] == ACTION_PROFILE
+            and additional["source_role"] == "development-build-tool"
+            and additional["references"] == ACTION_REFERENCES, "invalid-additional-action-source-policy")
+    verifier = additional["verifier"]
+    require(set(verifier) == {"snapshot", "source", "role", "bytes", "sha256", "gitBlob"}
+            and verifier["source"] == ACTION_VERIFIER_SOURCE
+            and verifier["role"] == "installed-source-verifier"
+            and source_identity(read_file(repo, verifier["snapshot"]))
+                == {field: verifier[field] for field in ("bytes", "sha256", "gitBlob")},
+            "additional-action-source-verifier-drift")
+    prefix = prefixes[0]
+    reference = ACTION_REFERENCES[prefix]
+    action = actions.get(reference, {})
+    files = {row.get("source"): row for row in action.get("files", [])}
+    expected_sources = {"action.yml", "package.json", "package-lock.json", ACTION_VERIFIER_SOURCE}
+    require(action.get("repository") == reference.split("@")[0]
+            and action.get("revision") == reference.split("@")[1]
+            and action.get("kind") == "npm" and set(files) == expected_sources
+            and files["package.json"]["snapshot"] == entry["path"]
+            and files["package-lock.json"]["snapshot"] == entry["lock"]
+            and files["action.yml"]["snapshot"] == prefix + "action.yml.snapshot"
+            and files[ACTION_VERIFIER_SOURCE] == {
+                "snapshot": verifier["snapshot"], "source": verifier["source"],
+                "sha256": verifier["sha256"], "source_sha256": verifier["sha256"]}
+            and action.get("metadata") == files["action.yml"], "action-source-revision-drift")
+    for row in files.values():
+        require(row["sha256"] == row["source_sha256"]
+                and digest(read_file(repo, row["snapshot"])) == row["sha256"],
+                "action-source-binding-drift")
+    return {"policy": policy, "material": material, "reference": reference, "checkout": False}
 
 
 def action_library_sources(repo: Path, entry: dict, owner: dict, lock: dict) -> dict:
     selected = action_source_inputs(repo, entry, owner, lock)
     return {} if selected is None else {"deepmerge": {
         "version": "4.3.1", "resolved": CHECKOUT_ARCHIVE,
-        "integrity": integrity(selected[1]["archive"])}}
+        "integrity": integrity(selected["material"]["archive"])}}
 
 
 def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch=registry_archive) -> list[dict]:
@@ -206,7 +261,7 @@ def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch
                                         decode_json(read_file(repo, entry["lock"])))
         if selected is None:
             continue
-        policy, material = selected
+        policy, material = selected["policy"], selected["material"]
         declaration, repair = (decode_json(material[key]) for key in ("declaration", "repair"))
         pin = {"name": "deepmerge", "version": "4.3.1", "integrity": declaration["upstream"]["integrity"]}
         upstream = fetch(pin)
@@ -232,38 +287,46 @@ def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch
                     and row["after"] == source_identity(repaired[key][0])
                     and row["mode"] == oct(original[key][1]) == oct(repaired[key][1]),
                     "action-source-file-drift")
-        build = decode_json(material["build"])
-        review = build["artifactReview"]
-        installed = review["installed"]
-        require(build["repository"] == "KirilsTurkins/lsf-checkout"
-                and build["publishedRevision"] == CHECKOUT_REFERENCE.split("@")[1]
-                and build["builtHead"] == installed["sourceCommit"] == "1d698c70938869d668a809ef4f9670156bf18809"
-                and build["builtTree"] == build["publishedTree"] == "9dc7521dc1111fe9ac5037a37e5bfff2eb77db6e"
-                and build["run"] == 40884108136 and build["job"] == 123483100746
-                and build["jobConclusion"] == "success" and build["node"] == installed["node"] == "24.19.0"
-                and build["npm"] == "11.17.0"
-                and build["existingBuildFormatLintJestAndStrictDistReadmeComparisonPassed"] is True
-                and review["installedSourceVerified"] is True
-                and review["existingJestTestsPassed"] == 128 and review["existingJestSuitesPassed"] == 10
-                and installed["repairSha256"] == digest(material["repair"])
-                and installed["installedPostimages"] == {row["path"]: row["afterSha256"] for row in repair["files"]},
-                "action-source-build-evidence-drift")
-        require(policy["runtime_bundle"] == {
-                    "source": "dist/index.js", "bytes": 1465687,
-                    "sha256": "116aa6f7b8efa570e95179673c8d067b39069df63915f0b805a413723b798cac",
-                    "gitBlob": "8f3d1593c2f1b48addb8c63595f6ea2f1d188b85"},
-                "action-source-runtime-identity-drift")
-        for name, source in (("manifest", "package.json"), ("lock", "package-lock.json"), ("runtime_bundle", "dist/index.js")):
-            binding = policy[name] if name == "runtime_bundle" else policy["bindings"][name]
-            require(review["payloads"]["lsf-checkout/lsf-checkout/" + source]
-                    == {field: binding[field] for field in ("bytes", "sha256")},
-                    "action-source-built-input-drift")
-        receipts.append({"name": pin["name"], "version": pin["version"], "profile": policy["profile"],
-                         "upstream_integrity": pin["integrity"], "derived_integrity": integrity(material["archive"]),
-                         "repair_sha256": digest(material["repair"]), "files": len(repair["files"]),
-                         "locks": [entry["lock"]], "advisories": policy["advisories"],
-                         "action": policy["action"], "source_role": policy["source_role"],
-                         "built_tree": build["builtTree"], "build_run": build["run"]})
+        receipt = {"name": pin["name"], "version": pin["version"],
+                   "profile": policy["profile"] if selected["checkout"] else ACTION_PROFILE,
+                   "upstream_integrity": pin["integrity"],
+                   "derived_integrity": integrity(material["archive"]),
+                   "repair_sha256": digest(material["repair"]), "files": len(repair["files"]),
+                   "locks": [entry["lock"]], "advisories": policy["advisories"],
+                   "action": selected["reference"], "source_role": "development-build-tool"}
+        if selected["checkout"]:
+            build = decode_json(material["build"])
+            review = build["artifactReview"]
+            installed = review["installed"]
+            require(build["repository"] == "KirilsTurkins/lsf-checkout"
+                    and build["publishedRevision"] == CHECKOUT_REFERENCE.split("@")[1]
+                    and build["builtHead"] == installed["sourceCommit"] == "1d698c70938869d668a809ef4f9670156bf18809"
+                    and build["builtTree"] == build["publishedTree"] == "9dc7521dc1111fe9ac5037a37e5bfff2eb77db6e"
+                    and build["run"] == 40884108136 and build["job"] == 123483100746
+                    and build["jobConclusion"] == "success" and build["node"] == installed["node"] == "24.19.0"
+                    and build["npm"] == "11.17.0"
+                    and build["existingBuildFormatLintJestAndStrictDistReadmeComparisonPassed"] is True
+                    and review["installedSourceVerified"] is True
+                    and review["existingJestTestsPassed"] == 128 and review["existingJestSuitesPassed"] == 10
+                    and installed["repairSha256"] == digest(material["repair"])
+                    and installed["installedPostimages"]
+                        == {row["path"]: row["afterSha256"] for row in repair["files"]},
+                    "action-source-build-evidence-drift")
+            require(policy["runtime_bundle"] == {
+                        "source": "dist/index.js", "bytes": 1465687,
+                        "sha256": "116aa6f7b8efa570e95179673c8d067b39069df63915f0b805a413723b798cac",
+                        "gitBlob": "8f3d1593c2f1b48addb8c63595f6ea2f1d188b85"},
+                    "action-source-runtime-identity-drift")
+            for name, source in (("manifest", "package.json"), ("lock", "package-lock.json"),
+                                 ("runtime_bundle", "dist/index.js")):
+                binding = policy[name] if name == "runtime_bundle" else policy["bindings"][name]
+                require(review["payloads"]["lsf-checkout/lsf-checkout/" + source]
+                        == {field: binding[field] for field in ("bytes", "sha256")},
+                        "action-source-built-input-drift")
+            receipt.update({"built_tree": build["builtTree"], "build_run": build["run"]})
+        else:
+            receipt["verifier_sha256"] = policy["additional_actions"]["verifier"]["sha256"]
+        receipts.append(receipt)
     return receipts
 
 

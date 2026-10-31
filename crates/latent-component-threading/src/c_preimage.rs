@@ -25,7 +25,15 @@ pub const C_VERIFICATION_WORK_BYTES: usize =
 // <=2MiB old backing during growth: <=6MiB transient, plus <=2MiB for
 // bounded numeric metadata/locals/control in the ORIGINAL8MiB envelope.
 // Other scalar/container limits and the separate65,536-edge bound remain.
-const MAX_ORIGINAL_OPERATORS: u64 = 32 * 1024;
+// Imported PLUS defined functions are bounded before downstream index vectors.
+// The +24 derivation allowance is unchanged. At408 functions the independent
+// 512 parser-payload ceiling still covers ordinary code bodies and sections.
+const MAX_ORIGINAL_FUNCTIONS: u32 = 384;
+const MAX_DERIVED_FUNCTIONS: u32 = MAX_ORIGINAL_FUNCTIONS + 24;
+// More small original bodies can use the existing64Ki derived work ceiling.
+// Per-body8Ki operators, aggregate4096 locals,32-value scalar signatures,
+// 65,536 direct edges and the original48MiB payer remain unchanged.
+const MAX_ORIGINAL_OPERATORS: u64 = 64 * 1024;
 const MAX_DERIVED_OPERATORS: u64 = 64 * 1024;
 const MAX_FUNCTION_OPERATORS: u64 = 8 * 1024;
 const MAGIC: &[u8; 8] = b"LSFCPR01";
@@ -400,7 +408,14 @@ fn bounded_core(input: &[u8], original: bool) -> Result<u64, &'static str> {
             }
             _ => {}
         }
-        if functions > if original { 256 } else { 280 } || globals > 256 {
+        if functions
+            > if original {
+                MAX_ORIGINAL_FUNCTIONS
+            } else {
+                MAX_DERIVED_FUNCTIONS
+            }
+            || globals > 256
+        {
             return Err("c-preimage-finite-function-or-global-count");
         }
     }
@@ -944,6 +959,75 @@ mod tests {
                 Err("c-preimage-finite-operator-count")
             );
         }
+        // Count imports and definitions together, including both old ceilings,
+        // both new inclusive boundaries and their first refused neighbours.
+        fn count_core(imported: u32, defined: u32, globals: u32) -> Vec<u8> {
+            let mut module = Module::new();
+            let mut types = TypeSection::new();
+            types.ty().function([], []);
+            module.section(&types);
+            if imported != 0 {
+                let mut imports = wasm_encoder::ImportSection::new();
+                for index in 0..imported {
+                    imports.import(
+                        "finite",
+                        &index.to_string(),
+                        wasm_encoder::EntityType::Function(0),
+                    );
+                }
+                module.section(&imports);
+            }
+            let mut functions = FunctionSection::new();
+            let mut code = CodeSection::new();
+            for _ in 0..defined {
+                functions.function(0);
+                let mut function = Function::new([]);
+                function.instruction(&Instruction::End);
+                code.function(&function);
+            }
+            module.section(&functions);
+            if globals != 0 {
+                let mut values = wasm_encoder::GlobalSection::new();
+                for _ in 0..globals {
+                    values.global(
+                        wasm_encoder::GlobalType {
+                            val_type: ValType::I32,
+                            mutable: false,
+                            shared: false,
+                        },
+                        &ConstExpr::i32_const(0),
+                    );
+                }
+                module.section(&values);
+            }
+            module.section(&code);
+            module.finish()
+        }
+        assert_eq!(MAX_DERIVED_FUNCTIONS - MAX_ORIGINAL_FUNCTIONS, 24);
+        for (original, limit) in [
+            (true, MAX_ORIGINAL_FUNCTIONS),
+            (false, MAX_DERIVED_FUNCTIONS),
+        ] {
+            for total in [256, 257, 280, 281, limit] {
+                for imported in [0, 64] {
+                    assert_eq!(
+                        bounded_core(&count_core(imported, total - imported, 0), original),
+                        Ok(u64::from(total - imported))
+                    );
+                }
+            }
+            for imported in [0, 64] {
+                assert_eq!(
+                    bounded_core(&count_core(imported, limit + 1 - imported, 0), original),
+                    Err("c-preimage-finite-function-or-global-count")
+                );
+            }
+        }
+        assert_eq!(bounded_core(&count_core(0, 0, 256), true), Ok(0));
+        assert_eq!(
+            bounded_core(&count_core(0, 0, 257), true),
+            Err("c-preimage-finite-global-count")
+        );
         // Worst allowed scalar call width: no unjustified one-value/op model.
         let mut wide = Module::new();
         let mut types = TypeSection::new();

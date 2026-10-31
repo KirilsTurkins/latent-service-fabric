@@ -288,22 +288,25 @@ on 2026-10-03. The workflow and pin validator now support the recommended `$/`
 reference; pinned zizmor 1.30.1 reports no workflow findings, so the obsolete
 `self-repository` exception has been removed.
 
-The sixteen content and location bound Gitleaks false positives were each
-re-reviewed on 2026-10-17, using the pinned 8.30.1 scanner and private field
-comparisons. They cover one explicitly labelled historical API-journal SHA256,
-fourteen digest suffixes of the recorded noncredential preparation lookup
-handles, and the synthetic denied environment-variable name. Every complete
-file matches the earlier reviewed historical bytes. The recorded producer hashes
-artifact metadata, engine/target identity and a process-local epoch; the lookup
-handle does not authorize execution. No raw match or credential was retained or
-probed. The [current individual review](security-exception-review-2026-10-17.json)
-records the exact fingerprints, locations, file identities and fresh canaries.
-The [2026-10-03 receipt](security-exception-review-2026-10-03.json) remains historical.
+The sixteen content and location bound Gitleaks false positives were explicitly
+re-reviewed on 2026-10-31 with the pinned 8.30.1 scanner and typed public-source
+field comparisons. The focused scan reproduced exactly the same sixteen
+findings across three unchanged files, with no additional finding. They cover
+one labelled historical API-journal SHA256, fourteen noncredential preparation
+lookup identities and the synthetic denied environment-variable name. Complete
+file identities and content/location fingerprints preserve the previous private
+field associations; long-line scanner coordinates are not treated as absolute
+source offsets. No raw match or decoded field value was retained or exported.
 
-These sixteen exact exceptions expire at UTC midnight on **2026-10-31**. Changed
-content, locations, rules and other occurrences continue to fail; the original
-30-day maximum, exclusive expiry and future-created guards remain unchanged.
-No dependency exception, general digest exemption or path allowlist exists.
+The [current technical review](security-exception-review-2026-10-31.json) records
+the sixteen classifications and all eight fresh maintained scanner canaries.
+The [2026-10-17 receipt](security-exception-review-2026-10-17.json) remains
+historical. The same sixteen exact exceptions have an exclusive proposed expiry
+of **2026-11-14**, subject to explicit parent/security review of the PR. The
+separately reviewed active #970 exception remains unchanged through 2026-11-10.
+The original 30-day maximum, exclusive-expiry and future-created guards remain
+unchanged. Changed content, locations, rules and other occurrences continue to
+fail. No dependency exception, general digest exemption or path allowlist exists.
 The [evidence ledger](security-baseline-evidence.md) retains the independent
 pinned scanner, original producer and canary reviews, and private match
 comparisons.

@@ -26,7 +26,8 @@
   "maintainedFiles": [
     "include/fetch.h",
     "src/libfetch/common.h",
-    "src/libfetch/http.c"
+    "src/libfetch/http.c",
+    "src/closed-file-abi.c"
   ],
   "headerDerivation": "Only the ASCII portability prefix before the original include guard is inserted; remove it to reconstruct upstream fetch.h exactly.",
   "commonDerivation": "Original notice followed by the finite fetch.c error-protocol subset; no socket/TLS/proxy implementation.",
@@ -107,5 +108,85 @@
     }
   ],
   "semantics": "No ambient sockets, custom TLS or redirects; guest FILE allocations remain within original Store memory; local free never credits Root memory.",
-  "qualification": "not-established-by-source"
+  "qualification": "not-established-by-source",
+  "getMetadata": {
+    "size": "Validated Content-Length, or signed off_t -1 if absent. No buffering/replay to invent length.",
+    "atimeAndMtime": "0: unknown; Last-Modified is not interpreted, and no local clock authority is acquired.",
+    "scope": "Only optional url_stat on the existing successful HTTP GET. Standalone Stat, range and conditional requests remain unsupported."
+  },
+  "unsupportedFileABI": {
+    "source": "src/closed-file-abi.c",
+    "functions": [
+      "open",
+      "close",
+      "fstat",
+      "mmap",
+      "munmap",
+      "realpath",
+      "getcwd",
+      "glob"
+    ],
+    "failure": "ENOTSUP; glob returns GLOB_NOSYS with ENOSYS. No output mutation, callback, allocation, free or authority.",
+    "declarations": [
+      {
+        "path": "lib/libc/include/wasm-wasi-musl/fcntl.h",
+        "url": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/include/wasm-wasi-musl/fcntl.h",
+        "bytes": 5901,
+        "sha256": "6e8a6761aacc0e7b25455a959be281c3f60582f8fa133fee4ae5ecbb470a4725"
+      },
+      {
+        "path": "lib/libc/include/wasm-wasi-musl/unistd.h",
+        "url": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/include/wasm-wasi-musl/unistd.h",
+        "bytes": 17815,
+        "sha256": "aba4cf237966a2528b10ccac4a59c3280f4e0783e9d01b89418ee288229d60f3"
+      },
+      {
+        "path": "lib/libc/include/wasm-wasi-musl/sys/stat.h",
+        "url": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/include/wasm-wasi-musl/sys/stat.h",
+        "bytes": 4837,
+        "sha256": "2ca36429f5bf55f099e99b1a3a7014643158562b80c108210f2ffd1b4eaa8b8b"
+      },
+      {
+        "path": "lib/libc/include/wasm-wasi-musl/glob.h",
+        "url": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/include/wasm-wasi-musl/glob.h",
+        "bytes": 995,
+        "sha256": "320a7e57a6a76f897624806d8a40a228f969a7964ee4b025ef10a093d6d3a0cc"
+      },
+      {
+        "path": "lib/libc/include/generic-musl/stdlib.h",
+        "url": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/include/generic-musl/stdlib.h",
+        "bytes": 4874,
+        "sha256": "ef3b9f8c2977cd076a37146f9356475153b22fa2d047ee512b28e0af6a01962b"
+      },
+      {
+        "path": "lib/libc/include/wasm-wasi-musl/sys/mman.h",
+        "url": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/include/wasm-wasi-musl/sys/mman.h",
+        "bytes": 3788,
+        "sha256": "35af27dff5b138b21dc4a2bee9fae93a71e30451fc0218d0f23d4e0d19e60437"
+      }
+    ],
+    "mman": "_WASI_EMULATED_MMAN selects original declarations only; no emulation library is linked.",
+    "globfree": {
+      "origin": "https://codeberg.org/ziglang/zig/raw/tag/0.16.0/lib/libc/wasi/libc-top-half/musl/src/regex/glob.c",
+      "sourceBytes": 8317,
+      "sourceSHA256": "sha256:c167aa41ecd54ae570ee5c5769af3c58f261e0f146f3039836ae3d2c9c7fa743",
+      "layoutSHA256": "sha256:cf83490d2577908e111ef28d5df4a71f0782d809e6116c7e603d1afda630666f",
+      "bodySHA256": "sha256:0e81734a140e4f005babb9dca8aa9c405285c3f6f154e8c178c06081e48c4f06",
+      "reuse": "Exact original private match layout and free/reset body, avoiding selection of the co-defined directory-traversing glob implementation.",
+      "license": "src/libfetch/upstream/musl-COPYRIGHT",
+      "licenseSHA256": "sha256:f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af"
+    }
+  },
+  "runtimeProfiles": [
+    "c-libfetch-http-v1",
+    "c-libfetch-clock-entropy-v1"
+  ],
+  "clockEntropyBackend": {
+    "profile": "c-libfetch-clock-entropy-v1",
+    "source": "src/standard-clock-entropy.c",
+    "sourceBytes": 2524,
+    "sourceSHA256": "sha256:9ff1b2f66a44958a2103b2a56f811a5de81d1747133079aaafe85280f740b84c",
+    "integration": "Normal PROFILE_SOURCES selection; no application source copying. Existing typed monotonic/wall/random contracts and original libc clock input authentication.",
+    "authority": "Explicit existing activation-monotonic-v1 now-nanos; activation-wall-v1 now-unix-millis; system-random-v1 bytes. The HTTP-only profile acquires none of these grants."
+  }
 }

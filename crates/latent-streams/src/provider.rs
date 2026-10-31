@@ -70,7 +70,83 @@ impl TlsInstallMode {
     }
 }
 
+/// Observed native preparation with its ORIGINAL affine owner still attached.
+/// No NodeFunding/NodeRetired constructor or usable stream is returned.
+#[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+pub struct NodeCapacityQualification {
+    // Start original conservative close before releasing the provider handle.
+    _node: crate::kernel::native::node_bootstrap::Owner,
+    _provider: StreamProvider,
+    facts: NodeCapacityFacts,
+}
+
+#[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+#[derive(Debug, Clone, Copy)]
+pub struct NodeCapacityFacts {
+    pub node_layout: [u64; 6],
+    pub cpu_geometry: [u64; 9],
+    pub accounting: [u64; 8],
+    pub vectors: [u16; 8],
+}
+
+#[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+impl NodeCapacityQualification {
+    pub fn facts(&self) -> NodeCapacityFacts {
+        self.facts
+    }
+}
+
 impl StreamProvider {
+    /// Isolated, source-bound boot qualification only. The reviewed outer image
+    /// owner must authenticate the kernel/configuration/compiler child and KVM
+    /// invocation. Missing build-time image bindings refuse BEFORE admission.
+    /// The original reservation is moved into the same worker before open;
+    /// descriptor close never authorizes a native or Node quota refund.
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    pub async fn prepare_kernel_node_for_qualification(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        deadline: Instant,
+    ) -> Result<NodeCapacityQualification, StreamError> {
+        let profile = crate::kernel::native::node_bootstrap::qualification_capacity_profile()?;
+        let provider = Self::install_with_modes(
+            Arc::clone(&pools),
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::Qualified,
+            crate::kernel::Mode::RetainUnproved,
+        )?;
+        let node = crate::kernel::native::node_bootstrap::start_capacity(
+            pools,
+            &provider.inner.installed,
+            profile,
+            deadline,
+        )
+        .await?;
+        let prepared = node
+            .capacity_prepared()
+            .ok_or_else(|| error(StreamErrorCode::Unsupported))?;
+        let facts = NodeCapacityFacts {
+            node_layout: prepared.node_layout(),
+            cpu_geometry: prepared.cpu_geometry(),
+            accounting: prepared.accounting(),
+            vectors: prepared.vectors(),
+        };
+        if Instant::now() >= deadline {
+            return Err(error(StreamErrorCode::Timeout));
+        }
+        Ok(NodeCapacityQualification {
+            _node: node,
+            _provider: provider,
+            facts,
+        })
+    }
+
     /// Actual descriptor/constructor experiment for an isolated candidate image.
     /// It retains unproved kernel retirement and cannot enable normal install.
     #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]

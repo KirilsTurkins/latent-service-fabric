@@ -246,10 +246,23 @@ class StandardFacilities(unittest.TestCase):
         from tools.c_dependency_authoring import manifest
         profile = facilities.FETCH_PROFILE
         original_defines = ('_POSIX_C_SOURCE=200809L',)
+        closed_symbols = ('open', 'close', 'fstat', 'mmap', 'munmap', 'realpath',
+                          'getcwd', 'glob', 'globfree', 'abort', 'exit')
+        self.assertEqual(facilities.FETCH_CLOSED_SYMBOLS, closed_symbols)
+        boundary = (ROOT / 'sdk/c-guest/src/closed-file-abi.c').read_text()
+        self.assertEqual(boundary.count('_Noreturn void exit(int status) {\n'
+            '    (void)status;\n    __builtin_trap();\n}'), 1)
+        self.assertNotIn('__wasi_proc_exit(', boundary)
+        closed_defines = tuple(name + '=__lsf_c_' + name for name in closed_symbols)
         self.assertEqual(facilities.compiler_defines(profile, original_defines),
-                         (*original_defines, '_GNU_SOURCE=1'))
-        selected_defines = ('_GNU_SOURCE=1', '_POSIX_C_SOURCE=200809L')
-        self.assertIs(facilities.compiler_defines(profile, selected_defines), selected_defines)
+                         (*original_defines, '_GNU_SOURCE=1', '_WASI_EMULATED_MMAN=1', *closed_defines))
+        selected_defines = ('_GNU_SOURCE=1', '_POSIX_C_SOURCE=200809L', '_WASI_EMULATED_MMAN=1')
+        self.assertEqual(facilities.compiler_defines(profile, selected_defines), (*selected_defines, *closed_defines))
+        for selected in facilities.FETCH_PROFILES:
+            for symbol in (*closed_symbols, *('__lsf_c_' + name for name in closed_symbols)):
+                with self.subTest(profile=selected, symbol=symbol), self.assertRaisesRegex(
+                        ValueError, '^c-http-compiler-owned-closed-file-symbol$'):
+                    facilities.compiler_defines(selected, (symbol + '=foreign',))
         for old_profile in (facilities.DEFAULT, facilities.PROFILE,
                             facilities.LOGGING_PROFILE, facilities.COMBINED_PROFILE):
             self.assertIs(facilities.compiler_defines(old_profile, original_defines), original_defines)
@@ -272,16 +285,130 @@ class StandardFacilities(unittest.TestCase):
         self.assertEqual((source / 'world.wit').read_bytes(), original)
         self.assertEqual({path.name for path in (selected / 'deps').iterdir()}, {'http-v3'})
 
+        expanded = facilities.FETCH_STANDARD_PROFILE
+        self.assertEqual(facilities.PROFILE_IMPORTS[expanded],
+                         (*facilities.PROFILE_IMPORTS[profile], *facilities.IMPORTS))
+        self.assertEqual(facilities.PROFILE_SOURCES[expanded],
+                         (*facilities.PROFILE_SOURCES[profile], 'standard-clock-entropy.c'))
+        self.assertEqual(facilities.compiler_defines(expanded, original_defines),
+                         facilities.compiler_defines(profile, original_defines))
+        self.assertEqual(facilities.selected_profile({'runtimeProfile': expanded}), expanded)
+        with_clock = facilities.stage(source, 'service', self.root / 'derived-clock',
+                                      ROOT / 'wit/platform', profile=expanded)
+        clock_text = (with_clock / 'world.wit').read_text()
+        for contract in facilities.PROFILE_IMPORTS[expanded]:
+            self.assertEqual(clock_text.count('import ' + contract + ';'), 1)
+        self.assertNotIn('latent:log/log@', clock_text)
+        self.assertNotIn('wasi:', clock_text)
+        self.assertEqual((source / 'world.wit').read_bytes(), original)
+
+        # Exercise the real command builder, stopping before any external tool.
+        # A client that calls no clock/entropy API still has this exact profile.
+        from unittest.mock import patch
+        from tools.c_guest.compiler import Compiler
+        from tools.tests.test_c_threading_profile import graph
+        from tools.c_guest.threading import PROFILE as threading_profile
+        class CommandCaptured(Exception):
+            pass
+        source = self.root / 'unused-standard-api.c'
+        source.write_bytes(b'int ordinary_library_value;\n')
+        compiler = Compiler.__new__(Compiler)
+        compiler.paths = {'zig': self.root / 'zig',
+                          'c-threading-transformer': self.root / 'transformer'}
+        compiler.sdk, compiler.platform = ROOT / 'sdk/c-guest', None
+        compiler.commands, compiler.isolation = None, None
+        compiler.validate_static_libraries = lambda *args: None
+        compiler.select_threading_clock_inputs = lambda: None
+        calls = []
+        def run(tool, *arguments):
+            if tool == 'zig':
+                calls.append(arguments)
+                raise CommandCaptured()
+            self.assertEqual((tool, arguments[:2]), ('wasm-tools', ('component', 'wit')))
+            return json.dumps(graph())
+        compiler.run = run
+        def generate(_run, _wit, _world, destination, _platform, *, sync_core_abi=False):
+            self.assertTrue(sync_core_abi)
+            destination.mkdir()
+            return destination, {'source': 'controlled-binding-boundary'}
+        roots = ('__imported_wasi_snapshot_preview1_clock_time_get',
+                 '__imported_wasi_snapshot_preview1_random_get')
+        lowering = (ROOT / 'sdk/c-guest/src/standard-clock-entropy.c').read_text()
+        self.assertEqual(lowering.count('__attribute__((used))'), 2)
+        for symbol in roots:
+            self.assertEqual(lowering.count('__attribute__((used))\nint32_t ' + symbol + '('), 1)
+        for ordinal, selected in enumerate(sorted(facilities.SUPPORTED)):
+            with self.subTest(selected=selected), patch('tools.c_guest.compiler.generate', generate):
+                with self.assertRaises(CommandCaptured):
+                    compiler.compile([source], self.root / 'unused-wit', 'service',
+                        self.root / ('command-' + str(ordinal)), runtime_profile=selected, memory_bytes=32 * 1024 * 1024,
+                        threading_profile=threading_profile)
+            command = calls[-1]
+            self.assertFalse(any(item.startswith('-Wl,-u,') for item in command))
+            self.assertNotIn('-Wl,--no-gc-sections', command)
+            self.assertIn('-Wl,--max-memory=33554432', command)
+            self.assertIn('-Wl,-z,stack-size=135168', command)
+            self.assertNotIn('--allow-undefined', command)
+            self.assertFalse(any(item.startswith('-Wl,--undefined') for item in command))
+            self.assertFalse(any(item.startswith('-Wl,--export=__imported_wasi_') for item in command))
+            self.assertFalse(any('allow-multiple-definition' in item or '--wrap' in item for item in command))
+            for value in closed_defines:
+                self.assertEqual('-D' + value in command, selected in facilities.FETCH_PROFILES)
+
+        # Run the normal owner's actual source/WIT selection for every profile;
+        # capture at Compiler.compile before any compiler or external tool runs.
+        from tools import c_capsule_build as builder
+        tool = self.root / 'never-executed-tool'
+        tool.write_bytes(b'controlled source-selection boundary')
+        captured = []
+        class SourceCompiler:
+            def __init__(self, _temporary, _timeout, *, sdk, **_options):
+                self.sdk = sdk
+                self.paths = {'zig': tool, 'wit-bindgen': tool, 'wasm-tools': tool}
+                self.materials = {'zig': {'name': 'zig', 'size': 1, 'digest': digest(b'controlled')}}
+            def enable_captured_isolation(self, _temporary):
+                return {}
+            def select_threading_clock_inputs(self):
+                pass
+            def compile(self, sources, wit, _world, _destination, **options):
+                captured.append((options['runtime_profile'],
+                    [path.relative_to(self.sdk).as_posix() for path in sources if self.sdk in path.parents],
+                    '\n'.join(path.read_text() for path in wit.glob('*.wit'))))
+                raise CommandCaptured()
+        for ordinal, selected in enumerate(sorted(facilities.SUPPORTED)):
+            application = project.create(self.root / ('source-profile-' + str(ordinal)), 'greeting',
+                threading_profile=threading_profile if selected in facilities.FETCH_PROFILES else None)
+            configuration = json.loads((application / 'capsule-project.json').read_bytes())
+            configuration['runtimeProfile'] = selected
+            (application / 'capsule-project.json').write_text(json.dumps(configuration))
+            with self.subTest(source_profile=selected), patch.object(builder, 'Compiler', SourceCompiler), \
+                    patch.object(builder, 'binding_check', return_value=digest(b'controlled-binding')), \
+                    patch.object(builder.guest_compatibility_build, 'failure_report'):
+                with self.assertRaises(CommandCaptured):
+                    builder.build(application, self.root / ('captured-source-' + str(ordinal)),
+                                  tool, None, 'https://example.test/developer-project')
+            actual, selected_sources, selected_wit = captured[-1]
+            self.assertEqual(actual, selected)
+            expected_sources = ['src/' + name for name in facilities.PROFILE_SOURCES.get(selected, ())]
+            self.assertEqual(selected_sources, expected_sources)
+            has_clock = 'src/standard-clock-entropy.c' in selected_sources
+            self.assertEqual(has_clock, selected in (facilities.PROFILE, facilities.COMBINED_PROFILE,
+                                                    facilities.FETCH_STANDARD_PROFILE))
+            for interface in facilities.IMPORTS:
+                self.assertEqual(('import ' + interface + ';') in selected_wit, has_clock)
+        self.assertEqual(len(captured), len(facilities.SUPPORTED))
+
     def test_libfetch_unthreaded_build_refuses_before_binding_generation_or_output(self):
         from unittest import mock
         from tools.c_guest.compiler import Compiler
         compiler = Compiler.__new__(Compiler)
         output = self.root / 'must-not-exist'
-        with mock.patch('tools.c_guest.compiler.generate') as generate:
-            with self.assertRaisesRegex(ValueError, 'libfetch-http-requires-cooperative-threading'):
-                compiler.compile([self.root / 'missing.c'], self.root / 'missing-wit',
-                                 'service', output, runtime_profile=facilities.FETCH_PROFILE)
-            generate.assert_not_called()
+        for profile in facilities.FETCH_PROFILES:
+            with self.subTest(profile=profile), mock.patch('tools.c_guest.compiler.generate') as generate:
+                with self.assertRaisesRegex(ValueError, 'libfetch-http-requires-cooperative-threading'):
+                    compiler.compile([self.root / 'missing.c'], self.root / 'missing-wit',
+                                     'service', output, runtime_profile=profile)
+                generate.assert_not_called()
         self.assertFalse(output.exists())
 
 

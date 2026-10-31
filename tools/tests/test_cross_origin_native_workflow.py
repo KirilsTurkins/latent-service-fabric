@@ -15,6 +15,21 @@ SPEC.loader.exec_module(CAMPAIGN)
 
 
 class NativeCrossOriginWorkflow(unittest.TestCase):
+    def test_executable_action_pins_match_the_current_reviewed_graph_and_guide(self):
+        from tools import workflow_action_yaml
+        actions = json.loads((ROOT / '.github/security/actions.json').read_bytes())['actions']
+        workflow = (ROOT / '.github/workflows/cross-origin-assets.yml').read_text()
+        guide = (ROOT / 'docs/development/workflow-action-pins.md').read_text()
+        references = list(workflow_action_yaml.references(workflow))
+        self.assertEqual(len(references), 6)
+        for reference in references:
+            with self.subTest(line=reference.line):
+                self.assertIn(reference.value, actions)
+                action, revision = reference.value.rsplit('@', 1)
+                row = next(line for line in guide.splitlines()
+                           if line.startswith('| `' + action + '` |'))
+                self.assertIn('`' + revision + '`', row)
+
     def test_native_lint_uses_the_maintained_strict_owner_recipe(self):
         from tools import ci_cargo, ci_lane_inventory
         workflow = ci_lane_inventory.workflow_model((ROOT / '.github/workflows/cross-origin-assets.yml').read_text())

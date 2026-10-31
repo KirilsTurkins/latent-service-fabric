@@ -184,6 +184,14 @@ static int create(struct lsf_c_thread **out,void *(*pthread_start)(void *),
     *out=thread;return 0;
 }
 
+/* Retain the complete original creation ABI even without an application child:
+ * this static address owns the original body, native import and entry address.
+ * It is part of the original paid image, not a call or a public export.
+ */
+__attribute__((used))
+static int (*const lsf_c_owned_creation_address)(struct lsf_c_thread **,
+    void *(*)(void *),int (*)(void *),void *,unsigned) = create;
+
 int pthread_create(pthread_t *restrict out,const pthread_attr_t *restrict attr,
                    void *(*start)(void *),void *restrict argument) {
     int saved=errno,error;struct lsf_c_thread *thread=NULL;

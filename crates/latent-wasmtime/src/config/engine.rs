@@ -137,7 +137,17 @@ impl CompilerEngineSettings {
         let backtrace_limit = self
             .development_numeric_trap_observation
             .then(|| std::num::NonZeroUsize::new(16).expect("fixed positive test frame cap"));
-        #[cfg(not(feature = "development-test-host"))]
+        #[cfg(all(
+            not(feature = "development-test-host"),
+            feature = "java-checkpoint-gc-trap-diagnostic"
+        ))]
+        let backtrace_limit = Some(
+            std::num::NonZeroUsize::new(8).expect("fixed positive Java GC diagnostic frame cap"),
+        );
+        #[cfg(not(any(
+            feature = "development-test-host",
+            feature = "java-checkpoint-gc-trap-diagnostic"
+        )))]
         let backtrace_limit = None;
         engine_config.wasm_backtrace_max_frames(backtrace_limit);
     }
