@@ -23,9 +23,9 @@ jobs:
           head = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
           assert head == os.environ['EXPECTED_HEAD']
           names = subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\0')
-          roots = {'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'AGENTS.md'}
-          prefixes = ('tools/', 'crates/latent-component-threading/', 'sdk/rust-standard-runtime/', '.github/')
-          selected = [p for p in names if p and (p in roots or p.startswith(prefixes))]
+          roots = {'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'AGENTS.md', '.cargo/config.toml', 'tools/toolchain.toml', '.github/security/actions.json'}
+          prefixes = ('tools/ci/contracts/', 'crates/latent-component-threading/', 'sdk/rust-standard-runtime/', '.github/workflows/')
+          selected = [p for p in names if p and (p in roots or p.startswith(prefixes) or (p.startswith('tools/') and p.endswith('.py')))]
           assert len(selected) <= 8192
           rows, total = [], 0
           destination = pathlib.Path(os.environ['RUNNER_TEMP']) / 'rust-catalogue-review'
@@ -33,9 +33,9 @@ jobs:
           with zipfile.ZipFile(destination / 'sources.zip', 'x', compression=zipfile.ZIP_DEFLATED) as archive:
               for name in selected:
                   path = pathlib.Path(name)
-                  assert not path.is_symlink() and path.is_file()
+                  assert not path.is_symlink() and path.is_file(), name
                   raw = subprocess.check_output(['git', 'show', head + ':' + name])
-                  assert path.read_bytes() == raw and len(raw) <= 4 * 1024 * 1024
+                  assert path.read_bytes() == raw and len(raw) <= 4 * 1024 * 1024, name
                   total += len(raw)
                   assert total <= 64 * 1024 * 1024
                   archive.writestr(name, raw)
