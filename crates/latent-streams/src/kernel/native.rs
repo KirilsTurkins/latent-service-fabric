@@ -549,12 +549,55 @@ pub(crate) mod node_bootstrap {
     const CAPACITY_PREPARE: u32 = 3;
     const CAPACITY_REPLY_BYTES: usize = 384;
 
-    /// Sealed image proof; no issuer.
+    /// Production image proof has no issuer. The private qualification builder
+    /// separately binds its actual image/source/configuration into the child.
     pub(crate) struct InstalledCapacityProfile {
         abi: &'static str,
         image: [u8; 32],
         source: [u8; 32],
         configuration: [u8; 32],
+    }
+
+    #[cfg(any(test, feature = "development-outbound"))]
+    fn qualification_identity(value: Option<&str>) -> Result<[u8; 32], StreamError> {
+        let text = value.ok_or_else(|| error(StreamErrorCode::Unsupported))?;
+        if text.len() != 64 {
+            return Err(error(StreamErrorCode::Unsupported));
+        }
+        let mut result = [0; 32];
+        for (index, pair) in text.as_bytes().chunks_exact(2).enumerate() {
+            fn nibble(value: u8) -> Option<u8> {
+                match value {
+                    b'0'..=b'9' => Some(value - b'0'),
+                    b'a'..=b'f' => Some(value - b'a' + 10),
+                    _ => None,
+                }
+            }
+            let high = nibble(pair[0]).ok_or_else(|| error(StreamErrorCode::Unsupported))?;
+            let low = nibble(pair[1]).ok_or_else(|| error(StreamErrorCode::Unsupported))?;
+            result[index] = high * 16 + low;
+        }
+        if result == [0; 32] {
+            return Err(error(StreamErrorCode::Unsupported));
+        }
+        Ok(result)
+    }
+
+    /// No runtime environment, request field or caller hash can select this.
+    /// The reviewed image builder sets these compile-time values only after
+    /// hashing the actual kernel and resolved configuration. Its captured KVM
+    /// invocation is the running-image proof; this is not a production issuer.
+    #[cfg(any(test, feature = "development-outbound"))]
+    pub(crate) fn qualification_capacity_profile() -> Result<InstalledCapacityProfile, StreamError>
+    {
+        Ok(InstalledCapacityProfile {
+            abi: CAPACITY_ABI,
+            image: qualification_identity(option_env!("LSF_Q35_QUALIFICATION_KERNEL_SHA256"))?,
+            source: qualification_identity(option_env!("LSF_Q35_QUALIFICATION_SOURCE_SHA256"))?,
+            configuration: qualification_identity(option_env!(
+                "LSF_Q35_QUALIFICATION_CONFIG_SHA256"
+            ))?,
+        })
     }
 
     enum SelectedProfile {
@@ -594,7 +637,7 @@ pub(crate) mod node_bootstrap {
     }
 
     #[cfg_attr(
-        not(test),
+        not(any(test, feature = "development-outbound")),
         expect(
             dead_code,
             reason = "uninstalled capacity observations have no production consumer"
@@ -733,9 +776,12 @@ pub(crate) mod node_bootstrap {
         Ok(fact)
     }
 
-    #[expect(
-        dead_code,
-        reason = "dormant capacity ABI has no production installed-image issuer"
+    #[cfg_attr(
+        not(any(test, feature = "development-outbound")),
+        expect(
+            dead_code,
+            reason = "dormant capacity ABI has no production installed-image issuer"
+        )
     )]
     pub(crate) async fn start_capacity(
         pools: Arc<ProviderPools>,
@@ -937,9 +983,12 @@ pub(crate) mod node_bootstrap {
     const _: () = assert!(std::mem::size_of::<Owner>() <= 4096);
 
     impl Owner {
-        #[expect(
-            dead_code,
-            reason = "no production capacity profile issuer or consumer yet"
+        #[cfg_attr(
+            not(any(test, feature = "development-outbound")),
+            expect(
+                dead_code,
+                reason = "no production capacity profile issuer or consumer yet"
+            )
         )]
         pub(crate) fn capacity_prepared(&self) -> Option<&CapacityPreparedUnqualified> {
             self.prepared.as_ref()
@@ -1206,6 +1255,19 @@ pub(crate) mod node_bootstrap {
 
         #[test]
         fn node_wire_refuses_old_ack_foreign_generation_and_funding_bits() {
+            let raw = "abababababababababababababababababababababababababababababababab";
+            assert_eq!(qualification_identity(Some(raw)).unwrap(), [0xab; 32]);
+            for value in [
+                None,
+                Some(""),
+                Some(&raw[..62]),
+                Some("ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB"),
+                Some("0000000000000000000000000000000000000000000000000000000000000000"),
+                Some("gbababababababababababababababababababababababababababababababab"),
+            ] {
+                assert!(matches!(qualification_identity(value),
+                    Err(error) if error.code == StreamErrorCode::Unsupported));
+            }
             let good = observed(2);
             let (phase, original) = reply(&good, 123, None).unwrap();
             assert_eq!(phase, Phase::AttachedUnqualified);

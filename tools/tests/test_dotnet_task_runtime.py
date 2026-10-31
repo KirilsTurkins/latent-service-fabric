@@ -163,6 +163,41 @@ class RootReturnNormalControls(unittest.TestCase):
             'waits': 16, 'timers': 8, 'results': 8, 'nativeOwners': 8})
         self.assertNotIn(7, [m for _, m, _ in selected.STEPS])
         self.assertEqual(len(selected.STEPS)+len(selected.PROFILES), 15)
+        import copy
+        import json
+        from unittest.mock import patch
+        from tools.dotnet_guest import managed_work, task_wait
+        from tools.phase2_operator_process import WorkflowError
+        port = {'profile': task_wait.PROFILE,
+            'managedAcceptedWork': copy.deepcopy(managed_work.PREFETCH_REWRITE_RECEIPT),
+            'generatedHelperCount': 96, 'completion': 'actual-task-only',
+            'finiteAndCancellableWaits': 'original-Task-WhenAny-Delay',
+            'completeOriginalWaitRemainderPreserved': True,
+            'nativeAotReferenceBinding': {'responseFiles': [{'controlled': 'parser-only'}]}}
+        with tempfile.TemporaryDirectory() as temporary:
+            artifact = Path(temporary)
+            path = artifact / 'task-wait-port.json'
+            path.write_text(json.dumps(port))
+            self.assertEqual(selected.current_managed_port(artifact), port)
+            for changed in ('dated', 'readiness', 'count', 'bool-count', 'response', 'remainder'):
+                bad = copy.deepcopy(port)
+                if changed == 'dated': bad['managedAcceptedWork'] = copy.deepcopy(managed_work.TIMER_REWRITE_RECEIPT)
+                elif changed == 'readiness': bad['managedAcceptedWork']['readiness'] = 'unproved'
+                elif changed == 'count': bad['generatedHelperCount'] = 95
+                elif changed == 'bool-count': bad['generatedHelperCount'] = True
+                elif changed == 'response': bad['nativeAotReferenceBinding']['responseFiles'] *= 2
+                else: bad['completeOriginalWaitRemainderPreserved'] = 1
+                path.write_text(json.dumps(bad))
+                with self.subTest(changed=changed), self.assertRaises((ValueError, WorkflowError)):
+                    selected.current_managed_port(artifact)
+            for event, ref in (('workflow_dispatch', 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028'),
+                               ('push', 'refs/heads/development'), ('push', 'refs/heads/test/sdk-dotnet-join-cause-20261027')):
+                untouched = artifact / 'must-not-exist'
+                with self.subTest(event=event, ref=ref), patch.dict(selected.os.environ,
+                        {'GITHUB_EVENT_NAME': event, 'GITHUB_REF': ref}), \
+                        self.assertRaisesRegex(WorkflowError, 'root-return-current-closed-push'):
+                    selected.qualify_current_products(untouched, artifact / 'unexecuted-tools', '0' * 40)
+                self.assertFalse(untouched.exists())
 
 
     def test_retention_closes17_and_keeps_component_before_shape_refusal(self):
