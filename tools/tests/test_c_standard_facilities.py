@@ -318,11 +318,12 @@ class StandardFacilities(unittest.TestCase):
             self.assertTrue(sync_core_abi)
             destination.mkdir()
             return destination, {'source': 'controlled-binding-boundary'}
-        expected = ('-Wl,-u,__imported_wasi_snapshot_preview1_clock_time_get',
-                    '-Wl,-u,__imported_wasi_snapshot_preview1_random_get')
+        roots = ('__imported_wasi_snapshot_preview1_clock_time_get',
+                 '__imported_wasi_snapshot_preview1_random_get')
         lowering = (ROOT / 'sdk/c-guest/src/standard-clock-entropy.c').read_text()
-        for symbol in expected:
-            self.assertIn('int32_t ' + symbol.split(',', 2)[2] + '(', lowering)
+        self.assertEqual(lowering.count('__attribute__((used))'), 2)
+        for symbol in roots:
+            self.assertEqual(lowering.count('__attribute__((used))\nint32_t ' + symbol + '('), 1)
         for ordinal, selected in enumerate(sorted(facilities.SUPPORTED)):
             with self.subTest(selected=selected), patch('tools.c_guest.compiler.generate', generate):
                 with self.assertRaises(CommandCaptured):
@@ -330,13 +331,56 @@ class StandardFacilities(unittest.TestCase):
                         self.root / ('command-' + str(ordinal)), runtime_profile=selected, memory_bytes=32 * 1024 * 1024,
                         threading_profile=threading_profile)
             command = calls[-1]
-            self.assertEqual(tuple(item for item in command if item.startswith('-Wl,-u,')),
-                             expected if selected == expanded else ())
+            self.assertFalse(any(item.startswith('-Wl,-u,') for item in command))
+            self.assertNotIn('-Wl,--no-gc-sections', command)
             self.assertIn('-Wl,--max-memory=33554432', command)
             self.assertIn('-Wl,-z,stack-size=135168', command)
             self.assertNotIn('--allow-undefined', command)
             self.assertFalse(any(item.startswith('-Wl,--undefined') for item in command))
             self.assertFalse(any(item.startswith('-Wl,--export=__imported_wasi_') for item in command))
+
+        # Run the normal owner's actual source/WIT selection for every profile;
+        # capture at Compiler.compile before any compiler or external tool runs.
+        from tools import c_capsule_build as builder
+        tool = self.root / 'never-executed-tool'
+        tool.write_bytes(b'controlled source-selection boundary')
+        captured = []
+        class SourceCompiler:
+            def __init__(self, _temporary, _timeout, *, sdk, **_options):
+                self.sdk = sdk
+                self.paths = {'zig': tool, 'wit-bindgen': tool, 'wasm-tools': tool}
+                self.materials = {'zig': {'name': 'zig', 'size': 1, 'digest': digest(b'controlled')}}
+            def enable_captured_isolation(self, _temporary):
+                return {}
+            def select_threading_clock_inputs(self):
+                pass
+            def compile(self, sources, wit, _world, _destination, **options):
+                captured.append((options['runtime_profile'],
+                    [path.relative_to(self.sdk).as_posix() for path in sources if self.sdk in path.parents],
+                    '\n'.join(path.read_text() for path in wit.glob('*.wit'))))
+                raise CommandCaptured()
+        for ordinal, selected in enumerate(sorted(facilities.SUPPORTED)):
+            application = project.create(self.root / ('source-profile-' + str(ordinal)), 'greeting',
+                threading_profile=threading_profile if selected in facilities.FETCH_PROFILES else None)
+            configuration = json.loads((application / 'capsule-project.json').read_bytes())
+            configuration['runtimeProfile'] = selected
+            (application / 'capsule-project.json').write_text(json.dumps(configuration))
+            with self.subTest(source_profile=selected), patch.object(builder, 'Compiler', SourceCompiler), \
+                    patch.object(builder, 'binding_check', return_value=digest(b'controlled-binding')), \
+                    patch.object(builder.guest_compatibility_build, 'failure_report'):
+                with self.assertRaises(CommandCaptured):
+                    builder.build(application, self.root / ('captured-source-' + str(ordinal)),
+                                  tool, None, 'https://example.test/developer-project')
+            actual, selected_sources, selected_wit = captured[-1]
+            self.assertEqual(actual, selected)
+            expected_sources = ['src/' + name for name in facilities.PROFILE_SOURCES.get(selected, ())]
+            self.assertEqual(selected_sources, expected_sources)
+            has_clock = 'src/standard-clock-entropy.c' in selected_sources
+            self.assertEqual(has_clock, selected in (facilities.PROFILE, facilities.COMBINED_PROFILE,
+                                                    facilities.FETCH_STANDARD_PROFILE))
+            for interface in facilities.IMPORTS:
+                self.assertEqual(('import ' + interface + ';') in selected_wit, has_clock)
+        self.assertEqual(len(captured), len(facilities.SUPPORTED))
 
     def test_libfetch_unthreaded_build_refuses_before_binding_generation_or_output(self):
         from unittest import mock

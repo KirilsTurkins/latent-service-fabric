@@ -247,13 +247,6 @@ class Compiler:
         if runtime_profile in standard_facilities.FETCH_PROFILES:
             # Zig maps this to wasm-ld -s: omit debug/name metadata, not code.
             command.append('-Wl,--strip-debug')
-        if runtime_profile == standard_facilities.FETCH_STANDARD_PROFILE:
-            # The selected profile declares all three clock/entropy interfaces.
-            # Retain their captured lowerings even when this client uses none;
-            # the strict final-surface inspection must still match that WIT.
-            command.extend('-Wl,-u,' + name for name in (
-                '__imported_wasi_snapshot_preview1_clock_time_get',
-                '__imported_wasi_snapshot_preview1_random_get'))
         thread_flags = []
         if threaded:
             # The post-link template-copy body is deliberately opaque to its
