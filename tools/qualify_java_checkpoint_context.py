@@ -98,6 +98,30 @@ def overlay(core, classes, target):
         'unchangedFiberClass': {'bytes': len(fiber), 'sha256': hashlib.sha256(fiber).hexdigest()}}
 
 
+def retain_compiler_inputs(output, tooling, observed, corrected_source):
+    """Retain only fixed, public compiler inputs for an offline fixture replay."""
+    entries = {str(p.relative_to(ROOT)): p for p in observed}
+    entries['generated/AsyncMethodFinder.java'] = corrected_source
+    for name in tooling.split(os.pathsep):
+        path = Path(name)
+        key = 'jars/' + path.name
+        require(key not in entries, 'java-checkpoint-reproducer-duplicate')
+        entries[key] = path
+    require(len(entries) <= 64, 'java-checkpoint-reproducer-entry-bound')
+    target = output/'commands/logs/compiler-inputs.zip'
+    total = 0
+    with zipfile.ZipFile(target, 'x', compression=zipfile.ZIP_DEFLATED) as archive:
+        for name, path in sorted(entries.items()):
+            raw = read_file(path, 32*1024**2)
+            total += len(raw)
+            require(total <= 34*1024**2, 'java-checkpoint-reproducer-byte-bound')
+            entry = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+            entry.compress_type = zipfile.ZIP_DEFLATED
+            entry.external_attr = 0o100644 << 16
+            archive.writestr(entry, raw)
+    return file_identity(target)
+
+
 def qualify(output):
     started = time.monotonic()
     output = fresh(output)
@@ -141,6 +165,7 @@ def qualify(output):
         require(len(core) == 1, 'java-checkpoint-exact-original-core')
         replacement = output/'teavm-core-context-probe.jar'
         replacement_identity = overlay(Path(core[0]), corrected, replacement)
+        report['compilerInputs'] = retain_compiler_inputs(output, tooling, observed, source)
         results = []
         compiler_results = []
         # Retain partial observations if a later real compiler control refuses.
