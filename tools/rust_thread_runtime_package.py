@@ -18,8 +18,10 @@ from tools.rust_capsule_build import BUILD_TYPE, Commands, package_inputs, selec
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, read_json, write_json
 from tools.rust_thread_callback_paths import section, unsigned
 
-SOURCE = 'ef841ed1d5691b4bf25db48b9980a776b4b56bc5'
-RUN = 41127291312
+CATALOGUE_PREVIOUS_SOURCE = 'ef841ed1d5691b4bf25db48b9980a776b4b56bc5'
+CATALOGUE_PREVIOUS_RUN = 41127291312
+SOURCE = 'e3f0edf822c10e84bbeede276174ac3217542afc'
+RUN = 41189829966
 HISTORICAL_PINS = {
     'application-source-and-capture.tar.gz': (20761985, 'c6d9ef4e2eb48af53b7685065e406dd5ff8403c5b003c45383680c6afb68a085'),
     'source-inputs.json': (9204, '645f05410a943a1383462ce2eef5a30145c1f6953de74154b3e0b5c62174057e'),
@@ -50,15 +52,21 @@ HOSTED_PREVIOUS_PINS = {
     'raw-core.wasm': (262853, 'ae5b68cec5fa2d68cdd65eb669844e0d2dd75d8a3fc7563d8fc0a272866b9c7b'),
     'observation.json': (5427, 'bd887733bf8360aeb85dfea8163067339a085f7f4fa5e95dac06e5ee3a11676a'),
 }
-PINS = {
+CATALOGUE_PREVIOUS_PINS = {
     'application-source-and-capture.tar.gz': (20968654, '1daf63d7e138e68e2f69910de05c07fc98ed23b60bccd4fa3784e3746ebeca2b'),
     'source-inputs.json': (9348, 'd0419a16e563d186d3c2fc323fa81bf26b13f18f068b88d5f36128bd9e7ada69'),
     'raw-core.wasm': (263030, '0cbb66d8e363c47df6b158d50facb7fa04f280bcb2650aa0597385fd63025a24'),
     'observation.json': (5426, '3738b83b3d08a857fe7dd38e73a9ebe415f65c0c8ff2551ac293bf465128a007'),
 }
-COMPONENT_SHA = 'sha256:1db2b051a515be1bd60974e38335f6bade254d6b016daf9e20b913360e72c00f'
-WRAPPED = {'bytes': 514833,
-           'sha256': 'sha256:e81881af5494d3d6ab3b071abd8fadca79d2f21b354e2e52dc746d492582f471'}
+PINS = {
+    'application-source-and-capture.tar.gz': (20954735, '5370c88bdf2ac8c16f38f21d196b6462c77e2fc3d7e4f0cbc4a14df1d7dae5f9'),
+    'source-inputs.json': (9348, '45c426fc2f3fd52c07b734e2504afc4ebde598166b1e9613c541887e92c75746'),
+    'raw-core.wasm': (261378, '7b280a32bc87a8db318432f47f8190816b6722f1402d1e2e161142788bdb0c69'),
+    'observation.json': (5428, '140a07c6a298b1b702a89ae4b6c8e137c19fce17429de9635a4fd975eadaa65a'),
+}
+COMPONENT_SHA = 'sha256:0ded5f17359bbff107af47e422549765de2e17f4829853ed2011225d85a56107'
+WRAPPED = {'bytes': 511683,
+           'sha256': 'sha256:3948e0fc6d64dbf40914915ba0618f14cdd4a45e6e4762ecf6e0e801fac4f4c6'}
 PROFILE = 'rust-context40-sync-cooperative-v1'
 SOURCE_IMPORTS = ('latent:runtime/activation@0.1.0', 'latent:runtime-native/threads@0.1.0',
                   'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0')
@@ -117,7 +125,7 @@ def original_files(artifact: Path) -> tuple[dict[str, bytes], dict]:
 def wrap_original(original: bytes, component: bytes) -> bytes:
     """Untrusted preimage framing only; the selected native host recomputes it."""
     require(digest(original) == 'sha256:' + PINS['raw-core.wasm'][1]
-            and digest(component) == COMPONENT_SHA and len(component) == 251758,
+            and digest(component) == COMPONENT_SHA and len(component) == 250260,
             'rust-thread-original-component-pair')
     name = b'latent-rust-original-core-v1'
     payload = unsigned(len(name)) + name + b'LSFRPR01' + len(original).to_bytes(4, 'little') + original
@@ -191,6 +199,10 @@ def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> d
             for name, (size, sha) in LATEST_PREVIOUS_PINS.items()},
         'hostedPreviousCompilerArtifactMembers': {name: {'bytes': size, 'sha256': 'sha256:' + sha}
             for name, (size, sha) in HOSTED_PREVIOUS_PINS.items()},
+        'cataloguePreviousCompilerSource': CATALOGUE_PREVIOUS_SOURCE,
+        'cataloguePreviousCompilerRun': CATALOGUE_PREVIOUS_RUN,
+        'cataloguePreviousCompilerArtifactMembers': {name: {'bytes': size, 'sha256': 'sha256:' + sha}
+            for name, (size, sha) in CATALOGUE_PREVIOUS_PINS.items()},
         'originalSourceDigest': digest(inventory(files)), 'projectedPublicWitDigest': digest(projected),
         'originalPublicWitDigest': digest(ORIGINAL_WIT), 'publicEffect': 'async',
         'originalDeclaredImports': list(SOURCE_IMPORTS), 'finalRequiredImports': list(IMPORTS),

@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/rust_thread_compiler_materials.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind the exact repaired hosted compiler artifact and retained historical origin.","schemaVersion":"latent.ci.contracts.v1","sha256":"6f86fa66cf30b19914cdc83b1b9101af4100e2da565112d8a5bc431536eb4bff"}
+{
+  "kind": "owner",
+  "path": "tools/rust_thread_compiler_materials.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Select only the actual successful e3 compiler event and exact four retained members; preserve previous catalogue event and all frozen retrieval controls",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "4fea440d534de20b1cb90929a38d8cbca3c6f1468ad7718cd95c2a87a7dfb99a"
+}

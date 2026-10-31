@@ -28,10 +28,9 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - name: Fetch the two exact original compiler and native source events
+      - name: Fetch the exact successful compiler and native source event
         run: |
-          git fetch --no-tags --depth=1 origin ef841ed1d5691b4bf25db48b9980a776b4b56bc5
-          git fetch --no-tags --depth=1 origin deb654086a6e9ca85c1c96c7e3485babbc6557d9
+          git fetch --no-tags --depth=1 origin e3f0edf822c10e84bbeede276174ac3217542afc
       - name: Install locked Python dependencies and check finite replay and policy refusals
         run: |
           python3 -m pip install --requirement tools/requirements.lock

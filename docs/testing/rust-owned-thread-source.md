@@ -397,3 +397,24 @@ Before any supported runtime claim, the remaining minimum delivery is:
 
 Issues #743 and #689 remain open. These sources do not establish all standard
 threading, Tokio/Rayon, hook, socket, multicore or general crates.io support.
+
+## 31 October: matched repaired compiler and ordinary native origin
+
+Compiler [41189829966](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41189829966)
+and native producer [41190176305](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41190176305)
+both passed at exact source `e3f0edf822c10e84bbeede276174ac3217542afc`.
+The compiler passed its original 29 native controls and all 76 library controls,
+including current original-source derivation and normal-component proof. Its
+actual framed component is 511,683 bytes,
+`3948e0fc6d64dbf40914915ba0618f14cdd4a45e6e4762ecf6e0e801fac4f4c6`.
+The ordinary native producer passed all 200 named controls and 91 exact command
+stages for the same five source-bound products. Compiler/native authority and
+runtime qualification remain separate; the immutable body catalogue origin
+stays `f401e388a7542b8f9cd9bbd987dbcc65814262d6`.
+
+The normal signed consumer now selects only those actual successful origins,
+the exact four retained compiler members and that framed component. Previous
+origin tuples and receipts remain historical. Its five original public calls,
+32 MiB/5-second envelope, eight Native owners, grants, assertions and physical
+retirement requirements stay unchanged. No diagnostic build is selected. The
+five signed calls must still run successfully before guest progress is proved.

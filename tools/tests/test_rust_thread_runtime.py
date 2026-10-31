@@ -11,9 +11,13 @@ class RustThreadRuntimeTests(unittest.TestCase):
     def test_native_reader_uses_current_catalogue_and_retains_failed_runtime_origin(self):
         from tools import rust_thread_native_products as native
 
-        self.assertEqual(native.SOURCE, 'deb654086a6e9ca85c1c96c7e3485babbc6557d9')
-        self.assertEqual(native.RUN, 41131800734)
-        self.assertEqual(native.ARTIFACT['id'], 13013563430)
+        self.assertEqual(native.SOURCE, 'e3f0edf822c10e84bbeede276174ac3217542afc')
+        self.assertEqual(native.RUN, 41190176305)
+        self.assertEqual(native.ARTIFACT['id'], 13038753096)
+        self.assertEqual(native.CATALOGUE_PREVIOUS_SOURCE,
+                         'deb654086a6e9ca85c1c96c7e3485babbc6557d9')
+        self.assertEqual(native.CATALOGUE_PREVIOUS_RUN, 41131800734)
+        self.assertEqual(native.CATALOGUE_PREVIOUS_ARTIFACT['id'], 13013563430)
         self.assertEqual(native.PREVIOUS_RUNTIME_SOURCE,
                          '9c0097fc4dee24c57e0cffbdf1963e47772b2ffc')
         self.assertEqual(native.PREVIOUS_RUNTIME_RUN, 41116286833)
