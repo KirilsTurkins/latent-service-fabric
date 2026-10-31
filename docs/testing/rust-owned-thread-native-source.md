@@ -145,9 +145,6 @@ the 25,052-byte source-inputs receipt
 and all five source-bound product identities. This producer event still executes
 no signed guest; it only supplies executables whose catalogue and runtime source
 include the repaired Rust component identities for the next exact signed run.
-The bounded diagnostic fetches this exact producer source before importing the
-frozen reader; it separately retains the earlier failed-runtime source so the
-historical pre-entry refusal remains reproducible instead of being overwritten.
 
 The exact repaired-catalogue native producer
 [`41131800734`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41131800734)
@@ -191,5 +188,85 @@ compressed bytes with GitHub digest
 The call still trapped with `unreachable-code`, no decoded result and zero
 effects after 93,883 fuel at a 5,692,107-byte peak. This progressed beyond the
 47,412-fuel shared-ThreadId failure but did not produce any ThreadPool result.
-The bounded diagnostic must identify this new exact trap before another repair
-is selected; the runtime and qualification flags remain false.
+The bounded #1373 diagnostic must identify this new exact trap before another
+runtime repair can be selected.
+
+## Original child-handoff catalogue observation, 31 October 2026
+
+Compiler run [41184446196](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41184446196),
+source `f401e388a7542b8f9cd9bbd987dbcc65814262d6`, passed the unchanged 29 native
+TLS/wait/synchronization and 76 source controls, rebuilt the selected sysroot and
+compiled the unchanged ordinary application. The 76 source controls are native
+Rust library tests, including the historical normal-component positive pair;
+they are not Python controls. Artifact `13036816711` retains
+112 CRC-verified members (52,701,865 bytes, ZIP SHA-256
+`1587f3ed7f2464b2f6c06d47fe69a3d9d825b78da1e191007e273f5191634b8f`).
+All 238 captured Git input identities and the actual rlib digests were joined
+before deriving this catalogue's 1,221 definitions and 5,245 real referents.
+The original-body image is 176,171 bytes, SHA-256
+`96f285899ad07269dafc3a539c6d3247ac7ec441aa8807575718e18ab9e156c8`.
+
+Removing the separate Bootstrap allocation leaves one original indirect
+`entered` callback, the existing TLS notification. Both source derivations now
+require that one exact site; they do not accept the prior two-call shape.
+The actual retained sealed core is `4b38efc1a41848dee2ec1d8bd1eb4861c5698181bc2ec1daae8058e2fdeb2486`.
+The actual full source-derived synchronous core is
+`0f5dce3b2a99ae8f91d4a391e7c0cfda7113e528f767493f8ea22d233d3639f3`.
+Applying the existing reviewed WIT-effect metadata projection changes only byte
+185,784 from `0x40` to `0x43`, yielding
+`deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423`.
+That is a metadata-only source expectation; independent native reproduction is
+still pending. No local compiler, native process or guest executed.
+
+The owning run stopped at the previous immutable native catalogue before normal
+component encoding. Its historical normal component and complete old origin
+remain unchanged and explicitly historical in `origin.json`; their earlier
+positive source controls remain. No new normal-component bytes or digest is
+claimed. Native whole-component fixture qualification and the five signed
+ThreadPool outcomes must use the next actual matched compiler/native origins.
+Current normal-component and runtime qualification remain unproved.
+
+
+The subsequent exact-catalogue owner run
+[41186537968](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41186537968)
+passed 74 of those 76 Rust library controls. Both current original-catalogue and
+source-derivation controls passed, independently reproducing `deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423`
+in the hosted native implementation. The two historical normal-component pair
+positives failed with `rust-component-recomputed-main-mismatch` before any new
+encoding. Artifact `13036114429` retains 29 CRC-verified members (7,450,592 bytes,
+ZIP SHA-256 `7e41304854912472a7712fb3cd3e15cde98576998df483168d881ebc56642fe9`).
+
+The existing explicit application-diagnostic owner now retains unsigned actual
+application encoding before running the same mandatory 76 library controls.
+All 76 must pass before owner success; an old fixture mismatch still fails the
+run. Original 29-control ordering, default non-application behavior, assertions,
+source immutability and qualification requirements remain unchanged. No guest
+execution or new normal-component qualification follows from this sequencing.
+
+Compiler [41187066997](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41187066997)
+then retained an actual 250,260-byte normal component,
+`0ded5f17359bbff107af47e422549765de2e17f4829853ed2011225d85a56107`.
+All 238 captured Git inputs and 199 application recipe inputs match exact source
+`24737830b5ea01006b419c1196212f08db2d715a`. The retained native core is byte-identical
+to source-adapted `deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423`.
+The unchanged envelope projection proves every non-consumed main-core section
+exact; restoring consumed WIT metadata and the producer merge reconstructs that
+complete derived core. The raw encoded main has a different digest because the
+encoder consumes that metadata. Original and adapted WIT fixtures stay unchanged.
+
+The repaired original main has the same 18 import identities in a new source
+order. Its encoder adapters, canonical lowerings, aliases and component-name
+metadata follow that order. Table limits remain exactly 121/121 in the main and
+9/9 in the adapters. The new exact 4,422-byte shell is
+`7640af9fd078983e33e464d5589e565a191686d0510ea5d5a4687bb886bf0e75`;
+the old shell's strict byte equality correctly refused it. The active component
+and shell now use only these actual captured bytes; prior bytes and complete
+provenance remain available through immutable Git source references and the
+historical origin. No old/new fallback or projection change is introduced.
+
+Artifact `13036539476` contains 118 CRC-verified members (52,934,272 bytes, ZIP
+SHA-256 `e15684a6a47091eec962a1044f21ab7f916c6477e2d864158cce27d2c1353644`).
+That owner failed native normal-component proof before reaching its mandatory
+76 controls. The next owning run must pass both; current component/runtime
+qualification and all five signed guest outcomes remain unproved. No local
+compiler, native executable or guest ran to produce this fixture update.

@@ -45,8 +45,8 @@
         "run": "git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915\ngit fetch --no-tags --depth=1 origin 28059f343bbd954e3e6614c5a24593897cc0c294\ngit fetch --no-tags --depth=1 origin 2259601ab19702eafd56c39bcb43f769cdb47fa5\ngit fetch --no-tags --depth=1 origin 9106147f83a2e19c8b1be16b9eb5d55e39512bde\n"
       },
       {
-        "name": "Fetch the exact successful native and compiler source event",
-        "run": "git fetch --no-tags --depth=1 origin deb654086a6e9ca85c1c96c7e3485babbc6557d9\ngit fetch --no-tags --depth=1 origin ef841ed1d5691b4bf25db48b9980a776b4b56bc5\ngit fetch --no-tags --depth=1 origin 79911762b366381d7dc61da12d1b5e9aba2b3222\n"
+        "name": "Fetch the exact successful current native and compiler source event",
+        "run": "git fetch --no-tags --depth=1 origin e3f0edf822c10e84bbeede276174ac3217542afc\n"
       },
       {
         "name": "Locked Python dependencies and finite numeric extraction control",
@@ -79,7 +79,7 @@
   },
   "jobId": "diagnostic",
   "kind": "job",
-  "reviewReason": "Run the bounded observer against the exact repaired compiler component and current 200-control native producer while retaining the earlier failed source event.",
+  "reviewReason": "Use the actual successful e3 compiler/native tuple for the same bounded current-component diagnostic; preserve original eight-frame observer, node control, budgets and historical obligations",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-thread-fault-diagnostic.yml"
 }

@@ -432,3 +432,47 @@ Before any supported runtime claim, the remaining minimum delivery is:
 
 Issues #743 and #689 remain open. These sources do not establish all standard
 threading, Tokio/Rayon, hook, socket, multicore or general crates.io support.
+
+## 31 October: matched repaired compiler and ordinary native origin
+
+Compiler [41189829966](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41189829966)
+and native producer [41190176305](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41190176305)
+both passed at exact source `e3f0edf822c10e84bbeede276174ac3217542afc`.
+The compiler passed its original 29 native controls and all 76 library controls,
+including current original-source derivation and normal-component proof. Its
+actual framed component is 511,683 bytes,
+`3948e0fc6d64dbf40914915ba0618f14cdd4a45e6e4762ecf6e0e801fac4f4c6`.
+The ordinary native producer passed all 200 named controls and 91 exact command
+stages for the same five source-bound products. Compiler/native authority and
+runtime qualification remain separate; the immutable body catalogue origin
+stays `f401e388a7542b8f9cd9bbd987dbcc65814262d6`.
+
+The normal signed consumer now selects only those actual successful origins,
+the exact four retained compiler members and that framed component. Previous
+origin tuples and receipts remain historical. Its five original public calls,
+32 MiB/5-second envelope, eight Native owners, grants, assertions and physical
+retirement requirements stay unchanged. No diagnostic build is selected. The
+five signed calls must still run successfully before guest progress is proved.
+
+
+## Current-component bounded diagnostic after the first normal call failed
+
+Normal signed owner [41191812242](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41191812242)
+authenticated and signed the current 511,683-byte component
+`3948e0fc6d64dbf40914915ba0618f14cdd4a45e6e4762ecf6e0e801fac4f4c6`.
+Its first `pools-cold` invocation was dispatched and reaped but trapped with the
+closed public label `guest-fault`: 298,549 fuel, 7,795,224-byte peak and
+1,369,273 microseconds. All effect counters were zero; no call result or
+five-call qualification passed. Retained audit shows completed register/settle
+callbacks, but does not prove a private worker result or Native-owner peak.
+
+This preserved diagnostic branch now uses the same repaired SDK/catalogue and
+actual successful compiler/native tuples as that normal attempt. The original
+bounded diagnostic feature, eight-frame numeric observer, exact node-source
+identity and four reused source-authenticated native helpers remain distinct
+from ordinary qualification. Only its diagnostic consumer's exact expected
+public trap label changes to the actual current `guest-fault`; there is no
+old/new fallback, normal assertion change, new frame type or observer expansion.
+The underlying Trap and numeric location remain unknown until this existing
+bounded owner captures the current component. Prior observations and full
+provenance remain historical; no runtime qualification is claimed.

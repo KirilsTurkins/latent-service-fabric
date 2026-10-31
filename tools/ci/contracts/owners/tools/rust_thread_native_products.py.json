@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/rust_thread_native_products.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the delegated native-products reader fingerprint to the reviewed exact current 200-control receipt cohort pin used by both the runtime and diagnostic programmes.",
+  "reviewReason": "Select only the actual successful e3 200-control native producer and exact receipts; preserve previous original tuple and every cohort/control/command/source bound",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "478102b0d497cdd8d2f119aee6ee801090ff7fe9f0b56dde3f014471e5c6274f"
+  "sha256": "6751a38b44a6f5a24dbc2500b662054a7d382bbd76d9520b4a910a1f5fc5fcfd"
 }

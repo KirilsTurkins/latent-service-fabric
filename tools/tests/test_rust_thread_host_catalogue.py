@@ -34,13 +34,45 @@ class HostCatalogueTests(unittest.TestCase):
         component = (base / 'catalogue-normal-component.wasm').read_bytes()
         shell = (base / 'normal-component-shell.bin').read_bytes()
         records = (base.parent / 'rust_catalogue.rs').read_text(encoding='utf-8')
-        self.assertEqual(origin['nodeCount'], 1225)
+        self.assertEqual(origin['nodeCount'], 1221)
+        self.assertEqual(origin['origin']['head'], 'f401e388a7542b8f9cd9bbd987dbcc65814262d6')
+        self.assertFalse(origin['origin']['normalComponentProduced'])
+        self.assertEqual(origin['normalComponentEnvelopeStatus'],
+                         'actual current-source encoding retained; native normal proof and mandatory 76 controls pending')
+        historical_envelope = origin['historicalCatalogueOrigin']['normalComponentEnvelope']
+        self.assertEqual(origin['historicalNormalComponentFixture']['normalComponentEnvelope'],
+                         historical_envelope)
+        self.assertEqual(origin['historicalNormalComponentFixture']['head'],
+                         '24737830b5ea01006b419c1196212f08db2d715a')
+        self.assertEqual(origin['historicalNormalComponentFixture']['componentDigest'],
+                         historical_envelope['componentDigest'])
+        self.assertTrue(origin['currentSourceObservation']['normalComponentProduced'])
+        self.assertFalse(origin['currentSourceObservation']['normalComponentObservation']['nativeNormalProofPassed'])
+        self.assertEqual(envelope['candidateSource'], {
+            'compilerRun': 41187066997,
+            'compilerJob': 124496037081,
+            'compilerHead': '24737830b5ea01006b419c1196212f08db2d715a',
+            'compilerArtifact': 13036539476,
+            'compilerArtifactZipSha256':
+                'e15684a6a47091eec962a1044f21ab7f916c6477e2d864158cce27d2c1353644',
+            'platform': 'ubuntu-24.04-x86_64',
+            'toolReleaseAsset': 'lsf-bytecodealliance-actions-wasm-tools-1.254.0',
+            'toolSha256': 'cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6',
+            'hostedConfirmation': True,
+            'nativeNormalProofPassed': False,
+            'mandatory76Reached': False,
+        })
+        self.assertEqual(envelope['derivedCoreDigest'],
+                         'sha256:deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423')
+        raw_core = (base / 'catalogue-original-core.wasm').read_bytes()
+        self.assertEqual('sha256:' + hashlib.sha256(raw_core).hexdigest(),
+                         origin['currentSourceObservation']['rawCore']['digest'])
         self.assertIn('current2id3ID0', records)
         self.assertIn('current2id4ID32', records)
         self.assertNotIn('current2id2ID"', records)
         self.assertEqual(envelope['toolSha256'],
                          'cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6')
-        self.assertEqual(envelope['candidateSource'], {
+        self.assertEqual(historical_envelope['candidateSource'], {
             'compilerRun': 41127291312,
             'compilerJob': 124309000420,
             'compilerHead': 'ef841ed1d5691b4bf25db48b9980a776b4b56bc5',
@@ -52,7 +84,7 @@ class HostCatalogueTests(unittest.TestCase):
             'toolSha256': 'cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6',
             'hostedConfirmation': True,
         })
-        self.assertEqual(envelope['previousHostedSource'], {
+        self.assertEqual(historical_envelope['previousHostedSource'], {
             'run': 41113065282,
             'job': 124260142818,
             'head': '9d9b4001bdefa57b6938c613d0fea13f8e638f83',
@@ -65,6 +97,12 @@ class HostCatalogueTests(unittest.TestCase):
             'nativeControlsPassed': 29,
             'hostedConfirmation': True,
         })
+        self.assertEqual(len(component), 250260)
+        self.assertEqual(hashlib.sha256(component).hexdigest(),
+                         '0ded5f17359bbff107af47e422549765de2e17f4829853ed2011225d85a56107')
+        self.assertEqual(len(shell), 4422)
+        self.assertEqual(hashlib.sha256(shell).hexdigest(),
+                         '7640af9fd078983e33e464d5589e565a191686d0510ea5d5a4687bb886bf0e75')
         self.assertEqual(envelope['componentBytes'], len(component))
         self.assertEqual(envelope['componentDigest'],
                          'sha256:' + hashlib.sha256(component).hexdigest())

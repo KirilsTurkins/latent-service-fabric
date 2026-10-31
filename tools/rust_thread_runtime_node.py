@@ -216,7 +216,7 @@ def run(artifact: Path, native: dict, output: Path, *, diagnostic=False):
                         require(row['exitCode'] == 4 and row['decoded'] is None
                                 and row['response']['data']['terminalState'] == 'guest_trap'
                                 and any(item.get('kind') == 'activation.guest-trap-kind'
-                                    and item.get('fields') == {'kind': 'unreachable-code'}
+                                    and item.get('fields') == {'kind': 'guest-fault'}
                                     for item in details)
                                 and diagnostic_frames.is_file(),
                                 'rust-thread-exact-numeric-original-fault-observation')
