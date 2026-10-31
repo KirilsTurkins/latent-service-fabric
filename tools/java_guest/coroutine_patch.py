@@ -320,6 +320,7 @@ CHECKPOINT_FIND_BEFORE = '''        this.classSource = classSource;
         hasAsyncMethods = findAsyncMethods();'''
 CHECKPOINT_FIND_AFTER = '''        this.classSource = classSource;
         validateCheckpointCallers();
+        validateNonsuspendableProgress();
         hasAsyncMethods = findAsyncMethods();'''
 CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         // CTarget calls find after every dependency completion callback, before
@@ -621,6 +622,1064 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         // Static owned reason only: never print application/call-graph details.
         System.err.println("latent.java.checkpoint-context.v1 " + reason);
         return new IllegalStateException(reason);
+    }
+
+    // This is a deliberately narrow, name-independent ranking proof. It never
+    // infers progress from a volatile read, a library/package name or fuel.
+    private boolean finiteCountedLoops(ProgramReader reader) {
+        org.teavm.model.Program program = boundedProgressProgram(reader);
+        if (program == null) {
+            return false;
+        }
+        org.teavm.common.Graph graph = ProgramUtils.buildControlFlowGraph(program);
+        int edges = 0;
+        for (int index = 0; index < graph.size(); ++index) {
+            int count = graph.outgoingEdgesCount(index);
+            if (count > 262144 - edges) {
+                throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+            }
+            edges += count;
+        }
+        if (org.teavm.common.GraphUtils.isIrreducible(graph)) {
+            return false;
+        }
+        org.teavm.common.LoopGraph loops = new org.teavm.common.LoopGraph(graph);
+        org.teavm.common.DominatorTree dominators = org.teavm.common.GraphUtils.buildDominatorTree(graph);
+        org.teavm.model.Instruction[] definitions = new org.teavm.model.Instruction[program.variableCount()];
+        int[] places = new int[program.variableCount()];
+        java.util.Arrays.fill(places, -1);
+        org.teavm.model.util.DefinitionExtractor extractor = new org.teavm.model.util.DefinitionExtractor();
+        for (org.teavm.model.BasicBlock block : program.getBasicBlocks()) {
+            if (block.getExceptionVariable() != null) {
+                int index = block.getExceptionVariable().getIndex();
+                if (places[index] != -1) {
+                    return false;
+                }
+                places[index] = block.getIndex();
+            }
+            for (org.teavm.model.Phi phi : block.getPhis()) {
+                int index = phi.getReceiver().getIndex();
+                if (places[index] != -1) {
+                    return false;
+                }
+                places[index] = block.getIndex();
+            }
+            for (org.teavm.model.Instruction instruction : block) {
+                if (instruction instanceof org.teavm.model.instructions.MonitorEnterInstruction) {
+                    return false; // A finite body does not bound a contended lock acquisition.
+                }
+                if (instruction instanceof org.teavm.model.instructions.InvokeInstruction
+                        && ((org.teavm.model.instructions.InvokeInstruction) instruction).getMethod()
+                                .getName().equals("<clinit>")) {
+                    return false; // A direct call is not the owned initializeClass protocol.
+                }
+                instruction.acceptVisitor(extractor);
+                for (org.teavm.model.Variable variable : extractor.getDefinedVariables()) {
+                    int index = variable.getIndex();
+                    if (places[index] != -1) {
+                        return false; // A non-SSA value cannot establish this proof.
+                    }
+                    places[index] = block.getIndex();
+                    definitions[index] = instruction;
+                }
+            }
+        }
+        for (org.teavm.common.Loop loop : loops.knownLoops()) {
+            if (!finiteCountedLoop(program, graph, loops, dominators, loop, definitions, places)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private org.teavm.model.Program boundedProgressProgram(ProgramReader reader) {
+        if (reader == null || reader.basicBlockCount() <= 0 || reader.basicBlockCount() > 65536
+                || reader.variableCount() <= 0 || reader.variableCount() > 262144) {
+            return null;
+        }
+        int work = 0;
+        for (int index = 0; index < reader.basicBlockCount(); ++index) {
+            org.teavm.model.BasicBlockReader block = reader.basicBlockAt(index);
+            if (block == null) {
+                return null;
+            }
+            // ProgramUtils' CFG includes exceptional edges. Count handlers now;
+            // the same ranking must cover a backedge through a catch block.
+            work = Math.addExact(work, block.readTryCatchBlocks().size());
+            if (work > 262144) {
+                return null;
+            }
+            for (org.teavm.model.PhiReader phi : block.readPhis()) {
+                work = Math.addExact(work, 1);
+                work = Math.addExact(work, phi.readIncomings().size());
+                if (work > 262144) {
+                    return null;
+                }
+            }
+            org.teavm.model.InstructionIterator iterator = block.iterateInstructions();
+            while (iterator.hasNext()) {
+                iterator.next();
+                if (++work > 262144) {
+                    return null;
+                }
+            }
+        }
+        org.teavm.model.Program program = ProgramUtils.copy(reader);
+        for (org.teavm.model.BasicBlock block : program.getBasicBlocks()) {
+            for (org.teavm.model.Instruction instruction : block) {
+                if (instruction instanceof org.teavm.model.instructions.SwitchInstruction) {
+                    work = Math.addExact(work,
+                            ((org.teavm.model.instructions.SwitchInstruction) instruction).getEntries().size());
+                    if (work > 262144) {
+                        return null;
+                    }
+                }
+            }
+        }
+        return program;
+    }
+
+    private boolean insideProgressLoop(org.teavm.common.LoopGraph loops,
+            org.teavm.common.Loop loop, int block) {
+        if (block < 0) {
+            return false;
+        }
+        org.teavm.common.Loop actual = loops.loopAt(block);
+        return actual != null && actual.isChildOf(loop);
+    }
+
+    private boolean finiteCountedLoop(org.teavm.model.Program program, org.teavm.common.Graph graph,
+            org.teavm.common.LoopGraph loops, org.teavm.common.DominatorTree dominators,
+            org.teavm.common.Loop loop,
+            org.teavm.model.Instruction[] definitions, int[] places) {
+        org.teavm.model.BasicBlock head = program.basicBlockAt(loop.getHead());
+        if (!(head.getLastInstruction() instanceof org.teavm.model.instructions.BranchingInstruction)) {
+            return false;
+        }
+        org.teavm.model.instructions.BranchingInstruction branch =
+                (org.teavm.model.instructions.BranchingInstruction) head.getLastInstruction();
+        boolean consequentInside = insideProgressLoop(loops, loop, branch.getConsequent().getIndex());
+        boolean alternativeInside = insideProgressLoop(loops, loop, branch.getAlternative().getIndex());
+        if (consequentInside == alternativeInside) {
+            return false;
+        }
+        int continuation = consequentInside ? branch.getConsequent().getIndex() : branch.getAlternative().getIndex();
+        for (org.teavm.model.TryCatchBlock handler : head.getTryCatchBlocks()) {
+            if (insideProgressLoop(loops, loop, handler.getHandler().getIndex())) {
+                return false; // A failing bound computation must not bypass the strict test.
+            }
+        }
+        org.teavm.model.instructions.BranchingCondition condition = branch.getCondition();
+        if (!(consequentInside && condition == org.teavm.model.instructions.BranchingCondition.LESS
+                || alternativeInside
+                && condition == org.teavm.model.instructions.BranchingCondition.GREATER_OR_EQUAL)) {
+            return false;
+        }
+        // Pinned ProgramParser translates IF_ICMP{LT,GE} to signed INT
+        // COMPARE_GREATER followed by a unary branch, not a subtraction.
+        org.teavm.model.Instruction comparison = definitions[branch.getOperand().getIndex()];
+        if (!(comparison instanceof org.teavm.model.instructions.BinaryInstruction)) {
+            return false;
+        }
+        org.teavm.model.instructions.BinaryInstruction compare =
+                (org.teavm.model.instructions.BinaryInstruction) comparison;
+        if (compare.getOperation() != org.teavm.model.instructions.BinaryOperation.COMPARE_GREATER
+                || compare.getOperandType() != org.teavm.model.instructions.NumericOperandType.INT
+                || compare.getBasicBlock() != head) {
+            return false;
+        }
+        int induction = compare.getFirstOperand().getIndex();
+        for (org.teavm.model.Phi phi : head.getPhis()) {
+            if (phi.getReceiver().getIndex() != induction) {
+                continue;
+            }
+            int outside = 0, inside = 0;
+            java.util.Set<Integer> incoming = new java.util.HashSet<>();
+            for (org.teavm.model.Incoming edge : phi.getIncomings()) {
+                if (!incoming.add(edge.getSource().getIndex())) {
+                    return false;
+                }
+                org.teavm.model.Instruction value = definitions[edge.getValue().getIndex()];
+                if (!insideProgressLoop(loops, loop, edge.getSource().getIndex())) {
+                    if (insideProgressLoop(loops, loop, places[edge.getValue().getIndex()])) {
+                        return false;
+                    }
+                    ++outside;
+                } else {
+                    if (edge.getSource() != head && !dominators.dominates(continuation,
+                            edge.getSource().getIndex())) {
+                        return false;
+                    }
+                    if (!(value instanceof org.teavm.model.instructions.BinaryInstruction)) {
+                        return false;
+                    }
+                    org.teavm.model.instructions.BinaryInstruction update =
+                            (org.teavm.model.instructions.BinaryInstruction) value;
+                    if (update.getOperation() != org.teavm.model.instructions.BinaryOperation.ADD
+                            || update.getOperandType() != org.teavm.model.instructions.NumericOperandType.INT
+                            || update.getFirstOperand().getIndex() != induction
+                            || !insideProgressLoop(loops, loop, places[edge.getValue().getIndex()])) {
+                        return false;
+                    }
+                    org.teavm.model.Instruction step = definitions[update.getSecondOperand().getIndex()];
+                    if (!(step instanceof org.teavm.model.instructions.IntegerConstantInstruction)
+                            || ((org.teavm.model.instructions.IntegerConstantInstruction) step).getConstant() != 1) {
+                        return false;
+                    }
+                    ++inside;
+                }
+            }
+            int[] predecessors = graph.incomingEdges(head.getIndex());
+            if (outside == 0 || inside == 0 || incoming.size() != predecessors.length) {
+                return false;
+            }
+            for (int predecessor : predecessors) {
+                if (!incoming.contains(predecessor)) {
+                    return false;
+                }
+            }
+            // The head dominates a reducible natural loop. Every backedge now
+            // carries i+1. The long rank Integer.MAX_VALUE-i decreases on every
+            // cycle, even for a changing signed limit. Its strict test requires
+            // i<limit<=Integer.MAX_VALUE, so a traversed backedge cannot wrap.
+            return true;
+        }
+        return false;
+    }
+
+    private void validateNonsuspendableProgress() {
+        progressRuntimeProofs.clear(); // Never reuse a proof across completion rounds.
+        progressOriginalClasses.clear();
+        progressMetadataProofs.clear();
+        progressPlatformProofs.clear();
+        // Unlike checkpoint-call validation, this closure is required even if
+        // Activation.checkpoint is entirely unreachable in the final programme.
+        java.util.Map<MethodReference, Integer> contexts = new java.util.HashMap<>();
+        java.util.List<MethodReference> pending = new java.util.ArrayList<>();
+        int work = 0;
+        for (MethodReference reference : dependency.getReachableMethods()) {
+            if (++work > 65536 || reference == null) {
+                throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+            }
+            ClassReader cls = classSource.get(reference.getClassName());
+            MethodReader method = cls == null ? null : cls.getMethod(reference.getDescriptor());
+            if (method == null) {
+                throw checkpointRefusal("java-checkpoint-unresolved-741");
+            }
+            if (progressRuntimeClassIdentity(cls.getName()) != null
+                    || reference.getName().equals("<clinit>")
+                    || method.getAnnotations().get("org.teavm.interop.Unmanaged") != null
+                    || cls.getAnnotations().get("org.teavm.interop.Unmanaged") != null) {
+                contexts.put(reference, pending.size());
+                pending.add(reference);
+            }
+        }
+        MethodReference managedEntry = new MethodReference(Fiber.class, "start", void.class);
+        java.util.List<int[]> edges = new java.util.ArrayList<>();
+        work = 0;
+        for (int index = 0; index < pending.size(); ++index) {
+            MethodReference reference = pending.get(index);
+            ClassReader cls = classSource.get(reference.getClassName());
+            MethodReader method = cls == null ? null : cls.getMethod(reference.getDescriptor());
+            CallGraphNode node = callGraph.getNode(reference);
+            if (method == null || node == null) {
+                throw checkpointRefusal("java-checkpoint-unresolved-741");
+            }
+            if (reference.equals(managedEntry) && method.getLevel() == org.teavm.model.AccessLevel.PRIVATE
+                    && !method.hasModifier(ElementModifier.STATIC)) {
+                if (method.getAnnotations().get("org.teavm.interop.Unmanaged") != null
+                        || cls.getAnnotations().get("org.teavm.interop.Unmanaged") != null
+                        || method.getAnnotations().get("org.teavm.interop.Async") != null) {
+                    throw checkpointRefusal("java-checkpoint-nonsuspendable-context-741");
+                }
+                if (!pinnedFiberEntry(method)) {
+                    throw checkpointRefusal("java-checkpoint-unresolved-741");
+                }
+                continue; // The existing, proven new managed execution context.
+            }
+            // The runtime proof must be closed before this pass is enabled:
+            // source-bound heap/metadata families are not a package exemption.
+            boolean runtime = progressRuntimeClassIdentity(cls.getName()) != null;
+            if (runtime) {
+                if (!finiteRuntimeMethod(cls, method)) {
+                    throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+                }
+                // The exact runtime certificate is compositional and includes
+                // its helper preconditions. Do not replace valid frame names
+                // with unconstrained null arguments through a call SCC.
+                continue;
+            }
+            if (method.getProgram() == null && progressNativePrimitive(method)) {
+                continue;
+            }
+            if (method.hasModifier(ElementModifier.SYNCHRONIZED)
+                    || method.getAnnotations().get("org.teavm.interop.Async") != null) {
+                throw checkpointRefusal("java-checkpoint-nonsuspendable-context-741");
+            }
+            MethodReference delegate = method.getProgram() == null ? progressNativeDelegate(cls, method) : null;
+            if (method.getProgram() == null ? delegate == null : !finiteCountedLoops(method.getProgram())) {
+                throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+            }
+            if (delegate != null) {
+                Integer targetIndex = contexts.get(delegate);
+                if (targetIndex == null) {
+                    if (pending.size() == 65536) {
+                        throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+                    }
+                    targetIndex = pending.size();
+                    contexts.put(delegate, targetIndex);
+                    pending.add(delegate);
+                }
+                if (++work > 262144) {
+                    throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+                }
+                edges.add(new int[] { index, targetIndex });
+            }
+            for (CallSite site : node.getCallSites()) {
+                if (++work > 262144 || site == null) {
+                    throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+                }
+                for (CallGraphNode callee : site.getCalledMethods()) {
+                    if (++work > 262144) {
+                        throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+                    }
+                    if (callee == null || callee.getMethod() == null) {
+                        throw checkpointRefusal("java-checkpoint-unresolved-741");
+                    }
+                    MethodReference target = callee.getMethod();
+                    if (target.getName().equals("<clinit>")) {
+                        if (!dependency.getReachableMethods().contains(target)) {
+                            throw checkpointRefusal("java-checkpoint-unresolved-741");
+                        }
+                        // Each initializer is already an independent root.
+                        // Owned C initialization sets in-progress before its
+                        // body: reentrant initialization is not a recursive
+                        // ordinary call. Direct invokes are rejected in the IR.
+                        continue;
+                    }
+                    Integer targetIndex = contexts.get(target);
+                    if (targetIndex == null) {
+                        if (pending.size() == 65536) {
+                            throw checkpointRefusal("java-checkpoint-analysis-bound-741");
+                        }
+                        targetIndex = pending.size();
+                        contexts.put(target, targetIndex);
+                        pending.add(target);
+                    }
+                    edges.add(new int[] { index, targetIndex });
+                }
+            }
+        }
+        if (pending.isEmpty()) {
+            return;
+        }
+        org.teavm.common.GraphBuilder builder = new org.teavm.common.GraphBuilder(pending.size());
+        for (int[] edge : edges) {
+            builder.addEdge(edge[0], edge[1]);
+        }
+        org.teavm.common.Graph calls = builder.build();
+        for (int[] component : org.teavm.common.GraphUtils.findStronglyConnectedComponents(calls)) {
+            boolean cyclic = component.length > 1;
+            if (!cyclic && component.length == 1) {
+                for (int target : calls.outgoingEdges(component[0])) {
+                    cyclic |= target == component[0];
+                }
+            }
+            if (!cyclic) {
+                continue;
+            }
+            // Generic recursive calls have no inferred depth argument. Only
+            // the closed ABI's decreasing-dimension/bounded-arena families may
+            // establish such an argument; an async label does not establish it.
+            for (int member : component) {
+                MethodReference reference = pending.get(member);
+                ClassReader cls = classSource.get(reference.getClassName());
+                MethodReader method = cls == null ? null : cls.getMethod(reference.getDescriptor());
+                if (method == null || !finiteRuntimeMethod(cls, method)) {
+                    throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+                }
+            }
+        }
+    }
+
+    private java.security.MessageDigest progressDigest() {
+        try {
+            return java.security.MessageDigest.getInstance("SHA-256");
+        } catch (java.security.NoSuchAlgorithmException unavailable) {
+            throw new IllegalStateException("java-checkpoint-unresolved-741", unavailable);
+        }
+    }
+
+    private boolean sameProgressMetadata(ClassReader expected, ClassReader actual) throws java.io.IOException {
+        if (expected.getMethods().size() != actual.getMethods().size()
+                || expected.getFields().size() != actual.getFields().size()) {
+            return false;
+        }
+        org.teavm.model.ClassHolder left = progressMetadata(expected);
+        org.teavm.model.ClassHolder right = progressMetadata(actual);
+        org.teavm.cache.ClassIO io = new org.teavm.cache.ClassIO(new org.teavm.model.ReferenceCache(),
+                new org.teavm.cache.InMemorySymbolTable(), new org.teavm.cache.InMemorySymbolTable(),
+                new org.teavm.cache.InMemorySymbolTable());
+        java.security.MessageDigest first = progressDigest(), second = progressDigest();
+        // One serializer and shared tables are essential: a changed field or
+        // operand cannot acquire the same independently assigned symbol ID.
+        // Streaming keeps the representation out of memory and public output.
+        try (java.security.DigestOutputStream a = new java.security.DigestOutputStream(
+                    java.io.OutputStream.nullOutputStream(), first);
+                java.security.DigestOutputStream b = new java.security.DigestOutputStream(
+                    java.io.OutputStream.nullOutputStream(), second)) {
+            io.writeClass(a, left);
+            io.writeClass(b, right);
+        }
+        return java.security.MessageDigest.isEqual(first.digest(), second.digest());
+    }
+
+    private org.teavm.model.ClassHolder progressMetadata(ClassReader source) {
+        // ModelUtils.copyClass(..., false) still calls getProgram() before its
+        // boolean check. Do not force unreachable programme suppliers during a
+        // final-reachability proof. Copy declarations without ever asking them.
+        org.teavm.model.ClassHolder result = new org.teavm.model.ClassHolder(source.getName());
+        result.setLevel(source.getLevel());
+        result.getModifiers().addAll(source.readModifiers());
+        result.setParent(source.getParent());
+        result.setGenericParent(source.getGenericParent());
+        result.getInterfaces().addAll(source.getInterfaces());
+        result.getGenericInterfaces().addAll(source.getGenericInterfaces());
+        result.setGenericParameters(source.getGenericParameters());
+        result.setOwnerName(source.getOwnerName());
+        result.setDeclaringClassName(source.getDeclaringClassName());
+        result.setSimpleName(source.getSimpleName());
+        result.getInnerClasses().addAll(source.getInnerClasses());
+        ModelUtils.copyAnnotations(source.getAnnotations(), result.getAnnotations());
+        for (org.teavm.model.FieldReader field : source.getFields()) {
+            result.addField(ModelUtils.copyField(field));
+        }
+        for (MethodReader method : source.getMethods()) {
+            org.teavm.model.MethodHolder copy = new org.teavm.model.MethodHolder(method.getDescriptor());
+            copy.setLevel(method.getLevel());
+            copy.getModifiers().addAll(method.readModifiers());
+            copy.setTypeParameters(method.getTypeParameters());
+            copy.setGenericSignature(method.getGenericResultType(), method.getGenericParameterTypes());
+            ModelUtils.copyAnnotations(method.getAnnotations(), copy.getAnnotations());
+            if (method.getAnnotationDefault() != null) {
+                // ClassIO only reads the default; do not mutate the final source
+                // or call ModelUtils' private annotation-value copier.
+                copy.setAnnotationDefault(method.getAnnotationDefault());
+            }
+            for (int index = 0; index < method.parameterCount(); ++index) {
+                ModelUtils.copyAnnotations(method.parameterAnnotation(index), copy.parameterAnnotation(index));
+            }
+            copy.setThrownTypes(method.getThrownTypes());
+            result.addMethod(copy);
+        }
+        return result;
+    }
+
+    private boolean sameProgressBody(ProgramReader expected, ProgramReader actual) throws java.io.IOException {
+        if (expected == null || actual == null) {
+            return expected == actual;
+        }
+        org.teavm.model.Program first = boundedProgressProgram(expected);
+        org.teavm.model.Program second = boundedProgressProgram(actual);
+        if (first == null || second == null) {
+            return false;
+        }
+        org.teavm.cache.ProgramIO io = new org.teavm.cache.ProgramIO(new org.teavm.model.ReferenceCache(),
+                new org.teavm.cache.InMemorySymbolTable(), new org.teavm.cache.InMemorySymbolTable(),
+                new org.teavm.cache.InMemorySymbolTable());
+        java.security.MessageDigest left = progressDigest(), right = progressDigest();
+        try (java.security.DigestOutputStream a = new java.security.DigestOutputStream(
+                    java.io.OutputStream.nullOutputStream(), left);
+                java.security.DigestOutputStream b = new java.security.DigestOutputStream(
+                    java.io.OutputStream.nullOutputStream(), right)) {
+            io.write(first, a);
+            io.write(second, b);
+        }
+        return java.security.MessageDigest.isEqual(left.digest(), right.digest());
+    }
+
+    private final java.util.Map<MethodReference, Boolean> progressRuntimeProofs = new java.util.HashMap<>();
+
+    private boolean finiteRuntimeMethod(ClassReader actualClass, MethodReader actualMethod) {
+        Boolean cached = progressRuntimeProofs.get(actualMethod.getReference());
+        if (cached != null) {
+            return cached;
+        }
+        boolean result = proveFiniteRuntimeMethod(actualClass, actualMethod);
+        progressRuntimeProofs.put(actualMethod.getReference(), result);
+        return result;
+    }
+
+    private boolean proveFiniteRuntimeMethod(ClassReader actualClass, MethodReader actualMethod) {
+        // This proof assumes the unchanged owned C/OWN_GC ABI and a valid heap.
+        // It does not establish safety of arbitrary native imports/raw writes.
+        // Those interfaces are neither expanded nor silently approved here.
+        if (progressRuntimeClassIdentity(actualClass.getName()) == null) {
+            return false;
+        }
+        try {
+            org.teavm.model.ClassHolder original = originalProgressClass(actualClass.getName());
+            if (original == null) {
+                return false;
+            }
+            org.teavm.model.ClassHolder expectedClass = ModelUtils.copyClass(original);
+            new org.teavm.backend.c.analyze.CDependencyListener().transformClass(expectedClass, null);
+            if (!sameProgressMetadata(expectedClass, actualClass)) {
+                return false;
+            }
+            org.teavm.model.MethodHolder expected = expectedClass.getMethod(actualMethod.getDescriptor());
+            if (expected == null) {
+                return false;
+            }
+            org.teavm.model.Program program = expected.getProgram();
+            if (program != null) {
+                org.teavm.diagnostics.AccumulationDiagnostics diagnostics =
+                        new org.teavm.diagnostics.AccumulationDiagnostics();
+                String[] platforms = { org.teavm.interop.Platforms.C,
+                        org.teavm.interop.Platforms.LOW_LEVEL, org.teavm.interop.Platforms.OWN_GC };
+                if (!progressPlatformMarkers(expectedClass, diagnostics)) {
+                    return false;
+                }
+                org.teavm.dependency.ReferenceResolver resolver = new org.teavm.dependency.ReferenceResolver(
+                        classSource, platforms, diagnostics);
+                resolver.use(expected.getReference());
+                resolver.resolve(expected, program);
+                if (!diagnostics.getSevereProblems().isEmpty()) {
+                    return false;
+                }
+                new org.teavm.model.transformation.ClassInitInsertion(classSource).apply(expected, program);
+            }
+            return progressLayouts(actualClass, expected, program) && closedRuntimeCalls(program)
+                    && sameProgressBody(program, actualMethod.getProgram());
+        } catch (Exception unavailable) {
+            return false; // Missing proof is an explicit unsupported classification.
+        }
+    }
+
+    private boolean progressPlatformMarkers(org.teavm.model.ClassHolder expected,
+            org.teavm.diagnostics.AccumulationDiagnostics diagnostics) throws Exception {
+        org.teavm.model.ClassHolderSource hierarchy = originalProgressHierarchy();
+        if (hierarchy == null) {
+            return false;
+        }
+        // Only these two public context queries occur in the pinned class pass.
+        // A lambda/JDK proxy preserves the original three-class finder output;
+        // no anonymous or new nested companion is admitted to the compiler JAR.
+        org.teavm.model.ClassHierarchy markers = new org.teavm.model.ClassHierarchy(hierarchy);
+        org.teavm.model.ClassHolderTransformerContext context =
+                (org.teavm.model.ClassHolderTransformerContext) java.lang.reflect.Proxy.newProxyInstance(
+                        AsyncMethodFinder.class.getClassLoader(),
+                        new Class<?>[] { org.teavm.model.ClassHolderTransformerContext.class },
+                        (proxy, member, arguments) -> {
+                            if (member.getDeclaringClass() != org.teavm.model.ClassHolderTransformerContext.class
+                                    || member.getParameterCount() != 0) {
+                                throw new UnsupportedOperationException("unexpected-progress-transform-context");
+                            }
+                            switch (member.getName()) {
+                                case "getHierarchy": return markers;
+                                case "getDiagnostics": return diagnostics;
+                                default: throw new UnsupportedOperationException("unexpected-progress-transform-context");
+                            }
+                        });
+        new org.teavm.classlib.impl.PlatformMarkerSupport(new String[] { org.teavm.interop.Platforms.C,
+                org.teavm.interop.Platforms.LOW_LEVEL, org.teavm.interop.Platforms.OWN_GC })
+                .transformClass(expected, context);
+        return diagnostics.getSevereProblems().isEmpty();
+    }
+
+    private final java.util.Map<String, org.teavm.model.ClassHolder> progressOriginalClasses = new java.util.HashMap<>();
+    private final java.util.Map<String, Boolean> progressMetadataProofs = new java.util.HashMap<>();
+
+    private org.teavm.model.ClassHolder originalProgressClass(String name) throws Exception {
+        org.teavm.model.ClassHolder cached = progressOriginalClasses.get(name);
+        if (cached != null) {
+            return cached;
+        }
+        String identity = progressRuntimeClassIdentity(name);
+        if (identity == null) {
+            identity = progressDonorIdentity(name);
+        }
+        if (identity == null) {
+            return null;
+        }
+        Class<?> host = Class.forName(name, false, AsyncMethodFinder.class.getClassLoader());
+        if (host.getClassLoader() != AsyncMethodFinder.class.getClassLoader()) {
+            return null;
+        }
+        java.nio.file.Path jar = java.nio.file.Path.of(host.getProtectionDomain()
+                .getCodeSource().getLocation().toURI()).toRealPath();
+        if (!java.nio.file.Files.isRegularFile(jar, java.nio.file.LinkOption.NOFOLLOW_LINKS)
+                || java.nio.file.Files.size(jar) > 67108864) {
+            return null;
+        }
+        try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(jar.toFile())) {
+            java.util.zip.ZipEntry entry = zip.getEntry(name.replace('.', '/') + ".class");
+            if (entry == null || entry.getSize() <= 0 || entry.getSize() > 131072) {
+                return null;
+            }
+            byte[] bytes;
+            try (java.io.InputStream input = zip.getInputStream(entry)) {
+                bytes = input.readNBytes(131073);
+            }
+            if (bytes.length != entry.getSize()) {
+                return null;
+            }
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256").digest(bytes);
+            StringBuilder hex = new StringBuilder(64);
+            for (byte value : digest) {
+                hex.append(Character.forDigit((value >>> 4) & 15, 16));
+                hex.append(Character.forDigit(value & 15, 16));
+            }
+            if (!identity.equals(hex.toString())) {
+                return null;
+            }
+        }
+        try (org.teavm.parsing.resource.ResourceProvider provider =
+                org.teavm.parsing.resource.ResourceProvider.ofClassPath(
+                        java.util.Collections.singletonList(jar.toFile()))) {
+            org.teavm.model.ClassHolderSource source = new org.teavm.model.PreOptimizingClassHolderSource(
+                    new org.teavm.parsing.resource.ResourceBytecodeClassHolderSource(provider,
+                            new org.teavm.model.ReferenceCache()));
+            org.teavm.model.ClassHolder result = source.get(name);
+            if (result == null || result.getMethods().size() > 65536 || result.getFields().size() > 65536) {
+                return null;
+            }
+            // These are immutable original programmes, not dependency suppliers.
+            // Materialize them while their authenticated provider is open.
+            for (org.teavm.model.MethodHolder method : result.getMethods()) {
+                if (method.getProgram() != null && boundedProgressProgram(method.getProgram()) == null) {
+                    return null;
+                }
+            }
+            progressOriginalClasses.put(name, result);
+            return result;
+        }
+    }
+
+    private org.teavm.model.ClassHolderSource originalProgressHierarchy() throws Exception {
+        org.teavm.model.MutableClassHolderSource result = new org.teavm.model.MutableClassHolderSource();
+        for (String name : progressRuntimeClassNames()) {
+            org.teavm.model.ClassHolder cls = originalProgressClass(name);
+            if (cls == null) {
+                return null;
+            }
+            result.putClassHolder(cls);
+        }
+        return result;
+    }
+
+    private boolean progressLayout(String name, java.util.Set<String> visited) throws Exception {
+        if (name == null || progressRuntimeClassIdentity(name) == null || !visited.add(name)) {
+            return true;
+        }
+        if (visited.size() > 65536) {
+            return false;
+        }
+        org.teavm.model.ClassHolder baseline = originalProgressClass(name);
+        ClassReader actual = classSource.get(name);
+        if (baseline == null || actual == null) {
+            return false; // A required semantic layout is never treated as optional.
+        }
+        Boolean cached = progressMetadataProofs.get(name);
+        if (cached == null) {
+            org.teavm.model.ClassHolder expected = ModelUtils.copyClass(baseline);
+            new org.teavm.backend.c.analyze.CDependencyListener().transformClass(expected, null);
+            cached = sameProgressMetadata(expected, actual);
+            progressMetadataProofs.put(name, cached);
+        }
+        if (!cached || !progressLayout(baseline.getParent(), visited)) {
+            return false;
+        }
+        for (String parent : baseline.getInterfaces()) {
+            if (!progressLayout(parent, visited)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean progressLayoutType(org.teavm.model.ValueType type, java.util.Set<String> visited)
+            throws Exception {
+        int dimensions = 0;
+        while (type instanceof org.teavm.model.ValueType.Array) {
+            if (++dimensions > 255) {
+                return false;
+            }
+            type = ((org.teavm.model.ValueType.Array) type).getItemType();
+        }
+        return !(type instanceof org.teavm.model.ValueType.Object)
+                || progressLayout(((org.teavm.model.ValueType.Object) type).getClassName(), visited);
+    }
+
+    private boolean progressLayouts(ClassReader owner, MethodReader method,
+            org.teavm.model.Program program) throws Exception {
+        java.util.Set<String> visited = new java.util.HashSet<>();
+        if (!progressLayout(owner.getName(), visited)) {
+            return false;
+        }
+        for (org.teavm.model.ValueType type : method.getSignature()) {
+            if (!progressLayoutType(type, visited)) {
+                return false;
+            }
+        }
+        if (program == null) {
+            return true;
+        }
+        // Follow actual semantic layout uses, including data-only classes.
+        // Merely mentioned pointer/signature types do not force absent DCE
+        // classes into a lean programme. Required loads/sizeof literals do.
+        for (org.teavm.model.BasicBlock block : program.getBasicBlocks()) {
+            for (org.teavm.model.Instruction instruction : block) {
+                if (instruction instanceof org.teavm.model.instructions.ClassConstantInstruction) {
+                    if (!progressLayoutType(((org.teavm.model.instructions.ClassConstantInstruction) instruction)
+                            .getConstant(), visited)) {
+                        return false;
+                    }
+                } else if (instruction instanceof org.teavm.model.instructions.GetFieldInstruction) {
+                    if (!progressLayout(((org.teavm.model.instructions.GetFieldInstruction) instruction)
+                            .getField().getClassName(), visited)) {
+                        return false;
+                    }
+                } else if (instruction instanceof org.teavm.model.instructions.PutFieldInstruction) {
+                    if (!progressLayout(((org.teavm.model.instructions.PutFieldInstruction) instruction)
+                            .getField().getClassName(), visited)) {
+                        return false;
+                    }
+                } else if (instruction instanceof org.teavm.model.instructions.InvokeInstruction) {
+                    if (!progressLayout(((org.teavm.model.instructions.InvokeInstruction) instruction)
+                            .getMethod().getClassName(), visited)) {
+                        return false;
+                    }
+                } else if (instruction instanceof org.teavm.model.instructions.ConstructInstruction) {
+                    if (!progressLayout(((org.teavm.model.instructions.ConstructInstruction) instruction)
+                            .getType(), visited)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private String progressRuntimeClassIdentity(String name) {
+        switch (name) {
+            case "org.teavm.backend.c.runtime.Memory": return "93200eea452324cb61e280b375ef713a02c75c4e8cd265a0a35ccd71ca9d560c";
+            case "org.teavm.classlib.PlatformDetector": return "fed9f02822ccbbb9ff0f897a2047748d76f34d35c6c417223f9aeb6f3b9105bb";
+            case "org.teavm.interop.Address": return "b8e1527375e7e90046468f66e68861db1a46d5bd65458be1d62614789eafff42";
+            case "org.teavm.interop.Structure": return "af925539c3d835e9b61d35f7fb1e65ac49c0a38a47ba8d3a81d4269400559276";
+            case "org.teavm.runtime.Allocator": return "6aee4d703cbea530313ca5f267733dc6b745a859265fbad555604559674a659c";
+            case "org.teavm.runtime.CallSite": return "05fc8fa5768fba2d1c38bea423c63ce923b544a15d4ce93cf6805caf5d9c4df2";
+            case "org.teavm.runtime.CallSiteLocation": return "603e649cf133e2ffa87863d60e2d40464928c078797b1c99dc732219032a0347";
+            case "org.teavm.runtime.Console": return "30175d7bef95b072ef95eba0d782d143e3b71871c879f43d0e0b819e83e91fca";
+            case "org.teavm.runtime.ExceptionHandler": return "819a544aa4fb5adfd6799edd83db89153bc9fec974628adf80c32c0c12f0c983";
+            case "org.teavm.runtime.ExceptionHandling": return "dd79c9f2c7d9e5d216b2ef9feae8a0a192c35f2650dd355b5db84be8890e208e";
+            case "org.teavm.runtime.FreeChunk": return "4fda9381ed5165223e9c39201defbf119098223fe41298c67c9d3b78615cb61b";
+            case "org.teavm.runtime.FreeChunkHolder": return "268786d0bcbc27818a868b866d7ff3b5c022c511892c43672f8a0d571a0de55a";
+            case "org.teavm.runtime.GC": return "14abf4b0595f4ac4cca1c34f39995f5899c0d6f4afb03ffddb4dde0b23500475";
+            case "org.teavm.runtime.GC$Region": return "fffd15ad1fbe7ab24d0ce393279219d87825dbcc0f4a6c8a97dd802890c43660";
+            case "org.teavm.runtime.InitFunction": return "12e0b2df07761272e3847e47d40aa73626ec770db3a88aa2d365c544cef33c99";
+            case "org.teavm.runtime.IsSupertypeFunction": return "a38e353d1a06f7e3ae09f6d41f9c1f9019644377624bde6437599426414e1748";
+            case "org.teavm.runtime.MarkQueue": return "51e2aa1c4e7edb166fa8eff6a07598a8bf8212fd258ccf332ae38e3c28656166";
+            case "org.teavm.runtime.MemoryTrace": return "c1b12afdd2d2a1f8901c3885060afbc961e2138bc12b076a0a74ba3ae08c5bff";
+            case "org.teavm.runtime.MethodLocation": return "292cbeba6e38c2471fc0445e0f765ed74b38c346a27280c15664204faf473dbc";
+            case "org.teavm.runtime.Mutator": return "a7001bfa2d5ba6b975c08cd0b69c171c07631e87630ce7a90edebc4a0c831276";
+            case "org.teavm.runtime.Relocation": return "227497a42dee6bd7e5a8c43ec1386ce671c0d48ed5d59716fe4d2f537a790e67";
+            case "org.teavm.runtime.RelocationBlock": return "c3ea30ce56c17f24a44beb2fab8eeca1d61a99dafd9269f3dea7230b7b7737d6";
+            case "org.teavm.runtime.RuntimeArray": return "077ec8f50819009bada9f2e7b72a087a5681fd29a8fb7974d50d1ec0b0900d77";
+            case "org.teavm.runtime.RuntimeBuffer": return "fd501c9ed10b1178c6665dc49b0c71b27b67eff3c09ad11409a2557bbeb43cd6";
+            case "org.teavm.runtime.RuntimeClass": return "2421efdefa1fbd747d7c6d9768ee61fddb3ec5916da1cc7cdd2e8df50e524490";
+            case "org.teavm.runtime.RuntimeClassPointer": return "fcbd6ffd919a831afa407434105974821d0fd3c8503acb5015d09bc9b20ed9e7";
+            case "org.teavm.runtime.RuntimeObject": return "24837e328b70cb0780e1c1586b21a2e223604424e5f67dc795fe935d78ce6ce6";
+            case "org.teavm.runtime.RuntimeObjectPtr": return "eb7ee52a682c0d3ef4285d0c7bbfc9c7374132283949cce24817d7d82b18486d";
+            case "org.teavm.runtime.RuntimeReference": return "e3bfbc56b6a311546e915f608b4ad4b731e8e529fd43ff5e6111ac8b13464a68";
+            case "org.teavm.runtime.RuntimeReferenceQueue": return "324b71917901093897b287d9a42dd0ab967f4a3d8abfbcdf3afd1ba31a4b91b5";
+            case "org.teavm.runtime.ShadowStack": return "edb8ab34aab3d48c42b00a597d1a6c7335bb8d387103f52f8841a8b501e57b31";
+            case "org.teavm.runtime.StringPtr": return "5f5eaf0275b37b9765ab676034b9b7b7a2452d9738107be000d5f8e7d931629d";
+            default: return null;
+        }
+    }
+
+    private String[] progressRuntimeClassNames() {
+        return new String[] {
+            "org.teavm.runtime.StringPtr",
+            "org.teavm.backend.c.runtime.Memory",
+            "org.teavm.classlib.PlatformDetector",
+            "org.teavm.interop.Address",
+            "org.teavm.interop.Structure",
+            "org.teavm.runtime.Allocator",
+            "org.teavm.runtime.CallSite",
+            "org.teavm.runtime.CallSiteLocation",
+            "org.teavm.runtime.Console",
+            "org.teavm.runtime.ExceptionHandler",
+            "org.teavm.runtime.ExceptionHandling",
+            "org.teavm.runtime.FreeChunk",
+            "org.teavm.runtime.FreeChunkHolder",
+            "org.teavm.runtime.GC",
+            "org.teavm.runtime.GC$Region",
+            "org.teavm.runtime.InitFunction",
+            "org.teavm.runtime.IsSupertypeFunction",
+            "org.teavm.runtime.MarkQueue",
+            "org.teavm.runtime.MemoryTrace",
+            "org.teavm.runtime.MethodLocation",
+            "org.teavm.runtime.Mutator",
+            "org.teavm.runtime.Relocation",
+            "org.teavm.runtime.RelocationBlock",
+            "org.teavm.runtime.RuntimeArray",
+            "org.teavm.runtime.RuntimeBuffer",
+            "org.teavm.runtime.RuntimeClass",
+            "org.teavm.runtime.RuntimeClassPointer",
+            "org.teavm.runtime.RuntimeObject",
+            "org.teavm.runtime.RuntimeObjectPtr",
+            "org.teavm.runtime.RuntimeReference",
+            "org.teavm.runtime.RuntimeReferenceQueue",
+            "org.teavm.runtime.ShadowStack"
+        };
+    }
+
+    private boolean progressDelegateType(org.teavm.model.ValueType from, org.teavm.model.ValueType to)
+            throws Exception {
+        if (from.equals(to)) {
+            return true;
+        }
+        // The unchanged C ABI has explicit managed/native object/array headers.
+        // Do not treat arbitrary references, integers or function pointers as
+        // interchangeable merely because wasm32 represents them in one word.
+        // This is representation compatibility, not proof that an arbitrary
+        // raw argument satisfies the owned ABI's valid-object/array precondition.
+        org.teavm.model.ValueType object = org.teavm.model.ValueType.object("java.lang.Object");
+        for (String name : new String[] { "org.teavm.runtime.RuntimeObject", "org.teavm.runtime.RuntimeArray" }) {
+            org.teavm.model.ValueType header = org.teavm.model.ValueType.object(name);
+            if ((from.equals(object) && to.equals(header) || from.equals(header) && to.equals(object))
+                    && progressLayout(name, new java.util.HashSet<>())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private MethodReference progressNativeDelegate(ClassReader cls, MethodReader method) {
+        org.teavm.model.AnnotationReader declaration = method.getAnnotations().get("org.teavm.interop.DelegateTo");
+        if (!method.hasModifier(ElementModifier.NATIVE) || declaration == null
+                || method.getAnnotations().get("org.teavm.interop.Import") != null) {
+            return null;
+        }
+        try {
+            org.teavm.model.AnnotationValue value = declaration.getValue("value");
+            String name = value == null ? null : value.getString();
+            if (name == null || name.isEmpty() || name.length() > 65535
+                    || name.equals("<init>") || name.equals("<clinit>")
+                    || name.equals(method.getName())) {
+                return null;
+            }
+            MethodReader target = null;
+            int count = 0;
+            for (MethodReader candidate : cls.getMethods()) {
+                if (++count > 65536) {
+                    return null;
+                }
+                if (candidate.getName().equals(name)) {
+                    if (target != null) {
+                        return null; // C's name-selected delegate must be unambiguous.
+                    }
+                    target = candidate;
+                }
+            }
+            int receiver = method.hasModifier(ElementModifier.STATIC) ? 0 : 1;
+            if (target == null || !target.hasModifier(ElementModifier.STATIC)
+                    || target.parameterCount() != method.parameterCount() + receiver
+                    || !progressDelegateType(target.getResultType(), method.getResultType())) {
+                return null;
+            }
+            if (receiver != 0 && !progressDelegateType(org.teavm.model.ValueType.object(cls.getName()),
+                    target.parameterType(0))) {
+                return null;
+            }
+            for (int index = 0; index < method.parameterCount(); ++index) {
+                if (!progressDelegateType(method.parameterType(index), target.parameterType(index + receiver))) {
+                    return null;
+                }
+            }
+            return dependency.getReachableMethods().contains(target.getReference()) ? target.getReference() : null;
+        } catch (Exception unavailable) {
+            return null;
+        }
+    }
+
+    private String progressDonorIdentity(String name) {
+        switch (name) {
+            case "org.teavm.classlib.java.lang.TObject":
+                return "dc3ef8b117975faf357bd6c9cdb772df390e914c8f3d82f1265af0b752c61651";
+            case "org.teavm.classlib.java.lang.TStackTraceElement":
+                return "9ba416fd3d6ab3503eb37b937fa1155ffdfc64012de17573e733ef6af20b74f9";
+            case "org.teavm.classlib.java.lang.TInteger":
+                return "ab971343646fcb1d75fb67cad2720de7c7ec1f270b93ba29892b17d157a37c11";
+            case "org.teavm.classlib.java.lang.TLong":
+                return "c52aba5c1d8856119fb9e4d3792487329f6a3f09d3c7c85badb220759eb6d856";
+            case "org.teavm.classlib.java.lang.TFloat":
+                return "be7d539a56499183397f76e5f416cdf6fc5eea85df127c3d2da857787b956327";
+            case "org.teavm.classlib.java.lang.TDouble":
+                return "a5d1be085669ed38036ca649f481cf11721a6921528af0ea4edf913c3e13e52f";
+            default: return null;
+        }
+    }
+
+    private boolean closedRuntimeCalls(org.teavm.model.Program program) throws Exception {
+        if (program == null) {
+            return true; // The fixed ABI's declared native primitives have their finite argument.
+        }
+        for (org.teavm.model.BasicBlock block : program.getBasicBlocks()) {
+            for (org.teavm.model.Instruction instruction : block) {
+                if (!(instruction instanceof org.teavm.model.instructions.InvokeInstruction)) {
+                    continue;
+                }
+                MethodReference target = ((org.teavm.model.instructions.InvokeInstruction) instruction).getMethod();
+                if (progressRuntimeClassIdentity(target.getClassName()) == null
+                        && !progressPlatformConstructor(target)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private final java.util.Map<MethodReference, Boolean> progressPlatformProofs = new java.util.HashMap<>();
+
+    private boolean progressPlatformConstructor(MethodReference reference) throws Exception {
+        String donor;
+        if (reference.equals(new MethodReference("java.lang.Object", "<init>", org.teavm.model.ValueType.VOID))) {
+            donor = "org.teavm.classlib.java.lang.TObject";
+        } else if (reference.equals(new MethodReference("java.lang.StackTraceElement", "<init>",
+                org.teavm.model.ValueType.object("java.lang.String"), org.teavm.model.ValueType.object("java.lang.String"),
+                org.teavm.model.ValueType.object("java.lang.String"), org.teavm.model.ValueType.INTEGER,
+                org.teavm.model.ValueType.VOID))) {
+            donor = "org.teavm.classlib.java.lang.TStackTraceElement";
+        } else {
+            return false;
+        }
+        return pinnedProgressPlatformMethod(reference, donor,
+                reference.getClassName().equals("java.lang.StackTraceElement"));
+    }
+
+    private boolean pinnedProgressPlatformMethod(MethodReference reference, String donor,
+            boolean completeDeclaration) throws Exception {
+        Boolean cached = progressPlatformProofs.get(reference);
+        if (cached != null) {
+            return cached;
+        }
+        if (originalProgressClass(donor) == null) {
+            return false;
+        }
+        java.util.List<java.io.File> jars = new java.util.ArrayList<>();
+        for (String name : new String[] { "org.teavm.runtime.GC", "org.teavm.interop.Address", donor }) {
+            Class<?> host = Class.forName(name, false, AsyncMethodFinder.class.getClassLoader());
+            java.nio.file.Path path = java.nio.file.Path.of(host.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI()).toRealPath();
+            if (!jars.contains(path.toFile())) {
+                jars.add(path.toFile());
+            }
+        }
+        boolean result = false;
+        try (org.teavm.parsing.resource.ResourceProvider provider =
+                org.teavm.parsing.resource.ResourceProvider.ofClassPath(jars)) {
+            org.teavm.model.ReferenceCache cache = new org.teavm.model.ReferenceCache();
+            org.teavm.model.ClassHolderSource bytes =
+                    new org.teavm.parsing.resource.ResourceBytecodeClassHolderSource(provider, cache);
+            org.teavm.parsing.substitution.SubstituteClassNameMapping mapping =
+                    org.teavm.parsing.substitution.DefaultSubstituteClassNameMapping.createWithPolicies(
+                            java.util.Collections.singletonList(new org.teavm.classlib.impl.ClasslibSubstitutionPolicy()));
+            org.teavm.model.ClassHolderSource source = new org.teavm.model.PreOptimizingClassHolderSource(
+                    new org.teavm.parsing.RenamingClassHolderSource(provider, cache, bytes, mapping));
+            org.teavm.model.ClassHolder cls = source.get(reference.getClassName());
+            if (cls != null) {
+                new org.teavm.backend.c.analyze.CDependencyListener().transformClass(cls, null);
+            }
+            org.teavm.model.MethodHolder expected = cls == null ? null : cls.getMethod(reference.getDescriptor());
+            ClassReader actualClass = classSource.get(reference.getClassName());
+            MethodReader actual = actualClass == null ? null : actualClass.getMethod(reference.getDescriptor());
+            if (expected != null && actual != null) {
+                if (completeDeclaration && !sameProgressMetadata(cls, actualClass)) {
+                    return false;
+                }
+                org.teavm.model.ClassHolder left = new org.teavm.model.ClassHolder(reference.getClassName());
+                org.teavm.model.ClassHolder right = new org.teavm.model.ClassHolder(reference.getClassName());
+                left.addMethod(ModelUtils.copyMethod(expected));
+                right.addMethod(ModelUtils.copyMethod(actual));
+                org.teavm.diagnostics.AccumulationDiagnostics diagnostics =
+                        new org.teavm.diagnostics.AccumulationDiagnostics();
+                if (!progressPlatformMarkers(cls, diagnostics)) {
+                    return false;
+                }
+                if (expected.getProgram() != null) {
+                    org.teavm.dependency.ReferenceResolver resolver = new org.teavm.dependency.ReferenceResolver(
+                            classSource, new String[] { org.teavm.interop.Platforms.C,
+                                    org.teavm.interop.Platforms.LOW_LEVEL, org.teavm.interop.Platforms.OWN_GC }, diagnostics);
+                    resolver.use(expected.getReference());
+                    resolver.resolve(expected, expected.getProgram());
+                    new org.teavm.model.transformation.ClassInitInsertion(classSource).apply(expected, expected.getProgram());
+                }
+                result = diagnostics.getSevereProblems().isEmpty() && sameProgressMetadata(left, right)
+                        && sameProgressBody(expected.getProgram(), actual.getProgram());
+            }
+        }
+        progressPlatformProofs.put(reference, result);
+        return result;
+    }
+
+    private boolean progressNativePrimitive(MethodReader method) {
+        // These exact C operations are bounded word operations, not a general
+        // approval for native methods declared by numeric-looking classes.
+        org.teavm.model.ValueType integer = org.teavm.model.ValueType.INTEGER;
+        org.teavm.model.ValueType longer = org.teavm.model.ValueType.LONG;
+        org.teavm.model.ValueType single = org.teavm.model.ValueType.FLOAT;
+        org.teavm.model.ValueType doubled = org.teavm.model.ValueType.DOUBLE;
+        org.teavm.model.ValueType bool = org.teavm.model.ValueType.BOOLEAN;
+        String owner = method.getReference().getClassName(), name = method.getName(), donor;
+        org.teavm.model.MethodDescriptor shape = null;
+        switch (owner) {
+            case "java.lang.Integer":
+                donor = "org.teavm.classlib.java.lang.TInteger";
+                if (name.equals("divideUnsigned") || name.equals("remainderUnsigned") || name.equals("compareUnsigned")) {
+                    shape = new org.teavm.model.MethodDescriptor(name, integer, integer, integer);
+                }
+                break;
+            case "java.lang.Long":
+                donor = "org.teavm.classlib.java.lang.TLong";
+                if (name.equals("divideUnsigned") || name.equals("remainderUnsigned")) {
+                    shape = new org.teavm.model.MethodDescriptor(name, longer, longer, longer);
+                } else if (name.equals("compareUnsigned")) {
+                    shape = new org.teavm.model.MethodDescriptor(name, longer, longer, integer);
+                }
+                break;
+            case "java.lang.Float":
+                donor = "org.teavm.classlib.java.lang.TFloat";
+                if (name.equals("isNaN") || name.equals("isFinite")) {
+                    shape = new org.teavm.model.MethodDescriptor(name, single, bool);
+                } else if (name.equals("floatToRawIntBits")) {
+                    shape = new org.teavm.model.MethodDescriptor(name, single, integer);
+                } else if (name.equals("intBitsToFloat")) {
+                    shape = new org.teavm.model.MethodDescriptor(name, integer, single);
+                }
+                break;
+            case "java.lang.Double":
+                donor = "org.teavm.classlib.java.lang.TDouble";
+                if (name.equals("isNaN") || name.equals("isFinite")) {
+                    shape = new org.teavm.model.MethodDescriptor(name, doubled, bool);
+                } else if (name.equals("doubleToRawLongBits")) {
+                    shape = new org.teavm.model.MethodDescriptor(name, doubled, longer);
+                } else if (name.equals("longBitsToDouble")) {
+                    shape = new org.teavm.model.MethodDescriptor(name, longer, doubled);
+                }
+                break;
+            default: return false;
+        }
+        if (shape == null || !shape.equals(method.getDescriptor())) {
+            return false;
+        }
+        try {
+            return pinnedProgressPlatformMethod(method.getReference(), donor, false);
+        } catch (Exception unavailable) {
+            return false;
+        }
     }
 
 '''
