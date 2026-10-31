@@ -88,9 +88,16 @@ mod tests {
             .instruction(&Instruction::End);
         code.function(&function);
         module.section(&code);
-        // Exercise the owning runtime engine policy. Ordinary nodes disable
-        // backtraces; this explicit feature fixes the diagnostic cap at eight.
-        let engine = crate::WasmtimeConfig::default().runtime_engine().unwrap();
+        // Exercise the owning runtime engine policy. The all-features host
+        // selects the explicit sixteen-frame development observer; a GC-only
+        // diagnostic host retains its fixed eight-frame engine policy.
+        let engine = crate::WasmtimeConfig {
+            #[cfg(feature = "development-test-host")]
+            development_numeric_trap_observation: true,
+            ..crate::WasmtimeConfig::default()
+        }
+        .runtime_engine()
+        .unwrap();
         let module = wasmtime::Module::new(&engine, module.finish()).unwrap();
         let mut store = wasmtime::Store::new(&engine, ());
         // The owning engine meters every Store. Give this synthetic recursive
@@ -107,8 +114,14 @@ mod tests {
             .unwrap();
         let error = function.call(&mut store, ()).unwrap_err();
         let original = error.downcast_ref::<wasmtime::WasmBacktrace>().unwrap();
-        // The owning diagnostic engine itself retains at most eight frames.
-        assert_eq!(original.frames().len(), MAX_FRAMES);
+        // Assert each real engine policy exactly. The Java observer below
+        // still emits only eight, including when the host retained sixteen.
+        let engine_frame_cap = if cfg!(feature = "development-test-host") {
+            16
+        } else {
+            MAX_FRAMES
+        };
+        assert_eq!(original.frames().len(), engine_frame_cap);
         // The signed Java component deliberately selects no native-thread
         // profile. Native-thread proofs belong to the separately qualified
         // Rust and C routes and must not select this diagnostic observer.
