@@ -1,0 +1,77 @@
+name: Rust ThreadPool integration review
+on:
+  push:
+    branches: ['feat/rust-thread-runtime-20261023']
+    paths: ['.github/workflows/rust-thread-integration-review.yml']
+permissions:
+  contents: read
+concurrency:
+  group: rust-thread-integration-review-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+        with:
+          persist-credentials: false
+      - name: Inspect the exact merge without running repository code or publishing refs
+        env:
+          HEAD_SOURCE: 6eb9c0863a20a593f4be32809de5149b9b83655f
+          DEVELOPMENT_SOURCE: 816b806d61c3479b3e138fa55466c22250818f07
+        run: |
+          git fetch --no-tags --depth=128 origin "$HEAD_SOURCE" "$DEVELOPMENT_SOURCE"
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, zipfile
+          def git(*args):
+              return subprocess.check_output(['git', *args], timeout=120)
+          head, development = os.environ['HEAD_SOURCE'], os.environ['DEVELOPMENT_SOURCE']
+          base = git('merge-base', head, development).decode().strip()
+          result = subprocess.run(['git', 'merge-tree', '--write-tree', head, development], capture_output=True, timeout=120)
+          assert result.returncode in (0, 1), result.stderr.decode()
+          tree = result.stdout.splitlines()[0].decode()
+          assert len(tree) == 40
+          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'rust-thread-integration-review'
+          output.mkdir()
+          (output / 'merge.txt').write_bytes(result.stdout)
+          (output / 'merge.stderr.txt').write_bytes(result.stderr)
+          rows = {}
+          for label, ref in [('base', base), ('head', head), ('development', development), ('merged', tree)]:
+              entries = []
+              for row in git('ls-tree', '-r', '-l', '-z', ref).split(b'\0'):
+                  if not row: continue
+                  meta, path = row.split(b'\t', 1)
+                  mode, kind, sha, size = meta.decode().split()
+                  entries.append({'path': path.decode(), 'mode': mode, 'type': kind, 'sha': sha, 'size': int(size) if size != '-' else None})
+              rows[label] = entries
+          (output / 'trees.json').write_text(json.dumps(rows, sort_keys=True))
+          report = {'head': head, 'development': development, 'base': base, 'mergedTree': tree, 'conflicts': result.returncode == 1, 'workflowHead': os.environ['GITHUB_SHA']}
+          (output / 'report.json').write_text(json.dumps(report, sort_keys=True))
+          (output / 'head.diff').write_bytes(git('diff', '--binary', base, head))
+          (output / 'development.diff').write_bytes(git('diff', '--binary', base, development))
+          prefixes = ('tools/', 'docs/', 'schemas/', '.github/workflows/', 'sdk/rust-standard-runtime/', 'crates/latent-component-threading/')
+          roots = {'AGENTS.md', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/config.toml', 'README.md'}
+          inventory, total = [], 0
+          with zipfile.ZipFile(output / 'sources.zip', 'x', compression=zipfile.ZIP_DEFLATED) as archive:
+              for label in ['base', 'head', 'development', 'merged']:
+                  for row in rows[label]:
+                      name = row['path']
+                      if not (name in roots or name.startswith(prefixes)) or row['type'] != 'blob' or row['mode'] not in ('100644', '100755'): continue
+                      if row['size'] > 4 * 1024 * 1024: continue
+                      raw = git('cat-file', 'blob', row['sha'])
+                      assert len(raw) == row['size']
+                      assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == row['sha']
+                      total += len(raw)
+                      assert total <= 256 * 1024 * 1024
+                      archive.writestr(label + '/' + name, raw)
+                      inventory.append({'path': label + '/' + name, 'sha': row['sha'], 'size': len(raw)})
+          (output / 'export.json').write_text(json.dumps({'files': inventory, 'totalBytes': total}, sort_keys=True))
+          print(json.dumps(report))
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        with:
+          name: rust-thread-integration-review-${{ github.sha }}
+          path: ${{ runner.temp }}/rust-thread-integration-review/
+          if-no-files-found: error
+          retention-days: 3
