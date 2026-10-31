@@ -1,15 +1,24 @@
-{"cases":["PeriodicDiagnosticTests.test_actual_handler_projection_preserves_original_failfast_and_private_scope","PeriodicDiagnosticTests.test_default_false_diagnostic_restores_every_previous_workflow_body","PeriodicDiagnosticTests.test_exact_frozen_host_log_encoding_identifies_only_one_frame","PeriodicDiagnosticTests.test_only_closed_actual_source_literals_have_codes","PeriodicDiagnosticTests.test_owner_and_error_codes_match_the_original_selected_private_bridge","PeriodicDiagnosticTests.test_reserve_projection_preserves_original_inputs_success_and_refusal"],"guards":{"PeriodicDiagnosticTests.test_actual_handler_projection_preserves_original_failfast_and_private_scope":
-  "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335"
-,"PeriodicDiagnosticTests.test_default_false_diagnostic_restores_every_previous_workflow_body":
-  "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335"
-,"PeriodicDiagnosticTests.test_exact_frozen_host_log_encoding_identifies_only_one_frame":
-  "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335"
-,"PeriodicDiagnosticTests.test_only_closed_actual_source_literals_have_codes":
-  "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335"
-,"PeriodicDiagnosticTests.test_owner_and_error_codes_match_the_original_selected_private_bridge":
-  "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335"
-,"PeriodicDiagnosticTests.test_reserve_projection_preserves_original_inputs_success_and_refusal":
-  "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335"
-},"kind":"python","module":"tools/tests/test_dotnet_periodic_diagnostic.py","reviewReason":"Reviewed diagnostic-only original Reserve failure projection preserves success/arguments/tokens/refusal/FailFast; adds all56 original owner-kind/host-error pairs plus67 actual CLR controls and two Python source-boundaries. No capacity credit or increased limit.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ea2317352bbb8c880ce34f1c378d4a02ddfddecceb5205a83567d3352c4c44a9","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "PeriodicDiagnosticTests.test_actual_handler_projection_preserves_original_failfast_and_private_scope":
+      "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335",
+    "PeriodicDiagnosticTests.test_default_false_diagnostic_restores_every_previous_workflow_body":
+      "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335",
+    "PeriodicDiagnosticTests.test_exact_frozen_host_log_encoding_identifies_only_one_frame":
+      "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335",
+    "PeriodicDiagnosticTests.test_only_closed_actual_source_literals_have_codes":
+      "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335",
+    "PeriodicDiagnosticTests.test_owner_and_error_codes_match_the_original_selected_private_bridge":
+      "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335",
+    "PeriodicDiagnosticTests.test_reserve_projection_preserves_original_inputs_success_and_refusal":
+      "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_dotnet_periodic_diagnostic.py",
+  "reviewReason":"Reviewed diagnostic-only original Reserve failure projection preserves success/arguments/tokens/refusal/FailFast; adds all56 original owner-kind/host-error pairs plus67 actual CLR controls and two Python source-boundaries. No capacity credit or increased limit.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "53c7c8b16ef18bbffcd367b7626079f6b8b59b7943a5795625790565615df335":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ea2317352bbb8c880ce34f1c378d4a02ddfddecceb5205a83567d3352c4c44a9","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

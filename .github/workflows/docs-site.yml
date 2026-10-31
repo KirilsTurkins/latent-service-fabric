@@ -17,7 +17,7 @@ jobs:
     # Duration is measured from job timestamps rather than enforced by truncation.
     timeout-minutes: 40
     steps:
-      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - name: Trust only the checked-out repository inside the owned container

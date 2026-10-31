@@ -1,17 +1,26 @@
-{"cases":["ManagedCapacityTests.test_manual_selector_restores_entire_original_three_job_workflow","ManagedCapacityTests.test_partial_failure_is_retained_and_cleanup_cannot_replace_primary_exception","ManagedCapacityTests.test_periodic_closed_diagnostic_is_never_a_qualified_capacity_outcome","ManagedCapacityTests.test_results_bind_original_budget_revision_and_managed_oracle","ManagedCapacityTests.test_selected_ceilings_only_narrow_original_queue_and_native_owners","ManagedCapacityTests.test_timer_birth_and_return_sequences_prove_individual_original_instances","ManagedCapacityTests.test_zero_native_terminal_never_becomes_typed_exception_or_application_success"],"guards":{"ManagedCapacityTests.test_manual_selector_restores_entire_original_three_job_workflow":
-  "cff4fe6478d6c7a9683b1b0f51cb8a1efcc85ad6c38bb8bfc70c2abec4ad2392"
-,"ManagedCapacityTests.test_partial_failure_is_retained_and_cleanup_cannot_replace_primary_exception":
-  "cff4fe6478d6c7a9683b1b0f51cb8a1efcc85ad6c38bb8bfc70c2abec4ad2392"
-,"ManagedCapacityTests.test_periodic_closed_diagnostic_is_never_a_qualified_capacity_outcome":
-  "cff4fe6478d6c7a9683b1b0f51cb8a1efcc85ad6c38bb8bfc70c2abec4ad2392"
-,"ManagedCapacityTests.test_results_bind_original_budget_revision_and_managed_oracle":
-  "cff4fe6478d6c7a9683b1b0f51cb8a1efcc85ad6c38bb8bfc70c2abec4ad2392"
-,"ManagedCapacityTests.test_selected_ceilings_only_narrow_original_queue_and_native_owners":
-  "cff4fe6478d6c7a9683b1b0f51cb8a1efcc85ad6c38bb8bfc70c2abec4ad2392"
-,"ManagedCapacityTests.test_timer_birth_and_return_sequences_prove_individual_original_instances":
-  "cff4fe6478d6c7a9683b1b0f51cb8a1efcc85ad6c38bb8bfc70c2abec4ad2392"
-,"ManagedCapacityTests.test_zero_native_terminal_never_becomes_typed_exception_or_application_success":
-  "cff4fe6478d6c7a9683b1b0f51cb8a1efcc85ad6c38bb8bfc70c2abec4ad2392"
-},"kind":"python","module":"tools/tests/test_dotnet_managed_capacity.py","reviewReason":"Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "cff4fe6478d6c7a9683b1b0f51cb8a1efcc85ad6c38bb8bfc70c2abec4ad2392"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:fe84e8673d2171c8ee418ea53e9cc438f1dff9953ae4492a0c7b8035d5966a74","class:setup-sha256:fe09adeac54297b49db980aaa3ae18d0ee8500c630c1b530c7f85106fd44b892"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "ManagedCapacityTests.test_manual_selector_restores_entire_original_three_job_workflow":
+      "e84ab8c67bd0045cc062d5cf689d536135e100f2fb86480da39e6f614948caae",
+    "ManagedCapacityTests.test_partial_failure_is_retained_and_cleanup_cannot_replace_primary_exception":
+      "e84ab8c67bd0045cc062d5cf689d536135e100f2fb86480da39e6f614948caae",
+    "ManagedCapacityTests.test_periodic_closed_diagnostic_is_never_a_qualified_capacity_outcome":
+      "e84ab8c67bd0045cc062d5cf689d536135e100f2fb86480da39e6f614948caae",
+    "ManagedCapacityTests.test_results_bind_original_budget_revision_and_managed_oracle":
+      "e84ab8c67bd0045cc062d5cf689d536135e100f2fb86480da39e6f614948caae",
+    "ManagedCapacityTests.test_selected_ceilings_only_narrow_original_queue_and_native_owners":
+      "e84ab8c67bd0045cc062d5cf689d536135e100f2fb86480da39e6f614948caae",
+    "ManagedCapacityTests.test_timer_birth_and_return_sequences_prove_individual_original_instances":
+      "e84ab8c67bd0045cc062d5cf689d536135e100f2fb86480da39e6f614948caae",
+    "ManagedCapacityTests.test_zero_native_terminal_never_becomes_typed_exception_or_application_success":
+      "e84ab8c67bd0045cc062d5cf689d536135e100f2fb86480da39e6f614948caae"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_dotnet_managed_capacity.py",
+  "reviewReason":"Default-false diagnostic-only periodic lane; explicit review preserves every original command/step/limit and adds only manual diagnostic exclusion. Whole previous four-job workflow restores byte-equivalent semantic data. Authenticate the exact repaired checkout inverse before historical workflow/source hashes; all original case IDs and non-setup guards retained.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "e84ab8c67bd0045cc062d5cf689d536135e100f2fb86480da39e6f614948caae":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:c669e9cd3c3a2f25c3105db42e4f9dabecb48b8a64197fba75146c03ddbc73a5","class:setup-sha256:fe09adeac54297b49db980aaa3ae18d0ee8500c630c1b530c7f85106fd44b892"]}
+  }
+}

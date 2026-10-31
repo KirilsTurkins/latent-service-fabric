@@ -461,7 +461,14 @@ mod tests {
         graph.c.as_mut().unwrap().lifted = true;
         graph.cores = vec![Core {
             bytes: &[],
-            types: vec![],
+            types: if name == "[thread-yield]" {
+                vec![Signature {
+                    params: vec![],
+                    results: vec![ValType::I32],
+                }]
+            } else {
+                vec![]
+            },
             functions: vec![],
             exports: BTreeMap::new(),
             imports: vec![
@@ -532,7 +539,12 @@ mod tests {
             handoff_graph("[thread-yield-then-resume]", Value::CThreadPromote).finish(),
             Err("c-component-unknown-root-intrinsic")
         );
-        for foreign in [Value::Other, Value::Native, Value::CThreadIndex] {
+        for foreign in [
+            Value::Other,
+            Value::Native,
+            Value::CThreadIndex,
+            Value::CThreadYield,
+        ] {
             assert_eq!(
                 handoff_graph("[thread-yield-then-promote]", foreign).finish(),
                 Err("c-component-canonical-context-route")
@@ -550,7 +562,7 @@ mod tests {
             ),
             (CanonicalFunction::ThreadSuspendThenResume, Value::Other),
             (CanonicalFunction::ThreadSuspendThenPromote, Value::Other),
-            (CanonicalFunction::ThreadYield, Value::Other),
+            (CanonicalFunction::ThreadYield, Value::CThreadYield),
         ] {
             let mut selected = public_lift_graph(true);
             selected.canonical(function).unwrap();
@@ -561,6 +573,10 @@ mod tests {
         original_rust.c = None;
         original_rust
             .canonical(CanonicalFunction::ThreadSuspend)
+            .unwrap();
+        assert_eq!(original_rust.funcs.last(), Some(&Value::Other));
+        original_rust
+            .canonical(CanonicalFunction::ThreadYield)
             .unwrap();
         assert_eq!(original_rust.funcs.last(), Some(&Value::Other));
     }
@@ -577,6 +593,7 @@ mod tests {
                 Value::Native,
                 Value::CThreadPromote,
                 Value::CThreadIndex,
+                Value::CThreadYield,
                 if expected == Value::CThreadSuspend {
                     Value::CThreadResumeLater
                 } else {
@@ -589,10 +606,49 @@ mod tests {
                 );
             }
         }
+        assert_eq!(
+            handoff_graph("[thread-yield]", Value::CThreadYield).finish(),
+            Ok((0, 1))
+        );
+        for foreign in [
+            Value::Other,
+            Value::Native,
+            Value::CContextGet,
+            Value::CContextSet,
+            Value::CThreadIndex,
+            Value::CThreadPromote,
+            Value::CThreadSuspend,
+            Value::CThreadResumeLater,
+        ] {
+            assert_eq!(
+                handoff_graph("[thread-yield]", foreign).finish(),
+                Err("c-component-canonical-context-route")
+            );
+        }
+        for signature in [
+            Signature {
+                params: vec![ValType::I32],
+                results: vec![ValType::I32],
+            },
+            Signature {
+                params: vec![],
+                results: vec![],
+            },
+            Signature {
+                params: vec![],
+                results: vec![ValType::I64],
+            },
+        ] {
+            let mut wrong = handoff_graph("[thread-yield]", Value::CThreadYield);
+            wrong.cores[0].types[0] = signature;
+            assert_eq!(wrong.finish(), Err("c-component-thread-yield-signature"));
+        }
+        let mut missing = handoff_graph("[thread-yield]", Value::CThreadYield);
+        missing.cores[0].types.clear();
+        assert_eq!(missing.finish(), Err("c-component-thread-yield-signature"));
         for forbidden in [
             "[thread-suspend-then-resume]",
             "[thread-suspend-then-promote]",
-            "[thread-yield]",
         ] {
             assert_eq!(
                 handoff_graph(forbidden, Value::CThreadSuspend).finish(),

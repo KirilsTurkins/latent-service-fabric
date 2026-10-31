@@ -28,7 +28,7 @@ NATIVE_SOURCES = (
     "promise_hooks.h", "promise_records.h", "promise_accounting.h",
     "reaction_records.h", "native_readiness.h", "native_timers.h", "native_timeout.h",
     "native_retirement.h", "native_objects.h", "native_ownership.h",
-    "native_import_lifecycle.h", "native_imports.h", "broker_import_accounting.h",
+    "native_import_lifecycle.h", "native_imports.h", "native_import_partial.h", "broker_import_accounting.h",
     "native_import_values.h",
     "native_import_observer.h",
     "native_cancel.h",

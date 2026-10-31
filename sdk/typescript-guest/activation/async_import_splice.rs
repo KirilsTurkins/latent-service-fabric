@@ -141,6 +141,63 @@ pub fn resource_disposer(module:&mut Module<'_>, descriptor:&Descriptor,
     Ok(function.finish_module(module))
 }
 
+pub fn partial_functions(module:&mut Module<'_>,descriptor:&Descriptor,
+    imports:&[(String,String,CoreFn,Option<i32>)])->Result<Option<(u32,FunctionID,FunctionID,u32)>> {
+    let Some((key,slots))=descriptor.partial_slots() else {return Ok(None)};
+    let mut drops=Vec::new();
+    for node in &descriptor.disposal {
+        let ResourceDisposal::Own{drop_import:Some(original),..}=node else {return Ok(None)};
+        let entries=imports.iter().filter(|(m,n,_,_)|m==&original.0 && n==&original.1).collect::<Vec<_>>();
+        let [(_,_,signature,Some(0))]=entries.as_slice() else {return Ok(None)};
+        anyhow::ensure!(matches!(signature.params.as_slice(),[CoreTy::I32]) && signature.ret.is_none()
+            && !signature.retptr && !signature.paramptr && signature.retsize==0,
+            "partial-original-canonical-drop-signature");
+        let drop=if let Some(function)=import_function(module,original)? {function} else {
+            let ty=module.types.add_func_type(&[DataType::I32],&[]);
+            module.add_import_func(original.0.clone(),original.1.clone(),ty).0
+        };
+        drops.push(drop);
+    }
+    // Pure constants: native loads the actual handle from its own bounded frame.
+    let mut getter=FunctionBuilder::new(&[DataType::I32],&[DataType::I64]);
+    for (index,(offset,resource)) in slots.iter().enumerate() {
+        getter.local_get(LocalID(0));getter.i32_const(index as i32);getter.i32_eq();
+        getter.if_stmt(BlockType::Empty);
+        let resource=u32::try_from(resource.index())?;
+        getter.i64_const(((u64::from(*offset)<<32)|u64::from(resource)) as i64);
+        getter.return_stmt();getter.end();
+    }
+    getter.i64_const(-1);
+    let getter=getter.finish_module(module);
+    let mut dispose=FunctionBuilder::new(&[DataType::I32;3],&[DataType::I32]);
+    let mask=dispose.add_local(DataType::I64);
+    dispose.local_get(LocalID(1));dispose.i64_extend_i32_u();
+    dispose.local_get(LocalID(2));dispose.i64_extend_i32_u();dispose.i64_const(32);
+    dispose.i64_shl();dispose.i64_or();dispose.local_set(mask);
+    let allowed=if slots.len()==64 {u64::MAX} else {(1u64<<slots.len())-1};
+    dispose.local_get(mask);dispose.i64_const(!allowed as i64);dispose.i64_and();
+    dispose.i64_eqz();dispose.i32_eqz();dispose.if_stmt(BlockType::Empty);
+    refuse(&mut dispose);dispose.end();
+    // Validate the ENTIRE fixed backing before the first original destructor.
+    fixed_range(&mut dispose,LocalID(0),0,u64::from(descriptor.result_bytes));
+    let mut handles=Vec::new();
+    for (offset,_) in &slots {
+        let local=dispose.add_local(DataType::I32);
+        dispose.local_get(LocalID(0));dispose.i32_load(memory(u64::from(*offset)));
+        dispose.local_set(local);handles.push(local);
+    }
+    // At most 64 compiler-fixed u32 Wasm locals. No frame/backing read follows
+    // the first effectful canonical destructor; no dynamic stack/heap buffer.
+    for (index,(handle,drop)) in handles.into_iter().zip(drops).enumerate() {
+        dispose.local_get(mask);dispose.i64_const((1u64<<index) as i64);
+        dispose.i64_and();dispose.i64_eqz();dispose.if_stmt(BlockType::Empty);
+        dispose.local_get(handle);dispose.call(drop);dispose.end();
+    }
+    dispose.i32_const(1);
+    let dispose=dispose.finish_module(module);
+    Ok(Some((key,getter,dispose,slots.len() as u32)))
+}
+
 fn refuse(function:&mut FunctionBuilder<'_>) {
     function.i32_const(0);function.return_stmt();
 }
@@ -352,6 +409,12 @@ fn writes(function:&mut FunctionBuilder<'_>,plan:&[MemoryWrite],original:&CoreFn
 pub fn synthesize(module:&mut Module<'_>,original:&CoreFn,descriptor:&Descriptor,
                   import:FunctionID,bigint:FunctionID,cx:LocalID,vp:LocalID,
                   disposer_pointer:i32)->Result<FunctionID> {
+    synthesize_with_partial(module,original,descriptor,import,bigint,cx,vp,disposer_pointer,None)
+}
+
+pub fn synthesize_with_partial(module:&mut Module<'_>,original:&CoreFn,descriptor:&Descriptor,
+                  import:FunctionID,bigint:FunctionID,cx:LocalID,vp:LocalID,
+                  disposer_pointer:i32, partial:Option<(u32,i32,i32,u32)>)->Result<FunctionID> {
     let get_result=exported(module,"lsf_import_result_buffer")?;
     let get_parameters=exported(module,"lsf_import_parameter_buffer")?;
     let begin=exported(module,"lsf_import_begin")?;
@@ -370,6 +433,13 @@ pub fn synthesize(module:&mut Module<'_>,original:&CoreFn,descriptor:&Descriptor
     function.i32_const(descriptor.result_bytes as i32);function.call(set_disposer);
     function.i32_eqz();function.if_stmt(BlockType::Empty);
     function.i32_const(0);function.return_stmt();function.end();
+    if let Some((key,getter,dispose,count))=partial {
+        let prepare=exported(module,"lsf_import_prepare_own_v2")?;
+        function.local_get(cx);function.local_get(id);function.i32_const(key as i32);
+        function.i32_const(getter);function.i32_const(dispose);function.i32_const(count as i32);
+        function.call(prepare);function.i32_eqz();function.if_stmt(BlockType::Empty);
+        function.i32_const(0);function.return_stmt();function.end();
+    }
     // Indirect parameters use exact original canonical record offsets. For a
     // formerly indirect (>16-flat) call, copy that original record unchanged.
     if descriptor.indirect_params {
@@ -736,4 +806,36 @@ mod tests {
         let bytes=wasm.finish();let module=Module::parse(&bytes,false,false).unwrap();
         assert!(validate_disposer_table_append(&module).is_err());
     }
+    #[test]
+    fn static_partial_getter_is_constant_and_disposer_uses_original_drop_only() {
+        let bytes=fixture(532,532,false,false);
+        let mut module=Module::parse(&bytes,false,false).unwrap();
+        let descriptor=actual_owned_shape("tuple<connection,connection>");
+        let (key,getter,dispose,count)=partial_functions(&mut module,&descriptor,&[original_drop_import()])
+            .unwrap().unwrap();
+        assert_eq!((key,count),(descriptor.partial_slots().unwrap().0,2));
+        let ops=module.functions.get(getter).unwrap_local().unwrap().body.instructions.get_ops();
+        assert!(!ops.iter().any(|op|matches!(op,Operator::Call{..}|Operator::CallIndirect{..}|
+            Operator::I32Load{..}|Operator::I64Load{..}|Operator::MemoryGrow{..})));
+        let ops=module.functions.get(dispose).unwrap_local().unwrap().body.instructions.get_ops();
+        let calls=ops.iter().enumerate().filter_map(|(index,op)|match op {
+            Operator::Call{function_index}=>Some((index,*function_index)),_=>None,
+        }).collect::<Vec<_>>();
+        assert_eq!(calls.len(),2);
+        assert!(ops[..calls[0].0].iter().any(|op|matches!(op,Operator::MemorySize{..})));
+        assert!(!ops[calls[0].0..].iter().any(|op|matches!(op,Operator::I32Load{..}|Operator::I64Load{..})));
+        for (_,function) in calls {
+            let FuncKind::Import(import)=module.functions.get_kind(FunctionID(function)) else {panic!("original drop required")};
+            let import=module.imports.get(import.import_id);
+            assert_eq!((import.module.as_ref(),import.name.as_ref()),
+                ("tests:imports/io@1.0.0","[resource-drop]connection"));
+        }
+        let encoded=module.encode().unwrap();
+        wirm::wasmparser::Validator::new().validate_all(&encoded).unwrap();
+        let before=module.functions.iter().count();
+        assert!(partial_functions(&mut module,&actual_owned_shape("option<connection>"),&[original_drop_import()])
+            .unwrap().is_none());
+        assert_eq!(module.functions.iter().count(),before);
+    }
+
 }

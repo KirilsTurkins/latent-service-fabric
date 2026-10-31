@@ -406,7 +406,8 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/checkout/package-lock.json",
-      "path": ".github/security/actions/checkout/package.json"
+      "path": ".github/security/actions/checkout/package.json",
+      "source_repair": "checkout-deepmerge-source-v1"
     },
     {
       "kind": "npm",

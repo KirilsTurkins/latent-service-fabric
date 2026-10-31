@@ -44,17 +44,7 @@ def need(value, reason):
 
 
 def sources(commands, names=None):
-    if names is None:
-        commands.command_seconds = 25
-        raw = commands.run('source-paths', 'git', 'ls-files', '-z', '--', *SOURCE_ALLOWLIST)
-        need(len(raw) <= 2 * 1024**2, 'source-path-bound')
-        names = set(raw.decode().strip('\0').split('\0')) | set(observed.EXTRA_SOURCES) | {WORKFLOW}
-    limits = SnapshotLimits()
-    need(100 <= len(names) <= limits.max_entries, 'source-count')
-    result = {name: identities.identity(read_file(ROOT / name, limits.max_file_bytes))
-              for name in sorted(names)}
-    need(sum(row['bytes'] for row in result.values()) <= limits.max_total_bytes, 'source-total')
-    return result
+    return observed.source_domains(commands, 'workers', names)
 
 
 def java_sources():
@@ -151,19 +141,21 @@ def qualify(output, revision):
     prepared = None
     old_path = os.environ.get('PATH', '')
     try:
-        artifacts.require_source(ROOT, revision, environment)
+        observed.require_source(commands, revision, 'source-head-before')
         before, java_before = sources(commands), java_sources()
-        receipt.update(sourceBefore=before, javaSourceBefore=java_before)
-        write_json(output / 'source-inputs.json', {'native': before, 'java': java_before})
+        receipt.update(sourceBefore=before['native'], supplementarySourceBefore=before['supplementary'],
+            javaSourceBefore=java_before)
+        write_json(output / 'source-inputs.json', {**before, 'java': java_before})
         private = Path(tempfile.mkdtemp(prefix='latent-java-workers.', dir='/tmp'))
         private.chmod(0o700)
         with files.directory(private, owners={0, os.geteuid()}):
             pass  # Original installer ancestry/ACL policy, before component cost.
         receipt['stage'] = 'focused-source-controls'
         commands.command_seconds = 55
+        control_index = len(commands.records)
         commands.run('source-controls', sys.executable, '-B', '-m', 'unittest', '-v',
             'tools.tests.test_java_published_workers')
-        raw = read_file(logs / 'logs/01-source-controls.stderr.txt', 128 * 1024)
+        raw = read_file(logs / f'logs/{control_index:02d}-source-controls.stderr.txt', 128 * 1024)
         need(re.search(rb'^Ran 4 tests in [0-9.]+s\r?$', raw, re.M)
             and re.search(rb'^OK\r?$', raw, re.M) and b'skipped' not in raw, 'four-controls-no-skip')
         receipt['sourceControls'] = {'passed': 4, 'skipped': 0, 'stderr': identities.identity(raw)}
@@ -214,7 +206,7 @@ def qualify(output, revision):
             '--no-run', '--message-format=json')
         contract, = [row for row in registry.load()['suites']
             if row['id'] == 'latent-wasmtime.test.local-service']
-        need(contract['minimumCases'] == 52 and CASE in contract['expectedCases']
+        need(contract['minimumCases'] == len(contract['expectedCases']) and CASE in contract['expectedCases']
             and CASE in contract['expectedIgnored'], 'existing-case-contract')
         suite = artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'local_service',
             'tests/local_service.rs', CASE, frozenset({CASE}), True, kind='test')
@@ -242,15 +234,16 @@ def qualify(output, revision):
         commands.command_seconds = 1795
         raw = commands.run('execute-exact-case', artifact.executable, CASE, '--exact', '--ignored',
             '--show-output', '--test-threads=1')
-        receipt['observation'] = observed.observations(raw, worker=True)
+        receipt['observation'] = observed.observations(raw, worker=True, filtered=len(contract['expectedCases']) - 1)
         java_fiber_library_inputs.check(prepared / 'library-inputs', report['libraries'])
-        need(sources(commands, before) == before and java_sources() == java_before, 'final-source')
+        need(sources(commands, before['native']) == before and java_sources() == java_before, 'final-source')
         need(file_identity(artifact.executable, 'local-service-java-published-workers', 512 * 1024**2)
             == receipt['executable'], 'final-executable')
         need([file_identity(tools[name], name) for name in sorted(tools)] == pins, 'final-tools')
-        artifacts.require_source(ROOT, revision, environment)
+        observed.require_source(commands, revision, 'source-head-after')
         need(time.monotonic() < commands.deadline, 'final-deadline')
-        receipt.update(status='passed', sourceAfter=before, javaSourceAfter=java_before, sourceUnchanged=True)
+        receipt.update(status='passed', sourceAfter=before['native'],
+            supplementarySourceAfter=before['supplementary'], javaSourceAfter=java_before, sourceUnchanged=True)
     except BaseException:
         receipt['status'] = 'failed'
         raise

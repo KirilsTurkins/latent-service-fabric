@@ -1,13 +1,6 @@
-{"cases":["ManagedGoHttpSourceControls.test_both_profiles_preserve_identical_client_private_worker_sdk_wit_and_budget_bytes","ManagedGoHttpSourceControls.test_default_node_stays_v4_and_managed_selection_changes_only_original_task_capacity","ManagedGoHttpSourceControls.test_maintenance_slots_plus_original_application_headroom_are_all_charged","ManagedGoHttpSourceControls.test_old_component_cannot_be_relabelled_managed_at_signed_boundary","ManagedGoHttpSourceControls.test_unknown_profile_and_nonboolean_programme_selector_fail_before_capture"],"guards":{"ManagedGoHttpSourceControls.test_both_profiles_preserve_identical_client_private_worker_sdk_wit_and_budget_bytes":
-  "6880a964680cfb5589ff6bbb8e115e3afb3d1c270f067e5c616e108b94b1165f"
-,"ManagedGoHttpSourceControls.test_default_node_stays_v4_and_managed_selection_changes_only_original_task_capacity":
-  "6880a964680cfb5589ff6bbb8e115e3afb3d1c270f067e5c616e108b94b1165f"
-,"ManagedGoHttpSourceControls.test_maintenance_slots_plus_original_application_headroom_are_all_charged":
-  "6880a964680cfb5589ff6bbb8e115e3afb3d1c270f067e5c616e108b94b1165f"
-,"ManagedGoHttpSourceControls.test_old_component_cannot_be_relabelled_managed_at_signed_boundary":
-  "6880a964680cfb5589ff6bbb8e115e3afb3d1c270f067e5c616e108b94b1165f"
-,"ManagedGoHttpSourceControls.test_unknown_profile_and_nonboolean_programme_selector_fail_before_capture":
-  "6880a964680cfb5589ff6bbb8e115e3afb3d1c270f067e5c616e108b94b1165f"
-},"kind":"python","module":"tools/tests/test_go_http_managed.py","reviewReason":"Explicit managed-v5 HTTP programme retains8charged maintenance plus8application TASK slots, requires real pending HTTP/timer/Store ownership and two context deadlines plus fresh reuse; default v4 nineteen outcomes remain unchanged, actual new signed gate pending.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "6880a964680cfb5589ff6bbb8e115e3afb3d1c270f067e5c616e108b94b1165f"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:fb19c9202b57e66b21dba3214028839748ac4b08df2b0efc562b761519f3b1af","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{"storageCases":"guard-keys","guards":{"ManagedGoHttpSourceControls.test_both_profiles_preserve_identical_client_private_worker_sdk_wit_and_budget_bytes":
+      "6880a964680cfb5589ff6bbb8e115e3afb3d1c270f067e5c616e108b94b1165f","ManagedGoHttpSourceControls.test_default_node_stays_v4_and_managed_selection_changes_only_original_task_capacity":
+      "6880a964680cfb5589ff6bbb8e115e3afb3d1c270f067e5c616e108b94b1165f","ManagedGoHttpSourceControls.test_maintenance_slots_plus_original_application_headroom_are_all_charged":
+      "6880a964680cfb5589ff6bbb8e115e3afb3d1c270f067e5c616e108b94b1165f","ManagedGoHttpSourceControls.test_old_component_cannot_be_relabelled_managed_at_signed_boundary":
+      "6880a964680cfb5589ff6bbb8e115e3afb3d1c270f067e5c616e108b94b1165f","ManagedGoHttpSourceControls.test_unknown_profile_and_nonboolean_programme_selector_fail_before_capture":
+      "6880a964680cfb5589ff6bbb8e115e3afb3d1c270f067e5c616e108b94b1165f"},"kind":"python","module":"tools/tests/test_go_http_managed.py","reviewReason":"Explicit managed-v5 HTTP programme retains8charged maintenance plus8application TASK slots, requires real pending HTTP/timer/Store ownership and two context deadlines plus fresh reuse; default v4 nineteen outcomes remain unchanged, actual new signed gate pending.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"6880a964680cfb5589ff6bbb8e115e3afb3d1c270f067e5c616e108b94b1165f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:fb19c9202b57e66b21dba3214028839748ac4b08df2b0efc562b761519f3b1af","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

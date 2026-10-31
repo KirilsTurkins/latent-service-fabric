@@ -61,9 +61,10 @@ class CThreadingProfile(unittest.TestCase):
         self.assertEqual(threading.TLS_SYMBOLS, expected)
         self.assertEqual(threading.linked_defines(('OWNED=7',)),
                          ('OWNED=7', 'LSF_C_LINKED_LIBC=1',
-                          *(name + '=__lsf_c_' + name for name in (*expected, *threading.SYNC_SYMBOLS))))
-        for name in ('LSF_C_LINKED_LIBC', *expected,
-                     *('__lsf_c_' + item for item in expected)):
+                          *(name + '=__lsf_c_' + name for name in (*expected, *threading.YIELD_SYMBOLS, *threading.SYNC_SYMBOLS))))
+        self.assertEqual(threading.YIELD_SYMBOLS, ('thrd_yield',))
+        for name in ('LSF_C_LINKED_LIBC', *expected, *threading.YIELD_SYMBOLS,
+                     *('__lsf_c_' + item for item in (*expected, *threading.YIELD_SYMBOLS))):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned-tls-symbol'):
                 threading.linked_defines((name + '=foreign',))
         self.assertNotIn('errno', expected)

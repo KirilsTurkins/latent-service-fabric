@@ -132,13 +132,36 @@ def derive_async_bindgen(original: bytes) -> tuple[bytes,dict]:
         let tracing_prefix = String::new();
 ''','real-native-await-callee')
     source=replace_once(source,b'        self.src.push_str(&f.src);\n        self.src.push_str("}");',
-        b'''        if lsf_async_call {
+        br'''        if lsf_async_call {
             let descriptor = lsf_async::descriptor(self.resolve, func, &self.sizes);
             uwriteln!(self.src, "const __lsfImportId = __lsfImports.reserve({}, {}, {}, {});",
                 descriptor.result_bytes, descriptor.parameter_bytes, descriptor.raw_result,
                 (0..nparams).map(|i| format!("arg{i}")).collect::<Vec<_>>().join(", "));
             uwriteln!(self.src, "const __lsfAwaitImport = async (...lowered) => __lsfImports.lift(await {original_callee}(__lsfImportId | 0, ...lowered));");
             uwriteln!(self.src, "/* lsf-owned-result-transfer:{} */", if f.err == ErrHandling::ThrowResultErr { "wit-result" } else { "value" });
+            if let Some((key,slots))=descriptor.partial_slots() {
+                let mut entries=Vec::new();
+                let mut supported=true;
+                for (offset,resource) in slots {
+                    let table=&resource_map[&resource];
+                    if !table.imported {supported=false;break;}
+                    let ResourceData::Guest{resource_name,prefix,..}=&table.data else {
+                        supported=false;break;
+                    };
+                    let prefix=prefix.as_deref().unwrap_or("");
+                    let registry=format!("finalizationRegistry_import${prefix}{}",resource_name.to_lower_camel_case());
+                    let class=format!("import_{prefix}{}",resource_name.to_upper_camel_case());
+                    if !registry.bytes().chain(class.bytes()).all(|b|b.is_ascii_alphanumeric()||b==b'_'||b==b'$') {
+                        supported=false;break;
+                    }
+                    let resource=resource.index();
+                    entries.push(format!(r#"{{"offset":{offset},"resource":{resource},"registry":"{registry}","class":"{class}"}}"#));
+                }
+                if supported {
+                    uwriteln!(self.src,r#"/* lsf-own-plan-v2:{{"key":{key},"bytes":{},"raw":{},"slots":[{}]}} */"#,
+                        descriptor.result_bytes,descriptor.raw_result,entries.join(","));
+                }
+            }
             uwriteln!(self.src, "try {{");
         }
         self.src.push_str(&f.src);
@@ -147,7 +170,7 @@ def derive_async_bindgen(original: bytes) -> tuple[bytes,dict]:
         }
         self.src.push_str("}");''','preallocation-and-typed-lift-retirement')
     receipt={'status':'private-derived-bindgen-source','originalSha256':hashlib.sha256(original).hexdigest(),
-        'derivedSha256':hashlib.sha256(source).hexdigest(),'actualNativeDescriptorRequired':True,
+        'derivedSha256':hashlib.sha256(source).hexdigest(),'actualNativeDescriptorRequired':True,'privateImportBindingAbi':2,
         'originalTypedLoweringAndLiftingRetained':True,'splicerTrampolineStillRequired':True,
         'actualCompilerExecuted':False,'qualification':'unknown','signedLSFComponentQualified':False}
     return source,receipt
@@ -225,8 +248,15 @@ pub fn splice_with_async(
                     .and_then(|value|value.checked_add(i32::try_from(lsf_disposers.len()).ok()?))
                     .context("native-disposer-table-index-overflow")?;
                 lsf_disposers.push(disposer);
-                import_fnids.push(lsf_async_splice::synthesize(module,impt_sig,descriptor,
-                    import_fn_fid,bigint,ctx_arg,vp_arg,pointer)?);
+                let partial=if let Some((key,getter,dispose,count))=
+                    lsf_async_splice::partial_functions(module,descriptor,imports)? {
+                    let getter_pointer=pointer.checked_add(1).context("own-getter-table-overflow")?;
+                    let dispose_pointer=pointer.checked_add(2).context("own-disposer-table-overflow")?;
+                    lsf_disposers.push(getter);lsf_disposers.push(dispose);
+                    Some((key,getter_pointer,dispose_pointer,count))
+                } else {None};
+                import_fnids.push(lsf_async_splice::synthesize_with_partial(module,impt_sig,descriptor,
+                    import_fn_fid,bigint,ctx_arg,vp_arg,pointer,partial)?);
                 continue;
             }
             // create the native JS binding function
@@ -290,5 +320,5 @@ def derive_async_compiler_sources(original:dict[str,bytes],native:dict[str,bytes
             'crates/spidermonkey-embedding-splicer/src/lsf_async_splice.rs':native['async_import_splice.rs']}
     return result,{'originalSource':identity(original),'derivedSource':identity(result),
         'bindgenDerivation':bindgen_receipt,'spliceDerivation':splice_receipt,
-        'upstreamPublicSplicerWitChanged':False,'unknownProfilePromoted':False,
+        'privateImportBindingAbi':2,'upstreamPublicSplicerWitChanged':False,'unknownProfilePromoted':False,
         'actualCompilerExecuted':False,'qualification':'unknown','signedLSFComponentQualified':False}

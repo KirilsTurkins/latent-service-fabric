@@ -1,5 +1,5 @@
 {
-"cases":["SmartBufferControls.test_exact_published_fixture_and_actual_strict_types","SmartBufferControls.test_original_graph_bindings_and_public_only_collector"],
+"storageCases":"guard-keys",
 "guards":{
 "SmartBufferControls.test_exact_published_fixture_and_actual_strict_types":
       "bb300707779b680edac66bada7a8fa24684db448a40d98be4ba597207fb0a22f",

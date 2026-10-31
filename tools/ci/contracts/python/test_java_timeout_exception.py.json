@@ -1,9 +1,18 @@
-{"cases":["JavaTimeoutExceptionTests.test_normal_profile_captures_the_exception_source_without_application_patch","JavaTimeoutExceptionTests.test_standard_constructors_parent_bytes_and_serial_identity_match_installed_jdk","JavaTimeoutExceptionTests.test_timeout_uses_same_closed_standard_substitution_and_reference_normalization"],"guards":{"JavaTimeoutExceptionTests.test_normal_profile_captures_the_exception_source_without_application_patch":
-  "d8915f2a049b9702d9f1e8f3b26af22ed2018486bc5729a892c0126486b6ae4d"
-,"JavaTimeoutExceptionTests.test_standard_constructors_parent_bytes_and_serial_identity_match_installed_jdk":
-  "d8915f2a049b9702d9f1e8f3b26af22ed2018486bc5729a892c0126486b6ae4d"
-,"JavaTimeoutExceptionTests.test_timeout_uses_same_closed_standard_substitution_and_reference_normalization":
-  "d8915f2a049b9702d9f1e8f3b26af22ed2018486bc5729a892c0126486b6ae4d"
-},"kind":"python","module":"tools/tests/test_java_timeout_exception.py","reviewReason":"Add actual JDK constructor/inheritance/partial-transfer/serial identity and source-capture controls for the TeaVM-missing standard SocketTimeoutException; preserve all existing HTTP substitutions.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "d8915f2a049b9702d9f1e8f3b26af22ed2018486bc5729a892c0126486b6ae4d"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:614a6d134c6446568142c5f24258fd2d21725cfa9426477e05c3b2c46bb3df88","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+"storageCases":"guard-keys",
+"guards":{
+"JavaTimeoutExceptionTests.test_normal_profile_captures_the_exception_source_without_application_patch":
+      "d8915f2a049b9702d9f1e8f3b26af22ed2018486bc5729a892c0126486b6ae4d",
+"JavaTimeoutExceptionTests.test_standard_constructors_parent_bytes_and_serial_identity_match_installed_jdk":
+      "d8915f2a049b9702d9f1e8f3b26af22ed2018486bc5729a892c0126486b6ae4d",
+"JavaTimeoutExceptionTests.test_timeout_uses_same_closed_standard_substitution_and_reference_normalization":
+      "d8915f2a049b9702d9f1e8f3b26af22ed2018486bc5729a892c0126486b6ae4d"
+},
+"kind":"python",
+"module":"tools/tests/test_java_timeout_exception.py",
+"reviewReason":"Add actual JDK constructor/inheritance/partial-transfer/serial identity and source-capture controls for the TeaVM-missing standard SocketTimeoutException; preserve all existing HTTP substitutions.",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"d8915f2a049b9702d9f1e8f3b26af22ed2018486bc5729a892c0126486b6ae4d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:614a6d134c6446568142c5f24258fd2d21725cfa9426477e05c3b2c46bb3df88","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
+}

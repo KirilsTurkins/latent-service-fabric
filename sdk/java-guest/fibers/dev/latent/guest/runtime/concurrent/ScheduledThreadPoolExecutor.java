@@ -62,6 +62,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         Activation.Lease queued;
         boolean executing;
         boolean released;
+        boolean resultAccepted;
         Task(Callable<V> callable, long next, long period, long order, Activation.Lease queued) {
             super(callable);
             this.next = next; this.period = period; this.order = order; this.queued = queued;
@@ -86,6 +87,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         }
         void release() {
             if (released) return;
+            if (resultAccepted) { resultAccepted = false; removeQueueCopy(true); }
             queued.close(); queued = null;
             released = true;
             pendingWork--;
@@ -111,7 +113,8 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         boolean installed = false;
         try {
             task = new Task<>(command, after(delay), period, sequence++, queued);
-            accepted = task.accept();
+            accepted = task.acceptQueueCopy();
+            task.resultAccepted = accepted;
             queue.add(task);
             pendingWork++;
             installed = true;
@@ -122,7 +125,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             if (!installed || queue.remove(task)) {
                 if (installed) pendingWork--;
                 queued.close();
-                if (accepted) task.rejectAcceptance();
+                if (accepted) { task.resultAccepted = false; task.removeQueueCopy(true); }
             }
             throw error;
         }
@@ -249,7 +252,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             Task<?> task = queue.remove(queue.size() - 1);
             pending.add(task);
             // An unexecuted returned future no longer owns accepted work.
-            task.rejectAcceptance(); task.release();
+            task.release();
         }
         for (Thread worker : workers) worker.interrupt();
         notifyAll(); settleIfTerminated();

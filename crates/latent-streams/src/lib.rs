@@ -19,6 +19,8 @@ pub use latent_capabilities::broker::network::{StreamError, StreamErrorCode};
 pub use lifecycle::{StreamLifecycle, StreamStatus};
 pub use maintenance::{StreamMaintenance, StreamMaintenanceStop};
 pub use provider::StreamProvider;
+#[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+pub use provider::{NodeCapacityFacts, NodeCapacityQualification};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]

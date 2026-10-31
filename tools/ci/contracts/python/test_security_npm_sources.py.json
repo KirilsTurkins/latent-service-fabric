@@ -1,28 +1,34 @@
 {
-  "cases":["NpmSourceRepairTests.test_archive_paths_links_duplicate_members_and_hidden_graphs_fail","NpmSourceRepairTests.test_independent_reconstruction_checks_both_libraries_and_complete_bundle","NpmSourceRepairTests.test_independent_reconstruction_rejects_upstream_source_lock_and_patch_drift","NpmSourceRepairTests.test_library_allowance_does_not_admit_aliases_or_changed_versions_and_integrities","NpmSourceRepairTests.test_only_exact_advisory_revision_verified_version_and_lock_are_remediated","NpmSourceRepairTests.test_repair_preserves_identity_graph_license_unchanged_bytes_and_modes","NpmSourceRepairTests.test_repair_rejects_missing_walkers_preimage_postimage_edit_and_upstream_drift","NpmSourceRepairTests.test_selector_bundle_refuses_changed_or_shadowed_existing_dependencies"],
+  "cases":["NpmSourceRepairTests.test_archive_paths_links_duplicate_members_and_hidden_graphs_fail","NpmSourceRepairTests.test_checkout_published_source_reconstructs_and_resolves_only_its_exact_advisory","NpmSourceRepairTests.test_checkout_source_never_admits_unselected_or_registry_graphs_as_repaired","NpmSourceRepairTests.test_checkout_source_rejects_graph_revision_source_and_build_drift","NpmSourceRepairTests.test_independent_reconstruction_checks_both_libraries_and_complete_bundle","NpmSourceRepairTests.test_independent_reconstruction_rejects_upstream_source_lock_and_patch_drift","NpmSourceRepairTests.test_library_allowance_does_not_admit_aliases_or_changed_versions_and_integrities","NpmSourceRepairTests.test_only_exact_advisory_revision_verified_version_and_lock_are_remediated","NpmSourceRepairTests.test_repair_preserves_identity_graph_license_unchanged_bytes_and_modes","NpmSourceRepairTests.test_repair_rejects_missing_walkers_preimage_postimage_edit_and_upstream_drift","NpmSourceRepairTests.test_selector_bundle_refuses_changed_or_shadowed_existing_dependencies"],
   "guards":{
     "NpmSourceRepairTests.test_repair_preserves_identity_graph_license_unchanged_bytes_and_modes":
-      "61b787d3e8d9ef12bc56234a9f8016e0dcf98e950f6d84e43808110fb6beb9f5",
+      "254da49514d10ef3353a992093cb2655b62915d7558be63391fc24d8b9ecd1d9",
     "NpmSourceRepairTests.test_repair_rejects_missing_walkers_preimage_postimage_edit_and_upstream_drift":
-      "61b787d3e8d9ef12bc56234a9f8016e0dcf98e950f6d84e43808110fb6beb9f5",
+      "254da49514d10ef3353a992093cb2655b62915d7558be63391fc24d8b9ecd1d9",
     "NpmSourceRepairTests.test_archive_paths_links_duplicate_members_and_hidden_graphs_fail":
-      "61b787d3e8d9ef12bc56234a9f8016e0dcf98e950f6d84e43808110fb6beb9f5",
+      "254da49514d10ef3353a992093cb2655b62915d7558be63391fc24d8b9ecd1d9",
     "NpmSourceRepairTests.test_only_exact_advisory_revision_verified_version_and_lock_are_remediated":
-      "61b787d3e8d9ef12bc56234a9f8016e0dcf98e950f6d84e43808110fb6beb9f5",
+      "254da49514d10ef3353a992093cb2655b62915d7558be63391fc24d8b9ecd1d9",
     "NpmSourceRepairTests.test_library_allowance_does_not_admit_aliases_or_changed_versions_and_integrities":
-      "61b787d3e8d9ef12bc56234a9f8016e0dcf98e950f6d84e43808110fb6beb9f5",
+      "254da49514d10ef3353a992093cb2655b62915d7558be63391fc24d8b9ecd1d9",
     "NpmSourceRepairTests.test_independent_reconstruction_checks_both_libraries_and_complete_bundle":
-      "61b787d3e8d9ef12bc56234a9f8016e0dcf98e950f6d84e43808110fb6beb9f5",
+      "254da49514d10ef3353a992093cb2655b62915d7558be63391fc24d8b9ecd1d9",
     "NpmSourceRepairTests.test_independent_reconstruction_rejects_upstream_source_lock_and_patch_drift":
-      "61b787d3e8d9ef12bc56234a9f8016e0dcf98e950f6d84e43808110fb6beb9f5",
+      "254da49514d10ef3353a992093cb2655b62915d7558be63391fc24d8b9ecd1d9",
     "NpmSourceRepairTests.test_selector_bundle_refuses_changed_or_shadowed_existing_dependencies":
-      "61b787d3e8d9ef12bc56234a9f8016e0dcf98e950f6d84e43808110fb6beb9f5"
+      "254da49514d10ef3353a992093cb2655b62915d7558be63391fc24d8b9ecd1d9",
+    "NpmSourceRepairTests.test_checkout_published_source_reconstructs_and_resolves_only_its_exact_advisory":
+      "254da49514d10ef3353a992093cb2655b62915d7558be63391fc24d8b9ecd1d9",
+    "NpmSourceRepairTests.test_checkout_source_rejects_graph_revision_source_and_build_drift":
+      "254da49514d10ef3353a992093cb2655b62915d7558be63391fc24d8b9ecd1d9",
+    "NpmSourceRepairTests.test_checkout_source_never_admits_unselected_or_registry_graphs_as_repaired":
+      "254da49514d10ef3353a992093cb2655b62915d7558be63391fc24d8b9ecd1d9"
   },
   "kind":"python",
   "module":"tools/tests/test_security_npm_sources.py",
-  "reviewReason":"Extend exact npm source verification to the three deepmerge distributed source entrypoints and same-version actual fixed bytes; preserve original graph/license and all8case IDs; action findings stay open until real fork delivery.",
+  "reviewReason":"Reconstruct the exact published checkout deepmerge source and qualified bundle; retain all8 old cases and add3 controls for exact advisory/path credit, drift refusal and ordinary registry graphs.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
-    "61b787d3e8d9ef12bc56234a9f8016e0dcf98e950f6d84e43808110fb6beb9f5":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:cfef8d9e8102a0874840cd99338892b14e610888a3f849e6abfdf97cf29c174c","class:setup-sha256:64c1815915908d013baf1ff971fe0a1b5fc746110718074a7a3ae2996d3a0b44"]}
+    "254da49514d10ef3353a992093cb2655b62915d7558be63391fc24d8b9ecd1d9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:cfef8d9e8102a0874840cd99338892b14e610888a3f849e6abfdf97cf29c174c","class:setup-sha256:c87952fa1bfc770a608c38753b50f762aeb4c710953aa88eba3fc1ab5b4e808c"]}
   }
 }

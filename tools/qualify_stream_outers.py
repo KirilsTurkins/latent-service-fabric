@@ -2783,7 +2783,7 @@ def qualify_node_bootstrap(output, revision):
     import shutil
     require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
-        and os.environ.get('GITHUB_REF_NAME') == NODE_BOOTSTRAP_BRANCH
+        and os.environ.get('GITHUB_REF_NAME') in (NODE_BOOTSTRAP_BRANCH, 'test/sdk-738-node-capacity-facts-20261029')
         and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'node-one-exact-hosted-push')
     require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'node-source-revision')
     require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
@@ -2928,6 +2928,351 @@ def qualify_node_bootstrap(output, revision):
 
 
 
+CALL_MEMORY_BRANCH = 'feat/sdk-736-call-parameter-closure-memory-20261028'
+CALL_MEMORY_PREFIX = 'runtime::component::concurrent::call_parameter_closure_memory_tests::'
+CALL_MEMORY_CASES = tuple(CALL_MEMORY_PREFIX + name for name in (
+    'original_store_parameter_refusal_and_fresh_empty_legacy_shapes',
+    'exact_typed_closure_layout_refusal_preserves_two_pointer_carriers',
+    'closures_hold_original_owner_through_calls_errors_and_cancelled_drop',
+    'unwind_and_capture_destructor_panic_retire_without_ticket_leaks'))
+CALL_MEMORY_STAGES = ('source-head', 'source-clean', 'source-input-paths',
+    'resolve-cargo', 'cargo-version', 'resolve-rustc', 'rustc-version', 'wasm-tools-version',
+    'build-private', 'private-rust-library-path',
+    'private-list-0', 'private-case-0', 'private-list-1', 'private-case-1',
+    'private-list-2', 'private-case-2', 'private-list-3', 'private-case-3',
+    'source-input-paths-after', 'source-clean-after', 'source-head-after')
+
+
+def call_memory_result(raw, case, *, _resource_table=False, _call_result_channel=False, _callback_memory=False, _host_baseline=False, _guest_start=False, _unstarted_host_drop=False):
+    require(type(_resource_table) is bool and type(_call_result_channel) is bool
+        and type(_callback_memory) is bool and type(_host_baseline) is bool
+        and type(_guest_start) is bool and type(_unstarted_host_drop) is bool
+        and sum((_resource_table, _call_result_channel, _callback_memory, _host_baseline, _guest_start, _unstarted_host_drop)) <= 1, 'store-memory-closed-result-profile')
+    cases = UNSTARTED_HOST_DROP_CASES if _unstarted_host_drop else GUEST_START_CASES if _guest_start else HOST_BASELINE_CASES if _host_baseline else CALLBACK_CASES if _callback_memory else CALL_RESULT_CHANNEL_CASES if _call_result_channel else RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
+    require(case in cases and len(raw) <= artifacts.MAX_OUTPUT_BYTES,
+        'call-memory-case-bound')
+    require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
+        == [case.encode()], 'call-memory-one-exact-success')
+    summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
+        rb'(\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    require(len(summaries) == 1 and summaries[0][:4] == (b'1', b'0', b'0', b'0')
+        and int(summaries[0][4]) <= 10000, 'call-memory-one-executed-no-skip')
+    return {'case': case, 'stdout': identity(raw), 'passed': 1, 'failed': 0,
+        'ignored': 0, 'filteredOut': int(summaries[0][4]),
+        'scope': 'original-Store-unstarted-host-future-drop-lifetime-owner' if _unstarted_host_drop else 'original-Store-guest-start-header-transaction-and-lifetime-counter-owner' if _guest_start
+            else 'source-bound-original-host-memory-lifetime-regressions' if _host_baseline
+            else 'original-Store-borrowed-callback-counter-owner' if _callback_memory
+            else 'original-Store-call-result-header-counter-owner-with-explicit-payload-unwind-retention' if _call_result_channel
+            else 'original-Store-resource-box-table-and-child-index-counter-owner' if _resource_table
+            else 'original-Store-parameter-and-typed-closure-counter-owner'}
+
+
+def qualify_call_memory(output, revision, *, _resource_table=False, _call_result_channel=False, _callback_memory=False, _host_baseline=False, _guest_start=False, _unstarted_host_drop=False):
+    import shutil
+    require(type(_resource_table) is bool and type(_call_result_channel) is bool
+        and type(_callback_memory) is bool and type(_host_baseline) is bool
+        and type(_guest_start) is bool and type(_unstarted_host_drop) is bool
+        and sum((_resource_table, _call_result_channel, _callback_memory, _host_baseline, _guest_start, _unstarted_host_drop)) <= 1, 'store-memory-closed-profile')
+    branch = UNSTARTED_HOST_DROP_BRANCH if _unstarted_host_drop else GUEST_START_BRANCH if _guest_start else HOST_BASELINE_BRANCH if _host_baseline else CALLBACK_BRANCH if _callback_memory else CALL_RESULT_CHANNEL_BRANCH if _call_result_channel else RESOURCE_TABLE_BRANCH if _resource_table else CALL_MEMORY_BRANCH
+    cases = UNSTARTED_HOST_DROP_CASES if _unstarted_host_drop else GUEST_START_CASES if _guest_start else HOST_BASELINE_CASES if _host_baseline else CALLBACK_CASES if _callback_memory else CALL_RESULT_CHANNEL_CASES if _call_result_channel else RESOURCE_TABLE_CASES if _resource_table else CALL_MEMORY_CASES
+    prefix = UNSTARTED_HOST_DROP_PREFIX if _unstarted_host_drop else GUEST_START_PREFIX if _guest_start else 'host::' if _host_baseline else CALLBACK_PREFIX if _callback_memory else CALL_RESULT_CHANNEL_PREFIX if _call_result_channel else RESOURCE_TABLE_PREFIX if _resource_table else CALL_MEMORY_PREFIX
+    schema = 'lsf.unstarted-host-drop.v1' if _unstarted_host_drop else 'lsf.guest-start-memory.v1' if _guest_start else 'lsf.host-memory-baseline.v1' if _host_baseline else 'lsf.callback-memory.v1' if _callback_memory else 'lsf.call-result-channel-memory.v1' if _call_result_channel else 'lsf.resource-table-memory.v1' if _resource_table else 'lsf.call-parameter-closure-memory.v1'
+    scope = ('four real component/Store controls for original unstarted host-drop, queue refusal, eligible siblings and handoff; post-lowering cleanup remains unchanged'
+        if _unstarted_host_drop else 'four exact private native guest-start header controls using actual pending state and queue/preparation APIs; no full resume_thread/component execution, original ActivationBudget, transitive capture cost or RSS qualification'
+        if _guest_start else 'eleven exact existing native host memory regression controls using real embedded components and unchanged original grants; no full runtime/cost-model qualification'
+        if _host_baseline else 'four exact private native original-Store borrowed callback header refusal, repeated/error calls, cancellation and unwind controls; actual dispatcher owns the carrier across call; no guest, full ActivationBudget, transitive capture cost or RSS qualification'
+        if _callback_memory else 'four exact private native original-Store call-result header admission, wake, cancellation and explicit payload-unwind retention controls; no guest, full ActivationBudget, transitive cost or RSS qualification'
+        if _call_result_channel else 'four exact private native original-Store resource Box, table and child-index backing controls; no guest, full ActivationBudget, transitive cost or RSS qualification'
+        if _resource_table else 'four exact private native original-Store factory and typed closure ownership/refusal/unwind controls; no guest, full ActivationBudget, transitive cost or RSS qualification')
+    require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
+        and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
+        and os.environ.get('GITHUB_REF_NAME') == branch
+        and os.environ.get('GITHUB_EVENT_NAME') == 'push', 'call-memory-one-exact-hosted-push')
+    require(re.fullmatch('[0-9a-f]{40}', revision) is not None, 'call-memory-source-revision')
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
+        'call-memory-owned-output')
+    output = fresh(output)
+    environment = io_copy_environment(build_environment(output))
+    environment.update(CARGO_TARGET_DIR=str(ROOT / 'target'), CARGO_INCREMENTAL='0',
+        RUSTUP_TOOLCHAIN='1.97.1', RUSTUP_AUTO_INSTALL='0', CARGO_BUILD_JOBS='2',
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+        CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+    logs = output / 'commands'; logs.mkdir()
+    # Single five-second process cleanup reserve inside the original 1320 seconds.
+    commands = Commands(ROOT, logs, environment, deadline_seconds=1315, command_seconds=1195)
+    receipt = {'schemaVersion': schema, 'status': 'in-progress',
+        'sourceRevision': revision, 'selectedCases': list(cases),
+        'casesStarted': [], 'casesPassed': [], 'observations': [],
+        'fullCostModelQualified': False, 'fullRuntimeSuiteExecuted': False,
+        'fullVendorSuiteExecuted': False, 'signedGuestExecuted': False,
+        'originalActivationBudgetQualified': False, 'rssOrStackQualified': False,
+        'whole736Complete': False, 'whole745Complete': False, 'hermetic': False,
+        'compilerImplicitInputsAttested': False, 'oldProgrammesExecuted': False,
+        'cargoBuildMayRunHostBuildScripts': True,
+        'limits': {'overallSeconds': 1320, 'buildProcessSeconds': 1200,
+            'listProcessSeconds': 30, 'caseProcessSeconds': 60, 'cleanupSeconds': 5,
+            'buildJobs': 2, 'maximumRootCommands': 25 if _host_baseline else 21,
+            'maximumCommandOutputBytes': 4 * 1024**2, 'maximumTotalLogsBytes': 16 * 1024**2,
+            'maximumPublicFiles': 64, 'maximumPublicBytes': 128 * 1024**2},
+        'commandBoundary': 'ALL25 roots, including one exact eleven-name list and eleven executions;50 raw channels' if _host_baseline else 'ALL21 Git/tool/build/library/list/test roots under one owner;42 raw channels',
+        'scope': scope}
+    if _call_result_channel:
+        receipt.update(payloadUnwindRetainsSameOriginalCharge=True,
+            payloadUnwindPhysicalRetirementQualified=False, quarantineCompletionQualified=False)
+    if _guest_start:
+        receipt.update(preAdmissionPreservesPendingStart=True, actualPendingStateAndQueueExercised=True,
+            fullResumeThreadOrComponentExecuted=False, confirmationPanicIsAdmissionRollback=False)
+    if _callback_memory:
+        receipt.update(callbackCallBorrowsCarrier=True,
+            actualDispatcherOwnsLocalCarrierAcrossCall=True, wholeCaptureGraphQualified=False)
+    stages = HOST_BASELINE_STAGES if _host_baseline else CALL_MEMORY_STAGES
+    def owned(stage, seconds, *argv, env=None):
+        require(len(commands.records) < len(stages)
+            and stage == stages[len(commands.records)], 'call-memory-fixed-command-order')
+        require(time.monotonic() < commands.deadline, 'call-memory-original-deadline')
+        commands.environment = environment if env is None else env
+        require_io_copy_environment(commands.environment)
+        require(len(argv) <= 64 and all(len(str(arg).encode()) <= 4096 for arg in argv)
+            and sum(len(str(arg).encode()) for arg in argv) <= 16 * 1024, 'call-memory-fixed-argv-bound')
+        receipt.setdefault('expandedCommands', []).append({'stage': stage,
+            'argv': [str(arg) for arg in argv], 'cwd': str(ROOT), 'commandSeconds': seconds})
+        commands.command_seconds = seconds; receipt['stage'] = stage
+        raw = commands.run(stage, *argv)
+        if _host_baseline:
+            paths = tuple(logs.rglob('*.txt'))
+            require(all(p.is_file() and not p.is_symlink() for p in paths)
+                and sum(p.stat().st_size for p in paths) <= 16 * 1024**2,
+                'host-baseline-total-log-bound')
+        return raw
+    def metadata(stage, *args):
+        return owned(stage, 25, 'git', '-c', 'core.fsmonitor=false', *args)
+    def head(stage):
+        raw = metadata(stage, '-c', 'gc.auto=0', 'rev-parse', '--verify', 'HEAD')
+        require(len(raw) <= 256 and raw.strip().decode('ascii') == revision, 'call-memory-source-head')
+    def inputs(stage):
+        raw = metadata(stage, 'ls-files', '-z', '--', *SOURCE_ALLOWLIST)
+        require(len(raw) <= 2 * 1024**2, 'call-memory-source-path-bound')
+        names = [n for n in raw.decode('utf-8').split('\0') if n]
+        limits = SnapshotLimits(); require(100 <= len(names) <= limits.max_entries, 'call-memory-source-count')
+        result, total = {}, 0
+        for name in names:
+            require(time.monotonic() < commands.deadline, 'call-memory-source-inventory-deadline')
+            data = read_file(ROOT / name, limits.max_file_bytes); total += len(data)
+            result[name] = identity(data)
+        require(total <= limits.max_total_bytes, 'call-memory-source-total-checkout-bytes')
+        result[WORKFLOW] = identity(read_file(ROOT / WORKFLOW, 128 * 1024))
+        return dict(sorted(result.items()))
+    try:
+        head('source-head')
+        metadata('source-clean', 'diff', '--no-ext-diff', '--exit-code', 'HEAD', '--')
+        before = inputs('source-input-paths'); receipt['sourceBefore'] = before
+        write_json(output / 'source-inputs.json', before)
+        if _unstarted_host_drop:
+            receipt['nativeFeatures'] = FEATURES + ',wat'
+            receipt['watFeatureInputs'] = {name: before[name] for name in (
+                'Cargo.toml', 'Cargo.lock', 'crates/vendor/wasmtime/Cargo.toml',
+                'crates/vendor/wasmtime/Cargo.lock')}
+        checked = source.verify(); receipt['wasmtimeSource'] = checked
+        toolchain = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml', 128 * 1024).decode())
+        require(toolchain['rust']['toolchain'] == '1.97.1'
+            and toolchain['contracts']['wasm-tools'] == '1.254.0', 'call-memory-normal-tool-pins')
+        rustup = shutil.which('rustup', path=environment.get('PATH'))
+        wasm = shutil.which('wasm-tools', path=environment.get('PATH'))
+        require(rustup and wasm, 'call-memory-required-installed-tools')
+        tools = {'rustup': Path(rustup).resolve(strict=True)}
+        for name in ('cargo', 'rustc'):
+            raw = owned('resolve-' + name, 25, rustup, 'which', '--toolchain', '1.97.1', name)
+            require(len(raw) <= 16 * 1024, 'call-memory-tool-resolution-bound')
+            path = Path(raw.decode('utf-8').strip())
+            require(path.is_absolute() and path.is_file(), 'call-memory-direct-tool-path')
+            tools[name] = path.resolve(strict=True)
+            raw = owned(name + '-version', 25, tools[name], '--version')
+            require(len(raw) <= 16 * 1024 and re.match(
+                rf'{name} 1\.97\.1(?:\s|$)', raw.decode('utf-8')), 'call-memory-tool-version')
+        tools['wasm-tools'] = Path(wasm).resolve(strict=True)
+        raw = owned('wasm-tools-version', 25, tools['wasm-tools'], '--version')
+        require(len(raw) <= 16 * 1024 and re.match(r'wasm-tools 1\.254\.0(?:\s|$)',
+            raw.decode('utf-8')), 'call-memory-wasm-tool-version')
+        pins = [file_identity(tools[n], n) for n in sorted(tools)]; receipt['tools'] = pins
+        environment['RUSTC'] = str(tools['rustc'])
+        suite = artifacts.Suite('crates/latent-wasmtime/Cargo.toml' if _host_baseline else 'crates/vendor/wasmtime/Cargo.toml',
+            'latent_wasmtime' if _host_baseline else 'wasmtime',
+            'src/lib.rs', prefix, frozenset(cases), True)
+        ordinal = len(commands.records)
+        if _host_baseline:
+            owned('build-private', 1195, tools['cargo'], 'test', '--manifest-path', suite.manifest,
+                '--locked', '--lib', '--no-run', '--message-format=json')
+        else:
+            owned('build-private', 1195, tools['cargo'], 'test', '--manifest-path', suite.manifest,
+                '--locked', '--lib', '--no-default-features', '--features',
+                FEATURES + ',wat' if _unstarted_host_drop else FEATURES,
+                '--no-run', '--message-format=json')
+        artifact = artifacts.read_inventory(logs / f'logs/{ordinal:02d}-build-private.stdout.txt',
+            ROOT, suite, target=ROOT / 'target')
+        executable = file_identity(artifact.executable, 'call-memory-controls', 512 * 1024**2)
+        receipt['privateExecutable'] = executable
+        def probe(argv, *, cwd, env, timeout, maximum):
+            require(argv == ['rustc', '--print', 'target-libdir'] and cwd == ROOT
+                and timeout == 30 and maximum == 4096, 'call-memory-exact-library-probe')
+            raw = owned('private-rust-library-path', 25, tools['rustc'], *argv[1:], env=env)
+            require(len(raw) <= maximum, 'call-memory-library-output-bound'); return 0, raw
+        run_env = io_copy_environment(artifacts.cargo_environment(ROOT, artifact, environment,
+            target=ROOT / 'target', execute=probe))
+        if _host_baseline:
+            listed = owned('host-baseline-list', 25, artifact.executable, *cases,
+                '--exact', '--list', env=run_env)
+            require(len(listed) <= artifacts.MAX_LIST_BYTES, 'call-memory-list-bound')
+            artifacts.validate_listing(listed, suite)
+        for index, case in enumerate(cases):
+            if not _host_baseline:
+                listed = owned(f'private-list-{index}', 25, artifact.executable, case,
+                    '--exact', '--list', env=run_env)
+                require(len(listed) <= artifacts.MAX_LIST_BYTES, 'call-memory-list-bound')
+                artifacts.validate_listing(listed, artifacts.Suite(suite.manifest, suite.target,
+                    suite.source, case, frozenset((case,)), True))
+            receipt['casesStarted'].append(case)
+            raw = owned(f'private-case-{index}', 55, artifact.executable, case,
+                '--exact', '--show-output', '--test-threads=1', env=run_env)
+            receipt['observations'].append(call_memory_result(raw, case, _resource_table=_resource_table,
+                _call_result_channel=_call_result_channel, _callback_memory=_callback_memory,
+                _host_baseline=_host_baseline, _guest_start=_guest_start,
+                _unstarted_host_drop=_unstarted_host_drop)); receipt['casesPassed'].append(case)
+        require(inputs('source-input-paths-after') == before and source.verify() == checked,
+            'call-memory-final-source')
+        metadata('source-clean-after', 'diff', '--no-ext-diff', '--exit-code', 'HEAD', '--')
+        head('source-head-after')
+        require(len(commands.records) == (25 if _host_baseline else 21) and receipt['casesPassed'] == list(cases),
+            'call-memory-four-controls-all21-roots')
+        require(file_identity(artifact.executable, 'call-memory-controls', 512 * 1024**2)
+            == executable, 'call-memory-final-executable')
+        require([file_identity(tools[n], n) for n in sorted(tools)] == pins, 'call-memory-final-tools')
+        require(time.monotonic() < commands.deadline, 'call-memory-final-deadline')
+        receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True,
+            executed=list(cases), ignored=[])
+        write_json(output / 'receipt.json', receipt)
+        if _host_baseline:
+            command_bytes = len(json.dumps(commands.records, indent=2, ensure_ascii=False).encode() + b'\n')
+            retained = tuple(p for p in output.rglob('*') if p.is_file())
+            require(len(retained) + 1 <= 64 and not any(p.is_symlink() for p in output.rglob('*'))
+                and sum(p.stat().st_size for p in retained) + command_bytes <= 128 * 1024**2,
+                'host-baseline-public-artifact-bound')
+    except BaseException:
+        receipt['status'] = 'failed'; write_json(output / 'FAILED.json', receipt); raise
+    finally:
+        write_json(output / 'commands.json', commands.records)
+
+
+
+RESOURCE_TABLE_BRANCH = 'feat/sdk-736-resource-table-memory-20261028'
+RESOURCE_TABLE_PREFIX = 'runtime::component::resource_table::native_memory_tests::'
+RESOURCE_TABLE_CASES = tuple(RESOURCE_TABLE_PREFIX + name for name in (
+    'original_store_box_and_entry_refusals_leave_no_published_resource',
+    'typed_and_wrong_type_delete_retire_only_physical_boxes',
+    'child_capacity_refusal_is_atomic_and_reused_indices_stay_sorted',
+    'confirmation_and_destructor_unwind_keep_original_owner_until_physical_drop'))
+
+
+def resource_table_result(raw, case):
+    return call_memory_result(raw, case, _resource_table=True)
+
+
+def qualify_resource_table_memory(output, revision):
+    return qualify_call_memory(output, revision, _resource_table=True)
+
+
+CALL_RESULT_CHANNEL_BRANCH = 'feat/sdk-736-call-result-channel-memory-20261028'
+CALL_RESULT_CHANNEL_PREFIX = 'runtime::component::concurrent::host_futures::call_result_channel::native_memory_tests::'
+CALL_RESULT_CHANNEL_CASES = tuple(CALL_RESULT_CHANNEL_PREFIX + name for name in (
+    'original_store_refuses_exact_header_before_any_channel_publication',
+    'send_wakes_parked_receiver_and_header_retires_after_last_half',
+    'cancelled_halves_and_legacy_channels_preserve_value_and_wake_semantics',
+    'confirmation_refunds_but_payload_unwind_retains_original_header_charge'))
+
+
+def call_result_channel_result(raw, case):
+    return call_memory_result(raw, case, _call_result_channel=True)
+
+
+def qualify_call_result_channel_memory(output, revision):
+    return qualify_call_memory(output, revision, _call_result_channel=True)
+
+
+CALLBACK_BRANCH = 'feat/sdk-736-callback-memory-20261028'
+CALLBACK_PREFIX = 'runtime::component::concurrent::call_parameter_closure_memory_tests::'
+CALLBACK_CASES = tuple(CALLBACK_PREFIX + name for name in (
+    'callbacks_reserve_exact_original_store_layout_and_keep_legacy_shapes',
+    'callbacks_borrow_repeatedly_and_keep_original_owner_after_error',
+    'cancelled_callbacks_can_outlive_their_store_without_rebinding_payer',
+    'callback_confirmation_and_destructor_panics_preserve_physical_retirement'))
+
+
+def callback_result(raw, case):
+    return call_memory_result(raw, case, _callback_memory=True)
+
+
+def qualify_callback_memory(output, revision):
+    return qualify_call_memory(output, revision, _callback_memory=True)
+
+
+
+GUEST_START_BRANCH = 'feat/sdk-736-guest-start-memory-20261029'
+GUEST_START_PREFIX = CALL_MEMORY_PREFIX
+GUEST_START_CASES = tuple(GUEST_START_PREFIX + name for name in (
+    'guest_start_carriers_reserve_exact_layout_and_preserve_legacy_shapes',
+    'explicit_start_preparation_refusal_preserves_pending_function_and_queue',
+    'guest_starts_keep_original_owner_through_next_error_cancel_and_store_drop',
+    'guest_start_confirmation_call_and_destructor_unwinds_retire_once',
+))
+
+
+def guest_start_result(raw, case):
+    return call_memory_result(raw, case, _guest_start=True)
+
+
+def qualify_guest_start_memory(output, revision):
+    return qualify_call_memory(output, revision, _guest_start=True)
+
+
+HOST_BASELINE_BRANCH = 'test/sdk-736-host-memory-baseline-20261029'
+HOST_BASELINE_CASES = (
+    'host::native_context_reply_tests::actual_context_reply_original_refusal_keeps_exact_error_and_fresh_same_grant',
+    'host::native_host_future_tests::actual_host_future_typed_and_dynamic_boxes_retain_original_memory_while_pending',
+    'host::native_host_future_tests::actual_host_future_cancellation_cannot_credit_another_live_store',
+    'host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires',
+    'host::native_host_future_tests::actual_sync_lower_result_box_refuses_before_poll_and_fresh_budget_reuses',
+    'host::native_host_future_tests::actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse',
+    'host::native_resource_types_tests::actual_resource_types_both_admission_refusals_preserve_prior_instance_and_retry',
+    'host::native_store_tests::actual_cancelled_lift_preserves_store_owners_and_cannot_credit_another_live_store',
+    'host::native_stream_outer_tests::actual_producer_stream_conversion_reuses_budget_and_preserves_owning_escape',
+    'host::native_stream_outer_tests::actual_producer_future_any_roundtrip_and_pending_completion_preserve_custody',
+    'host::native_stream_outer_tests::actual_producer_factory_conversion_and_pending_lifetime_preserve_budget',
+)
+HOST_BASELINE_STAGES = (CALL_MEMORY_STAGES[:10] + ('host-baseline-list',)
+    + tuple(f'private-case-{i}' for i in range(11)) + CALL_MEMORY_STAGES[-3:])
+
+
+def qualify_host_memory_baseline(output, revision):
+    return qualify_call_memory(output, revision, _host_baseline=True)
+
+UNSTARTED_HOST_DROP_BRANCH = 'feat/sdk-736-unstarted-host-drop-20261029'
+UNSTARTED_HOST_DROP_PREFIX = CALL_MEMORY_PREFIX + 'unstarted_host_drop_tests::'
+UNSTARTED_HOST_DROP_CASES = tuple(UNSTARTED_HOST_DROP_PREFIX + name for name in (
+    'prepared_and_queue_refused_drop_retires_without_new_admission',
+    'queued_and_backpressured_drop_preserves_eligible_sibling',
+    'unconsumed_worker_handoff_drop_retires_only_original_store',
+    'lowered_host_drop_keeps_live_thread_until_original_cleanup',
+))
+
+
+def unstarted_host_drop_result(raw, case):
+    return call_memory_result(raw, case, _unstarted_host_drop=True)
+
+
+def qualify_unstarted_host_drop(output, revision):
+    return qualify_call_memory(output, revision, _unstarted_host_drop=True)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -2947,8 +3292,29 @@ if __name__ == '__main__':
     modes.add_argument('--http-ip-format', action='store_true')
     modes.add_argument('--lift-result-memory', action='store_true')
     modes.add_argument('--node-bootstrap', action='store_true')
+    modes.add_argument('--call-parameter-closure-memory', action='store_true')
+    modes.add_argument('--resource-table-memory', action='store_true')
+    modes.add_argument('--call-result-channel-memory', action='store_true')
+    modes.add_argument('--callback-memory', action='store_true')
+    modes.add_argument('--guest-start-memory', action='store_true')
+    modes.add_argument('--unstarted-host-drop', action='store_true')
+    modes.add_argument('--host-memory-baseline', action='store_true')
     args = parser.parse_args()
-    if args.node_bootstrap:
+    if args.unstarted_host_drop:
+        qualify_unstarted_host_drop(args.output.resolve(), args.source_commit)
+    elif args.guest_start_memory:
+        qualify_guest_start_memory(args.output.resolve(), args.source_commit)
+    elif args.host_memory_baseline:
+        qualify_host_memory_baseline(args.output.resolve(), args.source_commit)
+    elif args.callback_memory:
+        qualify_callback_memory(args.output.resolve(), args.source_commit)
+    elif args.call_result_channel_memory:
+        qualify_call_result_channel_memory(args.output.resolve(), args.source_commit)
+    elif args.resource_table_memory:
+        qualify_resource_table_memory(args.output.resolve(), args.source_commit)
+    elif args.call_parameter_closure_memory:
+        qualify_call_memory(args.output.resolve(), args.source_commit)
+    elif args.node_bootstrap:
         qualify_node_bootstrap(args.output.resolve(), args.source_commit)
     elif args.lift_result_memory:
         qualify_lift_result_memory(args.output.resolve(), args.source_commit)

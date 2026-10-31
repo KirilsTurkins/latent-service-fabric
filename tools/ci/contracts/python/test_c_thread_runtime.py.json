@@ -1,33 +1,45 @@
-{"cases":["CThreadRuntime.test_actual_empty_list_usage_schema_is_required","CThreadRuntime.test_c_diagnostic_audit_envelope_matches_original_eighteen_observation_burst_only","CThreadRuntime.test_child_entry_requires_exact_current_native_and_child_events_and_five_owners","CThreadRuntime.test_cleanup_preserves_original_failure_but_refuses_failed_success_cleanup","CThreadRuntime.test_current_native_source_equality_is_required_before_any_product_use","CThreadRuntime.test_explicit_fixed_product_source_is_checked_without_falling_back_to_v1","CThreadRuntime.test_failed_child_audit_retains_raw_page_and_live_inventory_before_original_refusal","CThreadRuntime.test_failed_invocation_completion_cannot_be_hidden_by_failed_close","CThreadRuntime.test_formatter_source_exception_is_exact_full_tree_and_digest_bound","CThreadRuntime.test_fresh_ordinary_project_is_selected_locked_and_uses_standard_calls","CThreadRuntime.test_positive_child_barrier_refuses_unknown_coverage_and_stale_or_fabricated_pairs","CThreadRuntime.test_positive_child_cursor_requires_one_frozen_session_and_retains_each_actual_loss_count","CThreadRuntime.test_real_child_owner_observation_is_exact_and_cannot_be_relabelled_pending","CThreadRuntime.test_retained_current_child_pair_is_positive_evidence_with_raw_loss_not_losslessness","CThreadRuntime.test_synchronization_observation_requires_both_real_waiters_without_relaxing_original_join"],"guards":{"CThreadRuntime.test_actual_empty_list_usage_schema_is_required":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_c_diagnostic_audit_envelope_matches_original_eighteen_observation_burst_only":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_child_entry_requires_exact_current_native_and_child_events_and_five_owners":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_cleanup_preserves_original_failure_but_refuses_failed_success_cleanup":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_current_native_source_equality_is_required_before_any_product_use":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_explicit_fixed_product_source_is_checked_without_falling_back_to_v1":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_failed_child_audit_retains_raw_page_and_live_inventory_before_original_refusal":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_failed_invocation_completion_cannot_be_hidden_by_failed_close":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_formatter_source_exception_is_exact_full_tree_and_digest_bound":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_fresh_ordinary_project_is_selected_locked_and_uses_standard_calls":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_positive_child_barrier_refuses_unknown_coverage_and_stale_or_fabricated_pairs":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_positive_child_cursor_requires_one_frozen_session_and_retains_each_actual_loss_count":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_real_child_owner_observation_is_exact_and_cannot_be_relabelled_pending":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_retained_current_child_pair_is_positive_evidence_with_raw_loss_not_losslessness":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-,"CThreadRuntime.test_synchronization_observation_requires_both_real_waiters_without_relaxing_original_join":
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-},"kind":"python","module":"tools/tests/test_c_thread_runtime.py","reviewReason":"Keep all15 cases and original assertions; additionally require one main.c translation unit and the captured byte-exact synchronization header.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625","class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "CHttpClientControls.test_libfetch_results_require_exact_case_error_checksum_and_no_bool_exit":
+      "67371d2d00ff0a86bf83da78fe37460bae5802662d5c4f73a99007bf7678311a",
+    "CThreadRuntime.test_actual_empty_list_usage_schema_is_required":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_c_diagnostic_audit_envelope_matches_original_eighteen_observation_burst_only":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_child_entry_requires_exact_current_native_and_child_events_and_five_owners":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_cleanup_preserves_original_failure_but_refuses_failed_success_cleanup":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_current_native_source_equality_is_required_before_any_product_use":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_explicit_fixed_product_source_is_checked_without_falling_back_to_v1":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_failed_child_audit_retains_raw_page_and_live_inventory_before_original_refusal":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_failed_invocation_completion_cannot_be_hidden_by_failed_close":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_formatter_source_exception_is_exact_full_tree_and_digest_bound":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_fresh_ordinary_project_is_selected_locked_and_uses_standard_calls":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_positive_child_barrier_refuses_unknown_coverage_and_stale_or_fabricated_pairs":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_positive_child_cursor_requires_one_frozen_session_and_retains_each_actual_loss_count":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_real_child_owner_observation_is_exact_and_cannot_be_relabelled_pending":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_retained_current_child_pair_is_positive_evidence_with_raw_loss_not_losslessness":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485",
+    "CThreadRuntime.test_synchronization_observation_requires_both_real_waiters_without_relaxing_original_join":
+      "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_c_thread_runtime.py",
+  "reviewReason":"Keep all15 cases and original assertions; additionally require one main.c translation unit and the captured byte-exact synchronization header. One closed libfetch result-parser negative control; every prior case and guard retained.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "67371d2d00ff0a86bf83da78fe37460bae5802662d5c4f73a99007bf7678311a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
+    "e1e131517b1d01089a9b1df46f57639da7523b806d17f2c2f67cddb0f5f42485":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:2be903e58e8891d808bbcbead97fda3654ac15cc0d2337b999ed19c3bd322625","class:setup-sha256:6608c6d59006b517edcc69dd775148dc3653a28a82ffd7d5c023ef18b5b6cecf"]}
+  }
+}

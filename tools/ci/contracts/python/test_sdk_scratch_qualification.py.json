@@ -1,36 +1,13 @@
-{
-  "storageCases":"guard-keys",
-  "guards":{
-    "ScratchQualification.test_builder_uses_normal_default_runtime_and_only_rust_dotnet_offline_flags":
-      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782",
-    "ScratchQualification.test_c_child_reuses_exact_normal_bundle_and_pinned_compiler_without_native_build":
-      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782",
-    "ScratchQualification.test_c_componentization_refusal_cannot_become_runtime_unsupported_or_signed_success":
-      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782",
-    "ScratchQualification.test_changed_lock_or_manifest_during_fetch_is_not_build_input":
-      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782",
-    "ScratchQualification.test_dotnet_scratch_installs_same_pinned_runtime_target_before_closed_compiler":
-      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782",
-    "ScratchQualification.test_exact_normal_native_companions_and_node_are_required_before_new_compile":
-      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782",
-    "ScratchQualification.test_existing_compatibility_report_keeps_unknown_and_trap_separate_from_actual_unsupported":
-      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782",
-    "ScratchQualification.test_other_languages_do_not_acquire_cargo_dependencies":
-      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782",
-    "ScratchQualification.test_owning_rust_child_reuses_normal_products_without_another_native_build_or_longer_parent":
-      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782",
-    "ScratchQualification.test_public_bundle_contains_observed_products_and_no_keys_caches_or_original_library_source":
-      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782",
-    "ScratchQualification.test_rehashed_normal_receipt_cannot_hide_foreign_source_native_or_signer_payload":
-      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782",
-    "ScratchQualification.test_rust_download_uses_owned_lock_not_workspace_and_keeps_compilation_offline":
-      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_sdk_scratch_qualification.py",
-  "reviewReason":"Repair authenticated closed-runtime-compile E0463 missing std/wasm32-unknown-unknown in actual installer-only0b97 run39517523039. Add only exact existing Rust1.97.1 wasm32 target and dependency-cache prerequisites from both maintained sibling jobs; all original workflow commands, conditions, budgets, upload paths and guest/native programme restore exactly. New source control fails original job and proves target/cache ordering and equality across all three installers.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:57ab7fe85de9bed60a22bbfe0bb40a0811e84bc8ee7779aa00fd1a302fe0e8fb","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"storageCases":"guard-keys","guards":{"ScratchQualification.test_builder_uses_normal_default_runtime_and_only_rust_dotnet_offline_flags":
+      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782","ScratchQualification.test_c_child_reuses_exact_normal_bundle_and_pinned_compiler_without_native_build":
+      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782","ScratchQualification.test_c_componentization_refusal_cannot_become_runtime_unsupported_or_signed_success":
+      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782","ScratchQualification.test_changed_lock_or_manifest_during_fetch_is_not_build_input":
+      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782","ScratchQualification.test_dotnet_scratch_installs_same_pinned_runtime_target_before_closed_compiler":
+      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782","ScratchQualification.test_exact_normal_native_companions_and_node_are_required_before_new_compile":
+      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782","ScratchQualification.test_existing_compatibility_report_keeps_unknown_and_trap_separate_from_actual_unsupported":
+      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782","ScratchQualification.test_other_languages_do_not_acquire_cargo_dependencies":
+      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782","ScratchQualification.test_owning_rust_child_reuses_normal_products_without_another_native_build_or_longer_parent":
+      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782","ScratchQualification.test_public_bundle_contains_observed_products_and_no_keys_caches_or_original_library_source":
+      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782","ScratchQualification.test_rehashed_normal_receipt_cannot_hide_foreign_source_native_or_signer_payload":
+      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782","ScratchQualification.test_rust_download_uses_owned_lock_not_workspace_and_keeps_compilation_offline":
+      "1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782"},"kind":"python","module":"tools/tests/test_sdk_scratch_qualification.py","reviewReason":"Repair authenticated closed-runtime-compile E0463 missing std/wasm32-unknown-unknown in actual installer-only0b97 run39517523039. Add only exact existing Rust1.97.1 wasm32 target and dependency-cache prerequisites from both maintained sibling jobs; all original workflow commands, conditions, budgets, upload paths and guest/native programme restore exactly. New source control fails original job and proves target/cache ordering and equality across all three installers.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"1052442b470d5f428404a7f9703440c17f3944342e1f78ddc2fe802974f6d782":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:57ab7fe85de9bed60a22bbfe0bb40a0811e84bc8ee7779aa00fd1a302fe0e8fb","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

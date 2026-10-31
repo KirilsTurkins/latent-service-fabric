@@ -208,6 +208,8 @@ class Compiler:
         if threaded:
             from tools.c_guest import threading
             threading.selected({'threadingProfile': threading_profile})
+        if runtime_profile == standard_facilities.FETCH_PROFILE and not threaded:
+            raise ValueError('c-libfetch-http-requires-cooperative-threading')
         if threaded and ('c-threading-transformer' not in self.paths or static_libraries):
             raise ValueError('c-threading-requires-transformer-and-no-static-archives')
         if embed_directories and (language_standard != 'c23' or len(embed_directories) > 64):
@@ -233,6 +235,7 @@ class Compiler:
                 defines = threading.linked_defines(defines, timed_clock=True)
             else:
                 defines = threading.linked_defines(defines)
+        defines = standard_facilities.compiler_defines(runtime_profile, defines)
         self.validate_static_libraries(static_libraries, destination)
         core, component = destination / "core.wasm", destination / "component.wasm"
         command = ["cc", "-std=" + language_standard, "-target", "wasm32-wasi", "-O2",
@@ -240,6 +243,9 @@ class Compiler:
                    "-Wl,--no-entry", "-Wl,--export-memory", "-Wl,-z,stack-size=65536",
                    f"-Wl,--max-memory={memory_bytes}", "-I", str(generated),
                    "-I", str(self.sdk / "include"), *map(str, sources)]
+        if runtime_profile == standard_facilities.FETCH_PROFILE:
+            # Zig maps this to wasm-ld -s: omit debug/name metadata, not code.
+            command.append('-Wl,--strip-debug')
         thread_flags = []
         if threaded:
             # The post-link template-copy body is deliberately opaque to its
@@ -283,6 +289,17 @@ class Compiler:
             self.isolation.receipt["preprocessorInputs"] = sorted(
                 {row["path"]: row for row in observed}.values(), key=lambda row: row["path"])
         self.run("zig", *command)
+        if runtime_profile == standard_facilities.FETCH_PROFILE and self.commands is not None:
+            from tools.rust_capsule_project import read_file
+            payload = read_file(core, 64 * 1024 * 1024)
+            observation = {'formatVersion': 1, 'size': len(payload), 'digest': digest(payload),
+                           'headerHex': payload[:8].hex(),
+                           'originalEnvelopeBytes': 20 + len(public.encode('utf-8')) + len(payload),
+                           'maximumEnvelopeBytes': 1024 * 1024,
+                           'linkerFlags': ['-Wl,--strip-debug']}
+            (self.commands.output / 'c-original-core.json').write_text(
+                json.dumps(observation, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+            (self.commands.output / 'c-original-core.wasm').write_bytes(payload)
         encoded_core = core
         if threaded:
             derived = destination / 'c-threading'

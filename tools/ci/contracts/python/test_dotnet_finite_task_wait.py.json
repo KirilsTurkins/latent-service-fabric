@@ -1,5 +1,5 @@
 {
-  "cases":["FiniteTaskWaitTests.test_finite_receipt_refuses_timer_leaks_synthetic_completion_and_changed_token_precedence","FiniteTaskWaitTests.test_four_explicit_runtime_facets_select_the_finite_rewrite_without_http","FiniteTaskWaitTests.test_missing_entropy_keeps_the_original_infinite_only_rewrite","FiniteTaskWaitTests.test_missing_wall_keeps_the_original_infinite_only_rewrite","FiniteTaskWaitTests.test_old_or_cross_selected_receipts_cannot_claim_finite_support"],
+  "storageCases":"guard-keys",
   "guards":{
     "FiniteTaskWaitTests.test_finite_receipt_refuses_timer_leaks_synthetic_completion_and_changed_token_precedence":
       "bac33d939fdcdab8bb611bbf1c49eafa4e14534bb19c883b1796935174f64889",

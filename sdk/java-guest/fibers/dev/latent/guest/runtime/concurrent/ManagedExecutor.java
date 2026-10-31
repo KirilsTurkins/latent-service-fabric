@@ -27,7 +27,11 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private static final class Item {
         final Runnable command;
         final Activation.Lease queued;
-        Item(Runnable command, Activation.Lease queued) { this.command = command; this.queued = queued; }
+        final boolean actionAccepted;
+        final boolean futureAccepted;
+        Item(Runnable command, Activation.Lease queued, boolean actionAccepted, boolean futureAccepted) {
+            this.command = command; this.queued = queued; this.actionAccepted = actionAccepted; this.futureAccepted = futureAccepted;
+        }
     }
 
     ManagedExecutor(int parallelism, ThreadFactory factory) {
@@ -52,14 +56,16 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         Activation.Lease queued = null;
         FutureTask<?> future = command instanceof FutureTask<?> ? (FutureTask<?>)command : null;
         boolean acceptedResult = false;
+        boolean acceptedAction = false;
         Item item = null;
         boolean installed = false;
         try {
             if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
                 throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
             queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
-            if (future != null) acceptedResult = future.accept();
-            item = new Item(command, queued);
+            if (future != null) acceptedResult = future.acceptQueueCopy();
+            acceptedAction = CompletableFuture.acceptedByQueue(command);
+            item = new Item(command, queued, acceptedAction, acceptedResult);
             queue.addLast(item);
             pendingWork++;
             installed = true;
@@ -69,8 +75,9 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             if (!installed || queue.remove(item)) {
                 if (installed) pendingWork--;
                 if (queued != null) queued.close();
-                if (acceptedResult) future.rejectAcceptance();
-                CompletableFuture.rejectedBeforeAcceptance(command);
+                if (acceptedResult) future.removeQueueCopy(true);
+                CompletableFuture.removedFromQueue(command, acceptedAction, true);
+                CompletableFuture.rejectedBeforeAcceptance(command, this);
             }
             throw error;
         }
@@ -107,7 +114,14 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                 }
                 if (!interrupting) Thread.interrupted();
                 try { item.command.run(); }
-                finally { synchronized (this) { running--; pendingWork--; notifyAll(); } }
+                finally {
+                    try {
+                        if (item.futureAccepted) ((FutureTask<?>)item.command).removeQueueCopy(false);
+                    } finally {
+                        try { CompletableFuture.removedFromQueue(item.command, item.actionAccepted, false); }
+                        finally { synchronized (this) { running--; pendingWork--; notifyAll(); } }
+                    }
+                }
                 Activation.checkpoint();
             }
         } finally {
@@ -142,10 +156,13 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     @Override public synchronized List<Runnable> shutdownNow() {
         shutdown = interrupting = true;
         List<Runnable> pending = new ArrayList<>(queue.size());
-        while (!queue.isEmpty()) { Item item = queue.removeFirst(); pendingWork--; pending.add(item.command); item.queued.close(); }
+        while (!queue.isEmpty()) {
+            Item item = queue.removeFirst(); pendingWork--; pending.add(item.command); item.queued.close();
+            if (item.futureAccepted) ((FutureTask<?>)item.command).removeQueueCopy(true);
+            CompletableFuture.removedFromQueue(item.command, item.actionAccepted, true);
+        }
         // Standard shutdownNow returns queued tasks without cancelling them.
         // They no longer own an accepted pending execution in this activation.
-        for (Runnable command : pending) if (command instanceof FutureTask<?>) ((FutureTask<?>)command).rejectAcceptance();
         for (Thread worker : workers) worker.interrupt();
         notifyAll();
         settleIfTerminated();

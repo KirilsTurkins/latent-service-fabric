@@ -1,5 +1,5 @@
 {
-"cases":["PublishedDelayControls.test_exact_published_fixture_and_actual_strict_types","PublishedDelayControls.test_original_graph_bindings_and_public_only_collector"],
+"storageCases":"guard-keys",
 "guards":{
 "PublishedDelayControls.test_exact_published_fixture_and_actual_strict_types":
       "873b514157549998cac8b034fb585537a5f942014546f74e4ca682622ca2371b",

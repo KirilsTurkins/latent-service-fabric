@@ -12,8 +12,8 @@ from tools.rust_capsule_project import ROOT, read_file
 PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.7"
-COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v22-lift-result-memory-cache-repair"
-RECORD_SHA256 = "b67f9b277af4fc8a8e4efefa8237c739e640ff75b11a3ce0f70a3c4a07c2022f"
+COHORT = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v28-unstarted-host-drop-cache-repair"
+RECORD_SHA256 = "e5a26ccd7eff9185ce58b2185e8795e52eed795b678d9d79f1dc46c391720877"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
@@ -58,8 +58,8 @@ POSTIMAGES = {
         "bytes": 106434
     },
     "src/runtime/component/concurrent.rs": {
-        "sha256": "8b601bc079dea80f20e957a81ad216c1b8a4b04f6e854bbb7367db38138c1758",
-        "bytes": 248115
+        "sha256": "577a046f2191b02642d5b4fb0587eef40ee1826d4303654b119192f38741a294",
+        "bytes": 327146
     },
     "src/runtime/component/dynamic_memory.rs": {
         "sha256": "70ab7ecf2fba9a29be46f4750e28ef404acc991d36d708939b022bce1872d57d",
@@ -214,8 +214,8 @@ POSTIMAGES = {
         "bytes": 1094
     },
     "src/runtime/component/concurrent/host_futures/mod.rs": {
-        "sha256": "bcf0a25ac5907ef9e6347b792dc5bf325bd8e3aefa7428509f3b1ca6433db84a",
-        "bytes": 2750
+        "sha256": "1ba25ca7993824020374671961551d6f87d3d0f946a07360aeeb2011a975806b",
+        "bytes": 2786
     },
     "src/runtime/component/concurrent/host_futures/paid_arc.rs": {
         "sha256": "6e73d28aa2f7ad007ba926d87edd66063d9e882da66d4ed104025bbe71ee19ad",
@@ -242,12 +242,20 @@ POSTIMAGES = {
         "bytes": 9353
     },
     "README.latent.md": {
-        "sha256": "0e82888db205683fb37bb4d42a1e8a6484632b32eac09a0ea14bf28ab6fbc395",
-        "bytes": 38262
+        "sha256": "ed1ad3622035fbee5993cd42c876434d5e6622442b8745ee55c90ba0cf00362a",
+        "bytes": 46045
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "825eef371c02370e5c473a2bf2fb1a36115632532728f06d4e00bdf46ca7c5b2",
-        "bytes": 546930
+        "sha256": "0a5f23d10a30d4c510fe0b20260df310e3d5d39c579cdb53298dff81022f5b81",
+        "bytes": 645870
+    },
+    "src/runtime/component/resource_table.rs": {
+        "sha256": "2b08c8101f9cf35c1961f2693ba962329712898e7e4f30b0a5c5b46e43454042",
+        "bytes": 35071
+    },
+    "src/runtime/component/concurrent/host_futures/call_result_channel.rs": {
+        "sha256": "6e2b50b37dbbe9515c2a1c9e79eda6d7562c5687ee30680646d6a5ec3ab91ab0",
+        "bytes": 15691
     }
 }
 DEPENDENCY = {"path": PROVIDER, "version": "=48.0.7", "default-features": False,
@@ -347,7 +355,7 @@ def verify(root: Path = ROOT) -> dict:
                 for row in record["originalFiles"]}
     require(len(record["originalFiles"]) == len(original) == 250, "original-file-set")
     expected = {**original, **POSTIMAGES, "UPSTREAM.latent.json": identity(raw)}
-    require(len(expected) == 275, "maintained-file-set")
+    require(len(expected) == 276, "maintained-file-set")
     actual, total = {}, 0
     for ordinal, path in enumerate(source.rglob("*")):
         require(ordinal < 1024 and not path.is_symlink(), "source-tree-bound-or-link")
@@ -374,8 +382,18 @@ def verify(root: Path = ROOT) -> dict:
     package = tomllib.loads(read_file(source / "Cargo.toml", 128 * 1024).decode())["package"]
     require(package["name"] == NAME and package["version"] == VERSION
             and package["license"] == "Apache-2.0 WITH LLVM-exception", "package-identity")
+    channel = record["callResultChannelUpstream"]
+    require(channel["name"] == "futures-channel" and channel["version"] == "0.3.34"
+            and channel["registryArchive"] == "https://static.crates.io/crates/futures-channel/futures-channel-0.3.34.crate"
+            and channel["registrySha256"] == "b1f9e3d69d39e4862ffed03ed071a76f9a13ba1d9109d355b0f0aa6b15e393c4",
+            "call-result-upstream-identity")
+    channel_lock = [row for row in lock["package"] if row["name"] == channel["name"]]
+    require(len(channel_lock) == 1 and channel_lock[0]["version"] == channel["version"]
+            and channel_lock[0].get("checksum") == channel["registrySha256"]
+            and channel_lock[0].get("source") == "registry+https://github.com/rust-lang/crates.io-index",
+            "call-result-channel-lock")
     cache_backport = verify_cache_dependency(root, record)
-    return {"cacheSecurityBackport": cache_backport,
+    return {"callResultChannelUpstream": channel, "cacheSecurityBackport": cache_backport,
             "package": NAME, "version": VERSION, "recordSha256": RECORD_SHA256,
             "nativeCohort": COHORT, "upstreamArchive": record["registryArchive"],
             "upstreamSha256": record["registrySha256"],

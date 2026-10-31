@@ -320,6 +320,47 @@ class FinalComponentInspection(unittest.TestCase):
             self.assertFalse((output / "compatibility-failure-report.json").exists())
             self.assertFalse((output / "compatibility-report-failed.json").exists())
 
+        from tools.c_application_dependencies import CDependencyError, archive_members
+        from tools.application_dependency_store import DependencyError
+        from tools.tests.test_c_application_dependencies import archive
+        try:
+            archive_members(archive([('native.o/', b'\x7fELF')]))
+        except CDependencyError as native:
+            causes = [native]
+        else:
+            self.fail('actual native-object refusal required')
+        causes += [CDependencyError(code) for code in c.C_DEPENDENCY_REFUSALS]
+        for cause in causes:
+            with self.subTest(code=cause.code), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary)
+                (output / 'source-inputs.json').write_bytes(b'captured C input inventory')
+                build.failure_report(output, 'c', 'application-dependencies', cause=cause)
+                actual = c.read((output / 'compatibility-report.json').read_bytes())
+                known, unknown = actual['findings']
+                self.assertEqual(known['diagnostic'], {'origin': cause.origin, 'code': cause.code})
+                self.assertEqual(known['classification'], c.C_DEPENDENCY_REFUSALS[cause.code])
+                self.assertEqual((known['evidence'], actual['status'], actual['authority']), ('model', 'blocked', 'none'))
+                self.assertEqual(unknown['classification'], 'unresolved-behavior')
+                self.assertIn(cause.origin + '/' + cause.code, c.present(actual))
+                with self.assertRaises(DevError): sample([known], language='rust')
+                changed = copy.deepcopy(known)
+                for key, value in (('code', 'https://secret.invalid'), ('origin', 'other')):
+                    changed['diagnostic'][key] = value
+                    with self.assertRaises(DevError): c.validate_finding(changed)
+                    changed = copy.deepcopy(known)
+        for language, cause in (('c', DependencyError('c-static-archive-host-native-member')),
+                ('c', CDependencyError('unknown-process-assumption')),
+                ('c', CDependencyError({})),
+                ('c', ValueError('https://user:password@private.invalid')),
+                ('rust', CDependencyError('c-static-archive-host-native-member'))):
+            with self.subTest(language=language, kind=type(cause).__name__), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary)
+                (output / 'source-inputs.json').write_bytes(b'captured source')
+                build.failure_report(output, language, 'compile', cause=cause)
+                actual = c.read((output / 'compatibility-report.json').read_bytes())
+                self.assertEqual(actual['findings'], [c.finding('unresolved-behavior', 'compile', 'not-evaluated')])
+                self.assertNotIn('private.invalid', c.present(actual))
+
     def test_raw_diagnostic_retains_shared_failure_and_raw_component_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)

@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "repository": "KirilsTurkins/lsf-checkout",
+  "builtHead": "1d698c70938869d668a809ef4f9670156bf18809",
+  "publishedRevision": "842365d0a25bf5a868311e4cb89c908bdcab4bb8",
+  "builtTree": "9dc7521dc1111fe9ac5037a37e5bfff2eb77db6e",
+  "publishedTree": "9dc7521dc1111fe9ac5037a37e5bfff2eb77db6e",
+  "run": 40884108136,
+  "job": 123483100746,
+  "jobConclusion": "success",
+  "node": "24.19.0",
+  "npm": "11.17.0",
+  "existingBuildFormatLintJestAndStrictDistReadmeComparisonPassed": true,
+  "artifactReview": {
+    "archive": "focused-1d698.zip",
+    "bytes": 411942,
+    "sha256": "cd96a3aa58ef0b8245e05958f0602230ec4031367d9bc6fb521be0339aa6c8cf",
+    "members": 7,
+    "payloads": {
+      "_temp/deepmerge-installed.json": {
+        "bytes": 524,
+        "sha256": "89466022700ea9f813caeb111c6073ef5c125fb535f226c1ba546163db62c42b"
+      },
+      "lsf-checkout/lsf-checkout/dist/index.js": {
+        "bytes": 1465687,
+        "sha256": "116aa6f7b8efa570e95179673c8d067b39069df63915f0b805a413723b798cac"
+      },
+      "lsf-checkout/lsf-checkout/dist/package.json": {
+        "bytes": 23,
+        "sha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a"
+      },
+      "lsf-checkout/lsf-checkout/dist/problem-matcher.json": {
+        "bytes": 253,
+        "sha256": "31430dcd64d833e6baa706d65803cb80ee2fb6ac20a35267b086218bbc210cb7"
+      },
+      "lsf-checkout/lsf-checkout/README.md": {
+        "bytes": 14138,
+        "sha256": "3df94d90d0df6df603a549cc779bc6cab4b21f8deef82eb6fef1f4d88b788174"
+      },
+      "lsf-checkout/lsf-checkout/package.json": {
+        "bytes": 1961,
+        "sha256": "64f50ca0c2e03efe66a47042c2347978b66d64ce3585d0a9f1f3047ac95e1484"
+      },
+      "lsf-checkout/lsf-checkout/package-lock.json": {
+        "bytes": 291709,
+        "sha256": "150804961399dd5d5689b87aaf7d1f7963dbb14dd4993851ee4a34893d860be3"
+      }
+    },
+    "installed": {
+      "kind": "installed-source-assertion",
+      "sourceCommit": "1d698c70938869d668a809ef4f9670156bf18809",
+      "node": "24.19.0",
+      "packageVersion": "4.3.1",
+      "repairSha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+      "installedPostimages": {
+        "index.js": "ba2a6c79e67e10f45a32cfe8f5ea5c5607dc4718be2b37956e9202ea4cdbe1bc",
+        "dist/cjs.js": "c5e9c1f08e7a3b589010133108a3c625806358fa9e1bdaa11f07e9e756f19da0",
+        "dist/umd.js": "b12652d3654f47b08ae43e8b390b66c55987ace6d9a6167c3240744ffa0f28f9"
+      },
+      "actionBuildOrSignedSDKQualified": false
+    },
+    "installedSourceVerified": true,
+    "existingJestTestsPassed": 128,
+    "existingJestSuitesPassed": 10
+  },
+  "sourceRole": "qualified-action-build-evidence; not signed SDK execution or a policy exception",
+  "qualifiedArtifactNotAllForkSource": "Seven artifact members were checked by Root. The repaired TAR/recipe/source are separately bound by the immutable published Git tree."
+}

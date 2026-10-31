@@ -1,7 +1,7 @@
 name: Unchanged published Java scheduled semaphore through the normal signed node
 on:
   push:
-    branches: ['feat/java-scheduled-executor-20261026']
+    branches: ['feat/java-scheduled-executor-20261026', 'feat/java-cf-shutdown-now-20261028', 'feat/java-future-queue-20261028']
     paths:
       - '.github/workflows/java-scheduled-library.yml'
       - 'tools/qualify_java_scheduled_library.py'
@@ -26,7 +26,7 @@ jobs:
   scheduled-library:
     name: One ordinary scheduled component and sixteen signed calls
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: ${{ github.ref_name != 'feat/java-scheduled-executor-20261026' && 25 || 45 }}
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -37,7 +37,7 @@ jobs:
       CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
       CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
     steps:
-      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
@@ -77,11 +77,28 @@ jobs:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
       - name: Capture and compile the ordinary semaphore then run only sixteen signed calls
+        if: github.ref_name == 'feat/java-scheduled-executor-20261026'
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           python3 -B tools/qualify_java_scheduled_library.py
           --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/java-scheduled-library"
+      - name: Qualify ordinary shutdownNow ownership with four signed calls
+        if: github.ref_name == 'feat/java-cf-shutdown-now-20261028'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/qualify_java_scheduled_library.py
+          --shutdown-now --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/java-scheduled-library"
+      - name: Qualify ordinary FutureTask queue copies with one Result and four signed calls
+        if: github.ref_name == 'feat/java-future-queue-20261028'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/qualify_java_scheduled_library.py
+          --future-queue --source-commit "${{ github.sha }}"
           --output "$RUNNER_TEMP/java-scheduled-library"
       - name: Retain only bounded public observations and source identities
         if: always()

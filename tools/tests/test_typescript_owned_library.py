@@ -38,6 +38,20 @@ class TypeScriptOwnedLibraryTests(unittest.TestCase):
         original='def original(library_root):\n'+''.join(line[4:] for line in fixture['block'].splitlines(keepends=True))
         old=ast.parse(original).body[0]
         current=ast.parse(inspect.getsource(native_build.validated_library)).body[0]
+        # Authenticate only the reviewed recipe-call extension before comparing
+        # the complete historical validator. Every old inventory/byte/header/
+        # archive check and the original expected fixture remain unchanged.
+        reviewed = ast.parse("library_recipe_equivalence(name,read_file(ROOT/name),identity)").body
+        historical = ast.parse("raise ValueError('typescript-native-library-recipe-drift')").body
+        predicate = ast.parse("file_identity(ROOT/name) != identity",mode='eval').body
+        found = 0
+        for node in ast.walk(current):
+            if isinstance(node,ast.If) and ast.dump(ast.Module(body=node.body,type_ignores=[])) == ast.dump(ast.Module(body=reviewed,type_ignores=[])):
+                self.assertEqual(ast.dump(node.test),ast.dump(predicate))
+                self.assertEqual(node.orelse,[])
+                node.body = historical
+                found += 1
+        self.assertEqual(found,1)
         self.assertEqual(ast.dump(ast.Module(body=current.body[1:-1],type_ignores=[])),
                          ast.dump(ast.Module(body=old.body,type_ignores=[])))
 

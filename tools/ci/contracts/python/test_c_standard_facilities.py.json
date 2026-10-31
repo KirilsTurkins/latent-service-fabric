@@ -19,6 +19,10 @@
       "763f2b24fa9a6f09cf560484533c80400cc26feddeaa94a320b7f36ced8d3829",
     "StandardFacilities.test_external_standard_library_probe_compiles_only_captured_closure_and_explicit_profile":
       "763f2b24fa9a6f09cf560484533c80400cc26feddeaa94a320b7f36ced8d3829",
+    "StandardFacilities.test_libfetch_profile_derives_only_typed_streams_and_preserves_dependency_selection":
+      "763f2b24fa9a6f09cf560484533c80400cc26feddeaa94a320b7f36ced8d3829",
+    "StandardFacilities.test_libfetch_unthreaded_build_refuses_before_binding_generation_or_output":
+      "763f2b24fa9a6f09cf560484533c80400cc26feddeaa94a320b7f36ced8d3829",
     "StandardFacilities.test_missing_runtime_grant_requires_rejected_zero_execution_receipt":
       "763f2b24fa9a6f09cf560484533c80400cc26feddeaa94a320b7f36ced8d3829",
     "StandardFacilities.test_profile_is_explicit_closed_and_part_of_original_source":
@@ -32,7 +36,7 @@
   },
   "kind":"python",
   "module":"tools/tests/test_c_standard_facilities.py",
-  "reviewReason":"Add offset-preserving C derived-WIT comment/literal controls while preserving all prior authority, source, profile and receipt obligations.",
+  "reviewReason":"Add offset-preserving C derived-WIT comment/literal controls while preserving all prior authority, source, profile and receipt obligations. Add only typed libfetch stream-profile derivation and refusal before unthreaded binding/output effects; preserve every existing case, guard and execution obligation.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
     "763f2b24fa9a6f09cf560484533c80400cc26feddeaa94a320b7f36ced8d3829":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:269d849038de39837a01ee18d467af4cf0b0d88e876ffaddd9e427168158f71e","class:setup-sha256:e66d634e4c04416fb18984b391c56214c557911adecd26b7ec5424751b7dfc03"],"skipSites":[]}

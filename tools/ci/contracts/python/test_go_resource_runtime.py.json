@@ -1,13 +1,6 @@
-{"cases":["GoResourceRuntime.test_callback_facilities_are_ordinary_and_random_bytes_are_not_logged_or_returned","GoResourceRuntime.test_fresh_go_build_requires_v5_current_material_bindings_and_original_package_inventory","GoResourceRuntime.test_go_keeps_original_owner_limits_scalar_imports_and_separate_activation_services","GoResourceRuntime.test_go_original_world_result_namespace_and_component_are_not_ts_projection","GoResourceRuntime.test_missing_random_optional_import_or_foreign_language_fails_before_configuration"],"guards":{"GoResourceRuntime.test_callback_facilities_are_ordinary_and_random_bytes_are_not_logged_or_returned":
-  "0cfc2f61a976eca2a786f3a1f3fbfb7de99633efc91d03bd64e5a8e62ac3392e"
-,"GoResourceRuntime.test_fresh_go_build_requires_v5_current_material_bindings_and_original_package_inventory":
-  "0cfc2f61a976eca2a786f3a1f3fbfb7de99633efc91d03bd64e5a8e62ac3392e"
-,"GoResourceRuntime.test_go_keeps_original_owner_limits_scalar_imports_and_separate_activation_services":
-  "0cfc2f61a976eca2a786f3a1f3fbfb7de99633efc91d03bd64e5a8e62ac3392e"
-,"GoResourceRuntime.test_go_original_world_result_namespace_and_component_are_not_ts_projection":
-  "0cfc2f61a976eca2a786f3a1f3fbfb7de99633efc91d03bd64e5a8e62ac3392e"
-,"GoResourceRuntime.test_missing_random_optional_import_or_foreign_language_fails_before_configuration":
-  "0cfc2f61a976eca2a786f3a1f3fbfb7de99633efc91d03bd64e5a8e62ac3392e"
-},"kind":"python","module":"tools/tests/test_go_resource_runtime.py","reviewReason":"Add source-prepared Go13 resource/runtime programme and five adversarial profile/build controls; retain all original TypeScript cases and pending audit/observer barriers. Publication of the owning workflow remains held separately.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "0cfc2f61a976eca2a786f3a1f3fbfb7de99633efc91d03bd64e5a8e62ac3392e"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:447360201f439d08ab391f1615156a3fc578c91c8278c6630beab08d16a21261","class:setup-sha256:36051699afb828a4ffaff909a8e846b3b0ed530cc0baa579ae5749827ea3d6cc"],"skipSites":[]}}}
+{"storageCases":"guard-keys","guards":{"GoResourceRuntime.test_callback_facilities_are_ordinary_and_random_bytes_are_not_logged_or_returned":
+      "0cfc2f61a976eca2a786f3a1f3fbfb7de99633efc91d03bd64e5a8e62ac3392e","GoResourceRuntime.test_fresh_go_build_requires_v5_current_material_bindings_and_original_package_inventory":
+      "0cfc2f61a976eca2a786f3a1f3fbfb7de99633efc91d03bd64e5a8e62ac3392e","GoResourceRuntime.test_go_keeps_original_owner_limits_scalar_imports_and_separate_activation_services":
+      "0cfc2f61a976eca2a786f3a1f3fbfb7de99633efc91d03bd64e5a8e62ac3392e","GoResourceRuntime.test_go_original_world_result_namespace_and_component_are_not_ts_projection":
+      "0cfc2f61a976eca2a786f3a1f3fbfb7de99633efc91d03bd64e5a8e62ac3392e","GoResourceRuntime.test_missing_random_optional_import_or_foreign_language_fails_before_configuration":
+      "0cfc2f61a976eca2a786f3a1f3fbfb7de99633efc91d03bd64e5a8e62ac3392e"},"kind":"python","module":"tools/tests/test_go_resource_runtime.py","reviewReason":"Add source-prepared Go13 resource/runtime programme and five adversarial profile/build controls; retain all original TypeScript cases and pending audit/observer barriers. Publication of the owning workflow remains held separately.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"0cfc2f61a976eca2a786f3a1f3fbfb7de99633efc91d03bd64e5a8e62ac3392e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:447360201f439d08ab391f1615156a3fc578c91c8278c6630beab08d16a21261","class:setup-sha256:36051699afb828a4ffaff909a8e846b3b0ed530cc0baa579ae5749827ea3d6cc"],"skipSites":[]}}}

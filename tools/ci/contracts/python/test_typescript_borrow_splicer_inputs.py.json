@@ -1,9 +1,18 @@
-{"cases":["CompleteBorrowSplicerTests.test_changed_whole_archive_refuses_before_output","CompleteBorrowSplicerTests.test_complete_projection_keeps_original_modules_and_all_five_receipts","CompleteBorrowSplicerTests.test_missing_link_encrypted_or_oversized_receipt_refuses_before_writes"],"guards":{"CompleteBorrowSplicerTests.test_changed_whole_archive_refuses_before_output":
-  "a232d2de4ff6c0ce2d6fd0b1a4ae81353b77e34eebc4eb8f9a92e97a7c2f8339"
-,"CompleteBorrowSplicerTests.test_complete_projection_keeps_original_modules_and_all_five_receipts":
-  "a232d2de4ff6c0ce2d6fd0b1a4ae81353b77e34eebc4eb8f9a92e97a7c2f8339"
-,"CompleteBorrowSplicerTests.test_missing_link_encrypted_or_oversized_receipt_refuses_before_writes":
-  "a232d2de4ff6c0ce2d6fd0b1a4ae81353b77e34eebc4eb8f9a92e97a7c2f8339"
-},"kind":"python","module":"tools/tests/test_typescript_borrow_splicer_inputs.py","reviewReason":"Three focused complete-splicer projection and refusal controls for the actual missing-receipt failure; no compiler or native execution","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "a232d2de4ff6c0ce2d6fd0b1a4ae81353b77e34eebc4eb8f9a92e97a7c2f8339"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6291ecf74646f7b0a629a93a654e5dc97d2c30fd1caf888f5e8f55743e28e41d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+"storageCases":"guard-keys",
+"guards":{
+"CompleteBorrowSplicerTests.test_changed_whole_archive_refuses_before_output":
+      "a232d2de4ff6c0ce2d6fd0b1a4ae81353b77e34eebc4eb8f9a92e97a7c2f8339",
+"CompleteBorrowSplicerTests.test_complete_projection_keeps_original_modules_and_all_five_receipts":
+      "a232d2de4ff6c0ce2d6fd0b1a4ae81353b77e34eebc4eb8f9a92e97a7c2f8339",
+"CompleteBorrowSplicerTests.test_missing_link_encrypted_or_oversized_receipt_refuses_before_writes":
+      "a232d2de4ff6c0ce2d6fd0b1a4ae81353b77e34eebc4eb8f9a92e97a7c2f8339"
+},
+"kind":"python",
+"module":"tools/tests/test_typescript_borrow_splicer_inputs.py",
+"reviewReason":"Three focused complete-splicer projection and refusal controls for the actual missing-receipt failure; no compiler or native execution",
+"schemaVersion":"latent.ci.contracts.v2",
+"guardDefinitions":{
+"a232d2de4ff6c0ce2d6fd0b1a4ae81353b77e34eebc4eb8f9a92e97a7c2f8339":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6291ecf74646f7b0a629a93a654e5dc97d2c30fd1caf888f5e8f55743e28e41d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+}
+}

@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_host_stream_kernel_stream_objects.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Append only the closed six-object native IRQ geometry producer/data-reader mode; preserve85/116/457 before88/119/463, all old routes and bounds; no funding, dynamic-topology, fit or runtime credit.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4c097136b14d1a67173e526f38bce6109912118357224be38bd75b9bcd40de05"
-}
+{"kind":"owner","path":"tools/qualify_host_stream_kernel_stream_objects.py","reviewBoundary":"committed-fingerprint","reviewReason":"Add unqualified capacity facts and a three-TU route; preserve prior captures, routes and caps.","schemaVersion":"latent.ci.contracts.v1","sha256":"7c3a715794a179320bba7c100fd13bf879324d6096446a349d36e19ce5d2e6d3"}

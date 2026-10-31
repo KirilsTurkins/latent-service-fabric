@@ -1,3 +1,1 @@
-{"kind":"owner","path":"tools/qualify_java_fibers.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve original modes and strict cache/model gates; verify actual public/SDK generated callback identities and declared private helpers against the pinned LambdaMetafactory.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "f2325469d0f26e752340c4330c337bf74906a4871f23b1bebee1d707eb12d97b"
-}
+{"kind":"owner","path":"tools/qualify_java_fibers.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve complete bounded native/supplemental/Java inputs and original programmes; add exact FutureTask queue-copy qualification through the normal SDK.","schemaVersion":"latent.ci.contracts.v1","sha256":"798c6a37b614e8c301c88db25444862b183c8282e7d00c1b16385a6ff7ba6afd"}

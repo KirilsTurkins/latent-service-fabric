@@ -1,37 +1,13 @@
-{
-  "storageCases":"guard-keys",
-  "guards":{
-    "JavaHttpPhaseCampaignSource.test_connect_backlog_owns_exactly_two_bounded_connections_and_writes_no_http":
-      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7",
-    "JavaHttpPhaseCampaignSource.test_connect_setup_failure_preserves_original_and_closes_all_owned_sockets":
-      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7",
-    "JavaHttpPhaseCampaignSource.test_default_library_and_actual_connect_boundary_do_not_relabel_root_or_header_wait":
-      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7",
-    "JavaHttpPhaseCampaignSource.test_normal_project_binds_published_defaults_to_explicit_phase_world_and_unchanged_sdk":
-      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7",
-    "JavaHttpPhaseHostReference.test_actual_adapter_exception_identity_timeout_selection_reason_bytes_and_old_profile":
-      "4a31965797710d1f039eba19ab82e7b23b86a69e2673d58b4b1e84fffd204bbd",
-    "JavaHttpPhaseHostReference.test_published_fixture_handles_checked_json_errors_without_changing_success_or_disconnect":
-      "4a31965797710d1f039eba19ab82e7b23b86a69e2673d58b4b1e84fffd204bbd",
-    "JavaHttpPhases.test_changed_sdk_or_staged_class_refuses_without_replacing_any_bytes":
-      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7",
-    "JavaHttpPhases.test_declared_phase_import_selects_only_v7_and_cannot_mix_transaction_authority":
-      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7",
-    "JavaHttpPhases.test_derived_adapter_is_bound_to_captured_preimage_and_existing_owner_limits":
-      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7",
-    "JavaHttpPhases.test_new_profile_is_explicit_and_original_selection_remains_exact":
-      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7",
-    "JavaHttpPhases.test_phase_compiler_selection_requires_explicit_fiber_io_before_creating_outputs":
-      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7",
-    "JavaHttpPhases.test_profile_receipt_binds_selected_transformation_and_preserves_old_boundary":
-      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_java_http_phases.py",
-  "reviewReason":"Add one installed-JDK language-boundary control for the actual pinned org.json checked-exception fixture failure. Both success results, exact checked exception cause identity and disconnect-finally remain asserted; original cases, all old class/module fixtures and skip guards unchanged. This is not a published-library or component execution claim.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-    "4a31965797710d1f039eba19ab82e7b23b86a69e2673d58b4b1e84fffd204bbd":{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(shutil.which('javac') and shutil.which('java'), 'Installed JDK required for host-only adapter reference')"],"decorators":[],"fixtureGuards":["module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"storageCases":"guard-keys","guards":{"JavaHttpPhaseCampaignSource.test_connect_backlog_owns_exactly_two_bounded_connections_and_writes_no_http":
+      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7","JavaHttpPhaseCampaignSource.test_connect_setup_failure_preserves_original_and_closes_all_owned_sockets":
+      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7","JavaHttpPhaseCampaignSource.test_default_library_and_actual_connect_boundary_do_not_relabel_root_or_header_wait":
+      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7","JavaHttpPhaseCampaignSource.test_normal_project_binds_published_defaults_to_explicit_phase_world_and_unchanged_sdk":
+      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7","JavaHttpPhaseHostReference.test_actual_adapter_exception_identity_timeout_selection_reason_bytes_and_old_profile":
+      "4a31965797710d1f039eba19ab82e7b23b86a69e2673d58b4b1e84fffd204bbd","JavaHttpPhaseHostReference.test_published_fixture_handles_checked_json_errors_without_changing_success_or_disconnect":
+      "4a31965797710d1f039eba19ab82e7b23b86a69e2673d58b4b1e84fffd204bbd","JavaHttpPhases.test_changed_sdk_or_staged_class_refuses_without_replacing_any_bytes":
+      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7","JavaHttpPhases.test_declared_phase_import_selects_only_v7_and_cannot_mix_transaction_authority":
+      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7","JavaHttpPhases.test_derived_adapter_is_bound_to_captured_preimage_and_existing_owner_limits":
+      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7","JavaHttpPhases.test_new_profile_is_explicit_and_original_selection_remains_exact":
+      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7","JavaHttpPhases.test_phase_compiler_selection_requires_explicit_fiber_io_before_creating_outputs":
+      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7","JavaHttpPhases.test_profile_receipt_binds_selected_transformation_and_preserves_old_boundary":
+      "dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7"},"kind":"python","module":"tools/tests/test_java_http_phases.py","reviewReason":"Add one installed-JDK language-boundary control for the actual pinned org.json checked-exception fixture failure. Both success results, exact checked exception cause identity and disconnect-finally remain asserted; original cases, all old class/module fixtures and skip guards unchanged. This is not a published-library or component execution claim.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"dd8daf9a12bf6d1f5fc87d35d89545c13f363e05bf8078c7909043288087aaf7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},"4a31965797710d1f039eba19ab82e7b23b86a69e2673d58b4b1e84fffd204bbd":{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(shutil.which('javac') and shutil.which('java'), 'Installed JDK required for host-only adapter reference')"],"decorators":[],"fixtureGuards":["module:setup-sha256:9f131a680521fbb44fabe603348b0301ee34f88ff274da5109704fcb87b09a58","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}

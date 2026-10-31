@@ -11,6 +11,29 @@ from tools.phase3_resource_identity import file_identity
 from tools.tests.test_sdk_scratch_qualification import ordinary, replace_json
 
 
+def historical_checkout(value):
+    """Authenticate the current action before the exact historical pin inverse."""
+    prefix = 'KirilsTurkins/lsf-checkout@'
+    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
+    if type(value) is bytes:
+        prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
+    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):
+        raise AssertionError('historical-workflow-exact-current-checkout-required')
+    return value.replace(current, previous)
+
+
+def original_libfetch_workflow(value):
+    """Remove only the authenticated closed libfetch route before legacy hashes."""
+    value = historical_checkout(value)
+    edits = (('  push:\n    branches: [development, feat/sdk-690-c-libfetch-http-20261029]\n    paths:\n', '  push:\n    branches: [development]\n    paths:\n'), ("  runtime:\n    if: ${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}\n    name: Admitted C capability ownership\n", "  runtime:\n    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}\n    name: Admitted C capability ownership\n"), ('    steps:\n      - name: Start the finite libfetch qualification clock\n        if: github.ref == \'refs/heads/feat/sdk-690-c-libfetch-http-20261029\'\n        run: echo "LSF_C_LIBFETCH_STARTED_NS=$(date +%s%N)" >> "$GITHUB_ENV"\n      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes\n', '    steps:\n      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes\n'), ("      - name: Execute the actual captured standard library on current default native products\n        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'\n        run: |\n", '      - name: Execute the actual captured standard library on current default native products\n        run: |\n'), ("      - name: Execute ordinary bounded stdio through the same frozen default products\n        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'\n        run: |\n", '      - name: Execute ordinary bounded stdio through the same frozen default products\n        run: |\n'), ("      - name: Execute combined ordinary libc facilities with four explicit grants\n        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'\n        run: |\n", '      - name: Execute combined ordinary libc facilities with four explicit grants\n        run: |\n'), ("      - name: Execute captured C23 raw resources and physical trap retirement\n        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'\n        run: |\n", '      - name: Execute captured C23 raw resources and physical trap retirement\n        run: |\n'), ('          python3 tools/qualify_c_standard_facilities.py --compiled-resources --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-compiled-resources"\n      - name: Execute one authentic libfetch client with the current signed typed HTTP backend\n        if: github.ref == \'refs/heads/feat/sdk-690-c-libfetch-http-20261029\'\n        run: >-\n          python3 tools/qualify_c_standard_facilities.py --libfetch-http --build-native\n          --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)"\n          --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-libfetch-http"\n      - name: Retain bounded C standard runtime proof including failures\n', '          python3 tools/qualify_c_standard_facilities.py --compiled-resources --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-compiled-resources"\n      - name: Retain bounded C standard runtime proof including failures\n'), ('          path: |\n            ${{ runner.temp }}/c-libfetch-http/qualified.json\n            ${{ runner.temp }}/c-libfetch-http/FAILED.json\n            ${{ runner.temp }}/c-libfetch-http/logs/**\n            ${{ runner.temp }}/c-libfetch-http/owner-inputs/**\n            ${{ runner.temp }}/c-libfetch-http/project/**\n            ${{ runner.temp }}/c-libfetch-http/native-build/native/native-tuple.json\n            ${{ runner.temp }}/c-libfetch-http/build/**\n            ${{ runner.temp }}/c-libfetch-http/node/signed/release-set.json\n            ${{ runner.temp }}/c-libfetch-http/node/signed/c-thread-runtime/package/**\n            ${{ runner.temp }}/c-libfetch-http/node/signed/c-thread-runtime/evidence/**\n            ${{ runner.temp }}/c-libfetch-http/node/signed/c-thread-runtime/deployment.json\n            ${{ runner.temp }}/c-libfetch-http/node/qualified.json\n            ${{ runner.temp }}/c-libfetch-http/node/FAILED.json\n            ${{ runner.temp }}/c-libfetch-http/node/controls/**\n            ${{ runner.temp }}/c-libfetch-http/node/commands/logs/**\n            ${{ runner.temp }}/c-libfetch-http/node/invocation-*.json\n            ${{ runner.temp }}/c-libfetch-http/node/peer-*.json\n            ${{ runner.temp }}/c-libfetch-http/node/barrier-*.json\n            ${{ runner.temp }}/c-libfetch-http/node/retirement-*.json\n            ${{ runner.temp }}/c-libfetch-http/node/*.stdout\n            ${{ runner.temp }}/c-libfetch-http/node/*.stderr\n            ${{ runner.temp }}/c-standard-facilities/qualified.json\n', '          path: |\n            ${{ runner.temp }}/c-standard-facilities/qualified.json\n'))
+    for current, previous in edits:
+        if value.count(current) != 1:
+            raise AssertionError('historical-workflow-exact-libfetch-route-required')
+        value = value.replace(current, previous, 1)
+    return value
+
+
 class ClosedFilesystemQualification(unittest.TestCase):
     def test_actual_c_standard_error_projection_uses_closed_attribution_tokens(self):
         from tools import guest_compatibility as compatibility
@@ -95,7 +118,7 @@ class ClosedFilesystemQualification(unittest.TestCase):
 
     def test_default_off_replay_preserves_all_original_job_bodies_and_bounds(self):
         from tools.ci_lane_inventory import workflow_model
-        model = workflow_model((gate.ROOT/'.github/workflows/c-guest-authoring.yml').read_text())
+        model = workflow_model(original_libfetch_workflow((gate.ROOT/'.github/workflows/c-guest-authoring.yml').read_text()))
         selector = model['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']
         self.assertEqual(selector['type'], 'boolean'); self.assertIs(selector['default'], False)
         jobs = copy.deepcopy(model['jobs'])
