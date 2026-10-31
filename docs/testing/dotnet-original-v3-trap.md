@@ -9,7 +9,8 @@ either trap or satisfy all of AC7.
 `diag/dotnet-original-v3-trap-20261031` branch. A source push to that branch or an
 explicit manual dispatch runs it; ordinary branches do not. It authenticates
 the completed normal v3 archive from run 41191304300, artifact 13038749267, verifies
-every admitted payload and CRC, and restores fourteen exact package inputs. WIT
+every admitted payload and CRC, and restores fifteen exact original build inputs
+plus the authenticated normal neutral-packaging observation reference. WIT
 bodies come from that same archive. The original component is 2,476,558 bytes,
 SHA-256 `9c20e7025c9a2672ee256d93fb51efd631b609064953a11dc2491a94639552af`.
 No guest, compiler, CoreLib or auxiliary package is rebuilt or rewritten.
@@ -17,8 +18,8 @@ No guest, compiler, CoreLib or auxiliary package is rebuilt or rewritten.
 Only the current `latent-wasmtime` library and `local_service` integration host
 are built with the existing `development-test-host` feature. The existing numeric
 observer control runs first. The new ignored integration control signs and admits
-the original package in process, then invokes original modes 9 and 8 through two
-separate backends. Each observer arms once. The request retains the original
+the original normal neutral package in process, then invokes original modes 9
+and 8 through two separate backends. Each observer arms once. The request retains the original
 1,000,000,000 fuel, 128 MiB memory and 120-second wall limit, four original grants,
 and fixed 8/2/8/16/8/8/8 runtime-owner capacities.
 
@@ -46,8 +47,8 @@ policy payloads from the authenticated normal archive (examples controls 007-014
 It reuses all four original test provider owners and matches their profile,
 configuration digest, epoch, operation lists, resource ceilings, administrator
 workflow-operator principal and the original deployment service `my-greeting`.
-The unchanged capsule display name is `examples/my-greeting`; it is not substituted
-for the original deployment identity. Only the new scratch publication ID changes
+The raw BUILD capsule display name is `examples/my-greeting`; normal packaging
+derives the neutral `my-greeting` name before signing and admission. Only the new scratch publication ID changes
 the original policy scope. No raw policy digest equality across publication IDs
 is claimed.
 
@@ -57,3 +58,15 @@ refreshes the sealed policy snapshots before any Store or activation session.
 It reads back all four actual provider references and current sealed documents,
 checks the binding generation and all definition fields, and requires zero
 created Stores throughout setup. General fixtures retain their prior behavior.
+
+The observation restores the original deployment as the fifteenth build input
+and the authenticated normal neutral-build observation as a separate reference.
+It reuses the same `capsule_authoring` input and neutral-packaging modules
+in-process, without a guest/CoreLib rebuild or another helper executable.
+The derived package uses the normal `my-greeting` neutral name and no capsule
+tenant field; the invocation remains confined to the original `examples` tenant,
+provider bindings, operations, policy and principal. Fresh packaging timestamps
+may differ; every other build-observation field, including package-input and
+derivation-asset identities, must equal the retained normal observation.
+This is packaging-only reuse, not a claim that the raw BUILD package and neutral
+package are identical or that a new runtime/trap cause has been qualified.

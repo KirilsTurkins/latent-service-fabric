@@ -37,6 +37,11 @@ BUDGET = {'cpuFuel': 1000000000, 'memoryBytes': 134217728, 'wallTimeLimitMillis'
 # authenticated original artifact, never from the current repository.
 PACKAGE = {'capsule.json': {'retainedSource': 'build/capsule.json', 'bytes': 1387, 'sha256': 'sha256:91a482b9599db19105db186a0aa71a85f7b394e766d46636b415c77e8ada024d'}, 'compatibility-report.json': {'retainedSource': 'build/compatibility-report.json', 'bytes': 1254, 'sha256': 'sha256:55932c6c18671dd35d4f357e388e187bd19b528a534d17b028055454b368accb'}, 'component.wasm': {'retainedSource': 'build/component.wasm', 'bytes': 2476558, 'sha256': 'sha256:9c20e7025c9a2672ee256d93fb51efd631b609064953a11dc2491a94639552af'}, 'contracts.json': {'retainedSource': 'build/contracts.json', 'bytes': 902, 'sha256': 'sha256:d87882a6ad7fb199776006e155b9ca7d7e36443c81f57abb9040dd29a717681e'}, 'package-source.json': {'retainedSource': 'build/package-source.json', 'bytes': 1650, 'sha256': 'sha256:10e9d6ad331cda8213a26994878970328f3d595f20d412b789599f3c0a91dadd'}, 'wit-lock.json': {'retainedSource': 'build/wit-lock.json', 'bytes': 924, 'sha256': 'sha256:e0bd8e53cf1b884a7348c6bea70d582218890b3c4a8bdee04b31d9cf2e91b96f'}, 'wit/deps/activation-runtime/package.wit': {'retainedSource': 'project/wit/deps/activation-runtime/package.wit', 'bytes': 2539, 'sha256': 'sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946'}, 'wit/deps/clock/package.wit': {'retainedSource': 'project/wit/deps/clock/package.wit', 'bytes': 139, 'sha256': 'sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea'}, 'wit/deps/random/package.wit': {'retainedSource': 'project/wit/deps/random/package.wit', 'bytes': 272, 'sha256': 'sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60'}, 'wit/world.wit': {'retainedSource': 'project/wit/world.wit', 'bytes': 345, 'sha256': 'sha256:7bc0cb3dc5134250cc0dcae3c850f3bdb6d9f28114be6b6246472d7c6466e737'}, 'BUILD-COMPLETE.json': {'retainedSource': 'build/BUILD-COMPLETE.json', 'bytes': 44295, 'sha256': 'sha256:e5a2234d5a8c1fafe4d4abb30c33d59e5dab0fa8383c2a4c203dd00d86521ebe'}, 'source-inputs.json': {'retainedSource': 'build/source-inputs.json', 'bytes': 24034, 'sha256': 'sha256:352c36056922652bece5dd9804a50ef7675c6ac61c5a9810b781535ab4ff32f4'}, 'build-observation.json': {'retainedSource': 'build/build-observation.json', 'bytes': 8146, 'sha256': 'sha256:a561a89b8b2ff6b0dccd810514be210e38ebd14ca25d996f2f153abc3d39d57e'}, 'package-inputs.json': {'retainedSource': 'build/package-inputs.json', 'bytes': 1201, 'sha256': 'sha256:ff48598edcf53543be926d2287e945dcf9601935c9927631e740ada180b7158f'}}
 
+# Original deployment is a fifteenth build input; neutral observation is a
+# separately authenticated packaging-only reference, never a replacement build.
+NEUTRAL_INPUTS = {'deployment.json': {'retainedSource': 'build/deployment.json', 'bytes': 886, 'sha256': 'sha256:88ecb7f872b991d33929295b2a0f1fb35a42e3346d41b8ca47111ddd29ab4e1a'}, 'normal-neutral-build-observation.json': {'retainedSource': 'neutral-build-observation.json', 'bytes': 8662, 'sha256': 'sha256:966bce14097fd21979a8ae15b0f735c44e9f191b6720a7f211480f7a60996eca'}}
+RESTORED_INPUTS = {**PACKAGE, **NEUTRAL_INPUTS}
+
 
 def object_pairs(pairs):
     value = {}
@@ -115,15 +120,17 @@ def restore(archive, destination, deadline):
             and case['response']['outcomeKnown'] is True and case['response']['error']['code'] == 'guest-trap'
             and resolved['releaseDigest'] == COMPONENT and resolved['routeGeneration'] == '10'
             and resolved['publicationId'] == deployed['publication'], 'dotnet-original-result-route-binding')
-    require(len(PACKAGE) == 14, 'dotnet-original-fourteen-inputs')
-    for name, row in PACKAGE.items():
+    require(len(PACKAGE) == 14 and len(RESTORED_INPUTS) == 16, 'dotnet-original-package-reference-inputs')
+    for name, row in RESTORED_INPUTS.items():
         require(identity(payloads[row['retainedSource']]) == {k: row[k] for k in ('bytes', 'sha256')},
             'dotnet-original-package-input')
     destination = fresh(destination)
-    for name, row in PACKAGE.items():
+    for name, row in RESTORED_INPUTS.items():
         target = destination/name; target.parent.mkdir(parents=True, exist_ok=True)
         with target.open('xb') as sink: sink.write(payloads[row['retainedSource']])
-    return {'origin': ORIGINAL, 'component': COMPONENT, 'packageInputs': PACKAGE,
+    return {'origin': ORIGINAL, 'component': COMPONENT,
+        'packageInputs': {**PACKAGE, 'deployment.json': NEUTRAL_INPUTS['deployment.json']},
+        'normalNeutralPackagingReference': NEUTRAL_INPUTS['normal-neutral-build-observation.json'],
         'originalEffectiveRequestBudget': BUDGET, 'allOriginalMembersAndCrcsVerified': True,
         'guestCompilerCorelibRebuilt': False}
 
@@ -270,7 +277,7 @@ def qualify(archive, output, revision):
                 {'bytes': ORIGINAL['bytes'], 'sha256': 'sha256:'+ORIGINAL['sha256']},
             'dotnet-original-source-tools-executables-archive-after')
         require(all(identity(read_file(output/'dotnet-root-return-normal'/n, 64*1024**2)) ==
-            {k: row[k] for k in ('bytes', 'sha256')} for n, row in PACKAGE.items()), 'dotnet-original-package-after')
+            {k: row[k] for k in ('bytes', 'sha256')} for n, row in RESTORED_INPUTS.items()), 'dotnet-original-package-after')
         record.update(status='captured-nonqualifying', sourceBeforeEqualsAfter=True)
         return record
     except BaseException:

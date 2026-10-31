@@ -680,9 +680,10 @@ def run_http(artifact: Path, native: dict, output: Path, *, deadline, runtime_pr
     require(type(runtime_profile) is str and runtime_profile in (FETCH_PROFILE, FETCH_STANDARD_PROFILE),
             'c-http-exact-runtime-profile')
     expanded = runtime_profile == FETCH_STANDARD_PROFILE
-    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl')
+    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl', 'outside-card')
             and (expanded or client_kind == 'libfetch'), 'c-http-exact-client')
     is_libucl = client_kind == 'libucl'
+    is_outside = client_kind == 'outside-card'
     if client_state is not None:
         require(expanded and type(client_state) is dict
                 and set(client_state) == {'calls', 'controlAttempts', 'retainedBytes'}
@@ -698,7 +699,8 @@ def run_http(artifact: Path, native: dict, output: Path, *, deadline, runtime_pr
     commands = Commands(ROOT, fresh(output / 'commands'), build_environment(output),
                         deadline_seconds=300, command_seconds=60)
     commands.deadline = min(commands.deadline, deadline)
-    record = {'schemaVersion': 'latent.c.libucl.node.v1' if is_libucl else 'latent.c.libfetch.node.v1',
+    record = {'schemaVersion': 'latent.c.outside-card.node.v1' if is_outside else
+                              'latent.c.libucl.node.v1' if is_libucl else 'latent.c.libfetch.node.v1',
               'status': 'incomplete',
               'component': component, 'native': before, 'full690Qualified': False,
               'fullCCostModelQualified': False, 'independentClientCount': 1}
@@ -754,14 +756,15 @@ def run_http(artifact: Path, native: dict, output: Path, *, deadline, runtime_pr
             grants = (install_libucl if expanded else install_http)(client, node, target, peer.origin())
             target = deploy(client, source / 'deployment.json', publication,
                             generation=str(target['generation']), grants=grants)
-            stage = 'five-ordinary-cells'
+            stage = 'one-outside-captured-cell' if is_outside else 'five-ordinary-cells'
             record['cases'] = []
-            cases = fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES
-            cell = libucl_cell if is_libucl else http_cell
+            cases = fixture.CARD_CASES if is_outside else fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES
+            cell = libucl_cell if is_libucl or is_outside else http_cell
             for case in cases:
-                record['cases'].append(cell(client, node, probe, target, peer, output, case))
+                record['cases'].append(cell(client, node, probe, target, peer, output, case,
+                    **({'outside_library': True} if is_outside else {})))
             require([row['case'] for row in record['cases']] == list(cases)
-                    and peer.observation()['startedRequests'] == (2 if is_libucl else 6),
+                    and peer.observation()['startedRequests'] == (1 if is_outside else 2 if is_libucl else 6),
                     'c-libucl-five-cells-two-contacts' if is_libucl else 'c-libfetch-five-cells-six-contacts')
             delete_all(client, [target['name']])
             record['afterDeletes'] = sample(client, probe, 'c-libfetch-after-deletes', 0)
@@ -776,7 +779,7 @@ def run_http(artifact: Path, native: dict, output: Path, *, deadline, runtime_pr
                 'c-libfetch-final-original-inputs-and-deadline')
         record.update(status='passed', cliCalls=client.calls, commands=commands.records)
         if expanded:
-            record['independentClientCount'] = 1
+            record['independentClientCount'] = 0 if is_outside else 1
         if client_state is not None:
             record['sharedClientBudget'] = {'before': budget_before,
                 'after': {'calls': client.calls, 'controlAttempts': client.control_attempts,
@@ -849,14 +852,15 @@ def install_libucl(client, node, target, origin):
     return grants
 
 
-def libucl_cell(client, node, probe, target, peer, output, case):
+def libucl_cell(client, node, probe, target, peer, output, case, *, outside_library=False):
     from tools.standard_http.observations import validate, delta, require_zero_contact
-    require(case in fixture.LIBUCL_CASES, 'c-libucl-closed-cell')
+    require(type(outside_library) is bool
+            and case in (fixture.CARD_CASES if outside_library else fixture.LIBUCL_CASES), 'c-libucl-closed-cell')
     vectors = {'normal': 'domain-json', 'not-found': 'http-404', 'denied': 'denied-target'}
     before, revision = peer.observation(), selected_revision(client, target)
     validate(before)
-    text = case + '\n' + (peer.url(vectors[case]) if case in vectors else '')
-    activation = 'c-libucl-' + case
+    text = ('' if outside_library else case + '\n') + (peer.url(vectors[case]) if case in vectors else '')
+    activation = ('c-outside-card-' if outside_library else 'c-libucl-') + case
     process, primary = start_http_call(client, target, text, activation), False
     deadline = min(client.deadline, time.monotonic() + 8)
     try:
@@ -871,7 +875,7 @@ def libucl_cell(client, node, probe, target, peer, output, case):
                 and row['response']['requestDispatched'] is True
                 and row['response']['data']['resolvedRevision'] == revision,
                 'c-libucl-known-current-invocation')
-        fixture.libucl_result(row, case)
+        (fixture.unseen_result if outside_library else fixture.libucl_result)(row, case)
         require(all(integer(row['response']['data']['consumption'][name]) == 0 for name in
             ('stateReadBytes', 'stateWriteBytes', 'blobReadBytes', 'blobWriteBytes',
              'logBytes', 'effectCount', 'childCalls')), 'c-libucl-no-unrelated-authority')

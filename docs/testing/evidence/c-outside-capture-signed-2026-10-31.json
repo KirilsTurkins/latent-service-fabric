@@ -1,0 +1,192 @@
+{
+  "schemaVersion": "latent.c.outside-capture.signed-observation.v1",
+  "status": "authenticated-finite-success",
+  "issueScopes": [
+    690,
+    744
+  ],
+  "source": "4e7ce694a51d5c4babb6693835d45278b2586e78",
+  "tree": "75de7cccd05a914971d3878b4a8099de74b94e90",
+  "run": 41207503246,
+  "artifact": 13045181403,
+  "archive": {
+    "sha256": "b53c49ec809e4ade42754c5ca1114301219a8705a89bd8de30da8c4bd5358245",
+    "crcMembers": 900,
+    "bytes": 3752821
+  },
+  "retainedProgrammeReceipt": {
+    "bytes": 154142,
+    "sha256": "c781bbf3044d82d2dd78a95077cf033ff63b1f7da4684b81ea103ab967f424d0"
+  },
+  "profiles": {
+    "C": "c-context144-sync-cooperative-v1",
+    "standardFacilities": "c-libfetch-clock-entropy-v1",
+    "hostAbi": "lsf-host-abi-phase3-v5",
+    "wasmtime": "48.0.7"
+  },
+  "runtimeInputsDigest": "sha256:a9c09f5fa30e525b02088080847df15952b24743d244ae354043664c82cca807",
+  "nativeSource": {
+    "sha256": "sha256:ebff7c7f4b70a0f22bd9ccf8c4a6138d0b0e0765d9da979c34f929499d0c7a80",
+    "files": 3794,
+    "bytes": 35926094,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "tools": {
+    "zig": {
+      "sha256": "sha256:2317bbb91798556d9d0f38aabdac23db83f0979b25f767259ae474546724087c",
+      "bytes": 172641672
+    },
+    "wit-bindgen": {
+      "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+      "bytes": 19856344
+    },
+    "wasm-tools": {
+      "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "bytes": 20231696
+    }
+  },
+  "guestLimits": {
+    "blobReadBytes": 0,
+    "blobWriteBytes": 0,
+    "childCalls": 0,
+    "cpuFuel": 1000000000,
+    "effectCount": 0,
+    "logBytes": 0,
+    "memoryBytes": 33554432,
+    "outboundRequests": 3,
+    "stateReadBytes": 0,
+    "stateWriteBytes": 0,
+    "wallTimeLimitMillis": 5000
+  },
+  "programmeLimits": {
+    "parentSeconds": 1320,
+    "commandSeconds": 900,
+    "cleanupReserveSeconds": 5,
+    "jobs": 2,
+    "cells": 2,
+    "components": 2,
+    "perOwnerCommandRetentionBytes": 16777216,
+    "clientCalls": 384,
+    "clientRetentionBytes": 4194304,
+    "clientSeconds": 240
+  },
+  "sharedClientCounters": {
+    "calls": 50,
+    "controlAttempts": 50,
+    "retainedBytes": 141032
+  },
+  "nativeBinaryBytesIndependentlyRetainedAndRehashed": false,
+  "full690Qualified": false,
+  "fullCCostModelQualified": false,
+  "publisherAuthenticated": false,
+  "releasePublished": false,
+  "evidenceRetaggedOrExecutionBorrowed": false,
+  "currentGitMaterialsVerified": 239,
+  "independentClientsAdded": 0,
+  "outsideIdentityVariants": 2,
+  "catalogueAbsenceQualified": true,
+  "standaloneRecipe": {
+    "fileCount": 144,
+    "sourceBytes": 957576,
+    "inventoryDigest": "sha256:479621041dd0ab2769fc27c9a4c5c504ac7896e415b2edabec72d252918d6cd2",
+    "isolatedPython": true,
+    "docsPresent": false,
+    "catalogueReaderPresent": false,
+    "stagingReceiptItselfQualifiesComponent": false
+  },
+  "completedCommandRoots": {
+    "ownerBeforeFinalFence": 14,
+    "builds": [
+      32,
+      32
+    ],
+    "nodes": [
+      1,
+      1
+    ],
+    "owner": 15,
+    "total": 81
+  },
+  "variants": [
+    {
+      "variant": 0,
+      "artifactIds": [
+        "shop-floor/price-card",
+        "shop-floor/card-policy"
+      ],
+      "capturedTrees": [
+        "sha256:1a6d26eff987e4b8c09ca5b1dc11fd1059a85bd386e5b014a7923242adebeb5d",
+        "sha256:b599acdb750c09d1571176db8de2ecb353801ac4dcda4a2b68e46bfee5bf9daf"
+      ],
+      "originalsRemovedAfterCapture": true,
+      "compiledResource": {
+        "path": "configuration/card-policy.txt",
+        "source": "dependencies/card-policy/expected-card.txt",
+        "mediaType": "text/plain",
+        "owner": "shop-floor/card-policy",
+        "digest": "sha256:87e7eb9b1dc90aa65dcd1a84f2511fc515935c0dedca941cf47b2f1c45747f7a",
+        "size": 16
+      },
+      "component": {
+        "sha256": "sha256:f4553071bb9a9b83fdedf489073884396274db190c8444bac8f7ed6b0307a385",
+        "bytes": 118442
+      },
+      "signedNormalExitCode": 0,
+      "peerRequests": 1,
+      "decoded": "card:7:5:57:1776131770",
+      "cleanup": {
+        "allRetirementsIdle": true,
+        "nodeShutdownClean": true,
+        "nodeReaped": true,
+        "peerStoppedCleanly": true
+      }
+    },
+    {
+      "variant": 1,
+      "artifactIds": [
+        "warehouse/bin-label-reader",
+        "warehouse/label-policy"
+      ],
+      "capturedTrees": [
+        "sha256:1a6d26eff987e4b8c09ca5b1dc11fd1059a85bd386e5b014a7923242adebeb5d",
+        "sha256:b599acdb750c09d1571176db8de2ecb353801ac4dcda4a2b68e46bfee5bf9daf"
+      ],
+      "originalsRemovedAfterCapture": true,
+      "compiledResource": {
+        "path": "configuration/card-policy.txt",
+        "source": "dependencies/card-policy/expected-card.txt",
+        "mediaType": "text/plain",
+        "owner": "warehouse/label-policy",
+        "digest": "sha256:87e7eb9b1dc90aa65dcd1a84f2511fc515935c0dedca941cf47b2f1c45747f7a",
+        "size": 16
+      },
+      "component": {
+        "sha256": "sha256:f4553071bb9a9b83fdedf489073884396274db190c8444bac8f7ed6b0307a385",
+        "bytes": 118442
+      },
+      "signedNormalExitCode": 0,
+      "peerRequests": 1,
+      "decoded": "card:7:5:57:1776131770",
+      "cleanup": {
+        "allRetirementsIdle": true,
+        "nodeShutdownClean": true,
+        "nodeReaped": true,
+        "peerStoppedCleanly": true
+      }
+    }
+  ],
+  "pairComparison": {
+    "receipt": "c-http-pair-signed-2026-10-31.json",
+    "sameRuntimeInputDigest": true,
+    "same67SdkMaterialRows": true,
+    "sameCompilerToolIdentities": true,
+    "sameFiveNativeBinaryReceiptIdentities": true,
+    "same3794NativeSourceFiles": true,
+    "nativeBinaryBytesIndependentlyRehashed": false,
+    "programmeItselfAuthenticatedPairExecution": false,
+    "pairReceiptBorrowed": false
+  },
+  "remainingQualification": "Two identity variants of one developer-owned library, not two more independently maintained clients. Full HTTP/lifecycle/cancellation/uncertain-POST matrix and complete C cost model remain unqualified."
+}

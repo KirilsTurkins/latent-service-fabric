@@ -95,8 +95,8 @@ fn both_real_components_have_checked_packages_and_exact_async_metadata() {
 async fn asynchronous_application_export_waits_for_the_canonical_async_service_import() {
     use latent_component_bindings::host::phase3::latent::service::invoke as wit;
     use wasmtime::{
-        component::{Component, Linker},
         Config, Engine, Store,
+        component::{Component, Linker},
     };
     let mut config = Config::new();
     config.wasm_component_model_async(true);
@@ -164,6 +164,13 @@ mod join_cause_package;
     target_os = "linux",
     target_arch = "x86_64"
 ))]
+#[path = "local_service/original_dotnet_package.rs"]
+mod original_dotnet_package;
+#[cfg(all(
+    feature = "development-test-host",
+    target_os = "linux",
+    target_arch = "x86_64"
+))]
 #[path = "generic_backend/support.rs"]
 #[allow(dead_code)]
 mod support;
@@ -179,7 +186,7 @@ async fn dotnet_original_v3_fault_and_quiescence_use_bounded_numeric_observation
     {
         use latent_activation::ActivationOutcome;
         use latent_artifacts::ArtifactRepository;
-        use latent_core::{ContractId, FunctionId, PlatformErrorCode, ServiceId};
+        use latent_core::{ContractId, FunctionId, PlatformErrorCode, ServiceId, TenantId};
         use latent_manifest::ManifestCodec;
         use latent_signing::DOTNET_CAPSULE_BUILD_TYPE;
 
@@ -197,18 +204,19 @@ async fn dotnet_original_v3_fault_and_quiescence_use_bounded_numeric_observation
             (9, "ac7-fault-unattributed"),
             (8, "ac7-opaque-unattributed"),
         ] {
-            let bundle = join_cause_package::bundle(&join_cause_package::input(NORMAL));
-            let observation = join_cause_package::observation(NORMAL);
+            let (bundle, observation) =
+                original_dotnet_package::load(&join_cause_package::input(NORMAL)).unwrap();
             assert_eq!(packages::release(&bundle).0, COMPONENT);
             assert_eq!(observation.component_digest, COMPONENT);
             let capsule = latent_manifest::JsonManifestCodec::default()
                 .decode_capsule(bundle.blob("capsule.json").unwrap())
                 .unwrap();
-            let tenant = capsule.metadata.tenant.expect("original capsule tenant");
-            assert_eq!(capsule.metadata.name, "examples/my-greeting");
-            // Original normal deployment 006 selects this tenant-local service.
-            // Capsule display metadata is not the deployment service identity.
-            let service = ServiceId("my-greeting".to_owned());
+            // The original normal signer neutralized only package scope/name.
+            // Invocation authority remains the original examples tenant.
+            assert!(capsule.metadata.tenant.is_none());
+            assert_eq!(capsule.metadata.name, "my-greeting");
+            let tenant = TenantId("examples".to_owned());
+            let service = ServiceId(capsule.metadata.name);
             let ceiling = capsule.execution.resource_budget_ceiling;
             assert_eq!(ceiling.cpu_fuel, 1_000_000_000);
             assert_eq!(ceiling.memory_bytes, 128 * 1024 * 1024);
@@ -228,7 +236,8 @@ async fn dotnet_original_v3_fault_and_quiescence_use_bounded_numeric_observation
                 .admit_package(&tenant, upload, &mut |_| Ok(()))
                 .await
                 .unwrap();
-            let callee = join_cause_package::bundle(&join_cause_package::input(NORMAL));
+            let (callee, _) =
+                original_dotnet_package::load(&join_cause_package::input(NORMAL)).unwrap();
             assert_eq!(callee.layout().digest(), bundle.layout().digest());
             // The existing once-per-backend observer is never reset/rearmed.
             let f = fixture::Fixture::with_original_dotnet_v3_numeric_runtime(

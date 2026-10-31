@@ -9,6 +9,9 @@ on:
       - 'crates/latent-wasmtime/tests/local_service.rs'
       - 'crates/latent-wasmtime/tests/local_service/fixture.rs'
       - 'crates/latent-wasmtime/tests/guest_sdk/runtime.rs'
+      - 'crates/latent-wasmtime/tests/local_service/original_dotnet_package.rs'
+      - 'crates/latent-policy/examples/capsule_authoring/inputs.rs'
+      - 'crates/latent-policy/examples/capsule_authoring/resource_neutral.rs'
   workflow_dispatch:
 
 permissions:
