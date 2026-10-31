@@ -684,12 +684,58 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 }
             }
         }
+        org.teavm.common.Loop[] rankedLoops = new org.teavm.common.Loop[graph.size()];
         for (org.teavm.common.Loop loop : loops.knownLoops()) {
             if (!finiteCountedLoop(program, graph, loops, dominators, loop, definitions, places)) {
                 return false;
             }
+            rankedLoops[loop.getHead()] = loop;
         }
-        return true;
+        // Pinned LoopGraph does not enumerate every CFG cycle: in particular,
+        // a self-edge is inspected after its own DFS frame is marked done.
+        // Remove only backedges covered by a proved rank, then independently
+        // require the remaining normal and exceptional graph to be acyclic.
+        return finiteResidualProgressGraph(graph, loops, dominators, rankedLoops);
+    }
+
+    private boolean rankedProgressBackedge(org.teavm.common.LoopGraph loops,
+            org.teavm.common.DominatorTree dominators, org.teavm.common.Loop[] rankedLoops,
+            int source, int target) {
+        org.teavm.common.Loop loop = rankedLoops[target];
+        return loop != null && insideProgressLoop(loops, loop, source)
+                && dominators.dominates(target, source);
+    }
+
+    private boolean finiteResidualProgressGraph(org.teavm.common.Graph graph,
+            org.teavm.common.LoopGraph loops, org.teavm.common.DominatorTree dominators,
+            org.teavm.common.Loop[] rankedLoops) {
+        // Both passes visit only the already bounded CFG. Each block enters
+        // this fixed-size queue once, when its residual in-degree becomes zero.
+        int[] incoming = new int[graph.size()];
+        for (int source = 0; source < graph.size(); ++source) {
+            for (int target : graph.outgoingEdges(source)) {
+                if (!rankedProgressBackedge(loops, dominators, rankedLoops, source, target)) {
+                    ++incoming[target];
+                }
+            }
+        }
+        int[] queue = new int[graph.size()];
+        int end = 0;
+        for (int index = 0; index < graph.size(); ++index) {
+            if (incoming[index] == 0) {
+                queue[end++] = index;
+            }
+        }
+        for (int next = 0; next < end; ++next) {
+            int source = queue[next];
+            for (int target : graph.outgoingEdges(source)) {
+                if (!rankedProgressBackedge(loops, dominators, rankedLoops, source, target)
+                        && --incoming[target] == 0) {
+                    queue[end++] = target;
+                }
+            }
+        }
+        return end == graph.size();
     }
 
     private org.teavm.model.Program boundedProgressProgram(ProgramReader reader) {
