@@ -247,8 +247,8 @@ class StandardFacilities(unittest.TestCase):
         profile = facilities.FETCH_PROFILE
         original_defines = ('_POSIX_C_SOURCE=200809L',)
         self.assertEqual(facilities.compiler_defines(profile, original_defines),
-                         (*original_defines, '_GNU_SOURCE=1'))
-        selected_defines = ('_GNU_SOURCE=1', '_POSIX_C_SOURCE=200809L')
+                         (*original_defines, '_GNU_SOURCE=1', '_WASI_EMULATED_MMAN=1'))
+        selected_defines = ('_GNU_SOURCE=1', '_POSIX_C_SOURCE=200809L', '_WASI_EMULATED_MMAN=1')
         self.assertIs(facilities.compiler_defines(profile, selected_defines), selected_defines)
         for old_profile in (facilities.DEFAULT, facilities.PROFILE,
                             facilities.LOGGING_PROFILE, facilities.COMBINED_PROFILE):
@@ -272,16 +272,34 @@ class StandardFacilities(unittest.TestCase):
         self.assertEqual((source / 'world.wit').read_bytes(), original)
         self.assertEqual({path.name for path in (selected / 'deps').iterdir()}, {'http-v3'})
 
+        expanded = facilities.FETCH_STANDARD_PROFILE
+        self.assertEqual(facilities.PROFILE_IMPORTS[expanded],
+                         (*facilities.PROFILE_IMPORTS[profile], *facilities.IMPORTS))
+        self.assertEqual(facilities.PROFILE_SOURCES[expanded],
+                         (*facilities.PROFILE_SOURCES[profile], 'standard-clock-entropy.c'))
+        self.assertEqual(facilities.compiler_defines(expanded, original_defines),
+                         facilities.compiler_defines(profile, original_defines))
+        self.assertEqual(facilities.selected_profile({'runtimeProfile': expanded}), expanded)
+        with_clock = facilities.stage(source, 'service', self.root / 'derived-clock',
+                                      ROOT / 'wit/platform', profile=expanded)
+        clock_text = (with_clock / 'world.wit').read_text()
+        for contract in facilities.PROFILE_IMPORTS[expanded]:
+            self.assertEqual(clock_text.count('import ' + contract + ';'), 1)
+        self.assertNotIn('latent:log/log@', clock_text)
+        self.assertNotIn('wasi:', clock_text)
+        self.assertEqual((source / 'world.wit').read_bytes(), original)
+
     def test_libfetch_unthreaded_build_refuses_before_binding_generation_or_output(self):
         from unittest import mock
         from tools.c_guest.compiler import Compiler
         compiler = Compiler.__new__(Compiler)
         output = self.root / 'must-not-exist'
-        with mock.patch('tools.c_guest.compiler.generate') as generate:
-            with self.assertRaisesRegex(ValueError, 'libfetch-http-requires-cooperative-threading'):
-                compiler.compile([self.root / 'missing.c'], self.root / 'missing-wit',
-                                 'service', output, runtime_profile=facilities.FETCH_PROFILE)
-            generate.assert_not_called()
+        for profile in facilities.FETCH_PROFILES:
+            with self.subTest(profile=profile), mock.patch('tools.c_guest.compiler.generate') as generate:
+                with self.assertRaisesRegex(ValueError, 'libfetch-http-requires-cooperative-threading'):
+                    compiler.compile([self.root / 'missing.c'], self.root / 'missing-wit',
+                                     'service', output, runtime_profile=profile)
+                generate.assert_not_called()
         self.assertFalse(output.exists())
 
 

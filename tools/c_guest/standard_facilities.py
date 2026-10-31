@@ -9,15 +9,19 @@ PROFILE = 'c-standard-clock-entropy-v1'
 LOGGING_PROFILE = 'c-standard-stdio-v1'
 COMBINED_PROFILE = 'c-standard-facilities-v1'
 FETCH_PROFILE = 'c-libfetch-http-v1'
+FETCH_STANDARD_PROFILE = 'c-libfetch-clock-entropy-v1'
+FETCH_PROFILES = (FETCH_PROFILE, FETCH_STANDARD_PROFILE)
 DEFAULT = 'closed-synchronous-v1'
 IMPORTS = ('latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0', 'latent:random/random@0.1.0')
-SUPPORTED = frozenset((DEFAULT, PROFILE, LOGGING_PROFILE, COMBINED_PROFILE, FETCH_PROFILE))
+SUPPORTED = frozenset((DEFAULT, PROFILE, LOGGING_PROFILE, COMBINED_PROFILE, *FETCH_PROFILES))
 PROFILE_IMPORTS = {PROFILE: IMPORTS, LOGGING_PROFILE: ('latent:log/log@0.1.0',),
                    COMBINED_PROFILE: (*IMPORTS, 'latent:log/log@0.1.0'),
                    FETCH_PROFILE: ('latent:http/streaming@0.3.0',)}
+PROFILE_IMPORTS[FETCH_STANDARD_PROFILE] = (*PROFILE_IMPORTS[FETCH_PROFILE], *IMPORTS)
 PROFILE_SOURCES = {PROFILE: ('standard-clock-entropy.c',), LOGGING_PROFILE: ('standard-stdio.c',),
                    COMBINED_PROFILE: ('standard-clock-entropy.c', 'standard-stdio.c'),
-                   FETCH_PROFILE: ('libfetch/fetch.c', 'libfetch/http.c')}
+                   FETCH_PROFILE: ('libfetch/fetch.c', 'libfetch/http.c', 'closed-file-abi.c')}
+PROFILE_SOURCES[FETCH_STANDARD_PROFILE] = (*PROFILE_SOURCES[FETCH_PROFILE], 'standard-clock-entropy.c')
 RECIPE = ('tools/c_guest/standard_facilities.py',)
 
 
@@ -33,8 +37,10 @@ def selected_profile(project, graph=None):
 
 def compiler_defines(profile, defines):
     """The selected GNU-cookie port owns its declaration feature selection."""
-    if profile == FETCH_PROFILE and not any(value.split('=', 1)[0] == '_GNU_SOURCE' for value in defines):
-        return (*defines, '_GNU_SOURCE=1')
+    if profile in FETCH_PROFILES:
+        for selected in ('_GNU_SOURCE=1', '_WASI_EMULATED_MMAN=1'):
+            if not any(value.split('=', 1)[0] == selected.split('=', 1)[0] for value in defines):
+                defines = (*defines, selected)
     return defines
 
 

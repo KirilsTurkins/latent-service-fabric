@@ -438,5 +438,104 @@ class CHttpClientControls(unittest.TestCase):
             fixture.http_result({'exitCode': 0, 'decoded': values['normal'][1]}, 'unknown')
 
 
+    def test_libucl_normal_profile_binds_six_original_grants_and_refuses_surface_drift(self):
+        from unittest.mock import patch
+        from tools.c_guest.standard_facilities import IMPORTS as standard
+        from tools.guest_runtime_profiles import profiles
+        settings = {'workers': {'runtime': 1, 'control': 1},
+            'cells': [{'capacity': 1, 'queueCapacity': 2, 'maximumMemoryBytes': 67108864}],
+            'audit': {'mode': 'durable', 'records': 1024, 'diskBytes': 16777216,
+                      'queuedOperations': 8, 'queryOwners': 2},
+            'execution': {'maximumCpuFuel': 10000000000, 'maximumWallTimeMillis': 5000},
+            'providers': {'http': {}, 'bindings': [{'name': 'http-binding'}]}}
+        capsule = {'imports': [{'contract': name, 'optional': False}
+                              for name in (*node.IMPORTS, node.HTTP)],
+                   'execution': {'limits': {'memoryBytes': 33554432, 'wallTimeLimitMillis': 5000}}}
+        expanded = copy.deepcopy(capsule)
+        expanded['imports'] += [{'contract': name, 'optional': False} for name in standard]
+        peer = SimpleNamespace(provider_destinations=lambda: [])
+        original = node.configure_http(copy.deepcopy(settings), capsule, peer, Path('/owned/peer'))
+        actual = node.configure_libucl(copy.deepcopy(settings), expanded, peer, Path('/owned/peer'))
+        selected = profiles('c')
+        projected = copy.deepcopy(actual)
+        for name in selected:
+            del projected['providers'][name]
+        projected['providers']['bindings'] = projected['providers']['bindings'][:3]
+        self.assertEqual(projected, original)
+        self.assertEqual(len(actual['providers']['bindings']), 6)
+        for change in ('missing', 'extra', 'duplicate', 'optional', 'bool-int'):
+            bad = copy.deepcopy(expanded)
+            if change == 'missing':
+                bad['imports'].pop()
+            elif change == 'extra':
+                bad['imports'].append({'contract': 'unknown:port/api@1.0.0', 'optional': False})
+            elif change == 'duplicate':
+                bad['imports'][-1] = copy.deepcopy(bad['imports'][-2])
+            else:
+                bad['imports'][-1]['optional'] = True if change == 'optional' else 0
+            with self.subTest(change=change), self.assertRaisesRegex(RuntimeError, '^c-libucl-exact-six-imports$'):
+                node.configure_libucl(copy.deepcopy(settings), bad, peer, Path('/owned/peer'))
+        startup = [{'id': name, 'capability': values[0], 'profile': values[1],
+                    'tenant': 'examples', 'service': 'runtime-host', 'configurationEpoch': '1',
+                    'configurationDigest': 'sha256:' + '1' * 64}
+                   for name, values in selected.items()]
+        target = {'service': 'examples/' + node.SERVICE, 'publication': 'selected-publication'}
+        baseline = [{'capability': cap, 'policy': 'base'} for cap in (*node.IMPORTS, node.HTTP)]
+        policies = []
+        with patch.object(node, 'install_http', return_value=copy.deepcopy(baseline)), \
+                patch('tools.static_api.node.policy',
+                      side_effect=lambda _client, kind, identity, value: policies.append((kind, identity, value))):
+            grants = node.install_libucl(None, SimpleNamespace(startup_record={'providers': startup}), target, {})
+        self.assertEqual(grants[:3], baseline)
+        self.assertEqual(len(grants), 6)
+        self.assertEqual(len(policies), 6)
+        for index, (name, (capability, profile, operation, kind)) in enumerate(selected.items()):
+            binding, rule = policies[2 * index], policies[2 * index + 1]
+            self.assertEqual(binding[0], 'provider-binding')
+            self.assertEqual(binding[2]['capability'], capability)
+            self.assertEqual(binding[2]['providerProfile'], profile)
+            self.assertEqual(binding[2]['restriction'], {'operations': [operation]})
+            self.assertEqual(rule[2]['rules'][0], {
+                'id': 'runtime', 'effect': 'allow',
+                'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
+                'services': [target['service']], 'publications': [target['publication']],
+                'capability': capability, 'operations': [operation], 'resources': {'kind': kind},
+                'ceiling': {'operations': 4096, 'inputBytes': 128 if kind == 'random' else 0,
+                            'outputBytes': 65536, 'wallTimeMillis': 5000}})
+        wrong = copy.deepcopy(startup); wrong[0]['profile'] = 'foreign-profile'
+        with patch.object(node, 'install_http', return_value=copy.deepcopy(baseline)), \
+                patch('tools.static_api.node.policy') as policy, \
+                self.assertRaisesRegex(RuntimeError, '^c-libucl-original-standard-provider$'):
+            node.install_libucl(None, SimpleNamespace(startup_record={'providers': wrong}), target, {})
+        policy.assert_not_called()
+        fixture.libucl_result({'exitCode': 0, 'decoded': [{'ok': 'ucl:7:caf\u00e9:first:\u03bb:0'}]}, 'normal')
+        for row in ({'exitCode': False, 'decoded': [{'ok': 'ucl:7:caf\u00e9:first:\u03bb:0'}]},
+                    {'exitCode': 0, 'decoded': [{'ok': 'not-the-domain'}]}):
+            with self.assertRaisesRegex(ValueError, '^c-libucl-exact-ordinary-result$'):
+                fixture.libucl_result(row, 'normal')
+
+
+        from tools.c_guest.standard_facilities import FETCH_PROFILE, FETCH_STANDARD_PROFILE
+        import time
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'never-created'
+            deadline = time.monotonic() + 30
+            with self.assertRaisesRegex(RuntimeError, '^c-http-exact-client$'):
+                node.run_http(Path('absent'), {}, output, deadline=deadline,
+                              runtime_profile=FETCH_PROFILE, client_kind='libucl')
+            self.assertFalse(output.exists())
+            for bad in ({'calls': 384, 'controlAttempts': 0, 'retainedBytes': 0},
+                        {'calls': False, 'controlAttempts': 0, 'retainedBytes': 0},
+                        {'calls': 0, 'controlAttempts': 384, 'retainedBytes': 0},
+                        {'calls': 0, 'controlAttempts': 0, 'retainedBytes': 4 * 1024**2},
+                        {'calls': 0, 'controlAttempts': 0, 'retainedBytes': 0, 'extra': 1}):
+                with self.subTest(bad=bad), self.assertRaisesRegex(RuntimeError,
+                        '^c-http-original-shared-client-budget$'):
+                    node.run_http(Path('absent'), {}, output, deadline=deadline,
+                        runtime_profile=FETCH_STANDARD_PROFILE, client_state=bad,
+                        client_deadline=deadline)
+                self.assertFalse(output.exists())
+
+
 if __name__ == '__main__':
     unittest.main()

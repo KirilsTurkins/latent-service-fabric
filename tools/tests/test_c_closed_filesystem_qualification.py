@@ -34,6 +34,24 @@ def original_libfetch_workflow(value):
     return value
 
 
+def original_libucl_workflow(value):
+    """Authenticate/invert only the paired-client route before the old inverse."""
+    if hashlib.sha256(value.encode()).hexdigest() != 'cfe78d91e5b92f7556b7cfef9b582571222ddbba722b2c7755b4c7e2be54a4c4':
+        raise AssertionError('historical-workflow-exact-libucl-source-required')
+    for current, previous, count in ((', feat/sdk-690-c-libucl-http-20261029', '', 1), (" && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029'", '', 5), (" || github.ref == 'refs/heads/feat/sdk-690-c-libucl-http-20261029'", '', 1)):
+        if value.count(current) != count:
+            raise AssertionError('historical-workflow-exact-libucl-selector-required')
+        value = value.replace(current, previous)
+    for start, end in (('      - name: Execute both unchanged HTTP clients on the same normal expanded profile\n', '      - name: Retain bounded C standard runtime proof including failures\n'), ('            ${{ runner.temp }}/c-libucl-http/qualified.json\n', '            ${{ runner.temp }}/c-standard-facilities/qualified.json\n')):
+        if value.count(start) != 1 or value.count(end) != 1:
+            raise AssertionError('historical-workflow-exact-libucl-block-required')
+        first = value.index(start); last = value.index(end, first)
+        value = value[:first] + value[last:]
+    if hashlib.sha256(value.encode()).hexdigest() != 'a3d926d95d19a1afba49a9c4919c407e3798e298b8ecc7134a2dec31571be7ee':
+        raise AssertionError('historical-workflow-original-libfetch-source-required')
+    return original_libfetch_workflow(value)
+
+
 class ClosedFilesystemQualification(unittest.TestCase):
     def test_actual_c_standard_error_projection_uses_closed_attribution_tokens(self):
         from tools import guest_compatibility as compatibility
@@ -118,7 +136,7 @@ class ClosedFilesystemQualification(unittest.TestCase):
 
     def test_default_off_replay_preserves_all_original_job_bodies_and_bounds(self):
         from tools.ci_lane_inventory import workflow_model
-        model = workflow_model(original_libfetch_workflow((gate.ROOT/'.github/workflows/c-guest-authoring.yml').read_text()))
+        model = workflow_model(original_libucl_workflow((gate.ROOT/'.github/workflows/c-guest-authoring.yml').read_text()))
         selector = model['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']
         self.assertEqual(selector['type'], 'boolean'); self.assertIs(selector['default'], False)
         jobs = copy.deepcopy(model['jobs'])

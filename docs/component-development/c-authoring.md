@@ -120,13 +120,30 @@ ambient socket authority is installed.
 
 Include `<fetch.h>` and use `fetchGetURL(url, "A")`, then ordinary `fread`,
 `ferror` and `fclose` on the returned read-only `FILE *`. The URL parser and
-parsed-URL GET entrypoints are retained; a supplied `url_stat` must be `NULL`.
+parsed-URL GET entrypoints accept optional `url_stat`: a validated Content-Length
+is reported as its size; absent length remains `-1`, and unknown timestamps are
+`0`. This does not enable standalone Stat, range or conditional requests.
 `fetchReqHTTP` supports bounded string request bodies for its declared HTTP
 methods. Only the empty flags string or `A` is supported. HTTP/HTTPS transport
 and TLS validation belong to the typed provider; socket and OpenSSL APIs are
-not exposed. FTP/file schemes, redirects, stat/list/range/conditional options,
-authentication callbacks, proxy configuration and writable FILE streams refuse
-explicitly. Independent sharing of one FILE across threads is not qualified.
+not exposed. FTP/file schemes, redirects, standalone stat/list/range/conditional
+options, authentication callbacks, proxy configuration and writable FILE streams
+refuse explicitly. Independent sharing of one FILE across threads is not qualified.
+
+The selected file ABI returns real errors: `open`, `close`, `fstat`, `mmap`,
+`munmap`, `realpath` and `getcwd` fail with `ENOTSUP`; `glob` returns `GLOB_NOSYS`
+with `ENOSYS`. It provides no directory, descriptor, file contents or successful
+empty result. `globfree` retains its real physical deallocation behavior.
+
+For libraries that also need ordinary libc clock/entropy support, select
+`"runtimeProfile": "c-libfetch-clock-entropy-v1"` through the same normal project
+configuration. The maintained profile automatically selects the HTTP and existing
+clock/entropy backends; applications do not copy internal SDK sources. Install
+explicit `activation-wall-v1` / `now-unix-millis`,
+`activation-monotonic-v1` / `now-nanos`, and `system-random-v1` / `bytes` providers
+and grants alongside the HTTP and cooperative-runtime grants. Selecting the
+HTTP-only profile still grants no clocks or entropy. No ambient WASI or socket
+authority is introduced.
 
 The selected C proof limits are 1 MiB for the original core, 32,768 original
 operators, 65,536 operators per derived core and 8,192 per function under its

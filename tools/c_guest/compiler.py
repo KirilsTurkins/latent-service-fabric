@@ -208,7 +208,7 @@ class Compiler:
         if threaded:
             from tools.c_guest import threading
             threading.selected({'threadingProfile': threading_profile})
-        if runtime_profile == standard_facilities.FETCH_PROFILE and not threaded:
+        if runtime_profile in standard_facilities.FETCH_PROFILES and not threaded:
             raise ValueError('c-libfetch-http-requires-cooperative-threading')
         if threaded and ('c-threading-transformer' not in self.paths or static_libraries):
             raise ValueError('c-threading-requires-transformer-and-no-static-archives')
@@ -229,7 +229,8 @@ class Compiler:
             runtime = self.sdk / 'runtime'
             sources = [*sources, runtime / 'threads.c', runtime / 'tls-keys.c', runtime / 'template-copy.c']
             include_directories = (*include_directories, runtime)
-            timed_clock = runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE}
+            timed_clock = runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE,
+                                               standard_facilities.FETCH_STANDARD_PROFILE}
             if timed_clock:
                 self.select_threading_clock_inputs()
                 defines = threading.linked_defines(defines, timed_clock=True)
@@ -243,7 +244,7 @@ class Compiler:
                    "-Wl,--no-entry", "-Wl,--export-memory", "-Wl,-z,stack-size=65536",
                    f"-Wl,--max-memory={memory_bytes}", "-I", str(generated),
                    "-I", str(self.sdk / "include"), *map(str, sources)]
-        if runtime_profile == standard_facilities.FETCH_PROFILE:
+        if runtime_profile in standard_facilities.FETCH_PROFILES:
             # Zig maps this to wasm-ld -s: omit debug/name metadata, not code.
             command.append('-Wl,--strip-debug')
         thread_flags = []
@@ -289,7 +290,7 @@ class Compiler:
             self.isolation.receipt["preprocessorInputs"] = sorted(
                 {row["path"]: row for row in observed}.values(), key=lambda row: row["path"])
         self.run("zig", *command)
-        if runtime_profile == standard_facilities.FETCH_PROFILE and self.commands is not None:
+        if runtime_profile in standard_facilities.FETCH_PROFILES and self.commands is not None:
             from tools.rust_capsule_project import read_file
             payload = read_file(core, 64 * 1024 * 1024)
             observation = {'formatVersion': 1, 'size': len(payload), 'digest': digest(payload),
