@@ -130,6 +130,24 @@ int32_t meth_otr_GC_markFields(void* teavm_local_1, void* teavm_local_2) {
     }
     return teavm_local_4;
 }
+int32_t meth_otr_GC_markArray(void* teavm_local_1, void* teavm_local_2) {
+    void* teavm_local_3;
+    int32_t teavm_local_4;
+    int32_t teavm_local_5;
+    if (meth_otr_RuntimeClass_isPrimitive(TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType))) {
+        return INT32_C(0);
+    }
+    teavm_local_3 = TEAVM_ALIGN(TEAVM_ADDRESS_ADD(teavm_local_2, INT32_C(1) * sizeof(TeaVM_Array)), sizeof(void*));
+    teavm_local_4 = INT32_C(0);
+    teavm_local_5 = INT32_C(0);
+    while (1) {
+        if (!(teavm_local_5 < TEAVM_FIELD(teavm_local_2, TeaVM_Array, size))) break;
+        teavm_local_4 = (teavm_local_4 | meth_otr_GC_enqueueMark((*(void**) teavm_local_3)));
+        teavm_local_3 = TEAVM_ADDRESS_ADD(teavm_local_3, sizeof(void*));
+        teavm_local_5 = (teavm_local_5 + INT32_C(1));
+    }
+    return teavm_local_4;
+}
 void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
     if ((TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType) == NULL)) {
         meth_otr_GC_updatePointersInObject(teavm_local_1, teavm_local_2);
@@ -141,7 +159,7 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
             original = gc.read_bytes()
             outputs, receipt = platform.monitor_root_outputs(root)
             self.assertEqual(receipt['upstreamIssue'], platform.MONITOR_ROOT_ISSUE)
-            self.assertEqual(receipt['profile'], 'teavm-0.15-c-packed-monitor-gc-root-v9')
+            self.assertEqual(receipt['profile'], 'teavm-0.15-c-packed-monitor-gc-root-v10')
             self.assertTrue(receipt['markPackedMonitor'])
             self.assertTrue(receipt['rewriteRelocatedMonitor'])
             self.assertTrue(receipt['boundedPackedMonitorValidityTraps'])
@@ -155,6 +173,10 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
             self.assertTrue(receipt['boundedFieldEdgeIdentityFrames'])
             self.assertTrue(receipt['boundedUnmarkedBelowHeapFieldEdgeIdentityFrames'])
             self.assertTrue(receipt['boundedMisalignedFieldEdgeIdentityFrames'])
+            self.assertTrue(receipt['boundedUnmarkedBelowHeapArrayItemIdentityFrames'])
+            self.assertTrue(receipt['arrayItemClassStaticTableOnly'])
+            self.assertEqual(receipt['arrayItemIndexMaximum'], 255)
+            self.assertTrue(receipt['unavailableArrayItemIdentityUsesOriginalGuard'])
             self.assertEqual(receipt['fieldEdgeParentClassIndexMaximum'], 4095)
             self.assertEqual(receipt['fieldEdgeOffsetMaximum'], 255)
             self.assertEqual(gc.read_bytes(), original)
@@ -201,7 +223,7 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
             self.assertIn('(uintptr_t) teavm_field_edge_candidate <', adapted)
             self.assertIn('(uintptr_t) teavm_field_edge_candidate >=', adapted)
             self.assertIn('(INT32_C(8) - INT32_C(1))) != 0', adapted)
-            self.assertEqual(adapted.count('&& !meth_otr_GC_isMarked('), 2)
+            self.assertEqual(adapted.count('&& !meth_otr_GC_isMarked('), 3)
             self.assertEqual(adapted.count('__attribute__((noinline)) static void teavm_field_edge_field_low_'), 16)
             self.assertEqual(adapted.count('__attribute__((noinline)) static void teavm_field_edge_field_high_'), 16)
             self.assertEqual(adapted.count('__attribute__((noinline)) static void teavm_field_edge_parent_low_'), 16)
@@ -210,6 +232,25 @@ void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {
             self.assertIn('teavm_field_edge_field_low_f();', adapted)
             self.assertIn('teavm_field_edge_field_high_f(teavm_field);', adapted)
             self.assertIn('teavm_field_edge_parent_low_f(teavm_parent, teavm_field);', adapted)
+            array = platform._generated_function(adapted, 'meth_otr_GC_markArray')[2]
+            edge = ('        teavm_local_4 = (teavm_local_4 | '
+                'meth_otr_GC_enqueueMark((*(void**) teavm_local_3)));\n')
+            self.assertEqual(array.count(edge), 1)
+            self.assertIn('teavm_gc_known_class_index(\n'
+                '                TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType))', array)
+            self.assertIn('teavm_array_edge_item_class <= INT32_C(4095)', array)
+            self.assertIn('teavm_local_5 >= INT32_C(0)', array)
+            self.assertIn('teavm_local_5 <= INT32_C(255)', array)
+            self.assertIn('&& !meth_otr_GC_isMarked(teavm_array_edge_candidate)', array)
+            self.assertLess(array.index('teavm_array_edge_unmarked_below_heap_diagnose('),
+                array.index(edge))
+            # An unreviewed item source must be refused before a diagnostic
+            # can attach a misleading class/index identity to the original call.
+            gc.write_bytes(original.replace(edge.encode(),
+                edge.replace('teavm_local_3', 'teavm_local_4').encode(), 1))
+            with self.assertRaisesRegex(ValueError, '^unreviewed-teavm-array-item-mark$'):
+                platform.monitor_root_outputs(root)
+            gc.write_bytes(original)
 
     def test_packed_monitor_repair_refuses_unknown_collector_shapes(self):
         with tempfile.TemporaryDirectory() as directory:

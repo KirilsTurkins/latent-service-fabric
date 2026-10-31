@@ -296,6 +296,10 @@ def _field_edge_diagnostics() -> str:
         '        int32_t teavm_parent, int32_t teavm_field) {',
         '    teavm_field_edge_diagnose(teavm_parent, teavm_field);',
         '}',
+        '__attribute__((noinline)) static void teavm_array_edge_unmarked_below_heap_diagnose(',
+        '        int32_t teavm_item_class, int32_t teavm_index) {',
+        '    teavm_field_edge_diagnose(teavm_item_class, teavm_index);',
+        '}',
         '__attribute__((noinline)) static void teavm_field_edge_misaligned_diagnose(',
         '        int32_t teavm_parent, int32_t teavm_field) {',
         '    teavm_field_edge_diagnose(teavm_parent, teavm_field);',
@@ -542,6 +546,33 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
         '            meth_otr_GC_enqueueMark(teavm_field_edge_candidate));\n')
     adapted = adapted[:start] + _field_edge_diagnostics() + body + adapted[end:]
 
+    start, end, body = _generated_function(adapted, 'meth_otr_GC_markArray')
+    declaration = '    int32_t teavm_local_5;\n'
+    edge = ('        teavm_local_4 = (teavm_local_4 | '
+            'meth_otr_GC_enqueueMark((*(void**) teavm_local_3)));\n')
+    if body.count(declaration) != 1 or body.count(edge) != 1:
+        raise ValueError('unreviewed-teavm-array-item-mark')
+    body = body.replace(declaration, declaration
+        + '    void* teavm_array_edge_candidate;\n'
+        + '    int32_t teavm_array_edge_item_class;\n')
+    body = body.replace(edge,
+        '        teavm_array_edge_candidate = (*(void**) teavm_local_3);\n'
+        '        if (teavm_array_edge_candidate != NULL\n'
+        '                && (uintptr_t) teavm_array_edge_candidate <\n'
+        '                    (uintptr_t) teavm_gc_heapAddress\n'
+        '                && !meth_otr_GC_isMarked(teavm_array_edge_candidate)) {\n'
+        '            teavm_array_edge_item_class = teavm_gc_known_class_index(\n'
+        '                TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType));\n'
+        '            if (teavm_array_edge_item_class >= INT32_C(0)\n'
+        '                    && teavm_array_edge_item_class <= INT32_C(4095)\n'
+        '                    && teavm_local_5 >= INT32_C(0)\n'
+        '                    && teavm_local_5 <= INT32_C(255)) {\n'
+        '                teavm_array_edge_unmarked_below_heap_diagnose(\n'
+        '                    teavm_array_edge_item_class, teavm_local_5);\n'
+        '            }\n'
+        '        }\n' + edge)
+    adapted = adapted[:start] + body + adapted[end:]
+
     start, end, body = _generated_function(adapted, 'meth_otr_GC_updatePointers')
     opening = 'void meth_otr_GC_updatePointers(void* teavm_local_1, void* teavm_local_2) {\n'
     branch = '    if ((TEAVM_FIELD(teavm_local_1, TeaVM_Class, itemType) == NULL)) {'
@@ -560,7 +591,7 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
     if value == selected:
         raise ValueError('unreviewed-teavm-monitor-root-closure')
     return [(path, value)], {
-        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v9',
+        'profile': 'teavm-0.15-c-packed-monitor-gc-root-v10',
         'upstreamIssue': MONITOR_ROOT_ISSUE,
         'path': 'c/o/t/r/GC.c',
         'upstreamSha256': hashlib.sha256(raw).hexdigest(),
@@ -579,6 +610,10 @@ __attribute__((noinline)) static void teavm_enqueued_root_trap_unknown_class(voi
         'boundedFieldEdgeIdentityFrames': True,
         'boundedUnmarkedBelowHeapFieldEdgeIdentityFrames': True,
         'boundedMisalignedFieldEdgeIdentityFrames': True,
+        'boundedUnmarkedBelowHeapArrayItemIdentityFrames': True,
+        'arrayItemClassStaticTableOnly': True,
+        'arrayItemIndexMaximum': 255,
+        'unavailableArrayItemIdentityUsesOriginalGuard': True,
         'fieldEdgeParentClassIndexMaximum': 4095,
         'fieldEdgeOffsetMaximum': 255,
     }

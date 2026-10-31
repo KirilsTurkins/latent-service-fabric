@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_checkpoint_gc.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require unchanged GC enqueue diagnostics inside the original unmarked-reference branch; preserve immortal marked objects and runtime limits.",
+  "reviewReason": "Require bounded static-item-class and exact original-loop array-index diagnostics; unavailable identity retains the original guard and limits.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0b74f9dd2176673c2ff9aec481b482882c2f3e90793a87e4f9d053e243dac8a1"
+  "sha256": "029f641ba4066c656dd2bec9fd4c9a0552b985b33dbf47f295227ea66bca1e7f"
 }
