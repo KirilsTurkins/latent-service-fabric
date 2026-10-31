@@ -47,105 +47,53 @@ jobs:
           save-if: false
       - name: Install locked validation dependencies
         run: python3 -m pip install --requirement tools/requirements.lock
-      - name: Restore the exact reviewed repair recipe and preserve authentic output bytes
+      - name: Materialize the reviewed bounded validation phases
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
           import base64, hashlib, json, os, pathlib, subprocess, yaml
-          root = pathlib.Path.cwd()
-          assert subprocess.check_output(['git','rev-parse','HEAD']).decode().strip() == '5b2c002eed0ae74c143e0fad38e85e44cd2a16a8'
-          sha = '3e3ca756180fefe947a7352304c1f9c9f5192f19'
+          sha = 'abead7600aed0679b4315f0df6cc635329381c70'
           response = subprocess.check_output(['gh','api',f'repos/KirilsTurkins/latent-service-fabric/git/blobs/{sha}'],timeout=30)
           blob = json.loads(response)
           assert blob['encoding'] == 'base64'
           raw = base64.b64decode(blob['content'])
           assert len(raw) <= 131072
           assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == sha
-          recipe = yaml.safe_load(raw)
-          selected, = [step['run'] for step in recipe['jobs']['inspect']['steps']
-                       if step.get('name') == 'Restore validated repairs and correct test-only feature ownership']
-          subprocess.run(['bash','-e','-o','pipefail','-c',selected],check=True,timeout=180)
-          path = root/'.gitattributes'
-          raw = path.read_bytes()
-          assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == 'b5eee5a8437368eb055e92f62de8de0ae39a0c7f'
-          path.write_bytes(raw + b'\n# Preserve authentic byte-pinned libtest output, including its final blank line.\n/docs/testing/evidence/dotnet-original-v3-2026-10-31.2a79e99.stdout.txt -text whitespace=blank-at-eol,space-before-tab\n')
-          out = pathlib.Path(os.environ['RUNNER_TEMP'])/'pr1587-inspect'
-          paths = json.loads((out/'paths.json').read_text())
-          paths.append('.gitattributes')
-          (out/'paths.json').write_text(json.dumps(sorted(paths))+'\n')
-          added = subprocess.check_output(['git','ls-files','--others','--exclude-standard']).decode().splitlines()
-          assert set(added) <= set(paths)
-          if added:
-              subprocess.run(['git','add','--intent-to-add','--',*added],check=True)
-          subprocess.run(['git','diff','--check'],check=True)
+          steps = yaml.safe_load(raw)['jobs']['inspect']['steps']
+          names = [
+              'Restore the exact reviewed repair recipe and preserve authentic output bytes',
+              'Recheck retained evidence and complete fixture copies',
+              'Compile the shared fixture in its actual node test crate',
+              'Require exact default and observer-feature Rust inventories and six package controls',
+              'Stage only validated source blobs without changing commits or refs',
+          ]
+          out = pathlib.Path(os.environ['RUNNER_TEMP'])/'pr1587-recipe'
+          out.mkdir()
+          for index, name in enumerate(names):
+              source, = [step['run'] for step in steps if step.get('name') == name]
+              if index == 0:
+                  old = 'whitespace=blank-at-eol,space-before-tab'
+                  assert source.count(old) == 1
+                  source = source.replace(old,'whitespace=-blank-at-eof')
+              (out/f'{index}.sh').write_text(source)
           PY
-      - name: Recheck retained evidence and complete fixture copies
-        run: |
-          set -o pipefail
-          python3 -m unittest tools.tests.test_owned_runners tools.tests.test_dotnet_original_fault tools.tests.test_dotnet_original_evidence tools.tests.test_ci_profile tools.tests.test_ci_result tools.tests.test_ci_suite_cases tools.tests.test_ci_suite_inventory tools.tests.test_ci_contracts tools.tests.test_ci_coverage tools.tests.test_dotnet_task_runtime tools.tests.test_dotnet_task_wait 2>&1 | tee "$RUNNER_TEMP/pr1587-inspect/tests.txt"
-          python3 tools/ci_coverage.py 2>&1 | tee "$RUNNER_TEMP/pr1587-inspect/coverage.txt"
-      - name: Compile the shared fixture in its actual node test crate
-        timeout-minutes: 10
-        run: |
-          set -o pipefail
-          rustfmt --edition 2021 --config skip_children=true --check crates/latent-wasmtime/tests/guest_sdk/runtime.rs crates/latent-wasmtime/tests/local_service.rs
-          cargo check --locked -p latentd --lib --tests --all-features 2>&1 | tee "$RUNNER_TEMP/pr1587-inspect/check.txt"
-      - name: Require exact default and observer-feature Rust inventories and six package controls
-        timeout-minutes: 11
-        run: |
-          python3 - <<'PY'
-          import json, os, pathlib, re, subprocess, time
-          from tools import ci_suite_inventory
-          out = pathlib.Path(os.environ['RUNNER_TEMP'])/'pr1587-inspect'
-          suite, = [s for s in ci_suite_inventory.load()['suites'] if s['id'] == 'latent-wasmtime.test.local-service']
-          expected = sorted(suite['expectedCases'])
-          deadline = time.monotonic()+650
-          summary = []
-          for label, features in [('default',[]),('observer',['--features','development-test-host'])]:
-              base = ['cargo','--config','.cargo/managed-guest.toml','test','--locked','-p','latent-wasmtime','--test','local_service',*features]
-              result = subprocess.run([*base,'--','--list'],capture_output=True,timeout=max(1,deadline-time.monotonic()))
-              (out/(label+'-list.stdout.txt')).write_bytes(result.stdout)
-              (out/(label+'-list.stderr.txt')).write_bytes(result.stderr)
-              assert result.returncode == 0, result.stderr[-8192:].decode(errors='replace')
-              actual = sorted(re.findall(r'^([A-Za-z0-9_:]+): test$',result.stdout.decode(),re.M))
-              assert actual == expected, (label,sorted(set(expected)-set(actual)),sorted(set(actual)-set(expected)))
-              controls = [name for name in expected if name.startswith('original_dotnet_package::')]
-              assert len(controls) == 6 and not set(controls).intersection(suite['expectedIgnored'])
-              result = subprocess.run([*base,'original_dotnet_package::','--','--test-threads=1'],capture_output=True,timeout=min(60,max(1,deadline-time.monotonic())))
-              (out/(label+'-controls.stdout.txt')).write_bytes(result.stdout)
-              (out/(label+'-controls.stderr.txt')).write_bytes(result.stderr)
-              assert result.returncode == 0, result.stderr[-8192:].decode(errors='replace')
-              assert sorted(re.findall(r'^test ([A-Za-z0-9_:]+) \.\.\. ok$',result.stdout.decode(),re.M)) == sorted(controls)
-              summary.append({'configuration':label,'exactInventoryCases':len(actual),'packageControlsPassed':len(controls)})
-              print('EXACT RUST INVENTORY',label,len(actual),'PACKAGE CONTROLS PASSED',len(controls),flush=True)
-          (out/'native-validation.json').write_text(json.dumps(summary,indent=2)+'\n')
-          PY
-          git diff --check
-      - name: Stage only validated source blobs without changing commits or refs
+      - name: Restore reviewed source and check all new files without altering receipt bytes
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 - <<'PY'
-          import hashlib, json, os, pathlib, subprocess
-          root = pathlib.Path.cwd()
-          out = pathlib.Path(os.environ['RUNNER_TEMP'])/'pr1587-inspect'
-          paths = json.loads((out/'paths.json').read_text())
-          changed = subprocess.check_output(['git','diff','--name-only']).decode().splitlines()
-          added = subprocess.check_output(['git','ls-files','--others','--exclude-standard']).decode().splitlines()
-          assert paths == sorted(changed+added), (paths,changed,added)
-          entries = []
-          for name in paths:
-              raw = (root/name).read_bytes()
-              assert len(raw) <= 131072
-              response = subprocess.run(['gh','api','--method','POST','repos/KirilsTurkins/latent-service-fabric/git/blobs','--input','-'],input=json.dumps({'content':raw.decode(),'encoding':'utf-8'}).encode(),check=True,capture_output=True,timeout=30)
-              sha = json.loads(response.stdout)['sha']
-              assert sha == hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
-              entries.append({'path':name,'mode':'100644','type':'blob','sha':sha,'sha256':hashlib.sha256(raw).hexdigest()})
-          value = {'testedBase':'5b2c002eed0ae74c143e0fad38e85e44cd2a16a8','entries':entries}
-          (out/'objects.json').write_text(json.dumps(value,indent=2)+'\n')
-          print('VALIDATED SOURCE OBJECTS',json.dumps(value))
-          PY
+        run: bash -e -o pipefail "$RUNNER_TEMP/pr1587-recipe/0.sh"
+      - name: Validate the Python controls and CI coverage
+        run: bash -e -o pipefail "$RUNNER_TEMP/pr1587-recipe/1.sh"
+      - name: Compile the shared fixture in its actual node test crate
+        timeout-minutes: 10
+        run: bash -e -o pipefail "$RUNNER_TEMP/pr1587-recipe/2.sh"
+      - name: Check both complete Rust inventories and execute all six pure packaging controls
+        timeout-minutes: 11
+        run: bash -e -o pipefail "$RUNNER_TEMP/pr1587-recipe/3.sh"
+      - name: Stage validated public source blobs without changing refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash -e -o pipefail "$RUNNER_TEMP/pr1587-recipe/4.sh"
       - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         if: always()
         with:
