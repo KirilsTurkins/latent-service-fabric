@@ -1,34 +1,35 @@
 {
   "schemaVersion": "latent.rust.trusted-original-catalogue.v1",
   "origin": {
-    "run": 41127291312,
-    "head": "ef841ed1d5691b4bf25db48b9980a776b4b56bc5",
-    "artifact": 13012116413,
-    "artifactZipSha256": "1f1fc1598c340b22f74b2bdf6b361ad576168738bbd619043a136a5faefcf45e",
+    "run": 41184446196,
+    "job": 124488360801,
+    "head": "f401e388a7542b8f9cd9bbd987dbcc65814262d6",
+    "artifact": 13036816711,
+    "artifactZipSha256": "1587f3ed7f2464b2f6c06d47fe69a3d9d825b78da1e191007e273f5191634b8f",
     "compilerDistributionDigest": "sha256:b8bbac71d7992a25a49b78726c4337dbcf0a6194700d42a444019b0ae19cda3f",
-    "sysrootIdentity": "sha256:93566fabadd8cab1efd4087f3ab7de50a70326fa5e9f37a4edb30394bc502f6c",
-    "sourceRecipeDigest": "sha256:726ab4756ac30e859a7f078301b8e01548b675bc7b5efd3017c3192e71b65b48",
-    "originRawCoreDigest": "sha256:0cbb66d8e363c47df6b158d50facb7fa04f280bcb2650aa0597385fd63025a24",
+    "sysrootIdentity": "sha256:5f2927236a56eb5c0bf4a42d25f7a0d366231d854b08940f784b2e43d1b7922d",
+    "sourceRecipeDigest": "sha256:b9fc4b6136b8c83ff3aa563900527dcf4ff1bc89f0d0325d9bcaf7e887a13d62",
+    "originRawCoreDigest": "sha256:7b280a32bc87a8db318432f47f8190816b6722f1402d1e2e161142788bdb0c69",
     "sourceProfile": "lsf-rust-std-owned-thread-built-source-v1",
     "compilerRust": "1.97.1",
     "compilerCommit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
     "threadSourcePathRemap": {
-      "sourceRoot": "/tmp/lsf-rust-clock-std-t7b7zdgk/library",
+      "sourceRoot": "/tmp/lsf-rust-clock-std-e017qse5/library",
       "mappedRoot": "/lsf/rust/library",
-      "argument": "--remap-path-prefix=/tmp/lsf-rust-clock-std-t7b7zdgk/library=/lsf/rust/library"
+      "argument": "--remap-path-prefix=/tmp/lsf-rust-clock-std-e017qse5/library=/lsf/rust/library"
     },
-    "owningStatus": "passed-10-native-tls-11-wait-8-sync-controls-76-source-controls-and-original-app-compile; refreshed-catalogue-not-runtime-qualified",
-    "newApplicationStackGeometryClaimed": true,
+    "owningStatus": "29-native-controls-and76-source-controls-passed;repaired-sysroot-and-original-application-built;native-original-catalogue-refused-before-normal-component-encoding",
     "actualOriginalLinkerLayout": {
       "stackLow": 27968,
       "stackHigh": 1142080,
       "activeDataHigh": 26888,
       "initialMemoryBytes": 1179648
     },
-    "actualGuestExecuted": false
+    "actualGuestExecuted": false,
+    "normalComponentProduced": false
   },
-  "originalBodyImageDigest": "sha256:b39bf23bfa8c1cd0217fb0ed785558d6c0812f8da170eb45fb57d9bf1b92343d",
-  "originalBodyImageBytes": 177207,
+  "originalBodyImageDigest": "sha256:96f285899ad07269dafc3a539c6d3247ac7ec441aa8807575718e18ab9e156c8",
+  "originalBodyImageBytes": 176171,
   "libraries": [
     {
       "label": "libcore-93c73edb509ba1e1.rlib",
@@ -97,19 +98,19 @@
     },
     {
       "label": "libstd.rlib",
-      "digest": "sha256:7fa369164b72419ed439ed4b3f4647cde13fb3a051e03dbf42946d0ac5355ba0",
-      "bytes": 9228760
+      "digest": "sha256:e41c4fe706fb291de68f7eba84c0b36ba6127ad463976a59f4ef7da127110a0f",
+      "bytes": 9221948
     },
     {
       "label": "captured-futures-executor.rlib",
-      "digest": "sha256:34749735755dc145aa44c91063953339fb7ff1cb08cc49b16d0bee28bd179ccb",
+      "digest": "sha256:89aec0abe990e4eaa27b9ac6852e8e2a71e7b1763b4c27739e4d2078c605faed",
       "bytes": 301150
     }
   ],
   "generationGrantsAuthority": false,
   "runtimeQualified": false,
-  "nodeCount": 1225,
-  "referenceCount": 5312,
+  "nodeCount": 1221,
+  "referenceCount": 5245,
   "rootCount": 11,
   "normalComponentEnvelope": {
     "tool": "wasm-tools",
@@ -178,6 +179,225 @@
       "sourceControlsPassed": 76,
       "nativeControlsPassed": 29,
       "hostedConfirmation": true
+    }
+  },
+  "historicalCatalogueOrigin": {
+    "schemaVersion": "latent.rust.trusted-original-catalogue.v1",
+    "origin": {
+      "run": 41127291312,
+      "head": "ef841ed1d5691b4bf25db48b9980a776b4b56bc5",
+      "artifact": 13012116413,
+      "artifactZipSha256": "1f1fc1598c340b22f74b2bdf6b361ad576168738bbd619043a136a5faefcf45e",
+      "compilerDistributionDigest": "sha256:b8bbac71d7992a25a49b78726c4337dbcf0a6194700d42a444019b0ae19cda3f",
+      "sysrootIdentity": "sha256:93566fabadd8cab1efd4087f3ab7de50a70326fa5e9f37a4edb30394bc502f6c",
+      "sourceRecipeDigest": "sha256:726ab4756ac30e859a7f078301b8e01548b675bc7b5efd3017c3192e71b65b48",
+      "originRawCoreDigest": "sha256:0cbb66d8e363c47df6b158d50facb7fa04f280bcb2650aa0597385fd63025a24",
+      "sourceProfile": "lsf-rust-std-owned-thread-built-source-v1",
+      "compilerRust": "1.97.1",
+      "compilerCommit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "threadSourcePathRemap": {
+        "sourceRoot": "/tmp/lsf-rust-clock-std-t7b7zdgk/library",
+        "mappedRoot": "/lsf/rust/library",
+        "argument": "--remap-path-prefix=/tmp/lsf-rust-clock-std-t7b7zdgk/library=/lsf/rust/library"
+      },
+      "owningStatus": "passed-10-native-tls-11-wait-8-sync-controls-76-source-controls-and-original-app-compile; refreshed-catalogue-not-runtime-qualified",
+      "newApplicationStackGeometryClaimed": true,
+      "actualOriginalLinkerLayout": {
+        "stackLow": 27968,
+        "stackHigh": 1142080,
+        "activeDataHigh": 26888,
+        "initialMemoryBytes": 1179648
+      },
+      "actualGuestExecuted": false
+    },
+    "originalBodyImageDigest": "sha256:b39bf23bfa8c1cd0217fb0ed785558d6c0812f8da170eb45fb57d9bf1b92343d",
+    "originalBodyImageBytes": 177207,
+    "libraries": [
+      {
+        "label": "libcore-93c73edb509ba1e1.rlib",
+        "digest": "sha256:f66985a0d26ea3c21cbe2def1ed8ef627bc6a7acbe11e94f100d208e60502bcf",
+        "bytes": 42306796
+      },
+      {
+        "label": "librustc_std_workspace_core-2155af6deccea071.rlib",
+        "digest": "sha256:5d25365ec3544c1b5d8d74565749666af8c60ec2138b9fa5a0b0b8b6759c369f",
+        "bytes": 8644
+      },
+      {
+        "label": "libcompiler_builtins-0a427c9baea88edc.rlib",
+        "digest": "sha256:66f265cbe47d83ffc4757de22f2a6feb869d4982e6192ec2a3ec10b42d6afbef",
+        "bytes": 3569196
+      },
+      {
+        "label": "liblibc-13c8a116298a3717.rlib",
+        "digest": "sha256:a54a05a8dc3953b5028bff16a88e68b066ac3ec35e84820b0624ab93ad50d278",
+        "bytes": 30998
+      },
+      {
+        "label": "libcfg_if-c89258830776edbb.rlib",
+        "digest": "sha256:c50ebd872c39642c040cbf55e67d1fb3d7b650e0f13dc7bb276fc2dad9508656",
+        "bytes": 8324
+      },
+      {
+        "label": "libdlmalloc-78e40b265d7c7471.rlib",
+        "digest": "sha256:ab53c4c070578c1b76ef655e8e58000eb623a6b9f644b07e5d4577997a3b2e87",
+        "bytes": 445696
+      },
+      {
+        "label": "libunwind-b1660e821c42324b.rlib",
+        "digest": "sha256:104442fa55ea5263e3aaa9362f771882fa3e7901724947884aa31ec5749b5bfd",
+        "bytes": 17806
+      },
+      {
+        "label": "libpanic_abort-f135c3a08b9cddd2.rlib",
+        "digest": "sha256:0debe40192c81d8fe8b45b5655234a5923c063a2bf136a0fd151c8eae92e4a11",
+        "bytes": 7762
+      },
+      {
+        "label": "librustc_demangle-36611d0700866548.rlib",
+        "digest": "sha256:3a214c8cd524daf2d69d52272d7e13e9e006bded9593bece7978930322addd35",
+        "bytes": 316046
+      },
+      {
+        "label": "librustc_std_workspace_alloc-509bc7cd45824e5d.rlib",
+        "digest": "sha256:cb6395689f21944a9001a7f1e8262810ff1c3fc257e84d571ca3302b7449c51d",
+        "bytes": 4880
+      },
+      {
+        "label": "liballoc-b59d09930bc4c66c.rlib",
+        "digest": "sha256:923042d711fa2eb649df270906f8fefd8f2280d988b37b2346517dfe818f05fb",
+        "bytes": 7254690
+      },
+      {
+        "label": "libhashbrown-0a531973ae5c1204.rlib",
+        "digest": "sha256:4787ca04cf7787dcd92d63900a58d8cadb0193997ce8605a4283ecf77a62b107",
+        "bytes": 1697010
+      },
+      {
+        "label": "libstd_detect-426e1e971f3c6043.rlib",
+        "digest": "sha256:41e94ade56648a27cb30383dae3c0f687dfa03ad8aab88dc140dcc018c284092",
+        "bytes": 222372
+      },
+      {
+        "label": "libstd.rlib",
+        "digest": "sha256:7fa369164b72419ed439ed4b3f4647cde13fb3a051e03dbf42946d0ac5355ba0",
+        "bytes": 9228760
+      },
+      {
+        "label": "captured-futures-executor.rlib",
+        "digest": "sha256:34749735755dc145aa44c91063953339fb7ff1cb08cc49b16d0bee28bd179ccb",
+        "bytes": 301150
+      }
+    ],
+    "generationGrantsAuthority": false,
+    "runtimeQualified": false,
+    "nodeCount": 1225,
+    "referenceCount": 5312,
+    "rootCount": 11,
+    "normalComponentEnvelope": {
+      "tool": "wasm-tools",
+      "version": "1.254.0",
+      "toolSha256": "cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "componentDigest": "sha256:1db2b051a515be1bd60974e38335f6bade254d6b016daf9e20b913360e72c00f",
+      "componentBytes": 251758,
+      "derivedCoreDigest": "sha256:31712d97ca16f65283b8d535d38f19a64c3ad048fdd8e774bd652c9b589b8fe7",
+      "actualGuestExecuted": false,
+      "nativeVerifierExecuted": false,
+      "files": [
+        {
+          "name": "normal-component-shell.bin",
+          "bytes": 4422,
+          "digest": "sha256:9764efdf4970070a220cb38229face5dae6a4a7e6c995df4e52d5f93ea2900ca"
+        },
+        {
+          "name": "original-wit-metadata.bin",
+          "bytes": 1420,
+          "digest": "sha256:d46e07b3b6b15e7b6d2f9bef3d1ab0fe1fc2baeb886e77eba09c76f6b3df58a3"
+        },
+        {
+          "name": "original-producers.bin",
+          "bytes": 61,
+          "digest": "sha256:481d56af9d9f23b7f94c4150f8085f48f9b05f177a0318cad370736cdbc5792f"
+        },
+        {
+          "name": "encoded-producers.bin",
+          "bytes": 107,
+          "digest": "sha256:69f3074c7d609279bfd822f32c19bd1ddca984aa7dbdfc2b7fb19f763c9cd776"
+        }
+      ],
+      "originalSyncCoreDigest": "sha256:c83288b6777ee690b4de107fd99ac63ea3e650221c79cee8230bc8d85ea8b51b",
+      "publicEffect": "explicit-async-WIT-ordinary-synchronous-core-ABI",
+      "metadataAdaptation": {
+        "originalBytes": 1420,
+        "adaptedBytes": 1420,
+        "completeParsedGraphDifference": "only examples:greeting/api@1.0.0#greet async flag",
+        "instructionDataImportExportsChanged": false,
+        "hostSyncTaskSemanticsChanged": false,
+        "changedOffset": 1244,
+        "originalByte": 64,
+        "adaptedByte": 67,
+        "adaptedDigest": "sha256:14bae97e29b1064d917330e77a459d068214ae6857d5fe6ff2298bdbecc7b826"
+      },
+      "candidateSource": {
+        "compilerRun": 41127291312,
+        "compilerJob": 124309000420,
+        "compilerHead": "ef841ed1d5691b4bf25db48b9980a776b4b56bc5",
+        "compilerArtifact": 13012116413,
+        "compilerArtifactZipSha256": "1f1fc1598c340b22f74b2bdf6b361ad576168738bbd619043a136a5faefcf45e",
+        "platform": "ubuntu-24.04-x86_64",
+        "toolReleaseAsset": "lsf-bytecodealliance-actions-wasm-tools-1.254.0",
+        "toolSha256": "cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "hostedConfirmation": true
+      },
+      "previousHostedSource": {
+        "run": 41113065282,
+        "job": 124260142818,
+        "head": "9d9b4001bdefa57b6938c613d0fea13f8e638f83",
+        "artifact": 13004447135,
+        "artifactZipSha256": "b7df73bbe827a016e45b1681db7304054a6d941c7d1844ebde87063417a58c37",
+        "platform": "ubuntu-24.04-x86_64-container",
+        "componentDigest": "sha256:1f49c19d412b36f9a28c6e867298f5f149df40452a2b179fad7eee46578f3a8f",
+        "originalCoreDigest": "sha256:ae5b68cec5fa2d68cdd65eb669844e0d2dd75d8a3fc7563d8fc0a272866b9c7b",
+        "sourceControlsPassed": 76,
+        "nativeControlsPassed": 29,
+        "hostedConfirmation": true
+      }
+    }
+  },
+  "normalComponentEnvelopeStatus": "historical-only; current-source normal component has not been encoded",
+  "currentSourceObservation": {
+    "rawCore": {
+      "bytes": 261378,
+      "digest": "sha256:7b280a32bc87a8db318432f47f8190816b6722f1402d1e2e161142788bdb0c69"
+    },
+    "callbackIsolatedCore": {
+      "bytes": 261515,
+      "digest": "sha256:4b38efc1a41848dee2ec1d8bd1eb4861c5698181bc2ec1daae8058e2fdeb2486"
+    },
+    "actualSourceDerivedCore": {
+      "bytes": 247213,
+      "digest": "sha256:0f5dce3b2a99ae8f91d4a391e7c0cfda7113e528f767493f8ea22d233d3639f3"
+    },
+    "closedMetadataAdaptation": {
+      "operation": "existing adapt_original_public_wit on actual retained full source core",
+      "bytes": 247213,
+      "digest": "sha256:deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423",
+      "changes": [
+        {
+          "offset": 185784,
+          "before": 64,
+          "after": 67
+        }
+      ],
+      "normalComponentEncoded": false,
+      "nativeConfirmationPending": true
+    },
+    "normalComponentProduced": false,
+    "nativeConfirmationPending": true,
+    "historicalOriginalCoreGit": {
+      "head": "f401e388a7542b8f9cd9bbd987dbcc65814262d6",
+      "path": "crates/latent-component-threading/src/rust_catalogue/catalogue-original-core.wasm",
+      "sha256": "0cbb66d8e363c47df6b158d50facb7fa04f280bcb2650aa0597385fd63025a24"
     }
   }
 }

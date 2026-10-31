@@ -190,3 +190,36 @@ effects after 93,883 fuel at a 5,692,107-byte peak. This progressed beyond the
 47,412-fuel shared-ThreadId failure but did not produce any ThreadPool result.
 The bounded #1373 diagnostic must identify this new exact trap before another
 runtime repair can be selected.
+
+## Original child-handoff catalogue observation, 31 October 2026
+
+Compiler run [41184446196](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41184446196),
+source `f401e388a7542b8f9cd9bbd987dbcc65814262d6`, passed the unchanged 29 native
+TLS/wait/synchronization and 76 source controls, rebuilt the selected sysroot and
+compiled the unchanged ordinary application. Artifact `13036816711` retains
+112 CRC-verified members (52,701,865 bytes, ZIP SHA-256
+`1587f3ed7f2464b2f6c06d47fe69a3d9d825b78da1e191007e273f5191634b8f`).
+All 238 captured Git input identities and the actual rlib digests were joined
+before deriving this catalogue's 1,221 definitions and 5,245 real referents.
+The original-body image is 176,171 bytes, SHA-256
+`96f285899ad07269dafc3a539c6d3247ac7ec441aa8807575718e18ab9e156c8`.
+
+Removing the separate Bootstrap allocation leaves one original indirect
+`entered` callback, the existing TLS notification. Both source derivations now
+require that one exact site; they do not accept the prior two-call shape.
+The actual retained sealed core is `4b38efc1a41848dee2ec1d8bd1eb4861c5698181bc2ec1daae8058e2fdeb2486`.
+The actual full source-derived synchronous core is
+`0f5dce3b2a99ae8f91d4a391e7c0cfda7113e528f767493f8ea22d233d3639f3`.
+Applying the existing reviewed WIT-effect metadata projection changes only byte
+185,784 from `0x40` to `0x43`, yielding
+`deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423`.
+That is a metadata-only source expectation; independent native reproduction is
+still pending. No local compiler, native process or guest executed.
+
+The owning run stopped at the previous immutable native catalogue before normal
+component encoding. Its historical normal component and complete old origin
+remain unchanged and explicitly historical in `origin.json`; their earlier
+positive source controls remain. No new normal-component bytes or digest is
+claimed. Native whole-component fixture qualification and the five signed
+ThreadPool outcomes must use the next actual matched compiler/native origins.
+Current normal-component and runtime qualification remain unproved.

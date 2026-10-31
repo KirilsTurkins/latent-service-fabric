@@ -34,7 +34,15 @@ class HostCatalogueTests(unittest.TestCase):
         component = (base / 'catalogue-normal-component.wasm').read_bytes()
         shell = (base / 'normal-component-shell.bin').read_bytes()
         records = (base.parent / 'rust_catalogue.rs').read_text(encoding='utf-8')
-        self.assertEqual(origin['nodeCount'], 1225)
+        self.assertEqual(origin['nodeCount'], 1221)
+        self.assertEqual(origin['origin']['head'], 'f401e388a7542b8f9cd9bbd987dbcc65814262d6')
+        self.assertFalse(origin['origin']['normalComponentProduced'])
+        self.assertEqual(origin['normalComponentEnvelopeStatus'],
+                         'historical-only; current-source normal component has not been encoded')
+        self.assertEqual(envelope, origin['historicalCatalogueOrigin']['normalComponentEnvelope'])
+        raw_core = (base / 'catalogue-original-core.wasm').read_bytes()
+        self.assertEqual('sha256:' + hashlib.sha256(raw_core).hexdigest(),
+                         origin['currentSourceObservation']['rawCore']['digest'])
         self.assertIn('current2id3ID0', records)
         self.assertIn('current2id4ID32', records)
         self.assertNotIn('current2id2ID"', records)
