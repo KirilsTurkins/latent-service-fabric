@@ -19,7 +19,7 @@ pub(super) fn check_current_format(root: &Path) -> Result<(), PlatformError> {
     let marker = optional(&root.join("LIFECYCLE_MODE"), 16 * 1024)?;
     if marker
         .as_deref()
-        .is_some_and(|value| value != LIFECYCLE_MARKER)
+        .is_some_and(|value| value != LIFECYCLE_MARKER && !super::retention::is_marker(value))
     {
         return Err(unsupported());
     }
@@ -39,6 +39,12 @@ pub(super) fn check_current_format(root: &Path) -> Result<(), PlatformError> {
     {
         return Err(corrupt("catalog-lifecycle-history-missing"));
     }
+    // Validate retention authority before any temporary/blob cleanup. Older
+    // binaries reject its promoted LIFECYCLE_MODE before touching the root.
+    super::retention::check_format(
+        root,
+        marker.as_deref().is_some_and(super::retention::is_marker),
+    )?;
     Ok(())
 }
 

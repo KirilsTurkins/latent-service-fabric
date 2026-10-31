@@ -15,6 +15,7 @@ mod preparation_read;
 mod publication_access;
 mod publication_preparation;
 mod retained_package;
+mod retention;
 mod root_durability;
 mod selected_transaction_asset;
 mod shared_content;
@@ -189,6 +190,7 @@ pub struct DirectoryArtifactRepository {
     admission: Option<admission::RepositoryAdmission>,
     lifecycle: OnceLock<crate::lifecycle::LifecycleStore>,
     web: web::WebCatalog,
+    retention: Mutex<retention::RetentionState>,
     _owner_lock: OwnerLock,
     #[cfg(test)]
     fail_parent_sync_once: AtomicBool,
@@ -269,6 +271,7 @@ impl DirectoryArtifactRepository {
         let baseline = repository.rebuild_index()?;
         repository.initialize_lifecycle(&baseline)?;
         repository.initialize_web()?;
+        repository.initialize_retention()?;
         if repository.admission.is_some() {
             admission::persist_mode(&repository.root)?;
         }
@@ -324,6 +327,7 @@ impl DirectoryArtifactRepository {
             )?,
             admission,
             lifecycle: OnceLock::new(),
+            retention: Mutex::new(retention::RetentionState::default()),
             _owner_lock: owner_lock,
             #[cfg(test)]
             fail_parent_sync_once: AtomicBool::new(false),

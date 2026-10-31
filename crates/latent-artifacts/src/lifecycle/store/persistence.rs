@@ -496,7 +496,8 @@ pub(super) fn replace_checked(
 fn validate_root_names(root: &Path) -> Result<(), PlatformError> {
     for name in io::files(root, 16)? {
         match name.as_str() {
-            "MODE" | "INITIALIZED" | "HEAD" | "records" | "receipts" | "evidence" => {}
+            "MODE" | "INITIALIZED" | "HEAD" | "records" | "receipts" | "evidence" | "retention" => {
+            }
             "MODE.next" | "INITIALIZED.next" | "HEAD.next" | "INTENT.next" => {
                 io::remove(&root.join(name))?
             }

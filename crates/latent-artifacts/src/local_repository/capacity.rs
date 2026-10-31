@@ -25,6 +25,7 @@ impl DirectoryArtifactRepository {
                 "catalog-capacity-unavailable",
             )
         };
+        self.life_store().check_health()?;
         let writer = self.publish_lock.try_lock().map_err(|_| unavailable())?;
         if writer.pending.is_some() {
             return Err(unavailable());
@@ -38,6 +39,7 @@ impl DirectoryArtifactRepository {
             .checked_add(storage.publication_file_bytes)
             .and_then(|n| n.checked_add(storage.incomplete_file_bytes))
             .and_then(|n| n.checked_add(storage.web_control_bytes))
+            .and_then(|n| n.checked_add(storage.retention_control_bytes))
             .ok_or_else(unavailable)?;
         Ok(PublicationCapacitySnapshot {
             storage,

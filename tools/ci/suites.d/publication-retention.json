@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "host",
+      "expectedCases": [
+        "catalog_fence_is_not_transferable_between_identical_native_catalogs",
+        "changed_generation_and_unrelated_catalog_changes_refuse_the_original_fence",
+        "componentless_web_pin_survives_retirement_and_native_reopen_without_serving_authority",
+        "corrupt_missing_or_retargeted_retention_authority_is_rejected_before_cleanup",
+        "elapsed_preflight_deadline_does_not_commit_or_refund_anything",
+        "exact_batch_limit_and_duplicate_rejection_precede_any_persistent_side_effect",
+        "exhausted_storage_and_metadata_budgets_refuse_before_intent",
+        "foreign_scope_and_missing_target_have_the_same_nondisclosing_result",
+        "interrupted_format_promotion_does_not_invent_a_committed_pin",
+        "interrupted_native_intent_head_and_removal_recover_only_the_original_operation",
+        "lexical::excessive_lexical_resources_refuse_before_cleanup",
+        "operation_identity_collision_is_not_an_unpin_or_a_foreign_receipt",
+        "pin_is_durable_and_never_restores_retired_execution_eligibility",
+        "preflight_rejection_and_concurrent_commit_do_not_leave_a_pin_or_intent",
+        "receipt_eviction_returns_unknown_and_does_not_reapply_the_old_fence",
+        "retention_accounting_is_restored_without_refunding_publication_payloads",
+        "stopped_full_backup_preserves_pins_receipts_hardlinks_and_terminal_authority"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-artifacts.test.publication-retention",
+      "ignoredLeaves": [],
+      "kind": "test",
+      "manifest": "crates/latent-artifacts/Cargo.toml",
+      "minimumCases": 17,
+      "mode": "libtest",
+      "package": "latent-artifacts",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "development-test-host feature enables explicit fault injection only"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "host-bounded",
+      "source": "tests/publication_retention.rs",
+      "target": "publication_retention",
+      "timeoutSeconds": 300
+    }
+  ]
+}
