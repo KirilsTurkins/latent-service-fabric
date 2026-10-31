@@ -6,51 +6,56 @@ on:
     paths: ['.github/workflows/pr1587-workspace-validation.yml']
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   inspect:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/diag/dotnet-original-v3-trap-20261031'
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           components: rustfmt
-      - name: Capture tracked source and formatter changes only
+      - name: Apply exact reviewed patch and format only its Rust files
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p "$RUNNER_TEMP/pr1587-workspace"
-          git rev-parse HEAD > "$RUNNER_TEMP/pr1587-workspace/source-revision.txt"
+          mkdir -p "$RUNNER_TEMP/pr1587-stage"
+          gh api repos/KirilsTurkins/latent-service-fabric/git/blobs/18056104fc0682476d232936f675b3c0a8e97342 --jq .content | base64 --decode > "$RUNNER_TEMP/pr1587-stage/reviewed.patch"
+          printf '%s  %s\n' d59040d3bb883ed4d27e5fda0025c94baac49925d7d684d5ed9611c30d3273e9 "$RUNNER_TEMP/pr1587-stage/reviewed.patch" | sha256sum --check --strict
+          git apply --check "$RUNNER_TEMP/pr1587-stage/reviewed.patch"
+          git apply "$RUNNER_TEMP/pr1587-stage/reviewed.patch"
+          rustfmt --edition 2021 --config skip_children=true crates/latent-wasmtime/tests/local_service.rs crates/latent-wasmtime/tests/local_service/fixture.rs
+          git diff --check
+          git diff > "$RUNNER_TEMP/pr1587-stage/formatted.patch"
+      - name: Stage exactly four source blobs for review, without creating commits or changing refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
           python3 - <<'PY'
-          import os, pathlib, subprocess, tarfile
-          root = pathlib.Path.cwd()
-          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1587-workspace'
-          names = subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\0')
-          with tarfile.open(output / 'source.tar.gz', 'w:gz') as archive:
-              for name in names:
-                  if not name:
-                      continue
-                  path = root / name
-                  if not path.is_file() or path.is_symlink() or path.stat().st_size > 2 * 1024**2:
-                      continue
-                  data = path.read_bytes()
-                  if b'\0' in data:
-                      continue
-                  try:
-                      data.decode('utf-8')
-                  except UnicodeDecodeError:
-                      continue
-                  archive.add(path, arcname=name, recursive=False)
-          print('Source archive bytes:', (output / 'source.tar.gz').stat().st_size)
-          assert (output / 'source.tar.gz').stat().st_size <= 128 * 1024**2
+          import hashlib, json, os, pathlib, subprocess
+          paths = ['crates/latent-wasmtime/tests/local_service.rs', 'crates/latent-wasmtime/tests/local_service/fixture.rs', 'tools/dotnet_original_fault.py', 'tools/tests/test_ci_contracts.py']
+          changed = subprocess.check_output(['git', 'diff', '--name-only']).decode().splitlines()
+          assert sorted(changed) == sorted(paths), changed
+          entries = []
+          for name in paths:
+              raw = pathlib.Path(name).read_bytes()
+              assert len(raw) <= 131072
+              payload = json.dumps({'content': raw.decode(), 'encoding': 'utf-8'}).encode()
+              result = subprocess.run(['gh', 'api', '--method', 'POST', 'repos/KirilsTurkins/latent-service-fabric/git/blobs', '--input', '-'], input=payload, check=True, capture_output=True)
+              sha = json.loads(result.stdout)['sha']
+              assert sha == hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+              entries.append({'path': name, 'mode': '100644', 'type': 'blob', 'sha': sha, 'sha256': hashlib.sha256(raw).hexdigest()})
+          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1587-stage'
+          (output / 'objects.json').write_text(json.dumps({'head': subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip(), 'tree': subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}']).decode().strip(), 'entries': entries}, indent=2) + '\n')
           PY
-          cargo fmt --all
-          git diff --binary > "$RUNNER_TEMP/pr1587-workspace/formatting.patch"
-      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
-          name: pr1587-workspace-${{ github.sha }}
-          path: ${{ runner.temp }}/pr1587-workspace/
+          name: pr1587-stage-${{ github.sha }}
+          path: ${{ runner.temp }}/pr1587-stage/
           if-no-files-found: error
           retention-days: 1
