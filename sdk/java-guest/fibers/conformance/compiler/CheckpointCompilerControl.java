@@ -87,6 +87,25 @@ public final class CheckpointCompilerControl {
         }
     }
 
+    private static void diagnose(org.teavm.vm.TeaVM vm) {
+        // This executable accepts only the four fixed fixture entry points.
+        // Failure-only observations stay here, never in the production finder.
+        // No application IR, source text, or arbitrary input is emitted.
+        var source = vm.getDependencyClassSource();
+        int visited = 0, printed = 0;
+        for (var reference : vm.getMethods()) {
+            require(++visited <= 65536, "checkpoint-control-diagnostic-work-bound");
+            var cls = source.get(reference.getClassName());
+            var method = cls == null ? null : cls.getMethod(reference.getDescriptor());
+            if (method == null && printed++ < 32) {
+                var implementation = vm.getDependencyInfo().getMethodImplementation(reference);
+                System.err.println("CHECKPOINT_COMPILER_MISSING " + reference
+                        + ";class=" + (cls != null)
+                        + ";implementation=" + (implementation == null ? "absent" : implementation.getReference()));
+            }
+        }
+    }
+
     private static void check(String entry, boolean corrected, boolean unsafe) {
         var target = new ProbeTarget();
         var vm = new TeaVMBuilder(target).build();
@@ -102,8 +121,11 @@ public final class CheckpointCompilerControl {
         } catch (AnalysisComplete completed) {
             require(target.analyzed, "checkpoint-control-real-c-analysis-completed");
         } catch (IllegalStateException failure) {
-            require(corrected && unsafe && REFUSAL.equals(failure.getMessage()),
-                    "checkpoint-control-unexpected-compiler-refusal");
+            if (!(corrected && unsafe && REFUSAL.equals(failure.getMessage()))) {
+                diagnose(vm);
+                failure.printStackTrace(System.err);
+                throw new AssertionError("checkpoint-control-unexpected-compiler-refusal");
+            }
             refused = true;
         }
         require(vm.getProblemProvider().getSevereProblems().isEmpty(),
