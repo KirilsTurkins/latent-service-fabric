@@ -206,6 +206,8 @@ def load(path: Path = INVENTORY) -> dict:
     require(data.get("schemaVersion") == SCHEMA, "inventory-version")
     require(isinstance(data["suites"], list), "inventory-suites")
     data["suites"].extend(suite_fragments(path))
+    from tools.ci_suite_cases import extend_suites
+    extend_suites(data["suites"], path)
     require(set(data["boundaries"]) == BOUNDARIES, "inventory-boundaries")
     require(set(data["narrowPackages"]) <= set(data["fastPackages"]), "narrow-package-not-fast")
     require(len(data["fastPackages"]) == len(set(data["fastPackages"])), "duplicate-fast-package")

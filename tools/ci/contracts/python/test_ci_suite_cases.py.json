@@ -1,0 +1,36 @@
+{
+  "cases":["SuiteCaseFragmentTests.test_absent_directory_preserves_the_primary_catalogue","SuiteCaseFragmentTests.test_actual_discovery_still_requires_every_added_and_original_case","SuiteCaseFragmentTests.test_additions_cannot_repair_an_invalid_primary_count_or_duplicate_owner","SuiteCaseFragmentTests.test_additions_preserve_all_prior_names_ignore_states_and_execution_fields","SuiteCaseFragmentTests.test_cases_and_owner_types_are_closed_and_bounded","SuiteCaseFragmentTests.test_count_and_aggregate_byte_limits_accept_exactly_and_reject_one_over","SuiteCaseFragmentTests.test_directory_and_file_links_and_non_json_entries_are_refused","SuiteCaseFragmentTests.test_duplicate_case_additions_cannot_hide_drift","SuiteCaseFragmentTests.test_fragment_schema_cannot_change_limits_recipes_or_ignore_state","SuiteCaseFragmentTests.test_merged_inventory_keeps_all_native_cors_and_java_cases","SuiteCaseFragmentTests.test_order_is_deterministic_and_suite_fragment_owners_are_supported","SuiteCaseFragmentTests.test_unknown_owners_and_non_libtest_targets_are_rejected"],
+  "guards":{
+    "SuiteCaseFragmentTests.test_absent_directory_preserves_the_primary_catalogue":
+      "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2",
+    "SuiteCaseFragmentTests.test_actual_discovery_still_requires_every_added_and_original_case":
+      "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2",
+    "SuiteCaseFragmentTests.test_additions_cannot_repair_an_invalid_primary_count_or_duplicate_owner":
+      "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2",
+    "SuiteCaseFragmentTests.test_additions_preserve_all_prior_names_ignore_states_and_execution_fields":
+      "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2",
+    "SuiteCaseFragmentTests.test_cases_and_owner_types_are_closed_and_bounded":
+      "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2",
+    "SuiteCaseFragmentTests.test_count_and_aggregate_byte_limits_accept_exactly_and_reject_one_over":
+      "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2",
+    "SuiteCaseFragmentTests.test_directory_and_file_links_and_non_json_entries_are_refused":
+      "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2",
+    "SuiteCaseFragmentTests.test_duplicate_case_additions_cannot_hide_drift":
+      "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2",
+    "SuiteCaseFragmentTests.test_fragment_schema_cannot_change_limits_recipes_or_ignore_state":
+      "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2",
+    "SuiteCaseFragmentTests.test_merged_inventory_keeps_all_native_cors_and_java_cases":
+      "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2",
+    "SuiteCaseFragmentTests.test_order_is_deterministic_and_suite_fragment_owners_are_supported":
+      "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2",
+    "SuiteCaseFragmentTests.test_unknown_owners_and_non_libtest_targets_are_rejected":
+      "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_ci_suite_cases.py",
+  "reviewReason":"Require bounded additive case registration, exact complete discovery, unchanged execution/ignore contracts, negative controls and both merged native inventories.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "c8039946095f4439869dd38b25738e67db85680915ab114cd786b8532c6ba2a2":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7af9a341b8dbbd65fd82f51417906e19cb2924bd74341bba9b97db62c78f2c11","class:setup-sha256:7fa2dc3ee3aff88d8a339a33efc56f7faa61a26bf22d327cb58fda910f9cd12a"],"skipSites":[]}
+  }
+}

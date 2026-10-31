@@ -127,6 +127,20 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
     if used - end > head.content_length {
         return Err(400);
     }
+    if head.cross_origin.is_some() {
+        if used != end {
+            return Err(400);
+        }
+        return super::assets::cross_origin::exchange(
+            socket,
+            shared,
+            head,
+            &mut buffer[..end],
+            deadline,
+            close,
+        )
+        .await;
+    }
     let path = head.collector.target().path();
     if path == "/_lsf/assets" || path.starts_with(latent_artifacts::web::IMMUTABLE_ASSET_PREFIX) {
         if head.public_document {
@@ -182,6 +196,16 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
         .append(&buffer[end..used])
         .map_err(|e| e.status().unwrap_or(0))?;
     read_body(socket, shared, buffer, &mut head, used - end, deadline).await?;
+    deliver(socket, shared, head, selected, deadline, close).await
+}
+async fn deliver<S: AsyncRead + AsyncWrite + Unpin>(
+    socket: &mut S,
+    shared: &Shared,
+    head: head::Head,
+    selected: latent_control_store::http_routes::AcceptedHttpRoute,
+    deadline: IncomingDeadline,
+    close: bool,
+) -> Result<bool, u16> {
     let delivery = match dispatch::begin(head, selected, shared)? {
         dispatch::Begun::Cached(delivery) => delivery,
         dispatch::Begun::Result(result) => {

@@ -1,0 +1,124 @@
+name: Cross-origin static assets
+
+on:
+  pull_request:
+    branches: [development]
+    paths:
+      - '.github/workflows/cross-origin-assets.yml'
+      - 'apps/latentd/**'
+      - 'apps/latent/**'
+      - 'crates/latent-artifacts/**'
+      - 'crates/latent-control-store/**'
+      - 'crates/latent-ingress/**'
+      - 'crates/latent-policy/**'
+      - 'crates/latent-signing/**'
+      - 'schemas/node-http-ingress.schema.json'
+      - 'tools/cross-origin/**'
+      - 'tools/tests/test_cross_origin_native*.py'
+      - 'tools/static-release/**'
+      - 'tools/static_site.py'
+      - 'tools/phase2_operator*.py'
+      - 'tools/phase3_web_scenario.py'
+      - 'tools/run_static_site_workflow.py'
+      - 'tools/run_security_profile_workflow.py'
+      - 'tools/build_process*.py'
+      - 'tools/ci/contracts/workflows/cross-origin-assets.yml/**'
+      - 'examples/renderer-profile/package*.json'
+      - 'examples/cross-origin-assets/**'
+      - 'docs/operations/cross-origin-static-assets.md'
+      - 'docs/testing/cross-origin-static-assets.md'
+      - 'adr/0049-scope-cross-origin-assets-to-publications.md'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cross-origin-assets-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: Native publication-scoped CORS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: '3.13.5'
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-cross-origin-assets-v1
+          cache-workspace-crates: false
+          save-if: ${{ github.ref == 'refs/heads/development' }}
+      - uses: KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: examples/renderer-profile/package-lock.json
+      - name: Retain source and formatting diagnostics
+        run: |
+          mkdir -p target/cross-origin-native
+          git rev-parse HEAD > target/cross-origin-native/source-commit.txt
+          git archive --format=tar.gz HEAD apps crates tools schemas adr .github Cargo.toml Cargo.lock rust-toolchain.toml .cargo sdk examples docs CONTRIBUTING.md > target/cross-origin-native/source.tar.gz
+          cargo fmt --all -- --check > target/cross-origin-native/format.log 2>&1 || true
+          cargo fmt --all
+          git diff --binary > target/cross-origin-native/format.patch
+          git diff --name-only -z | tar --null -T - -czf target/cross-origin-native/formatted-files.tar.gz
+          git restore --worktree .
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - name: Validate native configuration schema
+        run: |
+          python -m pip install --requirement tools/requirements.lock
+          python -m unittest tools.tests.test_cross_origin_native_schema tools.tests.test_cross_origin_native_workflow -v
+          node --check tools/cross-origin/native-fixture.mjs
+          node --check tools/cross-origin/native-browser.mjs
+          node --test tools/cross-origin/contract.test.mjs tools/cross-origin/native-network.test.mjs
+      - name: Execute native policy and ownership controls
+        run: |
+          set -o pipefail
+          cargo test -p latentd --lib --locked cross_origin -- --nocapture --test-threads=1 2>&1 | tee target/cross-origin-native/native-tests.log
+      - name: Build actual node and package CLI
+        run: cargo build --locked --bin latent --bin latentd
+      - name: Retain exact native qualification products
+        run: |
+          mkdir -p target/cross-origin-bin
+          objcopy --strip-debug target/debug/latent target/cross-origin-bin/latent
+          objcopy --strip-debug target/debug/latentd target/cross-origin-bin/latentd
+          tar -C target/cross-origin-bin -czf target/cross-origin-native/native-products.tar.gz latent latentd
+          sha256sum target/cross-origin-bin/latent target/cross-origin-bin/latentd > target/cross-origin-native/native-products.sha256
+      - name: Qualify signed native TLS publications with real Chromium
+        timeout-minutes: 9
+        run: |
+          npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund
+          python3 tools/cross-origin/native_qualify.py --cli target/cross-origin-bin/latent --node target/cross-origin-bin/latentd --toolchain examples/renderer-profile --chrome "$(command -v google-chrome)" --font examples/renderer-profile/node_modules/primeicons/fonts/primeicons.woff2 --output target/cross-origin-native
+      - name: Check maintained formatting and strict native lint
+        run: |
+          python3 tools/ci_cargo.py run format
+          python3 tools/ci_cargo.py run clippy
+      - name: Retain native diagnostics
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: cross-origin-native-${{ github.sha }}
+          path: target/cross-origin-native/
+          if-no-files-found: error
+          retention-days: 7

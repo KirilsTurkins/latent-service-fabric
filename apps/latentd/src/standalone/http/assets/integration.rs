@@ -7,11 +7,11 @@ use latent_artifacts::{
     AdmissionStorageLimits, DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig,
     ReleaseLifecycleAction, ReleaseLifecycleReason,
 };
-use latent_core::TenantId;
+use latent_core::{PlatformError, TenantId};
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc,
+        Arc, Mutex,
     },
     time::Duration,
 };
@@ -28,6 +28,7 @@ pub(super) struct Harness {
     pub(super) repository: Arc<DirectoryArtifactRepository>,
     pub(super) deployments: Arc<latent_control_store::DirectoryDeploymentRepository>,
     current: Arc<AtomicBool>,
+    pub(super) admission_failure: Arc<Mutex<Option<PlatformError>>>,
     storage: TempDir,
 }
 impl Harness {
@@ -85,12 +86,16 @@ impl Harness {
         );
         let storage = TempDir::new().unwrap();
         let current = Arc::new(AtomicBool::new(true));
+        let admission_failure = Arc::new(Mutex::new(None));
         let repository = Arc::new(
             DirectoryArtifactRepository::open_enforced(
                 storage.path().join("catalog"),
                 DirectoryArtifactRepositoryConfig::default(),
                 AdmissionStorageLimits::default(),
-                Arc::new(fixture::Authority(Arc::clone(&current))),
+                Arc::new(fixture::Authority {
+                    current: Arc::clone(&current),
+                    failure: Arc::clone(&admission_failure),
+                }),
             )
             .unwrap(),
         );
@@ -139,6 +144,7 @@ impl Harness {
             repository,
             deployments,
             current,
+            admission_failure,
             storage,
         }
     }

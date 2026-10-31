@@ -47,10 +47,14 @@ untrusted applications even when they share an LSF tenant.
 
 ## Requests, CORS and CSRF
 
-An opt-in asset extension is specified in
-[ADR-0049](../../adr/0049-scope-cross-origin-assets-to-publications.md). Its browser
-experiment establishes feasibility only; native CORS support remains pending.
-The current rules below continue to apply to running nodes.
+Development nodes with the native #660 implementation can opt in to
+[publication-scoped cross-origin static assets](../operations/cross-origin-static-assets.md)
+as specified in [ADR-0049](../../adr/0049-scope-cross-origin-assets-to-publications.md).
+The [native qualification](../testing/cross-origin-static-assets.md) is distinct
+from the original separate-peer feasibility experiment. Grants are default-empty,
+require HTTPS/public-origins, and never authorize bearer or application routes.
+The rules below remain the default and apply outside that exact static exception;
+the published alpha.5 toolkit does not include the extension.
 
 - An Origin must equal the exact serialized configured origin. `null`, lists,
   alternative/default-port spellings, trailing slashes and foreign origins are
@@ -59,7 +63,8 @@ The current rules below continue to apply to running nodes.
   Supported modes are `navigate`, `same-origin`, `cors` and `no-cors`; supported
   destinations are document, empty, script, style, image, font and manifest.
   `Sec-Fetch-User`, when present, must be `?1`.
-- CORS is not supported. Preflight request fields are rejected, no access-control
+- Without that explicit static grant, CORS is not supported. Preflight request
+  fields are rejected, no access-control
   response headers are emitted, and guests cannot opt back in. This also means
   external-site links/subresources with cross-site Fetch Metadata are rejected
   unless a static document navigation is explicitly enabled below. A safe
@@ -126,6 +131,11 @@ Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Resource-Policy: same-origin
 Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
 ```
+
+The opt-in cross-origin static profile replaces CORP only after exact eligible
+publication/asset selection, emits its exact CORS/Vary headers, and uses private
+revalidation rather than shared immutable caching. Denials keep the same-origin
+policy; guests still cannot supply any of these host-owned headers.
 
 HTTPS responses additionally carry `Strict-Transport-Security: max-age=31536000`,
 without includeSubDomains or preload. Deploy HTTPS before using browser cookies.
@@ -348,10 +358,12 @@ public caching, then retrieves the untouched public entry. Cross-tenant origin
 bindings and credential rejection run before route/asset lookup. A separate
 regression rejects unsafe HTML before a staged response-cache fill can publish.
 
-Immutable asset caching remains private, immutable and varied on Authorization
-and Accept-Encoding. Current publication/policy authority is checked on every
-origin request, including hits/HEAD/304. Browser-cached immutable bytes cannot
-be recalled by revocation. Neither kind of cached byte buffer grants admission.
+Outside the cross-origin static exception, immutable asset caching remains
+private, immutable and varied on Authorization and Accept-Encoding. Granted
+cross-origin reads instead require private revalidation as described above.
+Current publication/policy authority is checked on every origin request,
+including hits/HEAD/304. Browser-cached bytes already delivered cannot be recalled
+by revocation. Neither kind of cached byte buffer grants admission.
 
 ## Finite abuse evidence and qualification limits
 
