@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "latent.ci.suite-case-fragment.v1",
+  "suiteId": "latent-control-store.lib.latent-control-store",
+  "expectedCases": [
+    "deployments::tests::http::deletion::native_static_http_reference_blocks_deletion_after_revocation_and_reopen",
+    "deployments::tests::publications::deletion::native_assessment_rechecks_generations_catalog_changes_and_exact_tenant",
+    "deployments::tests::publications::deletion::native_batch_validation_and_elapsed_deadline_leave_no_deletion_intent",
+    "deployments::tests::publications::deletion::native_deletion_assessment_preserves_every_file_charge_and_operation_identity",
+    "deployments::tests::publications::deletion::native_missing_foreign_dropped_and_replaced_reference_owners_fail_closed",
+    "deployments::tests::publications::deletion::native_preparation_sources_and_all_clones_prevent_deletion_assessment",
+    "deployments::tests::publications::deletion::native_retention_pin_is_a_negative_deletion_reference_not_execution_authority",
+    "deployments::tests::publications::deletion::native_retired_deployment_reference_survives_reopen_until_explicit_removal",
+    "deployments::tests::publications::deletion::native_unconfirmed_reference_head_never_acts_as_an_empty_catalog",
+    "deployments::tests::publications::deletion::native_writer_excludes_assessment_and_remains_held_through_reference_callback",
+    "deployments::tests::publications::deletion::terminal_native_rollout_keeps_both_publications_after_routes_are_removed",
+    "deployments::tests::publications::deletion::unrelated_native_control_commit_is_rechecked_without_refreshing_the_publication_selection"
+  ]
+}

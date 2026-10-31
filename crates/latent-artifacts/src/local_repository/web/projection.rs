@@ -136,6 +136,7 @@ impl DirectoryArtifactRepository {
         reference: &PublicationRef,
         control: bool,
     ) -> Result<HistoricalExecutionSnapshot, PlatformError> {
+        let epoch = self.web.epoch.read()?;
         let state = self.web.state.try_read().map_err(|_| busy())?;
         let entry = state.entry(reference)?;
         let projection = Arc::clone(
@@ -158,8 +159,9 @@ impl DirectoryArtifactRepository {
             .checked_add(self.web_authority()?.limits.max_document_bytes * 8)
             .and_then(|bytes| bytes.checked_add(16 * 1024))
             .ok_or_else(capacity)?;
-        let permit = self.web.reads.reserve(charge)?;
+        let permit = self.web.reads.reserve_publication(charge, &reference.id)?;
         drop(state);
+        drop(epoch);
         let directory = self.web_publication_path(&reference.id);
         let stored = storage::Stored::read_header(
             &directory,

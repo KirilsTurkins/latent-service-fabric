@@ -42,34 +42,49 @@ pub struct PublicationRetentionRequest {
 }
 impl PublicationRetentionRequest {
     pub(crate) fn validate(&self) -> Result<(), PlatformError> {
-        self.scope.validate()?;
-        self.actor.validate()?;
-        token(&self.operation_id)?;
-        if self.targets.is_empty()
-            || self.targets.len() > MAX_PUBLICATION_RETENTION_BATCH
-            || self.targets.capacity() > MAX_PUBLICATION_RETENTION_BATCH
-            || self.operation_id.capacity() > 128
-        {
-            return Err(invalid());
-        }
-        for target in &self.targets {
-            target.publication.scope.validate()?;
-            if target.publication.scope != self.scope {
-                return Err(unavailable_target());
-            }
-            if target.expected_generation == 0 {
-                return Err(invalid());
-            }
-        }
-        if self
-            .targets
-            .windows(2)
-            .any(|pair| pair[0].publication.id >= pair[1].publication.id)
-        {
-            return Err(invalid());
-        }
-        Ok(())
+        validate_targets(
+            &self.scope,
+            &self.actor,
+            &self.operation_id,
+            &self.targets,
+            self.targets.capacity(),
+        )
     }
+}
+
+pub(crate) fn validate_targets(
+    scope: &LifecycleScope,
+    actor: &ReleaseActor,
+    operation_id: &String,
+    targets: &[PublicationRetentionTarget],
+    target_capacity: usize,
+) -> Result<(), PlatformError> {
+    scope.validate()?;
+    actor.validate()?;
+    token(operation_id)?;
+    if targets.is_empty()
+        || targets.len() > MAX_PUBLICATION_RETENTION_BATCH
+        || target_capacity > MAX_PUBLICATION_RETENTION_BATCH
+        || operation_id.capacity() > 128
+    {
+        return Err(invalid());
+    }
+    for target in targets {
+        target.publication.scope.validate()?;
+        if target.publication.scope != *scope {
+            return Err(unavailable_target());
+        }
+        if target.expected_generation == 0 {
+            return Err(invalid());
+        }
+    }
+    if targets
+        .windows(2)
+        .any(|pair| pair[0].publication.id >= pair[1].publication.id)
+    {
+        return Err(invalid());
+    }
+    Ok(())
 }
 
 /// Persisted independently of eligibility and generation changes. Revoking,

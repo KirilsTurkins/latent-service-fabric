@@ -73,3 +73,13 @@ Representative source tests (not a complete coverage inventory):
 - [Standalone management services](../../docs/reference/management-services.md)
 - [Workspace package index](../README.md)
 - [Architecture index](../../ARCHITECTURE.md)
+
+## Publication reference exclusion
+
+`bind_publication_reference_authority` attaches this actual `Arc`-owned native
+control store to the matching artifact lifecycle owner. The standalone composes
+this binding at startup. Read-only deletion assessment holds the native writer
+and current catalog while checking a budgeted deployment inverse index, stored
+HTTP targets, and retained rollout base/candidate targets. Missing, foreign,
+dropped or unconfirmed owners fail closed; reference absence is not deletion
+permission. See the [retention and assessment contract](../../docs/reference/publication-retention-pins.md).

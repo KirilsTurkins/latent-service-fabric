@@ -1,5 +1,7 @@
 //! Embedded, tenant-safe deployment catalog and immutable route publication.
 
+mod publication_deletion;
+
 mod admission_fence;
 pub mod bindings;
 mod compiler;

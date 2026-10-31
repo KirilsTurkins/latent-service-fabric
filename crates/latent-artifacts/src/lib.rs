@@ -12,6 +12,7 @@ pub mod package;
 mod preparation;
 mod preparation_fingerprint;
 mod publication;
+mod publication_deletion;
 mod publication_management;
 mod publication_retention;
 mod raw_cache;
@@ -23,6 +24,9 @@ mod verified_metadata;
 pub use lifecycle::DevelopmentTestArtifact;
 pub mod web;
 pub use publication::PublicationRef;
+pub use publication_deletion::{
+    PublicationDeletionAssessment, PublicationDeletionRequest, PublicationReferenceAuthority,
+};
 pub use publication_management::PublicationOperationReceipt;
 #[cfg(feature = "development-test-host")]
 pub use publication_retention::DevelopmentRetentionFault;

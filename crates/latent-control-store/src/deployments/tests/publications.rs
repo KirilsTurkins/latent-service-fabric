@@ -14,6 +14,7 @@ use latent_routing::{RevisionPolicySource, RouteResolver};
 use super::fixtures::*;
 use crate::{rollouts::*, DeploymentStore};
 
+mod deletion;
 mod history;
 mod operations;
 

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "latent.ci.suite-case-fragment.v1",
+  "suiteId": "latent-artifacts.lib.latent-artifacts",
+  "expectedCases": [
+    "local_repository::tests::publication_reads::exclusive_deletion_gate_refuses_new_native_reads_and_preparation_sources",
+    "local_repository::tests::publication_reads::physical_metadata_read_excludes_deletion_until_native_scan_retires",
+    "local_repository::tests::web::projection::historical_renderer_read_blocks_deletion_but_an_unrelated_web_read_does_not",
+    "local_repository::tests::web::retired_web_publication_keeps_exact_reader_reference_through_eligibility_clones"
+  ]
+}

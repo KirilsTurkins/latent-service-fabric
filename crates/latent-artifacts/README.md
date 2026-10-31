@@ -75,3 +75,11 @@ Integration targets: [tests/package_adversarial.rs](tests/package_adversarial.rs
 - [ADR-0027: Separate publication authority from component identity](../../adr/0027-separate-publication-authority-from-component-identity.md)
 - [Workspace package index](../README.md)
 - [Architecture index](../../ARCHITECTURE.md)
+
+## Publication deletion admission
+
+The native retention owner also exposes a read-only exact-selection assessment
+against its bound control-store authority and physical read/preparation owners.
+It does not delete content or create a mutation receipt. Borrowed preparation
+sources are explicit `Clone` owners, no longer `Copy`; quiesce all source clones
+before maintenance. See the [retention and assessment contract](../../docs/reference/publication-retention-pins.md).

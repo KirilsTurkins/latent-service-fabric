@@ -43,6 +43,18 @@ pub(in crate::deployments) struct HttpTable {
     _charge: Charge,
 }
 impl HttpTable {
+    pub(in crate::deployments) fn references_publications(
+        &self,
+        publications: &[latent_artifacts::PublicationRef],
+    ) -> bool {
+        // At most MAX_RECORDS (256), including disabled/stale retained triggers.
+        self.rows.iter().any(|row| {
+            publications
+                .binary_search_by(|p| p.id.cmp(&row.target.publication().id))
+                .is_ok()
+        })
+    }
+
     /// Bounded metadata scan of the existing maximum-256 table, under its
     /// catalog publication pin. Never clones request matchers or configuration.
     pub(in crate::deployments) fn inspection_bindings(

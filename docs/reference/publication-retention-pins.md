@@ -4,7 +4,8 @@
 
 This is the native storage foundation for issue #662, not the completed
 committed-publication deletion feature. The repository exposes trusted-host
-pin/unpin and original-operation lookup APIs. There is no operator pin/deletion
+pin/unpin and original-operation lookup APIs, plus a read-only deletion
+assessment against the native reference owner. There is no operator pin/deletion
 CLI or public management transport in this change. Committed publications,
 including retired and revoked publications, still retain their content. Existing
 orphan reclamation is unchanged; do not manually remove catalog files.
@@ -107,8 +108,72 @@ not claims of power-loss testing. The componentless-web fixture injects a
 non-cryptographic host authority; it does not qualify signature policy. Suite
 registration alone is not execution evidence.
 
-Issue #662 still requires the deletion/tombstone protocol; persistent deployment,
-HTTP-trigger and rollout target protection; reader/preparation race qualification;
-last-reference payload unlink/sync/refund; authenticated CLI and finite audit
-integration; deletion backup/restore; and source-bound native deletion/release
-sequence measurements. None are marked complete by this pin foundation.
+Issue #662 still requires the deletion/tombstone protocol and qualification of
+its mutation-time reference exclusion, last-reference payload unlink/sync/refund,
+authenticated CLI and finite audit integration, deletion backup/restore, and
+source-bound native deletion/release sequence measurements. The read-only
+assessment described below does not complete those requirements.
+
+## Native deletion assessment and physical ownership
+
+`inspect_publication_deletion` is a bounded **read-only observation**, not a
+preview receipt, reservation, deletion capability or promise about a later
+request. It accepts 1–32 exact, sorted publications with scope, actor, original
+operation ID, generation and catalog fence. It validates the complete selection
+before returning pin/reference diagnostics, refuses admitted publications and
+retention pins, and returns the observed control-store transaction only when
+all negative checks succeed. It creates no intent, receipt, audit reservation,
+tombstone, content unlink or capacity refund. Looking up that operation ID does
+not establish a deletion outcome. A later deletion implementation must repeat
+these checks while holding the same fences through its durable authority commit.
+
+The standalone composition binds its real `DirectoryDeploymentRepository` once.
+Trusted native embeddings using these two concrete owners must likewise call
+`control.bind_publication_reference_authority(artifacts.as_ref())` on the actual
+`Arc`-owned control store. This is an installation-composition operation, not a
+way to provide caller-selected reference lists. Unsupported multiple independent
+control stores are not a qualified deletion configuration. Missing, foreign,
+dropped, unconfirmed or replacement owners refuse assessment. The artifact owner
+keeps a weak reference to avoid an ownership cycle; rebinding after shutdown
+requires reopening the complete coupled installation, not substituting an empty
+control store.
+
+The control writer and current immutable publication remain held across the
+reference check. Deployment references use a compiled inverse index of record
+positions, conservatively charged to the existing metadata budget **before**
+allocation. The check does not rescan desired deployment manifests. HTTP rows
+(maximum 256) and rollout rows (maximum 1,024) are scanned within their existing
+finite limits, including denied/stale HTTP targets and both retained base and
+candidate targets of terminal rollouts. Unknown publication associations fail
+closed. Unrelated control commits can be observed without granting stale
+reference authority; artifact/publication changes still invalidate the original
+catalog fence.
+
+Native physical reads share a nonblocking exclusion with assessment. Generic
+borrowed and owned preparation sources retain a conservative catalog-wide count
+until their last clone drops. The borrowed source is now `Clone`, not `Copy`:
+copying implicitly must not evade physical ownership. Embeddings must quiesce and
+drop these sources before maintenance; long-lived preparation owners can
+therefore deliberately refuse assessment even for an unrelated publication.
+There is no per-publication idle worker or task, and no waiting queue behind the
+exclusion. A busy result does not authorize replay or deletion.
+
+Web selections, cloned eligibility tokens and historical renderer snapshots
+retain **exact publication** read references within the existing 32-read/64-MiB
+owner. Reference-map overhead is charged before admission. Revocation does not
+release these reads; only actual final-consumer retirement does. An unrelated
+web selection does not pin an otherwise unreferenced target. Historical metadata
+never restores serving eligibility.
+
+The added native tests exercise both real filesystem catalogs, persisted denied
+routes and terminal rollouts, reopen, foreign/dropped owners, original request
+identity, retention pins, reader clones, a paused physical scan on another
+thread, admission while the native control writer is held, unchanged bytes and
+charges, and unrelated control changes. Componentless-web tests reuse the
+explicitly non-cryptographic fixture authority; signing qualification is separate.
+Run the owning libraries and the existing pin suite without relaxing any gate:
+
+```sh
+cargo test --locked -p latent-artifacts --all-features --all-targets
+cargo test --locked -p latent-control-store --all-features --lib
+```

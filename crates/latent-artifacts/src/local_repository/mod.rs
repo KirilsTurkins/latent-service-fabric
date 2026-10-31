@@ -14,6 +14,7 @@ mod paging;
 mod preparation_read;
 mod publication_access;
 mod publication_preparation;
+mod publication_reads;
 mod retained_package;
 mod retention;
 mod root_durability;
@@ -191,6 +192,8 @@ pub struct DirectoryArtifactRepository {
     lifecycle: OnceLock<crate::lifecycle::LifecycleStore>,
     web: web::WebCatalog,
     retention: Mutex<retention::RetentionState>,
+    read_owners: publication_reads::PublicationReads,
+    reference_authority: OnceLock<std::sync::Weak<dyn crate::PublicationReferenceAuthority>>,
     _owner_lock: OwnerLock,
     #[cfg(test)]
     fail_parent_sync_once: AtomicBool,
@@ -328,6 +331,8 @@ impl DirectoryArtifactRepository {
             admission,
             lifecycle: OnceLock::new(),
             retention: Mutex::new(retention::RetentionState::default()),
+            read_owners: publication_reads::PublicationReads::default(),
+            reference_authority: OnceLock::new(),
             _owner_lock: owner_lock,
             #[cfg(test)]
             fail_parent_sync_once: AtomicBool::new(false),
@@ -477,6 +482,7 @@ impl DirectoryArtifactRepository {
         limits: ArtifactPreparationReadLimits,
         metadata_budget: Option<usize>,
     ) -> Result<VerifiedEntry, PlatformError> {
+        let _read = self.read_owners.read()?;
         let completion = CompletionRecord::read(path)?;
         let admission = match (self.admission.as_ref(), completion.admission_digest()) {
             (Some(config), Some(digest)) => Some(admission_storage::StoredAdmission::read(
@@ -871,11 +877,11 @@ impl ArtifactRepository for DirectoryArtifactRepository {
         Box::pin(async move { self.admit_legacy(tenant, upload, preflight) })
     }
     fn owned_preparation_source(self: Arc<Self>) -> Option<OwnedArtifactPreparationSource> {
-        Some(OwnedArtifactPreparationSource::new(self))
+        OwnedArtifactPreparationSource::new(self)
     }
 
     fn preparation_source(&self) -> Option<ArtifactPreparationSource<'_>> {
-        Some(ArtifactPreparationSource::new(self))
+        ArtifactPreparationSource::new(self)
     }
     fn get_catalog_entry<'a>(
         &'a self,

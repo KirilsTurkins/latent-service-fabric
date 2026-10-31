@@ -20,6 +20,10 @@ pub(super) const REPOSITORY_ACCOUNTED_BYTES: usize = crate::preparation::EPOCH_R
     + std::mem::size_of::<crate::verification_statistics::VerificationStatistics>()
     + std::mem::size_of::<super::web::WebCatalog>()
     + std::mem::size_of::<super::retention::RetentionState>()
+    + std::mem::size_of::<super::publication_reads::PublicationReads>()
+    + std::mem::size_of::<
+        std::sync::OnceLock<std::sync::Weak<dyn crate::PublicationReferenceAuthority>>,
+    >()
     + 1024;
 pub(super) type Rows = BTreeSet<PublicationId>;
 

@@ -1,4 +1,5 @@
 //! Shared native retention owner. This does not enable committed-content deletion.
+mod deletion;
 mod model;
 mod storage;
 use super::{

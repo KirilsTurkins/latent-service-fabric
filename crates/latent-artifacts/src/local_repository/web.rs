@@ -44,6 +44,23 @@ pub(super) struct WebCatalog {
     pub(super) after_payload_staged: std::sync::Mutex<Option<Box<dyn FnOnce() + Send>>>,
 }
 impl WebCatalog {
+    pub(super) fn terminal_for_deletion(
+        &self,
+        publication: &PublicationRef,
+    ) -> Result<bool, PlatformError> {
+        let state = self.state.try_read().map_err(|_| busy())?;
+        let entry = state.entry(publication)?;
+        Ok(matches!(
+            entry.record.state,
+            ReleaseLifecycleState::Retired | ReleaseLifecycleState::Revoked
+        ))
+    }
+    pub(super) fn retained_readers(
+        &self,
+        publications: &[PublicationRef],
+    ) -> Result<bool, PlatformError> {
+        self.reads.references_any(publications)
+    }
     pub(super) fn retention_generation(
         &self,
         reference: &PublicationRef,

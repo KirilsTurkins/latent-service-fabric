@@ -20,6 +20,7 @@ impl DirectoryArtifactRepository {
         reference: &PublicationRef,
         payload_bytes: usize,
     ) -> Result<WebSelection, PlatformError> {
+        let epoch = self.web.epoch.read()?;
         self.web.epoch.check()?;
         let state = self.web.state.try_read().map_err(|_| busy())?;
         let entry = state.entry(reference)?;
@@ -32,7 +33,7 @@ impl DirectoryArtifactRepository {
             .checked_add(payload_bytes)
             .and_then(|n| n.checked_add(4096))
             .ok_or_else(capacity)?;
-        let permit = self.web.reads.reserve(bytes)?;
+        let permit = self.web.reads.reserve_publication(bytes, &reference.id)?;
         let token = WebUseEligibility::new(
             reference.clone(),
             Arc::clone(&entry.layout),
@@ -43,6 +44,7 @@ impl DirectoryArtifactRepository {
             Arc::clone(&permit),
         )?;
         drop(state);
+        drop(epoch);
         token.check_current(reference.scope.tenant().ok_or_else(denied)?)?;
         Ok(WebSelection {
             eligibility: token,

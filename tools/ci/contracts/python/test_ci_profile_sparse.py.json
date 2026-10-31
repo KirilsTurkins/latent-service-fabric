@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "latent.ci.contracts.v2",
+  "kind": "python",
+  "module": "tools/tests/test_ci_profile_sparse.py",
+  "cases": [
+    "SparseProfileTests.test_declared_result_checkout_executes_the_unchanged_fail_closed_gate",
+    "SparseProfileTests.test_declared_sparse_inputs_run_profile_and_preserve_all_additive_cases"
+  ],
+  "guards": {
+    "SparseProfileTests.test_declared_sparse_inputs_run_profile_and_preserve_all_additive_cases": "3e90f908c8db12f7b80ed3adea7ed359273d4400dcfa7d5bb49970658c0362a4",
+    "SparseProfileTests.test_declared_result_checkout_executes_the_unchanged_fail_closed_gate": "3e90f908c8db12f7b80ed3adea7ed359273d4400dcfa7d5bb49970658c0362a4"
+  },
+  "reviewReason": "New isolated real-Git sparse-checkout regressions execute both unchanged profile and result owners with every additive suite case; no existing test or guard changes.",
+  "guardDefinitions": {
+    "3e90f908c8db12f7b80ed3adea7ed359273d4400dcfa7d5bb49970658c0362a4": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4871ceee9a3c5faf8ac1fbe3a2543fc106d4aace0e23814df4392bc1acbe7af4",
+        "class:setup-sha256:81ba43f163681e4a6af8d6672593e8a2287ad5bff26d2e160ae90a1f8078df86"
+      ]
+    }
+  }
+}
