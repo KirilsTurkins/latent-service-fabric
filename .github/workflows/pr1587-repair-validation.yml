@@ -32,15 +32,92 @@ jobs:
       - name: Apply only the reviewed repairs and preserve historical obligations
         run: |
           python3 - <<'PY'
-          import base64, hashlib, os, pathlib, shutil, subprocess, zlib
+          import hashlib, pathlib, shutil, subprocess
           from tools import ci_contracts
           root = pathlib.Path.cwd()
-          assert subprocess.check_output(['git', 'rev-parse', 'HEAD^']).decode().strip() == 'dc4b2f31af5f1dc3e0afec022c61cea89ecff744'
-          encoded = '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'
-          patch = zlib.decompress(base64.b64decode(encoded, validate=True))
-          assert hashlib.sha256(patch).hexdigest() == '5791b0dc29d0c87ba48de9e1657cf5e78ad028aca8ea6d7eba80383ba72e970e'
-          subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
-          subprocess.run(['git', 'apply', '-'], input=patch, check=True)
+          subprocess.run(['git', 'merge-base', '--is-ancestor', 'dc4b2f31af5f1dc3e0afec022c61cea89ecff744', 'HEAD'], check=True)
+          for name, expected in {
+              '.github/workflows/ci.yml': '786a1d898c90fd0c16353736eb0fa97b323ac1f5',
+              'crates/latent-wasmtime/tests/local_service.rs': '1c30f8e5a14e45d0d8d09469f1277ab71f5a7c8b',
+              'tools/tests/test_ci_profile.py': '737e227cdd4b3c825772b2467932e0d0c0447898',
+          }.items():
+              raw = (root / name).read_bytes()
+              assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == expected, name
+          path = root / 'crates/latent-wasmtime/tests/local_service.rs'
+          source = path.read_text()
+          assert source.count('latent_core::ActivationOutcome::Failed') == 1
+          path.write_text(source.replace('latent_core::ActivationOutcome::Failed', 'latent_activation::ActivationOutcome::Failed'))
+          path = root / '.github/workflows/ci.yml'
+          source = path.read_text()
+          assert source.count('            /tools/ci_suite_inventory.py\n') == 2
+          assert source.count('            /tools/ci/suites.d/\n') == 2
+          source = source.replace('            /tools/ci_suite_inventory.py\n', '            /tools/ci_suite_inventory.py\n            /tools/ci_suite_cases.py\n')
+          source = source.replace('            /tools/ci/suites.d/\n', '            /tools/ci/suites.d/\n            /tools/ci/suites.cases.d/\n')
+          path.write_text(source)
+          method = r'''    def test_sparse_profile_and_result_checkouts_load_complete_catalogue(self) -> None:
+                  import hashlib
+                  import sys
+                  from tools.ci_lane_inventory import workflow_model
+
+                  root = profile.registry.ROOT
+                  model = workflow_model((root / ".github/workflows/ci.yml").read_text())
+                  expected = hashlib.sha256(json.dumps(profile.registry.load(), sort_keys=True).encode()).hexdigest()
+                  environment = {**os.environ, "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+                                 "GIT_TERMINAL_PROMPT": "0", "GIT_NO_LAZY_FETCH": "1"}
+                  environment.pop("PYTHONPATH", None)
+                  environment.pop("PYTHONHOME", None)
+                  for job in ("profile", "result"):
+                      with self.subTest(job=job), tempfile.TemporaryDirectory() as temporary:
+                          checkout = next(step for step in model["jobs"][job]["steps"]
+                                          if "sparse-checkout" in step.get("with", {}))
+                          patterns = checkout["with"]["sparse-checkout"]
+                          self.assertIn("/tools/ci_suite_cases.py", patterns.splitlines())
+                          self.assertIn("/tools/ci/suites.cases.d/", patterns.splitlines())
+                          sparse = Path(temporary) / "checkout"
+                          def run(*arguments, input=None, status=0):
+                              result = subprocess.run(arguments, cwd=sparse if sparse.exists() else root,
+                                                      input=input, env=environment, capture_output=True,
+                                                      text=True, timeout=30)
+                              self.assertEqual(result.returncode, status, result.stdout + result.stderr)
+                              return result.stdout + result.stderr
+                          # Local shared objects, no network and no full working-tree fallback.
+                          run("git", "clone", "--quiet", "--shared", "--no-checkout", str(root), str(sparse))
+                          run("git", "sparse-checkout", "set", "--no-cone", "--stdin", input=patterns)
+                          run("git", "checkout", "--quiet", "--detach", "HEAD")
+                          observed = run(sys.executable, "-I", "-c",
+                                         "import hashlib,json,sys; from pathlib import Path; "
+                                         "sys.path.insert(0,str(Path.cwd())); "
+                                         "from tools import ci_suite_inventory as registry; "
+                                         "print(hashlib.sha256(json.dumps(registry.load(),sort_keys=True).encode()).hexdigest())")
+                          self.assertEqual(observed.strip(), expected)
+                          if job == "profile":
+                              event = Path(temporary) / "event.json"
+                              event.write_text("{}\n")
+                              output = Path(temporary) / "outputs.txt"
+                              summary = Path(temporary) / "summary.md"
+                              result = run(sys.executable, "-I", "tools/ci_profile.py", "--event-name", "workflow_dispatch",
+                                           "--event-path", str(event), "--github-output", str(output),
+                                           "--github-step-summary", str(summary))
+                              self.assertIn("CI profile: full", result)
+                              self.assertIn("profile=full\n", output.read_text())
+                          else:
+                              outputs = profile.Decision("full", "workflow-dispatch", 0).outputs()
+                              required = json.loads(outputs["expected_jobs"])
+                              results = {name: {"result": "success" if name in required else "skipped"}
+                                         for name in profile.registry.ALL_JOBS}
+                              results["profile"]["outputs"] = outputs
+                              environment["CI_JOB_RESULTS"] = json.dumps(results)
+                              self.assertIn("Required CI jobs passed:", run(sys.executable, "-I", "tools/ci_result.py"))
+                              results["docs"]["result"] = "failure"
+                              environment["CI_JOB_RESULTS"] = json.dumps(results)
+                              self.assertIn("unexpected-job-result:docs:failure",
+                                            run(sys.executable, "-I", "tools/ci_result.py", status=1))
+
+          '''
+          path = root / 'tools/tests/test_ci_profile.py'
+          source = path.read_text()
+          assert source.count('class ClassificationTests(unittest.TestCase):\n') == 1
+          path.write_text(source.replace('class ClassificationTests(unittest.TestCase):\n', 'class ClassificationTests(unittest.TestCase):\n' + method, 1))
           (root / '.github/workflows/pr1587-repair-validation.yml').unlink()
           for job in ('profile', 'result'):
               proposal = ci_contracts.propose(root, 'job', '.github/workflows/ci.yml', job,
