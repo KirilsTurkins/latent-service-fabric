@@ -130,3 +130,11 @@ empty catalogs and current lifecycle interruption recovery. Policy integration u
 real publisher and builder signatures with corrected embedded inventories and
 identical packages in two tenants. These are functional tests, with no guest
 invocations or 100k load campaign.
+
+## Retention pin foundation
+
+The native repository has a [bounded durable pin foundation](publication-retention-pins.md)
+for issue #662. It provides no public deletion command and does not relax the
+committed-history retention contract. Pins are independent of execution and
+serving eligibility; clearing one does not reclaim content. The guide distinguishes
+the implemented native owner from the remaining deletion and operator scope.

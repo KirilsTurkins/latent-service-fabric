@@ -145,6 +145,12 @@ impl LifecycleStore {
     pub(crate) fn limits(&self) -> LifecycleLimits {
         self.limits
     }
+    pub(crate) fn check_health(&self) -> Result<(), PlatformError> {
+        self.owner.check()
+    }
+    pub(crate) fn poison(&self) {
+        self.owner.poison();
+    }
     pub(crate) fn retire(&self) {
         self.owner.retire();
     }

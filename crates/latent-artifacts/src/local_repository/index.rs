@@ -19,6 +19,7 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(super) const REPOSITORY_ACCOUNTED_BYTES: usize = crate::preparation::EPOCH_RETAINED_BYTES
     + std::mem::size_of::<crate::verification_statistics::VerificationStatistics>()
     + std::mem::size_of::<super::web::WebCatalog>()
+    + std::mem::size_of::<super::retention::RetentionState>()
     + 1024;
 pub(super) type Rows = BTreeSet<PublicationId>;
 
@@ -48,6 +49,7 @@ pub(super) struct CatalogIndex {
     pub(super) accounted_bytes: usize,
     web_entries: usize,
     web_bytes: usize,
+    retention_bytes: usize,
     pub(super) generation: u64,
 }
 
@@ -65,6 +67,7 @@ impl Default for CatalogIndex {
             accounted_bytes: REPOSITORY_ACCOUNTED_BYTES,
             web_entries: 0,
             web_bytes: 0,
+            retention_bytes: 0,
             generation: 0,
         }
     }
@@ -88,6 +91,33 @@ fn unique(rows: Option<&Rows>) -> Result<Option<&PublicationId>, PlatformError> 
 }
 
 impl CatalogIndex {
+    pub(super) fn check_retention(
+        &self,
+        bytes: usize,
+        config: DirectoryArtifactRepositoryConfig,
+    ) -> Result<(), PlatformError> {
+        if self
+            .accounted_bytes
+            .checked_sub(self.retention_bytes)
+            .and_then(|n| n.checked_add(bytes))
+            .is_none_or(|n| n > config.max_index_bytes)
+        {
+            return Err(resource_exhausted(
+                "publication-retention-metadata-capacity",
+            ));
+        }
+        Ok(())
+    }
+    pub(super) fn replace_retention(
+        &mut self,
+        bytes: usize,
+        config: DirectoryArtifactRepositoryConfig,
+    ) -> Result<(), PlatformError> {
+        self.check_retention(bytes, config)?;
+        self.accounted_bytes = self.accounted_bytes - self.retention_bytes + bytes;
+        self.retention_bytes = bytes;
+        Ok(())
+    }
     pub(super) fn capacity_entries(&self) -> usize {
         self.by_publication.len() + self.pending_reservations.len() + self.web_entries
     }

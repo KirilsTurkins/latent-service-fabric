@@ -13,6 +13,7 @@ mod preparation;
 mod preparation_fingerprint;
 mod publication;
 mod publication_management;
+mod publication_retention;
 mod raw_cache;
 mod retained_package;
 mod selected_transaction_asset;
@@ -23,6 +24,15 @@ pub use lifecycle::DevelopmentTestArtifact;
 pub mod web;
 pub use publication::PublicationRef;
 pub use publication_management::PublicationOperationReceipt;
+#[cfg(feature = "development-test-host")]
+pub use publication_retention::DevelopmentRetentionFault;
+pub use publication_retention::{
+    PublicationRetentionAction, PublicationRetentionFence, PublicationRetentionLookup,
+    PublicationRetentionPin, PublicationRetentionReceipt, PublicationRetentionRequest,
+    PublicationRetentionResult, PublicationRetentionSelection, PublicationRetentionSnapshot,
+    PublicationRetentionTarget, MAX_PUBLICATION_RETENTION_BATCH, MAX_PUBLICATION_RETENTION_PINS,
+    MAX_PUBLICATION_RETENTION_RECEIPTS,
+};
 pub use retained_package::{RetainedPackageParts, RetainedPackageSource};
 mod selected_transaction_layers;
 pub use selected_transaction_asset::{

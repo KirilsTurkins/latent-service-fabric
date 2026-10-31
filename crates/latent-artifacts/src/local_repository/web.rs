@@ -44,6 +44,20 @@ pub(super) struct WebCatalog {
     pub(super) after_payload_staged: std::sync::Mutex<Option<Box<dyn FnOnce() + Send>>>,
 }
 impl WebCatalog {
+    pub(super) fn retention_generation(
+        &self,
+        reference: &PublicationRef,
+    ) -> Result<u64, PlatformError> {
+        self.epoch.check()?;
+        let state = self.state.try_read().map_err(|_| busy())?;
+        state
+            .entries
+            .get(&reference.id)
+            .filter(|entry| entry.record.publication.scope == reference.scope)
+            .map(|entry| entry.record.generation)
+            .ok_or_else(crate::publication_retention::unavailable_target)
+    }
+
     pub(super) fn new(
         authority: Option<Arc<dyn crate::AdmissionAuthority>>,
     ) -> Result<Self, PlatformError> {
