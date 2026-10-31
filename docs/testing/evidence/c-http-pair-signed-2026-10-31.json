@@ -1,0 +1,234 @@
+{
+  "schemaVersion": "latent.c.http-pair.signed-observation.v1",
+  "status": "authenticated-finite-success",
+  "issueScopes": [
+    690,
+    744
+  ],
+  "source": "72fb8969352b37eb5c9f4f9cd0cfec9845fc9f1a",
+  "tree": "abb4f3c76175a5c2664d02ba0b3cf5097bd60f27",
+  "run": 41204486731,
+  "artifact": 13043702337,
+  "archive": {
+    "sha256": "5bca0e31676f168e2f6405591f3be608ea0ae8b16d3f6287ca0ec8d362fe7bf4",
+    "crcMembers": 864
+  },
+  "retainedProgrammeReceipt": {
+    "bytes": 188190,
+    "sha256": "c4359b8d77c5e5763ea4de7df3b7edf5c600e6a59e50f2d978f731b73ccbe85a"
+  },
+  "profiles": {
+    "C": "c-context144-sync-cooperative-v1",
+    "standardFacilities": "c-libfetch-clock-entropy-v1",
+    "hostAbi": "lsf-host-abi-phase3-v5",
+    "wasmtime": "48.0.7"
+  },
+  "runtimeInputsDigest": "sha256:a9c09f5fa30e525b02088080847df15952b24743d244ae354043664c82cca807",
+  "nativeSource": {
+    "sha256": "sha256:ebff7c7f4b70a0f22bd9ccf8c4a6138d0b0e0765d9da979c34f929499d0c7a80",
+    "files": 3794,
+    "bytes": 35926094,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "tools": {
+    "zig": {
+      "sha256": "sha256:2317bbb91798556d9d0f38aabdac23db83f0979b25f767259ae474546724087c",
+      "bytes": 172641672
+    },
+    "wit-bindgen": {
+      "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+      "bytes": 19856344
+    },
+    "wasm-tools": {
+      "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "bytes": 20231696
+    }
+  },
+  "guestLimits": {
+    "blobReadBytes": 0,
+    "blobWriteBytes": 0,
+    "childCalls": 0,
+    "cpuFuel": 1000000000,
+    "effectCount": 0,
+    "logBytes": 0,
+    "memoryBytes": 33554432,
+    "outboundRequests": 3,
+    "stateReadBytes": 0,
+    "stateWriteBytes": 0,
+    "wallTimeLimitMillis": 5000
+  },
+  "programmeLimits": {
+    "parentSeconds": 1320,
+    "commandSeconds": 900,
+    "cleanupReserveSeconds": 5,
+    "jobs": 2,
+    "cells": 10,
+    "components": 2
+  },
+  "sharedClientCounters": {
+    "calls": 76,
+    "controlAttempts": 76,
+    "retainedBytes": 329165
+  },
+  "nativeBinaryBytesIndependentlyRetainedAndRehashed": false,
+  "full690Qualified": false,
+  "fullCCostModelQualified": false,
+  "publisherAuthenticated": false,
+  "releasePublished": false,
+  "evidenceRetaggedOrExecutionBorrowed": false,
+  "currentGitMaterialsVerified": 220,
+  "nativeBoundaryControlsPassed": 4,
+  "independentClientCount": 2,
+  "nativeBinaryReceiptIdentities": {
+    "latent": {
+      "sha256": "sha256:72aeb1ce23e28c410ec5646a357a1eeb177cc3fc3903d7ee859c59f264a15d3c",
+      "bytes": 81159288,
+      "actualFeatures": []
+    },
+    "latentd": {
+      "sha256": "sha256:8dfec1940d200b658d3aedcee5bfada69e4bc62d98dfde04f70d9dd8e2d283ad",
+      "bytes": 202660336,
+      "actualFeatures": []
+    },
+    "package": {
+      "sha256": "sha256:9eb26ac8cd3cdf0d4228b449c3374934d8354e052e126af3b88c2a57c6725e28",
+      "bytes": 25928256,
+      "actualFeatures": []
+    },
+    "capsule_contracts": {
+      "sha256": "sha256:95892190d8ee796d12ee81200a7e4b81669e65e23adb40b81bb6e0dfe1a2b7f7",
+      "bytes": 14934456,
+      "actualFeatures": []
+    },
+    "capsule_authoring": {
+      "sha256": "sha256:a0a8e679d0576ff29526cd68e86886e7e4b051bbea71550e04569d1a5ba1fd01",
+      "bytes": 32006992,
+      "actualFeatures": []
+    }
+  },
+  "completedRootBuildAndSignCommands": 95,
+  "nativePollPendingObserved": false,
+  "sourceBoundPendingAndSiblingCompletionObserved": true,
+  "clients": [
+    {
+      "client": "libfetch",
+      "component": {
+        "sha256": "sha256:9a4bb14e6d216a685e6273b54e9b6d14db3402646f7c8eda0c26b9676a2b6a37",
+        "bytes": 122541
+      },
+      "cases": [
+        {
+          "case": "normal",
+          "exitCode": 0,
+          "peerRequests": 1,
+          "physicalOwnersAfter": 0,
+          "activeProviderCountersAfter": 0
+        },
+        {
+          "case": "not-found",
+          "exitCode": 3,
+          "peerRequests": 1,
+          "physicalOwnersAfter": 0,
+          "activeProviderCountersAfter": 0
+        },
+        {
+          "case": "denied",
+          "exitCode": 3,
+          "peerRequests": 0,
+          "physicalOwnersAfter": 0,
+          "activeProviderCountersAfter": 0
+        },
+        {
+          "case": "early-close",
+          "exitCode": 0,
+          "peerRequests": 1,
+          "physicalOwnersAfter": 0,
+          "activeProviderCountersAfter": 0
+        },
+        {
+          "case": "sibling",
+          "exitCode": 0,
+          "peerRequests": 3,
+          "physicalOwnersAfter": 0,
+          "activeProviderCountersAfter": 0
+        }
+      ],
+      "cleanup": {
+        "allRetirementsIdle": true,
+        "nodeShutdownClean": true,
+        "nodeReaped": true,
+        "peerStoppedCleanly": true
+      }
+    },
+    {
+      "client": "libucl",
+      "component": {
+        "sha256": "sha256:814daab9bae6476c59a571806039060738803c63951a5aa15fb9077fc3a6bedd",
+        "bytes": 326670
+      },
+      "cases": [
+        {
+          "case": "normal",
+          "exitCode": 0,
+          "peerRequests": 1,
+          "physicalOwnersAfter": 0,
+          "activeProviderCountersAfter": 0
+        },
+        {
+          "case": "not-found",
+          "exitCode": 3,
+          "peerRequests": 1,
+          "physicalOwnersAfter": 0,
+          "activeProviderCountersAfter": 0
+        },
+        {
+          "case": "denied",
+          "exitCode": 3,
+          "peerRequests": 0,
+          "physicalOwnersAfter": 0,
+          "activeProviderCountersAfter": 0
+        },
+        {
+          "case": "file",
+          "exitCode": 3,
+          "peerRequests": 0,
+          "physicalOwnersAfter": 0,
+          "activeProviderCountersAfter": 0
+        },
+        {
+          "case": "glob",
+          "exitCode": 3,
+          "peerRequests": 0,
+          "physicalOwnersAfter": 0,
+          "activeProviderCountersAfter": 0
+        }
+      ],
+      "cleanup": {
+        "allRetirementsIdle": true,
+        "nodeShutdownClean": true,
+        "nodeReaped": true,
+        "peerStoppedCleanly": true
+      }
+    }
+  ],
+  "upstreamScope": {
+    "freebsdFrontend": {
+      "commit": "b319c3d6ac7cf408b56fe745f718de6a324ec180",
+      "file": "fetch.c",
+      "bytes": 11826,
+      "sha256": "sha256:e161caef3dd62b8ae90748f30ff89fb5e14328e9abf8f56efdc6bc2bc0cbb426",
+      "unchanged": true
+    },
+    "libucl": {
+      "commit": "1778e38ef06b75876cdd10d76f409954fea3869a",
+      "unchangedMaterials": 25,
+      "ordinaryPath": "ucl_parser_new/add_chunk; URL include transitively calls fetchParseURL/fetchXGet/fread"
+    },
+    "maintainedBackend": "LSF http.c, finite file/libc ABI and clock/entropy integration; not the upstream FreeBSD socket/TLS backend",
+    "applicationTransportCallbacksRequired": false,
+    "perPackageProductionDispatchRequired": false
+  },
+  "remainingQualification": "Full HTTP/lifecycle/cancellation/uncertain-POST matrix and complete C cost model remain unqualified; no native poll-Pending observation is claimed."
+}

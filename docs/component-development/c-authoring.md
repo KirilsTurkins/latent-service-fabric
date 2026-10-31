@@ -150,8 +150,9 @@ and grants alongside the HTTP and cooperative-runtime grants. Selecting the
 HTTP-only profile still grants no clocks or entropy. No ambient WASI or socket
 authority is introduced.
 
-The selected C proof limits are 1 MiB for the original core, 32,768 original
-operators, 65,536 operators per derived core and 8,192 per function under its
+The selected C proof limits are 1 MiB for the original core, 384 original
+functions and 408 after transformation (including imports), 65,536 aggregate
+operators per original or derived core and 8,192 per function under the unchanged
 48 MiB verification-work reservation; larger shapes refuse. These are compiler
 compatibility bounds, not universal C support.
 
@@ -163,9 +164,26 @@ Closing the cookie releases its body/cookie owners; libc then frees the FILE.
 The original Store backing remains charged until its actual cleanup, and host
 HTTP upload, body and chunk owners have separate lifetimes.
 
-The qualification programme covers one libfetch client and five signed cases:
-normal GET, not-found, denied target, early close and a held fread with a completed
-sibling. It does not qualify the whole #690 matrix or C cost model.
+The [paired signed programme](../testing/evidence/c-http-pair-signed-2026-10-31.json)
+covers two independently maintained clients on the same expanded profile: the
+unchanged pinned FreeBSD `fetch.c` frontend through ordinary libfetch APIs, and
+25 unchanged libucl materials through its constructor, parser and
+transitive URL-include calls. The HTTP/libc backend is LSF-maintained; this is not
+the full upstream FreeBSD socket/TLS implementation. Ten signed cases passed:
+libfetch normal/404/denied/early-close/sibling and libucl normal/404/denied/file/glob.
+All ten retirements were idle and both nodes shut down cleanly and were reaped.
+The sibling result is source/peer-bound; native poll-Pending was not observed.
+
+The [catalogue-free signed programme](../testing/evidence/c-outside-capture-signed-2026-10-31.json)
+adds two identity variants of one developer-owned library, not two additional
+independent clients. Both normal builds used a copied SDK source root without
+documentation or catalogue data, with the original outside inputs removed after
+capture. Ordinary constructor/request/destructor calls and the embedded UTF-8
+resource passed both signed runs, followed by idle retirement and clean shutdown.
+SDK, compiler-tool and native-binary receipt identities match the paired run;
+retained native binary bytes were not independently rehashed. These finite
+programmes do not qualify the full #690 HTTP/lifecycle/cancellation/uncertain-POST
+matrix or the complete C cost model.
 
 ## 2. Build and package the project
 
