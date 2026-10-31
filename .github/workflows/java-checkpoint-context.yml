@@ -1,7 +1,7 @@
 name: Java checkpoint context compiler control
 on:
   push:
-    branches: ['feat/java-checkpoint-context-20261023']
+    branches: ['feat/java-checkpoint-context-20261023', 'feat/java-nonsuspendable-progress-20261031']
   workflow_dispatch:
 permissions:
   contents: read

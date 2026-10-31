@@ -66,6 +66,8 @@ public final class CheckpointContextControl {
         final MutableClassHolderSource source = new MutableClassHolderSource();
         final DefaultCallGraph graph = new DefaultCallGraph();
         final Set<MethodReference> reachable = new HashSet<>();
+        final Set<MethodReference> unused = new HashSet<>();
+        final Set<MethodReference> called = new HashSet<>();
 
         Inputs() {
             owner(source, "java.lang.Object");
@@ -91,7 +93,21 @@ public final class CheckpointContextControl {
         @Override public boolean isPrecise() { return true; }
         @Override public Collection<FieldReference> getReachableFields() { throw new AssertionError("unused-fields"); }
         @Override public FieldDependencyInfo getField(FieldReference field) { throw new AssertionError("unused-field"); }
-        @Override public MethodDependencyInfo getMethod(MethodReference method) { throw new AssertionError("unused-method"); }
+        @Override public MethodDependencyInfo getMethod(MethodReference method) {
+            if (!unused.contains(method)) return null;
+            return new MethodDependencyInfo() {
+                @Override public ValueDependencyInfo[] getVariables() { return new ValueDependencyInfo[0]; }
+                @Override public int getVariableCount() { return 0; }
+                @Override public ValueDependencyInfo getVariable(int index) { throw new AssertionError("unused-variable"); }
+                @Override public int getParameterCount() { return 0; }
+                @Override public ValueDependencyInfo getResult() { return null; }
+                @Override public ValueDependencyInfo getThrown() { return null; }
+                @Override public MethodReference getReference() { return method; }
+                @Override public boolean isUsed() { return false; }
+                @Override public boolean isCalled() { return called.contains(method); }
+                @Override public boolean isMissing() { return true; }
+            };
+        }
         @Override public MethodDependencyInfo getMethodImplementation(MethodReference method) {
             throw new AssertionError("unused-implementation");
         }
@@ -385,7 +401,7 @@ public final class CheckpointContextControl {
         }
     }
 
-    private static void classAnnotationControl() throws Exception {
+    private static void classAnnotationControl(boolean corrected) throws Exception {
         var source = new MutableClassHolderSource();
         var method = method(source, ref("control.UnmanagedLoops", "loop"), null);
         var cls = source.get("control.UnmanagedLoops");
@@ -405,6 +421,278 @@ public final class CheckpointContextControl {
         transform.setAccessible(true);
         transform.invoke(plugin, cls, null);
         require(block.getFirstInstruction() == jump, "class-unmanaged-loop-not-instrumented");
+        directProgressControls(cls, corrected);
+        if (corrected) originalGcProgressControl();
+    }
+
+    private static void isolatedProgress(Inputs inputs, MethodReference entry, boolean corrected,
+            String expected) {
+        inputs.reachable.clear();
+        inputs.reachable.add(entry);
+        inputs.graph.getNode(entry);
+        require(!inputs.reachable.contains(CHECKPOINT), "no-checkpoint-root-in-progress-control");
+        find(inputs, corrected, expected);
+    }
+
+    private static void directProgressControls(ClassHolder unmanagedLoop, boolean corrected) {
+        final String refusal = "java-checkpoint-nonsuspendable-progress-741";
+        var speculative = new Inputs();
+        var absent = ref("control.SpeculativeManaged", "absent");
+        owner(speculative.source, absent.getClassName());
+        isolatedProgress(speculative, absent, corrected, null);
+        var symbolic = new Inputs();
+        var symbolicEntry = ref("control.UnusedUnknown", "entry");
+        symbolic.unused.add(symbolicEntry);
+        isolatedProgress(symbolic, symbolicEntry, corrected, null);
+        symbolic.called.add(symbolicEntry);
+        isolatedProgress(symbolic, symbolicEntry, corrected, "java-checkpoint-unresolved-741");
+        symbolic.called.clear();
+        var usedCaller = ref("control.UsedUnknownCaller", "<clinit>");
+        symbolic.caller(usedCaller, symbolicEntry);
+        // A direct executable edge still needs a body even if its dependency
+        // record is speculative. The root filter must not weaken the closure.
+        isolatedProgress(symbolic, usedCaller, corrected, "java-checkpoint-unresolved-741");
+        for (int kind = 0; kind < 4; ++kind) {
+            var excluded = new Inputs();
+            var missing = ref(kind == 2 ? "org.teavm.runtime.GC" : "control.MissingProgress",
+                    kind == 0 ? "<clinit>" : "absent");
+            if (kind != 3) {
+                var cls = owner(excluded.source, missing.getClassName());
+                if (kind == 1) cls.getAnnotations().add(new AnnotationHolder("org.teavm.interop.Unmanaged"));
+            }
+            isolatedProgress(excluded, missing, corrected, "java-checkpoint-unresolved-741");
+        }
+        var transitive = new Inputs();
+        var unresolvedEntry = ref("control.TransitiveMissingProgress", "<clinit>");
+        owner(transitive.source, absent.getClassName());
+        transitive.caller(unresolvedEntry, absent);
+        isolatedProgress(transitive, unresolvedEntry, corrected, "java-checkpoint-unresolved-741");
+        var unmanaged = new Inputs();
+        unmanaged.source.putClassHolder(ModelUtils.copyClass(unmanagedLoop));
+        isolatedProgress(unmanaged, ref(unmanagedLoop.getName(), "loop"), corrected, refusal);
+
+        var initializer = new Inputs();
+        var entry = ref("control.DirectInitializer", "<clinit>");
+        var method = method(initializer.source, entry, null);
+        var block = method.getProgram().basicBlockAt(0);
+        block.getLastInstruction().delete();
+        var poll = new GetFieldInstruction();
+        poll.setField(new FieldReference("control.ProgressFlag", "ready"));
+        poll.setFieldType(ValueType.BOOLEAN);
+        poll.setReceiver(method.getProgram().createVariable());
+        block.add(poll);
+        var branch = new BranchingInstruction(BranchingCondition.EQUAL);
+        branch.setOperand(poll.getReceiver());
+        branch.setConsequent(block);
+        var done = method.getProgram().createBasicBlock();
+        done.add(new ExitInstruction());
+        branch.setAlternative(done);
+        block.add(branch);
+        var flag = new FieldHolder("ready");
+        flag.setType(ValueType.BOOLEAN);
+        flag.getModifiers().add(ElementModifier.STATIC);
+        flag.getModifiers().add(ElementModifier.VOLATILE);
+        owner(initializer.source, "control.ProgressFlag").addField(flag);
+        isolatedProgress(initializer, entry, corrected, refusal);
+
+        var methodUnmanaged = new Inputs();
+        var unsafe = ref("control.DirectMethod", "loop");
+        var direct = method(methodUnmanaged.source, unsafe, null);
+        direct.getAnnotations().add(new AnnotationHolder("org.teavm.interop.Unmanaged"));
+        var head = direct.getProgram().basicBlockAt(0);
+        head.getLastInstruction().delete();
+        var back = new JumpInstruction();
+        back.setTarget(head);
+        head.add(back);
+        isolatedProgress(methodUnmanaged, unsafe, corrected, refusal);
+
+        for (boolean arrayBound : new boolean[] { false, true }) {
+            var finite = new Inputs();
+            var counted = ref(arrayBound ? "control.ArrayInitializer" : "control.CountedInitializer", "<clinit>");
+            var count = method(finite.source, counted, null);
+            count.setProgram(countedProgram(arrayBound));
+            isolatedProgress(finite, counted, corrected, null);
+        }
+        var overflow = new Inputs();
+        var wrapping = ref("control.WrappingInitializer", "<clinit>");
+        var wrappingMethod = method(overflow.source, wrapping, null);
+        wrappingMethod.setProgram(countedProgram(false));
+        var wrappingHead = wrappingMethod.getProgram().basicBlockAt(1);
+        ((IntegerConstantInstruction) wrappingHead.getFirstInstruction()).setConstant(Integer.MAX_VALUE);
+        ((BranchingInstruction) wrappingHead.getLastInstruction()).setCondition(BranchingCondition.GREATER);
+        isolatedProgress(overflow, wrapping, corrected, refusal);
+
+        for (boolean cyclic : new boolean[] { false, true }) {
+            var delegated = new Inputs();
+            var caller = ref("control.DelegatedInitializer", "<clinit>");
+            var bridge = ref("control.NativeBridge", "bridge");
+            var target = ref("control.NativeBridge", "finite");
+            method(delegated.source, caller, bridge);
+            var nativeMethod = method(delegated.source, bridge, null);
+            nativeMethod.setProgram(null);
+            nativeMethod.getModifiers().add(ElementModifier.NATIVE);
+            var annotation = new AnnotationHolder("org.teavm.interop.DelegateTo");
+            annotation.getValues().put("value", new AnnotationValue("finite"));
+            nativeMethod.getAnnotations().add(annotation);
+            var targetMethod = method(delegated.source, target, null);
+            if (cyclic) {
+                var loop = targetMethod.getProgram().basicBlockAt(0);
+                loop.getLastInstruction().delete();
+                var again = new JumpInstruction();
+                again.setTarget(loop);
+                loop.add(again);
+            }
+            delegated.reachable.clear();
+            delegated.reachable.addAll(Set.of(caller, bridge, target));
+            delegated.graph.getNode(caller).addCallSite(bridge);
+            delegated.graph.getNode(bridge);
+            delegated.graph.getNode(target);
+            require(!delegated.reachable.contains(CHECKPOINT), "delegate-progress-without-checkpoint");
+            find(delegated, corrected, cyclic ? refusal : null);
+        }
+        // A managed loop outside every non-suspendable closure remains eligible
+        // for the existing scheduling mechanism; this pass does not reject it.
+        var managed = new Inputs();
+        var running = ref("control.ManagedProgress", "loop");
+        var ordinary = method(managed.source, running, null);
+        var runningBlock = ordinary.getProgram().basicBlockAt(0);
+        runningBlock.getLastInstruction().delete();
+        var runningBackedge = new JumpInstruction();
+        runningBackedge.setTarget(runningBlock);
+        runningBlock.add(runningBackedge);
+        isolatedProgress(managed, running, corrected, null);
+    }
+
+    private static Program countedProgram(boolean arrayBound) {
+        var result = new Program();
+        result.createVariable();
+        var zero = result.createVariable();
+        var limit = result.createVariable();
+        var index = result.createVariable();
+        var step = result.createVariable();
+        var next = result.createVariable();
+        var comparison = result.createVariable();
+        var entry = result.createBasicBlock();
+        var head = result.createBasicBlock();
+        var body = result.createBasicBlock();
+        var exit = result.createBasicBlock();
+        var initial = new IntegerConstantInstruction();
+        initial.setConstant(0);
+        initial.setReceiver(zero);
+        entry.add(initial);
+        var length = new IntegerConstantInstruction();
+        length.setConstant(256);
+        length.setReceiver(limit);
+        var increment = new IntegerConstantInstruction();
+        increment.setConstant(1);
+        increment.setReceiver(step);
+        entry.add(increment);
+        if (arrayBound) {
+            entry.add(length);
+            var array = new ConstructArrayInstruction();
+            array.setItemType(ValueType.BYTE);
+            array.setSize(limit);
+            array.setReceiver(result.createVariable());
+            entry.add(array);
+            var read = new ArrayLengthInstruction();
+            read.setArray(array.getReceiver());
+            read.setReceiver(result.createVariable());
+            head.add(read);
+            limit = read.getReceiver();
+        } else {
+            // Match the pinned parser's ordinary literal-bound loop shape:
+            // SIPUSH/ICONST appears at the comparison head, not its preheader.
+            head.add(length);
+        }
+        var start = new JumpInstruction();
+        start.setTarget(head);
+        entry.add(start);
+        var phi = new Phi();
+        phi.setReceiver(index);
+        var outside = new Incoming();
+        outside.setSource(entry);
+        outside.setValue(zero);
+        phi.getIncomings().add(outside);
+        var inside = new Incoming();
+        inside.setSource(body);
+        inside.setValue(next);
+        phi.getIncomings().add(inside);
+        head.getPhis().add(phi);
+        var compare = new BinaryInstruction(BinaryOperation.COMPARE_GREATER, NumericOperandType.INT);
+        compare.setFirstOperand(index);
+        compare.setSecondOperand(limit);
+        compare.setReceiver(comparison);
+        head.add(compare);
+        var condition = new BranchingInstruction(BranchingCondition.GREATER_OR_EQUAL);
+        condition.setOperand(comparison);
+        condition.setConsequent(exit);
+        condition.setAlternative(body);
+        head.add(condition);
+        var add = new BinaryInstruction(BinaryOperation.ADD, NumericOperandType.INT);
+        add.setFirstOperand(index);
+        add.setSecondOperand(step);
+        add.setReceiver(next);
+        body.add(add);
+        var repeat = new JumpInstruction();
+        repeat.setTarget(head);
+        body.add(repeat);
+        exit.add(new ExitInstruction());
+        return result;
+    }
+
+    private static boolean runtimeProgressProof(Inputs inputs, MethodReader method) throws Exception {
+        var finder = new AsyncMethodFinder(inputs.graph, inputs);
+        var source = AsyncMethodFinder.class.getDeclaredField("classSource");
+        source.setAccessible(true);
+        source.set(finder, inputs.source);
+        var proof = AsyncMethodFinder.class.getDeclaredMethod("finiteRuntimeMethod", ClassReader.class,
+                MethodReader.class);
+        proof.setAccessible(true);
+        return Boolean.TRUE.equals(proof.invoke(finder, inputs.source.get(method.getReference().getClassName()),
+                method));
+    }
+
+    private static void originalGcProgressControl() throws Exception {
+        var core = java.nio.file.Path.of(org.teavm.runtime.GC.class.getProtectionDomain()
+                .getCodeSource().getLocation().toURI()).toRealPath();
+        var interop = java.nio.file.Path.of(org.teavm.interop.Address.class.getProtectionDomain()
+                .getCodeSource().getLocation().toURI()).toRealPath();
+        try (var provider = org.teavm.parsing.resource.ResourceProvider.ofClassPath(
+                java.util.List.of(core.toFile(), interop.toFile()))) {
+            var source = new PreOptimizingClassHolderSource(
+                    new org.teavm.parsing.resource.ResourceBytecodeClassHolderSource(provider, new ReferenceCache()));
+            var inputs = new Inputs();
+            for (String name : java.util.List.of("org.teavm.runtime.GC", "org.teavm.runtime.RuntimeClass",
+                    "org.teavm.runtime.RuntimeArray", "org.teavm.runtime.RuntimeObject", "org.teavm.interop.Address",
+                    "org.teavm.interop.Structure")) {
+                var cls = source.get(name);
+                require(cls != null, "original-gc-progress-class-present");
+                new org.teavm.backend.c.analyze.CDependencyListener().transformClass(cls, null);
+                inputs.source.putClassHolder(cls);
+            }
+            var gc = inputs.source.get("org.teavm.runtime.GC");
+            var method = gc.getMethod(new MethodDescriptor("markArray", ValueType.object("org.teavm.runtime.RuntimeClass"),
+                    ValueType.object("org.teavm.runtime.RuntimeArray"), ValueType.BOOLEAN));
+            require(method != null && method.getProgram() != null, "original-gc-progress-array-method-present");
+            var diagnostics = new AccumulationDiagnostics();
+            // This method has no platform-marker operation. The complete
+            // certificate independently applies the original JCL class pass.
+            var resolver = new ReferenceResolver(inputs.source, new String[] { org.teavm.interop.Platforms.C,
+                    org.teavm.interop.Platforms.LOW_LEVEL, org.teavm.interop.Platforms.OWN_GC }, diagnostics);
+            resolver.use(method.getReference());
+            resolver.resolve(method, method.getProgram());
+            new org.teavm.model.transformation.ClassInitInsertion(inputs.source).apply(method, method.getProgram());
+            require(diagnostics.getSevereProblems().isEmpty(), "original-gc-progress-normal-resolution");
+            require(runtimeProgressProof(inputs, method), "original-gc-array-finite-family-accepted");
+            var changed = new EmptyInstruction();
+            method.getProgram().basicBlockAt(0).getFirstInstruction().insertPrevious(changed);
+            require(!runtimeProgressProof(inputs, method), "altered-gc-array-body-not-certified");
+            changed.delete();
+            var field = new FieldHolder("unreviewedProgressState");
+            field.setType(ValueType.INTEGER);
+            gc.addField(field);
+            require(!runtimeProgressProof(inputs, method), "altered-gc-layout-not-certified");
+        }
     }
 
     public static void main(String[] arguments) throws Exception {
@@ -418,7 +706,7 @@ public final class CheckpointContextControl {
         boolean corrected = arguments[0].equals("corrected");
         graphControls(corrected);
         lateAnalyzerControl(corrected);
-        classAnnotationControl();
+        classAnnotationControl(corrected);
         System.out.println("CHECKPOINT_CONTEXT_CONTROL PASS " + arguments[0]
                 + ";direct;multihop;shared;virtual;class-unmanaged;managed-cycle;pinned-managed-entry;altered-entry-negatives;unresolved;bound;real-late-completion");
     }

@@ -21,7 +21,7 @@ NATIVE = re.compile(r'Method (' + NAME + r')' + DESCRIPTOR
 MISSING_METHOD = re.compile(r'Method (' + NAME + r')' + DESCRIPTOR + r' was not found')
 MISSING_CLASS = re.compile(r'Class (' + NAME + r') was not found')
 CHECKPOINT_CONTEXT = re.compile(r'latent\.java\.checkpoint-context\.v1 '
-    r'java-checkpoint-(nonsuspendable-context|analysis-bound|unresolved)-741')
+    r'java-checkpoint-(nonsuspendable-context|nonsuspendable-progress|analysis-bound|unresolved)-741')
 
 
 def findings(raw: bytes, classpath: dict, source: str) -> tuple[list[dict], int]:
@@ -45,7 +45,7 @@ def findings(raw: bytes, classpath: dict, source: str) -> tuple[list[dict], int]
         checkpoint = CHECKPOINT_CONTEXT.fullmatch(line)
         value = None
         if checkpoint:
-            classification = ('missing-runtime-port' if checkpoint[1] == 'nonsuspendable-context'
+            classification = ('missing-runtime-port' if checkpoint[1] in {'nonsuspendable-context', 'nonsuspendable-progress'}
                 else 'unresolved-behavior')
             value = compatibility.finding(classification, 'compile', 'compiler',
                 operation='java-runtime-checkpoint-context', source_digest=source, owner_issue=741)

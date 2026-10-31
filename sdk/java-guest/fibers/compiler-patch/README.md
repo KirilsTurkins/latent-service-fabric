@@ -146,3 +146,93 @@ is only a pre-Clang decision, not component acceptance. It selects no compiler
 SDK or alternate application. Existing FULL/O2, native EH/SjLj, 64KiB stack, 64MiB
 maximum memory and the 7654321-byte function parser limit remain unchanged.
 The new JVM cost controls and actual public observation are still unexecuted.
+
+### Non-suspendable progress classification
+
+The private finder's final-reachability pass checks progress independently of
+whether `Activation.checkpoint` is reachable. It starts from reachable class
+initializers and method/class `@Unmanaged` contexts, follows the actual call
+graph, and retains the original exact private `Fiber.start()` managed-entry
+boundary. The existing checkpoint-call refusals run first and keep their reason
+codes. An excluded cycle without a supported finite argument refuses with
+`java-checkpoint-nonsuspendable-progress-741`; fuel exhaustion is not its proof.
+Managed loops outside these contexts keep the existing checkpoint transformation.
+
+The generic rule uses a reducible CFG, including exceptional edges, and SSA
+induction. Every entry supplies a signed `int`; every backedge must supply
+exactly `i + 1`; the dominating continuation test is strict signed `i < limit`.
+The limit may be an array length or a getter recomputed at the header: the rank
+`Integer.MAX_VALUE - (long) i` still decreases on every cycle because no signed
+limit can admit a cycle at `Integer.MAX_VALUE`. Header exception paths cannot
+bypass that test, and a body backedge must be dominated by its continuation.
+The increment on a traversed backedge cannot wrap. Mutable
+flag polling, reset/bypassed updates, unsupported exception cycles and unknown
+recursive call components do not acquire this argument. No package name is an
+approval, and calls/inner cycles require their own argument. Existing C
+`DelegateTo` wrappers
+must have one reachable static sibling with a compatible signature; that body
+is analyzed in the same context. The C object/array header aliases retain their
+valid-operand precondition and are not arbitrary pointer conversions.
+An asynchronous operation or possibly contended monitor is not made bounded
+by a loop-free method body. Normal class-initialization edges retain the owned
+at-most-once/in-progress protocol, with every initializer checked independently;
+a direct IR invoke of `<clinit>` is not accepted as that protocol.
+
+The separate runtime argument binds 32 exact original TeaVM 0.15 class entries,
+their complete field/method declarations, and normalized bodies. Shared symbol
+tables make the pinned `ClassIO`/`ProgramIO` representations comparable; their
+SHA-256 digests stream without retaining or publishing application IR. A changed
+runtime declaration or body cannot fall back to the generic counted rule. The
+normal C `DelegateTo` transformation, JCL platform-marker and branch passes,
+reference resolution and class-init insertion are reused. Marker declarations
+come from the authenticated original hierarchy. Required data-only layout uses,
+such as `RuntimeArray`, and their native structure parents must also match;
+unused pointer types do not force missing DCE classes into a lean programme.
+The certificate is a compositional finite boundary. Its two ordinary helper
+constructors (`Object` and `StackTraceElement`) bind exact original classlib
+inputs and actual normalized declaration/body comparisons through the pinned
+JCL substitution policy. Frame-name metadata and explicit fallback strings
+satisfy the stack element constructor's nonnull inputs; an unconstrained
+null-check/Throwable call SCC is not substituted for those actual inputs.
+Four additional exact classlib donors bind only fourteen C word operations:
+unsigned division/remainder/comparison, IEEE predicates and bit reinterpretation.
+No other native operation gains a finite argument from its declaring class name.
+
+The finite runtime families have these arguments under the existing owned
+C/OWN_GC ABI and valid heap/metadata invariants:
+
+- Heap/free-chunk and relocation walks consume positive aligned spans within
+  the admitted arena, or advance through its finite chunk list.
+- Card, region, field, array and bulk-copy scans consume a finite count or
+  address range. Heap growth initializes only the newly admitted region range;
+  it does not create an unbounded resize-retry argument.
+- Mark work consumes objects whose mark bit is set before further discovery.
+  The finite admitted heap bounds objects/edges and the existing mark queue.
+- Weak-reference/direct-buffer walks consume the runtime's acyclic registration
+  lists; buffer superclass walks consume the emitted acyclic class metadata.
+- Exception and root traversal consume the owned shadow-stack frame chain and
+  finite emitted callsite/location/handler metadata.
+- Multi-array recursion reduces the compiler-supplied dimension count; each
+  array allocation retains the existing finite heap/failure bounds.
+
+These are source-bound runtime invariants, not a claim that arbitrary raw native
+writes preserve a heap or that an unknown external body is bounded. The admitted
+native interface is unchanged. An unknown body reached from a non-suspendable
+context has no inferred finite argument. Existing heap, stack, invocation, fuel,
+queue, observer and cleanup limits stay unchanged; the pass does not grant a
+larger heap or promise that every finite computation fits a caller's fuel grant.
+
+The pass retains the existing 65,536-method/block and 262,144-edge/variable/work
+bounds. Original proof classes have at most 128 KiB per entry in a regular JAR
+of at most 64 MiB. The unchanged archive writer still requires exactly the
+original three finder classes and thirteen replacement classes, each at most
+1 MiB, and preserves every nonreplacement entry. Digest streams and a strict
+public-context proxy lambda introduce no source companion class; the actual
+javac output must still pass that unchanged closure before acceptance.
+
+The existing context control is extended with checkpoint-absent initializer and
+unmanaged polling negatives, counted/managed positives, and an original GC array
+body positive plus altered-body/layout negatives. These source changes have not
+yet run the hosted JVM or normal compiler programme. Historical signed GC and
+checkpoint receipts keep their original source identities; this proposal does
+not retag them or complete issue #741.
