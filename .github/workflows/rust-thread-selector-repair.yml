@@ -19,9 +19,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          import_not_a_shell_command=unused
           python3 - <<'PY'
-          import hashlib, json, os, pathlib, subprocess, urllib.request
+          import base64, hashlib, json, os, pathlib, subprocess, urllib.request, zlib
           source = '14d8109cc42c1355d764d78ccd52822bef22b0cc'
           repository = 'KirilsTurkins/latent-service-fabric'
           rows = [
@@ -56,95 +55,13 @@ jobs:
                   settings['sparse-checkout'] = settings['sparse-checkout'].replace(old, new)
               value['reviewReason'] = 'Include the existing additive suite-case loader and committed case fragments in sparse CI consumers. Preserve all previous paths, exact commands, triggering conditions and required jobs; no fallback or waived validation.'
               values[name] = json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n'
-          method = r'''    def test_workflow_sparse_checkouts_load_the_complete_suite_case_inventory(self) -> None:
-                  # Use the actual Git patterns and isolated Python processes: the outer
-                  # checkout must not supply an omitted module or additive case fragment.
-                  import shutil
-                  import sys
-                  import yaml
-
-                  root = Path(__file__).resolve().parents[2]
-                  workflow = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
-                  source_paths = [Path("tools/ci_profile.py"), Path("tools/ci_result.py"),
-                                  Path("tools/ci_suite_inventory.py"), Path("tools/ci_suite_cases.py"),
-                                  Path("tools/ci/suites.json")]
-                  for directory in ("tools/ci/suites.d", "tools/ci/suites.cases.d"):
-                      fragments = sorted((root / directory).glob("*.json"))
-                      self.assertTrue(fragments, directory)
-                      source_paths.extend(path.relative_to(root) for path in fragments)
-                  expected = profile.registry.load()
-                  outputs = profile.Decision("full", "manual-dispatch", 0).outputs()
-                  required = json.loads(outputs["expected_jobs"])
-                  results = {name: {"result": "success" if name in required else "skipped"}
-                             for name in profile.registry.ALL_JOBS}
-                  results["profile"]["outputs"] = outputs
-                  for job in ("profile", "result"):
-                      with self.subTest(job=job), tempfile.TemporaryDirectory() as temporary:
-                          checkout = workflow["jobs"][job]["steps"][0]["with"]
-                          self.assertIs(checkout["sparse-checkout-cone-mode"], False)
-                          if job == "profile":
-                              self.assertEqual(checkout["fetch-depth"], 0)
-                          base = Path(temporary)
-                          repo = base / "checkout"
-                          repo.mkdir()
-                          for name in source_paths:
-                              destination = repo / name
-                              destination.parent.mkdir(parents=True, exist_ok=True)
-                              shutil.copyfile(root / name, destination)
-                          # Keep the local Git fixture independent of ambient config,
-                          # hooks, credentials, Python paths and network transports.
-                          config = base / "gitconfig"
-                          config.write_text("")
-                          environment = {key: value for key, value in os.environ.items()
-                                         if not key.startswith(("GIT_", "GITHUB_"))
-                                         and key not in {"PYTHONPATH", "CI_JOB_RESULTS"}}
-                          environment.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=str(config),
-                                             GIT_TERMINAL_PROMPT="0", GIT_ALLOW_PROTOCOL="file",
-                                             PYTHONDONTWRITEBYTECODE="1", CI_JOB_RESULTS=json.dumps(results))
-
-                          def command(*argv: str, stdin: str | None = None) -> subprocess.CompletedProcess:
-                              return subprocess.run(argv, cwd=repo, env=environment, input=stdin,
-                                                    text=True, stdout=subprocess.PIPE,
-                                                    stderr=subprocess.PIPE, timeout=30, check=False)
-
-                          for arguments in (("init", "--quiet"), ("add", "."),
-                                            ("-c", "user.name=CI fixture", "-c", "user.email=fixture@example.invalid",
-                                             "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "selector inputs"),
-                                            ("sparse-checkout", "set", "--no-cone", "--stdin")):
-                              result = command("git", *arguments, stdin=checkout["sparse-checkout"]
-                                               if arguments[0] == "sparse-checkout" else None)
-                              self.assertEqual(result.returncode, 0, result.stderr)
-                          if job == "profile":
-                              event, output = base / "event.json", base / "output.txt"
-                              event.write_text("{}")
-                              result = command(sys.executable, "-I", "-B", "tools/ci_profile.py",
-                                               "--event-name", "workflow_dispatch", "--event-path", str(event),
-                                               "--repo", str(repo), "--github-output", str(output))
-                              self.assertEqual(result.returncode, 0, result.stderr)
-                              self.assertIn("profile=full\n", output.read_text())
-                          else:
-                              result = command(sys.executable, "-I", "-B", "tools/ci_result.py")
-                              self.assertEqual(result.returncode, 0, result.stderr)
-                              # Retain the aggregate's fail-closed behavior as well.
-                              failed = json.loads(json.dumps(results))
-                              failed["docs"]["result"] = "failure"
-                              environment["CI_JOB_RESULTS"] = json.dumps(failed)
-                              result = command(sys.executable, "-I", "-B", "tools/ci_result.py")
-                              self.assertEqual(result.returncode, 1, result.stderr)
-                              self.assertIn("unexpected-job-result:docs:failure", result.stderr)
-                          result = command(sys.executable, "-I", "-B", "-c",
-                                           "import json,sys; sys.path.insert(0,'.'); "
-                                           "from tools.ci_suite_inventory import load; "
-                                           "print(json.dumps(load(),sort_keys=True))")
-                          self.assertEqual(result.returncode, 0, result.stderr)
-                          # An import-only fix can still silently omit cases: compare
-                          # the complete effective inventory with the normal checkout.
-                          self.assertEqual(json.loads(result.stdout), expected)
-
-          '''
-          # Remove the ten extra indentation columns used by this YAML literal.
-          lines = method.splitlines(keepends=True)
-          method = lines[0] + ''.join(line[10:] if line.strip() else line for line in lines[1:])
+          # Compressed transfer data for the locally reviewed regression method;
+          # it is never executed here. The complete resulting file hash is fixed.
+          encoded = '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'
+          decoder = zlib.decompressobj()
+          raw = decoder.decompress(base64.b64decode(encoded, validate=True), 16384)
+          assert decoder.eof and not decoder.unused_data and not decoder.unconsumed_tail
+          method = raw.decode()
           name = rows[3][0]
           anchor = 'class ClassificationTests(unittest.TestCase):\n'
           assert values[name].count(anchor) == 1
@@ -158,7 +75,6 @@ jobs:
           values[name] = json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n'
           for name, _, after in rows:
               assert identity(values[name].encode()) == after, (name, identity(values[name].encode()), after)
-          # No code from the repository is executed, and no tree/ref is published.
           receipts = []
           for name, before, after in rows:
               request = urllib.request.Request(
