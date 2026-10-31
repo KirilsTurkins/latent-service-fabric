@@ -370,7 +370,11 @@ impl Fixture {
         value._guest_runtime.configure_original_dotnet_v3_authority(
             &value.policies,
             &value.identities.tenant.0,
-            &value.target.publication,
+            value
+                .target
+                .publication
+                .as_ref()
+                .expect("signed original publication"),
         );
         // Plans own sealed policy snapshots. Recompile the same definitions
         // against the updated original policies before any Store exists.
