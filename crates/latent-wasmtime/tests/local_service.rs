@@ -95,8 +95,8 @@ fn both_real_components_have_checked_packages_and_exact_async_metadata() {
 async fn asynchronous_application_export_waits_for_the_canonical_async_service_import() {
     use latent_component_bindings::host::phase3::latent::service::invoke as wit;
     use wasmtime::{
-        Config, Engine, Store,
         component::{Component, Linker},
+        Config, Engine, Store,
     };
     let mut config = Config::new();
     config.wasm_component_model_async(true);
@@ -297,6 +297,38 @@ async fn dotnet_original_v3_fault_and_quiescence_use_bounded_numeric_observation
             request.target.contract = ContractId("examples:greeting/api@1.0.0".into());
             request.target.function = FunctionId("probe".into());
             request.budget = ceiling.clone();
+            // Refused admission is not guest-trap evidence. Prove that the
+            // exact original actor is required before arming either observer;
+            // these negative requests must never create a guest Store.
+            for (index, (subject, kind)) in [
+                ("alice", latent_core::PrincipalKind::User),
+                ("workflow-operator", latent_core::PrincipalKind::User),
+                ("other-operator", latent_core::PrincipalKind::Administrator),
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                let mut denied = request.clone();
+                denied.activation_id = Some(latent_core::ActivationId(format!(
+                    "{activation}-denied-{index}"
+                )));
+                denied.principal.subject = subject.into();
+                denied.principal.kind = kind;
+                let denied_receipt = f.manager.start(denied).unwrap().await;
+                match denied_receipt.outcome {
+                    latent_core::ActivationOutcome::Failed { error, .. } => {
+                        assert_eq!(error.code, latent_core::PlatformErrorCode::PermissionDenied);
+                    }
+                    _ => panic!("foreign diagnostic principal was not refused"),
+                }
+                f.idle().await;
+                assert_eq!(f.backend.resource_snapshot().stores_created, 0);
+                let quotas = f.quotas.usage().unwrap();
+                assert_eq!(quotas.active_activations, 0);
+                assert_eq!(quotas.queued_activations, 0);
+                assert_eq!(quotas.reserved_cpu_fuel, 0);
+                assert_eq!(quotas.reserved_memory_bytes, 0);
+            }
             assert_eq!(f.backend.resource_snapshot().stores_created, 0);
             let guard = f.backend.arm_development_trap_observation().unwrap();
             let receipt = f.manager.start(request).unwrap().await;

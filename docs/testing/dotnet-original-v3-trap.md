@@ -78,3 +78,22 @@ activation-origin/clamped monotonic and Unix wall-clock implementation. The
 activation identity derives from the actual original owner limits and host ABI,
 not a profile-name-only fixture hash. Generic fixture registrations remain
 unchanged; all original provider/policy digest assertions remain strict.
+
+The original-v3 fixture also restricts node admission for the `examples` tenant
+to the exact `workflow-operator` administrator. This is separate from provider
+policy authority: correct provider bindings do not authorize a request through
+node admission. The generic fixture's `alice` user and host-derived service
+subjects are not inherited by this diagnostic tenant. Other fixture tenants,
+node quotas, request budgets and runtime-owner capacities remain unchanged.
+Before arming each observer, the control rejects the generic user, the original
+subject with the wrong principal kind, and another administrator. Every refused
+request must leave zero created Stores and zero quota reservations. Only the two
+original authorized mode invocations may reach a guest Store.
+
+The run at `ddc2ae4f7c3bbe71ceb3a57de15337976bfe31a6` (41213594822,
+artifact 13047721098) failed node admission with `PermissionDenied` and recorded
+zero observed Wasm errors. It is a harness failure, not evidence of either
+original terminal cause. The observer and receipt parser continue to require
+one bounded `unreachable-code` trap and one idle record per original mode;
+missing, reordered, over-capacity, cross-typed or qualification-promoting records
+must fail closed.

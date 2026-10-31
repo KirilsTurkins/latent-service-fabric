@@ -15,6 +15,9 @@ import struct
 import time
 import zipfile
 
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from tools import ci_rust_artifacts as artifacts
 from tools.build_observation import build_environment
 from tools.dotnet_root_return import (JoinCauseCommands, join_public_admission,

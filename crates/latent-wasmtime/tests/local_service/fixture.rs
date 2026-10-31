@@ -1352,7 +1352,16 @@ impl Fixture {
                 .get(&TenantId("tenant-a".into()))
                 .unwrap()
                 .clone();
-            tenant_policy.allowed_subjects.insert(caller_principal);
+            if original_provider_configuration {
+                // Match the original authenticated invocation, not the generic
+                // fixture's alice/service principals. This grants no authority
+                // to other administrators or to the same subject as a User.
+                assert_eq!(tenant, "examples");
+                tenant_policy.allowed_subjects = ["workflow-operator".into()].into();
+                tenant_policy.allowed_principal_kinds = vec![PrincipalKind::Administrator];
+            } else {
+                tenant_policy.allowed_subjects.insert(caller_principal);
+            }
             admission_policy
                 .tenants
                 .insert(identities.tenant.clone(), tenant_policy);

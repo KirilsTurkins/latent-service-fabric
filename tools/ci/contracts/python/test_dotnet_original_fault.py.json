@@ -1,0 +1,34 @@
+{
+  "storageCases": "guard-keys",
+  "guards": {
+    "OriginalDotnetFaultTests.test_duplicate_json_keys_cannot_override_identity_or_flags": "97d4129109bc295bc6e44a265be649c549afea0f3d37b2397a77586fc144c997",
+    "OriginalDotnetFaultTests.test_every_qualification_flag_must_remain_boolean_false": "97d4129109bc295bc6e44a265be649c549afea0f3d37b2397a77586fc144c997",
+    "OriginalDotnetFaultTests.test_exact_mode_component_and_closed_rows_are_required": "97d4129109bc295bc6e44a265be649c549afea0f3d37b2397a77586fc144c997",
+    "OriginalDotnetFaultTests.test_exact_two_modes_accept_bounded_numeric_frames_without_qualification": "97d4129109bc295bc6e44a265be649c549afea0f3d37b2397a77586fc144c997",
+    "OriginalDotnetFaultTests.test_frame_identifiers_offsets_and_module_sequence_are_bounded_integers": "97d4129109bc295bc6e44a265be649c549afea0f3d37b2397a77586fc144c997",
+    "OriginalDotnetFaultTests.test_frame_tail_and_unknown_snapshot_fields_refuse": "97d4129109bc295bc6e44a265be649c549afea0f3d37b2397a77586fc144c997",
+    "OriginalDotnetFaultTests.test_idle_requires_one_store_zero_live_owners_and_original_consumption_bounds": "97d4129109bc295bc6e44a265be649c549afea0f3d37b2397a77586fc144c997",
+    "OriginalDotnetFaultTests.test_missing_ambiguous_and_nontrap_observations_refuse": "97d4129109bc295bc6e44a265be649c549afea0f3d37b2397a77586fc144c997",
+    "OriginalDotnetFaultTests.test_missing_reordered_duplicate_and_extra_events_refuse": "97d4129109bc295bc6e44a265be649c549afea0f3d37b2397a77586fc144c997",
+    "OriginalDotnetFaultTests.test_output_event_and_prefix_limits_fail_closed": "97d4129109bc295bc6e44a265be649c549afea0f3d37b2397a77586fc144c997",
+    "OriginalDotnetFaultTests.test_truncated_or_counterfeit_archive_refuses_before_restoring_inputs": "97d4129109bc295bc6e44a265be649c549afea0f3d37b2397a77586fc144c997"
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_original_fault.py",
+  "reviewReason": "Add eleven unignored fail-closed original-v3 observation parser and immutable-archive controls; retain every existing Python case and execution guard.",
+  "schemaVersion": "latent.ci.contracts.v2",
+  "guardDefinitions": {
+    "97d4129109bc295bc6e44a265be649c549afea0f3d37b2397a77586fc144c997": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74b5f52830a3565e8de5567c358897726197bdba5527cabe7eb3d6645ba1676f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  }
+}

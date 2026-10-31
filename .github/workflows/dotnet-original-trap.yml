@@ -45,17 +45,17 @@ jobs:
         name: Establish the original 1320-second absolute programme deadline
         timeout-minutes: 1
         run: python3 -c 'import os,time; open(os.environ["GITHUB_ENV"],"a").write("LSF_ROOT_RETURN_DEADLINE="+str(time.monotonic()+1320)+"\n")'
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         timeout-minutes: 1
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
         timeout-minutes: 1
         with:
           python-version: 3.13.5
-      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         timeout-minutes: 2
-      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
         timeout-minutes: 1
         with:
           prefix-key: lsf-ci-dependencies-v2
@@ -84,14 +84,14 @@ jobs:
         name: Build only the current diagnostic host and observe two original modes
         timeout-minutes: 22
         run: >-
-          python3 -m tools.dotnet_original_fault
+          python3 tools/dotnet_original_fault.py
           --archive "$RUNNER_TEMP/dotnet-original-v3.zip"
           --source-commit "${{ github.sha }}"
           --output "$RUNNER_TEMP/dotnet-original-fault"
       - name: Retain admitted observations including failures
         if: always()
         timeout-minutes: 2
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-original-trap-${{ github.sha }}
           path: ${{ runner.temp }}/dotnet-original-fault/public/**
