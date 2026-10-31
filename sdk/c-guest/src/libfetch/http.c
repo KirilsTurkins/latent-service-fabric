@@ -174,9 +174,10 @@ static char *request_url(const struct url *url) {
     return text;
 }
 
-static bool content_length(const latent_http_streaming_list_header_t *headers, size_t *length) {
+static bool content_length(const latent_http_streaming_list_header_t *headers, size_t *length, bool *known) {
     bool found = false;
     *length = SIZE_MAX; /* The original libfetch unknown-length sentinel. */
+    *known = false;
     for (size_t i = 0; i < headers->len; ++i) {
         const latent_http_streaming_header_t *header = &headers->ptr[i];
         static const char name[] = "content-length";
@@ -198,12 +199,13 @@ static bool content_length(const latent_http_streaming_list_header_t *headers, s
         }
         *length = value;
     }
+    *known = found;
     return true;
 }
 
 static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
                      const char *method, const char *content_type, const char *body) {
-    if (stat || fetchAuthMethod || fetchDebug || fetchTimeout < 0) { unsupported(); return NULL; }
+    if ((stat && strcmp(method, "GET")) || fetchAuthMethod || fetchDebug || fetchTimeout < 0) { unsupported(); return NULL; }
     if (flags) for (const char *flag = flags; *flag; ++flag)
         if (*flag != 'A') { unsupported(); return NULL; }
     latent_http_streaming_method_t operation;
@@ -265,7 +267,8 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     lsf_body_adopt(&stream->body, completed.val.ok.body);
     const uint16_t status = completed.val.ok.status;
     size_t length;
-    const bool valid_length = content_length(&completed.val.ok.headers, &length);
+    bool known_length;
+    const bool valid_length = content_length(&completed.val.ok.headers, &length, &known_length);
     lsf_streaming_metadata_close(&completed.val.ok);
     if (!valid_length) {
         failure(FETCH_PROTO, EOVERFLOW, "HTTP content length is invalid or unrepresentable");
@@ -280,6 +283,14 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
         snprintf(fetchLastErrString, MAXERRSTRING, "HTTP status %u%s", (unsigned)status,
                  status >= 300 && status < 400 ? ": redirects unsupported" : ": request failed");
         goto fail_file;
+    }
+    if (stat) {
+        /* Selected wasm32 WASI size_t is 32-bit and off_t is signed 64-bit.
+         * Keep a valid maximum-size header distinct from missing length.
+         * This profile does not interpret Last-Modified; both times are the
+         * original unknown sentinel, never a fabricated local clock value. */
+        stat->size = known_length ? (off_t)length : (off_t)-1;
+        stat->atime = stat->mtime = 0;
     }
     return file;
 fail_file:

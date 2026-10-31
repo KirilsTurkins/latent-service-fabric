@@ -99,3 +99,71 @@ def http_result(row: dict, case: str) -> None:
     }
     if type(row.get('exitCode')) is not int or case not in expected or (row['exitCode'], row['decoded']) != expected[case]:
         raise ValueError('c-libfetch-exact-ordinary-result')
+
+
+LIBUCL_FIXTURE = 'sdk/c-guest/runtime-fixtures/libucl/'
+LIBUCL_CASES = ('normal', 'not-found', 'denied', 'file', 'glob')
+
+
+def prepare_libucl(directory: Path, outside: Path) -> Path:
+    """Normal captured dependency recipe; no configure subprocess or backend glue."""
+    from tools.application_dependencies import MANIFEST, LOCK, capture
+    from tools.build_snapshot import canonical, digest
+    from tools.c_guest.standard_facilities import FETCH_STANDARD_PROFILE
+    declaration = json.loads(read_file(ROOT / (LIBUCL_FIXTURE + 'UPSTREAM.json'), 65536))
+    originals = snapshot(ROOT / (LIBUCL_FIXTURE + 'upstream'))
+    expected = {row['path']: row for row in declaration['files']}
+    if (len(originals) != 25 or set(originals) != set(expected)
+            or sum(map(len, originals.values())) > 2 * 1024 * 1024
+            or any(len(data) != expected[name]['bytes'] or digest(data) != expected[name]['sha256']
+                   for name, data in originals.items())):
+        raise ValueError('c-libucl-original-source-closure')
+    outside.mkdir(mode=0o700)
+    for name, data in originals.items():
+        target = outside / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+    project = c_capsule_project.create(directory, 'greeting', name='c-thread-runtime',
+                                       threading_profile=PROFILE)
+    for target, original in (('src/main.c', 'probe.c'), ('wit/world.wit', 'world.wit')):
+        (project / target).write_bytes(read_file(ROOT / (LIBUCL_FIXTURE + original)))
+    config = json.loads(read_file(project / 'capsule-project.json'))
+    config.update(world=HTTP_WORLD, runtimeProfile=FETCH_STANDARD_PROFILE)
+    config['limits'].update(cpuFuel=1_000_000_000, memoryBytes=32 * 1024 * 1024,
+                            wallTimeLimitMillis=5000, logBytes=0, outboundRequests=3)
+    (project / 'capsule-project.json').write_bytes(canonical(config) + b'\n')
+    dependency = {'formatVersion': 1, 'language': 'c',
+        'selection': {'target': 'wasm32-wasi', 'runtimeProfile': FETCH_STANDARD_PROFILE},
+        'nativeLocks': [], 'artifacts': [{
+            'id': 'vstakhov/libucl/' + declaration['commit'], 'role': 'application',
+            'format': 'directory', 'mount': 'dependencies/libucl', 'source': {'path': str(outside)},
+            'dependencies': [], 'metadata': {
+                'cSources': declaration['cSources'],
+                'includeDirectories': declaration['includeDirectories'],
+                'defines': declaration['defines'],
+                'license': 'BSD-2-Clause AND MIT AND BSD-1-Clause'}}], 'transformations': []}
+    (project / MANIFEST).write_bytes(canonical(dependency) + b'\n')
+    (project / LOCK).write_bytes(canonical(capture(project)) + b'\n')
+    c_capsule_project.validate(snapshot(project))
+    return project
+
+
+def libucl_result(row: dict, case: str) -> None:
+    expected = {'normal': (0, [{'ok': 'ucl:7:caf\u00e9:first:\u03bb:0'}]),
+                **{name: (3, [{'err': 'include-rejected'}])
+                   for name in ('not-found', 'denied', 'file', 'glob')}}
+    if type(row.get('exitCode')) is not int or case not in expected or (
+            row['exitCode'], row['decoded']) != expected[case]:
+        raise ValueError('c-libucl-exact-ordinary-result')
+
+
+def prepare_http_standard(directory: Path) -> Path:
+    """The unchanged current libfetch probe under the expanded normal profile."""
+    from tools.c_guest.standard_facilities import FETCH_STANDARD_PROFILE
+    project = prepare_http(directory)
+    config = json.loads(read_file(project / 'capsule-project.json'))
+    config['runtimeProfile'] = FETCH_STANDARD_PROFILE
+    (project / 'capsule-project.json').write_bytes(
+        (json.dumps(config, sort_keys=True, indent=2) + '\n').encode())
+    c_capsule_project.validate(snapshot(project))
+    return project

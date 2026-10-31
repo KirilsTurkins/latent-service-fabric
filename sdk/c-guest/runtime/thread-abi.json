@@ -126,7 +126,8 @@
     "compilerDefine": "LSF_C_TIMED_CLOCK=1",
     "requiresRuntimeProfile": [
       "c-standard-clock-entropy-v1",
-      "c-standard-facilities-v1"
+      "c-standard-facilities-v1",
+      "c-libfetch-clock-entropy-v1"
     ],
     "ordinaryApis": [
       "pthread_mutex_timedlock",

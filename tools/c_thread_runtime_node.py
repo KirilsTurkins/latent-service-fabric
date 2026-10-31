@@ -14,6 +14,7 @@ import time
 
 from tools import c_thread_runtime_fixture as fixture
 from tools.c_guest.threading import IMPORTS, PROFILE
+from tools.c_guest.standard_facilities import FETCH_PROFILE, FETCH_STANDARD_PROFILE
 from tools.phase2_operator_process import require, write_json
 from tools.phase2_operator_process import stopped_record
 from tools.phase2_operator_scenario import connect, stop
@@ -671,10 +672,25 @@ def http_cell(client, node, probe, target, peer, output, case):
         close_call(process, primary_failure=primary)
 
 
-def run_http(artifact: Path, native: dict, output: Path, *, deadline):
+def run_http(artifact: Path, native: dict, output: Path, *, deadline, runtime_profile=FETCH_PROFILE,
+             client_kind='libfetch', client_state=None, client_deadline=None):
     import secrets
     from tools.standard_http.peer import Peer
     from tools.standard_http.observations import validate
+    require(type(runtime_profile) is str and runtime_profile in (FETCH_PROFILE, FETCH_STANDARD_PROFILE),
+            'c-http-exact-runtime-profile')
+    expanded = runtime_profile == FETCH_STANDARD_PROFILE
+    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl')
+            and (expanded or client_kind == 'libfetch'), 'c-http-exact-client')
+    is_libucl = client_kind == 'libucl'
+    if client_state is not None:
+        require(expanded and type(client_state) is dict
+                and set(client_state) == {'calls', 'controlAttempts', 'retainedBytes'}
+                and all(type(value) is int and value >= 0 for value in client_state.values())
+                and client_state['calls'] < 384 and client_state['controlAttempts'] < 384
+                and client_state['retainedBytes'] < 4 * 1024**2, 'c-http-original-shared-client-budget')
+        require(type(client_deadline) is float and time.monotonic() < client_deadline <= deadline,
+                'c-http-original-shared-client-deadline')
     output = fresh(output)
     component = file_identity(artifact / 'component.wasm', 8 * 1024**2)
     before = {name: file_identity(path) for name, path in native.items()}
@@ -682,10 +698,15 @@ def run_http(artifact: Path, native: dict, output: Path, *, deadline):
     commands = Commands(ROOT, fresh(output / 'commands'), build_environment(output),
                         deadline_seconds=300, command_seconds=60)
     commands.deadline = min(commands.deadline, deadline)
-    record = {'schemaVersion': 'latent.c.libfetch.node.v1', 'status': 'incomplete',
+    record = {'schemaVersion': 'latent.c.libucl.node.v1' if is_libucl else 'latent.c.libfetch.node.v1',
+              'status': 'incomplete',
               'component': component, 'native': before, 'full690Qualified': False,
               'fullCCostModelQualified': False, 'independentClientCount': 1}
     stage, failed = 'sign', False
+    client = None
+    budget_before = dict(client_state) if client_state is not None else None
+    if expanded:
+        record.update(runtimeProfile=runtime_profile, client=client_kind, independentClientCount=0)
     try:
         signed = output / 'signed'
         commands.run('libfetch-sign', native['capsule_authoring'], 'demo-sign', signed, artifact)
@@ -704,8 +725,16 @@ def run_http(artifact: Path, native: dict, output: Path, *, deadline):
             cleanup.callback(peer.close)
             client = RecordingClient(native['latent'], work / 'client', cancellation,
                 min(commands.deadline, time.monotonic() + 240), evidence=output / 'controls')
+            if client_state is not None:
+                client.deadline = min(client.deadline, client_deadline)
+                client.calls = client_state['calls']
+                client.control_attempts = client_state['controlAttempts']
+                client.retained = client_state['retainedBytes']
             config, settings = configure_base(work / 'node', signed, peer.origin()['port'], language='c')
-            configure_http(settings, read_json(artifact / 'capsule.json'), peer, credential)
+            if expanded:
+                configure_libucl(settings, read_json(artifact / 'capsule.json'), peer, credential)
+            else:
+                configure_http(settings, read_json(artifact / 'capsule.json'), peer, credential)
             config.write_bytes((json.dumps(settings, sort_keys=True, separators=(',', ':')) + '\n').encode())
             # Private credentials and node configuration are intentionally not public artifacts.
             stage = 'node'
@@ -722,15 +751,18 @@ def run_http(artifact: Path, native: dict, output: Path, *, deadline):
             publication = published['data']['operation']['publication']['id']
             target = deploy(client, source / 'deployment.json', publication)
             require(target['grants'] == [], 'c-libfetch-no-ambient-grants')
-            grants = install_http(client, node, target, peer.origin())
+            grants = (install_libucl if expanded else install_http)(client, node, target, peer.origin())
             target = deploy(client, source / 'deployment.json', publication,
                             generation=str(target['generation']), grants=grants)
             stage = 'five-ordinary-cells'
             record['cases'] = []
-            for case in fixture.HTTP_CASES:
-                record['cases'].append(http_cell(client, node, probe, target, peer, output, case))
-            require([row['case'] for row in record['cases']] == list(fixture.HTTP_CASES)
-                    and peer.observation()['startedRequests'] == 6, 'c-libfetch-five-cells-six-contacts')
+            cases = fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES
+            cell = libucl_cell if is_libucl else http_cell
+            for case in cases:
+                record['cases'].append(cell(client, node, probe, target, peer, output, case))
+            require([row['case'] for row in record['cases']] == list(cases)
+                    and peer.observation()['startedRequests'] == (2 if is_libucl else 6),
+                    'c-libucl-five-cells-two-contacts' if is_libucl else 'c-libfetch-five-cells-six-contacts')
             delete_all(client, [target['name']])
             record['afterDeletes'] = sample(client, probe, 'c-libfetch-after-deletes', 0)
             stop(client, node); record['nodeShutdown'] = stopped_record(node)
@@ -743,6 +775,12 @@ def run_http(artifact: Path, native: dict, output: Path, *, deadline):
                 and time.monotonic() < commands.deadline and client.calls <= 384,
                 'c-libfetch-final-original-inputs-and-deadline')
         record.update(status='passed', cliCalls=client.calls, commands=commands.records)
+        if expanded:
+            record['independentClientCount'] = 1
+        if client_state is not None:
+            record['sharedClientBudget'] = {'before': budget_before,
+                'after': {'calls': client.calls, 'controlAttempts': client.control_attempts,
+                          'retainedBytes': client.retained}}
         write_json(output / 'qualified.json', record)
         return record
     except BaseException:
@@ -750,5 +788,120 @@ def run_http(artifact: Path, native: dict, output: Path, *, deadline):
         record.update(status='failed', stage=stage)
         raise
     finally:
+        if client_state is not None and client is not None:
+            client_state.update(calls=client.calls, controlAttempts=client.control_attempts,
+                                retainedBytes=client.retained)
         if failed:
             write_json(output / 'FAILED.json', record)
+
+
+def configure_libucl(settings, capsule, peer, credential):
+    """Select exactly the normal HTTP plus standard clock/entropy contracts."""
+    from tools.c_guest.standard_facilities import IMPORTS as standard
+    from tools.guest_runtime_profiles import profiles
+    imports = capsule.get('imports')
+    require(type(imports) is list and len(imports) == 6
+            and all(type(row) is dict and set(row) == {'contract', 'optional'}
+                    and row['optional'] is False for row in imports)
+            and {row['contract'] for row in imports} == {*IMPORTS, HTTP, *standard},
+            'c-libucl-exact-six-imports')
+    # Validation projection only; the complete signed source remains unchanged.
+    configure_http(settings, {**capsule, 'imports': [
+        row for row in imports if row['contract'] not in standard]}, peer, credential)
+    selected = profiles('c')
+    providers = settings['providers']
+    require({value[0] for value in selected.values()} == set(standard)
+            and all(name not in providers for name in selected), 'c-libucl-fresh-standard-providers')
+    for name, (contract, _, _, _) in selected.items():
+        providers[name] = {'identity': {'id': name, 'tenant': 'examples',
+                                       'service': 'runtime-host', 'epoch': 1}}
+        providers['bindings'].append({'name': name + '-c-thread-runtime', 'tenant': 'examples',
+            'consumerService': 'examples/' + SERVICE, 'providerService': 'runtime-host',
+            'contract': contract, 'providerBinding': name + '-installed'})
+    require(len(providers['bindings']) == 6, 'c-libucl-exact-six-bindings')
+    return settings
+
+
+def install_libucl(client, node, target, origin):
+    from tools.guest_runtime_profiles import profiles
+    from tools.static_api.node import policy
+    grants = install_http(client, node, target, origin)
+    for name, (capability, profile, operation, kind) in profiles('c').items():
+        rows = [row for row in node.startup_record['providers'] if row['id'] == name]
+        require(len(rows) == 1 and rows[0]['capability'] == capability
+                and rows[0]['profile'] == profile and rows[0]['tenant'] == 'examples'
+                and rows[0]['service'] == 'runtime-host' and rows[0]['configurationEpoch'] == '1',
+                'c-libucl-original-standard-provider')
+        descriptor = rows[0]
+        policy(client, 'provider-binding', name + '-installed', {
+            'formatVersion': 1, 'tenant': 'examples', 'capability': capability,
+            'providerProfile': profile, 'configurationDigest': descriptor['configurationDigest'],
+            'configurationEpoch': 1, 'restriction': {'operations': [operation]}})
+        policy(client, 'policy', name + '-allow', {'formatVersion': 1, 'tenant': 'examples', 'rules': [{
+            'id': 'runtime', 'effect': 'allow',
+            'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
+            'services': [target['service']], 'publications': [target['publication']],
+            'capability': capability, 'operations': [operation], 'resources': {'kind': kind},
+            'ceiling': {'operations': 4096, 'inputBytes': 128 if kind == 'random' else 0,
+                        'outputBytes': 65536, 'wallTimeMillis': 5000}}]})
+        grants.append({'capability': capability, 'policy': name + '-allow'})
+    require(len(grants) == 6, 'c-libucl-explicit-six-grants')
+    return grants
+
+
+def libucl_cell(client, node, probe, target, peer, output, case):
+    from tools.standard_http.observations import validate, delta, require_zero_contact
+    require(case in fixture.LIBUCL_CASES, 'c-libucl-closed-cell')
+    vectors = {'normal': 'domain-json', 'not-found': 'http-404', 'denied': 'denied-target'}
+    before, revision = peer.observation(), selected_revision(client, target)
+    validate(before)
+    text = case + '\n' + (peer.url(vectors[case]) if case in vectors else '')
+    activation = 'c-libucl-' + case
+    process, primary = start_http_call(client, target, text, activation), False
+    deadline = min(client.deadline, time.monotonic() + 8)
+    try:
+        while not process.owner.exited():
+            client.cancellation.check()
+            require(time.monotonic() < deadline, 'c-libucl-cell-deadline')
+            process.drain()
+            peer.poll(min(0.02, max(0, deadline - time.monotonic())))
+        row = finish_call(client, process)
+        write_json(output / ('invocation-' + activation + '.json'), row)
+        require(row['processReaped'] is True and row['response']['outcomeKnown'] is True
+                and row['response']['requestDispatched'] is True
+                and row['response']['data']['resolvedRevision'] == revision,
+                'c-libucl-known-current-invocation')
+        fixture.libucl_result(row, case)
+        require(all(integer(row['response']['data']['consumption'][name]) == 0 for name in
+            ('stateReadBytes', 'stateWriteBytes', 'blobReadBytes', 'blobWriteBytes',
+             'logBytes', 'effectCount', 'childCalls')), 'c-libucl-no-unrelated-authority')
+        for _ in range(128):
+            observed = peer.observation()
+            if observed['openConnections'] == 0:
+                break
+            require(time.monotonic() < deadline, 'c-libucl-peer-retirement-deadline')
+            peer.poll(min(0.02, max(0, deadline - time.monotonic())))
+        change = delta(before, peer.observation())
+        if case in ('denied', 'file', 'glob'):
+            require_zero_contact(before, peer.observation())
+        else:
+            require([item.get('vector') for item in change['requests']] == [vectors[case]]
+                    and all(item['method'] == 'GET' and item['role'] == 'primary'
+                            and item.get('authorizationPresent') is True for item in change['requests'])
+                    and change['rejectedRequests'] == change['connectionBoundRejections'] == 0,
+                    'c-libucl-exact-authenticated-peer-contact')
+        require(peer.observation()['openConnections'] == 0 and not peer.gates(),
+                'c-libucl-no-peer-owners-left')
+        write_json(output / ('peer-' + activation + '.json'), peer.observation())
+        return {'case': case, 'activation': activation, 'exitCode': row['exitCode'],
+                'peerDelta': change, 'retirement': retire(client, probe, target, output, activation)}
+    except BaseException:
+        primary = True
+        write_json(output / ('peer-failed-' + activation + '.json'), peer.observation())
+        try:
+            retain_partial(process, output, activation)
+        except BaseException:
+            pass
+        raise
+    finally:
+        close_call(process, primary_failure=primary)
