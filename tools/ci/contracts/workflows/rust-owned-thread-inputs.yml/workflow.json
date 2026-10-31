@@ -1,41 +1,43 @@
 {
-"kind":"workflow",
-"policy":{
-"concurrency":{
-"cancel-in-progress":false,
-"group":"rust-owned-thread-inputs-${{ github.ref }}"
-},
-"name":"Owned Rust thread compiler inputs",
-"on":{
-"push":{
-"branches":[
-"feat/rust-standard-thread-runtime-20261022",
-"feat/rust-thread-runtime-20261023"
-],
-"paths":[
-".github/workflows/rust-owned-thread-inputs.yml",
-"tools/compile_rust_owned_thread_inputs.py",
-"sdk/rust-standard-runtime/**"
-]
-},
-"workflow_dispatch":{
-"inputs":{
-"application-diagnostic":{
-"default":false,
-"description":"Compile one captured ordinary ThreadPool application core; graph remains unqualified",
-"type":"boolean"
-}
-}
-}
-},
-"permissions":{
-"contents":"read"
-}
-},
-"requiredJobs":[
-"compiler-inputs"
-],
-"reviewReason":"Run the unchanged compiler-only programme on the active Rust runtime branch and runtime source changes; application diagnostics remain explicit and default false",
-"schemaVersion":"latent.ci.contracts.v1",
-"workflow":".github/workflows/rust-owned-thread-inputs.yml"
+  "kind": "workflow",
+  "policy": {
+    "name": "Owned Rust thread compiler inputs",
+    "on": {
+      "workflow_dispatch": {
+        "inputs": {
+          "application-diagnostic": {
+            "description": "Compile one captured ordinary ThreadPool application core; graph remains unqualified",
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "push": {
+        "branches": [
+          "feat/rust-standard-thread-runtime-20261022",
+          "feat/rust-thread-runtime-20261023"
+        ],
+        "paths": [
+          ".github/workflows/rust-owned-thread-inputs.yml",
+          "tools/compile_rust_owned_thread_inputs.py",
+          "tools/compile_rust_owned_thread_application.py",
+          "crates/latent-component-threading/**",
+          "sdk/rust-standard-runtime/**"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    },
+    "concurrency": {
+      "group": "rust-owned-thread-inputs-${{ github.ref }}",
+      "cancel-in-progress": false
+    }
+  },
+  "requiredJobs": [
+    "compiler-inputs"
+  ],
+  "reviewReason": "Include the existing application compiler and exact native catalogue in branch push coverage; manual diagnostic selection stays default false.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-owned-thread-inputs.yml"
 }
