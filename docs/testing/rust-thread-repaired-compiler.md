@@ -34,4 +34,40 @@ A candidate still needs an explicitly reviewed catalogue update and source-
 matched native products before the unchanged signed five-call campaign can
 establish ThreadPool progress and physical retirement. The separate diagnostic's
 original nonempty fault-frame requirement remains mandatory; a suspension record
-does not satisfy it. No new compiler or repaired-runtime pass is claimed here.
+does not satisfy it. Enabling this workflow alone confers no compiler or
+repaired-runtime pass.
+
+## Observed results on 31 October 2026
+
+[Compiler run 41231319361](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41231319361)
+ran at `eb8bfc41999827b6ab10bcdc1b6a50da48787586`. Its artifact
+`13054160505` is 52,708,533 bytes with ZIP SHA-256
+`c1c36cde5737ae3b76b2c60287c76005ab6127bc1566614bbe9514d98f8a5cb2`;
+all 110 member CRCs were checked. The ten TLS, eleven wait-driver and eight
+synchronization controls passed. The repaired sysroot and unchanged application
+compiled, then the original catalogue refused the changed body with
+`rust-original-full-body-or-signature`. This is a failed compiler programme,
+not a component or signed-runtime qualification. No guest executed. The
+subsequent 76 source-mechanism controls were not reached.
+
+The separate runtime consumer
+[PR #1371](https://github.com/KirilsTurkins/latent-service-fabric/pull/1371)
+has since retained the successful signed
+[run 41231421695](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41231421695)
+at `eb5bfd4786f46131394f814e77eef4412d26e5dc`. Its artifact
+`13053847936` is 674,622 bytes with ZIP SHA-256
+`a09fe2fba877f149c156bce8abf30f54e0e2774baaab98fe3731f04101eaeaff`;
+all 154 member CRCs were checked. The five invocation records contain the
+expected cold/hot/post-error pool results, declared error and recovery greeting.
+Their retirement records show zero active/queued activation reservations and
+zero reserved fuel/memory after every call; node and peer shutdown completed.
+This evidence executes the 511,729-byte component
+`c3135d063fae81a2dc651d4f102b2bcdd53eacf197406104aad4e3b405dfe97c`
+with a separately identified native node, not this branch's frozen fault guest.
+
+These are distinct source, build and execution events. The companion result
+does not retroactively pass this compiler run, establish current diagnostic-head
+CI, or replace the original failed component and nonempty fault-frame gate.
+Review the companion's exact catalogue and native-producer chain when integrating
+the repaired runtime; do not manufacture another historical origin. Neither
+record closes the full #743 or checkpoint qualification.
