@@ -218,12 +218,6 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
                 'rust-thread-inputs-tool-copy')
         summary['contextTool'] = identity
         if application_diagnostic:
-            summary['stage'] = 'source-mechanism-controls'
-            controls = commands.run('owned-core-source-mechanism-controls', tools['cargo'], 'test', '--locked',
-                '--package', 'latent-component-threading', '--lib', '--', '--test-threads=1')
-            require(b'test result: ok. 76 passed; 0 failed; 0 ignored;' in controls,
-                    'rust-thread-inputs-exact-source-mechanism-controls')
-            summary['sourceMechanismControlsPassed'] = 76
             summary['stage'] = 'emitted-result-guard-engine-controls'
             summary['emittedResultGuardControls'] = result_controls.run(
                 commands, copied, output / 'result-guard-controls')
@@ -240,6 +234,14 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
             summary['stage'] = 'ordinary-application-core-diagnostic'
             summary['applicationDiagnostic'] = application.run(output / 'application-diagnostic',
                 rust_bin, output / 'owned-sysroot', copied, deadline=started + 600)
+            # Retain unsigned diagnostic encoding before historical-pair controls.
+            # Every native library source control still must pass for owner success.
+            summary['stage'] = 'source-mechanism-controls'
+            controls = commands.run('owned-core-source-mechanism-controls', tools['cargo'], 'test', '--locked',
+                '--package', 'latent-component-threading', '--lib', '--', '--test-threads=1')
+            require(b'test result: ok. 76 passed; 0 failed; 0 ignored;' in controls,
+                    'rust-thread-inputs-exact-source-mechanism-controls')
+            summary['sourceMechanismControlsPassed'] = 76
         summary['stage'] = 'recheck'
         require(sources(expected_head, application_diagnostic) == original, 'rust-thread-inputs-source-mutated')
         require(distribution(rust_bin.parent) == compiler

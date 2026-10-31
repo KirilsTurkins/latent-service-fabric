@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_rust_owned_thread_inputs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Include the separate catalogue candidate pair without replacing the last complete runtime pair",
+  "reviewReason": "Retain unsigned actual application encoding before the same mandatory 76 Rust library source controls; owner success still requires all 76 after original native controls",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "815d33627df04e3371f686fe83cbfd53b0325ff0b1ea8579dee0eaa063ae663c"
+  "sha256": "0f56062660e9e2d0169b241be989e83d23f5ccb87783aeb1d7d1ba5c5dd7d519"
 }

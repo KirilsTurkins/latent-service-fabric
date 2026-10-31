@@ -196,7 +196,9 @@ runtime repair can be selected.
 Compiler run [41184446196](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41184446196),
 source `f401e388a7542b8f9cd9bbd987dbcc65814262d6`, passed the unchanged 29 native
 TLS/wait/synchronization and 76 source controls, rebuilt the selected sysroot and
-compiled the unchanged ordinary application. Artifact `13036816711` retains
+compiled the unchanged ordinary application. The 76 source controls are native
+Rust library tests, including the historical normal-component positive pair;
+they are not Python controls. Artifact `13036816711` retains
 112 CRC-verified members (52,701,865 bytes, ZIP SHA-256
 `1587f3ed7f2464b2f6c06d47fe69a3d9d825b78da1e191007e273f5191634b8f`).
 All 238 captured Git input identities and the actual rlib digests were joined
@@ -223,3 +225,20 @@ positive source controls remain. No new normal-component bytes or digest is
 claimed. Native whole-component fixture qualification and the five signed
 ThreadPool outcomes must use the next actual matched compiler/native origins.
 Current normal-component and runtime qualification remain unproved.
+
+
+The subsequent exact-catalogue owner run
+[41186537968](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41186537968)
+passed 74 of those 76 Rust library controls. Both current original-catalogue and
+source-derivation controls passed, independently reproducing `deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423`
+in the hosted native implementation. The two historical normal-component pair
+positives failed with `rust-component-recomputed-main-mismatch` before any new
+encoding. Artifact `13036114429` retains 29 CRC-verified members (7,450,592 bytes,
+ZIP SHA-256 `7e41304854912472a7712fb3cd3e15cde98576998df483168d881ebc56642fe9`).
+
+The existing explicit application-diagnostic owner now retains unsigned actual
+application encoding before running the same mandatory 76 library controls.
+All 76 must pass before owner success; an old fixture mismatch still fails the
+run. Original 29-control ordering, default non-application behavior, assertions,
+source immutability and qualification requirements remain unchanged. No guest
+execution or new normal-component qualification follows from this sequencing.
