@@ -23,6 +23,56 @@ class RustThreadFaultFramesTests(unittest.TestCase):
                          '79911762b366381d7dc61da12d1b5e9aba2b3222'):
             self.assertNotIn(prefix + obsolete, workflow)
 
+        # Rebuild the repaired SDK through the existing owning compiler, never
+        # by replacing the frozen guest used above to preserve the old fault.
+        from tools.ci_lane_inventory import workflow_model
+        compiler = workflow_model((Path(__file__).resolve().parents[2] / '.github'
+            / 'workflows' / 'rust-owned-thread-inputs.yml').read_text(encoding='utf-8'))
+        self.assertEqual(set(compiler['on']), {'push', 'workflow_dispatch'})
+        self.assertEqual(compiler['on']['push'], {
+            'branches': ['feat/rust-standard-thread-runtime-20261022',
+                         'diag/rust-thread-frames-20261023'],
+            'paths': ['.github/workflows/rust-owned-thread-inputs.yml',
+                      'tools/compile_rust_owned_thread_inputs.py',
+                      'tools/compile_rust_owned_thread_application.py',
+                      'sdk/rust-standard-runtime/**']})
+        option = compiler['on']['workflow_dispatch']['inputs']['application-diagnostic']
+        self.assertEqual(option['type'], 'boolean')
+        self.assertIs(option['default'], False)
+        self.assertEqual(compiler['permissions'], {'contents': 'read'})
+        self.assertEqual(compiler['concurrency'], {
+            'group': 'rust-owned-thread-inputs-${{ github.ref }}',
+            'cancel-in-progress': False})
+        self.assertEqual(set(compiler['jobs']), {'compiler-inputs'})
+        job = compiler['jobs']['compiler-inputs']
+        self.assertEqual(job['runs-on'], 'ubuntu-24.04')
+        self.assertEqual(job['timeout-minutes'], 20)
+        selector = ("${{ inputs.application-diagnostic || (github.event_name == 'push' && "
+                    "github.ref == 'refs/heads/diag/rust-thread-frames-20261023') }}")
+        conditional = [step for step in job['steps'] if step.get('if') not in (None, 'always()')]
+        self.assertEqual([step.get('uses', step.get('name')).split('@', 1)[0]
+                          for step in conditional], [
+            'KirilsTurkins/lsf-setup-node',
+            'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup',
+            'KirilsTurkins/lsf-setup-zig',
+            'Prepare the existing captured compiler isolation and binding tool'])
+        for step in conditional:
+            self.assertEqual(step['if'], selector)
+        build = next(step for step in job['steps']
+                     if step.get('name') == 'Build the two exact owned compiler inputs once')
+        self.assertEqual(build['env'], {'EXPECTED_HEAD': '${{ github.sha }}',
+                                       'APPLICATION_DIAGNOSTIC': selector})
+        self.assertIn('arguments+=(--application-diagnostic)', build['run'])
+        self.assertIn('--expected-head "$EXPECTED_HEAD"', build['run'])
+        self.assertIn('tools/compile_rust_owned_thread_inputs.py', build['run'])
+        cache = next(step for step in job['steps']
+                     if step.get('uses', '').startswith('KirilsTurkins/lsf-rust-cache@'))
+        self.assertIs(cache['with']['save-if'], False)
+        retained = job['steps'][-1]
+        self.assertEqual(retained['if'], 'always()')
+        self.assertEqual(retained['with']['retention-days'], 3)
+        self.assertEqual(retained['with']['if-no-files-found'], 'error')
+
     def test_diagnostic_consumer_accepts_only_the_bound_numeric_unreachable_fault(self):
         runtime = (Path(__file__).resolve().parents[2] / 'tools'
                    / 'rust_thread_runtime_node.py').read_text(encoding='utf-8')
