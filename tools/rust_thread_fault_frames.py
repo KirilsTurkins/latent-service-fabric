@@ -96,6 +96,7 @@ SUSP_FRAME_VALUE = re.compile(rb':(0|[1-9][0-9]{0,9})' * 5 + rb'\r?')
 def root_suspension(stderr):
     require(len(stderr) <= 262144, 'rust-thread-fault-stderr-bound')
     header = None
+    header_end = -1
     for match in SUSP_ROW.finditer(stderr):
         require(header is None and match.end(1) - match.start(1) <= 17,
                 'rust-thread-fault-single-root-suspension-header')
@@ -108,10 +109,14 @@ def root_suspension(stderr):
                 and (not flags & 96 or flags in (32, 64) and steps == visited == count == 0),
                 'rust-thread-fault-root-suspension-range')
         header = flags, steps, visited, count
+        header_end = match.end()
     rows = []
     modules = set()
     for match in SUSP_FRAME_ROW.finditer(stderr):
-        require(header is not None and len(rows) < header[3]
+        # The emitter writes the header first. Do not combine earlier orphan
+        # frames with a later header into an apparently complete last capture.
+        require(header is not None and match.start() > header_end
+                and len(rows) < header[3]
                 and match.end(1) - match.start(1) <= 56,
                 'rust-thread-fault-root-suspension-frame-bound')
         value = SUSP_FRAME_VALUE.fullmatch(match.group(1))

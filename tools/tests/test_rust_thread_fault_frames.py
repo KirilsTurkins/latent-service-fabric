@@ -137,11 +137,48 @@ class RustThreadFaultFramesTests(unittest.TestCase):
                         suspension.replace(b':123:', b':private:', 1),
                         suspension + b'LSF-RUST40-SUSP-FRAME:8:0:1:2:3\n',
                         b'LSF-RUST40-SUSP-FRAME:0:0:1:2:3\n',
-                        b'LSF-RUST40-SUSP:32:1:0:0\n',
+                        b'LSF-RUST40-SUSP:32:1:0:0:0\n',
                         b'LSF-RUST40-SUSP:128:0:0:0\n',
                         b'LSF-RUST40-SUSP:private\n', b'x' * 262145):
             with self.subTest(suspensionBytes=len(invalid)), self.assertRaises(WorkflowError):
                 root_suspension(invalid)
+        # Header-first is part of the emitted record, not merely a set of rows.
+        # In particular, a later valid header cannot adopt an earlier orphan.
+        header, _, emitted_frames = suspension.partition(b'\n')
+        first, _, remaining = emitted_frames.partition(b'\n')
+        for invalid in (emitted_frames + header + b'\n',
+                        first + b'\n' + header + b'\n' + remaining):
+            with self.subTest(order=invalid[:32]), self.assertRaises(WorkflowError):
+                root_suspension(invalid)
+
+        # Numeric coordinates retained by diagnostic run 41211537571. This is
+        # parser coverage of an observation, NOT replay or runtime qualification.
+        actual_frames = ((288, 76700, 500), (449, 132337, 44),
+                         (240, 58505, 284), (357, 89350, 104),
+                         (376, 93025, 63), (63, 16666, 176))
+        actual = b'LSF-RUST40-SUSP:0:5:6:6\n' + b''.join(
+            f'LSF-RUST40-SUSP-FRAME:{i}:0:{function}:{instruction}:{offset}\n'.encode()
+            for i, (function, instruction, offset) in enumerate(actual_frames))
+        actual_wait = root_suspension(actual)
+        self.assertEqual(actual_wait['rawTraversalSteps'], 5)
+        self.assertEqual(actual_wait['rawFrameVisits'], 6)
+        self.assertEqual([(row['function'], row['moduleOffset'], row['functionOffset'])
+                          for row in actual_wait['frames']], list(actual_frames))
+        for flag in ('traversalMayBeTruncated', 'framesMayBeTruncated',
+                     'missingSourceCoordinates', 'unmappedFrames', 'traceUnavailable',
+                     'lastTransferUnavailable', 'noCaptureSaved'):
+            self.assertFalse(actual_wait[flag])
+        self.assertEqual(root_suspension(actual.replace(b'\n', b'\r\n')), actual_wait)
+        Node.buffers = (b'', b'private guest-name\nLSF-RUST40-TRAP:22\n' + actual)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            capture(Node(), {'fixture': 'node'}, {'fixture': 'component'}, output)
+            kept = json.loads((output / 'numeric-original-root-suspension.json').read_bytes())
+            self.assertEqual(kept['suspension'], actual_wait)
+            self.assertFalse(kept['runtimeQualification'])
+            self.assertTrue(kept['frameObservationRequiredSeparately'])
+            self.assertFalse((output / 'numeric-fault-frames.json').exists())
+            self.assertNotIn('private guest-name', json.dumps(kept))
         Node.buffers = (b'', b'LSF-RUST40-TRAP:22\n' + scheduler + suspension)
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)
