@@ -628,7 +628,21 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
 TYPE_CLASSES = frozenset(TYPE_ROOT + name for name in (
     'TypeInferer.class', 'TypeInferer$1.class', 'TypeInferer$2.class',
     'TypeInferer$InferenceKind.class', 'TypeInferer$InferenceType.class'))
-PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES | ASYNC_CLASSES
+VOLATILE_ROOT = 'org/teavm/backend/c/analyze/'
+VOLATILE_CLASSES = frozenset(VOLATILE_ROOT + name for name in (
+    'VolatileDefinitionFinder.class', 'VolatileDefinitionFinder$1.class'))
+VOLATILE_SOURCE_SHA256 = 'b8f854640f7cedccb4cd0dddc4993b86259fafc52f0b2ca822d1a432561d90b1'
+VOLATILE_BEFORE = '''                            mutatedVars.computeIfAbsent(tryCatch, k -> new IntHashSet())
+                                    .add(definition.getVariableIndex());
+                        } else {'''
+VOLATILE_AFTER = '''                            mutatedVars.computeIfAbsent(tryCatch, k -> new IntHashSet())
+                                    .add(definition.getVariableIndex());
+                            for (var outerTryCatch : outerTryCatches) {
+                                definitionsToBackupOnEntry.computeIfAbsent(outerTryCatch, k -> new IntHashSet())
+                                        .add(definition.getVariableIndex());
+                            }
+                        } else {'''
+PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES | ASYNC_CLASSES | VOLATILE_CLASSES
 CONTROL = CLASS_ROOT + 'Check.class'
 ARRAY_CONTROL = TYPE_ROOT + 'ArrayTypeCheck.class'
 CONTROLS = frozenset((CONTROL, ARRAY_CONTROL)) | MONITOR_CONTROLS
@@ -686,6 +700,21 @@ def corrected_async_source(raw: bytes) -> bytes:
         raise ValueError('unreviewed-teavm-checkpoint-find-preimage')
     return source.replace(ASYNC_BEFORE, CHECKPOINT_VALIDATION + ASYNC_AFTER).replace(
         CHECKPOINT_FIND_BEFORE, CHECKPOINT_FIND_AFTER).encode('utf-8')
+
+
+def corrected_volatile_source(raw: bytes) -> bytes:
+    if hashlib.sha256(raw).hexdigest() != VOLATILE_SOURCE_SHA256:
+        raise ValueError('unreviewed-teavm-volatile-definition-source')
+    source = raw.decode('utf-8')
+    if source.count(VOLATILE_BEFORE) != 1:
+        raise ValueError('unreviewed-teavm-volatile-definition-preimage')
+    source = source.replace(VOLATILE_BEFORE, VOLATILE_AFTER)
+    for name in ('IntHashSet', 'IntSet'):
+        before = 'import com.carrotsearch.hppc.' + name + ';'
+        if source.count(before) != 1:
+            raise ValueError('unreviewed-teavm-volatile-definition-relocation')
+        source = source.replace(before, 'import org.teavm.hppc.' + name + ';')
+    return source.encode('utf-8')
 
 
 def checked_jars(compiler, project: Path) -> list[Path]:
@@ -753,7 +782,9 @@ def jar_entries(path: Path) -> dict[str, bytes]:
             or {name for name in result if name.startswith(TYPE_ROOT + 'TypeInferer')
                 and name.endswith('.class')} != TYPE_CLASSES
             or {name for name in result if name.startswith(TYPE_ROOT + 'AsyncMethodFinder')
-                and name.endswith('.class')} != ASYNC_CLASSES):
+                and name.endswith('.class')} != ASYNC_CLASSES
+            or {name for name in result if name.startswith(VOLATILE_ROOT + 'VolatileDefinitionFinder')
+                and name.endswith('.class')} != VOLATILE_CLASSES):
         raise ValueError('coroutine-patch-class-closure')
     return result
 
@@ -880,13 +911,17 @@ def stage(compiler, project: Path, destination: Path) -> dict:
     async_raw = read_file(sdk / 'AsyncMethodFinder.java')
     async_source = folder / 'AsyncMethodFinder.java'
     corrected_async = corrected_async_source(async_raw); async_source.write_bytes(corrected_async)
+    volatile_raw = read_file(sdk / 'VolatileDefinitionFinder.java')
+    volatile_source = folder / 'VolatileDefinitionFinder.java'
+    corrected_volatile = corrected_volatile_source(volatile_raw); volatile_source.write_bytes(corrected_volatile)
     monitor_control = folder / 'MonitorAsyncControl.java'
     monitor_control.write_bytes(read_file(sdk / 'MonitorAsyncControl.java'))
     # Compiler.run provides the original process, output and remaining-time bounds.
     classes = folder / 'classes'
     read_file(sdk / 'Compile.java')
     compiler.run('java-coroutine-patch', 'java', sdk / 'Compile.java', source, control, classes,
-                 os.pathsep.join(map(str, jars)), type_source, array_control, async_source, monitor_control)
+                 os.pathsep.join(map(str, jars)), type_source, array_control, async_source, monitor_control,
+                 volatile_source)
     replacement = folder / 'teavm-core-patched.jar'
     receipt = replace_jar(original[0], classes, replacement)
     for mode, selected in (('original', original[0]), ('corrected', replacement)):
@@ -997,6 +1032,9 @@ tasks.named('generateC') {
         realStructuralCopyCostControls=cost_controls,
         upstreamAsyncFinderSourceSha256=ASYNC_SOURCE_SHA256,
         correctedAsyncFinderSourceSha256=hashlib.sha256(corrected_async).hexdigest(),
+        upstreamVolatileDefinitionSourceSha256=VOLATILE_SOURCE_SHA256,
+        correctedVolatileDefinitionSourceSha256=hashlib.sha256(corrected_volatile).hexdigest(),
+        nestedHandlerReferenceBackupsPreserved=True,
         realOriginalMonitorBoundaryDefectObserved=True,
         realCorrectedMonitorOnlyAndMixedBoundariesPreserved=True,
         realCorrectedMonitorCallerAndFamilyClosurePreserved=True,

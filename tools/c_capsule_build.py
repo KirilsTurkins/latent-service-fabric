@@ -109,7 +109,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "application-dependencies"
             closure = prepare(dependency_root, work, output, "c")
             runtime_profile = standard_facilities.selected_profile(project, closure.lock if closure is not None else None)
-            if runtime_profile == standard_facilities.FETCH_PROFILE and not threaded:
+            if runtime_profile in standard_facilities.FETCH_PROFILES and not threaded:
                 raise ValueError('c-libfetch-http-requires-cooperative-threading')
             language_standard = language.selected_standard(project, closure.lock if closure is not None else None)
             resources = c_resource_inputs.selected(closure, files)
@@ -132,7 +132,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                    compiler_distribution_digest=digest(json.dumps(isolated_inputs["distributions"],
                                         sort_keys=True, separators=(",", ":")).encode()) if closure is not None else None)
             write_json(output / "c-libraries.json", application.receipt)
-            if threaded and runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE}:
+            if threaded and runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE,
+                                                standard_facilities.FETCH_STANDARD_PROFILE}:
                 # Select before the observed materials snapshot. compile()
                 # rechecks the same pins and cannot replace these identities.
                 compiler.select_threading_clock_inputs()
@@ -164,6 +165,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                                           static_libraries=application.archives, defines=defines,
                                                           runtime_profile=runtime_profile, language_standard=language_standard,
                                                           embed_directories=resources.directories if language_standard == 'c23' else (),
+                                                          **({'dependency_sources': application.sources} if application.sources else {}),
                                                           **({'threading_profile': threading.PROFILE} if threaded else {}))
             if closure is not None or threaded:
                 write_json(output / "compiler-inputs.json", isolated_inputs)

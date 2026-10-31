@@ -1,3 +1,0 @@
-{"kind":"owner","path":"tools/c_timed_source_controls.py","reviewBoundary":"committed-fingerprint","reviewReason":"Freestanding real C source regression serializes a later timer expiry stack reclamation and newer waiter during broadcast without claiming guest canonical or ledger execution","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "1afc6a013a26c492683267a513b05a047305cbedaa873f1f1e562255974939b2"
-}

@@ -1,0 +1,12 @@
+config LSF_STREAM_NODE_BOOTSTRAP
+	bool "LSF q35 original-Node preparation image (qualification only)"
+	depends on X86_64 && PCI && PCI_MSI && VIRTIO_PCI
+	depends on INET && SECURITY && SECURITY_NETWORK
+	select LSF_STREAM_FACTORY
+	default n
+	help
+	  Compile the source-bound Node fops at the fixed protected factory path.
+	  The image owner must bind q35/KVM, one possible/online CPU, no vIOMMU and
+	  no hotplug before entry. This is not the production network provider.
+	  Original OS registration remains a platform prerequisite. Only the
+	  original moved userspace escrow pays later Node/bank/PREPARE births.

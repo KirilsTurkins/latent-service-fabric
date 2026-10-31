@@ -14,6 +14,20 @@ class RustThreadRuntimeTests(unittest.TestCase):
         self.assertEqual(native.SOURCE, 'cddfb5d016a6311ed0db4673e490dc9caad917dd')
         self.assertEqual(native.RUN, 41229829377)
         self.assertEqual(native.ARTIFACT['id'], 13053891150)
+        # Development's second 193-control attempt remains historical, not
+        # silently substituted for the matched 200-control retirement build.
+        self.assertEqual(native.HISTORICAL_JOB, 120188455407)
+        self.assertEqual(native.PREVIOUS_JOB, 124001233201)
+        self.assertEqual(native.PREVIOUS_ARTIFACT, {
+            'id': 12969252228, 'size_in_bytes': 70987125,
+            'digest': 'sha256:3a3cc9c4ceb585bb51e5780f09b34339f72feaf6a2ecaabf1e359932745bb066',
+        })
+        self.assertEqual(native.PREVIOUS_RECEIPTS['native-products.json'], {
+            'bytes': 135020,
+            'sha256': 'sha256:3f030c32826880b7338982e4162fbd0d50ed86ae187b0677ea71c771521b48be',
+        })
+        self.assertEqual(native.PREVIOUS_RECEIPTS['source-inputs.json'],
+                         native.HISTORICAL_RECEIPTS['source-inputs.json'])
         self.assertEqual(native.RETIREMENT_PREVIOUS_ARTIFACT['id'], 13038753096)
         self.assertEqual(native.RETIREMENT_PREVIOUS_SOURCE,
                          'e3f0edf822c10e84bbeede276174ac3217542afc')

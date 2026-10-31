@@ -89,7 +89,7 @@
             "integrity": "sha512-w9M3UphEGYK/Zn9kkYnPVw7NnQyxE3T7gIcqBv3m4/Fe+LAhnAPZBwgYCqj0/orv2GagYhPGa2OMjqdzp7G0Lg=="
           }
         },
-        "lock_sha256": "fda58995f14365c692cc36d195b5814c0af36a5eb8e7bc3a21965b25ea86afcb",
+        "lock_sha256": "6b47f4a248b29fa7623b92cefdf166259d29148e0591852e11bd08a0e780239c",
         "source_sha256": "42da38ca0597fc243b088e95259519a886a520b8f4fb84b70d901c6ebebabfc3"
       },
       "kind": "npm",
@@ -117,7 +117,7 @@
             "integrity": "sha512-w9M3UphEGYK/Zn9kkYnPVw7NnQyxE3T7gIcqBv3m4/Fe+LAhnAPZBwgYCqj0/orv2GagYhPGa2OMjqdzp7G0Lg=="
           }
         },
-        "lock_sha256": "dcdcd4dc913f4e460195f1778ec5a32fa823b7299a549d2e7d32c60415a40fc8",
+        "lock_sha256": "51fe53a080c8a2721218c960b403762f03e17f6bdebaaf86cbf253378b82ac73",
         "source_sha256": "42da38ca0597fc243b088e95259519a886a520b8f4fb84b70d901c6ebebabfc3"
       },
       "kind": "npm",

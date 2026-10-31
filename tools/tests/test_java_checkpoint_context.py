@@ -22,7 +22,7 @@ class CheckpointContext(unittest.TestCase):
             coroutine_patch.CHECKPOINT_FIND_AFTER, coroutine_patch.CHECKPOINT_FIND_BEFORE).replace(
             coroutine_patch.ASYNC_AFTER, coroutine_patch.ASYNC_BEFORE), raw.decode())
         self.assertLess(fixed.index('validateCheckpointCallers();'), fixed.index('hasAsyncMethods = findAsyncMethods();'))
-        self.assertEqual(len(coroutine_patch.PATCH_CLASSES), 11)
+        self.assertEqual(len(coroutine_patch.PATCH_CLASSES), 13)
         self.assertEqual(len(coroutine_patch.ASYNC_CLASSES), 3)
         self.assertNotIn('asyncMethods', coroutine_patch.CHECKPOINT_VALIDATION.split('MethodReference checkpoint', 1)[1])
         self.assertIn('pending.size() == 65536', fixed)
@@ -36,6 +36,24 @@ class CheckpointContext(unittest.TestCase):
         self.assertIn('!block.readTryCatchBlocks().isEmpty()', fixed)
         with self.assertRaisesRegex(ValueError, 'unreviewed-teavm-async-finder-source'):
             coroutine_patch.corrected_async_source(raw+b'\n')
+
+    def test_nested_handler_reference_backup_is_exact_reversible_upstream_backport(self):
+        raw = (probe.SDK/'fibers/compiler-patch/VolatileDefinitionFinder.java').read_bytes()
+        fixed = coroutine_patch.corrected_volatile_source(raw).decode()
+        restored = fixed.replace(coroutine_patch.VOLATILE_AFTER,
+            coroutine_patch.VOLATILE_BEFORE)
+        for name in ('IntHashSet', 'IntSet'):
+            restored = restored.replace('import org.teavm.hppc.' + name + ';',
+                'import com.carrotsearch.hppc.' + name + ';')
+        self.assertEqual(restored.encode(), raw)
+        self.assertEqual(fixed.count('for (var outerTryCatch : outerTryCatches)'), 1)
+        self.assertIn('definitionsToBackupOnEntry.computeIfAbsent(outerTryCatch', fixed)
+        self.assertEqual(coroutine_patch.VOLATILE_CLASSES & coroutine_patch.PATCH_CLASSES,
+            coroutine_patch.VOLATILE_CLASSES)
+        self.assertIn(coroutine_patch.VOLATILE_ROOT + 'VolatileDefinitionFinder$1.class',
+            coroutine_patch.PATCH_CLASSES)
+        with self.assertRaisesRegex(ValueError, 'unreviewed-teavm-volatile-definition-source'):
+            coroutine_patch.corrected_volatile_source(raw+b'\n')
 
     def test_selected_model_jars_require_exact_lock_metadata_names_and_finite_total(self):
         lock = json.loads((probe.SDK/'feasibility/dependencies.lock.json').read_bytes())

@@ -28,8 +28,12 @@ def original_workflow(test):
     return restored
 
 
+from tools.tests.test_sdk_scratch_qualification import historical_security_actions
+
+
 def historical_checkout(value):
     """Authenticate the current action before the exact historical pin inverse."""
+    value = historical_security_actions(value)
     prefix = 'KirilsTurkins/lsf-checkout@'
     current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
     previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
@@ -42,6 +46,12 @@ def historical_checkout(value):
 
 def historical_resource_fixture(value):
     """Keep the original whole-file fixture hash after its reviewed guard repair."""
+    if hashlib.sha256(value).hexdigest() != 'f3270c83ed4554527a994d8a1236a3dd26d1ef19f930a22685648455bd26edab':
+        raise AssertionError('historical-resource-fixture-security-projection-required')
+    for current in (b'from tools.tests.test_sdk_scratch_qualification import historical_security_actions\n\n\n', b'    value = historical_security_actions(value)\n'):
+        if value.count(current) != 1:
+            raise AssertionError('historical-resource-fixture-security-projection-required')
+        value = value.replace(current, b'', 1)
     edits = ((b'\n\ndef historical_checkout(value):\n    """Authenticate the current action before the exact historical pin inverse."""\n    prefix = \'KirilsTurkins/lsf-checkout@\'\n    current = prefix + \'842365d0a25bf5a868311e4cb89c908bdcab4bb8\'\n    previous = prefix + \'c3024dfac542bb46ebccc7829ddf1f95e0be8da9\'\n    if type(value) is bytes:\n        prefix, current, previous = (item.encode(\'ascii\') for item in (prefix, current, previous))\n    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):\n        raise AssertionError(\'historical-workflow-exact-current-checkout-required\')\n    return value.replace(current, previous)\n', b''), (b"historical_checkout(read_file(ROOT/('.github/workflows/'+language+'-resource-runtime.yml')))", b"read_file(ROOT/('.github/workflows/'+language+'-resource-runtime.yml'))"))
     for current, previous in edits:
         if value.count(current) != 1:

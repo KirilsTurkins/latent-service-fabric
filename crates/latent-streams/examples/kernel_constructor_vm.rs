@@ -158,6 +158,9 @@ mod selected {
             return Err(());
         }
         emit("baseline", baseline, 0);
+        if std::env::args().nth(1).as_deref() == Some("--node-capacity-vm-child") {
+            return execute_node(pools, baseline, deadline).await;
+        }
         let provider = StreamProvider::install_kernel_constructor_for_qualification(
             Arc::clone(&pools),
             "streams",
@@ -225,12 +228,80 @@ mod selected {
         Ok(())
     }
 
+    async fn execute_node(
+        pools: Arc<ProviderPools>,
+        baseline: ProviderPoolSnapshot,
+        deadline: Instant,
+    ) -> Checked<()> {
+        let node = StreamProvider::prepare_kernel_node_for_qualification(
+            Arc::clone(&pools),
+            "streams",
+            1,
+            0,
+            configuration(),
+            deadline,
+        )
+        .await
+        .map_err(|_| ())?;
+        let facts = node.facts();
+        let ready = snapshot(&pools, deadline).await?;
+        if Instant::now() >= deadline
+            || factory_descriptors()? != 1
+            || facts.cpu_geometry[0..3] != [1, 1, 1]
+            || ready.connections != baseline.connections + 1
+            || ready.metadata_bytes < baseline.metadata_bytes + 1024 * 1024
+            || facts.accounting[1] > facts.accounting[2]
+            || facts.vectors.iter().any(|vector| *vector == 0)
+            || facts
+                .vectors
+                .iter()
+                .enumerate()
+                .any(|(i, vector)| facts.vectors[..i].contains(vector))
+        {
+            return Err(());
+        }
+        emit("node-prepared-unqualified", ready, 1);
+        println!(
+            "LSFNODEBOOT1 facts={:?} cpu={:?} accounting={:?} vectors={:?}",
+            facts.node_layout, facts.cpu_geometry, facts.accounting, facts.vectors
+        );
+        drop(node);
+        loop {
+            if Instant::now() >= deadline {
+                return Err(());
+            }
+            let retained = snapshot(&pools, deadline).await?;
+            if factory_descriptors()? == 0
+                && retained.pending_requests == 0
+                && retained.running_requests == 0
+                && retained.workers == 0
+            {
+                if retained.connections != baseline.connections + 1
+                    || retained.metadata_bytes < baseline.metadata_bytes + 1024 * 1024
+                {
+                    return Err(());
+                }
+                emit("node-closed-retained", retained, 0);
+                break;
+            }
+            if Instant::now() >= deadline {
+                return Err(());
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+        println!("LSFNODEBOOT1 prepared=1 descriptorClosed=1 originalEscrowRetained=1 nodeFunding=0 nodeRetired=0 irqEnabled=0 tcpEnabled=0");
+        Ok(())
+    }
+
     pub fn run() {
         // The hosted programme only builds this file. The PID1 supervisor execs it in
         // the VM; no compiler/parser control invokes this native constructor on host.
         let mut arguments = std::env::args();
         let isolated = arguments.next().as_deref() == Some("/native-init")
-            && arguments.next().as_deref() == Some("--constructor-vm-child")
+            && matches!(
+                arguments.next().as_deref(),
+                Some("--constructor-vm-child" | "--node-capacity-vm-child")
+            )
             && arguments.next().is_none()
             && std::fs::read_link("/proc/1/exe").ok().as_deref() == Some(Path::new("/init"));
         if !isolated {

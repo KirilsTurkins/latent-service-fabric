@@ -18,6 +18,8 @@ mod development_trap_observer;
 mod factory;
 mod host;
 mod invocation_input_observer;
+#[cfg(feature = "java-checkpoint-gc-trap-diagnostic")]
+mod java_checkpoint_gc_fault;
 mod native_stacks;
 mod native_tables;
 mod phase0;

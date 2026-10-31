@@ -11,6 +11,7 @@ static int valid_range(const void *pointer, uint32_t size) {
     return (address != 0 || size == 0) && address <= memory && size <= memory - address;
 }
 
+__attribute__((used))
 int32_t __imported_wasi_snapshot_preview1_clock_time_get(int32_t id, int64_t precision, int32_t address) {
     __wasi_timestamp_t *output = (__wasi_timestamp_t *)(uintptr_t)(uint32_t)address;
     (void)precision;
@@ -39,6 +40,7 @@ int32_t __imported_wasi_snapshot_preview1_clock_res_get(int32_t id, int32_t addr
     return 0;
 }
 
+__attribute__((used))
 int32_t __imported_wasi_snapshot_preview1_random_get(int32_t address, int32_t requested) {
     uint8_t *buffer = (uint8_t *)(uintptr_t)(uint32_t)address;
     uint32_t length = (uint32_t)requested;

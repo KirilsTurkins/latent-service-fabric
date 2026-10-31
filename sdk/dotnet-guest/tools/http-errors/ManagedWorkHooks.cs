@@ -351,6 +351,44 @@ internal sealed class ManagedWorkHooks
         changed.Add(enqueue);
     }
 
+    // Evaluate only the actual generated accessor's five read-only opcodes.
+    // This is a compiler metadata control, not guest or CLR runtime qualification.
+    private static void CheckPrefetchedReadiness(MethodDefinition method,
+        FieldDefinition workQueue, FieldDefinition prefetched)
+    {
+        Need(method.Body.Instructions.Count == 5);
+        var queue = new object();
+        bool Read(object? slot)
+        {
+            var stack = new Stack<object?>();
+            foreach (var instruction in method.Body.Instructions)
+                switch (instruction.OpCode.Code)
+                {
+                    case Code.Ldsfld:
+                        Need(ReferenceEquals(instruction.Operand, workQueue)); stack.Push(queue); break;
+                    case Code.Ldfld:
+                        Need(ReferenceEquals(instruction.Operand, prefetched)
+                            && ReferenceEquals(stack.Pop(), queue)); stack.Push(slot); break;
+                    case Code.Ldnull: stack.Push(null); break;
+                    case Code.Cgt_Un:
+                        var right = stack.Pop(); stack.Push(!ReferenceEquals(stack.Pop(), right)); break;
+                    case Code.Ret:
+                        Need(stack.Count == 1 && stack.Peek() is bool); return (bool)stack.Pop()!;
+                    default: throw new InvalidDataException("managed-work-prefetched-readiness-opcode");
+                }
+            throw new InvalidDataException("managed-work-prefetched-readiness-return");
+        }
+        foreach (bool queued in new[] { false, true })
+            foreach (object? slot in new object?[] { null, new object() })
+            {
+                bool original = queued;
+                bool actual = Read(slot) || queued;
+                Need(actual == (queued || slot is not null)
+                    && (slot is not null || actual == original));
+                if (!queued && slot is not null) Need(!original && actual);
+            }
+    }
+
     private void ProducerBindings()
     {
         var loop = Type("System.Threading.WasiEventLoop");
@@ -397,6 +435,24 @@ internal sealed class ManagedWorkHooks
         il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Isinst, Type("System.Runtime.CompilerServices.IAsyncStateMachineBox"));
         il.Emit(OpCodes.Ldnull); il.Emit(OpCodes.Cgt_Un); il.Emit(OpCodes.Ret);
 
+        // The dispatcher can retain an eligible item outside every counted queue.
+        // Read its original slot without consuming it or creating another owner.
+        var queue = Type("System.Threading.ThreadPoolWorkQueue");
+        var workQueue = Type("System.Threading.ThreadPool").Fields.Single(field => field.Name == "s_workQueue");
+        var prefetched = queue.Fields.Single(field => field.Name == "_nextWorkItemToProcess");
+        Need(workQueue.IsStatic && (workQueue.IsAssembly || workQueue.IsPublic)
+            && workQueue.FieldType.FullName == queue.FullName
+            && prefetched.IsPrivate && !prefetched.IsStatic
+            && prefetched.FieldType.MetadataType == MetadataType.Object
+            && queue.Methods.Single(method => method.Name == "Dispatch").Body.Instructions.Any(instruction =>
+                instruction.Operand is FieldReference field && field.Resolve() == prefetched));
+        var prefetchedReady = New(queue, "LsfManagedWorkPrefetchedReady", module.TypeSystem.Boolean,
+            MethodAttributes.Assembly | MethodAttributes.Static);
+        il = prefetchedReady.Body.GetILProcessor();
+        il.Emit(OpCodes.Ldsfld, workQueue); il.Emit(OpCodes.Ldfld, prefetched);
+        il.Emit(OpCodes.Ldnull); il.Emit(OpCodes.Cgt_Un); il.Emit(OpCodes.Ret);
+        CheckPrefetchedReadiness(prefetchedReady, workQueue, prefetched);
+
         var ready = New(loop, "LsfManagedWorkReady", module.TypeSystem.Boolean,
             MethodAttributes.Assembly | MethodAttributes.Static);
         il = ready.Body.GetILProcessor(); yes = Instruction.Create(OpCodes.Ldc_I4_1);
@@ -407,6 +463,7 @@ internal sealed class ManagedWorkHooks
                 .Single(method => method.Name == "get_Count" && method.DeclaringType.FullName == field.FieldType.FullName);
             il.Emit(OpCodes.Ldsfld, field); il.Emit(OpCodes.Callvirt, count); il.Emit(OpCodes.Brtrue, yes);
         }
+        il.Emit(OpCodes.Call, prefetchedReady); il.Emit(OpCodes.Brtrue, yes);
         il.Emit(OpCodes.Call, Type("System.Threading.ThreadPool").Methods.Single(method => method.Name == "get_PendingWorkItemCount"));
         il.Emit(OpCodes.Ldc_I4_0); il.Emit(OpCodes.Conv_I8); il.Emit(OpCodes.Cgt); il.Emit(OpCodes.Ret);
         il.Append(yes); il.Emit(OpCodes.Ret);

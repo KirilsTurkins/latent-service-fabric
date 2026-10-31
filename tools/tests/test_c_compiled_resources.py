@@ -149,24 +149,59 @@ class CompiledResources(unittest.TestCase):
 
     def test_c23_flags_and_embed_roots_apply_to_both_compilation_and_dependency_observation(self):
         source = self.root / 'source.c'; source.write_text('int value;')
+        dependency = self.root / 'third-party.c'; dependency.write_text('int upstream_value;')
         compiler = Compiler.__new__(Compiler)
-        compiler.compiler_edges, compiler.compiler_edge_sources = None, {}
+        retained, refused = [], []
+        compiler.compiler_edges = SimpleNamespace(queries=[{'source': 'application'}, {'source': 'dependency'}],
+            retain_unit=lambda *row: retained.append(row), fail_unit=lambda name: refused.append(name))
+        compiler.compiler_edge_sources = {'application': source, 'dependency': dependency}
         compiler.sdk, compiler.platform, compiler.commands = project.ROOT / 'sdk/c-guest', None, None
         compiler.isolation = SimpleNamespace(receipt={}, observe_inputs=lambda path: [])
         compiler.validate_static_libraries = lambda *args: None; compiler.check_unchanged = lambda: None
-        calls = []; compiler.run = lambda *args: calls.append(args) or ''
+        calls = []
+        def run(*args):
+            calls.append(args)
+            if args[0] == 'zig' and ('-c' in args or '-emit-llvm' in args):
+                Path(args[args.index('-o') + 1]).write_bytes(b'controlled compiler output')
+            return ''
+        compiler.run = run
         def generate(run, wit, world, destination, platform, *, sync_core_abi=False):
             self.assertFalse(sync_core_abi)
             destination.mkdir(); return destination, {}
         with patch('tools.c_guest.compiler.generate', generate):
-            compiler.compile([source], self.root / 'wit', 'service', self.root / 'compiled',
-                language_standard='c23', embed_directories=(self.root,))
+            compiler.compile([source, dependency], self.root / 'wit', 'service', self.root / 'compiled',
+                language_standard='c23', embed_directories=(self.root,), dependency_sources=(dependency,))
         commands = [row for row in calls if row[0] == 'zig']
         self.assertGreaterEqual(len(commands), 2)
         for row in commands:
             self.assertIn('-std=c23', row)
             self.assertIn('--embed-dir=' + str(self.root), row)
             self.assertNotIn('--embed-dir', row)
+        objects = [row for row in commands if '-c' in row]
+        self.assertEqual(len(objects), 1)
+        self.assertIn(str(dependency), objects[0]); self.assertNotIn(str(source), objects[0])
+        self.assertNotIn('-Werror', objects[0]); self.assertIn('-Wall', objects[0]); self.assertIn('-Wextra', objects[0])
+        self.assertFalse(any(value.startswith('-Wl,') for value in objects[0]))
+        link = next(row for row in commands if str(self.root / 'compiled/core.wasm') in row)
+        self.assertIn('-Werror', link); self.assertIn(str(source), link); self.assertNotIn(str(dependency), link)
+        object_path = str(self.root / 'compiled/dependency-0000.o')
+        self.assertIn(object_path, link)
+        for row in (row for row in commands if '-emit-llvm' in row):
+            self.assertEqual('-Werror' in row, str(source) in row)
+            self.assertNotIn(object_path, row)
+        self.assertEqual([row[0] for row in retained], ['application', 'dependency']); self.assertEqual(refused, [])
+        receipt = compiler.isolation.receipt['dependencyCompilation']
+        self.assertEqual(receipt['warningPolicy'], 'visible-warnings-without-werror')
+        self.assertEqual(receipt['objects'][0]['source']['digest'], digest(dependency.read_bytes()))
+        self.assertEqual(receipt['objects'][0]['object']['digest'], digest(b'controlled compiler output'))
+        for bad in ((dependency, dependency), (self.root / 'uncaptured.c',)):
+            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, 'distinct captured non-SDK'):
+                compiler.compile([source, dependency], self.root, 'service', self.root / 'denied',
+                                 dependency_sources=bad)
+        compiler.isolation = None
+        with self.assertRaisesRegex(ValueError, 'distinct captured non-SDK'):
+            compiler.compile([source, dependency], self.root, 'service', self.root / 'unisolated',
+                             dependency_sources=(dependency,))
         with self.assertRaisesRegex(ValueError, 'bounded-c23'):
             compiler.compile([source], self.root, 'service', self.root / 'closed', embed_directories=(self.root,))
 

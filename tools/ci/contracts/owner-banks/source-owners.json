@@ -1,0 +1,96 @@
+{"schemaVersion":"latent.ci.owner-bank.v1","records":[
+{"kind":"owner","path":"tools/activation_stack_native_products.py","reviewBoundary":"committed-fingerprint","reviewReason":"New dedicated diagnostics workflow delegates directly to the unchanged frozen c713 reader; authenticate exact source, artifact, products and materials, no native rebuild or historical receipt mutation.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "8964783aca30521a0c9882df15f98ca574b0b2d1b965a0951cd2cbf2a1abe352"
+}
+,
+{"kind":"owner","path":"tools/build_angular_package.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"6355b56981461912e5aeea8c9cc69424b512d5d55a6d805516af6eae523a02a0"}
+,
+{"kind":"owner","path":"tools/build_angular_renderer.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"7a52c2a73e1178a12066b940849fc1ddfc5504705621cb11c920552258e1a809"}
+,
+{"kind":"owner","path":"tools/build_dev_bundle.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"6e6a2fca5042eae43020432ef2ff8a49b75fed174a05e88f08f877404b334a05"}
+,
+{"kind":"owner","path":"tools/build_dev_frontend.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reviewed whole679 finite owner, private deadline propagation and ordinary-default API presentation; original shared process ownership and runtime limits unchanged.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "709a93ccdf46a88a938a765b17536791e7a69c40549672bd5d65b805e61b39aa"
+}
+,
+{"kind":"owner","path":"tools/build_dev_guest_tools.py","reviewBoundary":"committed-fingerprint","reviewReason":"Admit prepared Java compiler inputs before normal native-builder cost and retain exact source-owned provenance.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "450e1a3b96d683b53c8c92d36fcbc95a4f2ab555919b39e016af28833cedfaa8"
+}
+,
+{"kind":"owner","path":"tools/build_dev_rootfs.py","reviewBoundary":"committed-fingerprint","reviewReason":"Include the original project NOTICE in the existing WSL image build context; preserve pinned images, original source identity, build ownership and qualification boundaries.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "e565f6edce6d3d30355532cde77ac8b94f6a344593913e9b0bddcf58e382d2b2"
+}
+,
+{"kind":"owner","path":"tools/build_echo_capsule.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"1d7ae4789124fe0765572297d3d5bca2fd0fc7b105c1fce1d7685f95c6a2586a"}
+,
+{"kind":"owner","path":"tools/build_framework_sites.py","reviewBoundary":"committed-fingerprint","reviewReason":"Capture the existing maintained Docusaurus 404 output as an optional signed document Incoming reviewed obligation: Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced. Exact merged owner bytes reviewed. Incoming reviewed obligation: versioned existing Angular PrimeNG Docusaurus recipe emits bounded capture budgets without new fixtures Incoming qualified753 obligation: Capture the existing maintained Docusaurus 404 output as an optional signed document","schemaVersion":"latent.ci.contracts.v1","sha256":"df234975fac90b2b37284641afaba8ea7da565f7efe89db8357855de3db20ec1"}
+,
+{"kind":"owner","path":"tools/build_guest_capsules.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review Rust wit-bindgen 0.63.0 macro compatibility and separate 0.62.0 CLI selection; preserve existing execution commands and qualification cases.","schemaVersion":"latent.ci.contracts.v1","sha256":"586b0781351a9d53bd42b3b320eb8c91e2982f94180753f0d27ff4af0c30793f"}
+,
+{"kind":"owner","path":"tools/build_native_runtime.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reviewed V5 opt-in runtime and outbound stream source identity, generator parity, unchanged skip controls, and active native/node profile selection; preserve every existing case.","schemaVersion":"latent.ci.contracts.v1","sha256":"af769e5e863345792a6242c2b775d40478889ecfab3de8b9439e5ae41f66be31"}
+,
+{"kind":"owner","path":"tools/build_observation.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reviewed whole679 finite owner, private deadline propagation and ordinary-default API presentation; original shared process ownership and runtime limits unchanged.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "49ed72767a609870ac9166b9466b94c38347efe1fc66d6a3176087c988da661c"
+}
+,
+{"kind":"owner","path":"tools/build_phase1_historical_control.sh","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"db11d256e0ffad91e60d7ca6cc48693e73463f31ffdad5c82464656f24f99cf9"}
+,
+{"kind":"owner","path":"tools/build_phase1_measurement_fixtures.sh","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"7931eda35e8c31a35bddf111dda1be447455129895d61324530fd85469475de3"}
+,
+{"kind":"owner","path":"tools/build_portable_c_guests.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"cce6de10103d0656bfdcd748e9d18311199101fd12b3749f34d2488345d65297"}
+,
+{"kind":"owner","path":"tools/build_portable_dev_guests.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"32d0e8645bdb4341be99ebcd32af85150518b0f4a9a12b505cbc4a7f6c0ae2b3"}
+,
+{"kind":"owner","path":"tools/build_process_linux.py","reviewBoundary":"committed-fingerprint","reviewReason":"Pin unchanged existing bounded build/environment/Linux process helpers explicitly named as producer source materials. New workflow material references are conservatively discovered as delegated owners; no helper implementation, command deadline, descendant ownership, output bound, or original normal SDK command changes. Verify fingerprints against exact Git LF bytes.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce"
+}
+,
+{"kind":"owner","path":"tools/build_provenance.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"03c1c677cb530fc6b762440dd3a7f762f945892909ad9034af7a115a17fbdb97"}
+,
+{"kind":"owner","path":"tools/build_s3_fixture.py","reviewBoundary":"committed-fingerprint","reviewReason":"Pin the official Go 1.27.2 Linux amd64 compiler image to match the existing exact version gate; preserve fixture sources, resource limits and qualification checks.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "b07a337442f73cfd42e6087257654f2fbb70f0e73b2bb14e6d3b1f0f401c1bfe"
+}
+,
+{"kind":"owner","path":"tools/build_static_sites.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain complete 250-file generator inventory while adding its ordinary designed error asset Incoming reviewed obligation: Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced. Exact merged owner bytes reviewed. Incoming reviewed obligation: retained finite generator packages now expose capture budget diagnostics beside unchanged signed inputs Incoming qualified753 obligation: Retain complete 250-file generator inventory while adding its ordinary designed error asset","schemaVersion":"latent.ci.contracts.v1","sha256":"132e857ad9d997a3efef6b779b9cb2204a555d102419e8cb3437b1c34e15ade4"}
+,
+{"kind":"owner","path":"tools/build_typescript_native_engine.py","reviewBoundary":"committed-fingerprint","reviewReason":"Select import engine only with explicit completed source compiler identity and preserve ordinary clock engine default","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "280658fa505c148efcf5a0f45d636633c7dd2419aed6d122626b079a5ef7900d"
+}
+,
+{"kind":"owner","path":"tools/build_typescript_promise_library.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reviewed thin CLI delegates to bounded exact-source Promise library builder only; it cannot claim a qualified runtime, alter supported600-second application compilation or enable production APIs.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "e9151a340dc972fb43592230952e9401debf2c0d715c09c2ab21ae2b8ef9bae9"
+}
+,
+{"kind":"owner","path":"tools/build_typescript_source_splicer.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind fresh output, pinned original source, captured compiler namespace and original WIT to actual locked source compiler outputs","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "681b4c1ea25635b92b9d7009bbb8ddadcd5c6d4d76ac1c5fc07500d260534fbe"
+}
+,
+{"kind":"owner","path":"tools/c_dependency_controls.py","reviewBoundary":"committed-fingerprint","reviewReason":"Separate read-only captured SDK inputs from owned writable compiler outputs while preserving all 21 original native dependency controls and isolation limits","schemaVersion":"latent.ci.contracts.v1","sha256":"068b086487effac06a4ee5af931816108d53ff8256b3cceaa3ef6ca60408fe82"}
+,
+{"kind":"owner","path":"tools/c_dependency_watch_fixture.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bound watch fixture formatting without importing stdio while preserving original dependency evaluation and expected signed payloads","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "7ecab28031b76983f72e4c5b36c9099175dc3b0d03a75a311feb45d24b5c31d5"
+}
+,
+{"kind":"owner","path":"tools/c_sync_source_controls.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind the bounded actual synchronization source/object and thirteen serialized source-control runner; original canonical/broker and signed qualification remain separate.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "aa52d93dbc818ba437146f9efce11c2457bec33ad3c8a20a9adc3cebc6dc4d8e"
+}
+,
+{"kind":"owner","path":"tools/c_thread_admission_native_products.py","reviewBoundary":"committed-fingerprint","reviewReason":"Authenticate immutable current3 and original2 products with precise perproduct compiler lineage","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "af5bc80aed0d274c43a317117c5dedbac801d428b8d5e59dfdb347f5007091b3"
+}
+,
+{"kind":"owner","path":"tools/c_thread_native_products.py","reviewBoundary":"committed-fingerprint","reviewReason":"Register the existing immutable f0 native reader as the new late-facility workflow CLI owner; tuple and byte content unchanged.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "f885e540ce9ad2ac183ccd781bd03e7accdf128d061b9ece7dc40b3a5ff1b899"
+}
+,
+{"kind":"owner","path":"tools/c_timed_source_controls.py","reviewBoundary":"committed-fingerprint","reviewReason":"Freestanding real C source regression serializes a later timer expiry stack reclamation and newer waiter during broadcast without claiming guest canonical or ledger execution","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "1afc6a013a26c492683267a513b05a047305cbedaa873f1f1e562255974939b2"
+}
+,
+{"kind":"owner","path":"tools/check_owned_diagnostics.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"38d0f7507d674c4b0ba0c0e6a72199b6250fbc48139dc909079116c1244f5d92"}
+,
+{"kind":"owner","path":"tools/check_testkit_dependencies.py","reviewBoundary":"committed-fingerprint","reviewReason":"Extend the same unconditional acyclic and heavy dependency checks to the neutral process helper and Phase 4 state owner; no runtime dependency exemptions.","schemaVersion":"latent.ci.contracts.v1","sha256":"1dc07f8b0b7b9eb23fe0417fa06f09c4358ab9f8de6864e31762e68f0a5a4117"}
+,
+{"kind":"owner","path":"tools/check_tool_versions.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"5e4f554e98632c88406d142deb121bd65c5acb54b376479624672f8e79545df6"}
+
+]}

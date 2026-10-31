@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "RetainedGcReaderTests.test_current_source_bridge_never_exempts_compiled_inputs",
+    "RetainedGcReaderTests.test_original_library_identity_refuses_replaced_or_extra_bytes",
+    "RetainedGcReaderTests.test_reconstruction_requires_original_package_hash_and_exact_absence",
+    "RetainedGcReaderTests.test_whole_identity_member_digest_and_safe_regular_copy"
+  ],
+  "guards": {
+    "RetainedGcReaderTests.test_current_source_bridge_never_exempts_compiled_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3debcba8f610dfa3acf4614c970d7108a72b491cfdbd0cd1cf111033ff35fa40",
+        "class:setup-sha256:3e0c8fe0331848e7143139a64aa8c69fd11ee273ce7ec50db5d155d743ac557e"
+      ],
+      "skipSites": []
+    },
+    "RetainedGcReaderTests.test_original_library_identity_refuses_replaced_or_extra_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3debcba8f610dfa3acf4614c970d7108a72b491cfdbd0cd1cf111033ff35fa40",
+        "class:setup-sha256:3e0c8fe0331848e7143139a64aa8c69fd11ee273ce7ec50db5d155d743ac557e"
+      ],
+      "skipSites": []
+    },
+    "RetainedGcReaderTests.test_reconstruction_requires_original_package_hash_and_exact_absence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3debcba8f610dfa3acf4614c970d7108a72b491cfdbd0cd1cf111033ff35fa40",
+        "class:setup-sha256:3e0c8fe0331848e7143139a64aa8c69fd11ee273ce7ec50db5d155d743ac557e"
+      ],
+      "skipSites": []
+    },
+    "RetainedGcReaderTests.test_whole_identity_member_digest_and_safe_regular_copy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3debcba8f610dfa3acf4614c970d7108a72b491cfdbd0cd1cf111033ff35fa40",
+        "class:setup-sha256:3e0c8fe0331848e7143139a64aa8c69fd11ee273ce7ec50db5d155d743ac557e"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_checkpoint_gc_retained.py",
+  "reviewReason": "Authenticate and run the unchanged GC programme on its retained a5c component; no guest/native compilation.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

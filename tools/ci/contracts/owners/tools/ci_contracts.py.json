@@ -1,3 +1,1 @@
-{"kind":"owner","path":"tools/ci_contracts.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review strict opt-in guard-key case storage, closed lossless ordered expansion and unchanged source/coverage checks; preserve V1 and shared-guard V2 defaults and existing bounds.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "d6fbebc1057c73ca132717f3014c9ebba5a6f8a0a22492cb01c6067d583b7805"
-}
+{"kind":"owner","path":"tools/ci_contracts.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless bounded owner-only metadata banks; unchanged virtual identities, limits, duplicate/path checks and semantic validation.","schemaVersion":"latent.ci.contracts.v1","sha256":"e02997761e53de7cd6e4c4df93a4c65253907d50678e89c4a84a8eda55b7884e"}

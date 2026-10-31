@@ -1,0 +1,235 @@
+{
+  "formatVersion": 1,
+  "upstream": "https://github.com/vstakhov/libucl",
+  "commit": "1778e38ef06b75876cdd10d76f409954fea3869a",
+  "files": [
+    {
+      "path": "src/ucl_emitter.c",
+      "bytes": 24631,
+      "sha256": "sha256:42aa48aac4499f2143c1f3204d4815b7ba482264a79ca57ac0e58d534d28fad5",
+      "gitBlob": "dd88d4bac775c262f2e56dbece64bbd7a5e28180",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_emitter.c",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "src/ucl_emitter_streamline.c",
+      "bytes": 5032,
+      "sha256": "sha256:35ffc337b611ac61c763d1f814c75914068f9a5be7c54e7da200d1f71a2c8f91",
+      "gitBlob": "1da1b7c5b14ce68b14247202ab2ab33c0912a8e6",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_emitter_streamline.c",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "src/ucl_emitter_utils.c",
+      "bytes": 12845,
+      "sha256": "sha256:beea26e49b3a2c6cf72ab55e7c52452fb61fdde776642db1ddb1669498f1593a",
+      "gitBlob": "2e99d7975865cdf26c6737eb65d353300e7d9690",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_emitter_utils.c",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "src/ucl_hash.c",
+      "bytes": 15544,
+      "sha256": "sha256:796e9bc72f5aecd6de75d0554f6446fe46655c6bac2edf46bf87587f916405be",
+      "gitBlob": "da54080727a3a5ccb8bcddecbfacc92a839f172d",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_hash.c",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "src/ucl_parser.c",
+      "bytes": 83436,
+      "sha256": "sha256:c08339dcd6f3d887ea1faa5c0c80af6826ac1cde6e5cfb973942e4b6c28076bc",
+      "gitBlob": "5c3b364ebe129c36e29d27702eca96cfcc3ddcbf",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_parser.c",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "src/ucl_schema.c",
+      "bytes": 31510,
+      "sha256": "sha256:a7be416e17ba798513aa1d2365f42acc2bf9cd0232618d12234d9e5d991af9e4",
+      "gitBlob": "767d7f42e8473170a8c251248c756deb1b0b4a6e",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_schema.c",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "src/ucl_util.c",
+      "bytes": 95203,
+      "sha256": "sha256:21ac9853aba527c489ba2c722abab45db28364fcb61aaec273c64e3d2dd0948d",
+      "gitBlob": "55a2400ed24211bd70b69c6fadfe81a0f50c49e6",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_util.c",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "src/ucl_msgpack.c",
+      "bytes": 44335,
+      "sha256": "sha256:7a967e628ef72806472b9d731f55a30ab1803b846b4fabc3b20d67a0d380aad5",
+      "gitBlob": "4c34986623b98c8f5acc37d530ca518d46587e65",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_msgpack.c",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "src/ucl_cbor.c",
+      "bytes": 36192,
+      "sha256": "sha256:28e820b68e5b37fd327e55a90812d2d3adf7729f9042d856d3f7c4fc9f32f680",
+      "gitBlob": "2df0ce40848088a567f9edb040c6d5b173561982",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_cbor.c",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "src/ucl_sexp.c",
+      "bytes": 6928,
+      "sha256": "sha256:3692fd4a8b692d5b9dab8b4d94a5cdb54ab81b2e3b3206e8ecde96873db7c31c",
+      "gitBlob": "41e6b8a33813b5a5a8d17239fb7427028810803f",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_sexp.c",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "include/ucl.h",
+      "bytes": 61956,
+      "sha256": "sha256:5a9b7eef6b7c661da14a65536460c9b24b54dee1cbee221adb177c2a18c35078",
+      "gitBlob": "0afa6bd1f4c6874f5cf5609c759e46ff78647032",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/include/ucl.h",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "src/ucl_internal.h",
+      "bytes": 20539,
+      "sha256": "sha256:658ee23b9211d02fb4d29a98b67b8be20d8604c7e3a8036ed11d3727b5533452",
+      "gitBlob": "16beff31055deb9caf2430e2853e7b67366ec461",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_internal.h",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "src/ucl_hash.h",
+      "bytes": 3859,
+      "sha256": "sha256:fecb06af8213b370e4c35851d1422fd3ee692beff38280457932707d51f3b364",
+      "gitBlob": "e7be542901d51f04b52b07c092470a22ab00d7a0",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_hash.h",
+      "acquisition": "bounded-official-source"
+    },
+    {
+      "path": "src/ucl_chartable.h",
+      "bytes": 21041,
+      "sha256": "sha256:271b639b8b8916b8e1bc732a51b11ea8c489e07d036bbe679f98a1f3b556ad32",
+      "gitBlob": "aa896ea5f0a3b0c4e17176dd610a3eabf39e9230",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/ucl_chartable.h",
+      "acquisition": "bounded-official-source"
+    },
+    {
+      "path": "src/mum.h",
+      "bytes": 13645,
+      "sha256": "sha256:406a4e6242f8cdc6068f428944cf838fdb84572d43ac0f3f2e0c7fb867bc1593",
+      "gitBlob": "aa1ed2d840a39ca301a1cac3309bd675abcbb21a",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/mum.h",
+      "acquisition": "bounded-official-source"
+    },
+    {
+      "path": "src/tree.h",
+      "bytes": 20790,
+      "sha256": "sha256:70ca2ea25dc79210c931612b61e3b393037d53429d1047d77c7c24e372509b51",
+      "gitBlob": "bb5fe46ff6a90cdca5f69e28e941ecc9af91915d",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/tree.h",
+      "acquisition": "bounded-official-source"
+    },
+    {
+      "path": "klib/khash.h",
+      "bytes": 22257,
+      "sha256": "sha256:916d890cc863f04e1b8abb8b0c4be60686556cd13a28f3fbb430955aaccd1b48",
+      "gitBlob": "e92e9472903df36987144f8f16160bb3c97921d7",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/klib/khash.h",
+      "acquisition": "bounded-official-source"
+    },
+    {
+      "path": "klib/kvec.h",
+      "bytes": 5341,
+      "sha256": "sha256:3f2cf61ddcb2f38ff39068b330d3d582253cb1666890187225c66c2269477578",
+      "gitBlob": "b685fcacb0ffbcc6d93f5cb4e99220c3fccf1d71",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/klib/kvec.h",
+      "acquisition": "bounded-official-source"
+    },
+    {
+      "path": "uthash/utlist.h",
+      "bytes": 81682,
+      "sha256": "sha256:ff2948e044bf0546af4038110d8670e391d4f642ca13e3cb271dde5e0afc9325",
+      "gitBlob": "08fc59ae6bef6ffc674e6fca2d8aad309b981f10",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/uthash/utlist.h",
+      "acquisition": "bounded-official-source"
+    },
+    {
+      "path": "uthash/utstring.h",
+      "bytes": 12532,
+      "sha256": "sha256:9ee8b7d762b85535439bf554af0a4b91698c6c0b2767db70f764bdd2ff515210",
+      "gitBlob": "b4399484c70ecce5b2abcc78a9e9fd859edaa733",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/uthash/utstring.h",
+      "acquisition": "bounded-official-source"
+    },
+    {
+      "path": "uthash/uthash.h",
+      "bytes": 45285,
+      "sha256": "sha256:9ecf730f422421660d48ad9020471942ced778980d48205d65cf2b1647b88de7",
+      "gitBlob": "9ed8bea4db4c773543d4581f49cf6b8829a61146",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/uthash/uthash.h",
+      "acquisition": "bounded-official-source"
+    },
+    {
+      "path": "COPYING",
+      "bytes": 1329,
+      "sha256": "sha256:1bf976835764c1d827e07472a0a75adb098682df56681878af05fc0db7439b03",
+      "gitBlob": "33048e1b8b975379db551bd996c525f9daf0763a",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/COPYING",
+      "acquisition": "bounded-official-source"
+    },
+    {
+      "path": "configure.ac",
+      "bytes": 5725,
+      "sha256": "sha256:3e39078cc42cf4340a5f7366035d758eb303be8bdfb7452caebe605aaa31f454",
+      "gitBlob": "2046de221a6b395acde3f6562daf77d90d972f06",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/configure.ac",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "src/Makefile.am",
+      "bytes": 817,
+      "sha256": "sha256:411fc6b405a6085297c0b655a99294030b5cef0672ef448dca0d39f553f4c432",
+      "gitBlob": "5c4ccbd0a501d1201df84c9c431379aaeff29126",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/src/Makefile.am",
+      "acquisition": "existing-authenticated-source"
+    },
+    {
+      "path": "Makefile.unix",
+      "bytes": 4209,
+      "sha256": "sha256:85e31ce838c2987b5ff32ba8738d088e5d53e2e812cbb5ff7f916f066b67f67b",
+      "gitBlob": "dbb8f4cb5a90eff34581e1145ec43dbdeea52a4a",
+      "origin": "https://raw.githubusercontent.com/vstakhov/libucl/1778e38ef06b75876cdd10d76f409954fea3869a/Makefile.unix",
+      "acquisition": "bounded-official-source"
+    }
+  ],
+  "cSources": [
+    "src/ucl_emitter.c",
+    "src/ucl_emitter_streamline.c",
+    "src/ucl_emitter_utils.c",
+    "src/ucl_hash.c",
+    "src/ucl_parser.c",
+    "src/ucl_schema.c",
+    "src/ucl_util.c",
+    "src/ucl_msgpack.c",
+    "src/ucl_cbor.c",
+    "src/ucl_sexp.c"
+  ],
+  "includeDirectories": [
+    "include",
+    "src",
+    "uthash",
+    "klib"
+  ],
+  "defines": {
+    "HAVE_FETCH_H": "1"
+  },
+  "embeddedConfiguration": "Original ucl_internal.h embedded path, without HAVE_CONFIG_H. HAVE_ATOMIC_BUILTINS, UCL_RANDOM_FUNCTION, CURL_FOUND and HAVE_OPENSSL are not defined.",
+  "upstreamWarningOptions": [
+    "-Wno-unused-parameter",
+    "-Wno-pointer-sign"
+  ],
+  "warningOptionsAreNotCurrentlySupportedByNormalMetadata": true,
+  "upstreamBytesUnchanged": true
+}

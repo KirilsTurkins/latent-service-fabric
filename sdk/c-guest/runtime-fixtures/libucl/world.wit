@@ -1,0 +1,3 @@
+package examples:libfetch@0.1.0;
+interface api { run: async func(input: string) -> result<string, string>; }
+world probe { export api; }

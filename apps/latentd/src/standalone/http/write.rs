@@ -85,6 +85,10 @@ pub(super) async fn error<W: AsyncWrite + Unpin>(
 ) -> io::Result<()> {
     // Only fixed local status numbers, never request text, token or guest error.
     let mut head = format!("HTTP/1.1 {status} Rejected\r\nConnection: close\r\nContent-Length: 0\r\nCache-Control: no-store\r\n");
+    // Includes parser/admission failures before an asset policy can be captured.
+    head.push_str("Vary: ");
+    head.push_str(super::assets::cross_origin::VARY);
+    head.push_str("\r\n");
     for header in browser::security_headers(scheme) {
         head.push_str(header.name);
         head.push_str(": ");

@@ -1,1 +1,63 @@
-{"baselineRevision":"50f003dd006e0786494936c49e55dc683cf26fd6","before":{},"coverage":{},"definition":{"if":"github.ref_name != 'feat/kernel-native-constructor-vm-20261024' && github.ref_name != 'feat/kernel-native-close-20261024'","name":"Thirteen actual descriptor and original node quota controls","runs-on":"ubuntu-24.04","steps":[{"uses":"KirilsTurkins/lsf-checkout","with":{"persist-credentials":false}},{"uses":"KirilsTurkins/lsf-setup-python","with":{"python-version":"3.13.5"}},{"uses":"dtolnay/rust-toolchain"},{"uses":"KirilsTurkins/lsf-rust-cache","with":{"cache-bin":false,"cache-targets":true,"cache-workspace-crates":false,"key":"ubuntu-24.04","prefix-key":"lsf-ci-dependencies-v2","shared-key":"host-correctness"}},{"name":"Check finite source and collector controls","run":"python3 -B -m unittest tools.tests.test_host_stream_kernel_cleanup_native -v"},{"name":"Execute only native descriptor ownership controls","run":"python3 -B tools/qualify_host_stream_native.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/stream-native-factory-owner\""},{"if":"always()","name":"Retain actual outcomes and compiler failures","uses":"KirilsTurkins/lsf-upload-artifact","with":{"if-no-files-found":"warn","name":"stream-native-factory-owner-${{ github.sha }}","path":"${{ runner.temp }}/stream-native-factory-owner/*.log\n${{ runner.temp }}/stream-native-factory-owner/receipt.json\n","retention-days":3}}],"timeout-minutes":25},"jobId":"native-owner","kind":"job","reviewReason":"Preserve prior owner commands and exact case obligations; require the fixed CLOSE observation, held receipt charge and original native/quarantine boundaries on closed qualification branches. Add no production gate, refund or ignored case.","schemaVersion":"latent.ci.contracts.v1","workflow":".github/workflows/stream-native-factory-owner.yml"}
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "github.ref_name != 'feat/kernel-native-constructor-vm-20261024' && github.ref_name != 'feat/kernel-native-close-20261024' && github.ref_name != 'feat/sdk-738-q35-node-boot-20261029'",
+    "name": "Thirteen actual descriptor and original node quota controls",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-bin": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Check finite source and collector controls",
+        "run": "python3 -B -m unittest tools.tests.test_host_stream_kernel_cleanup_native -v"
+      },
+      {
+        "name": "Execute only native descriptor ownership controls",
+        "run": "python3 -B tools/qualify_host_stream_native.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/stream-native-factory-owner\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain actual outcomes and compiler failures",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "stream-native-factory-owner-${{ github.sha }}",
+          "path": "${{ runner.temp }}/stream-native-factory-owner/*.log\n${{ runner.temp }}/stream-native-factory-owner/receipt.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "native-owner",
+  "kind": "job",
+  "reviewReason": "Closed fresh q35/KVM one-CPU original-Node preparation image; old routes retained, no NodeFunding/IRQ/TCP/retirement qualification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/stream-native-factory-owner.yml"
+}

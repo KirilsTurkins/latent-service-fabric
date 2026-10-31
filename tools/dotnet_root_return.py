@@ -569,6 +569,115 @@ def qualify(output, tools, archive):
             pass  # Preserve the original failure; absent ADMISSION cannot receive qualification.
         raise
 
+def current_managed_port(artifact):
+    """Require the actual current producer; a dated v2 receipt is not its proof."""
+    from tools.dotnet_guest import managed_work, task_wait
+    port = read_json(artifact / 'task-wait-port.json', 128 * 1024)
+    managed_work.validate_rewrite(port.get('managedAcceptedWork'))
+    require(port.get('profile') == task_wait.PROFILE
+        and port['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v3'
+        and type(port.get('generatedHelperCount')) is int and port['generatedHelperCount'] == 96
+        and port.get('completion') == 'actual-task-only'
+        and port.get('finiteAndCancellableWaits') == 'original-Task-WhenAny-Delay'
+        and port.get('completeOriginalWaitRemainderPreserved') is True
+        and type(port.get('nativeAotReferenceBinding')) is dict
+        and type(port['nativeAotReferenceBinding'].get('responseFiles')) is list
+        and len(port['nativeAotReferenceBinding']['responseFiles']) == 1,
+        'root-return-current-v3-normal-corelib-binding')
+    return port
+
+
+def qualify_current_products(output, tools, source_commit):
+    """One fresh normal v3 component, current default products and original calls."""
+    from tools.build_observation import resolve_tools, file_identity as tool_identity
+    from tools.qualify_java_server_lifecycle_suite import native as build_native
+    import tomllib
+    require(os.environ.get('GITHUB_EVENT_NAME') == 'push'
+        and os.environ.get('GITHUB_REF') == 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028',
+        'root-return-current-closed-push')
+    require(sys.platform == 'linux' and sys.version_info >= (3, 13), 'root-return-current-linux-python313')
+    require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
+        'root-return-current-output-ownership')
+    deadline = float(os.environ['LSF_ROOT_RETURN_DEADLINE'])
+    require(math.isfinite(deadline) and time.monotonic() < deadline <= time.monotonic() + 1320,
+        'root-return-current-original-deadline')
+    require(re.fullmatch(r'[0-9a-f]{40}', source_commit)
+        and subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, timeout=15).decode().strip() == source_commit
+        and not subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, timeout=15),
+        'root-return-current-clean-source')
+    output = fresh(output)
+    shared = {'bytes': 0, 'records': []}
+    environment = build_environment(output)
+    environment.update(CARGO_TARGET_DIR=str(ROOT / 'target'), CARGO_INCREMENTAL='0', CARGO_BUILD_JOBS='2',
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0', CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true',
+        CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true', CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true',
+        CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true', RUSTUP_TOOLCHAIN='1.97.1', RUSTUP_AUTO_INSTALL='0')
+    commands = JoinCauseCommands(ROOT, output, environment, shared, deadline)
+    record = {'schemaVersion': 'latent.dotnet.root-return.current-products.v1', 'status': 'in-progress',
+        'sourceCommit': source_commit, 'full746Qualified': False, 'fullAC7Qualified': False,
+        'originalFaultCauseQualified': False, 'opaqueCauseQualified': False, 'lateGenerationQualified': False,
+        'deadlineCancellationQualified': False, 'nativeAccountingComplete': False,
+        'diagnosticRewritePerformed': False, 'nativeBuildCount': 0, 'normalComponentBuildCount': 0,
+        'hermetic': False, 'implicitCompilerInputsAttested': False,
+        'limits': {'absoluteSeconds': 1320, 'commandSeconds': 600, 'cleanupReserveSeconds': 5,
+            'jobs': 2, 'commands': 128, 'diagnosticBytes': 16 * 1024**2, 'publicBytes': PUBLIC_BYTES},
+        'ownerCaps': OWNER_CAPS, 'programme': list(STEPS)}
+    stage = 'source-before'
+    try:
+        before = source_map(); write_json(output / 'current-git-inputs.json', before)
+        pins = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml', 128 * 1024).decode())
+        paths, identities = resolve_tools(pins, ROOT, environment, _deadline=deadline)
+        record['nativeToolIdentities'] = identities
+        stage = 'five-current-default-products'
+        record['nativeBuildCount'] = 1
+        native_directory, native_receipt = build_native(commands, fresh(output / 'native-build'), pins)
+        native_tuple = read_json(native_receipt, 128 * 1024)
+        write_json(output / 'native-tuple.json', native_tuple)
+        native = {name if name in ('latent', 'latentd') else 'examples/' + name: native_directory / name
+            for name in ('latent', 'latentd', 'package', 'capsule_contracts', 'capsule_authoring')}
+        native_identities = {name: file_identity(path, 512 * 1024**2) for name, path in native.items()}
+        record['nativeProducts'] = native_identities
+        record['nativeTuple'] = file_identity(native_receipt, 128 * 1024)
+        stage = 'one-normal-v3-component'
+        project = fixture(output / 'project'); captured = inventory(snapshot(project))
+        (output / 'project-inputs.json').write_bytes(captured)
+        def command_owner(root, folder, env):
+            return JoinCauseCommands(root, folder, env, shared, deadline)
+        record['normalComponentBuildCount'] = 1
+        artifact = build(project, output / 'build', native['examples/capsule_contracts'], native['examples/package'],
+            'https://github.com/KirilsTurkins/latent-service-fabric', tools=tools, offline=True,
+            _deadline=deadline, _root_return_capture=(retain_probe_inputs, retain_probe_failure),
+            _root_return_commands=command_owner)
+        require(read_file(artifact / 'source-inputs.json') == captured, 'root-return-current-captured-source')
+        record['taskWaitPort'] = current_managed_port(artifact)
+        stage = 'original-fifteen-signed-outcomes'
+        signed_node(native, artifact, output, commands, record)
+        stage = 'source-products-tools-after'
+        require(source_map() == before
+            and not subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, timeout=15)
+            and inventory(snapshot(project)) == captured, 'root-return-current-source-after')
+        require(native_identities == {name: file_identity(path, 512 * 1024**2) for name, path in native.items()}
+            and record['nativeTuple'] == file_identity(native_receipt, 128 * 1024)
+            and identities == [tool_identity(path, name) for name, path in sorted(paths.items())],
+            'root-return-current-products-tools-after')
+        record.update(status='passed', invocations=15, sourceBeforeEqualsAfter=True,
+            normalComponent=file_identity(artifact / 'component.wasm', 64 * 1024**2),
+            actualGeneratedProbe=file_identity(artifact / 'probe-inputs.json', 1024**2))
+        write_json(output / 'qualified.json', record)
+        return record
+    except BaseException as error:
+        record.update(status='failed', stage=stage, errorCategory=type(error).__name__)
+        write_json(output / 'FAILED.json', record)
+        raise
+    finally:
+        write_json(output / 'commands.json', shared['records'])
+        try:
+            public_admission(output)
+        except BaseException:
+            if record['status'] == 'passed':
+                raise
+
+
 
 
 def retain_join_cause_inputs(compiled, output, binding, compiler):

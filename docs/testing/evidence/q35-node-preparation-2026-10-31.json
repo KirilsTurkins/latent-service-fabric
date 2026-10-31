@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "latent.q35-node-preparation.review.v1",
+  "sourceRevision": "670354ed4d4c43f934f1d180eaee90e2b34162fb",
+  "owningRun": 41185570511,
+  "owningJob": 124491697112,
+  "status": "passed",
+  "artifact": {
+    "id": 13037585223,
+    "bytes": 21155079,
+    "sha256": "6eb9a7256e9200614750b537967ab66038117a0cbb27a63b2ca9450eb993f84e",
+    "crcVerifiedMembers": 93
+  },
+  "receipt": {
+    "bytes": 2373709,
+    "sha256": "ad07deda6bfd1e13a81763c483861975aeff2e6313d85bd5cfdd69cc60cb8ce8"
+  },
+  "profile": {
+    "qemu": "11.1.2",
+    "machine": "pc-q35-11.1",
+    "accel": "kvm",
+    "cpus": 1,
+    "maxcpus": 1,
+    "virtualIommu": false,
+    "interruptRemapping": false,
+    "virtioNetPciVectors": 3,
+    "hostNetwork": false,
+    "hostDrives": false
+  },
+  "actualVmBoots": 1,
+  "commandRoots": 40,
+  "allCommandsCompletedAndCleaned": true,
+  "sourceBeforeAfterExact": true,
+  "capturedSourceFiles": 6648,
+  "physicalCFiles": 119,
+  "observations": {
+    "raw": {
+      "bytes": 26574,
+      "sha256": "2841c88f6771bfe7c52c7cd4b4bef48ff2e40620ca55473fef533861197493bc"
+    },
+    "nodeLayout": [
+      26344,
+      8,
+      26368,
+      327680,
+      80,
+      26264
+    ],
+    "cpuGeometry": [
+      1,
+      1,
+      1,
+      512,
+      1,
+      2097152,
+      0,
+      2097152,
+      0
+    ],
+    "accounting": [
+      582684,
+      270336,
+      270336,
+      26688,
+      60,
+      58,
+      1,
+      61
+    ],
+    "vectors": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      49,
+      51
+    ],
+    "descriptorClosed": true,
+    "originalEscrowRetained": true,
+    "nodeFunding": false,
+    "nodeRetired": false,
+    "irqEnabled": false,
+    "tcpEnabled": false
+  },
+  "executablePartition": {
+    "pid1MaximumFileBytes": 2097152,
+    "nativeMaximumFileBytes": 3145728,
+    "pid1LoadSpanBytes": 739816,
+    "nativeLoadSpanBytes": 3022280,
+    "aggregateLoadSpanBytes": 3762096,
+    "maximumAggregateLoadSpanBytes": 4194304
+  },
+  "kernel": {
+    "bytes": 13870080,
+    "sha256": "e08c2b2dd20a668cb1687b54f10e6702e61d429b07227931d586408583dcfa4d",
+    "bootProtocol": 527,
+    "x86_64": true
+  },
+  "qemuProduct": {
+    "binary": {
+      "bytes": 30409152,
+      "sha256": "beb861a6c70818e21d28174f8cd6ab12a9f065931bf3a5d8ea15122c51bf77ed"
+    },
+    "firmware": {
+      "bios-256k.bin": {
+        "bytes": 262144,
+        "sha256": "ae6f6aa973aaccc143f57aa960fb035fd9de4daee4ad0cd713322f8c259e7650"
+      },
+      "kvmvapic.bin": {
+        "bytes": 9216,
+        "sha256": "cdf057a71b07e3b52b19cbe210bdefa59250d01a9810b960f7fe1f98eed95a27"
+      }
+    },
+    "version": "11.1.2",
+    "configurationSource": {
+      "bytes": 61685,
+      "sha256": "b430cf9275cf53933807f9a63e8487b411c56925bb981e5032e56b352fe107d5"
+    }
+  },
+  "limits": {
+    "maximumSeconds": 1320,
+    "maximumCommands": 128,
+    "maximumCommandSeconds": 1200,
+    "cleanupReserveSeconds": 5,
+    "maximumPublicBytes": 134217728,
+    "maximumCSourceBytes": 16777216,
+    "maximumCSourceEntries": 512
+  },
+  "qualificationFlags": {
+    "nodeFunding": false,
+    "nodeRetired": false,
+    "irqEnabled": false,
+    "tcpEnabled": false,
+    "whole738Complete": false,
+    "wholeNodeFitQualified": false,
+    "productionInstallation": false,
+    "earlyPlatformObjectsRetroactivelyFunded": false,
+    "hermetic": false,
+    "compilerImplicitInputsAttested": false
+  },
+  "reproducibility": "not-checked",
+  "scope": "One actual q35 KVM boot and original-Node preparation. No production issuer, IRQ/TCP enablement, Node retirement or whole issue qualification."
+}

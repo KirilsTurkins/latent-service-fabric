@@ -106,14 +106,32 @@ transformation, with finite explicit reachable inputs. It checks monitor-only an
 already asynchronous callers, suspension guards, caller/family propagation, the
 no-`Thread.start` negative and an unrelated method. It does not qualify arbitrary
 class-initializer or unmanaged monitor suspension. The actual compiler classloader
-must prove all eleven replacement classes before a component can be accepted.
+must prove those eleven replacement classes before a component can be accepted.
 Actual six-case signed execution remains required; source and synthetic IR controls
 alone are insufficient.
 
+`VolatileDefinitionFinder.java` is the unmodified TeaVM 0.15.0 source, SHA-256
+`b8f854640f7cedccb4cd0dddc4993b86259fafc52f0b2ca822d1a432561d90b1`.
+The additional private derivation is the exact four-line upstream repair from
+TeaVM commit `ae0630dd286cf57bcb4ec175696ae8010e42588c`: when a definition inside a
+nested protected body remains live in an outer handler, its reference temporary
+must be backed up on entry to that outer handler as well as at its inner
+definition. Otherwise a parked continuation can resume with an undefined C
+reference and publish it into a live heap field. The published HPPC imports are
+relocated exactly as for the other pinned sources. These two replacement class
+outputs change no Java application bytecode, GC algorithm, capability, resource
+limit, or exception policy; the compiler source hash, corrected hash, class
+bytes, selected JAR and loaded JAR remain bound in the existing receipts.
+
+The source's changed assignment visitor is an anonymous class, so javac emits
+both `VolatileDefinitionFinder.class` and `VolatileDefinitionFinder$1.class`.
+Both exact outputs are replacement inputs; accepting only the outer class would
+leave the repaired visitor bytecode behind. The finite compiler closure requires
+all 13 replacement classes and refuses missing or additional companions.
 
 The structural-copy-cost observation is default-off and qualification-only. Its
 fixed public Java/WIT pair must authenticate before preparation, and its JVM
-property is set only after the replacement JAR and all eleven loaded classes
+property is set only after the replacement JAR and all thirteen loaded classes
 pass the existing identity fence. It adds no replacement companion class.
 Production weights do not depend on method names. For the observed public
 `pools` method, one copy of the actual pre-normalization Program runs the real

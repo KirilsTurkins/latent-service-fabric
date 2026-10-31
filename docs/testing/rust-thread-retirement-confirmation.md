@@ -106,6 +106,7 @@ required retirement witnesses. The original reports deliberately keep
 `full743Qualified`, `checkpointQualified` and `privateGraphRuntimeQualified`
 false. Wider synchronization/TLS/panic, checkpoint fairness, exhaustion,
 networking, cancellation and cross-tenant criteria are not inferred from five
-calls. Development merge conflicts and general PR CI/integration still require
-separate work. This does not enable the profile in the normal shipping builder
+calls. The later [development integration](rust-thread-development-integration.md)
+records merge resolution and its separate validation boundary; this historical
+signed result does not qualify the merged native source. This does not enable the profile in the normal shipping builder
 or close either owning issue.

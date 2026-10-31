@@ -1,0 +1,100 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "github.event_name == 'push' || inputs.programme == 'fresh'",
+    "name": "Two observed collections with both Java continuations retaining roots",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Fetch the immutable native producer source without rebuilding",
+        "run": "git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-java",
+        "with": {
+          "distribution": "temurin",
+          "java-version": "25.0.4+101.0.LTS"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Install the maintained exact compiler tools and focused controller checks",
+        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest sdk.java-guest.tests.test_platform \\\n  sdk.java-guest.tests.test_exception_spills \\\n  sdk.java-guest.tests.test_exception_array_spills \\\n  tools.tests.test_java_checkpoint_gc \\\n  tools.tests.test_java_checkpoint_gc_fault_frames -v\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ntimeout --signal=KILL 180s curl --fail --location \\\n  --retry 3 --retry-all-errors --retry-delay 1 --max-time 60 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the five existing 193-control native products",
+        "run": "python3 -B tools/rust_thread_native_products.py --output \"$RUNNER_TEMP/java-gc-native\""
+      },
+      {
+        "name": "Build one authenticated bounded numeric diagnostic node",
+        "run": "export CARGO_TARGET_DIR=\"$RUNNER_TEMP/java-gc-host-target\"\ncargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --lib \\\n  --features java-checkpoint-gc-trap-diagnostic \\\n  java_checkpoint_gc_fault::tests::java_gc_fault_visits_only_eight_numeric_frames_for_authenticated_profile \\\n  -- --exact --test-threads=1\ncargo --config .cargo/managed-guest.toml build --release --locked -p latentd --bin latentd \\\n  --features java-checkpoint-gc-trap-diagnostic\ncargo --config .cargo/managed-guest.toml build --release --locked -p latent --bin latent\n"
+      },
+      {
+        "name": "Selected reference GC and real compiler controls then one fresh signed GC target",
+        "run": "python3 -B tools/qualify_java_checkpoint_gc.py \\\n  --native \"$RUNNER_TEMP/java-gc-native\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" \\\n  --diagnostic-node \"$RUNNER_TEMP/java-gc-host-target/release/latentd\" \\\n  --diagnostic-client \"$RUNNER_TEMP/java-gc-host-target/release/latent\" \\\n  --output \"$RUNNER_TEMP/java-gc-roots\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded source compiler and actual runtime evidence without keys",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-checkpoint-gc-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-gc-native/*.json\n${{ runner.temp }}/java-gc-roots/*.json\n${{ runner.temp }}/java-gc-roots/commands/logs/**\n${{ runner.temp }}/java-gc-roots/controls/controls.json\n${{ runner.temp }}/java-gc-roots/controls/reference-commands.json\n${{ runner.temp }}/java-gc-roots/controls/reference-commands/logs/**\n${{ runner.temp }}/java-gc-roots/project/candidate.json\n${{ runner.temp }}/java-gc-roots/project/receipts/*.json\n${{ runner.temp }}/java-gc-roots/project/application/java-dependencies.json\n${{ runner.temp }}/java-gc-roots/project/application/latent.dependencies*.json\n${{ runner.temp }}/java-gc-roots/compiler/compiler-cache-selection.json\n${{ runner.temp }}/java-gc-roots/compiler/compiler-acquisition/*.json\n${{ runner.temp }}/java-gc-roots/build/*.json\n${{ runner.temp }}/java-gc-roots/build/component.wasm\n${{ runner.temp }}/java-gc-roots/build/gc-root-generated/**\n${{ runner.temp }}/java-gc-roots/build/compiler-logs/*-java-to-c.log\n${{ runner.temp }}/java-gc-roots/build/compiler-logs/*-java-coroutine-*.log\n${{ runner.temp }}/java-gc-roots/build/compiler-logs/*-c-to-wasm.log\n${{ runner.temp }}/java-gc-roots/node/*.json\n${{ runner.temp }}/java-gc-roots/node/commands/logs/**\n${{ runner.temp }}/java-gc-roots/node/examples-controls/**\n${{ runner.temp }}/java-gc-roots/node/foreign-controls/**\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "gc-roots",
+  "kind": "job",
+  "reviewReason": "Bind the exact upstream TeaVM 32-bit heap alignment repair and its focused generated-C controls to the owning signed Java GC programme without changing execution budgets or removing historical obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-checkpoint-gc.yml"
+}

@@ -332,8 +332,11 @@ public final class Activation {
         root = new Work(register(Bindings.LatentRuntimeActivationOwnerKind.Task));
         threads.put(Thread.currentThread(), root);
         Fiber.userThreadCount++;
+        // A linear-memory address must use the primitive coroutine stack;
+        // TeaVM would otherwise spill this capture through Fiber.push(Object).
+        int inputAddress = data.toInt();
         Fiber.start(() -> {
-            try { result = Bindings.dispatchBody(operation, data, length); }
+            try { result = Bindings.dispatchBody(operation, inputAddress, length); }
             catch (Throwable error) { failure = error; }
             finally { rootComplete = true; }
         }, false);

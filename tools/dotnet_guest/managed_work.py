@@ -179,11 +179,19 @@ TIMER_REWRITE_RECEIPT = {'patch': 'latent.dotnet.managed-accepted-work.v2',
  'qualified': False}
 
 
+# The v1/v2 dated receipts stay exact; the current producer names its extra
+# read-only accessor and compiler-metadata control explicitly.
+PREFETCH_REWRITE_RECEIPT = {**TIMER_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v3',
+    'readiness': 'original-prefetched-slot-or-counted-queues-and-polls',
+    'readinessControls': 'four-actual-generated-slot-models'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (TIMER_REWRITE_RECEIPT if value.get('patch') == TIMER_REWRITE_RECEIPT['patch']
-        else REWRITE_RECEIPT)
+    expected_receipt = (PREFETCH_REWRITE_RECEIPT if value.get('patch') == PREFETCH_REWRITE_RECEIPT['patch']
+        else TIMER_REWRITE_RECEIPT if value.get('patch') == TIMER_REWRITE_RECEIPT['patch'] else REWRITE_RECEIPT)
     if (set(value) != set(expected_receipt)
             or any(type(value.get(key)) is not type(expected) or value[key] != expected
                 for key, expected in expected_receipt.items())):

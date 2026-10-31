@@ -308,8 +308,16 @@ fn catalog_contention_preserves_configured_and_confirmed_generations_until_expli
         Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => {}
         other => panic!("actual peer closure expected: {other:?}"),
     }
-    assert_eq!(lifecycle.status().unwrap().usage.connections, 0);
-    assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+    let observed = invocation
+        .block_on(
+            node.providers
+                .as_ref()
+                .unwrap()
+                .stream_control_status_after_mutation("observe", "sampled-not-authority", None),
+        )
+        .unwrap();
+    assert_eq!(observed.stream.usage.connections, 0);
+    assert_eq!(observed.stream.usage.owners, 1);
     assert!(execution.budget.host_memory_bytes() > 0);
     drop(stream);
     physical::wait_for_audit_retirement(&execution.budget, session_bytes, &invocation);

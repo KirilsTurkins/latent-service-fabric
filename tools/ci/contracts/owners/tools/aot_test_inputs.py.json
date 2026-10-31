@@ -1,3 +1,1 @@
-{"kind":"owner","path":"tools/aot_test_inputs.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind the exact five-feature all-features test closure and increment its shared producer/consumer profile to v5; keep production feature defaults, preparation commands, executable identities and limits unchanged.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "9550e41482c08111a526e57b56bb5882712f933023e68bae616b02f7bdff3a5a"
-}
+{"kind":"owner","path":"tools/aot_test_inputs.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind the exact six-feature all-features test closure under shared v6; diagnostics remain explicitly off in ordinary Cargo builds.","schemaVersion":"latent.ci.contracts.v1","sha256":"8f30aa0e69075f726f314274e3a3acb79c6c70c70afd62712614207c01fd2c47"}
