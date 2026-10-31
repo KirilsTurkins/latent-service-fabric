@@ -1,0 +1,50 @@
+name: Review retained Rust catalogue sources
+on:
+  push:
+    branches: ['feat/rust-thread-runtime-20261023']
+    paths: ['.github/workflows/rust-catalogue-review.yml']
+permissions:
+  contents: read
+jobs:
+  review-sources:
+    name: Retain exact tracked sources for offline catalogue review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+        with:
+          persist-credentials: false
+      - name: Archive only tracked review inputs without executing repository code
+        env:
+          EXPECTED_HEAD: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, zipfile
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+          assert head == os.environ['EXPECTED_HEAD']
+          names = subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\0')
+          roots = {'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'AGENTS.md'}
+          prefixes = ('tools/', 'crates/latent-component-threading/', 'sdk/rust-standard-runtime/', '.github/')
+          selected = [p for p in names if p and (p in roots or p.startswith(prefixes))]
+          assert len(selected) <= 8192
+          rows, total = [], 0
+          destination = pathlib.Path(os.environ['RUNNER_TEMP']) / 'rust-catalogue-review'
+          destination.mkdir()
+          with zipfile.ZipFile(destination / 'sources.zip', 'x', compression=zipfile.ZIP_DEFLATED) as archive:
+              for name in selected:
+                  path = pathlib.Path(name)
+                  assert not path.is_symlink() and path.is_file()
+                  raw = subprocess.check_output(['git', 'show', head + ':' + name])
+                  assert path.read_bytes() == raw and len(raw) <= 4 * 1024 * 1024
+                  total += len(raw)
+                  assert total <= 64 * 1024 * 1024
+                  archive.writestr(name, raw)
+                  rows.append({'path': name, 'size': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()})
+          (destination / 'source-manifest.json').write_text(json.dumps({'head': head, 'files': rows, 'totalBytes': total, 'runtimeQualified': False}, sort_keys=True))
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        with:
+          name: rust-catalogue-review-${{ github.sha }}
+          path: ${{ runner.temp }}/rust-catalogue-review/*
+          retention-days: 3
+          if-no-files-found: error
