@@ -27,8 +27,40 @@ def frames(stderr):
     return rows
 
 
+# Exactly the 50 original unit-enum ordinals in locked wasmtime-environ 48.0.7.
+# Inspect the actual typed Trap separately from the optional original backtrace.
+TRAP_ROW = re.compile(rb'^LSF-RUST40-TRAP([^\n]*)$', re.M)
+TRAP_VALUE = re.compile(rb':(0|[1-9][0-9]?)\r?')
+
+
+def trap_code(stderr):
+    require(len(stderr) <= 262144, 'rust-thread-fault-stderr-bound')
+    code = None
+    for match in TRAP_ROW.finditer(stderr):
+        require(code is None, 'rust-thread-fault-single-original-trap-code')
+        # Bound the captured payload before copying it out of the match.
+        require(match.end(1) - match.start(1) <= 4,
+                'rust-thread-fault-original-trap-code-format')
+        value = TRAP_VALUE.fullmatch(match.group(1))
+        require(value is not None, 'rust-thread-fault-original-trap-code-format')
+        code = int(value.group(1))
+        require(code < 50, 'rust-thread-fault-original-trap-code-range')
+    return code
+
+
 def capture(node, native, component, output):
     node.drain()
+    code = trap_code(node.buffers[1])
+    if code is not None:
+        # Retain this independent non-qualifying observation even if the old
+        # nonempty-frame assertion subsequently fails. Do not invent frames.
+        write_json(output / 'numeric-original-trap-code.json', {
+            'schemaVersion': 'latent.rust.thread-fault.original-trap-code.v1',
+            'node': native, 'component': component, 'originalTrapCode': code,
+            'codeProfile': 'wasmtime-environ-48.0.7-original-u8-v1',
+            'frameObservationRequiredSeparately': True,
+            'rawStderrRetained': False, 'runtimeQualification': False,
+            'diagnosticIoMayPerturbTimingAndTerminalObservation': True})
     rows = frames(node.buffers[1])
     if rows:
         write_json(output / 'numeric-fault-frames.json', {

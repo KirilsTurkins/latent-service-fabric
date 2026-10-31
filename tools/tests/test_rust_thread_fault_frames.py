@@ -43,6 +43,34 @@ class RustThreadFaultFramesTests(unittest.TestCase):
         self.assertEqual(len(observed), 8)
         self.assertEqual(observed[0], {'ordinal': 0, 'function': 123,
                                      'moduleOffset': 456, 'functionOffset': 789})
+        from tools.rust_thread_fault_frames import capture, trap_code
+        self.assertEqual(trap_code(b'private guest-name\n'), None)
+        self.assertEqual(trap_code(b'LSF-RUST40-TRAP:17\n' + rows), 17)
+        self.assertEqual(frames(b'LSF-RUST40-TRAP:17\n' + rows), observed)
+        for invalid in (b'LSF-RUST40-TRAP:0\nLSF-RUST40-TRAP:17\n',
+                        b'LSF-RUST40-TRAP:50\n', b'LSF-RUST40-TRAP:00\n',
+                        b'LSF-RUST40-TRAP:-1\n', b'LSF-RUST40-TRAP:private\n',
+                        b'LSF-RUST40-TRAP\n', b'LSF-RUST40-TRAP:1:2\n',
+                        b'x' * 262145):
+            with self.subTest(bytes=len(invalid)), self.assertRaises(WorkflowError):
+                trap_code(invalid)
+
+        import json
+        import tempfile
+
+        class Node:
+            buffers = (b'', b'LSF-RUST40-TRAP:17\n')
+
+            def drain(self):
+                pass
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            capture(Node(), {'fixture': 'node'}, {'fixture': 'component'}, output)
+            scalar = json.loads((output / 'numeric-original-trap-code.json').read_bytes())
+            self.assertEqual(scalar['originalTrapCode'], 17)
+            self.assertIs(scalar['runtimeQualification'], False)
+            self.assertTrue(scalar['frameObservationRequiredSeparately'])
+            self.assertFalse((output / 'numeric-fault-frames.json').exists())
         self.assertEqual(frames(b'private guest-name\nLSF-RUST40-FAULT:0:private:2:3\n'), [])
         for invalid in (rows + b'LSF-RUST40-FAULT:8:1:2:3\n',
                         b'LSF-RUST40-FAULT:1:1:2:3\n',

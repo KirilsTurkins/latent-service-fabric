@@ -989,6 +989,19 @@ class RepositoryMigrationTests(unittest.TestCase):
     def test_every_historical_obligation_and_current_expectation_is_accounted_for(self):
         legacy = contracts.read_json(ROOT / "tools/ci/history/commands-v1.json")
         data = contracts.load(ROOT)
+        from tools.tests.test_c_closed_filesystem_qualification import original_libfetch_workflow
+        from tools.ci_lane_inventory import workflow_model
+        c_path = '.github/workflows/c-guest-authoring.yml'
+        c_text = (ROOT / c_path).read_text()
+        current_c = workflow_model(c_text)
+        previous_c = workflow_model(original_libfetch_workflow(c_text))
+        current_guard = current_c['jobs']['runtime']['if']
+        self.assertEqual(current_guard,
+            "${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}")
+        for command in data['after'].values():
+            if command['workflow'] == c_path and command['job'] == 'runtime':
+                self.assertEqual(command['jobIf'], current_guard)
+                command['jobIf'] = previous_c['jobs']['runtime']['if']
         for field in ("before", "baselineRevision"):
             self.assertEqual(data[field], legacy[field], field)
         self.assertEqual(set(data["coverage"]), set(legacy["coverage"]))
@@ -1066,7 +1079,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         for key, original in legacy["after"].items():
             value = dict(original)
             if value["workflow"] == ".github/workflows/dotnet-guest.yml" and value["job"] == "toolchain":
-                # Only the two reviewed closed root-return fixture branches exclude this job.
+                # Only the three reviewed closed .NET fixture branches exclude this job.
                 # No status override is introduced: ordinary branches retain
                 # GitHub's implicit success() and every original command field.
                 self.assertEqual(value["jobIf"], "success()", key)
@@ -1074,7 +1087,9 @@ class RepositoryMigrationTests(unittest.TestCase):
                     "github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' "
                     "&& github.head_ref != 'test/sdk-dotnet-root-return-20261027' "
                     "&& github.ref != 'refs/heads/test/sdk-dotnet-join-cause-20261027' "
-                    "&& github.head_ref != 'test/sdk-dotnet-join-cause-20261027'")
+                    "&& github.head_ref != 'test/sdk-dotnet-join-cause-20261027' "
+                    "&& github.ref != 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028' "
+                    "&& github.head_ref != 'feat/sdk-dotnet-prefetched-readiness-review-20261028'")
             if value['workflow'] == '.github/workflows/developer-tools.yml' and value['job'] in {'contracts', 'guest-tools', 'wsl-image'}:
                 # Only the closed default-false data-only mode skips these
                 # jobs. Every existing ordinary command remains mandatory.

@@ -78,18 +78,20 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
     if managed:
         from tools.dotnet_guest.managed_work import validate_rewrite
         validate_rewrite(value.get('managedAcceptedWork'))
-        timers = value['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v2'
-        fixed.update(generatedHelperCount=91 if timers else 77, unchangedOriginalMethods=44719 if timers else 44723,
+        prefetched = value['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v3'
+        timers = prefetched or value['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v2'
+        fixed.update(generatedHelperCount=(91 if timers else 77) + int(prefetched), unchangedOriginalMethods=44719 if timers else 44723,
             managedAcceptedWork=value['managedAcceptedWork'])
     if aggregate:
         from tools.dotnet_guest import aggregate_task_wait
-        from tools.dotnet_guest.managed_work import TIMER_REWRITE_RECEIPT
+        from tools.dotnet_guest.managed_work import TIMER_REWRITE_RECEIPT, PREFETCH_REWRITE_RECEIPT
         aggregate_task_wait.validate(value.get('aggregateTaskWait'))
-        if (not aggregate_task_wait.exact(value['managedAcceptedWork'], TIMER_REWRITE_RECEIPT)
+        expected_managed = PREFETCH_REWRITE_RECEIPT if prefetched else TIMER_REWRITE_RECEIPT
+        if (not aggregate_task_wait.exact(value['managedAcceptedWork'], expected_managed)
                 or type(value.get('outputDigest')) is not str
                 or re.fullmatch(r'sha256:[0-9a-f]{64}', value['outputDigest']) is None):
             raise ValueError('task-wait-aggregate-managed-and-output-identities')
-        fixed.update(generatedHelperCount=95, unchangedOriginalMethods=44709,
+        fixed.update(generatedHelperCount=95 + int(prefetched), unchangedOriginalMethods=44709,
             timerDriverScheduledToFire='positive-batch-detachment-before-original-enumerator',
             aggregateTaskWait=value['aggregateTaskWait'])
     bodies = value.get('timerDriverOriginalBodies')
@@ -110,6 +112,13 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
             or type(value['unchangedOriginalMethods']) is not int
             or not 10000 <= value['unchangedOriginalMethods'] <= 65536):
         raise ValueError('task-wait-rewrite-receipt')
+
+
+def validate_current_receipt(value: dict, *, finite: bool = False,
+                             managed: bool = False, aggregate: bool = False) -> None:
+    validate_receipt(value, finite=finite, managed=managed, aggregate=aggregate)
+    if managed and value['managedAcceptedWork']['patch'] != 'latent.dotnet.managed-accepted-work.v3':
+        raise ValueError('task-wait-current-managed-readiness-required')
 
 
 @dataclass
@@ -206,7 +215,7 @@ def prepare(sdk: Path, tools: Path, packages: Path, dotnet: Path, declared: list
     run('task-wait-rewrite', dotnet, tools / 'http-errors/HttpErrors.dll',
         '--aggregate-task-wait' if managed else '--finite-task-wait' if finite else '--task-wait', source, assembly, receipt)
     result = json.loads(read_file(receipt, http_errors.MAX_RECEIPT))
-    validate_receipt(result, finite=finite, managed=managed, aggregate=managed)
+    validate_current_receipt(result, finite=finite, managed=managed, aggregate=managed)
     identity = file_identity(assembly, 'task-wait-derived-corelib', MAX_ASSEMBLY)
     if identity['digest'] != result['outputDigest']:
         raise ValueError('task-wait-rewrite-output-drift')

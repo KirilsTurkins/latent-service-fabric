@@ -113,6 +113,12 @@ if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f
             b"        write_json(output / f'child-inventory-{process.authoring_activation}-{attempt}.json', inventory)\n")
         self.assertNotEqual(retained, original_node)
         current_node = (qualification.ROOT / node).read_text()
+        http_marker = "\n\nHTTP = 'latent:http/streaming@0.3.0'\n"
+        self.assertEqual(current_node.count(http_marker), 1)
+        original_prefix, http_tail = current_node.split(http_marker, 1)
+        self.assertEqual(hashlib.sha256((http_marker + http_tail).encode()).hexdigest(),
+                         'de3b789dd49822e530b15217823e61677ccc1f4b570762d60e6b8790fe1d7870')
+        current_node = original_prefix
         current_node = project_once(current_node,
             "            children = {'mixed': 2, 'pressure': 3, 'sync-pthread': 2, 'sync-mixed': 2}.get(mode, 1)\n"
             "            witness = fixture.observation(row['decoded'][0]['ok'], children,\n"

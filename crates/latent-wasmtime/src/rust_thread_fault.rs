@@ -43,7 +43,20 @@ fn visit(
     count
 }
 
+// The pinned wasmtime-environ 48.0.7 Trap is an original unit enum. Its
+// source-defined u8 ordinal is borrowed from the actual typed error; no error
+// text, guest data, native address or invented frame is formatted.
+fn trap_code(authentication: &Authentication, error: &wasmtime::Error) -> Option<u8> {
+    if !matches!(authentication, Authentication::RustSyncVerified(_)) {
+        return None;
+    }
+    error.downcast_ref::<wasmtime::Trap>().map(|trap| *trap as u8)
+}
+
 fn emit(authentication: &Authentication, error: &wasmtime::Error, sink: &mut impl Write) {
+    if let Some(code) = trap_code(authentication, error) {
+        let _ = writeln!(sink, "LSF-RUST40-TRAP:{code}");
+    }
     let mut ordinal = 0;
     visit(authentication, error, |frame| {
         let _ = writeln!(
@@ -61,8 +74,8 @@ pub(crate) fn record(authentication: &Authentication, error: &wasmtime::Error) {
     if !matches!(authentication, Authentication::RustSyncVerified(_)) {
         return;
     }
-    // An explicit diagnostic binary writes at most eight fixed-format rows to
-    // its existing process stderr (fewer than 800 bytes on 64-bit hosts). A
+    // The explicit binary writes at most one original Trap code and eight
+    // fixed-format frame rows (fewer than 832 bytes on 64-bit hosts). A
     // draining sink is required by the owning diagnostic programme; writing is
     // not time bounded and its duration enters measured wall consumption.
     // There is no retained allocation,
@@ -154,8 +167,14 @@ mod tests {
         emit(&proof, &error, &mut output);
         let used = usize::try_from(output.position()).unwrap();
         let text = std::str::from_utf8(&output.get_ref()[..used]).unwrap();
-        assert_eq!(text.lines().count(), MAX_FRAMES);
-        for (line, (ordinal, source)) in text.lines().zip(original.frames().iter().enumerate()) {
+        assert_eq!(trap_code(&proof, &error), Some(0));
+        assert_eq!(wasmtime::Trap::from_u8(0), Some(wasmtime::Trap::StackOverflow));
+        let frame_text = text.strip_prefix("LSF-RUST40-TRAP:0\n").unwrap();
+        assert_eq!(frame_text.lines().count(), MAX_FRAMES);
+        for (line, (ordinal, source)) in frame_text
+            .lines()
+            .zip(original.frames().iter().enumerate())
+        {
             assert_eq!(
                 line,
                 format!(
@@ -166,7 +185,7 @@ mod tests {
                 )
             );
         }
-        assert!(text.lines().enumerate().all(|(ordinal, line)| {
+        assert!(frame_text.lines().enumerate().all(|(ordinal, line)| {
             let prefix = format!("LSF-RUST40-FAULT:{ordinal}:");
             line.strip_prefix(&prefix).is_some_and(|numbers| {
                 numbers.split(':').count() == 3
@@ -185,8 +204,29 @@ mod tests {
                 visit(&other, &error, |_| panic!("unauthenticated trace")),
                 0
             );
+            assert_eq!(trap_code(&other, &error), None);
+            let mut denied = std::io::Cursor::new([0_u8; 1024]);
+            emit(&other, &error, &mut denied);
+            assert_eq!(denied.position(), 0);
         }
         let private = wasmtime::Error::msg("private unstructured diagnostic must never escape");
         assert_eq!(visit(&proof, &private, |_| panic!("unstructured trace")), 0);
+        assert_eq!(trap_code(&proof, &private), None);
+        let mut denied = std::io::Cursor::new([0_u8; 1024]);
+        emit(&proof, &private, &mut denied);
+        assert_eq!(denied.position(), 0);
+
+        // A typed component-runtime Trap may have no Wasm stack. Preserve its
+        // exact original ordinal separately without fabricating any frames.
+        let host = wasmtime::Error::from(wasmtime::Trap::CannotEnterComponent);
+        assert!(host.downcast_ref::<wasmtime::WasmBacktrace>().is_none());
+        assert_eq!(trap_code(&proof, &host), Some(17));
+        assert_eq!(visit(&proof, &host, |_| panic!("invented host frame")), 0);
+        let mut scalar = std::io::Cursor::new([0_u8; 1024]);
+        emit(&proof, &host, &mut scalar);
+        assert_eq!(
+            &scalar.get_ref()[..scalar.position() as usize],
+            b"LSF-RUST40-TRAP:17\n"
+        );
     }
 }
