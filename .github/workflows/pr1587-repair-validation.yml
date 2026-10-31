@@ -62,11 +62,13 @@ jobs:
           }
           assert set(actual['cases']) == set(prior['cases']) | added
           assert all(prior['guards'][name] == actual['guards'][name] for name in prior['cases'])
-          assert physical['storageCases'] == 'guard-keys'
+          assert (physical.get('storageCases') == 'guard-keys') != ('cases' in physical)
           for case in added:
               same = next(name for name in prior['cases'] if prior['guards'][name] == actual['guards'][case])
               physical['guards'][case] = physical['guards'][same]
           physical['guards'] = dict(sorted(physical['guards'].items()))
+          if 'cases' in physical:
+              physical['cases'] = sorted(physical['guards'])
           physical['reviewReason'] = 'Preserve the exact historical replay pins, all existing cases and every existing guard. Add unignored source-identity controls that reject duplicate, missing, altered and mode-changed inputs before package restoration; no runtime or qualification claim is added.'
           semantic = ci_contracts.semantic_record(physical)
           assert semantic['cases'] == actual['cases'] and semantic['guards'] == actual['guards']
