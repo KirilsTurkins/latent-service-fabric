@@ -247,8 +247,12 @@ class StandardFacilities(unittest.TestCase):
         profile = facilities.FETCH_PROFILE
         original_defines = ('_POSIX_C_SOURCE=200809L',)
         closed_symbols = ('open', 'close', 'fstat', 'mmap', 'munmap', 'realpath',
-                          'getcwd', 'glob', 'globfree', 'abort')
+                          'getcwd', 'glob', 'globfree', 'abort', 'exit')
         self.assertEqual(facilities.FETCH_CLOSED_SYMBOLS, closed_symbols)
+        boundary = (ROOT / 'sdk/c-guest/src/closed-file-abi.c').read_text()
+        self.assertEqual(boundary.count('_Noreturn void exit(int status) {\n'
+            '    (void)status;\n    __builtin_trap();\n}'), 1)
+        self.assertNotIn('__wasi_proc_exit(', boundary)
         closed_defines = tuple(name + '=__lsf_c_' + name for name in closed_symbols)
         self.assertEqual(facilities.compiler_defines(profile, original_defines),
                          (*original_defines, '_GNU_SOURCE=1', '_WASI_EMULATED_MMAN=1', *closed_defines))

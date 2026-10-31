@@ -27,7 +27,7 @@ RECIPE = ('tools/c_guest/standard_facilities.py',)
 # needed by an unchanged dependency. Bind ordinary selected-source calls and
 # SDK definitions together, as for the existing thread/TLS source ABI.
 FETCH_CLOSED_SYMBOLS = ('open', 'close', 'fstat', 'mmap', 'munmap', 'realpath',
-                        'getcwd', 'glob', 'globfree', 'abort')
+                        'getcwd', 'glob', 'globfree', 'abort', 'exit')
 
 
 def selected_profile(project, graph=None):

@@ -17,6 +17,14 @@ static int file_unsupported(void) {
     return -1;
 }
 
+/* Process completion is unsupported: retain original owners through the
+ * activation trap and Store cleanup. No atexit callbacks or stdio flushing.
+ */
+_Noreturn void exit(int status) {
+    (void)status;
+    __builtin_trap();
+}
+
 int open(const char *path, int flags, ...) {
     (void)path; (void)flags;
     return file_unsupported();

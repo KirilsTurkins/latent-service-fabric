@@ -130,6 +130,11 @@ not exposed. FTP/file schemes, redirects, standalone stat/list/range/conditional
 options, authentication callbacks, proxy configuration and writable FILE streams
 refuse explicitly. Independent sharing of one FILE across threads is not qualified.
 
+Both HTTP profiles lower a fatal `exit(int)` request to an activation trap.
+C process completion/status, `atexit` callbacks and exit-time stdio flushing
+remain unsupported. Original owners remain retained through the activation's
+Store cleanup; fatal-exit and exhaustion behavior require separate qualification.
+
 The selected file ABI returns real errors: `open`, `close`, `fstat`, `mmap`,
 `munmap`, `realpath` and `getcwd` fail with `ENOTSUP`; `glob` returns `GLOB_NOSYS`
 with `ENOSYS`. It provides no directory, descriptor, file contents or successful
