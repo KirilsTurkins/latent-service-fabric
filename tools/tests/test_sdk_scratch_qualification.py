@@ -1,5 +1,6 @@
 """The additive packet consumes exact observed normal products; it never builds a host."""
 import json
+import re
 from pathlib import Path
 import tempfile
 import unittest
@@ -8,6 +9,34 @@ from tools import qualify_sdk_scratch as qualifier
 from tools.native_runtime.common import InstallError
 from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import digest, inventory, write_json
+
+
+SECURITY_ACTION_PIN_INVERSES = (
+    ('KirilsTurkins/lsf-setup-python', '14de4ddb02861c1e098a1a260a2de7a6b45b68fb', '50257733267ef69f611231aad6b77a62adca7140'),
+    ('KirilsTurkins/lsf-upload-artifact', '5c42799caf30eda69cb2db5da0be2400c47cef16', '01d82cc6ae713563e8d04f36a17af500cf82a6a9'),
+    ('KirilsTurkins/lsf-setup-node', 'fdae00b14e855eb751452bc70c64dde286270415', 'c1136b2d97fe79ef645e9508b2048a222f50a170'),
+    ('KirilsTurkins/lsf-setup-java', '5d910981b146bc2d4fd97fa349210f3e3d454039', 'f041d6677134ada73c077d0c012bd78164b251a7'),
+    ('KirilsTurkins/lsf-upload-pages-artifact', '78e399e92cd7485cca2752423a3eb0ccf404df77', 'f6fd45bb134f6855d391ed2198e9b3d57d305a05'),
+)
+
+
+def historical_security_actions(value):
+    """Invert only the five reviewed security pins before immutable old guards."""
+    if type(value) not in (str, bytes):
+        raise AssertionError('historical-workflow-exact-current-security-actions-required')
+    for action, current_sha, previous_sha in SECURITY_ACTION_PIN_INVERSES:
+        prefix = action + '@'
+        current, previous = prefix + current_sha, prefix + previous_sha
+        terminal = r'(?=$|[\s\x22\x27])'
+        if type(value) is bytes:
+            prefix, current, previous, terminal = (part.encode('ascii')
+                for part in (prefix, current, previous, terminal))
+        if prefix not in value:
+            continue
+        if value.count(prefix) != len(re.findall(re.escape(current) + terminal, value)):
+            raise AssertionError('historical-workflow-exact-current-security-actions-required')
+        value = value.replace(current, previous)
+    return value
 
 
 def replace_json(path, value):
@@ -239,7 +268,9 @@ class ScratchQualification(unittest.TestCase):
 
     def test_c_child_reuses_exact_normal_bundle_and_pinned_compiler_without_native_build(self):
         from tools.ci_lane_inventory import workflow_model
-        model = workflow_model((qualifier.ROOT/'.github/workflows/c-guest-authoring.yml').read_text())
+        from tools.tests.test_c_closed_filesystem_qualification import original_libfetch_workflow
+        model = workflow_model(original_libfetch_workflow(
+            (qualifier.ROOT/'.github/workflows/c-guest-authoring.yml').read_text()))
         jobs = model['jobs']
         selector = model['on']['workflow_dispatch']['inputs']['qualify-scratch-refusals']
         self.assertEqual((selector['type'], selector['default']), ('boolean', False))
