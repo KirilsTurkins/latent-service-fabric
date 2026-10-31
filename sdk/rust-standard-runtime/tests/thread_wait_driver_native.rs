@@ -3,14 +3,13 @@
 #![allow(dead_code)]
 use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
-use std::ptr::NonNull;
 pub use std::{cell, mem, ptr, time};
 pub mod alloc {
     pub use std::alloc::{GlobalAlloc, Layout, System};
 }
 #[path = "../runtime_owner.rs"]
 mod owner;
-use owner::{Kind, SystemOwned, Token};
+use owner::{Kind, Token};
 #[path = "../thread_wait_driver.rs"]
 mod driver;
 #[path = "../thread_wait.rs"]
@@ -23,7 +22,7 @@ pub mod sys {
             pub use crate::wait;
             pub mod runtime {
                 pub(crate) use crate::driver::*;
-                pub(crate) use crate::{current_index, system_allocate, system_deallocate, Token};
+                pub(crate) use crate::{current_index, Token};
             }
         }
     }
@@ -39,16 +38,6 @@ pub(crate) fn current_task() -> Token {
 pub(crate) fn current_index() -> u32 {
     0
 }
-pub(crate) fn system_allocate<T>(value: T) -> *mut T {
-    SystemOwned::try_new(value, Some(current_task()))
-        .unwrap()
-        .into_raw()
-        .as_ptr()
-}
-pub(crate) unsafe fn system_deallocate<T>(pointer: *mut T) {
-    drop(unsafe { SystemOwned::from_raw(NonNull::new(pointer).unwrap()) });
-}
-
 #[derive(Default)]
 struct Ports {
     next: u64,
@@ -120,7 +109,6 @@ unsafe extern "C" fn register(kind: u32, present: u32, generation: u64, parent: 
     });
     call(match kind {
         4 => "admit-wait",
-        7 => "admit-node",
         _ => panic!("unexpected owner"),
     });
     unsafe {
@@ -131,11 +119,8 @@ unsafe extern "C" fn register(kind: u32, present: u32, generation: u64, parent: 
 unsafe extern "C" fn settle(generation: u64, id: u64, out: *mut u8) {
     assert_eq!(generation, ROOT.generation);
     let kind = PORTS.with(|p| p.borrow_mut().owners.remove(&id).unwrap());
-    call(if kind == Kind::Wait as u32 {
-        "settle-wait"
-    } else {
-        "settle-node"
-    });
+    assert_eq!(kind, Kind::Wait as u32);
+    call("settle-wait");
     unsafe {
         success(out);
     }
@@ -269,14 +254,7 @@ fn early_untimed_notification_never_resumes_a_running_thread() {
     assert!(wait.wait());
     assert_eq!(
         calls(),
-        [
-            "admit-wait",
-            "admit-node",
-            "park-task",
-            "wake-task",
-            "settle-node",
-            "settle-wait"
-        ]
+        ["admit-wait", "park-task", "wake-task", "settle-wait"]
     );
     assert_retired();
 }
@@ -290,12 +268,10 @@ fn untimed_wait_uses_exact_explicit_canonical_suspension_after_park() {
         calls(),
         [
             "admit-wait",
-            "admit-node",
             "park-task",
             "suspend",
             "resume-later",
             "wake-task",
-            "settle-node",
             "settle-wait"
         ]
     );
@@ -322,11 +298,9 @@ fn only_actual_one_shot_readiness_becomes_elapsed_sleep() {
         [
             "admit-wait",
             "timer-start",
-            "admit-node",
             "park-task",
             "timer-next",
             "wake-task",
-            "settle-node",
             "timer-stop",
             "settle-wait"
         ]
@@ -413,10 +387,10 @@ fn nested_same_thread_wait_is_refused_before_any_second_admission_or_node_alloca
     reset();
     let q = wait::WaitQueue::new();
     let first = q.prepare(None);
-    assert_eq!(calls(), ["admit-wait", "admit-node"]);
+    assert_eq!(calls(), ["admit-wait"]);
     let error = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| q.prepare(None)));
     assert!(error.is_err());
-    assert_eq!(calls(), ["admit-wait", "admit-node"]);
+    assert_eq!(calls(), ["admit-wait"]);
     first.cancel();
     assert_retired();
 }

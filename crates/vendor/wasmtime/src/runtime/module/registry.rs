@@ -453,6 +453,34 @@ impl ModuleRegistry {
         Ok(id)
     }
 
+    // Borrowed numeric lookup: no FrameInfo, name, symbol, Module clone or Vec.
+    // The Copy module key is private scratch for at-most-eight local ordinals.
+    #[cfg(feature = "gc")]
+    pub(crate) fn lookup_numeric_frame(
+        &self,
+        pc: usize,
+    ) -> Option<(RegisteredModuleId, u32, Option<u32>, Option<u32>)> {
+        let (code, text_offset) = self.loaded_code_by_pc(pc)?;
+        let key = code
+            .index
+            .func_by_text_offset(u32::try_from(text_offset).ok()?)?;
+        let FuncKey::DefinedWasmFunction(module_index, defined) = key else {
+            return None;
+        };
+        let id = (*code.modules.get(module_index)?)?;
+        let module = self.modules.get(id)?;
+        let compiled = module.compiled_module();
+        let function = compiled.module().func_index(defined).as_u32();
+        let start = compiled.func_start_srcloc(key).file_offset();
+        let instruction =
+            wasmtime_environ::lookup_file_pos(module.engine_code().address_map_data(), text_offset)
+                .and_then(|position| position.file_offset());
+        let function_offset = instruction
+            .zip(start)
+            .and_then(|(instruction, start)| instruction.checked_sub(start));
+        Some((id, function, instruction, function_offset))
+    }
+
     /// Fetches frame information about a program counter in a backtrace.
     ///
     /// Returns an object if this `pc` is known to some previously registered

@@ -1466,6 +1466,11 @@ impl<T> StoreContextMut<'_, T> {
                             if trap_on_idle {
                                 // `trap_on_idle` is true, so we exit
                                 // immediately.
+                                reset
+                                    .store
+                                    .0
+                                    .concurrent_state_mut_without_forcing_current_thread()
+                                    .observe_async_deadlock();
                                 Poll::Ready(Err(Trap::AsyncDeadlock.into()))
                             } else {
                                 // `trap_on_idle` is false, so we assume
@@ -2342,6 +2347,9 @@ impl StoreOpaque {
                 .unwrap_or(true)
         );
 
+        #[cfg(feature = "gc")]
+        self.observe_root_suspension(&reason);
+
         let suspend_reason = &mut self.concurrent_state_mut()?.suspend_reason;
         if suspend_reason.is_some() {
             bail_bug!("suspend reason unexpectedly already set for store");
@@ -2355,6 +2363,69 @@ impl StoreOpaque {
         }
 
         Ok(())
+    }
+
+    #[cfg(feature = "gc")]
+    fn observe_root_suspension(&mut self, reason: &SuspendReason) {
+        let SuspendReason::ExplicitlySuspending { thread, .. } = reason else {
+            return;
+        };
+        // Checked direct handles, no table scan. Failure is diagnostic-only and
+        // cannot replace the original suspend or manufacture a wake.
+        let state = self.concurrent_state_mut_without_forcing_current_thread();
+        if !state
+            .get_mut(thread.thread)
+            .is_ok_and(|row| row.diagnostic_host_root && row.parent_task == thread.task)
+            || !state
+                .get_mut(thread.task)
+                .is_ok_and(|task| matches!(task.caller, Caller::Host { .. }))
+        {
+            return;
+        }
+        let memory = state.queue_memory.clone();
+        let Some(memory) = memory.filter(|memory| memory.root_suspension_enabled()) else {
+            return;
+        };
+        let mut snapshot = crate::RootSuspensionSnapshot::default();
+        let mut modules = [None; 8];
+        let (steps, visited, flags) =
+            crate::runtime::vm::Backtrace::trace_root_suspension(self, |frame| {
+                // All frames here are host-call return PCs, not a faulting Trap PC.
+                let numeric = frame
+                    .pc()
+                    .checked_sub(1)
+                    .and_then(|pc| self.modules().lookup_numeric_frame(pc));
+                let Some((module, function, instruction, offset)) = numeric else {
+                    snapshot.flags |= 8;
+                    return;
+                };
+                let index = usize::from(snapshot.count);
+                let ordinal = modules
+                    .iter()
+                    .position(|key| *key == Some(module))
+                    .unwrap_or_else(|| {
+                        let empty = modules
+                            .iter()
+                            .position(Option::is_none)
+                            .expect("at most eight raw frames");
+                        modules[empty] = Some(module);
+                        empty
+                    });
+                if instruction.is_none() || offset.is_none() {
+                    snapshot.flags |= 4;
+                }
+                snapshot.frames[index] = crate::RootSuspensionFrame {
+                    module: ordinal as u8,
+                    function,
+                    module_offset: instruction.unwrap_or(u32::MAX),
+                    function_offset: offset.unwrap_or(u32::MAX),
+                };
+                snapshot.count += 1;
+            });
+        snapshot.steps = steps;
+        snapshot.visited = visited;
+        snapshot.flags |= flags;
+        memory.save_root_suspension(&snapshot);
     }
 
     fn wait_for_event(&mut self, waitable: Waitable) -> Result<()> {
@@ -5186,6 +5257,9 @@ enum GuestThreadState {
     Completed,
 }
 pub struct GuestThread {
+    // Only the initial implicit thread of an authenticated host task. Explicit
+    // children share the task but can never overwrite its root observation.
+    diagnostic_host_root: bool,
     /// Context-local state used to implement the `context.{get,set}`
     /// intrinsics.
     context: [u32; NUM_COMPONENT_CONTEXT_SLOTS],
@@ -5218,6 +5292,11 @@ impl GuestThread {
     }
 
     fn new_implicit(state: &mut ConcurrentState, parent_task: TableId<GuestTask>) -> Result<Self> {
+        let diagnostic_host_root = state
+            .queue_memory
+            .as_ref()
+            .is_some_and(|memory| memory.root_suspension_enabled())
+            && matches!(state.get_mut(parent_task)?.caller, Caller::Host { .. });
         let sync_call_set = state.push(WaitableSet {
             is_sync_call_set: true,
             ..WaitableSet::default()
@@ -5227,6 +5306,7 @@ impl GuestThread {
             parent_task,
             wake_on_cancel: None,
             state: GuestThreadState::NotStartedImplicit,
+            diagnostic_host_root,
             instance_rep: None,
             sync_call_set,
         })
@@ -5246,6 +5326,7 @@ impl GuestThread {
             parent_task,
             wake_on_cancel: None,
             state: GuestThreadState::NotStartedExplicit(start_func),
+            diagnostic_host_root: false,
             instance_rep: None,
             sync_call_set,
         })
@@ -6308,6 +6389,68 @@ impl Default for ConcurrentState {
 }
 
 impl ConcurrentState {
+    // Called only at the sole original AsyncDeadlock emission, after the final
+    // root poll. No mutation, progress manufacture, heap allocation or ID escape.
+    fn observe_async_deadlock(&mut self) {
+        let Some(observe) = self
+            .queue_memory
+            .as_ref()
+            .and_then(|memory| memory.async_deadlock_observer())
+        else {
+            return;
+        };
+        let mut snapshot = crate::AsyncDeadlockSnapshot::default();
+        snapshot.flags = (u8::from(self.high_priority.is_empty()) << 1)
+            | (u8::from(self.low_priority.is_empty()) << 2)
+            // poll_until reached Ready(None) before its final root poll.
+            | (1 << 3);
+        let (entries, scanned, truncated) = self.table.get_mut().diagnostic_prefix();
+        snapshot.scanned_slots = scanned;
+        snapshot.flags |= u8::from(truncated);
+        for entry in entries {
+            if let Some(thread) = entry.downcast_ref::<GuestThread>() {
+                let index = match &thread.state {
+                    GuestThreadState::NotStartedImplicit => 0,
+                    GuestThreadState::NotStartedExplicit(_) => 1,
+                    GuestThreadState::Running => 2,
+                    GuestThreadState::Suspended(_) => 3,
+                    GuestThreadState::Ready { .. } => 4,
+                    GuestThreadState::Completed => 5,
+                };
+                snapshot.thread_states[index] += 1;
+            } else if let Some(task) = entry.downcast_ref::<GuestTask>() {
+                if let Caller::Host {
+                    tx,
+                    host_future_present,
+                    ..
+                } = &task.caller
+                {
+                    snapshot.host_roots += 1;
+                    snapshot.root_flags |= u8::from(task.lower_params.is_some())
+                        | (u8::from(task.lift_result.is_some()) << 1)
+                        | (u8::from(task.result.is_some()) << 2)
+                        | (u8::from(task.exited) << 3)
+                        | (u8::from(task.async_function) << 4)
+                        | (u8::from(tx.is_some()) << 5)
+                        | (u8::from(matches!(task.host_future_state, HostFutureState::Live)) << 6)
+                        | (u8::from(*host_future_present) << 7);
+                }
+            } else if let Some(set) = entry.downcast_ref::<WaitableSet>() {
+                let count = usize::from(snapshot.waiting_threads).checked_add(set.waiting.len());
+                match count.and_then(|n| u16::try_from(n).ok()) {
+                    Some(count) => snapshot.waiting_threads = count,
+                    None => {
+                        snapshot.waiting_threads = u16::MAX;
+                        snapshot.flags |= 1 << 4;
+                    }
+                }
+            }
+        }
+        // All table borrows end before the trusted host callback. Snapshot is
+        // <=16 stack bytes; the existing native stack remains its only owner.
+        observe(&snapshot);
+    }
+
     pub(super) fn new(queue_memory: crate::runtime::native_memory::Memory) -> Self {
         let paid = queue_memory.is_some();
         let table = ResourceTable::with_native_memory(queue_memory.clone());

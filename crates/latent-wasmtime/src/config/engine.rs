@@ -144,9 +144,17 @@ impl CompilerEngineSettings {
         let backtrace_limit = Some(
             std::num::NonZeroUsize::new(8).expect("fixed positive Java GC diagnostic frame cap"),
         );
+        #[cfg(all(
+            not(feature = "development-test-host"),
+            not(feature = "java-checkpoint-gc-trap-diagnostic"),
+            feature = "rust-thread-trap-diagnostic"
+        ))]
+        let backtrace_limit =
+            Some(std::num::NonZeroUsize::new(8).expect("fixed positive Rust diagnostic frame cap"));
         #[cfg(not(any(
             feature = "development-test-host",
-            feature = "java-checkpoint-gc-trap-diagnostic"
+            feature = "java-checkpoint-gc-trap-diagnostic",
+            feature = "rust-thread-trap-diagnostic"
         )))]
         let backtrace_limit = None;
         engine_config.wasm_backtrace_max_frames(backtrace_limit);

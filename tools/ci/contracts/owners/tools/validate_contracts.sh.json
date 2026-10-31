@@ -1,3 +1,0 @@
-{"kind":"owner","path":"tools/validate_contracts.sh","reviewBoundary":"committed-fingerprint","reviewReason":"Actual CI118482127658 fails before Wasmtime compilation because generic backend invokes the original exact Go52 case without either required adapter env. Reuse the existing authenticated old/current source producer and pinned wasm-tools1.254.0 in prepare-only mode, pass BOTH fixed paths through unchanged full generic --ignored command. No test/skip/Cargo/native changes; same original64KiB/10k native gate. Old harness RED/current40 focused PASS; local real pinned WAT parsing prepares1246/1245B inputs but supplies no new Rust execution credit.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "7678e035e4b39c04a4b39d8acdd70fe7972b9557375960054e9e46d9e3f2fadd"
-}

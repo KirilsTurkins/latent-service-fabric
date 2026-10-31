@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "RustThreadFaultFramesTests.test_diagnostic_consumer_accepts_only_the_bound_numeric_unreachable_fault",
+    "RustThreadFaultFramesTests.test_numeric_rows_are_finite_sequential_and_exclude_private_text",
+    "RustThreadFaultFramesTests.test_workflow_fetches_current_native_and_retained_failure_sources"
+  ],
+  "guards": {
+    "RustThreadFaultFramesTests.test_diagnostic_consumer_accepts_only_the_bound_numeric_unreachable_fault": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5f4103f12474075341144678a5dd5aee833b041252affc1e96421424143f9c61",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustThreadFaultFramesTests.test_numeric_rows_are_finite_sequential_and_exclude_private_text": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5f4103f12474075341144678a5dd5aee833b041252affc1e96421424143f9c61",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustThreadFaultFramesTests.test_workflow_fetches_current_native_and_retained_failure_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5f4103f12474075341144678a5dd5aee833b041252affc1e96421424143f9c61",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_thread_fault_frames.py",
+  "reviewReason": "Finite off-default authenticated Rust fault observation: preserve original Trap scalar and eight-frame requirement; add one strictly bounded 64-physical-slot scheduler-prefix record only for original AsyncDeadlock22, explicit truncation and duplicate/range/privacy negatives. No runtime qualification or new case IDs. v30 retains a separately authenticated last original root-suspension record with strict64 raw traversal/eight raw frame bounds, closed numeric coordinates, missing/failed-transfer controls and unchanged original fault-frame completion gate.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

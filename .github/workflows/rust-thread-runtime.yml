@@ -1,0 +1,64 @@
+name: Signed original Rust default ThreadPool progress
+
+on:
+  push:
+    branches: ['feat/rust-thread-runtime-20261023']
+    paths: ['.github/workflows/rust-thread-runtime.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: rust-original-thread-runtime-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  signed-default-pools:
+    name: One original Rust component and five signed default ThreadPool calls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - name: Fetch the exact successful compiler and native source event
+        run: |
+          git fetch --no-tags --depth=1 origin e3f0edf822c10e84bbeede276174ac3217542afc
+      - name: Install locked Python dependencies and check finite replay and policy refusals
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_rust_thread_runtime -v
+      - name: Authenticate five exact native products and the complete 200-control origin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/rust_thread_native_products.py --output "$RUNNER_TEMP/rust200-native"
+      - name: Retain only four original compiler members with exact preimage pins
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/rust_thread_compiler_materials.py --output "$RUNNER_TEMP/rust411272-materials"
+      - name: Sign one retained component and run all five ordinary public calls
+        run: >-
+          python3 -B tools/qualify_rust_thread_runtime.py
+          --prepared "$RUNNER_TEMP/rust200-native"
+          --compiler-materials "$RUNNER_TEMP/rust411272-materials"
+          --output "$RUNNER_TEMP/rust-thread-runtime"
+      - name: Retain bounded public signing, invocation and physical retirement evidence
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: rust-thread-runtime-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-thread-runtime/**
+            ${{ runner.temp }}/rust200-native/retrieval.json
+            ${{ runner.temp }}/rust200-native/native-products.json
+            ${{ runner.temp }}/rust200-native/source-inputs.json
+            ${{ runner.temp }}/rust411272-materials/retrieval.json
+          if-no-files-found: error
+          retention-days: 7

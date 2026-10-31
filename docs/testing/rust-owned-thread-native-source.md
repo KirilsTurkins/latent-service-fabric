@@ -4,13 +4,56 @@ This draft adds a distinct `rust-context40-sync-cooperative-v1` host profile.
 The ordinary Rust builder remains closed. Signed execution of the captured
 default ThreadPool application and runtime qualification are still pending.
 
-The compiled host catalogue borrows 175,996 original body bytes and fixes all
-1,225 function/data records and 5,325 actual relocation referents. Its origin is
-the independently verified compiler observation at
-`28059f343bbd954e3e6614c5a24593897cc0c294`, run 39877020838. The earlier ec11
-failure remains a distinct historical event; the original object image is
-byte-identical. Guest JSON, names, producer strings and supplied rlibs never
-select or replace this catalogue.
+The current candidate host catalogue borrows 177,207 original body bytes and
+fixes all 1,225 function/data records and 5,312 actual relocation referents.
+Its generation origin is the exact hosted compiler observation at
+`ef841ed1d5691b4bf25db48b9980a776b4b56bc5`,
+[run 41127291312](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41127291312),
+job 124309000420 and artifact 13012116413, whose GitHub artifact SHA-256 is
+`1f1fc1598c340b22f74b2bdf6b361ad576168738bbd619043a136a5faefcf45e`.
+That Ubuntu 24.04 run passed all 29 native and 76 source controls, rebuilt the
+repaired owned sysroot, compiled the unchanged application and reproduced the
+reviewed 251,758-byte component
+`sha256:1db2b051a515be1bd60974e38335f6bade254d6b016daf9e20b913360e72c00f`
+and 248,711-byte original source-adapted core
+`sha256:31712d97ca16f65283b8d535d38f19a64c3ad048fdd8e774bd652c9b589b8fe7`.
+The graph has separate context-owned ID0 and ID32 records and no former shared
+ID record. The catalogue now records `hostedConfirmation: true` while retaining
+`runtimeQualified: false` and `actualGuestExecuted: false`; this compiler event
+did not execute a signed guest.
+
+The preceding exact compiler
+[run 41122296703](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41122296703)
+at `eefea340b053d0f95185b6527e6caae5bf8bf457`, artifact 13009371378 and
+ZIP SHA-256
+`1f40ddf6fe0f6d6cb0b2f136df04d4b965fa3833f15c9b9fde9079596c13e49a`
+first produced the repaired 1,225-node object graph. It passed the same 29
+native and 76 source controls but refused that graph at the immutable previous
+catalogue before component encoding or guest execution. A local Windows
+wasm-tools 1.254.0 envelope was retained provisionally until the hosted run
+reproduced the exact component bytes above.
+
+The first candidate-catalogue rerun,
+[run 41124401894](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41124401894),
+stopped before rebuilding the owned sysroot because three source-mechanism test
+expectations still named the previous catalogue head, stack geometry and sealed
+derivation digest. Its artifact 13010186814 has ZIP SHA-256
+`64dfbf84db8ab873bc062cb0e5fc2b3bc24f7271f57facd1b7d727d8cfe343c0`.
+The other 73 source-mechanism tests and all 29 native controls passed. This is a
+test-contract failure, not compiler or guest evidence; no application was
+compiled and no guest executed in that rerun.
+
+The preceding exact-head
+[run 41113065282](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41113065282)
+at `9d9b4001bdefa57b6938c613d0fea13f8e638f83` remains the independently
+verified hosted origin for the previous catalogue. It passed all 29 native and
+76 source controls plus the independent normal-component proof. Its sole
+artifact 13004447135 is bound by ZIP SHA-256
+`b7df73bbe827a016e45b1681db7304054a6d941c7d1844ebde87063417a58c37`.
+Neither compiler event executed a signed guest. Earlier observations,
+including `28059f3` and the `ec11` failure, remain distinct historical events.
+Guest JSON, names, producer strings and supplied rlibs never select or replace
+this catalogue.
 
 Before any allocating component reader, the verifier compares raw framing
 against the immutable normal encoder envelope. It then recomputes the complete
@@ -40,7 +83,7 @@ fallback and unauthorized pointer/table traps. A native build or these tiny
 mechanism outcomes do not establish ordinary Rust guest progress, signed
 runtime qualification, checkpoints or completion of #743/#689 AC3.
 
-The native programme actually passed at
+The original 193-control native programme actually passed at
 [`b422af24d86344ac7abb8b8fa56c3782aab63915`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39884205952).
 Its sole artifact, `12472447074`, is 70,987,235 compressed bytes with SHA-256
 `5a4c0f0cc2ebf8f307ad7d657323ed4c53afc61cd9bb2bc318d564e9b23a4e58`.
@@ -51,3 +94,179 @@ the exact listed/passing 193 cases and all five emitted product identities.
 The additive `rust_thread_native_products.py` reader freezes that completed
 origin and retains the historical 188-control reader unchanged. Neither
 receipt records a signed Rust guest invocation.
+
+The later runtime repair extended that same source-bound programme without
+relabeling the historical receipt. [Run 41066971526](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41066971526)
+passed all 200 cases and 91 command records at its exact source
+`2259601ab19702eafd56c39bcb43f769cdb47fa5`. The seven added cases cover both
+previously omitted host-future controls, all three omitted activation-runtime
+controls and the two session-retirement controls, including post-Store registry
+retirement. Its sole artifact `12984202115` is 74,662,397 compressed bytes with
+SHA-256 `97cd66ec9dc4db29711d768f0197f8f2185522d1b6fb6c0c904caa56420743d4`.
+Independent download verified the exact source and material snapshot, both
+receipt hashes, all five emitted binaries and the final passing command. This
+native event still compiles and tests host controls only; it does not itself
+claim a signed guest call or ThreadPool completion.
+
+After the wait-node and retained-input repairs, exact-head
+[run 41096399674](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41096399674)
+again passed all 200 cases and 91 command records at
+`79911762b366381d7dc61da12d1b5e9aba2b3222`. Its sole artifact `12998565138`
+is 74,662,330 compressed bytes with SHA-256
+`c6c4c063cc8fb73b7e2c649bf19adf2a2c832c63ded8e153d59a76324ed19265`.
+Independent download verified the exact source/material snapshot, the
+136,235-byte native-products receipt
+(`3dde2dc307780b27e60c13e5b226f2e87b7c7c29bfd57c83c6c8918930560ed4`),
+the 25,052-byte source-inputs receipt
+(`3220fc2a3bfacf77cd6becc070486861e8a46746ac631a7433ab7a5dffb099bf`),
+all five product identities and the final passing command. Its record explicitly
+keeps `signedQualification` and `guestSourceCompiled` false: this is the native
+origin for the pending signed campaign, not a successful ThreadPool result.
+
+Signed runtime run
+[`41115657241`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41115657241)
+subsequently authenticated that native origin and the current compiler artifact,
+but it refused before guest entry with `corrupt-artifact`. The native executable's
+compiled original-object catalogue came from `79911762b366381d7dc61da12d1b5e9aba2b3222`
+and therefore could not authenticate the repaired component pair from
+`9d9b4001bdefa57b6938c613d0fea13f8e638f83`. Its zero fuel, zero memory and zero
+effects are preserved as pre-execution evidence, not a ThreadPool result.
+
+The preceding source-matched native producer
+[`41116286833`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41116286833)
+passed the same 200 controls and 91 commands at exact source
+`9c0097fc4dee24c57e0cffbdf1963e47772b2ffc`. Its sole artifact `13008060664`
+is 74,661,519 compressed bytes with ZIP SHA-256
+`0a6b8e76fc984e347125c1c5892f81d452593ea776b1b194534d70434040e046`.
+Independent download verified the 136,240-byte native-products receipt
+(`dcafd3864e22e5f7ff59fc4808de189fffc99691fb07600b79b7a0fef6f09526`),
+the 25,052-byte source-inputs receipt
+(`c0eed219a9bc8f5bbda5df03a815bb755fa28608d43eb8bbf912d156242846ac`)
+and all five source-bound product identities. This producer event still executes
+no signed guest; it only supplies executables whose catalogue and runtime source
+include the repaired Rust component identities for the next exact signed run.
+
+The exact repaired-catalogue native producer
+[`41131800734`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41131800734)
+then passed all 200 controls and 91 command records at
+`deb654086a6e9ca85c1c96c7e3485babbc6557d9`. Job 124324299029 retained artifact
+`13013563430`, 74,661,577 compressed bytes with GitHub ZIP SHA-256
+`cd9d6429408c9c87aee29911a066bb2de74b7355440b0a5374c76b8bdc19de3a`.
+Independent download verified the 136,231-byte native-products receipt
+(`19f814e63fa6733b56b4cad18f06c7007cb287a563fc875d304db066950e7e12`),
+the 25,052-byte source-inputs receipt
+(`031028fe27de7925761453b337efe5f8cdbc65f45713aa913f185575e355d4e7`),
+the final passing command and all five product identities. The products are
+`latent` `sha256:16b113e8f2f72343500e790a2421bf01a55610c1b15a07a2bf5891f615091871`,
+`latentd` `sha256:e10ab51379007164d65b83a76aa0e7877c813ce6e8883b51ed48a1cdc7aa57db`,
+package `sha256:80a4513399e70fdbd6398b100aae5932c931e2156d3e43584e46973dd336625c`,
+capsule-contracts `sha256:d2bdea874a37cce5136220dfb1ad9ae514a316c5caf42bcbc5c568a8d294a2c9`
+and capsule-authoring
+`sha256:98e1956da6aef945927147b426d7261de654cc78873605e3367f5fb7613a9976`.
+This remains native source/control evidence only; it does not claim signed guest
+entry or ThreadPool completion.
+
+The first source-matched signed retry,
+[run 41121239149](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41121239149),
+authenticated that producer and reached the unchanged guest at exact source
+`023b5f00f4d`. Its artifact 13008198151 has ZIP SHA-256
+`34b7d00596c4bf8d6567462d94b872b9fc83c8b880a8c5ca8dd988dc49780cf0`.
+The first ThreadPool call still trapped at the historical `unreachable` in
+component `sha256:c88f911c7534b119c4658da6f87553ac1b2d621607fed39123f28574033780bc`
+after 47,412 fuel, with 5,692,098 peak bytes and zero effects. That component
+predates the compiler repair and is retained as failed runtime evidence; it is
+not evidence against the repaired 1,225-node compiler output.
+
+The repaired-component signed run
+[`41134417250`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41134417250)
+at `b60eb4c51fc30dd09bb8fab34969a6a152e06d4d` authenticated the exact compiler
+and current 200-control native origins, signed component
+`sha256:e81881af5494d3d6ab3b071abd8fadca79d2f21b354e2e52dc746d492582f471`
+and reached the unchanged `pools-cold` call. Artifact `13015681982` is 610,993
+compressed bytes with GitHub digest
+`sha256:9815184569a042438f93f0b78e092a7f08f29273c1bb5f3bf4380846e136c799`.
+The call still trapped with `unreachable-code`, no decoded result and zero
+effects after 93,883 fuel at a 5,692,107-byte peak. This progressed beyond the
+47,412-fuel shared-ThreadId failure but did not produce any ThreadPool result.
+The bounded #1373 diagnostic must identify this new exact trap before another
+runtime repair can be selected.
+
+## Original child-handoff catalogue observation, 31 October 2026
+
+Compiler run [41184446196](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41184446196),
+source `f401e388a7542b8f9cd9bbd987dbcc65814262d6`, passed the unchanged 29 native
+TLS/wait/synchronization and 76 source controls, rebuilt the selected sysroot and
+compiled the unchanged ordinary application. The 76 source controls are native
+Rust library tests, including the historical normal-component positive pair;
+they are not Python controls. Artifact `13036816711` retains
+112 CRC-verified members (52,701,865 bytes, ZIP SHA-256
+`1587f3ed7f2464b2f6c06d47fe69a3d9d825b78da1e191007e273f5191634b8f`).
+All 238 captured Git input identities and the actual rlib digests were joined
+before deriving this catalogue's 1,221 definitions and 5,245 real referents.
+The original-body image is 176,171 bytes, SHA-256
+`96f285899ad07269dafc3a539c6d3247ac7ec441aa8807575718e18ab9e156c8`.
+
+Removing the separate Bootstrap allocation leaves one original indirect
+`entered` callback, the existing TLS notification. Both source derivations now
+require that one exact site; they do not accept the prior two-call shape.
+The actual retained sealed core is `4b38efc1a41848dee2ec1d8bd1eb4861c5698181bc2ec1daae8058e2fdeb2486`.
+The actual full source-derived synchronous core is
+`0f5dce3b2a99ae8f91d4a391e7c0cfda7113e528f767493f8ea22d233d3639f3`.
+Applying the existing reviewed WIT-effect metadata projection changes only byte
+185,784 from `0x40` to `0x43`, yielding
+`deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423`.
+That is a metadata-only source expectation; independent native reproduction is
+still pending. No local compiler, native process or guest executed.
+
+The owning run stopped at the previous immutable native catalogue before normal
+component encoding. Its historical normal component and complete old origin
+remain unchanged and explicitly historical in `origin.json`; their earlier
+positive source controls remain. No new normal-component bytes or digest is
+claimed. Native whole-component fixture qualification and the five signed
+ThreadPool outcomes must use the next actual matched compiler/native origins.
+Current normal-component and runtime qualification remain unproved.
+
+
+The subsequent exact-catalogue owner run
+[41186537968](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41186537968)
+passed 74 of those 76 Rust library controls. Both current original-catalogue and
+source-derivation controls passed, independently reproducing `deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423`
+in the hosted native implementation. The two historical normal-component pair
+positives failed with `rust-component-recomputed-main-mismatch` before any new
+encoding. Artifact `13036114429` retains 29 CRC-verified members (7,450,592 bytes,
+ZIP SHA-256 `7e41304854912472a7712fb3cd3e15cde98576998df483168d881ebc56642fe9`).
+
+The existing explicit application-diagnostic owner now retains unsigned actual
+application encoding before running the same mandatory 76 library controls.
+All 76 must pass before owner success; an old fixture mismatch still fails the
+run. Original 29-control ordering, default non-application behavior, assertions,
+source immutability and qualification requirements remain unchanged. No guest
+execution or new normal-component qualification follows from this sequencing.
+
+Compiler [41187066997](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41187066997)
+then retained an actual 250,260-byte normal component,
+`0ded5f17359bbff107af47e422549765de2e17f4829853ed2011225d85a56107`.
+All 238 captured Git inputs and 199 application recipe inputs match exact source
+`24737830b5ea01006b419c1196212f08db2d715a`. The retained native core is byte-identical
+to source-adapted `deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423`.
+The unchanged envelope projection proves every non-consumed main-core section
+exact; restoring consumed WIT metadata and the producer merge reconstructs that
+complete derived core. The raw encoded main has a different digest because the
+encoder consumes that metadata. Original and adapted WIT fixtures stay unchanged.
+
+The repaired original main has the same 18 import identities in a new source
+order. Its encoder adapters, canonical lowerings, aliases and component-name
+metadata follow that order. Table limits remain exactly 121/121 in the main and
+9/9 in the adapters. The new exact 4,422-byte shell is
+`7640af9fd078983e33e464d5589e565a191686d0510ea5d5a4687bb886bf0e75`;
+the old shell's strict byte equality correctly refused it. The active component
+and shell now use only these actual captured bytes; prior bytes and complete
+provenance remain available through immutable Git source references and the
+historical origin. No old/new fallback or projection change is introduced.
+
+Artifact `13036539476` contains 118 CRC-verified members (52,934,272 bytes, ZIP
+SHA-256 `e15684a6a47091eec962a1044f21ab7f916c6477e2d864158cce27d2c1353644`).
+That owner failed native normal-component proof before reaching its mandatory
+76 controls. The next owning run must pass both; current component/runtime
+qualification and all five signed guest outcomes remain unproved. No local
+compiler, native executable or guest ran to produce this fixture update.

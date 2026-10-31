@@ -62,8 +62,12 @@ pub mod sys {
                 pub fn on_admit(f: impl FnOnce() + 'static) { PORTS.with(|p| *p.on_admit.borrow_mut() = Some(Box::new(f))); }
                 pub fn on_wait(f: impl FnOnce() + 'static) { PORTS.with(|p| *p.on_wait.borrow_mut() = Some(Box::new(f))); }
                 pub fn on_wake(f: impl FnOnce() + 'static) { PORTS.with(|p| *p.on_wake.borrow_mut() = Some(Box::new(f))); }
-                pub fn system_allocate<T>(value: T) -> *mut T { Box::into_raw(Box::new(value)) }
-                pub unsafe fn system_deallocate<T>(pointer: *mut T) { drop(unsafe { Box::from_raw(pointer) }); }
+                pub(crate) fn allocate_wait_node(_lease: &mut WaitLease, value: Node) -> *mut Node {
+                    Box::into_raw(Box::new(value))
+                }
+                pub(crate) unsafe fn deallocate_wait_node(_lease: &mut WaitLease, pointer: *mut Node) {
+                    drop(unsafe { Box::from_raw(pointer) });
+                }
                 pub(crate) fn register_wait(lease: &mut WaitLease, node: *mut Node) {
                     let token = lease.token();
                     PORTS.with(|p| {

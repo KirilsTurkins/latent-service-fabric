@@ -178,7 +178,7 @@ class SourceCapacityTests(unittest.TestCase):
         from tools import build_process
 
         limits = SnapshotLimits()
-        self.assertEqual(limits.max_total_bytes, 76 * 1024 * 1024)
+        self.assertEqual(limits.max_total_bytes, 77 * 1024 * 1024)
         self.assertEqual(limits.max_archive_bytes, 83 * 1024 * 1024)
         self.assertEqual(limits.max_archive_bytes, build_process.MAX_OUTPUT_BYTES)
         self.assertEqual(limits.max_file_bytes, 4 * 1024 * 1024)

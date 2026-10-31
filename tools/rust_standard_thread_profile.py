@@ -14,9 +14,12 @@ TLS_REFERENCE='b198ed15262ba83c837936955349ebf9faddff71a20e88ae3b4052dbc3dce540'
 SELECTOR='all(target_arch = "wasm32", target_os = "unknown", target_vendor = "unknown", target_env = "", not(target_feature = "atomics"))'
 LIFECYCLE='std/src/thread/lifecycle.rs'
 LIFECYCLE_SHA='dd6611f792e01f967deb119f9d66f611fdefc78cc3044b3f71e8814cbb62c3af'
+CURRENT='std/src/thread/current.rs'
+CURRENT_SHA='1084535565799fa30c42320309fa2cf4d95aacdfb022ce301b17b0a299e52109'
 ORIGINALS = {'std/src/sys/thread/mod.rs': '3590ca4dc8b112c787b14fcc5585add929a6e7c827ce01c329c2ef43e45587d6', 'std/src/sys/sync/mutex/mod.rs': '1c715675a2bc34471b96de58f7aaaf2db411289cf838d17edc61cb2d6b006aa2', 'std/src/sys/sync/condvar/mod.rs': 'af88b86441a57ae779ae0a01528bc4e8b0068f1e72978547c1a08ac4d7107c2d', 'std/src/sys/sync/thread_parking/mod.rs': '26f989d09efadae98b1fa6447b386d8eda21b9fc3ef99c8bea3154d6625788a3', 'std/src/sys/sync/rwlock/mod.rs': '5438fdbc0ade05b50d7350c252ccb9d37bea596355560fbdc695f4937d727ef3', 'std/src/sys/sync/once/mod.rs': '4e9b50925535fe54275f6e3aa1bb26b093d15e4a6168935bdb92d1117271293c'}
 BRANCHES = {'std/src/sys/thread/mod.rs': 'pub(crate) mod lsf;\n        pub use lsf::*;', 'std/src/sys/sync/mutex/mod.rs': 'mod lsf;\n        pub use lsf::Mutex;', 'std/src/sys/sync/condvar/mod.rs': 'mod lsf;\n        pub use lsf::Condvar;', 'std/src/sys/sync/thread_parking/mod.rs': 'mod lsf;\n        pub use lsf::Parker;', 'std/src/sys/sync/rwlock/mod.rs': 'mod lsf;\n        pub use lsf::RwLock;', 'std/src/sys/sync/once/mod.rs': 'mod lsf;\n        pub use lsf::{Once, OnceState};'}
 ORIGINALS[LIFECYCLE]=LIFECYCLE_SHA
+ORIGINALS[CURRENT]=CURRENT_SHA
 SOURCES={
  'std/src/sys/thread_local/key/lsf.rs':'sdk/rust-standard-runtime/thread_tls.rs',
  'std/src/sys/thread/lsf.rs':'sdk/rust-standard-runtime/thread.rs',
@@ -87,11 +90,25 @@ def overlay(original,runtime,*,tls_reference,target=TARGET,rust=RUST):
   if name==LIFECYCLE:
    selected[name]=packet_lifecycle(raw)
    continue
+  if name==CURRENT:
+   selected[name]=logical_thread_id(raw)
+   continue
   needle=b'cfg_select! {\n'
   require(raw.count(needle)==1,'rust-thread-one-original-selector')
   branch=('cfg_select! {\n    '+SELECTOR+' => {\n        '+BRANCHES[name]+'\n    }\n').encode()
   selected[name]=raw.replace(needle,branch,1)
  for target_path,source_path in SOURCES.items():selected[target_path]=runtime[source_path]
+ return selected
+
+def logical_thread_id(raw):
+ """Route Rust's persistent ThreadId through the selected logical TLS backend."""
+ require(type(raw)is bytes and hashlib.sha256(raw).hexdigest()==CURRENT_SHA,
+         'rust-thread-original-current-preimage')
+ needle=b'    cfg_select! {\n        target_thread_local => {'
+ branch=('    cfg_select! {\n        all(target_thread_local, not('+SELECTOR+')) => {').encode()
+ require(raw.count(needle)==1,'rust-thread-one-current-native-tls-selector')
+ selected=raw.replace(needle,branch,1)
+ require(selected.replace(branch,needle,1)==raw,'rust-thread-current-id-selector-only')
  return selected
 
 def packet_lifecycle(raw):

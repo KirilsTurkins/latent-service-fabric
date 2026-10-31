@@ -1,0 +1,88 @@
+name: Numeric original Rust ThreadPool fault diagnostic
+on:
+  push:
+    branches: ['diag/rust-thread-frames-20261023']
+    paths:
+      - '.github/workflows/rust-thread-fault-diagnostic.yml'
+      - 'crates/latent-wasmtime/src/config/engine.rs'
+      - 'crates/latent-wasmtime/src/rust_thread_fault.rs'
+      - 'tools/diagnose_rust_thread_fault.py'
+      - 'tools/rust_thread_fault_frames.py'
+      - 'tools/rust_thread_native_products.py'
+      - 'tools/rust_thread_compiler_materials.py'
+      - 'tools/rust_thread_runtime_package.py'
+      - 'tools/rust_thread_runtime_node.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: rust-thread-fault-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  diagnostic:
+    name: One diagnostic node, one trap control and the unchanged original guest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Fetch only immutable original source events
+        run: |
+          git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915
+          git fetch --no-tags --depth=1 origin 28059f343bbd954e3e6614c5a24593897cc0c294
+          git fetch --no-tags --depth=1 origin 2259601ab19702eafd56c39bcb43f769cdb47fa5
+          git fetch --no-tags --depth=1 origin 9106147f83a2e19c8b1be16b9eb5d55e39512bde
+      - name: Fetch the exact successful current native and compiler source event
+        run: |
+          git fetch --no-tags --depth=1 origin e3f0edf822c10e84bbeede276174ac3217542afc
+      - name: Locked Python dependencies and finite numeric extraction control
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_rust_thread_fault_frames tools.tests.test_rust_thread_runtime -v
+      - name: Verify immutable native origin and retain the same compiler inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B tools/rust_thread_native_products.py --output "$RUNNER_TEMP/rust193-native"
+          python3 -B tools/rust_thread_compiler_materials.py --output "$RUNNER_TEMP/rust28059-materials"
+      - name: Build only the explicit diagnostic node and execute the original guest
+        run: >-
+          python3 -B tools/diagnose_rust_thread_fault.py
+          --source-commit "${{ github.sha }}"
+          --prepared "$RUNNER_TEMP/rust193-native"
+          --compiler-materials "$RUNNER_TEMP/rust28059-materials"
+          --output "$RUNNER_TEMP/rust-thread-fault"
+      - name: Retain source, diagnostic node, real command logs and numeric-only fault rows
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: rust-thread-fault-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-thread-fault/**
+            ${{ runner.temp }}/rust193-native/retrieval.json
+            ${{ runner.temp }}/rust193-native/native-products.json
+            ${{ runner.temp }}/rust193-native/source-inputs.json
+            ${{ runner.temp }}/rust28059-materials/retrieval.json
+          if-no-files-found: error
+          retention-days: 7
