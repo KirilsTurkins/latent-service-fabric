@@ -246,10 +246,19 @@ class StandardFacilities(unittest.TestCase):
         from tools.c_dependency_authoring import manifest
         profile = facilities.FETCH_PROFILE
         original_defines = ('_POSIX_C_SOURCE=200809L',)
+        closed_symbols = ('open', 'close', 'fstat', 'mmap', 'munmap', 'realpath',
+                          'getcwd', 'glob', 'globfree', 'abort')
+        self.assertEqual(facilities.FETCH_CLOSED_SYMBOLS, closed_symbols)
+        closed_defines = tuple(name + '=__lsf_c_' + name for name in closed_symbols)
         self.assertEqual(facilities.compiler_defines(profile, original_defines),
-                         (*original_defines, '_GNU_SOURCE=1', '_WASI_EMULATED_MMAN=1'))
+                         (*original_defines, '_GNU_SOURCE=1', '_WASI_EMULATED_MMAN=1', *closed_defines))
         selected_defines = ('_GNU_SOURCE=1', '_POSIX_C_SOURCE=200809L', '_WASI_EMULATED_MMAN=1')
-        self.assertIs(facilities.compiler_defines(profile, selected_defines), selected_defines)
+        self.assertEqual(facilities.compiler_defines(profile, selected_defines), (*selected_defines, *closed_defines))
+        for selected in facilities.FETCH_PROFILES:
+            for symbol in (*closed_symbols, *('__lsf_c_' + name for name in closed_symbols)):
+                with self.subTest(profile=selected, symbol=symbol), self.assertRaisesRegex(
+                        ValueError, '^c-http-compiler-owned-closed-file-symbol$'):
+                    facilities.compiler_defines(selected, (symbol + '=foreign',))
         for old_profile in (facilities.DEFAULT, facilities.PROFILE,
                             facilities.LOGGING_PROFILE, facilities.COMBINED_PROFILE):
             self.assertIs(facilities.compiler_defines(old_profile, original_defines), original_defines)
@@ -338,6 +347,9 @@ class StandardFacilities(unittest.TestCase):
             self.assertNotIn('--allow-undefined', command)
             self.assertFalse(any(item.startswith('-Wl,--undefined') for item in command))
             self.assertFalse(any(item.startswith('-Wl,--export=__imported_wasi_') for item in command))
+            self.assertFalse(any('allow-multiple-definition' in item or '--wrap' in item for item in command))
+            for value in closed_defines:
+                self.assertEqual('-D' + value in command, selected in facilities.FETCH_PROFILES)
 
         # Run the normal owner's actual source/WIT selection for every profile;
         # capture at Compiler.compile before any compiler or external tool runs.

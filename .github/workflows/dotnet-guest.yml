@@ -2,7 +2,7 @@ name: .NET guest qualification
 
 on:
   push:
-    branches: [test/sdk-dotnet-root-return-20261027, test/sdk-dotnet-join-cause-20261027]
+    branches: [test/sdk-dotnet-root-return-20261027, test/sdk-dotnet-join-cause-20261027, feat/sdk-dotnet-prefetched-readiness-review-20261028]
   pull_request:
     paths:
       - 'sdk/dotnet-guest/**'
@@ -99,7 +99,7 @@ env:
 
 jobs:
   toolchain:
-    if: github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' && github.head_ref != 'test/sdk-dotnet-root-return-20261027' && github.ref != 'refs/heads/test/sdk-dotnet-join-cause-20261027' && github.head_ref != 'test/sdk-dotnet-join-cause-20261027'
+    if: github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' && github.head_ref != 'test/sdk-dotnet-root-return-20261027' && github.ref != 'refs/heads/test/sdk-dotnet-join-cause-20261027' && github.head_ref != 'test/sdk-dotnet-join-cause-20261027' && github.ref != 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028' && github.head_ref != 'feat/sdk-dotnet-prefetched-readiness-review-20261028'
     name: NativeAOT component qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -756,7 +756,7 @@ jobs:
 
   root-return:
     name: ${{ github.ref == 'refs/heads/test/sdk-dotnet-join-cause-20261027' && 'Auxiliary managed Join cause before unchanged finalization' || 'Normal managed accepted work after application root return' }}
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027' || github.ref == 'refs/heads/test/sdk-dotnet-join-cause-20261027')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027' || github.ref == 'refs/heads/test/sdk-dotnet-join-cause-20261027' || github.ref == 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028')
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -780,7 +780,7 @@ jobs:
         with:
           python-version: 3.13.5
       - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
-        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027' || github.ref == 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028'
         timeout-minutes: 2
         with:
           dotnet-version: '10.0.100'
@@ -819,18 +819,18 @@ jobs:
         timeout-minutes: 1
         run: python3 -m pip install --requirement tools/requirements.lock
       - name: Check only the new closed normal observer and programme controls
-        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027' || github.ref == 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028'
         timeout-minutes: 1
         run: python3 -B -m unittest tools.tests.test_dotnet_task_runtime.RootReturnNormalControls -v
       - name: Install captured NativeAOT namespace and loader inputs
-        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027' || github.ref == 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028'
         timeout-minutes: 2
         run: |
           sudo apt-get update
           sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Install the pinned native compiler and closed runtime
-        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
+        if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027' || github.ref == 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028'
         timeout-minutes: 5
         shell: bash
         run: |
@@ -850,6 +850,14 @@ jobs:
         run: >-
           python3 tools/qualify_dotnet_task_runtime.py --root-return
           --prerequisite-archive "$RUNNER_TEMP/root-return-normal.zip"
+          --tools "$RUNNER_TEMP/dotnet-authoring-tools"
+          --output "$RUNNER_TEMP/dotnet-root-return"
+      - name: Build current normal products and qualify v3 readiness with the original fifteen outcomes
+        if: github.ref == 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028'
+        timeout-minutes: 22
+        run: >-
+          python3 tools/qualify_dotnet_task_runtime.py --root-return-current
+          --source-commit "${{ github.sha }}"
           --tools "$RUNNER_TEMP/dotnet-authoring-tools"
           --output "$RUNNER_TEMP/dotnet-root-return"
       - name: Acquire the exact completed component pair without rebuilding either

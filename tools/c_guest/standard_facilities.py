@@ -23,6 +23,11 @@ PROFILE_SOURCES = {PROFILE: ('standard-clock-entropy.c',), LOGGING_PROFILE: ('st
                    FETCH_PROFILE: ('libfetch/fetch.c', 'libfetch/http.c', 'closed-file-abi.c')}
 PROFILE_SOURCES[FETCH_STANDARD_PROFILE] = (*PROFILE_SOURCES[FETCH_PROFILE], 'standard-clock-entropy.c')
 RECIPE = ('tools/c_guest/standard_facilities.py',)
+# The precompiled libc may extract other strong definitions from a member
+# needed by an unchanged dependency. Bind ordinary selected-source calls and
+# SDK definitions together, as for the existing thread/TLS source ABI.
+FETCH_CLOSED_SYMBOLS = ('open', 'close', 'fstat', 'mmap', 'munmap', 'realpath',
+                        'getcwd', 'glob', 'globfree', 'abort')
 
 
 def selected_profile(project, graph=None):
@@ -38,9 +43,13 @@ def selected_profile(project, graph=None):
 def compiler_defines(profile, defines):
     """The selected GNU-cookie port owns its declaration feature selection."""
     if profile in FETCH_PROFILES:
+        reserved = {*FETCH_CLOSED_SYMBOLS, *('__lsf_c_' + name for name in FETCH_CLOSED_SYMBOLS)}
+        if any(value.split('=', 1)[0] in reserved for value in defines):
+            raise ValueError('c-http-compiler-owned-closed-file-symbol')
         for selected in ('_GNU_SOURCE=1', '_WASI_EMULATED_MMAN=1'):
             if not any(value.split('=', 1)[0] == selected.split('=', 1)[0] for value in defines):
                 defines = (*defines, selected)
+        defines = (*defines, *(name + '=__lsf_c_' + name for name in FETCH_CLOSED_SYMBOLS))
     return defines
 
 

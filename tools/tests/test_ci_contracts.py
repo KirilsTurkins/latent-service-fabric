@@ -1079,7 +1079,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         for key, original in legacy["after"].items():
             value = dict(original)
             if value["workflow"] == ".github/workflows/dotnet-guest.yml" and value["job"] == "toolchain":
-                # Only the two reviewed closed root-return fixture branches exclude this job.
+                # Only the three reviewed closed .NET fixture branches exclude this job.
                 # No status override is introduced: ordinary branches retain
                 # GitHub's implicit success() and every original command field.
                 self.assertEqual(value["jobIf"], "success()", key)
@@ -1087,7 +1087,9 @@ class RepositoryMigrationTests(unittest.TestCase):
                     "github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' "
                     "&& github.head_ref != 'test/sdk-dotnet-root-return-20261027' "
                     "&& github.ref != 'refs/heads/test/sdk-dotnet-join-cause-20261027' "
-                    "&& github.head_ref != 'test/sdk-dotnet-join-cause-20261027'")
+                    "&& github.head_ref != 'test/sdk-dotnet-join-cause-20261027' "
+                    "&& github.ref != 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028' "
+                    "&& github.head_ref != 'feat/sdk-dotnet-prefetched-readiness-review-20261028'")
             if value['workflow'] == '.github/workflows/developer-tools.yml' and value['job'] in {'contracts', 'guest-tools', 'wsl-image'}:
                 # Only the closed default-false data-only mode skips these
                 # jobs. Every existing ordinary command remains mandatory.
