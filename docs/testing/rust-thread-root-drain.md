@@ -56,16 +56,69 @@ uses the actual `SystemOwned` allocation and owner implementation.
 The completion sink, host admissions and Control worker methods are explicit
 test ports. These controls test the notification/epoch and destruction boundary,
 not a canonical suspension, worker TLS semantics or physical Wasmtime retirement.
-The existing 29 TLS, wait-driver and synchronization controls remain unchanged.
-The existing compiler programme additionally builds, lists and runs exactly
-these five tests before sysroot construction, retaining their logs and count.
-Its application diagnostic still requires all 76 native library controls.
+The original 29 TLS, wait-driver and synchronization test names and assertions
+are retained. The existing compiler programme additionally builds, lists and
+runs exactly these five root tests before sysroot construction, retaining their
+logs and count. Its application diagnostic still requires all 76 native library
+controls before owner success.
 
-The compiler-only push trigger now also covers the active runtime branch and
-its runtime source paths. Application compilation remains an explicit,
-default-false diagnostic choice; a compiler-only success is not a guest result.
-All catalogue fixtures, compiler/native provenance pins and five signed-call
-assertions remain unchanged. A fresh application compiler observation, reviewed
-catalogue/component integration, matched native build and all five successful
-signed calls with retirement/accounting witnesses are still required. No new
-component identity or successful signed outcome is inferred from this repair.
+The early-notification wait-driver control now also exercises the actual
+executor-root registry, affine Owner, fixed wait registry, WaitQueue and driver
+together. It adopts the reviewed Source-port regression from diagnostic source
+`0d6a9269e9c079aae6ee9cbe5c888f8398769de2`, without any diagnostic node or engine
+instrumentation. A pool becomes releasable after the root prepares its waiter;
+its final Arc destructor deliberately emits no notification. The exact host-call
+sequence must contain neither canonical suspension nor resume-later, and a
+fresh empty-registry scan plus original owner and wait retirement are required.
+A test-only suspension callback prevents a broken implementation from hanging,
+but any use of that callback fails the exact sequence assertion. All eleven
+wait-driver test names and their existing assertions remain. The Source-port
+pool does not claim captured-executor or signed-runtime coverage.
+
+[Diagnostic run 41217651378](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41217651378)
+passed that one selected early-notification test at source
+`ae3bbddf554dfa47febcab025fb6a3ceacef070b`; ten other wait-driver tests were
+filtered out in that diagnostic. Its overall failure and unchanged retained
+guest are not reclassified. The normal compiler owner runs all eleven tests,
+including this integrated subcase, alongside the five separate root controls.
+
+## Application-mode validation on the runtime branch
+
+The push trigger covers the active runtime branch, runtime sources, the existing
+application compiler and the native catalogue. On
+`feat/rust-thread-runtime-20261023` pushes, the existing bounded owner selects
+application compilation and its mandatory controls. The older compiler-input
+branch remains compiler-only on push. Manual `workflow_dispatch` keeps the
+explicit `application-diagnostic` input default false. The same selector guards
+all application prerequisites and the compiler command; no second runner or
+alternate qualification path is introduced. Permissions remain read-only,
+and deadlines, source/artifact bounds and all runtime gates are unchanged.
+
+[Application run 41218846793](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41218846793)
+at exact source `b610bf2490db57a95f4f7b5c087b660b76dd6fd9` passed all 34 native
+controls and the emitted result/private-dispatch engine controls, rebuilt the
+repaired owned sysroot, and compiled the unchanged ordinary application. Its
+116-member artifact `13048229653` is 52,700,826 bytes with ZIP SHA-256
+`4ca49ad27759facd7f5c8796884b1fecd8ce93f5a70cc1f678b53c91528cb732`.
+The 239-entry source inventory identifies that exact source. All ZIP member
+CRCs and the archive digest were checked after download.
+
+The actual original core is 261,403 bytes, SHA-256
+`8cd26a5f34ec90f23af43dfcb21b0b619b369ed2199a5368a24572bb96cbf177`.
+Its retained object observation has 1,221 matched definitions (463 function,
+758 data) and 5,246 relocation edges, with no unresolved referents, matching
+failures or instruction-decode failures. This is one additional direct-call
+relocation compared with the prior 5,245-edge graph. The original
+`executor_root::progress_all` body is now 1,407 bytes with SHA-256
+`abda2353bdcb03540fb1039fdcf1d7b1f16215e0e6ccfa56d8d6b69d37bdcb93`.
+These are actual retained compiler facts, not a promoted trusted catalogue.
+
+The old immutable native catalogue refused `rust-original-full-body-or-signature`
+before normal-component encoding. The owner failed at that boundary; its
+application-mode 76 library controls were not reached. No normal component was
+produced, no guest ran, and no signed outcome passed. Catalogue fixtures,
+compiler/native provenance pins and all five signed-call assertions remain
+unchanged. A reviewed catalogue/component integration, matched native build,
+and five successful signed calls with retirement/accounting witnesses remain
+required. Development-branch merge conflicts are not resolved by this compiler
+observation or the regression integration.
