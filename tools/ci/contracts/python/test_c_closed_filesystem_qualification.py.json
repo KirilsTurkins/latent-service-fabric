@@ -2,23 +2,23 @@
   "storageCases":"guard-keys",
   "guards":{
     "ClosedFilesystemQualification.test_actual_c_standard_error_projection_uses_closed_attribution_tokens":
-      "e8e8aefdd7ebc0e3834059be1d7bedbb2e7b17ace2c5126e313c1ee1831cf675",
+      "5e2cd191cc283bb2fa919486d834fade4e242a74bc403057f03b9e49332d11e3",
     "ClosedFilesystemQualification.test_default_off_replay_preserves_all_original_job_bodies_and_bounds":
-      "e8e8aefdd7ebc0e3834059be1d7bedbb2e7b17ace2c5126e313c1ee1831cf675",
+      "5e2cd191cc283bb2fa919486d834fade4e242a74bc403057f03b9e49332d11e3",
     "ClosedFilesystemQualification.test_historical_native_five_and_four_companions_keep_original_identity":
-      "e8e8aefdd7ebc0e3834059be1d7bedbb2e7b17ace2c5126e313c1ee1831cf675",
+      "5e2cd191cc283bb2fa919486d834fade4e242a74bc403057f03b9e49332d11e3",
     "ClosedFilesystemQualification.test_historical_pin_and_generic_current_verifier_are_not_interchangeable":
-      "e8e8aefdd7ebc0e3834059be1d7bedbb2e7b17ace2c5126e313c1ee1831cf675",
+      "5e2cd191cc283bb2fa919486d834fade4e242a74bc403057f03b9e49332d11e3",
     "ClosedFilesystemQualification.test_native_and_signer_layer_mutations_fail_before_current_compilation":
-      "e8e8aefdd7ebc0e3834059be1d7bedbb2e7b17ace2c5126e313c1ee1831cf675",
+      "5e2cd191cc283bb2fa919486d834fade4e242a74bc403057f03b9e49332d11e3",
     "ClosedFilesystemQualification.test_rehashed_receipt_cannot_authenticate_foreign_source_or_node":
-      "e8e8aefdd7ebc0e3834059be1d7bedbb2e7b17ace2c5126e313c1ee1831cf675"
+      "5e2cd191cc283bb2fa919486d834fade4e242a74bc403057f03b9e49332d11e3"
   },
   "kind":"python",
   "module":"tools/tests/test_c_closed_filesystem_qualification.py",
-  "reviewReason":"Add exact C report projection regression while preserving five existing ancestry/workflow controls and closed attribution grammar. Authenticate the exact repaired checkout inverse before historical workflow/source hashes; all original case IDs and non-setup guards retained. Authenticate five reviewed action-pin inverses before unchanged historical guards. Mechanical current-development composition: preserve the reviewed security-action pin inverses and C paired-route inverse; update only the two full-workflow hashes and module setup identity, retaining all six case IDs, class fixtures, skip sites and predicates.",
+  "reviewReason":"Add exact C report projection regression while preserving five existing ancestry/workflow controls and closed attribution grammar. Authenticate the exact repaired checkout inverse before historical workflow/source hashes; all original case IDs and non-setup guards retained. Authenticate five reviewed action-pin inverses before unchanged historical guards. Mechanical current-development composition: preserve the reviewed security-action pin inverses and C paired-route inverse; update only the two full-workflow hashes and module setup identity, retaining all six case IDs, class fixtures, skip sites and predicates. Dedicated outside-capture branch selects only explicit manual outside mode; preserve every original paired/default route for other refs, exact full-file inverse and previous source bounds.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
-    "e8e8aefdd7ebc0e3834059be1d7bedbb2e7b17ace2c5126e313c1ee1831cf675":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:8238851ea404ff1317da018eeebef1db4a34f4f43c64c4a0b62d02e4055cef5f","class:setup-sha256:458a591eb1e37dd7ff058a0b826ef954f46ee7fea83863a3291f6fb363ebb93c"]}
+    "5e2cd191cc283bb2fa919486d834fade4e242a74bc403057f03b9e49332d11e3":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:30826d3d96110bdbd38d1aba9dffe280100271b21607990bee6a968a5b0e8bb6","class:setup-sha256:458a591eb1e37dd7ff058a0b826ef954f46ee7fea83863a3291f6fb363ebb93c"]}
   }
 }
