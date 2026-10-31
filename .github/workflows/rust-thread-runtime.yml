@@ -30,7 +30,7 @@ jobs:
           python-version: 3.13.5
       - name: Fetch the exact successful compiler and native source event
         run: |
-          git fetch --no-tags --depth=1 origin e3f0edf822c10e84bbeede276174ac3217542afc
+          git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd
       - name: Install locked Python dependencies and check finite replay and policy refusals
         run: |
           python3 -m pip install --requirement tools/requirements.lock

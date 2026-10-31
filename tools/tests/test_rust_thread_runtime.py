@@ -11,9 +11,18 @@ class RustThreadRuntimeTests(unittest.TestCase):
     def test_native_reader_uses_current_catalogue_and_retains_failed_runtime_origin(self):
         from tools import rust_thread_native_products as native
 
-        self.assertEqual(native.SOURCE, 'e3f0edf822c10e84bbeede276174ac3217542afc')
-        self.assertEqual(native.RUN, 41190176305)
-        self.assertEqual(native.ARTIFACT['id'], 13038753096)
+        self.assertEqual(native.SOURCE, 'cddfb5d016a6311ed0db4673e490dc9caad917dd')
+        self.assertEqual(native.RUN, 41229829377)
+        self.assertEqual(native.ARTIFACT['id'], 13053891150)
+        self.assertEqual(native.RETIREMENT_PREVIOUS_ARTIFACT['id'], 13038753096)
+        self.assertEqual(native.RETIREMENT_PREVIOUS_SOURCE,
+                         'e3f0edf822c10e84bbeede276174ac3217542afc')
+        self.assertEqual(native.RETIREMENT_PREVIOUS_RUN, 41190176305)
+        self.assertEqual(native.EVENT, 'push')
+        self.assertEqual(native.READER.event, native.EVENT)
+        self.assertEqual(package.SOURCE, native.SOURCE)
+        self.assertEqual(package.RUN, 41229829427)
+        self.assertEqual(package.EVENT, 'push')
         self.assertEqual(native.CATALOGUE_PREVIOUS_SOURCE,
                          'deb654086a6e9ca85c1c96c7e3485babbc6557d9')
         self.assertEqual(native.CATALOGUE_PREVIOUS_RUN, 41131800734)
@@ -29,6 +38,44 @@ class RustThreadRuntimeTests(unittest.TestCase):
         self.assertIn('git fetch --no-tags --depth=1 origin ' + native.SOURCE, workflow)
         self.assertNotIn('git fetch --no-tags --depth=1 origin ' + native.FAILED_RUNTIME_SOURCE,
                          workflow)
+
+        # Both readers bind one actual push event, not an either-event fallback.
+        # Wrong-event checks must fail before archive acquisition or output creation.
+        from pathlib import Path
+        import tempfile
+        from unittest.mock import patch
+        from tools import rust_thread_compiler_materials as compiler
+
+        def official(run, job, workflow, name, event):
+            return [
+                {'id': run, 'head_sha': native.SOURCE,
+                 'path': workflow, 'event': event,
+                 'head_branch': native.BRANCH,
+                 'status': 'completed', 'conclusion': 'success'},
+                {'id': job, 'run_id': run, 'head_sha': native.SOURCE,
+                 'name': name, 'status': 'completed', 'conclusion': 'success'},
+            ]
+
+        for event in ('workflow_dispatch', 'pull_request'):
+            with self.subTest(reader='compiler', event=event):
+                values = official(compiler.RUN, compiler.JOB,
+                    '.github/workflows/rust-owned-thread-inputs.yml',
+                    'Compile exact Rust context utility and owned thread sysroot', event)
+                with tempfile.TemporaryDirectory() as temporary:
+                    destination = Path(temporary) / 'not-created'
+                    with patch.object(compiler, 'api', side_effect=values) as api:
+                        with self.assertRaisesRegex(WorkflowError, 'rust-thread-retained-official-compiler-origin'):
+                            compiler.prepare(destination)
+                        self.assertEqual(api.call_count, 2)
+                    self.assertFalse(destination.exists())
+            with self.subTest(reader='native', event=event):
+                values = official(native.RUN, native.JOB,
+                    '.github/workflows/host-codec-memory.yml',
+                    native.READER.job_name, event)
+                with patch('tools.sdk_native_products_reader.api', side_effect=values) as api:
+                    with self.assertRaisesRegex(WorkflowError, 'sdk-native-official-producer'):
+                        native.READER._official_artifact()
+                    self.assertEqual(api.call_count, 2)
 
     def test_retained_original_pair_refuses_foreign_core_envelope_and_double_framing(self):
         self.assertEqual(package.PREVIOUS_PINS['raw-core.wasm'],

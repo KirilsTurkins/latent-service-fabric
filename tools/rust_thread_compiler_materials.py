@@ -14,7 +14,7 @@ from tools.java_replay_materials import api, NoRedirect, Ranges, REPOSITORY
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import fresh, write_json
-from tools.rust_thread_runtime_package import SOURCE, RUN, PINS
+from tools.rust_thread_runtime_package import SOURCE, RUN, PINS, EVENT
 
 HISTORICAL_ARTIFACT = {'id': 12469845581, 'size_in_bytes': 52246859,
     'digest': 'sha256:76e11dc5d099d353d027b5e946ec7624f5c7bc90110f4844fc9aff387f2afdc6'}
@@ -28,15 +28,16 @@ LATEST_PREVIOUS_ARTIFACT = {'id': 13004447135, 'size_in_bytes': 53113028,
     'digest': 'sha256:b7df73bbe827a016e45b1681db7304054a6d941c7d1844ebde87063417a58c37'}
 CATALOGUE_PREVIOUS_ARTIFACT = {'id': 13012116413, 'size_in_bytes': 53116510,
     'digest': 'sha256:1f1fc1598c340b22f74b2bdf6b361ad576168738bbd619043a136a5faefcf45e'}
-ARTIFACT = {'id': 13038776169, 'size_in_bytes': 53097750, 'digest': 'sha256:c3dcc608d605de8b07fffbfa6bdbc15d78311253107cc5d752cb448c7bfdbaf7'}
-JOB = 124504142965
+RETIREMENT_PREVIOUS_ARTIFACT = {'id': 13038776169, 'size_in_bytes': 53097750, 'digest': 'sha256:c3dcc608d605de8b07fffbfa6bdbc15d78311253107cc5d752cb448c7bfdbaf7'}
+ARTIFACT = {'id': 13053132953, 'size_in_bytes': 53111750, 'digest': 'sha256:615b09e081095cf3af2da98d321ec6948a9b2b92f5366ac6f75bfdb824eb6ada'}
+JOB = 124621548583
 PREFIX = 'application-diagnostic/'
 
 
 def prepare(output: Path) -> dict:
     run, job = api(f'actions/runs/{RUN}'), api(f'actions/jobs/{JOB}')
     require(run['id'] == RUN and run['path'] == '.github/workflows/rust-owned-thread-inputs.yml'
-            and run['event'] == 'workflow_dispatch' and run['head_sha'] == SOURCE
+            and run['event'] == EVENT and run['head_sha'] == SOURCE
             and run['head_branch'] == 'feat/rust-thread-runtime-20261023'
             and run['status'] == 'completed' and run['conclusion'] == 'success'
             and job['id'] == JOB and job['run_id'] == RUN and job['head_sha'] == SOURCE
@@ -69,7 +70,7 @@ def prepare(output: Path) -> dict:
     identities = {}
     with zipfile.ZipFile(remote) as archive:
         rows = archive.infolist()
-        require(len(rows) == 125 and len({row.filename.casefold() for row in rows}) == 125,
+        require(len(rows) == 131 and len({row.filename.casefold() for row in rows}) == 131,
                 'rust-thread-retained-compiler-archive-index')
         # Only these four names can be extracted; all are fixed by the independently
         # verified immutable compiler event. No executable from this archive runs.
@@ -90,11 +91,12 @@ def prepare(output: Path) -> dict:
                     'rust-thread-retained-compiler-member-hash')
             identities[name] = actual
     record = {'schemaVersion': 'latent.rust.thread-retained-compiler.v1',
-        'source': SOURCE, 'run': RUN, 'job': JOB, 'artifact': ARTIFACT,
+        'source': SOURCE, 'run': RUN, 'event': EVENT, 'job': JOB, 'artifact': ARTIFACT,
         'producerAttempt': 1, 'historicalArtifact': HISTORICAL_ARTIFACT,
         'earlierArtifact': EARLIER_ARTIFACT, 'previousArtifact': PREVIOUS_ARTIFACT,
         'priorArtifact': PRIOR_ARTIFACT, 'latestPreviousArtifact': LATEST_PREVIOUS_ARTIFACT,
         'cataloguePreviousArtifact': CATALOGUE_PREVIOUS_ARTIFACT,
+        'retirementPreviousArtifact': RETIREMENT_PREVIOUS_ARTIFACT,
         'archiveDigestVerification': 'official-metadata-only-selected-members-hash-verified',
         'wholeArchiveRetained': False, 'selected': identities,
         'rangeBytes': remote.transferred, 'rangeRequests': remote.requests,

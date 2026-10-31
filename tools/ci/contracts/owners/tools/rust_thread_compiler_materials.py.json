@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/rust_thread_compiler_materials.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Select only the actual successful e3 compiler event and exact four retained members; preserve previous catalogue event and all frozen retrieval controls",
+  "reviewReason": "Bind the independently verified cddfb5d root-retirement producer, explicit push event and retained member preimages; preserve all historical origins and original refusal gates",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4fea440d534de20b1cb90929a38d8cbca3c6f1468ad7718cd95c2a87a7dfb99a"
+  "sha256": "9f6d86cc50527f50f5b73658c809243e086e56960eb8cc869df4ce6dda69ce25"
 }

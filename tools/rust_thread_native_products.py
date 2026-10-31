@@ -38,11 +38,18 @@ CATALOGUE_PREVIOUS_JOB = 124324299029
 BRANCH = 'feat/rust-thread-runtime-20261023'
 CATALOGUE_PREVIOUS_ARTIFACT = {'id': 13013563430, 'size_in_bytes': 74661577, 'digest': 'sha256:cd9d6429408c9c87aee29911a066bb2de74b7355440b0a5374c76b8bdc19de3a'}
 CATALOGUE_PREVIOUS_RECEIPTS = {'native-products.json': {'bytes': 136231, 'sha256': 'sha256:19f814e63fa6733b56b4cad18f06c7007cb287a563fc875d304db066950e7e12'}, 'source-inputs.json': {'bytes': 25052, 'sha256': 'sha256:031028fe27de7925761453b337efe5f8cdbc65f45713aa913f185575e355d4e7'}}
-SOURCE = 'e3f0edf822c10e84bbeede276174ac3217542afc'
-RUN = 41190176305
-JOB = 124505170873
-ARTIFACT = {'id': 13038753096, 'size_in_bytes': 74661525, 'digest': 'sha256:3b7d71c596e9fff85946a7b432b8b90265a5b0856515d34231365132cfb02adb'}
-RECEIPTS = {'native-products.json': {'bytes': 136240, 'sha256': 'sha256:3751aed792a5f4dcb7833e2ba4de104584150b6ddb9fe6adedf65b73e60820bf'}, 'source-inputs.json': {'bytes': 25052, 'sha256': 'sha256:df7210b57e124412979a66395005a3295408b6502999f958025f6e8c9cefa1d0'}}
+RETIREMENT_PREVIOUS_SOURCE = 'e3f0edf822c10e84bbeede276174ac3217542afc'
+RETIREMENT_PREVIOUS_RUN = 41190176305
+RETIREMENT_PREVIOUS_JOB = 124505170873
+RETIREMENT_PREVIOUS_ARTIFACT = {'id': 13038753096, 'size_in_bytes': 74661525, 'digest': 'sha256:3b7d71c596e9fff85946a7b432b8b90265a5b0856515d34231365132cfb02adb'}
+RETIREMENT_PREVIOUS_RECEIPTS = {'native-products.json': {'bytes': 136240, 'sha256': 'sha256:3751aed792a5f4dcb7833e2ba4de104584150b6ddb9fe6adedf65b73e60820bf'}, 'source-inputs.json': {'bytes': 25052, 'sha256': 'sha256:df7210b57e124412979a66395005a3295408b6502999f958025f6e8c9cefa1d0'}}
+RETIREMENT_PREVIOUS_EVENT = 'workflow_dispatch'
+SOURCE = 'cddfb5d016a6311ed0db4673e490dc9caad917dd'
+RUN = 41229829377
+JOB = 124621549313
+EVENT = 'push'
+ARTIFACT = {'id': 13053891150, 'size_in_bytes': 74660568, 'digest': 'sha256:0067b7d3963e1d0843331c934e187276043c143d81879c4291d79cb4008a44a6'}
+RECEIPTS = {'native-products.json': {'bytes': 136236, 'sha256': 'sha256:4ef4e77d503cfc3bf501113e34d9a12f93141b6ae89b49fff72c6ccbc456e75c'}, 'source-inputs.json': {'bytes': 25052, 'sha256': 'sha256:47934c189aaca472d4bfbfb0a6dbf7eb6a563e78ed6aa2b38e41f8080d3213a7'}}
 PRODUCER_SHA256 = '81cc1afcab3fdadf078bb2204be046cedc5940280b099c2bb3ffe6ce7162cf2c'
 ALLOCATION_COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v28-unstarted-host-drop-cache-repair'
 COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-session-core-stats-c-canonical-system-stack-native-only-cumulative-retirement-physical-result-owner-box-handle-owned-text-call-buffers-rust-context40-authenticated-original-memory-v16'
@@ -57,7 +64,7 @@ class _FrozenRustOriginalNativeProducts(FrozenHostCodecProducts):
 
     def __init__(self):
         super().__init__(source=SOURCE, run=RUN, job=JOB, artifact=ARTIFACT,
-            receipts=RECEIPTS, branch=BRANCH, event='workflow_dispatch')
+            receipts=RECEIPTS, branch=BRANCH, event=EVENT)
 
     def _valid_stages(self, stages):
         return stages == STAGES
