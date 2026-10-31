@@ -51,15 +51,14 @@ class CThreadingProfile(unittest.TestCase):
             self.assertEqual(selected, {'vendor/lsf/sdk/c-guest/runtime/' + name for name in
                                        ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c', 'synchronization.c')})
             # This normal greeting never creates a child, but still captures
-            # the selected PAL's original immutable entry-address reservation.
+            # the selected PAL's original creation/import/entry-address owner.
             self.assertNotIn(b'pthread_create', files['src/main.c'])
             runtime = files['vendor/lsf/sdk/c-guest/runtime/threads.c']
             self.assertEqual(runtime.count(b'__attribute__((used))\n'
-                b'static void (*const lsf_c_owned_entry_address)(struct lsf_c_thread *) =\n'
-                b'    __lsf_c_owned_thread_entry;'), 1)
+                b'static int create('), 1)
             self.assertEqual(runtime.count(b'void __lsf_c_owned_thread_entry(struct lsf_c_thread *thread) {\n'
                 b'    (void)thread;__builtin_trap();\n}'), 1)
-            self.assertNotIn(b'export_name("lsf_c_owned_entry_address")', runtime)
+            self.assertNotIn(b'lsf_c_owned_entry_address', runtime)
             for path in selected:
                 changed = dict(files, **{path: files[path] + b'\n'})
                 with self.subTest(path=path), self.assertRaisesRegex(ValueError, 'vendored SDK changed'):
