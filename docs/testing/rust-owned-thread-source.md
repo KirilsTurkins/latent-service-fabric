@@ -27,6 +27,15 @@ an entire physical Arc allocation. The fixed tables are finite implementation
 bounds, not replacement resource grants. Pure root calls and uncontended sync
 do not bootstrap a concurrency runtime.
 
+The bounded Wait registry also owns 32 fixed intrusive node slots in the
+component's original linear memory. A slot is reserved before Wait/Timer
+admission, initialized only after admission, removed before logical settlement,
+and reused only after the node is no longer registered. This avoids inventing a
+separate Native owner and System allocation for every temporary wait while
+retaining the original Wait/Timer limits, identities and admission failures.
+The compiler programme runs the 11 wait-driver controls and eight synchronization
+controls, in addition to the ten TLS controls, before producing any sysroot.
+
 Join waits for actual TLS completion and the separately authenticated final
 frame/stack boundary, rather than a filled Packet alone. Ordinary waits use the
 engine's eligible queue; only the known newly created Ready child uses explicit
@@ -209,6 +218,157 @@ its distribution receipt is not reused. Normal builder, native catalogue,
 canonical-body, checkpoint and runtime qualification flags remain false.
 No normal component, signed Rust guest or runtime ThreadPool was executed.
 
+The preceding retained compiler origin is
+[run 41058624633](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41058624633)
+at exact source `9106147f83a2e19c8b1be16b9eb5d55e39512bde`. Its job
+`124073347987` passed and produced sole artifact `12978203439`, 55,102,784
+compressed bytes with SHA-256
+`6570db47d0c9657b3375d66c0ddd720cbc2c05fcce61b48d3d2b9ae7ff47dbf2`.
+The retained four-member reader verified the 262,760-byte original core
+(`sha256:32d45c689b53d41e6a4797e4a293c3a41ad5a3e7219407632101cf3858a18468`)
+and 514,214-byte wrapped component
+(`sha256:ad791f7486361d73f69b4b4a7b0bc57f5b5094d63cc3d5d2beddef560f9003dd`).
+No executable from that compiler artifact is invoked during retrieval, and the
+compiler observation alone still establishes no signed runtime result.
+
+The current retained compiler origin is exact-head
+[run 41094795688](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41094795688)
+at source `79911762b366381d7dc61da12d1b5e9aba2b3222`. Job `124197667917`
+passed the 29 native controls, 76 source controls, ordinary application compile,
+Linux component proof and fixed retained-evidence bound. Its sole artifact
+`12996890774` is 53,110,361 compressed bytes with SHA-256
+`1adc79551de5dfd54255c9fba50346a18161eeec3d01c2c097f06e69b8251e86`.
+Independent download verified all 125 archive members and the four selected
+preimages, including the 262,561-byte repaired core
+(`sha256:1016bc74d96585be6943d2b1396cf79ebd8f1fa66828a321d2ee251827431bcc`).
+That core and the reviewed Linux envelope produce the 513,900-byte wrapped
+component (`sha256:c6d1156c12cc8464682e49ccc1763c1c68a5347266d1e71efa2b7b786f2cefc5`).
+The earlier artifacts and member identities remain recorded separately. This
+compiler success still establishes no signed runtime result.
+
+Signed run `41101952346` reached that unchanged application/library path at
+component `sha256:c6d1156c12cc8464682e49ccc1763c1c68a5347266d1e71efa2b7b786f2cefc5`,
+but the first `pools-cold` call trapped before producing a typed result. The
+earlier stack-overflow label and per-key TLS hypothesis are retained as failed
+historical diagnoses; neither establishes the current cause.
+
+The bounded follow-up in
+[run 41106326690](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41106326690)
+at exact diagnostic source `48a6198bd31f88a4a3bd735dce03042de3a72918`
+reproduced the same component, fuel (`422285`), peak memory (`5692098`) and
+zero-effect trap. Its eight numeric frames put `Lease::acquire` at the panic
+format branch for `TLS owner admission rejected`; panic bookkeeping then entered
+`panic_count` TLS and the top frame reached the private stack-lower-bound guard.
+The guard is therefore secondary, not evidence that a larger stack is needed.
+
+Source reconciliation found the accounting defect below the unchanged library:
+each context was already allocated under its own Native owner (or was the fixed
+root record), yet its first bounded TLS entries required a second allocation and
+owner. The repair embeds the first 32 entries in that context. Fixed-root entries
+manufacture no owner; overflow blocks still require continuation-backed Native
+admission before each actual System allocation, remain under the unchanged
+linear-memory and owner limits, free before settlement and must leave a null TLS
+table. The ten focused controls now cover fixed-root entries, dynamically owned
+contexts, a 64-key inline-plus-overflow case and refusal of the 65th key under
+the original two-owner bound.
+
+Hosted compiler run
+[41109207452](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41109207452)
+at exact source `a9809cab6aa3021b29014bd8b80dd15922c93265` passed the
+10 TLS, 11 wait, 8 synchronization and 76 source-mechanism controls, built the
+owned sysroot and compiled the unchanged application. Its sole artifact
+`13003202462` is bound by ZIP SHA-256
+`22d2c3ab01c98d422159effe2ced1ae4b2dc3d62cdff67e734cdb8fab8a59d53`.
+The native verifier then refused the stale immutable catalogue before component
+encoding or guest execution. The retained original graph has the same 1,222
+definitions and exactly three additional real relocation referents (5,312
+total). The refreshed catalogue borrows 177,210 original body bytes with digest
+`sha256:979aefc58089be437b59c6879431d86017332097c5e8ea55e5e9d8a673540bc3`.
+It grants no runtime authority. A fresh normal-component proof and signed hosted
+result are still required before runtime acceptance.
+
+Hosted compiler run
+[41111550257](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41111550257)
+at exact source `07919b3e50adda76cc4bab551fa470d0b9b10379` retained artifact
+`13003802395` with ZIP digest
+`sha256:bf30a5c3cbec28efd4232713de07c77b6bf96ff0916f05ebf5ce5b00dbce64f6`.
+All 29 native controls passed and 75 of 76 source-mechanism controls passed;
+the final control refused before compilation and guest execution because its
+fixed callback-isolated-core identity still named the previous catalogue. The
+independent Python production emission already retained by artifact 13003202462
+is `sha256:34eb2f704cae5a3f480a8975b3ca4e66b59311b65716118041c3cb1d72dfa182`.
+The Rust verifier now binds that exact emission and the separately retained
+complete source-derived core
+`sha256:a1fd0ce4d9f557c88b2ff0df9ac0e7b99b25586bd6ddb2529f368339183faa27`;
+the original synchronous pre-component core remains
+`sha256:e7d643d2b2593158ba1a40fdd4fc9f4613123064d056f9bf39fa3adbaeb324d7`.
+These are identity corrections, not runtime results or expansions of a limit.
+
+Replacement compiler run
+[`41113065282`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41113065282)
+at exact source `9d9b4001bdefa57b6938c613d0fea13f8e638f83` passed all 29 native controls,
+all 76 source-mechanism controls, owned-sysroot construction, the unchanged
+application compile, independent source/native derivation and normal-component
+proof. Its sole artifact `13004447135` is 53,113,028 compressed bytes with
+ZIP SHA-256
+`b7df73bbe827a016e45b1681db7304054a6d941c7d1844ebde87063417a58c37`.
+The exact original core is 262,853 bytes with digest
+`sha256:ae5b68cec5fa2d68cdd65eb669844e0d2dd75d8a3fc7563d8fc0a272866b9c7b`;
+the 251,586-byte normal component is
+`sha256:1f49c19d412b36f9a28c6e867298f5f149df40452a2b179fad7eee46578f3a8f`.
+Those two exact hosted members are now the reviewed runtime preimages. Their
+framed authenticated pair is 514,484 bytes with digest
+`sha256:c88f911cf1304ae9daba6e738bd4fc5128fb4e0b491d7143558905a70f04cdcf`.
+This run performed no signed invocation and grants no runtime success; the next
+hosted gate must execute all five signed calls against this exact pair.
+
+The first such gate, signed run
+[`41115657241`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41115657241),
+refused before guest entry because its older native executable still embedded
+the original-object catalogue from `79911762b366381d7dc61da12d1b5e9aba2b3222`.
+It could not authenticate this repaired component pair and reported
+`corrupt-artifact` with zero fuel, zero peak memory and zero effects. Current-head
+native producer run
+[`41116286833`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41116286833)
+then passed all 200 source-bound controls at
+`9c0097fc4dee24c57e0cffbdf1963e47772b2ffc`; that producer result is not guest
+execution, but binds the next signed gate to an executable compiled with the
+same repaired catalogue.
+
+The bounded diagnostic at exact head
+`fb0e126a357468afd6538da2e5ee7a80e4f0a513` then reached guest execution with
+the repaired component and trapped at function 279 offset 79. That byte is the
+`unreachable` in the unchanged `ThreadInit::init` failure branch. Its compiled
+predecessor shows the selected logical context's `CURRENT` handle was empty,
+but Rust's persistent `ThreadId` still came from the target-native
+`#[thread_local]` branch and held the root ID. On this no-atomics wasm target,
+canonical threads share linear-memory statics, so that native TLS selection is
+not a logical-thread boundary; `set_current` correctly rejected changing the
+already-set root ID.
+
+The source-matched compiler repair keeps `ThreadInit::init`, `set_current`, the
+application and the executor unchanged. Only this explicit
+`rust-context40-sync-cooperative-v1` sysroot selects the existing 32-bit
+`local_pointer!` ThreadId storage, which routes both halves through the same
+context-owned TLS table as `CURRENT`. Every other target retains the exact
+upstream native-TLS condition. The upstream `current.rs` preimage is pinned as
+10,501 bytes with SHA-256
+`1084535565799fa30c42320309fa2cf4d95aacdfb022ce301b17b0a299e52109`;
+focused selector/capture controls prove the transform is one reversible cfg
+edit. A hosted sysroot/application/component build and real signed execution
+are still required; this source diagnosis is not a passing ThreadPool result.
+
+Hosted compiler run
+[`41125356593`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41125356593)
+at exact source `3f7f88abb1907234c8e2da3eb52570fd76cde878` passed all 29
+native controls and 75 of 76 source-mechanism controls. It stopped before the
+sysroot/application build, component encoding and guest execution because the
+remaining complete source-derived-core assertion still named the former
+catalogue graph. Artifact `13010103530` retains the exact current derivation as
+`sha256:31712d97ca16f65283b8d535d38f19a64c3ad048fdd8e774bd652c9b589b8fe7`.
+That identity now matches the separately retained catalogue origin; this is an
+identity correction, not a runtime result.
+
 Other validation includes source/preimage controls and metadata typechecks
 with explicit public-wrapper/ABI ports. Earlier native source controls exercise
 the actual registry, wait, TLS and lifecycle bodies with explicit reference
@@ -237,3 +397,24 @@ Before any supported runtime claim, the remaining minimum delivery is:
 
 Issues #743 and #689 remain open. These sources do not establish all standard
 threading, Tokio/Rayon, hook, socket, multicore or general crates.io support.
+
+## 31 October: matched repaired compiler and ordinary native origin
+
+Compiler [41189829966](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41189829966)
+and native producer [41190176305](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41190176305)
+both passed at exact source `e3f0edf822c10e84bbeede276174ac3217542afc`.
+The compiler passed its original 29 native controls and all 76 library controls,
+including current original-source derivation and normal-component proof. Its
+actual framed component is 511,683 bytes,
+`3948e0fc6d64dbf40914915ba0618f14cdd4a45e6e4762ecf6e0e801fac4f4c6`.
+The ordinary native producer passed all 200 named controls and 91 exact command
+stages for the same five source-bound products. Compiler/native authority and
+runtime qualification remain separate; the immutable body catalogue origin
+stays `f401e388a7542b8f9cd9bbd987dbcc65814262d6`.
+
+The normal signed consumer now selects only those actual successful origins,
+the exact four retained compiler members and that framed component. Previous
+origin tuples and receipts remain historical. Its five original public calls,
+32 MiB/5-second envelope, eight Native owners, grants, assertions and physical
+retirement requirements stay unchanged. No diagnostic build is selected. The
+five signed calls must still run successfully before guest progress is proved.

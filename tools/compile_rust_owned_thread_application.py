@@ -433,7 +433,7 @@ def native_normal_proof(commands, context_tool, wasm_tools, output):
                  output / 'normal-component.wasm', output / 'native-normal')
     commands.run('validate-native-normal-component', wasm_tools, 'validate',
                  output / 'native-normal/component.wasm',
-                 '--features', 'cm-async,cm-async-stackful,cm-more-async-builtins')
+                 '--features', 'cm-threading,cm-async,cm-async-stackful,cm-more-async-builtins')
     receipt = decode_json(read_file(output / 'native-normal/receipt.json'))
     catalogue = decode_json(read_file(builder.ROOT /
         'crates/latent-component-threading/src/rust_catalogue/origin.json'))

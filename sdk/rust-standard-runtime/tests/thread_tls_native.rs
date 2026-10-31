@@ -155,6 +155,7 @@ unsafe extern "C" fn destroy(value: *mut u8) {
 static FIRST: platform::LazyKey = platform::LazyKey::new(Some(destroy));
 static SECOND: platform::LazyKey = platform::LazyKey::new(Some(destroy));
 static BORROWED: platform::LazyKey = platform::LazyKey::new(None);
+static BLOCK_KEYS: [platform::LazyKey; 65] = [const { platform::LazyKey::new(None) }; 65];
 
 fn boot(limit: usize) -> *mut u8 {
     reset(limit);
@@ -203,7 +204,7 @@ fn no_concurrency_bootstrap_uses_fixed_record_without_task_native_allocation_or_
 }
 
 #[test]
-fn tls_only_admits_real_native_entries_without_creating_a_root_task() {
+fn fixed_root_tls_entries_need_no_allocation_owner_or_root_task() {
     let root = boot(8);
     let allocated = SYSTEM_ALLOCS.load(Ordering::SeqCst);
     let freed = SYSTEM_FREES.load(Ordering::SeqCst);
@@ -211,19 +212,45 @@ fn tls_only_admits_real_native_entries_without_creating_a_root_task() {
     unsafe {
         platform::set(FIRST.force(), value);
     }
-    assert_eq!(owners(), 2);
-    assert_eq!(LEDGER.with(|l| l.borrow().kinds.clone()), [7, 7]);
-    assert_eq!(SYSTEM_ALLOCS.load(Ordering::SeqCst), allocated + 1);
+    assert_eq!(owners(), 0);
+    assert!(LEDGER.with(|l| l.borrow().kinds.is_empty()));
+    assert_eq!(SYSTEM_ALLOCS.load(Ordering::SeqCst), allocated);
     unsafe {
         platform::__lsf_rust_root_finish(root);
     }
     assert_eq!(DROPS.load(Ordering::SeqCst), 1);
-    assert_eq!(SYSTEM_FREES.load(Ordering::SeqCst), freed + 1);
-    assert_eq!(owners(), 1);
+    assert_eq!(SYSTEM_FREES.load(Ordering::SeqCst), freed);
+    assert_eq!(owners(), 0);
     unsafe {
         wrapper_exited(root);
         platform::__lsf_rust_root_reap(root);
     }
+    assert_eq!(owners(), 0);
+    assert_eq!(SYSTEM_FREES.load(Ordering::SeqCst), freed);
+}
+
+#[test]
+fn inline_tls_entries_leave_bounded_overflow_blocks_under_the_original_limit() {
+    let root = boot(2);
+    let allocated = SYSTEM_ALLOCS.load(Ordering::SeqCst);
+    let freed = SYSTEM_FREES.load(Ordering::SeqCst);
+    for key in &BLOCK_KEYS[..64] {
+        unsafe {
+            platform::set(key.force(), std::ptr::without_provenance_mut(1));
+        }
+    }
+    assert_eq!(owners(), 2); // overflow context continuation and one actual block
+    assert_eq!(LEDGER.with(|l| l.borrow().kinds.clone()), [7, 7]);
+    assert_eq!(SYSTEM_ALLOCS.load(Ordering::SeqCst), allocated + 1);
+    assert!(
+        std::panic::catch_unwind(|| unsafe {
+            platform::get(BLOCK_KEYS[64].force());
+        })
+        .is_err()
+    );
+    assert_eq!(owners(), 2);
+    assert_eq!(SYSTEM_ALLOCS.load(Ordering::SeqCst), allocated + 1);
+    finish(root);
     assert_eq!(owners(), 0);
     assert_eq!(SYSTEM_FREES.load(Ordering::SeqCst), freed + 1);
 }
@@ -286,6 +313,8 @@ fn static_root_cannot_use_unstarted_or_child_system_free_paths() {
         platform::get(BORROWED.force());
     }
     assert_ne!(context_get(), root);
+    assert_eq!(owners(), 1);
+    assert_eq!(LEDGER.with(|l| l.borrow().kinds.clone()), [7]);
     assert_eq!(
         unsafe { platform::retire_exited_thread_context(root) },
         Err(platform::RetireError::WrongStackPhase)
@@ -310,7 +339,7 @@ unsafe fn drain_port(state: *mut u8) -> bool {
 unsafe fn release_port(state: *mut u8) {
     assert_eq!(state.addr(), 8);
     assert!(context_get().is_null());
-    assert_eq!(owners(), 2); // real context Native and accepted root Task
+    assert_eq!(owners(), 1); // accepted root Task; inline root TLS has no owner
     DRAIN_RELEASES.fetch_add(1, Ordering::SeqCst);
 }
 unsafe extern "C" fn submit_first_from_destructor(value: *mut u8) {
@@ -336,11 +365,11 @@ fn first_destructor_submitted_concurrency_can_install_drain_until_true_tls_exit(
     unsafe {
         platform::set(SUBMITS.force(), Box::into_raw(Box::new(42u32)).cast());
     }
-    assert_eq!(LEDGER.with(|l| l.borrow().kinds.clone()), [7, 7]);
+    assert!(LEDGER.with(|l| l.borrow().kinds.is_empty()));
     unsafe {
         platform::__lsf_rust_root_finish(root);
     }
-    assert_eq!(LEDGER.with(|l| l.borrow().kinds.clone()), [7, 7, 0]);
+    assert_eq!(LEDGER.with(|l| l.borrow().kinds.clone()), [0]);
     assert!(DRAIN_CALLS.load(Ordering::SeqCst) >= 2);
     assert_eq!(DRAIN_RELEASES.load(Ordering::SeqCst), 0);
     unsafe {

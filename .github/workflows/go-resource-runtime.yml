@@ -30,7 +30,7 @@ jobs:
       with:
         persist-credentials: false
         fetch-depth: 1
-    - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
       with:
         python-version: 3.13.5
     - name: Fetch the exact successful current SDK5 producer before validation
@@ -94,7 +94,7 @@ jobs:
       run: python3 -B tools/qualify_go_resource_runtime.py --native "$RUNNER_TEMP/go-resource-native" --output "$RUNNER_TEMP/go-resource-runtime"
     - name: Retain bounded original construction and actual outcomes including failures
       if: always()
-      uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+      uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: go-resource-runtime-${{ github.sha }}
         retention-days: 3

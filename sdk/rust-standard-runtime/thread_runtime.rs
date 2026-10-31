@@ -24,12 +24,15 @@ mod wait_registry;
 pub(crate) use owner::Token;
 use owner::{AllocationError, Error, Kind, Owner, SystemOwned};
 pub(crate) use registry::Handle;
-pub(crate) use wait_driver::{drive_wait, register_wait, unregister_wait, wake_wait, WaitLease};
+pub(crate) use wait_driver::{
+    allocate_wait_node, deallocate_wait_node, drive_wait, register_wait, unregister_wait, wake_wait,
+    WaitLease,
+};
 
 struct Child {
     task: Owner,
     context: NonNull<u8>,
-    bootstrap: Option<NonNull<start::Bootstrap>>,
+    bootstrap: Option<start::Bootstrap>,
     parent: u32,
     executor: Option<executor_worker::Lease>,
 }
@@ -161,7 +164,7 @@ struct Preparing {
     handle: Handle,
     task: Option<Owner>,
     context: Option<NonNull<u8>>,
-    bootstrap: Option<NonNull<start::Bootstrap>>,
+    bootstrap: Option<start::Bootstrap>,
     started: bool,
     published: bool,
 }
@@ -171,9 +174,9 @@ impl Drop for Preparing {
             return;
         }
         reg(|r| r.rollback(self.handle)).expect("unstarted std slot rollback");
-        if let Some(pointer) = self.bootstrap.take() {
-            drop(unsafe { SystemOwned::from_raw(pointer) });
-        }
+        // This is the original ThreadInit Box in our existing bounded slot.
+        // Its normal Drop precedes context free and original Task settlement.
+        drop(self.bootstrap.take());
         if let Some(pointer) = self.context.take() {
             unsafe {
                 tls::discard_unstarted_context(pointer.as_ptr());
@@ -211,11 +214,7 @@ pub(crate) unsafe fn spawn(stack: usize, init: Box<ThreadInit>) -> io::Result<Ha
         tls::ContextError::Layout => io::Error::from(io::ErrorKind::InvalidInput),
     })?;
     preparing.context = NonNull::new(context);
-    preparing.bootstrap = Some(
-        start::Bootstrap::prepare(init, token)
-            .map_err(allocation_error)?
-            .into_raw(),
-    );
+    preparing.bootstrap = Some(start::Bootstrap::prepare(init, token));
     let canonical = unsafe {
         thread_new(
             super::__lsf_rust_owned_thread_entry as *const () as usize as u32,
@@ -276,9 +275,7 @@ pub(crate) unsafe fn entered(context: *mut u8) {
     );
     reg(|r| r.start(handle, canonical)).expect("std child started without creator handshake");
     let bootstrap = children(|c| c[handle.slot()].as_mut().unwrap().bootstrap.take().unwrap());
-    unsafe {
-        start::run(bootstrap);
-    }
+    start::run(bootstrap);
     unsafe {
         tls::finish_stacked_thread_tls().expect("std child TLS cleanup did not complete");
     }

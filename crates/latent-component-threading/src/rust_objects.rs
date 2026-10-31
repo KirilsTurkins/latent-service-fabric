@@ -1,9 +1,9 @@
 //! Closed, host-owned original-object expectations for the selected Rust port.
 //!
 //! A guest cannot provide or select this catalogue. The current immutable corpus
-//! is the independently verified passed28059 remapped compiler observation.
-//! Its original app and guarded core compiled; the ordinary guest was not run.
-//! The earlier byte-identical ec11 failure remains an immutable distinct event.
+//! is the independently verified a9809 compiler observation retained by run
+//! 41109207452. Its original app and guarded core compiled; the ordinary guest
+//! was not run because the stale catalogue refused the changed object graph.
 //! This source proof alone does not enable any runtime or component profile.
 use wasmparser::{BinaryReader, Encoding, Operator, Parser, Payload, Validator};
 
@@ -11,8 +11,8 @@ use wasmparser::{BinaryReader, Encoding, Operator, Parser, Payload, Validator};
 #[path = "rust_catalogue.rs"]
 mod catalogue;
 
-const NODE_COUNT: usize = 1225;
-const REFERENCE_COUNT: usize = 5325;
+const NODE_COUNT: usize = 1221;
+const REFERENCE_COUNT: usize = 5245;
 const MAX_BYTES: usize = 1024 * 1024;
 const MAX_FUNCTIONS: u32 = 1024;
 const MAX_OPERATORS: u64 = 262_144;
@@ -925,7 +925,7 @@ fn callback_plan(
     let root_sites = indirect_sites(module, root, &[progress, progress, release])?;
     let worker_sites = indirect_sites(module, functions[2], &[release])?;
     let reaper_sites = indirect_sites(module, reaper, &[notified, release])?;
-    let entered_sites = indirect_sites(module, entered, &[release, notified])?;
+    let entered_sites = indirect_sites(module, entered, &[notified])?;
     // The authenticated original Captured1/Source branch and genuine Arc
     // allocation/header/increments/worker/destructor paths remain byte-exact.
     // Only these six owner dispatches change. Source progress and ordinary TLS
@@ -966,7 +966,7 @@ fn callback_plan(
             },
             CallbackSite {
                 function: entered,
-                offset: entered_sites[1],
+                offset: entered_sites[0],
                 target: 4,
                 fallback: false,
             },
@@ -1802,7 +1802,7 @@ pub fn derive_source_core(
 #[cfg(test)]
 mod tests {
     use super::*;
-    const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/reviewed-original-core.wasm");
+    const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/catalogue-original-core.wasm");
     const PUBLIC: &str = "examples:greeting/api@1.0.0#greet";
     const POST: &str = "cabi_post_examples:greeting/api@1.0.0#greet";
 
@@ -1853,7 +1853,7 @@ mod tests {
         assert!(!proof.bindings.contains(&UNBOUND));
         assert_eq!(
             (proof.stack_low, proof.stack_high, proof.memory_bytes),
-            (26256, 1140368, 1179648)
+            (27968, 1142080, 1179648)
         );
         let module = Original::parse(ORIGINAL).unwrap();
         let selected = source_role(&proof, "runtime13executor_root12progress_all").unwrap();
@@ -1937,14 +1937,14 @@ mod tests {
         let (targets, sites) = callback_plan(&module, &proof).unwrap();
         assert_eq!(sites.iter().filter(|site| site.fallback).count(), 1);
         let sealed = seal_original_callbacks(ORIGINAL).unwrap();
-        // Exact independently retained Python production derivation from the
-        // authentic ec11 event. This is an emission comparison, not execution.
+        // Exact independently retained Python production derivation from run
+        // 41184446196, artifact 13036816711. This compares emissions, not execution.
         assert_eq!(
             Sha256::digest(&sealed)
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "8a23f238e78076122b458e174b9a4fb03b0f5d6be9f2807f57ba96d52c412dd0"
+            "4b38efc1a41848dee2ec1d8bd1eb4861c5698181bc2ec1daae8058e2fdeb2486"
         );
         let sealed_module = Original::parse(&sealed).unwrap();
         for (index, function) in module.table.iter().enumerate() {
@@ -1989,11 +1989,11 @@ mod tests {
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "e3ee64a72d7a75e229a4f07edf58b3e4907ae4e1e974609fc51c2fae4e5f91fd"
+            "deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423"
         );
-        assert_eq!(receipt.original_panic_function, 531);
-        assert_eq!(receipt.root.canonical_system_panic_trap, Some(532));
-        assert_eq!(receipt.root.canonical_system_stack_high, Some(1140368));
+        assert_eq!(receipt.original_panic_function, 525);
+        assert_eq!(receipt.root.canonical_system_panic_trap, Some(526));
+        assert_eq!(receipt.root.canonical_system_stack_high, Some(1142080));
         assert_eq!(
             receipt.root.root_stack_high - receipt.root.root_stack_low,
             1024 * 1024

@@ -24,7 +24,7 @@ jobs:
           persist-credentials: false
       - name: Fetch only the authenticated native producer source object
         run: git fetch --no-tags --depth=1 origin 77bf0e3f3b68e17342b6146abd6f2de34a3efa00
-      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install pinned source controls
@@ -66,7 +66,7 @@ jobs:
         run: python3 tools/qualify_go_node_stop_v7.py --source-commit "${{ github.sha }}" --native-products "$RUNNER_TEMP/go-node-stop-v7-products" --output "$RUNNER_TEMP/go-node-stop-positive"
       - name: Retain bounded source timer and shutdown evidence including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: go-node-stop-positive-${{ github.sha }}
           path: |

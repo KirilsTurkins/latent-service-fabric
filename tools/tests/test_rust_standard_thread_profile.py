@@ -37,6 +37,12 @@ class StandardThreadSource(unittest.TestCase):
                     self.assertEqual(after.count(new), 1)
                     after = after.replace(new, old)
                 self.assertEqual(after, before)
+            elif name == profile.CURRENT:
+                needle = b'    cfg_select! {\n        target_thread_local => {'
+                branch = ('    cfg_select! {\n        all(target_thread_local, not('
+                          + profile.SELECTOR + ')) => {').encode()
+                self.assertEqual(after.count(branch), 1)
+                self.assertEqual(after.replace(branch, needle, 1), before)
             elif name != profile.LIFECYCLE:
                 selected = ('cfg_select! {\n    ' + profile.SELECTOR + ' => {\n        '
                             + profile.BRANCHES[name] + '\n    }\n').encode()
