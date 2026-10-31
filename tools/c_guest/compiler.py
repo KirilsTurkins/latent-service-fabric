@@ -201,6 +201,7 @@ class Compiler:
                 static_libraries: tuple[Path, ...] = (), defines: tuple[str, ...] = (),
                 runtime_profile: str = standard_facilities.DEFAULT, language_standard: str = C_STANDARD,
                 embed_directories: tuple[Path, ...] = (),
+                dependency_sources: tuple[Path, ...] = (),
                 threading_profile: str = 'single-threaded') -> tuple[Path, dict]:
         standard_facilities.selected_profile({'runtimeProfile': runtime_profile})
         selected_standard({'languageStandard': language_standard})
@@ -218,6 +219,11 @@ class Compiler:
             raise ValueError("C source count must be between 1 and 64")
         if any(path.is_symlink() or not path.is_file() or path.stat().st_size > 262144 for path in sources):
             raise ValueError("invalid or oversized C source")
+        if (not isinstance(dependency_sources, tuple) or len(set(dependency_sources)) != len(dependency_sources)
+                or any(path not in sources or path.resolve().is_relative_to(self.sdk.resolve())
+                       for path in dependency_sources)
+                or (dependency_sources and self.isolation is None)):
+            raise ValueError('C dependency sources require a distinct captured non-SDK source selection')
         if isinstance(memory_bytes, bool) or memory_bytes < 2 * 1024 * 1024 or memory_bytes > 64 * 1024 * 1024 or memory_bytes % 65536:
             raise ValueError("C memory ceiling must be page-aligned and between 2 and 64 MiB")
         generated, lock = generate(self.run, wit_source, world, destination, self.platform,
@@ -289,6 +295,33 @@ class Compiler:
                 observed.extend(self.isolation.observe_inputs(depfile))
             self.isolation.receipt["preprocessorInputs"] = sorted(
                 {row["path"]: row for row in observed}.values(), key=lambda row: row["path"])
+        dependency_objects = []
+        if dependency_sources:
+            # Captured third-party source keeps visible warnings, without
+            # imposing the SDK/application's warning-as-error policy on it.
+            # Fresh objects use the same target, O2, headers and thread ABI;
+            # this does not admit opaque archives or caller-provided flags.
+            link_inputs = [*sources, *static_libraries, generated / 'probe.c', generated / 'probe_component_type.o']
+            if trap:
+                link_inputs.append(self.sdk / 'src/trap.c')
+            options = self.translation_options(command, link_inputs)
+            options.remove('-Werror')
+            rows, replacements, total = [], {}, 0
+            for ordinal, source in enumerate(dependency_sources):
+                target = destination / f'dependency-{ordinal:04}.o'
+                if target.exists() or target.is_symlink():
+                    raise ValueError('C dependency object output must be fresh')
+                self.run('zig', *options, '-c', str(source), '-o', str(target))
+                identity = file_identity(target, target.name, 4 * 1024 * 1024)
+                total += identity['size']
+                if total > 4 * 1024 * 1024:
+                    raise ValueError('C dependency object byte limit exceeded')
+                rows.append({'source': file_identity(source, source.name, 262144), 'object': identity})
+                replacements[str(source)] = str(target)
+                dependency_objects.append(target)
+            command = [replacements.get(value, value) for value in command]
+            self.isolation.receipt['dependencyCompilation'] = {
+                'warningPolicy': 'visible-warnings-without-werror', 'objects': rows}
         self.run("zig", *command)
         if runtime_profile in standard_facilities.FETCH_PROFILES and self.commands is not None:
             from tools.rust_capsule_project import read_file
@@ -345,22 +378,17 @@ class Compiler:
                 'publicExport': public, 'finalComponent': component}
         self.check_unchanged()
         if self.compiler_edges is not None:
-            link_inputs = [*sources, *static_libraries, generated / 'probe.c', generated / 'probe_component_type.o']
+            link_inputs = [*sources, *dependency_objects, *static_libraries,
+                           generated / 'probe.c', generated / 'probe_component_type.o']
             if trap:
                 link_inputs.append(self.sdk / 'src/trap.c')
-            self.observe_compiler_edges(command, destination, link_inputs)
+            self.observe_compiler_edges(command, destination, link_inputs, dependency_sources=dependency_sources)
         return component, lock
 
-    def observe_compiler_edges(self, original, destination, link_inputs):
-        """Passive per-TU O2 metadata under this original finite compiler owner.
-
-        Keep every original compile option. Remove only its link inputs/output
-        and linker-only options; the original component argv above is untouched.
-        A missing/large/unmapped witness is unavailable, never support.
-        """
-        from tools.rust_capsule_project import read_file
+    @staticmethod
+    def translation_options(original, link_inputs):
+        """The original compile flags, without source/object inputs or link output."""
         paths = {str(path) for path in link_inputs}
-        selected = sorted({row['source'] for row in self.compiler_edges.queries})
         options, at = [], 0
         while at < len(original):
             value = str(original[at])
@@ -368,14 +396,28 @@ class Compiler:
             if value in paths or value.startswith('-Wl,'):
                 at += 1; continue
             options.append(value); at += 1
+        return options
+
+    def observe_compiler_edges(self, original, destination, link_inputs, *, dependency_sources=()):
+        """Passive per-TU O2 metadata under this original finite compiler owner.
+
+        Keep each TU's original compile options and warning policy. Remove its
+        link inputs/output and linker-only options; component argv is untouched.
+        A missing/large/unmapped witness is unavailable, never support.
+        """
+        from tools.rust_capsule_project import read_file
+        selected = sorted({row['source'] for row in self.compiler_edges.queries})
+        options = self.translation_options(original, link_inputs)
         for index, name in enumerate(selected):
             try:
                 source = self.compiler_edge_sources[name]
+                unit_options = [value for value in options
+                                if value != '-Werror' or source not in dependency_sources]
                 witness = destination / ('compiler-edge-%04d.ll' % index)
                 # Zig's IR-only driver adds an otherwise unused -c internally.
                 # Keep that bounded warning visible without making it fatal;
                 # normal component argv and every other -Werror stay unchanged.
-                self.run('zig', *options, '-S', '-emit-llvm',
+                self.run('zig', *unit_options, '-S', '-emit-llvm',
                     '-Wno-error=unused-command-line-argument', str(source), '-o', str(witness))
                 self.compiler_edges.retain_unit(name, read_file(witness, 4 * 1024 * 1024))
             except Exception:
