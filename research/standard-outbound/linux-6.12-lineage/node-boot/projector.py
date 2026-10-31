@@ -74,6 +74,28 @@ def inverse_bootstrap(raw):
     return raw.replace(NEW_ENTRY, OLD_ENTRY, 1)
 
 
+GEOMETRY_SOURCE = "include/linux/lsf-node-irq-geometry.c"
+GEOMETRY_SECTION = b'__section(".lsf_node_geometry")'
+GEOMETRY_LINK_SECTION = b'__section(".rodata.lsf_node_geometry")'
+
+
+def inverse_geometry_for_link(raw):
+    require(type(raw) is bytes and raw.count(GEOMETRY_LINK_SECTION) == 1 and
+            GEOMETRY_SECTION not in raw, "geometry-link-inverse-shape")
+    return raw.replace(GEOMETRY_LINK_SECTION, GEOMETRY_SECTION, 1)
+
+
+def geometry_for_link(raw):
+    # All six allocating TUs include this one read-only constant declaration.
+    # Linux's normal .rodata.* placement admits it without an orphan bypass.
+    # The earlier ET_REL-only geometry programme keeps its original section.
+    require(type(raw) is bytes and raw.count(GEOMETRY_SECTION) == 1 and
+            GEOMETRY_LINK_SECTION not in raw, "geometry-link-declaration")
+    result = raw.replace(GEOMETRY_SECTION, GEOMETRY_LINK_SECTION, 1)
+    require(inverse_geometry_for_link(result) == raw, "geometry-link-whole-file-inverse")
+    return result
+
+
 def transform(values, build_files, selected_materials):
     require(type(values) is dict and len(values) == 485 and
             all(type(n) is str and type(r) is bytes for n, r in values.items()), "input-set")
@@ -98,6 +120,7 @@ def transform(values, build_files, selected_materials):
             b"#define LSF_NODE_VERSION 3u" in bootstrap and
             b"    struct lsf_node_capacity capacity;" in bootstrap, "native-entry")
     result = dict(values)
+    result[GEOMETRY_SOURCE] = geometry_for_link(values[GEOMETRY_SOURCE])
     result["net/factory.c"] = factory.replace(OLD_INCLUDE, NEW_INCLUDE, 1) + BOOT_INCLUDE
     result["net/factory-node-bootstrap.c"] = bootstrap.replace(OLD_ENTRY, NEW_ENTRY, 1)
     require("net/factory-node-boot.c" not in result, "material-collision")
@@ -107,11 +130,15 @@ def transform(values, build_files, selected_materials):
         result[name] = build_files[name] + b"\n" + selected_materials[fragment]
         require(result[name][:-len(selected_materials[fragment])-1] == build_files[name], "kbuild-inverse")
     require(inverse_factory(result["net/factory.c"]) == factory and
-            inverse_bootstrap(result["net/factory-node-bootstrap.c"]) == bootstrap, "whole-body-inverses")
+            inverse_bootstrap(result["net/factory-node-bootstrap.c"]) == bootstrap and
+            inverse_geometry_for_link(result[GEOMETRY_SOURCE]) == values[GEOMETRY_SOURCE],
+            "whole-body-inverses")
     return result, {"stage": "q35-node-boot-entry", "before": before, "after": identities(result),
         "nativeBuildBefore": identities(build_files), "materialInputs": identities(selected_materials),
         "compiledAbi": "lsf-q35-node-capacity-v2", "wireVersion": 3,
         "beforeCount": 485, "afterCount": 488, "originalBodiesInverseExact": True,
+        "geometryLinkPlacement": {"source": GEOMETRY_SOURCE, "declarations": 1,
+            "section": ".rodata.lsf_node_geometry", "wholeFileInverseExact": True},
         "registrationOwner": "original-platform-prerequisite-not-Node",
         "nodeFundingQualified": False, "nodeRetirementQualified": False,
         "irqEnabled": False, "consumerInstalled": False, "booted": False}

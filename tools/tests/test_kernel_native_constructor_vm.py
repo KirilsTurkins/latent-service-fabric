@@ -187,6 +187,23 @@ class Q35NodeBootSourceControls(unittest.TestCase):
             with self.subTest(raw=bad),self.assertRaises(ValueError):owner.node_serial(bad)
 
     def test_q35_argv_and_captured_loader_cannot_select_tcg_or_alternate_source(self):
+        # This is the actual shared geometry material, with all ordinary
+        # function bodies unchanged. The final image uses normal rodata layout.
+        projector_path = owner.ROOT / owner.NODE_PROJECTOR
+        projector = {'__file__': str(projector_path)}
+        exec(compile(projector_path.read_bytes(), str(projector_path), 'exec'), projector)
+        geometry = (owner.ROOT / 'research/standard-outbound/linux-6.12-lineage/node-irq-geometry/geometry.c').read_bytes()
+        placed = projector['geometry_for_link'](geometry)
+        self.assertEqual(placed, geometry.replace(b'__section(".lsf_node_geometry")',
+            b'__section(".rodata.lsf_node_geometry")', 1))
+        self.assertEqual(projector['inverse_geometry_for_link'](placed), geometry)
+        for bad in (geometry.replace(b'.lsf_node_geometry', b'.foreign_geometry'),
+                geometry + geometry, placed, geometry + placed, None):
+            with self.subTest(geometry=bad), self.assertRaises(ValueError):
+                projector['geometry_for_link'](bad)
+        for bad in (geometry, placed + placed, geometry + placed, None):
+            with self.subTest(inverse=bad), self.assertRaises(ValueError):
+                projector['inverse_geometry_for_link'](bad)
         root = Path(tempfile.gettempdir()).resolve()/'owned'
         argv = owner.node_boot_argv(*(root/n for n in ('qemu','kernel','cpio','firmware')))
         self.assertEqual(argv[argv.index('-machine')+1],'pc-q35-11.1')
