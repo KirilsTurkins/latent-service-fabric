@@ -137,7 +137,7 @@ class RustThreadFaultFramesTests(unittest.TestCase):
                         suspension.replace(b':123:', b':private:', 1),
                         suspension + b'LSF-RUST40-SUSP-FRAME:8:0:1:2:3\n',
                         b'LSF-RUST40-SUSP-FRAME:0:0:1:2:3\n',
-                        b'LSF-RUST40-SUSP:32:1:0:0:0\n',
+                        b'LSF-RUST40-SUSP:32:1:0:0\n',
                         b'LSF-RUST40-SUSP:128:0:0:0\n',
                         b'LSF-RUST40-SUSP:private\n', b'x' * 262145):
             with self.subTest(suspensionBytes=len(invalid)), self.assertRaises(WorkflowError):

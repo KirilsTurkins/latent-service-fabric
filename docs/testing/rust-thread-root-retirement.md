@@ -74,7 +74,7 @@ source-level missed-wakeup path consistent with the captured cleanup wait;
 repaired signed guest execution is still required to establish its effect on
 the observed component failure.
 
-## Regression and remaining proof
+## Native regression and hosted result
 
 The existing native early-notification control now also includes the actual
 executor-root registry, affine Owner, WaitQueue, fixed wait registry and wait
@@ -86,15 +86,58 @@ stable empty-registry stamp. A bounded fallback notification lets the unfixed
 case return, but the exact call sequence rejects that spurious suspension.
 This is not a captured-executor, canonical-engine or signed-component test.
 
-The diagnostic programme now builds and runs that exact source-bound native
+The diagnostic programme builds and runs that exact source-bound native
 control before rebuilding the node. Its recipe includes every participating
 SDK source; the retained guest is not rebuilt or replaced by this check. The
 normal compiler-input programme also continues to run the existing eleven
 wait-driver tests, with this regression added to the early-notification case.
 
-At this source checkpoint the new native regression has not yet been executed;
-its next hosted result must be retained rather than inferred from review.
-After native controls pass, the repaired owned sysroot and unchanged application
-need a new compiler observation, reviewed immutable catalogue update, matching
-native products and the original signed five-call campaign. Historical receipts
-and the current failed result must not be rewritten to stand in for that work.
+[Diagnostic run 41217651378](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41217651378)
+at `ae3bbddf554dfa47febcab025fb6a3ceacef070b` compiled, listed and passed the
+selected native early-notification control (one passed, ten filtered out).
+Its numeric native control also passed, and all eight source/version,
+control-build/list/run and diagnostic-node build command records exited zero.
+Artifact `13048683583` is 44,114,000 ZIP bytes with SHA-256
+`0626c2215842c5e9929404182c6f7844f011d8ca2f9198ad2a95c82ea1a85fe7`.
+Independent download verified the archive digest, all 136 member CRCs and the
+sizes and hashes of all sixteen retained build-command log streams.
+
+The retained `build/root-retirement-wakeup-control` executable is 7,491,664
+bytes with SHA-256
+`292d87a63194d7fb9fc16e8254f2d510e8b75af09aefc27c7e50b639010dfdd0`.
+A separate local execution of that exact hosted-built binary listed all eleven
+wait-driver controls and passed all eleven with `--test-threads=1`, with no
+ignored or filtered tests. This was not a local Rust compilation, a pre-fix
+native mutation test, or a signed guest execution.
+
+The diagnostic run as a whole still failed on the unchanged original guest.
+Its diagnostic node is 200,557,680 bytes with SHA-256
+`a976d4b3090129e0c7a95f9f7ad613993a752ce19b821d922798d1ce4ea6c6bb`.
+The same component again produced trap 22 and the same six suspension frames,
+with 298,549 fuel, 7,795,408 peak memory bytes, no decoded result and zero
+effects. The repaired SDK was exercised by the native control, not compiled
+into this frozen guest; that repeated failure is not a repaired-guest result.
+The original nonempty fault-frame gate remains unsatisfied and mandatory.
+
+## Suspension-record parser ordering
+
+The observer emits its suspension header before every associated frame. The
+parser now rejects frames preceding that header instead of allowing a later
+header to adopt earlier orphan frames. The existing numeric/privacy control
+covers both wholly reversed records and a single earlier orphan, plus the six
+actual retained coordinates, CRLF input and private-text exclusion. A suspension
+record alone still cannot create `numeric-fault-frames.json` or qualify runtime
+progress. Existing case IDs, range checks and failed-transfer controls remain.
+
+Isolated parser validation with the fetched production helper definitions
+reproduced exactly the two ordering failures in the old parser. The corrected
+parser passed all 44 negative subtests and the positive assertions. This is
+not a claim that the complete repository test suite or current-head CI passed.
+
+## Remaining proof
+
+The repaired owned sysroot and unchanged application still need a new compiler
+observation, reviewed immutable catalogue update, matching native products and
+the original signed five-call campaign. Historical receipts and the current
+failed result must not be rewritten to stand in for that work. Integration
+conflicts and other CI failures remain separate obligations.
