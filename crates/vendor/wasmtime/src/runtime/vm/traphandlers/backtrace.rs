@@ -63,6 +63,37 @@ impl Activation {
     }
 }
 
+// A shared finite budget counts raw TLS and continuation metadata steps,
+// including empty/unrelated attempts. Raw frames count before source lookup.
+#[cfg(feature = "gc")]
+#[derive(Default)]
+struct SuspensionBudget {
+    steps: u8,
+    frames: u8,
+    flags: u8,
+}
+
+#[cfg(feature = "gc")]
+impl SuspensionBudget {
+    fn step(&mut self) -> bool {
+        if self.steps == 64 {
+            self.flags |= 1;
+            return false;
+        }
+        self.steps += 1;
+        true
+    }
+
+    fn frame(&mut self) -> bool {
+        if self.frames == 8 {
+            self.flags |= 2;
+            return false;
+        }
+        self.frames += 1;
+        true
+    }
+}
+
 impl Backtrace {
     /// Returns an empty backtrace
     pub fn empty() -> Backtrace {
@@ -131,6 +162,142 @@ impl Backtrace {
             },
             None => {}
         });
+    }
+
+    // Additive diagnostic walker. All existing trace/capture APIs stay intact.
+    // Called only while the original host-call stack/fiber remains live.
+    #[cfg(feature = "gc")]
+    pub(crate) fn trace_root_suspension(
+        store: &StoreOpaque,
+        mut visit: impl FnMut(Frame),
+    ) -> (u8, u8, u8) {
+        let mut budget = SuspensionBudget::default();
+        let vm = store.vm_store_context();
+        tls::with(|state| {
+            let Some(state) = state else {
+                budget.flags |= 16;
+                return;
+            };
+            // SAFETY: identical live TLS/Store stack source as trace(), before
+            // the caller releases its current fiber. No PC survives this call.
+            unsafe {
+                let pc = *(*vm).last_wasm_exit_pc.get();
+                if !Self::trace_suspension_chain(
+                    store.unwinder(),
+                    (*(*vm).stack_chain.get()).clone(),
+                    pc,
+                    (*vm).last_wasm_exit_fp(),
+                    *(*vm).last_wasm_entry_fp.get(),
+                    &mut budget,
+                    &mut visit,
+                ) {
+                    return;
+                }
+                // Count each raw TLS link BEFORE checking Store identity.
+                // Do not flat_map suffix iterators or scan until eight matches.
+                let mut previous = state.iter();
+                loop {
+                    if !budget.step() {
+                        return;
+                    }
+                    let Some(previous) = previous.next() else {
+                        return;
+                    };
+                    if !core::ptr::eq(vm, previous.vm_store_context.get().as_ptr()) {
+                        continue;
+                    }
+                    if !Self::trace_suspension_chain(
+                        store.unwinder(),
+                        previous.old_stack_chain(),
+                        previous.old_last_wasm_exit_pc(),
+                        previous.old_last_wasm_exit_fp(),
+                        previous.old_last_wasm_entry_fp(),
+                        &mut budget,
+                        &mut visit,
+                    ) {
+                        return;
+                    }
+                }
+            }
+        });
+        (budget.steps, budget.frames, budget.flags)
+    }
+
+    #[cfg(feature = "gc")]
+    unsafe fn trace_suspension_chain(
+        unwind: &dyn Unwind,
+        chain: VMStackChain,
+        pc: usize,
+        fp: usize,
+        entry: usize,
+        budget: &mut SuspensionBudget,
+        visit: &mut impl FnMut(Frame),
+    ) -> bool {
+        if !budget.step() {
+            return false;
+        }
+        if pc == 0 || chain == VMStackChain::Absent {
+            if budget.frames == 0 {
+                budget.flags |= 16;
+            }
+            return false;
+        }
+        // Stop the unwinder at the eighth RAW frame, including unknown modules.
+        let mut walk = |pc, fp, entry, budget: &mut SuspensionBudget| {
+            let result = unsafe {
+                wasmtime_unwinder::visit_frames(unwind, pc, fp, entry, &mut |frame| {
+                    if !budget.frame() {
+                        return ControlFlow::Break(());
+                    }
+                    visit(frame);
+                    if budget.frames == 8 {
+                        budget.flags |= 2;
+                        ControlFlow::Break(())
+                    } else {
+                        ControlFlow::Continue(())
+                    }
+                })
+            };
+            matches!(result, ControlFlow::Continue(()))
+        };
+        if !walk(pc, fp, entry, budget) {
+            return false;
+        }
+        let mut limits = unsafe { chain.clone().into_stack_limits_iter() };
+        let mut continuations = unsafe { chain.into_continuation_iter() };
+        if !budget.step() {
+            return false;
+        }
+        // Count even this initial stack-limit iterator attempt.
+        let _current = limits.next();
+        loop {
+            if !budget.step() {
+                return false;
+            }
+            let Some(continuation) = continuations.next() else {
+                return true;
+            };
+            if !budget.step() {
+                return false;
+            }
+            let Some(parent) = limits.next() else {
+                budget.flags |= 16;
+                return false;
+            };
+            // Each budgeted continuation pair performs at most two pointer
+            // reads. No lookahead, collection, recursive walk or guest memory.
+            let continuation = unsafe { &*continuation };
+            let parent = unsafe { &*parent };
+            let stack = continuation.fiber_stack();
+            if !walk(
+                stack.control_context_instruction_pointer(),
+                stack.control_context_frame_pointer(),
+                parent.last_wasm_entry_fp,
+                budget,
+            ) {
+                return false;
+            }
+        }
     }
 
     // Walk the stack of the given continuation, which must be suspended, and

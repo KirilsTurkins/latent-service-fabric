@@ -10,6 +10,8 @@ struct Factory {
     observer: Option<fn(&wasmtime::AsyncDeadlockSnapshot)>,
     #[cfg(feature = "rust-thread-trap-diagnostic")]
     observed: core::sync::atomic::AtomicBool,
+    #[cfg(feature = "rust-thread-trap-diagnostic")]
+    root: RootRecord,
 }
 
 impl wasmtime::NativeMemory for Factory {
@@ -18,13 +20,92 @@ impl wasmtime::NativeMemory for Factory {
     }
 
     #[cfg(feature = "rust-thread-trap-diagnostic")]
+    fn root_suspension_enabled(&self) -> bool {
+        self.observer.is_some() && !self.observed.load(core::sync::atomic::Ordering::Relaxed)
+    }
+
+    #[cfg(feature = "rust-thread-trap-diagnostic")]
+    fn save_root_suspension(&self, snapshot: &wasmtime::RootSuspensionSnapshot) {
+        if !self.root_suspension_enabled() {
+            return;
+        }
+        self.root.save(snapshot);
+    }
+
+    #[cfg(feature = "rust-thread-trap-diagnostic")]
     fn async_deadlock_observer(&self) -> Option<fn(&wasmtime::AsyncDeadlockSnapshot)> {
         self.observer.filter(|_| {
-            !self
+            if self
                 .observed
                 .swap(true, core::sync::atomic::Ordering::Relaxed)
+            {
+                return false;
+            }
+            crate::rust_thread_fault::record_root_suspension(&self.root.snapshot());
+            true
         })
     }
+}
+
+#[cfg(feature = "rust-thread-trap-diagnostic")]
+#[derive(Default)]
+struct RootRecord {
+    value: std::sync::Mutex<Option<wasmtime::RootSuspensionSnapshot>>,
+    failed: core::sync::atomic::AtomicBool,
+}
+
+#[cfg(feature = "rust-thread-trap-diagnostic")]
+const _: () = assert!(size_of::<RootRecord>() <= 256);
+
+#[cfg(feature = "rust-thread-trap-diagnostic")]
+impl RootRecord {
+    fn save(&self, snapshot: &wasmtime::RootSuspensionSnapshot) {
+        match self.value.try_lock() {
+            Ok(mut value) => {
+                *value = Some(*snapshot);
+                self.failed
+                    .store(false, core::sync::atomic::Ordering::Relaxed);
+            }
+            Err(_) => self
+                .failed
+                .store(true, core::sync::atomic::Ordering::Relaxed),
+        }
+    }
+
+    fn snapshot(&self) -> wasmtime::RootSuspensionSnapshot {
+        let unavailable = |flags| wasmtime::RootSuspensionSnapshot {
+            flags,
+            ..wasmtime::RootSuspensionSnapshot::default()
+        };
+        if self.failed.load(core::sync::atomic::Ordering::Relaxed) {
+            // An older successful record cannot stand in for a failed LAST write.
+            return unavailable(32);
+        }
+        match self.value.try_lock() {
+            Ok(value) => value.unwrap_or_else(|| unavailable(64)),
+            Err(_) => unavailable(32),
+        }
+    }
+}
+
+#[cfg(all(test, feature = "rust-thread-trap-diagnostic"))]
+pub(crate) fn assert_root_suspension_transfer_controls() {
+    let record = RootRecord::default();
+    assert_eq!(record.snapshot().flags, 64);
+    let mut first = wasmtime::RootSuspensionSnapshot::default();
+    first.steps = 1;
+    record.save(&first);
+    assert_eq!(record.snapshot(), first);
+    let held = record.value.try_lock().unwrap();
+    // A contended read and a failed LAST write return, never block or reuse old.
+    assert_eq!(record.snapshot().flags, 32);
+    let second = wasmtime::RootSuspensionSnapshot { steps: 2, ..first };
+    record.save(&second);
+    drop(held);
+    let missing = record.snapshot();
+    assert_eq!((missing.flags, missing.count, missing.visited), (32, 0, 0));
+    record.save(&second);
+    assert_eq!(record.snapshot(), second);
 }
 
 pub(crate) fn binding(
@@ -61,6 +142,8 @@ fn binding_inner(
             observer,
             #[cfg(feature = "rust-thread-trap-diagnostic")]
             observed: core::sync::atomic::AtomicBool::new(false),
+            #[cfg(feature = "rust-thread-trap-diagnostic")]
+            root: RootRecord::default(),
         },
         owner,
     ))

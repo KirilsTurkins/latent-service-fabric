@@ -2347,6 +2347,9 @@ impl StoreOpaque {
                 .unwrap_or(true)
         );
 
+        #[cfg(feature = "gc")]
+        self.observe_root_suspension(&reason);
+
         let suspend_reason = &mut self.concurrent_state_mut()?.suspend_reason;
         if suspend_reason.is_some() {
             bail_bug!("suspend reason unexpectedly already set for store");
@@ -2360,6 +2363,69 @@ impl StoreOpaque {
         }
 
         Ok(())
+    }
+
+    #[cfg(feature = "gc")]
+    fn observe_root_suspension(&mut self, reason: &SuspendReason) {
+        let SuspendReason::ExplicitlySuspending { thread, .. } = reason else {
+            return;
+        };
+        // Checked direct handles, no table scan. Failure is diagnostic-only and
+        // cannot replace the original suspend or manufacture a wake.
+        let state = self.concurrent_state_mut_without_forcing_current_thread();
+        if !state
+            .get_mut(thread.thread)
+            .is_ok_and(|row| row.diagnostic_host_root && row.parent_task == thread.task)
+            || !state
+                .get_mut(thread.task)
+                .is_ok_and(|task| matches!(task.caller, Caller::Host { .. }))
+        {
+            return;
+        }
+        let memory = state.queue_memory.clone();
+        let Some(memory) = memory.filter(|memory| memory.root_suspension_enabled()) else {
+            return;
+        };
+        let mut snapshot = crate::RootSuspensionSnapshot::default();
+        let mut modules = [None; 8];
+        let (steps, visited, flags) =
+            crate::runtime::vm::Backtrace::trace_root_suspension(self, |frame| {
+                // All frames here are host-call return PCs, not a faulting Trap PC.
+                let numeric = frame
+                    .pc()
+                    .checked_sub(1)
+                    .and_then(|pc| self.modules().lookup_numeric_frame(pc));
+                let Some((module, function, instruction, offset)) = numeric else {
+                    snapshot.flags |= 8;
+                    return;
+                };
+                let index = usize::from(snapshot.count);
+                let ordinal = modules
+                    .iter()
+                    .position(|key| *key == Some(module))
+                    .unwrap_or_else(|| {
+                        let empty = modules
+                            .iter()
+                            .position(Option::is_none)
+                            .expect("at most eight raw frames");
+                        modules[empty] = Some(module);
+                        empty
+                    });
+                if instruction.is_none() || offset.is_none() {
+                    snapshot.flags |= 4;
+                }
+                snapshot.frames[index] = crate::RootSuspensionFrame {
+                    module: ordinal as u8,
+                    function,
+                    module_offset: instruction.unwrap_or(u32::MAX),
+                    function_offset: offset.unwrap_or(u32::MAX),
+                };
+                snapshot.count += 1;
+            });
+        snapshot.steps = steps;
+        snapshot.visited = visited;
+        snapshot.flags |= flags;
+        memory.save_root_suspension(&snapshot);
     }
 
     fn wait_for_event(&mut self, waitable: Waitable) -> Result<()> {
@@ -5191,6 +5257,9 @@ enum GuestThreadState {
     Completed,
 }
 pub struct GuestThread {
+    // Only the initial implicit thread of an authenticated host task. Explicit
+    // children share the task but can never overwrite its root observation.
+    diagnostic_host_root: bool,
     /// Context-local state used to implement the `context.{get,set}`
     /// intrinsics.
     context: [u32; NUM_COMPONENT_CONTEXT_SLOTS],
@@ -5223,6 +5292,11 @@ impl GuestThread {
     }
 
     fn new_implicit(state: &mut ConcurrentState, parent_task: TableId<GuestTask>) -> Result<Self> {
+        let diagnostic_host_root = state
+            .queue_memory
+            .as_ref()
+            .is_some_and(|memory| memory.root_suspension_enabled())
+            && matches!(state.get_mut(parent_task)?.caller, Caller::Host { .. });
         let sync_call_set = state.push(WaitableSet {
             is_sync_call_set: true,
             ..WaitableSet::default()
@@ -5232,6 +5306,7 @@ impl GuestThread {
             parent_task,
             wake_on_cancel: None,
             state: GuestThreadState::NotStartedImplicit,
+            diagnostic_host_root,
             instance_rep: None,
             sync_call_set,
         })
@@ -5251,6 +5326,7 @@ impl GuestThread {
             parent_task,
             wake_on_cancel: None,
             state: GuestThreadState::NotStartedExplicit(start_func),
+            diagnostic_host_root: false,
             instance_rep: None,
             sync_call_set,
         })

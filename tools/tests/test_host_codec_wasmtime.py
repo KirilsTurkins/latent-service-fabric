@@ -179,13 +179,15 @@ class PinnedWasmtimeSource(unittest.TestCase):
                 registry.workspace(root)
 
     def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
-        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v29-authenticated-bounded-async-deadlock-prefix')
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
             for name in ('src/runtime/limits.rs', 'src/runtime/store.rs',
                          'src/runtime/component/concurrent.rs',
                          'src/runtime/component/resource_table.rs',
+                         'src/runtime/module/registry.rs',
+                         'src/runtime/vm/traphandlers/backtrace.rs',
                          'src/runtime/vm/table.rs',
                          'src/runtime/vm/instance/allocator/pooling/table_pool.rs'):
                 with self.subTest(name=name):

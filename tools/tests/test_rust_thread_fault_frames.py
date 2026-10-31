@@ -114,6 +114,43 @@ class RustThreadFaultFramesTests(unittest.TestCase):
             mismatch.mkdir()
             with self.assertRaises(WorkflowError):
                 capture(Node(), {'fixture': 'node'}, {'fixture': 'component'}, mismatch)
+        from tools.rust_thread_fault_frames import root_suspension
+        suspension = b'LSF-RUST40-SUSP:3:64:8:8\n' + b''.join(
+            f'LSF-RUST40-SUSP-FRAME:{i}:{i % 2}:123:456:789\n'.encode() for i in range(8))
+        observed_wait = root_suspension(b'private guest-name\n' + suspension)
+        self.assertEqual(len(observed_wait['frames']), 8)
+        self.assertEqual(observed_wait['rawTraversalSteps'], 64)
+        self.assertTrue(observed_wait['framesMayBeTruncated'])
+        self.assertIsNone(root_suspension(b'private guest-name\n'))
+        unavailable = root_suspension(b'LSF-RUST40-SUSP:32:0:0:0\n')
+        self.assertTrue(unavailable['lastTransferUnavailable'])
+        self.assertEqual(unavailable['frames'], [])
+        for invalid in (suspension + b'LSF-RUST40-SUSP:0:1:0:0\n',
+                        suspension.replace(b':64:', b':65:', 1),
+                        suspension.replace(b':3:64:', b':3:63:', 1),
+                        suspension.replace(b':8:8\n', b':9:8\n', 1),
+                        suspension.replace(b':8:8\n', b':8:7\n', 1),
+                        suspension.replace(b':0:0:123:', b':0:2:123:', 1),
+                        suspension.replace(b':123:', b':4294967296:', 1),
+                        suspension.replace(b':456:', b':4294967295:', 1),
+                        suspension.replace(b':0:0:123:', b':00:0:123:', 1),
+                        suspension.replace(b':123:', b':private:', 1),
+                        suspension + b'LSF-RUST40-SUSP-FRAME:8:0:1:2:3\n',
+                        b'LSF-RUST40-SUSP-FRAME:0:0:1:2:3\n',
+                        b'LSF-RUST40-SUSP:32:1:0:0\n',
+                        b'LSF-RUST40-SUSP:128:0:0:0\n',
+                        b'LSF-RUST40-SUSP:private\n', b'x' * 262145):
+            with self.subTest(suspensionBytes=len(invalid)), self.assertRaises(WorkflowError):
+                root_suspension(invalid)
+        Node.buffers = (b'', b'LSF-RUST40-TRAP:22\n' + scheduler + suspension)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            capture(Node(), {'fixture': 'node'}, {'fixture': 'component'}, output)
+            kept = json.loads((output / 'numeric-original-root-suspension.json').read_bytes())
+            self.assertEqual(kept['suspension'], observed_wait)
+            self.assertFalse(kept['runtimeQualification'])
+            self.assertTrue(kept['frameObservationRequiredSeparately'])
+            self.assertFalse((output / 'numeric-fault-frames.json').exists())
         self.assertEqual(frames(b'private guest-name\nLSF-RUST40-FAULT:0:private:2:3\n'), [])
         for invalid in (rows + b'LSF-RUST40-FAULT:8:1:2:3\n',
                         b'LSF-RUST40-FAULT:1:1:2:3\n',

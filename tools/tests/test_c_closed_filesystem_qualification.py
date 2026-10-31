@@ -38,6 +38,43 @@ def original_libfetch_workflow(value):
     return value
 
 
+def original_outside_workflow(value):
+    """Invert only the reviewed dedicated-branch outside mode, losslessly."""
+    original = '4c748a13eca74ecb1cadb638f0b890d2bd32a6cdd82f9501140038e092d2d73c'
+    actual = hashlib.sha256(value.encode()).hexdigest()
+    if actual == original:
+        return value
+    if actual != '219d6ab6f03f4eaa755f4031d3313f83adfff604d965dca3fe987394fb9ca7db':
+        raise AssertionError('historical-workflow-exact-outside-source-required')
+    edits = (("    if: ${{ github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' && github.event_name == 'workflow_dispatch' && inputs.replay-closed-filesystem }}\n", "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay-closed-filesystem }}\n"), ('          path: |\n            ${{ runner.temp }}/c-outside-capture/qualified.json\n            ${{ runner.temp }}/c-outside-capture/FAILED.json\n            ${{ runner.temp }}/c-outside-capture/logs/**\n            ${{ runner.temp }}/c-outside-capture/owner-inputs/**\n            ${{ runner.temp }}/c-outside-capture/project-outside-*/**\n            ${{ runner.temp }}/c-outside-capture/build-outside-*/**\n            ${{ runner.temp }}/c-outside-capture/native-build/native/native-tuple.json\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/qualified.json\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/FAILED.json\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/signed/release-set.json\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/signed/c-thread-runtime/package/**\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/signed/c-thread-runtime/evidence/**\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/signed/c-thread-runtime/deployment.json\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/controls/**\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/commands/logs/**\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/invocation-*.json\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/peer-*.json\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/retirement-*.json\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/*.stdout\n            ${{ runner.temp }}/c-outside-capture/node-outside-*/*.stderr\n            ${{ runner.temp }}/c-outside-capture/standalone-sdk/recipe/**\n            ${{ runner.temp }}/c-libfetch-http/qualified.json\n', '          path: |\n            ${{ runner.temp }}/c-libfetch-http/qualified.json\n'), ('      - name: Execute two normal outside-source capture identity variants\n        if: github.event_name == \'workflow_dispatch\' && inputs.outside-capture && github.ref == \'refs/heads/feat/sdk-690-c-outside-capture-20261031\'\n        run: >-\n          python3 tools/qualify_c_standard_facilities.py --outside-capture --build-native\n          --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)"\n          --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-outside-capture"\n      - name: Retain bounded C standard runtime proof including failures\n', '      - name: Retain bounded C standard runtime proof including failures\n'), ("      - name: Execute captured C23 raw resources and physical trap retirement\n        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'\n", "      - name: Execute captured C23 raw resources and physical trap retirement\n        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029'\n"), ("      - name: Execute combined ordinary libc facilities with four explicit grants\n        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'\n", "      - name: Execute combined ordinary libc facilities with four explicit grants\n        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029'\n"), ("      - name: Execute ordinary bounded stdio through the same frozen default products\n        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'\n", "      - name: Execute ordinary bounded stdio through the same frozen default products\n        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029'\n"), ("      - name: Execute the actual captured standard library on current default native products\n        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'\n", "      - name: Execute the actual captured standard library on current default native products\n        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029'\n"), ("        if: github.ref == 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' || github.ref == 'refs/heads/feat/sdk-690-c-libucl-http-20261029' || github.ref == 'refs/heads/feat/sdk-690-c-outside-capture-20261031'\n", "        if: github.ref == 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' || github.ref == 'refs/heads/feat/sdk-690-c-libucl-http-20261029'\n"), ("    if: ${{ (github.event_name != 'workflow_dispatch' || (!inputs.qualify-scratch-refusals && !inputs.replay-closed-filesystem)) && (github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' || (github.event_name == 'workflow_dispatch' && inputs.outside-capture)) }}\n", "    if: ${{ github.event_name != 'workflow_dispatch' || (!inputs.qualify-scratch-refusals && !inputs.replay-closed-filesystem) }}\n"), ("    if: ${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}\n", "    if: ${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}\n"), ('    inputs:\n      outside-capture:\n        description: "On the dedicated C outside-capture branch, qualify two developer-owned outside-source identity variants"\n        type: boolean\n        default: false\n', '    inputs:\n'))
+    for current, previous in edits:
+        if value.count(current) != 1:
+            raise AssertionError('historical-workflow-exact-outside-inverse-required')
+        value = value.replace(current, previous, 1)
+    if hashlib.sha256(value.encode()).hexdigest() != original:
+        raise AssertionError('historical-workflow-original-pair-source-required')
+    return value
+
+
+def original_libucl_workflow(value):
+    """Authenticate/invert only the paired-client route before the old inverse."""
+    value = original_outside_workflow(value)
+    if hashlib.sha256(value.encode()).hexdigest() != '4c748a13eca74ecb1cadb638f0b890d2bd32a6cdd82f9501140038e092d2d73c':
+        raise AssertionError('historical-workflow-exact-libucl-source-required')
+    for current, previous, count in ((', feat/sdk-690-c-libucl-http-20261029', '', 1), (" && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029'", '', 5), (" || github.ref == 'refs/heads/feat/sdk-690-c-libucl-http-20261029'", '', 1)):
+        if value.count(current) != count:
+            raise AssertionError('historical-workflow-exact-libucl-selector-required')
+        value = value.replace(current, previous)
+    for start, end in (('      - name: Execute both unchanged HTTP clients on the same normal expanded profile\n', '      - name: Retain bounded C standard runtime proof including failures\n'), ('            ${{ runner.temp }}/c-libucl-http/qualified.json\n', '            ${{ runner.temp }}/c-standard-facilities/qualified.json\n')):
+        if value.count(start) != 1 or value.count(end) != 1:
+            raise AssertionError('historical-workflow-exact-libucl-block-required')
+        first = value.index(start); last = value.index(end, first)
+        value = value[:first] + value[last:]
+    if hashlib.sha256(value.encode()).hexdigest() != 'e8a8c440b002c785b001d6d9d1f4038d4ff929f9b620029eedd318a25c1e2781':
+        raise AssertionError('historical-workflow-original-libfetch-source-required')
+    return original_libfetch_workflow(value)
+
+
 class ClosedFilesystemQualification(unittest.TestCase):
     def test_actual_c_standard_error_projection_uses_closed_attribution_tokens(self):
         from tools import guest_compatibility as compatibility
@@ -133,7 +170,34 @@ class ClosedFilesystemQualification(unittest.TestCase):
                             AssertionError, '^historical-workflow-exact-current-security-actions-required$'):
                         historical_security_actions(encode(invalid))
         from tools.ci_lane_inventory import workflow_model
-        model = workflow_model(original_libfetch_workflow((gate.ROOT/'.github/workflows/c-guest-authoring.yml').read_text()))
+        current = (gate.ROOT/'.github/workflows/c-guest-authoring.yml').read_text()
+        selected = workflow_model(current)
+        outside = selected['on']['workflow_dispatch']['inputs']['outside-capture']
+        self.assertEqual(outside['type'], 'boolean'); self.assertIs(outside['default'], False)
+        steps = selected['jobs']['standard-facilities']['steps']
+        route = next(row for row in steps if row.get('name') == 'Execute two normal outside-source capture identity variants')
+        self.assertEqual(route['if'], "github.event_name == 'workflow_dispatch' && inputs.outside-capture && github.ref == 'refs/heads/feat/sdk-690-c-outside-capture-20261031'")
+        self.assertIn('--outside-capture --build-native', route['run'])
+        dedicated = 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
+        self.assertIn("github.ref != '" + dedicated + "'", selected['jobs']['runtime']['if'])
+        self.assertIn("github.event_name == 'workflow_dispatch' && inputs.outside-capture",
+                      selected['jobs']['standard-facilities']['if'])
+        self.assertIn("github.ref != '" + dedicated + "'", selected['jobs']['closed-filesystem']['if'])
+        defaults = [row for row in steps if row.get('name') in (
+            'Execute the actual captured standard library on current default native products',
+            'Execute ordinary bounded stdio through the same frozen default products',
+            'Execute combined ordinary libc facilities with four explicit grants',
+            'Execute captured C23 raw resources and physical trap retirement')]
+        self.assertEqual(len(defaults), 4)
+        self.assertTrue(all("github.ref != '" + dedicated + "'" in row['if'] for row in defaults))
+        restored = original_outside_workflow(current)
+        self.assertEqual(hashlib.sha256(restored.encode()).hexdigest(),
+                         '4c748a13eca74ecb1cadb638f0b890d2bd32a6cdd82f9501140038e092d2d73c')
+        for changed in (current.replace('--outside-capture --build-native', '--libucl-http --build-native'),
+                        current.replace('On the dedicated C outside-capture branch', 'unreviewed mode')):
+            with self.assertRaisesRegex(AssertionError, '^historical-workflow-exact-outside-source-required$'):
+                original_outside_workflow(changed)
+        model = workflow_model(original_libucl_workflow(current))
         selector = model['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']
         self.assertEqual(selector['type'], 'boolean'); self.assertIs(selector['default'], False)
         jobs = copy.deepcopy(model['jobs'])

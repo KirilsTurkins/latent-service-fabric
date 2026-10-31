@@ -89,6 +89,34 @@ fn emit_scheduler(snapshot: &wasmtime::AsyncDeadlockSnapshot, sink: &mut impl Wr
         snapshot.root_flags, snapshot.waiting_threads);
 }
 
+fn emit_root_suspension(snapshot: &wasmtime::RootSuspensionSnapshot, sink: &mut impl Write) {
+    // All coordinates are numeric and each is bounded by its original Wasm u32.
+    // Unavailable transfers must not relabel stale earlier frames as the last wait.
+    let _ = writeln!(
+        sink,
+        "LSF-RUST40-SUSP:{}:{}:{}:{}",
+        snapshot.flags, snapshot.steps, snapshot.visited, snapshot.count
+    );
+    for (ordinal, frame) in snapshot
+        .frames
+        .iter()
+        .take(usize::from(snapshot.count).min(MAX_FRAMES))
+        .enumerate()
+    {
+        let _ = writeln!(
+            sink,
+            "LSF-RUST40-SUSP-FRAME:{ordinal}:{}:{}:{}:{}",
+            frame.module, frame.function, frame.module_offset, frame.function_offset
+        );
+    }
+}
+
+pub(crate) fn record_root_suspension(snapshot: &wasmtime::RootSuspensionSnapshot) {
+    // Only the one-shot original AsyncDeadlock callback on the authenticated
+    // factory reaches this. No output occurs at each suspension.
+    emit_root_suspension(snapshot, &mut std::io::stderr().lock());
+}
+
 fn record_scheduler(snapshot: &wasmtime::AsyncDeadlockSnapshot) {
     emit_scheduler(snapshot, &mut std::io::stderr().lock());
 }
@@ -187,6 +215,48 @@ mod tests {
             root_flags: 66,
             waiting_threads: 2,
         };
+        crate::native_tables::assert_root_suspension_transfer_controls();
+        let suspension = wasmtime::RootSuspensionSnapshot {
+            flags: 7,
+            steps: 64,
+            visited: 8,
+            count: 8,
+            frames: core::array::from_fn(|index| wasmtime::RootSuspensionFrame {
+                module: (index % 2) as u8,
+                function: index as u32,
+                module_offset: u32::MAX,
+                function_offset: 123,
+            }),
+        };
+        let mut bounded = std::io::Cursor::new([0_u8; 1024]);
+        emit_root_suspension(&suspension, &mut bounded);
+        let emitted =
+            std::str::from_utf8(&bounded.get_ref()[..bounded.position() as usize]).unwrap();
+        assert!(emitted.starts_with("LSF-RUST40-SUSP:7:64:8:8\n"));
+        assert_eq!(emitted.lines().count(), 9);
+        assert!(emitted.lines().all(|line| line
+            .rsplit_once(':')
+            .unwrap()
+            .1
+            .bytes()
+            .all(|b| b.is_ascii_digit())));
+        assert!(!emitted.contains("private-guest-export"));
+        assert!(bounded.position() < 768);
+        // Even a malformed trusted count cannot escape fixed storage/output.
+        let malformed = wasmtime::RootSuspensionSnapshot {
+            count: u8::MAX,
+            ..suspension
+        };
+        let mut output = std::io::Cursor::new([0_u8; 1024]);
+        emit_root_suspension(&malformed, &mut output);
+        assert_eq!(
+            std::str::from_utf8(&output.get_ref()[..output.position() as usize])
+                .unwrap()
+                .lines()
+                .count(),
+            9
+        );
+
         let mut scheduler = std::io::Cursor::new([0_u8; 96]);
         emit_scheduler(&snapshot, &mut scheduler);
         assert_eq!(

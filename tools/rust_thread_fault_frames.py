@@ -85,6 +85,63 @@ def scheduler_snapshot(stderr):
     return result
 
 
+# Last original root suspension, independent of the original fault-frame gate.
+# Every matching prefix is parsed/refused; unknown private strings are not saved.
+SUSP_ROW = re.compile(rb'^LSF-RUST40-SUSP(?!-FRAME)([^\n]*)$', re.M)
+SUSP_VALUE = re.compile(rb':(0|[1-9][0-9]{0,2})' * 4 + rb'\r?')
+SUSP_FRAME_ROW = re.compile(rb'^LSF-RUST40-SUSP-FRAME([^\n]*)$', re.M)
+SUSP_FRAME_VALUE = re.compile(rb':(0|[1-9][0-9]{0,9})' * 5 + rb'\r?')
+
+
+def root_suspension(stderr):
+    require(len(stderr) <= 262144, 'rust-thread-fault-stderr-bound')
+    header = None
+    for match in SUSP_ROW.finditer(stderr):
+        require(header is None and match.end(1) - match.start(1) <= 17,
+                'rust-thread-fault-single-root-suspension-header')
+        value = SUSP_VALUE.fullmatch(match.group(1))
+        require(value is not None, 'rust-thread-fault-root-suspension-format')
+        flags, steps, visited, count = map(int, value.groups())
+        require(flags < 128 and steps <= 64 and count <= visited <= 8
+                and (not flags & 1 or steps == 64)
+                and (not flags & 2 or visited == 8)
+                and (not flags & 96 or flags in (32, 64) and steps == visited == count == 0),
+                'rust-thread-fault-root-suspension-range')
+        header = flags, steps, visited, count
+    rows = []
+    modules = set()
+    for match in SUSP_FRAME_ROW.finditer(stderr):
+        require(header is not None and len(rows) < header[3]
+                and match.end(1) - match.start(1) <= 56,
+                'rust-thread-fault-root-suspension-frame-bound')
+        value = SUSP_FRAME_VALUE.fullmatch(match.group(1))
+        require(value is not None, 'rust-thread-fault-root-suspension-frame-format')
+        ordinal, module, function, instruction, offset = map(int, value.groups())
+        require(ordinal == len(rows) and module <= 7
+                and module <= len(modules)
+                and max(function, instruction, offset) <= 0xffffffff,
+                'rust-thread-fault-root-suspension-frame-range')
+        modules.add(module)
+        rows.append({'ordinal': ordinal, 'module': module, 'function': function,
+                     'moduleOffset': instruction, 'functionOffset': offset})
+    if header is None:
+        return None
+    flags, steps, visited, count = header
+    require(len(rows) == count and bool(flags & 8) == (visited > count)
+            and bool(flags & 4) == any(row['moduleOffset'] == 0xffffffff
+                                      or row['functionOffset'] == 0xffffffff for row in rows),
+            'rust-thread-fault-root-suspension-complete-record')
+    return {'rawTraversalSteps': steps, 'traversalStepLimit': 64,
+            'rawFrameVisits': visited, 'frameVisitLimit': 8,
+            'traversalMayBeTruncated': bool(flags & 1),
+            'framesMayBeTruncated': bool(flags & 2),
+            'missingSourceCoordinates': bool(flags & 4),
+            'unmappedFrames': bool(flags & 8),
+            'traceUnavailable': bool(flags & 16),
+            'lastTransferUnavailable': bool(flags & 32),
+            'noCaptureSaved': bool(flags & 64), 'frames': rows}
+
+
 def capture(node, native, component, output):
     node.drain()
     code = trap_code(node.buffers[1])
@@ -105,6 +162,15 @@ def capture(node, native, component, output):
             'schemaVersion': 'latent.rust.thread-fault.scheduler-prefix.v1',
             'node': native, 'component': component, 'originalTrapCode': code,
             'snapshot': snapshot, 'frameObservationRequiredSeparately': True,
+            'rawStderrRetained': False, 'runtimeQualification': False,
+            'diagnosticIoMayPerturbTimingAndTerminalObservation': True})
+    suspension = root_suspension(node.buffers[1])
+    if suspension is not None:
+        require(code == 22, 'rust-thread-fault-root-suspension-original-async-deadlock')
+        write_json(output / 'numeric-original-root-suspension.json', {
+            'schemaVersion': 'latent.rust.thread-fault.root-suspension.v1',
+            'node': native, 'component': component, 'originalTrapCode': code,
+            'suspension': suspension, 'frameObservationRequiredSeparately': True,
             'rawStderrRetained': False, 'runtimeQualification': False,
             'diagnosticIoMayPerturbTimingAndTerminalObservation': True})
     rows = frames(node.buffers[1])

@@ -4,7 +4,7 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains 35 changed upstream files and 23 added
+original package; it contains 36 changed upstream files and 23 added
 source/license files. Other Wasmtime packages remain at the original locked
 registry versions. The standalone development lock selects Tokio 1.51.6 for
 RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
@@ -715,3 +715,40 @@ compiler, normal-component and native receipts retain their immutable original
 identities. Only a freshly built explicit diagnostic runtime can claim v29.
 Original normal five-call outcomes and the separate nonempty frame requirement
 remain mandatory and unqualified by these observations.
+
+## v30: bounded last original root suspension coordinates
+
+The same authenticated, off-default Rust diagnostic can retain one last-root
+record INLINE in its already prepaid NativeMemory Factory. RootRecord is at most
+256 bytes (including its fixed Mutex/atomic); the actual enlarged Factory Arc
+layout is reserved before allocation. Snapshot is at most144 bytes, eight fixed
+numeric rows, no Module/String/Vec/PC retention. Transfer is try_lock only: a
+failed last write invalidates old rows; failed read/never saved are explicit.
+Only the original one-shot AsyncDeadlock callback emits the record. Normal None
+factories neither trace nor access the record and retain their old Factory layout
+when the Rust diagnostic feature is absent.
+
+GuestThread gains ONE private diagnostic-origin bool in its existing cell even
+for default factories. Its physical padding/size delta is target/compiler layout,
+not claimed zero: ResourceValue::new still reserves actual size_of::<GuestThread>()
+before Box::new. No grant, native owner or per-file/runtime capacity is increased.
+The bool is set only by the sole new_implicit callsite for the actual Host task
+while the observer is enabled; explicit children remain false even though they
+share that task. Every suspend checks exact origin/parent before tracing.
+
+The additive walker preserves old APIs and counts BEFORE raw TLS, continuation
+and stack-limit iterator next() attempts, including unrelated/empty attempts,
+under one64-step budget. Eight RAW Wasm-frame callbacks cap work before numeric
+lookup, including unmapped modules. Both limits expose truncation. A borrowed
+registry lookup avoids FrameInfo::new and all function-name/symbol allocation.
+Private Copy numeric module keys exist only in fixed local scratch and are
+replaced by first-seen ordinals; output contains only original source coordinates.
+The existing trusted unwinder reads native Wasm-stack metadata, never guest
+linear memory. Fixed scratch uses the original admitted native stack/guards;
+144 bytes bounds the record, not the entire compiler-generated native frame.
+
+No scheduler progress, original Trap22, normal outcome, old nonempty fault-frame
+gate or authority/retirement limit changes. The new observation is independent
+nonqualifying cause evidence; stderr can block and perturb timing. All v29/e3
+compiler/component/native/four-helper receipts remain immutable and historical;
+only a freshly built explicit diagnostic runtime may claim v30.

@@ -49,6 +49,38 @@ pub struct AsyncDeadlockSnapshot {
 
 const _: () = assert!(core::mem::size_of::<AsyncDeadlockSnapshot>() <= 16);
 
+/// One source-only coordinate. Missing offsets use `u32::MAX`, never a PC.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct RootSuspensionFrame {
+    /// First-seen ordinal within this one bounded capture, not a registry ID.
+    pub module: u8,
+    /// Original Wasm function index.
+    pub function: u32,
+    /// Original source instruction offset, or `u32::MAX` when unavailable.
+    pub module_offset: u32,
+    /// Offset within that original function, or `u32::MAX` when unavailable.
+    pub function_offset: u32,
+}
+
+/// Nonqualifying last original implicit-host-root explicit suspension only.
+/// Stored inline by an authenticated factory; no owning module or native PC.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct RootSuspensionSnapshot {
+    /// Bits: 0 traversal truncated, 1 frames may truncate, 2 missing coordinates,
+    /// 3 unmapped frame, 4 no active trace, 5 failed transfer, 6 no saved capture.
+    pub flags: u8,
+    /// Raw TLS/continuation traversal attempts, at most 64, before filtering.
+    pub steps: u8,
+    /// Raw Wasm-frame visits including unmapped frames, at most eight.
+    pub visited: u8,
+    /// Mapped coordinates retained, no more than `visited` and at most eight.
+    pub count: u8,
+    /// Fixed inline numeric coordinates; unused rows are never emitted.
+    pub frames: [RootSuspensionFrame; 8],
+}
+
+const _: () = assert!(core::mem::size_of::<RootSuspensionSnapshot>() <= 144);
+
 /// Original memory admission selected before a Store or its instances allocate.
 ///
 /// A successful nonzero reservation must return an affine owner. The owner must
@@ -57,6 +89,14 @@ const _: () = assert!(core::mem::size_of::<AsyncDeadlockSnapshot>() <= 16);
 pub trait NativeMemory: Send + Sync {
     /// Reserve the complete checked allocation size before allocating it.
     fn reserve(&self, bytes: usize) -> Result<Box<dyn NativeAllocation>>;
+
+    /// Default factories neither identify diagnostic roots nor walk stacks.
+    fn root_suspension_enabled(&self) -> bool {
+        false
+    }
+
+    /// Copy into the existing paid factory only; a failed try must not block.
+    fn save_root_suspension(&self, _snapshot: &RootSuspensionSnapshot) {}
 
     /// Optional fixed-scalar diagnostic on the existing admitted factory.
     /// No observer means no snapshot scan. It cannot alter the original Trap.

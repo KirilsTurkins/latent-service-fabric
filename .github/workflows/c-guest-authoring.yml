@@ -3,6 +3,10 @@ name: C guest authoring
 on:
   workflow_dispatch:
     inputs:
+      outside-capture:
+        description: "On the dedicated C outside-capture branch, qualify two developer-owned outside-source identity variants"
+        type: boolean
+        default: false
       replay-closed-filesystem:
         description: "Fresh closed-file C component using the authenticated passed normal products"
         type: boolean
@@ -24,7 +28,7 @@ on:
       - 'docs/component-development/c-authoring.md'
       - '.github/workflows/c-guest-authoring.yml'
   push:
-    branches: [development, feat/sdk-690-c-libfetch-http-20261029]
+    branches: [development, feat/sdk-690-c-libfetch-http-20261029, feat/sdk-690-c-libucl-http-20261029]
     paths:
       - 'sdk/c-guest/**'
       - 'sdk/transaction-contract/**'
@@ -56,7 +60,7 @@ env:
 
 jobs:
   runtime:
-    if: ${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}
+    if: ${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}
     name: Admitted C capability ownership
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -187,13 +191,13 @@ jobs:
           retention-days: 3
 
   standard-facilities:
-    if: ${{ github.event_name != 'workflow_dispatch' || (!inputs.qualify-scratch-refusals && !inputs.replay-closed-filesystem) }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || (!inputs.qualify-scratch-refusals && !inputs.replay-closed-filesystem)) && (github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' || (github.event_name == 'workflow_dispatch' && inputs.outside-capture)) }}
     name: Signed C standard clock and entropy profile
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - name: Start the finite libfetch qualification clock
-        if: github.ref == 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'
+        if: github.ref == 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' || github.ref == 'refs/heads/feat/sdk-690-c-libucl-http-20261029' || github.ref == 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
         run: echo "LSF_C_LIBFETCH_STARTED_NS=$(date +%s%N)" >> "$GITHUB_ENV"
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
@@ -231,22 +235,22 @@ jobs:
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Execute the actual captured standard library on current default native products
-        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'
+        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
         run: |
           python3 -m unittest tools.tests.test_c_standard_facilities
           python3 tools/qualify_c_standard_facilities.py --build-native --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-facilities"
       - name: Execute ordinary bounded stdio through the same frozen default products
-        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'
+        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
         run: |
           python3 -m unittest tools.tests.test_c_standard_logging
           python3 tools/qualify_c_standard_facilities.py --standard-logging --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-logging"
       - name: Execute combined ordinary libc facilities with four explicit grants
-        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'
+        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
         run: |
           python3 -m unittest tools.tests.test_c_standard_combined
           python3 tools/qualify_c_standard_facilities.py --combined-profile --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-combined"
       - name: Execute captured C23 raw resources and physical trap retirement
-        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029'
+        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
         run: |
           python3 -m unittest tools.tests.test_c_compiled_resources
           python3 tools/qualify_c_standard_facilities.py --compiled-resources --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-compiled-resources"
@@ -256,12 +260,45 @@ jobs:
           python3 tools/qualify_c_standard_facilities.py --libfetch-http --build-native
           --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)"
           --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-libfetch-http"
+      - name: Execute both unchanged HTTP clients on the same normal expanded profile
+        if: github.ref == 'refs/heads/feat/sdk-690-c-libucl-http-20261029'
+        run: >-
+          python3 tools/qualify_c_standard_facilities.py --libucl-http --build-native
+          --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)"
+          --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-libucl-http"
+      - name: Execute two normal outside-source capture identity variants
+        if: github.event_name == 'workflow_dispatch' && inputs.outside-capture && github.ref == 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
+        run: >-
+          python3 tools/qualify_c_standard_facilities.py --outside-capture --build-native
+          --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)"
+          --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-outside-capture"
       - name: Retain bounded C standard runtime proof including failures
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: c-standard-facilities-${{ github.run_id }}
           path: |
+            ${{ runner.temp }}/c-outside-capture/qualified.json
+            ${{ runner.temp }}/c-outside-capture/FAILED.json
+            ${{ runner.temp }}/c-outside-capture/logs/**
+            ${{ runner.temp }}/c-outside-capture/owner-inputs/**
+            ${{ runner.temp }}/c-outside-capture/project-outside-*/**
+            ${{ runner.temp }}/c-outside-capture/build-outside-*/**
+            ${{ runner.temp }}/c-outside-capture/native-build/native/native-tuple.json
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/qualified.json
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/FAILED.json
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/signed/release-set.json
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/signed/c-thread-runtime/package/**
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/signed/c-thread-runtime/evidence/**
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/signed/c-thread-runtime/deployment.json
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/controls/**
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/commands/logs/**
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/invocation-*.json
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/peer-*.json
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/retirement-*.json
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/*.stdout
+            ${{ runner.temp }}/c-outside-capture/node-outside-*/*.stderr
+            ${{ runner.temp }}/c-outside-capture/standalone-sdk/recipe/**
             ${{ runner.temp }}/c-libfetch-http/qualified.json
             ${{ runner.temp }}/c-libfetch-http/FAILED.json
             ${{ runner.temp }}/c-libfetch-http/logs/**
@@ -283,6 +320,43 @@ jobs:
             ${{ runner.temp }}/c-libfetch-http/node/retirement-*.json
             ${{ runner.temp }}/c-libfetch-http/node/*.stdout
             ${{ runner.temp }}/c-libfetch-http/node/*.stderr
+            ${{ runner.temp }}/c-libucl-http/qualified.json
+            ${{ runner.temp }}/c-libucl-http/FAILED.json
+            ${{ runner.temp }}/c-libucl-http/logs/**
+            ${{ runner.temp }}/c-libucl-http/owner-inputs/**
+            ${{ runner.temp }}/c-libucl-http/project-libfetch/**
+            ${{ runner.temp }}/c-libucl-http/project-libucl/**
+            ${{ runner.temp }}/c-libucl-http/native-build/native/native-tuple.json
+            ${{ runner.temp }}/c-libucl-http/build-libfetch/**
+            ${{ runner.temp }}/c-libucl-http/build-libucl/**
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/signed/release-set.json
+            ${{ runner.temp }}/c-libucl-http/node-libucl/signed/release-set.json
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/signed/c-thread-runtime/package/**
+            ${{ runner.temp }}/c-libucl-http/node-libucl/signed/c-thread-runtime/package/**
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/signed/c-thread-runtime/evidence/**
+            ${{ runner.temp }}/c-libucl-http/node-libucl/signed/c-thread-runtime/evidence/**
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/signed/c-thread-runtime/deployment.json
+            ${{ runner.temp }}/c-libucl-http/node-libucl/signed/c-thread-runtime/deployment.json
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/qualified.json
+            ${{ runner.temp }}/c-libucl-http/node-libucl/qualified.json
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/FAILED.json
+            ${{ runner.temp }}/c-libucl-http/node-libucl/FAILED.json
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/controls/**
+            ${{ runner.temp }}/c-libucl-http/node-libucl/controls/**
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/commands/logs/**
+            ${{ runner.temp }}/c-libucl-http/node-libucl/commands/logs/**
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/invocation-*.json
+            ${{ runner.temp }}/c-libucl-http/node-libucl/invocation-*.json
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/peer-*.json
+            ${{ runner.temp }}/c-libucl-http/node-libucl/peer-*.json
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/barrier-*.json
+            ${{ runner.temp }}/c-libucl-http/node-libucl/barrier-*.json
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/retirement-*.json
+            ${{ runner.temp }}/c-libucl-http/node-libucl/retirement-*.json
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/*.stdout
+            ${{ runner.temp }}/c-libucl-http/node-libucl/*.stdout
+            ${{ runner.temp }}/c-libucl-http/node-libfetch/*.stderr
+            ${{ runner.temp }}/c-libucl-http/node-libucl/*.stderr
             ${{ runner.temp }}/c-standard-facilities/qualified.json
             ${{ runner.temp }}/c-standard-facilities/FAILED.json
             ${{ runner.temp }}/c-standard-facilities/logs/**
@@ -399,7 +473,7 @@ jobs:
           retention-days: 3
   closed-filesystem:
     name: Fresh signed concrete C filesystem Unsupported results
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay-closed-filesystem }}
+    if: ${{ github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' && github.event_name == 'workflow_dispatch' && inputs.replay-closed-filesystem }}
     permissions:
       contents: read
       actions: read
