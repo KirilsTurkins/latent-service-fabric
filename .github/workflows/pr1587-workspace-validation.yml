@@ -18,14 +18,25 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
-          toolchain: '1.97.1'
           components: rustfmt
       - name: Capture tracked source and formatter changes only
         run: |
           mkdir -p "$RUNNER_TEMP/pr1587-workspace"
           git rev-parse HEAD > "$RUNNER_TEMP/pr1587-workspace/source-revision.txt"
-          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/pr1587-workspace/source.tar.gz"
-          test "$(stat --format=%s "$RUNNER_TEMP/pr1587-workspace/source.tar.gz")" -le 134217728
+          python3 - <<'PY'
+          import os, pathlib, subprocess, tarfile
+          root = pathlib.Path.cwd()
+          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1587-workspace'
+          names = subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\0')
+          with tarfile.open(output / 'source.tar.gz', 'w:gz') as archive:
+              for name in names:
+                  if not name:
+                      continue
+                  path = root / name
+                  if path.is_file() and not path.is_symlink() and path.stat().st_size <= 2 * 1024**2:
+                      archive.add(path, arcname=name, recursive=False)
+          assert (output / 'source.tar.gz').stat().st_size <= 128 * 1024**2
+          PY
           cargo fmt --all
           git diff --binary > "$RUNNER_TEMP/pr1587-workspace/formatting.patch"
       - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
