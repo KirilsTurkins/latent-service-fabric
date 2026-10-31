@@ -242,3 +242,31 @@ All 76 must pass before owner success; an old fixture mismatch still fails the
 run. Original 29-control ordering, default non-application behavior, assertions,
 source immutability and qualification requirements remain unchanged. No guest
 execution or new normal-component qualification follows from this sequencing.
+
+Compiler [41187066997](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41187066997)
+then retained an actual 250,260-byte normal component,
+`0ded5f17359bbff107af47e422549765de2e17f4829853ed2011225d85a56107`.
+All 238 captured Git inputs and 199 application recipe inputs match exact source
+`24737830b5ea01006b419c1196212f08db2d715a`. The retained native core is byte-identical
+to source-adapted `deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423`.
+The unchanged envelope projection proves every non-consumed main-core section
+exact; restoring consumed WIT metadata and the producer merge reconstructs that
+complete derived core. The raw encoded main has a different digest because the
+encoder consumes that metadata. Original and adapted WIT fixtures stay unchanged.
+
+The repaired original main has the same 18 import identities in a new source
+order. Its encoder adapters, canonical lowerings, aliases and component-name
+metadata follow that order. Table limits remain exactly 121/121 in the main and
+9/9 in the adapters. The new exact 4,422-byte shell is
+`7640af9fd078983e33e464d5589e565a191686d0510ea5d5a4687bb886bf0e75`;
+the old shell's strict byte equality correctly refused it. The active component
+and shell now use only these actual captured bytes; prior bytes and complete
+provenance remain available through immutable Git source references and the
+historical origin. No old/new fallback or projection change is introduced.
+
+Artifact `13036539476` contains 118 CRC-verified members (52,934,272 bytes, ZIP
+SHA-256 `e15684a6a47091eec962a1044f21ab7f916c6477e2d864158cce27d2c1353644`).
+That owner failed native normal-component proof before reaching its mandatory
+76 controls. The next owning run must pass both; current component/runtime
+qualification and all five signed guest outcomes remain unproved. No local
+compiler, native executable or guest ran to produce this fixture update.

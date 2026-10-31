@@ -116,16 +116,16 @@
     "tool": "wasm-tools",
     "version": "1.254.0",
     "toolSha256": "cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
-    "componentDigest": "sha256:1db2b051a515be1bd60974e38335f6bade254d6b016daf9e20b913360e72c00f",
-    "componentBytes": 251758,
-    "derivedCoreDigest": "sha256:31712d97ca16f65283b8d535d38f19a64c3ad048fdd8e774bd652c9b589b8fe7",
+    "componentDigest": "sha256:0ded5f17359bbff107af47e422549765de2e17f4829853ed2011225d85a56107",
+    "componentBytes": 250260,
+    "derivedCoreDigest": "sha256:deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423",
     "actualGuestExecuted": false,
-    "nativeVerifierExecuted": false,
+    "nativeVerifierExecuted": true,
     "files": [
       {
         "name": "normal-component-shell.bin",
         "bytes": 4422,
-        "digest": "sha256:9764efdf4970070a220cb38229face5dae6a4a7e6c995df4e52d5f93ea2900ca"
+        "digest": "sha256:7640af9fd078983e33e464d5589e565a191686d0510ea5d5a4687bb886bf0e75"
       },
       {
         "name": "original-wit-metadata.bin",
@@ -143,7 +143,7 @@
         "digest": "sha256:69f3074c7d609279bfd822f32c19bd1ddca984aa7dbdfc2b7fb19f763c9cd776"
       }
     ],
-    "originalSyncCoreDigest": "sha256:c83288b6777ee690b4de107fd99ac63ea3e650221c79cee8230bc8d85ea8b51b",
+    "originalSyncCoreDigest": "sha256:0f5dce3b2a99ae8f91d4a391e7c0cfda7113e528f767493f8ea22d233d3639f3",
     "publicEffect": "explicit-async-WIT-ordinary-synchronous-core-ABI",
     "metadataAdaptation": {
       "originalBytes": 1420,
@@ -157,15 +157,17 @@
       "adaptedDigest": "sha256:14bae97e29b1064d917330e77a459d068214ae6857d5fe6ff2298bdbecc7b826"
     },
     "candidateSource": {
-      "compilerRun": 41127291312,
-      "compilerJob": 124309000420,
-      "compilerHead": "ef841ed1d5691b4bf25db48b9980a776b4b56bc5",
-      "compilerArtifact": 13012116413,
-      "compilerArtifactZipSha256": "1f1fc1598c340b22f74b2bdf6b361ad576168738bbd619043a136a5faefcf45e",
+      "compilerRun": 41187066997,
+      "compilerJob": 124496037081,
+      "compilerHead": "24737830b5ea01006b419c1196212f08db2d715a",
+      "compilerArtifact": 13036539476,
+      "compilerArtifactZipSha256": "e15684a6a47091eec962a1044f21ab7f916c6477e2d864158cce27d2c1353644",
       "platform": "ubuntu-24.04-x86_64",
       "toolReleaseAsset": "lsf-bytecodealliance-actions-wasm-tools-1.254.0",
       "toolSha256": "cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
-      "hostedConfirmation": true
+      "hostedConfirmation": true,
+      "nativeNormalProofPassed": false,
+      "mandatory76Reached": false
     },
     "previousHostedSource": {
       "run": 41113065282,
@@ -179,6 +181,12 @@
       "sourceControlsPassed": 76,
       "nativeControlsPassed": 29,
       "hostedConfirmation": true
+    },
+    "nativeVerifierPassed": false,
+    "consumedPublicWitMetadata": {
+      "name": "adapted-wit-metadata.bin",
+      "bytes": 1420,
+      "digest": "sha256:14bae97e29b1064d917330e77a459d068214ae6857d5fe6ff2298bdbecc7b826"
     }
   },
   "historicalCatalogueOrigin": {
@@ -364,7 +372,7 @@
       }
     }
   },
-  "normalComponentEnvelopeStatus": "historical-only; current-source normal component has not been encoded",
+  "normalComponentEnvelopeStatus": "actual current-source encoding retained; native normal proof and mandatory 76 controls pending",
   "currentSourceObservation": {
     "rawCore": {
       "bytes": 261378,
@@ -390,14 +398,114 @@
         }
       ],
       "normalComponentEncoded": false,
-      "nativeConfirmationPending": true
+      "nativeConfirmationPending": false
     },
-    "normalComponentProduced": false,
-    "nativeConfirmationPending": true,
+    "normalComponentProduced": true,
+    "nativeConfirmationPending": false,
     "historicalOriginalCoreGit": {
       "head": "f401e388a7542b8f9cd9bbd987dbcc65814262d6",
       "path": "crates/latent-component-threading/src/rust_catalogue/catalogue-original-core.wasm",
       "sha256": "0cbb66d8e363c47df6b158d50facb7fa04f280bcb2650aa0597385fd63025a24"
+    },
+    "normalComponentObservation": {
+      "run": 41187066997,
+      "job": 124496037081,
+      "head": "24737830b5ea01006b419c1196212f08db2d715a",
+      "artifact": 13036539476,
+      "artifactZipSha256": "e15684a6a47091eec962a1044f21ab7f916c6477e2d864158cce27d2c1353644",
+      "crcMembers": 118,
+      "component": {
+        "bytes": 250260,
+        "digest": "sha256:0ded5f17359bbff107af47e422549765de2e17f4829853ed2011225d85a56107"
+      },
+      "nativeDerivedCore": {
+        "bytes": 247213,
+        "digest": "sha256:deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423"
+      },
+      "encodedMainNonConsumedSectionsExact": true,
+      "restoredConsumedMetadataAndProducerMainExactlyEqualsDerived": true,
+      "nativeNormalProofPassed": false,
+      "mandatory76Reached": false,
+      "actualGuestExecuted": false,
+      "standardRuntimeQualified": false,
+      "originalNormalEnvelopeMismatch": "strict previous-shell byte equality after actual original import-order change"
+    }
+  },
+  "historicalNormalComponentFixture": {
+    "head": "24737830b5ea01006b419c1196212f08db2d715a",
+    "componentPath": "crates/latent-component-threading/src/rust_catalogue/catalogue-normal-component.wasm",
+    "componentDigest": "sha256:1db2b051a515be1bd60974e38335f6bade254d6b016daf9e20b913360e72c00f",
+    "componentBytes": 251758,
+    "shellPath": "crates/latent-component-threading/src/rust_catalogue/normal-component-shell.bin",
+    "shellDigest": "sha256:9764efdf4970070a220cb38229face5dae6a4a7e6c995df4e52d5f93ea2900ca",
+    "normalComponentEnvelope": {
+      "tool": "wasm-tools",
+      "version": "1.254.0",
+      "toolSha256": "cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "componentDigest": "sha256:1db2b051a515be1bd60974e38335f6bade254d6b016daf9e20b913360e72c00f",
+      "componentBytes": 251758,
+      "derivedCoreDigest": "sha256:31712d97ca16f65283b8d535d38f19a64c3ad048fdd8e774bd652c9b589b8fe7",
+      "actualGuestExecuted": false,
+      "nativeVerifierExecuted": false,
+      "files": [
+        {
+          "name": "normal-component-shell.bin",
+          "bytes": 4422,
+          "digest": "sha256:9764efdf4970070a220cb38229face5dae6a4a7e6c995df4e52d5f93ea2900ca"
+        },
+        {
+          "name": "original-wit-metadata.bin",
+          "bytes": 1420,
+          "digest": "sha256:d46e07b3b6b15e7b6d2f9bef3d1ab0fe1fc2baeb886e77eba09c76f6b3df58a3"
+        },
+        {
+          "name": "original-producers.bin",
+          "bytes": 61,
+          "digest": "sha256:481d56af9d9f23b7f94c4150f8085f48f9b05f177a0318cad370736cdbc5792f"
+        },
+        {
+          "name": "encoded-producers.bin",
+          "bytes": 107,
+          "digest": "sha256:69f3074c7d609279bfd822f32c19bd1ddca984aa7dbdfc2b7fb19f763c9cd776"
+        }
+      ],
+      "originalSyncCoreDigest": "sha256:c83288b6777ee690b4de107fd99ac63ea3e650221c79cee8230bc8d85ea8b51b",
+      "publicEffect": "explicit-async-WIT-ordinary-synchronous-core-ABI",
+      "metadataAdaptation": {
+        "originalBytes": 1420,
+        "adaptedBytes": 1420,
+        "completeParsedGraphDifference": "only examples:greeting/api@1.0.0#greet async flag",
+        "instructionDataImportExportsChanged": false,
+        "hostSyncTaskSemanticsChanged": false,
+        "changedOffset": 1244,
+        "originalByte": 64,
+        "adaptedByte": 67,
+        "adaptedDigest": "sha256:14bae97e29b1064d917330e77a459d068214ae6857d5fe6ff2298bdbecc7b826"
+      },
+      "candidateSource": {
+        "compilerRun": 41127291312,
+        "compilerJob": 124309000420,
+        "compilerHead": "ef841ed1d5691b4bf25db48b9980a776b4b56bc5",
+        "compilerArtifact": 13012116413,
+        "compilerArtifactZipSha256": "1f1fc1598c340b22f74b2bdf6b361ad576168738bbd619043a136a5faefcf45e",
+        "platform": "ubuntu-24.04-x86_64",
+        "toolReleaseAsset": "lsf-bytecodealliance-actions-wasm-tools-1.254.0",
+        "toolSha256": "cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "hostedConfirmation": true
+      },
+      "previousHostedSource": {
+        "run": 41113065282,
+        "job": 124260142818,
+        "head": "9d9b4001bdefa57b6938c613d0fea13f8e638f83",
+        "artifact": 13004447135,
+        "artifactZipSha256": "b7df73bbe827a016e45b1681db7304054a6d941c7d1844ebde87063417a58c37",
+        "platform": "ubuntu-24.04-x86_64-container",
+        "componentDigest": "sha256:1f49c19d412b36f9a28c6e867298f5f149df40452a2b179fad7eee46578f3a8f",
+        "originalCoreDigest": "sha256:ae5b68cec5fa2d68cdd65eb669844e0d2dd75d8a3fc7563d8fc0a272866b9c7b",
+        "sourceControlsPassed": 76,
+        "nativeControlsPassed": 29,
+        "hostedConfirmation": true
+      }
     }
   }
 }
