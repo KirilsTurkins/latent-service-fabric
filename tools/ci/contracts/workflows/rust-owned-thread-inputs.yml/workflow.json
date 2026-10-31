@@ -9,11 +9,13 @@
 "on":{
 "push":{
 "branches":[
-"feat/rust-standard-thread-runtime-20261022"
+"feat/rust-standard-thread-runtime-20261022",
+"feat/rust-thread-runtime-20261023"
 ],
 "paths":[
 ".github/workflows/rust-owned-thread-inputs.yml",
-"tools/compile_rust_owned_thread_inputs.py"
+"tools/compile_rust_owned_thread_inputs.py",
+"sdk/rust-standard-runtime/**"
 ]
 },
 "workflow_dispatch":{
@@ -33,7 +35,7 @@
 "requiredJobs":[
 "compiler-inputs"
 ],
-"reviewReason":"Expose closed default-false compiler-only ordinary ThreadPool application diagnostic selector",
+"reviewReason":"Run the unchanged compiler-only programme on the active Rust runtime branch and runtime source changes; application diagnostics remain explicit and default false",
 "schemaVersion":"latent.ci.contracts.v1",
 "workflow":".github/workflows/rust-owned-thread-inputs.yml"
 }

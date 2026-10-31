@@ -459,6 +459,14 @@ pub(crate) unsafe fn progress_all() -> Option<Stamp> {
                 // after the real Pool Arc/control block was physically freed.
                 drop(live.control);
                 drop(live.executor);
+                // Removing a live entry invalidates this pass's snapshot.
+                // The root may already have prepared its completion wait for
+                // the second drain check, and this may be the final executor:
+                // no worker would remain to wake it for the required rescan.
+                // Publish only after physical release and owner settlement;
+                // callbacks can create more work, so never report completion
+                // from this changed snapshot instead of rechecking it.
+                changed();
             }
         }
     }

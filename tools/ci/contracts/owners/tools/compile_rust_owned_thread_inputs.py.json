@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_rust_owned_thread_inputs.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain unsigned actual application encoding before the same mandatory 76 Rust library source controls; owner success still requires all 76 after original native controls",
+  "reviewReason": "Add five actual executor-root and affine-owner notification controls before sysroot construction; preserve the original 29 native controls, all 76 application-mode library controls and every qualification gate",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0f56062660e9e2d0169b241be989e83d23f5ccb87783aeb1d7d1ba5c5dd7d519"
+  "sha256": "2c7edb8f88ece814a48a8ccef5cf50f90a8abff98c9893d2777fb91baa47344a"
 }

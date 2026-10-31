@@ -7,10 +7,11 @@ on:
         type: boolean
         default: false
   push:
-    branches: ['feat/rust-standard-thread-runtime-20261022']
+    branches: ['feat/rust-standard-thread-runtime-20261022', 'feat/rust-thread-runtime-20261023']
     paths:
       - .github/workflows/rust-owned-thread-inputs.yml
       - tools/compile_rust_owned_thread_inputs.py
+      - sdk/rust-standard-runtime/**
 permissions:
   contents: read
 concurrency:

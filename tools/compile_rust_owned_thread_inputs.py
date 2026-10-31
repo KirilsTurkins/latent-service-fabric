@@ -29,6 +29,7 @@ CRATE = 'crates/latent-component-threading/'
 NATIVE_TLS_TEST = 'sdk/rust-standard-runtime/tests/thread_tls_native.rs'
 NATIVE_WAIT_TEST = 'sdk/rust-standard-runtime/tests/thread_wait_driver_native.rs'
 NATIVE_SYNC_TEST = 'sdk/rust-standard-runtime/tests/thread_sync_native.rs'
+NATIVE_ROOT_TEST = 'sdk/rust-standard-runtime/tests/executor_root_native.rs'
 CRATE_SOURCES = tuple(CRATE + 'src/' + name for name in (
     'lib.rs', 'thread_entry.rs', 'root.rs', 'public_root.rs', 'admission.rs', 'component.rs',
     'c_abi.rs', 'c_component.rs', 'c_context.rs', 'c_lifecycle.rs',
@@ -49,7 +50,7 @@ RECIPE = tuple(dict.fromkeys((
     'tools/rust_standard_logging_inputs.py', 'tools/rust_application_dependencies.py',
     'tools/rust_standard_thread_capture.py', 'tools/rust_owned_thread_component.py',
     *result_controls.RECIPE, *CRATE_SOURCES, *std.recipe(threads=True),
-    NATIVE_TLS_TEST, NATIVE_WAIT_TEST, NATIVE_SYNC_TEST)))
+    NATIVE_TLS_TEST, NATIVE_WAIT_TEST, NATIVE_SYNC_TEST, NATIVE_ROOT_TEST)))
 
 
 def git(*args, input=None):
@@ -200,11 +201,20 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
         commands.run('native-sync-run', native_sync, '--test-threads=1')
         summary['nativeWaitControls'] = 11
         summary['nativeSyncControls'] = 8
+        summary['stage'] = 'native-executor-root-controls'
+        native_root = build_output / 'executor-root-native'
+        commands.run('native-executor-root-build', tools['rustc'], '--edition=2024', '--test',
+                     ROOT / NATIVE_ROOT_TEST, '-o', native_root)
+        listed = commands.run('native-executor-root-list', native_root, '--list')
+        require(sum(line.endswith(b': test') for line in listed.splitlines()) == 5,
+                'rust-thread-inputs-native-executor-root-case-closure')
+        commands.run('native-executor-root-run', native_root, '--test-threads=1')
+        summary['nativeExecutorRootControls'] = 5
         # The bounded evidence keeps the exact build/list/run logs and control
-        # counts.  The three native runner executables are transient products,
+        # counts.  The four native runner executables are transient products,
         # not compiler inputs or runtime products, so do not duplicate them in
         # the retained compiler-input artifact after their tests have run.
-        for native_control in (native_tls, native_wait, native_sync):
+        for native_control in (native_tls, native_wait, native_sync, native_root):
             native_control.unlink()
         summary['stage'] = 'tool-build'
         cargo = commands.run('rust-context-build', tools['cargo'], 'build', '--locked',
