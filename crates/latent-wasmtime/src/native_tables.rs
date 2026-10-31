@@ -1,27 +1,66 @@
 //! Original activation ownership follows actual Wasmtime table allocations.
 use latent_core::{ActivationBudget, HostMemoryReservation};
 
-// No user callbacks, Weak handles, custom destructor or returned self-Arc.
+// No guest callbacks, Weak handles, custom destructor or returned self-Arc.
 // Every allocation guard captures the original ledger directly, not this
 // factory; the paid binding's private clones are confined to engine containers.
 struct Factory {
     budget: ActivationBudget,
+    #[cfg(feature = "rust-thread-trap-diagnostic")]
+    observer: Option<fn(&wasmtime::AsyncDeadlockSnapshot)>,
+    #[cfg(feature = "rust-thread-trap-diagnostic")]
+    observed: core::sync::atomic::AtomicBool,
 }
 
 impl wasmtime::NativeMemory for Factory {
     fn reserve(&self, bytes: usize) -> wasmtime::Result<Box<dyn wasmtime::NativeAllocation>> {
         Ok(reserve(&self.budget, bytes)?.expect("native factory requests nonzero backing"))
     }
+
+    #[cfg(feature = "rust-thread-trap-diagnostic")]
+    fn async_deadlock_observer(&self) -> Option<fn(&wasmtime::AsyncDeadlockSnapshot)> {
+        self.observer.filter(|_| {
+            !self
+                .observed
+                .swap(true, core::sync::atomic::Ordering::Relaxed)
+        })
+    }
 }
 
 pub(crate) fn binding(
     budget: &ActivationBudget,
 ) -> wasmtime::Result<wasmtime::NativeMemoryBinding> {
+    #[cfg(feature = "rust-thread-trap-diagnostic")]
+    return binding_with_observer(budget, None);
+    #[cfg(not(feature = "rust-thread-trap-diagnostic"))]
+    binding_inner(budget)
+}
+
+#[cfg(feature = "rust-thread-trap-diagnostic")]
+pub(crate) fn binding_with_observer(
+    budget: &ActivationBudget,
+    observer: Option<fn(&wasmtime::AsyncDeadlockSnapshot)>,
+) -> wasmtime::Result<wasmtime::NativeMemoryBinding> {
+    binding_inner(budget, observer)
+}
+
+fn binding_inner(
+    budget: &ActivationBudget,
+    #[cfg(feature = "rust-thread-trap-diagnostic")] observer: Option<
+        fn(&wasmtime::AsyncDeadlockSnapshot),
+    >,
+) -> wasmtime::Result<wasmtime::NativeMemoryBinding> {
+    // Exact diagnostic Factory layout, including its optional function pointer,
+    // is admitted before Arc::new; no extra native owner or ledger is created.
     let size = wasmtime::NativeMemoryBinding::allocation_size::<Factory>();
     let owner = reserve(budget, size)?.expect("factory Arc has a nonzero allocation layout");
     Ok(wasmtime::NativeMemoryBinding::new(
         Factory {
             budget: budget.clone(),
+            #[cfg(feature = "rust-thread-trap-diagnostic")]
+            observer,
+            #[cfg(feature = "rust-thread-trap-diagnostic")]
+            observed: core::sync::atomic::AtomicBool::new(false),
         },
         owner,
     ))

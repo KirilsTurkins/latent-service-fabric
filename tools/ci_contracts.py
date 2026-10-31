@@ -28,6 +28,8 @@ PYTHON_STORAGE_SCHEMA = "latent.ci.contracts.v2"
 PYTHON_CASE_STORAGE = "guard-keys"
 DIRECTORY = "tools/ci/contracts"
 MAX_FRAGMENTS = 2048
+OWNER_BANK_SCHEMA = "latent.ci.owner-bank.v1"
+MAX_BANK_OWNERS = 32
 COMMON = {"schemaVersion", "kind", "reviewReason"}
 KINDS = {
     "workflow": {"workflow", "policy", "requiredJobs"},
@@ -358,16 +360,29 @@ def fragments(root: Path, directory: Path | None = None) -> dict[str, dict]:
             continue
         require(path.suffix == ".json", "unexpected-contract-fragment:" + relative)
         safe_path(root, path.relative_to(root).as_posix())
-        record = semantic_record(read_json(path))
-        expected = fragment_path(record)
-        require(relative == expected, "misplaced-or-duplicate-contract:" + relative)
-        require(expected not in records, "duplicate-contract-identity")
-        records[relative] = record
+        physical = read_json(path)
+        banked = isinstance(physical, dict) and physical.get("schemaVersion") == OWNER_BANK_SCHEMA
+        if banked:
+            require(re.fullmatch(r"owner-banks/[a-z0-9][a-z0-9_.-]*\.json", relative)
+                    and set(physical) == {"schemaVersion", "records"}, "owner-bank-fields-or-path")
+            values = physical["records"]
+            require(isinstance(values, list) and 0 < len(values) <= MAX_BANK_OWNERS
+                    and all(isinstance(value, dict) and value.get("kind") == "owner"
+                            for value in values), "owner-bank-records")
+        else:
+            values = [physical]
+        for value in values:
+            record = semantic_record(value)
+            expected = fragment_path(record)
+            if not banked:
+                require(relative == expected, "misplaced-or-duplicate-contract:" + relative)
+            require(expected not in records, "duplicate-contract-identity")
+            records[expected] = record
+            require(len(records) <= MAX_FRAGMENTS, "contract-fragment-limit")
         parents.update(parent.as_posix() for parent in Path(relative).parents if parent != Path("."))
-        require(len(records) <= MAX_FRAGMENTS, "contract-fragment-limit")
     require(records, "empty-contract-directory")
     require(directories == parents, "unexpected-empty-contract-directory")
-    return records
+    return dict(sorted(records.items()))
 
 
 def assemble(records: dict[str, dict]) -> dict:

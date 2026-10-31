@@ -12,7 +12,7 @@ public final class Bindings {
     public enum Error { ResourceExhausted, Cancelled, InvalidToken }
     public record LatentRuntimeActivationToken(long generation, long id) { }
     public record Reply<T>(T value, Error error) { public boolean isError() { return error != null; } }
-    public static Address dispatchBody(int operation, Address data, int length) { throw new AssertionError("source-control-no-dispatch"); }
+    public static Address dispatchBody(int operation, int inputAddress, int length) { throw new AssertionError("source-control-no-dispatch"); }
     public static Option<Reply<Unsigned64>> lsfRootTimerNext(LatentRuntimeActivationToken token) {
         return Option.some(LatentRuntimeActivation.timerNext(token));
     }

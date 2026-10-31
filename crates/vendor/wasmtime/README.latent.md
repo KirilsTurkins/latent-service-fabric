@@ -4,7 +4,7 @@ This is the complete crates.io Wasmtime 48.0.7 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains 34 changed upstream files and 22 added
+original package; it contains 35 changed upstream files and 23 added
 source/license files. Other Wasmtime packages remain at the original locked
 registry versions. The standalone development lock selects Tokio 1.51.6 for
 RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
@@ -686,3 +686,32 @@ These controls are not signed SDK execution, full #736 retirement, payload
 or stack admission, or evidence that the existing post-lowering cleanup TODO
 is resolved. The maintained one-line-context patch preserves the other57
 sections and all250 original identities.
+
+## v29: nonqualifying original AsyncDeadlock scheduler prefix
+
+The existing off-default Rust thread diagnostic may select a host-only callback
+on its already admitted NativeMemory factory, only after original RustSync
+authentication. Ordinary factories return None and perform no snapshot scan.
+The factory's exact allocation_size includes its diagnostic function pointer and
+one-shot atomic flag before allocation; no new native owner or collection exists.
+At the sole original AsyncDeadlock branch, an at-most-16-byte scalar record visits
+at most 64 PHYSICAL ResourceTable slots, counting holes toward that bound.
+Truncation and waiting-count overflow are explicit; these are prefix counts, not
+whole-store totals. Root flags are OR aggregates and cannot identify one root if
+multiple roots or a truncated prefix were observed. Host-future exhaustion is
+observed before the final root poll; priority-queue emptiness is sampled after it.
+
+The scan only reads existing host scheduler metadata. It copies no IDs, names,
+addresses, error strings or guest memory, allocates no backing, and retains no
+record in the runtime. Fixed formatting/iterator work uses the existing admitted
+native stack and original stack guards; 16 bytes bounds the scalar record, not
+the compiler-generated total frame. Stderr writes are byte bounded (under 96
+bytes) but not time bounded and may perturb timing/terminal observation.
+The original AsyncDeadlock predicate, error and wake/progress behavior are
+unchanged. The observer cannot manufacture work or make the original call pass.
+
+This source cohort has no new runtime-qualification receipt. All v28/e3 helper,
+compiler, normal-component and native receipts retain their immutable original
+identities. Only a freshly built explicit diagnostic runtime can claim v29.
+Original normal five-call outcomes and the separate nonempty frame requirement
+remain mandatory and unqualified by these observations.

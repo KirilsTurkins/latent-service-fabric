@@ -71,6 +71,49 @@ class RustThreadFaultFramesTests(unittest.TestCase):
             self.assertIs(scalar['runtimeQualification'], False)
             self.assertTrue(scalar['frameObservationRequiredSeparately'])
             self.assertFalse((output / 'numeric-fault-frames.json').exists())
+        from tools.rust_thread_fault_frames import scheduler_snapshot
+        scheduler = b'LSF-RUST40-SCHED:12:14:1:2:3:1:1:0:1:66:2\n'
+        self.assertIsNone(scheduler_snapshot(b'private guest-name\n'))
+        snapshot = scheduler_snapshot(b'private guest-name\n' + scheduler)
+        self.assertEqual(snapshot['physicalSlotsScanned'], 12)
+        self.assertFalse(snapshot['prefixTruncated'])
+        self.assertEqual(snapshot['prefixThreadStateCounts']['running'], 3)
+        self.assertEqual(snapshot['prefixHostRootCount'], 1)
+        self.assertEqual(snapshot['prefixRootFlagsOr'], 66)
+        self.assertEqual(snapshot['prefixWaitingThreadCount'], 2)
+        self.assertTrue(snapshot['hostFutureStreamExhaustedBeforeFinalRootPoll'])
+        self.assertTrue(scheduler_snapshot(
+            b'LSF-RUST40-SCHED:64:15:0:0:0:1:0:0:1:66:2\n')['prefixTruncated'])
+        for invalid in (scheduler + scheduler,
+                        scheduler.replace(b':12:', b':012:', 1),
+                        scheduler.replace(b':12:', b':65:', 1),
+                        scheduler.replace(b':14:', b':32:', 1),
+                        scheduler.replace(b':14:', b':6:', 1),
+                        scheduler.replace(b':14:', b':15:', 1),
+                        scheduler.replace(b':14:', b':30:', 1),
+                        scheduler.replace(b':12:', b':1:', 1),
+                        scheduler.replace(b':66:', b':256:', 1),
+                        scheduler.replace(b':2\n', b':65536\n'),
+                        b'LSF-RUST40-SCHED\n',
+                        scheduler[:-1] + b':0\n',
+                        b'LSF-RUST40-SCHED:private\n', b'x' * 262145):
+            with self.subTest(schedulerBytes=len(invalid)), self.assertRaises(WorkflowError):
+                scheduler_snapshot(invalid)
+        Node.buffers = (b'', b'LSF-RUST40-TRAP:22\n' + scheduler)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            capture(Node(), {'fixture': 'node'}, {'fixture': 'component'}, output)
+            observed = json.loads((output / 'numeric-original-scheduler-snapshot.json').read_bytes())
+            self.assertEqual(observed['originalTrapCode'], 22)
+            self.assertEqual(observed['snapshot'], snapshot)
+            self.assertIs(observed['runtimeQualification'], False)
+            self.assertTrue(observed['frameObservationRequiredSeparately'])
+            self.assertFalse((output / 'numeric-fault-frames.json').exists())
+            Node.buffers = (b'', b'LSF-RUST40-TRAP:17\n' + scheduler)
+            mismatch = output / 'mismatch'
+            mismatch.mkdir()
+            with self.assertRaises(WorkflowError):
+                capture(Node(), {'fixture': 'node'}, {'fixture': 'component'}, mismatch)
         self.assertEqual(frames(b'private guest-name\nLSF-RUST40-FAULT:0:private:2:3\n'), [])
         for invalid in (rows + b'LSF-RUST40-FAULT:8:1:2:3\n',
                         b'LSF-RUST40-FAULT:1:1:2:3\n',

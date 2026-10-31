@@ -16,6 +16,7 @@ path = "src/lib_root.rs"
 development-test-node = ["latent-wasmtime/development-clock-fixture", "latent-wasmtime/development-local-service-fixture"]
 development-outbound-streams = ["latent-streams/development-outbound"]
 rust-thread-trap-diagnostic = ["latent-wasmtime/rust-thread-trap-diagnostic"]
+java-checkpoint-gc-trap-diagnostic = ["latent-wasmtime/java-checkpoint-gc-trap-diagnostic"]
 
 [lints]
 workspace = true

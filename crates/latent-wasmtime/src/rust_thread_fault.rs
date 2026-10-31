@@ -70,6 +70,29 @@ fn emit(authentication: &Authentication, error: &wasmtime::Error, sink: &mut imp
     });
 }
 
+// The callback is selected from the authenticated prepared runtime before
+// Store construction. The off-default feature and existing paid native-memory
+// binding are both required; no guest declaration or environment can enable it.
+pub(crate) fn scheduler_observer(
+    authentication: &Authentication,
+) -> Option<fn(&wasmtime::AsyncDeadlockSnapshot)> {
+    matches!(authentication, Authentication::RustSyncVerified(_))
+        .then_some(record_scheduler as fn(&wasmtime::AsyncDeadlockSnapshot))
+}
+
+fn emit_scheduler(snapshot: &wasmtime::AsyncDeadlockSnapshot, sink: &mut impl Write) {
+    let [implicit, explicit, running, suspended, ready, completed] = snapshot.thread_states;
+    // Eleven canonical scalars; fewer than 96 bytes, no retained allocation.
+    // Diagnostic stderr I/O is not time bounded and may perturb observation.
+    let _ = writeln!(sink, "LSF-RUST40-SCHED:{}:{}:{implicit}:{explicit}:{running}:{suspended}:{ready}:{completed}:{}:{}:{}",
+        snapshot.scanned_slots, snapshot.flags, snapshot.host_roots,
+        snapshot.root_flags, snapshot.waiting_threads);
+}
+
+fn record_scheduler(snapshot: &wasmtime::AsyncDeadlockSnapshot) {
+    emit_scheduler(snapshot, &mut std::io::stderr().lock());
+}
+
 pub(crate) fn record(authentication: &Authentication, error: &wasmtime::Error) {
     if !matches!(authentication, Authentication::RustSyncVerified(_)) {
         return;
@@ -114,10 +137,16 @@ mod tests {
             .instruction(&Instruction::End);
         code.function(&function);
         module.section(&code);
-        // Use the actual owning runtime engine policy, not Wasmtime's default:
-        // ordinary nodes disable backtraces and this explicit feature fixes the
-        // diagnostic node to eight numeric frames.
-        let engine = crate::WasmtimeConfig::default().runtime_engine().unwrap();
+        // Exercise both actual engine policies: an all-features host uses the
+        // explicit sixteen-frame development observer; a Rust-only diagnostic
+        // retains its fixed eight-frame engine cap. Emission stays capped at eight.
+        let engine = crate::WasmtimeConfig {
+            #[cfg(feature = "development-test-host")]
+            development_numeric_trap_observation: true,
+            ..crate::WasmtimeConfig::default()
+        }
+        .runtime_engine()
+        .unwrap();
         let module = wasmtime::Module::new(&engine, module.finish()).unwrap();
         let mut store = wasmtime::Store::new(&engine, ());
         // The owning engine meters every Store. Give this synthetic recursive
@@ -138,11 +167,33 @@ mod tests {
             Some(&wasmtime::Trap::StackOverflow)
         );
         let original = error.downcast_ref::<wasmtime::WasmBacktrace>().unwrap();
-        // The owning diagnostic engine itself retains at most eight frames.
-        assert_eq!(original.frames().len(), MAX_FRAMES);
+        // Assert the actual selected engine cap, separately from this observer's
+        // unchanged eight-frame output bound (also when the host retained sixteen).
+        let engine_frame_cap = if cfg!(feature = "development-test-host") {
+            16
+        } else {
+            MAX_FRAMES
+        };
+        assert_eq!(original.frames().len(), engine_frame_cap);
         let mut frames = [None; MAX_FRAMES];
         let mut index = 0;
         let proof = Authentication::RustSyncVerified([0x11; 32]);
+        assert!(scheduler_observer(&proof).is_some());
+        let snapshot = wasmtime::AsyncDeadlockSnapshot {
+            scanned_slots: 12,
+            flags: 14,
+            thread_states: [1, 2, 3, 1, 1, 0],
+            host_roots: 1,
+            root_flags: 66,
+            waiting_threads: 2,
+        };
+        let mut scheduler = std::io::Cursor::new([0_u8; 96]);
+        emit_scheduler(&snapshot, &mut scheduler);
+        assert_eq!(
+            &scheduler.get_ref()[..scheduler.position() as usize],
+            b"LSF-RUST40-SCHED:12:14:1:2:3:1:1:0:1:66:2\n"
+        );
+
         assert_eq!(
             visit(&proof, &error, |frame| {
                 frames[index] = Some(frame);
@@ -168,12 +219,14 @@ mod tests {
         let used = usize::try_from(output.position()).unwrap();
         let text = std::str::from_utf8(&output.get_ref()[..used]).unwrap();
         assert_eq!(trap_code(&proof, &error), Some(0));
-        assert_eq!(wasmtime::Trap::from_u8(0), Some(wasmtime::Trap::StackOverflow));
+        assert_eq!(
+            wasmtime::Trap::from_u8(0),
+            Some(wasmtime::Trap::StackOverflow)
+        );
         let frame_text = text.strip_prefix("LSF-RUST40-TRAP:0\n").unwrap();
         assert_eq!(frame_text.lines().count(), MAX_FRAMES);
-        for (line, (ordinal, source)) in frame_text
-            .lines()
-            .zip(original.frames().iter().enumerate())
+        for (line, (ordinal, source)) in
+            frame_text.lines().zip(original.frames().iter().enumerate())
         {
             assert_eq!(
                 line,
@@ -205,6 +258,7 @@ mod tests {
                 0
             );
             assert_eq!(trap_code(&other, &error), None);
+            assert!(scheduler_observer(&other).is_none());
             let mut denied = std::io::Cursor::new([0_u8; 1024]);
             emit(&other, &error, &mut denied);
             assert_eq!(denied.position(), 0);

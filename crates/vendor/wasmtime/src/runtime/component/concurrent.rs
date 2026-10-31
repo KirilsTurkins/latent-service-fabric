@@ -1466,6 +1466,11 @@ impl<T> StoreContextMut<'_, T> {
                             if trap_on_idle {
                                 // `trap_on_idle` is true, so we exit
                                 // immediately.
+                                reset
+                                    .store
+                                    .0
+                                    .concurrent_state_mut_without_forcing_current_thread()
+                                    .observe_async_deadlock();
                                 Poll::Ready(Err(Trap::AsyncDeadlock.into()))
                             } else {
                                 // `trap_on_idle` is false, so we assume
@@ -6308,6 +6313,68 @@ impl Default for ConcurrentState {
 }
 
 impl ConcurrentState {
+    // Called only at the sole original AsyncDeadlock emission, after the final
+    // root poll. No mutation, progress manufacture, heap allocation or ID escape.
+    fn observe_async_deadlock(&mut self) {
+        let Some(observe) = self
+            .queue_memory
+            .as_ref()
+            .and_then(|memory| memory.async_deadlock_observer())
+        else {
+            return;
+        };
+        let mut snapshot = crate::AsyncDeadlockSnapshot::default();
+        snapshot.flags = (u8::from(self.high_priority.is_empty()) << 1)
+            | (u8::from(self.low_priority.is_empty()) << 2)
+            // poll_until reached Ready(None) before its final root poll.
+            | (1 << 3);
+        let (entries, scanned, truncated) = self.table.get_mut().diagnostic_prefix();
+        snapshot.scanned_slots = scanned;
+        snapshot.flags |= u8::from(truncated);
+        for entry in entries {
+            if let Some(thread) = entry.downcast_ref::<GuestThread>() {
+                let index = match &thread.state {
+                    GuestThreadState::NotStartedImplicit => 0,
+                    GuestThreadState::NotStartedExplicit(_) => 1,
+                    GuestThreadState::Running => 2,
+                    GuestThreadState::Suspended(_) => 3,
+                    GuestThreadState::Ready { .. } => 4,
+                    GuestThreadState::Completed => 5,
+                };
+                snapshot.thread_states[index] += 1;
+            } else if let Some(task) = entry.downcast_ref::<GuestTask>() {
+                if let Caller::Host {
+                    tx,
+                    host_future_present,
+                    ..
+                } = &task.caller
+                {
+                    snapshot.host_roots += 1;
+                    snapshot.root_flags |= u8::from(task.lower_params.is_some())
+                        | (u8::from(task.lift_result.is_some()) << 1)
+                        | (u8::from(task.result.is_some()) << 2)
+                        | (u8::from(task.exited) << 3)
+                        | (u8::from(task.async_function) << 4)
+                        | (u8::from(tx.is_some()) << 5)
+                        | (u8::from(matches!(task.host_future_state, HostFutureState::Live)) << 6)
+                        | (u8::from(*host_future_present) << 7);
+                }
+            } else if let Some(set) = entry.downcast_ref::<WaitableSet>() {
+                let count = usize::from(snapshot.waiting_threads).checked_add(set.waiting.len());
+                match count.and_then(|n| u16::try_from(n).ok()) {
+                    Some(count) => snapshot.waiting_threads = count,
+                    None => {
+                        snapshot.waiting_threads = u16::MAX;
+                        snapshot.flags |= 1 << 4;
+                    }
+                }
+            }
+        }
+        // All table borrows end before the trusted host callback. Snapshot is
+        // <=16 stack bytes; the existing native stack remains its only owner.
+        observe(&snapshot);
+    }
+
     pub(super) fn new(queue_memory: crate::runtime::native_memory::Memory) -> Self {
         let paid = queue_memory.is_some();
         let table = ResourceTable::with_native_memory(queue_memory.clone());

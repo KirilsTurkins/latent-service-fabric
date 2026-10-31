@@ -44,6 +44,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_thread_fault_frames.py",
-  "reviewReason": "Finite off-default current guest-fault observation; retain at most one original locked Trap ordinal separately from up to eight numeric frames, with exact-source gates and privacy/bounds/duplicate negatives; no fabricated frames or qualification",
+  "reviewReason": "Finite off-default authenticated Rust fault observation: preserve original Trap scalar and eight-frame requirement; add one strictly bounded 64-physical-slot scheduler-prefix record only for original AsyncDeadlock22, explicit truncation and duplicate/range/privacy negatives. No runtime qualification or new case IDs.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -19,6 +19,7 @@ development-test-host = ["latent-artifacts/development-test-host", "latent-polic
 java-guest-diagnostic = []
 # Explicit developer artifact only; ordinary products emit no numeric trace.
 rust-thread-trap-diagnostic = []
+java-checkpoint-gc-trap-diagnostic = []
 
 [lints.rust]
 # Private authenticated native loading, guarded original-owner stacks and exact canonical result delegation

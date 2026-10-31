@@ -638,6 +638,8 @@ impl WasmtimeBackend {
             capabilities,
             ownership.transaction,
             runtime.surface.hostcall_fuel,
+            #[cfg(feature = "rust-thread-trap-diagnostic")]
+            crate::rust_thread_fault::scheduler_observer(&runtime.threading),
         )?);
         *native_stack_observer = store
             .data()
@@ -674,6 +676,10 @@ impl WasmtimeBackend {
         #[cfg(feature = "rust-thread-trap-diagnostic")]
         if let Err(error) = &call_result {
             crate::rust_thread_fault::record(&runtime.threading, error);
+        }
+        #[cfg(feature = "java-checkpoint-gc-trap-diagnostic")]
+        if let Err(error) = &call_result {
+            crate::java_checkpoint_gc_fault::record(&runtime.threading, error);
         }
         // Wasmtime 47's safe dynamic call completes canonical ABI post-return
         // before resolving, including propagation of post-return traps.
@@ -842,6 +848,9 @@ impl WasmtimeBackend {
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
         mut transaction: transaction_access::GuestAccess,
         hostcall_fuel: usize,
+        #[cfg(feature = "rust-thread-trap-diagnostic")] scheduler_observer: Option<
+            fn(&wasmtime::AsyncDeadlockSnapshot),
+        >,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -920,8 +929,15 @@ impl WasmtimeBackend {
             host_state.accounting.budget().profile(),
             latent_core::BudgetProfile::Phase3 | latent_core::BudgetProfile::Phase4
         ) {
+            #[cfg(not(feature = "rust-thread-trap-diagnostic"))]
             let memory = crate::native_tables::binding(host_state.accounting.budget())
                 .map_err(native_store_error)?;
+            #[cfg(feature = "rust-thread-trap-diagnostic")]
+            let memory = crate::native_tables::binding_with_observer(
+                host_state.accounting.budget(),
+                scheduler_observer,
+            )
+            .map_err(native_store_error)?;
             Store::try_new_with_memory_binding(&self.engine, host_state, memory)
                 .map_err(native_store_error)?
         } else {

@@ -4,7 +4,7 @@ use super::layout::{
     ASYNC_STACK_ZEROING, POOL_DECOMMIT_BATCH_SIZE, POOL_KEEP_RESIDENT_BYTES, POOL_UNUSED_WARM_SLOTS,
 };
 use super::{CompilerOptimization, InstanceAllocator, WasmtimeConfig};
-use crate::containment::{MAX_DIAGNOSTIC_BYTES, bounded_text, platform_error};
+use crate::containment::{bounded_text, platform_error, MAX_DIAGNOSTIC_BYTES};
 use latent_core::{PlatformError, PlatformErrorCode};
 
 /// Closed code-generation settings shared by the runtime and compiler bootstrap.
@@ -139,12 +139,21 @@ impl CompilerEngineSettings {
             .then(|| std::num::NonZeroUsize::new(16).expect("fixed positive test frame cap"));
         #[cfg(all(
             not(feature = "development-test-host"),
+            feature = "java-checkpoint-gc-trap-diagnostic"
+        ))]
+        let backtrace_limit = Some(
+            std::num::NonZeroUsize::new(8).expect("fixed positive Java GC diagnostic frame cap"),
+        );
+        #[cfg(all(
+            not(feature = "development-test-host"),
+            not(feature = "java-checkpoint-gc-trap-diagnostic"),
             feature = "rust-thread-trap-diagnostic"
         ))]
         let backtrace_limit =
             Some(std::num::NonZeroUsize::new(8).expect("fixed positive Rust diagnostic frame cap"));
         #[cfg(not(any(
             feature = "development-test-host",
+            feature = "java-checkpoint-gc-trap-diagnostic",
             feature = "rust-thread-trap-diagnostic"
         )))]
         let backtrace_limit = None;
@@ -232,12 +241,10 @@ mod tests {
         selected.validate_compiler().unwrap();
         assert!(selected.owned_native_threads());
         document["javaGuest"] = true.into();
-        assert!(
-            serde_json::from_value::<CompilerEngineSettings>(document)
-                .unwrap()
-                .validate_compiler()
-                .is_err()
-        );
+        assert!(serde_json::from_value::<CompilerEngineSettings>(document)
+            .unwrap()
+            .validate_compiler()
+            .is_err());
     }
 }
 

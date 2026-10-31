@@ -48,6 +48,43 @@ def trap_code(stderr):
     return code
 
 
+# One fixed record from the existing authenticated, admitted native factory.
+# Prefix counts are NEVER whole-store totals when the physical scan truncates.
+SCHED_ROW = re.compile(rb'^LSF-RUST40-SCHED([^\n]*)$', re.M)
+SCHED_VALUE = re.compile(rb':(0|[1-9][0-9]{0,4})' * 11 + rb'\r?')
+
+
+def scheduler_snapshot(stderr):
+    require(len(stderr) <= 262144, 'rust-thread-fault-stderr-bound')
+    result = None
+    for match in SCHED_ROW.finditer(stderr):
+        require(result is None, 'rust-thread-fault-single-scheduler-snapshot')
+        require(match.end(1) - match.start(1) <= 67,
+                'rust-thread-fault-scheduler-format')
+        value = SCHED_VALUE.fullmatch(match.group(1))
+        require(value is not None, 'rust-thread-fault-scheduler-format')
+        scanned, flags, *tail = map(int, value.groups())
+        states, roots, root_flags, waiting = tail[:6], *tail[6:]
+        require(scanned <= 64 and flags < 32 and flags & 8
+                and sum(states) + roots <= scanned and root_flags <= 255
+                and waiting <= 65535 and (not flags & 1 or scanned == 64)
+                and (not flags & 16 or waiting == 65535)
+                and (roots != 0 or root_flags == 0),
+                'rust-thread-fault-scheduler-range')
+        result = {'physicalSlotsScanned': scanned, 'physicalSlotLimit': 64,
+                  'prefixTruncated': bool(flags & 1),
+                  'highQueueEmptyAfterFinalRootPoll': bool(flags & 2),
+                  'lowQueueEmptyAfterFinalRootPoll': bool(flags & 4),
+                  'hostFutureStreamExhaustedBeforeFinalRootPoll': True,
+                  'waitingCountOverflow': bool(flags & 16),
+                  'prefixThreadStateCounts': dict(zip(
+                      ('notStartedImplicit', 'notStartedExplicit', 'running',
+                       'suspended', 'ready', 'completed'), states)),
+                  'prefixHostRootCount': roots, 'prefixRootFlagsOr': root_flags,
+                  'prefixWaitingThreadCount': waiting}
+    return result
+
+
 def capture(node, native, component, output):
     node.drain()
     code = trap_code(node.buffers[1])
@@ -59,6 +96,15 @@ def capture(node, native, component, output):
             'node': native, 'component': component, 'originalTrapCode': code,
             'codeProfile': 'wasmtime-environ-48.0.7-original-u8-v1',
             'frameObservationRequiredSeparately': True,
+            'rawStderrRetained': False, 'runtimeQualification': False,
+            'diagnosticIoMayPerturbTimingAndTerminalObservation': True})
+    snapshot = scheduler_snapshot(node.buffers[1])
+    if snapshot is not None:
+        require(code == 22, 'rust-thread-fault-scheduler-original-async-deadlock')
+        write_json(output / 'numeric-original-scheduler-snapshot.json', {
+            'schemaVersion': 'latent.rust.thread-fault.scheduler-prefix.v1',
+            'node': native, 'component': component, 'originalTrapCode': code,
+            'snapshot': snapshot, 'frameObservationRequiredSeparately': True,
             'rawStderrRetained': False, 'runtimeQualification': False,
             'diagnosticIoMayPerturbTimingAndTerminalObservation': True})
     rows = frames(node.buffers[1])

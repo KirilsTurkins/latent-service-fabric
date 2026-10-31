@@ -1,3 +1,0 @@
-{"kind":"owner","path":"tools/generate_transaction_contracts.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review Rust wit-bindgen 0.63.0 macro compatibility and separate 0.62.0 CLI selection; preserve existing execution commands and qualification cases.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "e4075954092fab43dec24a22c1d42e76c2082d1e18eaf10560f2e95014aa9dbd"
-}

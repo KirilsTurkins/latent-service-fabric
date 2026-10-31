@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_checkpoint_gc_retained.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Authenticate and run the unchanged GC programme on its retained a5c component; no guest/native compilation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "337f529d7d9614f2c5079f1719796124a2454dc848635dba3cd3030dd3070c87"
+}
