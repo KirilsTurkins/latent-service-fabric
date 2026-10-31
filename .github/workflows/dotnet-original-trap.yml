@@ -1,0 +1,99 @@
+name: Original .NET v3 numeric trap observation
+
+on:
+  push:
+    branches: [diag/dotnet-original-v3-trap-20261031]
+    paths:
+      - '.github/workflows/dotnet-original-trap.yml'
+      - 'tools/dotnet_original_fault.py'
+      - 'crates/latent-wasmtime/tests/local_service.rs'
+      - 'crates/latent-wasmtime/tests/local_service/fixture.rs'
+      - 'crates/latent-wasmtime/tests/guest_sdk/runtime.rs'
+      - 'crates/latent-wasmtime/tests/local_service/original_dotnet_package.rs'
+      - 'crates/latent-policy/examples/capsule_authoring/inputs.rs'
+      - 'crates/latent-policy/examples/capsule_authoring/resource_neutral.rs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: dotnet-original-trap-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/diag/dotnet-original-v3-trap-20261031'
+    name: Observe original fault and quiescence without guest recompilation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      RUSTUP_TOOLCHAIN: '1.97.1'
+      RUSTUP_AUTO_INSTALL: '0'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - id: deadline
+        name: Establish the original 1320-second absolute programme deadline
+        timeout-minutes: 1
+        run: python3 -c 'import os,time; open(os.environ["GITHUB_ENV"],"a").write("LSF_ROOT_RETURN_DEADLINE="+str(time.monotonic()+1320)+"\n")'
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        timeout-minutes: 2
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        timeout-minutes: 1
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - id: python-dependencies
+        name: Install existing locked Python dependencies
+        timeout-minutes: 1
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - id: original-package
+        name: Acquire the exact completed normal v3 observation
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          timeout 90s gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/13038749267/zip > "$RUNNER_TEMP/dotnet-original-v3.zip"
+          test "$(stat --format=%s "$RUNNER_TEMP/dotnet-original-v3.zip")" = 8155138
+          printf '%s  %s\n' 23af068f95a0fc554c16cf4c7c058273146c6ec7f1e2d0e2c06120f56b2cb1bb "$RUNNER_TEMP/dotnet-original-v3.zip" | sha256sum --check --strict
+      - id: observe
+        name: Build only the current diagnostic host and observe two original modes
+        timeout-minutes: 22
+        run: >-
+          python3 tools/dotnet_original_fault.py
+          --archive "$RUNNER_TEMP/dotnet-original-v3.zip"
+          --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/dotnet-original-fault"
+      - name: Retain admitted observations including failures
+        if: always()
+        timeout-minutes: 2
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: dotnet-original-trap-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-original-fault/public/**
+          if-no-files-found: warn
+          retention-days: 7

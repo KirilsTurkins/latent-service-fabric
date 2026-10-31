@@ -269,9 +269,72 @@ impl Runtime {
         (clocks, random): (bool, bool),
         native: bool,
     ) -> Self {
+        Self::activation_scoped_with_configuration(
+            broker,
+            policies,
+            tenant,
+            scopes,
+            call_wall_millis,
+            (clocks, random),
+            (native, None),
+        )
+    }
+
+    /// Use the normal provider configuration only for the original v3 observation.
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub fn original_dotnet_v3_scoped(
+        broker: &ActivationCapabilityBroker,
+        policies: &PolicyStore,
+        tenant: &str,
+        scopes: &[Scope<'_>],
+        call_wall_millis: u64,
+        limits: latent_core::activation_runtime::RuntimeLimits,
+    ) -> Self {
+        assert_eq!(tenant, "examples");
+        limits.validate().unwrap();
+        Self::activation_scoped_with_configuration(
+            broker,
+            policies,
+            tenant,
+            scopes,
+            call_wall_millis,
+            (true, true),
+            (false, Some(limits)),
+        )
+    }
+
+    fn activation_scoped_with_configuration(
+        broker: &ActivationCapabilityBroker,
+        policies: &PolicyStore,
+        tenant: &str,
+        scopes: &[Scope<'_>],
+        call_wall_millis: u64,
+        (clocks, random): (bool, bool),
+        (native, normal_configuration): (
+            bool,
+            Option<latent_core::activation_runtime::RuntimeLimits>,
+        ),
+    ) -> Self {
         let mut owner = Self::default();
         let profile = latent_core::activation_runtime::PROFILE;
-        let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
+        let digest = if let Some(limits) = normal_configuration {
+            let document =
+                latent_capabilities::broker::scalar_configuration::activation_configuration(
+                    json!({"tasks":limits.tasks,"executors":limits.executors,
+                    "queuedWork":limits.queued_work,"waits":limits.waits,"timers":limits.timers,
+                    "results":limits.results,"nativeOwners":limits.native_owners}),
+                    false,
+                );
+            latent_artifacts::package::artifact_blob_digest(&serde_json::to_vec(&document).unwrap())
+        } else {
+            latent_artifacts::package::artifact_blob_digest(profile.as_bytes())
+        };
+        let normal_restriction = normal_configuration
+            .map(|_| serde_json::to_vec(&json!({"operations": ACTIVATION_OPERATIONS})).unwrap());
         // Exercise the same per-operation fuel requirements as ordinary
         // protected node installation, including fixed and pending results.
         let charges = ACTIVATION_OPERATIONS.map(|operation| ProviderBudgetRequirement {
@@ -285,7 +348,9 @@ impl Runtime {
                 profile,
                 configuration_digest: digest.as_str(),
                 configuration_epoch: 1,
-                restriction_json: br#"{"operations":[]}"#,
+                restriction_json: normal_restriction
+                    .as_deref()
+                    .unwrap_or(br#"{"operations":[]}"#),
                 minimum_call_charges: &charges,
             })
             .unwrap();
@@ -314,20 +379,29 @@ impl Runtime {
         if clocks {
             for (capability, profile, operation) in CLOCKS {
                 let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
-                let registration = broker
-                    .register_provider(ProviderConfiguration {
-                        capability,
-                        profile,
-                        configuration_digest: digest.as_str(),
-                        configuration_epoch: 1,
-                        restriction_json: br#"{"operations":[]}"#,
-                        minimum_call_charges: &[ProviderBudgetRequirement {
-                            operation,
-                            dimension: BudgetDimension::CpuFuel,
-                            minimum: 100,
-                        }],
-                    })
-                    .unwrap();
+                let registration = if normal_configuration.is_some() {
+                    latent_capabilities::broker::scalar_configuration::register_clock(
+                        broker,
+                        1,
+                        capability == CLOCKS[0].0,
+                    )
+                    .unwrap()
+                } else {
+                    broker
+                        .register_provider(ProviderConfiguration {
+                            capability,
+                            profile,
+                            configuration_digest: digest.as_str(),
+                            configuration_epoch: 1,
+                            restriction_json: br#"{"operations":[]}"#,
+                            minimum_call_charges: &[ProviderBudgetRequirement {
+                                operation,
+                                dimension: BudgetDimension::CpuFuel,
+                                minimum: 100,
+                            }],
+                        })
+                        .unwrap()
+                };
                 owner.add(registration.reference(), operation);
                 owner.clocks.push(registration);
             }
@@ -347,6 +421,150 @@ impl Runtime {
     }
 
     /// Add only tenant-scoped policies for existing provider registrations.
+
+    /// Closed original-v3 authority, applied only before the named observation.
+    /// Reuses all four installed provider owners; no general fixture opts in.
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub fn configure_original_dotnet_v3_authority(
+        &mut self,
+        policies: &PolicyStore,
+        tenant: &str,
+        publication: &PublicationId,
+    ) {
+        assert_eq!(tenant, "examples");
+        assert_eq!(self.entries.len(), 4);
+        for entry in &mut self.entries {
+            let capability = entry.reference.capability();
+            let (profile, operations, random): (&str, &[&str], bool) = match capability {
+                "latent:clock/monotonic@0.1.0" => {
+                    ("activation-monotonic-v1", &["now-nanos"], false)
+                }
+                "latent:clock/wall@0.1.0" => ("activation-wall-v1", &["now-unix-millis"], false),
+                RANDOM => ("system-random-v1", &["bytes"], true),
+                ACTIVATION => ("activation-owned-v1", &ACTIVATION_OPERATIONS, false),
+                _ => panic!("original v3 has exactly four reviewed providers"),
+            };
+            assert_eq!(entry.reference.profile(), profile);
+            assert_eq!(entry.reference.configuration_epoch(), 1);
+            if random {
+                assert_eq!(entry.operation, vec!["u64-value".to_owned()]);
+            } else {
+                assert_eq!(
+                    entry.operation,
+                    operations
+                        .iter()
+                        .map(|s| (*s).to_owned())
+                        .collect::<Vec<_>>()
+                );
+            }
+            entry.operation = operations.iter().map(|s| (*s).to_owned()).collect();
+            let binding = json!({"formatVersion":1,"tenant":tenant,"capability":capability,
+                "providerProfile":entry.reference.profile(),
+                "configurationDigest":entry.reference.configuration_digest(),
+                "configurationEpoch":entry.reference.configuration_epoch(),
+                "restriction":{"operations":entry.operation}});
+            let policy = json!({"formatVersion":1,"tenant":tenant,"rules":[{
+                "id":"root-return","effect":"allow",
+                "principals":[{"kind":"administrator","subject":"workflow-operator"}],
+                "services":["my-greeting"],"publications":[publication.as_str()],
+                "capability":capability,"operations":entry.operation,
+                "resources":{"kind":if random {"random"} else {"clock"}},
+                "ceiling":{"operations":if random {16} else {4096},
+                    "inputBytes":if random {8} else {0},
+                    "outputBytes":if random {4096} else {32768},"wallTimeMillis":5000}
+            }]});
+            for (id, kind, document) in [
+                (entry.binding.as_str(), RecordKind::ProviderBinding, binding),
+                (entry.policy[0].as_str(), RecordKind::Policy, policy),
+            ] {
+                let revision = {
+                    let read = policies
+                        .get(
+                            tenant,
+                            kind,
+                            id,
+                            16384,
+                            Instant::now() + Duration::from_secs(10),
+                        )
+                        .unwrap();
+                    read.value()
+                        .as_ref()
+                        .expect("original fixture policy exists")
+                        .revision
+                };
+                // Destroy the read lease before acquiring the mutation lease.
+                let bytes = serde_json::to_vec(&document).unwrap();
+                let operation = format!("original-v3-{id}");
+                policies
+                    .mutate(
+                        MutationRequest {
+                            tenant,
+                            actor: "original-dotnet-v3-operator",
+                            id,
+                            kind,
+                            operation_id: &operation,
+                            expected_revision: revision,
+                            document: Some(&bytes),
+                        },
+                        Instant::now() + Duration::from_secs(10),
+                        |_| Ok(()),
+                    )
+                    .unwrap();
+            }
+        }
+    }
+
+    /// Read the actual provider references and sealed current policy documents.
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub fn original_dotnet_v3_authority_snapshot(
+        &self,
+        policies: &PolicyStore,
+        tenant: &str,
+    ) -> serde_json::Value {
+        let mut rows = Vec::new();
+        for entry in &self.entries {
+            let read_document = |kind, id: &str| {
+                let read = policies
+                    .get(
+                        tenant,
+                        kind,
+                        id,
+                        16384,
+                        Instant::now() + Duration::from_secs(10),
+                    )
+                    .unwrap();
+                serde_json::from_str::<serde_json::Value>(
+                    read.value().as_ref().unwrap().document.as_ref().unwrap(),
+                )
+                .unwrap()
+            };
+            rows.push(json!({
+                "capability":entry.reference.capability(),
+                "providerProfile":entry.reference.profile(),
+                "configurationDigest":entry.reference.configuration_digest(),
+                "configurationEpoch":entry.reference.configuration_epoch(),
+                "configuredOperations":entry.operation,
+                "providerBinding":read_document(RecordKind::ProviderBinding, &entry.binding),
+                "policy":read_document(RecordKind::Policy, &entry.policy[0]),
+            }));
+        }
+        rows.sort_by(|a, b| {
+            a["capability"]
+                .as_str()
+                .unwrap()
+                .cmp(b["capability"].as_str().unwrap())
+        });
+        json!(rows)
+    }
+
     /// This test-operator helper allocates no second provider or executor.
     pub fn authorize_additional_tenant(
         &self,

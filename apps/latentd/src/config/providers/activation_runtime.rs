@@ -78,22 +78,10 @@ impl ActivationRuntimeInstallation {
     /// Fixed interface/profile plus all operator limits define the immutable
     /// provider identity. The epoch remains a separately pinned currentness key.
     pub(crate) fn configuration_digest(&self) -> Result<ArtifactBlobDigest, PlatformError> {
-        let mut document = serde_json::json!({
-            "formatVersion": 1,
-            "capability": latent_core::activation_runtime::CAPABILITY,
-            "profile": latent_core::activation_runtime::PROFILE,
-            "hostAbi": latent_core::host_profile::PHASE3_HOST_ABI_V5.id,
-            "operations": latent_core::activation_runtime::OPERATIONS,
-            "limits": self.limits
-        });
-        if self.native_threads {
-            document["nativeThreads"] = serde_json::json!({
-                "capability": "latent:runtime-native/threads@0.1.0",
-                "profile": "conservative-native-total-starts-v1",
-                "hostAbi": latent_core::host_profile::PHASE3_HOST_ABI_V6.id,
-                "operations": ["start"],
-            });
-        }
+        let document = latent_capabilities::broker::scalar_configuration::activation_configuration(
+            self.limits,
+            self.native_threads,
+        );
         let bytes =
             serde_json::to_vec(&document).map_err(|_| invalid("providers.activationRuntime"))?;
         Ok(latent_artifacts::package::artifact_blob_digest(&bytes))

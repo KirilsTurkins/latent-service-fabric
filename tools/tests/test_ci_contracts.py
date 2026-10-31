@@ -1050,7 +1050,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         previous_c = workflow_model(original_libucl_workflow(c_text))
         current_guard = current_c['jobs']['runtime']['if']
         self.assertEqual(current_guard,
-            "${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}")
+            "${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}")
         for command in data['after'].values():
             if command['workflow'] == c_path and command['job'] == 'runtime':
                 self.assertEqual(command['jobIf'], current_guard)

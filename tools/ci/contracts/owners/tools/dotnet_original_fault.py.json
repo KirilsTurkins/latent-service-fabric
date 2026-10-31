@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/dotnet_original_fault.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain the reviewed bounded original .NET observer as an explicit delegated script owner; add only the standard repository-root import bootstrap for its directly visible CI entrypoint.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "648ef16f0ea6f7f935e954b25f4b03c347c4803f4444edfb932626c9b68b7594"
+}
