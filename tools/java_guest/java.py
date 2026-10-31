@@ -182,11 +182,13 @@ def generate(graph: Graph, *, activation_profile: bool = False, fiber_io_profile
     if activation_profile:
         output.extend(['@Export(name = "lsf_java_dispatch") public static Address dispatch(int operation, Address data, int length) {',
                        'return dev.latent.guest.runtime.Activation.invoke(operation, data, length); }',
-                       'public static Address dispatchBody(int operation, Address data, int length) {'])
+                       'public static Address dispatchBody(int operation, int inputAddress, int length) {'])
     else:
         output.append('@Export(name = "lsf_java_dispatch") public static Address dispatch(int operation, Address data, int length) {')
     output.extend([
-                   "try (Wire.Reader input = Wire.Reader.copy(data, length); Wire.Writer output = new Wire.Writer()) {",
+                   "try (Wire.Reader input = Wire.Reader.copy(" +
+                   ("Address.fromInt(inputAddress)" if activation_profile else "data") +
+                   ", length); Wire.Writer output = new Wire.Writer()) {",
                    "switch (operation) {"])
     for function in graph.exports:
         output.append(f"case {function['operation']}: {{")

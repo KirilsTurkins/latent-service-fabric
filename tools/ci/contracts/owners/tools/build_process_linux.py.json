@@ -1,3 +1,0 @@
-{"kind":"owner","path":"tools/build_process_linux.py","reviewBoundary":"committed-fingerprint","reviewReason":"Pin unchanged existing bounded build/environment/Linux process helpers explicitly named as producer source materials. New workflow material references are conservatively discovered as delegated owners; no helper implementation, command deadline, descendant ownership, output bound, or original normal SDK command changes. Verify fingerprints against exact Git LF bytes.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce"
-}

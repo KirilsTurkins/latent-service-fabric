@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_checkpoint_gc.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Require both authenticated named owner paths for the GC programme; permit pinned-linker ordered field subsets and explicit unavailable flags in lean compiler-cache inputs.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "76a406fc81edac5c12227a31aa8cc13fe729ec3121ecb7f0d0ab624508687710"
+}

@@ -15,6 +15,11 @@ CHECKPOINT_CLASSES = ('c/d/l/a/Capsule', 'c/j/l/Object', 'c/j/l/Thread', 'c/o/t/
     'c/d/l/g/r/Monitors')
 CHECKPOINT_SOURCES = tuple(name + suffix for name in CHECKPOINT_CLASSES for suffix in ('.c', '.h'))
 CHECKPOINT_JAVA = 'sha256:2fe6c39a15d8e230838ae709599055cdba156bd8d9058f472c1dc5be469a88e8'
+GC_ROOT_CLASSES = (*CHECKPOINT_CLASSES, 'c/d/l/a/Capsule@d1', 'c/o/t/r/GC',
+    'c/j/l/r/WeakReference', 'c/j/l/System')
+GC_ROOT_SOURCES = (*tuple(name + suffix for name in GC_ROOT_CLASSES for suffix in ('.c', '.h')),
+    'c/o/t/r/Allocator.c', 'heaptrace.c')
+GC_ROOT_JAVA = 'sha256:e6fa160c97a9c448db7af2fb78b81af95b5a360d79b3470084650813724ec7b0'
 CHECKPOINT_MAX_FILE = 1024 * 1024
 CHECKPOINT_MAX_BYTES = 8 * 1024 * 1024
 
@@ -30,7 +35,7 @@ DECLARATION = re.compile(r'\s*(?:(?:volatile|const|unsigned|signed|struct)\s+)*'
 
 
 def selection(selected: tuple[str, ...]) -> None:
-    if type(selected) is not tuple or selected not in ((), FIXTURE_SOURCES, PHASE_FIXTURE_SOURCES, CHECKPOINT_SOURCES):
+    if type(selected) is not tuple or selected not in ((), FIXTURE_SOURCES, PHASE_FIXTURE_SOURCES, CHECKPOINT_SOURCES, GC_ROOT_SOURCES):
         raise ValueError('java-c-failure-context-selection-invalid')
 
 
@@ -157,6 +162,9 @@ def retain_component_inputs(compiler, source: Path, output: Path, selected: tupl
     the byte-exact checkpoint fixture retains eight adapted C/header pairs.
     The separate output bounds never extend the original 16 MiB log cap.
     """
+    if type(selected) is tuple and selected == GC_ROOT_SOURCES:
+        retain_gc_root_inputs(compiler,source,output)
+        return
     if type(selected) is tuple and selected == CHECKPOINT_SOURCES:
         try:
             # Only this byte-exact public diagnostic fixture can select the
@@ -228,5 +236,49 @@ def retain_component_inputs(compiler, source: Path, output: Path, selected: tupl
                 'schemaVersion': 'latent.java.public-fixture-component-inputs.v1',
                 'status': 'unavailable', 'qualification': False,
                 'reason': 'fixed-assembly-inputs-unavailable-or-unsafe'}))
+        except BaseException:
+            pass
+
+
+def retain_gc_root_inputs(compiler, source: Path, output: Path) -> None:
+    """Fixed GC fixture only; old checkpoint selection stays byte-exact."""
+    try:
+        # Only this byte-exact public diagnostic fixture can select the
+        # closed GC projection. The read occurs after adapt and includes the
+        # two additional runtime files changed by the heap-alignment repair;
+        # the real clang attempt, before the original temporary cleanup.
+        if compiler is None or not any(row.get('stage') == 'c-to-wasm' for row in compiler.records):
+            raise ValueError('gc-root-generated-before-adapt')
+        fixture = paths.read(source, 'project/src/main/java/dev/latent/app/Capsule.java', CHECKPOINT_MAX_FILE)
+        if digest(fixture) != GC_ROOT_JAVA:
+            raise ValueError('gc-root-generated-fixture-mismatch')
+        generated = source / 'project/build/teavm-c/c'
+        payloads, total = {}, 0
+        for name in GC_ROOT_SOURCES:
+            raw = paths.read(generated, name, CHECKPOINT_MAX_FILE)
+            total += len(raw)
+            if total > CHECKPOINT_MAX_BYTES or b'\0' in raw:
+                raise ValueError('gc-root-generated-byte-bound')
+            raw.decode('utf-8')
+            payloads[name] = raw
+        # Publish nothing until every fixed source and bound is checked.
+        target = output / 'gc-root-generated'
+        target.mkdir()
+        for name, raw in payloads.items():
+            destination = target / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            paths.write_new(destination, raw)
+        paths.write_new(output / 'gc-root-generated.json', encoded({
+            'schemaVersion': 'latent.java.gc-root-generated-c.v1', 'status': 'retained',
+            'qualification': False, 'publicFixtureOnly': True, 'afterPlatformAdapt': True,
+            'fixtureDigest': GC_ROOT_JAVA, 'capture': 'after-original-clang-attempt-before-temporary-cleanup',
+            'files': {name: {'sha256': digest(raw), 'bytes': len(raw)} for name, raw in payloads.items()},
+            'fileLimitBytes': CHECKPOINT_MAX_FILE, 'totalLimitBytes': CHECKPOINT_MAX_BYTES,
+            'bytes': total, 'compilerAcceptanceChanged': False, 'logLimitBytesUnchanged': 16*1024*1024}))
+    except BaseException:
+        try:
+            paths.write_new(output / 'gc-root-generated-refused.json', encoded({
+                'schemaVersion': 'latent.java.gc-root-generated-c.v1', 'status': 'unavailable',
+                'qualification': False, 'reason': 'fixed-public-generated-inputs-unavailable-or-unsafe'}))
         except BaseException:
             pass

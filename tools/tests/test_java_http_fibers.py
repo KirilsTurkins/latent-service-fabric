@@ -791,7 +791,8 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             (sdk/'tools/dependencies.py').write_bytes(read_file(campaign.ROOT/'sdk/java-guest/tools/dependencies.py'))
             sources=sdk/'fibers/compiler-patch';sources.mkdir(parents=True)
             for name in ('CoroutineTransformation.java','Compile.java','Check.java',
-                         'TypeInferer.java','ArrayTypeCheck.java','AsyncMethodFinder.java','MonitorAsyncControl.java'):
+                         'TypeInferer.java','ArrayTypeCheck.java','AsyncMethodFinder.java','MonitorAsyncControl.java',
+                         'VolatileDefinitionFinder.java'):
                 (sources/name).write_bytes(read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch'/name))
             cache=root/'files-2.1';base=cache/'org.teavm/teavm-core/0.15.0/pinned';base.mkdir(parents=True)
             core=base/'teavm-core-0.15.0.jar'

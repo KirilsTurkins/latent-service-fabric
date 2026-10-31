@@ -63,7 +63,7 @@ jobs:
           cat "$RUNNER_TEMP/frontend-release/qualification.json"
       - name: Retain public qualification receipts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: frontend-release-qualification
           path: |

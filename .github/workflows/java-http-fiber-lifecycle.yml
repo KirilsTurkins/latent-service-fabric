@@ -104,7 +104,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Fetch only the exact historical compiled source commits
@@ -123,7 +123,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/qualify_java_http_fibers.py --prepare --output "$RUNNER_TEMP/java-http-fiber-prepared"
-      - uses: KirilsTurkins/lsf-setup-java@f041d6677134ada73c077d0c012bd78164b251a7 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
@@ -158,7 +158,7 @@ jobs:
           --output "$RUNNER_TEMP/java-http-fiber-lifecycle"
       - name: Retain bounded source-specific replay evidence without credentials or keys
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-http-fiber-lifecycle-${{ github.sha }}
           path: |-
@@ -194,7 +194,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Fetch the one exact V7 native producer source before any helper verification
@@ -203,7 +203,7 @@ jobs:
         run: git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f
       - name: Fetch the exact independent-tenant HTTP producer before its helper verification
         run: git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015
-      - uses: KirilsTurkins/lsf-setup-java@f041d6677134ada73c077d0c012bd78164b251a7 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
@@ -268,7 +268,7 @@ jobs:
           --output "$RUNNER_TEMP/java-http-phases"
       - name: Retain bounded source-specific replay evidence without credentials or keys
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-http-phases-${{ github.sha }}
           path: |-
@@ -323,7 +323,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Fetch the one exact V7 native producer source before any helper verification
@@ -332,7 +332,7 @@ jobs:
         run: git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f
       - name: Fetch the exact independent-tenant HTTP producer before its helper verification
         run: git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015
-      - uses: KirilsTurkins/lsf-setup-java@f041d6677134ada73c077d0c012bd78164b251a7 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
@@ -385,7 +385,7 @@ jobs:
           --output "$RUNNER_TEMP/java-http-spi"
       - name: Retain bounded source-specific replay evidence without credentials or keys
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-http-spi-${{ github.sha }}
           path: |-
@@ -425,7 +425,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Fetch only the exact original component and current native producer Git objects
@@ -465,7 +465,7 @@ jobs:
           --output "$RUNNER_TEMP/java-prepared-tenants"
       - name: Retain bounded public evidence without keys, private credentials or repeated native binaries
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-http-prepared-tenants-${{ github.sha }}
           path: |-
@@ -506,7 +506,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Fetch only the exact protocol-inclusive CLI-dispatch native source
@@ -525,7 +525,7 @@ jobs:
           --output "$RUNNER_TEMP/java-mixed-native"
       - name: Check only fixed public failed-assembly input retention
         run: python3 -B -m unittest tools.tests.test_java_phase_c_context -v
-      - uses: KirilsTurkins/lsf-setup-java@f041d6677134ada73c077d0c012bd78164b251a7 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
@@ -558,7 +558,7 @@ jobs:
           --output "$RUNNER_TEMP/java-http-mixed"
       - name: Retain bounded public build and node evidence without private fixture credentials
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-http-mixed-bodies-${{ github.sha }}
           path: |-
@@ -606,7 +606,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Fetch only the exact protocol-inclusive CLI-dispatch native source
@@ -625,7 +625,7 @@ jobs:
           --output "$RUNNER_TEMP/java-late-native"
       - name: Check only fixed public failed-assembly input retention
         run: python3 -B -m unittest tools.tests.test_java_phase_c_context -v
-      - uses: KirilsTurkins/lsf-setup-java@f041d6677134ada73c077d0c012bd78164b251a7 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
@@ -658,7 +658,7 @@ jobs:
           --output "$RUNNER_TEMP/java-http-late"
       - name: Retain bounded public build and node evidence without private fixture credentials
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-http-late-completion-${{ github.sha }}
           path: |-

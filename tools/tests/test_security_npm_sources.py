@@ -336,6 +336,27 @@ class NpmSourceRepairTests(unittest.TestCase):
                 with self.assertRaises(SecurityError):
                     sources.verify_sources(root, packages, {"manifests": [entry]}, lambda pin: fetch(pin) + b"drift")
 
+    def test_all_additional_action_sources_bind_exact_revisions_and_resolve_only_their_locks(self):
+        inventory = json.loads(read_file(ROOT, ".github/security/inventory.json"))
+        entries = [entry for entry in inventory["manifests"]
+                   if entry.get("source_repair") == sources.ACTION_PROFILE]
+        packages = [package for entry in entries for package in npm_packages(ROOT, entry)]
+        upstream = read_file(ROOT, ".github/security/actions/checkout-source/deepmerge-4.3.1.original.tgz")
+        receipts = sources.verify_sources(ROOT, packages, {"manifests": entries}, lambda pin: upstream)
+        self.assertEqual(len(entries), len(receipts), 4)
+        self.assertEqual({receipt["action"] for receipt in receipts}, set(sources.ACTION_REFERENCES.values()))
+        self.assertEqual({receipt["profile"] for receipt in receipts}, {sources.ACTION_PROFILE})
+        advisory = receipts[0]["advisories"][0]
+        findings = [finding("osv", advisory["id"], entry["lock"], "npm:deepmerge@4.3.1")
+                    for entry in entries]
+        observations = [{"advisories": [{"package": {"name": "deepmerge", "version": "4.3.1",
+                                                       "path": item.path}, **advisory}]}
+                        for item in findings]
+        self.assertEqual(sources.resolve_findings(findings, observations, receipts), ([], findings))
+        foreign = finding("osv", advisory["id"], ".github/security/actions/cache/package-lock.json",
+                          "npm:deepmerge@4.3.1")
+        self.assertEqual(sources.resolve_findings([foreign], observations, receipts), ([foreign], []))
+
     def test_checkout_source_never_admits_unselected_or_registry_graphs_as_repaired(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

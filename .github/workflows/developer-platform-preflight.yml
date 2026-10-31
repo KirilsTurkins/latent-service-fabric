@@ -140,7 +140,7 @@ jobs:
           Write-Output 'Actual hosted WSL2 preflight passed; packaged workflow qualification remains separate.'
       - name: Retain the bounded host observation including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: developer-platform-preflight-${{ github.sha }}
           path: ${{ runner.temp }}/developer-platform-preflight/observation.json

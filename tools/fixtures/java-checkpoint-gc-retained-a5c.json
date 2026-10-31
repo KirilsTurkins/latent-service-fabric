@@ -1,0 +1,426 @@
+{
+  "java-gc-native/native-products.json": {
+    "bytes": 135023,
+    "sha256": "sha256:9172517704fd93fd1e5311b2ac9a12aa2df4d7ff9e255804b27a47fb9276c5aa"
+  },
+  "java-gc-native/retrieval.json": {
+    "bytes": 2535,
+    "sha256": "sha256:50a8a78abcb37026546c1532e02a6a57a3d64ad25cec9a9c5399bfc7f872473f"
+  },
+  "java-gc-native/source-inputs.json": {
+    "bytes": 24881,
+    "sha256": "sha256:c24f170cb7890fa25b363a0219138d3629149849e4d7cc299ad53313948da6da"
+  },
+  "java-gc-roots/FAILED.json": {
+    "bytes": 126170,
+    "sha256": "sha256:feca4e4d0d38cb1b8f232a0414281593ef02ae6549a15d56bfc6a8a077a8a8d7"
+  },
+  "java-gc-roots/build/BUILD-COMPLETE.json": {
+    "bytes": 41053,
+    "sha256": "sha256:ecfc3f1c4c3b311b5f21c48a568fbf2ea7e2f8b5d6d70257444add114b872561"
+  },
+  "java-gc-roots/build/application-dependencies.json": {
+    "bytes": 7899,
+    "sha256": "sha256:d68bdae35cdd92dc502f5893b20b37d0d55bc43ced2e9c807260b6219dacb640"
+  },
+  "java-gc-roots/build/bindings.json": {
+    "bytes": 25546,
+    "sha256": "sha256:22aaff86cadaf592fa28bd24f7025ba03b75e1e12c5f03d886e1cd6ff0cc92a9"
+  },
+  "java-gc-roots/build/build-observation.json": {
+    "bytes": 3793,
+    "sha256": "sha256:164caa3009d0d09cb92273dc26b04877446b9ab7f6e49c658eff3671bc8443e2"
+  },
+  "java-gc-roots/build/capsule.json": {
+    "bytes": 1301,
+    "sha256": "sha256:2b3f7a20e2f0c92b3a15f02010b10413e5294eb0078295f767c1b6a7550546fa"
+  },
+  "java-gc-roots/build/compatibility-context.json": {
+    "bytes": 6250,
+    "sha256": "sha256:3ba8363f1949ffd2a5b8b58d92120dc727f8609b0577aae4683949b6bee5a592"
+  },
+  "java-gc-roots/build/compatibility-inspection.json": {
+    "bytes": 507,
+    "sha256": "sha256:48918495eee2edb9229ac17b75fc3e0a1df5425c01817559bd9fc67b05772cd3"
+  },
+  "java-gc-roots/build/compatibility-reachability.json": {
+    "bytes": 19423,
+    "sha256": "sha256:405d74f92b5b09579f2721c127e98bcab6736e85856750179d609fe10f59b711"
+  },
+  "java-gc-roots/build/compatibility-report.json": {
+    "bytes": 1252,
+    "sha256": "sha256:74af7c9239425c00cc12488d31686d1403a5df9ce153b3b60cf8e03b69457c30"
+  },
+  "java-gc-roots/build/compiler-inputs.json": {
+    "bytes": 2952146,
+    "sha256": "sha256:96e88682c3f0c9c4775d31ec42a94530440059571691e5f459672a89a827096f"
+  },
+  "java-gc-roots/build/compiler-logs/17-java-coroutine-patch.log": {
+    "bytes": 1,
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  "java-gc-roots/build/compiler-logs/18-java-coroutine-original-control.log": {
+    "bytes": 90,
+    "sha256": "sha256:01c538693a3632d25520419458df49878381435cf3447bbbf057656177ec326f"
+  },
+  "java-gc-roots/build/compiler-logs/19-java-coroutine-monitor-original-control.log": {
+    "bytes": 90,
+    "sha256": "sha256:51845c53fd413c79c1c4e61c01fee793d8425ef808a2fd09d4f9bd3d34d85795"
+  },
+  "java-gc-roots/build/compiler-logs/20-java-coroutine-corrected-control.log": {
+    "bytes": 91,
+    "sha256": "sha256:4828f5d55aa6bab7d28b8266afd76eaca05911722b3338c1d23abc56c65b7d51"
+  },
+  "java-gc-roots/build/compiler-logs/21-java-coroutine-monitor-corrected-control.log": {
+    "bytes": 91,
+    "sha256": "sha256:36ae283936a6b418b41521d8b079dfcea962b00da32322146ab4bbc64b99ab53"
+  },
+  "java-gc-roots/build/compiler-logs/22-java-to-c.log": {
+    "bytes": 981,
+    "sha256": "sha256:3cf32035c63c6b4918919217a9b33f7cdc7c55b42259d712967bb40bfae8e044"
+  },
+  "java-gc-roots/build/compiler-logs/23-c-to-wasm.log": {
+    "bytes": 186730,
+    "sha256": "sha256:b9ca9a30ea56b614c4d7dc7c8ab75274f75e8600e6e6d6f97c3a0ca658164756"
+  },
+  "java-gc-roots/build/component.wasm": {
+    "bytes": 1923907,
+    "sha256": "sha256:59ab624d308106f52bb3bb190252f2ac7420649fd604504a8d7d8a46252d0078"
+  },
+  "java-gc-roots/build/contracts.json": {
+    "bytes": 673,
+    "sha256": "sha256:20f28668fb4955d5c9429404ded95e957a5e5b737e9151915936c30d6eeb6379"
+  },
+  "java-gc-roots/build/coroutine-compiler-preparation.json": {
+    "bytes": 11828,
+    "sha256": "sha256:5b14f0c3542444ac91b2629901837c6bf37adb0b284cf36489496b29a72d48f3"
+  },
+  "java-gc-roots/build/deployment.json": {
+    "bytes": 885,
+    "sha256": "sha256:8d1fbd35a22348532f8d6c2ea931cdb9a9c4a07891306030d835f2dc95d12994"
+  },
+  "java-gc-roots/build/diagnostic-source.json": {
+    "bytes": 174,
+    "sha256": "sha256:aba76e33077115dc9a259f757189fa3d9fa4f6b16f6d9da877cf22fa826484e0"
+  },
+  "java-gc-roots/build/gc-root-generated.json": {
+    "bytes": 3331,
+    "sha256": "sha256:b95358c13d6f5f2c41a2143ea67ea75f0b870a520023c069d06c9b432fa16640"
+  },
+  "java-gc-roots/build/gc-root-generated/c/d/l/a/Capsule.c": {
+    "bytes": 139230,
+    "sha256": "sha256:9e39afc0f5296407c1b85195e69c857b42a5fcf22b36d2fbeb708c3d71913be4"
+  },
+  "java-gc-roots/build/gc-root-generated/c/d/l/a/Capsule.h": {
+    "bytes": 1332,
+    "sha256": "sha256:4e2708cc6f9d4f71feeaf6db29e1d3d000620380d245565159b6ce911e15ad79"
+  },
+  "java-gc-roots/build/gc-root-generated/c/d/l/a/Capsule@d1.c": {
+    "bytes": 54313,
+    "sha256": "sha256:7e1d59d6b02282e0f0b4ff1a7e6d1512f0e3a538ab917695835e20be5004dda9"
+  },
+  "java-gc-roots/build/gc-root-generated/c/d/l/a/Capsule@d1.h": {
+    "bytes": 1081,
+    "sha256": "sha256:4bc5e725c827b2af2b0d62d703a8538b405926d3b199f6058df971f7335ccabd"
+  },
+  "java-gc-roots/build/gc-root-generated/c/d/l/g/r/Activation.c": {
+    "bytes": 241758,
+    "sha256": "sha256:46360b7a37d3d1bd99f417c7fba43b431969c71a81637bd2fcff380b43e12f9e"
+  },
+  "java-gc-roots/build/gc-root-generated/c/d/l/g/r/Activation.h": {
+    "bytes": 1988,
+    "sha256": "sha256:b3d87aef4f700331e4d992b459d3e21265c9eac2705b7b4c200426e3b2b3f032"
+  },
+  "java-gc-roots/build/gc-root-generated/c/d/l/g/r/Monitors.c": {
+    "bytes": 27498,
+    "sha256": "sha256:d73cd029446cd02f8f78c0aa66c7c4f874f65e9538372904a650133a14e2db4e"
+  },
+  "java-gc-roots/build/gc-root-generated/c/d/l/g/r/Monitors.h": {
+    "bytes": 645,
+    "sha256": "sha256:953f49a255a7a334c931c107d8c0ae78241a21b5d9a48c00893976aade2fe2b7"
+  },
+  "java-gc-roots/build/gc-root-generated/c/j/l/Object.c": {
+    "bytes": 63385,
+    "sha256": "sha256:4289a2a207d899894e411cd87b8b64379404c73504b549f99e6e6fa88ea4ed25"
+  },
+  "java-gc-roots/build/gc-root-generated/c/j/l/Object.h": {
+    "bytes": 1996,
+    "sha256": "sha256:d0b42ab7515dc9bef1114d36564b68bf6bf92fc0c1d33050bbb8a143279eb9c9"
+  },
+  "java-gc-roots/build/gc-root-generated/c/j/l/System.c": {
+    "bytes": 26738,
+    "sha256": "sha256:1c3b5ceac5d62a3e32b3240c6bcdeb20da230543b074e06d8447ba056007d52c"
+  },
+  "java-gc-roots/build/gc-root-generated/c/j/l/System.h": {
+    "bytes": 928,
+    "sha256": "sha256:f40fa808922a809b00ca0e85007a0ec9fe1c15e20a0926bd138327d406c8582d"
+  },
+  "java-gc-roots/build/gc-root-generated/c/j/l/Thread.c": {
+    "bytes": 25050,
+    "sha256": "sha256:bf49b2986ee3c0d9ed7e0cec4a2deb33412680347772d3447a62fec1e0ef2653"
+  },
+  "java-gc-roots/build/gc-root-generated/c/j/l/Thread.h": {
+    "bytes": 2001,
+    "sha256": "sha256:b4b0137558d05f625ffb6abd6b32f023fbd62790cdbfc05846fa067d12ae50ed"
+  },
+  "java-gc-roots/build/gc-root-generated/c/j/l/r/WeakReference.c": {
+    "bytes": 1628,
+    "sha256": "sha256:24fa912f8373511b5f7888395609a30a092a7a9e01eec5a03a770cf239b4895e"
+  },
+  "java-gc-roots/build/gc-root-generated/c/j/l/r/WeakReference.h": {
+    "bytes": 566,
+    "sha256": "sha256:e7624c926855789216f2cd464fd622e1eb697718d22318a5077ee7e1eb3df142"
+  },
+  "java-gc-roots/build/gc-root-generated/c/o/a/c/l/c/AtomicSafeInitializer.c": {
+    "bytes": 9742,
+    "sha256": "sha256:b53b0e48f9ea82cdb135f7426bf0d56839d6bb374d661902f438fad42f827ba8"
+  },
+  "java-gc-roots/build/gc-root-generated/c/o/a/c/l/c/AtomicSafeInitializer.h": {
+    "bytes": 925,
+    "sha256": "sha256:8bc60cb7d360031e5e912e13aefed9c390f8d49ee501d3fab2062603067b8a06"
+  },
+  "java-gc-roots/build/gc-root-generated/c/o/t/r/EventQueue.c": {
+    "bytes": 22238,
+    "sha256": "sha256:6b2baad1ab33a2e83cd721e1e81aaff72f184dcb5682ddc8ced81e28ee454326"
+  },
+  "java-gc-roots/build/gc-root-generated/c/o/t/r/EventQueue.h": {
+    "bytes": 973,
+    "sha256": "sha256:8e3ec29827e087379ffc907da6435e6d495d49ab33ff0d23091ca5102cbaeba4"
+  },
+  "java-gc-roots/build/gc-root-generated/c/o/t/r/Fiber.c": {
+    "bytes": 22603,
+    "sha256": "sha256:3bcc674daceadaf9ee289196a36936358071e0b4830b6837093eea125f9ed645"
+  },
+  "java-gc-roots/build/gc-root-generated/c/o/t/r/Fiber.h": {
+    "bytes": 3260,
+    "sha256": "sha256:f652670453f668ce5b06f6836ea032a0579a5158ca183b9cda0421ed684d50be"
+  },
+  "java-gc-roots/build/gc-root-generated/c/o/t/r/GC.c": {
+    "bytes": 87631,
+    "sha256": "sha256:03dd0dd0d8e85405ace527a9e109806ce7c1d28a56ac4b238279cc5e313b036a"
+  },
+  "java-gc-roots/build/gc-root-generated/c/o/t/r/GC.h": {
+    "bytes": 4822,
+    "sha256": "sha256:058a680a7c20b4c2fff23e1893a4f6dc30d92ef75b84e4b8441e87078e3e04bc"
+  },
+  "java-gc-roots/build/java-classpath.json": {
+    "bytes": 90352,
+    "sha256": "sha256:f5c13e4f792687bb480f2122ea8dcf18387250192e8d98d7f0d5e0c46d9da65b"
+  },
+  "java-gc-roots/build/package-inputs.json": {
+    "bytes": 1557,
+    "sha256": "sha256:77460e7ba60d6f80c4891e3de2e95b203d4ad05e86be509efd280f1926fcffc2"
+  },
+  "java-gc-roots/build/package-source.json": {
+    "bytes": 2241,
+    "sha256": "sha256:062da6b95e8ee7407b021fd7c529e36c12f4969cf8fdbabd10aa35ab5b5738a9"
+  },
+  "java-gc-roots/build/recipe-inputs.json": {
+    "bytes": 9674,
+    "sha256": "sha256:92d19a9cdc47bcfceaf4db4026e42c7972d90218663e810176146d1270e40b71"
+  },
+  "java-gc-roots/build/resource-index.json": {
+    "bytes": 1465,
+    "sha256": "sha256:c70b6ab5d70312ff9a4e9fd2ab22563178ebac2381dcb2aaaa47d36f3a5fd6fb"
+  },
+  "java-gc-roots/build/runtime-profile.json": {
+    "bytes": 24708,
+    "sha256": "sha256:331c5dd272ce37b20840468bf72f411676cefe0731b577e2369371d41c70351a"
+  },
+  "java-gc-roots/build/source-inputs.json": {
+    "bytes": 37063,
+    "sha256": "sha256:581a5d08dda013125e4506d8a64b8df602cd78e62ddfea9cf95c7745fe71f09f"
+  },
+  "java-gc-roots/build/source-origins.json": {
+    "bytes": 165,
+    "sha256": "sha256:6197dd42b13806c1a07bd708c44ed91c22933f94076c5a86c087c156e42e495b"
+  },
+  "java-gc-roots/build/surface.json": {
+    "bytes": 227,
+    "sha256": "sha256:5a89d214dcb315c396fdd9f43f1ae739e244c0592f8f45c9ad14cb467a7d9479"
+  },
+  "java-gc-roots/build/wit-lock.json": {
+    "bytes": 729,
+    "sha256": "sha256:7cf019d4515e5484926be0a4bf6a1f693a044a44b3cff36f22a03386e1b90405"
+  },
+  "java-gc-roots/commands/logs/00-checkpoint-reference-jdk-version.stderr.txt": {
+    "bytes": 0,
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "java-gc-roots/commands/logs/00-checkpoint-reference-jdk-version.stdout.txt": {
+    "bytes": 190,
+    "sha256": "sha256:2ea09eaf7b3c2db5256b076f18d3758d1f2a5746384c9f6b58a2c5d244864971"
+  },
+  "java-gc-roots/commands/logs/01-checkpoint-reference-compile.stderr.txt": {
+    "bytes": 0,
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "java-gc-roots/commands/logs/01-checkpoint-reference-compile.stdout.txt": {
+    "bytes": 0,
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "java-gc-roots/commands/logs/02-checkpoint-real-plugin-model-compile.stderr.txt": {
+    "bytes": 0,
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "java-gc-roots/commands/logs/02-checkpoint-real-plugin-model-compile.stdout.txt": {
+    "bytes": 0,
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "java-gc-roots/commands/logs/03-checkpoint-real-plugin-model.stderr.txt": {
+    "bytes": 0,
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "java-gc-roots/commands/logs/03-checkpoint-real-plugin-model.stdout.txt": {
+    "bytes": 137,
+    "sha256": "sha256:8c63994b4ef2b8d15c49eb75ba6a24bef605b915e31b61061663845c896f7a78"
+  },
+  "java-gc-roots/commands/logs/04-checkpoint-real-gc-reference-model.stderr.txt": {
+    "bytes": 0,
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "java-gc-roots/commands/logs/04-checkpoint-real-gc-reference-model.stdout.txt": {
+    "bytes": 150,
+    "sha256": "sha256:551aec79c6f2a0ee2e0375fb03e7a910a3df668efebe420c8b61c47f555c4f3a"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/0-java-version.command.json": {
+    "bytes": 188,
+    "sha256": "sha256:5df7898c9b2e4151a7f433776bc266eb1d7f42d1ff09f1e5f34bb30baa644b3e"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/1-gradle-version.command.json": {
+    "bytes": 163,
+    "sha256": "sha256:ab4265c515f216df4f7b9d153bb65e549030f21428172435e24b1c38abc107cd"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/10-bindings-metadata.command.json": {
+    "bytes": 269,
+    "sha256": "sha256:cd02a2717f5b2946b2b86717784169177b7e419655eb6b599811e170e66c1920"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/11-wit-graph.command.json": {
+    "bytes": 247,
+    "sha256": "sha256:e341c14aa49d53db962ff9a1e1dc6d4d0dda506af53e13317a174ec7b066251c"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/12-wit-bindings.command.json": {
+    "bytes": 464,
+    "sha256": "sha256:228e89b75c5a36036dc3e2c65719b8893a974e793f6034a983a86479501bde02"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/13-bindings-metadata.command.json": {
+    "bytes": 275,
+    "sha256": "sha256:2384ad624dda919b9cfb3728a46545de2cbf241e5a7454cee5fc6da06ab8f8a5"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/14-java-to-c.command.json": {
+    "bytes": 178,
+    "sha256": "sha256:01f4acf44fa7914a67c0b963bb6dc54763b0c2d8632bdb464b6e8be130a27558"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/15-c-to-wasm.command.json": {
+    "bytes": 1501,
+    "sha256": "sha256:e59125b7d194e0454239f368a48ba737ae2a9b7c4713fa40968090f24f622e95"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/16-closed-runtime.command.json": {
+    "bytes": 492,
+    "sha256": "sha256:93abe842eaff5388d3336805ead05c3d2f1e7a9f94bbb74516e074b0eac13be9"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/17-component-new.command.json": {
+    "bytes": 463,
+    "sha256": "sha256:1299d1da5baa564c9645bfe310e88323b058bfe70cad736565ea643587978bd7"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/18-component-validate.command.json": {
+    "bytes": 241,
+    "sha256": "sha256:4f959cbc55cb3ecc1c9bfd9519f7f16a0ca6b2fd4770cda2e2ff4a943544b6ff"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/19-component-surface.command.json": {
+    "bytes": 252,
+    "sha256": "sha256:d97d78d6caa152c5981b35143da7e540f349c4c774cdc4dabe89dc62fd48d1ef"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/2-clang-version.command.json": {
+    "bytes": 178,
+    "sha256": "sha256:5871a3d778a3643df8f05031c923dead69602c110140a4e341eab57ffe95209f"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/20-expected-wit.command.json": {
+    "bytes": 250,
+    "sha256": "sha256:87881bcddcfb7b032a8551e85e5cfbe34f788e9363f765ad43945da5dc5349a3"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/21-compiled-wit.command.json": {
+    "bytes": 261,
+    "sha256": "sha256:9a8d3aeac848b4234a0c341e2df896d301ecd3aae64327dc3e0645968640270f"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/3-wit-bindgen-version.command.json": {
+    "bytes": 169,
+    "sha256": "sha256:17e5742d5c6b38058f7d95c47302d57ebe88dcebc01bf03842182d49936bb477"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/4-wasm-tools-version.command.json": {
+    "bytes": 158,
+    "sha256": "sha256:51f219344d7fb7b909a6ccfd5fdb1c9b4b284fc04f68486b01314b8104de6062"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/5-wit-graph.command.json": {
+    "bytes": 267,
+    "sha256": "sha256:078585c39fe49743ab45fed3a0a5b4a5b53275e0a1c167eab6f21a3db1cc0e8b"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/6-wit-bindings.command.json": {
+    "bytes": 494,
+    "sha256": "sha256:22ef299d75d53e746cd155d392a104d97ad57d15c5935d544c4418c7cbc8ddc2"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/7-bindings-metadata.command.json": {
+    "bytes": 289,
+    "sha256": "sha256:d966cb2a057bbf3c05d9601557add584bf6c1d707eb0447d8c13426a90c02420"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/8-wit-graph.command.json": {
+    "bytes": 247,
+    "sha256": "sha256:33c3de1e32a42ef9c97d15cd811d19b4d982024ea718835f6ea864686117df1b"
+  },
+  "java-gc-roots/compiler/compiler-acquisition/9-wit-bindings.command.json": {
+    "bytes": 458,
+    "sha256": "sha256:674562febef7c63a88e10f9ed6a9a9bb8391d7509f0b612a8c0989f1a8b9f319"
+  },
+  "java-gc-roots/compiler/compiler-cache-selection.json": {
+    "bytes": 215,
+    "sha256": "sha256:f0233c59ee5d69f174c22221b8a00b5b026a55ac9c5717da09d2029ff4276079"
+  },
+  "java-gc-roots/controls/controls.json": {
+    "bytes": 6198,
+    "sha256": "sha256:488c1d2bc25b7ebcace31c7e39c67201a0940c691c8c88840cd5266864d4ae89"
+  },
+  "java-gc-roots/controls/reference-commands.json": {
+    "bytes": 196,
+    "sha256": "sha256:4cda6b8c34ba976668adc0026b6b64b7c6d73b540109f023323317f28d553f12"
+  },
+  "java-gc-roots/controls/reference-commands/logs/00-checkpoint-gc-reference-fresh.stderr.txt": {
+    "bytes": 0,
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "java-gc-roots/controls/reference-commands/logs/00-checkpoint-gc-reference-fresh.stdout.txt": {
+    "bytes": 22,
+    "sha256": "sha256:27a9af2fa75d267f399757a5be1e5ab0fa90c03f5eb3ce32d562f4771cc90149"
+  },
+  "java-gc-roots/controls/reference-commands/logs/01-checkpoint-gc-reference-gc.stderr.txt": {
+    "bytes": 0,
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "java-gc-roots/controls/reference-commands/logs/01-checkpoint-gc-reference-gc.stdout.txt": {
+    "bytes": 124,
+    "sha256": "sha256:104cf98cd5334ac3741445ec3b6f3b6c7c36d4726fc2bdfd4d57a69280d790f9"
+  },
+  "java-gc-roots/project/application/java-dependencies.json": {
+    "bytes": 297,
+    "sha256": "sha256:28ddfbe755575c510c59bfce724a4ad64fe1e744cb8f2c160a183ce0bf10a610"
+  },
+  "java-gc-roots/project/application/latent.dependencies.json": {
+    "bytes": 5444,
+    "sha256": "sha256:e18e1a5ac7f0e833f2bc09607a9b36e575fc1b12bae5b98f637521c3a72c6c9a"
+  },
+  "java-gc-roots/project/application/latent.dependencies.lock.json": {
+    "bytes": 7881,
+    "sha256": "sha256:fbb69b4b444e5e0a63959071775c919e78f4fdc76bdf6ba9318187e38049c456"
+  },
+  "java-gc-roots/project/candidate.json": {
+    "bytes": 7881,
+    "sha256": "sha256:fbb69b4b444e5e0a63959071775c919e78f4fdc76bdf6ba9318187e38049c456"
+  },
+  "java-gc-roots/project/receipts/application-dependencies.json": {
+    "bytes": 7899,
+    "sha256": "sha256:d68bdae35cdd92dc502f5893b20b37d0d55bc43ced2e9c807260b6219dacb640"
+  },
+  "java-gc-roots/project/receipts/capture.json": {
+    "bytes": 95094,
+    "sha256": "sha256:ce8217693887c8559592138cabadce3f94fb9e422de89eac26e4b5a359caa902"
+  }
+}
