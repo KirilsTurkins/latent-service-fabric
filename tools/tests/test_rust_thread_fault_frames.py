@@ -10,12 +10,18 @@ class RustThreadFaultFramesTests(unittest.TestCase):
     def test_workflow_fetches_current_native_and_retained_failure_sources(self):
         workflow = (Path(__file__).resolve().parents[2] / '.github' / 'workflows'
                     / 'rust-thread-fault-diagnostic.yml').read_text(encoding='utf-8')
-        self.assertIn('git fetch --no-tags --depth=1 origin '
-                      'deb654086a6e9ca85c1c96c7e3485babbc6557d9', workflow)
-        self.assertIn('git fetch --no-tags --depth=1 origin '
-                      'ef841ed1d5691b4bf25db48b9980a776b4b56bc5', workflow)
-        self.assertIn('git fetch --no-tags --depth=1 origin '
-                      '79911762b366381d7dc61da12d1b5e9aba2b3222', workflow)
+        prefix = 'git fetch --no-tags --depth=1 origin '
+        self.assertEqual(workflow.count(prefix +
+                         'e3f0edf822c10e84bbeede276174ac3217542afc'), 1)
+        for source in ('b422af24d86344ac7abb8b8fa56c3782aab63915',
+                       '28059f343bbd954e3e6614c5a24593897cc0c294',
+                       '2259601ab19702eafd56c39bcb43f769cdb47fa5',
+                       '9106147f83a2e19c8b1be16b9eb5d55e39512bde'):
+            self.assertIn(prefix + source, workflow)
+        for obsolete in ('deb654086a6e9ca85c1c96c7e3485babbc6557d9',
+                         'ef841ed1d5691b4bf25db48b9980a776b4b56bc5',
+                         '79911762b366381d7dc61da12d1b5e9aba2b3222'):
+            self.assertNotIn(prefix + obsolete, workflow)
 
     def test_diagnostic_consumer_accepts_only_the_bound_numeric_unreachable_fault(self):
         runtime = (Path(__file__).resolve().parents[2] / 'tools'
@@ -23,7 +29,8 @@ class RustThreadFaultFramesTests(unittest.TestCase):
         programme = (Path(__file__).resolve().parents[2] / 'tools'
                      / 'diagnose_rust_thread_fault.py').read_text(encoding='utf-8')
         self.assertIn("row['exitCode'] == 4 and row['decoded'] is None", runtime)
-        self.assertIn("{'kind': 'unreachable-code'}", runtime)
+        self.assertIn("{'kind': 'guest-fault'}", runtime)
+        self.assertNotIn("'unreachable-code'", runtime)
         self.assertIn("'rust-thread-exact-numeric-original-fault-observation'", runtime)
         self.assertIn("status='diagnostic-fault-observed'", runtime)
         self.assertIn("'completed-with-fault'", programme)

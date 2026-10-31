@@ -44,6 +44,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_thread_fault_frames.py",
-  "reviewReason": "Finite off-default numeric fault diagnostic; one authenticated unreachable trap with bounded numeric frames, one rebuilt node, four original helpers and unchanged guest retained; no qualification or timing equivalence claim.",
+  "reviewReason": "Finite off-default current guest-fault diagnostic with one exact shared successful compiler/native fetch and required historical preimages; unchanged case IDs, bounded numeric frames, distinct rebuilt node, original helpers and no qualification claim.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
