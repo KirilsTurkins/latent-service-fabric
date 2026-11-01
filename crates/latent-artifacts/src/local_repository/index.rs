@@ -168,6 +168,25 @@ impl CatalogIndex {
         self.web_bytes = bytes;
         Ok(())
     }
+    pub(super) fn refund_reclaimed_web(
+        &mut self,
+        entries: usize,
+        bytes: usize,
+    ) -> Result<(), PlatformError> {
+        self.web_entries = self
+            .web_entries
+            .checked_sub(entries)
+            .ok_or_else(|| corrupt("web-cleanup-count"))?;
+        self.web_bytes = self
+            .web_bytes
+            .checked_sub(bytes)
+            .ok_or_else(|| corrupt("web-cleanup-charge"))?;
+        self.accounted_bytes = self
+            .accounted_bytes
+            .checked_sub(bytes)
+            .ok_or_else(|| corrupt("web-cleanup-charge"))?;
+        Ok(())
+    }
     pub(super) fn pending_ids(&self, maximum: usize) -> Vec<PublicationId> {
         self.pending_reservations
             .keys()

@@ -1,6 +1,7 @@
 //! Componentless web publications inside the exclusively owned artifact catalog.
 //! Componentless web publications share the actual catalog owner, admission
 //! work slot, writer and content/index budgets. They never enter capsule indexes.
+pub(super) mod cleanup;
 mod evidence;
 mod mutation;
 mod persistence;
@@ -55,7 +56,7 @@ impl WebCatalog {
         for reference in publications {
             if let Some(entry) = state.entries.get(&reference.id) {
                 if entry.record.publication != *reference
-                    || entry.deleted
+                    || (entry.deleted && entry.layout.is_some())
                     || !matches!(
                         entry.record.state,
                         ReleaseLifecycleState::Retired | ReleaseLifecycleState::Revoked
@@ -155,12 +156,17 @@ struct Entry {
     deleted: bool,
     record: WebLifecycleRecord,
     completion: ArtifactBlobDigest,
-    layout: Arc<CheckedWebLayout>,
+    layout: Option<Arc<CheckedWebLayout>>,
     projection: Option<Arc<projection::Projection>>,
     grant: Option<Arc<dyn WebAdmissionGrant>>,
     generation: Arc<WebGeneration>,
 }
 impl Entry {
+    fn layout(&self) -> Result<&Arc<CheckedWebLayout>, PlatformError> {
+        self.layout
+            .as_ref()
+            .ok_or_else(|| corrupt("web-payload-reclaimed"))
+    }
     fn retained_bytes(&self) -> Result<usize, PlatformError> {
         let encoded = persistence::encode_line(
             &self.record,
@@ -170,7 +176,13 @@ impl Entry {
             .len()
             .checked_mul(4)
             .and_then(|n| n.checked_add(2048))
-            .and_then(|n| n.checked_add(self.layout.retained_bytes()))
+            .and_then(|n| {
+                n.checked_add(
+                    self.layout
+                        .as_ref()
+                        .map_or(0, |layout| layout.retained_bytes()),
+                )
+            })
             .and_then(|n| {
                 n.checked_add(
                     self.projection
@@ -189,6 +201,12 @@ impl Entry {
     }
 }
 impl State {
+    fn payload_entries(&self) -> usize {
+        self.entries
+            .values()
+            .filter(|entry| entry.layout.is_some())
+            .count()
+    }
     fn retained_bytes(&self) -> Result<usize, PlatformError> {
         let mut bytes = 4096usize;
         for entry in self.entries.values() {

@@ -81,10 +81,20 @@ pub(super) fn load(
         return Ok(None); // interrupted empty initialization, no committed pins
     };
     let marker = required(&root.join("LIFECYCLE_MODE"), 64)?;
-    let cleanup_mode = marker == model::CLEANUP_MARKER;
+    let web_cleanup_mode = marker == model::WEB_CLEANUP_MARKER;
+    let cleanup_mode = marker == model::CLEANUP_MARKER || web_cleanup_mode;
     let deletion_mode = marker == model::DELETION_MARKER || cleanup_mode;
     let saved: Saved = decode(&head_bytes, MAX_HEAD)?;
     saved.validate(authority)?;
+    if saved
+        .head
+        .cleanup
+        .as_ref()
+        .is_some_and(|c| !c.web_identities.is_empty())
+        && !web_cleanup_mode
+    {
+        return Err(corrupt());
+    }
     if saved.head.cleanup.is_some() && !cleanup_mode {
         return Err(corrupt());
     }
@@ -106,6 +116,16 @@ pub(super) fn load(
         }
         let intent: Intent = decode(&bytes, MAX_INTENT)?;
         intent.next.validate(authority)?;
+        if intent
+            .next
+            .head
+            .cleanup
+            .as_ref()
+            .is_some_and(|c| !c.web_identities.is_empty())
+            && !web_cleanup_mode
+        {
+            return Err(corrupt());
+        }
         if intent.next.head.cleanup.is_some() && !cleanup_mode {
             return Err(corrupt());
         }
@@ -167,8 +187,19 @@ pub(super) fn persist(
     initialize(root, old)?;
     if next.cleanup.is_some() {
         let marker = root.join("LIFECYCLE_MODE");
-        if required(&marker, 64)? != model::CLEANUP_MARKER {
-            atomic(&marker, model::CLEANUP_MARKER)?;
+        let previous = required(&marker, 64)?;
+        let required = if previous == model::WEB_CLEANUP_MARKER
+            || next
+                .cleanup
+                .as_ref()
+                .is_some_and(|c| !c.web_identities.is_empty())
+        {
+            model::WEB_CLEANUP_MARKER
+        } else {
+            model::CLEANUP_MARKER
+        };
+        if previous != required {
+            atomic(&marker, required)?;
         }
         fault(7)?;
     } else if next.deletion.is_some() {
@@ -224,7 +255,10 @@ fn initialize(root: &Path, old: &Head) -> Result<(), PlatformError> {
     }
     let marker = root.join("LIFECYCLE_MODE");
     let previous = required(&marker, 64)?;
-    if previous != MARKER && previous != model::DELETION_MARKER && previous != model::CLEANUP_MARKER
+    if previous != MARKER
+        && previous != model::DELETION_MARKER
+        && previous != model::CLEANUP_MARKER
+        && previous != model::WEB_CLEANUP_MARKER
     {
         if previous != b"lsf-release-lifecycle-v1\n" || old.revision != 0 {
             return Err(corrupt());

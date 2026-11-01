@@ -74,7 +74,7 @@ The catalog root contains:
 | `lifecycle/records/<publication hex>.json` | Independently mutable lifecycle state with monotonic generations |
 | `lifecycle/receipts/` | Bounded operation ring with exact publication associations |
 | `lifecycle/evidence/` | Independently selected immutable evidence revisions |
-| `lifecycle/retention/` | Bounded pins, tombstones, capsule cleanup intent/head and original-operation receipts |
+| `lifecycle/retention/` | Bounded pins, tombstones, capsule/web cleanup intent/head and original-operation receipts |
 | `LIFECYCLE_MODE` | Reader compatibility fence, promoted before accepting new retention/deletion/cleanup authority |
 | `.tmp/` | Owned publication/reclamation staging |
 
@@ -99,7 +99,7 @@ Directory unlink and parent synchronization precede refunds. An indeterminate
 write or reclamation failure requires reopening; it cannot refund a live owner.
 Unknown incomplete directories require offline inspection and repair. This orphan
 operation never deletes committed historical payloads. The separate trusted-host
-capsule reclamation protocol below requires prior durable visibility removal and
+publication reclamation protocol below requires prior durable visibility removal and
 fresh native reference/reader checks; it is not an expansion of orphan cleanup.
 
 The authenticated node inventory exposes a fixed `publication-catalog` topology
@@ -138,25 +138,29 @@ real publisher and builder signatures with corrected embedded inventories and
 identical packages in two tenants. These are functional tests, with no guest
 invocations or 100k load campaign.
 
-## Retention pins, tombstones and capsule reclamation
+## Retention pins, tombstones and payload reclamation
 
 The native repository has [bounded durable retention and deletion owners](publication-retention-pins.md)
 for issue #662. Pins are independent of execution and serving eligibility;
 clearing one does not reclaim content. `tombstone_publications` durably removes
 visibility and eligibility but retains payloads and their charges.
 
-The separate trusted-host `reclaim_tombstoned_capsules` continues an exact retained
-deletion operation with a fresh catalog fence. It commits bounded cleanup
+The separate trusted-host `reclaim_tombstoned_publications` continues an exact
+retained capsule/web deletion operation with a fresh catalog fence. It commits bounded cleanup
 authority before unlink, preserves shared blobs until their last committed
 reference is removed, and synchronizes parent directories before capacity
 refunds. Compact protected identities and original-operation receipts allow
 reopen to continue recognized partial cleanup without restoring old visibility
-or requiring already-removed capsule files. Unsupported older readers and
+or requiring already-removed payload files. Unsupported older readers and
 corrupt or downgraded cleanup authority are rejected before cleanup.
 
-Componentless-web physical cleanup, independent lifecycle/evidence history
-compaction, and authenticated management/CLI plus finite audit integration are
-not implemented by this capsule path. There is still no supported public
+The capsule-only API remains available with its original target restriction.
+Web cleanup retains negative identities and independently verified history and
+evidence; the v2 cleanup marker rejects older readers. HTTP recovery refuses
+older control snapshots that reference tombstoned web payloads without rejecting
+ordinary retained revoked/retired references. Independent lifecycle/evidence
+history compaction and authenticated management/CLI plus finite audit integration
+remain unfinished. There is still no supported public
 operator deletion command. Follow the capacity and stopped-backup workflow
 above; do not call the trusted-host API with a no-op audit callback or remove
 catalog directories manually. The retention guide records the exact limits,

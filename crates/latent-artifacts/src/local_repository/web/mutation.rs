@@ -94,7 +94,7 @@ impl DirectoryArtifactRepository {
             projection: super::projection::Projection::new(&record.publication, &value.layout)?,
             record,
             completion,
-            layout: Arc::new(value.layout),
+            layout: Some(Arc::new(value.layout)),
             grant: Some(value.grant),
             generation: Arc::new(WebGeneration::new(1)),
         };
@@ -224,7 +224,7 @@ impl DirectoryArtifactRepository {
         let tenant = context.scope.tenant().ok_or_else(denied)?;
         let value = config.authority.verify_web(tenant, upload)?;
         self.check_web_grant(tenant, &value)?;
-        if value.layout != *entry.layout {
+        if value.layout != **entry.layout()? {
             return Err(corrupt("web-renewal-package-changed"));
         }
         entry.grant = Some(Arc::clone(&value.grant));
@@ -291,7 +291,7 @@ impl DirectoryArtifactRepository {
             .authority
             .verify_web(reference.scope.tenant().ok_or_else(denied)?, upload)?;
         self.check_web_grant(reference.scope.tenant().ok_or_else(denied)?, &value)?;
-        if value.layout != *entry.layout {
+        if value.layout != **entry.layout()? {
             return Err(corrupt("web-reverification-association"));
         }
         let grant = Arc::clone(&value.grant);
@@ -304,7 +304,7 @@ impl DirectoryArtifactRepository {
         grant.with_current(&mut |check| {
             check.check()?;
             self.index.write().map_err(lock_error)?.replace_web(
-                next.entries.len(),
+                next.payload_entries(),
                 retained,
                 self.config,
             )?;

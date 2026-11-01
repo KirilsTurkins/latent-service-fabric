@@ -13,6 +13,7 @@ use tombstones::DeletionHistory;
 pub(super) const MAX_HEAD: usize = 4 * 1024 * 1024;
 pub(super) const MAX_REQUEST: usize = 64 * 1024;
 pub(super) const MAX_INTENT: usize = MAX_HEAD + 4096;
+pub(super) const WEB_CLEANUP_MARKER: &[u8] = b"lsf-release-lifecycle-reclamation-v2\n";
 pub(super) const CLEANUP_MARKER: &[u8] = b"lsf-release-lifecycle-reclamation-v1\n";
 pub(super) const DELETION_MARKER: &[u8] = b"lsf-release-lifecycle-deletion-v1\n";
 pub(super) const MARKER: &[u8] = b"lsf-release-lifecycle-retention-v1\n";

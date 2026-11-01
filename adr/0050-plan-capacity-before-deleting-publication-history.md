@@ -1,6 +1,6 @@
 # ADR-0050: Plan capacity before deleting publication history
 
-- Status: Accepted maintenance design; committed-history deletion is pending
+- Status: Accepted maintenance design; native payload deletion implemented, operator workflow pending
 - Context: First Integration Feedback #642
 
 ## Decision
@@ -9,9 +9,12 @@ Keep committed publication history pinned. Expose the existing admission ledgers
 through authenticated node inventory and plan maintenance from measured remaining
 budgets. Retirement and revocation remove authority, not committed payloads.
 Existing bounded reclamation removes only uncommitted leftovers and zero-reference
-blobs. It cannot delete historical publications.
+blobs. It cannot delete historical publications. A separate trusted-host native protocol
+now provides durable pins, visibility tombstones and capsule/componentless-web
+payload reclamation; it does not extend orphan cleanup or expose an operator CLI.
+See the [retention implementation boundary](../docs/reference/publication-retention-pins.md).
 
-Select a future explicit, authorized deletion protocol, with a dedicated
+Select an explicit, authorized deletion protocol, with a dedicated
 [implementation child #662](https://github.com/KirilsTurkins/latent-service-fabric/issues/662). Until qualified, operators stop promotions before exhausting
 budgets and expand a reviewed finite limit/storage profile or explicitly provision
 a separate installation from currently eligible packages. No automatic TTL
@@ -108,8 +111,14 @@ and retired history across reopen, expands to four entries and admits exactly
 one more release. Node tests check exact integer accounting, thresholds and
 rejection of unavailable data.
 
-This qualifies current inventory and safe uncommitted maintenance, not a future
-deletion protocol, arbitrary backup software or cloud/network storage. The
-implementation child must qualify active-route/read races, shared-blob deletion,
-rollback pins, audit retention and every commit/unlink interruption point.
+The original evidence above qualifies inventory and uncommitted maintenance, not
+arbitrary backup software or cloud/network storage. The implementation child now
+adds native active-reference/read protections, durable pins/tombstones, bounded
+capsule and web cleanup plans, interrupted unlink/sync/refund recovery and stopped
+coupled restore tests. Web cleanup retains exact negative identities and verifies
+independent history/evidence; older control snapshots referencing tombstoned
+static targets refuse startup. These storage fixtures do not qualify signed
+operator workflows. Authenticated management/CLI, real finite audit integration
+and their end-to-end qualification remain pending. Evidence, trust/revocation,
+audit and compact negative identity budgets retain independent finite policies.
 Coordinate with #397 without conflating business-state and publication catalogs.

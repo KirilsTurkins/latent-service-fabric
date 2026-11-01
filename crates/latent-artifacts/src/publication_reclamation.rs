@@ -1,4 +1,4 @@
-//! Bounded content observation and explicit durable capsule payload reclamation.
+//! Bounded content observation and explicit durable publication payload reclamation.
 //! A read-only assessment never substitutes for the native commit/recovery protocol.
 use crate::{PublicationDeletionRequest, PublicationRetentionFence};
 use latent_core::{PlatformError, PlatformErrorCode};
@@ -72,7 +72,8 @@ pub struct PublicationReclamationAssessment {
 
 /// Continue one exact retained deletion, with a fresh observation fence.
 /// The trusted host must authenticate scope/actor and reserve finite audit space.
-/// This version reclaims capsule publication directories, not componentless web.
+/// `reclaim_tombstoned_publications` supports capsule and componentless-web payloads;
+/// the capsule-only entry point retains its stricter target restriction.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PublicationReclamationRequest {

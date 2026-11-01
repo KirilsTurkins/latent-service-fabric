@@ -1,7 +1,8 @@
-//! Capsule immutable-history reclamation, including recognized-intent recovery.
-//! Web payloads and independent lifecycle/evidence/audit histories remain retained.
+//! Capsule and web payload reclamation with recognized-intent recovery.
+//! Independent lifecycle/evidence/audit histories remain retained.
 use super::*;
 use crate::lifecycle::LifecycleIdentity;
+use crate::local_repository::web::cleanup::WebCleanupIdentity;
 use crate::{
     PublicationReclamationLimits, PublicationReclamationLookup, PublicationReclamationRequest,
     PublicationReclamationResult,
@@ -21,6 +22,28 @@ impl DirectoryArtifactRepository {
         timeout: Duration,
         preflight: &mut dyn FnMut(&PublicationReclamationResult) -> Result<(), PlatformError>,
     ) -> Result<PublicationReclamationResult, PlatformError> {
+        self.reclaim_publications_inner(request, timeout, preflight, false)
+    }
+
+    /// Reclaim a mixed capsule/componentless-web batch under the original exact
+    /// deletion operation. The same trusted-host authorization and finite audit
+    /// reservation contract applies; this is not a public management endpoint.
+    pub fn reclaim_tombstoned_publications(
+        &self,
+        request: &PublicationReclamationRequest,
+        timeout: Duration,
+        preflight: &mut dyn FnMut(&PublicationReclamationResult) -> Result<(), PlatformError>,
+    ) -> Result<PublicationReclamationResult, PlatformError> {
+        self.reclaim_publications_inner(request, timeout, preflight, true)
+    }
+
+    fn reclaim_publications_inner(
+        &self,
+        request: &PublicationReclamationRequest,
+        timeout: Duration,
+        preflight: &mut dyn FnMut(&PublicationReclamationResult) -> Result<(), PlatformError>,
+        allow_web: bool,
+    ) -> Result<PublicationReclamationResult, PlatformError> {
         let deadline = deadline(timeout)?;
         request.validate()?;
         model::encode(request, model::MAX_REQUEST)?;
@@ -29,6 +52,20 @@ impl DirectoryArtifactRepository {
             &request.deletion.operation_id,
         )? {
             PublicationReclamationLookup::Found(receipt) => {
+                if !allow_web {
+                    for target in &request.deletion.targets {
+                        if self
+                            .life_store()
+                            .identity_publication(&target.publication.id)?
+                            .is_none()
+                        {
+                            return Err(failure(
+                                PlatformErrorCode::InvalidArgument,
+                                "publication-reclamation-capsule-target-required",
+                            ));
+                        }
+                    }
+                }
                 if receipt.request != *request {
                     return Err(conflict());
                 }
@@ -52,7 +89,7 @@ impl DirectoryArtifactRepository {
                 if storage::fence(&self.root, checked(state)?)? != request.expected_catalog_fence {
                     return Err(conflict());
                 }
-                let plan = self.prepare_cleanup(request, revision, deadline)?;
+                let plan = self.prepare_cleanup(request, revision, deadline, allow_web)?;
                 let next = checked(state)?.begin_cleanup(&plan)?;
                 self.check_cleanup_capacity(checked(state)?, &next)?;
                 prepared = Some((plan, next));
@@ -75,7 +112,7 @@ impl DirectoryArtifactRepository {
                     || storage::fence(&self.root, checked(state)?)?
                         != request.expected_catalog_fence
                     || checked(state)?.begin_cleanup(&plan)? != next
-                    || self.prepare_cleanup(request, revision, deadline)? != plan
+                    || self.prepare_cleanup(request, revision, deadline, allow_web)? != plan
                 {
                     return Err(conflict());
                 }
@@ -112,26 +149,38 @@ impl DirectoryArtifactRepository {
         request: &PublicationReclamationRequest,
         revision: u64,
         deadline: Instant,
+        allow_web: bool,
     ) -> Result<Plan, PlatformError> {
         let mut identities = Vec::with_capacity(request.deletion.targets.len());
+        let mut web_identities = Vec::new();
         let mut selected = Vec::with_capacity(request.deletion.targets.len());
         for target in &request.deletion.targets {
             check_time(deadline)?;
-            let identity = self
+            if let Some(identity) = self
                 .life_store()
                 .identity_publication(&target.publication.id)?
-                .filter(|i| i.publication().ok().as_ref() == Some(&target.publication))
-                .ok_or_else(|| {
-                    failure(
+            {
+                if identity.publication()? != target.publication {
+                    return Err(corrupt());
+                }
+                identities.push(identity);
+                selected.push((
+                    target.publication.id.clone(),
+                    self.publication_path(&target.publication.id),
+                ));
+            } else {
+                if !allow_web {
+                    return Err(failure(
                         PlatformErrorCode::InvalidArgument,
                         "publication-reclamation-capsule-target-required",
-                    )
-                })?;
-            identities.push(identity);
-            selected.push((
-                target.publication.id.clone(),
-                self.publication_path(&target.publication.id),
-            ));
+                    ));
+                }
+                web_identities.push(self.web.cleanup_identity(&target.publication)?);
+                selected.push((
+                    target.publication.id.clone(),
+                    self.web_publication_path(&target.publication.id),
+                ));
+            }
         }
         // Both the preflight preview and post-callback recheck count towards one
         // public work limit. Neither pass can consume more than half the budget.
@@ -139,15 +188,21 @@ impl DirectoryArtifactRepository {
             maximum_files: request.limits.maximum_files / 2,
             maximum_bytes_hashed: request.limits.maximum_bytes_hashed / 2,
         };
-        let files = self
+        let mut files = self
             .content
             .try_lock()
             .map_err(|_| busy())?
             .plan_reclamation(&selected, limits, deadline)?;
+        for directory in &mut files.directories {
+            directory.web = web_identities
+                .binary_search_by(|i| i.record.publication.id.cmp(&directory.id))
+                .is_ok();
+        }
         Ok(Plan {
             request: request.clone(),
             reference_revision: revision,
             identities,
+            web_identities,
             files,
         })
     }
@@ -200,12 +255,13 @@ impl DirectoryArtifactRepository {
             storage::fault(14)?;
             // Refunded metadata and directory slots are published only after
             // file unlink + parent fsync and the durable completion receipt.
-            for target in &plan.request.deletion.targets {
-                index.refund_reclaimed(&target.publication.id)?;
+            for identity in &plan.identities {
+                index.refund_reclaimed(&identity.publication()?.id)?;
             }
+            self.web.finish_cleanup(&plan.web_identities, &mut index)?;
             writer.release_directories = writer
                 .release_directories
-                .checked_sub(plan.identities.len())
+                .checked_sub(plan.files.directories.len())
                 .ok_or_else(corrupt)?;
             let (metadata, physical) = exposure(&final_head)?;
             index.replace_retention(metadata, self.config)?;
@@ -257,10 +313,43 @@ impl DirectoryArtifactRepository {
             .as_ref()
             .and_then(|h| h.cleanup.as_ref())
             .is_some_and(|c| {
-                c.identities
-                    .binary_search_by(|i| i.publication().expect("validated identity").id.cmp(id))
+                c.web_identities
+                    .binary_search_by(|i| i.record.publication.id.cmp(id))
                     .is_ok()
+                    || c.identities
+                        .binary_search_by(|i| {
+                            i.publication().expect("validated identity").id.cmp(id)
+                        })
+                        .is_ok()
             }))
+    }
+    pub(in crate::local_repository) fn cleanup_web_identities(
+        &self,
+    ) -> Result<Vec<WebCleanupIdentity>, PlatformError> {
+        Ok(self
+            .retention
+            .lock()
+            .map_err(lock_error)?
+            .head
+            .as_ref()
+            .and_then(|h| h.cleanup.as_ref())
+            .map_or_else(Vec::new, |c| c.web_identities.clone()))
+    }
+    pub(in crate::local_repository) fn check_web_cleanup_path(
+        &self,
+        id: &PublicationId,
+        path: &Path,
+    ) -> Result<(), PlatformError> {
+        let state = self.retention.lock().map_err(lock_error)?;
+        let active = state
+            .head
+            .as_ref()
+            .and_then(|h| h.cleanup.as_ref())
+            .and_then(|c| c.active.as_ref());
+        if !active.is_some_and(|p| p.files.directories.iter().any(|d| d.web && d.id == *id)) {
+            return Err(corrupt());
+        }
+        shared_content::directory(path)
     }
     pub(in crate::local_repository) fn cleanup_identity_path(
         &self,

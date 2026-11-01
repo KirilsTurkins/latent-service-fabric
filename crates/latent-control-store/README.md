@@ -83,10 +83,13 @@ and current catalog while checking a budgeted deployment inverse index, stored
 HTTP targets, and retained rollout base/candidate targets. Missing, foreign,
 dropped or unconfirmed owners fail closed; reference absence is not deletion
 permission. Tombstones remove visibility without unlinking content or refunding
-capacity. The separate native capsule reclamation stage holds the same actual
+capacity. The separate native capsule/web reclamation stage holds the same actual
 writer/current revision through rechecking, durable cleanup intent, physical
-unlink/synchronization and completion receipt. Componentless-web cleanup and
-authenticated operator/audit integration remain outstanding.
+unlink/synchronization and completion receipt. HTTP recovery validates retained
+static-web publication identities without creating a serving grant: terminal
+negative references remain valid, but a mismatched older control snapshot cannot
+reintroduce a tombstoned or reclaimed target. Authenticated operator/audit
+integration and independent history compaction remain outstanding.
 Native tests also refuse an older control catalog that references tombstoned
 history. See the [retention and assessment contract](../../docs/reference/publication-retention-pins.md).
 

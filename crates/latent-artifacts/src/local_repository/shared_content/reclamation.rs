@@ -21,6 +21,8 @@ pub(in crate::local_repository) struct FileRecord {
 pub(in crate::local_repository) struct DirectoryPlan {
     #[serde(with = "crate::publication::id_codec")]
     pub id: PublicationId,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub web: bool,
     pub files: Vec<FileRecord>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -36,6 +38,20 @@ pub(in crate::local_repository) struct ContentPlan {
     pub directories: Vec<DirectoryPlan>,
     pub blobs: Vec<BlobPlan>,
     pub content: PublicationReclamationContent,
+}
+
+fn is_false(value: &bool) -> bool {
+    !*value
+}
+impl DirectoryPlan {
+    pub(in crate::local_repository) fn path(&self, root: &Path) -> PathBuf {
+        let parent = if self.web {
+            root.join("web/publications")
+        } else {
+            root.join(super::RELEASES_DIR)
+        };
+        parent.join(self.id.hex())
+    }
 }
 
 impl SharedContent {
@@ -147,6 +163,7 @@ impl SharedContent {
             )?;
             directories.push(DirectoryPlan {
                 id: id.clone(),
+                web: false,
                 files,
             });
         }

@@ -55,6 +55,21 @@ impl HttpTable {
         })
     }
 
+    /// Startup validates the existing maximum-256 static associations without
+    /// requesting a serving grant. An independently restored older control root
+    /// must not silently retain a tombstoned or physically reclaimed target.
+    pub(in crate::deployments) fn validate_retained_web_publications(
+        &self,
+        artifacts: &dyn latent_artifacts::ArtifactRepository,
+    ) -> Result<(), PlatformError> {
+        for row in &self.rows {
+            if let TriggerTargetIdentity::StaticWeb { publication, .. } = &row.target {
+                artifacts.check_retained_web_publication(publication)?;
+            }
+        }
+        Ok(())
+    }
+
     /// Bounded metadata scan of the existing maximum-256 table, under its
     /// catalog publication pin. Never clones request matchers or configuration.
     pub(in crate::deployments) fn inspection_bindings(

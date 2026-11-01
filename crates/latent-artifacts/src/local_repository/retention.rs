@@ -32,7 +32,10 @@ pub(super) fn check_format(root: &Path, promoted: bool) -> Result<(), PlatformEr
     storage::load(root, promoted, false).map(|_| ())
 }
 pub(super) fn is_marker(bytes: &[u8]) -> bool {
-    bytes == model::MARKER || bytes == model::DELETION_MARKER || bytes == model::CLEANUP_MARKER
+    bytes == model::MARKER
+        || bytes == model::DELETION_MARKER
+        || bytes == model::CLEANUP_MARKER
+        || bytes == model::WEB_CLEANUP_MARKER
 }
 
 impl DirectoryArtifactRepository {

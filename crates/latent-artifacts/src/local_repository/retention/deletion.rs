@@ -120,14 +120,17 @@ impl DirectoryArtifactRepository {
             if tombstoned
                 && head.cleanup.as_ref().is_some_and(|c| {
                     request.targets.iter().any(|t| {
-                        c.identities
-                            .binary_search_by(|i| {
-                                i.publication()
-                                    .expect("validated identity")
-                                    .id
-                                    .cmp(&t.publication.id)
-                            })
+                        c.web_identities
+                            .binary_search_by(|i| i.record.publication.id.cmp(&t.publication.id))
                             .is_ok()
+                            || c.identities
+                                .binary_search_by(|i| {
+                                    i.publication()
+                                        .expect("validated identity")
+                                        .id
+                                        .cmp(&t.publication.id)
+                                })
+                                .is_ok()
                     })
                 })
             {

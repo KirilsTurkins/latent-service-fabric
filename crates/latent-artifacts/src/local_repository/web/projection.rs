@@ -148,9 +148,9 @@ impl DirectoryArtifactRepository {
                 .as_ref()
                 .ok_or_else(crate::web::incompatible)?,
         );
-        let layout = Arc::clone(&entry.layout);
+        let layout = Arc::clone(entry.layout()?);
         let renderer = entry
-            .layout
+            .layout()?
             .manifest()
             .renderer
             .as_ref()

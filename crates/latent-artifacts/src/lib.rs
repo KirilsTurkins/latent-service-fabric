@@ -264,6 +264,16 @@ pub trait ArtifactRepository: Send + Sync {
         Err(unsupported_catalog_query())
     }
 
+    /// Validate a retained exact web association during control-store recovery.
+    /// Revoked/retired payloads remain valid negative references; tombstoned or
+    /// absent publications do not. This creates no serving grant or read lease.
+    fn check_retained_web_publication(
+        &self,
+        _reference: &PublicationRef,
+    ) -> Result<(), PlatformError> {
+        Err(unsupported_catalog_query())
+    }
+
     fn get_web_operation<'a>(
         &'a self,
         _scope: &'a LifecycleScope,

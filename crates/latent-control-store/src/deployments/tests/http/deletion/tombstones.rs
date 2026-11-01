@@ -231,3 +231,5 @@ fn native_web_physical_reclamation_refuses_before_preflight_and_preserves_all_by
     assert_eq!(before, files(&roots[0].0));
     assert_eq!(capacity, repo.publication_capacity_snapshot().unwrap());
 }
+
+mod web_cleanup;

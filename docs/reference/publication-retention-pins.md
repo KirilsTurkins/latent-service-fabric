@@ -6,13 +6,12 @@ This is the native storage foundation for issue #662, not the completed
 committed-publication deletion feature. The repository exposes trusted-host
 pin/unpin and original-operation lookup APIs, a read-only deletion assessment,
 a **native durable tombstone stage** that removes terminal publications from
-visible indexes, and a separate **native capsule payload-reclamation stage**.
+visible indexes, and a separate **native capsule and componentless-web payload-reclamation stage**.
 There is no operator pin/deletion CLI or public management transport in this
 change. A tombstone alone is not a reclamation receipt and retains every payload
-charge. Only an explicit, durably recorded capsule cleanup may release selected
-immutable publication files and last-reference blobs. Componentless-web cleanup,
-independent lifecycle/evidence history pruning, and authenticated CLI/audit
-integration remain unfinished. Existing orphan reclamation is unchanged.
+charge. Only an explicit, durably recorded cleanup may release selected immutable
+publication files and last-reference blobs. Independent lifecycle/evidence
+history pruning and authenticated CLI/audit integration remain unfinished. Existing orphan reclamation is unchanged.
 Do not manually remove catalog files or call this trusted-host foundation as an
 operator cleanup tool.
 
@@ -95,8 +94,8 @@ The native tests copy a stopped publication/control catalog pair and preserve
 inode sharing, pins, tombstones, original receipts and terminal eligibility.
 Reopening an older control catalog that still references tombstoned history is
 refused rather than restoring the deleted publication. This is not qualification
-of online backup, arbitrary external backup software, audit archival, or the
-still-unimplemented physical deletion lifecycle.
+of online backup, arbitrary external backup software or audit archival. The
+separate native payload-cleanup restore cases below do not qualify those surfaces.
 
 Admission evidence, trust/revocation history and administrative audit have their
 own owners and retention rules. Pin receipts neither replace audit nor permit
@@ -119,11 +118,11 @@ not claims of power-loss testing. The componentless-web fixture injects a
 non-cryptographic host authority; it does not qualify signature policy. Suite
 registration alone is not execution evidence.
 
-Issue #662 still requires componentless-web/history pruning and a supported
+Issue #662 still requires independent history pruning and a supported
 authenticated operator workflow with real finite audit admission/outcomes. The
-capsule cleanup stage below qualifies native payload unlink/sync/refund, recovery
-and coupled restore; it is not completion of the whole issue or qualification of
-unimplemented web cleanup or independent evidence/lifecycle pruning.
+capsule and web cleanup stages below exercise native payload unlink/sync/refund,
+recovery and coupled restore; they do not complete the whole issue or qualify
+independent evidence/lifecycle pruning or signed end-to-end operator workflows.
 
 ## Native deletion assessment and physical ownership
 
@@ -137,7 +136,7 @@ all negative checks succeed. It creates no intent, receipt, audit reservation,
 tombstone, content unlink or capacity refund. Looking up that operation ID does
 not establish a deletion outcome. `tombstone_publications` repeats
 these checks and holds the same fences through its durable authority commit.
-A future physical cleanup step must consume the committed negative authority;
+The separate physical cleanup step consumes the committed negative authority;
 it must not treat this assessment as authorization.
 
 The standalone composition binds its real `DirectoryDeploymentRepository` once.
@@ -339,7 +338,7 @@ its logical byte total; that total is not permission to discard evidence.
 
 A successful assessment changes no file, charge, receipt or eligibility state.
 It does not reserve audit capacity, authorize unlink or enable a cleanup CLI.
-The separate capsule mutation below rechecks authority and bytes, commits a
+The separate capsule/web mutations below recheck authority and bytes, commit a
 bounded cleanup record and uses its own recognized-intent recovery protocol.
 No committed-content unlink or refund is performed by this assessment.
 
@@ -455,4 +454,107 @@ blocks. Serialized installation/fence bytes can vary, so retained-control values
 are observations of this run, not golden constants or a universal growth rate.
 The test prints `CAPSULE_RECLAMATION_SEQUENCE` rows for each fresh execution and
 checks that final live and reopened accounting agree. This is not a signed-site
-soak or qualification of unfinished componentless-web cleanup.
+soak or qualification of signed operator workflows. Web-specific cases follow.
+
+
+## Componentless-web payload reclamation
+
+`reclaim_tombstoned_publications` extends the same trusted-host cleanup protocol
+across capsule and componentless-web payload namespaces. The original
+`reclaim_tombstoned_capsules` retains its capsule-only restriction, including
+receipt replay. Neither entry point authenticates an operator or supplies the
+finite audit adapter. The generic method requires the exact retained original
+deletion, a fresh catalog fence, bounded work and the same preflight reservation.
+It repeats all authority/content checks after preflight; a diagnostic assessment
+is never a cleanup permit.
+
+Each committed directory plan explicitly identifies the fixed `publications/`
+or `web/publications/` namespace. The journal validator cross-checks that kind
+against the exact retained publication identity before any recovery unlink.
+Callers supply no filesystem paths. The total 32-publication batch limit is
+independent of file/hash limits: a batch of large web packages may exceed the
+1,024-observation limit even when its publication count is allowed. Both fresh
+hash passes count against one work budget. Such a request refuses before
+preflight or mutation; increasing the publication limit or guessing a smaller
+original deletion request does not override the committed operation identity.
+
+Before the first web cleanup intent, `LIFECYCLE_MODE` is synchronized as
+`lsf-release-lifecycle-reclamation-v2`. Earlier readers reject it before cleanup.
+Capsule-only v1 cleanup heads remain supported; a v1 or earlier marker paired
+with web cleanup authority is corrupt and refused. Later capsule/pin operations
+must not downgrade the marker. There is no automatic downgrade or migration of
+obsolete alpha formats.
+
+### Negative web identities and independent history
+
+A compact web identity retains the exact terminal lifecycle record, package,
+manifest/assets digests, original completion digest, generation and selected
+evidence association. It has **no layout, renderer projection or serving grant**.
+Capsule and web compact identities share the existing 1,024-entry cap and bounded
+head/intent envelopes. Cleanup receipts retain the existing 64-operation window.
+Receipt eviction remains UNKNOWN and cannot authorize payload reconstruction.
+
+Restart checks the independently retained web HEAD against every protected
+compact identity. A missing/changed history row or reintroduced completed payload
+directory fails closed. For recognized partial cleanup, only the committed
+namespace and exact file list may be resumed. All surviving selected content is
+verified before further unlink, and parents are synchronized before refunds.
+Startup never calls the admission provider to recreate a grant for a compact
+negative identity. Unrelated web publications and later web commits remain usable.
+
+Web HEAD, operation receipts, evidence revisions, trust/revocation history and
+administrative audit remain separately retained and charged. Evidence recovery
+verifies every complete revision against its original completion association;
+selected evidence must still exist even when its original payload was reclaimed.
+Missing an entire selected evidence revision is not treated as an empty history.
+No evidence, lifecycle or audit compaction is introduced by this payload API.
+
+After durable completion, only selected payload layouts/index slots and actual
+unlinked namespace bytes are refunded. Canonical blobs stay until their last
+committed capsule or web reference is gone, including references in other
+tenants. Retained negative identities and history continue consuming their own
+finite budgets. A receipt reports logical namespace accounting, not filesystem
+allocated blocks; hard-linked publication/blob charges must not be summed as
+independent physical allocations.
+
+### Restore and native qualification
+
+Use the same complete stopped publication/control/audit backup boundary. Copying
+just a web HEAD, a retention head, or an older control snapshot is unsupported.
+HTTP catalog startup now validates retained static-web associations without
+requiring serving eligibility: revoked/retired targets remain negative references,
+whereas missing/tombstoned/reclaimed targets refuse startup. This does not prune
+stale HTTP rows or reinterpret denied routes as permission to delete.
+
+The additive `publication-web-reclamation.json` case fragment registers native
+control-store tests using actual web package files, shared blobs, locks and
+synchronization. Cases cover successful cleanup/replay/reopen, cross-tenant
+sharing and later web commits, every injected cleanup boundary, metadata/storage
+capacity, both hash-pass limits, preparation clones and unrelated mutations,
+receipt eviction, protected history/evidence corruption, older control snapshots,
+and stopped coupled restore. The capsule-only refusal regression is preserved.
+Run the owning suite, including its existing physical-resource gates:
+
+```sh
+cargo test --locked -p latent-control-store --all-features --lib \
+  -- --nocapture --test-threads=1
+```
+
+`native_web_cleanup_finite_release_sequence_refunds_payload_not_independent_history`
+prints actual namespace refunds and retained control charges for three finite
+static-web releases, checks payload/blob accounting returns to zero, and verifies
+final reopened capacity. One Linux Rust 1.97.1 debug-profile run of these small
+noncryptographic static-package fixtures (distinct manifest annotations, not a
+production website soak) observed:
+
+| Release | Publication-file bytes removed | Last-reference blob bytes removed | Retention-control charge afterward |
+| --- | ---: | ---: | ---: |
+| 1 | 4,090 | 4,060 | 24,988 |
+| 2 | 4,090 | 4,060 | 31,951 |
+| 3 | 4,090 | 4,060 | 38,896 |
+
+The retained control column is the retention ledger, not all independent web
+history or physical allocation. These numbers are observations, not golden
+constants or a universal release-growth rate. Fixtures explicitly use trusted-local,
+noncryptographic admission; fault injection is not a physical power-loss campaign.
+Signed publication/operator end-to-end qualification remains outstanding.

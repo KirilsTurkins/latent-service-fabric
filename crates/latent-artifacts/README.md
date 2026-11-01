@@ -87,8 +87,11 @@ receipts. Tombstones alone retain every payload charge. The separate native
 `reclaim_tombstoned_capsules` commits a recoverable cleanup plan before unlinking
 selected capsule files and last-reference blobs, synchronizes parents before
 refunds, and retains compact identities plus bounded original-operation receipts.
-Componentless-web cleanup, independent history pruning, operator CLI and real
-finite audit integration remain outstanding. Borrowed preparation
+The generic `reclaim_tombstoned_publications` also handles componentless-web
+payloads with a v2 compatibility marker and compact negative identities. Web
+history/evidence remain validated and retained; no serving grant is reconstructed.
+Independent history pruning, operator CLI and real finite audit integration
+remain outstanding. Borrowed preparation
 sources are explicit `Clone` owners, no longer `Copy`; quiesce all source clones
 before maintenance. See the [retention and assessment contract](../../docs/reference/publication-retention-pins.md).
 

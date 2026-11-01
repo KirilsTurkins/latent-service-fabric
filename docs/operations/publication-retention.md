@@ -94,9 +94,10 @@ directories, rows, lock files or format markers by hand.
 Development includes [durable native visibility tombstones](../reference/publication-retention-pins.md)
 for terminal, unreferenced publications. This removes visibility but deliberately
 retains all content/history files and their capacity charges. The authenticated
-CLI/audit adapter remains pending in #662. A separate trusted-native capsule
+CLI/audit adapter remains pending in #662. A separate trusted-native capsule/web
 payload cleanup now has durable intent, synchronized unlink/refund and original
-operation recovery; componentless-web physical cleanup is still unsupported.
+operation recovery. Web cleanup retains compact negative identities and verifies
+independent history/evidence on reopen; it does not compact those histories.
 The stopped coupled backup/expansion workflow above remains the supported
 capacity-maintenance workflow; do not call a trusted-host API with a no-op audit
 callback or manually remove tombstoned directories to free space.

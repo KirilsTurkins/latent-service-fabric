@@ -726,6 +726,14 @@ impl DirectoryArtifactRepository {
 }
 
 impl ArtifactRepository for DirectoryArtifactRepository {
+    fn check_retained_web_publication(
+        &self,
+        reference: &crate::PublicationRef,
+    ) -> Result<(), PlatformError> {
+        reference.scope.validate()?;
+        self.web.retention_generation(reference).map(|_| ())
+    }
+
     fn get_selected_catalog_entry<'a>(
         &'a self,
         scope: &'a crate::LifecycleScope,

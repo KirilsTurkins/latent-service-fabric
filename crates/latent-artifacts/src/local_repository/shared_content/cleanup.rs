@@ -141,12 +141,7 @@ impl SharedContent {
         };
         for directory_plan in &plan.directories {
             work.check_time()?;
-            let path = self
-                .root
-                .parent()
-                .expect("catalog root")
-                .join(RELEASES_DIR)
-                .join(directory_plan.id.hex());
+            let path = directory_plan.path(self.root.parent().expect("catalog root"));
             if !optional_exists(&path)? {
                 continue;
             }
@@ -210,7 +205,7 @@ impl SharedContent {
         // Live callers hold all native ownership and have just reverified the
         // exact full plan. Recovery has verified all surviving bytes above.
         for planned in &plan.directories {
-            let path = root.join(RELEASES_DIR).join(planned.id.hex());
+            let path = planned.path(root);
             if optional_exists(&path)? {
                 directory(&path)?;
                 for file in &planned.files {
