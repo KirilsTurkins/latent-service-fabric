@@ -30,6 +30,28 @@ class RustThreadRuntimeTests(unittest.TestCase):
         self.assertNotIn('git fetch --no-tags --depth=1 origin ' + native.FAILED_RUNTIME_SOURCE,
                          workflow)
 
+        # The repository-wide discovery imports Java and TypeScript consumers
+        # of this same frozen reader. A shallow CI checkout must acquire the
+        # immutable producer before those modules are imported, not its old tip.
+        import shlex
+        from tools import ci_lane_inventory
+        ci = ci_lane_inventory.workflow_model((ROOT / '.github/workflows/ci.yml').read_text())
+        steps = ci['jobs']['contracts']['steps']
+        fetch = next(step for step in steps if step.get('name') ==
+                     'Fetch exact historical source inputs for Python preservation controls')
+        self.assertEqual(fetch['if'], "matrix.lane == 'python'")
+        argv = shlex.split(fetch['run'].replace('\\\n', ''))
+        self.assertEqual(argv[:5], ['git', 'fetch', '--no-tags', '--depth=1', 'origin'])
+        revisions = argv[5:]
+        self.assertEqual(len(revisions), len(set(revisions)))
+        self.assertIn(native.SOURCE, revisions)
+        self.assertIn(native.HISTORICAL_SOURCE, revisions)
+        self.assertTrue(all(len(ref) == 40 and set(ref) <= set('0123456789abcdef')
+                            for ref in revisions))
+        validation = next(step for step in steps if step.get('name') ==
+                          'Validate contracts, echo component, and generated bindings')
+        self.assertLess(steps.index(fetch), steps.index(validation))
+
     def test_retained_original_pair_refuses_foreign_core_envelope_and_double_framing(self):
         self.assertEqual(package.PREVIOUS_PINS['raw-core.wasm'],
                          package.HISTORICAL_PINS['raw-core.wasm'])

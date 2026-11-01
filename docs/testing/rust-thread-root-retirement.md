@@ -134,6 +134,24 @@ reproduced exactly the two ordering failures in the old parser. The corrected
 parser passed all 44 negative subtests and the positive assertions. This is
 not a claim that the complete repository test suite or current-head CI passed.
 
+## Repository integration boundaries
+
+The Python contract lane fetches the exact frozen Rust native producer commit
+`e3f0edf822c10e84bbeede276174ac3217542afc` before test discovery, alongside
+all previously required historical revisions. A shallow checkout otherwise
+cannot import the frozen reader and its Java and TypeScript consumers. Fetching
+that object supplies source bytes for authentication; it does not qualify a
+native product or signed guest, or make a different consumer origin compatible.
+The Rust runtime and fault-diagnostic workflows use the same reviewed Python
+setup and artifact-upload action revisions as the repository security graph.
+
+Source-capture controls exercise the current 9,248-file and 77 MiB native-source
+ceilings at equality and one unit over, with the separate fixed supplementary
+capture still bounded independently. The audit selection preserves its 25 exact
+cases and distinguishes the historical six host-memory cases from the two
+additional cases now included in the live producer. These are fixture and CI
+integration repairs, not production quota increases or rewritten native proof.
+
 ## Remaining proof
 
 The repaired owned sysroot and unchanged application still need a new compiler
