@@ -9,9 +9,10 @@ jobs:
   recheck:
     if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/diag/dotnet-original-v3-trap-20261031'
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 20
     env:
       PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
     steps:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
@@ -25,28 +26,16 @@ jobs:
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Install reviewed Python dependencies
         run: python3 -m pip install --requirement tools/requirements.lock
-      - name: Capture the full tracked source and run the actual Python lane
+      - name: Run the actual Python lane and preserve its exit status
         run: |
           python3 - <<'PY'
-          import hashlib, json, os, pathlib, subprocess, tarfile, yaml
+          import json, os, pathlib, subprocess, yaml
           root = pathlib.Path.cwd()
           out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1587-python-recheck'
           out.mkdir()
           revision = subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()
           assert revision == '8f5ae699ee6849036af6e9c129e6cb47c4b21b15', revision
-          paths = subprocess.check_output(['git','ls-files','-z']).decode().strip('\0').split('\0')
-          identities = []
-          total = 0
-          with tarfile.open(out / 'tracked-source.tar.gz','w:gz') as archive:
-              for name in paths:
-                  path = root / name
-                  assert path.is_file() and not path.is_symlink(), name
-                  raw = path.read_bytes()
-                  total += len(raw)
-                  assert total <= 536870912
-                  identities.append({'path':name,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),'gitBlob':hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()})
-                  archive.add(path,arcname=name)
-          (out / 'source.json').write_text(json.dumps({'revision':revision,'files':identities},indent=2)+'\n')
+          (out/'revision.txt').write_text(revision+'\n')
           steps = yaml.safe_load((root/'.github/workflows/ci.yml').read_text())['jobs']['contracts']['steps']
           history, = [step['run'] for step in steps if step.get('name') == 'Fetch exact historical source inputs for Python preservation controls']
           result = subprocess.run(['bash','-e','-o','pipefail','-c',history],capture_output=True,timeout=180)
@@ -55,16 +44,17 @@ jobs:
           assert result.returncode == 0, result.stderr.decode(errors='replace')[-8192:]
           command = ['bash','tools/validate_contracts.sh','python']
           try:
-              result = subprocess.run(command,capture_output=True,timeout=420)
+              result = subprocess.run(command,capture_output=True,timeout=900)
               code, stdout, stderr = result.returncode, result.stdout, result.stderr
           except subprocess.TimeoutExpired as error:
               code, stdout, stderr = 124, error.stdout or b'', error.stderr or b''
           assert len(stdout)+len(stderr) <= 16777216
-          (out / 'python.stdout.txt').write_bytes(stdout)
-          (out / 'python.stderr.txt').write_bytes(stderr)
-          (out / 'python-status.json').write_text(json.dumps({'command':command,'returncode':code})+'\n')
-          print(stderr.decode(errors='replace')[-20000:])
-          print('Exact-source Python lane return code:',code)
+          (out/'python.stdout.txt').write_bytes(stdout)
+          (out/'python.stderr.txt').write_bytes(stderr)
+          (out/'python-status.json').write_text(json.dumps({'revision':revision,'command':command,'returncode':code})+'\n')
+          print(stdout.decode(errors='replace')[-10000:])
+          print(stderr.decode(errors='replace')[-30000:])
+          raise SystemExit(code)
           PY
       - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         if: always()
