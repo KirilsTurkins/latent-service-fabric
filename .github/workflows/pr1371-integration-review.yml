@@ -5,62 +5,45 @@ on:
     paths: [.github/workflows/pr1371-integration-review.yml]
 permissions:
   contents: read
-  actions: read
 jobs:
   inspect:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
-      - name: Retain exact failing-run diagnostics
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+        with:
+          ref: 0ef909fda133933fddced7c52b17e2863ccf06a1
+          persist-credentials: false
+      - name: Export only historical Git objects absent from the reviewed head
         run: |
-          mkdir -p "$RUNNER_TEMP/pr1371-review"
           python3 - <<'PY'
-          import hashlib, json, os, pathlib, re, urllib.parse, urllib.request
-          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1371-review'
-          api = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
-          class Redirect(urllib.request.HTTPRedirectHandler):
-              def redirect_request(self, req, fp, code, msg, headers, newurl):
-                  assert urllib.parse.urlsplit(newurl).scheme == 'https'
-                  new = super().redirect_request(req, fp, code, msg, headers, newurl)
-                  if urllib.parse.urlsplit(newurl).netloc != urllib.parse.urlsplit(req.full_url).netloc:
-                      new.remove_header('Authorization')
-                      new.remove_header('Accept')
-                  return new
-          opener = urllib.request.build_opener(Redirect())
-          def get(path):
-              request = urllib.request.Request(api + path, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
-              with opener.open(request, timeout=60) as response:
-                  data = response.read(32 * 1024 * 1024 + 1)
-                  assert len(data) <= 32 * 1024 * 1024
-                  return data
-          summaries = {}
-          for run_id in (41247721989, 41247721977):
-              run = json.loads(get(f'/actions/runs/{run_id}'))
-              assert run['head_sha'] == '0ef909fda133933fddced7c52b17e2863ccf06a1'
-              jobs = json.loads(get(f'/actions/runs/{run_id}/jobs?per_page=100'))['jobs']
-              report = []
-              for job in jobs:
-                  if job['conclusion'] != 'failure':
-                      continue
-                  raw = get(f"/actions/jobs/{job['id']}/logs")
-                  (root / f"{job['id']}.log").write_bytes(raw)
-                  lines = raw.decode('utf-8-sig').splitlines()
-                  relevant = []
-                  for i, line in enumerate(lines):
-                      if re.search(r'\b(?:FAIL|ERROR): |^\S+ (?:FAILED \(|Ran \d+ tests|.*[Aa]ssertionError:|.*[Ee]rror:)', line):
-                          relevant.extend(x[:700] for x in lines[max(0,i-1):min(len(lines),i+9)])
-                  entry = {'job': job['id'], 'name': job['name'], 'logSha256': hashlib.sha256(raw).hexdigest(), 'diagnostics': list(dict.fromkeys(relevant))}
-                  report.append(entry)
-                  print(json.dumps(entry))
-              summaries[str(run_id)] = report
-          (root / 'summary.json').write_text(json.dumps(summaries, indent=2))
+          import hashlib, json, os, pathlib, re, subprocess
+          root = pathlib.Path.cwd()
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1371-history'
+          out.mkdir()
+          text = (root / '.github/workflows/ci.yml').read_text()
+          block = text.split('      - name: Fetch exact historical source inputs for Python preservation controls\n', 1)[1].split('      - name: Install Python validator dependencies\n', 1)[0]
+          refs = list(dict.fromkeys(re.findall(r'\b[0-9a-f]{40}\b', block) + ['cddfb5d016a6311ed0db4673e490dc9caad917dd', '72fb8969352b37eb5c9f4f9cd0cfec9845fc9f1a']))
+          assert len(refs) == 30
+          subprocess.run(['git', 'fetch', '--no-tags', '--depth=1', 'origin', *refs], check=True, timeout=240)
+          selected = subprocess.check_output(['git', 'rev-list', '--objects', '--no-object-names', *refs, '^HEAD'], timeout=60)
+          objects = sorted(set(selected.splitlines()))
+          assert 0 < len(objects) <= 100000
+          with (out / 'history.pack').open('wb') as dest:
+              subprocess.run(['git', 'pack-objects', '--stdout'], input=b'\n'.join(objects) + b'\n', stdout=dest, check=True, timeout=120)
+          assert (out / 'history.pack').stat().st_size <= 512 * 1024**2
+          (out / 'shallow').write_bytes((root / '.git/shallow').read_bytes())
+          for name in ('tools/c_thread_runtime_node.py', 'sdk/c-guest/src/closed-file-abi.c'):
+              raw = subprocess.check_output(['git', 'show', refs[-1] + ':' + name], timeout=30)
+              (out / name.replace('/', '_')).write_bytes(raw)
+          report = {'base': '0ef909fda133933fddced7c52b17e2863ccf06a1', 'refs': refs, 'objects': len(objects), 'packBytes': (out / 'history.pack').stat().st_size, 'packSha256': hashlib.file_digest((out / 'history.pack').open('rb'), 'sha256').hexdigest()}
+          (out / 'report.json').write_text(json.dumps(report, indent=2))
+          print(json.dumps(report))
           PY
       - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
         if: always()
         with:
-          name: pr1371-integration-failure-logs
-          path: ${{ runner.temp }}/pr1371-review/
+          name: pr1371-historical-inputs
+          path: ${{ runner.temp }}/pr1371-history/
           if-no-files-found: error
           retention-days: 3
