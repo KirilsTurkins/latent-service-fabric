@@ -57,6 +57,26 @@ class CheckpointCompiler(unittest.TestCase):
         self.assertIn('read(new PollingSupplier())', source)
         self.assertNotIn('Activation.checkpoint', source)
 
+    def test_monitor_fixture_keeps_every_reachable_method_in_progress_analysis(self):
+        source = probe.MONITOR_CONTROL.read_text()
+        self.assertIn('require(reachable.contains(method), "unmodeled-method-query");', source)
+        self.assertIn('progressQueries.add(method);', source)
+        self.assertIn('inputs.progressQueries.equals(mode.equals("corrected") ? inputs.reachable : Set.of())', source)
+        self.assertIn('"final-reachable-progress-query-coverage"', source)
+        self.assertNotIn('new MethodDependencyInfo', source)
+        self.assertIn('"monitor-suspension-boundary"', source)
+        self.assertIn('"real-monitor-family-closure"', source)
+
+    def test_fast_qualification_runs_and_retains_both_production_monitor_controls(self):
+        source = Path(probe.__file__).read_text()
+        self.assertIn('CONTROL, COMPILER_CONTROL, MONITOR_CONTROL, raw_finder', source)
+        self.assertIn("'-d', model, *sources, CONTROL, COMPILER_CONTROL, MONITOR_CONTROL)", source)
+        self.assertIn("commands.run('checkpoint-monitor-'+mode,", source)
+        self.assertIn("'org.teavm.dependency.MonitorAsyncControl', mode)", source)
+        self.assertIn("'java-checkpoint-monitor-control'", source)
+        self.assertIn('monitorControls=monitor_results', source)
+        self.assertIn('monitor_results.append(monitor_result)', source)
+
     def test_retained_inputs_are_deterministic_and_exclude_unselected_files(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
