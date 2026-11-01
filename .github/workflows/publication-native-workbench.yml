@@ -1,0 +1,171 @@
+name: Publication native web reclamation
+on:
+  push:
+    branches: [feat/662-bounded-publication-deletion]
+    paths: ['.github/workflows/publication-native-workbench.yml']
+permissions:
+  contents: write
+jobs:
+  native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+        with:
+          persist-credentials: false
+          fetch-depth: 4
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt, clippy
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb
+        with:
+          python-version: '3.13.5'
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          cache-workspace-crates: false
+          save-if: false
+      - name: Verify reviewed source and upload exact blobs without updating refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma, os, pathlib, subprocess, tarfile, urllib.request
+          root = pathlib.Path.cwd()
+          out = root / 'target/publication-web-reclamation'
+          out.mkdir(parents=True, exist_ok=True)
+          api = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
+          headers = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'}
+          def call(path, data=None):
+              req = urllib.request.Request(api + path, data=None if data is None else json.dumps(data).encode(), headers=headers, method='GET' if data is None else 'POST')
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  return json.load(response)
+          def blob(data):
+              return hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+          parts = [
+              'b523aab309df433add3c02241e062cea85e0536d',
+              '2b7a4b3b2b96207eeb3c7840d51c96b3058d045e',
+              '645d6badf62204fb9527835e7c9288fa1f0aeab1',
+              'b5c2f1c607cf84fc272ff772633d16cb387bd832',
+              'b19ad3cd286d88e91aad8b5fd5de5e54c9fada72',
+              'a205708eb8b0cee56646a358c224ca49c47dc5c1',
+              '7ffff91744ceec970f5ac71e3f604c7af715f26a',
+              'c35c9716f721b377a195b60b81dcf0d33b67ffe5',
+              'd18100594ac1b83b33339ac57d510790ce991a6a',
+              'a4805d7dd8d95f40482d759834cd3c4093ed5c25',
+              '46f69754bf168cd5099668628a72fc30605ea92a',
+          ]
+          chunks = []
+          for sha in parts:
+              row = call('/git/blobs/' + sha)
+              raw = base64.b64decode(row['content'])
+              assert row['encoding'] == 'base64' and blob(raw) == sha
+              chunks.append(raw)
+          compressed = b''.join(chunks)
+          assert len(compressed) == 24180
+          assert hashlib.sha256(compressed).hexdigest() == 'a2c956d19c766129a817a6a276f0efd86af89a51b95f64d8b804ca55b72cb598'
+          decoder = lzma.LZMADecompressor(memlimit=128 * 1024 * 1024)
+          decoded = decoder.decompress(compressed, max_length=2 * 1024 * 1024)
+          assert decoder.eof and not decoder.unused_data
+          payload = json.loads(decoded)
+          assert payload['base'] == '6c8ee635018b563f41899a926b4490cee373ec49'
+          subprocess.run(['git', 'merge-base', '--is-ancestor', payload['base'], 'HEAD'], check=True)
+          rows = payload['files']
+          assert len(rows) == 34 and len({row['path'] for row in rows}) == 34
+          for row in rows:
+              path = pathlib.PurePosixPath(row['path'])
+              assert not path.is_absolute() and '..' not in path.parts and path.parts[0] in {'crates', 'docs', 'tools', 'adr'}
+              target = root / path
+              assert not target.is_symlink()
+              assert (blob(target.read_bytes()) if target.exists() else None) == row['before'], row['path']
+          patch = payload['patch'].encode()
+          assert len(patch) == 115869
+          (out / 'reviewed.patch').write_bytes(patch)
+          (out / 'reviewed.xz').write_bytes(compressed)
+          (out / 'files.json').write_text(json.dumps(rows, indent=2) + '\n')
+          subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
+          subprocess.run(['git', 'apply', '-'], input=patch, check=True)
+          entries = []
+          for row in rows:
+              raw = (root / row['path']).read_bytes()
+              assert len(raw) == row['size'] and blob(raw) == row['after'], row['path']
+              uploaded = call('/git/blobs', {'encoding': 'base64', 'content': base64.b64encode(raw).decode()})
+              assert uploaded['sha'] == row['after'], row['path']
+              entries.append({'path': row['path'], 'mode': row['mode'], 'type': 'blob', 'sha': uploaded['sha']})
+          (out / 'tree-entries.json').write_text(json.dumps(entries, indent=2) + '\n')
+          with tarfile.open(out / 'qualified-source.tar.gz', 'w:gz') as archive:
+              for row in rows:
+                  archive.add(root / row['path'], arcname=row['path'], recursive=False)
+          (out / 'source-commit.txt').write_bytes(subprocess.check_output(['git', 'rev-parse', 'HEAD']))
+          workflow = root / '.github/workflows/publication-native-workbench.yml'
+          (out / 'qualification-workflow.yml').write_bytes(workflow.read_bytes())
+          workflow.unlink()
+          print('Verified and uploaded all 34 exact source blobs; no refs updated.')
+          PY
+      - name: Execute all artifact targets on real native storage
+        run: |
+          cargo test --locked -p latent-artifacts --all-features --all-targets -- --test-threads=1 > target/publication-web-reclamation/artifact-tests.log 2>&1
+      - name: Execute complete control-store library including physical resource gates
+        run: |
+          cargo test --locked -p latent-control-store --all-features --lib -- --nocapture --test-threads=1 > target/publication-web-reclamation/control-tests.log 2>&1
+      - name: Check default features and standalone composition
+        run: |
+          cargo check --locked -p latent-artifacts -p latent-control-store > target/publication-web-reclamation/default-check.log 2>&1
+          cargo check --locked -p latentd --lib > target/publication-web-reclamation/standalone-check.log 2>&1
+      - name: Check formatting and unchanged owning-package lint policy
+        run: |
+          cargo fmt -p latent-artifacts -p latent-control-store -- --check > target/publication-web-reclamation/format.log 2>&1
+          cargo clippy --locked --no-deps -p latent-artifacts -p latent-control-store --all-targets --all-features --message-format=json > target/publication-web-reclamation/clippy.jsonl 2> target/publication-web-reclamation/clippy.log
+      - name: Verify exact native test discovery against registered inventory
+        run: |
+          cargo test --locked -p latent-control-store --all-features --lib -- --list > target/publication-web-reclamation/discovery.txt 2> target/publication-web-reclamation/discovery-build.log
+          python3 - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+          from tools import ci_suite_inventory
+          out = Path('target/publication-web-reclamation')
+          suites = ci_suite_inventory.load()['suites']
+          owner = next(row for row in suites if row['id'] == 'latent-control-store.lib.latent-control-store')
+          names = [line[:-6] for line in (out / 'discovery.txt').read_text().splitlines() if line.endswith(': test')]
+          assert Counter(names) == Counter(owner['expectedCases'])
+          assert len(names) == 353
+          for name, count in [('publication-reclamation-planning', 15), ('publication-payload-reclamation', 19), ('publication-web-reclamation', 19)]:
+              fragment = json.loads(Path('tools/ci/suites.cases.d/' + name + '.json').read_text())
+              assert len(fragment['expectedCases']) == count
+              assert all(names.count(case) == 1 for case in fragment['expectedCases'])
+          (out / 'discovery-verification.json').write_text(json.dumps({'cases': len(names), 'assessmentCases': 15, 'cleanupCases': 19, 'webCleanupCases': 19, 'status': 'passed'}) + '\n')
+          PY
+      - name: Validate Python controls and final review-tree CI contracts
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock > target/publication-web-reclamation/python-install.log 2>&1
+          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_ci_profile_sparse tools.tests.test_ci_result tools.tests.test_ci_suite_cases tools.tests.test_ci_contracts > target/publication-web-reclamation/python-tests.log 2>&1
+          python3 tools/ci_coverage.py --receipt target/ci/publication-web-reclamation.json > target/publication-web-reclamation/ci-coverage.log 2>&1
+          cp target/ci/publication-web-reclamation.json target/publication-web-reclamation/ci-inventory.json
+          python3 tools/validate_docs.py > target/publication-web-reclamation/docs.log 2>&1
+      - name: Retain reproducible qualification identities
+        if: always()
+        run: |
+          mkdir -p target/publication-web-reclamation
+          rustc -vV > target/publication-web-reclamation/rustc.txt
+          cargo -vV > target/publication-web-reclamation/cargo.txt
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          root = Path('target/publication-web-reclamation')
+          rows = [{'path': p.name, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest(), 'bytes': p.stat().st_size} for p in sorted(root.iterdir()) if p.is_file()]
+          (root / 'SHA256SUMS.json').write_text(json.dumps(rows, indent=2) + '\n')
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        if: always()
+        with:
+          name: publication-native-web-reclamation-${{ github.sha }}
+          path: target/publication-web-reclamation/
+          if-no-files-found: error
+          retention-days: 7
