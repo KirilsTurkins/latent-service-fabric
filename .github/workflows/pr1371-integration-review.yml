@@ -9,27 +9,32 @@ permissions:
 jobs:
   inspect:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 5
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
-        with:
-          ref: 0ef909fda133933fddced7c52b17e2863ccf06a1
-          persist-credentials: false
-      - name: Retain immutable source and exact failing-run diagnostics
+      - name: Retain exact failing-run diagnostics
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p "$RUNNER_TEMP/pr1371-review"
-          git archive --format=zip -o "$RUNNER_TEMP/pr1371-review/source.zip" HEAD
-          git ls-tree -r HEAD > "$RUNNER_TEMP/pr1371-review/tree.txt"
           python3 - <<'PY'
-          import hashlib, io, json, os, pathlib, re, urllib.request, zipfile
+          import hashlib, json, os, pathlib, re, urllib.parse, urllib.request
           root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1371-review'
           api = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
+          class Redirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  assert urllib.parse.urlsplit(newurl).scheme == 'https'
+                  new = super().redirect_request(req, fp, code, msg, headers, newurl)
+                  if urllib.parse.urlsplit(newurl).netloc != urllib.parse.urlsplit(req.full_url).netloc:
+                      new.remove_header('Authorization')
+                      new.remove_header('Accept')
+                  return new
+          opener = urllib.request.build_opener(Redirect())
           def get(path):
               request = urllib.request.Request(api + path, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
-              with urllib.request.urlopen(request, timeout=90) as response:
-                  return response.read()
+              with opener.open(request, timeout=60) as response:
+                  data = response.read(32 * 1024 * 1024 + 1)
+                  assert len(data) <= 32 * 1024 * 1024
+                  return data
           summaries = {}
           for run_id in (41247721989, 41247721977):
               run = json.loads(get(f'/actions/runs/{run_id}'))
@@ -44,25 +49,18 @@ jobs:
                   lines = raw.decode('utf-8-sig').splitlines()
                   relevant = []
                   for i, line in enumerate(lines):
-                      if re.search(r'\b(?:FAIL|ERROR): |^\S+ (?:FAILED \(|Ran \d+ tests|.*[Aa]dvisory.*failed|.*[Ss]ecurity.*failed|.*[Aa]ssertionError:|.*[Ee]rror:)', line):
+                      if re.search(r'\b(?:FAIL|ERROR): |^\S+ (?:FAILED \(|Ran \d+ tests|.*[Aa]ssertionError:|.*[Ee]rror:)', line):
                           relevant.extend(x[:700] for x in lines[max(0,i-1):min(len(lines),i+9)])
                   entry = {'job': job['id'], 'name': job['name'], 'logSha256': hashlib.sha256(raw).hexdigest(), 'diagnostics': list(dict.fromkeys(relevant))}
                   report.append(entry)
                   print(json.dumps(entry))
               summaries[str(run_id)] = report
-              artifacts = json.loads(get(f'/actions/runs/{run_id}/artifacts?per_page=100'))
-              (root / f'{run_id}-artifacts.json').write_text(json.dumps(artifacts))
-              for artifact in artifacts['artifacts']:
-                  if run_id == 41247721977 and artifact['size_in_bytes'] < 5000000 and not artifact['expired']:
-                      data = get(f"/actions/artifacts/{artifact['id']}/zip")
-                      (root / f"artifact-{artifact['id']}.zip").write_bytes(data)
-                      print(json.dumps({'artifact': artifact['id'], 'name': artifact['name'], 'sha256': hashlib.sha256(data).hexdigest()}))
           (root / 'summary.json').write_text(json.dumps(summaries, indent=2))
           PY
       - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
         if: always()
         with:
-          name: pr1371-integration-review
+          name: pr1371-integration-failure-logs
           path: ${{ runner.temp }}/pr1371-review/
           if-no-files-found: error
           retention-days: 3
