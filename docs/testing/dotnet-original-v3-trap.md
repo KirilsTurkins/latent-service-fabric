@@ -118,3 +118,48 @@ inputs, missing inputs and changes to other protected sources fail before packag
 restoration. This replaces a test that incorrectly required the live fixture to
 remain byte-identical forever; it does not refresh historical pins, weaken the
 normal fifteen-outcome receipt, or grant runtime qualification.
+
+## Captured original observations at `2a79e99`
+
+Run [41231638834](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41231638834)
+completed successfully at `2a79e99443c534cdbbb5ef97ef608b591e416d2f`.
+Artifact 13053659402 is 1,281,439 bytes with SHA-256
+`e05333c1a16b529289d3b34181124756697157cb285cd8633720c335af7dfa8b`.
+The retained [evidence manifest](evidence/dotnet-original-v3-2026-10-31.2a79e99.json)
+binds byte-identical admission, observation and execution-output records.
+Both original modes executed after the three negative admission controls.
+
+Each mode recorded exactly one `unreachable-code` error with twelve numeric
+frames, below the sixteen-frame cap, and no truncation or missing backtrace.
+The traces have the same function sequence. Their only frame difference is
+zero-based frame 9, function 1314: function offset 1109 (module offset 566031)
+for mode 9 and function offset 1413 (module offset 566335) for mode 8. The
+common top frame is function 3273 at module offset 1133740. These are numeric
+observations, not a symbol mapping or proof of either original cause.
+
+| Mode | Consumed fuel | Peak accounted memory (bytes) | New Stores |
+| --- | ---: | ---: | ---: |
+| 9, unhandled fault | 54,183,312 | 56,871,047 | 1 |
+| 8, opaque quiescence | 53,851,343 | 56,870,125 | 1 |
+
+Each idle record has zero live Stores, live instances, active activations,
+reserved fuel and reserved memory. Logical idle is not evidence of physical
+owner retirement or complete native accounting. The original guest, compiler,
+CoreLib, original limits and normal fifteen-outcome receipt remain unchanged.
+Runtime qualification, both original-cause flags, AC7 and whole-ticket closure
+remain false. The diagnostic is not hermetic, and its I/O can perturb timing
+and terminal observation. The successful run does not remove those limits.
+
+The synthetic owned-runner catalogue now copies both `suites.d` and
+`suites.cases.d` before exercising prepared tests. Its regression compares
+the complete effective catalogue and the exact bytes of both fragment families;
+it does not drop additive cases or weaken any selected test requirement.
+
+The shared test-operator helpers are also included by `latentd`, which does
+not declare the `latent-wasmtime`-specific `development-test-host` feature.
+Their target-platform guards therefore do not mention a foreign Cargo feature.
+The actual original-component execution and observer remain opt-in on their
+owning test path; production admission and provider behavior are unchanged.
+The six pure normal-packager controls are compiled with and without the observer
+feature, so default-feature signed programmes retain the same exact catalogue.
+No ignored case, filtered-case check or qualification requirement is relaxed.

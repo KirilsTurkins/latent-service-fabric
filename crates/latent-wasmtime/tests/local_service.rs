@@ -159,11 +159,8 @@ async fn asynchronous_application_export_waits_for_the_canonical_async_service_i
 ))]
 #[path = "guest_sdk/package.rs"]
 mod join_cause_package;
-#[cfg(all(
-    feature = "development-test-host",
-    target_os = "linux",
-    target_arch = "x86_64"
-))]
+// Pure package-validation controls belong to every local-service inventory.
+// Only the original-component execution below requires the diagnostic host.
 #[path = "local_service/original_dotnet_package.rs"]
 mod original_dotnet_package;
 #[cfg(all(

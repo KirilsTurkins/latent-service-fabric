@@ -281,11 +281,9 @@ impl Runtime {
     }
 
     /// Use the normal provider configuration only for the original v3 observation.
-    #[cfg(all(
-        feature = "development-test-host",
-        target_os = "linux",
-        target_arch = "x86_64"
-    ))]
+    // This test module is also included by latentd, whose Cargo features differ.
+    // Keep the observer opt-in on its owning local_service execution path.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     pub fn original_dotnet_v3_scoped(
         broker: &ActivationCapabilityBroker,
         policies: &PolicyStore,
@@ -424,11 +422,7 @@ impl Runtime {
 
     /// Closed original-v3 authority, applied only before the named observation.
     /// Reuses all four installed provider owners; no general fixture opts in.
-    #[cfg(all(
-        feature = "development-test-host",
-        target_os = "linux",
-        target_arch = "x86_64"
-    ))]
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     pub fn configure_original_dotnet_v3_authority(
         &mut self,
         policies: &PolicyStore,
@@ -519,11 +513,7 @@ impl Runtime {
     }
 
     /// Read the actual provider references and sealed current policy documents.
-    #[cfg(all(
-        feature = "development-test-host",
-        target_os = "linux",
-        target_arch = "x86_64"
-    ))]
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     pub fn original_dotnet_v3_authority_snapshot(
         &self,
         policies: &PolicyStore,
