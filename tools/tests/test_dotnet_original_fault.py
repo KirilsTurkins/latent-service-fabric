@@ -184,5 +184,45 @@ class OriginalDotnetFaultTests(unittest.TestCase):
                 self.assertFalse(destination.exists())
 
 
+    def test_archive_path_replacement_after_read_cannot_replace_verified_bytes(self):
+        # A synthetic authenticated envelope exercises byte ownership only. It
+        # deliberately stops at the closed admission schema, before restoration.
+        import hashlib
+        import io
+        from unittest.mock import patch
+        import zipfile
+
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as source:
+            source.writestr("ADMISSION.json", b"{}")
+        original = buffer.getvalue()
+        metadata = dict(selected.ORIGINAL, bytes=len(original), members=1,
+                        sha256=hashlib.sha256(original).hexdigest(), admittedBytes=0,
+                        admissionSha256=hashlib.sha256(b"{}").hexdigest())
+        read = selected.read_file
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive, destination = root / "original.zip", root / "restored"
+            for mutation in ("replace", "unlink"):
+                with self.subTest(mutation=mutation):
+                    archive.write_bytes(original)
+
+                    def replace_after_read(path, maximum):
+                        self.assertEqual((path, maximum), (archive, len(original)))
+                        raw = read(path, maximum)
+                        if mutation == "replace":
+                            archive.write_bytes(b"unverified replacement")
+                        else:
+                            archive.unlink()
+                        return raw
+
+                    with patch.object(selected, "ORIGINAL", metadata), \
+                            patch.object(selected, "read_file", side_effect=replace_after_read) as checked:
+                        with self.assertRaisesRegex(WorkflowError, "dotnet-original-admission-fields"):
+                            selected.restore(archive, destination, time.monotonic() + 10)
+                        checked.assert_called_once_with(archive, len(original))
+                    self.assertFalse(destination.exists())
+
+
 if __name__ == '__main__':
     unittest.main()

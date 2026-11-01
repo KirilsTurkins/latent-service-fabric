@@ -6,6 +6,7 @@ rewritten or rebuilt. No additional CLI, feature or environment selector exists.
 """
 from pathlib import Path, PurePosixPath
 import hashlib
+import io
 import json
 import os
 import re
@@ -71,7 +72,9 @@ def restore(archive, destination, deadline):
         and end[7] == 0 and end[5] <= 4*1024**2 and end[6]+end[5]+22 == len(raw),
         'dotnet-original-central-bound')
     payloads, spellings, expanded = {}, set(), 0
-    with zipfile.ZipFile(archive) as source:
+    # Parse the bounded bytes whose complete archive identity was checked above.
+    # Reopening the path would allow a replacement between verification and use.
+    with zipfile.ZipFile(io.BytesIO(raw)) as source:
         require(len(source.infolist()) == ORIGINAL['members'] and source.start_dir == end[6],
             'dotnet-original-exact-member-count')
         for member in source.infolist():

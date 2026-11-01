@@ -163,3 +163,18 @@ owning test path; production admission and provider behavior are unchanged.
 The six pure normal-packager controls are compiled with and without the observer
 feature, so default-feature signed programmes retain the same exact catalogue.
 No ignored case, filtered-case check or qualification requirement is relaxed.
+
+The original archive is parsed directly from the bounded byte snapshot whose
+complete length and SHA-256 identity have already been checked. The loader does
+not reopen the pathname after verification. A synthetic regression replaces or
+unlinks that pathname after the initial read and requires parsing to continue
+from the verified snapshot, with all existing admission and payload checks still
+enforced. This closes a verification/use race; it does not relax any identity
+pin or turn archive restoration into runtime qualification.
+
+The sparse-checkout regression constructs an isolated Git repository from the
+current CI selector, result checker and complete catalogue bytes, independently
+of the workflow's sparse patterns. It neither clones the live repository nor
+requires historical/promisor objects. Both jobs still use real Git sparse
+checkout, compare the complete catalogue, and reject a missing case loader or
+additive case directory; no full-working-tree fallback is permitted.
