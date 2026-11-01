@@ -4,46 +4,167 @@ on:
     branches: [ci/pr1371-integration-review-20261101]
     paths: [.github/workflows/pr1371-integration-review.yml]
 permissions:
-  contents: read
+  contents: write
 jobs:
   inspect:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 15
     steps:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
         with:
           ref: 0ef909fda133933fddced7c52b17e2863ccf06a1
           persist-credentials: false
-      - name: Export only historical Git objects absent from the reviewed head
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb
+        with:
+          python-version: 3.13.5
+      - name: Apply only the hash-bound reviewed patch
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import hashlib, json, os, pathlib, re, subprocess
+          import base64, gzip, hashlib, json, os, pathlib, re, subprocess, urllib.request
           root = pathlib.Path.cwd()
-          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1371-history'
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1371-validation'
           out.mkdir()
-          text = (root / '.github/workflows/ci.yml').read_text()
+          api = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
+          chunks = [
+              'e885c4142ef974878ea36a293dbf7906be24a6b0',
+              'e7450f3aea5cf1e5224237c97a79d41b863cf7c6',
+              '5c6fb957bd4f6e6cbe13e41187264e02d7f7144c',
+              '5a05ba81fa2c6dea28778df25d8926c9fc8f60b4',
+              '3ce6442fcfc87e9bcbcb20e0a0d33959c96fffb4',
+              'c12dcc1cd4db8d5abcde83e437ac9ec4dc535fd9',
+              '4e8e660a548a08ba42c78ea7e279ecf71d8e5d07',
+              'd1ad829e37bb6565fe8d759382cab511ca6c43fa',
+              'a0f45d46aeddc57e8d209bd0c3f8955f0f8f359c',
+              '2960d20b6c9ef73138e385d485ccf10eaf7bcfd7',
+              '462fd0f662e0f693394f7879a76f2d8abf1a5492',
+          ]
+          def blob(raw):
+              return hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+          encoded = b''
+          for sha in chunks:
+              request = urllib.request.Request(api + '/git/blobs/' + sha, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  data = json.load(response)
+              raw = base64.b64decode(data['content'])
+              assert data['sha'] == sha == blob(raw) and len(raw) <= 1000
+              encoded += raw
+          assert len(encoded) == 10612
+          assert hashlib.sha256(encoded).hexdigest() == '578035f7b262406008ef8a1791b01c8c242876218d365e4a47e098651bf0e3ac'
+          raw = gzip.decompress(base64.b64decode(encoded, validate=True))
+          assert len(raw) < 65536
+          payload = json.loads(raw)
+          assert payload['base'] == subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == '0ef909fda133933fddced7c52b17e2863ccf06a1'
+          allowed = {
+              '.github/workflows/ci.yml',
+              'tools/ci/contracts/workflows/ci.yml/jobs/contracts.json',
+              'tools/tests/test_ci_contracts.py',
+              'tools/tests/test_rust_thread_runtime.py',
+              'tools/ci/contracts/python/test_rust_thread_runtime.py.json',
+              'tools/tests/test_owned_runners.py',
+              'tools/ci/contracts/python/test_owned_runners.py.json',
+              'tools/tests/test_audit_memory_programme.py',
+              'tools/tests/test_java_scheduled_library.py',
+              'tools/tests/test_c_thread_minimal.py',
+              'tools/tests/test_c_thread_ready_runtime.py',
+              'tools/tests/test_typescript_private_removed.py',
+              'tools/qualify_typescript_private_removed.py',
+              'tools/ci/contracts/owners/tools/qualify_typescript_private_removed.py.json',
+              'docs/testing/rust-thread-integration-regressions.md',
+          }
+          assert len(payload['files']) == len(allowed) == 15
+          assert {row[0] for row in payload['files']} == allowed
+          reviewed = []
+          for path, before, after, edits in payload['files']:
+              target = root / path
+              assert not target.is_symlink()
+              original = target.read_bytes() if target.exists() else b''
+              assert (blob(original) if target.exists() else None) == before
+              assert re.fullmatch('[0-9a-f]{40}', after)
+              end = 0
+              for start, count, text in edits:
+                  assert type(start) is int and type(count) is int and end <= start <= start + count <= len(original)
+                  end = start + count
+                  assert isinstance(text, str)
+              changed = original
+              for start, count, text in reversed(edits):
+                  changed = changed[:start] + text.encode() + changed[start + count:]
+              assert blob(changed) == after
+              target.write_bytes(changed)
+              reviewed.append({'path': path, 'before': before, 'sha': after, 'mode': '100644', 'type': 'blob'})
+          (out / 'reviewed.json').write_text(json.dumps(reviewed, indent=2))
+          subprocess.run(['git', 'diff', '--check'], check=True)
+          with (out / 'repair.patch').open('wb') as dest:
+              subprocess.run(['git', 'diff', '--binary'], stdout=dest, check=True)
+          print(json.dumps({'base': payload['base'], 'reviewedFiles': reviewed}))
+          PY
+      - name: Fetch every original and matched historical producer input
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, subprocess
+          text = pathlib.Path('.github/workflows/ci.yml').read_text()
           block = text.split('      - name: Fetch exact historical source inputs for Python preservation controls\n', 1)[1].split('      - name: Install Python validator dependencies\n', 1)[0]
-          refs = list(dict.fromkeys(re.findall(r'\b[0-9a-f]{40}\b', block) + ['cddfb5d016a6311ed0db4673e490dc9caad917dd', '72fb8969352b37eb5c9f4f9cd0cfec9845fc9f1a']))
-          assert len(refs) == 30
+          refs = re.findall(r'\b[0-9a-f]{40}\b', block)
+          assert len(refs) == len(set(refs)) == 29
+          assert 'cddfb5d016a6311ed0db4673e490dc9caad917dd' in refs
           subprocess.run(['git', 'fetch', '--no-tags', '--depth=1', 'origin', *refs], check=True, timeout=240)
-          selected = subprocess.check_output(['git', 'rev-list', '--objects', '--no-object-names', *refs, '^HEAD'], timeout=60)
-          objects = sorted(set(selected.splitlines()))
-          assert 0 < len(objects) <= 100000
-          with (out / 'history.pack').open('wb') as dest:
-              subprocess.run(['git', 'pack-objects', '--stdout'], input=b'\n'.join(objects) + b'\n', stdout=dest, check=True, timeout=120)
-          assert (out / 'history.pack').stat().st_size <= 512 * 1024**2
-          (out / 'shallow').write_bytes((root / '.git/shallow').read_bytes())
-          for name in ('tools/c_thread_runtime_node.py', 'sdk/c-guest/src/closed-file-abi.c'):
-              raw = subprocess.check_output(['git', 'show', refs[-1] + ':' + name], timeout=30)
-              (out / name.replace('/', '_')).write_bytes(raw)
-          report = {'base': '0ef909fda133933fddced7c52b17e2863ccf06a1', 'refs': refs, 'objects': len(objects), 'packBytes': (out / 'history.pack').stat().st_size, 'packSha256': hashlib.file_digest((out / 'history.pack').open('rb'), 'sha256').hexdigest()}
-          (out / 'report.json').write_text(json.dumps(report, indent=2))
-          print(json.dumps(report))
+          PY
+      - name: Install the unchanged pinned validator dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Run affected preservation controls and exact documentation CI block
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, time, yaml
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1371-validation'
+          modules = ['test_ci_contracts', 'test_java_checkpoint_gc', 'test_java_checkpoint_gc_retained', 'test_java_dependency_checkpoints', 'test_typescript_private_removed', 'test_c_thread_minimal', 'test_c_thread_ready_runtime', 'test_rust_thread_runtime', 'test_audit_memory_programme', 'test_java_scheduled_library', 'test_owned_runners', 'test_build_snapshot', 'test_build_source_capacity']
+          workflow = yaml.safe_load(pathlib.Path('.github/workflows/ci.yml').read_text())
+          steps = workflow['jobs']['docs']['steps']
+          docs = next(step['run'] for step in steps if step.get('name') == 'Validate documentation and profile selection')
+          commands = [
+              ('coverage', ['python3', 'tools/ci_coverage.py', '--receipt', str(out / 'observed-inventory.json')]),
+              ('affected', ['python3', '-m', 'unittest', *['tools.tests.' + name for name in modules]]),
+              ('documentation-ci', ['bash', '-euo', 'pipefail', '-c', docs]),
+          ]
+          results = []
+          env = dict(os.environ, LSF_REQUIRE_NATIVE_PROCESS_TESTS='1')
+          for name, command in commands:
+              started = time.monotonic()
+              log = out / (name + '.log')
+              with log.open('wb') as dest:
+                  result = subprocess.run(command, env=env, stdout=dest, stderr=subprocess.STDOUT, timeout=540)
+              row = {'name': name, 'returncode': result.returncode, 'seconds': round(time.monotonic() - started, 3), 'command': command}
+              results.append(row)
+              (out / 'results.json').write_text(json.dumps(results, indent=2))
+              print(json.dumps(row), flush=True)
+              print('\n'.join(log.read_text(errors='replace').splitlines()[-35:]), flush=True)
+          assert all(row['returncode'] == 0 for row in results), 'reviewed integration regression failure'
+          PY
+      - name: Prepare verified source blobs without modifying any reference
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, urllib.request
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1371-validation'
+          rows = json.loads((out / 'reviewed.json').read_text())
+          assert all(row['returncode'] == 0 for row in json.loads((out / 'results.json').read_text()))
+          for row in rows:
+              raw = pathlib.Path(row['path']).read_bytes()
+              expected = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+              assert expected == row['sha']
+              body = json.dumps({'content': base64.b64encode(raw).decode(), 'encoding': 'base64'}).encode()
+              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs', data=body, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'}, method='POST')
+              with urllib.request.urlopen(request, timeout=45) as response:
+                  created = json.load(response)
+              assert created['sha'] == expected
+              print(json.dumps({'path': row['path'], 'sha': expected}), flush=True)
+          (out / 'prepared-blobs.json').write_text(json.dumps(rows, indent=2))
           PY
       - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
         if: always()
         with:
-          name: pr1371-historical-inputs
-          path: ${{ runner.temp }}/pr1371-history/
+          name: pr1371-reviewed-integration-validation
+          path: ${{ runner.temp }}/pr1371-validation/
           if-no-files-found: error
           retention-days: 3
