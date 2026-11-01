@@ -1,0 +1,199 @@
+name: PR 1587 guard and lint recheck
+on:
+  push:
+    branches: [diag/dotnet-original-v3-trap-20261031]
+    paths: [.github/workflows/pr1587-guard-recheck.yml]
+permissions:
+  contents: read
+jobs:
+  recheck:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/diag/dotnet-original-v3-trap-20261031'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+          ref: 5ff39cf2fc05cdc02ecf7be636ac999ee28826aa
+          fetch-depth: 1
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.1 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          save-if: false
+      - name: Install reviewed Python dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Apply the pinned repair without changing production C inputs or historical pins
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64, copy, hashlib, json, os, pathlib, subprocess, urllib.request
+          from tools import ci_contracts as contracts
+          root = pathlib.Path.cwd()
+          out = pathlib.Path(os.environ['RUNNER_TEMP'])/'pr1587-guard-recheck'
+          out.mkdir()
+          revision = subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()
+          assert revision == '5ff39cf2fc05cdc02ecf7be636ac999ee28826aa'
+          pins = {
+              'tools/tests/test_c_thread_minimal.py': '0474c13dbe4d72327bb42a9168619830795f0ba8',
+              'tools/tests/test_c_thread_ready_runtime.py': 'fab2ab2376f5d6ec653fe06773b8851f9c6eef3c',
+              'crates/latent-wasmtime/tests/guest_sdk/runtime.rs': 'c565a2fc9c72effed4520e024614c8c4b132b091',
+              'docs/testing/dotnet-original-v3-trap.md': 'baa7b4e0c99913873f3cbb9530dbd35723389ef6',
+              'tools/ci/contracts/python/test_c_thread_minimal.py.json': 'e5e0896f8f3a75502a36a3c3e48b549aabd1ceff',
+              'tools/ci/contracts/python/test_c_thread_ready_runtime.py.json': '9f3e39f03e5170949bc6bc353c72b64b7aa7076f',
+          }
+          def blob(raw):
+              return hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
+          for name, expected in pins.items():
+              assert blob((root/name).read_bytes()) == expected, name
+          identity = '24df4ecf776e6f9508d4240a03d09cb54c7b1a6c'
+          url = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs/'+identity
+          with urllib.request.urlopen(url, timeout=30) as response:
+              payload = response.read(131073)
+          assert len(payload) <= 131072
+          record = json.loads(payload)
+          assert record['sha'] == identity and record['encoding'] == 'base64'
+          raw = base64.b64decode(record['content'])
+          assert len(raw) == 9411 and blob(raw) == identity
+          patch = out/'reviewed.patch'; patch.write_bytes(raw)
+          subprocess.run(['git','apply','--check',str(patch)],check=True)
+          subprocess.run(['git','apply',str(patch)],check=True)
+          path = root/'crates/latent-wasmtime/tests/guest_sdk/runtime.rs'
+          before = path.read_text()
+          misplaced = '    /// Add only tenant-scoped policies for existing provider registrations.\n\n'
+          correct = '    /// This test-operator helper allocates no second provider or executor.\n'
+          assert before.count(misplaced) == before.count(correct) == 1
+          after = before.replace(misplaced,'',1).replace(correct,misplaced.rstrip('\n')+'\n'+correct,1)
+          def non_docs(text):
+              return [line for line in text.splitlines() if line.strip() and not line.lstrip().startswith('///')]
+          assert non_docs(before) == non_docs(after)
+          path.write_text(after)
+          path = root/'docs/testing/dotnet-original-v3-trap.md'
+          path.write_text(path.read_text()+'''\nThe C preservation controls also authenticate the finite additions already merged\nin PRs #1582 and #1585. They invert only the exact activation-local `exit` trap\nand twelve outside-library driver edits before enforcing every original file-ABI,\npaired-client and seventeen-outcome identity. Missing, duplicated or modified\nadditions and unrelated source/budget drift are rejected. These are source-only\nCI controls; neither production C inputs nor historical qualification receipts\nare rewritten, and no .NET runtime claim follows from their passing.\n''')
+          observed = contracts.python_expectations(root)
+          reasons = {
+              'test_c_thread_minimal.py': 'Review the exact PR #1582 activation-local exit-trap inverse without refreshing the original finite file-ABI fingerprint; retain every existing case and add missing, duplicate, modified-trap and unrelated-drift refusals.',
+              'test_c_thread_ready_runtime.py': 'Review the exact twelve-hunk PR #1585 outside-card inverse, authenticate both source generations, and retain all original paired-client and seventeen-outcome proofs; add missing, duplicate, altered-hunk and original-budget drift refusals.',
+          }
+          for short, reason in reasons.items():
+              path = root/'tools/ci/contracts/python'/(short+'.json')
+              physical = json.loads(path.read_text())
+              previous = contracts.semantic_record(physical)
+              actual = observed['tools/tests/'+short]
+              assert set(previous['cases']) < set(actual['cases'])
+              for case in previous['cases']:
+                  old, new = copy.deepcopy(previous['guards'][case]), copy.deepcopy(actual['guards'][case])
+                  assert old['fixtureGuards'][1:] == new['fixtureGuards'][1:]
+                  assert all(x['fixtureGuards'][0].startswith('module:setup-sha256:') for x in (old,new))
+                  old.pop('fixtureGuards'); new.pop('fixtureGuards')
+                  assert old == new
+              actual['guards'] = {case:actual['guards'][case] for case in actual['cases']}
+              value = {**previous, **actual, 'reviewReason':reason}
+              if physical['schemaVersion'] == contracts.PYTHON_STORAGE_SCHEMA:
+                  value = contracts.shared_python_record(value)
+                  if 'storageCases' in physical:
+                      value = contracts.case_key_python_record(value)
+                  text = contracts.shared_python_text(value)
+              else:
+                  text = json.dumps(value,indent=2,sort_keys=True)+'\n'
+              path.write_text(text)
+          assert set(subprocess.check_output(['git','diff','--name-only']).decode().splitlines()) == set(pins)
+          (out/'paths.json').write_text(json.dumps(sorted(pins))+'\n')
+          (out/'source.json').write_text(json.dumps({'revision':revision,'patch':identity,'files':[
+              {'path':name,'sha':blob((root/name).read_bytes()),'bytes':(root/name).stat().st_size,
+               'sha256':hashlib.sha256((root/name).read_bytes()).hexdigest()} for name in sorted(pins)]},indent=2)+'\n')
+          (out/'validated.patch').write_bytes(subprocess.check_output(['git','diff','--binary']))
+          PY
+      - name: Acquire the exact historical inputs required by the normal Python lane
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import pathlib, subprocess, yaml
+          steps = yaml.safe_load(pathlib.Path('.github/workflows/ci.yml').read_text())['jobs']['contracts']['steps']
+          command, = [step['run'] for step in steps if step.get('name') == 'Fetch exact historical source inputs for Python preservation controls']
+          subprocess.run(['bash','-e','-o','pipefail','-c',command],check=True,timeout=240)
+          PY
+      - name: Validate complete focused suites, source coverage and Rust formatting
+        shell: bash
+        run: |
+          python3 -m unittest tools.tests.test_c_thread_minimal tools.tests.test_c_thread_ready_runtime tools.tests.test_c_thread_runtime tools.tests.test_c_closed_filesystem_qualification tools.tests.test_ci_contracts tools.tests.test_dotnet_original_fault tools.tests.test_dotnet_original_evidence -q 2>&1 | tee "$RUNNER_TEMP/pr1587-guard-recheck/focused.txt"
+          python3 tools/ci_coverage.py 2>&1 | tee "$RUNNER_TEMP/pr1587-guard-recheck/coverage.txt"
+          python3 tools/ci_cargo.py run format 2>&1 | tee "$RUNNER_TEMP/pr1587-guard-recheck/format.txt"
+          git diff --check
+      - name: Run the actual complete Python lane
+        shell: bash
+        run: |
+          set +e
+          bash tools/validate_contracts.sh python > "$RUNNER_TEMP/pr1587-guard-recheck/python.txt" 2>&1
+          status=$?
+          printf '%s\n' "$status" > "$RUNNER_TEMP/pr1587-guard-recheck/python-status.txt"
+          tail -n 100 "$RUNNER_TEMP/pr1587-guard-recheck/python.txt"
+          exit "$status"
+      - name: Run the unchanged full Clippy recipe
+        shell: bash
+        run: |
+          set +e
+          python3 tools/ci_cargo.py run clippy > "$RUNNER_TEMP/pr1587-guard-recheck/clippy.txt" 2>&1
+          status=$?
+          printf '%s\n' "$status" > "$RUNNER_TEMP/pr1587-guard-recheck/clippy-status.txt"
+          tail -n 100 "$RUNNER_TEMP/pr1587-guard-recheck/clippy.txt"
+          exit "$status"
+      - name: Stage only successfully validated source blobs without changing any branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, subprocess, tarfile, urllib.request
+          out = pathlib.Path(os.environ['RUNNER_TEMP'])/'pr1587-guard-recheck'
+          source = json.loads((out/'source.json').read_text())
+          entries = []
+          assert set(subprocess.check_output(['git','diff','--name-only']).decode().splitlines()) == {row['path'] for row in source['files']}
+          subprocess.run(['git','diff','--check'],check=True)
+          with tarfile.open(out/'validated-source.tar.gz','w:gz') as archive:
+              for row in source['files']:
+                  path = pathlib.Path(row['path']); raw = path.read_bytes()
+                  assert not path.is_symlink() and len(raw) == row['bytes']
+                  assert hashlib.sha256(raw).hexdigest() == row['sha256']
+                  assert len(raw) < 131072
+                  request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs',
+                      data=json.dumps({'encoding':'base64','content':base64.b64encode(raw).decode()}).encode(),
+                      headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      created = json.load(response)
+                  assert created['sha'] == row['sha']
+                  entries.append({'path':row['path'],'mode':'100644','type':'blob','sha':row['sha'],'sha256':row['sha256']})
+                  archive.add(path,arcname=row['path'])
+          (out/'objects.json').write_text(json.dumps({'testedBase':source['revision'],'entries':entries},indent=2)+'\n')
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        if: always()
+        with:
+          name: pr1587-guard-recheck-${{ github.sha }}
+          path: ${{ runner.temp }}/pr1587-guard-recheck/
+          retention-days: 7
+          if-no-files-found: error
