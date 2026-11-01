@@ -208,7 +208,9 @@ class SuiteCaseFragmentTests(unittest.TestCase):
         self.assertEqual(len(fragment["expectedCases"]), 17)
         additions = [fragment]
         for name, owner, count in (
+            ("publication-payload-reclamation.json", "latent-control-store.lib.latent-control-store", 19),
             ("publication-reader-exclusion.json", "latent-artifacts.lib.latent-artifacts", 4),
+            ("publication-reclamation-planning.json", "latent-control-store.lib.latent-control-store", 15),
             ("publication-reference-exclusion.json", "latent-control-store.lib.latent-control-store", 12),
             ("publication-tombstones.json", "latent-control-store.lib.latent-control-store", 20),
         ):

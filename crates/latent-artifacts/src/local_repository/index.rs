@@ -251,6 +251,25 @@ impl CatalogIndex {
             .ok_or_else(|| resource_exhausted("artifact-catalog-generation-exhausted"))
     }
 
+    pub(super) fn refund_reclaimed(&mut self, id: &PublicationId) -> Result<(), PlatformError> {
+        let Some(entry) = self.deleted.remove(id) else {
+            return Err(corrupt("reclamation-index-missing"));
+        };
+        let bytes = entry.retained_base
+            + entry
+                .admission_binding
+                .as_ref()
+                .map_or(0, |b| history_bytes(b))
+            + entry
+                .eligibility
+                .as_ref()
+                .map_or(0, crate::ReleaseEligibility::retained_bytes);
+        self.accounted_bytes = self
+            .accounted_bytes
+            .checked_sub(bytes)
+            .ok_or_else(|| corrupt("reclamation-index-accounting"))?;
+        Ok(())
+    }
     pub(super) fn tombstone(&mut self, id: &PublicationId) {
         if let Some(entry) = self.take_visible(id) {
             self.deleted.insert(id.clone(), entry);

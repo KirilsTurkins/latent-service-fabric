@@ -39,6 +39,12 @@ impl DirectoryArtifactRepository {
         let mut request = self.publication_request(context, &upload)?;
         if let Some(operation) = self.replay(&request, preflight)? {
             let publication = self.operation_publication_ref(&operation)?;
+            if self.is_reclaimed_publication(&publication.id)? {
+                return Err(error(
+                    PlatformErrorCode::NotFound,
+                    "publication-payload-reclaimed-query-original-operation",
+                ));
+            }
             let release = self
                 .index
                 .read()
@@ -204,6 +210,12 @@ impl DirectoryArtifactRepository {
                 &publication.completion.identity()?,
             )?,
         };
+        if self.is_reclaimed_publication(&reference.id)? {
+            return Err(error(
+                PlatformErrorCode::NotFound,
+                "publication-payload-reclaimed-query-original-operation",
+            ));
+        }
         request.publication = Some(reference.id.clone());
         let old = self.life_store().record_publication(&reference.id)?;
         request.check_generation(old.as_ref())?;

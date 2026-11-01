@@ -1,3 +1,4 @@
+pub(super) mod cleanup;
 mod lexical;
 mod tombstones;
 use super::{
@@ -12,6 +13,7 @@ use tombstones::DeletionHistory;
 pub(super) const MAX_HEAD: usize = 4 * 1024 * 1024;
 pub(super) const MAX_REQUEST: usize = 64 * 1024;
 pub(super) const MAX_INTENT: usize = MAX_HEAD + 4096;
+pub(super) const CLEANUP_MARKER: &[u8] = b"lsf-release-lifecycle-reclamation-v1\n";
 pub(super) const DELETION_MARKER: &[u8] = b"lsf-release-lifecycle-deletion-v1\n";
 pub(super) const MARKER: &[u8] = b"lsf-release-lifecycle-retention-v1\n";
 const VERSION: u32 = 1;
@@ -27,6 +29,8 @@ pub(super) struct Head {
     pub receipts: Vec<PublicationRetentionReceipt>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deletion: Option<DeletionHistory>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cleanup: Option<cleanup::Cleanup>,
 }
 impl Head {
     pub fn empty(mode: [u8; 32]) -> Self {
@@ -38,6 +42,7 @@ impl Head {
             pins: Vec::new(),
             receipts: Vec::new(),
             deletion: None,
+            cleanup: None,
         }
     }
     pub fn validate(&self, mode: [u8; 32]) -> Result<(), PlatformError> {
@@ -59,6 +64,9 @@ impl Head {
             {
                 return Err(corrupt());
             }
+        }
+        if let Some(cleanup) = &self.cleanup {
+            cleanup.validate(self)?;
         }
         for pin in &self.pins {
             pin.publication.scope.validate().map_err(|_| corrupt())?;

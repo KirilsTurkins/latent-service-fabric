@@ -1,4 +1,5 @@
-//! Shared native retention owner. This does not enable committed-content deletion.
+//! Shared native retention, logical deletion and explicit capsule payload reclamation owner.
+mod cleanup;
 mod deletion;
 mod model;
 mod storage;
@@ -31,7 +32,7 @@ pub(super) fn check_format(root: &Path, promoted: bool) -> Result<(), PlatformEr
     storage::load(root, promoted, false).map(|_| ())
 }
 pub(super) fn is_marker(bytes: &[u8]) -> bool {
-    bytes == model::MARKER || bytes == model::DELETION_MARKER
+    bytes == model::MARKER || bytes == model::DELETION_MARKER || bytes == model::CLEANUP_MARKER
 }
 
 impl DirectoryArtifactRepository {
@@ -46,6 +47,14 @@ impl DirectoryArtifactRepository {
             DevelopmentRetentionFault::AfterFormatPromotion => 4,
             DevelopmentRetentionFault::AfterDeletionFormatPromotion => 5,
             DevelopmentRetentionFault::AfterDeletionVisibility => 6,
+            DevelopmentRetentionFault::AfterReclamationFormatPromotion => 7,
+            DevelopmentRetentionFault::AfterReclamationCommit => 8,
+            DevelopmentRetentionFault::AfterPublicationFileUnlink => 9,
+            DevelopmentRetentionFault::AfterPublicationDirectorySync => 10,
+            DevelopmentRetentionFault::AfterBlobUnlink => 11,
+            DevelopmentRetentionFault::AfterBlobParentSync => 12,
+            DevelopmentRetentionFault::BeforeReclamationReceipt => 13,
+            DevelopmentRetentionFault::AfterReclamationReceipt => 14,
         };
         storage::FAIL.with(|value| value.set(number));
     }
@@ -65,6 +74,7 @@ impl DirectoryArtifactRepository {
             }
         }
         self.restore_publication_tombstones(&head)?;
+        let head = self.recover_cleanup(head)?;
         let bytes = if stored { exposure(&head)? } else { (0, 0) };
         self.index
             .write()
@@ -386,4 +396,8 @@ fn ensure_identity(state: &mut RetentionState) -> Result<(), PlatformError> {
             "publication-retention-platform-unsupported",
         ))
     }
+}
+
+pub(super) fn cleanup_fault(point: u8) -> Result<(), PlatformError> {
+    storage::fault(point)
 }

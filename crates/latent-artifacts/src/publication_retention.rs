@@ -173,4 +173,12 @@ pub enum DevelopmentRetentionFault {
     AfterFormatPromotion,
     AfterDeletionFormatPromotion,
     AfterDeletionVisibility,
+    AfterReclamationFormatPromotion,
+    AfterReclamationCommit,
+    AfterPublicationFileUnlink,
+    AfterPublicationDirectorySync,
+    AfterBlobUnlink,
+    AfterBlobParentSync,
+    BeforeReclamationReceipt,
+    AfterReclamationReceipt,
 }

@@ -1,8 +1,11 @@
 //! Bounded immutable blobs, hard-linked into publication directories.
 //!
 //! Committed publication/history membership pins its files, including after
-//! retirement. Only uncommitted directories and zero-reference blobs are GC
-//! candidates. No live source can lose a committed payload through this GC.
+//! retirement. General GC still handles only uncommitted content. A separate
+//! durable tombstone cleanup plan is required to release committed capsule files.
+
+mod cleanup;
+pub(super) mod reclamation;
 
 use super::*;
 use latent_core::{ArtifactBlobDigest, PublicationId};

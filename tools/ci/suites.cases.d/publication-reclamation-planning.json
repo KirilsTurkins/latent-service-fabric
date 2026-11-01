@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "latent.ci.suite-case-fragment.v1",
+  "suiteId": "latent-control-store.lib.latent-control-store",
+  "expectedCases": [
+    "deployments::tests::http::deletion::tombstones::native_web_reclamation_planning_retains_shared_content_and_survives_reopen",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_bounds_are_validated_without_filesystem_mutation",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_counts_shared_blobs_once_across_exact_batches",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_detects_canonical_blob_corruption_independent_of_links",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_enforces_exact_file_byte_and_deadline_bounds",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_holds_actual_reference_writer_through_content_observation",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_preserves_bytes_charges_and_original_receipts",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_preserves_unselected_committed_blob_references",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_rechecks_preparations_owner_and_reopen",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_recomputes_after_unrelated_publications_and_control_changes",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_refuses_changed_selected_file_sets_without_cleanup",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_refuses_evicted_receipts_without_replaying_deletion",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_rejects_corrupt_payload_without_refund",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_rejects_foreign_or_changed_batches_before_content_details",
+    "deployments::tests::publications::deletion::tombstones::reclamation::native_reclamation_planning_requires_exact_retained_original_deletion"
+  ]
+}

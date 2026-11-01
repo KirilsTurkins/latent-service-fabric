@@ -80,9 +80,14 @@ pub(super) fn load(
         }
         return Ok(None); // interrupted empty initialization, no committed pins
     };
-    let deletion_mode = required(&root.join("LIFECYCLE_MODE"), 64)? == model::DELETION_MARKER;
+    let marker = required(&root.join("LIFECYCLE_MODE"), 64)?;
+    let cleanup_mode = marker == model::CLEANUP_MARKER;
+    let deletion_mode = marker == model::DELETION_MARKER || cleanup_mode;
     let saved: Saved = decode(&head_bytes, MAX_HEAD)?;
     saved.validate(authority)?;
+    if saved.head.cleanup.is_some() && !cleanup_mode {
+        return Err(corrupt());
+    }
     if saved.head.deletion.is_some() && !deletion_mode {
         return Err(corrupt());
     }
@@ -101,6 +106,9 @@ pub(super) fn load(
         }
         let intent: Intent = decode(&bytes, MAX_INTENT)?;
         intent.next.validate(authority)?;
+        if intent.next.head.cleanup.is_some() && !cleanup_mode {
+            return Err(corrupt());
+        }
         if intent.next.head.deletion.is_some() && !deletion_mode {
             return Err(corrupt());
         }
@@ -157,7 +165,13 @@ pub(super) fn persist(
     check_time(deadline)?;
     let path = directory(root);
     initialize(root, old)?;
-    if next.deletion.is_some() {
+    if next.cleanup.is_some() {
+        let marker = root.join("LIFECYCLE_MODE");
+        if required(&marker, 64)? != model::CLEANUP_MARKER {
+            atomic(&marker, model::CLEANUP_MARKER)?;
+        }
+        fault(7)?;
+    } else if next.deletion.is_some() {
         let marker = root.join("LIFECYCLE_MODE");
         if required(&marker, 64)? != model::DELETION_MARKER {
             atomic(&marker, model::DELETION_MARKER)?;
@@ -210,7 +224,8 @@ fn initialize(root: &Path, old: &Head) -> Result<(), PlatformError> {
     }
     let marker = root.join("LIFECYCLE_MODE");
     let previous = required(&marker, 64)?;
-    if previous != MARKER && previous != model::DELETION_MARKER {
+    if previous != MARKER && previous != model::DELETION_MARKER && previous != model::CLEANUP_MARKER
+    {
         if previous != b"lsf-release-lifecycle-v1\n" || old.revision != 0 {
             return Err(corrupt());
         }

@@ -14,6 +14,7 @@ mod preparation_fingerprint;
 mod publication;
 mod publication_deletion;
 mod publication_management;
+mod publication_reclamation;
 mod publication_retention;
 mod raw_cache;
 mod retained_package;
@@ -30,6 +31,12 @@ pub use publication_deletion::{
     PublicationReferenceAuthority, MAX_PUBLICATION_DELETION_RECEIPTS, MAX_PUBLICATION_TOMBSTONES,
 };
 pub use publication_management::PublicationOperationReceipt;
+pub use publication_reclamation::{
+    PublicationReclamationAssessment, PublicationReclamationContent, PublicationReclamationLimits,
+    PublicationReclamationLookup, PublicationReclamationReceipt, PublicationReclamationRequest,
+    PublicationReclamationResult, MAX_PUBLICATION_RECLAMATION_BYTES,
+    MAX_PUBLICATION_RECLAMATION_FILES,
+};
 #[cfg(feature = "development-test-host")]
 pub use publication_retention::DevelopmentRetentionFault;
 pub use publication_retention::{

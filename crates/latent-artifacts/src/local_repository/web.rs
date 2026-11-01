@@ -90,6 +90,27 @@ impl WebCatalog {
     ) -> Result<bool, PlatformError> {
         self.reads.references_any(publications)
     }
+    pub(super) fn tombstoned_generation(
+        &self,
+        reference: &PublicationRef,
+    ) -> Result<u64, PlatformError> {
+        self.epoch.check()?;
+        let state = self.state.try_read().map_err(|_| busy())?;
+        state
+            .entries
+            .get(&reference.id)
+            .filter(|entry| {
+                entry.deleted
+                    && entry.record.publication == *reference
+                    && matches!(
+                        entry.record.state,
+                        ReleaseLifecycleState::Retired | ReleaseLifecycleState::Revoked
+                    )
+            })
+            .map(|entry| entry.record.generation)
+            .ok_or_else(crate::publication_retention::unavailable_target)
+    }
+
     pub(super) fn retention_generation(
         &self,
         reference: &PublicationRef,
@@ -224,7 +245,7 @@ impl DirectoryArtifactRepository {
     fn web_path(&self) -> PathBuf {
         self.root.join(DIRECTORY)
     }
-    fn web_publication_path(&self, id: &PublicationId) -> PathBuf {
+    pub(in crate::local_repository) fn web_publication_path(&self, id: &PublicationId) -> PathBuf {
         self.web_path().join(PUBLICATIONS).join(id.hex())
     }
     fn web_authority(&self) -> Result<&admission::RepositoryAdmission, PlatformError> {

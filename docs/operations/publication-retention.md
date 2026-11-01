@@ -94,7 +94,16 @@ directories, rows, lock files or format markers by hand.
 Development includes [durable native visibility tombstones](../reference/publication-retention-pins.md)
 for terminal, unreferenced publications. This removes visibility but deliberately
 retains all content/history files and their capacity charges. The authenticated
-CLI/audit adapter and physical reclamation lifecycle remain pending in #662.
+CLI/audit adapter remains pending in #662. A separate trusted-native capsule
+payload cleanup now has durable intent, synchronized unlink/refund and original
+operation recovery; componentless-web physical cleanup is still unsupported.
 The stopped coupled backup/expansion workflow above remains the supported
 capacity-maintenance workflow; do not call a trusted-host API with a no-op audit
 callback or manually remove tombstoned directories to free space.
+
+A trusted-host-only reclamation assessment can verify bounded selected files and
+report which shared blobs have their last committed references in an exact
+retained tombstone operation. It is a diagnostic, not an operator cleanup command
+or a receipt for freed capacity. Its limits and recovery boundaries are in the
+[retention reference](../reference/publication-retention-pins.md#bounded-physical-reclamation-assessment).
+Manual catalog removal remains unsupported.

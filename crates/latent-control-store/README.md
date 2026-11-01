@@ -83,6 +83,15 @@ and current catalog while checking a budgeted deployment inverse index, stored
 HTTP targets, and retained rollout base/candidate targets. Missing, foreign,
 dropped or unconfirmed owners fail closed; reference absence is not deletion
 permission. Tombstones remove visibility without unlinking content or refunding
-capacity; physical cleanup and operator integration are separate remaining work.
+capacity. The separate native capsule reclamation stage holds the same actual
+writer/current revision through rechecking, durable cleanup intent, physical
+unlink/synchronization and completion receipt. Componentless-web cleanup and
+authenticated operator/audit integration remain outstanding.
 Native tests also refuse an older control catalog that references tombstoned
 history. See the [retention and assessment contract](../../docs/reference/publication-retention-pins.md).
+
+The bound native publication-reference owner also guards the read-only
+`inspect_publication_reclamation` assessment of a retained original tombstone
+operation. Its writer/current revision remain held while selected publication
+files and canonical blobs are verified. This does not authorize content unlink
+or change the control store's deployment, HTTP-trigger or rollout retention.

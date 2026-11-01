@@ -266,6 +266,7 @@ impl DirectoryArtifactRepository {
     ) -> Result<Self, PlatformError> {
         let repository = Self::acquire_configured(root, config, admission, lifecycle_limits)?;
         format::check_current_format(&repository.root)?;
+        repository.preload_cleanup()?;
         fs::create_dir_all(repository.root.join(RELEASES_DIR)).map_err(io_error)?;
         fs::create_dir_all(repository.root.join(TEMP_DIR)).map_err(io_error)?;
         cleanup_temporary_entries(&repository.root)?;
@@ -392,6 +393,11 @@ impl DirectoryArtifactRepository {
                 ));
             }
             let path = entry.path();
+            if let Some(identity) = self.cleanup_identity_path(&path)? {
+                self.check_cleanup_path(&identity, &path)?;
+                scanned -= 1;
+                continue;
+            }
             if !is_recovery_candidate(&path)? {
                 self.content
                     .lock()
@@ -448,6 +454,7 @@ impl DirectoryArtifactRepository {
                 next.insert_verified(publication_ref, metadata, stamp, self.config)?;
             }
         }
+        baseline.extend(self.cleanup_identities()?);
         // Reconcile completed entries from an interrupted publication before
         // exposing the rebuilt index or allowing further mutations.
         sync_dir(&releases)?;

@@ -5,12 +5,16 @@
 This is the native storage foundation for issue #662, not the completed
 committed-publication deletion feature. The repository exposes trusted-host
 pin/unpin and original-operation lookup APIs, a read-only deletion assessment,
-and a **native durable tombstone stage** that removes terminal publications from
-visible indexes. There is no operator pin/deletion CLI or public management
-transport in this change. A tombstone is not a payload-reclamation receipt:
-publication files, shared blobs, lifecycle/evidence history and their charges
-remain retained. Existing orphan reclamation is unchanged. Do not manually remove
-catalog files, and do not use this native foundation as an operator cleanup tool.
+a **native durable tombstone stage** that removes terminal publications from
+visible indexes, and a separate **native capsule payload-reclamation stage**.
+There is no operator pin/deletion CLI or public management transport in this
+change. A tombstone alone is not a reclamation receipt and retains every payload
+charge. Only an explicit, durably recorded capsule cleanup may release selected
+immutable publication files and last-reference blobs. Componentless-web cleanup,
+independent lifecycle/evidence history pruning, and authenticated CLI/audit
+integration remain unfinished. Existing orphan reclamation is unchanged.
+Do not manually remove catalog files or call this trusted-host foundation as an
+operator cleanup tool.
 
 A pin is **negative retention authority only**. It neither grants execution or
 HTTP serving nor restores an expired, revoked or retired release. Generation
@@ -115,11 +119,11 @@ not claims of power-loss testing. The componentless-web fixture injects a
 non-cryptographic host authority; it does not qualify signature policy. Suite
 registration alone is not execution evidence.
 
-Issue #662 still requires physical history pruning and last-reference payload
-unlink/sync/refund, an authenticated operator workflow and finite audit
-integration, cleanup-specific interruption/restore qualification, and measured
-**reclaimed** release sequences. The native visibility stage below is an
-implemented prerequisite, not completion of the issue.
+Issue #662 still requires componentless-web/history pruning and a supported
+authenticated operator workflow with real finite audit admission/outcomes. The
+capsule cleanup stage below qualifies native payload unlink/sync/refund, recovery
+and coupled restore; it is not completion of the whole issue or qualification of
+unimplemented web cleanup or independent evidence/lifecycle pruning.
 
 ## Native deletion assessment and physical ownership
 
@@ -291,3 +295,164 @@ soak, physical allocation measurement or reclaimed-byte claim. The test prints
 its own machine-readable observation so a source/toolchain change can be measured
 again rather than silently reusing these numbers. The unchanged payload/count
 charges are intentional: completing visibility removal is not completing cleanup.
+
+## Bounded physical-reclamation assessment
+
+The trusted native host can call `inspect_publication_reclamation` with the exact
+original `PublicationDeletionRequest`, explicit `PublicationReclamationLimits`,
+and a positive timeout of at most 30 seconds. The original deletion receipt must
+still be retained and the request must match it completely. A missing or evicted
+receipt returns `publication-reclamation-original-operation-unavailable`; do not
+reconstruct it from a tombstone or automatically retry a fresh deletion. The host
+must authenticate and authorize the scope and actor before invoking this API.
+
+The assessment retains the same native lifecycle, publication writer, retention,
+preparation/read and actual control-reference owners as deletion admission. It
+checks the tombstones and terminal generations before examining payloads, then
+hashes each selected publication file and each distinct canonical blob. Capsule
+and componentless-web content use the same reference accounting. It examines
+only the selected publication directories and their indexed blob names, not the
+rest of the publication catalog or blob directory.
+
+`maximum_files` bounds publication-file observations **plus** distinct canonical
+blob observations, with a hard ceiling of 1,024. `maximum_bytes_hashed` counts
+both sides of a hard link: publication-file bytes plus each selected canonical
+blob's bytes once. Its default is 64 MiB and hard ceiling is 1 GiB. Budget checks
+against the retained index precede payload reads. Deadline checks bracket file
+operations and every 16 KiB hashing chunk. Kernel filesystem calls are not
+forcibly cancellable; owners remain held until the current call returns.
+
+The result reports selected publication-file counts/bytes, last-reference blob
+counts/bytes, shared blobs that other publications still retain, and actual bytes
+hashed. Repeated links to one blob are counted as separate references but the
+canonical blob is counted only once. Unselected publications still protect their
+blobs even when retired or tombstoned. An unrelated publication can add a shared
+reference after an earlier assessment, so the result includes the **current**
+catalog fence and native control revision separately from the original deletion
+request's pre-deletion fence. Never reuse an estimate as a commit authorization.
+
+These are potential **namespace/accounting** changes, not filesystem block usage
+or proven freed storage. Separate lifecycle, evidence-revision, audit and
+retention-control stores are outside the totals and retain their own policies.
+Original admission side files inside a publication directory are included in
+its logical byte total; that total is not permission to discard evidence.
+
+A successful assessment changes no file, charge, receipt or eligibility state.
+It does not reserve audit capacity, authorize unlink or enable a cleanup CLI.
+The separate capsule mutation below rechecks authority and bytes, commits a
+bounded cleanup record and uses its own recognized-intent recovery protocol.
+No committed-content unlink or refund is performed by this assessment.
+
+
+## Durable native capsule payload reclamation
+
+`reclaim_tombstoned_capsules` is an explicit trusted-host mutation, not a public
+management route or CLI. Its `PublicationReclamationRequest` contains the exact
+retained original deletion request, a **fresh** assessment catalog fence, and
+finite limits. The host must authenticate scope and actor and reserve finite
+audit outcome/response capacity in preflight. The callback is an integration
+contract, not an implementation of those checks; a no-op callback is appropriate
+only in explicit native test fixtures. Componentless-web targets fail with
+`publication-reclamation-capsule-target-required` before preflight or mutation.
+
+Fresh mutation hashes the selected publication files and each canonical blob,
+prepares and bounds both durable record envelopes, invokes preflight without the
+commit locks held, then rechecks the exact fence, control revision, references,
+readers/preparation clones and content. Each of the two hashing passes receives
+half the request's file/byte limit. The receipt's `content.bytes_hashed` reports
+one verified pass; total fresh-mutation hash work is twice that value and cannot
+exceed the request limit. Both passes share the caller's deadline (positive,
+maximum 30 seconds). Native filesystem calls cannot be forcibly cancelled; no
+owner is released while its call is still running.
+
+The durable sequence is:
+
+1. Promote and synchronize `LIFECYCLE_MODE` to
+   `lsf-release-lifecycle-reclamation-v1`. Older readers reject it before cleanup.
+2. Commit a bounded cleanup intent/head under the existing retention owner. It
+   binds the exact original request, current control revision, compact capsule
+   identities, and selected file/blob names, lengths and digests. Admission and
+   recovery allow at most 32 targets and a 1 MiB encoded cleanup plan; existing
+   64 KiB request, 4 MiB head, parser and retention accounting ceilings remain.
+3. Keep the real lifecycle, publication writer, read/preparation exclusions and
+   bound control writer/revision held. Unlink only exact selected files, sync the
+   emptied publication directory, remove it and sync the publication parent.
+4. Release selected committed content references. Unlink a canonical blob only
+   when its last committed reference is gone, and sync the blob parent **before**
+   refunding its charge. Other publications protect shared blobs even if retired
+   or tombstoned. No unrelated publication directory is scanned.
+5. Commit the original-operation completion receipt. Publish refunded index
+   metadata and publication-directory capacity only after the synchronized
+   namespace removals and completion record. No positive lifecycle or serving
+   grant is created. Original deletion receipts still report `VisibilityRemoved`.
+
+An error after intent retires the live catalog owners. Capacity reads are then
+unavailable, never falsely reported as reclaimed. Stop the embedding and reopen
+its coupled protected roots; do not delete the intent or retry a new identity.
+On reopen, the retained cleanup record is checked **before** ordinary temporary
+cleanup. Compact identities are cross-checked against independent lifecycle
+history, tombstones and exact terminal generations. Recovery first validates
+**all** surviving selected file names and bytes, canonical blobs and surviving
+references; only then may it continue the exact already committed cleanup.
+Missing selected names are acceptable only within that recognized active plan.
+Corrupt, foreign, extra, symlinked or downgraded authority refuses cleanup.
+A completed cleanup cannot silently reintroduce an older publication directory.
+
+`publication_reclamation_operation(scope, operation_id)` returns `Found`,
+`Unknown`, or `Uncertain`. Exact retained completion replay returns the original
+receipt and performs no unlink/refund. The independent cleanup receipt window
+is 64 operations; its eviction is UNKNOWN and cannot authorize reconstruction or
+replay. Compact removed identities share the existing 1,024-tombstone ceiling,
+remain after receipt eviction, and refuse re-publication under either the old
+or a fresh operation ID. Reclaimed publish replay returns
+`publication-payload-reclaimed-query-original-operation`, not a corruption
+claim. Inspecting an already cleaned original request returns
+`publication-reclamation-already-committed-query-original-operation` when its
+original deletion receipt remains retained.
+
+This stage returns publication-directory slots, immutable publication-file
+charges, last-reference canonical blob charges and their in-memory indexes.
+It does **not** prune independent lifecycle rows, evidence revisions, audit,
+retention pins or tombstones. These budgets remain finite and independently
+exhaustible. Do not report filesystem allocated blocks, signed evidence history
+or business-state reclamation from these namespace/accounting receipts.
+
+### Cleanup backup and native measurements
+
+A stopped, coupled backup must retain artifact and control roots together,
+including lifecycle/retention HEAD and recognized INTENT, format/installation
+identity, compact removed identities, pins, original receipts, shared surviving
+files and protected permissions. Do not mix older control snapshots into a
+newer artifact snapshot or restore missing payloads into a completed cleanup.
+The native fixture copies actual stopped trees, preserving hard links/modes,
+and checks both a partially unlinked intent and a completed cleanup against the
+same-root reopen, survivor reads, pin state and capacity accounting.
+
+The owning native tests execute actual writes/unlinks/parent synchronization,
+including interrupted intent, head, format promotion, publication-file removal,
+publication-parent sync, blob removal, blob-parent sync, and before/after final
+receipt. They also cover exact 32-target cleanup, reader clones, real held
+control writer/revision, preflight races, 64-receipt eviction and low metadata or
+storage capacity. Existing physical-resource tests remain enabled. Fault hooks
+are test-only and are not a physical power-loss campaign. Trusted-local fixtures
+do not qualify signature policy or a network filesystem.
+
+`native_cleanup_finite_release_sequence_reclaims_payload_not_independent_history`
+publishes, retires, tombstones and cleans three sequential trusted-local capsules
+with distinct 1 MiB component payloads. One local Rust 1.97.1 debug-profile run
+on Linux (debug info disabled) observed the following accounting bytes:
+
+| Iteration | Charged before cleanup | Charged after cleanup | Publication files removed | Last-reference blobs removed |
+| --- | ---: | ---: | ---: | ---: |
+| 0 | 2,120,725 | 23,998 | 1,050,474 | 1,050,474 |
+| 1 | 2,127,244 | 29,923 | 1,050,474 | 1,050,474 |
+| 2 | 2,133,166 | 35,857 | 1,050,474 | 1,050,474 |
+
+Publication and canonical blob byte charges were zero after each cleanup; the
+remaining reported charge was retained control metadata. The two removed byte
+columns count hard-linked namespaces, not two independent allocations of disk
+blocks. Serialized installation/fence bytes can vary, so retained-control values
+are observations of this run, not golden constants or a universal growth rate.
+The test prints `CAPSULE_RECLAMATION_SEQUENCE` rows for each fresh execution and
+checks that final live and reopened accounting agree. This is not a signed-site
+soak or qualification of unfinished componentless-web cleanup.

@@ -8,6 +8,8 @@ use latent_core::{PlatformError, PlatformErrorCode};
 use std::fs;
 
 mod capacity;
+mod cleanup;
+mod reclamation;
 mod recovery;
 
 fn retired(repo: &DirectoryArtifactRepository, id: &str) -> PublicationRef {

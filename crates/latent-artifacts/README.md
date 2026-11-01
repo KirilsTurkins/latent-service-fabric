@@ -83,7 +83,19 @@ against its bound control-store authority and physical read/preparation owners.
 Assessment does not delete content or create a mutation receipt. The separate
 `tombstone_publications` native stage rechecks those owners through a durable
 negative-authority commit, removes public visibility, and preserves original
-receipts. It retains all payload/history files and charges; physical reclamation,
-operator CLI and audit integration remain outstanding. Borrowed preparation
+receipts. Tombstones alone retain every payload charge. The separate native
+`reclaim_tombstoned_capsules` commits a recoverable cleanup plan before unlinking
+selected capsule files and last-reference blobs, synchronizes parents before
+refunds, and retains compact identities plus bounded original-operation receipts.
+Componentless-web cleanup, independent history pruning, operator CLI and real
+finite audit integration remain outstanding. Borrowed preparation
 sources are explicit `Clone` owners, no longer `Copy`; quiesce all source clones
 before maintenance. See the [retention and assessment contract](../../docs/reference/publication-retention-pins.md).
+
+For an exact retained tombstone operation, the trusted host may use
+`inspect_publication_reclamation` to obtain bounded, content-verified
+last-reference accounting for capsule or static-web publication files. File,
+aggregate hashing-byte and deadline limits apply while native reader and
+reference owners remain held. The observation is not a cleanup permit or a
+reclamation receipt; it leaves every file, quota charge and original receipt
+unchanged. See the [retention reference](../../docs/reference/publication-retention-pins.md#bounded-physical-reclamation-assessment).

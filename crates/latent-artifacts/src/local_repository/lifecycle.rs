@@ -78,6 +78,9 @@ impl DirectoryArtifactRepository {
         // COMPLETE proves content integrity. Only durable lifecycle membership
         // proves that the publication transaction committed.
         for identity in baseline {
+            if self.is_reclaimed_publication(&identity.publication()?.id)? {
+                continue;
+            }
             match self
                 .life_store()
                 .record_publication(&identity.publication()?.id)?

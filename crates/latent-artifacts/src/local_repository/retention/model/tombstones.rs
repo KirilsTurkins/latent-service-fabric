@@ -178,6 +178,18 @@ impl Head {
     /// Reconstruct exactly one authorized transition. Neither a changed pin set
     /// nor a mixed pin/deletion transition can be laundered through recovery.
     pub fn successor_fence(&self, next: &Self) -> Result<PublicationRetentionFence, PlatformError> {
+        if self.cleanup != next.cleanup {
+            let cleanup = next.cleanup.as_ref().ok_or_else(corrupt)?;
+            let expected = if let Some(plan) = &cleanup.active {
+                self.begin_cleanup(plan)?
+            } else {
+                self.finish_cleanup(cleanup.fence)?
+            };
+            if expected != *next {
+                return Err(corrupt());
+            }
+            return Ok(cleanup.fence);
+        }
         if self.deletion == next.deletion {
             let receipt = next.receipts.last().ok_or_else(corrupt)?;
             if self.next(&receipt.request).map_err(|_| corrupt())? != *next {

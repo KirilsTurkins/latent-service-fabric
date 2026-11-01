@@ -171,6 +171,14 @@ impl DirectoryArtifactRepository {
         // Reopen work is capped by MAX_PUBLICATION_TOMBSTONES; no public request
         // can request an unbounded catalog walk. Validate the complete set first.
         for tombstone in &history.tombstones {
+            if self.is_reclaimed_publication(&tombstone.target.publication.id)? {
+                if self.tombstoned_generation(&tombstone.target.publication)?
+                    != tombstone.target.expected_generation
+                {
+                    return Err(corrupt());
+                }
+                continue;
+            }
             if self.retention_generation(&tombstone.target.publication)?
                 != tombstone.target.expected_generation
                 || !self.terminal_publication(&tombstone.target.publication)?

@@ -284,7 +284,9 @@ impl DirectoryArtifactRepository {
             PlatformErrorCode::ResourceExhausted => return Ok(failure),
             _ => ReleaseLifecycleReason::InvalidPackage,
         };
-        if failure.message == "publication-selector-ambiguous" {
+        if failure.message == "publication-selector-ambiguous"
+            || failure.message == "publication-payload-reclaimed-query-original-operation"
+        {
             return Ok(failure);
         }
         let old = request
