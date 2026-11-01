@@ -168,15 +168,20 @@ bypass that test, and a body backedge must be dominated by its continuation.
 The increment on a traversed backedge cannot wrap. Mutable
 flag polling, reset/bypassed updates, unsupported exception cycles and unknown
 recursive call components do not acquire this argument. No package name is an
-approval, and calls/inner cycles require their own argument. Existing C
-`DelegateTo` wrappers
-must have one reachable static sibling with a compatible signature; that body
-is analyzed in the same context. The C object/array header aliases retain their
-valid-operand precondition and are not arbitrary pointer conversions.
+approval, and calls/inner cycles require their own argument. After removing only
+ranked backedges, a separate acyclicity check rejects residual cycles, including
+self-edges not enumerated by the pinned loop finder. Existing C `DelegateTo`
+wrappers must have one reachable static sibling with a compatible signature;
+that body is analyzed in the same context. The C object/array header aliases
+retain their valid-operand precondition and are not arbitrary pointer conversions.
 An asynchronous operation or possibly contended monitor is not made bounded
 by a loop-free method body. Normal class-initialization edges retain the owned
 at-most-once/in-progress protocol, with every initializer checked independently;
-a direct IR invoke of `<clinit>` is not accepted as that protocol.
+a direct IR invoke of `<clinit>` is not accepted as that protocol. Speculative
+unused/uncalled links are not executable roots; an actual call from an excluded
+context still requires its complete transitive proof. The absent original
+`Allocator.<clinit>` is authenticated, not treated as an exemption for an added
+or modified initializer.
 
 The separate runtime argument binds 32 exact original TeaVM 0.15 class entries,
 their complete field/method declarations, and normalized bodies. Shared symbol
@@ -197,6 +202,18 @@ null-check/Throwable call SCC is not substituted for those actual inputs.
 Four additional exact classlib donors bind only fourteen C word operations:
 unsigned division/remainder/comparison, IEEE predicates and bit reinterpretation.
 No other native operation gains a finite argument from its declaring class name.
+
+The current certificate authenticates **42 runtime/donor entries in total**:
+32 runtime entries and ten donors. Besides the two constructor and four numeric
+donors, exact `ClassInfo`/`ReflectionInfo` inputs bind the selected native metadata
+queries to the original layout. The original `Object.getClassInfo` body also
+requires its exact method proof. These rules do not approve class initialization,
+allocation, or arbitrary reflective callbacks. Exact `TString`/`TSystem` donors
+cover the apparent char-array-constructor/arraycopy recursion: the nested copy
+uses a non-null source and a freshly allocated equal-length destination at zero
+offsets, so it cannot recurse through error-string construction again. Changed
+bodies or declarations do not receive this input-specific argument, and other
+Java callees still require their ordinary transitive proof.
 
 The finite runtime families have these arguments under the existing owned
 C/OWN_GC ABI and valid heap/metadata invariants:
@@ -230,9 +247,60 @@ original three finder classes and thirteen replacement classes, each at most
 public-context proxy lambda introduce no source companion class; the actual
 javac output must still pass that unchanged closure before acceptance.
 
-The existing context control is extended with checkpoint-absent initializer and
-unmanaged polling negatives, counted/managed positives, and an original GC array
-body positive plus altered-body/layout negatives. These source changes have not
-yet run the hosted JVM or normal compiler programme. Historical signed GC and
-checkpoint receipts keep their original source identities; this proposal does
-not retag them or complete issue #741.
+#### Responding to a progress refusal
+
+`java-checkpoint-nonsuspendable-progress-741` means the compiler could not prove
+finite progress in the excluded call closure. It does not assert that every
+rejected programme is mathematically nonterminating: unsupported finite loop or
+recursion shapes also refuse. Keep initializer/unmanaged work finite using the
+supported strict counted form, or move waiting and potentially suspending work
+out of that excluded context into managed execution. A finite outer loop does
+not make an unbounded inner loop or callee safe. Do not remove synchronization,
+insert a checkpoint inside an unsupported non-suspendable region, or increase
+fuel/heap limits to bypass the refusal.
+
+#### Executable qualification and evidence boundary
+
+The existing context control covers checkpoint-absent initializer and unmanaged
+polling negatives, counted/managed positives, and the original GC array body
+versus altered-body/layout controls. Run `41223241737`, job `124601967665`, at
+source `9e7746600ced8c200638eee1c57e013b79f37ebc` passed ten Python source/acquisition
+checks and both original/corrected JVM controls. Its retained `result.json`
+records `status: passed`, both context markers, and both eight-case real
+C-frontend markers; the selected private JAR preserves the other 1,874 entries.
+This supersedes the earlier statement that those controls were unexecuted.
+
+The current `CheckpointCompilerControl` expands the real frontend to twenty
+cases per mode. Six corrected cases must reach analysis completion: finite array
+initialization, managed polling outside excluded contexts, finite unmanaged
+counting, nested counted loops, a changing signed bound, and a strict near-maximum
+integer bound. Fourteen must refuse with the owned progress diagnostic: direct,
+transitive and virtual initializer polling; method/class unmanaged polling;
+self/mutual recursion; wrapping or reset induction; exception retries bypassing
+the update; an unbounded inner loop; and the three altered-runtime controls.
+The original compiler must reach analysis completion for all twenty, exposing
+the missing refusal rather than executing any of the fixture initializers.
+Independent Python checks bind the complete case inventory to the exact marker.
+
+Use the repository-pinned JDK and Python dependencies from the repository root:
+
+```sh
+python3 -m pip install --requirement tools/requirements.lock
+python3 -B tools/qualify_java_checkpoint_context.py --output /tmp/lsf-checkpoint-context
+```
+
+The output directory must be fresh. Inspect `result.json`, `commands.json`, and
+`commands/logs/`; a successful exit without the complete original/corrected
+markers is not accepted. The bounded `compiler-inputs.zip` retains the selected
+public sources, generated finder and locked JARs for replay. Each observation
+keeps its actual source/JDK/JAR identities; an older run does not certify a
+changed fixture or compiler.
+
+This exercises real bytecode parsing, JCL/C transformations, dependency analysis
+and the owning `CTarget` finder, not just a synthetic call graph. It intentionally
+stops before optimization and C generation even though the FULL setting remains
+selected. It does not compile or execute a guest, sign/admit a component, or
+qualify managed sibling fairness and GC roots at runtime. Fresh signed-component
+regressions remain separate work. Historical signed GC and checkpoint receipts
+keep their original source identities; this partial AC3 repair does not retag
+them or complete issue #741.
