@@ -1,0 +1,64 @@
+name: PR 1587 Python recheck
+on:
+  push:
+    branches: [diag/dotnet-original-v3-trap-20261031]
+    paths: [.github/workflows/pr1587-python-recheck.yml]
+permissions:
+  contents: read
+jobs:
+  recheck:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/diag/dotnet-original-v3-trap-20261031'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+          ref: 8f5ae699ee6849036af6e9c129e6cb47c4b21b15
+          fetch-depth: 1
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - name: Fetch exact historical preservation inputs
+        run: |
+          git fetch --no-tags --depth=1 origin 1a737cb5e893c6d62f793b0fdf5f4ce0c5b7bc1b28 5a0e094cf71d2d25fdd21657ccafd1d89e7444249 89d4fca29902961fdd6cb1a51ff7ef3e5312e04df
+      - name: Install reviewed Python dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Retain exact tracked source and reproduce both failures
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, tarfile
+          root = pathlib.Path.cwd()
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1587-python-recheck'
+          out.mkdir()
+          revision = subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()
+          assert revision == '8f5ae699ee6849036af6e9c129e6cb47c4b21b15', revision
+          paths = subprocess.check_output(['git','ls-files','-z','--','tools','.github/workflows','.github/actions','.gitattributes','.cargo','Cargo.toml','Cargo.lock','rust-toolchain.toml','docs/testing']).decode().strip('\0').split('\0')
+          identities = []
+          total = 0
+          with tarfile.open(out / 'tracked-source.tar.gz','w:gz') as archive:
+              for name in paths:
+                  path = root / name
+                  assert path.is_file() and not path.is_symlink(), name
+                  raw = path.read_bytes()
+                  total += len(raw)
+                  assert total <= 268435456
+                  identities.append({'path':name,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),'gitBlob':hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()})
+                  archive.add(path,arcname=name)
+          (out / 'source.json').write_text(json.dumps({'revision':revision,'files':identities},indent=2)+'\n')
+          result = subprocess.run(['python3','-m','unittest','-v','tools.tests.test_ci_contract_storage','tools.tests.test_ci_contract_source_gate'],capture_output=True,timeout=180)
+          (out / 'focused.stdout.txt').write_bytes(result.stdout)
+          (out / 'focused.stderr.txt').write_bytes(result.stderr)
+          (out / 'focused-status.json').write_text(json.dumps({'returncode':result.returncode})+'\n')
+          print(result.stderr.decode(errors='replace'))
+          print('Exact-source diagnostic return code:',result.returncode)
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        if: always()
+        with:
+          name: pr1587-python-recheck-${{ github.sha }}
+          path: ${{ runner.temp }}/pr1587-python-recheck/
+          retention-days: 2
+          if-no-files-found: error
