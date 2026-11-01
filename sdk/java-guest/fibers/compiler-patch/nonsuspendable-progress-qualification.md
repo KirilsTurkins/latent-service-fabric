@@ -85,6 +85,49 @@ repaired original/corrected controls passed using OpenJDK 21 and `--release 11`.
 That supplementary replay is not a new pinned hosted or signed-runtime result;
 the repaired source requires its own fresh run.
 
+## Production classloader regression and isolated-JCL control
+
+Run `41300387755`, source `fcd2eaebc157e9cb65d5041fcbac1e35898d5891`,
+passed the pinned JVM job, including both repaired monitor controls and all forty
+frontend cases. The fresh target build then passed compiler preparation but
+failed in `java-to-c` with `NoClassDefFoundError` for
+`org.teavm.classlib.impl.PlatformMarkerSupport`. It did not produce or execute a
+signed target component. Runtime artifact `13081380817`, SHA-256
+`776fefacd91110f64f158694ca5eec90d56a1f581fd02d88aa87a902665b3bf7`,
+preserves this distinct failure.
+
+The earlier frontend fixture put the class library on the compiler's own
+classpath. Gradle instead keeps the compiler in a parent loader and supplies the
+class library through the explicit application/dependency loader. The finder
+must not statically link class-library transformation helpers from its parent
+loader or silently add dependencies to the measured buildscript graph.
+
+The repair resolves only the three existing JCL proof helpers through
+`DependencyInfo.getClassLoader()`, authenticates their entire locked classlib JAR
+before reflective initialization, and uses that same explicit loader chain for
+the existing runtime/donor entries. It does not consult the ambient context
+loader, add runtime exemptions, or change the 42-entry proof inventory. The
+original method/body/layout certificates, managed-entry boundary, exact three
+finder/thirteen production replacement classes and resource limits remain.
+
+`CheckpointClassloaderControl` now runs the same twenty real frontend cases in
+both modes with the class library and platform JARs in a separate child loader.
+It asserts that the parent cannot load the JCL helpers and that the finder is
+still owned by the parent. A further pair changes only a ZIP local-header
+timestamp in the classlib archive: the archive length and class bodies are
+unchanged, but the corrected proof must refuse the changed archive identity.
+The original compiler must accept that finite-initializer control. Exceptions
+are propagated, temporary inputs are removed, and the ambient context loader is
+restored after the fixture.
+
+The fast qualifier retains these results in `classloaderControls` and includes
+the launcher source in its bounded input archive. Its existing twenty-case
+flat-classpath controls, context and monitor controls still run independently.
+The original split-loader crash and repaired controls were replayed locally with
+the locked TeaVM JARs, OpenJDK 21, and `--release 21` fixtures; generated finder
+classes used `--release 11`. These local controls do not substitute for a fresh
+pinned hosted build or signed-runtime qualification of the repaired source.
+
 ## Local route checks
 
 From a checkout with the repository's Python dependencies installed:

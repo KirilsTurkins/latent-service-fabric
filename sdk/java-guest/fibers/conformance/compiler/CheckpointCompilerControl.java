@@ -16,6 +16,7 @@ import org.teavm.model.ValueType;
 import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.parsing.ClasspathClassHolderSource;
+import org.teavm.parsing.ClasspathResourceProvider;
 import org.teavm.vm.TeaVMBuilder;
 import org.teavm.vm.TeaVMOptimizationLevel;
 
@@ -315,6 +316,10 @@ public final class CheckpointCompilerControl {
         var target = new ProbeTarget();
         var references = new ReferenceCache();
         var builder = new TeaVMBuilder(target).setReferenceCache(references);
+        // The split-loader control supplies the same explicit application loader
+        // boundary as the production in-process Gradle build strategy.
+        var loader = Thread.currentThread().getContextClassLoader();
+        builder.setClassLoader(loader).setResourceProvider(new ClasspathResourceProvider(loader));
         // Match TeaVMTool's maintained non-incremental input preparation.
         builder.setClassSource(new PreOptimizingClassHolderSource(new ClasspathClassHolderSource(
                 builder.getResourceProvider(), references, builder.getClassLoader())));
@@ -344,6 +349,13 @@ public final class CheckpointCompilerControl {
         require(vm.getProblemProvider().getSevereProblems().isEmpty(),
                 "checkpoint-control-no-hidden-compiler-errors");
         require(refused == (corrected && unsafe), "checkpoint-control-progress-verdict");
+    }
+
+    public static void checkClasslibIdentity(String mode) {
+        require(mode.equals("original") || mode.equals("corrected"), "checkpoint-classlib-control-mode");
+        // A changed archive retains all class bytes but is not the locked proof
+        // source. Only the corrected finder must refuse its finite initializer.
+        check(Finite.class.getName(), mode.equals("corrected"), true, "");
     }
 
     public static void main(String[] arguments) {

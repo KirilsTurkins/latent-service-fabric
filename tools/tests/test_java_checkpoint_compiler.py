@@ -1,5 +1,6 @@
 """Bounded fixture and retained-input controls; JVM execution is a separate step."""
 import os
+import json
 import re
 from pathlib import Path
 import tempfile
@@ -69,13 +70,57 @@ class CheckpointCompiler(unittest.TestCase):
 
     def test_fast_qualification_runs_and_retains_both_production_monitor_controls(self):
         source = Path(probe.__file__).read_text()
-        self.assertIn('CONTROL, COMPILER_CONTROL, MONITOR_CONTROL, raw_finder', source)
-        self.assertIn("'-d', model, *sources, CONTROL, COMPILER_CONTROL, MONITOR_CONTROL)", source)
+        self.assertIn('CONTROL, COMPILER_CONTROL, MONITOR_CONTROL, CLASSLOADER_CONTROL, raw_finder', source)
+        self.assertIn("'-d', model, *sources, CONTROL, COMPILER_CONTROL, MONITOR_CONTROL, CLASSLOADER_CONTROL)", source)
         self.assertIn("commands.run('checkpoint-monitor-'+mode,", source)
         self.assertIn("'org.teavm.dependency.MonitorAsyncControl', mode)", source)
         self.assertIn("'java-checkpoint-monitor-control'", source)
         self.assertIn('monitorControls=monitor_results', source)
         self.assertIn('monitor_results.append(monitor_result)', source)
+
+    def test_classlib_proof_uses_the_explicit_loader_and_authenticates_before_initialization(self):
+        from tools.java_guest import coroutine_patch
+        source = coroutine_patch.corrected_async_source(
+            (probe.SDK/'fibers/compiler-patch/AsyncMethodFinder.java').read_bytes()).decode()
+        self.assertNotIn('new org.teavm.classlib.', source)
+        self.assertIn('ClassLoader loader = dependency.getClassLoader();', source)
+        self.assertIn('Class.forName(name, false, loader)', source)
+        self.assertIn('depth < 64', source)
+        self.assertNotIn('getContextClassLoader()', source)
+        self.assertIn('progressClasslibTypes.clear();', source)
+        helper = source.split('private Class<?> progressClasslibType(', 1)[1].split(
+            'private final java.util.Map<String, org.teavm.model.ClassHolder>', 1)[0]
+        lock = json.loads((probe.SDK/'feasibility/dependencies.lock.json').read_bytes())
+        row, = [row for row in lock['artifacts'] if row['path'].endswith('/teavm-classlib-0.15.0.jar')]
+        self.assertIn('Files.size(jar) != '+str(row['size']), helper)
+        self.assertIn('input.readNBytes('+str(row['size']+1)+')', helper)
+        self.assertIn(row['sha256'], helper)
+        self.assertLess(helper.index(row['sha256']), helper.index('progressClasslibTypes.put(name, host)'))
+        self.assertNotIn('newInstance', helper)
+        runtime_inventory = source.split('private String progressRuntimeClassIdentity(', 1)[1].split(
+            'private String[] progressRuntimeClassNames()', 1)[0]
+        for name in ('PlatformMarkerSupport', 'ClasslibSubstitutionPolicy', 'DefaultStringTransformer'):
+            self.assertIn(name, helper)
+            self.assertNotIn(name, runtime_inventory)
+
+    def test_split_loader_control_runs_the_real_frontend_and_same_size_archive_negative(self):
+        source = probe.CLASSLOADER_CONTROL.read_text()
+        self.assertIn('ClassLoader.getPlatformClassLoader()', source)
+        self.assertIn('"checkpoint-classloader-jcl-not-in-parent"', source)
+        self.assertIn('"checkpoint-classloader-finder-owned-by-parent"', source)
+        self.assertIn('fixture.getMethod("main", String[].class).invoke', source)
+        self.assertIn('fixture.getMethod("checkClasslibIdentity", String.class).invoke', source)
+        self.assertIn('bytes[10] ^= 1;', source)
+        self.assertIn('Thread.currentThread().setContextClassLoader(previous);', source)
+        self.assertIn('Files.deleteIfExists(altered);', source)
+        self.assertIn('check(Finite.class.getName(), mode.equals("corrected"), true, "");',
+            probe.COMPILER_CONTROL.read_text())
+        runner = Path(probe.__file__).read_text()
+        self.assertIn("commands.run('checkpoint-classloader-'+mode,", runner)
+        self.assertIn('classloaderControls=classloader_results', runner)
+        self.assertIn('classloader_results.append', runner)
+        self.assertIn('MONITOR_CONTROL, CLASSLOADER_CONTROL, raw_finder', runner)
+        self.assertIn("'java-checkpoint-classloader-control'", runner)
 
     def test_retained_inputs_are_deterministic_and_exclude_unselected_files(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -898,6 +898,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         progressOriginalClasses.clear();
         progressMetadataProofs.clear();
         progressPlatformProofs.clear();
+        progressClasslibTypes.clear();
         // Unlike checkpoint-call validation, this closure is required even if
         // Activation.checkpoint is entirely unreachable in the final programme.
         java.util.Map<MethodReference, Integer> contexts = new java.util.HashMap<>();
@@ -1303,10 +1304,77 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                                 default: throw new UnsupportedOperationException("unexpected-progress-transform-context");
                             }
                         });
-        new org.teavm.classlib.impl.PlatformMarkerSupport(new String[] { org.teavm.interop.Platforms.C,
-                org.teavm.interop.Platforms.LOW_LEVEL, org.teavm.interop.Platforms.OWN_GC })
-                .transformClass(expected, context);
+        org.teavm.model.ClassHolderTransformer transform = org.teavm.model.ClassHolderTransformer.class.cast(
+                progressClasslibType("org.teavm.classlib.impl.PlatformMarkerSupport")
+                        .getConstructor(String[].class).newInstance((Object) new String[] {
+                                org.teavm.interop.Platforms.C, org.teavm.interop.Platforms.LOW_LEVEL,
+                                org.teavm.interop.Platforms.OWN_GC }));
+        transform.transformClass(expected, context);
         return diagnostics.getSevereProblems().isEmpty();
+    }
+
+    // The Gradle compiler loader intentionally excludes the class library. Its
+    // existing child loader owns JCL plugins and bytecode donors; never enlarge
+    // the measured buildscript graph or consult the ambient context loader.
+    private Class<?> progressHostClass(String name) throws ClassNotFoundException {
+        ClassLoader loader = dependency.getClassLoader();
+        Class<?> host;
+        try {
+            host = Class.forName(name, false, loader);
+        } catch (LinkageError unavailable) {
+            return null;
+        }
+        for (int depth = 0; loader != null && depth < 64; ++depth, loader = loader.getParent()) {
+            if (host.getClassLoader() == loader) {
+                return host;
+            }
+        }
+        return null;
+    }
+
+    private final java.util.Map<String, Class<?>> progressClasslibTypes = new java.util.HashMap<>();
+
+    private Class<?> progressClasslibType(String name) throws Exception {
+        // These helpers are compiler implementations, not additional runtime
+        // exemptions. Authenticate their entire locked JAR before initialization,
+        // including the nested/transitive helper classes in that same archive.
+        if (!name.equals("org.teavm.classlib.impl.PlatformMarkerSupport")
+                && !name.equals("org.teavm.classlib.impl.ClasslibSubstitutionPolicy")
+                && !name.equals("org.teavm.classlib.impl.string.DefaultStringTransformer")) {
+            throw new IllegalStateException("unreviewed-progress-classlib-helper");
+        }
+        Class<?> cached = progressClasslibTypes.get(name);
+        if (cached != null) {
+            return cached;
+        }
+        Class<?> host = progressHostClass(name);
+        if (host == null) {
+            throw new IllegalStateException("unavailable-progress-classlib-helper");
+        }
+        java.nio.file.Path jar = java.nio.file.Path.of(host.getProtectionDomain()
+                .getCodeSource().getLocation().toURI()).toRealPath();
+        if (!java.nio.file.Files.isRegularFile(jar, java.nio.file.LinkOption.NOFOLLOW_LINKS)
+                || java.nio.file.Files.size(jar) != 17718996) {
+            throw new IllegalStateException("unreviewed-progress-classlib-origin");
+        }
+        byte[] bytes;
+        try (java.io.InputStream input = java.nio.file.Files.newInputStream(jar)) {
+            bytes = input.readNBytes(17718997);
+        }
+        if (bytes.length != 17718996) {
+            throw new IllegalStateException("unreviewed-progress-classlib-size");
+        }
+        byte[] digest = java.security.MessageDigest.getInstance("SHA-256").digest(bytes);
+        StringBuilder hex = new StringBuilder(64);
+        for (byte value : digest) {
+            hex.append(Character.forDigit((value >>> 4) & 15, 16));
+            hex.append(Character.forDigit(value & 15, 16));
+        }
+        if (!hex.toString().equals("7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410")) {
+            throw new IllegalStateException("unreviewed-progress-classlib-identity");
+        }
+        progressClasslibTypes.put(name, host);
+        return host;
     }
 
     private final java.util.Map<String, org.teavm.model.ClassHolder> progressOriginalClasses = new java.util.HashMap<>();
@@ -1324,8 +1392,8 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         if (identity == null) {
             return null;
         }
-        Class<?> host = Class.forName(name, false, AsyncMethodFinder.class.getClassLoader());
-        if (host.getClassLoader() != AsyncMethodFinder.class.getClassLoader()) {
+        Class<?> host = progressHostClass(name);
+        if (host == null) {
             return null;
         }
         java.nio.file.Path jar = java.nio.file.Path.of(host.getProtectionDomain()
@@ -1719,7 +1787,10 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         }
         java.util.List<java.io.File> jars = new java.util.ArrayList<>();
         for (String name : new String[] { "org.teavm.runtime.GC", "org.teavm.interop.Address", donor }) {
-            Class<?> host = Class.forName(name, false, AsyncMethodFinder.class.getClassLoader());
+            Class<?> host = progressHostClass(name);
+            if (host == null) {
+                return false;
+            }
             java.nio.file.Path path = java.nio.file.Path.of(host.getProtectionDomain()
                     .getCodeSource().getLocation().toURI()).toRealPath();
             if (!jars.contains(path.toFile())) {
@@ -1734,13 +1805,17 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                     new org.teavm.parsing.resource.ResourceBytecodeClassHolderSource(provider, cache);
             org.teavm.parsing.substitution.SubstituteClassNameMapping mapping =
                     org.teavm.parsing.substitution.DefaultSubstituteClassNameMapping.createWithPolicies(
-                            java.util.Collections.singletonList(new org.teavm.classlib.impl.ClasslibSubstitutionPolicy()));
+                            java.util.Collections.singletonList(org.teavm.extension.spi.substitution.SubstitutionPolicy.class.cast(
+                                    progressClasslibType("org.teavm.classlib.impl.ClasslibSubstitutionPolicy")
+                                            .getConstructor().newInstance())));
             org.teavm.model.ClassHolderSource source = new org.teavm.model.PreOptimizingClassHolderSource(
                     new org.teavm.parsing.RenamingClassHolderSource(provider, cache, bytes, mapping));
             org.teavm.model.ClassHolder cls = source.get(reference.getClassName());
             if (cls != null) {
                 new org.teavm.backend.c.analyze.CDependencyListener().transformClass(cls, null);
-                new org.teavm.classlib.impl.string.DefaultStringTransformer().transformClass(cls, null);
+                org.teavm.model.ClassHolderTransformer.class.cast(
+                        progressClasslibType("org.teavm.classlib.impl.string.DefaultStringTransformer")
+                                .getConstructor().newInstance()).transformClass(cls, null);
             }
             org.teavm.model.MethodHolder expected = cls == null ? null : cls.getMethod(reference.getDescriptor());
             ClassReader actualClass = dependency.getClassSource().get(reference.getClassName());
