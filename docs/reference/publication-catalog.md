@@ -59,6 +59,9 @@ Retained successful operation receipts preserve their exact publication associat
 Replay after coexistence or restart returns that captured publication and the
 original historical result, even if fresh component selection is now ambiguous.
 Replay does not restore current eligibility to a revoked or retired publication.
+After confirmed capsule payload reclamation, publication replay explicitly refuses
+with `publication-payload-reclaimed-query-original-operation`; query the retained
+original operation instead. A receipt cannot recreate reclaimed payloads.
 
 ## Persistence and resource ownership
 
@@ -71,6 +74,8 @@ The catalog root contains:
 | `lifecycle/records/<publication hex>.json` | Independently mutable lifecycle state with monotonic generations |
 | `lifecycle/receipts/` | Bounded operation ring with exact publication associations |
 | `lifecycle/evidence/` | Independently selected immutable evidence revisions |
+| `lifecycle/retention/` | Bounded pins, tombstones, capsule cleanup intent/head and original-operation receipts |
+| `LIFECYCLE_MODE` | Reader compatibility fence, promoted before accepting new retention/deletion/cleanup authority |
 | `.tmp/` | Owned publication/reclamation staging |
 
 The node places this catalog root at `<dataDirectory>/releases`. Its publications
@@ -92,8 +97,10 @@ including revoked/retired history, keeps its content pin. A live preparation
 source therefore cannot lose committed bytes through this maintenance operation.
 Directory unlink and parent synchronization precede refunds. An indeterminate
 write or reclamation failure requires reopening; it cannot refund a live owner.
-Unknown incomplete directories require offline inspection and repair. This
-implementation does not offer deletion of committed historical payloads.
+Unknown incomplete directories require offline inspection and repair. This orphan
+operation never deletes committed historical payloads. The separate trusted-host
+capsule reclamation protocol below requires prior durable visibility removal and
+fresh native reference/reader checks; it is not an expansion of orphan cleanup.
 
 The authenticated node inventory exposes a fixed `publication-catalog` topology
 row with actual usage and limits. Use the [capacity and maintenance guide](../operations/publication-retention.md)
@@ -131,11 +138,26 @@ real publisher and builder signatures with corrected embedded inventories and
 identical packages in two tenants. These are functional tests, with no guest
 invocations or 100k load campaign.
 
-## Retention pins and native visibility tombstones
+## Retention pins, tombstones and capsule reclamation
 
-The native repository has a [bounded durable pin foundation](publication-retention-pins.md)
-for issue #662, plus a native durable visibility-removal stage with original
-operation receipts. It provides no public deletion command, does not unlink
-committed payload/history files, and does not refund their capacity. Pins are independent of execution and
-serving eligibility; clearing one does not reclaim content. The guide distinguishes
-the implemented native owner from the remaining deletion and operator scope.
+The native repository has [bounded durable retention and deletion owners](publication-retention-pins.md)
+for issue #662. Pins are independent of execution and serving eligibility;
+clearing one does not reclaim content. `tombstone_publications` durably removes
+visibility and eligibility but retains payloads and their charges.
+
+The separate trusted-host `reclaim_tombstoned_capsules` continues an exact retained
+deletion operation with a fresh catalog fence. It commits bounded cleanup
+authority before unlink, preserves shared blobs until their last committed
+reference is removed, and synchronizes parent directories before capacity
+refunds. Compact protected identities and original-operation receipts allow
+reopen to continue recognized partial cleanup without restoring old visibility
+or requiring already-removed capsule files. Unsupported older readers and
+corrupt or downgraded cleanup authority are rejected before cleanup.
+
+Componentless-web physical cleanup, independent lifecycle/evidence history
+compaction, and authenticated management/CLI plus finite audit integration are
+not implemented by this capsule path. There is still no supported public
+operator deletion command. Follow the capacity and stopped-backup workflow
+above; do not call the trusted-host API with a no-op audit callback or remove
+catalog directories manually. The retention guide records the exact limits,
+recovery/restore requirements, native test scope and remaining work.
