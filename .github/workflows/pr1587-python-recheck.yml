@@ -9,7 +9,7 @@ jobs:
   recheck:
     if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/diag/dotnet-original-v3-trap-20261031'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 12
     env:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
@@ -22,18 +22,19 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Install reviewed Python dependencies
         run: python3 -m pip install --requirement tools/requirements.lock
-      - name: Retain exact tracked source and reproduce both failures
+      - name: Capture the full tracked source and run the actual Python lane
         run: |
           python3 - <<'PY'
-          import hashlib, json, os, pathlib, subprocess, tarfile
+          import hashlib, json, os, pathlib, subprocess, tarfile, yaml
           root = pathlib.Path.cwd()
           out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1587-python-recheck'
           out.mkdir()
           revision = subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()
           assert revision == '8f5ae699ee6849036af6e9c129e6cb47c4b21b15', revision
-          paths = subprocess.check_output(['git','ls-files','-z','--','tools','.github/workflows','.github/actions','.gitattributes','.cargo','Cargo.toml','Cargo.lock','rust-toolchain.toml','docs/testing']).decode().strip('\0').split('\0')
+          paths = subprocess.check_output(['git','ls-files','-z']).decode().strip('\0').split('\0')
           identities = []
           total = 0
           with tarfile.open(out / 'tracked-source.tar.gz','w:gz') as archive:
@@ -42,16 +43,28 @@ jobs:
                   assert path.is_file() and not path.is_symlink(), name
                   raw = path.read_bytes()
                   total += len(raw)
-                  assert total <= 268435456
+                  assert total <= 536870912
                   identities.append({'path':name,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),'gitBlob':hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()})
                   archive.add(path,arcname=name)
           (out / 'source.json').write_text(json.dumps({'revision':revision,'files':identities},indent=2)+'\n')
-          result = subprocess.run(['python3','-m','unittest','-v','tools.tests.test_ci_contract_storage','tools.tests.test_ci_contract_source_gate'],capture_output=True,timeout=180)
-          (out / 'focused.stdout.txt').write_bytes(result.stdout)
-          (out / 'focused.stderr.txt').write_bytes(result.stderr)
-          (out / 'focused-status.json').write_text(json.dumps({'returncode':result.returncode})+'\n')
-          print(result.stderr.decode(errors='replace'))
-          print('Exact-source diagnostic return code:',result.returncode)
+          steps = yaml.safe_load((root/'.github/workflows/ci.yml').read_text())['jobs']['contracts']['steps']
+          history, = [step['run'] for step in steps if step.get('name') == 'Fetch exact historical source inputs for Python preservation controls']
+          result = subprocess.run(['bash','-e','-o','pipefail','-c',history],capture_output=True,timeout=180)
+          (out/'history.stdout.txt').write_bytes(result.stdout)
+          (out/'history.stderr.txt').write_bytes(result.stderr)
+          assert result.returncode == 0, result.stderr.decode(errors='replace')[-8192:]
+          command = ['bash','tools/validate_contracts.sh','python']
+          try:
+              result = subprocess.run(command,capture_output=True,timeout=420)
+              code, stdout, stderr = result.returncode, result.stdout, result.stderr
+          except subprocess.TimeoutExpired as error:
+              code, stdout, stderr = 124, error.stdout or b'', error.stderr or b''
+          assert len(stdout)+len(stderr) <= 16777216
+          (out / 'python.stdout.txt').write_bytes(stdout)
+          (out / 'python.stderr.txt').write_bytes(stderr)
+          (out / 'python-status.json').write_text(json.dumps({'command':command,'returncode':code})+'\n')
+          print(stderr.decode(errors='replace')[-20000:])
+          print('Exact-source Python lane return code:',code)
           PY
       - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         if: always()
