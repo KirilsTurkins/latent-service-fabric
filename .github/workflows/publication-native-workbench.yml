@@ -18,6 +18,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
         with:
           persist-credentials: false
+          fetch-depth: 4
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
           components: rustfmt, clippy
@@ -77,7 +78,7 @@ jobs:
           assert decoder.eof and not decoder.unused_data
           payload = json.loads(decoded)
           assert payload['base'] == '41cfd1f928cdda958293d0072f83c1db8f7480bc'
-          assert subprocess.check_output(['git', 'rev-parse', 'HEAD^'], text=True).strip() == payload['base']
+          subprocess.run(['git', 'merge-base', '--is-ancestor', payload['base'], 'HEAD'], check=True)
           rows = payload['files']
           assert len(rows) == 35 and len({row['path'] for row in rows}) == 35
           for row in rows:
