@@ -28,12 +28,15 @@ def copy_catalog(destination):
     catalog.load(source)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_bytes(source.read_bytes())
-    fragments = source.with_suffix('.d')
-    if fragments.exists():
-        copied = destination.with_suffix('.d')
-        copied.mkdir()
-        for fragment in sorted(fragments.iterdir()):
-            (copied / fragment.name).write_bytes(fragment.read_bytes())
+    # Suite owners and additive exact-case owners are both catalogue inputs.
+    # Omitting case fragments would silently reduce the synthetic inventory.
+    for suffix in ('.d', '.cases.d'):
+        fragments = source.with_suffix(suffix)
+        if fragments.exists():
+            copied = destination.with_suffix(suffix)
+            copied.mkdir()
+            for fragment in sorted(fragments.iterdir()):
+                (copied / fragment.name).write_bytes(fragment.read_bytes())
 
 
 class RunnerContractTests(unittest.TestCase):
@@ -55,11 +58,14 @@ class RunnerContractTests(unittest.TestCase):
         destination = self.root / 'tools/ci/suites.json'
         copy_catalog(destination)
         self.assertEqual(catalog.load(destination), catalog.load())
-        source = ROOT / 'tools/ci/suites.d'
-        if source.exists():
-            self.assertEqual(
-                {path.name: path.read_bytes() for path in source.iterdir()},
-                {path.name: path.read_bytes() for path in destination.with_suffix('.d').iterdir()})
+        for suffix in ('.d', '.cases.d'):
+            source = (ROOT / 'tools/ci/suites.json').with_suffix(suffix)
+            if source.exists():
+                with self.subTest(fragment_family=suffix):
+                    self.assertEqual(
+                        {path.name: path.read_bytes() for path in source.iterdir()},
+                        {path.name: path.read_bytes()
+                         for path in destination.with_suffix(suffix).iterdir()})
 
     def test_preflight_reports_no_test_execution(self):
         for module, args in ((oci, ['--preflight']), (angular, ['--preflight'])):
