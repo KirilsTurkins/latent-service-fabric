@@ -107,6 +107,173 @@ public final class CheckpointCompilerControl {
         }
     }
 
+    public static final class FiniteUnmanaged {
+        private static int result;
+        @Unmanaged
+        private static int sum(int limit) {
+            int total = 0;
+            for (int index = 0; index < limit; ++index) total += index;
+            return total;
+        }
+        public static void main(String[] arguments) {
+            result = sum(arguments.length);
+        }
+    }
+
+    public static final class NestedCounted {
+        private static int result;
+        static {
+            for (int outer = 0; outer < 4; ++outer) {
+                for (int inner = 0; inner < 3; ++inner) result += outer + inner;
+            }
+        }
+        public static void main(String[] arguments) {
+            result += arguments.length;
+        }
+    }
+
+    public static final class ChangingBound {
+        private static volatile int limit = 3;
+        private static int result;
+        static {
+            // The signed induction rank decreases even when the bound changes.
+            for (int index = 0; index < limit; ++index) {
+                limit = (index & 1) + 4;
+                result = index;
+            }
+        }
+        public static void main(String[] arguments) {
+            result += arguments.length;
+        }
+    }
+
+    public static final class WrappingCounted {
+        private static volatile int limit = Integer.MAX_VALUE;
+        private static int result;
+        static {
+            // A non-strict test admits MAX_VALUE and lets the increment wrap.
+            for (int index = Integer.MAX_VALUE; index <= limit; ++index) result = index;
+        }
+        public static void main(String[] arguments) {
+            result += arguments.length;
+        }
+    }
+
+    public static final class ResetCounted {
+        private static volatile int limit = 4;
+        private static int result;
+        static {
+            for (int index = 0; index < limit; ++index) {
+                result = index;
+                index = 0;
+            }
+        }
+        public static void main(String[] arguments) {
+            result += arguments.length;
+        }
+    }
+
+    public static final class ExceptionalRetry {
+        private static volatile int divisor;
+        private static int result;
+        static {
+            for (int index = 0; index < 3;) {
+                try {
+                    result = 1 / divisor;
+                    ++index;
+                } catch (ArithmeticException retry) {
+                    // The exceptional backedge bypasses the induction update.
+                }
+            }
+        }
+        public static void main(String[] arguments) {
+            result += arguments.length;
+        }
+    }
+
+    @Unmanaged
+    public static final class UnmanagedClassPolling {
+        private static volatile boolean ready;
+        private static void poll() {
+            while (!ready) { }
+        }
+        public static void main(String[] arguments) {
+            poll();
+        }
+    }
+
+    public static final class TransitiveInitializer {
+        private static volatile boolean ready;
+        private static int result = first();
+        private static int first() {
+            return second();
+        }
+        private static int second() {
+            while (!ready) { }
+            return 1;
+        }
+        public static void main(String[] arguments) {
+            result += arguments.length;
+        }
+    }
+
+    public static final class NearMaxCounted {
+        private static int result;
+        static {
+            for (int index = Integer.MAX_VALUE - 2; index < Integer.MAX_VALUE; ++index) result = index;
+        }
+        public static void main(String[] arguments) {
+            result += arguments.length;
+        }
+    }
+
+    public static final class NestedPolling {
+        private static volatile boolean ready;
+        private static int result;
+        static {
+            for (int index = 0; index < 3; ++index) {
+                while (!ready) { }
+                result = index;
+            }
+        }
+        public static void main(String[] arguments) {
+            result += arguments.length;
+        }
+    }
+
+    public static final class MutualRecursion {
+        private static int result = first(0);
+        private static int first(int value) {
+            return second(value + 1);
+        }
+        private static int second(int value) {
+            return first(value + 1);
+        }
+        public static void main(String[] arguments) {
+            result += arguments.length;
+        }
+    }
+
+    public static final class VirtualInitializer {
+        private interface Supplier {
+            int get();
+        }
+        private static final class PollingSupplier implements Supplier {
+            private static volatile boolean ready;
+            public int get() {
+                while (!ready) { }
+                return 1;
+            }
+        }
+        private static int read(Supplier supplier) {
+            return supplier.get();
+        }
+        private static int result = read(new PollingSupplier());
+        public static void main(String[] arguments) {
+            result += arguments.length;
+        }
+    }
+
     private static void loop(MethodHolder method) {
         Program program = new Program();
         for (int index = 0; index <= method.parameterCount(); ++index) program.createVariable();
@@ -191,7 +358,19 @@ public final class CheckpointCompilerControl {
         for (String mutation : new String[] { "runtime-initializer", "class-object-helper", "string-copy-body" }) {
             check(Finite.class.getName(), corrected, true, mutation);
         }
+        check(FiniteUnmanaged.class.getName(), corrected, false, "");
+        check(NestedCounted.class.getName(), corrected, false, "");
+        check(ChangingBound.class.getName(), corrected, false, "");
+        check(WrappingCounted.class.getName(), corrected, true, "");
+        check(ResetCounted.class.getName(), corrected, true, "");
+        check(ExceptionalRetry.class.getName(), corrected, true, "");
+        check(UnmanagedClassPolling.class.getName(), corrected, true, "");
+        check(TransitiveInitializer.class.getName(), corrected, true, "");
+        check(NearMaxCounted.class.getName(), corrected, false, "");
+        check(NestedPolling.class.getName(), corrected, true, "");
+        check(MutualRecursion.class.getName(), corrected, true, "");
+        check(VirtualInitializer.class.getName(), corrected, true, "");
         System.out.println("CHECKPOINT_COMPILER_CONTROL PASS " + arguments[0]
-                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body");
+                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer");
     }
 }

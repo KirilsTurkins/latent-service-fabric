@@ -1,5 +1,6 @@
 """Bounded fixture and retained-input controls; JVM execution is a separate step."""
 import os
+import re
 from pathlib import Path
 import tempfile
 import unittest
@@ -26,7 +27,35 @@ class CheckpointCompiler(unittest.TestCase):
         self.assertIn('"' + probe.COMPILER_EXPECTED + '"', source)
         self.assertEqual(probe.COMPILER_EXPECTED.split(';')[1:], [
             'finite', 'initializer', 'unmanaged', 'managed', 'recursion',
-            'runtime-initializer', 'class-object-helper', 'string-copy-body'])
+            'runtime-initializer', 'class-object-helper', 'string-copy-body',
+            'finite-unmanaged', 'nested-counted', 'changing-bound', 'wrapping-counted',
+            'reset-counted', 'exceptional-retry', 'unmanaged-class', 'transitive-initializer',
+            'near-max-counted', 'nested-polling', 'mutual-recursion', 'virtual-initializer'])
+
+    def test_real_frontend_executes_every_declared_progress_case(self):
+        source = probe.COMPILER_CONTROL.read_text()
+        cases = re.findall(r'check\((\w+)\.class\.getName\(\), corrected, (false|true), ""\);', source)
+        self.assertEqual(cases, [
+            ('Finite', 'false'), ('InitializerPolling', 'true'), ('UnmanagedPolling', 'true'),
+            ('ManagedPolling', 'false'), ('RecursiveInitializer', 'true'),
+            ('FiniteUnmanaged', 'false'), ('NestedCounted', 'false'), ('ChangingBound', 'false'),
+            ('WrappingCounted', 'true'), ('ResetCounted', 'true'), ('ExceptionalRetry', 'true'),
+            ('UnmanagedClassPolling', 'true'), ('TransitiveInitializer', 'true'),
+            ('NearMaxCounted', 'false'), ('NestedPolling', 'true'), ('MutualRecursion', 'true'),
+            ('VirtualInitializer', 'true')])
+        self.assertIn('new String[] { "runtime-initializer", "class-object-helper", "string-copy-body" }', source)
+        self.assertIn('check(Finite.class.getName(), corrected, true, mutation);', source)
+        self.assertEqual(len(cases) + 3, len(probe.COMPILER_EXPECTED.split(';')) - 1)
+
+    def test_real_frontend_preserves_strict_rank_and_excluded_call_controls(self):
+        source = probe.COMPILER_CONTROL.read_text()
+        self.assertIn('index = Integer.MAX_VALUE - 2; index < Integer.MAX_VALUE;', source)
+        self.assertIn('index = Integer.MAX_VALUE; index <= limit;', source)
+        self.assertIn('limit = (index & 1) + 4;', source)
+        self.assertIn('catch (ArithmeticException retry)', source)
+        self.assertIn('@Unmanaged\n    public static final class UnmanagedClassPolling', source)
+        self.assertIn('read(new PollingSupplier())', source)
+        self.assertNotIn('Activation.checkpoint', source)
 
     def test_retained_inputs_are_deterministic_and_exclude_unselected_files(self):
         with tempfile.TemporaryDirectory() as temporary:

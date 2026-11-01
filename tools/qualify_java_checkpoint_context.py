@@ -42,7 +42,9 @@ NAMES = frozenset(('teavm-classlib', 'teavm-core', 'teavm-extension-apis',
 EXPECTED = (';direct;multihop;shared;virtual;class-unmanaged;managed-cycle;pinned-managed-entry;altered-entry-negatives;'
     'unresolved;bound;real-late-completion')
 COMPILER_EXPECTED = (';finite;initializer;unmanaged;managed;recursion;runtime-initializer;'
-    'class-object-helper;string-copy-body')
+    'class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;'
+    'reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;'
+    'mutual-recursion;virtual-initializer')
 
 
 def selected(lock):
