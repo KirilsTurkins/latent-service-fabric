@@ -1,3 +1,1 @@
-{"kind":"owner","path":"tools/qualify_java_checkpoint_context.py","reviewBoundary":"committed-fingerprint","reviewReason":"JVM-only original/corrected checkpoint context probe with complete existing locked core runtime closure; fifteen identity-checked JARs under unchanged32MiB/acquisition caps, unchanged same-JAR overlay and no guest/native build.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "fdb163f77496270a4f1003a48ce0e9deeb803d7c72e177078e7ae2c2d5910590"
-}
+{"kind":"owner","path":"tools/qualify_java_checkpoint_context.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve the pinned JVM-only context, monitor, flat and isolated-JCL compiler controls and exact authenticated input archive; synchronize the owner fingerprint with the current split-loader repair. No guest/native compilation or limit change.","schemaVersion":"latent.ci.contracts.v1","sha256":"40d8a2178a94efb204982450985b8cb6d3b3174c5f2a56e90951a0a728ca597a"}
