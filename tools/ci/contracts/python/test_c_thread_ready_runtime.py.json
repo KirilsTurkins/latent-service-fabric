@@ -1,9 +1,20 @@
-{"storageCases":"guard-keys","guards":{"CThreadReadyRuntime.test_fixed_v4_admission_runs_before_any_compiler_or_node_work":
-  "35004146c6046b13b36cc3eb48b72b1a2d5fb0a29449d854271d869bd9b72883"
-,"CThreadReadyRuntime.test_pre_call_audit_idle_requires_real_zero_samples_and_bounds_nonquiescent_work":
-  "35004146c6046b13b36cc3eb48b72b1a2d5fb0a29449d854271d869bd9b72883"
-,"CThreadReadyRuntime.test_seventeen_outcomes_oracles_caps_and_default_assert_current_are_unchanged":
-  "35004146c6046b13b36cc3eb48b72b1a2d5fb0a29449d854271d869bd9b72883"
-},"kind":"python","module":"tools/tests/test_c_thread_ready_runtime.py","reviewReason":"Retain exact historical seventeen outcomes while pinning bounded actual audit-idle helper and fail-closed live/nonquiescent controls","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{
-  "35004146c6046b13b36cc3eb48b72b1a2d5fb0a29449d854271d869bd9b72883"
-:{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:ccedc149b2e476df1c34fec69078d4045db4b9e3a1907acfe40b19b4a0248982","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "storageCases":"guard-keys",
+  "guards":{
+    "CThreadReadyRuntime.test_fixed_v4_admission_runs_before_any_compiler_or_node_work":
+      "4d8ce765fabb04da881d790d2ff1a0222b3c2771c491fe735d34486aec6a203d",
+    "CThreadReadyRuntime.test_outside_card_inverse_refuses_every_missing_duplicated_changed_hunk_and_old_body_drift":
+      "4d8ce765fabb04da881d790d2ff1a0222b3c2771c491fe735d34486aec6a203d",
+    "CThreadReadyRuntime.test_pre_call_audit_idle_requires_real_zero_samples_and_bounds_nonquiescent_work":
+      "4d8ce765fabb04da881d790d2ff1a0222b3c2771c491fe735d34486aec6a203d",
+    "CThreadReadyRuntime.test_seventeen_outcomes_oracles_caps_and_default_assert_current_are_unchanged":
+      "4d8ce765fabb04da881d790d2ff1a0222b3c2771c491fe735d34486aec6a203d"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_c_thread_ready_runtime.py",
+  "reviewReason":"Review the exact twelve-hunk PR #1585 outside-card inverse, authenticate both source generations, and retain all original paired-client and seventeen-outcome proofs; add missing, duplicate, altered-hunk and original-budget drift refusals.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "4d8ce765fabb04da881d790d2ff1a0222b3c2771c491fe735d34486aec6a203d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:f39bcfb1372529a9f2058af3b6264d02f8e19a24d1cc9d82ad64b0ab2163d6bd","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+  }
+}

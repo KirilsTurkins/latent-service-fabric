@@ -14,6 +14,99 @@ from tools import ci_profile as profile
 
 
 class ClassificationTests(unittest.TestCase):
+    def test_sparse_profile_and_result_checkouts_load_complete_catalogue(self) -> None:
+        import hashlib
+        import sys
+        from tools.ci_lane_inventory import workflow_model
+
+        root = profile.registry.ROOT
+        model = workflow_model((root / ".github/workflows/ci.yml").read_text())
+        expected = hashlib.sha256(json.dumps(profile.registry.load(), sort_keys=True).encode()).hexdigest()
+        # Do not inherit a partial clone's object store, refs or Git configuration.
+        environment = {name: value for name, value in os.environ.items() if not name.startswith("GIT_")}
+        environment.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
+                           GIT_TERMINAL_PROMPT="0", GIT_NO_LAZY_FETCH="1",
+                           GIT_AUTHOR_NAME="CI fixture", GIT_AUTHOR_EMAIL="fixture@example.invalid",
+                           GIT_COMMITTER_NAME="CI fixture", GIT_COMMITTER_EMAIL="fixture@example.invalid")
+        environment.pop("PYTHONPATH", None)
+        environment.pop("PYTHONHOME", None)
+        for job in ("profile", "result"):
+            with self.subTest(job=job), tempfile.TemporaryDirectory() as temporary:
+                checkout = next(step for step in model["jobs"][job]["steps"]
+                                if "sparse-checkout" in step.get("with", {}))
+                patterns = checkout["with"]["sparse-checkout"]
+                self.assertIn("/tools/ci_suite_cases.py", patterns.splitlines())
+                self.assertIn("/tools/ci/suites.cases.d/", patterns.splitlines())
+                sparse = Path(temporary) / "checkout"
+                sparse.mkdir()
+                def run(*arguments, input=None, status=0):
+                    result = subprocess.run(arguments, cwd=sparse,
+                                            input=input, env=environment, capture_output=True,
+                                            text=True, timeout=30)
+                    self.assertEqual(result.returncode, status, result.stdout + result.stderr)
+                    return result.stdout + result.stderr
+                # Populate a standalone Git fixture from current source bytes, not
+                # historical/promisor objects. This set is independent of the checkout
+                # patterns, so missing inputs cannot silently redefine the full catalogue.
+                sources = [root / "tools" / name for name in (
+                    "ci_profile.py", "ci_result.py", "ci_suite_inventory.py", "ci_suite_cases.py")]
+                sources.append(root / "tools/ci/suites.json")
+                for suffix in (".d", ".cases.d"):
+                    sources.extend(sorted((root / "tools/ci/suites.json").with_suffix(suffix).glob("*.json")))
+                for source in sources:
+                    destination = sparse / source.relative_to(root)
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    destination.write_bytes(source.read_bytes())
+                excluded = sparse / "not-selected.txt"
+                excluded.write_text("The sparse checkout must remove this tracked file.\n")
+                run("git", "-c", "init.templateDir=", "init", "--quiet")
+                run("git", "add", "--all")
+                run("git", "-c", "commit.gpgSign=false", "-c", "core.hooksPath=" + os.devnull,
+                    "commit", "--quiet", "-m", "Current CI catalogue fixture")
+                self.assertEqual(run("git", "remote").strip(), "")
+                probe = ("import hashlib,json,sys; from pathlib import Path; "
+                         "sys.path.insert(0,str(Path.cwd())); "
+                         "from tools import ci_suite_inventory as registry; "
+                         "actual=hashlib.sha256(json.dumps(registry.load(),sort_keys=True).encode()).hexdigest(); "
+                         f"assert actual == {expected!r}, 'incomplete-catalogue'; print(actual)")
+                self.assertEqual(run(sys.executable, "-I", "-c", probe).strip(), expected)
+                run("git", "sparse-checkout", "set", "--no-cone", "--stdin", input=patterns)
+                run("git", "checkout", "--quiet", "--detach", "HEAD")
+                self.assertFalse(excluded.exists())
+                observed = run(sys.executable, "-I", "-c", probe)
+                self.assertEqual(observed.strip(), expected)
+                if job == "profile":
+                    event = Path(temporary) / "event.json"
+                    event.write_text("{}\n")
+                    output = Path(temporary) / "outputs.txt"
+                    summary = Path(temporary) / "summary.md"
+                    result = run(sys.executable, "-I", "tools/ci_profile.py", "--event-name", "workflow_dispatch",
+                                 "--event-path", str(event), "--github-output", str(output),
+                                 "--github-step-summary", str(summary))
+                    self.assertIn("CI profile: full", result)
+                    self.assertIn("profile=full\n", output.read_text())
+                else:
+                    outputs = profile.Decision("full", "workflow-dispatch", 0).outputs()
+                    required = json.loads(outputs["expected_jobs"])
+                    results = {name: {"result": "success" if name in required else "skipped"}
+                               for name in profile.registry.ALL_JOBS}
+                    results["profile"]["outputs"] = outputs
+                    environment["CI_JOB_RESULTS"] = json.dumps(results)
+                    self.assertIn("Required CI jobs passed:", run(sys.executable, "-I", "tools/ci_result.py"))
+                    results["docs"]["result"] = "failure"
+                    environment["CI_JOB_RESULTS"] = json.dumps(results)
+                    self.assertIn("unexpected-job-result:docs:failure",
+                                  run(sys.executable, "-I", "tools/ci_result.py", status=1))
+
+                # Both actual sparse-checkout jobs must reject missing loader/case
+                # inputs; a full-tree fallback would make these negative controls pass.
+                for omitted in ("/tools/ci_suite_cases.py", "/tools/ci/suites.cases.d/"):
+                    with self.subTest(omitted=omitted):
+                        incomplete = "\n".join(line for line in patterns.splitlines() if line != omitted) + "\n"
+                        run("git", "sparse-checkout", "set", "--no-cone", "--stdin", input=incomplete)
+                        self.assertFalse((sparse / omitted.strip("/")).exists())
+                        run(sys.executable, "-I", "-c", probe, status=1)
+
     def test_website_sources_use_only_the_site_and_documentation_jobs(self) -> None:
         for path in ("website/package-lock.json", "website/docusaurus.config.ts", "website/src/pages/index.tsx",
                      "website/plugins/examples/remark.mjs", "website/src/css/theme.css", "website/content/coverage.json",
