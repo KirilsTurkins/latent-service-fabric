@@ -88,8 +88,10 @@ writer/current revision through rechecking, durable cleanup intent, physical
 unlink/synchronization and completion receipt. HTTP recovery validates retained
 static-web publication identities without creating a serving grant: terminal
 negative references remain valid, but a mismatched older control snapshot cannot
-reintroduce a tombstoned or reclaimed target. Authenticated operator/audit
-integration and independent history compaction remain outstanding.
+reintroduce a tombstoned or reclaimed target. The authenticated management/CLI
+adapter now requires finite durable audit for publication mutations; see the
+[operator workflow](../../docs/operations/publication-deletion.md). Independent
+history compaction and full signed public-workflow qualification remain separate.
 Native tests also refuse an older control catalog that references tombstoned
 history. See the [retention and assessment contract](../../docs/reference/publication-retention-pins.md).
 
