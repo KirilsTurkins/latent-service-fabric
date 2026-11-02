@@ -44,7 +44,7 @@ impl Drop for Journal {
     }
 }
 async fn retired(h: &Harness, name: &str) -> proto::PublicationRef {
-    let (p, _) = publish_variant(h, "acme", name).await;
+    let (p, _) = publish_variant(h, "acme", &format!("1.0.0-{name}")).await;
     let publication = PublicationRef {
         scope: LifecycleScope::Tenant(TenantId("acme".into())),
         id: p.id.parse().unwrap(),
