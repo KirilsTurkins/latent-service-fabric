@@ -92,6 +92,30 @@ jobs:
           subprocess.run(['git','apply',str(out/'source.patch')], check=True)
           (out/'base.txt').write_text(spec['base']+'\n')
           PY
+      - name: Apply exact owning-worker formatting without changing behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,pathlib,subprocess
+          out=pathlib.Path('target/publication-operator')
+          row={'path':'crates/latent-audit/src/durable/worker.rs','before':'979dfcd6fea8b7cc0523e19abd8ab09ece6d6b2a','after':'d38de036b44836707ab4cab2b5011716762e19de','sha256':'2472465338e30c876789c85e251bfada1367088986631b7f18249ca24699ebf6'}
+          def blob(data):
+              return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+          path=pathlib.Path(row['path'])
+          data=path.read_bytes()
+          assert blob(data)==row['before']
+          data=data.replace(b'        let bytes = heap.checked_add(std::mem::size_of::<AuditStoredRecord>())',b'        let bytes = heap\n            .checked_add(std::mem::size_of::<AuditStoredRecord>())')
+          data=data.replace(b'            .and_then(|bytes| bytes.checked_mul(3)).ok_or_else(capacity)?;',b'            .and_then(|bytes| bytes.checked_mul(3))\n            .ok_or_else(capacity)?;')
+          assert blob(data)==row['after'] and hashlib.sha256(data).hexdigest()==row['sha256']
+          path.write_bytes(data)
+          rows=json.loads((out/'manifest.json').read_text())
+          assert len(rows)==66 and all(item['path']!=row['path'] for item in rows)
+          rows.append(row)
+          rows.sort(key=lambda item:item['path'])
+          (out/'manifest.json').write_text(json.dumps(rows,indent=2)+'\n')
+          (out/'format.patch').write_bytes(subprocess.check_output(['git','diff','--',row['path']]))
+          PY
       - name: Generate the locked bounded protocol descriptor
         shell: bash
         run: |
@@ -110,6 +134,7 @@ jobs:
           import base64, hashlib, json, os, pathlib, tarfile, urllib.request
           out = pathlib.Path('target/publication-operator')
           rows = json.loads((out/'manifest.json').read_text())
+          assert len(rows)==67
           entries = []
           with tarfile.open(out/'source.tar.gz','w:gz') as archive:
               for row in rows:
