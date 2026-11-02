@@ -1639,7 +1639,7 @@ version = "0.1.0-alpha.5"
 dependencies = [
  "sha2 0.11.0",
  "wasm-encoder 0.259.0",
- "wasmparser 0.259.0",
+ "wasmparser 0.262.0",
 ]
 
 [[package]]
@@ -1909,7 +1909,7 @@ dependencies = [
  "sha2 0.11.0",
  "tokio",
  "tonic",
- "wasmparser 0.261.0",
+ "wasmparser 0.262.0",
 ]
 
 [[package]]
@@ -1937,7 +1937,7 @@ dependencies = [
  "spdx",
  "tempfile",
  "wasm-encoder 0.261.0",
- "wasmparser 0.261.0",
+ "wasmparser 0.262.0",
  "wit-parser 0.262.0",
 ]
 
@@ -2320,7 +2320,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "wasm-encoder 0.261.0",
- "wasmparser 0.261.0",
+ "wasmparser 0.262.0",
  "wasmtime",
  "wit-parser 0.262.0",
  "zeroize",
@@ -2435,7 +2435,7 @@ dependencies = [
  "tonic",
  "tower",
  "wasm-encoder 0.261.0",
- "wasmparser 0.261.0",
+ "wasmparser 0.262.0",
  "zeroize",
 ]
 
@@ -4129,10 +4129,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f7c12eac7bb587801590f6a67ff0bc84d0748513864b71108e4b311cc3df694"
 dependencies = [
  "bitflags",
- "hashbrown 0.17.1",
  "indexmap",
  "semver",
- "serde",
 ]
 
 [[package]]
@@ -4142,10 +4140,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4f20f20e44f7e8aeb6744823ea9d869ede51e51be4fdaedede2852282e54d2d8"
 dependencies = [
  "bitflags",
- "hashbrown 0.17.1",
  "indexmap",
  "semver",
- "serde",
 ]
 
 [[package]]
@@ -4158,6 +4154,7 @@ dependencies = [
  "hashbrown 0.17.1",
  "indexmap",
  "semver",
+ "serde",
 ]
 
 [[package]]
