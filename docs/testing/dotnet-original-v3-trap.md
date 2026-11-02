@@ -178,3 +178,11 @@ of the workflow's sparse patterns. It neither clones the live repository nor
 requires historical/promisor objects. Both jobs still use real Git sparse
 checkout, compare the complete catalogue, and reject a missing case loader or
 additive case directory; no full-working-tree fallback is permitted.
+
+The C preservation controls also authenticate the finite additions already merged
+in PRs #1582 and #1585. They invert only the exact activation-local `exit` trap
+and twelve outside-library driver edits before enforcing every original file-ABI,
+paired-client and seventeen-outcome identity. Missing, duplicated or modified
+additions and unrelated source/budget drift are rejected. These are source-only
+CI controls; neither production C inputs nor historical qualification receipts
+are rewritten, and no .NET runtime claim follows from their passing.

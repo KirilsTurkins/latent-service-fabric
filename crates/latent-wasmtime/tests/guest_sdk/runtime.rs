@@ -418,8 +418,6 @@ impl Runtime {
         owner
     }
 
-    /// Add only tenant-scoped policies for existing provider registrations.
-
     /// Closed original-v3 authority, applied only before the named observation.
     /// Reuses all four installed provider owners; no general fixture opts in.
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -555,6 +553,7 @@ impl Runtime {
         json!(rows)
     }
 
+    /// Add only tenant-scoped policies for existing provider registrations.
     /// This test-operator helper allocates no second provider or executor.
     pub fn authorize_additional_tenant(
         &self,
