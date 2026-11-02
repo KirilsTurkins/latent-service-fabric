@@ -11,6 +11,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+      actions: read
     steps:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
         with:
@@ -38,9 +39,12 @@ jobs:
       - name: Run complete affected contract and selector suites
         run: |
           mkdir -p "$RUNNER_TEMP/rust-contract-review"
-          python3 -m unittest tools.tests.test_ci_contracts tools.tests.test_ci_profile tools.tests.test_ci_result tools.tests.test_c_closed_filesystem_qualification > "$RUNNER_TEMP/rust-contract-review/tests.log" 2>&1
-          tail -n 12 "$RUNNER_TEMP/rust-contract-review/tests.log"
-          python3 tools/ci_coverage.py --receipt "$RUNNER_TEMP/rust-contract-review/coverage.json"
+          status=0
+          python3 -m unittest tools.tests.test_ci_contracts tools.tests.test_ci_profile tools.tests.test_ci_result tools.tests.test_c_closed_filesystem_qualification > "$RUNNER_TEMP/rust-contract-review/tests.log" 2>&1 || status=$?
+          tail -n 30 "$RUNNER_TEMP/rust-contract-review/tests.log"
+          test "$status" = 0
+          python3 tools/ci_coverage.py --receipt target/ci/rust-thread-contract-review.json
+          cp target/ci/rust-thread-contract-review.json "$RUNNER_TEMP/rust-contract-review/coverage.json"
       - name: Store the tested blob without changing any branch
         env:
           GH_TOKEN: ${{ github.token }}
@@ -61,6 +65,35 @@ jobs:
           (out / 'tested-blob.json').write_text(json.dumps(record, indent=2) + '\n')
           (out / 'test_ci_contracts.py').write_bytes(raw)
           print(json.dumps(record))
+          PY
+      - name: Read bounded original Python failure details
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re, urllib.request
+          class Redirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  target = super().redirect_request(req, fp, code, msg, headers, newurl)
+                  if target is not None:
+                      target.remove_header('Authorization')
+                  return target
+          opener = urllib.request.build_opener(Redirect())
+          job = 124675114467
+          request = urllib.request.Request(f'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/jobs/{job}/logs', headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
+          with opener.open(request, timeout=60) as response:
+              raw = response.read(32 * 1024 * 1024 + 1)
+          assert len(raw) <= 32 * 1024 * 1024
+          lines = [re.sub(r'^\S+Z ', '', line) for line in raw.decode('utf-8-sig').splitlines()]
+          starts = [i for i, line in enumerate(lines) if re.match(r'^(FAIL|ERROR):|^Ran \d+ tests|^FAILED \(', line)]
+          excerpt = '\n'.join('\n'.join(line[:1200] for line in lines[i:i + 12]) for i in starts)
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'rust-contract-review'
+          out.mkdir(exist_ok=True)
+          (out / 'original-python.log').write_bytes(raw)
+          (out / 'python-failures.txt').write_text(excerpt)
+          print(excerpt[:40000])
+          print(json.dumps({'job': job, 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}))
           PY
       - name: Retain exact review evidence
         if: always()
