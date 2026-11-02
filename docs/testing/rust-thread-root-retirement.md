@@ -152,6 +152,31 @@ cases and distinguishes the historical six host-memory cases from the two
 additional cases now included in the live producer. These are fixture and CI
 integration repairs, not production quota increases or rewritten native proof.
 
+## Separate frozen consumers and historical C preservation
+
+The private TypeScript package-removal campaign uses
+`tools/typescript_private_removed_native_products.py`, an exact copy of the
+193-control reader retained on development at
+`816b806d61c3479b3e138fa55466c22250818f07`. Its source remains
+`b422af24d86344ac7abb8b8fa56c3782aab63915`; its producer hash, 44 groups,
+24 recipe inputs, 91 command stages, original and reacquired artifact identities,
+and receipt pins are unchanged. The acquisition step and consumer material
+inventory both select this reader. The current Rust reader still selects the
+separate e3 200-control origin; changing that Rust origin must not silently
+change an unrelated frozen consumer. The regression authenticates the complete
+193-control tuple and rejects foreign-source, failed-job, expired, duplicate and
+historical-artifact substitutions. These source and synthetic metadata checks
+do not claim a fresh native acquisition or signed TypeScript execution.
+
+The Python lane's exact historical-fetch inventory includes all 29 required
+revisions, including e3. The C source-preservation controls retain their original
+hashes while explicitly reversing only the exact additions merged in #1582 and
+#1585 for comparison: the closed fatal-exit trap and outside-card HTTP route.
+Every added fragment must occur once, and the complete historical owner hash
+must still match. The actual SDK and HTTP owner are not rewritten or rolled
+back. The original seventeen outcomes, synchronization extension, limits,
+source-equality requirements and independent runtime acceptance gates remain.
+
 ## Remaining proof
 
 The repaired owned sysroot and unchanged application still need a new compiler

@@ -113,6 +113,38 @@ if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f
             b"        write_json(output / f'child-inventory-{process.authoring_activation}-{attempt}.json', inventory)\n")
         self.assertNotEqual(retained, original_node)
         current_node = (qualification.ROOT / node).read_text()
+        # PR #1585 appended an outside-card route to the shared HTTP owner.
+        # Every inverse must match once. The unchanged whole-owner hash below
+        # then authenticates the complete pre-addition body, including limits.
+        for added, previous in (
+            ("client_kind in ('libfetch', 'libucl', 'outside-card')",
+             "client_kind in ('libfetch', 'libucl')"),
+            ("    is_outside = client_kind == 'outside-card'\n",
+             ''),
+            ("    record = {'schemaVersion': 'latent.c.outside-card.node.v1' if is_outside else\n                              'latent.c.libucl.node.v1' if is_libucl else 'latent.c.libfetch.node.v1',\n",
+             "    record = {'schemaVersion': 'latent.c.libucl.node.v1' if is_libucl else 'latent.c.libfetch.node.v1',\n"),
+            ("            stage = 'one-outside-captured-cell' if is_outside else 'five-ordinary-cells'\n",
+             "            stage = 'five-ordinary-cells'\n"),
+            ('            cases = fixture.CARD_CASES if is_outside else fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES\n',
+             '            cases = fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES\n'),
+            ('            cell = libucl_cell if is_libucl or is_outside else http_cell\n',
+             '            cell = libucl_cell if is_libucl else http_cell\n'),
+            ("                record['cases'].append(cell(client, node, probe, target, peer, output, case,\n                    **({'outside_library': True} if is_outside else {})))\n",
+             "                record['cases'].append(cell(client, node, probe, target, peer, output, case))\n"),
+            ("peer.observation()['startedRequests'] == (1 if is_outside else 2 if is_libucl else 6)",
+             "peer.observation()['startedRequests'] == (2 if is_libucl else 6)"),
+            ("            record['independentClientCount'] = 0 if is_outside else 1\n",
+             "            record['independentClientCount'] = 1\n"),
+            ('def libucl_cell(client, node, probe, target, peer, output, case, *, outside_library=False):\n',
+             'def libucl_cell(client, node, probe, target, peer, output, case):\n'),
+            ("    require(type(outside_library) is bool\n            and case in (fixture.CARD_CASES if outside_library else fixture.LIBUCL_CASES), 'c-libucl-closed-cell')\n",
+             "    require(case in fixture.LIBUCL_CASES, 'c-libucl-closed-cell')\n"),
+            ("    text = ('' if outside_library else case + '\\n') + (peer.url(vectors[case]) if case in vectors else '')\n    activation = ('c-outside-card-' if outside_library else 'c-libucl-') + case\n",
+             "    text = case + '\\n' + (peer.url(vectors[case]) if case in vectors else '')\n    activation = 'c-libucl-' + case\n"),
+            ('        (fixture.unseen_result if outside_library else fixture.libucl_result)(row, case)\n',
+             '        fixture.libucl_result(row, case)\n'),
+        ):
+            current_node = project_once(current_node, added, previous)
         # Invert only the authenticated paired-client addendum before old node proofs.
         self.assertEqual(hashlib.sha256(current_node.encode()).hexdigest(),
                          '336345171062a1d9bcde8c0b93bdafcbcfcb3c68cc10bd5feae57c8a5a726e13')
