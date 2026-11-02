@@ -49,9 +49,11 @@ also need storage outside the publication content ledger.
 
 ## Choose a maintenance window
 
-There is no command to delete committed history. Current choices are a reviewed
-increase of the relevant finite limit, storage expansion or explicit
-reprovisioning of an independent empty installation.
+For terminal unreferenced payloads, use the explicit
+[publication deletion workflow](publication-deletion.md) with mandatory durable
+audit. It does not compact independent history. Other choices remain a reviewed
+increase of a finite limit, storage expansion or reprovisioning of an independent
+empty installation. The following stopped workflow applies to expansion/restore.
 
 1. Stop release jobs and other mutations. Record exact current publications,
    GET/HEAD routes, deployments, evidence and retained rollback targets.
@@ -84,27 +86,23 @@ publication limit, unchanged history and an explicit rollback. Its receipt is
 backup product or network filesystem; repeat the drill on your selected storage.
 
 The [retention decision](../../adr/0050-plan-capacity-before-deleting-publication-history.md)
-defines the future deletion protocol. Current orphan cleanup retains committed
+defines the bounded deletion protocol. Current orphan cleanup retains committed
 publications, shared content and live preparation sources. Do not remove catalog
 directories, rows, lock files or format markers by hand.
 
 
-### Native tombstone foundation is not an operator cleanup command
+## Payload deletion is separate from history compaction
 
-Development includes [durable native visibility tombstones](../reference/publication-retention-pins.md)
-for terminal, unreferenced publications. This removes visibility but deliberately
-retains all content/history files and their capacity charges. The authenticated
-CLI/audit adapter remains pending in #662. A separate trusted-native capsule/web
-payload cleanup now has durable intent, synchronized unlink/refund and original
-operation recovery. Web cleanup retains compact negative identities and verifies
-independent history/evidence on reopen; it does not compact those histories.
-The stopped coupled backup/expansion workflow above remains the supported
-capacity-maintenance workflow; do not call a trusted-host API with a no-op audit
-callback or manually remove tombstoned directories to free space.
+The [operator deletion guide](publication-deletion.md) covers snapshots, rollback
+pins, terminal visibility removal, read-only reclamation assessment, explicit
+cleanup, capacity facts and original-operation recovery. It uses authenticated
+management requests and mandatory durable audit; there is no no-op audit fallback.
+A tombstone retains its payload charges until a separate durable cleanup finishes.
+Capsule and componentless-web cleanup preserve shared blobs until their last
+committed reference and synchronize removal before refunds.
 
-A trusted-host-only reclamation assessment can verify bounded selected files and
-report which shared blobs have their last committed references in an exact
-retained tombstone operation. It is a diagnostic, not an operator cleanup command
-or a receipt for freed capacity. Its limits and recovery boundaries are in the
-[retention reference](../reference/publication-retention-pins.md#bounded-physical-reclamation-assessment).
-Manual catalog removal remains unsupported.
+Independent lifecycle/evidence/web history and compact negative identity budgets
+remain charged. Payload deletion is not permission to compact those histories,
+trust/revocations, business state or audit. Stop and preserve the whole coupled
+installation for backup/restore; never merge individual protected roots. An
+assessment is only a diagnostic and grants no permission for a later unlink.

@@ -640,3 +640,7 @@ The earlier Java tenant campaigns' uncertain cold-preparation failures remain
 failed. The unchanged twelve-case tenant programme still needs actual execution
 with explicit preparation; the native controls provide no successful HTTP or
 cross-tenant guest execution evidence.
+
+## Publication maintenance
+
+ReleaseService exposes `GetPublicationRetention`, `MaintainPublications`, `AssessPublicationReclamation` and `GetPublicationMaintenanceOperation`. Mutations require tenant operator/admin authority and durable audit, exact sorted targets/generations, an operation ID and original fence. Reclamation also supplies a fresh fence and finite work bounds. See the [operator guide](../operations/publication-deletion.md).

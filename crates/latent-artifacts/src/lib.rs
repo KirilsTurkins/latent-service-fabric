@@ -55,8 +55,10 @@ pub use selected_transaction_asset::{
 pub use selected_transaction_layers::SelectedTransactionLayers;
 
 pub use audit::{
-    reconcile_release_audit, AuditedAdmissionAuthority, ReleaseAuditAck, ReleaseAuditGuard,
-    ReleaseAuditStatus, WebAuditGuard,
+    reconcile_publication_maintenance_audit, reconcile_release_audit, AuditedAdmissionAuthority,
+    PublicationAuditGuard, PublicationMaintenanceOutcome, PublicationMaintenanceReceipt,
+    PublicationMaintenanceRequest, PublicationMaintenanceResult, ReleaseAuditAck,
+    ReleaseAuditGuard, ReleaseAuditStatus, WebAuditGuard,
 };
 pub use historical_execution::{
     HistoricalExecutionSnapshot, HistoricalExecutionState, HistoricalReleaseDenial,

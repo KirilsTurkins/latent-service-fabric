@@ -102,3 +102,7 @@ aggregate hashing-byte and deadline limits apply while native reader and
 reference owners remain held. The observation is not a cleanup permit or a
 reclamation receipt; it leaves every file, quota charge and original receipt
 unchanged. See the [retention reference](../../docs/reference/publication-retention-pins.md#bounded-physical-reclamation-assessment).
+
+## Audited publication maintenance
+
+`audited_publication_maintenance` composes native pin/delete/reclaim with mandatory finite audit admission. Complete response preflight precedes the journal attempt; exact original receipt digests govern audit conclusion and startup reconciliation. It runs on an existing bounded control worker, never a new per-publication task.

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "latent.ci.suite-case-fragment.v1",
+  "suiteId": "latent.lib.latent",
+  "expectedCases": [
+    "management::retention::tests::publication_operator_projects_lossless_generations_and_never_claims_delete_refunds",
+    "management::retention::tests::publication_operator_recovery_keeps_both_fences_without_automatic_replay",
+    "management::retention::tests::publication_operator_refuses_duplicates_zero_generation_and_noncanonical_numbers",
+    "management::retention::tests::publication_operator_rejects_wrong_scope_fabricated_refunds_and_receipt_on_unknown",
+    "management::retention::tests::publication_operator_requires_explicit_identity_fences_and_finite_wait"
+  ]
+}

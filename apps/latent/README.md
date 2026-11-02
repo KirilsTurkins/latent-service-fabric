@@ -66,3 +66,7 @@ Integration targets: [tests/completions.rs](tests/completions.rs), [tests/phase1
 - [Local test entry point](../../docs/development/local-tests.md)
 - [Workspace package index](../../crates/README.md)
 - [Architecture index](../../ARCHITECTURE.md)
+
+## Publication retention commands
+
+`latent release retention` provides snapshot, pin, unpin, delete, assess, reclaim and operation commands. Mutation IDs and original catalog fences are explicit; reclamation additionally requires a fresh fence. There is no automatic mutation retry. See [the operator guide](../../docs/operations/publication-deletion.md).

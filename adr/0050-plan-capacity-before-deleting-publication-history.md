@@ -118,7 +118,10 @@ capsule and web cleanup plans, interrupted unlink/sync/refund recovery and stopp
 coupled restore tests. Web cleanup retains exact negative identities and verifies
 independent history/evidence; older control snapshots referencing tombstoned
 static targets refuse startup. These storage fixtures do not qualify signed
-operator workflows. Authenticated management/CLI, real finite audit integration
-and their end-to-end qualification remain pending. Evidence, trust/revocation,
+operator workflows. Authenticated typed management, explicit CLI commands and mandatory finite audit
+are implemented. Complete signed public end-to-end qualification remains pending. Evidence, trust/revocation,
 audit and compact negative identity budgets retain independent finite policies.
 Coordinate with #397 without conflating business-state and publication catalogs.
+
+The [operator guide](../docs/operations/publication-deletion.md) defines the
+finite two-stage workflow and separates catalog outcome from audit acknowledgement.

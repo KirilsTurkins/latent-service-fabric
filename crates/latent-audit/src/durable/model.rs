@@ -105,7 +105,11 @@ enumeration!(AuditControlAction {
     StateCheckpoint,
     PayloadPurge,
     CommandFloorRelease,
-    CommandCancel
+    CommandCancel,
+    PublicationPin,
+    PublicationUnpin,
+    PublicationDelete,
+    PublicationReclaim
 });
 enumeration!(AuditOperationResult {
     Committed,

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "latent.ci.suite-case-fragment.v1",
+  "suiteId": "latent-control-store.lib.latent-control-store",
+  "expectedCases": [
+    "deployments::tests::publications::deletion::tombstones::audit::audited_native_changed_preflight_fence_records_unknown_without_retrying_mutation",
+    "deployments::tests::publications::deletion::tombstones::audit::audited_native_full_journal_and_response_preflight_refuse_before_catalog_change",
+    "deployments::tests::publications::deletion::tombstones::audit::audited_native_interrupted_unlink_keeps_original_query_and_audit_outcome_separate",
+    "deployments::tests::publications::deletion::tombstones::audit::audited_native_missing_original_receipt_recovers_unknown_without_creating_tombstone",
+    "deployments::tests::publications::deletion::tombstones::audit::audited_native_pin_unpin_delete_reclaim_and_replay_have_exact_distinct_receipts",
+    "deployments::tests::publications::deletion::tombstones::audit::audited_native_recovery_matches_original_receipt_and_generic_owner_cannot_consume_it"
+  ]
+}

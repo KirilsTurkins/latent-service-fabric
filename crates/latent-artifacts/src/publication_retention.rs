@@ -12,6 +12,17 @@ pub const MAX_PUBLICATION_RETENTION_RECEIPTS: usize = 64;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct PublicationRetentionFence(pub(crate) [u8; 32]);
+impl PublicationRetentionFence {
+    /// Decode an opaque transport fence. Possession of these bytes grants no authority.
+    #[must_use]
+    pub const fn from_bytes(bytes: [u8; 32]) -> Self {
+        Self(bytes)
+    }
+    #[must_use]
+    pub const fn as_bytes(&self) -> &[u8; 32] {
+        &self.0
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]

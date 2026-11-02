@@ -103,3 +103,7 @@ Integration targets: [tests/catalog_scale.rs](tests/catalog_scale.rs), [tests/ph
 - [Execution security profiles](../../docs/runtime/execution-security-profiles.md)
 - [Workspace package index](../../crates/README.md)
 - [Architecture index](../../ARCHITECTURE.md)
+
+## Publication maintenance recovery
+
+The existing bounded control workers serve publication maintenance with mandatory durable audit. Startup reconciles native publication attempts after catalog recovery and before generic release reconciliation; missing or evicted original receipts remain unknown and never trigger mutation replay.

@@ -22,7 +22,8 @@ mapping!(action, AuditControlAction, AuditControlAction; Publish, Revoke, Retire
     NamespaceCreate, NamespaceQuiesce, NamespaceRetire, NamespaceDestroy, NamespaceRecreate, NamespaceInspect,
     DispatcherInspect, DispatcherPause, DispatcherResume, DispatcherOperationRead,
     EffectPlan, EffectReconcile, EffectRedrive, EffectTerminate, StateOperationRead,
-    StateCheckpoint, PayloadPurge, CommandFloorRelease, CommandCancel);
+    StateCheckpoint, PayloadPurge, CommandFloorRelease, CommandCancel,
+    PublicationPin, PublicationUnpin, PublicationDelete, PublicationReclaim);
 mapping!(capability_resource, AuditCapabilityResourceClass, AuditCapabilityResourceClass;
     Context, Clock, Random, Log, Http, Blob, Secrets, Events, Telemetry, Service, Stream, State);
 mapping!(provider_outcome, AuditProviderOutcome, AuditProviderOutcome;

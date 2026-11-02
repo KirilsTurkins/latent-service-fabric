@@ -7,6 +7,7 @@ use latent_artifacts::{
 use latent_core::{PlatformError, PlatformErrorCode};
 use std::fs;
 
+mod audit;
 mod capacity;
 mod cleanup;
 mod reclamation;

@@ -2,18 +2,15 @@
 
 ## Delivery boundary
 
-This is the native storage foundation for issue #662, not the completed
-committed-publication deletion feature. The repository exposes trusted-host
-pin/unpin and original-operation lookup APIs, a read-only deletion assessment,
-a **native durable tombstone stage** that removes terminal publications from
-visible indexes, and a separate **native capsule and componentless-web payload-reclamation stage**.
-There is no operator pin/deletion CLI or public management transport in this
-change. A tombstone alone is not a reclamation receipt and retains every payload
-charge. Only an explicit, durably recorded cleanup may release selected immutable
-publication files and last-reference blobs. Independent lifecycle/evidence
-history pruning and authenticated CLI/audit integration remain unfinished. Existing orphan reclamation is unchanged.
-Do not manually remove catalog files or call this trusted-host foundation as an
-operator cleanup tool.
+Issue #662 now has native pin/unpin, durable visibility removal, capsule and
+componentless-web payload reclamation, authenticated typed management methods,
+and the explicit `latent release retention` operator commands. Destructive
+maintenance requires the real finite administrative audit journal; disabled
+audit is refused. Follow the [operator deletion guide](../operations/publication-deletion.md),
+not direct native calls with a no-op preflight callback. A tombstone alone never
+refunds payload capacity. Independent history compaction and complete signed
+operator release/deletion/restore qualification remain unfinished. Existing
+orphan reclamation is unchanged, and manual catalog deletion is unsupported.
 
 A pin is **negative retention authority only**. It neither grants execution or
 HTTP serving nor restores an expired, revoked or retired release. Generation
@@ -48,7 +45,9 @@ The mandatory preflight callback runs outside reference/commit fences. A host
 adapter must reserve required audit and response capacity there. All original
 preconditions are rechecked after that callback and before the durable intent.
 A publication or retention change during preflight refuses the stale request.
-This callback contract is not an implemented management/audit integration.
+The authenticated management adapter now checks complete response capacity and
+reserves the mandatory audit attempt/outcome here. It reauthorizes the caller
+and preserves the native rechecks before the intent.
 
 ## Persistence and original-operation recovery
 
@@ -119,7 +118,7 @@ non-cryptographic host authority; it does not qualify signature policy. Suite
 registration alone is not execution evidence.
 
 Issue #662 still requires independent history pruning and a supported
-authenticated operator workflow with real finite audit admission/outcomes. The
+signed end-to-end operator qualification of the implemented finite audit and CLI workflow. The
 capsule and web cleanup stages below exercise native payload unlink/sync/refund,
 recovery and coupled restore; they do not complete the whole issue or qualify
 independent evidence/lifecycle pruning or signed end-to-end operator workflows.
@@ -197,7 +196,8 @@ cargo test --locked -p latent-control-store --all-features --lib
 entry point for the first deletion stage. It uses the same `PublicationDeletionRequest`
 as assessment. Authenticate and authorize the exact scope and actor before calling
 it. The callback must reserve the required finite audit attempt/outcome and
-response capacity; it is **not** an implemented RPC, CLI or audit adapter. Do not
+response capacity. The public adapter supplies mandatory finite audit and
+response admission through the audited host facade. Do not
 replace it with a no-op in an audited host.
 
 The method validates all scoped target identities before reporting pins or
@@ -337,7 +337,8 @@ Original admission side files inside a publication directory are included in
 its logical byte total; that total is not permission to discard evidence.
 
 A successful assessment changes no file, charge, receipt or eligibility state.
-It does not reserve audit capacity, authorize unlink or enable a cleanup CLI.
+It does not reserve audit capacity or authorize unlink. The separate explicit
+operator mutation performs fresh preflight and native authority checks.
 The separate capsule/web mutations below recheck authority and bytes, commit a
 bounded cleanup record and uses its own recognized-intent recovery protocol.
 No committed-content unlink or refund is performed by this assessment.
@@ -346,7 +347,8 @@ No committed-content unlink or refund is performed by this assessment.
 ## Durable native capsule payload reclamation
 
 `reclaim_tombstoned_capsules` is an explicit trusted-host mutation, not a public
-management route or CLI. Its `PublicationReclamationRequest` contains the exact
+management route by itself. The authenticated operator adapter calls the general
+audited facade. Its `PublicationReclamationRequest` contains the exact
 retained original deletion request, a **fresh** assessment catalog fence, and
 finite limits. The host must authenticate scope and actor and reserve finite
 audit outcome/response capacity in preflight. The callback is an integration
@@ -558,3 +560,30 @@ history or physical allocation. These numbers are observations, not golden
 constants or a universal release-growth rate. Fixtures explicitly use trusted-local,
 noncryptographic admission; fault injection is not a physical power-loss campaign.
 Signed publication/operator end-to-end qualification remains outstanding.
+
+## Mandatory administrative audit and public transport
+
+`GetPublicationRetention`, `MaintainPublications`,
+`AssessPublicationReclamation` and `GetPublicationMaintenanceOperation` use the
+installed native catalog and actual reference owner. Tenant and actor come from
+authentication, not from claimed request fields. Targets and full response graphs
+are bounded before mutation. The CLI sends one explicit request, retains both
+original deletion and fresh reclamation fences, and never invents a retry ID.
+
+`audited_publication_maintenance` reserves durable attempt and outcome capacity
+before allowing the native callback to return. Four distinct audit actions cover
+pin, unpin, visibility deletion and reclamation. Domain-separated bounded hashes
+bind the entire canonical request and preview receipt: scope, actor, every target,
+generation, both fences, limits, stage and native result. A batch is not represented
+as a fictitious single component/publication identity. Retain the original request
+and receipt for forensic comparison with those digests. The streaming hash input
+is independently capped at 64 KiB.
+
+Every admitted attempt, including an explicit confirmed replay, consumes finite
+audit capacity. Full/disabled/unavailable audit never becomes a best-effort bypass.
+Response and maximum acknowledgement sizing precede audit reservation. A native
+failure after reservation can leave a durable unknown outcome; only exact retained
+original-operation evidence proves a committed audit conclusion. Startup's native
+publication reconciler runs before generic release reconciliation and never calls
+mutation APIs. Catalog disposition and audit durability remain distinct. See the
+[operator recovery diagnostics](../operations/publication-deletion.md#recover-the-original-operation-never-guess-a-retry).

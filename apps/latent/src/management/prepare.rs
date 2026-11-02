@@ -23,6 +23,9 @@ use super::invalid_manifest;
 
 pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, Failure> {
     match command {
+        Command::Release(ReleaseCommand::Retention(command)) => {
+            super::retention::prepare(command, config)
+        }
         Command::Activation(command) => activation(command),
         Command::Web(command) => super::web::prepare(command, config),
         Command::Trigger(command) => super::triggers::prepare(command, config),

@@ -159,9 +159,18 @@ Web cleanup retains negative identities and independently verified history and
 evidence; the v2 cleanup marker rejects older readers. HTTP recovery refuses
 older control snapshots that reference tombstoned web payloads without rejecting
 ordinary retained revoked/retired references. Independent lifecycle/evidence
-history compaction and authenticated management/CLI plus finite audit integration
-remain unfinished. There is still no supported public
-operator deletion command. Follow the capacity and stopped-backup workflow
-above; do not call the trusted-host API with a no-op audit callback or remove
+history compaction remains separate. Authenticated management/CLI and finite
+audit integration are described below. Follow the operator deletion and complete
+stopped-backup workflows; do not call the trusted-host API with a no-op audit callback or remove
 catalog directories manually. The retention guide records the exact limits,
 recovery/restore requirements, native test scope and remaining work.
+
+## Authenticated operator maintenance
+
+Use [publication deletion](../operations/publication-deletion.md) through the
+four typed publication-maintenance RPCs and `latent release retention` commands.
+Mutations derive scope/actor from authentication, require durable finite audit,
+preflight complete response capacity and then recheck native authority. Snapshot,
+assessment and original-operation lookup are bounded read-only calls. Deletion
+and reclamation remain distinct stages; UNKNOWN is never automatic replay
+permission. Independent evidence/lifecycle/web history compaction remains separate.

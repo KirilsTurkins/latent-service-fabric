@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "latent.ci.suite-case-fragment.v1",
+  "suiteId": "latent-wire.test.management-service",
+  "expectedCases": [
+    "maintenance::authenticated_publication_operator_full_audit_prevents_deletion_and_replay",
+    "maintenance::authenticated_publication_operator_pin_delete_reclaim_replay_and_lookup",
+    "maintenance::authenticated_publication_operator_refuses_changed_fence_and_empty_or_oversized_batch",
+    "maintenance::authenticated_publication_operator_requires_audit_and_does_not_leak_foreign_selection",
+    "maintenance::authenticated_publication_operator_small_response_budget_has_no_audit_or_catalog_mutation"
+  ]
+}
