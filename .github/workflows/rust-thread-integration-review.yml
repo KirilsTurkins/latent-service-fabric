@@ -1,0 +1,53 @@
+name: Rust thread integration review
+on:
+  push:
+    branches: ['feat/rust-thread-runtime-20261023']
+    paths: ['.github/workflows/rust-thread-integration-review.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+        with:
+          persist-credentials: false
+          ref: 0ef909fda133933fddced7c52b17e2863ccf06a1
+      - name: Retain immutable source and bounded original failure details
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/rust-thread-review"
+          git archive --format=zip HEAD > "$RUNNER_TEMP/rust-thread-review/source.zip"
+          git ls-tree -r HEAD > "$RUNNER_TEMP/rust-thread-review/tree.txt"
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re, urllib.request
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'rust-thread-review'
+          records = []
+          for job in (124675114398, 124675114467, 124677420610):
+              request = urllib.request.Request(
+                  f'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/jobs/{job}/logs',
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  raw = response.read(32 * 1024 * 1024 + 1)
+              if len(raw) > 32 * 1024 * 1024:
+                  raise ValueError('review-log-bound')
+              (out / f'{job}.log').write_bytes(raw)
+              lines = [re.sub(r'^\S+Z ', '', line) for line in raw.decode('utf-8-sig').splitlines()]
+              indices = [i for i, line in enumerate(lines) if re.match(r'^(FAIL|ERROR):|^Ran \d+ tests|^FAILED \(|^SDK.*(fail|find)|^.*RUSTSEC-|^.*GHSA-', line)]
+              excerpt = '\n'.join('\n'.join(line[:1400] for line in lines[i:i + 10]) for i in indices)
+              (out / f'{job}-summary.txt').write_text(excerpt)
+              print(f'JOB {job}\n{excerpt[:24000]}')
+              records.append({'job': job, 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()})
+          (out / 'review.json').write_text(json.dumps({'source': '0ef909fda133933fddced7c52b17e2863ccf06a1', 'logs': records}, indent=2) + '\n')
+          PY
+      - name: Retain review inputs
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        with:
+          name: rust-thread-integration-review-${{ github.sha }}
+          path: ${{ runner.temp }}/rust-thread-review/
+          if-no-files-found: error
+          retention-days: 3
