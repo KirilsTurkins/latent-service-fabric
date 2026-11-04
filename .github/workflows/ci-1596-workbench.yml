@@ -1,0 +1,29 @@
+name: Issue 1596 implementation checks
+on:
+  push:
+    branches: [ci/1596-dynamic-test-discovery]
+    paths: [.github/workflows/ci-1596-workbench.yml]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+        with:
+          ref: 816b806d61c3479b3e138fa55466c22250818f07
+          persist-credentials: false
+      - name: Export exact tracked inputs without credentials
+        run: |
+          mkdir -p "$RUNNER_TEMP/issue-1596-source"
+          git rev-parse HEAD > "$RUNNER_TEMP/issue-1596-source/revision.txt"
+          git ls-files -z | tar --null -T - -czf "$RUNNER_TEMP/issue-1596-source/source.tar.gz"
+          git bundle create "$RUNNER_TEMP/issue-1596-source/source.bundle" HEAD
+          cp .git/shallow "$RUNNER_TEMP/issue-1596-source/shallow"
+      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        with:
+          name: issue-1596-exact-source
+          path: ${{ runner.temp }}/issue-1596-source/
+          if-no-files-found: error
+          retention-days: 3
