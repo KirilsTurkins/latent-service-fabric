@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "latent.cross-origin.native-evidence.v1",
+  "date": "2026-10-30",
+  "pullRequest": 1561,
+  "issue": 660,
+  "headCommit": "341e3e619f99862d611b1b8d2758987a1af01eee",
+  "testedCommit": "fa5395e71e98860421539c832be16e1d660ea8bc",
+  "developmentCommit": "26966f822eaafcfad7749836e749b3ac25c5a9e8",
+  "runId": 41038217752,
+  "jobId": 124004237068,
+  "artifactId": 12970335406,
+  "qualificationPassed": true,
+  "workflowPassed": false,
+  "workflowFailure": "post-qualification-clippy-applied-selected-owner-deny-warnings-to-dependencies",
+  "nativeRustCases": 19,
+  "browserCases": 19,
+  "browserObservations": 73,
+  "wireObservations": 13,
+  "nativeRuntimeQualified": true,
+  "productionTlsQualified": false,
+  "testIdentityOnly": true,
+  "receipts": {
+    "qualification.json": {
+      "file": "cross-origin-native-2026-10-30.qualification.json.gz",
+      "bytes": 39909,
+      "sha256": "fad5b7dcf1065bb379173a32542292d569b1b526976e7294db91ff3ff7ae8bfe",
+      "gzipSha256": "856a026b106385b442501168ec5e06bf29a5464a52d1bcd47a9a1f13c3fea1ac"
+    },
+    "browser-network.json": {
+      "file": "cross-origin-native-2026-10-30.browser.json.gz",
+      "bytes": 61704,
+      "sha256": "e4b5bcd0c3b52ac247876ba69f3939fb4c7334fa0cf83830eafcfe2c97251297",
+      "gzipSha256": "1d480c0062760cc3fc443a942deecf68cacc15b297771ff3f7ff6bfb54aeca48"
+    }
+  },
+  "nativeTestsLogSha256": "82a0a74b40013d040965024efdee263b64773c9f7a35d4b7b0c9afffaaea14ad"
+}

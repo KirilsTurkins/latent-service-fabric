@@ -29,7 +29,7 @@ The current security forks were reviewed on **2026-10-30**. They extend the pins
 | `KirilsTurkins/lsf-rust-cache` | `v2.9.3` + upstream changes and security fixes ([review](https://github.com/Swatinem/rust-cache/pull/396)) | `476b290465f7c84db317df6e6a6e2d3c12ea3477` |
 | `KirilsTurkins/lsf-attest-build-provenance` | `v4.2.2` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-attest-build-provenance/pull/1)) | `16b356100dfe77222eebe783b5e26a565b76055a` |
 | `KirilsTurkins/lsf-cache` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/cache/pull/1804)) | `2ff27e45011b8bcf31ef566ae84c1c923c8aea69` |
-| `KirilsTurkins/lsf-checkout` | `v7.0.1` + upstream changes and security fixes ([review](https://github.com/actions/checkout/pull/2607)) | `c3024dfac542bb46ebccc7829ddf1f95e0be8da9` |
+| `KirilsTurkins/lsf-checkout` | `v7.0.1` + upstream changes and security fixes ([review](https://github.com/actions/checkout/pull/2607)) | `842365d0a25bf5a868311e4cb89c908bdcab4bb8` |
 | `KirilsTurkins/lsf-deploy-pages` | `v5.0.1` + upstream changes and security fixes ([review](https://github.com/actions/deploy-pages/pull/453)) | `9290f9265d55d382005aa5f300fc4e9d5bb65cb2` |
 | `KirilsTurkins/lsf-download-artifact` | `v8.0.2` + upstream changes and security fixes ([review](https://github.com/actions/download-artifact/pull/496)) | `f073ba9e3801be93f933866d4c9a748e42157e5f` |
 | `KirilsTurkins/lsf-setup-dotnet` | `v6.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-dotnet/pull/795)) | `f5bcdac7f26977ef44527f837688dd86faf648ec` |
@@ -127,6 +127,12 @@ cross-run token inputs. Digest mismatches still fail by default. Its artifact
 dependency improves download retries on rate-limited requests. The remaining
 v8.0.1 pins now match the v8.0.2 identity already used by the other workflows;
 the ownership-local command contracts and historical snapshot need no refresh.
+
+The publication-scoped CORS workflow uses these same reviewed Python, Node
+and artifact-upload revisions. When bringing that workflow into a newer branch,
+check its executable references against `.github/security/actions.json`; a clean
+textual merge does not make a superseded action revision reviewed. Historical
+qualification receipts retain the actions and source identity of their own run.
 
 ## Updating a pin
 

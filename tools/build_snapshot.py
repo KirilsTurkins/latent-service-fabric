@@ -56,7 +56,11 @@ class SnapshotError(RuntimeError):
 # The v27 integration adds 67,917 bytes before this finite source adjustment.
 # Its 86,353,920-byte Git tar exceeds 82 MiB; retain fixed 83 MiB transport.
 # Source and archive framing caps remain independent; runtime budgets stay fixed.
-MAX_SOURCE_FILES = 8992
+# CI measured 9,037 selected files at the #660 merge fa5395e, exceeding
+# the old 8,992-file allowance before compiler work. Add one fixed
+# 256-file allowance, shared with attribution, without dropping inputs
+# or changing byte, directory, archive or runtime limits.
+MAX_SOURCE_FILES = 9248
 
 
 @dataclass(frozen=True)

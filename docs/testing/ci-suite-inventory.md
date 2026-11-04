@@ -1,9 +1,12 @@
 # Exact CI suites and host correctness
 
 The current catalogue is `tools/ci/suites.json` plus bounded additive fragments
-under `tools/ci/suites.d/`. The [loader](../../tools/ci_suite_inventory.py) checks
+under `tools/ci/suites.d/`, with ordinary case additions under
+`tools/ci/suites.cases.d/`. The [loader](../../tools/ci_suite_inventory.py) checks
 the combined contract; fragments can add target suites but cannot replace shared
-recipes, selections or existing identities. Use `tools/test.py list` and `plan`
+recipes, selections or existing identities. Case fragments add required ordinary
+cases to an exact existing libtest suite; they cannot remove or replace names,
+change ignore state, or override any execution field. Use `tools/test.py list` and `plan`
 for the selected checkout rather than treating a historical target/case count
 as today's inventory. Listing metadata is not executable discovery or a pass.
 
@@ -21,8 +24,8 @@ separate exact sources and cases. Earlier host execution receipts below also
 keep their original source; the maintained CI produces fresh discovery and
 execution receipts for subsequent changes.
 
-The versioned contracts live in `tools/ci/suites.json` and
-`tools/ci/contracts/`. The former identifies Cargo artifacts and exact test
+The versioned contracts live in the suite catalogue and its fragments, and in
+`tools/ci/contracts/`. The catalogue identifies Cargo artifacts and exact test
 names; the latter shards workflow policy, per-job commands and historical
 replacements, per-script owner fingerprints, and per-Python-module exact cases.
 See the [contract update and rebase guide](ci-command-contracts.md). They extend `tools/ci_profile.py` and
@@ -84,6 +87,50 @@ invocation. The signing suite still runs separately with
 `ed25519-dalek/legacy_compatibility`. Their result contracts require two one-case
 doctest summaries and the five compatibility cases respectively. They are not
 assumed to run under `--all-targets`.
+
+### Additive case fragments and merge review
+
+A feature adding ordinary tests to an existing libtest owner may register them
+in `tools/ci/suites.cases.d/<feature>.json` rather than rewriting the shared
+catalogue. The exact format is:
+
+```json
+{
+  "schemaVersion": "latent.ci.suite-case-fragment.v1",
+  "suiteId": "latentd.lib.latentd",
+  "expectedCases": ["module::tests::new_ordinary_case"]
+}
+```
+
+The example name is illustrative, not a registered test. The maintained
+[CORS fragment](../../tools/ci/suites.cases.d/cross-origin-assets.json) provides a
+real registration. Use the effective inventory from `ci_suite_inventory.load()`
+or `tools/test.py list`, not a direct JSON read of the primary catalogue, when
+reviewing complete case coverage.
+
+The [case loader](../../tools/ci_suite_cases.py) accepts additions only to a
+known libtest owner. It raises that owner's minimum by exactly the number of
+new cases without changing prerequisites, recipes, limits or existing ignored
+cases. Duplicate names within/across fragments or already in the primary
+catalogue, unknown owners, custom/compile-only targets, additional fields and
+invalid primary counts fail closed. Renaming/removing a test or changing its
+ignore state still requires an explicit review of its original registration;
+there is no replacement, subtraction or implicit deduplication operation.
+
+Case fragments have an independent ceiling of 64 regular JSON files and 2 MiB
+of aggregate bytes. Symlinked directories/files and unexpected entries are
+refused. Input order is deterministic. The existing suite-fragment and primary
+catalogue bounds remain unchanged. Both types of fragment retain normal exact
+Cargo discovery: a missing original/new case, unexpected case or new ignore
+state fails; a catalogue-only test is not runtime execution evidence.
+
+When merging, preserve every existing registration from both branches. If a case
+is deliberately moved from a fragment into the primary catalogue, remove its old
+fragment entry in the same reviewed change; leaving both is an error. Run:
+
+```sh
+python3 -m unittest tools.tests.test_ci_suite_cases tools.tests.test_ci_suite_fragments tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery
+```
 
 ## Affected inputs and offline selection
 

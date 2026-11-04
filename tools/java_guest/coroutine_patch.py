@@ -921,7 +921,21 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 "java.lang.Float", "java.lang.Double", "java.lang.Math", "java.lang.Character",
                 "java.lang.ref.Reference", "java.lang.ref.WeakReference", "java.lang.ref.ReferenceQueue",
                 "org.teavm.runtime.reflect.ClassInfo", "org.teavm.platform.Platform",
-                "org.teavm.platform.PlatformObject"
+                "org.teavm.platform.PlatformObject",
+                // Additional fixed public TeaVM 0.15 source owners declaring
+                // nonstatic native methods; these are diagnostic buckets only.
+                "org.teavm.runtime.ObjectInfo", "org.teavm.runtime.StringInfo",
+                "org.teavm.runtime.reflect.AnnotationConstructor", "org.teavm.runtime.reflect.AnnotationInfo",
+                "org.teavm.runtime.reflect.AnnotationValueArray", "org.teavm.runtime.reflect.ClassReflectionInfo",
+                "org.teavm.runtime.reflect.DerivedClassInfo", "org.teavm.runtime.reflect.FieldInfo",
+                "org.teavm.runtime.reflect.FieldReflectionInfo", "org.teavm.runtime.reflect.GenericArrayInfo",
+                "org.teavm.runtime.reflect.GenericTypeInfo", "org.teavm.runtime.reflect.MethodInfo",
+                "org.teavm.runtime.reflect.MethodReflectionInfo", "org.teavm.runtime.reflect.ParameterInfo",
+                "org.teavm.runtime.reflect.ParameterizedTypeInfo", "org.teavm.runtime.reflect.RawTypeInfo",
+                "org.teavm.runtime.reflect.TypeVariableInfo", "org.teavm.runtime.reflect.TypeVariableReference",
+                "org.teavm.runtime.reflect.WildcardTypeInfo", "org.teavm.backend.wasm.runtime.StringInternPool",
+                "java.net.impl.XHRURLConnection", "java.nio.BufferFinalizationRegistry",
+                "java.util.concurrent.ArrayBlockingQueue", "java.util.zip.Inflater"
             };
             for (int index = 0; index < classes.length; ++index) {
                 if (classes[index].equals(owner.getName())) {
@@ -933,6 +947,8 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             if (method.getAnnotations().get("org.teavm.interop.DelegateTo") != null) flags |= 2;
             if (method.getAnnotations().get("org.teavm.interop.Import") != null) flags |= 4;
             if (method.hasModifier(ElementModifier.STATIC)) flags |= 8;
+            if (method.getAnnotations().get("org.teavm.interop.Unmanaged") != null) flags |= 16;
+            if (method.getAnnotations().get("org.teavm.interop.Intrinsified") != null) flags |= 32;
         } catch (Exception unavailable) {
             group = 0;
             flags = 0;

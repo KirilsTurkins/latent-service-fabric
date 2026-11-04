@@ -36,7 +36,17 @@ class CThreadMinimal(unittest.TestCase):
    current_addendum = {'vendor/lsf/sdk/c-guest/src/closed-file-abi.c': '7b825118e32ce9561e8d876c14a0e50e33cad997b5a8599c4112e6f40323212a', 'vendor/lsf/sdk/c-guest/src/libfetch/upstream/musl-COPYRIGHT': 'f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af', 'vendor/lsf/sdk/c-guest/src/libfetch/http.c': 'f3f495e024a79d5221c0fd42b321c33105295c90d085756e8a36af5f8f89f5a2', 'vendor/lsf/sdk/c-guest/src/libfetch/UPSTREAM.json': 'e137aef2ca8901ce260c5aed164d0eec6d5c46ef94e1f0a61b408d757f0606a2'}
    for path, expected in current_addendum.items():
     self.assertEqual(left[path], right[path], path)
-    self.assertEqual(hashlib.sha256(left[path]).hexdigest(), expected, path)
+    original_bytes = left[path]
+    if path == 'vendor/lsf/sdk/c-guest/src/closed-file-abi.c':
+     # #1582 added the exact process-completion trap; keep the previous pin.
+     before = b'static int file_unsupported(void) {\n    errno = ENOTSUP;\n    return -1;\n}\n\n'
+     trap = (b'/* Process completion is unsupported: retain original owners through the\n'
+             b' * activation trap and Store cleanup. No atexit callbacks or stdio flushing.\n'
+             b' */\n_Noreturn void exit(int status) {\n    (void)status;\n    __builtin_trap();\n}\n\n')
+     following = b'int open(const char *path, int flags, ...) {\n'
+     self.assertEqual(original_bytes.count(before + trap + following), 1, path)
+     original_bytes = original_bytes.replace(before + trap + following, before + following, 1)
+    self.assertEqual(hashlib.sha256(original_bytes).hexdigest(), expected, path)
     if path in added_sdk:
      added_sdk[path] = expected
     else:
