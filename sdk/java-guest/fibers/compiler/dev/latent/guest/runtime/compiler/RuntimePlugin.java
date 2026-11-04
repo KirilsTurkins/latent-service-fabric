@@ -66,6 +66,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
         MonitorContinuations.transform(cls);
         SleepContinuations.transform(cls);
         WaitContinuations.transform(cls);
+        EventQueueHeapMethods.transform(cls, context);
         boolean thread = cls.getName().equals("java.lang.Thread");
         boolean monotonic = thread || cls.getName().equals("java.lang.Object")
             || cls.getName().equals("org.teavm.runtime.EventQueue");
