@@ -21,6 +21,13 @@ The new diagnostic node is 200,557,680 bytes, with SHA-256
 `f9a7da7ed2bf493693428ceaf6c8d9a951dfbda35e19b72634e9a650bbd2273d`.
 The four historical helper identities are not relabelled as new builds.
 
+The retained diagnostic receipts used the e3 200-control native origin, even
+though their temporary directory and the legacy false
+`original193NodeReused` field used the older 193 label. Existing receipts
+remain unchanged. New source retains that false field for compatibility and
+also records `original200NodeReused: false`; it does not change any reader,
+producer identity, helper bytes, diagnostic gate or qualification claim.
+
 The last-root-suspension record visited six frames in five raw traversal steps.
 No truncation, missing-coordinate, unmapped-frame or unavailable-transfer flag
 was set. All frames have observation-local module ordinal zero. The complete

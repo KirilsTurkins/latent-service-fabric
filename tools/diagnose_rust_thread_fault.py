@@ -1,6 +1,6 @@
 """Build only an explicit diagnostic node/control, then reuse unchanged inputs.
 
-Four helper products retain their exact verified 193-control origin. The node
+Four helper products retain their exact verified e3 200-control origin. The node
 has a NEW source/product identity and is never relabelled as that cohort. No
 guest/compiler/sysroot build and no runtime qualification occur here. Numeric
 stderr I/O can block and perturbs wall/terminal observation; this programme
@@ -56,7 +56,7 @@ def diagnose(prepared: Path, compiler_materials: Path, output: Path, revision: s
               'full743Qualified': False, 'historicalReceiptRewritten': False,
               'guestCompilerAndSysrootRebuilt': False,
               'diagnosticIoMayPerturbTimingAndTerminalObservation': True}
-    stage, primary = 'verify-original-193-helper-origin', False
+    stage, primary = 'verify-original-200-helper-origin', False
     stages = None
     try:
         old = original.verify_prepared(prepared)
@@ -114,7 +114,8 @@ def diagnose(prepared: Path, compiler_materials: Path, output: Path, revision: s
                                        for name, path in products.items()}
         record.update(sourceRevision=revision, source=before, compiler=compiler,
                       buildCommands=stages.records, newDiagnosticNode=identity,
-                      original193NodeReused=False, originalFourHelpersReused=True)
+                      original193NodeReused=False, original200NodeReused=False,
+                      originalFourHelpersReused=True)
         write_json(output / 'diagnostic-native-origin.json', record)
         stage = 'unchanged-retained-component-package'
         assembly = fresh(output / 'assembly')

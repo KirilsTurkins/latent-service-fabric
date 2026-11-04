@@ -275,6 +275,24 @@ jobs:
       - name: "Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}"
         if: failure() && matrix.lane == 'checks' && steps.clippy.outcome == 'failure'
         run: tail -n 120 "$RUNNER_TEMP/lsf-clippy.log"
+      - name: Build pinned source-only S3 test fixture
+        if: matrix.lane == 'provider'
+        id: s3_fixture
+        timeout-minutes: 26
+        run: |
+          python3 -m unittest tools.tests.test_s3_fixture_builder tools.tests.test_s3_blob_runner
+          python3 tools/build_s3_fixture.py --output "$RUNNER_TEMP/s3-fixture"
+      # This is a fresh GitHub-hosted provider VM. The fixture compiler
+      # container has already retired; keep its checked imported fixture image.
+      - name: Release retired S3 compiler image before the Rust build
+        if: matrix.lane == 'provider'
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          from tools.build_s3_fixture import BUILDER
+          subprocess.run(["docker", "image", "rm", BUILDER], check=True)
+          PY
+          df -h "$GITHUB_WORKSPACE"
       - name: Build workspace binaries and test harnesses
         if: matrix.lane != 'checks'
         run: python3 tools/ci_cargo.py run prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
@@ -369,13 +387,6 @@ jobs:
           cargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release
           wasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o "$RUNNER_TEMP/browser-component/application.wasm"
           wasm-tools validate "$RUNNER_TEMP/browser-component/application.wasm"
-      - name: Build pinned source-only S3 test fixture
-        if: matrix.lane == 'provider'
-        id: s3_fixture
-        timeout-minutes: 26
-        run: |
-          python3 -m unittest tools.tests.test_s3_fixture_builder tools.tests.test_s3_blob_runner
-          python3 tools/build_s3_fixture.py --output "$RUNNER_TEMP/s3-fixture"
       - name: Retain source-built S3 fixture and failure evidence
         if: always() && steps.s3_fixture.outcome != '' && steps.s3_fixture.outcome != 'skipped'
         uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes

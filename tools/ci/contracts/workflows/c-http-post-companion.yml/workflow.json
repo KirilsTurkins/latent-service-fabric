@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "workflow",
+  "reviewReason": "One dedicated-branch finite four-cell ordinary libfetch POST/uncertain/cancel/recovery companion; fresh five ordinary native products and one fresh guest, original bounds, no historical result retag or shared peer changes.",
+  "workflow": ".github/workflows/c-http-post-companion.yml",
+  "policy": {
+    "name": "C ordinary HTTP POST companion",
+    "on": {
+      "workflow_dispatch": null,
+      "push": {
+        "branches": [
+          "feat/sdk-690-c-http-post-20261031"
+        ],
+        "paths": [
+          ".github/workflows/c-http-post-companion.yml",
+          "tools/c_http_post_companion.py",
+          "tools/c_thread_runtime_node.py",
+          "sdk/c-guest/runtime-fixtures/libfetch/post-probe.c"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    },
+    "concurrency": {
+      "group": "c-http-post-${{ github.ref }}",
+      "cancel-in-progress": false
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    }
+  },
+  "requiredJobs": [
+    "ordinary-post"
+  ]
+}
