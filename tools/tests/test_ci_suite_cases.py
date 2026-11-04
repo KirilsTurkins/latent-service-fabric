@@ -206,10 +206,11 @@ class SuiteCaseFragmentTests(unittest.TestCase):
         after = {row["id"]: row for row in data["suites"]}
         fragment = registry.read_json(ROOT / "tools/ci/suites.cases.d/cross-origin-assets.json")
         self.assertEqual(len(fragment["expectedCases"]), 17)
-        command_race = registry.read_json(ROOT / "tools/ci/suites.cases.d/phase4-command-admission-race.json")
+        additions = [registry.read_json(path) for path in sorted(
+            (ROOT / "tools/ci/suites.cases.d").glob("*.json"))]
         for key, original in before.items():
             expected = copy.deepcopy(original)
-            for addition in (fragment, command_race):
+            for addition in additions:
                 if key == addition["suiteId"]:
                     expected["expectedCases"].extend(addition["expectedCases"])
                     expected["minimumCases"] += len(addition["expectedCases"])
