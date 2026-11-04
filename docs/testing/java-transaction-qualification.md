@@ -65,6 +65,11 @@ observed typed denial, no TCP contact, no application state commit and physical
 retirement on native/conductor source `7d22ee26ac2`. It does not qualify
 post-stage rollback or packaged delivery.
 
+The separate post-staging input generator creates a guest that stages state and
+a current deferred HTTP intent before attempting the forbidden immediate call.
+Its authored declaration and compiler output are preparation only; neither
+proves that staging occurred or that the node rolled it back.
+
 Use `python tools/run_java_transaction_http_qualification.py --help` from the
 repository root to inspect the complete required input set. Execution requires
 Linux and Python 3.13 or newer, explicit private inputs and the original finite

@@ -105,7 +105,7 @@ def _validate_materials(files, selected, names):
             and all(isinstance(item, str) for item in imports) and REQUIRED_IMPORTS <= set(imports)
             and set(imports) <= REQUIRED_IMPORTS | {"latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:http/client@0.2.0"}
             and (("latent:http/client@0.2.0" in imports) ==
-                 (selected.variant in {'forbidden-http', 'forbidden-http-before-stage'})),
+                 (selected.variant in {'forbidden-http', 'forbidden-http-before-stage', 'put-once-poststage-http-denial'})),
             "current-java-actual-transaction-imports")
     details = report.get("details")
     commands = details.get("commands") if isinstance(details, dict) else None
