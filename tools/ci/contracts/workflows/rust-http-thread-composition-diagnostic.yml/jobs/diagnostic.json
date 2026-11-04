@@ -1,0 +1,122 @@
+{
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Capture one unadmitted composed HTTP and ThreadPool graph",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Prepare the existing bounded compiler namespace and binding tool",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/rust-http-thread-tools\"\necho \"$RUNNER_TEMP/rust-http-thread-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Check causal gates and the explicit async WIT layout controls",
+        "run": "python3 -B -m unittest tools.tests.test_rust_thread_http_sibling tools.tests.test_rust_thread_http_sibling_compiler tools.tests.test_rust_thread_http_sibling_retention -v"
+      },
+      {
+        "name": "Acquire only the locked current SDK compiler inputs",
+        "run": "cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu"
+      },
+      {
+        "env": {
+          "EXPECTED_HEAD": "${{ github.sha }}"
+        },
+        "name": "Build current owned thread sysroot and context utility",
+        "run": "python3 -B tools/compile_rust_owned_thread_inputs.py --expected-head \"$EXPECTED_HEAD\" --rust-bin \"$(dirname \"$(rustup which rustc)\")\" --output \"$RUNNER_TEMP/rust-http-thread-owned\""
+      },
+      {
+        "name": "Build the current source-bound standard HTTP backend",
+        "run": "python3 -B tools/rust_wasi_http_inputs.py --output \"$RUNNER_TEMP/rust-http-thread-http\""
+      },
+      {
+        "env": {
+          "EXPECTED_HEAD": "${{ github.sha }}"
+        },
+        "name": "Build and identify the current contracts helper",
+        "run": "python3 -B tools/rust_thread_http_sibling_contracts.py --expected-head \"$EXPECTED_HEAD\" --rust-bin \"$(dirname \"$(rustup which rustc)\")\" --output \"$RUNNER_TEMP/rust-http-thread-contracts\""
+      },
+      {
+        "env": {
+          "EXPECTED_HEAD": "${{ github.sha }}"
+        },
+        "name": "Capture the actual unadmitted composed graph",
+        "run": "python3 -B tools/compile_rust_thread_http_sibling.py --expected-head \"$EXPECTED_HEAD\" --rust-bin \"$(dirname \"$(rustup which rustc)\")\" --owned-sysroot \"$RUNNER_TEMP/rust-http-thread-owned/owned-sysroot\" --context-tool \"$RUNNER_TEMP/rust-http-thread-owned/tool/rust-context\" --owned-report \"$RUNNER_TEMP/rust-http-thread-owned/report.json\" --owned-source \"$RUNNER_TEMP/rust-http-thread-owned/source-inputs.json\" --http-runtime \"$RUNNER_TEMP/rust-http-thread-http\" --contracts-tool \"$RUNNER_TEMP/rust-http-thread-contracts/capsule_contracts\" --contracts-receipt \"$RUNNER_TEMP/rust-http-thread-contracts/report.json\" --output \"$RUNNER_TEMP/rust-http-thread-combined\""
+      },
+      {
+        "if": "always()",
+        "name": "Admit bounded public source, compiler and failure observations",
+        "run": "python3 -B tools/rust_thread_http_sibling_retention.py --root \"$RUNNER_TEMP\" --output \"$RUNNER_TEMP/rust-http-thread-public\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain the bounded public diagnostic artifact",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "rust-http-thread-composition-diagnostic-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-http-thread-public/**",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 60
+  },
+  "jobId": "diagnostic",
+  "kind": "job",
+  "reviewReason": "Bind same-head producers, actual composed graph and bounded public artifact.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-http-thread-composition-diagnostic.yml"
+}

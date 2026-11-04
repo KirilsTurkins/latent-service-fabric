@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "CombinedCompilerSourceReceipt.test_contract_tool_receipt_requires_same_head_and_exact_binary",
+    "CombinedCompilerSourceReceipt.test_git_recipe_binds_the_clean_expected_head_and_exact_bytes",
+    "CombinedCompilerSourceReceipt.test_git_recipe_rejects_dirty_checkout_and_truncated_blob",
+    "CombinedCompilerSourceReceipt.test_owned_tool_and_sysroot_must_match_same_head_producer",
+    "CombinedCompilerWit.test_exact_async_result_is_checked_without_mutating_contract",
+    "CombinedCompilerWit.test_sync_foreign_or_ambiguous_interfaces_refuse",
+    "CombinedCompilerWit.test_unrelated_unowned_interface_does_not_change_exact_match",
+    "CombinedCompilerWit.test_wrong_result_type_and_oversized_interface_set_refuse"
+  ],
+  "guards": {
+    "CombinedCompilerSourceReceipt.test_contract_tool_receipt_requires_same_head_and_exact_binary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a055dd80b458d4a2b63ee02427c3704fb6091e61568e6f931ab9606e86528bf6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CombinedCompilerSourceReceipt.test_git_recipe_binds_the_clean_expected_head_and_exact_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a055dd80b458d4a2b63ee02427c3704fb6091e61568e6f931ab9606e86528bf6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CombinedCompilerSourceReceipt.test_git_recipe_rejects_dirty_checkout_and_truncated_blob": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a055dd80b458d4a2b63ee02427c3704fb6091e61568e6f931ab9606e86528bf6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CombinedCompilerSourceReceipt.test_owned_tool_and_sysroot_must_match_same_head_producer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a055dd80b458d4a2b63ee02427c3704fb6091e61568e6f931ab9606e86528bf6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CombinedCompilerWit.test_exact_async_result_is_checked_without_mutating_contract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a055dd80b458d4a2b63ee02427c3704fb6091e61568e6f931ab9606e86528bf6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CombinedCompilerWit.test_sync_foreign_or_ambiguous_interfaces_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a055dd80b458d4a2b63ee02427c3704fb6091e61568e6f931ab9606e86528bf6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CombinedCompilerWit.test_unrelated_unowned_interface_does_not_change_exact_match": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a055dd80b458d4a2b63ee02427c3704fb6091e61568e6f931ab9606e86528bf6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CombinedCompilerWit.test_wrong_result_type_and_oversized_interface_set_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a055dd80b458d4a2b63ee02427c3704fb6091e61568e6f931ab9606e86528bf6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_thread_http_sibling_compiler.py",
+  "reviewReason": "Preserve async WIT, clean Git preimages, and same-head owned and contract receipt refusals.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

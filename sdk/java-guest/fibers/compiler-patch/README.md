@@ -146,3 +146,161 @@ is only a pre-Clang decision, not component acceptance. It selects no compiler
 SDK or alternate application. Existing FULL/O2, native EH/SjLj, 64KiB stack, 64MiB
 maximum memory and the 7654321-byte function parser limit remain unchanged.
 The new JVM cost controls and actual public observation are still unexecuted.
+
+### Non-suspendable progress classification
+
+The private finder's final-reachability pass checks progress independently of
+whether `Activation.checkpoint` is reachable. It starts from reachable class
+initializers and method/class `@Unmanaged` contexts, follows the actual call
+graph, and retains the original exact private `Fiber.start()` managed-entry
+boundary. The existing checkpoint-call refusals run first and keep their reason
+codes. An excluded cycle without a supported finite argument refuses with
+`java-checkpoint-nonsuspendable-progress-741`; fuel exhaustion is not its proof.
+Managed loops outside these contexts keep the existing checkpoint transformation.
+
+The generic rule uses a reducible CFG, including exceptional edges, and SSA
+induction. Every entry supplies a signed `int`; every backedge must supply
+exactly `i + 1`; the dominating continuation test is strict signed `i < limit`.
+The limit may be an array length or a getter recomputed at the header: the rank
+`Integer.MAX_VALUE - (long) i` still decreases on every cycle because no signed
+limit can admit a cycle at `Integer.MAX_VALUE`. Header exception paths cannot
+bypass that test, and a body backedge must be dominated by its continuation.
+The increment on a traversed backedge cannot wrap. Mutable
+flag polling, reset/bypassed updates, unsupported exception cycles and unknown
+recursive call components do not acquire this argument. No package name is an
+approval, and calls/inner cycles require their own argument. After removing only
+ranked backedges, a separate acyclicity check rejects residual cycles, including
+self-edges not enumerated by the pinned loop finder. Existing C `DelegateTo`
+wrappers must have one reachable static sibling with a compatible signature;
+that body is analyzed in the same context. The C object/array header aliases
+retain their valid-operand precondition and are not arbitrary pointer conversions.
+An asynchronous operation or possibly contended monitor is not made bounded
+by a loop-free method body. Normal class-initialization edges retain the owned
+at-most-once/in-progress protocol, with every initializer checked independently;
+a direct IR invoke of `<clinit>` is not accepted as that protocol. Speculative
+unused/uncalled links are not executable roots; an actual call from an excluded
+context still requires its complete transitive proof. The absent original
+`Allocator.<clinit>` is authenticated, not treated as an exemption for an added
+or modified initializer.
+
+The separate runtime argument binds 32 exact original TeaVM 0.15 class entries,
+their complete field/method declarations, and normalized bodies. Shared symbol
+tables make the pinned `ClassIO`/`ProgramIO` representations comparable; their
+SHA-256 digests stream without retaining or publishing application IR. A changed
+runtime declaration or body cannot fall back to the generic counted rule. The
+normal C `DelegateTo` transformation, JCL platform-marker and branch passes,
+reference resolution and class-init insertion are reused. Marker declarations
+come from the authenticated original hierarchy. Required data-only layout uses,
+such as `RuntimeArray`, and their native structure parents must also match;
+unused pointer types do not force missing DCE classes into a lean programme.
+The certificate is a compositional finite boundary. Its two ordinary helper
+constructors (`Object` and `StackTraceElement`) bind exact original classlib
+inputs and actual normalized declaration/body comparisons through the pinned
+JCL substitution policy. Frame-name metadata and explicit fallback strings
+satisfy the stack element constructor's nonnull inputs; an unconstrained
+null-check/Throwable call SCC is not substituted for those actual inputs.
+Four additional exact classlib donors bind only fourteen C word operations:
+unsigned division/remainder/comparison, IEEE predicates and bit reinterpretation.
+No other native operation gains a finite argument from its declaring class name.
+
+The current certificate authenticates **42 runtime/donor entries in total**:
+32 runtime entries and ten donors. Besides the two constructor and four numeric
+donors, exact `ClassInfo`/`ReflectionInfo` inputs bind the selected native metadata
+queries to the original layout. The original `Object.getClassInfo` body also
+requires its exact method proof. These rules do not approve class initialization,
+allocation, or arbitrary reflective callbacks. Exact `TString`/`TSystem` donors
+cover the apparent char-array-constructor/arraycopy recursion: the nested copy
+uses a non-null source and a freshly allocated equal-length destination at zero
+offsets, so it cannot recurse through error-string construction again. Changed
+bodies or declarations do not receive this input-specific argument, and other
+Java callees still require their ordinary transitive proof.
+
+The finite runtime families have these arguments under the existing owned
+C/OWN_GC ABI and valid heap/metadata invariants:
+
+- Heap/free-chunk and relocation walks consume positive aligned spans within
+  the admitted arena, or advance through its finite chunk list.
+- Card, region, field, array and bulk-copy scans consume a finite count or
+  address range. Heap growth initializes only the newly admitted region range;
+  it does not create an unbounded resize-retry argument.
+- Mark work consumes objects whose mark bit is set before further discovery.
+  The finite admitted heap bounds objects/edges and the existing mark queue.
+- Weak-reference/direct-buffer walks consume the runtime's acyclic registration
+  lists; buffer superclass walks consume the emitted acyclic class metadata.
+- Exception and root traversal consume the owned shadow-stack frame chain and
+  finite emitted callsite/location/handler metadata.
+- Multi-array recursion reduces the compiler-supplied dimension count; each
+  array allocation retains the existing finite heap/failure bounds.
+
+These are source-bound runtime invariants, not a claim that arbitrary raw native
+writes preserve a heap or that an unknown external body is bounded. The admitted
+native interface is unchanged. An unknown body reached from a non-suspendable
+context has no inferred finite argument. Existing heap, stack, invocation, fuel,
+queue, observer and cleanup limits stay unchanged; the pass does not grant a
+larger heap or promise that every finite computation fits a caller's fuel grant.
+
+The pass retains the existing 65,536-method/block and 262,144-edge/variable/work
+bounds. Original proof classes have at most 128 KiB per entry in a regular JAR
+of at most 64 MiB. The unchanged archive writer still requires exactly the
+original three finder classes and thirteen replacement classes, each at most
+1 MiB, and preserves every nonreplacement entry. Digest streams and a strict
+public-context proxy lambda introduce no source companion class; the actual
+javac output must still pass that unchanged closure before acceptance.
+
+#### Responding to a progress refusal
+
+`java-checkpoint-nonsuspendable-progress-741` means the compiler could not prove
+finite progress in the excluded call closure. It does not assert that every
+rejected programme is mathematically nonterminating: unsupported finite loop or
+recursion shapes also refuse. Keep initializer/unmanaged work finite using the
+supported strict counted form, or move waiting and potentially suspending work
+out of that excluded context into managed execution. A finite outer loop does
+not make an unbounded inner loop or callee safe. Do not remove synchronization,
+insert a checkpoint inside an unsupported non-suspendable region, or increase
+fuel/heap limits to bypass the refusal.
+
+#### Executable qualification and evidence boundary
+
+The existing context control covers checkpoint-absent initializer and unmanaged
+polling negatives, counted/managed positives, and the original GC array body
+versus altered-body/layout controls. Run `41223241737`, job `124601967665`, at
+source `9e7746600ced8c200638eee1c57e013b79f37ebc` passed ten Python source/acquisition
+checks and both original/corrected JVM controls. Its retained `result.json`
+records `status: passed`, both context markers, and both eight-case real
+C-frontend markers; the selected private JAR preserves the other 1,874 entries.
+This supersedes the earlier statement that those controls were unexecuted.
+
+The current `CheckpointCompilerControl` expands the real frontend to twenty
+cases per mode. Six corrected cases must reach analysis completion: finite array
+initialization, managed polling outside excluded contexts, finite unmanaged
+counting, nested counted loops, a changing signed bound, and a strict near-maximum
+integer bound. Fourteen must refuse with the owned progress diagnostic: direct,
+transitive and virtual initializer polling; method/class unmanaged polling;
+self/mutual recursion; wrapping or reset induction; exception retries bypassing
+the update; an unbounded inner loop; and the three altered-runtime controls.
+The original compiler must reach analysis completion for all twenty, exposing
+the missing refusal rather than executing any of the fixture initializers.
+Independent Python checks bind the complete case inventory to the exact marker.
+
+Use the repository-pinned JDK and Python dependencies from the repository root:
+
+```sh
+python3 -m pip install --requirement tools/requirements.lock
+python3 -B tools/qualify_java_checkpoint_context.py --output /tmp/lsf-checkpoint-context
+```
+
+The output directory must be fresh. Inspect `result.json`, `commands.json`, and
+`commands/logs/`; a successful exit without the complete original/corrected
+markers is not accepted. The bounded `compiler-inputs.zip` retains the selected
+public sources, generated finder and locked JARs for replay. Each observation
+keeps its actual source/JDK/JAR identities; an older run does not certify a
+changed fixture or compiler.
+
+This exercises real bytecode parsing, JCL/C transformations, dependency analysis
+and the owning `CTarget` finder, not just a synthetic call graph. It intentionally
+stops before optimization and C generation even though the FULL setting remains
+selected. It does not compile or execute a guest, sign/admit a component, or
+qualify managed sibling fairness and GC roots at runtime. Fresh signed-component
+regressions remain separate work. Historical signed GC and checkpoint receipts
+keep their original source identities; this partial AC3 repair does not retag
+them or complete issue #741.

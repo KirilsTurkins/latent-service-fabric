@@ -54,6 +54,7 @@ class JavaCompilerDiagnostics(unittest.TestCase):
 
     def test_owned_checkpoint_refusals_classify_only_the_finite_reason_without_private_graph_names(self):
         for reason, classification in (('nonsuspendable-context', 'missing-runtime-port'),
+                ('nonsuspendable-progress', 'missing-runtime-port'),
                 ('analysis-bound', 'unresolved-behavior'), ('unresolved', 'unresolved-behavior')):
             text = 'latent.java.checkpoint-context.v1 java-checkpoint-'+reason+'-741'
             with self.subTest(reason=reason):
