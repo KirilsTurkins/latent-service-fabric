@@ -147,6 +147,7 @@ class PythonSourcePolicyTests(unittest.TestCase):
             helper.write_text('FLAG = False\ndef disabled(): return available()\ndef available(): return FLAG\ndef unrelated(): return 1\n')
             (tests / 'test_demo.py').write_text("import unittest\nfrom tools.checks import disabled\nclass Cases(unittest.TestCase):\n def test_one(self):\n  if disabled(): self.skipTest('native')\n")
             self.assertEqual(imported_skip_predicates("from tools import checks as c\nimport unittest\n@unittest.skipIf(c.disabled(), 'native')\nclass Cases(unittest.TestCase): pass\n"), {('tools/checks.py', 'disabled')})
+            self.assertEqual(imported_skip_predicates("from tools.checks import disabled\nclass Cases:\n def gate(self): return disabled()\n def test_one(self):\n  if self.gate(): self.skipTest('native')\n"), {('tools/checks.py', 'disabled')})
             git('add', '.'); git('commit', '-qm', 'baseline'); baseline = git('rev-parse', 'HEAD')
             original = helper.read_text()
             helper.write_text(original.replace('return 1', 'return 1 + 0'))

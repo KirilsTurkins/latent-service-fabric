@@ -171,7 +171,15 @@ def imported_skip_predicates(source: str) -> set[tuple[str, str]]:
     """Find repository functions directly reachable from a skip predicate."""
     tree = ast.parse(source)
     parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
-    functions = {node.name: node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    functions = {}
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            functions.setdefault(node.name, []).append(node)
+    for owner in (node for node in tree.body if isinstance(node, ast.ClassDef)):
+        for method in owner.body:
+            if isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                functions.setdefault('self.' + method.name, []).append(method)
+                functions.setdefault('cls.' + method.name, []).append(method)
     aliases = {name: name for name in SUPPRESSION}
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and node.module in {'unittest', 'unittest.case'}:
@@ -193,7 +201,8 @@ def imported_skip_predicates(source: str) -> set[tuple[str, str]]:
     while called - expanded:
         name = min(called - expanded); expanded.add(name)
         if name in functions:
-            called.update(ast.unparse(call.func) for call in ast.walk(functions[name]) if isinstance(call, ast.Call))
+            called.update(ast.unparse(call.func) for function in functions[name]
+                          for call in ast.walk(function) if isinstance(call, ast.Call))
     result = set()
     for node in tree.body:
         if isinstance(node, ast.ImportFrom) and not node.level and node.module == 'tools':
