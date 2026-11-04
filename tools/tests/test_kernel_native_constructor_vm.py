@@ -483,3 +483,58 @@ class Q35NodePciSetupControls(unittest.TestCase):
         self.assertIn(b'owned->revoked || owned->put_error',wait)
         for forbidden in (b'free_pages(',b'kfree(',b'request_irq(',b'register_netdevice('):
             self.assertNotIn(forbidden,source)
+
+
+class Q35NodePciFixupControls(unittest.TestCase):
+    @staticmethod
+    def serial():
+        marker = (b'[    2.345679] LSFQ35PCIFIXUP1 entries=125 matches=0 dispatcher=1 '
+            b'intxCheck=0 barProbe=0 registered=0\n')
+        return Q35NodePciSetupControls.serial().replace(
+            b'LSFNODESETUP1 childAck=1', marker+b'LSFNODESETUP1 childAck=1')
+
+    def test_original_dispatch_no_match_requires_bounded_ordered_marker(self):
+        raw = self.serial()
+        observed = owner.node_fixup_serial(raw)
+        self.assertEqual(observed['pciEarlyFixup']['linkedEntries'], 125)
+        self.assertEqual(observed['pciEarlyFixup']['matchingCallbacks'], 0)
+        self.assertTrue(observed['pciEarlyFixup']['originalDispatcherReached'])
+        for key in ('intxMaskCheckReached','barProbeReached','registered','callbacksQualified'):
+            self.assertFalse(observed['pciEarlyFixup'][key])
+        for bad in (raw.replace(b'entries=125', b'entries=0'),
+                raw.replace(b'entries=125', b'entries=513'),
+                raw.replace(b'matches=0', b'matches=1'),
+                raw.replace(b'dispatcher=1', b'dispatcher=0'),
+                raw.replace(b'intxCheck=0', b'intxCheck=1'),
+                raw.replace(b'barProbe=0', b'barProbe=1'),
+                raw.replace(b'LSFQ35PCIFIXUP1', b'WRONGMARKER'),
+                raw + b'[    2.345679] LSFQ35PCIFIXUP1 entries=1 matches=0 dispatcher=1 intxCheck=0 barProbe=0 registered=0\n'):
+            with self.subTest(raw=bad), self.assertRaises(ValueError):
+                owner.node_fixup_serial(bad)
+
+    def test_source_capture_and_incomplete_projection_refuse(self):
+        captured = owner.node_fixup_capture(owner.ROOT)
+        self.assertEqual(set(captured), {owner.FIXUP_PROJECTOR, owner.FIXUP_MATERIAL})
+        self.assertTrue(all(captured.values()))
+        with self.assertRaises(ValueError):
+            owner.node_fixup_compose({}, captured, b'')
+        with self.assertRaises(ValueError):
+            owner.node_fixup_compose({}, {}, b'')
+
+    def test_linked_table_and_owned_completion_are_fail_closed(self):
+        from importlib.util import module_from_spec, spec_from_file_location
+        path = owner.ROOT/owner.FIXUP_PROJECTOR
+        spec = spec_from_file_location('q35_fixup_control_projector', path)
+        stage = module_from_spec(spec); spec.loader.exec_module(stage)
+        raw = repr(stage.OPERATIONS)
+        for predicate in ('__start_pci_fixups_early','__end_pci_fixups_early',
+                'lsf_pci_fixup_matches(dev, f)','bytes / sizeof(*f) > 512u',
+                'is_kernel_rodata(first)','is_kernel_rodata(last - 1)', 'STRICT_KERNEL_RWX',
+                'f->class_shift >= 32u','lsf_fixup_before != lsf_fixup_after',
+                'lsf_node_fixup_reached(dev, lsf_fixup_after)', 'return -ECANCELED'):
+            self.assertIn(predicate, raw)
+        material = (owner.ROOT/owner.FIXUP_MATERIAL).read_text(encoding='utf8')
+        for predicate in ('lsf_node_constructor_actor_current()', 'node->prefix_fixup',
+                'lsf_node_setup_records_locked', 'pci_record->phase != LSF_PREPAID_LIVE',
+                'fw_record->phase != LSF_PREPAID_LIVE', 'factory.pool.poisoned = 1u'):
+            self.assertIn(predicate, material)
