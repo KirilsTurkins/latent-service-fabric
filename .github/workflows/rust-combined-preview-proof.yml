@@ -1,0 +1,60 @@
+name: Rust combined HTTP and thread source proof
+on:
+  push:
+    branches: ['diag/rust-combined-host-preview-20261105']
+    paths:
+      - '.github/workflows/rust-combined-preview-proof.yml'
+      - 'crates/latent-component-threading/Cargo.toml'
+      - 'crates/latent-component-threading/src/rust_objects.rs'
+      - 'crates/latent-component-threading/src/rust_component.rs'
+      - 'crates/latent-component-threading/src/rust_catalogue/combined-*'
+permissions:
+  contents: read
+concurrency:
+  group: rust-combined-preview-proof-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  preview-proof:
+    name: Original and separately bounded fixed combined graph proofs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Verify the unchanged normal profile and fixed combined graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rust-combined-preview-proof"
+          cargo test --locked -p latent-component-threading --lib rust_component::tests:: -- --nocapture 2>&1 | tee "$RUNNER_TEMP/rust-combined-preview-proof/normal.log"
+          grep -F 'test rust_component::tests::rust_normal_component_recomputes_original_graph_and_rejects_envelope_or_main_changes ... ok' "$RUNNER_TEMP/rust-combined-preview-proof/normal.log"
+          grep -F 'test rust_component::tests::rust_normal_preimage_never_authorizes_forged_or_duplicate_original_material ... ok' "$RUNNER_TEMP/rust-combined-preview-proof/normal.log"
+          cargo test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic rust_component::tests:: -- --nocapture 2>&1 | tee "$RUNNER_TEMP/rust-combined-preview-proof/combined.log"
+          grep -F 'test rust_component::tests::rust_combined_graph_recomputes_original_without_enabling_a_runtime ... ok' "$RUNNER_TEMP/rust-combined-preview-proof/combined.log"
+      - name: Retain bounded proof output including failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: rust-combined-preview-proof-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: ${{ runner.temp }}/rust-combined-preview-proof/*.log
