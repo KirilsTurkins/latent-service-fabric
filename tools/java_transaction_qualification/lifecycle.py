@@ -31,7 +31,7 @@ CURRENT_NODE_PROGRAM = (
 CURRENT_METADATA_SESSIONS = {'publish', 'authority', 'diagnostic-metadata', 'legacy-metadata',
                              'compatible-metadata', 'writer-metadata'}
 CURRENT_HTTP_TERMINAL_NODE_PROGRAM = (
-    *CURRENT_NODE_PROGRAM[:6], 'diagnostic-after-crash', *CURRENT_NODE_PROGRAM[6:11],
+    *CURRENT_NODE_PROGRAM[:11],
     'cancellation-legacy-metadata', 'cancellation-legacy-runtime',
     'cancellation-compatible-metadata', 'cancellation-compatible-runtime',
     *CURRENT_NODE_PROGRAM[11:],
@@ -40,6 +40,8 @@ CURRENT_HTTP_TERMINAL_METADATA_SESSIONS = CURRENT_METADATA_SESSIONS | {
     'cancellation-legacy-metadata', 'cancellation-compatible-metadata'}
 PENDING_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'legacy-runtime',
                         'pending-original-runtime', 'pending-restored-runtime')
+PRECOMMIT_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'legacy-runtime',
+                          'diagnostic-metadata', 'diagnostic-runtime', 'diagnostic-after-crash')
 EARLY_HTTP_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'early-http-runtime')
 
 
@@ -49,7 +51,7 @@ class Node:
         require(type(current_publication_program) is bool
                 and (not current_publication_program or getattr(client, 'phase4', False)),
                 'explicit-current-node-program')
-        require(type(current_program) is str and current_program in {'terminal', 'pending-close', 'early-http'}
+        require(type(current_program) is str and current_program in {'terminal', 'pending-close', 'early-http', 'precommit-crash'}
                 and (current_program == 'terminal' or current_publication_program),
                 'closed-current-node-program-selection')
         self.client, self.executable, self.directory = client, executable, directory
@@ -59,7 +61,8 @@ class Node:
         self.current_publication_program = current_publication_program
         self.current_program = current_program
         self.program = {'terminal': CURRENT_NODE_PROGRAM, 'pending-close': PENDING_NODE_PROGRAM,
-                        'early-http': EARLY_HTTP_NODE_PROGRAM}[current_program]
+                        'early-http': EARLY_HTTP_NODE_PROGRAM,
+                        'precommit-crash': PRECOMMIT_NODE_PROGRAM}[current_program]
         self.metadata_sessions = CURRENT_METADATA_SESSIONS
         self.current_activation = None
 
@@ -75,6 +78,7 @@ class Node:
         require(type(restore_authority) is bool, "explicit-restore-authority-session")
         if restore_authority:
             require(self.current_program != 'early-http', 'early-http-cannot-install-restore-authority')
+            require(self.current_program != 'precommit-crash', 'precommit-cannot-install-restore-authority')
             settings = read_json(configuration)
             state = settings.get("state")
             require(not self.current_publication_program

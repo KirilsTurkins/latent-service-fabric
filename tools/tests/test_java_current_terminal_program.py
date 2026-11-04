@@ -74,7 +74,10 @@ class CurrentHttpTerminalProgram(unittest.TestCase):
                      ('publish', 'authority', 'namespace-create', 'early-http-runtime')),
                     ({'current_publication_program': True, 'current_program': 'pending-close'},
                      ('publish', 'authority', 'namespace-create', 'legacy-runtime',
-                      'pending-original-runtime', 'pending-restored-runtime'))]:
+                      'pending-original-runtime', 'pending-restored-runtime')),
+                    ({'current_publication_program': True, 'current_program': 'precommit-crash'},
+                     ('publish', 'authority', 'namespace-create', 'legacy-runtime',
+                      'diagnostic-metadata', 'diagnostic-runtime', 'diagnostic-after-crash'))]:
                 with self.subTest(options=options):
                     node = self.node(root, **options)
                     self.assertEqual(node.program, names)
@@ -82,12 +85,12 @@ class CurrentHttpTerminalProgram(unittest.TestCase):
                     self.assertEqual((node.ordinal, node.restore_authority_sessions), (0, 0))
                     self.assertIsNone(node.process)
 
-    def test_explicit_selection_is_prestart_one_shot_and_adds_only_five_slots(self):
+    def test_explicit_selection_is_prestart_one_shot_and_adds_only_four_slots(self):
         with tempfile.TemporaryDirectory() as temporary, patch.object(lifecycle, 'Process') as process:
             node = self.node(Path(temporary).resolve(), current_publication_program=True)
             node.select_current_http_terminal_program()
             original = self.original_program()
-            self.assertEqual(node.program, (*original[:6], 'diagnostic-after-crash', *original[6:11],
+            self.assertEqual(node.program, (*original[:11],
                 'cancellation-legacy-metadata', 'cancellation-legacy-runtime',
                 'cancellation-compatible-metadata', 'cancellation-compatible-runtime', *original[11:]))
             self.assertEqual(node.metadata_sessions, lifecycle.CURRENT_METADATA_SESSIONS |
@@ -102,7 +105,8 @@ class CurrentHttpTerminalProgram(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary, patch.object(lifecycle, 'Process') as process:
             root = Path(temporary).resolve()
             for selected in ({}, {'current_publication_program': True, 'current_program': 'early-http'},
-                             {'current_publication_program': True, 'current_program': 'pending-close'}):
+                             {'current_publication_program': True, 'current_program': 'pending-close'},
+                             {'current_publication_program': True, 'current_program': 'precommit-crash'}):
                 with self.subTest(selected=selected):
                     node = self.node(root, **selected)
                     before = node.program, node.metadata_sessions
@@ -162,12 +166,12 @@ class CurrentHttpTerminalProgram(unittest.TestCase):
             configuration = root / 'restore-authority.json'
             write_json(configuration, {'state': {'formatVersion': 2, 'operations': [], 'createIfMissing': False}})
             with patch.object(lifecycle, 'Process', side_effect=RuntimeError('native-not-created')) as process:
-                node.ordinal = 17
+                node.ordinal = 16
                 with self.assertRaisesRegex(ValueError, 'current-restore-authority-after-writer-retirement'):
                     node.start(configuration, restore_authority=True)
                 process.assert_not_called()
                 self.assertEqual(node.restore_authority_sessions, 0)
-                node.ordinal = 18
+                node.ordinal = 17
                 with self.assertRaisesRegex(RuntimeError, 'native-not-created'):
                     node.start(configuration, restore_authority=True)
                 self.assertEqual(node.restore_authority_sessions, 1)
@@ -185,7 +189,7 @@ class CurrentHttpTerminalProgram(unittest.TestCase):
                 self.assertEqual(process.call_count, 2)
 
     def test_real_environment_selects_extension_only_for_current_http_terminal(self):
-        for program, length in [('terminal', 19), ('early-http', 4), ('pending-close', 6)]:
+        for program, length in [('terminal', 18), ('early-http', 4), ('pending-close', 6), ('precommit-crash', 7)]:
             with self.subTest(program=program), tempfile.TemporaryDirectory() as temporary:
                 fixture = EnvironmentFixture(Path(temporary).resolve())
                 peer, configuration, node = fixture.prepare(program)

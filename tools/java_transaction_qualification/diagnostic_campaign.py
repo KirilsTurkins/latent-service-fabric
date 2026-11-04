@@ -447,10 +447,6 @@ class DiagnosticCampaign:
         if "memoryAfterStage" in self.input.selectors:
             selected["memory"] = "memoryAfterStage"
         observations = {kind: self.case(kind, self.input.selectors[name]) for kind, name in selected.items()}
-        crash_qualified = (getattr(c.peer, 'current_http', False)
-                           and getattr(c.node, 'current_program', None) == 'terminal')
-        if crash_qualified:
-            self.crash_before_commit(self.input.selectors['loopAfterStage'])
         # Original full physical teardown proves release; fresh success uses
         # the same store, current policies, recipient and nonrenewable deadline.
         c.node.stop()
@@ -467,6 +463,4 @@ class DiagnosticCampaign:
         qualified = ["trap-and-fuel-after-staging", "cancellation-before-commit"]
         if "memory" in observations:
             qualified.append("memory-exhaustion-before-commit")
-        if crash_qualified:
-            qualified.append('crash-before-commit')
         return qualified

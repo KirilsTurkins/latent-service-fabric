@@ -183,7 +183,7 @@ retaining the existing broad-profile refusal and every qualification ceiling.
 `tools/run_java_pending_recovery_qualification.py` is a separate finite current
 conductor. It selects six named ordinary node sessions and one empty-operation
 restore-authority session. The default terminal program remains fourteen
-sessions; current HTTP terminal qualification explicitly selects nineteen before
+sessions; current HTTP terminal qualification explicitly selects eighteen before
 its first start. The pending program remains six sessions. Its twelve native
 actions export an actual
 unattempted pending effect, resume the original installation for real remote
@@ -192,6 +192,13 @@ the exact stable effect ID, replay that close, review and resume. The dispatcher
 control uses the existing authenticated node operator, original owner epoch and
 revision, durable audit and immutable receipt lookup. Logical pause alone cannot
 satisfy the physical drain required before backup.
+
+The separate `tools/run_java_precommit_crash_qualification.py` uses seven bounded
+node sessions in its own disposable installation. It observes a staged pending
+attempt, kills and positively reaps the original node, and checks the same
+unknown command identity after restart without retry. Keeping that unresolved
+attempt separate lets the terminal migration programme retain its normal
+quiescence requirements.
 
 ## Collector observations and uncertainty
 
