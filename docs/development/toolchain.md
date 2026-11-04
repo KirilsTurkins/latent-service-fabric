@@ -27,7 +27,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `tokio-rustls` |                               0.26.6 | Direct TLS adapter dependency |
 | Tracing / tracing-subscriber |                      0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
 | Wasmtime |                               48.0.7 | Maintained source package with selected value/native-allocation hooks; exact cohort participates in runtime identity |
-| `wasmparser` |                               0.261.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
+| `wasmparser` |                               0.262.0 | Direct component binary validation; the threading source profile retains 0.259.0 alongside its matching encoder, and WIT tooling retains separately locked parser dependencies |
 | `wasm-encoder` |                               0.261.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
 | `wit-parser` |                               0.262.0 | Direct WIT parsing and component decoding; guest tooling retains its separately locked parser dependencies |
 | `wit-bindgen` Rust macro |                    0.63.0 | Rust guest bindings generated from WIT |

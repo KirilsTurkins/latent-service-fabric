@@ -105,6 +105,31 @@ struct Entry {
     key: Key,
     value: Cell<*mut u8>,
     next: *mut Entry,
+}
+
+// The first bounded entries live inside their already-owned Context (or the
+// fixed root record), so ordinary std bookkeeping needs no second allocation
+// or Native owner. Overflow blocks retain admission-before-allocation and one
+// Native owner per actual System allocation.
+const ENTRIES_PER_BLOCK: usize = 32;
+
+struct EntrySlots {
+    used: Cell<usize>,
+    entries: UnsafeCell<[MaybeUninit<Entry>; ENTRIES_PER_BLOCK]>,
+}
+
+impl EntrySlots {
+    const fn new() -> Self {
+        Self {
+            used: Cell::new(0),
+            entries: UnsafeCell::new([const { MaybeUninit::uninit() }; ENTRIES_PER_BLOCK]),
+        }
+    }
+}
+
+struct EntryBlock {
+    next: *mut EntryBlock,
+    slots: EntrySlots,
     owner: ManuallyDrop<Lease>,
 }
 
@@ -158,6 +183,8 @@ struct Context {
     // reader/writer controls bind all four offsets, not a Rust default layout.
     stack: ShadowStack,
     head: Cell<*mut Entry>,
+    inline_entries: EntrySlots,
+    blocks: Cell<*mut EntryBlock>,
     closing: Cell<bool>,
     cleanup_requested: Cell<bool>,
     owner: ManuallyDrop<Cell<Option<Lease>>>,
@@ -218,6 +245,8 @@ fn allocate_context(continuation: Option<Token>) -> *mut Context {
             creation_started: Cell::new(0),
         },
         head: Cell::new(ptr::null_mut()),
+        inline_entries: EntrySlots::new(),
+        blocks: Cell::new(ptr::null_mut()),
         closing: Cell::new(false),
         cleanup_requested: Cell::new(false),
         owner: ManuallyDrop::new(Cell::new(Some(owner))),
@@ -259,6 +288,8 @@ pub(crate) fn prepare_borrowed_root_context(continuation: Token, low: u32, high:
             creation_started: Cell::new(0),
         },
         head: Cell::new(ptr::null_mut()),
+        inline_entries: EntrySlots::new(),
+        blocks: Cell::new(ptr::null_mut()),
         closing: Cell::new(false),
         cleanup_requested: Cell::new(false),
         owner: ManuallyDrop::new(Cell::new(Some(owner))),
@@ -304,6 +335,8 @@ pub(crate) fn prepare_stacked_thread_context(continuation: Token, bytes: usize) 
             creation_started: Cell::new(0),
         },
         head: Cell::new(ptr::null_mut()),
+        inline_entries: EntrySlots::new(),
+        blocks: Cell::new(ptr::null_mut()),
         closing: Cell::new(false),
         cleanup_requested: Cell::new(false),
         owner: ManuallyDrop::new(Cell::new(Some(owner))),
@@ -362,6 +395,8 @@ pub(crate) fn try_prepare_stacked_thread_context(
                 creation_started: Cell::new(0),
             },
             head: Cell::new(ptr::null_mut()),
+            inline_entries: EntrySlots::new(),
+            blocks: Cell::new(ptr::null_mut()),
             closing: Cell::new(false),
             cleanup_requested: Cell::new(false),
             owner: ManuallyDrop::new(Cell::new(Some(owner))),
@@ -397,6 +432,8 @@ pub(crate) unsafe fn frames_exited(pointer: *mut u8) -> bool {
         && live.stack.pointer.get() == live.stack.high
         && live.closing.get()
         && live.head.get().is_null()
+        && live.inline_entries.used.get() == 0
+        && live.blocks.get().is_null()
 }
 
 pub(crate) fn installed_context() -> *mut u8 {
@@ -463,6 +500,8 @@ pub(crate) fn prepare_owned_root_context(low: u32, high: u32) -> *mut u8 {
                 creation_started: Cell::new(0),
             },
             head: Cell::new(ptr::null_mut()),
+            inline_entries: EntrySlots::new(),
+            blocks: Cell::new(ptr::null_mut()),
             closing: Cell::new(false),
             cleanup_requested: Cell::new(false),
             owner: ManuallyDrop::new(Cell::new(None)),
@@ -557,7 +596,9 @@ pub unsafe extern "C" fn __lsf_rust_root_reap(pointer: *mut u8) {
             && live.stack.phase.get() == STACK_WASM_FRAMES_EXITED
             && live.stack.pointer.get() == live.stack.high
             && live.closing.get()
-            && live.head.get().is_null(),
+            && live.head.get().is_null()
+            && live.inline_entries.used.get() == 0
+            && live.blocks.get().is_null(),
         "root reaper requires completed logical TLS/frame retirement"
     );
     let drain = live.root_drain.get();
@@ -584,7 +625,12 @@ pub(crate) unsafe fn discard_unstarted_context(pointer: *mut u8) {
         !is_static_root(live),
         "fixed root must use its final root reaper"
     );
-    assert!(live.head.get().is_null() && !live.closing.get());
+    assert!(
+        live.head.get().is_null()
+            && live.inline_entries.used.get() == 0
+            && live.blocks.get().is_null()
+            && !live.closing.get()
+    );
     assert!(
         root_task_token(live).is_none(),
         "root context requires its owned root lifecycle"
@@ -629,17 +675,43 @@ unsafe fn entry(key: Key) -> &'static Entry {
         }
         current = item.next;
     }
-    // Every key entry is a real ledger Native owner. The context token keeps
-    // accepted destructor work attributable during close/drain. The values
-    // and entry bytes remain under the original Wasm linear-memory limiter;
-    // this code introduces no replacement byte quota or second task ledger.
-    let owner = Lease::acquire(Some(ensure_context_owner(context)));
-    let item = allocate(Entry {
-        key,
-        value: Cell::new(ptr::null_mut()),
-        next: context.head.get(),
-        owner: ManuallyDrop::new(owner),
-    });
+    let inline = &context.inline_entries;
+    let slots = if inline.used.get() < ENTRIES_PER_BLOCK {
+        inline
+    } else {
+        let mut block = context.blocks.get();
+        if block.is_null() || unsafe { &*block }.slots.used.get() == ENTRIES_PER_BLOCK {
+            // One accepted Native owner covers this one physical block allocation.
+            // The context token keeps accepted destructor work attributable during
+            // close/drain. Block and value bytes remain charged to the original
+            // Wasm linear-memory limiter; there is no replacement byte quota.
+            let owner = Lease::acquire(Some(ensure_context_owner(context)));
+            block = allocate(EntryBlock {
+                next: block,
+                slots: EntrySlots::new(),
+                owner: ManuallyDrop::new(owner),
+            });
+            context.blocks.set(block);
+        }
+        unsafe { &(*block).slots }
+    };
+    let index = slots.used.get();
+    let item = unsafe {
+        slots
+            .entries
+            .get()
+            .cast::<MaybeUninit<Entry>>()
+            .add(index)
+            .cast::<Entry>()
+    };
+    unsafe {
+        item.write(Entry {
+            key,
+            value: Cell::new(ptr::null_mut()),
+            next: context.head.get(),
+        })
+    };
+    slots.used.set(index + 1);
     context.head.set(item);
     unsafe { &*item }
 }
@@ -785,14 +857,17 @@ unsafe fn finish_tls(context: &Context) -> Result<(), RetireError> {
     if pending_destructors(context) {
         return Err(RetireError::DestructorLimit);
     }
-    // No callbacks remain; detach/free each TLS entry before settling its
-    // owner. The context and shadow stack remain installed through return.
-    let mut current = context.head.replace(ptr::null_mut());
+    // No callbacks remain; detach all logical entries, then free each physical
+    // block before settling that block's Native owner. The context and shadow
+    // stack remain installed through return.
+    context.head.set(ptr::null_mut());
+    context.inline_entries.used.set(0);
+    let mut current = context.blocks.replace(ptr::null_mut());
     while !current.is_null() {
-        let item = unsafe { deallocate(current) };
-        current = item.next;
-        let owner = unsafe { ptr::read(&*item.owner) };
-        drop(item);
+        let block = unsafe { deallocate(current) };
+        current = block.next;
+        let owner = unsafe { ptr::read(&*block.owner) };
+        drop(block);
         drop(owner);
     }
     Ok(())
@@ -814,6 +889,8 @@ pub(crate) unsafe fn retire_exited_thread_context(pointer: *mut u8) -> Result<()
         || live.stack.phase.get() != STACK_WASM_FRAMES_EXITED
         || !live.closing.get()
         || !live.head.get().is_null()
+        || live.inline_entries.used.get() != 0
+        || !live.blocks.get().is_null()
         || root_task_token(live).is_some()
     {
         return Err(RetireError::WrongStackPhase);

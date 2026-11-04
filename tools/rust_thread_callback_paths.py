@@ -119,7 +119,7 @@ def derive_plan(core: bytes, observation: dict, *, std_library: str,
         ('worker-release', calls('worker-release', (release,))[0], 'pool-release', False),
         ('reaper', calls('reaper', (notified, release))[0], 'worker-frames', False),
         ('reaper', calls('reaper', (notified, release))[1], 'worker-release', False),
-        ('entered', calls('entered', (release, notified))[1], 'worker-tls', False),
+        ('entered', calls('entered', (notified,))[0], 'worker-tls', False),
     ]
     sites = tuple(Site(roles[name]['actual'], row[0], targets_by_name[target].slot, fallback)
                   for name, (_, row), target, fallback in owners)
