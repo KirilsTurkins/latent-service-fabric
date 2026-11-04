@@ -114,6 +114,16 @@ class IsolatedDocumentationTestTests(unittest.TestCase):
             with self.subTest(source=bad): self.assertFalse(isolated_doc_test_additions(before, bad))
 
 class DynamicLoaderControlTests(unittest.TestCase):
+    def test_native_sdk_python_consumer_is_never_excluded(self):
+        from tools.ci_tool_graph import sdk_native_excludes
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); (root / 'sdk').mkdir()
+            source = root / 'sdk/build.rs'
+            source.write_text('fn main() {}\n')
+            self.assertTrue(sdk_native_excludes(root, 'tools/tests/test_validate_docs.py'))
+            source.write_text('fn main() { Command::new("python3"); }\n')
+            self.assertFalse(sdk_native_excludes(root, 'tools/tests/test_validate_docs.py'))
+
     def test_unrecognized_dynamic_owner_is_not_treated_as_resolved(self):
         from tools.ci_tool_graph import resolved_dynamic_exclusions
         with tempfile.TemporaryDirectory() as temporary:

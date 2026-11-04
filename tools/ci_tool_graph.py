@@ -341,6 +341,32 @@ def java_loader_excludes(root: Path, candidate: str) -> bool:
         return False
 
 
+def sdk_native_excludes(root: Path, candidate: str) -> bool:
+    """Do not infer away a native SDK source that launches Python tests."""
+    import os
+    directory = root / 'sdk'
+    if not directory.is_dir() or directory.is_symlink(): return False
+    extensions = {'.rs', '.go', '.sh', '.js', '.mjs', '.ts', '.java', '.c', '.h', '.toml'}
+    files = total = 0
+    try:
+        for folder, dirs, names in os.walk(directory, followlinks=False):
+            if any((Path(folder) / name).is_symlink() for name in dirs): return False
+            dirs[:] = [name for name in dirs if name not in {'target', 'node_modules', '__pycache__', '.git'}]
+            for name in names:
+                path = Path(folder) / name
+                if path.suffix not in extensions: continue
+                if path.is_symlink(): return False
+                with path.open('rb') as source: raw = source.read(MAX_SOURCE_BYTES + 1)
+                files += 1; total += len(raw)
+                if files > MAX_FILES or len(raw) > MAX_SOURCE_BYTES or total > MAX_TOTAL_BYTES: return False
+                text = raw.decode('utf-8-sig').lower()
+                if any(token in text for token in ('python', 'unittest', 'pytest', Path(candidate).name.lower())):
+                    return False
+        return files > 0
+    except (OSError, UnicodeError, ValueError):
+        return False
+
+
 def sdk_dynamic_excludes(root: Path, candidate: str) -> bool:
     """Reject SDK loader sites unless their file target is a fixed other basename."""
     import os
@@ -554,6 +580,7 @@ def isolated_qualification_scope(root: Path, candidate: str) -> tuple[bool, str]
     if candidate != 'tools/tests/test_validate_docs.py': return False, 'unowned-tooling-path'
     try:
         if not workflow_triggers_are_scoped(root, candidate): return False, 'unresolved-workflow-trigger'
+        if not sdk_native_excludes(root, candidate): return False, 'unresolved-native-sdk-consumer'
         if not sdk_dynamic_excludes(root, candidate): return False, 'unresolved-sdk-loader'
         graph = observe(root)
         roots = qualification_roots(root, graph)
