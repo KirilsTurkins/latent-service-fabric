@@ -83,6 +83,71 @@ class PrivateRemovedInputs(unittest.TestCase):
         self.assertNotEqual(inputs.SOURCE,consumer.native.SOURCE)
         self.assertEqual(consumer.native.READER.control_count,193)
         self.assertNotIn('npm-private-dependencies/node-2/workflow.json',value['members'])
+        # This campaign must never inherit a later Rust reader's origin.
+        # Pin the complete independently reviewed b422 tuple, not just a count.
+        import hashlib, json
+        from unittest.mock import patch
+        from tools import sdk_native_products_reader as shared
+        from tools.ci_lane_inventory import workflow_model
+        native = consumer.native
+        names = ('SOURCE', 'RUN', 'HISTORICAL_JOB', 'JOB', 'BRANCH',
+            'HISTORICAL_ARTIFACT', 'ARTIFACT', 'HISTORICAL_RECEIPTS', 'RECEIPTS',
+            'PRODUCER_SHA256', 'ALLOCATION_COHORT', 'COHORT', 'SCOPE', 'STAGES')
+        encoded = json.dumps({name: getattr(native, name) for name in names},
+                             sort_keys=True, separators=(',', ':')).encode()
+        self.assertEqual(hashlib.sha256(encoded).hexdigest(),
+                         'b26a5191b8443c6131919e07ddaae29d0d744fbcfdadc39c7de8907fca3b0b8d')
+        self.assertEqual(native.SOURCE, 'b422af24d86344ac7abb8b8fa56c3782aab63915')
+        self.assertEqual((native.READER.command_count, len(native.READER.controls),
+                          len(native.READER.recipe)), (91, 44, 24))
+        self.assertEqual(sum(len(row[3]) for row in native.READER.controls), 193)
+        self.assertEqual(native.READER.stages, native.STAGES)
+        selected = 'tools/typescript_private_removed_native_products.py'
+        self.assertIn(selected, consumer.MATERIALS)
+        self.assertNotIn('tools/rust_thread_native_products.py', consumer.MATERIALS)
+        workflow = workflow_model((inputs.ROOT / '.github/workflows/typescript-private-removed.yml').read_text())
+        self.assertIn(selected, workflow['on']['push']['paths'])
+        steps = workflow['jobs']['removed-phase']['steps']
+        acquire = next(step for step in steps if step.get('name') ==
+                       'Authenticate the separate five native products without rebuilding')
+        self.assertEqual(acquire['run'], 'python3 -B ' + selected +
+                         ' --output "$RUNNER_TEMP/typescript-removed-native"')
+        fetched = next(step for step in steps if step.get('name') ==
+                       'Fetch the two immutable compiled origins before source verification')
+        self.assertEqual(fetched['run'].splitlines(), [
+            'git fetch --no-tags --depth=1 origin ' + inputs.SOURCE,
+            'git fetch --no-tags --depth=1 origin ' + native.SOURCE])
+        self.assertLess(steps.index(fetched), steps.index(acquire))
+        # Synthetic metadata exercises the real origin validator without
+        # downloading products or claiming a new native/signed execution.
+        reader = native.READER
+        run = dict(id=native.RUN, head_sha=native.SOURCE,
+            path='.github/workflows/host-codec-memory.yml', event='workflow_dispatch',
+            head_branch=native.BRANCH, status='completed', conclusion='success')
+        job = dict(id=native.JOB, run_id=native.RUN, head_sha=native.SOURCE,
+            name=reader.job_name, status='completed', conclusion='success')
+        artifact = dict(native.ARTIFACT, expired=False,
+            name='host-codec-memory-' + native.SOURCE,
+            workflow_run=dict(id=native.RUN, head_sha=native.SOURCE))
+        listing = dict(total_count=1, artifacts=[artifact])
+        with patch.object(shared, 'api', side_effect=[run, job, listing]) as request:
+            self.assertEqual(reader._official_artifact(), artifact)
+            self.assertEqual(request.call_count, 3)
+        for label, bad_run, bad_job, bad_listing in (
+            ('foreign-source', dict(run, head_sha='e3f0edf822c10e84bbeede276174ac3217542afc'), job, listing),
+            ('wrong-job', run, dict(job, id=native.HISTORICAL_JOB), listing),
+            ('failed-job', run, dict(job, conclusion='failure'), listing),
+            ('old-artifact', run, job, dict(listing, artifacts=[dict(artifact, **native.HISTORICAL_ARTIFACT)])),
+            ('expired', run, job, dict(listing, artifacts=[dict(artifact, expired=True)])),
+            ('foreign-artifact', run, job, dict(listing, artifacts=[dict(artifact,
+                workflow_run=dict(id=native.RUN, head_sha='e3f0edf822c10e84bbeede276174ac3217542afc'))])),
+            ('duplicate', run, job, dict(total_count=2, artifacts=[artifact, artifact])),
+        ):
+            with self.subTest(origin=label), patch.object(shared, 'api',
+                    side_effect=[bad_run, bad_job, bad_listing]), self.assertRaises(WorkflowError):
+                reader._official_artifact()
+        with self.assertRaisesRegex(WorkflowError, 'exact-frozen-producer'):
+            reader._producer_contract(b'CONTROLS = ()\n')
 
     def test_original_static_layer_recovery_preserves_package_hash(self):
         from unittest.mock import patch

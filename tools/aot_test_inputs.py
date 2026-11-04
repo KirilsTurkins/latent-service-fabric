@@ -25,11 +25,12 @@ if __package__ in (None, ""):
 from tools import ci_rust_artifacts as artifacts
 
 SCHEMA = "latent.aot-test-inputs.v1"
-PROFILE = "debug-all-features-v6"
+PROFILE = "debug-all-features-v7"
 # Exact --all-features closure, including explicit clock/local-service fixtures.
 # Production Wasm exceptions remain an explicit, bounded Java profile opt-in.
 FEATURES = ("aot-test-timings", "development-clock-fixture", "development-local-service-fixture",
-            "development-test-host", "java-checkpoint-gc-trap-diagnostic", "java-guest-diagnostic")
+            "development-test-host", "java-checkpoint-gc-trap-diagnostic", "java-guest-diagnostic",
+            "rust-thread-trap-diagnostic")
 MAX_FILE = 512 * 1024 * 1024
 MAX_MANIFEST = 64 * 1024
 HARNESS_NAMES = ("aot_supervisor", "isolated_aot", "native_aot_cache")
