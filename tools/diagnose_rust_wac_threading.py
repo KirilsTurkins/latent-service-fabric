@@ -51,6 +51,11 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def recipe_identities():
+    # The build-observation helper requires both the file path and its name.
+    return {name: file_identity(ROOT / name, name) for name in RECIPE}
+
+
 def official_metadata(api):
     run = api('actions/runs/' + str(RUN))
     require(run['id'] == RUN and run['head_sha'] == SOURCE and run['event'] == 'push'
@@ -117,7 +122,7 @@ def compare(output: Path, new_wac: Path, expected_head: str):
     try:
         require(git('rev-parse', 'HEAD') == expected_head and not git('status', '--porcelain'),
             'wac-probe-clean-exact-source')
-        recipe = {name: file_identity(ROOT / name) for name in RECIPE}
+        recipe = recipe_identities()
         record['recipe'] = recipe
         require(os.environ.get('GH_TOKEN'), 'wac-probe-official-artifact-token-required')
         gh_env = build_environment(output)
@@ -199,7 +204,7 @@ def compare(output: Path, new_wac: Path, expected_head: str):
             originalWholeComponentEmbedded=preview.read_bytes() in composed,
             preview={'bytes': preview.stat().st_size, 'sha256': 'sha256:' + sha(preview.read_bytes())},
             composed={'bytes': len(composed), 'sha256': 'sha256:' + sha(composed)})
-        require(recipe == {name: file_identity(ROOT / name) for name in RECIPE}
+        require(recipe == recipe_identities()
             and git('rev-parse', 'HEAD') == expected_head and not git('status', '--porcelain')
             and sha(read_file(new_wac, NEW_WAC_SIZE)) == NEW_WAC_SHA,
             'wac-probe-source-or-composer-changed')
