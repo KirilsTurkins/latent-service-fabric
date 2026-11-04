@@ -123,9 +123,12 @@ The full-profile Python contract job ran unittest discovery (8,551 tests, 50
 skips) without the native-required environment variable, after its own toolchain
 and fixture setup. Job elapsed times were 2m30s and 9m24s respectively; their
 sum was 11m54s, excluding other jobs. These are a single historical sample,
-not equivalent-context proof or a measured saving. The different prerequisite
-and skip behavior remains a reason to retain both Python executions until
-case-level observations demonstrate an equivalent owner.
+not a measured saving. The deterministic modules have no native-required
+environment or external service prerequisites: the full profile runs them in its
+Python discovery job, while docs, website and fast profiles retain the docs-job
+execution. The native-required tooling and process groups remain in the docs job
+because the full Python context has different prerequisite and skip behavior.
+A completed comparable hosted run is needed before reporting any savings.
 
 The validator writes `target/ci/observed-inventory.json`, including on validation
 failure when source/Git inspection is possible. The documentation lane runs it

@@ -1085,6 +1085,10 @@ class RepositoryMigrationTests(unittest.TestCase):
         invocations = [line.strip() for step in steps for line in step.get("run", "").splitlines()
                        if line.strip().startswith("python3 tools/ci_coverage.py")]
         self.assertEqual(invocations, ["python3 tools/ci_coverage.py --receipt target/ci/observed-inventory.json"])
+        deterministic = next(step for step in steps if step.get("name") == "Validate deterministic dependency regressions")
+        self.assertEqual(deterministic["if"], "needs.profile.outputs.profile != 'full'")
+        self.assertEqual(model["jobs"]["contracts"]["if"], "needs.profile.outputs.profile == 'full'")
+        self.assertIn("python", model["jobs"]["contracts"]["strategy"]["matrix"]["lane"])
         upload = next(step for step in steps if step.get("id") == "contract_evidence")
         self.assertEqual(upload["if"], "always()")
         self.assertEqual(upload["with"]["path"], "target/ci/observed-inventory.json")

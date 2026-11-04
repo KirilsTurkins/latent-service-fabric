@@ -123,6 +123,7 @@ jobs:
           python3 tools/validate_foundation.py
 
       - name: Validate deterministic dependency regressions
+        if: needs.profile.outputs.profile != 'full'
         run: python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies
 
       - name: Retain CI contract diagnostics even on validation failure
