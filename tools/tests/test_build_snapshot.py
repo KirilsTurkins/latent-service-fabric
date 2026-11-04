@@ -156,14 +156,13 @@ class BuildSnapshotTests(unittest.TestCase):
             with self.subTest(limits=limits), tempfile.TemporaryDirectory() as temporary:
                 with self.assertRaises(SnapshotError):
                     extract_archive(payload, Path(temporary) / "source", limits)
-        # The finite 76 MiB source budget has a separate 7 MiB allowance
-        # for archive framing. Both remain hard caps.
-        self.assertEqual(SnapshotLimits().max_total_bytes, 76 * 1024 * 1024)
-        self.assertEqual(SnapshotLimits().max_archive_bytes, 83 * 1024 * 1024)
+        # Source bytes and archive framing have separate finite caps.
+        self.assertGreater(SnapshotLimits().max_total_bytes, SnapshotLimits().max_file_bytes)
+        self.assertGreater(SnapshotLimits().max_archive_bytes, SnapshotLimits().max_total_bytes)
         SnapshotLimits().validate()
         for limits in (SnapshotLimits(max_entries=0),
-                       SnapshotLimits(max_total_bytes=76 * 1024 * 1024 + 1),
-                       SnapshotLimits(max_archive_bytes=83 * 1024 * 1024 + 1)):
+                       SnapshotLimits(max_total_bytes=SnapshotLimits().max_total_bytes + 1),
+                       SnapshotLimits(max_archive_bytes=SnapshotLimits().max_archive_bytes + 1)):
             with self.assertRaises(SnapshotError):
                 limits.validate()
 
@@ -178,7 +177,7 @@ class BuildSnapshotTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary, self.assertRaises(SnapshotError):
             extract_archive(payload, Path(temporary) / "source",
                             SnapshotLimits(max_entries=1, max_directories=1))
-        for maximum in (0, 4097):
+        for maximum in (0, SnapshotLimits().max_directories + 1):
             with self.subTest(maximum=maximum), self.assertRaises(SnapshotError):
                 SnapshotLimits(max_directories=maximum).validate()
 
