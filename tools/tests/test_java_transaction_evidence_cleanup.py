@@ -346,6 +346,7 @@ class QualificationCleanup(unittest.TestCase):
             self.assertEqual((evidence.directory / "node-1-startup.stderr").read_bytes(), b"")
             failure = json.loads((evidence.directory / "node-1-startup-failure.json").read_bytes())
             self.assertEqual((failure["exitStatus"], failure["reaped"]), (0, True))
+            self.assertEqual(failure["startupElapsedMillis"], 0)
 
 
 class EvidenceFinalization(unittest.TestCase):

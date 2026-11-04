@@ -110,6 +110,7 @@ class Node:
             require(current_session is None and self.process is None and self.ordinal - self.restore_authority_sessions < 6,
                     "bounded-exclusive-node-session")
         self.ordinal += 1
+        startup_began = time.monotonic()
         process = Process([str(self.executable), "serve", "--config", str(configuration)], self.directory,
             dict(self.client.environment, HOME=str(self.directory)), self.client.cancellation, maximum=262144)
         try:
@@ -133,6 +134,7 @@ class Node:
             self.client.evidence.record(f"node-{self.ordinal}-started", started)
             return process
         except BaseException:
+            startup_elapsed_millis = max(0, int((time.monotonic() - startup_began) * 1000))
             self.client.node = None
             self.process = None
             process.close()
@@ -140,7 +142,8 @@ class Node:
             self.client.evidence.write(f"node-{self.ordinal}-startup.stderr", bytes(process.buffers[1]))
             self.client.evidence.record(f"node-{self.ordinal}-startup-failure", {
                 "exitStatus": process.owner.process.returncode, "reaped": process.closed and process.owner.finished,
-                "started": getattr(process, "startup_record", None)})
+                "started": getattr(process, "startup_record", None),
+                "startupElapsedMillis": startup_elapsed_millis})
             raise
 
     def stop(self):
