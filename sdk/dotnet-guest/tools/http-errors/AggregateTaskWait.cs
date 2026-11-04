@@ -221,6 +221,12 @@ internal static class AggregateTaskWait
         var observedCompletion = new FieldDefinition("s_lsfAggregateCompleted", FieldAttributes.Private | FieldAttributes.Static, module.TypeSystem.Boolean);
         foreach (var field in new[] { target, callerToken, start, timeout, observedCompletion }) loop.Fields.Add(field);
 
+        // The dispatcher may already own the next runnable callback in its
+        // original prefetched slot, which PendingWorkItemCount does not include.
+        var prefetched = Type("System.Threading.ThreadPoolWorkQueue").Methods.Single(method =>
+            method.Name == "LsfManagedWorkPrefetchedReady");
+        Need(prefetched.IsStatic && prefetched.IsAssembly && prefetched.Parameters.Count == 0
+            && prefetched.ReturnType.MetadataType == MetadataType.Boolean);
         var ready = New(loop, Prefix + "Ready", module.TypeSystem.Boolean,
             MethodAttributes.Private | MethodAttributes.Static);
         var il = ready.Body.GetILProcessor();
@@ -236,6 +242,13 @@ internal static class AggregateTaskWait
         il.Append(legacy); il.Emit(OpCodes.Brfalse, no); il.Emit(OpCodes.Ldsfld, current);
         il.Emit(OpCodes.Callvirt, task.Methods.Single(method => method.Name == "get_IsCompleted")); il.Emit(OpCodes.Ret);
         il.Append(yes); il.Emit(OpCodes.Ret); il.Append(no); il.Emit(OpCodes.Ret);
+        // Preserve the complete previous helper and only prepend the actual
+        // read-only slot query. A true result takes the existing zero-poll path.
+        Need(TaskWait.BodyIdentity(ready) == "b54b84931d18366cfa690fb0eebb61d741d7e934f19e18e845ccd91379bf15f7");
+        var originalReady = ready.Body.Instructions[0];
+        il.InsertBefore(originalReady, Instruction.Create(OpCodes.Call, prefetched));
+        il.InsertBefore(originalReady, Instruction.Create(OpCodes.Brtrue, yes));
+        Need(TaskWait.BodyIdentity(ready) == "4eabc2f11e2f7eac8a6d4a67812a51d356b7654101845c01458b5f85754cb5a7");
 
         // Replace only the original five-instruction main-target condition.
         var sites = check.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Ldsfld
@@ -401,7 +414,8 @@ internal static class AggregateTaskWait
         var timerPump = DetachTimerPumpBatch(module, reader);
 
         var receipt = new {
-            patch = "latent.dotnet.wait-all.v2", profile = "dotnet-aggregate-task-wait-candidate-v2",
+            patch = "latent.dotnet.wait-all.v3", profile = "dotnet-aggregate-task-wait-candidate-v3",
+            prefetchedPollReadiness = "original-dispatch-slot-before-blocking-poll",
             originalMethods = Originals.Select((row, index) => new {
                 method = members[index].FullName, token = row.Token, ilBytes = row.Bytes, ilSha256 = "sha256:" + row.Sha256 }).ToArray(),
             originalRemainders = remainders,
