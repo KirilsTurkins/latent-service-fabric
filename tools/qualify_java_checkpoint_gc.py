@@ -207,19 +207,46 @@ def diagnostic_pair(native, diagnostic_node, diagnostic_client):
     return {**native,'latentd':node,'latent':client},node,client
 
 
+CURRENT_NATIVE_SOURCE='678b19d42b26a12ac35f3d6de525029b82e169f7'
+
+
+def native_materials(reader):
+    """Keep the historical default and admit one explicit current native reader."""
+    if reader is products:
+        return MATERIALS
+    from tools import wasmtime_48_0_8_678b_native_products as current
+    require(reader is current and current.SOURCE==CURRENT_NATIVE_SOURCE,
+        'java-checkpoint-current-native-reader')
+    return tuple(sorted(set((*MATERIALS,'tools/qualify_java_checkpoint_gc_current.py',
+        'tools/wasmtime_48_0_8_678b_native_products.py','.github/workflows/java-checkpoint-current.yml',
+        'tools/tests/test_java_progress_workflow.py','tools/tests/test_java_progress_current_workflow.py',
+        'tools/tests/test_java_checkpoint_gc.py','tools/tests/test_java_checkpoint_gc_current.py'))))
+
+
+def require_current_native_source(reader,consumer):
+    """A current-host receipt must match the consumer's actual native inputs."""
+    if reader is products:
+        return
+    from tools.java_replay_materials import git_source_identity
+    require(consumer==git_source_identity(CURRENT_NATIVE_SOURCE),
+        'java-checkpoint-current-native-source-mismatch')
+
+
 def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None,diagnostic_node=None,
-        diagnostic_client=None):
+        diagnostic_client=None,native_reader=products):
     require(sys.platform=='linux' and sys.version_info>=(3,13),'java-checkpoint-linux-python313')
     native_directory,wasi_sdk=(Path(p).resolve(strict=True) for p in (native_directory,wasi_sdk))
     output=Path(output).absolute()
     require(output!=ROOT and ROOT not in output.parents and output not in ROOT.parents
         and all(output!=p and output not in p.parents and p not in output.parents for p in (native_directory,wasi_sdk)),
         'java-checkpoint-separated-inputs')
-    origin=products.verify_prepared(native_directory);native=products.native_products(native_directory)
+    materials=native_materials(native_reader)
+    origin=native_reader.verify_prepared(native_directory);native=native_reader.native_products(native_directory)
     for path in native.values():path.chmod(0o700)
     native,diagnostic_node,diagnostic_client=diagnostic_pair(native,diagnostic_node,diagnostic_client)
     output=fresh(output)
-    before={name:file_identity(ROOT/name) for name in MATERIALS};consumer=source_identity(ROOT)
+    before={name:file_identity(ROOT/name) for name in materials};consumer=source_identity(ROOT)
+    require_current_native_source(native_reader,consumer)
     commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=1800,command_seconds=600)
     record={'schemaVersion':'lsf.java.checkpoint-gc-qualification.v1','status':'incomplete',
         'source':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip(),
@@ -259,7 +286,7 @@ def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None,diagnostic_n
             record['build']['component']['sha256'],diagnostic=diagnostic_node is not None)
         require(build_evidence(artifact)==record['build'] and inventory(snapshot(app))==source
             and verify_inputs(app,'java').identity==record['capture']['capturedInputIdentity']
-            and origin==products.verify_prepared(native_directory) and consumer==source_identity(ROOT)
+            and origin==native_reader.verify_prepared(native_directory) and consumer==source_identity(ROOT)
             and before=={name:file_identity(ROOT/name) for name in before}
             and time.monotonic()<commands.deadline,'java-checkpoint-final-original-source-and-product-bindings')
         record.update(status='passed',garbageCollectionObserved=True,commands=commands.records)
