@@ -1,7 +1,7 @@
 name: Numeric original Rust ThreadPool fault diagnostic
 on:
   push:
-    branches: ['diag/rust-thread-frames-20261023', 'fix/rust-e3-recovery-20261104']
+    branches: ['diag/rust-thread-frames-20261023', 'fix/rust-e3-recovery-20261104', 'fix/rust-e3-origin-20261104']
     paths:
       - '.github/workflows/rust-thread-fault-diagnostic.yml'
       - 'crates/latent-wasmtime/src/config/engine.rs'
