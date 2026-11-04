@@ -4,6 +4,7 @@ import java.util.List;
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.classlib.impl.ClasslibSubstitutionPolicy;
+import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.parsing.ClasspathResourceProvider;
@@ -22,15 +23,16 @@ public final class QueueFrontendControl {
         ClassLoader loader = QueueFrontendControl.class.getClassLoader();
         var mapping = DefaultSubstituteClassNameMapping.createWithPolicies(
                 List.of(new ClasslibSubstitutionPolicy(), new RuntimeSubstitution()));
-        var source = new ClasspathClassHolderSource(new ClasspathResourceProvider(loader), new ReferenceCache(), mapping);
+        var source = new PreOptimizingClassHolderSource(
+                new ClasspathClassHolderSource(new ClasspathResourceProvider(loader), new ReferenceCache(), mapping));
         var vm = new TeaVMBuilder(new CTarget(new CNameProvider())).setClassSource(source)
                 .setClassLoader(loader).setStrict(true).build();
-        vm.installPlugins();
         int[] seen = { 0 };
         vm.add((cls, context) -> {
             if (cls.getName().equals("org.teavm.runtime.EventQueue")) seen[0]++;
             EventQueueHeapMethods.transform(cls, context);
         });
+        vm.installPlugins();
         vm.setEntryPoint(App.class.getName());
         vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
         var output = new MemoryBuildTarget();
