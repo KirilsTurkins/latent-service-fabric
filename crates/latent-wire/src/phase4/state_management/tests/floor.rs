@@ -301,6 +301,24 @@ fn linked_row(
 #[tokio::test]
 async fn audited_floor_release_allows_explicit_destroy_and_incarnation_recreation() {
     let mut fixture = Fixture::new(true).await;
+    let select = c::SelectEntityRequest {
+        namespace: Some(fixture.target()),
+        prefix: None,
+        page: Some(latent_rpc::transaction::v1::PageRequest {
+            limit: 1,
+            cursor: None,
+        }),
+    };
+    assert_eq!(
+        fixture
+            .backend
+            .execute_state(context("alice"), select.into())
+            .await
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::NotFound
+    );
     assert_eq!(
         fixture
             .backend
