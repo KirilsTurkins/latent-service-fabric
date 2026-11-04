@@ -40,6 +40,21 @@ class PythonSuppressionPolicyTests(unittest.TestCase):
             require_no_new_controls(before, before.replace('return False', 'return True'))
 
 class PythonExecutionReceiptTests(unittest.TestCase):
+    def test_failed_subtests_account_for_the_discovered_parent_once(self):
+        import io
+        from tools.ci_python_policy import flatten_suite, recording_result_class, execution_receipt
+        class Fixture(unittest.TestCase):
+            def test_subtests(self):
+                for value in (1, 2):
+                    with self.subTest(value=value): self.fail('injected subtest failure')
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(Fixture)
+        discovered = flatten_suite(suite)
+        result = unittest.TextTestRunner(stream=io.StringIO(), resultclass=recording_result_class(lambda *_: False)).run(suite)
+        receipt = execution_receipt(discovered, result, source_identity={'revision': 'a' * 40}, recipe_identity='test')
+        self.assertEqual(receipt['failed'], discovered)
+        self.assertIn('test-failure', receipt['errors'])
+        self.assertNotIn('discovery-execution-mismatch', receipt['errors'])
+
     def test_discovery_execution_skips_and_failures_are_observed(self):
         import io
         from tools.ci_python_policy import flatten_suite, recording_result_class, execution_receipt
@@ -97,6 +112,14 @@ class Other(unittest.TestCase):
         helper = "import unittest\ndef prerequisite(): raise unittest.SkipTest('missing native')\nclass Cases(unittest.TestCase):\n @classmethod\n def setUpClass(cls): prerequisite()\n def test_one(self): pass\n"
         self.assertTrue(permitted_skip(helper, 'Cases', None, 'missing native'))
         self.assertFalse(permitted_skip(helper.replace('def setUpClass(cls): prerequisite()', 'def setUpClass(cls): pass'), 'Cases', None, 'missing native'))
+        same_class = "import unittest\nclass Cases(unittest.TestCase):\n def prerequisite(self): self.skipTest('missing frontend')\n def test_one(self): self.prerequisite()\n def test_other(self): pass\n"
+        self.assertTrue(permitted_skip(same_class, 'Cases', 'test_one', 'missing frontend'))
+        self.assertFalse(permitted_skip(same_class, 'Cases', 'test_other', 'missing frontend'))
+        other_class = "import unittest\nclass Original(unittest.TestCase):\n @classmethod\n def setUpClass(cls): raise unittest.SkipTest('missing sandbox')\nclass Cases(unittest.TestCase):\n @classmethod\n def setUpClass(cls): Original.setUpClass()\n def test_one(self): pass\n"
+        self.assertTrue(permitted_skip(other_class, 'Cases', None, 'missing sandbox'))
+        external = "import unittest\nclass Cases(unittest.TestCase):\n @classmethod\n def setUpClass(cls):\n  from tools.tests.test_native_helper import prerequisite\n  prerequisite()\n def test_one(self): pass\n"
+        sources = {'test_native_helper': "import unittest\ndef prerequisite(): raise unittest.SkipTest('missing host')\n"}
+        self.assertTrue(permitted_skip(external, 'Cases', None, 'missing host', sources))
 
 class PythonFixtureReceiptTests(unittest.TestCase):
     def test_authorized_class_skip_accounts_for_every_discovered_case(self):

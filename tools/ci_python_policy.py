@@ -311,6 +311,12 @@ def recording_result_class(allowed_skip):
             self.record(test, 'failed'); super().addFailure(test, err)
         def addError(self, test, err):
             self.record(test, 'failed'); super().addError(test, err)
+        def addSubTest(self, test, subtest, err):
+            if err is not None:
+                # unittest reports failed subtests through addSubTest and does
+                # not subsequently call addSuccess for their parent case.
+                self.observed[test.id()] = 'failed'
+            super().addSubTest(test, subtest, err)
         def addSkip(self, test, reason):
             self.record(test, 'skipped')
             if not allowed_skip(test.id(), reason): self.unauthorized.append('skip:' + test.id())
@@ -355,45 +361,71 @@ def execution_receipt(discovered, result, *, source_identity, recipe_identity):
             'errors': errors}
 
 
-def permitted_skip(before_source: str, class_name: str | None, method_name: str | None, reason: str) -> bool:
-    """Accept a runtime skip only when its own baseline fixture declares its reason."""
+def permitted_skip(before_source: str, class_name: str | None, method_name: str | None,
+                   reason: str, baseline_sources=None) -> bool:
+    """Authorize only reasons reachable through the baseline case or fixture."""
     import re
-    tree = ast.parse(before_source)
-    scopes = [node for node in tree.body
-              if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == 'setUpModule']
-    classes = [node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == class_name]
-    if class_name is not None and len(classes) != 1:
-        return False
-    if classes:
-        owner = classes[0]
-        scopes.extend(owner.decorator_list)
-        scopes.extend(node for node in owner.body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-                      and node.name in {'setUp', 'setUpClass', method_name})
-    # Follow direct calls to module-local prerequisite helpers, without
-    # authorizing unrelated skip declarations elsewhere in the module.
-    helpers = {node.name: node for node in tree.body
-               if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and not node.name.startswith('test_')}
+    baseline_sources = baseline_sources or {}
+    trees = {'<case>': ast.parse(before_source)}
+    queue = []
     visited = set()
-    for scope in scopes:
-        for node in ast.walk(scope):
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-                name = node.func.id
-                if name in helpers and name not in visited:
-                    visited.add(name)
-                    scopes.append(helpers[name])
-    for scope in scopes:
+
+    def add_scope(module, owner, name):
+        key = (module, owner, name)
+        if key in visited: return
+        visited.add(key)
+        if len(visited) > 128: raise ValueError('python-skip-helper-limit')
+        tree = trees[module]
+        bodies = tree.body
+        if owner is not None:
+            matches = [node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == owner]
+            if len(matches) != 1: return
+            bodies = matches[0].body
+        for node in bodies:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == name:
+                queue.append((module, owner, node))
+
+    tree = trees['<case>']
+    add_scope('<case>', None, 'setUpModule')
+    classes = [node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == class_name]
+    if class_name is not None and len(classes) != 1: return False
+    if classes:
+        queue.extend(('<case>', class_name, node) for node in classes[0].decorator_list)
+        for name in ('setUp', 'setUpClass', method_name):
+            if name: add_scope('<case>', class_name, name)
+    while queue:
+        module, owner, scope = queue.pop(0)
+        tree = trees[module]
+        imports = {}
+        for statement in ast.walk(tree):
+            if isinstance(statement, ast.ImportFrom) and statement.module and not statement.level:
+                for alias in statement.names:
+                    imports[alias.asname or alias.name] = (statement.module, alias.name)
         for node in ast.walk(scope):
             if not isinstance(node, ast.Call): continue
             name = node.func.attr if isinstance(node.func, ast.Attribute) else getattr(node.func, 'id', '')
-            if name not in SUPPRESSION: continue
-            for value in node.args:
-                if isinstance(value, ast.Constant) and value.value == reason:
-                    return True
-                if isinstance(value, ast.JoinedStr) and len(reason) <= 4096:
-                    parts = [re.escape(part.value) if isinstance(part, ast.Constant) and isinstance(part.value, str)
-                             else r'.*' for part in value.values]
-                    if re.fullmatch(''.join(parts), reason, re.DOTALL):
-                        return True
+            if name in SUPPRESSION:
+                for value in node.args:
+                    if isinstance(value, ast.Constant) and value.value == reason: return True
+                    if isinstance(value, ast.JoinedStr) and len(reason) <= 4096:
+                        parts = [re.escape(part.value) if isinstance(part, ast.Constant) and isinstance(part.value, str)
+                                 else r'.*' for part in value.values]
+                        if re.fullmatch(''.join(parts), reason, re.DOTALL): return True
+            if isinstance(node.func, ast.Name):
+                add_scope(module, None, node.func.id)
+                imported = imports.get(node.func.id)
+                if imported:
+                    package, helper = imported
+                    key = package if package in baseline_sources else package.removeprefix('tools.tests.')
+                    if key in baseline_sources:
+                        if key not in trees: trees[key] = ast.parse(baseline_sources[key])
+                        add_scope(key, None, helper)
+            elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                receiver = node.func.value.id
+                if receiver in {'self', 'cls'} and owner:
+                    add_scope(module, owner, node.func.attr)
+                elif receiver not in {'self', 'cls'}:
+                    add_scope(module, receiver, node.func.attr)
     return False
 
 
@@ -423,7 +455,7 @@ def run_discovered(suite, *, baseline_sources, current_sources, source_identity,
             before = baseline_sources[key]
         except (ValueError, KeyError):
             return False
-        return permitted_skip(before, owner, method, reason)
+        return permitted_skip(before, owner, method, reason, baseline_sources)
     runner = unittest.TextTestRunner(stream=stream, resultclass=recording_result_class(allowed))
     result = runner.run(suite)
     return execution_receipt(discovered, result, source_identity=source_identity, recipe_identity=recipe_identity)
