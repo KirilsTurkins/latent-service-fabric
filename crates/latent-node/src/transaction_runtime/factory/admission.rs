@@ -8,7 +8,9 @@ use crate::transaction_runtime::observation::{self, Phase};
 use crate::transaction_runtime::{CommandHostSelection, StateAuthorization};
 use latent_activation::ActivationEnvelope;
 use latent_capabilities::namespace::{NamespaceAdmission, NamespaceAuthority};
-use latent_commit::atomic::{AdmissionDecision, AdmissionInput, CommandAccess, PreparedAdmission};
+use latent_commit::atomic::{
+    AdmissionDecision, AdmissionInput, CommandAccess, PreparedAdmission, PublishedAdmission,
+};
 use latent_core::{
     transaction_contract::{CommandFingerprint, CommandKey, Value},
     ActivationBudget, BoxFuture, StateNamespaceId,
@@ -412,15 +414,19 @@ impl NativeTransactionAdmission {
                     )
                     .map_err(|_| AtomicError::PermissionDenied)
                 };
+                let first_attempt = retry.is_none();
                 let prepared = if let Some(retry) = retry {
                     authorize(CommandAccess::Admit, None).and_then(|()| {
                         super::retry::check_association(&view, &input, &retry)?;
-                        PreparedAdmission::retry(&view, &input, &retry.request, time, authorize)
+                        PreparedAdmission::retry(&view, &input, &retry.request, time, &authorize)
                     })
                 } else {
-                    PreparedAdmission::prepare(&view, input, time, authorize)
+                    PreparedAdmission::prepare(&view, input, time, &authorize)
                 };
                 let prepared = observation::atomic(Phase::PendingPreparation, prepared);
+                // A CAS loser may take one fresh view to inspect the winning
+                // command. Retire the original planning view first.
+                drop(view);
                 Ok(match prepared {
                     Ok(AdmissionDecision::New(prepared)) => {
                         let expected = authorization.namespace.expectation();
@@ -432,15 +438,29 @@ impl NativeTransactionAdmission {
                         {
                             return Ok(Ok(PendingPublication::Refused(AtomicError::Conflict)));
                         }
-                        prepared
-                            .publish(store, || {
-                                retained_role.with_current(|_| {
-                                    authorization
-                                        .authorize("commit", 0, 0, || Ok(()))
-                                        .map_err(|_| AtomicError::PermissionDenied)
-                                })
+                        let final_accept = || {
+                            retained_role.with_current(|_| {
+                                authorization
+                                    .authorize("commit", 0, 0, || Ok(()))
+                                    .map_err(|_| AtomicError::PermissionDenied)
                             })
-                            .map(PendingPublication::New)
+                        };
+                        if first_attempt {
+                            prepared
+                                .publish_or_existing(store, time, final_accept, &authorize)
+                                .map(|result| match result {
+                                    PublishedAdmission::New(claim) => {
+                                        PendingPublication::New(claim)
+                                    }
+                                    PublishedAdmission::Existing(record) => {
+                                        PendingPublication::Existing(record)
+                                    }
+                                })
+                        } else {
+                            prepared
+                                .publish(store, final_accept)
+                                .map(PendingPublication::New)
+                        }
                     }
                     Ok(AdmissionDecision::Existing(record)) => {
                         Ok(PendingPublication::Existing(record))

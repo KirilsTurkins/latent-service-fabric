@@ -378,6 +378,76 @@ fn identical_concurrent_claims_have_one_writer_and_changed_fingerprints_conflict
 }
 
 #[test]
+fn losing_first_attempt_observes_only_an_authorized_identical_winner() {
+    let (_dir, store, _effects) = setup();
+    let view = store.snapshot().unwrap();
+    let prepare = |request| match PreparedAdmission::prepare(&view, request, time(100), permission)
+        .unwrap()
+    {
+        AdmissionDecision::New(plan) => plan,
+        AdmissionDecision::Existing(_) => panic!("unexpected owner"),
+    };
+    let winner = prepare(input("race"));
+    let identical = prepare(input("race"));
+    let revoked = prepare(input("race"));
+    let mut changed = input("race");
+    changed.fingerprint.input.bytes.push(1);
+    let changed = prepare(changed);
+    let unrelated = prepare(input("other"));
+    let owner = winner.publish(&store, || Ok(())).unwrap();
+    let PublishedAdmission::Existing(existing) = identical
+        .publish_or_existing(
+            &store,
+            time(100),
+            || panic!("stale CAS cannot accept"),
+            permission,
+        )
+        .unwrap()
+    else {
+        panic!("duplicate became an owner")
+    };
+    assert_eq!(existing.id(), owner.record().id());
+    assert_eq!(existing.outcome(), Outcome::Pending);
+    assert!(matches!(
+        revoked.publish_or_existing(
+            &store,
+            time(100),
+            || Ok(()),
+            |_, _| Err(AtomicError::PermissionDenied)
+        ),
+        Err(AtomicError::PermissionDenied)
+    ));
+    assert!(matches!(
+        changed.publish_or_existing(&store, time(100), || Ok(()), permission),
+        Err(AtomicError::Conflict)
+    ));
+    assert!(matches!(
+        unrelated.publish_or_existing(&store, time(100), || Ok(()), permission),
+        Err(AtomicError::Conflict)
+    ));
+}
+
+#[test]
+fn first_attempt_authority_refusal_is_not_treated_as_a_cas_race() {
+    let (_dir, store, _effects) = setup();
+    let view = store.snapshot().unwrap();
+    let AdmissionDecision::New(plan) =
+        PreparedAdmission::prepare(&view, input("fence"), time(100), permission).unwrap()
+    else {
+        panic!()
+    };
+    assert!(matches!(
+        plan.publish_or_existing(
+            &store,
+            time(100),
+            || Err(AtomicError::Conflict),
+            |_, _| panic!("fence refusal must not replay")
+        ),
+        Err(AtomicError::Conflict)
+    ));
+}
+
+#[test]
 fn lost_business_rejection_replays_after_restart_and_changed_business_state() {
     let (dir, store, effects) = setup();
     let request = input("reject");

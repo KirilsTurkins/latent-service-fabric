@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "latent.ci.suite-case-fragment.v1",
+  "suiteId": "latent-commit.lib.latent-commit",
+  "expectedCases": [
+    "atomic::tests::first_attempt_authority_refusal_is_not_treated_as_a_cas_race",
+    "atomic::tests::losing_first_attempt_observes_only_an_authorized_identical_winner"
+  ]
+}

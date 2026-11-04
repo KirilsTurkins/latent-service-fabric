@@ -206,11 +206,13 @@ class SuiteCaseFragmentTests(unittest.TestCase):
         after = {row["id"]: row for row in data["suites"]}
         fragment = registry.read_json(ROOT / "tools/ci/suites.cases.d/cross-origin-assets.json")
         self.assertEqual(len(fragment["expectedCases"]), 17)
+        command_race = registry.read_json(ROOT / "tools/ci/suites.cases.d/phase4-command-admission-race.json")
         for key, original in before.items():
             expected = copy.deepcopy(original)
-            if key == fragment["suiteId"]:
-                expected["expectedCases"].extend(fragment["expectedCases"])
-                expected["minimumCases"] += len(fragment["expectedCases"])
+            for addition in (fragment, command_race):
+                if key == addition["suiteId"]:
+                    expected["expectedCases"].extend(addition["expectedCases"])
+                    expected["minimumCases"] += len(addition["expectedCases"])
             self.assertEqual(after[key], expected, key)
         self.assertIn("java_checkpoint_gc_fault::tests::"
                       "java_gc_fault_visits_only_eight_numeric_frames_for_authenticated_profile",
