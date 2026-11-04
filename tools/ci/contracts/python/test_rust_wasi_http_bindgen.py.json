@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "CapturedBindgenSelection.test_composer_preserves_the_old_single_version_route_without_extra_files",
+    "CapturedBindgenSelection.test_composer_reads_the_extra_proof_only_for_multiple_versions",
+    "CapturedBindgenSelection.test_forwarding_root_preserves_proof_schema_and_uses_selected_generator",
+    "CapturedBindgenSelection.test_historical_single_version_path_is_preserved_and_multi_version_refuses",
+    "CapturedBindgenSelection.test_malformed_bounded_and_unclosed_inputs_refuse",
+    "CapturedBindgenSelection.test_root_edge_selects_exact_pin_and_only_its_unchanged_closure",
+    "CapturedBindgenSelection.test_wrong_missing_aliased_or_ambiguous_identity_refuses"
+  ],
+  "guards": {
+    "CapturedBindgenSelection.test_composer_preserves_the_old_single_version_route_without_extra_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993d1978d1ea65a876ab0d58b7d8b01986cae31fbbdb6d7d90be1d9943d04a6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CapturedBindgenSelection.test_composer_reads_the_extra_proof_only_for_multiple_versions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993d1978d1ea65a876ab0d58b7d8b01986cae31fbbdb6d7d90be1d9943d04a6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CapturedBindgenSelection.test_forwarding_root_preserves_proof_schema_and_uses_selected_generator": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993d1978d1ea65a876ab0d58b7d8b01986cae31fbbdb6d7d90be1d9943d04a6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CapturedBindgenSelection.test_historical_single_version_path_is_preserved_and_multi_version_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993d1978d1ea65a876ab0d58b7d8b01986cae31fbbdb6d7d90be1d9943d04a6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CapturedBindgenSelection.test_malformed_bounded_and_unclosed_inputs_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993d1978d1ea65a876ab0d58b7d8b01986cae31fbbdb6d7d90be1d9943d04a6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CapturedBindgenSelection.test_root_edge_selects_exact_pin_and_only_its_unchanged_closure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993d1978d1ea65a876ab0d58b7d8b01986cae31fbbdb6d7d90be1d9943d04a6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CapturedBindgenSelection.test_wrong_missing_aliased_or_ambiguous_identity_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993d1978d1ea65a876ab0d58b7d8b01986cae31fbbdb6d7d90be1d9943d04a6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_wasi_http_bindgen.py",
+  "reviewReason": "Check the captured root edge, historical routing and refusal of ambiguous, unpinned or malformed binding selection.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -30,7 +30,8 @@ SDK = ROOT / 'sdk/java-guest'
 HEAP = ('QUEUE_HEAP_CONTROL PASS actual-original-regression;actual-corrected-order;'
         'up;down;ties;root;single-child;signed-min;last;singleton;empty;missing;repeat;model;'
         'preimage-negative;repeat-negative;donor-body-negative;donor-layout-negative;donor-node-negative')
-FRONTEND = 'QUEUE_FRONTEND_CONTROL PASS actual-locked-c-emission;event-queue-transform-once'
+FRONTEND = ('QUEUE_FRONTEND_CONTROL PASS actual-locked-c-emission;event-queue-transform-once;'
+            'original-refusal;exact-copy-preimage;copy-body-negative')
 CLOCK = ('QUEUE_DEADLINE_MODEL_CONTROL PASS actual-locked-queue;first-sample-delays;'
          'second-sample-comparison;owned-clock-hooks=2;negative-shapes=4')
 

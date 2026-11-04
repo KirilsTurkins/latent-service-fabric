@@ -5,7 +5,11 @@ import org.teavm.backend.c.CTarget;
 import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.classlib.impl.ClasslibSubstitutionPolicy;
 import org.teavm.model.PreOptimizingClassHolderSource;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.ReferenceCache;
+import org.teavm.model.ValueType;
+import org.teavm.model.instructions.EmptyInstruction;
+import org.teavm.model.util.ModelUtils;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.parsing.ClasspathResourceProvider;
 import org.teavm.parsing.substitution.DefaultSubstituteClassNameMapping;
@@ -29,7 +33,23 @@ public final class QueueFrontendControl {
                 .setClassLoader(loader).setStrict(true).build();
         int[] seen = { 0 };
         vm.add((cls, context) -> {
-            if (cls.getName().equals("org.teavm.runtime.EventQueue")) seen[0]++;
+            if (cls.getName().equals("org.teavm.runtime.EventQueue")) {
+                seen[0]++;
+                try {
+                    var selected = source.get("org.teavm.runtime.EventQueue");
+                    require(selected != null && !EventQueueHeapMethods.matches(selected, cls),
+                            "queue-frontend-original-preimage-refusal");
+                    var copied = ModelUtils.copyClass(selected);
+                    require(EventQueueHeapMethods.matches(copied, cls), "queue-frontend-exact-copy-preimage");
+                    var changed = ModelUtils.copyClass(copied);
+                    var update = changed.getMethod(new MethodDescriptor("update", ValueType.INTEGER, ValueType.VOID));
+                    require(update != null && update.getProgram() != null, "queue-frontend-copy-update");
+                    update.getProgram().basicBlockAt(0).getFirstInstruction().insertPrevious(new EmptyInstruction());
+                    require(!EventQueueHeapMethods.matches(changed, cls), "queue-frontend-copy-body-negative");
+                } catch (Exception failure) {
+                    throw new IllegalStateException("queue-frontend-copy-control", failure);
+                }
+            }
             EventQueueHeapMethods.transform(cls, context);
         });
         vm.installPlugins();
@@ -46,7 +66,8 @@ public final class QueueFrontendControl {
             require(bytes <= 16 * 1024 * 1024, "queue-heap-frontend-output-bound");
         }
         require(bytes > 0, "queue-heap-frontend-output-empty");
-        System.out.println("QUEUE_FRONTEND_CONTROL PASS actual-locked-c-emission;event-queue-transform-once");
+        System.out.println("QUEUE_FRONTEND_CONTROL PASS actual-locked-c-emission;event-queue-transform-once;"
+                + "original-refusal;exact-copy-preimage;copy-body-negative");
     }
 
     public static final class App {

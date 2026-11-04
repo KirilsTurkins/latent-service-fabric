@@ -151,7 +151,7 @@ final class EventQueueHeapMethods {
         }
     }
 
-    private static boolean matches(ClassHolder expected, ClassHolder actual) throws Exception {
+    static boolean matches(ClassHolder expected, ClassHolder actual) throws Exception {
         if (expected == null) return false;
         for (MethodDescriptor descriptor : new MethodDescriptor[] { OFFER, KILL, REMOVE, UPDATE, PUMP }) {
             var baseline = expected.getMethod(descriptor);
@@ -160,6 +160,22 @@ final class EventQueueHeapMethods {
                 return false;
         }
         return true;
+    }
+
+    // TeaVM's DependencyClassSource copies the selected class before invoking
+    // its transformers. ProgramUtils.copy recreates variable registers, so its
+    // exact output is a distinct finite preimage of the authenticated source.
+    private static ClassHolder copied(ClassHolder source) {
+        return source == null ? null : ModelUtils.copyClass(source);
+    }
+
+    private static ClassHolder copiedDonor(ClassHolder source) {
+        if (source == null || source.getFields().size() > 16 || source.getMethods().size() > 16) return null;
+        for (var method : source.getMethods()) {
+            var program = method.getProgram();
+            if (program != null && !bounded(program)) return null;
+        }
+        return ModelUtils.copyClass(source);
     }
 
     // Evaluated only after a preimage has already been refused. Bits identify
@@ -235,10 +251,11 @@ final class EventQueueHeapMethods {
             site = 6;
             ClassHolder raw = source(loader).get(QUEUE);
             ClassHolder optimized = new PreOptimizingClassHolderSource(source(loader)).get(QUEUE);
-            // Only the two deterministic representations of the locked body
-            // are admitted. Unknown transforms and a repeated repair refuse.
+            // Admit only locked raw/preoptimized bodies and TeaVM's exact
+            // deterministic copies. Unknown transforms and a repeated repair refuse.
             site = 7;
-            if (!(matches(raw, cls) || matches(optimized, cls))) {
+            if (!(matches(raw, cls) || matches(optimized, cls)
+                    || matches(copied(raw), cls) || matches(copied(optimized), cls))) {
                 rawMask = queueMismatch(raw, cls);
                 optimizedMask = queueMismatch(optimized, cls);
                 throw new IllegalStateException();
@@ -248,7 +265,8 @@ final class EventQueueHeapMethods {
             ClassHolder rawNode = source(loader).get(QUEUE + "$Node");
             ClassHolder optimizedNode = new PreOptimizingClassHolderSource(source(loader)).get(QUEUE + "$Node");
             site = 9;
-            if (!(matchesNode(rawNode, node) || matchesNode(optimizedNode, node))) {
+            if (!(matchesNode(rawNode, node) || matchesNode(optimizedNode, node)
+                    || matchesNode(copied(rawNode), node) || matchesNode(copied(optimizedNode), node))) {
                 rawMask = nodeMismatch(rawNode, node);
                 optimizedMask = nodeMismatch(optimizedNode, node);
                 throw new IllegalStateException();
@@ -282,9 +300,11 @@ final class EventQueueHeapMethods {
                     && rawNode.getField("time").getType().equals(ValueType.LONG));
             // The active hierarchy may not shadow or alter either compiler-owned
             // donor. Both metadata and all method bodies must match the trusted
-            // class-loader's captured raw or deterministically preoptimized input.
-            require((sameClass(rawDonor, donor) || sameClass(optimizedDonor, donor))
-                    && (sameClass(rawNode, donorNode) || sameClass(optimizedNode, donorNode)));
+            // class-loader's captured raw/preoptimized input or its exact copy.
+            require((sameClass(rawDonor, donor) || sameClass(optimizedDonor, donor)
+                    || sameClass(copiedDonor(rawDonor), donor) || sameClass(copiedDonor(optimizedDonor), donor))
+                    && (sameClass(rawNode, donorNode) || sameClass(optimizedNode, donorNode)
+                    || sameClass(copiedDonor(rawNode), donorNode) || sameClass(copiedDonor(optimizedNode), donorNode)));
         } catch (Exception failure) {
             throw new IllegalStateException("unexpected-maintained-event-queue-donor", failure);
         }
