@@ -893,6 +893,23 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         return false;
     }
 
+    // Fixed compiler-only site and pinned runtime-class ordinal. Never print
+    // application names, method names, descriptors, source, or call graphs.
+    private IllegalStateException progressRefusal(int site, ClassReader owner) {
+        int runtime = 0;
+        if (owner != null) {
+            String[] names = progressRuntimeClassNames();
+            for (int index = 0; index < names.length; ++index) {
+                if (names[index].equals(owner.getName())) {
+                    runtime = index + 1;
+                    break;
+                }
+            }
+        }
+        System.err.println("latent.java.progress-site.v1 " + site + ":" + runtime);
+        return checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+    }
+
     private void validateNonsuspendableProgress() {
         progressRuntimeProofs.clear(); // Never reuse a proof across completion rounds.
         progressOriginalClasses.clear();
@@ -972,7 +989,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             boolean runtime = progressRuntimeClassIdentity(cls.getName()) != null;
             if (runtime) {
                 if (!finiteRuntimeMethod(cls, method)) {
-                    throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+                    throw progressRefusal(1, cls);
                 }
                 // The pinned runtime certificate bounds its own loops and
                 // internal ABI helpers. Ordinary Java callees still need the
@@ -994,9 +1011,10 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             }
             MethodReference delegate = !runtime && method.getProgram() == null
                     ? progressNativeDelegate(cls, method) : null;
-            if (!runtime && (method.getProgram() == null ? delegate == null
+            boolean noProgram = !runtime && method.getProgram() == null;
+            if (!runtime && (noProgram ? delegate == null
                     : !finiteCountedLoops(method.getProgram()))) {
-                throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+                throw progressRefusal(noProgram ? 2 : 3, cls);
             }
             if (delegate != null) {
                 Integer targetIndex = contexts.get(delegate);
@@ -1077,7 +1095,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 ClassReader cls = classSource.get(reference.getClassName());
                 MethodReader method = cls == null ? null : cls.getMethod(reference.getDescriptor());
                 if (method == null || !finiteRuntimeMethod(cls, method)) {
-                    throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+                    throw progressRefusal(4, cls);
                 }
             }
         }
