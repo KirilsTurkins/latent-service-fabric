@@ -13,6 +13,82 @@ from tools import host_codec_owned_reply_native_products as native
 ORIGINAL = '173ccd9c096e4db643aa9627bd4550cef27fb922'
 
 
+# Exact inverse of development PR #1602, before the outside-card inverse.
+POST_ADDENDUM = (
+                ("    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl', 'outside-card', 'libfetch-post')\n",
+                 "    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl', 'outside-card')\n"),
+                ("    is_post = client_kind == 'libfetch-post'\n    if is_post:\n        from tools import c_http_post_companion as post\n",
+                 ''),
+                ("    record = {'schemaVersion': 'latent.c.http-post.node.v1' if is_post else\n                              'latent.c.outside-card.node.v1' if is_outside else\n",
+                 "    record = {'schemaVersion': 'latent.c.outside-card.node.v1' if is_outside else\n"),
+                ('            grants = (post.install if is_post else install_libucl if expanded else install_http)(client, node, target, peer.origin())\n',
+                 '            grants = (install_libucl if expanded else install_http)(client, node, target, peer.origin())\n'),
+                ("            stage = 'four-ordinary-post-cells' if is_post else 'one-outside-captured-cell' if is_outside else 'five-ordinary-cells'\n",
+                 "            stage = 'one-outside-captured-cell' if is_outside else 'five-ordinary-cells'\n"),
+                ('            cases = post.CASES if is_post else fixture.CARD_CASES if is_outside else fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES\n            cell = post.cell if is_post else libucl_cell if is_libucl or is_outside else http_cell\n',
+                 '            cases = fixture.CARD_CASES if is_outside else fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES\n            cell = libucl_cell if is_libucl or is_outside else http_cell\n'),
+                ("                    and peer.observation()['startedRequests'] == (4 if is_post else 1 if is_outside else 2 if is_libucl else 6),\n",
+                 "                    and peer.observation()['startedRequests'] == (1 if is_outside else 2 if is_libucl else 6),\n"),
+            )
+
+
+def before_post(text):
+    current = hashlib.sha256(text.encode()).hexdigest()
+    if current == '37535d730b206b1ea2304c78697201d37b6930cd62c9e40326b4f3ead5d8e647':
+        return text
+    if current != 'e94beca2207d259a7dd03273bc83f7749e13bbf590c5d34cdaf463595ae2e31e':
+        raise AssertionError('c-thread-exact-post-source')
+    for added, previous in POST_ADDENDUM:
+        if text.count(added) != 1:
+            raise AssertionError('c-thread-exact-post-addendum')
+        text = text.replace(added, previous, 1)
+    if hashlib.sha256(text.encode()).hexdigest() != '37535d730b206b1ea2304c78697201d37b6930cd62c9e40326b4f3ead5d8e647':
+        raise AssertionError('c-thread-before-post-source')
+    return text
+
+
+# Exact inverse of PR #1585 (94f646b66d23ad774f3747f9e5e75581f4e1eeb5).
+# Authenticate the complete current source, then keep all earlier node proofs.
+OUTSIDE_CARD_ADDENDUM = (
+    ("    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl', 'outside-card')\n",
+     "    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl')\n"),
+    ("    is_outside = client_kind == 'outside-card'\n",
+     ''),
+    ("    record = {'schemaVersion': 'latent.c.outside-card.node.v1' if is_outside else\n                              'latent.c.libucl.node.v1' if is_libucl else 'latent.c.libfetch.node.v1',\n",
+     "    record = {'schemaVersion': 'latent.c.libucl.node.v1' if is_libucl else 'latent.c.libfetch.node.v1',\n"),
+    ("            stage = 'one-outside-captured-cell' if is_outside else 'five-ordinary-cells'\n",
+     "            stage = 'five-ordinary-cells'\n"),
+    ('            cases = fixture.CARD_CASES if is_outside else fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES\n            cell = libucl_cell if is_libucl or is_outside else http_cell\n',
+     '            cases = fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES\n            cell = libucl_cell if is_libucl else http_cell\n'),
+    ("                record['cases'].append(cell(client, node, probe, target, peer, output, case,\n                    **({'outside_library': True} if is_outside else {})))\n",
+     "                record['cases'].append(cell(client, node, probe, target, peer, output, case))\n"),
+    ("                    and peer.observation()['startedRequests'] == (1 if is_outside else 2 if is_libucl else 6),\n",
+     "                    and peer.observation()['startedRequests'] == (2 if is_libucl else 6),\n"),
+    ("            record['independentClientCount'] = 0 if is_outside else 1\n",
+     "            record['independentClientCount'] = 1\n"),
+    ('def libucl_cell(client, node, probe, target, peer, output, case, *, outside_library=False):\n',
+     'def libucl_cell(client, node, probe, target, peer, output, case):\n'),
+    ("    require(type(outside_library) is bool\n            and case in (fixture.CARD_CASES if outside_library else fixture.LIBUCL_CASES), 'c-libucl-closed-cell')\n",
+     "    require(case in fixture.LIBUCL_CASES, 'c-libucl-closed-cell')\n"),
+    ("    text = ('' if outside_library else case + '\\n') + (peer.url(vectors[case]) if case in vectors else '')\n    activation = ('c-outside-card-' if outside_library else 'c-libucl-') + case\n",
+     "    text = case + '\\n' + (peer.url(vectors[case]) if case in vectors else '')\n    activation = 'c-libucl-' + case\n"),
+    ('        (fixture.unseen_result if outside_library else fixture.libucl_result)(row, case)\n',
+     '        fixture.libucl_result(row, case)\n'),
+)
+
+
+def before_outside_card(text):
+    if hashlib.sha256(text.encode()).hexdigest() != '37535d730b206b1ea2304c78697201d37b6930cd62c9e40326b4f3ead5d8e647':
+        raise AssertionError('c-thread-exact-outside-card-source')
+    for current, previous in OUTSIDE_CARD_ADDENDUM:
+        if text.count(current) != 1:
+            raise AssertionError('c-thread-exact-outside-card-addendum')
+        text = text.replace(current, previous, 1)
+    if hashlib.sha256(text.encode()).hexdigest() != '336345171062a1d9bcde8c0b93bdafcbcfcb3c68cc10bd5feae57c8a5a726e13':
+        raise AssertionError('c-thread-original-paired-client-source')
+    return text
+
+
 class CThreadReadyRuntime(unittest.TestCase):
     def test_fixed_v4_admission_runs_before_any_compiler_or_node_work(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -113,56 +189,7 @@ if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f
             b"        write_json(output / f'child-inventory-{process.authoring_activation}-{attempt}.json', inventory)\n")
         self.assertNotEqual(retained, original_node)
         current_node = (qualification.ROOT / node).read_text()
-        # The separately reviewed POST and outside-card selections are exact
-        # additive source changes. Undo each once before historical proofs;
-        # retain the whole-source identity at each intermediate boundary.
-        if hashlib.sha256(current_node.encode()).hexdigest() == 'e94beca2207d259a7dd03273bc83f7749e13bbf590c5d34cdaf463595ae2e31e':
-            for added, previous in (
-                ("    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl', 'outside-card', 'libfetch-post')\n",
-                 "    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl', 'outside-card')\n"),
-                ("    is_post = client_kind == 'libfetch-post'\n    if is_post:\n        from tools import c_http_post_companion as post\n",
-                 ''),
-                ("    record = {'schemaVersion': 'latent.c.http-post.node.v1' if is_post else\n                              'latent.c.outside-card.node.v1' if is_outside else\n",
-                 "    record = {'schemaVersion': 'latent.c.outside-card.node.v1' if is_outside else\n"),
-                ('            grants = (post.install if is_post else install_libucl if expanded else install_http)(client, node, target, peer.origin())\n',
-                 '            grants = (install_libucl if expanded else install_http)(client, node, target, peer.origin())\n'),
-                ("            stage = 'four-ordinary-post-cells' if is_post else 'one-outside-captured-cell' if is_outside else 'five-ordinary-cells'\n",
-                 "            stage = 'one-outside-captured-cell' if is_outside else 'five-ordinary-cells'\n"),
-                ('            cases = post.CASES if is_post else fixture.CARD_CASES if is_outside else fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES\n            cell = post.cell if is_post else libucl_cell if is_libucl or is_outside else http_cell\n',
-                 '            cases = fixture.CARD_CASES if is_outside else fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES\n            cell = libucl_cell if is_libucl or is_outside else http_cell\n'),
-                ("                    and peer.observation()['startedRequests'] == (4 if is_post else 1 if is_outside else 2 if is_libucl else 6),\n",
-                 "                    and peer.observation()['startedRequests'] == (1 if is_outside else 2 if is_libucl else 6),\n"),
-            ):
-                current_node = project_once(current_node, added, previous)
-        self.assertEqual(hashlib.sha256(current_node.encode()).hexdigest(),
-                         '37535d730b206b1ea2304c78697201d37b6930cd62c9e40326b4f3ead5d8e647')
-        for added, previous in (
-            ("    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl', 'outside-card')\n",
-             "    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl')\n"),
-            ("    is_outside = client_kind == 'outside-card'\n",
-             ''),
-            ("    record = {'schemaVersion': 'latent.c.outside-card.node.v1' if is_outside else\n                              'latent.c.libucl.node.v1' if is_libucl else 'latent.c.libfetch.node.v1',\n",
-             "    record = {'schemaVersion': 'latent.c.libucl.node.v1' if is_libucl else 'latent.c.libfetch.node.v1',\n"),
-            ("            stage = 'one-outside-captured-cell' if is_outside else 'five-ordinary-cells'\n",
-             "            stage = 'five-ordinary-cells'\n"),
-            ('            cases = fixture.CARD_CASES if is_outside else fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES\n            cell = libucl_cell if is_libucl or is_outside else http_cell\n',
-             '            cases = fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES\n            cell = libucl_cell if is_libucl else http_cell\n'),
-            ("                record['cases'].append(cell(client, node, probe, target, peer, output, case,\n                    **({'outside_library': True} if is_outside else {})))\n",
-             "                record['cases'].append(cell(client, node, probe, target, peer, output, case))\n"),
-            ("                    and peer.observation()['startedRequests'] == (1 if is_outside else 2 if is_libucl else 6),\n",
-             "                    and peer.observation()['startedRequests'] == (2 if is_libucl else 6),\n"),
-            ("            record['independentClientCount'] = 0 if is_outside else 1\n",
-             "            record['independentClientCount'] = 1\n"),
-            ('def libucl_cell(client, node, probe, target, peer, output, case, *, outside_library=False):\n',
-             'def libucl_cell(client, node, probe, target, peer, output, case):\n'),
-            ("    require(type(outside_library) is bool\n            and case in (fixture.CARD_CASES if outside_library else fixture.LIBUCL_CASES), 'c-libucl-closed-cell')\n",
-             "    require(case in fixture.LIBUCL_CASES, 'c-libucl-closed-cell')\n"),
-            ("    text = ('' if outside_library else case + '\\n') + (peer.url(vectors[case]) if case in vectors else '')\n    activation = ('c-outside-card-' if outside_library else 'c-libucl-') + case\n",
-             "    text = case + '\\n' + (peer.url(vectors[case]) if case in vectors else '')\n    activation = 'c-libucl-' + case\n"),
-            ('        (fixture.unseen_result if outside_library else fixture.libucl_result)(row, case)\n',
-             '        fixture.libucl_result(row, case)\n'),
-        ):
-            current_node = project_once(current_node, added, previous)
+        current_node = before_outside_card(before_post(current_node))
         # Invert only the authenticated paired-client addendum before old node proofs.
         self.assertEqual(hashlib.sha256(current_node.encode()).hexdigest(),
                          '336345171062a1d9bcde8c0b93bdafcbcfcb3c68cc10bd5feae57c8a5a726e13')
@@ -222,6 +249,35 @@ if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f
         self.assertIn('tools/host_codec_owned_reply_native_products.py', qualification.MATERIALS)
         self.assertIn('tools/host_codec_owned_reply_native_products_reader.py', qualification.MATERIALS)
         self.assertIn('.github/workflows/c-thread-runtime.yml', qualification.MATERIALS)
+
+
+    def test_outside_card_inverse_refuses_every_missing_duplicated_changed_hunk_and_old_body_drift(self):
+        selected = (qualification.ROOT/'tools/c_thread_runtime_node.py').read_text()
+        current = before_post(selected)
+        self.assertNotEqual(selected, current)
+        self.assertEqual(before_post(current), current)
+        for index, (added, _) in enumerate(POST_ADDENDUM):
+            self.assertEqual(selected.count(added), 1)
+            for label, changed in (('missing', ''), ('duplicate', added*2),
+                                   ('changed', added.rstrip('\n') + ' # drift\n')):
+                altered_post = selected.replace(added, changed, 1)
+                with self.subTest(post=index, mutation=label), \
+                        self.assertRaisesRegex(AssertionError, 'c-thread-exact-post-source'):
+                    before_post(altered_post)
+        original = before_outside_card(current)
+        self.assertNotEqual(current, original)
+        altered = {'old-source': original, 'extra-source': current + '\n',
+                   'original-limit': current.replace('client.calls <= 384', 'client.calls <= 385', 1)}
+        for index, (added, _) in enumerate(OUTSIDE_CARD_ADDENDUM):
+            self.assertEqual(current.count(added), 1)
+            altered[f'missing-{index}'] = current.replace(added, '', 1)
+            altered[f'duplicate-{index}'] = current.replace(added, added*2, 1)
+            altered[f'changed-{index}'] = current.replace(added, added.rstrip('\n') + ' # drift\n', 1)
+        for label, text in altered.items():
+            with self.subTest(label=label):
+                self.assertNotEqual(text, current)
+                with self.assertRaisesRegex(AssertionError, 'c-thread-exact-outside-card-source'):
+                    before_outside_card(text)
 
 
 if __name__ == '__main__':

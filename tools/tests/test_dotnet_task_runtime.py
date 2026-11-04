@@ -271,13 +271,23 @@ class RootReturnSupplementalControls(unittest.TestCase):
         self.assertNotIn('..Default::default()', body)
         from tools import dotnet_root_return as replay
         from tools.phase2_operator_process import WorkflowError
-        import hashlib
         translated = replay.JOIN_REPLAY_FIXTURE_TRANSLATION
-        self.assertEqual(translated['path'], 'crates/latent-wasmtime/tests/local_service/fixture.rs')
-        fixture = (ROOT/translated['path']).read_bytes()
-        actual_blob = hashlib.sha1(b'blob '+str(len(fixture)).encode()+b'\0'+fixture).hexdigest()
-        self.assertEqual(actual_blob, translated['currentGitBlob'])
-        self.assertNotEqual(translated['currentGitBlob'], translated['producerGitBlob'])
+        # These are dated reviewed identities, not a mutable current-tree pin.
+        self.assertEqual(translated, {
+            'path': 'crates/latent-wasmtime/tests/local_service/fixture.rs',
+            'mode': '100644',
+            'producerGitBlob': 'a19dbcdef71bb2147e426753b67bb5b3eebbcb99',
+            'currentGitBlob': '4d4e2ee16abca8713acefaee82a657816c90e795'})
+        producer = [{'path': translated['path'], 'mode': translated['mode'],
+                     'gitBlob': translated['producerGitBlob']}]
+        current = [{'path': translated['path'], 'mode': translated['mode'],
+                    'gitBlob': translated['currentGitBlob']}]
+        before = copy.deepcopy((producer, current))
+        old, now, protected = replay.join_replay_source_identity(producer, current)
+        self.assertEqual(old, {translated['path']: producer[0]})
+        self.assertEqual(now, {translated['path']: current[0]})
+        self.assertEqual(protected, {translated['path']})
+        self.assertEqual((producer, current), before)
         self.assertEqual(replay.JOIN_REPLAY['artifact'], 12759125468)
         self.assertEqual(replay.JOIN_REPLAY['bytes'], 15120874)
         self.assertEqual(len(replay.JOIN_REPLAY_COMPONENTS), 2)
@@ -292,6 +302,63 @@ class RootReturnSupplementalControls(unittest.TestCase):
                            (a.JOIN_CAUSE_FILE, a.JOIN_CAUSE_NORMAL)]:
             with self.assertRaisesRegex(ValueError, 'unreviewed-normal-helper'):
                 a.diagnostic_join_cause(name, text)
+
+
+    def test_join_replay_rejects_unreviewed_fixture_identity_before_package_restore(self):
+        import hashlib
+        from tools import dotnet_root_return as replay
+        from tools.phase2_operator_process import WorkflowError
+        translated = replay.JOIN_REPLAY_FIXTURE_TRANSLATION
+        producer = [{'path': translated['path'], 'mode': translated['mode'],
+                     'gitBlob': translated['producerGitBlob']}]
+        # The real working fixture plus a deliberate byte change cannot become
+        # the historical reviewed fixture, even if that fixture is restored later.
+        raw = (replay.ROOT/translated['path']).read_bytes() + b'\n// unreviewed replay input\n'
+        changed_blob = hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
+        self.assertNotEqual(changed_blob, translated['currentGitBlob'])
+        for blob, mode in ((changed_blob, '100644'), (translated['currentGitBlob'], '100755')):
+            current = [{'path': translated['path'], 'mode': mode, 'gitBlob': blob}]
+            with self.subTest(blob=blob, mode=mode), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                with patch.object(replay, 'read_json', return_value=producer) as read, \
+                        patch.object(replay.shutil, 'copytree') as restore:
+                    with self.assertRaisesRegex(WorkflowError, 'join-replay-reviewed-fixture-translation'):
+                        replay.join_replay_packages(root/'original', root/'output', current, 0)
+                    read.assert_called_once_with(root/'original/current-git-inputs.json', 4*1024**2)
+                    restore.assert_not_called()
+                self.assertFalse((root/'output').exists())
+
+    def test_join_replay_source_gate_preserves_complete_protected_membership(self):
+        from tools import dotnet_root_return as replay
+        from tools.phase2_operator_process import WorkflowError
+        translated = replay.JOIN_REPLAY_FIXTURE_TRANSLATION
+        producer = [{'path': translated['path'], 'mode': translated['mode'],
+                     'gitBlob': translated['producerGitBlob']},
+                    {'path': 'crates/latent-wasmtime/src/lib.rs', 'mode': '100644',
+                     'gitBlob': 'a'*40}]
+        current = copy.deepcopy(producer)
+        current[0]['gitBlob'] = translated['currentGitBlob']
+        old, now, protected = replay.join_replay_source_identity(producer, current)
+        self.assertEqual(protected, set(old) | set(now))
+        cases = [(producer+producer[:1], current, 'join-replay-unique-git-inputs'),
+                 (producer, current+current[:1], 'join-replay-unique-git-inputs'),
+                 (producer[1:], current[1:], 'join-replay-explicit-fixture-source'),
+                 (producer, current[1:], 'join-replay-protected-source-set'),
+                 (producer[1:], current, 'join-replay-protected-source-set'),
+                 (producer, current[:1], 'join-replay-protected-source-set'),
+                 (producer[:1], current, 'join-replay-protected-source-set')]
+        changed = copy.deepcopy(current)
+        changed[1]['gitBlob'] = 'b'*40
+        cases.append((producer, changed, 'join-replay-original-component-and-observer-implementation'))
+        changed = copy.deepcopy(producer)
+        changed[0]['gitBlob'] = 'c'*40
+        cases.append((changed, current, 'join-replay-reviewed-fixture-translation'))
+        for before, after, error in cases:
+            with self.subTest(error=error, before=before, after=after):
+                snapshots = copy.deepcopy((before, after))
+                with self.assertRaisesRegex(WorkflowError, error):
+                    replay.join_replay_source_identity(before, after)
+                self.assertEqual((before, after), snapshots)
 
 
 if __name__ == '__main__':
