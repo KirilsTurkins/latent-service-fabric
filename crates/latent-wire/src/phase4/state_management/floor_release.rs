@@ -168,6 +168,7 @@ fn write(
         clock,
     ) {
         Ok(prepared) => prepared,
+        Err(AtomicError::Corrupt) => return Err(StoreError::Corrupt),
         Err(error) => return Ok(Err(atomic_error(error))),
     };
     if prepared.before() != read.record() {
@@ -209,7 +210,10 @@ fn write(
                 value: Some(receipt.encode()?),
             }],
         })
-        .map_err(|_| StoreError::Capacity)?;
+        .map_err(|error| match error {
+            AtomicError::Corrupt => StoreError::Corrupt,
+            _ => StoreError::Capacity,
+        })?;
     // Native reclamation refuses physically live views before policy acceptance.
     drop(view);
     if let Err(error) = pending.started() {
@@ -290,6 +294,9 @@ fn write(
     if let Err(error) = committed {
         if let Some(error) = rejected {
             return Ok(Err(error));
+        }
+        if error == AtomicError::Corrupt {
+            return Err(StoreError::Corrupt);
         }
         if matches!(
             error,
