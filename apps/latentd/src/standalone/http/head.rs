@@ -1,5 +1,5 @@
 //! Parse once after a bounded CRLF head; no header merging or permissive framing.
-use super::Shared;
+use super::{assets::cross_origin, Shared};
 use crate::config::http::Authentication;
 use latent_core::{IncomingDeadline, InvocationPrincipal};
 use latent_ingress::http::{
@@ -14,6 +14,7 @@ pub(super) struct Head {
     pub content_length: usize,
     pub close: bool,
     pub public_document: bool,
+    pub cross_origin: Option<cross_origin::Candidate>,
     method: latent_ingress::http::Method,
 }
 impl Head {
@@ -55,13 +56,7 @@ pub(super) fn parse(
             if close.is_some() {
                 return Err(400);
             }
-            close = Some(if field.value.eq_ignore_ascii_case(b"close") {
-                true
-            } else if field.value.eq_ignore_ascii_case(b"keep-alive") {
-                false
-            } else {
-                return Err(400);
-            });
+            close = Some(connection_close(field.value)?);
             continue;
         }
         if field.name.eq_ignore_ascii_case("expect") {
@@ -112,21 +107,66 @@ pub(super) fn parse(
     let principal = authenticate(shared, collector.target().authority(), authorization)?;
     let method =
         latent_ingress::http::Method::parse(request.method.ok_or(400u16)?).map_err(|_| 405u16)?;
-    let browser_admission = admit_browser(
+    let (public_document, cross_origin) = browser_policy(
         shared,
         collector.target(),
         &principal,
         method,
         &headers[..count],
+        content_length.unwrap_or(0),
     )?;
     Ok(Head {
         collector,
         principal,
         content_length: content_length.unwrap_or(0),
         close: close.unwrap_or(false),
-        public_document: browser_admission == browser::Admission::PublicDocument,
+        public_document,
+        cross_origin,
         method,
     })
+}
+fn connection_close(value: &[u8]) -> Result<bool, u16> {
+    if value.eq_ignore_ascii_case(b"close") {
+        Ok(true)
+    } else if value.eq_ignore_ascii_case(b"keep-alive") {
+        Ok(false)
+    } else {
+        Err(400)
+    }
+}
+
+fn browser_policy(
+    shared: &Shared,
+    target: &latent_ingress::http::CanonicalTarget,
+    principal: &InvocationPrincipal,
+    method: latent_ingress::http::Method,
+    headers: &[HeaderView<'_>],
+    content_length: usize,
+) -> Result<(bool, Option<cross_origin::Candidate>), u16> {
+    let cross_origin = match (&shared.settings.authentication, principal.tenant.as_ref()) {
+        (Authentication::PublicOrigins(_), Some(tenant)) => cross_origin::admit(
+            &shared.settings.cross_origin_assets,
+            target,
+            &tenant.0,
+            method,
+            headers,
+        )?,
+        _ => None,
+    };
+    let browser_admission = if cross_origin.is_some() {
+        if content_length != 0 {
+            return Err(400);
+        }
+        // Provisional only. The connection must take the static-only branch,
+        // which binds the grant to the exact current selected publication.
+        browser::Admission::SameOrigin
+    } else {
+        admit_browser(shared, target, principal, method, headers)?
+    };
+    Ok((
+        browser_admission == browser::Admission::PublicDocument,
+        cross_origin,
+    ))
 }
 fn validate_forwarded(name: &str, has_proxy_peers: bool) -> Result<(), u16> {
     let forwarded = name.eq_ignore_ascii_case("forwarded")

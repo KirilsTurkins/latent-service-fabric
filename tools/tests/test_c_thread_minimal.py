@@ -53,6 +53,11 @@ class CThreadMinimal(unittest.TestCase):
    current_addendum = {'vendor/lsf/sdk/c-guest/src/closed-file-abi.c': '7b825118e32ce9561e8d876c14a0e50e33cad997b5a8599c4112e6f40323212a', 'vendor/lsf/sdk/c-guest/src/libfetch/upstream/musl-COPYRIGHT': 'f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af', 'vendor/lsf/sdk/c-guest/src/libfetch/http.c': 'f3f495e024a79d5221c0fd42b321c33105295c90d085756e8a36af5f8f89f5a2', 'vendor/lsf/sdk/c-guest/src/libfetch/UPSTREAM.json': 'e137aef2ca8901ce260c5aed164d0eec6d5c46ef94e1f0a61b408d757f0606a2'}
    for path, expected in current_addendum.items():
     self.assertEqual(left[path], right[path], path)
+    # Preserve the original adjacency check and the exact whole-source inverse.
+    if path.endswith('/closed-file-abi.c'):
+     before = b'static int file_unsupported(void) {\n    errno = ENOTSUP;\n    return -1;\n}\n\n'
+     following = b'int open(const char *path, int flags, ...) {\n'
+     self.assertEqual(left[path].count(before + EXIT_TRAP_ADDENDUM + following), 1, path)
     # Compare current fixtures first; invert only the reviewed fatal-process addition.
     preserved = before_exit_trap(left[path]) if path.endswith('/closed-file-abi.c') else left[path]
     self.assertEqual(hashlib.sha256(preserved).hexdigest(), expected, path)

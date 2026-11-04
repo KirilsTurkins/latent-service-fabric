@@ -14,6 +14,91 @@ from tools import ci_profile as profile
 
 
 class ClassificationTests(unittest.TestCase):
+    def test_workflow_sparse_checkouts_load_the_complete_suite_case_inventory(self) -> None:
+        # Use the actual Git patterns and isolated Python processes: the outer
+        # checkout must not supply an omitted module or additive case fragment.
+        import shutil
+        import sys
+        import yaml
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
+        source_paths = [Path("tools/ci_profile.py"), Path("tools/ci_result.py"),
+                        Path("tools/ci_suite_inventory.py"), Path("tools/ci_suite_cases.py"),
+                        Path("tools/ci/suites.json")]
+        for directory in ("tools/ci/suites.d", "tools/ci/suites.cases.d"):
+            fragments = sorted((root / directory).glob("*.json"))
+            self.assertTrue(fragments, directory)
+            source_paths.extend(path.relative_to(root) for path in fragments)
+        expected = profile.registry.load()
+        outputs = profile.Decision("full", "manual-dispatch", 0).outputs()
+        required = json.loads(outputs["expected_jobs"])
+        results = {name: {"result": "success" if name in required else "skipped"}
+                   for name in profile.registry.ALL_JOBS}
+        results["profile"]["outputs"] = outputs
+        for job in ("profile", "result"):
+            with self.subTest(job=job), tempfile.TemporaryDirectory() as temporary:
+                checkout = workflow["jobs"][job]["steps"][0]["with"]
+                self.assertIs(checkout["sparse-checkout-cone-mode"], False)
+                if job == "profile":
+                    self.assertEqual(checkout["fetch-depth"], 0)
+                base = Path(temporary)
+                repo = base / "checkout"
+                repo.mkdir()
+                for name in source_paths:
+                    destination = repo / name
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(root / name, destination)
+                # Keep the local Git fixture independent of ambient config,
+                # hooks, credentials, Python paths and network transports.
+                config = base / "gitconfig"
+                config.write_text("")
+                environment = {key: value for key, value in os.environ.items()
+                               if not key.startswith(("GIT_", "GITHUB_"))
+                               and key not in {"PYTHONPATH", "CI_JOB_RESULTS"}}
+                environment.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=str(config),
+                                   GIT_TERMINAL_PROMPT="0", GIT_ALLOW_PROTOCOL="file",
+                                   PYTHONDONTWRITEBYTECODE="1", CI_JOB_RESULTS=json.dumps(results))
+
+                def command(*argv: str, stdin: str | None = None) -> subprocess.CompletedProcess:
+                    return subprocess.run(argv, cwd=repo, env=environment, input=stdin,
+                                          text=True, stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE, timeout=30, check=False)
+
+                for arguments in (("init", "--quiet"), ("add", "."),
+                                  ("-c", "user.name=CI fixture", "-c", "user.email=fixture@example.invalid",
+                                   "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "selector inputs"),
+                                  ("sparse-checkout", "set", "--no-cone", "--stdin")):
+                    result = command("git", *arguments, stdin=checkout["sparse-checkout"]
+                                     if arguments[0] == "sparse-checkout" else None)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                if job == "profile":
+                    event, output = base / "event.json", base / "output.txt"
+                    event.write_text("{}")
+                    result = command(sys.executable, "-I", "-B", "tools/ci_profile.py",
+                                     "--event-name", "workflow_dispatch", "--event-path", str(event),
+                                     "--repo", str(repo), "--github-output", str(output))
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn("profile=full\n", output.read_text())
+                else:
+                    result = command(sys.executable, "-I", "-B", "tools/ci_result.py")
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    # Retain the aggregate's fail-closed behavior as well.
+                    failed = json.loads(json.dumps(results))
+                    failed["docs"]["result"] = "failure"
+                    environment["CI_JOB_RESULTS"] = json.dumps(failed)
+                    result = command(sys.executable, "-I", "-B", "tools/ci_result.py")
+                    self.assertEqual(result.returncode, 1, result.stderr)
+                    self.assertIn("unexpected-job-result:docs:failure", result.stderr)
+                result = command(sys.executable, "-I", "-B", "-c",
+                                 "import json,sys; sys.path.insert(0,'.'); "
+                                 "from tools.ci_suite_inventory import load; "
+                                 "print(json.dumps(load(),sort_keys=True))")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                # An import-only fix can still silently omit cases: compare
+                # the complete effective inventory with the normal checkout.
+                self.assertEqual(json.loads(result.stdout), expected)
+
     def test_sparse_profile_and_result_checkouts_load_complete_catalogue(self) -> None:
         import hashlib
         import sys

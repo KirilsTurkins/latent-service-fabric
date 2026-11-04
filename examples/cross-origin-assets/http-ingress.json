@@ -1,0 +1,29 @@
+{
+  "formatVersion": 1,
+  "bind": "0.0.0.0:8443",
+  "transport": {
+    "mode": "tls",
+    "certificateFile": "tls/server.pem",
+    "privateKeyFile": "tls/server-key.pem"
+  },
+  "authentication": {
+    "mode": "public-origins",
+    "origins": [
+      {"authority": "assets.example.test:8443", "subject": "public-assets", "tenant": "example"}
+    ]
+  },
+  "limits": {
+    "maximumConnections": 16,
+    "maximumExchanges": 2,
+    "maximumBufferBytes": 50331648
+  },
+  "crossOriginAssets": [
+    {
+      "authority": "assets.example.test:8443",
+      "tenant": "example",
+      "publication": "publication:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "origins": ["https://portal.example.test"],
+      "credentials": "omit"
+    }
+  ]
+}
