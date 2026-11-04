@@ -86,20 +86,16 @@ pub(super) async fn mutate(
                     ),
                 };
                 let finish = pending.finish(disposition, reason, digest, replay);
-                Ok((result, access.inspect, finish, retained))
+                result.map(|value| (value, access.inspect, finish, retained))
             },
         )
         .map_err(protected_error)?;
     let (result, inspect, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
-    // A rejected or failed native mutation still owns its critical audit slot.
+    // A rejected mutation still owns its critical audit slot.
     // Wait for the original conclusion before returning that error to the caller.
     let ack = audit::ack(finish).await;
-    let (read, receipt, replayed) = result.map_err(|error| {
-        protected_error(latent_state::protected_store::ProtectedStoreError::Store(
-            error,
-        ))
-    })??;
+    let (read, receipt, replayed) = result?;
     let public = receipt_to_proto(&receipt).map_err(namespace_error)?;
     response::owned(
         inner,

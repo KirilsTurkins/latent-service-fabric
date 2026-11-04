@@ -301,6 +301,16 @@ fn linked_row(
 #[tokio::test]
 async fn audited_floor_release_allows_explicit_destroy_and_incarnation_recreation() {
     let mut fixture = Fixture::new(true).await;
+    assert_eq!(
+        fixture
+            .backend
+            .execute_state(context("alice"), fixture.target().into())
+            .await
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::NotFound
+    );
     let floor = seed_floor(&mut fixture).await;
     let mut malformed = fixture.mutation("malformed-create", c::NamespaceMutationKind::Create, 0);
     malformed.configuration = None;
