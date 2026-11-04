@@ -66,6 +66,12 @@ original-result read, the collector makes one separately recorded, read-only
 lookup of the same key and current publication; it does not retry a mutation or
 change the original HTTP outcome.
 
+A [third isolated terminal run](evidence/java-terminal-recovery-5f-failure-2026-11-04.json)
+failed on an empty original-result HTTP 503 after 40 cases. The separately
+recorded read-only RPC lookup of the same original key and selected publication
+succeeded immediately afterward. That observation does not identify whether the
+HTTP failure was transient or which HTTP delivery stage rejected it.
+
 The [pending-effect recovery evidence](evidence/java-pending-recovery-2026-11-04.json)
 records 16 passing measured cases on the same native and compiler sources. It
 covers the original recipient acceptance, restored pending identity, audited
