@@ -90,6 +90,7 @@ public final class MonitorAsyncControl {
         final MutableClassHolderSource source = new MutableClassHolderSource();
         final DefaultCallGraph graph = new DefaultCallGraph();
         final Set<MethodReference> reachable = new HashSet<>();
+        final Set<MethodReference> progressQueries = new HashSet<>();
         final MethodHolder locked;
         final MethodHolder mixed;
 
@@ -129,7 +130,14 @@ public final class MonitorAsyncControl {
         @Override public boolean isPrecise() { return true; }
         @Override public Collection<FieldReference> getReachableFields() { throw new AssertionError("unused-fields"); }
         @Override public FieldDependencyInfo getField(FieldReference field) { throw new AssertionError("unused-field"); }
-        @Override public MethodDependencyInfo getMethod(MethodReference method) { throw new AssertionError("unused-method"); }
+        @Override public MethodDependencyInfo getMethod(MethodReference method) {
+            require(reachable.contains(method), "unmodeled-method-query");
+            progressQueries.add(method);
+            // No speculative-link metadata is modeled here. A null record
+            // conservatively keeps every declared method in progress analysis;
+            // it must not mark the monitor cases unused to bypass that pass.
+            return null;
+        }
         @Override public MethodDependencyInfo getMethodImplementation(MethodReference method) {
             throw new AssertionError("unused-implementation");
         }
@@ -156,6 +164,8 @@ public final class MonitorAsyncControl {
         var inputs = new Inputs(threads);
         var finder = new AsyncMethodFinder(inputs.graph, inputs);
         finder.find(inputs.source);
+        require(inputs.progressQueries.equals(mode.equals("corrected") ? inputs.reachable : Set.of()),
+                "final-reachable-progress-query-coverage");
         boolean fixed = mode.equals("corrected") && threads;
         require(finder.hasAsyncMethods() == fixed, "real-thread-monitor-admission");
         require(finder.getAsyncMethods().contains(PAUSE) && finder.getAsyncMethods().contains(MIXED),
