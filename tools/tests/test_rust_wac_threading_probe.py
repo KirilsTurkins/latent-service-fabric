@@ -1,6 +1,9 @@
 """Authenticate the original retained WAC failure and bounded probe inputs."""
 import hashlib
 import io
+import json
+import tempfile
+from pathlib import Path
 import unittest
 import warnings
 import zipfile
@@ -38,6 +41,28 @@ class RetainedPreviewIdentity(unittest.TestCase):
         with self.assertRaises(WorkflowError): probe.official_metadata(lambda _path: values.pop(0))
         values = self.metadata(); values[2]['workflow_run']['id'] += 1
         with self.assertRaises(WorkflowError): probe.official_metadata(lambda _path: values.pop(0))
+
+    def test_compare_records_named_recipe_before_refusing_missing_artifact_authority(self):
+        head = 'a' * 40
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); source = root / 'source'; source.mkdir()
+            (source / 'recipe.txt').write_bytes(b'original recipe')
+            composer = root / 'composer'; composer.write_bytes(b'wac')
+            with patch.multiple(probe, ROOT=source, RECIPE=('recipe.txt',), NEW_WAC_SIZE=3,
+                    NEW_WAC_SHA=hashlib.sha256(b'wac').hexdigest()), \
+                 patch.object(probe.sys, 'platform', 'linux'), \
+                 patch.object(probe.subprocess, 'check_output', side_effect=[head.encode(), b'']), \
+                 patch.dict(probe.os.environ, {'GH_TOKEN': ''}):
+                with self.assertRaisesRegex(WorkflowError, 'official-artifact-token-required'):
+                    probe.compare(root / 'output', composer, head)
+                failed = json.loads((root / 'output/FAILED.json').read_text())
+                expected = {'name': 'recipe.txt', 'digest': 'sha256:' + hashlib.sha256(b'original recipe').hexdigest(),
+                    'size': len(b'original recipe')}
+                self.assertEqual(failed['recipe'], {'recipe.txt': expected})
+                self.assertEqual(failed['stage'], 'verify-current-source')
+                self.assertEqual(failed['attempts'], [])
+                (source / 'recipe.txt').write_bytes(b'changed recipe')
+                self.assertNotEqual(probe.recipe_identities(), failed['recipe'])
 
     def test_exact_members_and_duplicate_or_tampered_archives_refuse(self):
         def archive(rows):
