@@ -34,7 +34,7 @@ class CheckpointCompiler(unittest.TestCase):
             'reset-counted', 'exceptional-retry', 'unmanaged-class', 'transitive-initializer',
             'near-max-counted', 'nested-polling', 'mutual-recursion', 'virtual-initializer',
             'string-info-getter', 'string-info-declaration', 'string-info-parent', 'string-info-target',
-            'compiler-archive-control'])
+            'compiler-archive-control', 'compiler-cache-isolation'])
 
     def test_real_frontend_executes_every_declared_progress_case(self):
         source = probe.COMPILER_CONTROL.read_text()
@@ -53,7 +53,24 @@ class CheckpointCompiler(unittest.TestCase):
         self.assertIn('check(StringInfoAccess.class.getName(), corrected, true, mutation);', source)
         self.assertIn('check(StringInfoAccess.class.getName(), corrected, true, "", true);', source)
         self.assertIn('checkCompilerArchive(corrected);', source)
-        self.assertEqual(len(cases) + 7, len(probe.COMPILER_EXPECTED.split(';')) - 1)
+        self.assertIn('checkCompilerCacheIsolation(corrected);', source)
+        self.assertEqual(len(cases) + 8, len(probe.COMPILER_EXPECTED.split(';')) - 1)
+
+    def test_archive_receipt_is_per_compiler_even_when_target_is_reused(self):
+        from tools.java_guest import coroutine_patch
+        emitted = coroutine_patch.corrected_async_source(
+            (probe.SDK/'fibers/compiler-patch/AsyncMethodFinder.java').read_bytes()).decode()
+        body = emitted.split('synchronized (progressStringInfoArchives) {', 1)[1].split(
+            '// FunctionIntrinsic', 1)[0]
+        self.assertIn('progressStringInfoArchives.get(vm)', body)
+        self.assertIn('progressStringInfoArchives.put(vm, false)', body)
+        self.assertIn('progressStringInfoArchives.put(vm, result)', body)
+        self.assertNotIn('progressStringInfoArchives.get(target)', body)
+        fixture = probe.COMPILER_CONTROL.read_text()
+        self.assertIn('cache.put(first, Boolean.FALSE);', fixture)
+        self.assertIn('Boolean.TRUE.equals(cache.get(second))', fixture)
+        self.assertEqual(fixture.count(
+            'compileWithTarget(StringInfoAccess.class.getName(), corrected, false, "", target)'), 2)
 
     def test_real_frontend_preserves_strict_rank_and_excluded_call_controls(self):
         source = probe.COMPILER_CONTROL.read_text()

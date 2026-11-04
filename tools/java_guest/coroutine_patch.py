@@ -2029,7 +2029,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             }
         }
         synchronized (progressStringInfoArchives) {
-            Boolean cached = progressStringInfoArchives.get(target);
+            Boolean cached = progressStringInfoArchives.get(vm);
             if (cached != null) {
                 if (!cached) return false;
             } else {
@@ -2038,9 +2038,9 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 }
                 // Even a failed or exceptional read is attempted at most once for
                 // this compiler; the target identity above is still checked anew.
-                progressStringInfoArchives.put(target, false);
+                progressStringInfoArchives.put(vm, false);
                 boolean result = pinnedStringInfoArchive(jar);
-                progressStringInfoArchives.put(target, result);
+                progressStringInfoArchives.put(vm, result);
                 if (!result) return false;
             }
         }

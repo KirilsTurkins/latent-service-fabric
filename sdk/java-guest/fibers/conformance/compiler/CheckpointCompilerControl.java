@@ -438,7 +438,12 @@ public final class CheckpointCompilerControl {
 
     private static void check(String entry, boolean corrected, boolean unsafe, String mutation,
             boolean alternateTarget) {
-        CTarget target = alternateTarget ? new ProbeTarget() : new CTarget(new CNameProvider());
+        compileWithTarget(entry, corrected, unsafe, mutation,
+                alternateTarget ? new ProbeTarget() : new CTarget(new CNameProvider()));
+    }
+
+    private static org.teavm.vm.TeaVM compileWithTarget(String entry, boolean corrected, boolean unsafe,
+            String mutation, CTarget target) {
         target.setMinHeapSize(1024 * 1024);
         target.setMaxHeapSize(4 * 1024 * 1024);
         var stop = new StopAfterFinder(target);
@@ -479,6 +484,42 @@ public final class CheckpointCompilerControl {
         require(vm.getProblemProvider().getSevereProblems().isEmpty(),
                 "checkpoint-control-no-hidden-compiler-errors");
         require(refused == (corrected && unsafe), "checkpoint-control-progress-verdict");
+        return vm;
+    }
+
+    private static void checkCompilerCacheIsolation(boolean corrected) throws Exception {
+        var target = new CTarget(new CNameProvider());
+        var first = compileWithTarget(StringInfoAccess.class.getName(), corrected, false, "", target);
+        java.util.Map<Object, Boolean> cache = null;
+        if (corrected) {
+            var field = org.teavm.model.util.AsyncMethodFinder.class.getDeclaredField("progressStringInfoArchives");
+            require(field.trySetAccessible(), "checkpoint-control-compiler-cache-access");
+            Object raw = field.get(null);
+            require(raw instanceof java.util.WeakHashMap, "checkpoint-control-compiler-cache-type");
+            @SuppressWarnings("unchecked")
+            var typedCache = (java.util.Map<Object, Boolean>) raw;
+            cache = typedCache;
+            synchronized (cache) {
+                require(Boolean.TRUE.equals(cache.get(first)) && !cache.containsKey(target),
+                        "checkpoint-control-first-vm-cache");
+                // A failed receipt for the first compiler must not affect another
+                // compiler even if it is given the very same CTarget object.
+                cache.put(first, Boolean.FALSE);
+            }
+        }
+        var methods = CTarget.class.getDeclaredField("asyncMethods");
+        require(methods.trySetAccessible() && methods.get(target) != null,
+                "checkpoint-control-reused-target-observation");
+        methods.set(target, null);
+        var second = compileWithTarget(StringInfoAccess.class.getName(), corrected, false, "", target);
+        require(first != second, "checkpoint-control-distinct-compiler-instances");
+        if (corrected) {
+            synchronized (cache) {
+                require(Boolean.FALSE.equals(cache.get(first)) && Boolean.TRUE.equals(cache.get(second))
+                                && !cache.containsKey(target),
+                        "checkpoint-control-compiler-cache-isolation");
+            }
+        }
     }
 
     public static void checkClasslibIdentity(String mode) {
@@ -519,10 +560,11 @@ public final class CheckpointCompilerControl {
         check(StringInfoAccess.class.getName(), corrected, true, "", true);
         try {
             checkCompilerArchive(corrected);
+            checkCompilerCacheIsolation(corrected);
         } catch (Exception failure) {
             throw new AssertionError("checkpoint-control-compiler-archive", failure);
         }
         System.out.println("CHECKPOINT_COMPILER_CONTROL PASS " + arguments[0]
-                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;compiler-archive-control");
+                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;compiler-archive-control;compiler-cache-isolation");
     }
 }
