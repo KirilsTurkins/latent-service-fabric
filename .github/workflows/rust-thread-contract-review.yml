@@ -12,188 +12,90 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
           ref: 0ef909fda133933fddced7c52b17e2863ccf06a1
-      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install reviewed validator dependencies
         run: python3 -m pip install --requirement tools/requirements.lock
-      - name: Apply exact reviewed integration repairs
+      - name: Read exact reviewed correction and preserved development reader
+        run: |
+          git fetch --no-tags --depth=1 origin 204ca9f3096ea9b62bd4f4892adc10319834255f 816b806d61c3479b3e138fa55466c22250818f07
+          python3 - <<'PY'
+          import hashlib, subprocess, yaml
+          raw = subprocess.check_output(['git', 'show', '204ca9f3096ea9b62bd4f4892adc10319834255f:.github/workflows/rust-thread-contract-review.yml'])
+          assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == '58cc79e4531afcaff0f24bc45f060631867e359b'
+          workflow = yaml.safe_load(raw)
+          steps = [s for s in workflow['jobs']['review']['steps'] if s.get('name') == 'Apply exact reviewed integration repairs']
+          assert len(steps) == 1
+          subprocess.run(['bash', '-eu'], input=steps[0]['run'].encode(), check=True)
+          PY
+      - name: Isolate Rust runtime selection from historical Java TypeScript and Audit readers
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import hashlib, json, os
-          from tools import ci_contracts as contracts
-          expected = {
-              'tools/tests/test_ci_contracts.py': '183984b75e6ee5dd3c728ee8b8c89b01fcc2e033',
-              '.github/workflows/ci.yml': '36bb49d61fad20b0ae865a338f345c58da7aef0c',
-              'tools/ci/contracts/workflows/ci.yml/jobs/contracts.json': '93b77fc86b3a2cdfec628615155990d4b94415ff',
-              'tools/tests/test_owned_runners.py': '79780a509e86aba510a69d3c5db8124bebedc890',
-              'tools/tests/test_java_scheduled_library.py': 'f3a37e65610e8cdf8942062fd1a42728a6a328b5',
-              'tools/tests/test_audit_memory_programme.py': '0fd87111a402f378ff5234e9d5f654ef33388b51',
-              'tools/tests/test_c_thread_minimal.py': '0474c13dbe4d72327bb42a9168619830795f0ba8',
-              'tools/tests/test_c_thread_ready_runtime.py': 'fab2ab2376f5d6ec653fe06773b8851f9c6eef3c',
-              'tools/ci/contracts/python/test_owned_runners.py.json': '0a7a99313ffb59e3c80305543da93dcb982187fe',
-              'tools/tests/test_rust_thread_runtime.py': '1bb01caf5b061805501dc8370d128542163481c3',
-          }
+          import hashlib, json, os, subprocess
           def blob(raw):
               return hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
-          original = {}
-          for name, identity in expected.items():
-              raw = Path(name).read_bytes()
-              assert blob(raw) == identity, name
-              original[name] = raw.decode()
-          def once(text, before, after):
-              assert text.count(before) == 1, before
-              return text.replace(before, after, 1)
           def edit(name, before, after):
-              path = Path(name)
-              path.write_text(once(path.read_text(), before, after))
-          edit('tools/tests/test_ci_contracts.py',
-              "github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}",
-              "github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}")
-          edit('.github/workflows/ci.yml',
-              '            95b8d8b16c29d94755262345a305401ee99a801f\n',
-              '            95b8d8b16c29d94755262345a305401ee99a801f \\\n            cddfb5d016a6311ed0db4673e490dc9caad917dd\n')
-          name = 'tools/ci/contracts/workflows/ci.yml/jobs/contracts.json'
-          text = original[name]; value = json.loads(text)
-          step = next(s for s in value['definition']['steps'] if s.get('name') == 'Fetch exact historical source inputs for Python preservation controls')
-          updated = once(step['run'], '  95b8d8b16c29d94755262345a305401ee99a801f\n',
-              '  95b8d8b16c29d94755262345a305401ee99a801f \\\n  cddfb5d016a6311ed0db4673e490dc9caad917dd\n')
-          text = once(text, json.dumps(step['run']), json.dumps(updated))
-          reason = value['reviewReason'] + ' Include the exact cddfb5d Rust ThreadPool native producer required by the frozen reader imported by five existing Python modules. Preserve every previous source, command, condition and authentication check.'
-          text = once(text, json.dumps(value['reviewReason']), json.dumps(reason))
-          Path(name).write_text(text)
-          edit('tools/tests/test_owned_runners.py',
-              "    fragments = source.with_suffix('.d')\n    if fragments.exists():\n        copied = destination.with_suffix('.d')\n        copied.mkdir()\n        for fragment in sorted(fragments.iterdir()):\n            (copied / fragment.name).write_bytes(fragment.read_bytes())\n",
-              "    for suffix in ('.d', '.cases.d'):\n        fragments = source.with_suffix(suffix)\n        if fragments.exists():\n            copied = destination.with_suffix(suffix)\n            copied.mkdir()\n            for fragment in sorted(fragments.iterdir()):\n                (copied / fragment.name).write_bytes(fragment.read_bytes())\n")
-          edit('tools/tests/test_owned_runners.py',
-              "        source = ROOT / 'tools/ci/suites.d'\n        if source.exists():\n            self.assertEqual(\n                {path.name: path.read_bytes() for path in source.iterdir()},\n                {path.name: path.read_bytes() for path in destination.with_suffix('.d').iterdir()})\n",
-              "        for suffix in ('.d', '.cases.d'):\n            source = (ROOT / 'tools/ci/suites.json').with_suffix(suffix)\n            if source.exists():\n                self.assertEqual(\n                    {path.name: path.read_bytes() for path in source.iterdir()},\n                    {path.name: path.read_bytes() for path in destination.with_suffix(suffix).iterdir()})\n        # A loader-only copy imports successfully but silently loses additive\n        # cases. Require full equality to catch that distinct failure mode.\n        fragments = destination.with_suffix('.cases.d')\n        self.assertTrue(any(fragments.iterdir()))\n        hidden = fragments.with_name('retained-case-fragments')\n        fragments.rename(hidden)\n        try:\n            self.assertNotEqual(catalog.load(destination), catalog.load())\n        finally:\n            hidden.rename(fragments)\n        self.assertEqual(catalog.load(destination), catalog.load())\n")
-          edit('tools/tests/test_java_scheduled_library.py',
-              "        native = [f'tools/capture-{index:04d}.py' for index in range(8992)]",
-              "        limits = owner.observed.SnapshotLimits()\n        self.assertEqual((limits.max_entries, limits.max_file_bytes, limits.max_total_bytes),\n                         (9248, 4 * 1024**2, 77 * 1024**2))\n        native = [f'tools/capture-{index:04d}.py' for index in range(limits.max_entries)]")
-          edit('tools/tests/test_java_scheduled_library.py', '(8992, 17, 1)', '(limits.max_entries, 17, 1)')
-          edit('tools/tests/test_java_scheduled_library.py',
-              '            changed.update(dict.fromkeys(native[:19], full))',
-              '            # One more full-size input than the total-byte allowance admits.\n            overflow_count = limits.max_total_bytes // limits.max_file_bytes + 1\n            changed.update(dict.fromkeys(native[:overflow_count], full))')
-          edit('tools/tests/test_audit_memory_programme.py',
-              "        # Immutable193 programme original six remain unchanged/unselected here.\n        from tools.qualify_host_codec_native import CONTROLS as original\n        self.assertEqual(len(original[0][3]), 6)\n        self.assertFalse(set(names) & set(original[0][3]))\n",
-              """        # The immutable193 six survive the two reviewed envelope additions.
-                  # The six historical cases remain unselected here; exactly the two
-                  # envelope additions are now shared with this 25-case Audit programme.
-                  from tools.qualify_host_codec_native import CONTROLS as original
-                  historical = (
-                      'budget::descendants::tests::host_memory_resize_confirms_parent_peak_and_retains_terminal_child_capacity',
-                      'budget::host_memory::tests::actual_native_owner_keeps_capacity_after_terminal_report_and_settles_once',
-                      'budget::host_memory::tests::failed_pending_replacement_refunds_only_unallocated_capacity',
-                      'budget::host_memory::tests::growing_overlap_competes_before_allocation_and_shrink_keeps_peak',
-                      'budget::host_memory::tests::native_and_linear_memory_compete_before_allocation_and_failed_preparations_roll_back',
-                      'budget::host_memory::tests::partial_confirmation_keeps_pending_capacity_without_inventing_allocated_peak',
-                  )
-                  additions = (
-                      'budget::host_memory::tests::native_envelope_refuses_unobserved_retirement_before_mutating_original_ledger',
-                      'budget::host_memory::tests::original_native_envelope_reuses_only_retired_storage_without_refunding_capacity',
-                  )
-                  self.assertEqual(original[0][3], (*historical[:-1], *additions, historical[-1]))
-                  self.assertEqual(tuple(case for case in original[0][3] if case not in additions), historical)
-                  self.assertFalse(set(names) & set(historical))
-                  self.assertEqual(set(names) & set(original[0][3]), set(additions))
-          """.replace('\n          ', '\n'))
-          exit_addendum = ('/* Process completion is unsupported: retain original owners through the\n'
-              ' * activation trap and Store cleanup. No atexit callbacks or stdio flushing.\n'
-              ' */\n_Noreturn void exit(int status) {\n    (void)status;\n    __builtin_trap();\n}\n\n')
-          edit('tools/tests/test_c_thread_minimal.py', '   for path, expected in current_addendum.items():\n',
-              "   # The outside-client port adds only a trapping process-exit entry. Keep\n"
-              "   # the historical file-ABI pin below after an exact, authenticated inverse.\n"
-              "   closed = 'vendor/lsf/sdk/c-guest/src/closed-file-abi.c'\n"
-              "   self.assertEqual(left[closed], right[closed])\n"
-              "   self.assertEqual(hashlib.sha256(left[closed]).hexdigest(),\n"
-              "                    '8af8989600438fdf5ebe265e3065404f0412270e8dc11b2fee8934de5ba3887f')\n"
-              '   exit_addendum = ' + repr(exit_addendum.encode()) + '\n'
-              "   self.assertEqual(left[closed].count(exit_addendum), 1)\n"
-              "   left[closed] = left[closed].replace(exit_addendum, b'', 1)\n"
-              "   right[closed] = right[closed].replace(exit_addendum, b'', 1)\n"
-              '   for path, expected in current_addendum.items():\n')
-          inverse = [
-              ("client_kind in ('libfetch', 'libucl', 'outside-card')", "client_kind in ('libfetch', 'libucl')"),
-              ("    is_outside = client_kind == 'outside-card'\n", ''),
-              ("    record = {'schemaVersion': 'latent.c.outside-card.node.v1' if is_outside else\n                              'latent.c.libucl.node.v1' if is_libucl else 'latent.c.libfetch.node.v1',", "    record = {'schemaVersion': 'latent.c.libucl.node.v1' if is_libucl else 'latent.c.libfetch.node.v1',"),
-              ("stage = 'one-outside-captured-cell' if is_outside else 'five-ordinary-cells'", "stage = 'five-ordinary-cells'"),
-              ("cases = fixture.CARD_CASES if is_outside else fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES", "cases = fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES"),
-              ("cell = libucl_cell if is_libucl or is_outside else http_cell", "cell = libucl_cell if is_libucl else http_cell"),
-              ("record['cases'].append(cell(client, node, probe, target, peer, output, case,\n                    **({'outside_library': True} if is_outside else {})))", "record['cases'].append(cell(client, node, probe, target, peer, output, case))"),
-              ("(1 if is_outside else 2 if is_libucl else 6)", "(2 if is_libucl else 6)"),
-              ("record['independentClientCount'] = 0 if is_outside else 1", "record['independentClientCount'] = 1"),
-              ("def libucl_cell(client, node, probe, target, peer, output, case, *, outside_library=False):", "def libucl_cell(client, node, probe, target, peer, output, case):"),
-              ("    require(type(outside_library) is bool\n            and case in (fixture.CARD_CASES if outside_library else fixture.LIBUCL_CASES), 'c-libucl-closed-cell')", "    require(case in fixture.LIBUCL_CASES, 'c-libucl-closed-cell')"),
-              ("text = ('' if outside_library else case + '\\n') + (peer.url(vectors[case]) if case in vectors else '')", "text = case + '\\n' + (peer.url(vectors[case]) if case in vectors else '')"),
-              ("activation = ('c-outside-card-' if outside_library else 'c-libucl-') + case", "activation = 'c-libucl-' + case"),
-              ("(fixture.unseen_result if outside_library else fixture.libucl_result)(row, case)", "fixture.libucl_result(row, case)"),
-          ]
-          marker = '        # Invert only the authenticated paired-client addendum before old node proofs.\n'
-          edit('tools/tests/test_c_thread_ready_runtime.py', marker,
-              '        # Authenticate and invert only the outside-card route before the\n'
-              '        # existing paired-client and original seventeen-outcome proofs.\n'
-              '        self.assertEqual(hashlib.sha256(current_node.encode()).hexdigest(),\n'
-              "                         '37535d730b206b1ea2304c78697201d37b6930cd62c9e40326b4f3ead5d8e647')\n"
-              '        outside_edits = (\n' + ''.join('            (' + repr(a) + ', ' + repr(b) + '),\n' for a,b in inverse)
-              + '        )\n        for added, previous in outside_edits:\n            current_node = project_once(current_node, added, previous)\n' + marker)
+              path = Path(name); text = path.read_text()
+              assert text.count(before) == 1, name
+              path.write_text(text.replace(before, after, 1))
+          old = Path('tools/rust_thread_native_products.py')
+          new = Path('tools/rust_thread_runtime_native_products.py')
+          assert not new.exists()
+          new.write_bytes(old.read_bytes())
+          preserved = subprocess.check_output(['git', 'show', '816b806d61c3479b3e138fa55466c22250818f07:tools/rust_thread_native_products.py'])
+          assert blob(preserved) == 'd402f90c175afcf42a22cd868589ec192aebd02c'
+          old.write_bytes(preserved)
+          edit('tools/qualify_rust_thread_runtime.py', 'from tools import rust_thread_native_products as native_source', 'from tools import rust_thread_runtime_native_products as native_source')
+          edit('tools/rust_thread_runtime_package.py', "'tools/rust_thread_native_products.py'", "'tools/rust_thread_runtime_native_products.py'")
+          edit('tools/tests/test_rust_thread_runtime.py', 'from tools import rust_thread_native_products as native', 'from tools import rust_thread_runtime_native_products as native')
+          edit('tools/tests/test_rust_thread_runtime.py',
+               '        # The shallow repository Python lane imports this frozen reader via\n        # Java and TypeScript controls too. Bind the exact producer before\n',
+               '        # The shallow repository Python lane imports the Rust runtime reader.\n        # Bind its own exact producer before\n')
           marker = '        # Both readers bind one actual push event, not an either-event fallback.\n'
-          edit('tools/tests/test_rust_thread_runtime.py', marker,
-              "        # The shallow repository Python lane imports this frozen reader via\n"
-              "        # Java and TypeScript controls too. Bind the exact producer before\n"
-              "        # discovery; current-tree or branch-tip substitution is not evidence.\n"
-              "        from tools.ci_lane_inventory import workflow_model\n"
-              "        shared = workflow_model((ROOT / '.github/workflows/ci.yml').read_text())\n"
-              "        steps = shared['jobs']['contracts']['steps']\n"
-              "        history = [step for step in steps if step.get('name') ==\n"
-              "                   'Fetch exact historical source inputs for Python preservation controls']\n"
-              "        self.assertEqual(len(history), 1)\n"
-              "        self.assertEqual(history[0]['if'], \"matrix.lane == 'python'\")\n"
-              "        command = history[0]['run'].replace(chr(92) + chr(10), ' ').split()\n"
-              "        self.assertEqual(command[:5], ['git', 'fetch', '--no-tags', '--depth=1', 'origin'])\n"
-              "        self.assertEqual(command[5:].count(native.SOURCE), 1)\n"
-              "        self.assertLess(steps.index(history[0]), next(index for index, step in enumerate(steps)\n"
-              "            if step.get('name') == 'Validate contracts, echo component, and generated bindings'))\n\n" + marker)
-          name = 'tools/ci/contracts/python/test_owned_runners.py.json'
-          text = original[name]; physical = json.loads(text); previous = contracts.semantic_record(physical)
-          observed = contracts.python_expectations(Path.cwd())['tools/tests/test_owned_runners.py']
-          assert previous['cases'] == observed['cases']
-          replacements = {}
-          for case in previous['cases']:
-              before, after = previous['guards'][case], observed['guards'][case]
-              for field in before:
-                  if field == 'fixtureGuards':
-                      delta = [(a,b) for a,b in zip(before[field],after[field]) if a != b]
-                      assert len(before[field]) == len(after[field]) and len(delta) == 1
-                      assert all(value.startswith('module:setup-sha256:') for value in delta[0])
-                      replacements.update(delta)
-                  else:
-                      assert before[field] == after[field], (case,field)
-              oldkey = physical['guards'][case]
-              newkey = hashlib.sha256(contracts.canonical(after).encode()).hexdigest()
-              replacements[oldkey] = newkey
-              previous['guards'][case] = after
-          for before, after in replacements.items():
-              assert before in text
-              text = text.replace(before, after)
-          reason = physical['reviewReason'] + ' Copy the existing independently bounded .cases.d fragments as well as .d suites in the synthetic inventory fixture. Keep every case, class, decorator and skip predicate; only the authenticated module setup changes. Full inventory equality and missing-case-fragment negative coverage remain required.'
-          text = once(text, json.dumps(physical['reviewReason']), json.dumps(reason))
-          previous['reviewReason'] = reason
-          assert contracts.semantic_record(json.loads(text)) == previous
-          Path(name).write_text(text)
-          out = Path(os.environ['RUNNER_TEMP']) / 'rust-contract-review'; out.mkdir()
-          records = [{'path':name,'before':identity,'after':blob(Path(name).read_bytes())} for name,identity in expected.items()]
-          (out / 'reviewed-edits.json').write_text(json.dumps(records,indent=2)+'\n')
-          print(json.dumps(records))
+          extra = '''        # Changing the Rust runtime tuple must not move another campaign's host.
+                  from tools import rust_thread_native_products as historical
+                  self.assertEqual(historical.SOURCE, 'b422af24d86344ac7abb8b8fa56c3782aab63915')
+                  self.assertEqual(historical.JOB, 124001233201)
+                  self.assertEqual(historical.READER.control_count, 193)
+                  self.assertNotEqual(historical.SOURCE, native.SOURCE)
+                  self.assertNotEqual(historical.ARTIFACT, native.ARTIFACT)
+                  self.assertEqual(package.SOURCE, native.SOURCE)
+          '''.replace('\n          ', '\n')
+          edit('tools/tests/test_rust_thread_runtime.py', marker, extra + '\n' + marker)
+          workflow = '.github/workflows/rust-thread-runtime.yml'
+          job = 'tools/ci/contracts/workflows/rust-thread-runtime.yml/jobs/signed-default-pools.json'
+          for name in (workflow, job):
+              edit(name, 'tools/rust_thread_native_products.py', 'tools/rust_thread_runtime_native_products.py')
+          edit(workflow,
+               '        run: git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd',
+               '        run: git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd b422af24d86344ac7abb8b8fa56c3782aab63915')
+          edit(job,
+               'git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd\\n',
+               'git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd b422af24d86344ac7abb8b8fa56c3782aab63915\\n')
+          owner = Path('tools/ci/contracts/owners/tools/rust_thread_native_products.py.json')
+          selected = json.loads(owner.read_text())
+          runtime = {**selected, 'path': str(new), 'sha256': hashlib.sha256(new.read_bytes()).hexdigest(),
+                     'reviewReason': 'Keep the exact Rust runtime 200-control producer in its own reader; historical Java, TypeScript and Audit campaigns retain the development 193-control reader byte-for-byte.'}
+          owner.with_name('rust_thread_runtime_native_products.py.json').write_text(json.dumps(runtime, indent=2) + '\n')
+          selected['sha256'] = hashlib.sha256(preserved).hexdigest()
+          selected['reviewReason'] = 'Restore the exact development d402f90c historical 193-control reader. The Rust runtime has a separate source-matched selection; no historical campaign is relabeled.'
+          owner.write_text(json.dumps(selected, indent=2) + '\n')
+          owner = Path('tools/ci/contracts/owners/tools/qualify_rust_thread_runtime.py.json')
+          selected = json.loads(owner.read_text())
+          selected['sha256'] = hashlib.sha256(Path(selected['path']).read_bytes()).hexdigest()
+          selected['reviewReason'] += ' Select only the isolated Rust runtime reader; signed results, budgets and retirement checks are unchanged.'
+          owner.write_text(json.dumps(selected, indent=2) + '\n')
+          out = Path(os.environ['RUNNER_TEMP']) / 'rust-contract-review'
+          (out / 'integration.patch').write_bytes(subprocess.check_output(['git', 'diff', '--binary']))
           PY
           git diff --check
-          git diff --stat
-      - name: Fetch every previous historical input and the exact Rust producer
+      - name: Fetch exact historical inputs
         run: |
           python3 - <<'PY' > "$RUNNER_TEMP/rust-contract-review/history.sh"
           from pathlib import Path
@@ -204,37 +106,43 @@ jobs:
           print(selected[0]['run'])
           PY
           bash "$RUNNER_TEMP/rust-contract-review/history.sh"
-      - name: Run complete affected preservation and regression suites
+      - name: Validate affected suites and complete command contracts
         run: |
           status=0
           python3 -m unittest tools.tests.test_ci_contracts tools.tests.test_ci_profile tools.tests.test_ci_result tools.tests.test_c_closed_filesystem_qualification tools.tests.test_owned_runners tools.tests.test_audit_memory_programme tools.tests.test_c_thread_minimal tools.tests.test_c_thread_ready_runtime tools.tests.test_java_scheduled_library tools.tests.test_rust_thread_runtime tools.tests.test_java_checkpoint_gc tools.tests.test_java_checkpoint_gc_retained tools.tests.test_java_dependency_checkpoints tools.tests.test_typescript_private_removed tools.tests.test_c_thread_runtime > "$RUNNER_TEMP/rust-contract-review/tests.log" 2>&1 || status=$?
           tail -n 100 "$RUNNER_TEMP/rust-contract-review/tests.log"
           test "$status" = 0
-          python3 tools/ci_coverage.py --receipt target/ci/rust-thread-contract-review.json
-          cp target/ci/rust-thread-contract-review.json "$RUNNER_TEMP/rust-contract-review/coverage.json"
-      - name: Store only the exact tested blobs without changing a branch
+          python3 tools/ci_coverage.py --receipt "$RUNNER_TEMP/rust-contract-review/coverage.json"
+      - name: Store exact tested blobs without changing a branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import base64, hashlib, json, os, pathlib, urllib.request
+          import base64, hashlib, json, os, pathlib, subprocess, urllib.request, zipfile
           out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'rust-contract-review'
-          records = json.loads((out / 'reviewed-edits.json').read_text()); result = []
-          for row in records:
-              path = pathlib.Path(row['path']); raw = path.read_bytes()
-              expected = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
-              assert expected == row['after']
-              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs', data=json.dumps({'encoding':'base64','content':base64.b64encode(raw).decode()}).encode(), headers={'Authorization':'Bearer ' + os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'}, method='POST')
-              with urllib.request.urlopen(request, timeout=60) as response:
-                  stored = json.load(response)
-              assert stored['sha'] == expected
-              result.append({'path':str(path),'sha':expected,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()})
-          (out / 'tested-blobs.json').write_text(json.dumps(result,indent=2)+'\n')
-          print(json.dumps(result))
+          changed = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
+          added = subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()
+          names = sorted(set(changed + added))
+          assert 10 <= len(names) <= 24
+          assert all(n.startswith(('tools/', '.github/workflows/')) for n in names)
+          records = []
+          with zipfile.ZipFile(out / 'tested-files.zip', 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+              for name in names:
+                  raw = pathlib.Path(name).read_bytes()
+                  assert len(raw) <= 4 * 1024 * 1024
+                  identity = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+                  request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs', data=json.dumps({'encoding':'base64','content':base64.b64encode(raw).decode()}).encode(), headers={'Authorization':'Bearer ' + os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'}, method='POST')
+                  with urllib.request.urlopen(request, timeout=60) as response:
+                      stored = json.load(response)
+                  assert stored['sha'] == identity
+                  records.append({'path':name,'sha':identity,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()})
+                  archive.writestr(name, raw)
+          (out / 'tested-blobs.json').write_text(json.dumps(records,indent=2)+'\n')
+          print(json.dumps(records))
           PY
       - name: Retain exact review evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-thread-contract-review-${{ github.sha }}
           path: ${{ runner.temp }}/rust-contract-review/
