@@ -24,14 +24,25 @@
     "Q35NodePciPrefixControls.test_prefix_sources_are_captured_and_wrong_projection_refuses":
       "aed320453801a392bfbadcd57cddadc143ed572e2f5a8682bce3ee6342af07a6",
     "Q35NodePciPrefixControls.test_prefix_uses_original_actor_one_scope_and_no_network_authority":
-      "aed320453801a392bfbadcd57cddadc143ed572e2f5a8682bce3ee6342af07a6"
+      "aed320453801a392bfbadcd57cddadc143ed572e2f5a8682bce3ee6342af07a6",
+    "Q35NodePciSetupControls.test_actor_scope_is_revoked_before_the_original_deadline_bounded_wait":
+      "3249d283e9deacdf8ecfd6908dd7cdf49581ad2819ba9a466f628dfc2009407a",
+    "Q35NodePciSetupControls.test_distinct_original_records_must_both_actually_return":
+      "3249d283e9deacdf8ecfd6908dd7cdf49581ad2819ba9a466f628dfc2009407a",
+    "Q35NodePciSetupControls.test_pending_and_intermediate_firmware_return_cannot_report_pci_return":
+      "3249d283e9deacdf8ecfd6908dd7cdf49581ad2819ba9a466f628dfc2009407a",
+    "Q35NodePciSetupControls.test_setup_sources_are_captured_and_unknown_projection_refuses":
+      "3249d283e9deacdf8ecfd6908dd7cdf49581ad2819ba9a466f628dfc2009407a",
+    "Q35NodePciSetupControls.test_setup_uses_original_actor_and_distinguishes_pending_from_return":
+      "3249d283e9deacdf8ecfd6908dd7cdf49581ad2819ba9a466f628dfc2009407a"
   },
   "kind":"python",
   "module":"tools/tests/test_kernel_native_constructor_vm.py",
-  "reviewReason":"One closed q35/KVM original-Node PCI birth/return qualification; original preimages, source bounds, ownership, IRQ/TCP and historical routes remain enforced.",
+  "reviewReason":"Default-off q35 original-Node PCI setup and asynchronous record-return qualification; existing authority, limits, historical paths and IRQ/TCP exclusions remain enforced.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
     "057a24724097bcdae4ce6361db08e60333f434d9845b514d8202938a2188f3f7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:0e30df0faf320a6c0a3c80af5a2f918bf598b8f88b0a62242c56de4067f16dd0","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-    "aed320453801a392bfbadcd57cddadc143ed572e2f5a8682bce3ee6342af07a6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:0e30df0faf320a6c0a3c80af5a2f918bf598b8f88b0a62242c56de4067f16dd0","class:setup-sha256:23e9215447844211bd35fe3d8fec2c184e923500a55057361e9615577c84fecf"]}
+    "aed320453801a392bfbadcd57cddadc143ed572e2f5a8682bce3ee6342af07a6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:0e30df0faf320a6c0a3c80af5a2f918bf598b8f88b0a62242c56de4067f16dd0","class:setup-sha256:23e9215447844211bd35fe3d8fec2c184e923500a55057361e9615577c84fecf"]},
+    "3249d283e9deacdf8ecfd6908dd7cdf49581ad2819ba9a466f628dfc2009407a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:0e30df0faf320a6c0a3c80af5a2f918bf598b8f88b0a62242c56de4067f16dd0","class:setup-sha256:1a8aa4c97feeb53857c36f82fa0593187542db91087e8fdd658c93c159ea20c8"]}
   }
 }
