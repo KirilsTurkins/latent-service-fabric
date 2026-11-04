@@ -4,9 +4,8 @@ The maintained conductor connects captured Java components to the installed
 version-2 protected store, signed operation admission and current HTTP provider.
 Use the [installed recovery contract](installed-transaction-recovery.md) for native
 action inputs, response frames, custody and the latest source-bound progress
-packets. Complete terminal and pending recovery programmes and packaged
-qualification remain outstanding; earlier compiler or host controls do not
-establish those results.
+packets. Current-source and packaged qualification remain outstanding; earlier
+compiler or host controls do not establish those results.
 
 ## Select actual inputs
 
@@ -47,6 +46,12 @@ records 16 passing measured cases on the same native and compiler sources. It
 covers the original recipient acceptance, restored pending identity, audited
 close/replay and physical retirement; it does not qualify packaged delivery or
 the full retention horizon.
+
+The separately isolated [precommit-crash evidence](evidence/java-precommit-crash-2026-11-04.json)
+records the staged signed guest, an actual node kill and recovery of the same
+pending command without a new activation. It uses native source `81d72bceaf4`
+and conductor source `ac55f717f2d`; it does not establish a terminal outcome,
+automatic retry, packaged delivery or the complete crash matrix.
 
 Use `python tools/run_java_transaction_http_qualification.py --help` from the
 repository root to inspect the complete required input set. Execution requires
