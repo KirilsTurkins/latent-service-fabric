@@ -896,7 +896,7 @@ class NodeNetOwningControls(unittest.TestCase):
             'runtimeLimitsConfiguration':'RuntimeLimits { tasks: 32, executors: 2, queued_work: 32, waits: 8, timers: 8, results: 8, native_owners: 128 }',
             'preparation':{'backend':'wasmtime-component-phase-1','release':'sha256:'+'1'*64,
                 'publication':'publication:sha256:'+'2'*64,'componentDigest':'sha256:'+'1'*64,
-                'engineConfigurationDigest':'blake3:'+'3'*64,'engineVersion':'48.0.7',
+                'engineConfigurationDigest':'blake3:'+'3'*64,'engineVersion':'48.0.8',
                 'targetTriple':'x86_64-unknown-linux-gnu','cpuFeatureSet':'host-baseline'}}
         for row in cases: row['referenceProfile']=copy.deepcopy(reference)
         complete = {'cases':8,'guestComponents':1,'gateComponent':False,'wholeAC7':False,

@@ -13,7 +13,7 @@ pub const MAX_ORIGINAL_BYTES: usize = 1024 * 1024;
 pub const MAX_COMPONENT_BYTES: usize = 2 * 1024 * 1024;
 // Admitted BEFORE recomputation. Sixteen2MiB image units cover overlapping
 // input/output/reencoder/section/TLS buffers; eightMiB separately covers the
-// fixed1221-node/5245-edge graph and bounded scalar signatures; eightMiB covers
+// fixed1221-node/5246-edge graph and bounded scalar signatures; eightMiB covers
 // validator state. Original component storage is charged independently.
 pub const RUST_VERIFICATION_WORK_BYTES: usize = 48 * 1024 * 1024;
 const MAGIC: &[u8; 8] = b"LSFRPR01";
@@ -343,8 +343,15 @@ pub fn verify_embedded_rust_original_core(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
     const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/catalogue-original-core.wasm");
+    #[cfg(feature = "rust-thread-diagnostic-legacy")]
+    const ORIGINAL: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/legacy-original-core.wasm"));
+    #[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
     const COMPONENT: &[u8] = include_bytes!("rust_catalogue/catalogue-normal-component.wasm");
+    #[cfg(feature = "rust-thread-diagnostic-legacy")]
+    const COMPONENT: &[u8] =
+        include_bytes!(concat!(env!("OUT_DIR"), "/legacy-normal-component.wasm"));
 
     #[test]
     fn rust_normal_component_recomputes_original_graph_and_rejects_envelope_or_main_changes() {
@@ -363,7 +370,11 @@ mod tests {
         let proof = verify_rust_component_routing(ORIGINAL, COMPONENT).unwrap();
         assert_eq!(
             proof.catalogue_origin_head,
-            "f401e388a7542b8f9cd9bbd987dbcc65814262d6"
+            if cfg!(feature = "rust-thread-diagnostic-legacy") {
+                "f401e388a7542b8f9cd9bbd987dbcc65814262d6"
+            } else {
+                "72707ee61ce4784f7c866f2835f474554df8d922"
+            }
         );
         assert!(proof.actual_component_graph_authenticated);
         assert!(!proof.canonical_creation_enabled && !proof.standard_runtime_qualified);

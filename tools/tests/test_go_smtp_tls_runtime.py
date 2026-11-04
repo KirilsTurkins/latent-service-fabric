@@ -27,6 +27,10 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
 
     def test_exact_smtp_and_guest_tls_paths_do_not_promote_host_tls_or_kernel_accounting(self):
         value = runtime.outcomes(self.output())
+        expanded = self.output().replace(b"0 filtered out", b"2 filtered out")
+        self.assertEqual(runtime.outcomes(expanded, filtered=2), value)
+        with self.assertRaises(ValueError):
+            runtime.outcomes(expanded, filtered=1)
         self.assertEqual(len(value['cases']), 6)
         self.assertEqual(value['completion']['contacts'], 6)
         self.assertEqual(len(value['userSpaceOwners']), 6)

@@ -1,7 +1,7 @@
 """Package one retained original ThreadPool compiler event for signed execution.
 
-No application compiler is invoked. The original 67-file application snapshot
-and full source/CAS archive remain bound to event 28059. The finite qualification
+No application compiler is invoked. The original 68-file application snapshot
+and full source/CAS archive remain bound to their pinned compiler event. The finite qualification
 policy changes only the public WIT effect and invocation memory/time envelope;
 neither change is presented as original compiler input or runtime authority.
 """
@@ -20,8 +20,18 @@ from tools.rust_thread_callback_paths import section, unsigned
 
 CATALOGUE_PREVIOUS_SOURCE = 'ef841ed1d5691b4bf25db48b9980a776b4b56bc5'
 CATALOGUE_PREVIOUS_RUN = 41127291312
-SOURCE = 'e3f0edf822c10e84bbeede276174ac3217542afc'
-RUN = 41189829966
+RETIREMENT_PREVIOUS_SOURCE = 'e3f0edf822c10e84bbeede276174ac3217542afc'
+RETIREMENT_PREVIOUS_RUN = 41189829966
+RETIREMENT_PREVIOUS_EVENT = 'workflow_dispatch'
+RETIREMENT_PREVIOUS_PINS = {
+    'application-source-and-capture.tar.gz': (20954735, '5370c88bdf2ac8c16f38f21d196b6462c77e2fc3d7e4f0cbc4a14df1d7dae5f9'),
+    'source-inputs.json': (9348, '45c426fc2f3fd52c07b734e2504afc4ebde598166b1e9613c541887e92c75746'),
+    'raw-core.wasm': (261378, '7b280a32bc87a8db318432f47f8190816b6722f1402d1e2e161142788bdb0c69'),
+    'observation.json': (5428, '140a07c6a298b1b702a89ae4b6c8e137c19fce17429de9635a4fd975eadaa65a'),
+}
+SOURCE = 'cddfb5d016a6311ed0db4673e490dc9caad917dd'
+RUN = 41229829427
+EVENT = 'push'
 HISTORICAL_PINS = {
     'application-source-and-capture.tar.gz': (20761985, 'c6d9ef4e2eb48af53b7685065e406dd5ff8403c5b003c45383680c6afb68a085'),
     'source-inputs.json': (9204, '645f05410a943a1383462ce2eef5a30145c1f6953de74154b3e0b5c62174057e'),
@@ -59,14 +69,13 @@ CATALOGUE_PREVIOUS_PINS = {
     'observation.json': (5426, '3738b83b3d08a857fe7dd38e73a9ebe415f65c0c8ff2551ac293bf465128a007'),
 }
 PINS = {
-    'application-source-and-capture.tar.gz': (20954735, '5370c88bdf2ac8c16f38f21d196b6462c77e2fc3d7e4f0cbc4a14df1d7dae5f9'),
-    'source-inputs.json': (9348, '45c426fc2f3fd52c07b734e2504afc4ebde598166b1e9613c541887e92c75746'),
-    'raw-core.wasm': (261378, '7b280a32bc87a8db318432f47f8190816b6722f1402d1e2e161142788bdb0c69'),
-    'observation.json': (5428, '140a07c6a298b1b702a89ae4b6c8e137c19fce17429de9635a4fd975eadaa65a'),
+    'application-source-and-capture.tar.gz': (20961554, '0e5833537b478e0fb7afdd2ed4aaa0a48b22e59283378d87d75e487b7e6dbd9e'),
+    'source-inputs.json': (9348, 'd338ae89f65fc2a5ebc351fba6fffb33b4ec53ef91820091036cae991aeeeb70'),
+    'raw-core.wasm': (261403, '8cd26a5f34ec90f23af43dfcb21b0b619b369ed2199a5368a24572bb96cbf177'),
+    'observation.json': (5428, '2e2e4ebfec57bc08f2be14fd57380ce986ad3a98f9351f31bd32dd070352cc99'),
 }
-COMPONENT_SHA = 'sha256:0ded5f17359bbff107af47e422549765de2e17f4829853ed2011225d85a56107'
-WRAPPED = {'bytes': 511683,
-           'sha256': 'sha256:3948e0fc6d64dbf40914915ba0618f14cdd4a45e6e4762ecf6e0e801fac4f4c6'}
+COMPONENT_SHA = 'sha256:0d66c4828a608e9ec0048205ac6f38539e417f62dbdaeb6b7bdc245aa1c073c8'
+WRAPPED = {'bytes': 511729, 'sha256': 'sha256:c3135d063fae81a2dc651d4f102b2bcdd53eacf197406104aad4e3b405dfe97c'}
 PROFILE = 'rust-context40-sync-cooperative-v1'
 SOURCE_IMPORTS = ('latent:runtime/activation@0.1.0', 'latent:runtime-native/threads@0.1.0',
                   'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0')
@@ -125,7 +134,7 @@ def original_files(artifact: Path) -> tuple[dict[str, bytes], dict]:
 def wrap_original(original: bytes, component: bytes) -> bytes:
     """Untrusted preimage framing only; the selected native host recomputes it."""
     require(digest(original) == 'sha256:' + PINS['raw-core.wasm'][1]
-            and digest(component) == COMPONENT_SHA and len(component) == 250260,
+            and digest(component) == COMPONENT_SHA and len(component) == 250281,
             'rust-thread-original-component-pair')
     name = b'latent-rust-original-core-v1'
     payload = unsigned(len(name)) + name + b'LSFRPR01' + len(original).to_bytes(4, 'little') + original
@@ -147,7 +156,7 @@ def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> d
             and prior['originalCore']['digest'] == 'sha256:' + PINS['raw-core.wasm'][1],
             'rust-thread-retained-original-compiler-observation')
     recipe_names = tuple(dict.fromkeys((*selected_recipe(),
-        '.github/workflows/rust-thread-runtime.yml', 'tools/rust_thread_native_products.py',
+        '.github/workflows/rust-thread-runtime.yml', 'tools/rust_thread_runtime_native_products.py',
         'tools/rust_thread_compiler_materials.py', 'tools/rust_thread_runtime_package.py',
         'tools/rust_thread_runtime_node.py', 'tools/qualify_rust_thread_runtime.py',
         'tools/rust_thread_callback_paths.py', 'tools/rust_thread_object_graph.py')))
@@ -188,6 +197,12 @@ def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> d
     (output / 'component.wasm').write_bytes(component)
     record = {'schemaVersion': 'latent.rust.thread-runtime.projection.v1',
         'compilerSource': SOURCE, 'compilerRun': str(RUN), 'compilerRunAttempt': 1,
+        'compilerRunEvent': EVENT,
+        'retirementPreviousCompilerSource': RETIREMENT_PREVIOUS_SOURCE,
+        'retirementPreviousCompilerRun': RETIREMENT_PREVIOUS_RUN,
+        'retirementPreviousCompilerEvent': RETIREMENT_PREVIOUS_EVENT,
+        'retirementPreviousCompilerArtifactMembers': {name: {'bytes': size, 'sha256': 'sha256:' + sha}
+            for name, (size, sha) in RETIREMENT_PREVIOUS_PINS.items()},
         'retainedCompilerMaterials': identities,
         'historicalCompilerArtifactMembers': {name: {'bytes': size, 'sha256': 'sha256:' + sha}
             for name, (size, sha) in HISTORICAL_PINS.items()},

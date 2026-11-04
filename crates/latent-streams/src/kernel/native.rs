@@ -600,32 +600,63 @@ pub(crate) mod node_bootstrap {
         })
     }
 
+    #[cfg(any(test, feature = "development-outbound"))]
+    const PCI_PREFIX_ABI: &str = "lsf-q35-node-pci-prefix-v1";
+    #[cfg(any(test, feature = "development-outbound"))]
+    const PCI_PREFIX_OPERATION: u32 = 4;
+
+    /// Qualification-only image bound by the owner at compile time; this is
+    /// not issued by a production provider or selected by a runtime request.
+    #[cfg(any(test, feature = "development-outbound"))]
+    pub(crate) struct InstalledPciPrefixProfile {
+        capacity: InstalledCapacityProfile,
+    }
+
+    #[cfg(any(test, feature = "development-outbound"))]
+    pub(crate) fn qualification_pci_prefix_profile(
+    ) -> Result<InstalledPciPrefixProfile, StreamError> {
+        if option_env!("LSF_Q35_PREFIX_PROFILE") != Some(PCI_PREFIX_ABI) {
+            return Err(error(StreamErrorCode::Unsupported));
+        }
+        Ok(InstalledPciPrefixProfile {
+            capacity: qualification_capacity_profile()?,
+        })
+    }
+
     enum SelectedProfile {
         Bootstrap(InstalledProfile),
         Capacity(InstalledCapacityProfile),
+        #[cfg(any(test, feature = "development-outbound"))]
+        PciPrefix(InstalledPciPrefixProfile),
     }
 
     impl SelectedProfile {
         fn check(&self) -> Result<(), StreamError> {
             match self {
                 Self::Bootstrap(value) => value.check(),
-                Self::Capacity(value) => {
-                    if value.abi != CAPACITY_ABI
-                        || value.image == [0; 32]
-                        || value.source == [0; 32]
-                        || value.configuration == [0; 32]
-                    {
-                        return Err(error(StreamErrorCode::Unsupported));
-                    }
-                    Ok(())
-                }
+                Self::Capacity(value) => Self::check_capacity(value),
+                #[cfg(any(test, feature = "development-outbound"))]
+                Self::PciPrefix(value) => Self::check_capacity(&value.capacity),
             }
+        }
+
+        fn check_capacity(value: &InstalledCapacityProfile) -> Result<(), StreamError> {
+            if value.abi != CAPACITY_ABI
+                || value.image == [0; 32]
+                || value.source == [0; 32]
+                || value.configuration == [0; 32]
+            {
+                return Err(error(StreamErrorCode::Unsupported));
+            }
+            Ok(())
         }
 
         fn wire_version(&self) -> u32 {
             match self {
                 Self::Bootstrap(_) => VERSION,
                 Self::Capacity(_) => CAPACITY_VERSION,
+                #[cfg(any(test, feature = "development-outbound"))]
+                Self::PciPrefix(_) => CAPACITY_VERSION,
             }
         }
     }
@@ -774,6 +805,73 @@ pub(crate) mod node_bootstrap {
             return Err(deadline_error());
         }
         Ok(fact)
+    }
+
+    #[cfg(any(test, feature = "development-outbound"))]
+    fn pci_prefix_reply(bytes: &[u8], original: Attachment) -> Result<(), StreamError> {
+        let (phase, attached) = reply_version(bytes, original.expiry, None, CAPACITY_VERSION)?;
+        if phase != Phase::AttachedUnqualified || attached != original {
+            return Err(error(StreamErrorCode::Unsupported));
+        }
+        Ok(())
+    }
+
+    #[cfg(any(test, feature = "development-outbound"))]
+    fn run_pci_prefix(
+        file: &mut File,
+        original: Attachment,
+        deadline: Instant,
+    ) -> Result<(), StreamError> {
+        if Instant::now() >= deadline {
+            return Err(deadline_error());
+        }
+        let request = frame_version(
+            CAPACITY_VERSION,
+            PCI_PREFIX_OPERATION,
+            original.expiry,
+            original.generation,
+        );
+        if file
+            .write(&request)
+            .map_err(|_| error(StreamErrorCode::Unsupported))?
+            != REQUEST_BYTES
+        {
+            return Err(error(StreamErrorCode::Unsupported));
+        }
+        let mut bytes = [0; REPLY_BYTES];
+        if file
+            .read(&mut bytes)
+            .map_err(|_| error(StreamErrorCode::Unsupported))?
+            != REPLY_BYTES
+        {
+            return Err(error(StreamErrorCode::Unsupported));
+        }
+        pci_prefix_reply(&bytes, original)?;
+        if Instant::now() >= deadline {
+            return Err(deadline_error());
+        }
+        Ok(())
+    }
+
+    #[cfg(any(test, feature = "development-outbound"))]
+    pub(crate) async fn start_pci_prefix(
+        pools: Arc<ProviderPools>,
+        installed: &InstalledProvider,
+        profile: InstalledPciPrefixProfile,
+        deadline: Instant,
+    ) -> Result<Owner, StreamError> {
+        let profile = SelectedProfile::PciPrefix(profile);
+        let backing = reserve_backing(&pools, installed, &profile)?;
+        enter_selected_with(
+            pools,
+            installed.clone(),
+            backing,
+            profile,
+            deadline,
+            open_factory,
+            |file, deadline| attach_version(file, deadline, CAPACITY_VERSION),
+        )
+        .await
     }
 
     #[cfg_attr(
@@ -1130,7 +1228,13 @@ pub(crate) mod node_bootstrap {
                     deadline,
                 )?);
                 value.phase = Phase::AttachedUnqualified;
-                let prepared = if matches!(&value._profile, SelectedProfile::Capacity(_)) {
+                let prepare = match &value._profile {
+                    SelectedProfile::Capacity(_) => true,
+                    #[cfg(any(test, feature = "development-outbound"))]
+                    SelectedProfile::PciPrefix(_) => true,
+                    _ => false,
+                };
+                let prepared = if prepare {
                     Some(prepare_capacity(
                         value.descriptor.as_mut().expect("actual fd"),
                         value.attachment.expect("original attachment"),
@@ -1139,6 +1243,14 @@ pub(crate) mod node_bootstrap {
                 } else {
                     None
                 };
+                #[cfg(any(test, feature = "development-outbound"))]
+                if matches!(&value._profile, SelectedProfile::PciPrefix(_)) {
+                    run_pci_prefix(
+                        value.descriptor.as_mut().expect("actual fd"),
+                        value.attachment.expect("original attachment"),
+                        deadline,
+                    )?;
+                }
                 request.checkpoint()?;
                 value
                     .backing
@@ -1359,6 +1471,24 @@ pub(crate) mod node_bootstrap {
             let mut duplicate = capacity;
             duplicate[64 + 25 * 8..64 + 26 * 8].copy_from_slice(&values[24].to_le_bytes());
             assert!(capacity_reply(&duplicate, original).is_err());
+        }
+
+        #[test]
+        fn pci_prefix_reply_refuses_changed_identity_state_or_funding() {
+            let mut good = observed(2);
+            good[4..8].copy_from_slice(&CAPACITY_VERSION.to_le_bytes());
+            let original = reply_version(&good, 123, None, CAPACITY_VERSION).unwrap().1;
+            assert!(pci_prefix_reply(&good, original).is_ok());
+            assert!(pci_prefix_reply(&good[..REPLY_BYTES - 1], original).is_err());
+            for at in [0, 4, 8, 12, 16, 24, 32, 40, 48, 56] {
+                let mut changed = good;
+                changed[at] ^= 1;
+                assert!(pci_prefix_reply(&changed, original).is_err(), "offset {at}");
+            }
+            let request = frame_version(CAPACITY_VERSION, PCI_PREFIX_OPERATION, 123, 7);
+            assert_eq!(&request[8..12], &4u32.to_le_bytes());
+            assert_eq!(&request[16..24], &123u64.to_le_bytes());
+            assert_eq!(&request[24..32], &7u64.to_le_bytes());
         }
 
         async fn snapshot(
