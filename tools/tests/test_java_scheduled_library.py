@@ -170,7 +170,10 @@ class TaskShutdownNowOwnership(unittest.TestCase):
 class TaskShutdownNowSourceCapture(unittest.TestCase):
     def test_full_native_snapshot_and_fixed_supplement_keep_limits_and_detect_drift(self):
         from types import SimpleNamespace
-        native = [f'tools/capture-{index:04d}.py' for index in range(8992)]
+        # Exercise the current reviewed ceiling, not a historical lower bound.
+        limits = owner.observed.SnapshotLimits()
+        self.assertEqual((limits.max_entries, limits.max_total_bytes), (9248, 77 * 1024**2))
+        native = [f'tools/capture-{index:04d}.py' for index in range(limits.max_entries)]
         supplemental = set(owner.observed.EXTRA_SOURCES) | {owner.workers.WORKFLOW, owner.WORKFLOW,
             'sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java'}
         calls, changed = [], {}
@@ -191,7 +194,7 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
             before = owner.shutdown_sources(commands)
             self.assertEqual(set(before['native']), set(native))
             self.assertEqual(set(before['supplementary']), supplemental)
-            self.assertEqual((len(before['native']), len(before['supplementary']), len(calls)), (8992, 17, 1))
+            self.assertEqual((len(before['native']), len(before['supplementary']), len(calls)), (limits.max_entries, 17, 1))
             self.assertEqual(owner.shutdown_sources(commands, before['native']), before)
             self.assertEqual(len(calls), 1)
             for capture, workflow in ((owner.workers.sources, owner.workers.WORKFLOW),
@@ -210,8 +213,8 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
             self.assertEqual(after['native'], before['native'])
             self.assertNotEqual(after['supplementary'], before['supplementary'])
             changed.clear()
-            # The shared source budget can grow independently of this 8,992-file
-            # fixture. Exercise its actual boundary without changing any limit.
+            # Exercise the actual source-count boundary without changing the
+            # shared limit, even if its reviewed value grows later.
             from tools.build_snapshot import SnapshotLimits
             maximum = SnapshotLimits().max_entries
             self.assertGreaterEqual(maximum, len(native))
@@ -230,7 +233,14 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
                 owner.shutdown_sources(commands, before['native'])
             changed.clear()
             full = b'x' * (4 * 1024**2)
-            changed.update(dict.fromkeys(native[:19], full))
+            # Fill the byte allowance exactly, including its non-file-sized tail.
+            count, remainder = divmod(limits.max_total_bytes, limits.max_file_bytes)
+            changed.update(dict.fromkeys(native[:count], full))
+            changed[native[count]] = b'x' * (remainder - (len(native) - count - 1))
+            exact = owner.shutdown_sources(commands, before['native'])
+            self.assertEqual(sum(row['bytes'] for row in exact['native'].values()),
+                             limits.max_total_bytes)
+            changed[native[count]] += b'x'
             with self.assertRaisesRegex(ValueError, 'native-source-total'):
                 owner.shutdown_sources(commands, before['native'])
             changed.clear(); changed.update(dict.fromkeys(sorted(supplemental)[:5], full))

@@ -26,6 +26,9 @@ from tools.rust_capsule_project import checked_path, decode_json, digest, fresh,
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = '.github/workflows/rust-owned-thread-inputs.yml'
 CRATE = 'crates/latent-component-threading/'
+NATIVE_TLS_TEST = 'sdk/rust-standard-runtime/tests/thread_tls_native.rs'
+NATIVE_WAIT_TEST = 'sdk/rust-standard-runtime/tests/thread_wait_driver_native.rs'
+NATIVE_SYNC_TEST = 'sdk/rust-standard-runtime/tests/thread_sync_native.rs'
 CRATE_SOURCES = tuple(CRATE + 'src/' + name for name in (
     'lib.rs', 'thread_entry.rs', 'root.rs', 'public_root.rs', 'admission.rs', 'component.rs',
     'c_abi.rs', 'c_component.rs', 'c_context.rs', 'c_lifecycle.rs',
@@ -35,6 +38,7 @@ CRATE_SOURCES = tuple(CRATE + 'src/' + name for name in (
     'rust_catalogue/normal-component-shell.bin', 'rust_catalogue/original-wit-metadata.bin',
     'rust_catalogue/adapted-wit-metadata.bin',
     'rust_catalogue/original-producers.bin', 'rust_catalogue/encoded-producers.bin',
+    'rust_catalogue/catalogue-original-core.wasm', 'rust_catalogue/catalogue-normal-component.wasm',
     'rust_catalogue/reviewed-original-core.wasm', 'rust_catalogue/reviewed-normal-component.wasm'))
 RECIPE = tuple(dict.fromkeys((
     'tools/compile_rust_owned_thread_inputs.py', WORKFLOW, '.cargo/config.toml',
@@ -44,7 +48,8 @@ RECIPE = tuple(dict.fromkeys((
     'tools/dev_workflow/common.py', 'tools/application_dependency_store.py',
     'tools/rust_standard_logging_inputs.py', 'tools/rust_application_dependencies.py',
     'tools/rust_standard_thread_capture.py', 'tools/rust_owned_thread_component.py',
-    *result_controls.RECIPE, *CRATE_SOURCES, *std.recipe(threads=True))))
+    *result_controls.RECIPE, *CRATE_SOURCES, *std.recipe(threads=True),
+    NATIVE_TLS_TEST, NATIVE_WAIT_TEST, NATIVE_SYNC_TEST)))
 
 
 def git(*args, input=None):
@@ -169,6 +174,38 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
         require('release: 1.97.1\n' in version
                 and 'commit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\n' in version,
                 'rust-thread-inputs-pinned-compiler')
+        summary['stage'] = 'native-tls-controls'
+        native_tls = build_output / 'thread-tls-native'
+        commands.run('native-tls-build', tools['rustc'], '--edition=2024', '--test',
+                     ROOT / NATIVE_TLS_TEST, '-o', native_tls)
+        listed = commands.run('native-tls-list', native_tls, '--list')
+        require(sum(line.endswith(b': test') for line in listed.splitlines()) == 10,
+                'rust-thread-inputs-native-tls-case-closure')
+        commands.run('native-tls-run', native_tls, '--test-threads=1')
+        summary['nativeTlsControls'] = 10
+        summary['stage'] = 'native-wait-controls'
+        native_wait = build_output / 'thread-wait-native'
+        commands.run('native-wait-build', tools['rustc'], '--edition=2024', '--test',
+                     ROOT / NATIVE_WAIT_TEST, '-o', native_wait)
+        listed = commands.run('native-wait-list', native_wait, '--list')
+        require(sum(line.endswith(b': test') for line in listed.splitlines()) == 11,
+                'rust-thread-inputs-native-wait-case-closure')
+        commands.run('native-wait-run', native_wait, '--test-threads=1')
+        native_sync = build_output / 'thread-sync-native'
+        commands.run('native-sync-build', tools['rustc'], '--edition=2024', '--test',
+                     ROOT / NATIVE_SYNC_TEST, '-o', native_sync)
+        listed = commands.run('native-sync-list', native_sync, '--list')
+        require(sum(line.endswith(b': test') for line in listed.splitlines()) == 8,
+                'rust-thread-inputs-native-sync-case-closure')
+        commands.run('native-sync-run', native_sync, '--test-threads=1')
+        summary['nativeWaitControls'] = 11
+        summary['nativeSyncControls'] = 8
+        # The bounded evidence keeps the exact build/list/run logs and control
+        # counts.  The three native runner executables are transient products,
+        # not compiler inputs or runtime products, so do not duplicate them in
+        # the retained compiler-input artifact after their tests have run.
+        for native_control in (native_tls, native_wait, native_sync):
+            native_control.unlink()
         summary['stage'] = 'tool-build'
         cargo = commands.run('rust-context-build', tools['cargo'], 'build', '--locked',
             '--package', 'latent-component-threading', '--bin', 'rust-context', '--message-format=json')
@@ -181,12 +218,6 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
                 'rust-thread-inputs-tool-copy')
         summary['contextTool'] = identity
         if application_diagnostic:
-            summary['stage'] = 'source-mechanism-controls'
-            controls = commands.run('owned-core-source-mechanism-controls', tools['cargo'], 'test', '--locked',
-                '--package', 'latent-component-threading', '--lib', '--', '--test-threads=1')
-            require(b'test result: ok. 76 passed; 0 failed; 0 ignored;' in controls,
-                    'rust-thread-inputs-exact-source-mechanism-controls')
-            summary['sourceMechanismControlsPassed'] = 76
             summary['stage'] = 'emitted-result-guard-engine-controls'
             summary['emittedResultGuardControls'] = result_controls.run(
                 commands, copied, output / 'result-guard-controls')
@@ -203,6 +234,14 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
             summary['stage'] = 'ordinary-application-core-diagnostic'
             summary['applicationDiagnostic'] = application.run(output / 'application-diagnostic',
                 rust_bin, output / 'owned-sysroot', copied, deadline=started + 600)
+            # Retain unsigned diagnostic encoding before historical-pair controls.
+            # Every native library source control still must pass for owner success.
+            summary['stage'] = 'source-mechanism-controls'
+            controls = commands.run('owned-core-source-mechanism-controls', tools['cargo'], 'test', '--locked',
+                '--package', 'latent-component-threading', '--lib', '--', '--test-threads=1')
+            require(b'test result: ok. 76 passed; 0 failed; 0 ignored;' in controls,
+                    'rust-thread-inputs-exact-source-mechanism-controls')
+            summary['sourceMechanismControlsPassed'] = 76
         summary['stage'] = 'recheck'
         require(sources(expected_head, application_diagnostic) == original, 'rust-thread-inputs-source-mutated')
         require(distribution(rust_bin.parent) == compiler
