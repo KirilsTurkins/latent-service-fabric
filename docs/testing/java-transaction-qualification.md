@@ -60,7 +60,10 @@ automatic retry, packaged delivery or the complete crash matrix.
 
 The [early immediate-HTTP capture](evidence/java-early-http-capture-2026-11-04.json)
 pins a separate guest that attempts the call before state or intent staging.
-Its compiler receipt does not establish signed execution or post-stage rollback.
+The [signed early-denial run](evidence/java-early-http-execution-2026-11-04.json)
+observed typed denial, no TCP contact, no application state commit and physical
+retirement on native/conductor source `7d22ee26ac2`. It does not qualify
+post-stage rollback or packaged delivery.
 
 Use `python tools/run_java_transaction_http_qualification.py --help` from the
 repository root to inspect the complete required input set. Execution requires
