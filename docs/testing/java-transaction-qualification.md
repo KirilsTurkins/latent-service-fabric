@@ -54,6 +54,12 @@ native source `50caadce1f7` and conductor source `46597407903`. It used the
 original compiler capture at `fccc27dbc52`; it does not qualify newly compiled
 Java sources, the full retention horizon or a packaged distribution.
 
+A [run of the later compiler capture](evidence/java-terminal-recovery-c6f-failure-2026-11-04.json)
+passed 46 cases through migration and restored-authority setup, then its original
+result request received an empty HTTP 503. The retained observation identifies a
+dependency-failed activation but supplies no producer reason. This failed run
+does not establish restored-result recovery for the newer capture.
+
 The [pending-effect recovery evidence](evidence/java-pending-recovery-2026-11-04.json)
 records 16 passing measured cases on the same native and compiler sources. It
 covers the original recipient acceptance, restored pending identity, audited
@@ -65,11 +71,22 @@ also passed 16 cases on the same native and compiler sources, with conductor
 source `7e5c0759046` and the explicitly declared 30-second startup reservation.
 Its separate receipt preserves the later configuration and evidence hashes.
 
+The [new-capture pending run](evidence/java-pending-recovery-c6f-2026-11-04.json)
+passed 16 measured cases on native/conductor source `c6f5902a318` with compiler
+source `46597407903`. It includes pending-effect backup, restore, audited close
+and physical retirement. It does not qualify the failed terminal restore run or
+the full retention horizon.
+
 The separately isolated [precommit-crash evidence](evidence/java-precommit-crash-2026-11-04.json)
 records the staged signed guest, an actual node kill and recovery of the same
 pending command without a new activation. It uses native source `81d72bceaf4`
 and conductor source `ac55f717f2d`; it does not establish a terminal outcome,
 automatic retry, packaged delivery or the complete crash matrix.
+
+The [new-capture precommit crash](evidence/java-precommit-crash-c6f-2026-11-04.json)
+also passed 10 cases on native/conductor source `c6f5902a318` and compiler source
+`46597407903`. It witnessed the original staged work before a controlled node
+kill and recovered the same pending identity; it makes no abort or retry claim.
 
 The [early immediate-HTTP capture](evidence/java-early-http-capture-2026-11-04.json)
 pins a separate guest that attempts the call before state or intent staging.
