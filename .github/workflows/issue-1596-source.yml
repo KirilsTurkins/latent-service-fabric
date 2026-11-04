@@ -1,0 +1,28 @@
+name: Issue 1596 source capture
+on:
+  push:
+    branches: [ci/1596-discovery-owned-tests]
+    paths: [.github/workflows/issue-1596-source.yml]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Capture tracked source and Git objects without credentials
+        run: |
+          mkdir -p "$RUNNER_TEMP/issue-1596"
+          git archive --format=tar.gz 816b806d61c3479b3e138fa55466c22250818f07 > "$RUNNER_TEMP/issue-1596/source.tar.gz"
+          git bundle create "$RUNNER_TEMP/issue-1596/history.bundle" --all
+          git rev-parse HEAD > "$RUNNER_TEMP/issue-1596/capture-commit.txt"
+      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        with:
+          name: issue-1596-source
+          path: ${{ runner.temp }}/issue-1596/
+          if-no-files-found: error
+          retention-days: 1
