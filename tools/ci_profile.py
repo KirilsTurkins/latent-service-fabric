@@ -252,7 +252,36 @@ def classify_event(event_name: str, event: dict, repo: Path) -> Decision:
     output = git_command(repo, "diff", "--no-ext-diff", "--no-textconv", "--name-only",
                          "-z", "--no-renames", start, head, "--")
     assert output is not None
-    decision = classify_paths(diff_paths(output), repo)
+    paths = diff_paths(output)
+    candidate = 'tools/tests/test_validate_docs.py'
+    if pull_request and paths == [candidate]:
+        # A single additive, self-contained test is currently the only tooling
+        # change whose native consumers can be ruled out. Require the checkout
+        # to contain exactly the compared change; otherwise use full coverage.
+        # The admitted additions have no imports or changes to existing ASTs,
+        # so their old and new dependency edges are identical. A broader edit
+        # must use the full profile until both graphs can be resolved.
+        try:
+            from tools import ci_tool_graph
+            checkout_diff = git_command(repo, 'diff', '--no-ext-diff', '--no-textconv',
+                                        '--name-only', '-z', '--no-renames', start, 'HEAD', '--')
+            dirty = git_command(repo, 'status', '--porcelain', '-z', '--untracked-files=normal')
+            raw = git_command(repo, 'diff', '--no-ext-diff', '--no-textconv', '--raw', '-z',
+                              '--no-renames', start, head, '--')
+            old = git_command(repo, 'show', start + ':' + candidate)
+            current = (repo / candidate).read_text(encoding='utf-8')
+            headers = raw.split(b'\0') if raw else []
+            mode_ok = (len(headers) == 3 and headers[1] == candidate.encode() and
+                       headers[0].split()[:2] == [b':100644', b'100644'] and
+                       headers[0].split()[-1:] == [b'M'])
+            if (checkout_diff == output and not dirty and mode_ok and old is not None
+                    and ci_tool_graph.isolated_doc_test_additions(old.decode('utf-8'), current)):
+                safe, owner = ci_tool_graph.isolated_qualification_scope(repo, candidate)
+                if safe:
+                    return Decision('docs', 'isolated-tooling:' + owner, 1, renderer=False)
+        except (ProfileError, OSError, UnicodeError, ValueError):
+            pass
+    decision = classify_paths(paths, repo)
     if decision.profile in {"docs", "website", "fast"}:
         # A Markdown/YAML symlink or executable-mode change is not documentation-only.
 
