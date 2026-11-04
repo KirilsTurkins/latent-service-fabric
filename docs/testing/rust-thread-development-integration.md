@@ -97,3 +97,19 @@ The [follow-up correction](rust-thread-integration-blockers.md) separates the
 Rust runtime native origin from the historical Java, TypeScript and Audit
 consumers, repairs preservation fixtures and records the remaining security
 and fresh-host validation requirements.
+
+## Diagnostic catalogue composition
+
+The normal component-threading build selects the `cddfb5d` catalogue. The
+explicit `rust-thread-trap-diagnostic` host feature enables the historical e3
+catalogue for the entire component-threading crate through Cargo feature
+unification. One feature-unified diagnostic binary therefore cannot also be
+described as a normal cdd binary. The two modes require separate builds and
+must refuse a component from the other authenticated origin.
+
+The diagnostic reconstructs its five fixed e3 assets from authenticated cdd
+inputs and bounded, fixed deltas, checking source, delta and output identities.
+Its hosted programme lists and executes the cross-origin refusal control once
+with default features and once with the explicit legacy feature before building
+the diagnostic node. These are source-proof controls; the original nonempty
+numeric fault-frame gate and all separate signed runtime qualification remain.

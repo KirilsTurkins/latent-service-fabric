@@ -343,8 +343,36 @@ pub fn verify_embedded_rust_original_core(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
     const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/catalogue-original-core.wasm");
+    #[cfg(feature = "rust-thread-diagnostic-legacy")]
+    const ORIGINAL: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/legacy-original-core.wasm"));
+    #[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
     const COMPONENT: &[u8] = include_bytes!("rust_catalogue/catalogue-normal-component.wasm");
+    #[cfg(feature = "rust-thread-diagnostic-legacy")]
+    const COMPONENT: &[u8] =
+        include_bytes!(concat!(env!("OUT_DIR"), "/legacy-normal-component.wasm"));
+
+    #[test]
+    fn selected_catalogue_never_admits_the_other_authenticated_origin() {
+        let (foreign_original, foreign_component) =
+            if cfg!(feature = "rust-thread-diagnostic-legacy") {
+                (
+                    include_bytes!("rust_catalogue/catalogue-original-core.wasm").to_vec(),
+                    include_bytes!("rust_catalogue/catalogue-normal-component.wasm").to_vec(),
+                )
+            } else {
+                crate::legacy_delta_tests::original_pair_for_test()
+            };
+        assert!(verify_rust_component_routing(ORIGINAL, COMPONENT).is_ok());
+        for (original, component) in [
+            (foreign_original.as_slice(), foreign_component.as_slice()),
+            (foreign_original.as_slice(), COMPONENT),
+            (ORIGINAL, foreign_component.as_slice()),
+        ] {
+            assert!(verify_rust_component_routing(original, component).is_err());
+        }
+    }
 
     #[test]
     fn rust_normal_component_recomputes_original_graph_and_rejects_envelope_or_main_changes() {
@@ -363,7 +391,11 @@ mod tests {
         let proof = verify_rust_component_routing(ORIGINAL, COMPONENT).unwrap();
         assert_eq!(
             proof.catalogue_origin_head,
-            "72707ee61ce4784f7c866f2835f474554df8d922"
+            if cfg!(feature = "rust-thread-diagnostic-legacy") {
+                "f401e388a7542b8f9cd9bbd987dbcc65814262d6"
+            } else {
+                "72707ee61ce4784f7c866f2835f474554df8d922"
+            }
         );
         assert!(proof.actual_component_graph_authenticated);
         assert!(!proof.canonical_creation_enabled && !proof.standard_runtime_qualified);

@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/rust_thread_compiler_materials.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the independently verified cddfb5d root-retirement producer, explicit push event and retained member preimages; preserve all historical origins and original refusal gates",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9f6d86cc50527f50f5b73658c809243e086e56960eb8cc869df4ce6dda69ce25"
-}
+{"kind":"owner","path":"tools/rust_thread_compiler_materials.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve both exact e3 diagnostic and cdd normal origins, the original command obligations and execution guards, and fail closed on changed reconstruction inputs.","schemaVersion":"latent.ci.contracts.v1","sha256":"9f6d86cc50527f50f5b73658c809243e086e56960eb8cc869df4ce6dda69ce25"}

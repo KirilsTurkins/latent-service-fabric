@@ -170,6 +170,7 @@ class TaskShutdownNowOwnership(unittest.TestCase):
 class TaskShutdownNowSourceCapture(unittest.TestCase):
     def test_full_native_snapshot_and_fixed_supplement_keep_limits_and_detect_drift(self):
         from types import SimpleNamespace
+        # Exercise the current reviewed ceiling, not a historical lower bound.
         limits = owner.observed.SnapshotLimits()
         self.assertEqual((limits.max_entries, limits.max_file_bytes, limits.max_total_bytes),
                          (9248, 4 * 1024**2, 77 * 1024**2))
@@ -213,8 +214,8 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
             self.assertEqual(after['native'], before['native'])
             self.assertNotEqual(after['supplementary'], before['supplementary'])
             changed.clear()
-            # The shared source budget can grow independently of this 8,992-file
-            # fixture. Exercise its actual boundary without changing any limit.
+            # Exercise the actual source-count boundary without changing the
+            # shared limit, even if its reviewed value grows later.
             from tools.build_snapshot import SnapshotLimits
             maximum = SnapshotLimits().max_entries
             self.assertGreaterEqual(maximum, len(native))
@@ -233,7 +234,17 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
                 owner.shutdown_sources(commands, before['native'])
             changed.clear()
             full = b'x' * (4 * 1024**2)
-            # One more full-size input than the total-byte allowance admits.
+            # Fill the byte allowance exactly, including its non-file-sized tail.
+            count, remainder = divmod(limits.max_total_bytes, limits.max_file_bytes)
+            changed.update(dict.fromkeys(native[:count], full))
+            changed[native[count]] = b'x' * (remainder - (len(native) - count - 1))
+            exact = owner.shutdown_sources(commands, before['native'])
+            self.assertEqual(sum(row['bytes'] for row in exact['native'].values()),
+                             limits.max_total_bytes)
+            changed[native[count]] += b'x'
+            with self.assertRaisesRegex(ValueError, 'native-source-total'):
+                owner.shutdown_sources(commands, before['native'])
+            changed.clear()
             overflow_count = limits.max_total_bytes // limits.max_file_bytes + 1
             changed.update(dict.fromkeys(native[:overflow_count], full))
             with self.assertRaisesRegex(ValueError, 'native-source-total'):

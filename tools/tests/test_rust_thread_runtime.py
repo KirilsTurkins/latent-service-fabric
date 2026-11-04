@@ -63,9 +63,16 @@ class RustThreadRuntimeTests(unittest.TestCase):
                    'Fetch exact historical source inputs for Python preservation controls']
         self.assertEqual(len(history), 1)
         self.assertEqual(history[0]['if'], "matrix.lane == 'python'")
-        command = history[0]['run'].replace(chr(92) + chr(10), ' ').split()
+        import shlex
+        command = shlex.split(history[0]['run'].replace('\\\n', ''))
         self.assertEqual(command[:5], ['git', 'fetch', '--no-tags', '--depth=1', 'origin'])
-        self.assertEqual(command[5:].count(native.SOURCE), 1)
+        revisions = command[5:]
+        self.assertEqual(len(revisions), len(set(revisions)))
+        self.assertEqual(revisions.count(native.SOURCE), 1)
+        self.assertIn(native.RETIREMENT_PREVIOUS_SOURCE, revisions)
+        self.assertIn(native.HISTORICAL_SOURCE, revisions)
+        self.assertTrue(all(len(ref) == 40 and set(ref) <= set('0123456789abcdef')
+                            for ref in revisions))
         self.assertLess(steps.index(history[0]), next(index for index, step in enumerate(steps)
             if step.get('name') == 'Validate contracts, echo component, and generated bindings'))
 

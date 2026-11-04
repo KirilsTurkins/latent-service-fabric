@@ -39,6 +39,10 @@ class AuditMemoryProgrammeTests(unittest.TestCase):
         self.assertEqual(tuple(case for case in original[0][3] if case not in additions), historical)
         self.assertFalse(set(names) & set(historical))
         self.assertEqual(set(names) & set(original[0][3]), set(additions))
+        group = next(row for row in original if row[0] == 'original-host-memory')
+        self.assertEqual(group[1:3], ('latent-core', 'host_memory'))
+        self.assertEqual(len(group[3]), 8)
+        self.assertEqual(set(group[3]), set(historical) | set(additions))
 
     def test_selected_commands_bind_only_owned_packages_and_exact_new_wide_filter_cases(self):
         for group in owner.CONTROLS:

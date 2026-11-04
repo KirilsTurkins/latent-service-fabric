@@ -346,6 +346,41 @@ canonical threads share linear-memory statics, so that native TLS selection is
 not a logical-thread boundary; `set_current` correctly rejected changing the
 already-set root ID.
 
+Exact-head diagnostic
+[run 41123607091](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41123607091)
+at `e2c83dd6c40f00db467016c975a84f1d9a97e54f` independently reproduced that
+route after authenticating both the current native producer and the historical
+failed component. Its sole artifact `13010052349` has ZIP SHA-256
+`16fd6e9fa0e4bafb940cf0653d1a708c4c824d1158736f70df99a40eb21a5248`.
+The exact 514,484-byte component remained
+`sha256:c88f911cf1304ae9daba6e738bd4fc5128fb4e0b491d7143558905a70f04cdcf`.
+The first call consumed 47,412 fuel, peaked at 5,692,082 bytes and produced
+zero effects before `unreachable`. Its four numeric frames map to
+`ThreadInit::init` (function 279, +79),
+`std::sys::thread::lsf::runtime::entered` (248, +402), the component adapter
+(561, +3), and `__lsf_rust_owned_thread_entry` (429, +39). The run is retained
+as failed historical execution, not ThreadPool qualification.
+
+The diagnostic consumer now accepts only that exact signed `guest_trap` /
+`unreachable-code` terminal shape when a bounded numeric frame file was
+actually retained. It reports `completed-with-fault`, keeps runtime
+qualification false and does not reinterpret the trap as application success.
+Ordinary runtime matching and every capability, fuel, memory, effect and
+retirement requirement remain unchanged.
+
+Exact-head diagnostic
+[`41126387395`](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41126387395)
+at `e839a0c37191560167ca63968e63e26f4626653f` passed that bounded fault
+contract. Artifact `13012450422` is 42,055,564 bytes with GitHub artifact
+digest `sha256:3e105389ee152a2b6840039fc347dafd32d15c095507742eacde252fa6b0214c`.
+The retained component is still
+`sha256:c88f911cf1304ae9daba6e738bd4fc5128fb4e0b491d7143558905a70f04cdcf`;
+the first call again consumed 47,412 fuel, peaked at 5,692,098 bytes, produced
+zero effects and ended at `unreachable-code`. The programme result is
+`completed-with-fault`, the node result is `diagnostic-fault-observed`, and the
+same four numeric frames are retained. Runtime qualification, default
+ThreadPool progress and ordinary ThreadPool qualification all remain false.
+
 The source-matched compiler repair keeps `ThreadInit::init`, `set_current`, the
 application and the executor unchanged. Only this explicit
 `rust-context40-sync-cooperative-v1` sysroot selects the existing 32-bit
@@ -418,3 +453,26 @@ origin tuples and receipts remain historical. Its five original public calls,
 32 MiB/5-second envelope, eight Native owners, grants, assertions and physical
 retirement requirements stay unchanged. No diagnostic build is selected. The
 five signed calls must still run successfully before guest progress is proved.
+
+
+## Current-component bounded diagnostic after the first normal call failed
+
+Normal signed owner [41191812242](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41191812242)
+authenticated and signed the current 511,683-byte component
+`3948e0fc6d64dbf40914915ba0618f14cdd4a45e6e4762ecf6e0e801fac4f4c6`.
+Its first `pools-cold` invocation was dispatched and reaped but trapped with the
+closed public label `guest-fault`: 298,549 fuel, 7,795,224-byte peak and
+1,369,273 microseconds. All effect counters were zero; no call result or
+five-call qualification passed. Retained audit shows completed register/settle
+callbacks, but does not prove a private worker result or Native-owner peak.
+
+This preserved diagnostic branch now uses the same repaired SDK/catalogue and
+actual successful compiler/native tuples as that normal attempt. The original
+bounded diagnostic feature, eight-frame numeric observer, exact node-source
+identity and four reused source-authenticated native helpers remain distinct
+from ordinary qualification. Only its diagnostic consumer's exact expected
+public trap label changes to the actual current `guest-fault`; there is no
+old/new fallback, normal assertion change, new frame type or observer expansion.
+The underlying Trap and numeric location remain unknown until this existing
+bounded owner captures the current component. Prior observations and full
+provenance remain historical; no runtime qualification is claimed.
