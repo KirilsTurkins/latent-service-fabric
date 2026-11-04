@@ -912,7 +912,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
 
     // Only fixed public class buckets and modifier/annotation bits are
     // emitted; never print application classes, methods or descriptors.
-    private IllegalStateException progressNativeRefusal(ClassReader owner, MethodReader method) {
+    private IllegalStateException progressNativeRefusal(ClassReader owner, MethodReader method, boolean root) {
         int group = 0, flags = 0;
         try {
             String[] classes = {
@@ -956,6 +956,28 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             flags = 256;
         }
         System.err.println("latent.java.progress-native.v1 " + group + ":" + flags);
+        if (method.hasModifier(ElementModifier.ABSTRACT)) {
+            int detail = root ? 1 : 0;
+            try {
+                if (owner.getAnnotations().get("org.teavm.interop.Unmanaged") != null) detail |= 2;
+                org.teavm.dependency.MethodDependencyInfo info = dependency.getMethod(method.getReference());
+                if (info == null) detail |= 4;
+                else {
+                    if (info.isUsed()) detail |= 8;
+                    if (info.isCalled()) detail |= 16;
+                }
+                CallGraphNode abstractNode = callGraph.getNode(method.getReference());
+                if (abstractNode == null) detail |= 32;
+                else {
+                    int callers = abstractNode.getCallerCallSites().size();
+                    if (callers == 0) detail |= 64;
+                    if (callers > 1) detail |= 128;
+                    if (!abstractNode.getCallSites().isEmpty()) detail |= 256;
+                }
+            } catch (Exception unavailable) { detail |= 512; }
+            // Fixed bits and cardinality buckets only; no method or owner data.
+            System.err.println("latent.java.progress-abstract.v1 " + detail);
+        }
         return progressRefusal(2, owner);
     }
 
@@ -1010,6 +1032,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 pending.add(reference);
             }
         }
+        int progressRootCount = pending.size();
         MethodReference managedEntry = new MethodReference(Fiber.class, "start", void.class);
         java.util.List<int[]> edges = new java.util.ArrayList<>();
         work = 0;
@@ -1063,7 +1086,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             boolean noProgram = !runtime && method.getProgram() == null;
             if (!runtime && (noProgram ? delegate == null
                     : !finiteCountedLoops(method.getProgram()))) {
-                throw noProgram ? progressNativeRefusal(cls, method) : progressRefusal(3, cls);
+                throw noProgram ? progressNativeRefusal(cls, method, index < progressRootCount) : progressRefusal(3, cls);
             }
             if (delegate != null) {
                 Integer targetIndex = contexts.get(delegate);
