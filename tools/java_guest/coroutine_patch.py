@@ -949,9 +949,11 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             if (method.hasModifier(ElementModifier.STATIC)) flags |= 8;
             if (method.getAnnotations().get("org.teavm.interop.Unmanaged") != null) flags |= 16;
             if (method.getAnnotations().get("org.teavm.interop.Intrinsified") != null) flags |= 32;
+            if (method.hasModifier(ElementModifier.ABSTRACT)) flags |= 64;
+            if (owner.hasModifier(ElementModifier.INTERFACE)) flags |= 128;
         } catch (Exception unavailable) {
             group = 0;
-            flags = 0;
+            flags = 256;
         }
         System.err.println("latent.java.progress-native.v1 " + group + ":" + flags);
         return progressRefusal(2, owner);
