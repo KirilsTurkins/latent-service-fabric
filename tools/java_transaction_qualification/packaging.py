@@ -64,7 +64,7 @@ def captured_assets(item, files):
         assets['java-current-http-profile.json'] = files['java-current-http-profile.json']
     if item.name == 'put-once-poststage-http-denial':
         assets['java-poststage-http-denial-input.json'] = files['java-poststage-http-denial-input.json']
-    if item.name in {'forbidden-http', 'forbidden-http-before-stage'}:
+    if item.name in {'forbidden-http', 'forbidden-http-before-stage', 'forbidden-child'}:
         require('java-current-http-profile.json' not in files and item.requirements_digest is None
                 and 0 < len(files[SCHEMA_ASSETS[-1]]) <= 262144,
                 'original-forbidden-source-without-effect-marker')

@@ -15,7 +15,7 @@ pub(super) use current_java::{
     sign_native_memory_current_java, sign_rebuilt_current_java,
 };
 pub(super) use early_http::{
-    sign_early_http, sign_november_early_http, sign_rebuilt_early_http,
+    sign_child, sign_early_http, sign_november_early_http, sign_rebuilt_early_http,
     sign_reconstructed_early_http,
 };
 pub(super) use freshness::check_stale_proofs;
