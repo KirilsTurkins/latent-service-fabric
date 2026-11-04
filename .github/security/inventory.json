@@ -238,7 +238,7 @@
       "configuration": [
         {
           "path": "sdk/dotnet/global.json",
-          "sha256": "683ba65681641830e4714c1bbd435989ccad98b9d596a83e91d053e7be3fd6e3"
+          "sha256": "486f72cefddf1a313cb040785ac9ac571c86a626ad3fc5a30ebbe609c1ddfd73"
         },
         {
           "path": "sdk/dotnet/nuget.transport.config",
@@ -247,7 +247,7 @@
       ],
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.Transport/packages.lock.json",
-      "manifest_sha256": "379b91e69b67b855ec2de6bfa4d68f67c9e240549e877359785c0948a4636e4e",
+      "manifest_sha256": "63d5e6e9bec1edf5fdb7c979928108d3849258fedcc040620b4a489cc263eae4",
       "path": "sdk/dotnet/Latent.Sdk.Transport/Latent.Sdk.Transport.csproj",
       "runtime_identifier": "linux-x64"
     },
@@ -255,7 +255,7 @@
       "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Transport.Tests",
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.Transport.Tests/packages.lock.json",
-      "manifest_sha256": "cee969b5a5863f48bd55cca6488f309fb2e9a4d88ab2dc987f0fbd955eda9459",
+      "manifest_sha256": "bd7cf044799d7f3c02a45d46cc2b778b0cc31714048391d23941d6a4499eeada",
       "path": "sdk/dotnet/Latent.Sdk.Transport.Tests/Latent.Sdk.Transport.Tests.csproj",
       "runtime_identifier": "linux-x64"
     },
@@ -263,7 +263,7 @@
       "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.ProviderWorkflow",
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.ProviderWorkflow/packages.lock.json",
-      "manifest_sha256": "326ab549bbfd29c7807405ccd099e9e611afaf2734ec2b8d769350e93dbeafc4",
+      "manifest_sha256": "af3b347652cf6fa375511c148af11a006998ee4186df91dbcd9492da140ed2bc",
       "path": "sdk/dotnet/Latent.Sdk.ProviderWorkflow/Latent.Sdk.ProviderWorkflow.csproj",
       "runtime_identifier": "linux-x64"
     },
