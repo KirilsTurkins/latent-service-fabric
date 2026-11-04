@@ -107,6 +107,12 @@ class SelectionTests(unittest.TestCase):
                            + ''.join(name + ': test\n' for name in signing_names)
                            + f'{len(signing_names)} tests, 0 benchmarks\n')
         discovery.validate_recipe_execution(data, 'explicit-doctests', doctests, doctest_listing)
+        split_streams = ('running 1 test\ntest admission example ... ok\n'
+                         'test result: ok. 1 passed; 0 failed; 0 ignored;\n'
+                         'running 1 test\ntest scheduler example ... ok\n'
+                         'test result: ok. 1 passed; 0 failed; 0 ignored;\n'
+                         '   Doc-tests latent_admission\n   Doc-tests latent_scheduler\n')
+        discovery.validate_recipe_execution(data, 'explicit-doctests', split_streams)
         discovery.validate_recipe_execution(data, 'signing-compatibility', signing(signing_names), signing_listing)
         with self.assertRaisesRegex(ValueError, 'discovery-execution-mismatch'):
             discovery.validate_recipe_execution(data, 'signing-compatibility', signing(signing_names),

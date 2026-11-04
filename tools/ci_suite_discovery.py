@@ -309,6 +309,21 @@ def validate_recipe_execution(data: dict, recipe: str, raw: str, listing_raw: st
         packages = [argv[index + 1].replace("-", "_") for index, value in enumerate(argv[:-1]) if value == "-p"]
         markers = list(re.finditer(r"^\s*Doc-tests ([A-Za-z0-9_]+)\s*$", text, re.M))
         registry.require(packages and [item.group(1) for item in markers] == packages, "missing-doctest-target")
+        if listing_raw is None:
+            # The performance observer keeps Cargo stdout and stderr separate
+            # to preserve JSON artifact records, so its diagnostic concatenation
+            # cannot assign stdout cases to individual stderr target markers.
+            # CI's ordered stream additionally compares each target to a listing.
+            outcomes = re.findall(r"^test (.+) \.\.\. (ok|ignored|FAILED)(?:, .*)?$", text, re.M)
+            summaries = re.findall(r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text, re.M)
+            names = [name for name, _ in outcomes]
+            registry.require(len(summaries) == len(packages) and names
+                             and len(names) == len(set(names))
+                             and all(status == 'ok' for _, status in outcomes)
+                             and all(failed == ignored == '0' for _, failed, ignored in summaries)
+                             and sum(int(passed) for passed, _, _ in summaries) == len(names),
+                             'explicit-recipe-result-mismatch')
+            return
         sections = [text[item.end():markers[index + 1].start() if index + 1 < len(markers) else len(text)]
                     for index, item in enumerate(markers)]
     else:
