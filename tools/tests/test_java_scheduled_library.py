@@ -170,7 +170,10 @@ class TaskShutdownNowOwnership(unittest.TestCase):
 class TaskShutdownNowSourceCapture(unittest.TestCase):
     def test_full_native_snapshot_and_fixed_supplement_keep_limits_and_detect_drift(self):
         from types import SimpleNamespace
-        native = [f'tools/capture-{index:04d}.py' for index in range(8992)]
+        limits = owner.observed.SnapshotLimits()
+        self.assertEqual((limits.max_entries, limits.max_file_bytes, limits.max_total_bytes),
+                         (9248, 4 * 1024**2, 77 * 1024**2))
+        native = [f'tools/capture-{index:04d}.py' for index in range(limits.max_entries)]
         supplemental = set(owner.observed.EXTRA_SOURCES) | {owner.workers.WORKFLOW, owner.WORKFLOW,
             'sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java'}
         calls, changed = [], {}
@@ -191,7 +194,7 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
             before = owner.shutdown_sources(commands)
             self.assertEqual(set(before['native']), set(native))
             self.assertEqual(set(before['supplementary']), supplemental)
-            self.assertEqual((len(before['native']), len(before['supplementary']), len(calls)), (8992, 17, 1))
+            self.assertEqual((len(before['native']), len(before['supplementary']), len(calls)), (limits.max_entries, 17, 1))
             self.assertEqual(owner.shutdown_sources(commands, before['native']), before)
             self.assertEqual(len(calls), 1)
             for capture, workflow in ((owner.workers.sources, owner.workers.WORKFLOW),
@@ -218,7 +221,9 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
                 owner.shutdown_sources(commands, before['native'])
             changed.clear()
             full = b'x' * (4 * 1024**2)
-            changed.update(dict.fromkeys(native[:19], full))
+            # One more full-size input than the total-byte allowance admits.
+            overflow_count = limits.max_total_bytes // limits.max_file_bytes + 1
+            changed.update(dict.fromkeys(native[:overflow_count], full))
             with self.assertRaisesRegex(ValueError, 'native-source-total'):
                 owner.shutdown_sources(commands, before['native'])
             changed.clear(); changed.update(dict.fromkeys(sorted(supplemental)[:5], full))

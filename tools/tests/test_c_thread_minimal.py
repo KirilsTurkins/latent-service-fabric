@@ -34,6 +34,16 @@ class CThreadMinimal(unittest.TestCase):
    }
    # Reviewed finite file ABI/GET metadata addendum; old seven pins remain below.
    current_addendum = {'vendor/lsf/sdk/c-guest/src/closed-file-abi.c': '7b825118e32ce9561e8d876c14a0e50e33cad997b5a8599c4112e6f40323212a', 'vendor/lsf/sdk/c-guest/src/libfetch/upstream/musl-COPYRIGHT': 'f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af', 'vendor/lsf/sdk/c-guest/src/libfetch/http.c': 'f3f495e024a79d5221c0fd42b321c33105295c90d085756e8a36af5f8f89f5a2', 'vendor/lsf/sdk/c-guest/src/libfetch/UPSTREAM.json': 'e137aef2ca8901ce260c5aed164d0eec6d5c46ef94e1f0a61b408d757f0606a2'}
+   # The outside-client port adds only a trapping process-exit entry. Keep
+   # the historical file-ABI pin below after an exact, authenticated inverse.
+   closed = 'vendor/lsf/sdk/c-guest/src/closed-file-abi.c'
+   self.assertEqual(left[closed], right[closed])
+   self.assertEqual(hashlib.sha256(left[closed]).hexdigest(),
+                    '8af8989600438fdf5ebe265e3065404f0412270e8dc11b2fee8934de5ba3887f')
+   exit_addendum = b'/* Process completion is unsupported: retain original owners through the\n * activation trap and Store cleanup. No atexit callbacks or stdio flushing.\n */\n_Noreturn void exit(int status) {\n    (void)status;\n    __builtin_trap();\n}\n\n'
+   self.assertEqual(left[closed].count(exit_addendum), 1)
+   left[closed] = left[closed].replace(exit_addendum, b'', 1)
+   right[closed] = right[closed].replace(exit_addendum, b'', 1)
    for path, expected in current_addendum.items():
     self.assertEqual(left[path], right[path], path)
     self.assertEqual(hashlib.sha256(left[path]).hexdigest(), expected, path)

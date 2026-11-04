@@ -23,7 +23,7 @@
       },
       {
         "name": "Fetch the exact successful compiler and native source event",
-        "run": "git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd\n"
+        "run": "git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd b422af24d86344ac7abb8b8fa56c3782aab63915\n"
       },
       {
         "name": "Install locked Python dependencies and check finite replay and policy refusals",
@@ -34,7 +34,7 @@
           "GH_TOKEN": "${{ github.token }}"
         },
         "name": "Authenticate five exact native products and the complete 200-control origin",
-        "run": "python3 -B tools/rust_thread_native_products.py --output \"$RUNNER_TEMP/rust200-native\""
+        "run": "python3 -B tools/rust_thread_runtime_native_products.py --output \"$RUNNER_TEMP/rust200-native\""
       },
       {
         "env": {

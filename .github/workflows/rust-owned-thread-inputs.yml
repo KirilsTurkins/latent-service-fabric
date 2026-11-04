@@ -88,4 +88,4 @@ jobs:
           name: rust-owned-thread-inputs-${{ github.sha }}
           path: ${{ runner.temp }}/rust-owned-thread-inputs/**
           if-no-files-found: error
-          retention-days: 3
+          retention-days: 7

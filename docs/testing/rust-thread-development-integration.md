@@ -90,3 +90,10 @@ converted into skips. All original 24/13/9 case inventories and fixture/skip
 guards remain unchanged. Separately, 27 focused Rust source/capture/routing
 controls passed; two creator checks require the full authenticated vendor tree
 and remain hosted-validation obligations.
+
+## Integration blocker correction
+
+The [follow-up correction](rust-thread-integration-blockers.md) separates the
+Rust runtime native origin from the historical Java, TypeScript and Audit
+consumers, repairs preservation fixtures and records the remaining security
+and fresh-host validation requirements.

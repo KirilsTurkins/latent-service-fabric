@@ -30,7 +30,7 @@ jobs:
           python-version: 3.13.5
       - name: Fetch the exact successful compiler and native source event
         run: |
-          git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd
+          git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd b422af24d86344ac7abb8b8fa56c3782aab63915
       - name: Install locked Python dependencies and check finite replay and policy refusals
         run: |
           python3 -m pip install --requirement tools/requirements.lock
@@ -38,7 +38,7 @@ jobs:
       - name: Authenticate five exact native products and the complete 200-control origin
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/rust_thread_native_products.py --output "$RUNNER_TEMP/rust200-native"
+        run: python3 -B tools/rust_thread_runtime_native_products.py --output "$RUNNER_TEMP/rust200-native"
       - name: Retain only four original compiler members with exact preimage pins
         env:
           GH_TOKEN: ${{ github.token }}

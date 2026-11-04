@@ -1,7 +1,7 @@
 {
 "schemaVersion":"latent.ci.contracts.v2",
 "kind":"python",
-"reviewReason":"Preserve all reviewed case identities and unchanged execution guards from both transaction and current development sources.",
+"reviewReason":"Preserve all reviewed case identities and unchanged execution guards from both transaction and current development sources. Copy the existing independently bounded .cases.d fragments as well as .d suites in the synthetic inventory fixture. Keep every case, class, decorator and skip predicate; only the authenticated module setup changes. Full inventory equality and missing-case-fragment negative coverage remain required.",
 "module":"tools/tests/test_owned_runners.py",
 "cases":[
 "NativeRunnerDemonstrations.test_live_provider_normal_and_injected_failure_leave_no_owned_container",
@@ -25,28 +25,28 @@
 "RunnerContractTests.test_wasm_and_provenance_paths_fail_before_execution"
 ],
 "guards":{
-"RunnerContractTests.test_inventory_contracts_reference_real_suites_and_pinned_services":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"RunnerContractTests.test_synthetic_catalog_retains_every_additive_suite_and_exact_selection":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"RunnerContractTests.test_preflight_reports_no_test_execution":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"RunnerContractTests.test_oci_normal_and_fault_paths_always_retire_registry":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"RunnerContractTests.test_oci_interrupted_launch_still_closes_owned_fixture":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"RunnerContractTests.test_oci_modes_execute_the_registered_prepared_cases":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"RunnerContractTests.test_registry_readiness_rejects_foreign_id_label_and_endpoint":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"RunnerContractTests.test_registry_cleanup_does_not_unlink_replaced_foreign_state":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"RunnerContractTests.test_active_commands_use_shared_owner_not_legacy_subprocess":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"RunnerContractTests.test_wasm_and_provenance_paths_fail_before_execution":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"RunnerContractTests.test_renderer_requires_explicit_artifacts_without_building":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"RunnerContractTests.test_broken_inventory_has_structured_failure_before_execution":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"RunnerContractTests.test_expected_fault_validator_rejects_stale_or_missing_cleanup":"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f",
-"PreparedHarnessTests.test_explicit_integration_target_runs_each_exact_case_once":"99e4fac3e094a8f60c72f4f86423debd03a704426d8d29e1bbefcd64f43afc03",
-"PreparedHarnessTests.test_missing_ignored_case_and_zero_execution_never_pass":"99e4fac3e094a8f60c72f4f86423debd03a704426d8d29e1bbefcd64f43afc03",
-"PreparedHarnessTests.test_fault_after_discovery_has_no_execution_or_retry":"99e4fac3e094a8f60c72f4f86423debd03a704426d8d29e1bbefcd64f43afc03",
-"PreparedHarnessTests.test_unknown_selection_rejected":"99e4fac3e094a8f60c72f4f86423debd03a704426d8d29e1bbefcd64f43afc03",
-"NativeRunnerDemonstrations.test_renderer_runner_normal_and_fault_with_retired_pipe_descendants":"2018cbd6d47af5a40cb74082022a627e7f15927dbbb7ebd924fd222ec171ed63",
-"NativeRunnerDemonstrations.test_live_provider_normal_and_injected_failure_leave_no_owned_container":"809559aecf246939af8800e9d69267801fa1777dc2ae68a5a882724ab57bc432"
+"RunnerContractTests.test_inventory_contracts_reference_real_suites_and_pinned_services":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"RunnerContractTests.test_synthetic_catalog_retains_every_additive_suite_and_exact_selection":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"RunnerContractTests.test_preflight_reports_no_test_execution":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"RunnerContractTests.test_oci_normal_and_fault_paths_always_retire_registry":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"RunnerContractTests.test_oci_interrupted_launch_still_closes_owned_fixture":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"RunnerContractTests.test_oci_modes_execute_the_registered_prepared_cases":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"RunnerContractTests.test_registry_readiness_rejects_foreign_id_label_and_endpoint":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"RunnerContractTests.test_registry_cleanup_does_not_unlink_replaced_foreign_state":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"RunnerContractTests.test_active_commands_use_shared_owner_not_legacy_subprocess":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"RunnerContractTests.test_wasm_and_provenance_paths_fail_before_execution":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"RunnerContractTests.test_renderer_requires_explicit_artifacts_without_building":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"RunnerContractTests.test_broken_inventory_has_structured_failure_before_execution":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"RunnerContractTests.test_expected_fault_validator_rejects_stale_or_missing_cleanup":"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711",
+"PreparedHarnessTests.test_explicit_integration_target_runs_each_exact_case_once":"e89eb3763026401dae42abd8e0a0ec0a82694888f6f23f28fa6b8d9829970e36",
+"PreparedHarnessTests.test_missing_ignored_case_and_zero_execution_never_pass":"e89eb3763026401dae42abd8e0a0ec0a82694888f6f23f28fa6b8d9829970e36",
+"PreparedHarnessTests.test_fault_after_discovery_has_no_execution_or_retry":"e89eb3763026401dae42abd8e0a0ec0a82694888f6f23f28fa6b8d9829970e36",
+"PreparedHarnessTests.test_unknown_selection_rejected":"e89eb3763026401dae42abd8e0a0ec0a82694888f6f23f28fa6b8d9829970e36",
+"NativeRunnerDemonstrations.test_renderer_runner_normal_and_fault_with_retired_pipe_descendants":"e2c7028e911f1ef9666767a850d9252e7410629163c10c1589360fe4612c0089",
+"NativeRunnerDemonstrations.test_live_provider_normal_and_injected_failure_leave_no_owned_container":"d93e8998173f558b2abd75cfdad01ce041cdde5dc4844a9d96648db9cb300029"
 },
 "guardDefinitions":{
-"945c55e9a1e116f73e98e68f9d5b9e04d5653f76d85e843ce323c9f5a946665f":{
+"035ec88f5016b88a7c287d1e8f81315f551d073701c4c50a5f21afdaf911a711":{
 "bases":[
 "unittest.TestCase"
 ],
@@ -54,11 +54,11 @@
 "decorators":[],
 "skipSites":[],
 "fixtureGuards":[
-"module:setup-sha256:326bc9a4c2369ad55bec3a32d478d10794fc70bf73f2242acfa5b5870eb3f7be",
+"module:setup-sha256:266e325ea79c3a4d5f137b0f485fd2e253b56955e4b521979001932e93ba7e21",
 "class:setup-sha256:eda48d7f55efeba20d7ebb07fc4d8a1306fd5e7fb59672c333865b106d10cb35"
 ]
 },
-"99e4fac3e094a8f60c72f4f86423debd03a704426d8d29e1bbefcd64f43afc03":{
+"e89eb3763026401dae42abd8e0a0ec0a82694888f6f23f28fa6b8d9829970e36":{
 "bases":[
 "unittest.TestCase"
 ],
@@ -66,11 +66,11 @@
 "decorators":[],
 "skipSites":[],
 "fixtureGuards":[
-"module:setup-sha256:326bc9a4c2369ad55bec3a32d478d10794fc70bf73f2242acfa5b5870eb3f7be",
+"module:setup-sha256:266e325ea79c3a4d5f137b0f485fd2e253b56955e4b521979001932e93ba7e21",
 "class:setup-sha256:223d57cb90da22abe7a4c21ec89d2444d77c4df02f0e4eebb5adc1cf99e66f8e"
 ]
 },
-"2018cbd6d47af5a40cb74082022a627e7f15927dbbb7ebd924fd222ec171ed63":{
+"e2c7028e911f1ef9666767a850d9252e7410629163c10c1589360fe4612c0089":{
 "bases":[
 "unittest.TestCase"
 ],
@@ -78,13 +78,13 @@
 "decorators":[],
 "skipSites":[],
 "fixtureGuards":[
-"module:setup-sha256:326bc9a4c2369ad55bec3a32d478d10794fc70bf73f2242acfa5b5870eb3f7be",
+"module:setup-sha256:266e325ea79c3a4d5f137b0f485fd2e253b56955e4b521979001932e93ba7e21",
 "class:raise:raise unittest.SkipTest('native Linux owned-child accounting unavailable; NOT coverage')",
 "class:setup-sha256:8cdb95f38278625142a829e34f61a0dc23682d6fe4060bc3ee3a4cab6cb2fb0d",
 "class:skip:unittest.SkipTest('native Linux owned-child accounting unavailable; NOT coverage')"
 ]
 },
-"809559aecf246939af8800e9d69267801fa1777dc2ae68a5a882724ab57bc432":{
+"d93e8998173f558b2abd75cfdad01ce041cdde5dc4844a9d96648db9cb300029":{
 "bases":[
 "unittest.TestCase"
 ],
@@ -97,7 +97,7 @@
 "unittest.skipUnless(os.environ.get('LSF_LIVE_OCI_DEMO') == '1', 'explicit prepared Docker fixture only')"
 ],
 "fixtureGuards":[
-"module:setup-sha256:326bc9a4c2369ad55bec3a32d478d10794fc70bf73f2242acfa5b5870eb3f7be",
+"module:setup-sha256:266e325ea79c3a4d5f137b0f485fd2e253b56955e4b521979001932e93ba7e21",
 "class:raise:raise unittest.SkipTest('native Linux owned-child accounting unavailable; NOT coverage')",
 "class:setup-sha256:8cdb95f38278625142a829e34f61a0dc23682d6fe4060bc3ee3a4cab6cb2fb0d",
 "class:skip:unittest.SkipTest('native Linux owned-child accounting unavailable; NOT coverage')"

@@ -28,12 +28,13 @@ def copy_catalog(destination):
     catalog.load(source)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_bytes(source.read_bytes())
-    fragments = source.with_suffix('.d')
-    if fragments.exists():
-        copied = destination.with_suffix('.d')
-        copied.mkdir()
-        for fragment in sorted(fragments.iterdir()):
-            (copied / fragment.name).write_bytes(fragment.read_bytes())
+    for suffix in ('.d', '.cases.d'):
+        fragments = source.with_suffix(suffix)
+        if fragments.exists():
+            copied = destination.with_suffix(suffix)
+            copied.mkdir()
+            for fragment in sorted(fragments.iterdir()):
+                (copied / fragment.name).write_bytes(fragment.read_bytes())
 
 
 class RunnerContractTests(unittest.TestCase):
@@ -55,11 +56,23 @@ class RunnerContractTests(unittest.TestCase):
         destination = self.root / 'tools/ci/suites.json'
         copy_catalog(destination)
         self.assertEqual(catalog.load(destination), catalog.load())
-        source = ROOT / 'tools/ci/suites.d'
-        if source.exists():
-            self.assertEqual(
-                {path.name: path.read_bytes() for path in source.iterdir()},
-                {path.name: path.read_bytes() for path in destination.with_suffix('.d').iterdir()})
+        for suffix in ('.d', '.cases.d'):
+            source = (ROOT / 'tools/ci/suites.json').with_suffix(suffix)
+            if source.exists():
+                self.assertEqual(
+                    {path.name: path.read_bytes() for path in source.iterdir()},
+                    {path.name: path.read_bytes() for path in destination.with_suffix(suffix).iterdir()})
+        # A loader-only copy imports successfully but silently loses additive
+        # cases. Require full equality to catch that distinct failure mode.
+        fragments = destination.with_suffix('.cases.d')
+        self.assertTrue(any(fragments.iterdir()))
+        hidden = fragments.with_name('retained-case-fragments')
+        fragments.rename(hidden)
+        try:
+            self.assertNotEqual(catalog.load(destination), catalog.load())
+        finally:
+            hidden.rename(fragments)
+        self.assertEqual(catalog.load(destination), catalog.load())
 
     def test_preflight_reports_no_test_execution(self):
         for module, args in ((oci, ['--preflight']), (angular, ['--preflight'])):

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/rust_thread_runtime_native_products.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Keep the exact Rust runtime 200-control producer in its own reader; historical Java, TypeScript and Audit campaigns retain the development 193-control reader byte-for-byte.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "3f8128f43d8bd4d41e298aad7c9b82e94a7403aba3454c5ddf77897d06e07e3e"
+}

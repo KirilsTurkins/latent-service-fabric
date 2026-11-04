@@ -156,7 +156,7 @@ def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> d
             and prior['originalCore']['digest'] == 'sha256:' + PINS['raw-core.wasm'][1],
             'rust-thread-retained-original-compiler-observation')
     recipe_names = tuple(dict.fromkeys((*selected_recipe(),
-        '.github/workflows/rust-thread-runtime.yml', 'tools/rust_thread_native_products.py',
+        '.github/workflows/rust-thread-runtime.yml', 'tools/rust_thread_runtime_native_products.py',
         'tools/rust_thread_compiler_materials.py', 'tools/rust_thread_runtime_package.py',
         'tools/rust_thread_runtime_node.py', 'tools/qualify_rust_thread_runtime.py',
         'tools/rust_thread_callback_paths.py', 'tools/rust_thread_object_graph.py')))

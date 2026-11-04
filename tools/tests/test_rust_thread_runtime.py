@@ -9,7 +9,7 @@ from tools.phase2_operator_process import WorkflowError
 
 class RustThreadRuntimeTests(unittest.TestCase):
     def test_native_reader_uses_current_catalogue_and_retains_failed_runtime_origin(self):
-        from tools import rust_thread_native_products as native
+        from tools import rust_thread_runtime_native_products as native
 
         self.assertEqual(native.SOURCE, 'cddfb5d016a6311ed0db4673e490dc9caad917dd')
         self.assertEqual(native.RUN, 41229829377)
@@ -52,6 +52,31 @@ class RustThreadRuntimeTests(unittest.TestCase):
         self.assertIn('git fetch --no-tags --depth=1 origin ' + native.SOURCE, workflow)
         self.assertNotIn('git fetch --no-tags --depth=1 origin ' + native.FAILED_RUNTIME_SOURCE,
                          workflow)
+
+        # The shallow repository Python lane imports the Rust runtime reader.
+        # Bind its own exact producer before
+        # discovery; current-tree or branch-tip substitution is not evidence.
+        from tools.ci_lane_inventory import workflow_model
+        shared = workflow_model((ROOT / '.github/workflows/ci.yml').read_text())
+        steps = shared['jobs']['contracts']['steps']
+        history = [step for step in steps if step.get('name') ==
+                   'Fetch exact historical source inputs for Python preservation controls']
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0]['if'], "matrix.lane == 'python'")
+        command = history[0]['run'].replace(chr(92) + chr(10), ' ').split()
+        self.assertEqual(command[:5], ['git', 'fetch', '--no-tags', '--depth=1', 'origin'])
+        self.assertEqual(command[5:].count(native.SOURCE), 1)
+        self.assertLess(steps.index(history[0]), next(index for index, step in enumerate(steps)
+            if step.get('name') == 'Validate contracts, echo component, and generated bindings'))
+
+        # Changing the Rust runtime tuple must not move another campaign's host.
+        from tools import rust_thread_native_products as historical
+        self.assertEqual(historical.SOURCE, 'b422af24d86344ac7abb8b8fa56c3782aab63915')
+        self.assertEqual(historical.JOB, 124001233201)
+        self.assertEqual(historical.READER.control_count, 193)
+        self.assertNotEqual(historical.SOURCE, native.SOURCE)
+        self.assertNotEqual(historical.ARTIFACT, native.ARTIFACT)
+        self.assertEqual(package.SOURCE, native.SOURCE)
 
         # Both readers bind one actual push event, not an either-event fallback.
         # Wrong-event checks must fail before archive acquisition or output creation.
