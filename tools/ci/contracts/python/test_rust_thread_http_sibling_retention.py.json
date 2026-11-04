@@ -1,0 +1,36 @@
+{
+  "cases": [
+    "CombinedRetention.test_only_selected_outputs_are_retained_without_the_cargo_cache",
+    "CombinedRetention.test_overflow_refuses_and_records_failure_before_copying"
+  ],
+  "guards": {
+    "CombinedRetention.test_only_selected_outputs_are_retained_without_the_cargo_cache": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a4d5740fe50f5ff61f41662b516f0b7e6e575d33e8dd245a5d64ebab3a983b6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CombinedRetention.test_overflow_refuses_and_records_failure_before_copying": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a4d5740fe50f5ff61f41662b516f0b7e6e575d33e8dd245a5d64ebab3a983b6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_thread_http_sibling_retention.py",
+  "reviewReason": "Preserve bounded public artifact selection and overflow refusal.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

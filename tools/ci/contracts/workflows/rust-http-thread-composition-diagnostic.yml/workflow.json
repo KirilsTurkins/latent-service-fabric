@@ -1,0 +1,36 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-http-thread-composition-diagnostic-${{ github.ref }}"
+    },
+    "name": "Rust combined HTTP and ThreadPool source diagnostic",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/rust-http-thread-20261104"
+        ],
+        "paths": [
+          ".github/workflows/rust-http-thread-composition-diagnostic.yml",
+          "tools/compile_rust_thread_http_sibling.py",
+          "tools/rust_thread_http_sibling_*.py",
+          "tools/tests/test_rust_thread_http_sibling*.py",
+          "tools/rust_wasi_http_compose.py",
+          "tools/rust_wasi_http_inputs.py",
+          "tools/rust_owned_thread_component.py",
+          "sdk/rust-standard-runtime/**"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "diagnostic"
+  ],
+  "reviewReason": "Own the unadmitted combined HTTP and ThreadPool compiler diagnostic.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-http-thread-composition-diagnostic.yml"
+}
