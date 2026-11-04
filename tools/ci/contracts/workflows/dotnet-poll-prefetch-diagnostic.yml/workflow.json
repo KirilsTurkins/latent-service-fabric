@@ -1,0 +1,37 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "dotnet-poll-prefetch-${{ github.ref }}"
+    },
+    "name": "Paired .NET poll-prefetch diagnostic",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/dotnet-poll-prefetch-20261104"
+        ],
+        "paths": [
+          ".github/workflows/dotnet-poll-prefetch-diagnostic.yml",
+          "tools/run_dotnet_poll_prefetch_pair.py",
+          "tools/qualify_dotnet_poll_prefetch.py",
+          "tools/dotnet_poll_prefetch_node.py",
+          "tools/admit_dotnet_poll_prefetch_evidence.py",
+          "tools/fixtures/dotnet-poll-prefetch/**",
+          "sdk/dotnet-guest/tools/http-errors/AggregateTaskWait.cs",
+          "tools/wasmtime_48_0_8_678b_native_products.py"
+        ]
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "diagnostic"
+  ],
+  "reviewReason": "Run only the bounded paired diagnostic on its dedicated branch.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-poll-prefetch-diagnostic.yml"
+}

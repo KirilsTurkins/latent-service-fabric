@@ -1,0 +1,105 @@
+{
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Compare observed prefetched sibling before and after the poll guard",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "fetch-depth": 3,
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-dotnet",
+        "with": {
+          "dotnet-version": "10.0.100"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Check only the affected diagnostic and source controls",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_dotnet_poll_prefetch tools.tests.test_dotnet_aggregate_task_wait tools.tests.test_dotnet_managed_work.ManagedWorkContractTests.test_actual_metadata_receipt_requires_every_producer_and_unqualified_scope tools.tests.test_dotnet_managed_work.ManagedWorkContractTests.test_selected_port_binds_exact_new_corelib_and_all_required_facets -v\n"
+      },
+      {
+        "name": "Prepare paired checkouts and the exact native source origin",
+        "run": "mkdir -p \"$RUNNER_TEMP/dotnet-prefetch\"\npython3 -B -c 'import re; from tools.wasmtime_48_0_8_678b_native_products import SOURCE; assert re.fullmatch(\"[0-9a-f]{40}\", SOURCE); print(SOURCE)' > \"$RUNNER_TEMP/dotnet-prefetch/native-source.txt\"\ntimeout --signal=TERM --kill-after=5s 90s git fetch --no-tags --depth=1 origin \"$(cat \"$RUNNER_TEMP/dotnet-prefetch/native-source.txt\")\"\ngit worktree add --detach \"$RUNNER_TEMP/dotnet-prefetch-baseline\" \"$(git rev-parse HEAD^)\"\n"
+      },
+      {
+        "name": "Install the existing compiler isolation boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Prepare the pinned compiler and unchanged runtime adapters",
+        "run": "curl --fail --location --max-time 180 https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-prefetch-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-prefetch-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-prefetch-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-prefetch/tools\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the separately qualified current five native products",
+        "run": "timeout --signal=TERM --kill-after=5s 180s python3 -B tools/wasmtime_48_0_8_678b_native_products.py --output \"$RUNNER_TEMP/dotnet-prefetch/native\""
+      },
+      {
+        "name": "Observe the same fixture on baseline and corrected managed CoreLib",
+        "run": "timeout --signal=TERM --kill-after=10s 3000s python3 -B tools/run_dotnet_poll_prefetch_pair.py \\\n  --baseline \"$RUNNER_TEMP/dotnet-prefetch-baseline\" --fixed \"$GITHUB_WORKSPACE\" \\\n  --native \"$RUNNER_TEMP/dotnet-prefetch/native\" --tools \"$RUNNER_TEMP/dotnet-prefetch/tools\" \\\n  --output \"$RUNNER_TEMP/dotnet-prefetch/pair\" --expected-base \"$(git rev-parse HEAD^^)\" --expected-head \"$GITHUB_SHA\"\n"
+      },
+      {
+        "id": "evidence",
+        "if": "always()",
+        "name": "Admit only the bounded public diagnostic evidence",
+        "run": "python3 -B tools/admit_dotnet_poll_prefetch_evidence.py --output \"$RUNNER_TEMP/dotnet-prefetch\""
+      },
+      {
+        "if": "always() && steps.evidence.outcome == 'success'",
+        "name": "Retain the admitted public pair",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "dotnet-poll-prefetch-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-prefetch/public/**\n${{ runner.temp }}/dotnet-prefetch/evidence-admission.json\n",
+          "retention-days": 3
+        }
+      },
+      {
+        "if": "always() && steps.evidence.outcome != 'success'",
+        "name": "Retain only a failed admission marker",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-poll-prefetch-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-prefetch/evidence-admission.json",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 70
+  },
+  "jobId": "diagnostic",
+  "kind": "job",
+  "reviewReason": "Preserve exact source, bounded original authority, paired observations and public retention.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-poll-prefetch-diagnostic.yml"
+}
