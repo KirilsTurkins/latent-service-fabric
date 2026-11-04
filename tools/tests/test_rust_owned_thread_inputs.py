@@ -57,11 +57,10 @@ class OwnedThreadInputs(unittest.TestCase):
         suite_path = inputs.ROOT / 'tools/ci/suites.d/component-threading.json'
         suite, = json.loads(suite_path.read_text())['suites']
         self.assertEqual(suite['id'], 'latent-component-threading.lib.latent-component-threading')
-        self.assertEqual((suite['minimumCases'], len(suite['expectedCases'])),
-                         (inputs.SOURCE_MECHANISM_CASES, inputs.SOURCE_MECHANISM_CASES))
         self.assertEqual(inputs.SOURCE_MECHANISM_CASES, 80)
+        self.assertNotIn('expectedCases', suite)
         self.assertIn('legacy_delta_tests::tests::selected_catalogue_never_admits_the_other_authenticated_origin',
-                      suite['expectedCases'])
+                      suite['requiredCases'])
         expected = {inputs.CRATE + 'build.rs', inputs.CRATE + 'build-support/legacy_delta.rs',
                     *(inputs.CRATE + f'src/rust_catalogue/legacy/legacy-delta-{index}.bin'
                       for index in range(5))}

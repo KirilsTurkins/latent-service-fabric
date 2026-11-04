@@ -18,6 +18,9 @@
         "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
+      "requiredCases": [
+        "legacy_delta_tests::tests::selected_catalogue_never_admits_the_other_authenticated_origin"
+      ],
       "resourceClass": "host-bounded",
       "source": "src/lib.rs",
       "target": "latent_component_threading",
