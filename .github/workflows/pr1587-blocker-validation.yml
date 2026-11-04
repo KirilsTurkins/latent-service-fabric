@@ -10,44 +10,143 @@ jobs:
   inspect:
     if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/pr1587-blocker-validation-20261104'
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
           ref: b76bfd7357a3f34cceac96ee61d9008ec135102f
-      - name: Locate exact compiler and qualification source
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - name: Install reviewed validator dependencies
+        run: python3 -m pip install -r tools/requirements.lock
+      - name: Validate retention before assertions and locate the exact import-plan check
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import pathlib, subprocess
+          root=pathlib.Path.cwd()
+          out=pathlib.Path(__import__('os').environ['RUNNER_TEMP'])/'pr1587-blockers';out.mkdir()
+          path=root/'tools/dotnet_task_runtime_probe.py';before=path.read_text()
+          old="        row = call(client, target, 'greeting', 'greet', ['task:' + mode], label)\n"
+          tail="        result['invocations'].append(row)\n        result['providerIdle'].append(provider_idle(client))"
+          assert before.count(old)==before.count(tail)==1
+          path.write_text(before.replace(old,old+"        # Retain the actual result before a value or resource assertion can fail.\n        result['invocations'].append(row)\n",1).replace(tail,"        result['providerIdle'].append(provider_idle(client))",1))
+          path=root/'tools/tests/test_dotnet_task_runtime.py';before=path.read_text()
+          marker='\n\nclass RootReturnNormalControls(unittest.TestCase):'
+          assert before.count(marker)==1
+          extra='''
+              def test_failed_invocation_is_retained_before_assertions_without_success_evidence(self):
+                  from tools.phase2_operator_process import WorkflowError
+                  row = {'processReaped': True, 'activation': 'dotnet-ordinary-tasks-run',
+                      'exitCode': 0, 'decoded': [{'err': 'ordinary-task-failure:run-join:unsupported'}],
+                      'response': {'outcomeKnown': True, 'data': {'consumption': {
+                          'cpuFuel': '17', 'peakMemoryBytes': '100', 'outboundRequests': '0',
+                          'logBytes': '0', 'effectCount': '0'}}}}
+                  for failure in ('value', 'consumption', 'idle', 'retirement'):
+                      with self.subTest(failure=failure):
+                          actual = copy.deepcopy(row)
+                          if failure == 'consumption': actual['processReaped'] = False
+                          result = {'invocations': [], 'providerIdle': [], 'samples': []}
+                          error = WorkflowError('retained-' + failure)
+                          with patch('tools.rust_capsule_node.call', return_value=actual) as call, \\
+                                  patch('tools.rust_capsule_node.assert_value',
+                                      side_effect=error if failure == 'value' else None) as values, \\
+                                  patch('tools.rust_capsule_node.provider_idle',
+                                      side_effect=error if failure == 'idle' else None) as idle, \\
+                                  patch('tools.rust_capsule_node.sample',
+                                      side_effect=error if failure == 'retirement' else None) as sample:
+                              with self.assertRaises(WorkflowError):
+                                  probe.probe(None, {'budget': {'cpuFuel': 1000, 'memoryBytes': 10000}},
+                                      None, result, 0)
+                              call.assert_called_once()
+                              values.assert_called_once()
+                              if failure in ('value', 'consumption'):
+                                  idle.assert_not_called()
+                                  sample.assert_not_called()
+                          self.assertEqual(result['invocations'], [actual])
+                          self.assertIs(result['invocations'][0], actual)
+                          self.assertEqual(result['samples'], [])
+                          self.assertNotIn('dotnetTaskRuntime', result)
+          '''
+          import textwrap
+          extra=textwrap.dedent(extra)
+          extra='\n'.join('    '+line if line else '' for line in extra.splitlines())+'\n'
+          path.write_text(before.replace(marker,'\n'+extra+marker,1))
+          subprocess.run(['python3','-m','unittest','tools.tests.test_dotnet_task_runtime','-v'],check=True)
+          (out/'retention.patch').write_bytes(subprocess.check_output(['git','diff','--binary']))
+          subprocess.run(['git','diff','--check'],check=True)
+          for pattern in ('activation-runtime-import-own-plan-binding-invalid','importOwnPlan','own-plan-binding'):
+              result=subprocess.run(['git','grep','-n','-C','18','-F',pattern,'--','tools','sdk'],capture_output=True,text=True)
+              print('IMPORT_CHECK',pattern,result.stdout[:22000])
+          PY
+      - name: Restore authenticated original products and replay the unchanged Task component
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import hashlib, io, json, os, pathlib, subprocess, urllib.request, urllib.error, zipfile
+          import hashlib, io, json, os, pathlib, stat, subprocess, urllib.request, urllib.error, zipfile
+          root=pathlib.Path.cwd();out=pathlib.Path(os.environ['RUNNER_TEMP'])/'pr1587-blockers'
           api='https://api.github.com/repos/KirilsTurkins/latent-service-fabric/'
           class NoRedirect(urllib.request.HTTPRedirectHandler):
               def redirect_request(self, req, fp, code, msg, headers, newurl): return None
-          opener=urllib.request.build_opener(NoRedirect)
-          def read(path,limit):
-              request=urllib.request.Request(api+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
-              try: response=opener.open(request,timeout=30)
+          def archive(ident,size,digest,destination):
+              req=urllib.request.Request(api+f'actions/artifacts/{ident}/zip',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN']})
+              try: response=urllib.request.build_opener(NoRedirect).open(req,timeout=30)
               except urllib.error.HTTPError as error:
-                  if error.code != 302: raise
+                  if error.code!=302: raise
+                  assert error.headers['Location'].startswith('https://')
                   response=urllib.request.urlopen(error.headers['Location'],timeout=90)
-              with response: raw=response.read(limit+1)
-              assert len(raw)<=limit,path
-              return raw
-          for pattern in ('onCancel','java-canary-promote','dotnetTaskRuntime','shim.js'):
-              result=subprocess.run(['git','grep','-l','-F',pattern,'--','tools','sdk'],capture_output=True,text=True)
-              print('SOURCE_PATHS',pattern,result.stdout[:9000])
-          for path in ('tools/tests/test_dotnet_task_runtime.py','tools/dotnet_task_runtime_fixture.py'):
-              text=pathlib.Path(path).read_text(); print('SOURCE',path,text[:30000])
-          raw=read('actions/artifacts/13128394251/zip',47459)
-          assert hashlib.sha256(raw).hexdigest()=='3cc798622a8257f91a5f3cba0d33a2c102a5cbabed8c74a60435496eb26396e7'
-          with zipfile.ZipFile(io.BytesIO(raw)) as z:
-              for name in ('compiled/raw-generated-bindings.json','logs/14-componentize.stderr.txt','compiled/imports.json','compiler-inputs.json'):
-                  raw=z.read(name);print('TS_RECORD',name,raw.decode()[:22000])
-          import yaml
-          workflow=yaml.safe_load(pathlib.Path('.github/workflows/dotnet-guest.yml').read_text())
-          for name,job in workflow['jobs'].items():
-              if any('qualify_dotnet_task_runtime' in str(s) for s in job['steps']):
-                  print('DOTNET_JOB',name,json.dumps(job)[:28000])
+              with response: raw=response.read(size+1)
+              assert len(raw)==size and hashlib.sha256(raw).hexdigest()==digest
+              with zipfile.ZipFile(io.BytesIO(raw)) as z:
+                  members=z.infolist(); assert len(members)<10000
+                  seen=set();total=0
+                  for m in members:
+                      p=pathlib.PurePosixPath(m.filename)
+                      assert not p.is_absolute() and '..' not in p.parts and str(p)==m.filename and m.filename not in seen
+                      assert not stat.S_ISLNK(m.external_attr>>16) and m.file_size<=536870912
+                      seen.add(m.filename);total+=m.file_size;assert total<=1073741824
+                      target=destination/p;target.parent.mkdir(parents=True,exist_ok=True)
+                      with target.open('xb') as f:f.write(z.read(m))
+          archive(13128117642,76823029,'2644fc4227ef4d652821b03304f6dfa4dfde2989ab023bd387f7b820818a7e16',out/'native')
+          archive(13132360193,5954062,'80662a5c726a949c037a3b7f57ffd35778786e1dcdc2b7db0b1b3e251193b5c2',out/'original')
+          print('NATIVE_ROOT',sorted(str(p.relative_to(out/'native')) for p in (out/'native').iterdir()))
+          from tools.qualify_dotnet_standard_console import inherited
+          from tools.rust_capsule_project import TEMPLATES
+          from tools.run_rust_capsule_workflow import run
+          native=out/'native'; binaries,companions,baseline=inherited(native)
+          for path in binaries.values():path.chmod(0o700)
+          assert inherited(native)[2]==baseline
+          greeting=out/'original/dotnet-task-runtime/build'
+          print('TASK_BUILD_MEMBERS',sorted(p.name for p in greeting.iterdir()))
+          marker=json.loads((greeting/'BUILD-COMPLETE.json').read_bytes())
+          for name,field in (('component.wasm','componentDigest'),('source-inputs.json','sourceDigest'),('build-observation.json','observationDigest')):
+              assert 'sha256:'+hashlib.sha256((greeting/name).read_bytes()).hexdigest()==marker[field]
+          from tools.rust_capsule_build import Commands
+          from tools.build_observation import build_environment
+          commands=Commands(root,out/'commands',build_environment(out))
+          commands.run('retained-task-sign',binaries['capsule_authoring'],'demo-sign',out/'releases',*[greeting if t=='greeting' else companions[t] for t in TEMPLATES])
+          try:
+              result=run(binaries['latent'],binaries['latentd'],out/'releases',out/'replay',language='dotnet',dotnet_task_runtime=True)
+              print('REPLAY_SUCCESS',result['status'])
+          except Exception as error:
+              print('REPLAY_FAILURE',type(error).__name__,str(error))
+              path=out/'replay/FAILED.json'
+              if path.exists():
+                  result=json.loads(path.read_bytes())
+                  print('ACTUAL_LAST_INVOCATION',json.dumps(result.get('invocations',[])[-1:])[:24000])
+              raise
           PY
+      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        if: always()
+        with:
+          name: pr1587-blocker-retention-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/pr1587-blockers/retention.patch
+            ${{ runner.temp }}/pr1587-blockers/replay/FAILED.json
+            ${{ runner.temp }}/pr1587-blockers/commands/logs/**
+          retention-days: 7
+          if-no-files-found: error
