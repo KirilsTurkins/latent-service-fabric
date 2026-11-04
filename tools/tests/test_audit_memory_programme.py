@@ -17,7 +17,6 @@ class AuditMemoryProgrammeTests(unittest.TestCase):
         for _, package, _, _, expected in owner.CONTROLS:
             suite = next(row for row in registry['suites']
                          if row.get('package') == package and row['kind'] == 'lib')
-            self.assertTrue(set(expected) <= set(suite['expectedCases']))
             self.assertFalse(set(expected) & set(suite['expectedIgnored']))
         # The immutable193 six survive the two reviewed envelope additions.
         # The six historical cases remain unselected here; exactly the two

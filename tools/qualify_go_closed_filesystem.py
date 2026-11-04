@@ -9,7 +9,7 @@ import sys
 
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools import ci_suite_inventory as registry
+from tools import ci_suite_inventory as registry, ci_suite_discovery as discovery
 from tools.build_observation import build_environment
 from tools.go_closed_filesystem import ADAPTER_CASE, adapter_sources, strict_scratch_result
 from tools.phase2_operator_process import require
@@ -79,12 +79,18 @@ def qualify_adapter(output):
     try:
         record['prepared'] = prepare_adapter_inputs(output, environment, commands)
         suite, = [row for row in registry.load()['suites'] if row['id'] == 'latent-wasmtime.test.generic-backend']
-        require(ADAPTER_CASE in suite['expectedCases'] and ADAPTER_CASE in suite['expectedIgnored'],
+        require(ADAPTER_CASE in suite['expectedIgnored'],
                 'Go-closed-adapter-explicit-suite-required')
+        list_command = ('cargo', '--config', '.cargo/managed-guest.toml', 'test', '--locked',
+                        '-p', 'latent-wasmtime', '--test', 'generic_backend', '--')
+        available = discovery.listing(commands.run('list-adapter-cases', *list_command, '--list'))
+        ignored = discovery.listing(commands.run('list-ignored-adapter-cases', *list_command, '--ignored', '--list'))
+        discovery.validate_cases(suite, available, ignored, {})
+        require(ADAPTER_CASE in ignored, 'Go-closed-adapter-explicit-suite-required')
         result = commands.run('actual-old-current-adapter', 'cargo', '--config', '.cargo/managed-guest.toml',
             'test', '--locked', '-p', 'latent-wasmtime', '--test', 'generic_backend', ADAPTER_CASE,
             '--', '--ignored', '--exact', '--show-output')
-        rows = adapter_observations(result, len(suite['expectedCases']) - 1)
+        rows = adapter_observations(result, len(available) - 1)
         require(adapter_sources() == (original, current), 'Go-closed-adapter-source-changed')
         record.update(status='passed', cases=rows, hostFilesystemOrProviderInstalled=False,
                       actualComponentQualification=False)

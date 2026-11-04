@@ -10,6 +10,7 @@ import sys
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from tools import ci_suite_discovery as discovery, ci_suite_inventory as registry
 from tools.build_observation import build_environment
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
@@ -46,26 +47,24 @@ def test_command():
             CASE, '--', '--ignored', '--exact', '--show-output', '--test-threads=1']
 
 
-def registry_filtered():
-    suites = read_json(ROOT/'tools/ci/suites.json')['suites']
-    rows = [row for row in suites if row['id'] == 'latent-wasmtime.test.local-service']
+def registry_contract():
+    rows = [row for row in registry.load(ROOT / 'tools/ci/suites.json')['suites']
+            if row['id'] == 'latent-wasmtime.test.local-service']
     require(len(rows) == 1, 'typescript-retirement-one-registered-target')
     row = rows[0]
-    cases = row['expectedCases']
-    require(type(cases) is list and len(cases) == len(set(cases)) == row['minimumCases']
-            and CASE in cases and CASE in row['expectedIgnored'] and row['target'] == 'local_service',
-            'typescript-retirement-exact-registered-cases')
-    return len(cases)-1
+    require(CASE in row['expectedIgnored'] and row['target'] == 'local_service',
+            'typescript-retirement-exact-registered-case')
+    return row
 
 
-def observation(raw):
+def observation(raw, filtered):
     require(type(raw) is bytes and 0 < len(raw) <= 4*1024**2, 'typescript-retirement-output-bound')
     text = raw.decode('utf-8', errors='strict')
     names = re.findall(r'^test (\S+) \.\.\. ([^\r\n]+)\r?$', text, re.MULTILINE)
     require(names == [(CASE, 'ok')], 'typescript-retirement-one-exact-native-case')
     summaries = [line for line in text.splitlines() if line.startswith('test result:')]
     require(len(summaries) == 1 and re.fullmatch(
-        rf'test result: ok\. 1 passed; 0 failed; 0 ignored; 0 measured; {registry_filtered()} filtered out; finished in [0-9]+\.[0-9]+s',
+        rf'test result: ok\. 1 passed; 0 failed; 0 ignored; 0 measured; {filtered} filtered out; finished in [0-9]+\.[0-9]+s',
         summaries[0]), 'typescript-retirement-exact-native-totals')
     lines = [line.removeprefix('TYPESCRIPT_RETIREMENT ') for line in text.splitlines()
              if line.startswith('TYPESCRIPT_RETIREMENT ')]
@@ -136,8 +135,14 @@ def qualify(acquired, engine, tools, output):
                            for name in ('typescript-runtime-retirement', 'typescript-service-callee')}
         commands.environment.update(LSF_GUEST_SDK_LANGUAGE='typescript', LSF_GUEST_CAPSULES=str(inputs))
         stage = 'exact-signed-native-retirement'
+        contract = registry_contract()
+        list_base = ['cargo', 'test', '--locked', '-p', 'latent-wasmtime', '--test', 'local_service', '--']
+        available = discovery.listing(commands.run('list-all-native-cases', *list_base, '--list'))
+        ignored = discovery.listing(commands.run('list-ignored-native-cases', *list_base, '--ignored', '--list'))
+        discovery.validate_cases(contract, available, ignored, {})
+        require(CASE in ignored, 'typescript-retirement-required-case-missing')
         raw = commands.run(stage, *test_command())
-        observed = observation(raw)
+        observed = observation(raw, len(available) - 1)
         write_json(output/'native-observation.json', observed)
         require(source_identity(ROOT) == source
                 and {name: file_identity(ROOT/name) for name in MATERIALS} == material,

@@ -37,6 +37,10 @@ def wire(values):
 
 class GoWriteProgressReader(unittest.TestCase):
     def test_variable_real_prefix_and_uncertainty_close_outcome_are_preserved(self):
+        sample = wire(records()).replace(b'0 filtered out', b'2 filtered out')
+        progress.outcomes(sample, filtered=2)
+        with self.assertRaises(ValueError):
+            progress.outcomes(sample, filtered=1)
         for uncertainty,close in [(False,'closed'),(True,'exhausted')]:
             selected=progress.outcomes(wire(records(uncertainty,close)))
             self.assertEqual(selected['cases'][2]['n'],24577)

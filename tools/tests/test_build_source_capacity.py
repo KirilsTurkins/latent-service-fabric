@@ -269,13 +269,12 @@ class SourceCapacityTests(unittest.TestCase):
                                         "command-output-limit-invalid"):
                 build_process._validate(["git"], Path.cwd(), {}, 30,
                                         limits.max_archive_bytes + 1)
-        # Keep the byte-envelope change inside the independently reviewed source
-        # boundary. A mismatch reports the digest; it never refreshes approval.
+        # The transport source has a protected review owner; its generated
+        # source digest is evidence, not a committed approval token.
         root = Path(__file__).resolve().parents[2]
-        owner = json.loads((root / "tools/ci/contracts/owners/tools/build_process.py.json").read_text())
-        actual = hashlib.sha256((root / "tools/build_process.py").read_bytes()).hexdigest()
-        self.assertEqual(owner["reviewBoundary"], "committed-fingerprint")
-        self.assertEqual(owner["sha256"], actual, "build transport requires explicit source-fingerprint review")
+        self.assertIn('/tools/build_process*.py @KirilsTurkins',
+                      (root / '.github/CODEOWNERS').read_text())
+        self.assertFalse((root / 'tools/ci/contracts/owners/tools/build_process.py.json').exists())
 
     def test_archive_and_content_byte_limits_are_enforced_independently(self):
         from dataclasses import replace

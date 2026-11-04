@@ -87,13 +87,11 @@ the newer C/libucl preservation controls and Java GC test registration rather
 than restoring their older branch copies. Native CORS implementation sources and
 all historical receipts above remain unchanged.
 
-The 17 added native CORS cases are registered in the bounded
-[owner-local case fragment](../../tools/ci/suites.cases.d/cross-origin-assets.json).
-The [suite loader](ci-suite-inventory.md#additive-case-fragments-and-merge-review)
-combines them with development's current catalogue and checks exact discovery.
-This keeps both branches' cases without replacing shared recipes, resource limits
-or ignore states. The dedicated `cross_origin` campaign remains mandatory and
-unchanged; additive registration does not substitute for running it.
+The 17 added native CORS cases are discovered from the current compiled test
+harness. The [suite inventory](ci-suite-inventory.md) retains the suite recipe
+and explicit exceptional obligations; ordinary test names are not maintained
+in a separate catalogue. The dedicated `cross_origin` campaign remains mandatory
+and is not replaced by ordinary suite execution.
 
 The workflow also uses development's reviewed Python, Node and upload-artifact
 pins, as bound by `.github/security/actions.json` and the

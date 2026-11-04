@@ -1,8 +1,0 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_host_stream_kernel_native_vm.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Default-off q35 original-Node PCI setup and asynchronous record-return qualification; existing authority, limits, historical paths and IRQ/TCP exclusions remain enforced.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d73c0fad312f605ecbff2e4fccb9986fa946697e68e695578a12ff419aa51c07"
-}

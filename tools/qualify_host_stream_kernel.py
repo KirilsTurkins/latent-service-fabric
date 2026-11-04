@@ -31,7 +31,7 @@ def snapshot(root: Path) -> dict:
 
 
 def outcomes(raw: bytes, expected: set[str]) -> dict:
-    if len(raw) > 65536 or len(expected) != 47:
+    if len(raw) > 65536 or not provider.REQUIRED_CASES <= expected or len(expected) > 10000:
         raise ValueError("kernel-reference-output-bound")
     provider.outcomes(raw, expected)
     rows = [json.loads(value) for value in re.findall(rb"^KERNEL_OWNER_OBSERVATION (.+)$", raw, re.M)]
@@ -149,23 +149,25 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
     if not compiler.startswith("rustc 1.97.1 "):
         raise ValueError("kernel-reference-compiler")
     command(["cargo", "test", "--locked", "--all-features", "-p", "latent-streams", "--lib", "--no-run", "--message-format=json"], "cargo", 1200, 16 * 1024 * 1024)
-    descriptor = artifacts.Suite(suite["manifest"], suite["target"], suite["source"], "", frozenset(suite["expectedCases"]), False)
+    descriptor = artifacts.Suite(suite["manifest"], suite["target"], suite["source"], "", provider.REQUIRED_CASES, False)
     inventory = output / "cargo.stdout.log"
     executable = artifacts.read_inventory(inventory, root, descriptor, target=root / "target")
     libraries = provider.compiled_tls(root, inventory, root / "target")
     environment = artifacts.cargo_environment(root, executable, environment, target=root / "target")
     listed = command([str(executable.executable), "--list"], "list", 30, 65536)
     ignored = command([str(executable.executable), "--ignored", "--list"], "ignored", 30, 65536)
-    discovery.validate_cases(suite, discovery.listing(listed), discovery.listing(ignored), {})
+    available, skipped = discovery.listing(listed), discovery.listing(ignored)
+    discovery.validate_cases(suite, available, skipped, {})
+    provider.validate_obligations(available, skipped)
     raw = command([str(executable.executable), "--show-output", "--test-threads=1"], "tests", suite["timeoutSeconds"], 65536)
-    rows = outcomes(raw, set(suite["expectedCases"]))
+    rows = outcomes(raw, set(available))
     after = snapshot(root)
     if before != after:
         raise ValueError("kernel-reference-source-changed")
     receipt = {"schemaVersion": "lsf.host-stream-kernel-tail-reference.v2", "sourceRevision": revision,
                "compiler": compiler, "kernelRelease": kernel, "sourceBefore": before, "sourceAfter": after, "compiledTls": libraries,
                "testExecutableSha256": provider.digest_file(executable.executable, 1024 * 1024 * 1024),
-               "executedCases": sorted(suite["expectedCases"]), "registeredCases": sorted(suite["expectedCases"]), "ignored": [],
+               "executedCases": sorted(available), "registeredCases": sorted(available), "ignored": [],
                "observations": rows, "oldFdRefundIsNotKernelRetirement": True, "originalOwnersQuarantinedWithoutRetirementProof": True,
                "kernelAccountingQualified": False, "productionInstallation": False, "fullTlsAccountingQualified": False}
     (output / "receipt.json").write_bytes((json.dumps(receipt, indent=2) + "\n").encode())
