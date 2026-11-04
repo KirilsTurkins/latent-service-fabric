@@ -16,12 +16,12 @@ jobs:
         with:
           persist-credentials: false
           ref: b76bfd7357a3f34cceac96ee61d9008ec135102f
-      - name: Read exact failure causes
+      - name: Locate exact compiler and qualification source
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import hashlib, io, json, os, subprocess, urllib.request, urllib.error, zipfile
+          import hashlib, io, json, os, pathlib, subprocess, urllib.request, urllib.error, zipfile
           api='https://api.github.com/repos/KirilsTurkins/latent-service-fabric/'
           class NoRedirect(urllib.request.HTTPRedirectHandler):
               def redirect_request(self, req, fp, code, msg, headers, newurl): return None
@@ -35,34 +35,19 @@ jobs:
               with response: raw=response.read(limit+1)
               assert len(raw)<=limit,path
               return raw
-          result=subprocess.run(['git','grep','-n','-E','onCancel|on-cancel','--','*.mjs','*.js','*.rs','*.py','*.wit'],capture_output=True,text=True)
-          print('GLOBAL_IMPORT_SOURCE',result.stdout[:20000])
-          for ident,size,digest,kind in ((13128394251,47459,'3cc798622a8257f91a5f3cba0d33a2c102a5cbabed8c74a60435496eb26396e7','ts'),(13132360193,5954062,'80662a5c726a949c037a3b7f57ffd35778786e1dcdc2b7db0b1b3e251193b5c2','dotnet'),(13130055422,106557782,'bea09db67efa2807cdfd858e0461ac6a5f598ca4d0f9f474c789782865ad8fb9','java')):
-              raw=read(f'actions/artifacts/{ident}/zip',size)
-              assert len(raw)==size and hashlib.sha256(raw).hexdigest()==digest
-              with zipfile.ZipFile(io.BytesIO(raw)) as z:
-                  if kind=='java':
-                      print('JAVA_PROMOTION',z.read('java-http-composition/http/controls/244.json').decode())
-                      print('JAVA_HTTP_RECORDS',[n for n in z.namelist() if n.startswith('java-http-composition/http/') and n.endswith('.json') and '/controls/' not in n][-30:])
-                  if kind=='dotnet':
-                      data=json.loads(z.read('dotnet-task-runtime/node/FAILED.json'))
-                      print('DOTNET_NODE_KEYS',list(data))
-                      for key in ('stage','reason','runtimeProbe','diagnostics','invocations','error','errorCategory'):
-                          if key in data: print('DOTNET_FIELD',key,json.dumps(data[key])[:16000])
-                      print('DOTNET_RECORD_PATHS',[n for n in z.namelist() if '/node/' in n][:100])
-                      def visit(value,path=''):
-                          if isinstance(value,dict):
-                              if any(k in value for k in ('activationId','decoded','diagnostic')):
-                                  print('DOTNET_RECORD',path,json.dumps(value)[:16000]); return
-                              for k,v in value.items():
-                                  if k not in ('inputs','source','binaries','materials','sourceBefore','sourceAfter'): visit(v,path+'/'+k)
-                          elif isinstance(value,list):
-                              for i,v in enumerate(value): visit(v,path+'/'+str(i))
-                      visit(data)
-                  if kind=='ts':
-                      print('TS_PATHS',z.namelist())
-                      for n in z.namelist():
-                          if n.endswith(('.js','.mjs','.stderr.log','.command.json')) and z.getinfo(n).file_size<131072:
-                              text=z.read(n).decode(errors='replace')
-                              if n.endswith('.command.json') or 'available' in text or 'SyntaxError' in text: print('TS_SOURCE',n,text[:22000])
+          for pattern in ('onCancel','java-canary-promote','dotnetTaskRuntime','shim.js'):
+              result=subprocess.run(['git','grep','-l','-F',pattern,'--','tools','sdk'],capture_output=True,text=True)
+              print('SOURCE_PATHS',pattern,result.stdout[:9000])
+          for path in ('tools/tests/test_dotnet_task_runtime.py','tools/dotnet_task_runtime_fixture.py'):
+              text=pathlib.Path(path).read_text(); print('SOURCE',path,text[:30000])
+          raw=read('actions/artifacts/13128394251/zip',47459)
+          assert hashlib.sha256(raw).hexdigest()=='3cc798622a8257f91a5f3cba0d33a2c102a5cbabed8c74a60435496eb26396e7'
+          with zipfile.ZipFile(io.BytesIO(raw)) as z:
+              for name in ('compiled/raw-generated-bindings.json','logs/14-componentize.stderr.txt','compiled/imports.json','compiler-inputs.json'):
+                  raw=z.read(name);print('TS_RECORD',name,raw.decode()[:22000])
+          import yaml
+          workflow=yaml.safe_load(pathlib.Path('.github/workflows/dotnet-guest.yml').read_text())
+          for name,job in workflow['jobs'].items():
+              if any('qualify_dotnet_task_runtime' in str(s) for s in job['steps']):
+                  print('DOTNET_JOB',name,json.dumps(job)[:28000])
           PY
