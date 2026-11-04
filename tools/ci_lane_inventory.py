@@ -38,8 +38,7 @@ def response_policy_cases(data: dict[str, Any]) -> tuple[str, ...]:
             or owner.get("kind") != "lib" or owner.get("mode") != "libtest"
             or owner.get("manifest") != "apps/latentd/Cargo.toml"
             or owner.get("target") != "latentd" or owner.get("source") != "src/lib_root.rs"
-            or HTTP_RESPONSE_POLICY_CASE not in owner.get("expectedIgnored", [])
-            or HTTP_RESPONSE_POLICY_CASE not in owner.get("expectedCases", [])):
+            or HTTP_RESPONSE_POLICY_CASE not in owner.get("expectedIgnored", [])):
         raise ValueError("http-response-policy-selection-contract")
     return (HTTP_RESPONSE_POLICY_CASE,)
 

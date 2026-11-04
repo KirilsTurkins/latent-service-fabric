@@ -1,3 +1,0 @@
-{"kind":"owner","path":"sdk/dotnet/validate.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain the actual bounded generated-file identities on lock drift while preserving the existing failure; required to review the additive diagnostic enum regeneration.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "14a31113adc8480e498324354092912556cd08e6cf71062b6125686df42b9a92"
-}

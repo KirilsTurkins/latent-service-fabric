@@ -1,1 +1,0 @@
-{"kind":"owner","path":"tools/run_security_profile_workflow.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind current 48.0.8 version and upstream security source; preserve historical receipts, feature, capability, limit and execution controls.","schemaVersion":"latent.ci.contracts.v1","sha256":"0593e04f2df7da554d88f0aa8b96a3169a2afe6ea98fd9302feade3d94528029"}

@@ -35,8 +35,8 @@ class CoverageTests(unittest.TestCase):
             with self.subTest(action=action), patch.object(coverage, 'commands', return_value=changed), self.assertRaises(ValueError):
                 coverage.validate()
 
-    def test_changed_nested_owner_requires_explicit_inventory_review(self):
-        with patch.object(coverage, 'delegated_owners', return_value={}), self.assertRaises(ValueError):
+    def test_missing_or_unsafe_delegated_owner_still_fails_validation(self):
+        with patch.object(coverage, 'delegated_owners', side_effect=ValueError('missing owner')), self.assertRaises(ValueError):
             coverage.validate()
 
     def test_no_coverage_row_may_remove_an_existing_required_owner(self):

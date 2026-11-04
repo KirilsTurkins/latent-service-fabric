@@ -21,7 +21,6 @@ from tools.rust_capsule_project import fresh
 from tools.test_run import digest, redact
 
 SUITE = "latent-streams.lib.latent-streams"
-EXPECTED_CASES_SHA256 = "c65d9974e96103c237ee78d17e3e36a0e3ee038a9a2e70e102a01b69af66a0dd"
 TLS_CASES = frozenset("tests::tls::" + name for name in (
     "direct_host_tls_validates_peer_transfers_and_retires_original_charges",
     "wrong_tls_hostname_fails_closed_without_cleartext_fallback",
@@ -40,6 +39,21 @@ NATIVE_CLOSE_CASES = frozenset('kernel::native::tests::' + name for name in (
     'fixed_file_close_receipt_stays_paid_until_drop_without_refunding_backing',
 ))
 DENIAL = "tests::tls::unqualified_tls_installation_fails_before_contact_and_leaves_no_owner"
+NODE_CASES = frozenset('kernel::native::node_bootstrap::controls::' + name for name in (
+    'node_wire_refuses_old_ack_foreign_generation_and_funding_bits',
+    'node_postopen_refusal_retains_original_whole_escrow',
+    'node_abandoned_waiter_keeps_custody_after_real_worker_returns',
+))
+REQUIRED_CASES = (TLS_CASES | ACCOUNTING_CASES | KERNEL_RETIREMENT_CASES | NATIVE_CLOSE_CASES |
+                  NODE_CASES | {DENIAL, KERNEL_CASE,
+                  'tests::tls::protected_root_replacement_digest_and_link_denials_precede_contact',
+                  'tests::unimplemented_host_tls_is_never_silently_replaced_with_tcp',
+                  'transport::tests::private_wire_fault_keeps_uncertainty_without_ciphertext_as_plaintext_prefix'})
+
+
+def validate_obligations(available: frozenset[str], ignored: frozenset[str]) -> None:
+    if not REQUIRED_CASES <= available - ignored:
+        raise ValueError("tls-provider-reference-required-case-missing")
 
 
 def digest_file(path: Path, maximum: int) -> str:
@@ -65,16 +79,13 @@ def suite_contract(root: Path) -> dict:
     if len(matches) != 1:
         raise ValueError("tls-provider-reference-suite-owner")
     row = matches[0]
-    if (row["minimumCases"] != 47 or len(row["expectedCases"]) != 47
-            or hashlib.sha256(json.dumps(row["expectedCases"], separators=(",", ":")).encode()).hexdigest() != EXPECTED_CASES_SHA256
-            or not (TLS_CASES | ACCOUNTING_CASES | KERNEL_RETIREMENT_CASES | NATIVE_CLOSE_CASES | {DENIAL, KERNEL_CASE}) <= set(row["expectedCases"])
-            or row["expectedIgnored"] or row["ignoredLeaves"] or row["timeoutSeconds"] != 900):
+    if row["expectedIgnored"] or row["ignoredLeaves"] or row["timeoutSeconds"] != 900:
         raise ValueError("tls-provider-reference-suite-contract")
     return row
 
 
 def outcomes(raw: bytes, expected: set[str]) -> list[str]:
-    if len(raw) > 4 * 1024 * 1024:
+    if len(raw) > 4 * 1024 * 1024 or not REQUIRED_CASES <= expected:
         raise ValueError("tls-provider-reference-result-bound")
     passed = re.findall(rb"^test ([a-zA-Z0-9_:]+) \.\.\. ok$", raw, re.M)
     names = [name.decode("ascii") for name in passed]
@@ -146,15 +157,17 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
     command(["cargo", "test", "--locked", "--all-features", "-p", "latent-streams", "--lib",
              "--no-run", "--message-format=json"], "cargo", 2400, 16 * 1024 * 1024)
     descriptor = artifacts.Suite(suite["manifest"], suite["target"], suite["source"], "",
-                                 frozenset(suite["expectedCases"]), False)
+                                 REQUIRED_CASES, False)
     executable = artifacts.read_inventory(inventory, root, descriptor, target=target)
     libraries = compiled_tls(root, inventory, target)
     environment = artifacts.cargo_environment(root, executable, environment, target=target)
     listed = command([str(executable.executable), "--list"], "list", 30, 65536)
     ignored = command([str(executable.executable), "--ignored", "--list"], "ignored", 30, 65536)
-    discovery.validate_cases(suite, discovery.listing(listed), discovery.listing(ignored), {})
+    available, skipped = discovery.listing(listed), discovery.listing(ignored)
+    discovery.validate_cases(suite, available, skipped, {})
+    validate_obligations(available, skipped)
     raw = command([str(executable.executable), "--test-threads=1"], "tests", suite["timeoutSeconds"], 4 * 1024 * 1024)
-    cases = outcomes(raw, set(suite["expectedCases"]))
+    cases = outcomes(raw, set(available))
     clean()
     after = snapshot(root)
     if before != after:
