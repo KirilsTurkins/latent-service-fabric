@@ -1,0 +1,425 @@
+name: C guest authoring
+
+on:
+  workflow_dispatch:
+    inputs:
+      replay-closed-filesystem:
+        description: "Fresh closed-file C component using the authenticated passed normal products"
+        type: boolean
+        default: false
+      qualify-scratch-refusals:
+        description: "Run the original normal C qualification and same-products scratch child"
+        type: boolean
+        default: false
+  pull_request:
+    branches: [development]
+    paths:
+      - 'sdk/c-guest/**'
+      - 'sdk/transaction-contract/**'
+      - 'tools/**'
+      - 'crates/**'
+      - 'wit/**'
+      - 'schemas/**'
+      - 'Cargo.*'
+      - 'docs/component-development/c-authoring.md'
+      - '.github/workflows/c-guest-authoring.yml'
+  push:
+    branches: [development]
+    paths:
+      - 'sdk/c-guest/**'
+      - 'sdk/transaction-contract/**'
+      - 'tools/**'
+      - 'crates/**'
+      - 'wit/**'
+      - 'schemas/**'
+      - 'Cargo.*'
+      - 'docs/component-development/c-authoring.md'
+      - '.github/workflows/c-guest-authoring.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: c-guest-authoring-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Symbols/incremental state cost disk and links; correctness checks stay on.
+  CARGO_BUILD_JOBS: "2"
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
+  CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: "true"
+  CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: "true"
+  CARGO_PROFILE_DEV_OVERFLOW_CHECKS: "true"
+  CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
+
+jobs:
+  runtime:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}
+    name: Admitted C capability ownership
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Restore compiled Rust dependencies
+        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        with:
+          version: 1.254.0
+      - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
+        with:
+          version: '0.16.0'
+      - name: Install pinned validation and bindings
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Qualify proposed transaction shapes with the maintained async C compiler
+        run: python3 tools/qualify_transaction_contracts.py --language c --output "$RUNNER_TEMP/transaction-contract-c"
+      - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
+        run: python3 tools/compile_transaction_guests.py --language c --output "$RUNNER_TEMP/transaction-guests-c"
+      - name: Build and execute signed C and Rust capability packages
+        env:
+          LSF_GUEST_CAPSULES: ${{ runner.temp }}/c-guest-capsules
+        run: |
+          set -o pipefail
+          python3 tools/build_guest_capsules.py --output "$LSF_GUEST_CAPSULES" 2>&1 | tee "$RUNNER_TEMP/c-guest-build.log"
+          cargo test --locked -p latent-wasmtime --test guest_sdk -- --ignored --test-threads=1 2>&1 | tee "$RUNNER_TEMP/c-guest-runtime.log"
+          cargo test --locked -p latent-signing --test guest_provenance 2>&1 | tee "$RUNNER_TEMP/c-guest-provenance.log"
+          cargo test --locked -p latent-control-store --lib managed_lease_failure_never_mutates_or_renews_a_historical_replay 2>&1 | tee "$RUNNER_TEMP/c-guest-control-lease.log"
+          cargo test --locked -p latent-policy --lib mutation_renewal_persists_a_full_window_even_before_the_sampler_margin 2>&1 | tee "$RUNNER_TEMP/c-guest-clock-window.log"
+      - name: Qualify standalone C projects and the printed guide
+        run: |
+          python3 -m unittest tools.tests.test_c_capsule_authoring
+          python3 tools/qualify_c_capsules.py --output "$RUNNER_TEMP/c-capsule-authoring"
+      - name: Qualify captured C libraries with enforced compiler isolation
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_c_application_dependencies tools.tests.test_c_static_symbols tools.tests.test_captured_compiler_isolation tools.tests.test_application_dependency_tools tools.tests.test_c_dependency_authoring tools.tests.test_c_authoring_frontend
+          python3 tools/qualify_c_capsules.py --application-dependencies --static-application-dependencies --approved-generator --output "$RUNNER_TEMP/c-application-library"
+      - name: Qualify actual C archive and isolated generated-header rejection controls
+        run: |
+          python3 tools/c_dependency_controls.py --project "$RUNNER_TEMP/c-application-library/projects/greeting" --output "$RUNNER_TEMP/c-dependency-controls"
+      - name: Retain compiler and ownership results including failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: c-guest-ownership-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/transaction-guests-c/**/report.json
+            ${{ runner.temp }}/transaction-guests-c/**/source-inputs.json
+            ${{ runner.temp }}/transaction-guests-c/**/recipe-inputs.json
+            ${{ runner.temp }}/transaction-guests-c/**/source.tar.gz
+            ${{ runner.temp }}/transaction-guests-c/**/component.wasm
+            ${{ runner.temp }}/transaction-guests-c/**/component.wit
+            ${{ runner.temp }}/transaction-guests-c/**/compiler-inputs.json
+            ${{ runner.temp }}/transaction-guests-c/**/logs/**
+            ${{ runner.temp }}/transaction-guests-c/**/compiler/*.log
+            ${{ runner.temp }}/transaction-guests-c/**/compiler/*.command.json
+            ${{ runner.temp }}/transaction-guests-c/**/compiled/generated/**
+            ${{ runner.temp }}/transaction-guests-c/**/compiled/bindings/**
+            ${{ runner.temp }}/transaction-guests-c/**/bindings/**
+            ${{ runner.temp }}/transaction-guests-c/**/compiled/raw-generated-bindings.json
+            ${{ runner.temp }}/transaction-contract-c/report.json
+            ${{ runner.temp }}/transaction-contract-c/source.tar.gz
+            ${{ runner.temp }}/transaction-contract-c/component.wit
+            ${{ runner.temp }}/transaction-contract-c/preparation.json
+            ${{ runner.temp }}/transaction-contract-c/compiler-inputs.json
+            ${{ runner.temp }}/transaction-contract-c/logs/**
+            ${{ runner.temp }}/transaction-contract-c/compiler/*.log
+            ${{ runner.temp }}/transaction-contract-c/compiler/*.command.json
+            ${{ runner.temp }}/transaction-contract-c/compiled/component.wasm
+            ${{ runner.temp }}/transaction-contract-c/compiled/component.wit
+            ${{ runner.temp }}/transaction-contract-c/compiled/bindings/**
+            ${{ runner.temp }}/transaction-contract-c/compiled/generated/**
+            ${{ runner.temp }}/transaction-contract-c/compiled/raw-generated-bindings.json
+            ${{ runner.temp }}/transaction-contract-c/bindings/**
+            ${{ runner.temp }}/transaction-contract-c/component.wasm
+            ${{ runner.temp }}/c-guest-*.log
+            ${{ runner.temp }}/c-guest-capsules/BUILD-COMPLETE.json
+            ${{ runner.temp }}/c-guest-capsules/c-*/*.json
+            ${{ runner.temp }}/c-capsule-authoring/*.json
+            ${{ runner.temp }}/c-capsule-authoring/logs/**
+            ${{ runner.temp }}/c-capsule-authoring/builds/**
+            ${{ runner.temp }}/c-capsule-authoring/node/**
+            ${{ runner.temp }}/c-capsule-authoring/releases/**
+            ${{ runner.temp }}/c-capsule-authoring/guide/guide.json
+            ${{ runner.temp }}/c-capsule-authoring/guide/guide.sh
+            ${{ runner.temp }}/c-capsule-authoring/guide/logs/**
+            ${{ runner.temp }}/c-capsule-authoring/guide/projects/results/**
+            ${{ runner.temp }}/c-application-library/**
+            ${{ runner.temp }}/c-dependency-controls/**
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Export exact normal public prerequisites for separate C scratch packet
+        run: >-
+          python3 tools/qualify_sdk_scratch.py --export-bundle --language c
+          --native-qualification "$RUNNER_TEMP/c-capsule-authoring"
+          --output "$RUNNER_TEMP/c-scratch-prepared"
+      - name: Retain only this run's verified public C normal products
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: c-scratch-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/c-scratch-prepared/
+          if-no-files-found: error
+          retention-days: 3
+
+  standard-facilities:
+    if: ${{ github.event_name != 'workflow_dispatch' || (!inputs.qualify-scratch-refusals && !inputs.replay-closed-filesystem) }}
+    name: Signed C standard clock and entropy profile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Restore compiled Rust dependencies
+        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        with:
+          version: 1.254.0
+      - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
+        with:
+          version: '0.16.0'
+      - name: Prepare pinned bindings and supported compiler containment
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Execute the actual captured standard library on current default native products
+        run: |
+          python3 -m unittest tools.tests.test_c_standard_facilities
+          python3 tools/qualify_c_standard_facilities.py --build-native --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-facilities"
+      - name: Execute ordinary bounded stdio through the same frozen default products
+        run: |
+          python3 -m unittest tools.tests.test_c_standard_logging
+          python3 tools/qualify_c_standard_facilities.py --standard-logging --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-logging"
+      - name: Execute combined ordinary libc facilities with four explicit grants
+        run: |
+          python3 -m unittest tools.tests.test_c_standard_combined
+          python3 tools/qualify_c_standard_facilities.py --combined-profile --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-combined"
+      - name: Execute captured C23 raw resources and physical trap retirement
+        run: |
+          python3 -m unittest tools.tests.test_c_compiled_resources
+          python3 tools/qualify_c_standard_facilities.py --compiled-resources --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-compiled-resources"
+      - name: Retain bounded C standard runtime proof including failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: c-standard-facilities-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/c-standard-facilities/qualified.json
+            ${{ runner.temp }}/c-standard-facilities/FAILED.json
+            ${{ runner.temp }}/c-standard-facilities/logs/**
+            ${{ runner.temp }}/c-standard-facilities/builds/*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/BUILD-FAILED.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/source-inputs.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/recipe-inputs.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/standard-runtime-selection.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/compatibility*.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/compiler-inputs.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/component.wasm
+            ${{ runner.temp }}/c-standard-facilities/builds/*/logs/**
+            ${{ runner.temp }}/c-standard-facilities/node/public-workflow.json
+            ${{ runner.temp }}/c-standard-logging/qualified.json
+            ${{ runner.temp }}/c-standard-logging/FAILED.json
+            ${{ runner.temp }}/c-standard-logging/logs/**
+            ${{ runner.temp }}/c-standard-logging/builds/*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/c-standard-logging/builds/*/BUILD-FAILED.json
+            ${{ runner.temp }}/c-standard-logging/builds/*/compatibility*.json
+            ${{ runner.temp }}/c-standard-logging/builds/*/standard-runtime-selection.json
+            ${{ runner.temp }}/c-standard-logging/builds/*/component.wasm
+            ${{ runner.temp }}/c-standard-logging/builds/*/core-componentization-failed.wasm
+            ${{ runner.temp }}/c-standard-logging/builds/*/logs/**
+            ${{ runner.temp }}/c-standard-logging/node/public-workflow.json
+            ${{ runner.temp }}/c-standard-combined/qualified.json
+            ${{ runner.temp }}/c-standard-combined/FAILED.json
+            ${{ runner.temp }}/c-standard-combined/logs/**
+            ${{ runner.temp }}/c-standard-combined/builds/*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/BUILD-FAILED.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/source-inputs.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/recipe-inputs.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/standard-runtime-selection.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/compatibility*.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/compiler-inputs.json
+            ${{ runner.temp }}/c-standard-combined/builds/*/component.wasm
+            ${{ runner.temp }}/c-standard-combined/builds/*/core-componentization-failed.wasm
+            ${{ runner.temp }}/c-standard-combined/builds/*/logs/**
+            ${{ runner.temp }}/c-standard-combined/node/public-workflow.json
+            ${{ runner.temp }}/c-compiled-resources/qualified.json
+            ${{ runner.temp }}/c-compiled-resources/FAILED.json
+            ${{ runner.temp }}/c-compiled-resources/logs/**
+            ${{ runner.temp }}/c-compiled-resources/builds/*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/BUILD-FAILED.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/source-inputs.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/recipe-inputs.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/standard-runtime-selection.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/c-resources.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/resource-index.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/resources/objects/**
+            ${{ runner.temp }}/c-compiled-resources/builds/*/compatibility*.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/compiler-inputs.json
+            ${{ runner.temp }}/c-compiled-resources/builds/*/component.wasm
+            ${{ runner.temp }}/c-compiled-resources/builds/*/logs/**
+            ${{ runner.temp }}/c-compiled-resources/node/public-workflow.json
+          if-no-files-found: warn
+          retention-days: 7
+  scratch-refusals:
+    name: Signed ordinary C scratch refusal and fresh-state packet
+    needs: runtime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        with:
+          version: 1.254.0
+      - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
+        with:
+          version: '0.16.0'
+      - name: Install the existing bounded compiler namespace and pinned bindings
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Read only this run's identity-checked existing native products
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
+        with:
+          name: c-scratch-prepared-${{ github.sha }}
+          path: ${{ runner.temp }}/c-scratch-prepared
+      - name: Check captured-source and exact-outcome refusal controls
+        run: python3 -m unittest tools.tests.test_sdk_scratch_fixture tools.tests.test_sdk_scratch_probe tools.tests.test_sdk_scratch_qualification
+      - name: Execute original signed programme and six ordinary filesystem refusal calls
+        run: >-
+          python3 tools/qualify_sdk_scratch.py --language c
+          --native-qualification "$RUNNER_TEMP/c-scratch-prepared"
+          --output "$RUNNER_TEMP/c-scratch-refusals"
+      - name: Retain bounded diagnostic evidence including failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: c-scratch-refusals-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/c-scratch-refusals/qualification.json
+            ${{ runner.temp }}/c-scratch-refusals/FAILED.json
+            ${{ runner.temp }}/c-scratch-refusals/compatibility-execution-report.json
+            ${{ runner.temp }}/c-scratch-refusals/logs/**
+            ${{ runner.temp }}/c-scratch-refusals/build/*.json
+            ${{ runner.temp }}/c-scratch-refusals/build/logs/**
+            ${{ runner.temp }}/c-scratch-refusals/build/component.wasm
+            ${{ runner.temp }}/c-scratch-refusals/build/core-componentization-failed.wasm
+            ${{ runner.temp }}/c-scratch-refusals/build/component.wit
+            ${{ runner.temp }}/c-scratch-refusals/node/workflow.json
+            ${{ runner.temp }}/c-scratch-refusals/node/FAILED.json
+            ${{ runner.temp }}/c-scratch-refusals/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 3
+  closed-filesystem:
+    name: Fresh signed concrete C filesystem Unsupported results
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.replay-closed-filesystem }}
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@c3024dfac542bb46ebccc7829ddf1f95e0be8da9 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@50257733267ef69f611231aad6b77a62adca7140 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        with:
+          version: 1.254.0
+      - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
+        with:
+          version: '0.16.0'
+      - name: Install original compiler namespace and binding tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Check pinned libc admission and historical ancestry refusals
+        run: python3 -B -m unittest tools.tests.test_c_closed_filesystem tools.tests.test_c_closed_filesystem_qualification
+      - name: Read only the original passed normal public bundle
+        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
+        with:
+          artifact-ids: '12235113319'
+          run-id: 39354843145
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/c-closed-original
+      - name: Compile current closed stdio and require original27 plus six signed calls
+        run: >-
+          python3 -B tools/qualify_c_closed_filesystem.py
+          --native "$RUNNER_TEMP/c-closed-original"
+          --output "$RUNNER_TEMP/c-closed-filesystem"
+      - name: Retain bounded public provenance and actual API results including failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@01d82cc6ae713563e8d04f36a17af500cf82a6a9 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: c-closed-filesystem-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/c-closed-filesystem/*.json
+            ${{ runner.temp }}/c-closed-filesystem/logs/**
+            ${{ runner.temp }}/c-closed-filesystem/build/*.json
+            ${{ runner.temp }}/c-closed-filesystem/build/logs/**
+            ${{ runner.temp }}/c-closed-filesystem/build/component.wasm
+            ${{ runner.temp }}/c-closed-filesystem/node/workflow.json
+            ${{ runner.temp }}/c-closed-filesystem/node/FAILED.json
+            ${{ runner.temp }}/c-closed-filesystem/node/controls/*.json
+          if-no-files-found: warn
+          retention-days: 7

@@ -2,8 +2,8 @@
 """Ownership-local reviewed contracts; no source discovery writes expectations.
 
 This is the storage/structural reader for ci_coverage, not a selector or runner.
-Migration is an explicit, one-time, checked operation. Proposals go to untracked
-output and retain all historical obligations; validation is strictly read-only.
+Migration is an explicit, one-time, checked operation over archived evidence.
+Proposals go to untracked output; current validation is strictly read-only.
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ MAX_BANK_OWNERS = 32
 COMMON = {"schemaVersion", "kind", "reviewReason"}
 KINDS = {
     "workflow": {"workflow", "policy", "requiredJobs"},
-    "job": {"workflow", "jobId", "definition", "baselineRevision", "before", "coverage"},
+    "job": {"workflow", "jobId", "definition"},
     "owner": {"path", "sha256", "reviewBoundary"},
     "python": {"module", "cases", "guards"},
 }
@@ -386,9 +386,9 @@ def fragments(root: Path, directory: Path | None = None) -> dict[str, dict]:
 
 
 def assemble(records: dict[str, dict]) -> dict:
-    data = {"schemaVersion": SCHEMA, "before": {}, "after": {}, "coverage": {},
+    data = {"schemaVersion": SCHEMA, "after": {},
             "delegatedOwners": {}, "pythonCases": {}, "pythonGuards": {}, "workflowContracts": {}}
-    policies, jobs, revisions = {}, {}, set()
+    policies, jobs = {}, {}
     for stored in records.values():
         record = semantic_record(stored)
         kind = record["kind"]
@@ -405,22 +405,6 @@ def assemble(records: dict[str, dict]) -> dict:
             require(job not in jobs.setdefault(name, {}), "duplicate-job-contract")
             require(isinstance(record["definition"], dict), "job-definition-type")
             jobs[name][job] = record["definition"]
-            revision = record["baselineRevision"]
-            require(isinstance(revision, str) and revision, "missing-baseline-revision")
-            revisions.add(revision)
-            for field in ("before", "coverage"):
-                require(isinstance(record[field], dict), "historical-contract-type")
-                require(not set(data[field]).intersection(record[field]), "duplicate-historical-obligation")
-                data[field].update(record[field])
-            require(set(record["before"]) == set(record["coverage"]), "missing-before-after-coverage")
-            for key, row in record["before"].items():
-                require(isinstance(row, dict) and set(row) == RECORD_FIELDS
-                        and all(isinstance(value, str) for value in row.values()), "historical-command-fields")
-                coverage = record["coverage"][key]
-                require(isinstance(coverage, dict) and set(coverage) == {"after", "disposition", "reason"}, "coverage-fields")
-                require(isinstance(coverage["after"], str) and coverage["after"].startswith(f"{name}:{job}:"), "misplaced-historical-obligation")
-                require(coverage["disposition"] in DISPOSITIONS and isinstance(coverage["reason"], str)
-                        and coverage["reason"].strip(), "invalid-coverage-disposition-or-reason")
         elif kind == "owner":
             name = record["path"]
             require(name not in data["delegatedOwners"], "duplicate-owner-contract")
@@ -437,14 +421,8 @@ def assemble(records: dict[str, dict]) -> dict:
         lanes.validate_workflow_model(model)
         data["workflowContracts"][name] = model
         data["after"].update(lanes.run_commands(name, model))
-    require(len(revisions) == 1, "inconsistent-historical-baseline")
-    data["baselineRevision"] = revisions.pop()
     require(data["delegatedOwners"] and data["pythonCases"], "missing-owner-or-python-contracts")
     data["pythonTestModules"] = sorted(data["pythonCases"])
-    for key, row in data["coverage"].items():
-        require(row["after"] in data["after"], "removed-required-command-without-replacement")
-        if row["disposition"] == "unchanged":
-            require(data["before"][key] == data["after"][row["after"]], "unchanged-command-drift")
     return data
 
 
@@ -526,21 +504,25 @@ def migrate(root: Path, legacy: Path, output: Path) -> dict:
     require(sorted(python) == data["pythonTestModules"]
             and {name: value["cases"] for name, value in python.items()} == data["pythonCases"], "stale-migration-python-snapshot")
     require(set(data["before"]) == set(data["coverage"]), "missing-migration-obligation")
-    reason = "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced."
+    # The historical algorithm remains an isolated one-time conversion. Check
+    # its input map here, not as an evergreen constraint on current workflows.
+    for key, row in data["coverage"].items():
+        require(isinstance(row, dict) and set(row) == {"after", "disposition", "reason"}
+                and row["after"] in actual and row["disposition"] in DISPOSITIONS
+                and isinstance(row["reason"], str) and row["reason"].strip(), "invalid-migration-obligation")
+        if row["disposition"] == "unchanged":
+            require(data["before"][key] == actual[row["after"]], "changed-migration-obligation")
+    reason = "Convert reviewed current jobs from the frozen v1 inventory; owner fingerprints remain enforced."
     proposed = []
     for name, model in models.items():
         proposed.append(record("workflow", reason, workflow=name, policy={k: v for k, v in model.items() if k != "jobs"}, requiredJobs=sorted(model["jobs"])))
         for job, definition in model["jobs"].items():
-            covered = {key: row for key, row in data["coverage"].items() if row["after"] in actual
-                       and actual[row["after"]]["workflow"] == name and actual[row["after"]]["job"] == job}
-            proposed.append(record("job", reason, workflow=name, jobId=job, definition=definition,
-                                   baselineRevision=data["baselineRevision"],
-                                   before={key: data["before"][key] for key in covered}, coverage=covered))
+            proposed.append(record("job", reason, workflow=name, jobId=job, definition=definition))
     proposed.extend(record("owner", reason, path=name, sha256=value["sha256"], reviewBoundary="committed-fingerprint")
                     for name, value in data["delegatedOwners"].items())
     proposed.extend(record("python", reason, module=name, **value) for name, value in python.items())
     assembled = assemble({fragment_path(value): value for value in proposed})
-    for field in ("baselineRevision", "before", "after", "coverage", "delegatedOwners", "pythonTestModules", "pythonCases"):
+    for field in ("after", "delegatedOwners", "pythonTestModules", "pythonCases"):
         require(assembled[field] == data[field], "lossy-migration:" + field)
     require(assembled["workflowContracts"] == models, "lossy-workflow-migration")
     write_records(output, proposed)
@@ -565,16 +547,10 @@ def propose(root: Path, kind: str, source: str, job: str | None, output: Path, r
             require(job in model["jobs"], "proposal-job-missing")
             path = f"workflows/{workflow_name(source)}/jobs/{job}.json"
             previous = existing.get(path)
-            value = record(kind, reason, workflow=source, jobId=job, definition=model["jobs"][job],
-                           baselineRevision=assembled["baselineRevision"],
-                           before=previous["before"] if previous else {}, coverage=previous["coverage"] if previous else {})
+            value = record(kind, reason, workflow=source, jobId=job, definition=model["jobs"][job])
             actual = lanes.run_commands(source, {"jobs": {job: value["definition"]}})
             old = lanes.run_commands(source, {"jobs": {job: previous["definition"]}}) if previous else {}
             require(set(old) <= set(actual), "proposal-would-remove-required-command")
-            for key, row in value["coverage"].items():
-                require(row["after"] in actual, "proposal-would-remove-replacement")
-                require(row["disposition"] != "unchanged" or value["before"][key] == actual[row["after"]],
-                        "proposal-needs-explicit-replacement-review")
     elif kind == "owner":
         safe_path(root, source)
         from tools import ci_coverage
