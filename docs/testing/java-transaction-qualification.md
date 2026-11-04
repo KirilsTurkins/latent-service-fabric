@@ -65,10 +65,15 @@ observed typed denial, no TCP contact, no application state commit and physical
 retirement on native/conductor source `7d22ee26ac2`. It does not qualify
 post-stage rollback or packaged delivery.
 
-The separate post-staging input generator creates a guest that stages state and
-a current deferred HTTP intent before attempting the forbidden immediate call.
-Its authored declaration and compiler output are preparation only; neither
-proves that staging occurred or that the node rolled it back.
+The [post-staging capture](evidence/java-poststage-http-capture-2026-11-04.json)
+pins a clean-source guest that would stage state and a deferred HTTP intent before
+attempting an immediate call. A [separate signed attempt](evidence/java-poststage-http-startup-refusal-2026-11-04.json)
+published and deployed the component but the selected node refused its operation
+at startup, before namespace creation. The native service-integration installation
+fence rejects an HTTP-importing effect component even without an immediate HTTP
+deployment grant. This source-based explanation does not establish guest execution,
+a staging witness, or post-stage rollback; the retained failure stays distinct from
+the passing early-denial and staged-fault cases.
 
 Use `python tools/run_java_transaction_http_qualification.py --help` from the
 repository root to inspect the complete required input set. Execution requires
@@ -124,7 +129,8 @@ version-2 contract above for the current checkout. The
 retain separate compiler, synthetic-recipient and signing observations.
 Their exact approvals do not transfer to changed sources or runtime profiles.
 
-Full current signed Java execution, terminal and pending restore/close behavior,
-retention/exhaustion/cancellation and authenticated clean-host packaged acceptance
-keep their separate criteria. No ticket is closed by source integration, model
+Current-source signed Java execution, retention/exhaustion/cancellation and
+authenticated clean-host package acceptance keep their separate criteria. Package
+and clean-host distribution qualification belongs to #405, not the Java guest
+ticket. No ticket is closed by source integration, model
 receipts or the finite native controls linked from these guides.
