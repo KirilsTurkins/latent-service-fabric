@@ -225,7 +225,8 @@ def guard_imported_skip_predicates(repo, baseline, sources):
                                                            '--name-only', '-z', '--no-renames', baseline, '--'))
     changed = {path for path in changed if path.startswith('tools/') and path.endswith('.py')}
     if not changed: return
-    relevant = set().union(*(imported_skip_predicates(source) for source in sources.values()))
+    relevant = set().union(*(imported_skip_predicates(source) for source in sources.values()
+                             if 'skip' in source.lower()))
     for path, function in sorted(relevant):
         if path not in changed: continue
         previous = ci_profile.git_command(repo, 'show', baseline + ':' + path, allow_failure=True)
