@@ -215,7 +215,10 @@ binding. A builder signature cannot replace that local native-output authority.
 The committed echo capture and its Cargo attribution reader share a fixed
 16,384-file ceiling. Git listing and canonical inventory transport are bounded
 separately to 10 MiB and 12 MiB. Their capacities cover the file count with
-512-byte portable paths and per-record framing. The 160 MiB stored-ZIP limit
+512-byte portable paths and per-record framing. Java source-identity
+qualification permits two such listings in its bounded diagnostic retention,
+plus the existing 16 MiB allowance for other output; other standalone commands
+retain their existing default. The 160 MiB stored-ZIP limit
 also reserves framing for the maximum file and directory counts independently
 of the 128 MiB source-byte ceiling. Limits are fixed, not inferred from the
 input; the allowlist remains intact because compiler and build-script closure
