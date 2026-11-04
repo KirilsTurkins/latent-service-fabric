@@ -167,6 +167,103 @@ def require_no_new_controls(before: str, after: str) -> None:
 
 
 
+def imported_skip_predicates(source: str) -> set[tuple[str, str]]:
+    """Find repository functions directly reachable from a skip predicate."""
+    tree = ast.parse(source)
+    parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
+    functions = {node.name: node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    aliases = {name: name for name in SUPPRESSION}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module in {'unittest', 'unittest.case'}:
+            aliases.update({alias.asname or alias.name: alias.name for alias in node.names if alias.name in SUPPRESSION})
+    called = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call): continue
+        name = node.func.attr if isinstance(node.func, ast.Attribute) else node.func.id if isinstance(node.func, ast.Name) else ''
+        name = aliases.get(name, name)
+        if name not in SUPPRESSION: continue
+        predicates = list(node.args[:1]) if name in {'skipIf', 'skipUnless'} else []
+        parent = parents.get(node)
+        while parent is not None and not isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module)):
+            if isinstance(parent, (ast.If, ast.IfExp, ast.While)): predicates.append(parent.test)
+            parent = parents.get(parent)
+        called.update(ast.unparse(call.func) for predicate in predicates for call in ast.walk(predicate)
+                      if isinstance(call, ast.Call))
+    expanded = set()
+    while called - expanded:
+        name = min(called - expanded); expanded.add(name)
+        if name in functions:
+            called.update(ast.unparse(call.func) for call in ast.walk(functions[name]) if isinstance(call, ast.Call))
+    result = set()
+    for node in tree.body:
+        if isinstance(node, ast.ImportFrom) and not node.level and node.module == 'tools':
+            for alias in node.names:
+                prefix = alias.asname or alias.name
+                for name in called:
+                    if alias.name.isidentifier() and name.startswith(prefix + '.') and name[len(prefix)+1:].isidentifier():
+                        result.add(('tools/' + alias.name + '.py', name[len(prefix)+1:]))
+        elif isinstance(node, ast.ImportFrom) and not node.level and node.module and node.module.startswith('tools.'):
+            for alias in node.names:
+                if (alias.asname or alias.name) in called and alias.name.isidentifier():
+                    result.add((node.module.replace('.', '/') + '.py', alias.name))
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name.startswith('tools.'):
+                    prefix = alias.asname or alias.name
+                    for name in called:
+                        if name.startswith(prefix + '.') and name[len(prefix)+1:].isidentifier():
+                            result.add((alias.name.replace('.', '/') + '.py', name[len(prefix)+1:]))
+    return result
+
+
+def guard_imported_skip_predicates(repo, baseline, sources):
+    """Reject changed repository helpers that can activate an existing skip."""
+    from tools import ci_profile, ci_contracts
+    from pathlib import Path
+    repo = Path(repo)
+    changed = ci_profile.diff_paths(ci_profile.git_command(repo, 'diff', '--no-ext-diff', '--no-textconv',
+                                                           '--name-only', '-z', '--no-renames', baseline, '--'))
+    changed = {path for path in changed if path.startswith('tools/') and path.endswith('.py')}
+    if not changed: return
+    relevant = set().union(*(imported_skip_predicates(source) for source in sources.values()))
+    for path, function in sorted(relevant):
+        if path not in changed: continue
+        previous = ci_profile.git_command(repo, 'show', baseline + ':' + path, allow_failure=True)
+        if previous is None: raise ValueError('new-python-test-suppression-requires-review')
+        current = ci_contracts.safe_path(repo, path).read_bytes()
+        if len(previous) > 1024 * 1024 or len(current) > 1024 * 1024:
+            raise ValueError('python-policy-source-limit')
+        def reachable(raw):
+            tree = ast.parse(raw.decode('utf-8-sig'))
+            definitions = {node.name: node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))}
+            pending, seen = {function}, set()
+            while pending - seen:
+                name = min(pending - seen); seen.add(name)
+                if name not in definitions: raise ValueError('new-python-test-suppression-requires-review')
+                pending.update(call.func.id for call in ast.walk(definitions[name])
+                               if isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
+                               and call.func.id in definitions)
+            result = {name: ast.dump(definitions[name], include_attributes=False) for name in seen}
+            dependencies = {item.id for name in seen for item in ast.walk(definitions[name])
+                            if isinstance(item, ast.Name) and isinstance(item.ctx, ast.Load)}
+            bindings = [node for node in tree.body if isinstance(node, (ast.Assign, ast.AnnAssign))]
+            included = set()
+            while True:
+                added = False
+                for node in bindings:
+                    targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                    assigned = {item.id for target in targets for item in ast.walk(target) if isinstance(item, ast.Name)}
+                    if not assigned & dependencies or id(node) in included: continue
+                    included.add(id(node)); added = True
+                    result['binding:' + ast.dump(node, include_attributes=False)] = ''
+                    dependencies.update(item.id for item in ast.walk(node)
+                                        if isinstance(item, ast.Name) and isinstance(item.ctx, ast.Load))
+                if not added: break
+            return result
+        if reachable(previous) != reachable(current):
+            raise ValueError('new-python-test-suppression-requires-review')
+
+
 def flatten_suite(suite):
     """Freeze the identities returned by unittest discovery before execution."""
     import unittest
@@ -492,6 +589,7 @@ def verify_source_tree(repo, baseline_revision, *, qualified=False):
         raise ValueError('empty-or-duplicate-python-modules')
     modules = [('tools.tests.' + name) if qualified else name for name in names]
     before, current = source_pairs(repo, baseline, modules)
+    guard_imported_skip_predicates(repo, baseline, current)
     for name in modules:
         if before[name].replace('\r\n', '\n') != current[name].replace('\r\n', '\n'):
             require_no_new_controls(before[name], current[name])

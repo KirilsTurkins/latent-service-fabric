@@ -132,6 +132,29 @@ class PythonOwnedExecutionTests(unittest.TestCase):
         self.assertEqual(len(receipt['discovered']), 2)
 
 class PythonSourcePolicyTests(unittest.TestCase):
+    def test_imported_skip_predicate_cannot_be_enabled_through_a_helper_edit(self):
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        import subprocess
+        from tools.ci_python_policy import imported_skip_predicates, verify_source_tree
+        with TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            def git(*args):
+                return subprocess.check_output(['git', *args], cwd=repo, stderr=subprocess.STDOUT, text=True).strip()
+            git('init', '-q'); git('config', 'user.name', 'Fixture'); git('config', 'user.email', 'fixture@example.invalid')
+            tests = repo / 'tools/tests'; tests.mkdir(parents=True)
+            helper = repo / 'tools/checks.py'
+            helper.write_text('FLAG = False\ndef disabled(): return available()\ndef available(): return FLAG\ndef unrelated(): return 1\n')
+            (tests / 'test_demo.py').write_text("import unittest\nfrom tools.checks import disabled\nclass Cases(unittest.TestCase):\n def test_one(self):\n  if disabled(): self.skipTest('native')\n")
+            self.assertEqual(imported_skip_predicates("from tools import checks as c\nimport unittest\n@unittest.skipIf(c.disabled(), 'native')\nclass Cases(unittest.TestCase): pass\n"), {('tools/checks.py', 'disabled')})
+            git('add', '.'); git('commit', '-qm', 'baseline'); baseline = git('rev-parse', 'HEAD')
+            original = helper.read_text()
+            helper.write_text(original.replace('return 1', 'return 1 + 0'))
+            verify_source_tree(repo, baseline)
+            helper.write_text(original.replace('FLAG = False', 'FLAG = True'))
+            with self.assertRaisesRegex(ValueError, 'suppression'):
+                verify_source_tree(repo, baseline)
+
     def test_baseline_is_commit_bound_and_missing_history_fails(self):
         from pathlib import Path
         from tempfile import TemporaryDirectory
