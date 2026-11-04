@@ -57,7 +57,7 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(report["sharedArtifactIdentities"]["shared"], ["check", "clippy", "test"])
         self.assertEqual(report["commandEliminations"], [])
 
-    def replay(self, *, drift=False):
+    def replay(self, *, drift=False, execution_errors=None):
         metadata = {"workspace_members": ["package-id"], "packages": [{"id": "package-id", "name": "application"}],
                     "target_directory": str(self.repo / "target")}
         receipt = {"activeCases": 1, "suites": [{"id": "one", "cases": ["a"], "ignored": []}]}
@@ -83,6 +83,7 @@ class EvaluationTests(unittest.TestCase):
              mock.patch.object(evaluation.observations, "observe", side_effect=observe), \
              mock.patch.object(evaluation.discovery, "discover", side_effect=[receipt, other if drift else receipt, receipt]), \
              mock.patch.object(evaluation.discovery, "validate_custom_execution") as custom, \
+             mock.patch.object(evaluation.discovery, "workspace_execution", return_value=({}, execution_errors or [])), \
              mock.patch.object(evaluation.discovery, "validate_recipe_execution") as recipes, \
              mock.patch.object(evaluation.aot_test_inputs, "prepare", return_value=self.root / "aot.json"), \
              mock.patch.object(evaluation.aot_test_inputs, "validate", return_value={}), \
@@ -115,6 +116,10 @@ class EvaluationTests(unittest.TestCase):
         self.assertFalse(record["passed"])
         self.assertTrue(record["samples"][0]["passed"])
         self.assertFalse(record["samples"][1]["passed"])
+
+    def test_missing_discovered_workspace_case_fails_the_evaluation(self):
+        with self.assertRaisesRegex(ValueError, 'workspace-discovery-execution-mismatch'):
+            self.replay(execution_errors=['missing-case'])
 
     def test_execution_coverage_preserves_both_streams_and_record_boundaries(self):
         from tools import run_aot_tests

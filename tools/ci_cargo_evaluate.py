@@ -248,6 +248,10 @@ def evaluate(repo: Path, output: Path, configuration: str, *,
                             raw = execution_text(sample_output / invocation.name)
                             if owner is None:
                                 discovery.validate_custom_execution(data, raw)
+                                execution, errors = discovery.workspace_execution(receipt, raw)
+                                observations.atomic_json(sample_output / 'workspace-execution.json', execution)
+                                if errors:
+                                    raise ValueError('workspace-discovery-execution-mismatch:' + errors[0])
                             else:
                                 listing = ci_cargo.RECIPES[invocation.name + '-list'][0]
                                 item = observations.observe(listing, repo=repo,
