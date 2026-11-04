@@ -16,12 +16,12 @@ jobs:
         with:
           persist-credentials: false
           ref: b76bfd7357a3f34cceac96ee61d9008ec135102f
-      - name: Trace compiler-owned imports and bounded failed records
+      - name: Read exact failure causes
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import hashlib, io, json, os, pathlib, subprocess, urllib.request, urllib.error, zipfile
+          import hashlib, io, json, os, subprocess, urllib.request, urllib.error, zipfile
           api='https://api.github.com/repos/KirilsTurkins/latent-service-fabric/'
           class NoRedirect(urllib.request.HTTPRedirectHandler):
               def redirect_request(self, req, fp, code, msg, headers, newurl): return None
@@ -35,22 +35,34 @@ jobs:
               with response: raw=response.read(limit+1)
               assert len(raw)<=limit,path
               return raw
-          grep=subprocess.run(['git','grep','-n','-E','onCancel|on-cancel|available.*wasi|wasi.*available','--','tools/typescript_guest','sdk/typescript-guest','tools/tests/test_typescript*'],capture_output=True,text=True)
-          print('IMPORT_SOURCES',grep.stdout[:16000])
-          print('TS_TESTS',subprocess.check_output(['git','ls-files','tools/tests/*typescript*']).decode())
+          result=subprocess.run(['git','grep','-n','-E','onCancel|on-cancel','--','*.mjs','*.js','*.rs','*.py','*.wit'],capture_output=True,text=True)
+          print('GLOBAL_IMPORT_SOURCE',result.stdout[:20000])
           for ident,size,digest,kind in ((13128394251,47459,'3cc798622a8257f91a5f3cba0d33a2c102a5cbabed8c74a60435496eb26396e7','ts'),(13132360193,5954062,'80662a5c726a949c037a3b7f57ffd35778786e1dcdc2b7db0b1b3e251193b5c2','dotnet'),(13130055422,106557782,'bea09db67efa2807cdfd858e0461ac6a5f598ca4d0f9f474c789782865ad8fb9','java')):
               raw=read(f'actions/artifacts/{ident}/zip',size)
               assert len(raw)==size and hashlib.sha256(raw).hexdigest()==digest
               with zipfile.ZipFile(io.BytesIO(raw)) as z:
-                  names=z.namelist()
-                  print('PATHS',kind,[(n,z.getinfo(n).file_size) for n in names if ('FAILED' in n or 'guard' in n or 'host-world' in n or '244' in n or 'diagnostic' in n or 'taskrt' in n)][:80])
-                  for n in names:
-                      show=(kind=='ts' and n.endswith('.wit')) or (kind=='dotnet' and ('guard-node' in n or 'taskrt-' in n or 'invocation-diagnostic' in n))
-                      if show and z.getinfo(n).file_size<65536:
-                          print('RECORD',kind,n,z.read(n).decode(errors='replace')[:14000])
-                      if kind=='java' and 'composition' in n and n.endswith('FAILED.json'):
-                          data=json.loads(z.read(n)); print('JAVA_FAILED_KEYS',list(data))
-                          for key,val in data.items():
-                              if key in ('before','after','materials','nativeInputs','inputs','builds'): continue
-                              print('JAVA_FIELD',key,json.dumps(val)[:22000])
+                  if kind=='java':
+                      print('JAVA_PROMOTION',z.read('java-http-composition/http/controls/244.json').decode())
+                      print('JAVA_HTTP_RECORDS',[n for n in z.namelist() if n.startswith('java-http-composition/http/') and n.endswith('.json') and '/controls/' not in n][-30:])
+                  if kind=='dotnet':
+                      data=json.loads(z.read('dotnet-task-runtime/node/FAILED.json'))
+                      print('DOTNET_NODE_KEYS',list(data))
+                      for key in ('stage','reason','runtimeProbe','diagnostics','invocations','error','errorCategory'):
+                          if key in data: print('DOTNET_FIELD',key,json.dumps(data[key])[:16000])
+                      print('DOTNET_RECORD_PATHS',[n for n in z.namelist() if '/node/' in n][:100])
+                      def visit(value,path=''):
+                          if isinstance(value,dict):
+                              if any(k in value for k in ('activationId','decoded','diagnostic')):
+                                  print('DOTNET_RECORD',path,json.dumps(value)[:16000]); return
+                              for k,v in value.items():
+                                  if k not in ('inputs','source','binaries','materials','sourceBefore','sourceAfter'): visit(v,path+'/'+k)
+                          elif isinstance(value,list):
+                              for i,v in enumerate(value): visit(v,path+'/'+str(i))
+                      visit(data)
+                  if kind=='ts':
+                      print('TS_PATHS',z.namelist())
+                      for n in z.namelist():
+                          if n.endswith(('.js','.mjs','.stderr.log','.command.json')) and z.getinfo(n).file_size<131072:
+                              text=z.read(n).decode(errors='replace')
+                              if n.endswith('.command.json') or 'available' in text or 'SyntaxError' in text: print('TS_SOURCE',n,text[:22000])
           PY
