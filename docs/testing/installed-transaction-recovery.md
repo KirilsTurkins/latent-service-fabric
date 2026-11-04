@@ -200,6 +200,12 @@ unknown command identity after restart without retry. Keeping that unresolved
 attempt separate lets the terminal migration programme retain its normal
 quiescence requirements.
 
+The current disposable conductor declares a 30-second state startup reservation,
+within the node's supported range, covering catalog opening as well as protected
+store startup. Earlier runs used five seconds and retain their original
+configuration and outcomes; this setting does not extend invocation deadlines
+or prove the cause of an earlier startup refusal.
+
 ## Collector observations and uncertainty
 
 Dispatcher mutation and receipt lookup retain the original operation, action,
