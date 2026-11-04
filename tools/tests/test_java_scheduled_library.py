@@ -189,7 +189,7 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
             return value
         commands = SimpleNamespace(command_seconds=0, deadline=1000, run=command)
         from tools.build_snapshot import SnapshotLimits
-        limits = SnapshotLimits(max_entries=100, max_total_bytes=72 * 1024**2)
+        limits = SnapshotLimits(max_entries=100, max_total_bytes=72 * 1024**2 + 100)
         with patch.object(owner.time, 'monotonic', return_value=100), \
                 patch.object(owner.observed, 'SnapshotLimits', return_value=limits), \
                 patch.object(owner.observed, 'read_file', side_effect=read):
@@ -225,7 +225,12 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
                 owner.shutdown_sources(commands, before['native'])
             changed.clear()
             full = b'x' * (4 * 1024**2)
-            changed.update(dict.fromkeys(native[:19], full))
+            count, remainder = divmod(limits.max_total_bytes, limits.max_file_bytes)
+            changed.update(dict.fromkeys(native[:count], full))
+            changed[native[count]] = b'x' * (remainder - (len(native) - count - 1))
+            exact = owner.shutdown_sources(commands, before['native'])
+            self.assertEqual(sum(row['bytes'] for row in exact['native'].values()), limits.max_total_bytes)
+            changed[native[count]] += b'x'
             with self.assertRaisesRegex(ValueError, 'native-source-total'):
                 owner.shutdown_sources(commands, before['native'])
             changed.clear(); changed.update(dict.fromkeys(sorted(supplemental)[:5], full))

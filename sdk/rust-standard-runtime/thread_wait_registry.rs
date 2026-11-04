@@ -45,6 +45,12 @@ pub(crate) struct Reservation {
     canonical: u32,
 }
 
+impl Reservation {
+    pub(crate) fn slot(self) -> usize {
+        self.slot
+    }
+}
+
 /// A real typed host stop or canonical resumption, never a dispatch fallback.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Wake {
@@ -117,8 +123,8 @@ impl Registry {
         Ok(())
     }
 
-    /// The original Wait/Timer owners and stable System node already exist.
-    /// This table admits no owner and publishes no uncharged allocation.
+    /// The original Wait/Timer owners and the reserved fixed node slot already
+    /// exist. This table admits no owner and publishes no uncharged allocation.
     pub(crate) fn install(
         &mut self,
         reservation: Reservation,

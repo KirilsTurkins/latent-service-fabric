@@ -2,8 +2,7 @@
   "kind": "owner",
   "path": "tools/rust_thread_native_products.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the successful second 193-control producer attempt while retaining the expired historical job, archive, and receipt identities.",
+  "reviewReason": "Select only the actual successful e3 200-control native producer and exact receipts; preserve previous original tuple and every cohort/control/command/source bound",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "cb25a9807a70a641e32692dda09fe6e8416e152b1e6b0fa672c9de92e475ed26"
+  "sha256": "6751a38b44a6f5a24dbc2500b662054a7d382bbd76d9520b4a910a1f5fc5fcfd"
 }
-
