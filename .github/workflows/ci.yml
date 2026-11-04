@@ -916,7 +916,7 @@ jobs:
       - name: Set up the .NET SDK provider participant
         uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
         with:
-          dotnet-version: 8.0.426
+          dotnet-version: 8.0.427
       - name: Validate contracts, echo component, and generated bindings
         if: matrix.lane != 'optimization'
         env:
@@ -1034,7 +1034,7 @@ jobs:
           java-version: "25.0.4+101.0.LTS"
       - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
         with:
-          dotnet-version: 8.0.426
+          dotnet-version: 8.0.427
       - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
         with:
           version: "0.16.0"
