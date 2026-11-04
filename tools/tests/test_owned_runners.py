@@ -57,6 +57,15 @@ class RunnerContractTests(unittest.TestCase):
     def test_synthetic_catalog_retains_every_additive_suite_and_exact_selection(self):
         destination = self.root / 'tools/ci/suites.json'
         copy_catalog(destination)
+        self.assertEqual(catalog.load(destination), catalog.load())
+        for suffix in ('.d', '.cases.d'):
+            source = (ROOT / 'tools/ci/suites.json').with_suffix(suffix)
+            copied = destination.with_suffix(suffix)
+            self.assertEqual(copied.exists(), source.exists())
+            if source.exists():
+                self.assertEqual(
+                    {path.name: path.read_bytes() for path in source.iterdir()},
+                    {path.name: path.read_bytes() for path in copied.iterdir()})
         expected = catalog.load()
         self.assertEqual(catalog.load(destination), expected)
         source = ROOT / 'tools/ci/suites.json'
