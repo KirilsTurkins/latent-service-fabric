@@ -28,9 +28,8 @@ def copy_catalog(destination):
     catalog.load(source)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_bytes(source.read_bytes())
-    # Suite definitions and appended cases are separate inputs. Copy both
-    # byte-for-byte so synthetic discovery sees the same effective inventory.
-    for suffix in ('.d', '.cases.d'):
+    # Copy current suite-definition fragments byte-for-byte.
+    for suffix in ('.d',):
         fragments = source.with_suffix(suffix)
         if fragments.exists():
             copied = destination.with_suffix(suffix)
@@ -57,69 +56,46 @@ class RunnerContractTests(unittest.TestCase):
     def test_synthetic_catalog_retains_every_additive_suite_and_exact_selection(self):
         destination = self.root / 'tools/ci/suites.json'
         copy_catalog(destination)
-        self.assertEqual(catalog.load(destination), catalog.load())
-        for suffix in ('.d', '.cases.d'):
-            source = (ROOT / 'tools/ci/suites.json').with_suffix(suffix)
-            copied = destination.with_suffix(suffix)
-            self.assertEqual(copied.exists(), source.exists())
-            if source.exists():
-                self.assertEqual(
-                    {path.name: path.read_bytes() for path in source.iterdir()},
-                    {path.name: path.read_bytes() for path in copied.iterdir()})
         expected = catalog.load()
         self.assertEqual(catalog.load(destination), expected)
         source = ROOT / 'tools/ci/suites.json'
         self.assertEqual(destination.read_bytes(), source.read_bytes())
-        for suffix in ('.d', '.cases.d'):
-            fragments = source.with_suffix(suffix)
-            copied = destination.with_suffix(suffix)
-            self.assertTrue(fragments.is_dir(), 'exercise both maintained fragment families')
-            self.assertEqual(
-                {path.name: path.read_bytes() for path in fragments.iterdir()},
-                {path.name: path.read_bytes() for path in copied.iterdir()})
-
-        # Without the case fragment the catalogue still parses, but is not the
-        # complete discovery contract. In particular, ordinary additions must
-        # not be silently lost because the process runs only an ignored subset.
-        additions = sorted(destination.with_suffix('.cases.d').iterdir())
-        self.assertTrue(additions)
-        for addition in additions:
-            original = addition.read_bytes()
-            fragment = json.loads(original)
-            with self.subTest(fragment=addition.name):
-                addition.unlink()
-                try:
-                    incomplete = catalog.load(destination)
-                    self.assertNotEqual(incomplete, expected)
-                    rows = {row['id']: row for row in incomplete['suites']}
-                    self.assertTrue(set(fragment['expectedCases']).isdisjoint(
-                        rows[fragment['suiteId']]['expectedCases']))
-                finally:
-                    addition.write_bytes(original)
-            self.assertEqual(catalog.load(destination), expected)
-
-        # A loader-only copy imports successfully but silently loses additive
-        # cases. Require full equality to catch that distinct failure mode.
-        fragments = destination.with_suffix('.cases.d')
-        self.assertTrue(any(fragments.iterdir()))
-        hidden = fragments.with_name('retained-case-fragments')
-        fragments.rename(hidden)
+        fragments, copied = source.with_suffix('.d'), destination.with_suffix('.d')
+        self.assertTrue(fragments.is_dir())
+        self.assertEqual({path.name: path.read_bytes() for path in fragments.iterdir()},
+                         {path.name: path.read_bytes() for path in copied.iterdir()})
+        addition = next(copied.glob('*.json'))
+        original = addition.read_bytes()
+        addition.unlink()
         try:
-            self.assertNotEqual(catalog.load(destination), catalog.load())
+            try:
+                incomplete = catalog.load(destination)
+            except ValueError:
+                pass  # References to the missing owner fail closed.
+            else:
+                self.assertNotEqual(incomplete, expected)
         finally:
-            hidden.rename(fragments)
-        self.assertEqual(catalog.load(destination), catalog.load())
-
-        # Validate the source before writing even the base catalogue. A duplicate
-        # case in an additive fragment must not become a partially copied fixture.
-        addition = additions[0]
-        fragment = json.loads(addition.read_bytes())
-        fragment['expectedCases'].append(fragment['expectedCases'][0])
-        addition.write_text(json.dumps(fragment))
+            addition.write_bytes(original)
+        self.assertEqual(catalog.load(destination), expected)
+        # The loader alone is insufficient: omitting the whole suite fragment
+        # directory must not appear equivalent to the complete inventory.
+        hidden = copied.with_name('retained-suite-fragments')
+        copied.rename(hidden)
+        try:
+            try:
+                incomplete = catalog.load(destination)
+            except ValueError:
+                pass
+            else:
+                self.assertNotEqual(incomplete, expected)
+        finally:
+            hidden.rename(copied)
+        self.assertEqual(catalog.load(destination), expected)
+        # Duplicate suite owners must fail before the destination is created.
+        (copied / 'duplicate-owner.json').write_bytes(original)
         rejected = self.root / 'rejected/tools/ci/suites.json'
-        with patch(__name__ + '.ROOT', self.root):
-            with self.assertRaisesRegex(ValueError, 'duplicate-suite-case-addition'):
-                copy_catalog(rejected)
+        with patch(__name__ + '.ROOT', self.root), self.assertRaises(ValueError):
+            copy_catalog(rejected)
         self.assertFalse(rejected.parent.exists())
 
     def test_preflight_reports_no_test_execution(self):

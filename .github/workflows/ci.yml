@@ -96,6 +96,13 @@ jobs:
           cache-dependency-path: tools/requirements.lock
       - name: Install documentation validator dependencies
         run: python -m pip install --requirement tools/requirements.lock
+      - name: Fetch the source-bound Python policy baseline
+        run: |
+          # The event supplies the comparison commit; this is source input, not a base-branch test run.
+          # tools/ci_python_policy.py
+          base="$(python3 -c 'import json,os; from tools.ci_python_policy import event_baseline; print(event_baseline(os.environ["GITHUB_EVENT_NAME"], json.load(open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8")), os.environ["GITHUB_SHA"]))')"
+          git fetch --no-tags --depth=1 origin "$base"
+          printf 'LSF_PYTHON_POLICY_BASE=%s\n' "$base" >> "$GITHUB_ENV"
       - name: Validate reviewed CI contracts and observe the tested source
         id: contract_coverage
         run: |
@@ -309,12 +316,16 @@ jobs:
         if: matrix.lane == 'tests'
         run: |
           set -o pipefail
-          python3 tools/ci_cargo.py run workspace-tests 2>&1 | tee "$RUNNER_TEMP/ci-workspace-tests.log"
-          python3 tools/ci_suite_discovery.py --execution-log "$RUNNER_TEMP/ci-workspace-tests.log"
+          workspace_status=0
+          python3 tools/ci_cargo.py run workspace-tests 2>&1 | tee "$RUNNER_TEMP/ci-workspace-tests.log" || workspace_status=$?
+          python3 tools/ci_suite_discovery.py --execution-log "$RUNNER_TEMP/ci-workspace-tests.log" --discovery-receipt "$RUNNER_TEMP/ci-discovery.json" --execution-receipt "$RUNNER_TEMP/ci-workspace-execution.json" || { if [ "$workspace_status" -eq 0 ]; then workspace_status=1; fi; }
+          test "$workspace_status" -eq 0
+          python3 tools/ci_cargo.py run doctests-list 2>&1 | tee "$RUNNER_TEMP/ci-doctests-list.log"
           python3 tools/ci_cargo.py run doctests 2>&1 | tee "$RUNNER_TEMP/ci-doctests.log"
-          python3 tools/ci_suite_discovery.py --recipe explicit-doctests --execution-log "$RUNNER_TEMP/ci-doctests.log"
+          python3 tools/ci_suite_discovery.py --recipe explicit-doctests --discovery-log "$RUNNER_TEMP/ci-doctests-list.log" --execution-log "$RUNNER_TEMP/ci-doctests.log" --discovery-receipt "$RUNNER_TEMP/ci-discovery.json"
+          python3 tools/ci_cargo.py run signing-compatibility-list 2>&1 | tee "$RUNNER_TEMP/ci-signing-compatibility-list.log"
           python3 tools/ci_cargo.py run signing-compatibility 2>&1 | tee "$RUNNER_TEMP/ci-signing-compatibility.log"
-          python3 tools/ci_suite_discovery.py --recipe signing-compatibility --execution-log "$RUNNER_TEMP/ci-signing-compatibility.log"
+          python3 tools/ci_suite_discovery.py --recipe signing-compatibility --discovery-log "$RUNNER_TEMP/ci-signing-compatibility-list.log" --execution-log "$RUNNER_TEMP/ci-signing-compatibility.log" --discovery-receipt "$RUNNER_TEMP/ci-discovery.json"
 
       - name: Check metadata working-set suite selection and observation validation
         if: matrix.lane == 'qualification'
@@ -622,9 +633,12 @@ jobs:
           name: ci-runtime-discovery-${{ github.sha }}-${{ matrix.lane }}
           path: |
             ${{ runner.temp }}/ci-discovery.json
+            ${{ runner.temp }}/ci-workspace-execution.json
             ${{ runner.temp }}/ci-workspace-tests.log
             ${{ runner.temp }}/ci-doctests.log
+            ${{ runner.temp }}/ci-doctests-list.log
             ${{ runner.temp }}/ci-signing-compatibility.log
+            ${{ runner.temp }}/ci-signing-compatibility-list.log
           if-no-files-found: warn
           retention-days: 7
 
@@ -819,6 +833,14 @@ jobs:
           python-version: 3.13.5
           cache: pip
           cache-dependency-path: tools/requirements.lock
+      - name: Fetch the source-bound Python policy baseline
+        if: matrix.lane == 'python'
+        run: |
+          # The event supplies the comparison commit; this is source input, not a base-branch test run.
+          # tools/ci_python_policy.py
+          base="$(python3 -c 'import json,os; from tools.ci_python_policy import event_baseline; print(event_baseline(os.environ["GITHUB_EVENT_NAME"], json.load(open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8")), os.environ["GITHUB_SHA"]))')"
+          git fetch --no-tags --depth=1 origin "$base"
+          printf 'LSF_PYTHON_POLICY_BASE=%s\n' "$base" >> "$GITHUB_ENV"
       - name: Fetch exact historical source inputs for Python preservation controls
         if: matrix.lane == 'python'
         run: |
@@ -914,6 +936,14 @@ jobs:
         env:
           CI_CONTRACT_LANE: ${{ matrix.lane }}
         run: tools/validate_contracts.sh "$CI_CONTRACT_LANE"
+      - name: Retain Python discovery and execution observations
+        if: always() && matrix.lane == 'python'
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: python-discovery-${{ github.sha }}
+          path: target/ci/python-discovery.json
+          if-no-files-found: warn
+          retention-days: 7
       - name: Pass bounded observed build inputs to registry verification
         if: matrix.lane == 'runtime'
         uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
@@ -1097,12 +1127,7 @@ jobs:
           filter: blob:none
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            /tools/ci_result.py
-            /tools/ci_suite_inventory.py
-            /tools/ci_suite_cases.py
-            /tools/ci/suites.json
-            /tools/ci/suites.d/
-            /tools/ci/suites.cases.d/
+            /tools/
       - name: Require every selected validation job
         env:
           CI_JOB_RESULTS: ${{ toJSON(needs) }}

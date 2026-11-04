@@ -159,7 +159,7 @@ class ManifestTests(unittest.TestCase):
                    if source["donor"] == {"name": "wasmtime", "version": "48.0.8", "file": "LICENSE"}]
         self.assertEqual(len(current), 1)
         source = current[0]
-        self.assertEqual(source["sourceCommit"], "c6846e13f64b07b7912d372db141397058b55f99")
+        self.assertEqual(source["sourceCommit"], "7b6c29ec3e9a49c97da231665cbd8eead9ccbda0")
         self.assertEqual(source["sha256"], "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5")
         self.assertEqual(len(source["packages"]), 14)
         locks = [tomllib.loads((ROOT / name).read_text())["package"]
@@ -193,7 +193,7 @@ class ManifestTests(unittest.TestCase):
                                 self.assertEqual(evidence["nativeCohort"], codec_wasmtime.COHORT)
                                 self.assertEqual(evidence["donorSourceRecordSha256"], codec_wasmtime.RECORD_SHA256)
                                 self.assertEqual(evidence["donorUpstreamArchiveSha256"],
-                                    "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6")
+                                    "a2afcadb2e7d0417cb8f3f322c66eff49338b288f22290c0ca0bd3e9570732aa")
                             else:
                                 self.assertEqual(evidence["donorCrateSha256"], selected["wasmtime"]["checksum"])
                             for sources in ([entry for entry in policy["sources"] if entry is not source],

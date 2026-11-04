@@ -53,16 +53,26 @@ class AotRecipeHandoffTests(unittest.TestCase):
         lines = [shlex.split(line) for line in test.splitlines()]
         self.assertEqual(lines[0], ['set', '-o', 'pipefail'])
         recipes = ['workspace-tests', 'doctests', 'signing-compatibility']
-        logs = ['ci-workspace-tests.log', 'ci-doctests.log', 'ci-signing-compatibility.log']
-        coverage = [None, 'explicit-doctests', 'signing-compatibility']
-        for index, (recipe, log, selection) in enumerate(zip(recipes, logs, coverage)):
-            self.assertEqual(lines[1 + index * 2], ['python3', 'tools/ci_cargo.py', 'run', recipe,
-                             '2>&1', '|', 'tee', '$RUNNER_TEMP/' + log])
-            expected = ['python3', 'tools/ci_suite_discovery.py']
-            if selection:
-                expected += ['--recipe', selection]
-            self.assertEqual(lines[2 + index * 2], expected + ['--execution-log', '$RUNNER_TEMP/' + log])
-        self.assertEqual(len(lines), 7)
+        sequence = ['workspace-tests', 'doctests-list', 'doctests',
+                    'signing-compatibility-list', 'signing-compatibility']
+        invocations = [(index, line[3]) for index, line in enumerate(lines)
+                       if line[:3] == ['python3', 'tools/ci_cargo.py', 'run']]
+        self.assertEqual([name for _, name in invocations], sequence)
+        validations = [(index, line) for index, line in enumerate(lines)
+                       if line[:2] == ['python3', 'tools/ci_suite_discovery.py']]
+        self.assertEqual(len(validations), 3)
+        self.assertLess(validations[0][0], invocations[1][0])
+        self.assertLess(validations[1][0], invocations[3][0])
+        for (run_index, recipe), (validation_index, command) in zip(
+                (invocations[0], invocations[2], invocations[4]), validations):
+            self.assertGreater(validation_index, run_index)
+            self.assertIn('--execution-log', command)
+            self.assertIn('--discovery-receipt', command)
+            if recipe == 'workspace-tests':
+                self.assertIn('--execution-receipt', command)
+            else:
+                self.assertIn('--discovery-log', command)
+        self.assertIn(['test', '$workspace_status', '-eq', '0'], lines)
         self.assertEqual([ci_cargo.RECIPES[name][0] for name in recipes], list(ci_cargo.RECIPES['test']))
 
     def test_only_aot_selectors_are_exported_from_the_prepared_manifest(self):

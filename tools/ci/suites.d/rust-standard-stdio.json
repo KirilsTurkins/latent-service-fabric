@@ -3,13 +3,11 @@
   "suites": [
     {
       "boundary": "runtime",
-      "expectedCases": [],
       "expectedIgnored": [],
       "id": "latent-standard-stdio.lib.latent-standard-stdio",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "sdk/rust-standard-stdio/Cargo.toml",
-      "minimumCases": 0,
       "mode": "compile-only",
       "package": "latent-standard-stdio",
       "platforms": [

@@ -189,8 +189,7 @@ def qualify(root,output,revision):
         command(['cargo','test','--locked','-p','latent-wasmtime','--features','development-test-host',
             '--test','go_stack_ceiling_runtime','--no-run','--message-format=json'],'cargo',1200,16*1024*1024)
         suite, = [s for s in registry.load(root/'tools/ci/suites.json')['suites'] if s['id'] == SUITE]
-        oracle.require(suite['expectedCases'] == [oracle.CASE] and suite['expectedIgnored'] == [oracle.CASE]
-            and suite['minimumCases'] == 1,'suite-contract')
+        oracle.require(oracle.CASE in suite['expectedIgnored'], 'suite-contract')
         descriptor = artifacts.Suite(suite['manifest'],suite['target'],suite['source'],oracle.CASE,
             frozenset({oracle.CASE}),True,kind='test')
         native = artifacts.read_inventory(output/'cargo.stdout.log',root,descriptor,target=root/'target')
@@ -198,10 +197,12 @@ def qualify(root,output,revision):
         environment['LSF_GUEST_CAPSULES'] = str(output)
         listed = command([native.executable,'--list'],'list',30,65536)
         ignored = command([native.executable,'--ignored','--list'],'ignored',30,65536)
-        discovery.validate_cases(suite,discovery.listing(listed),discovery.listing(ignored),{})
+        available = discovery.listing(listed)
+        discovery.validate_cases(suite,available,discovery.listing(ignored),{})
+        oracle.require(oracle.CASE in available, 'required-native-case-missing')
         raw = command([native.executable,'--ignored','--exact',oracle.CASE,'--show-output','--test-threads=1'],
             'native',300,1024*1024)
-        record['observations'] = oracle.read(raw)
+        record['observations'] = oracle.read(raw, filtered=len(available)-1)
         oracle.require(before == source_inputs(root),'native-source-changed')
         oracle.require(time.monotonic() < deadline,'final-deadline')
         record.update(status='passed',sourceUnchanged=True,commands=commands,

@@ -3,13 +3,11 @@
   "suites": [
     {
       "boundary": "runtime",
-      "expectedCases": [],
       "expectedIgnored": [],
       "id": "latent-toolchain-smoke.example.rust-wasi-http-runtime",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "tools/toolchain-smoke/Cargo.toml",
-      "minimumCases": 0,
       "mode": "compile-only",
       "package": "latent-toolchain-smoke",
       "platforms": [

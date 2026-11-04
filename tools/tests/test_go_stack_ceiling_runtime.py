@@ -78,6 +78,9 @@ def encoded(rows):
 class StackProgramme(unittest.TestCase):
     def test_actual_reader_requires_seven_attempts_and_preserves_bounded_truncation(self):
         rows = controlled_rows();value = oracle.read(encoded(rows))
+        expanded = encoded(rows).replace(b'0 filtered out', b'2 filtered out')
+        self.assertEqual(oracle.read(expanded, filtered=2), value)
+        with self.assertRaises(ValueError): oracle.read(expanded, filtered=1)
         self.assertEqual(len(value['cases']),7)
         wrong_tenant = copy.deepcopy(rows)
         [v for k,v in wrong_tenant if k == 'POLICIES'][0]['scopes'][1]['principal'] = 'service:8:tenant-a:6:caller'

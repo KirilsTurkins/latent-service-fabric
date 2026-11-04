@@ -3,13 +3,11 @@
   "suites": [
     {
       "boundary": "runtime",
-      "expectedCases": [],
       "expectedIgnored": [],
       "id": "latent-toolchain-smoke.example.dotnet-closed-logging-runtime",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "tools/toolchain-smoke/Cargo.toml",
-      "minimumCases": 0,
       "mode": "compile-only",
       "package": "latent-toolchain-smoke",
       "platforms": [
@@ -27,13 +25,11 @@
     },
     {
       "boundary": "runtime",
-      "expectedCases": [],
       "expectedIgnored": [],
       "id": "latent-toolchain-smoke.example.dotnet-activation-logging-runtime",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "tools/toolchain-smoke/Cargo.toml",
-      "minimumCases": 0,
       "mode": "compile-only",
       "package": "latent-toolchain-smoke",
       "platforms": [
@@ -51,13 +47,11 @@
     },
     {
       "boundary": "runtime",
-      "expectedCases": [],
       "expectedIgnored": [],
       "id": "latent-toolchain-smoke.example.dotnet-http-logging-runtime",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "tools/toolchain-smoke/Cargo.toml",
-      "minimumCases": 0,
       "mode": "compile-only",
       "package": "latent-toolchain-smoke",
       "platforms": [
