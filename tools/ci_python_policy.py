@@ -231,7 +231,8 @@ def guard_imported_skip_predicates(repo, baseline, sources):
         if path not in changed: continue
         previous = ci_profile.git_command(repo, 'show', baseline + ':' + path, allow_failure=True)
         if previous is None: raise ValueError('new-python-test-suppression-requires-review')
-        current = ci_contracts.safe_path(repo, path).read_bytes()
+        with ci_contracts.safe_path(repo, path).open('rb') as source:
+            current = source.read(1024 * 1024 + 1)
         if len(previous) > 1024 * 1024 or len(current) > 1024 * 1024:
             raise ValueError('python-policy-source-limit')
         def reachable(raw):
