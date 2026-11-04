@@ -19,6 +19,7 @@ use latent_executor::transaction::{TransactionHost, ViewIdentity};
 use latent_manifest::TransactionOperationMode;
 use latent_policy::capability::OwnedPolicyDecision;
 use latent_state::{
+    embedded::StoreError,
     namespace::catalog::NamespaceRead,
     session::{StateMode, StateScope},
     store_io::StoreIoKind,
@@ -427,7 +428,7 @@ impl NativeTransactionAdmission {
                 // A CAS loser may take one fresh view to inspect the winning
                 // command. Retire the original planning view first.
                 drop(view);
-                Ok(match prepared {
+                let result = match prepared {
                     Ok(AdmissionDecision::New(prepared)) => {
                         let expected = authorization.namespace.expectation();
                         if !prepared
@@ -474,8 +475,28 @@ impl NativeTransactionAdmission {
                     Ok(AdmissionDecision::Existing(record)) => {
                         Ok(PendingPublication::Existing(record))
                     }
+                    Err(AtomicError::Corrupt) => {
+                        // The planning view is retired and no writer or guest
+                        // was accepted. Release this contender's role before
+                        // the protected store quarantines its physical worker.
+                        retained_role
+                            .retire()
+                            .map_err(|_| StoreError::CommitUncertain)?;
+                        return Err(StoreError::Corrupt);
+                    }
                     Err(error) => Ok(PendingPublication::Refused(error)),
-                })
+                };
+                match result {
+                    Err(AtomicError::Corrupt) => {
+                        // Corrupt is a known noncommitted engine result;
+                        // uncertain commits use RecoveryRequired instead.
+                        retained_role
+                            .retire()
+                            .map_err(|_| StoreError::CommitUncertain)?;
+                        Err(StoreError::Corrupt)
+                    }
+                    other => Ok(other),
+                }
             },
         );
         let Ok(job) = job else {
