@@ -98,7 +98,8 @@ def qualify(output, revision):
         CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
     logs = output / 'commands'
     logs.mkdir()
-    commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895)
+    commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895,
+                        max_retained_bytes=observed.SOURCE_LISTING_DIAGNOSTIC_BYTES)
     receipt = {'schemaVersion': 'lsf.java-scheduled-library.v1', 'status': 'in-progress',
         'sourceRevision': revision, 'case': CASE, 'javaComponentRecompiled': False,
         'llvmBuilt': False, 'nativeHarnessBuilt': False, 'fullJavaProfileQualified': False,
@@ -358,7 +359,8 @@ def qualify_shutdown(output, revision, *, future_queue=False):
         CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
         CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
     logs = output / 'commands'; logs.mkdir()
-    commands = Commands(ROOT, logs, environment, deadline_seconds=1315, command_seconds=25)
+    commands = Commands(ROOT, logs, environment, deadline_seconds=1315, command_seconds=25,
+                        max_retained_bytes=observed.SOURCE_LISTING_DIAGNOSTIC_BYTES)
     commands.deadline = end - 5
     receipt = {'schemaVersion': 'lsf.java-future-queue.v1' if future_queue else 'lsf.java-cf-shutdown-now.v1', 'status': 'in-progress',
         'sourceRevision': revision, 'case': case, 'javaComponentRecompiled': False,

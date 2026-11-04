@@ -125,7 +125,8 @@ def qualify(output, revision):
         CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
     logs = output / 'commands'
     logs.mkdir()
-    commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895)
+    commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895,
+                        max_retained_bytes=observed.SOURCE_LISTING_DIAGNOSTIC_BYTES)
     receipt = {'schemaVersion': 'lsf.java-published-workers.v1', 'status': 'in-progress',
         'sourceRevision': revision, 'case': CASE, 'javaComponentRecompiled': False,
         'llvmBuilt': False, 'nativeHarnessBuilt': False, 'fullJavaProfileQualified': False,
