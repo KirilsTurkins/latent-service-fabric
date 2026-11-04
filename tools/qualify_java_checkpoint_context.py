@@ -46,7 +46,8 @@ EXPECTED = (';direct;multihop;shared;virtual;class-unmanaged;managed-cycle;pinne
 COMPILER_EXPECTED = (';finite;initializer;unmanaged;managed;recursion;runtime-initializer;'
     'class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;'
     'reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;'
-    'mutual-recursion;virtual-initializer')
+    'mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;'
+    'compiler-archive-control')
 
 
 def selected(lock):

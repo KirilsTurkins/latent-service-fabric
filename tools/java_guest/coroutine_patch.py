@@ -1792,6 +1792,8 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 return "8ce9a2e2d304c3b8cf0f5ae81a1d8644931a00e2316057ca0b6f2ab634394d18";
             case "org.teavm.runtime.reflect.ReflectionInfo":
                 return "a746e0d136e4d2d9ba83a3be093d0b2c1616eec58419402d01b7fcb483aaab5a";
+            case "org.teavm.runtime.StringInfo":
+                return "e2b359ef166de55f83a26a784a930a0fa831df8f36874238a89cce676c778cd7";
             case "org.teavm.classlib.java.lang.TString":
                 return "f8920b4fd19dfa052d65646bf146065f90656c01e2feb4a8d72eb2e07cdabd67";
             case "org.teavm.classlib.java.lang.TSystem":
@@ -1962,6 +1964,175 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         return pinnedClassMetadataMethod(method);
     }
 
+    // Weak keys avoid retaining completed compiler instances. The closed cap
+    // refuses rather than permitting an unbounded compiler-global cache.
+    private static final java.util.WeakHashMap<Object, Boolean> progressStringInfoArchives =
+            new java.util.WeakHashMap<>();
+
+    private boolean pinnedStringInfoCompiler() throws Exception {
+        Class<?> analyzer = progressHostClass("org.teavm.dependency.DependencyAnalyzer");
+        Class<?> precise = progressHostClass("org.teavm.dependency.PreciseDependencyAnalyzer");
+        Class<?> fast = progressHostClass("org.teavm.dependency.FastDependencyAnalyzer");
+        Class<?> vmClass = progressHostClass("org.teavm.vm.TeaVM");
+        Class<?> targetClass = progressHostClass("org.teavm.backend.c.CTarget");
+        Class<?> emitter = progressHostClass("org.teavm.backend.c.intrinsic.reflection.StringInfoIntrinsic");
+        Class<?> selector = progressHostClass("org.teavm.backend.c.generate.GenerationContext");
+        Class<?> traitsClass = progressHostClass("org.teavm.model.lowlevel.Characteristics");
+        if (analyzer == null || precise == null || fast == null || vmClass == null
+                || targetClass == null || emitter == null || selector == null
+                || traitsClass == null
+                || dependency.getClass() != precise && dependency.getClass() != fast) {
+            return false;
+        }
+        java.lang.reflect.Field services = analyzer.getDeclaredField("services");
+        java.lang.reflect.Field vmDependency = vmClass.getDeclaredField("dependencyAnalyzer");
+        java.lang.reflect.Field vmTarget = vmClass.getDeclaredField("target");
+        java.lang.reflect.Field vmController = vmClass.getDeclaredField("targetController");
+        java.lang.reflect.Field controller = targetClass.getDeclaredField("controller");
+        java.lang.reflect.Field characteristics = targetClass.getDeclaredField("characteristics");
+        java.lang.reflect.Field traitsSource = traitsClass.getDeclaredField("classSource");
+        if (!services.trySetAccessible() || !vmDependency.trySetAccessible()
+                || !vmTarget.trySetAccessible() || !vmController.trySetAccessible() || !controller.trySetAccessible()
+                || !characteristics.trySetAccessible() || !traitsSource.trySetAccessible()) {
+            return false;
+        }
+        Object vm = services.get(dependency);
+        if (vm == null || vm.getClass() != vmClass || vmDependency.get(vm) != dependency) {
+            return false;
+        }
+        Object target = vmTarget.get(vm);
+        if (target == null || target.getClass() != targetClass) {
+            return false; // No alternate target or subclass is a C-lowering proof.
+        }
+        Object rawController = controller.get(target);
+        if (!(rawController instanceof org.teavm.vm.TeaVMTargetController)
+                || rawController != vmController.get(vm) || rawController.getClass().getEnclosingClass() != vmClass) {
+            return false;
+        }
+        org.teavm.vm.TeaVMTargetController active = (org.teavm.vm.TeaVMTargetController) rawController;
+        Object traits = characteristics.get(target);
+        if (traits == null || traits.getClass() != traitsClass
+                || traitsSource.get(traits) != dependency.getClassSource()) {
+            return false;
+        }
+        java.nio.file.Path jar = java.nio.file.Path.of(targetClass.getProtectionDomain()
+                .getCodeSource().getLocation().toURI()).toRealPath();
+        if (!java.nio.file.Files.isRegularFile(jar, java.nio.file.LinkOption.NOFOLLOW_LINKS)
+                || java.nio.file.Files.size(jar) > 67108864) {
+            return false;
+        }
+        for (Class<?> host : new Class<?>[] { analyzer, precise, fast, vmClass, emitter, selector, traitsClass }) {
+            java.nio.file.Path source = java.nio.file.Path.of(host.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI()).toRealPath();
+            if (!jar.equals(source)) {
+                return false;
+            }
+        }
+        synchronized (progressStringInfoArchives) {
+            Boolean cached = progressStringInfoArchives.get(target);
+            if (cached != null) {
+                if (!cached) return false;
+            } else {
+                if (progressStringInfoArchives.size() >= 256) {
+                    return false;
+                }
+                // Even a failed or exceptional read is attempted at most once for
+                // this compiler; the target identity above is still checked anew.
+                progressStringInfoArchives.put(target, false);
+                boolean result = pinnedStringInfoArchive(jar);
+                progressStringInfoArchives.put(target, result);
+                if (!result) return false;
+            }
+        }
+        // FunctionIntrinsic is the only earlier built-in that classifies the
+        // owner by hierarchy rather than exact name. It must not preempt this
+        // getter's pinned StringInfoIntrinsic lowering.
+        return active.getDependencyInfo() == dependency && active.getServices() == vm
+                && !((org.teavm.model.lowlevel.Characteristics) traits).isFunction("org.teavm.runtime.StringInfo");
+    }
+
+    private boolean pinnedStringInfoArchive(java.nio.file.Path jar) throws Exception {
+        // The currently executing finder is the trust anchor checked by the
+        // owned compiler's pre-execution loaded-class receipt. Every other
+        // entry, including the other twelve replacements, is authenticated.
+        String executingFinder = "org/teavm/model/util/AsyncMethodFinder.class";
+        java.util.TreeMap<String, java.util.zip.ZipEntry> entries = new java.util.TreeMap<>();
+        long total = 0;
+        int skipped = 0;
+        java.security.MessageDigest manifest = java.security.MessageDigest.getInstance("SHA-256");
+        try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(jar.toFile())) {
+            java.util.Enumeration<? extends java.util.zip.ZipEntry> listing = zip.entries();
+            while (listing.hasMoreElements()) {
+                java.util.zip.ZipEntry entry = listing.nextElement();
+                if (entries.size() >= 32768 || entry.getSize() < 0 || entry.getSize() > 16777216
+                        || entries.put(entry.getName(), entry) != null) {
+                    return false;
+                }
+            }
+            for (java.util.Map.Entry<String, java.util.zip.ZipEntry> row : entries.entrySet()) {
+                if (executingFinder.equals(row.getKey())) {
+                    ++skipped;
+                    continue;
+                }
+                long size = row.getValue().getSize();
+                total = Math.addExact(total, size);
+                if (total > 134217728) {
+                    return false;
+                }
+                byte[] name = row.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                byte[] bytes;
+                try (java.io.InputStream input = zip.getInputStream(row.getValue())) {
+                    bytes = input.readNBytes((int) size + 1);
+                }
+                if (bytes.length != size) {
+                    return false;
+                }
+                for (int shift = 24; shift >= 0; shift -= 8) manifest.update((byte) (name.length >>> shift));
+                manifest.update(name);
+                manifest.update(java.security.MessageDigest.getInstance("SHA-256").digest(bytes));
+            }
+        }
+        byte[] digest = manifest.digest();
+        StringBuilder hex = new StringBuilder(64);
+        for (byte value : digest) {
+            hex.append(Character.forDigit((value >>> 4) & 15, 16));
+            hex.append(Character.forDigit(value & 15, 16));
+        }
+        String identity = hex.toString();
+        // Exact compiler-control overlay or exact owned runtime replacements;
+        // an arbitrary mixture or any unknown helper/replacement is refused.
+        return entries.size() == 1877 && skipped == 1
+                && (identity.equals("27dd98bd0940cc205d0546a00182fc5225dfbeec1ce8de843c63825600302df7")
+                    || identity.equals("210799a37dfb44936170e5977630dfa62f69e87f378f5c2936fedf8565f208c4"));
+    }
+
+    private boolean progressStringInfoPrimitive(MethodReader method) {
+        String owner = "org.teavm.runtime.StringInfo";
+        MethodReference getter = new MethodReference(owner, "getStringObject",
+                org.teavm.model.ValueType.object("java.lang.String"));
+        if (!method.getReference().equals(getter) || !method.hasModifier(ElementModifier.NATIVE)
+                || method.hasModifier(ElementModifier.STATIC)
+                || method.getAnnotations().get("org.teavm.interop.Unmanaged") == null
+                || method.getAnnotations().get("org.teavm.interop.Intrinsified") == null
+                || method.getAnnotations().get("org.teavm.interop.NoSideEffects") == null) {
+            return false;
+        }
+        try {
+            String parent = "org.teavm.runtime.reflect.ReflectionInfo";
+            org.teavm.model.ClassHolder baseline = originalProgressClass(parent);
+            ClassReader actual = dependency.getClassSource().get(parent);
+            ClassReader root = dependency.getClassSource().get("java.lang.Object");
+            // The exact C intrinsic is a single pointer load. Authenticate its
+            // target, emitter, declaration and parent before treating it as finite.
+            return baseline != null && actual != null && root != null && root.getParent() == null
+                    && sameProgressMetadata(baseline, actual)
+                    && pinnedStringInfoCompiler()
+                    && pinnedProgressPlatformMethod(getter, owner, true);
+        } catch (Exception unavailable) {
+            return false;
+        }
+    }
+
     private boolean pinnedClassMetadataMethod(MethodReader method) {
         try {
             String owner = "org.teavm.runtime.reflect.ClassInfo";
@@ -1977,7 +2148,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
     }
 
     private boolean progressNativePrimitive(MethodReader method) {
-        if (progressClassMetadataPrimitive(method)) {
+        if (progressClassMetadataPrimitive(method) || progressStringInfoPrimitive(method)) {
             return true;
         }
         // These exact C operations are bounded word operations, not a general

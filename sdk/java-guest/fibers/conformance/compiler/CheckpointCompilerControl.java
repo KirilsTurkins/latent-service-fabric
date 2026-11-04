@@ -1,5 +1,6 @@
 package org.teavm.dependency;
 
+import java.nio.file.Files;
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.interop.Unmanaged;
@@ -19,6 +20,9 @@ import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.parsing.ClasspathResourceProvider;
 import org.teavm.vm.TeaVMBuilder;
 import org.teavm.vm.TeaVMOptimizationLevel;
+import org.teavm.vm.TeaVMPhase;
+import org.teavm.vm.TeaVMProgressFeedback;
+import org.teavm.vm.TeaVMProgressListener;
 
 /** Real bytecode/JCL/C-frontend control; never executes the fixture initializers. */
 public final class CheckpointCompilerControl {
@@ -53,6 +57,45 @@ public final class CheckpointCompilerControl {
         }
     }
 
+    // Ordinary cases use the exact production CTarget. Stop at the first
+    // progress callback after its finder returned, before any C output.
+    private static final class StopAfterFinder implements TeaVMProgressListener {
+        private final CTarget target;
+        private final java.lang.reflect.Field asyncMethods;
+        boolean observed;
+
+        StopAfterFinder(CTarget target) {
+            this.target = target;
+            try {
+                asyncMethods = CTarget.class.getDeclaredField("asyncMethods");
+                require(asyncMethods.trySetAccessible(), "checkpoint-control-target-observation");
+            } catch (ReflectiveOperationException failure) {
+                throw new AssertionError("checkpoint-control-target-observation", failure);
+            }
+        }
+
+        private void stopIfAnalyzed() {
+            try {
+                if (asyncMethods.get(target) != null) {
+                    observed = true;
+                    throw new AnalysisComplete();
+                }
+            } catch (IllegalAccessException failure) {
+                throw new AssertionError("checkpoint-control-target-observation", failure);
+            }
+        }
+
+        @Override public TeaVMProgressFeedback progressReached(int progress) {
+            stopIfAnalyzed();
+            return TeaVMProgressFeedback.CONTINUE;
+        }
+
+        @Override public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) {
+            stopIfAnalyzed();
+            return TeaVMProgressFeedback.CONTINUE;
+        }
+    }
+
     public static final class Finite {
         private static final int[] VALUES = new int[256];
         private static int result;
@@ -61,6 +104,15 @@ public final class CheckpointCompilerControl {
         }
         public static void main(String[] arguments) {
             result = VALUES[arguments.length & 255];
+        }
+    }
+
+    // The fixture is analyzed by the real C frontend but is never executed:
+    // it makes the exact StringInfo metadata getter reachable in an initializer.
+    public static final class StringInfoAccess {
+        private static String result = new org.teavm.runtime.StringInfo().getStringObject();
+        public static void main(String[] arguments) {
+            if (arguments.length != 0) result = arguments[0];
         }
     }
 
@@ -309,11 +361,87 @@ public final class CheckpointCompilerControl {
             method.getProgram().basicBlockAt(0).getFirstInstruction().insertPrevious(new EmptyInstruction());
             return true;
         }
+        if (mutation.equals("string-info-declaration") && cls.getName().equals("org.teavm.runtime.StringInfo")) {
+            var method = cls.getMethod(new MethodDescriptor("getStringObject", ValueType.object("java.lang.String")));
+            require(method != null && !method.hasModifier(ElementModifier.FINAL),
+                    "checkpoint-control-string-info-original-declaration");
+            method.getModifiers().add(ElementModifier.FINAL);
+            return true;
+        }
+        if (mutation.equals("string-info-parent") && cls.getName().equals("org.teavm.runtime.reflect.ReflectionInfo")) {
+            var field = new org.teavm.model.FieldHolder("changedLayout");
+            field.setType(ValueType.INTEGER);
+            cls.addField(field);
+            return true;
+        }
         return false;
     }
 
+    private static void checkCompilerArchive(boolean corrected) throws Exception {
+        Class<?> finderType = org.teavm.model.util.AsyncMethodFinder.class;
+        java.lang.reflect.Method verifier;
+        try {
+            verifier = finderType.getDeclaredMethod("pinnedStringInfoArchive", java.nio.file.Path.class);
+        } catch (NoSuchMethodException missing) {
+            require(!corrected, "checkpoint-control-archive-verifier-missing");
+            return;
+        }
+        require(corrected && verifier.trySetAccessible(), "checkpoint-control-archive-verifier-unexpected");
+        var finder = new org.teavm.model.util.AsyncMethodFinder(null, null);
+        java.nio.file.Path original = java.nio.file.Path.of(CTarget.class.getProtectionDomain()
+                .getCodeSource().getLocation().toURI()).toRealPath();
+        require(Files.size(original) <= 67108864 && Boolean.TRUE.equals(verifier.invoke(finder, original)),
+                "checkpoint-control-original-compiler-archive");
+        for (String selected : new String[] {
+                "org/teavm/backend/c/intrinsic/reflection/StringInfoIntrinsic.class",
+                "org/teavm/model/util/TypeInferer.class" }) {
+            java.nio.file.Path altered = Files.createTempFile("checkpoint-compiler-archive-", ".jar");
+            try {
+                int count = 0, changed = 0;
+                long total = 0;
+                try (var input = new java.util.zip.ZipFile(original.toFile());
+                        var output = new java.util.zip.ZipOutputStream(Files.newOutputStream(altered))) {
+                    var entries = input.entries();
+                    while (entries.hasMoreElements()) {
+                        var entry = entries.nextElement();
+                        long size = entry.getSize();
+                        require(++count <= 32768 && size >= 0 && size <= 16777216,
+                                "checkpoint-control-compiler-archive-entry-bound");
+                        total = Math.addExact(total, size);
+                        require(total <= 134217728, "checkpoint-control-compiler-archive-total-bound");
+                        byte[] bytes;
+                        try (var stream = input.getInputStream(entry)) {
+                            bytes = stream.readNBytes((int) size + 1);
+                        }
+                        require(bytes.length == size, "checkpoint-control-compiler-archive-entry-size");
+                        if (entry.getName().equals(selected)) {
+                            require(bytes.length > 0, "checkpoint-control-compiler-archive-entry-empty");
+                            bytes[bytes.length - 1] ^= 1;
+                            ++changed;
+                        }
+                        output.putNextEntry(new java.util.zip.ZipEntry(entry.getName()));
+                        output.write(bytes);
+                        output.closeEntry();
+                    }
+                }
+                require(changed == 1 && Boolean.FALSE.equals(verifier.invoke(finder, altered)),
+                        "checkpoint-control-altered-compiler-archive-refused");
+            } finally {
+                Files.deleteIfExists(altered);
+            }
+        }
+    }
+
     private static void check(String entry, boolean corrected, boolean unsafe, String mutation) {
-        var target = new ProbeTarget();
+        check(entry, corrected, unsafe, mutation, false);
+    }
+
+    private static void check(String entry, boolean corrected, boolean unsafe, String mutation,
+            boolean alternateTarget) {
+        CTarget target = alternateTarget ? new ProbeTarget() : new CTarget(new CNameProvider());
+        target.setMinHeapSize(1024 * 1024);
+        target.setMaxHeapSize(4 * 1024 * 1024);
+        var stop = new StopAfterFinder(target);
         var references = new ReferenceCache();
         var builder = new TeaVMBuilder(target).setReferenceCache(references);
         // The split-loader control supplies the same explicit application loader
@@ -324,6 +452,7 @@ public final class CheckpointCompilerControl {
         builder.setClassSource(new PreOptimizingClassHolderSource(new ClasspathClassHolderSource(
                 builder.getResourceProvider(), references, builder.getClassLoader())));
         var vm = builder.build();
+        vm.setProgressListener(stop);
         vm.setOptimizationLevel(TeaVMOptimizationLevel.FULL);
         vm.installPlugins();
         boolean[] changed = { false };
@@ -338,7 +467,8 @@ public final class CheckpointCompilerControl {
             }, "unused.c");
             throw new AssertionError("checkpoint-control-must-reach-owning-finder");
         } catch (AnalysisComplete completed) {
-            require(target.analyzed, "checkpoint-control-real-c-analysis-completed");
+            require(stop.observed || target instanceof ProbeTarget && ((ProbeTarget) target).analyzed,
+                    "checkpoint-control-real-c-analysis-completed");
         } catch (IllegalStateException failure) {
             if (!(corrected && unsafe && REFUSAL.equals(failure.getMessage()))) {
                 throw new AssertionError("checkpoint-control-unexpected-compiler-refusal", failure);
@@ -382,7 +512,17 @@ public final class CheckpointCompilerControl {
         check(NestedPolling.class.getName(), corrected, true, "");
         check(MutualRecursion.class.getName(), corrected, true, "");
         check(VirtualInitializer.class.getName(), corrected, true, "");
+        check(StringInfoAccess.class.getName(), corrected, false, "");
+        for (String mutation : new String[] { "string-info-declaration", "string-info-parent" }) {
+            check(StringInfoAccess.class.getName(), corrected, true, mutation);
+        }
+        check(StringInfoAccess.class.getName(), corrected, true, "", true);
+        try {
+            checkCompilerArchive(corrected);
+        } catch (Exception failure) {
+            throw new AssertionError("checkpoint-control-compiler-archive", failure);
+        }
         System.out.println("CHECKPOINT_COMPILER_CONTROL PASS " + arguments[0]
-                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer");
+                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;compiler-archive-control");
     }
 }

@@ -8,8 +8,9 @@ exercise different boundaries; neither may stand in for the other.
 
 `.github/workflows/java-checkpoint-context.yml` retains the original
 `compiler-context` job, tool pins, timeout, and branch route. Its
-original/corrected controls include twenty real bytecode/JCL/C-frontend cases per
-mode. Run `41294005890` passed for source
+original/corrected controls include 24 real bytecode/JCL/C-frontend cases per
+mode, including the StringInfo control and three refusal cases below, plus a
+compiler-archive control. Run `41294005890` passed for source
 `ad707b8c02664fff5fa81f4ec6a29617f61f1f19`; this is JVM evidence, not runtime
 qualification.
 
@@ -106,7 +107,7 @@ The repair resolves only the three existing JCL proof helpers through
 `DependencyInfo.getClassLoader()`, authenticates their entire locked classlib JAR
 before reflective initialization, and uses that same explicit loader chain for
 the existing runtime/donor entries. It does not consult the ambient context
-loader, add runtime exemptions, or change the 42-entry proof inventory. The
+loader, add runtime exemptions, or change the then-current 42-entry proof inventory. The
 original method/body/layout certificates, managed-entry boundary, exact three
 finder/thirteen production replacement classes and resource limits remain.
 
@@ -127,6 +128,47 @@ The original split-loader crash and repaired controls were replayed locally with
 the locked TeaVM JARs, OpenJDK 21, and `--release 21` fixtures; generated finder
 classes used `--release 11`. These local controls do not substitute for a fresh
 pinned hosted build or signed-runtime qualification of the repaired source.
+
+## Exact finite StringInfo lowering
+
+Fresh run `41852624295`, source `1d34bc5dde63a856a00be442d8e0b256d5006319`,
+passed the pinned JVM control but refused the real target during `java-to-c`.
+No target component was signed or executed. Failure artifact `13338080308`,
+SHA-256 `0ba4f7bf05b2807c786258a13c300b6827ac58dc8d03c09df8b2065d7ef0bc84`,
+retains the fixed public-class/annotation marker `20:49`: the nonstatic native
+is the pinned `StringInfo` metadata getter, not an imported method.
+
+The exact owned C lowering is a single pointer load. The finite certificate is
+limited to `StringInfo.getStringObject(): String` with its original native,
+unmanaged, intrinsified and no-side-effects declaration. It authenticates the
+original owner and parent metadata, the actual TeaVM C target/controller, and
+the complete transformed declaration before accepting that one method. A bounded
+canonical manifest authenticates all 1,876 other compiler-JAR entries, including
+the C target, intrinsic selector, emitter, helpers and twelve other replacements.
+It accepts only the exact compiler-control or owned runtime replacement profile.
+The executing finder is the trust anchor; the existing owned-build pre-execution
+loader receipt separately authenticates its source and bytes along with all
+thirteen replacements. The owned builder derives those classes from the pinned
+upstream sources and, before `generateC`, checks the actual loaded compiler JAR
+and every replacement class's loader, resource, source JAR and SHA-256 against
+the generated receipt. Its production route selects the runtime profile; the
+control profile is for the JVM-only qualifier. The selected target must be exactly `CTarget`, attached to
+the same `TeaVM` and one of the pinned built-in dependency analyzers; its active
+characteristics must not let an earlier intrinsic claim this getter. The archive check runs at most
+once per compiler target; its weak-key cache has a 256-live-target ceiling and
+fails closed if full. Missing, changed or unavailable proof inputs still refuse.
+Other native methods and other owners receive no exemption.
+
+The real frontend control adds one unexecuted metadata-getter initializer and
+three refusal controls that independently alter the getter declaration, its
+parent layout, or the active C target. Ordinary cases use the exact C target
+and stop at the first progress callback after the finder returns, before any C
+output. A separate control exercises the actual archive verifier against the
+unaltered compiler and independently altered emitter and replacement entries;
+the original compiler control confirms the verifier was absent upstream. Both
+the original and corrected compilers run them in flat and isolated JCL loaders.
+These source changes have not themselves established a
+fresh hosted compiler result, signed component or runtime qualification.
 
 ## Local route checks
 

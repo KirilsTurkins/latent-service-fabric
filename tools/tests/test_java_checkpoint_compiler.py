@@ -18,9 +18,10 @@ class CheckpointCompiler(unittest.TestCase):
         self.assertIn('new PreOptimizingClassHolderSource(new ClasspathClassHolderSource(', source)
         self.assertIn('vm.installPlugins();', source)
         self.assertIn('vm.setOptimizationLevel(TeaVMOptimizationLevel.FULL);', source)
-        self.assertIn('super.analyzeBeforeOptimizations(source);', source)
-        self.assertLess(source.index('super.analyzeBeforeOptimizations(source);'),
-            source.index('throw new AnalysisComplete();'))
+        self.assertIn('new CTarget(new CNameProvider())', source)
+        self.assertIn('vm.setProgressListener(stop);', source)
+        self.assertIn('asyncMethods.get(target) != null', source)
+        self.assertIn('checkpoint-control-real-c-analysis-completed', source)
         self.assertIn('checkpoint-control-must-not-generate-code', source)
         self.assertIn('checkpoint-control-mutation-was-applied', source)
         self.assertIn('getSevereProblems().isEmpty()', source)
@@ -31,7 +32,9 @@ class CheckpointCompiler(unittest.TestCase):
             'runtime-initializer', 'class-object-helper', 'string-copy-body',
             'finite-unmanaged', 'nested-counted', 'changing-bound', 'wrapping-counted',
             'reset-counted', 'exceptional-retry', 'unmanaged-class', 'transitive-initializer',
-            'near-max-counted', 'nested-polling', 'mutual-recursion', 'virtual-initializer'])
+            'near-max-counted', 'nested-polling', 'mutual-recursion', 'virtual-initializer',
+            'string-info-getter', 'string-info-declaration', 'string-info-parent', 'string-info-target',
+            'compiler-archive-control'])
 
     def test_real_frontend_executes_every_declared_progress_case(self):
         source = probe.COMPILER_CONTROL.read_text()
@@ -43,10 +46,14 @@ class CheckpointCompiler(unittest.TestCase):
             ('WrappingCounted', 'true'), ('ResetCounted', 'true'), ('ExceptionalRetry', 'true'),
             ('UnmanagedClassPolling', 'true'), ('TransitiveInitializer', 'true'),
             ('NearMaxCounted', 'false'), ('NestedPolling', 'true'), ('MutualRecursion', 'true'),
-            ('VirtualInitializer', 'true')])
+            ('VirtualInitializer', 'true'), ('StringInfoAccess', 'false')])
         self.assertIn('new String[] { "runtime-initializer", "class-object-helper", "string-copy-body" }', source)
         self.assertIn('check(Finite.class.getName(), corrected, true, mutation);', source)
-        self.assertEqual(len(cases) + 3, len(probe.COMPILER_EXPECTED.split(';')) - 1)
+        self.assertIn('new String[] { "string-info-declaration", "string-info-parent" }', source)
+        self.assertIn('check(StringInfoAccess.class.getName(), corrected, true, mutation);', source)
+        self.assertIn('check(StringInfoAccess.class.getName(), corrected, true, "", true);', source)
+        self.assertIn('checkCompilerArchive(corrected);', source)
+        self.assertEqual(len(cases) + 7, len(probe.COMPILER_EXPECTED.split(';')) - 1)
 
     def test_real_frontend_preserves_strict_rank_and_excluded_call_controls(self):
         source = probe.COMPILER_CONTROL.read_text()
