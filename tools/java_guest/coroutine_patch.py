@@ -910,6 +910,37 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         return checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
     }
 
+    // Only fixed public class buckets and modifier/annotation bits are
+    // emitted; never print application classes, methods or descriptors.
+    private IllegalStateException progressNativeRefusal(ClassReader owner, MethodReader method) {
+        int group = 0, flags = 0;
+        try {
+            String[] classes = {
+                "java.lang.Object", "java.lang.System", "java.lang.String", "java.lang.Class",
+                "java.lang.Thread", "java.lang.Throwable", "java.lang.Integer", "java.lang.Long",
+                "java.lang.Float", "java.lang.Double", "java.lang.Math", "java.lang.Character",
+                "java.lang.ref.Reference", "java.lang.ref.WeakReference", "java.lang.ref.ReferenceQueue",
+                "org.teavm.runtime.reflect.ClassInfo", "org.teavm.platform.Platform",
+                "org.teavm.platform.PlatformObject"
+            };
+            for (int index = 0; index < classes.length; ++index) {
+                if (classes[index].equals(owner.getName())) {
+                    group = index + 1;
+                    break;
+                }
+            }
+            if (method.hasModifier(ElementModifier.NATIVE)) flags |= 1;
+            if (method.getAnnotations().get("org.teavm.interop.DelegateTo") != null) flags |= 2;
+            if (method.getAnnotations().get("org.teavm.interop.Import") != null) flags |= 4;
+            if (method.hasModifier(ElementModifier.STATIC)) flags |= 8;
+        } catch (Exception unavailable) {
+            group = 0;
+            flags = 0;
+        }
+        System.err.println("latent.java.progress-native.v1 " + group + ":" + flags);
+        return progressRefusal(2, owner);
+    }
+
     private void validateNonsuspendableProgress() {
         progressRuntimeProofs.clear(); // Never reuse a proof across completion rounds.
         progressOriginalClasses.clear();
@@ -1014,7 +1045,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             boolean noProgram = !runtime && method.getProgram() == null;
             if (!runtime && (noProgram ? delegate == null
                     : !finiteCountedLoops(method.getProgram()))) {
-                throw progressRefusal(noProgram ? 2 : 3, cls);
+                throw noProgram ? progressNativeRefusal(cls, method) : progressRefusal(3, cls);
             }
             if (delegate != null) {
                 Integer targetIndex = contexts.get(delegate);
