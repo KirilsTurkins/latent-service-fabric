@@ -1,0 +1,117 @@
+{"schemaVersion":"latent.ci.owner-bank.v1","records":[
+{"kind":"owner","path":"tools/ci_cargo.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve every owned workspace package and target format check while authenticating exact third-party bounded TLS source before its sole explicit exclusion; no generic vendor skip or source rewrite","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "a47e81d211872d6ef67828527555e923058865862fdc97f3ebd9fb32744dc279"
+}
+
+,
+{"kind":"owner","path":"tools/ci_cargo_cache.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"2e8182e237e1dbce64e0c7d0375319dde5df3c69517a785d808549c48a119972"}
+
+,
+{"kind":"owner","path":"tools/ci_cargo_evaluate.py","reviewBoundary":"committed-fingerprint","reviewReason":"PR729: add isolated development-push cache-service cold and repeated-warm observations; retain every existing recipe, workflow obligation, case and guard; close exporter files before atomic replacement on Windows.","schemaVersion":"latent.ci.contracts.v1","sha256":"4ece78425e9c4b1f1232f61029a00cca010380b1809af6903bbe959154f5f45a"}
+
+,
+{"kind":"owner","path":"tools/ci_cargo_observe.py","reviewBoundary":"committed-fingerprint","reviewReason":"PR729: add isolated development-push cache-service cold and repeated-warm observations; retain every existing recipe, workflow obligation, case and guard; close exporter files before atomic replacement on Windows.","schemaVersion":"latent.ci.contracts.v1","sha256":"65ffa7c037d053a68c0ee927ce503459d1b30289467bdf023e15a96084414dc1"}
+
+,
+{"kind":"owner","path":"tools/ci_cargo_probe.py","reviewBoundary":"committed-fingerprint","reviewReason":"PR #729: preserve all current CI obligations and add bounded manual Cargo observations, link-free dependency snapshots, and unchanged native regression guards.","schemaVersion":"latent.ci.contracts.v1","sha256":"dcc7e2176e644cd43ae98b50ea386cacd265fe4a7b7cf389d9ba4f0ba7d8cca1"}
+
+,
+{"kind":"owner","path":"tools/ci_cargo_service.py","reviewBoundary":"committed-fingerprint","reviewReason":"PR729: add isolated development-push cache-service cold and repeated-warm observations; retain every existing recipe, workflow obligation, case and guard; close exporter files before atomic replacement on Windows.","schemaVersion":"latent.ci.contracts.v1","sha256":"6b34938bbdd4db824493d5839d77304ec6f8bccd03684c3dec8b674cb94ff17e"}
+
+,
+{"kind":"owner","path":"tools/ci_coverage.py","reviewBoundary":"committed-fingerprint","reviewReason":"Issue #732: read ownership-local expected contracts independently; retain commit-bound, digest-only evidence even on validation failure. Regression tests cover strictness and read-only operation.","schemaVersion":"latent.ci.contracts.v1","sha256":"e7a1ebb8fa72820ed4d1efc9a881ce136bf9dc14cbd36999b0af9ecd484d10fa"}
+
+,
+{"kind":"owner","path":"tools/ci_fast.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve every owned workspace package and target format check while authenticating exact third-party bounded TLS source before its sole explicit exclusion; no generic vendor skip or source rewrite","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "1b27bee66d137352bfa3c8728383f56f557e24ce1597d32d18e6acd5d9e509fc"
+}
+
+,
+{"kind":"owner","path":"tools/ci_lane_inventory.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reconcile #713 with reviewed optimizer v3: keep both parent case sets, skip/authority guards and the exact HTTP policy proof in renderer-public; preserve original renderer-angular obligations. Incoming reviewed obligation: Preserve every renderer/provider case and process owner while running fixed mandatory shards from current-job Cargo inputs. Exact merged owner bytes reviewed.","schemaVersion":"latent.ci.contracts.v1","sha256":"7c96ed0f66b678e4195f9265e177221c60f3953886a1dda5c70a77ef5b6e1af9"}
+
+,
+{"kind":"owner","path":"tools/ci_lane_worker.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reconcile #713 with reviewed optimizer v3: keep both parent case sets, skip/authority guards and the exact HTTP policy proof in renderer-public; preserve original renderer-angular obligations. Incoming reviewed obligation: Preserve every renderer/provider case and process owner while running fixed mandatory shards from current-job Cargo inputs. Exact merged owner bytes reviewed. Incoming reviewed obligation: Preserve every original provider/renderer case and the qualified deferred JetStream cases, running fixed mandatory shards from current-job Cargo inputs with the same finite process ownership. Exact byte review: retain all original HTTP response policy and renderer cases, add only the pinned deferred selection/step and existing finite 420-second owned command; no other test or runner body changes. Additional reviewed obligation: Prepare the locked wasm32 dependency closure before offline Angular packaging, retaining original commands, limits, owners and all original test guards.","schemaVersion":"latent.ci.contracts.v1","sha256":"e778f8b443c67de3aa2680e90d3d654748115bd39c05a90bc6bd4f49b265c6fb"}
+
+,
+{"kind":"owner","path":"tools/ci_profile.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"63949a0f50b4b7e3554383ade3a5f0ab51fed79a182fa301478df31501359fc8"}
+
+,
+{"kind":"owner","path":"tools/ci_result.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"3a4a88afcbab08033ba6afa7bcccdcbc96e811784dfa4a3a5e3c60160d275063"}
+
+,
+{"kind":"owner","path":"tools/ci_rust_artifacts.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"07a2c681d97e95f512e9781f9bc27c8759778780bf9c55ab6f47cb8d3bbfbeb2"}
+
+,
+{"kind":"owner","path":"tools/prepare_container_runtime.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"de3bb9f2e814513ef974e775a6538a87bf3d2a8aee74a29251a340535f25836a"}
+
+,
+{"kind":"owner","path":"tools/prepare_dev_packaged_probe.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"da346e6f90223ba2edd3b18a3f0ba6bb0df3d21c268e5f3f6ffa9641649ac449"}
+
+,
+{"kind":"owner","path":"tools/prepare_native_workspace.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"5c4afeab6a1fa1caa97e4a8c02d3e6452c35de4dea69cfeecdc359fc49eb53a6"}
+
+,
+{"kind":"owner","path":"tools/prepare_typescript_commonjs_inputs.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reuse exact shared selector with complete verification/receipt deadline and immutable Git bounds; no build fallback","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "2686f7ca7ae2007191a01ee4bab38d2feb40ae3185849d6c55ad92bca0a8deb3"
+}
+
+,
+{"kind":"owner","path":"tools/validate_contracts.sh","reviewBoundary":"committed-fingerprint","reviewReason":"Actual CI118482127658 fails before Wasmtime compilation because generic backend invokes the original exact Go52 case without either required adapter env. Reuse the existing authenticated old/current source producer and pinned wasm-tools1.254.0 in prepare-only mode, pass BOTH fixed paths through unchanged full generic --ignored command. No test/skip/Cargo/native changes; same original64KiB/10k native gate. Old harness RED/current40 focused PASS; local real pinned WAT parsing prepares1246/1245B inputs but supplies no new Rust execution credit.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "7678e035e4b39c04a4b39d8acdd70fe7972b9557375960054e9e46d9e3f2fadd"
+}
+
+,
+{"kind":"owner","path":"tools/validate_docs.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"3f4a311d4ed13b261df0fe476ab3c9fe3670073c6b4e2ccb05f8e5ebe835abc3"}
+
+,
+{"kind":"owner","path":"tools/validate_foundation.py","reviewBoundary":"committed-fingerprint","reviewReason":"Require current Make validation, binding, workspace/AOT preparation and execution entrypoints instead of the retired phase alias; preserve all existing workflow recipes, graph and generation boundary checks.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "3722c7de5ff54ba99a7696f0c68220d4a1d5af200fb518312fe020510e93554b"
+}
+
+,
+{"kind":"owner","path":"tools/validate_package_smoke.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"185d8800860c35016b7f3d878a215f4e5a12628320c4dabff8a7c970539c919b"}
+
+,
+{"kind":"owner","path":"tools/validate_phase1_descriptor.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"86090f52c2264d8fa6a9f0800c8917bc4319f3540ebd8bdd2502811ac7154393"}
+
+,
+{"kind":"owner","path":"tools/validate_repository.py","reviewBoundary":"committed-fingerprint","reviewReason":"Append retained-context original-memory controls to the unchanged103-prefix programme; authenticate the exact original memory placeholder block while retaining whole-tree and all other upstream guards.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "acad4a42c5d7bca72bd6b2d99b432d5709be1f174f78243b61104c8f8f2a66d0"
+}
+
+,
+{"kind":"owner","path":"tools/validate_sdks.sh","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"d54f23e45547763efb7ebe6261060474c4816e048ce5ccc73ef2c846e5466aab"}
+
+,
+{"kind":"owner","path":"tools/validate_workflow_actions.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"be4ece95d8ff964c3af99eded12af6784301e7297e447ed5013b5c921d8eef30"}
+
+,
+{"kind":"owner","path":"tools/docs_pages.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"9461a86c1cc3669e10b23d9f82bb24ddefacc35c6c528d6366ba76966a7c4045"}
+
+,
+{"kind":"owner","path":"tools/generate_transaction_contracts.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review Rust wit-bindgen 0.63.0 macro compatibility and separate 0.62.0 CLI selection; preserve existing execution commands and qualification cases.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "e4075954092fab43dec24a22c1d42e76c2082d1e18eaf10560f2e95014aa9dbd"
+}
+
+,
+{"kind":"owner","path":"tools/compare_portable_guest_tests.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"53d331d99878fa00a54a160c89ac2bbb629558364b0719352aa1409666c9656e"}
+
+,
+{"kind":"owner","path":"tools/compatibility_closure_matrix.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reviewed final eight logical cells: six immutable successful source/profile epochs plus current Go baseline/reached/initializer and fixed completed61a .NET builder/newpositive node-only. Exact passive postimages, source/SDK/WIT/materials/native/deadline/original failure gates remain strict. Original cases/skips/decorators preserved; additive bounded controls only.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "d16731b37b7157e9fb17f051d5e983727028fca242894fb187d63a7d17bfe475"
+}
+
+,
+{"kind":"owner","path":"tools/compatibility_preserved_cells.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reviewed final finite API receipt pins and conservative unknown for another source; current passive postimage identity only, original runtime epochs and all retention/owner gates unchanged.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "da55fdc5ab2b3345de537555e4f6039159416920e30ac47039902e6b9b6bdea9"
+}
+
+,
+{"kind":"owner","path":"tools/verify_sdk_provider_matrix.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"}
+
+,
+{"kind":"owner","path":"tools/compatibility_native_products.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reviewed strict LLVM debug records and exact Go memory op grammar; preserve five actual passed cells in two fixed source epochs and execute only three missing cells, with original bounds and separate current passive diagnostics.","schemaVersion":"latent.ci.contracts.v1","sha256":
+  "e7c4f0b6783f851061e3796f0f58ca6974b9bfe0ae36d393f6ef8a25a15a54c9"
+}
+
+]}

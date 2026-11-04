@@ -1,7 +1,7 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Retain all source-capacity cases and guards; add real committed-tree exact-9248 acceptance, old-ceiling and one-over refusal, shared attribution ceiling and cleanup with unchanged byte/runtime budgets.",
+  "reviewReason":"Compose development's fixed 9248-file capture and attribution allowance with the diagnostic branch's separately reviewed 77 MiB source allowance. Retain all nine cases, guards, exact-boundary acceptance, one-over refusal, CRLF accounting and cleanup. The 83 MiB archive, 4 MiB per-file, 4096-directory and runtime budgets are unchanged.",
   "module":"tools/tests/test_build_source_capacity.py",
   "cases":["SourceCapacityTests.test_archive_and_content_byte_limits_are_enforced_independently","SourceCapacityTests.test_capture_byte_allowances_are_fixed_and_reject_one_over","SourceCapacityTests.test_committed_crlf_export_is_charged_as_archived_bytes","SourceCapacityTests.test_current_committed_repository_fits_capture_and_attribution_limits","SourceCapacityTests.test_current_committed_selection_passes_preflight_without_running_archive","SourceCapacityTests.test_expanded_file_inventory_is_shared_exact_and_still_bounded","SourceCapacityTests.test_source_inventory_uses_capture_file_ceiling_and_rejects_one_over","SourceCapacityTests.test_tree_file_limit_rejects_before_archive_and_cleans_up","SourceCapacityTests.test_tree_full_file_ceiling_passes_but_one_over_refuses_before_archive"],
   "guards":{

@@ -41,12 +41,16 @@ The next source slice in `tls.rs` selects the unchanged pinned key-based std
 TLS storage beneath ordinary `thread_local!`, including its alignment,
 initializers, recursive initialization and destructor sentinel rules. The
 backend uses canonical per-thread context slot 1; wit-bindgen's slot 0 stays
-owned by its original implementation. Each lazily admitted context/key entry
-holds an original activation Native owner, while its guest bytes retain the
-original linear-memory limit. An accepted thread prepares its context with
-the existing task continuation before start; closure does not authorize new
-independent work. Physical entries/contexts free before settlement. Bounded
-destructor cycles, destroying sentinels and nested retirement stay fail closed.
+owned by its original implementation. A dynamically allocated context holds
+its original activation Native owner; its first 32 bounded key entries are
+embedded in that same allocation. The fixed root embeds the same entries
+without manufacturing an allocation owner. Each overflow block is admitted
+before its System allocation and keeps a separate Native owner, while all guest
+bytes retain the original linear-memory limit. An accepted thread prepares its
+context with the existing task continuation before start; closure does not
+authorize new independent work. Physical overflow blocks/contexts free before
+settlement. Bounded destructor cycles, destroying sentinels and nested
+retirement stay fail closed.
 
 `tools/rust_standard_tls_profile.py` preserves the exact official std originals
 and stages only the target selector and TLS backend. The canonical register
