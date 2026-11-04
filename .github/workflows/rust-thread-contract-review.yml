@@ -11,7 +11,6 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
-      actions: read
     steps:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
@@ -22,13 +21,13 @@ jobs:
           python-version: 3.13.5
       - name: Install reviewed validator dependencies
         run: python3 -m pip install --requirement tools/requirements.lock
-      - name: Apply and test the pinned correction then store only its tested blobs
+      - name: Apply and test pinned corrections before storing their exact blobs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           git fetch --no-tags --depth=1 origin 17b4d186e50009bee236d296fdd248c05905d2f2
           python3 - <<'PY'
-          import hashlib, json, os, pathlib, subprocess, yaml, zipfile
+          import hashlib, pathlib, shutil, subprocess, yaml, zipfile, os
           raw = subprocess.check_output(['git', 'show', '17b4d186e50009bee236d296fdd248c05905d2f2:.github/workflows/rust-thread-contract-review.yml'])
           assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == '07acc1704f9aa33b17692bc97273b63ad7f0b233'
           steps = yaml.safe_load(raw)['jobs']['review']['steps']
@@ -47,56 +46,34 @@ jobs:
                   if name.startswith('Isolate'):
                       assert script.count('        run: git fetch') == 2
                       script = script.replace('        run: git fetch', 'git fetch')
+                  if name.startswith('Validate'):
+                      # Compiler artifacts previously expired before integration replay.
+                      # Match the native producer's seven-day evidence window without
+                      # changing any build command, permission or runtime resource limit.
+                      updates = {
+                          '.github/workflows/rust-owned-thread-inputs.yml': ('retention-days: 3', 'retention-days: 7'),
+                          'tools/ci/contracts/workflows/rust-owned-thread-inputs.yml/jobs/compiler-inputs.json': ('"retention-days":3', '"retention-days":7'),
+                      }
+                      for filename, (before, after) in updates.items():
+                          path = pathlib.Path(filename); text = path.read_text()
+                          assert text.count(before) == 1
+                          path.write_text(text.replace(before, after, 1))
+                      before = 'python3 tools/ci_coverage.py --receipt "$RUNNER_TEMP/rust-contract-review/coverage.json"'
+                      assert script.count(before) == 1
+                      script = script.replace(before, 'python3 tools/ci_coverage.py --receipt target/ci/rust-thread-contract-review.json\ncp target/ci/rust-thread-contract-review.json "$RUNNER_TEMP/rust-contract-review/coverage.json"')
                   print('Executing reviewed stage:', name, flush=True)
                   subprocess.run(['bash', '-eu'], input=script.encode(), check=True)
           finally:
               out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'rust-contract-review'
               out.mkdir(exist_ok=True)
-              names = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
-              names += subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()
+              changed = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
+              changed += subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()
               with zipfile.ZipFile(out / 'candidate-files.zip', 'w', compression=zipfile.ZIP_DEFLATED) as archive:
-                  for name in sorted(set(names)):
+                  for name in sorted(set(changed)):
                       path = pathlib.Path(name)
                       assert path.is_file() and not path.is_symlink() and path.stat().st_size <= 4 * 1024 * 1024
                       archive.write(path, name)
               (out / 'integration.patch').write_bytes(subprocess.check_output(['git', 'diff', '--binary']))
-          PY
-      - name: Retain only failing integration diagnostics from the previous head
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 - <<'PY'
-          import json, os, pathlib, urllib.error, urllib.request
-          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'rust-contract-review' / 'previous-failures'
-          root.mkdir(parents=True, exist_ok=True)
-          base = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/'
-          headers = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'}
-          class NoRedirect(urllib.request.HTTPRedirectHandler):
-              def redirect_request(self, request, fp, code, message, response_headers, url):
-                  return None
-          summary = []
-          for run in (41422894374, 41422894288, 41422894196):
-              with urllib.request.urlopen(urllib.request.Request(base + f'actions/runs/{run}/jobs?per_page=100', headers=headers), timeout=30) as response:
-                  jobs = json.load(response)['jobs']
-              for job in jobs:
-                  if job['conclusion'] != 'failure':
-                      continue
-                  request = urllib.request.Request(base + f'actions/jobs/{job["id"]}/logs', headers=headers)
-                  try:
-                      response = urllib.request.build_opener(NoRedirect).open(request, timeout=30)
-                  except urllib.error.HTTPError as error:
-                      if error.code != 302:
-                          raise
-                      location = error.headers['Location']
-                      assert location.startswith('https://')
-                      response = urllib.request.urlopen(location, timeout=60)
-                  with response:
-                      raw = response.read(8 * 1024 * 1024 + 1)
-                  assert len(raw) <= 8 * 1024 * 1024
-                  (root / f'{job["id"]}.log').write_bytes(raw)
-                  summary.append({'run':run, 'job':job['id'], 'name':job['name'], 'bytes':len(raw)})
-          (root / 'jobs.json').write_text(json.dumps(summary, indent=2) + '\n')
           PY
       - name: Retain exact review evidence
         if: always()
