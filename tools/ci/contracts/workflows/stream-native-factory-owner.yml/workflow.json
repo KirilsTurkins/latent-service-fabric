@@ -18,6 +18,7 @@
         ],
         "paths": [
           ".github/workflows/stream-native-factory-owner.yml",
+          "apps/**",
           "crates/latent-streams/**",
           "examples/renderer-profile/package.json",
           "examples/renderer-profile/package-lock.json",

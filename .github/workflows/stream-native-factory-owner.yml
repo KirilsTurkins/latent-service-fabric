@@ -7,6 +7,7 @@ on:
     branches: ['feat/stream-kernel-native-factory-owner-20261023', 'feat/kernel-native-constructor-vm-20261024', 'feat/kernel-native-close-20261024', 'feat/sdk-738-q35-node-boot-20261029', 'feat/sdk-738-q35-pci-identity-20261104', 'feat/sdk-738-q35-node-pci-prefix-20261104']
     paths:
       - '.github/workflows/stream-native-factory-owner.yml'
+      - 'apps/**'
       - 'crates/latent-streams/**'
       - 'examples/renderer-profile/package.json'
       - 'examples/renderer-profile/package-lock.json'
