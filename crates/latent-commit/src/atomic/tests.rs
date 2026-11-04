@@ -390,6 +390,8 @@ fn losing_first_attempt_observes_only_an_authorized_identical_winner() {
     let winner = prepare(input("race"));
     let identical = prepare(input("race"));
     let revoked = prepare(input("race"));
+    let clock_regressed = prepare(input("race"));
+    let clock_unproven = prepare(input("race"));
     let mut changed = input("race");
     changed.fingerprint.input.bytes.push(1);
     let changed = prepare(changed);
@@ -408,6 +410,22 @@ fn losing_first_attempt_observes_only_an_authorized_identical_winner() {
     };
     assert_eq!(existing.id(), owner.record().id());
     assert_eq!(existing.outcome(), Outcome::Pending);
+    assert!(matches!(
+        clock_regressed.publish_or_existing(&store, time(99), || Ok(()), permission),
+        Err(AtomicError::RecoveryRequired)
+    ));
+    assert!(matches!(
+        clock_unproven.publish_or_existing(
+            &store,
+            CommandTime {
+                unix_millis: 100,
+                continuity_proven: false
+            },
+            || Ok(()),
+            permission,
+        ),
+        Err(AtomicError::RecoveryRequired)
+    ));
     assert!(matches!(
         revoked.publish_or_existing(
             &store,
