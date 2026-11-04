@@ -67,8 +67,11 @@ typed runtime denial or signed execution.
 The separately pinned [value capture](evidence/java-values-capture-5f-2026-11-05.json)
 has a narrowly selected native codec association and fixture signer. Its
 single-publication conductor checks durable state, full-width unsigned values,
-UTF-8, absent options and fresh instances. The capture and controls alone do
-not establish that this conductor has completed a signed node run.
+UTF-8, absent options and fresh instances. The [signed node run](evidence/java-signed-values-abf-2026-11-05.json)
+passed both unsigned boundary values, original command replay, acknowledged
+intents and physical retirement on native/conductor source `abf058af216`. The
+guest checked exact UTF-8 bytes, absent options and a fresh static instance on
+each query. Provider acknowledgement is not recipient delivery.
 
 The separate [terminal recovery evidence](evidence/java-terminal-recovery-2026-11-04.json)
 records 50 passing measured cases on native/conductor source `81d72bceaf4`,

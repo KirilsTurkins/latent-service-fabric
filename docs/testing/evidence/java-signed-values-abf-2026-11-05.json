@@ -1,0 +1,64 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": "latent.java.signed-values-evidence.v1",
+  "scope": "Signed Java state value and effect roundtrips; not full milestone or packaged qualification",
+  "nativeSourceCommit": "abf058af21614f04c37527e097e2a3008929d733",
+  "nativeSourceTree": "da8299875d30d86e9c16da9e50e7d742afbb3a62",
+  "conductorSourceCommit": "abf058af21614f04c37527e097e2a3008929d733",
+  "compilerSourceCommit": "5f99649cd3b583d4a855c7c3b07ed3167419b866",
+  "componentDigest": "sha256:e5fb75766a283d8ac818c073288706cea89303746b9d347746a2f44429c5f424",
+  "selectionDigest": "sha256:01407cc7fabe4862861482d6d3c7d506e9000c537cc44288977dfe5dccfd8737",
+  "trust": "ephemeral-native-package-test-only",
+  "passed": true,
+  "signedGuestExecutionQualified": true,
+  "valueRoundtripQualified": true,
+  "packagedDistributionQualified": false,
+  "receiptSha256": "sha256:9b69ee7fb38336a12dc98a93304c67f4fabc9042edc48d21a412376d073ecb58",
+  "evidenceInventorySha256": "sha256:d8b5336ae7b3e2e12119ae7dac9ddcd9e95c4a9ea501e72922fb0ff5468b97ab",
+  "nativeTools": {
+    "cli": {
+      "name": "cli",
+      "digest": "sha256:0b6859b4600d37809a32db3889b5101c57ebeb3d7ff5ef009f6fd01e5f01f12a",
+      "size": 521413640
+    },
+    "node": {
+      "name": "node",
+      "digest": "sha256:8b75fdd747b37ffa702d7346dc8073edf1da420e761dbaf5f22ee6e0877a5aeb",
+      "size": 1061086760
+    },
+    "aot_compiler": {
+      "name": "aot_compiler",
+      "digest": "sha256:fb33e1dc35b77e5f38f57cd0538863125cdc13fc3728d2d96ee773eda6697e42",
+      "size": 33812944
+    },
+    "contracts_tool": {
+      "name": "contracts_tool",
+      "digest": "sha256:5481f47067e12c4d140b402334ff0bc3f9b8152e7394f44c15111c7b3459b320",
+      "size": 145218272
+    },
+    "signer": {
+      "name": "signer",
+      "digest": "sha256:2cf10f11f71c5755fedd531a716849cc05b75443eb8eb7405eb3a10f7f1fff2f",
+      "size": 187347248
+    }
+  },
+  "nativeSourcePreparation": "Exact 4a5d source archive plus checked git binary diff to abf058af216; source mounted read-only. A same-source AOT compiler copy was stripped to satisfy the byte limit.",
+  "unsignedQueryValues": [
+    "9223372036854775808",
+    "18446744073709551615"
+  ],
+  "eachCommandCommitted": true,
+  "eachOriginalReplayed": true,
+  "eachIntentProviderAcknowledged": true,
+  "utf8AndAbsentOption": "The captured guest checks exact UTF-8 state bytes and absence on each fresh query and throws on mismatch.",
+  "freshInstance": "The captured guest rejects reuse of its static entry counter on each invocation.",
+  "recipientDeliveryQualified": false,
+  "measuredCases": [
+    "publish-early-http",
+    "deploy-put-once-values",
+    "namespace-create",
+    "signed-java-state-value-roundtrips",
+    "values-physical-retirement"
+  ],
+  "retainedEvidence": "session-owned Docker volume lsf-phase4-387-linux, java-values-abf-attempt1; source volume lsf-phase4-values-src-abf"
+}
