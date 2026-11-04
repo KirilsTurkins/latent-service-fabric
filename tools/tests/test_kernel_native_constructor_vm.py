@@ -185,6 +185,17 @@ class Q35NodeBootSourceControls(unittest.TestCase):
         self.assertIn('cpu_online(0) &&\n        lsf_node_boot_selected_pci()', source)
         for forbidden in ('pci_scan_single_device(', 'pci_bus_add_device(', 'pci_enable_device('):
             self.assertNotIn(forbidden, source)
+        from importlib.util import spec_from_file_location, module_from_spec
+        spec = spec_from_file_location('lsf_node_pci_projector', owner.ROOT / owner.NODE_PROJECTOR)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        projector = module_from_spec(spec)
+        spec.loader.exec_module(projector)
+        entry = projector.NEW_ENTRY
+        refusal = b'if (!ns_capable(&init_user_ns, CAP_SYS_ADMIN))\n        return -EPERM;'
+        self.assertEqual(entry.count(refusal), 1)
+        self.assertLess(entry.index(refusal), entry.index(b'lsf_node_boot_entry_ready()'))
+        self.assertEqual(projector.inverse_bootstrap(entry), projector.OLD_ENTRY)
 
     def test_actual_node_facts_are_required_without_funding_or_retirement_credit(self):
         facts = (b'LSFNODEBOOT1 facts=[1, 2, 3, 4, 5, 6] cpu=[1, 1, 1, 2, 3, 4, 5, 6, 7] '

@@ -23,6 +23,10 @@ NEW_ENTRY = b"""    /* The immutable built-in preparation image uses only its re
      * fops. The original escrow must precede this syscall. This is not a
      * network consumer, NodeFunding approval or a native retirement issuer. */
 #ifdef CONFIG_LSF_STREAM_NODE_BOOTSTRAP
+    /* Do not read PCI configuration for a task that the unchanged common
+     * entry authorization below would refuse. That original check remains. */
+    if (!ns_capable(&init_user_ns, CAP_SYS_ADMIN))
+        return -EPERM;
     if (!lsf_node_boot_entry_ready())
         return error;
 #else
