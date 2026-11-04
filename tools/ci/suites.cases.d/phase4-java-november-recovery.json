@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "latent.ci.suite-case-fragment.v1",
+  "suiteId": "latentd.lib.latentd",
+  "expectedCases": [
+    "standalone::state::recovery::profile::november_http::tests::november_exact_component_marker_and_requirement_associations_are_installed",
+    "standalone::state::recovery::profile::november_http::tests::november_custody_rejects_mixed_or_unreviewed_inputs"
+  ]
+}

@@ -2,6 +2,7 @@
 //! Native codec conformance is separate from actual Java execution evidence.
 mod http_custody;
 mod native_memory;
+mod november_http;
 mod reconstructed_http;
 mod refreshed_http;
 pub(super) use http_custody::CurrentHttpInput;
@@ -79,17 +80,23 @@ impl Profile {
             "sha256:ec6ac5b4a95957406f664f7df9feb4a92829fb26e8634cde97f8b44ae21082ce" => {
                 Ok(Self::Writer)
             }
-            "sha256:eae8efb880744d60ba7163590fb0fd825d45cb2018760b7c1cd00272e4cefecd" => {
+            "sha256:eae8efb880744d60ba7163590fb0fd825d45cb2018760b7c1cd00272e4cefecd"
+            | "sha256:355dbd17c29b2a8756d5dfccb34582e878b03fd299c35c0652cbec4bb7d7338a" => {
                 Ok(Self::CurrentLegacy)
             }
-            "sha256:ecd7d566a6403468a1166ad0c9042a51cce47e12f92e63907bce680daa08f813" => {
+            "sha256:ecd7d566a6403468a1166ad0c9042a51cce47e12f92e63907bce680daa08f813"
+            | "sha256:6c31f6763a5d3d8d84aa0668a44b220c3ba619f9c257e9a0d0b441e58d94099b" => {
                 Ok(Self::CurrentCompatible)
             }
-            "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d" => {
+            "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d"
+            | "sha256:5f2f4bd6880bf516f042d65b2fc65d06ad80036a82b7ad60a2b95438972546a8" => {
                 Ok(Self::CurrentWriter)
             }
             "sha256:322dfed5d9838edfbbd53bf0672c31f849ac7c7309358975bf1bf6c10b0a24bb"
-            | native_memory::COMPONENT => Ok(Self::CurrentDiagnostic),
+            | native_memory::COMPONENT
+            | "sha256:25258bd576a7ee6e79f20a0b7a13e10293780fce310d03f529ac811c7ccdc5e0" => {
+                Ok(Self::CurrentDiagnostic)
+            }
             _ => Err(super::denied()),
         }
     }
@@ -164,6 +171,9 @@ impl Profile {
             }
             Some(SelectedHttpCustody::Refreshed) => {
                 self.conformance_with_marker(refreshed_http::MARKER)?
+            }
+            Some(SelectedHttpCustody::November) => {
+                self.conformance_with_marker(november_http::MARKER)?
             }
             _ => self.conformance()?,
         };
