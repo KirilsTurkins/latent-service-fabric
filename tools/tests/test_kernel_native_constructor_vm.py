@@ -376,3 +376,110 @@ class Q35NodePciPrefixControls(unittest.TestCase):
         self.assertLess(projector.index('lsf_node_prefix_pci_birth(dev)'),
             projector.index('lsf_prepaid_pci_setup_device(dev)',projector.index('PROBE_NEW')))
         self.assertIn('default n',projector)
+
+
+class Q35NodePciSetupControls(unittest.TestCase):
+    @staticmethod
+    def serial():
+        prefix = (b'[    2.345678] LSFQ35PCIPREFIX1 bdf=0000:00:03.0 vendor=1af4 '
+            b'device=1041 born=1 returned=1 registered=0 scopeRevoked=1 slot=40 '
+            b'generation=45 live=40,41,40 cursor=4096,5760,5760')
+        setup = (b'[    2.345678] LSFQ35PCISETUP1 bdf=0000:00:03.0 vendor=1af4 '
+            b'device=1041 header=0 class=020000 cfg=4096 companion=0 born=1 setup=1 '
+            b'pending=1 firmwareReturned=1 pciReturned=1 registered=0 scopeRevoked=1 '
+            b'pciSlot=40 pciGeneration=45 firmwareSlot=41 firmwareGeneration=46 '
+            b'live=40,42,40 cursor=4096,6016,6016')
+        return Q35NodePciPrefixControls.serial().replace(prefix,setup).replace(
+            b'LSFNODEPREFIX1 childAck=1',b'LSFNODESETUP1 childAck=1')
+
+    def test_distinct_original_records_must_both_actually_return(self):
+        raw = self.serial()
+        observed = owner.node_setup_serial(raw)
+        self.assertEqual(observed['pciSetup']['live'],[40,42,40])
+        self.assertEqual(observed['pciSetup']['cursor'],[4096,6016,6016])
+        self.assertFalse(observed['pciSetup']['companionObserved'])
+        self.assertTrue(observed['pciSetup']['firmwareRecordReturned'])
+        self.assertTrue(observed['pciSetup']['pciRecordReturned'])
+        self.assertFalse(observed['pciSetup']['registered'])
+        for key in ('nodeFunding','nodeRetired','irqEnabled','tcpEnabled',
+                'pciConstructorQualified','napiQualified'):
+            self.assertIs(observed[key],False)
+        for bad in (raw.replace(b'pending=1',b'pending=0'),
+                raw.replace(b'firmwareReturned=1',b'firmwareReturned=0'),
+                raw.replace(b'pciReturned=1',b'pciReturned=0'),
+                raw.replace(b'scopeRevoked=1',b'scopeRevoked=0'),
+                raw.replace(b'registered=0',b'registered=1'),
+                raw.replace(b'firmwareSlot=41',b'firmwareSlot=40'),
+                raw.replace(b'firmwareGeneration=46',b'firmwareGeneration=45'),
+                raw.replace(b'live=40,42,40',b'live=40,41,40'),
+                raw.replace(b'live=40,42,40',b'live=40,42,41'),
+                raw.replace(b'cursor=4096,6016,6016',b'cursor=4096,6016,4096'),
+                raw.replace(b'class=020000',b'class=010000'),
+                raw.replace(b'cfg=4096',b'cfg=255'),
+                raw.replace(b'LSFNODESETUP1 childAck=1\n',b''),
+                raw+b'LSFNODESETUP1 childAck=1\n'):
+            with self.subTest(raw=bad), self.assertRaises(ValueError):
+                owner.node_setup_serial(bad)
+
+    def test_setup_sources_are_captured_and_unknown_projection_refuses(self):
+        captured = owner.node_setup_capture(owner.ROOT)
+        self.assertEqual(set(captured),{owner.SETUP_PROJECTOR,owner.SETUP_MATERIAL})
+        self.assertTrue(all(captured.values()))
+        with self.assertRaises(ValueError):
+            owner.node_setup_compose({},captured)
+        with self.assertRaises(ValueError):
+            owner.node_setup_compose({},{})
+
+    def test_setup_uses_original_actor_and_distinguishes_pending_from_return(self):
+        source = (owner.ROOT/owner.SETUP_MATERIAL).read_text(encoding='utf8')
+        projector = (owner.ROOT/owner.SETUP_PROJECTOR).read_text(encoding='utf8')
+        for predicate in ('lsf_node_constructor_actor_current()', 'node->prefix_pending = 1u',
+                'node->prefix_waiting != 1u', '!lsf_node_device_actor_current()',
+                'fw->phase != LSF_PREPAID_RETURNED', 'pci->phase != LSF_PREPAID_RETURNED',
+                'context->cursor != node->prefix_peak_cursor', 'cond_resched()'):
+            self.assertIn(predicate,source)
+        self.assertIn('CONFIG_LSF_STREAM_NODE_PCI_SETUP',projector)
+        self.assertIn('return -ECANCELED',projector)
+        self.assertIn('after->prefix_task = NULL',projector)
+
+    def test_actor_scope_is_revoked_before_the_original_deadline_bounded_wait(self):
+        from importlib.util import module_from_spec, spec_from_file_location
+        path = owner.ROOT/owner.SETUP_PROJECTOR
+        spec = spec_from_file_location('q35_setup_control_projector',path)
+        stage = module_from_spec(spec)
+        spec.loader.exec_module(stage)
+        edits = [row for row in stage.OPERATIONS if row[0] == 'net/factory-node-pci-prefix.c']
+        sequence = next(new for _,_,_,old,new in edits if b'error = lsf_node_boot_pci_prefix()' in old)
+        sequence = sequence[sequence.index(b'error = lsf_node_boot_pci_prefix()'):]
+        points = [sequence.index(x) for x in (b'error = lsf_node_boot_pci_prefix()',
+            b'after->prefix_active = 0u', b'after->prefix_task = NULL', b'after->prefix_waiting = 1u',
+            b'spin_unlock_irqrestore', b'mutex_unlock(&factory_lock)', b'lsf_node_setup_wait(node)')]
+        self.assertEqual(points,sorted(points))
+        wait = (owner.ROOT/owner.SETUP_MATERIAL).read_bytes().split(b'static int lsf_node_setup_wait(',1)[1]
+        self.assertIn(b'node->prefix_waiting != 1u || node->prefix_task ||',wait)
+        self.assertIn(b'!lsf_node_device_actor_current()',wait)
+        self.assertIn(b'fatal_signal_pending(current)',wait)
+        self.assertIn(b'cond_resched()',wait)
+        self.assertNotIn(b'mutex_lock(',wait)
+        capacity = (owner.ROOT/'research/standard-outbound/linux-6.12-lineage/node-capacity/factory-node-capacity.c').read_bytes()
+        self.assertIn(b'ktime_get_ns() < node->expires_ns',capacity)
+
+    def test_pending_and_intermediate_firmware_return_cannot_report_pci_return(self):
+        source = (owner.ROOT/owner.SETUP_MATERIAL).read_bytes()
+        pending = source.split(b'void lsf_node_setup_pending(',1)[1].split(b'void lsf_node_setup_unexpected(',1)[0]
+        for item in (b'setup_error != -ECANCELED',b'requested != 1',b'!owned->retirement',
+                b'owned->queued',b'owned->returned',b'pci_record->phase != LSF_PREPAID_LIVE',
+                b'fw_record->phase != LSF_PREPAID_LIVE'):
+            self.assertIn(item,pending)
+        self.assertNotIn(b'node->prefix_returned = 1u',pending)
+        wait = source.split(b'static int lsf_node_setup_wait(',1)[1]
+        child = wait.index(b'fw->phase == LSF_PREPAID_RETURNED')
+        still_pending = wait.index(b'result = 1; /* Child finished',child)
+        both = wait.index(b'pci->phase != LSF_PREPAID_RETURNED',still_pending)
+        success = wait.index(b'node->prefix_returned = 1u',both)
+        self.assertLess(child,still_pending)
+        self.assertLess(still_pending,both)
+        self.assertLess(both,success)
+        self.assertIn(b'owned->revoked || owned->put_error',wait)
+        for forbidden in (b'free_pages(',b'kfree(',b'request_irq(',b'register_netdevice('):
+            self.assertNotIn(forbidden,source)
