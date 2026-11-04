@@ -47,6 +47,11 @@ covers the original recipient acceptance, restored pending identity, audited
 close/replay and physical retirement; it does not qualify packaged delivery or
 the full retention horizon.
 
+The [second pending-effect run](evidence/java-pending-recovery-30s-2026-11-04.json)
+also passed 16 cases on the same native and compiler sources, with conductor
+source `7e5c0759046` and the explicitly declared 30-second startup reservation.
+Its separate receipt preserves the later configuration and evidence hashes.
+
 The separately isolated [precommit-crash evidence](evidence/java-precommit-crash-2026-11-04.json)
 records the staged signed guest, an actual node kill and recovery of the same
 pending command without a new activation. It uses native source `81d72bceaf4`
