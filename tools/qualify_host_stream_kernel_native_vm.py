@@ -351,8 +351,9 @@ def qualify_node(output,revision):
         os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric' and
         os.environ.get('GITHUB_REF_NAME') in native.NODE_BRANCHES and
         os.environ.get('GITHUB_EVENT_NAME') == 'push','node-one-hosted-push')
-    setup = os.environ.get('GITHUB_REF_NAME') == native.NODE_SETUP_BRANCH
-    prefix = os.environ.get('GITHUB_REF_NAME') in (native.NODE_PREFIX_BRANCH,native.NODE_SETUP_BRANCH)
+    fixup = os.environ.get('GITHUB_REF_NAME') == native.NODE_FIXUP_BRANCH
+    setup = os.environ.get('GITHUB_REF_NAME') in (native.NODE_SETUP_BRANCH,native.NODE_FIXUP_BRANCH)
+    prefix = os.environ.get('GITHUB_REF_NAME') in (native.NODE_PREFIX_BRANCH,native.NODE_SETUP_BRANCH,native.NODE_FIXUP_BRANCH)
     started = float(os.environ.get('LSF_Q35_STARTED_MONOTONIC','nan'))
     now = time.monotonic()
     native.require(math.isfinite(started) and 0 < started <= now and now-started < 1315,
@@ -413,9 +414,11 @@ def qualify_node(output,revision):
         boot_raw = native.node_capture(ROOT)
         prefix_raw = native.node_prefix_capture(ROOT) if prefix else {}
         setup_raw = native.node_setup_capture(ROOT) if setup else {}
-        native.require(set(boot_raw).isdisjoint(prefix_raw) and set(boot_raw).isdisjoint(setup_raw) and
-            set(prefix_raw).isdisjoint(setup_raw),'node-research-captures-disjoint')
-        extra_raw = {**boot_raw,**prefix_raw,**setup_raw}
+        fixup_raw = native.node_fixup_capture(ROOT) if fixup else {}
+        groups = (boot_raw,prefix_raw,setup_raw,fixup_raw)
+        native.require(all(set(a).isdisjoint(b) for i,a in enumerate(groups) for b in groups[i+1:]),
+            'node-research-captures-disjoint')
+        extra_raw = {**boot_raw,**prefix_raw,**setup_raw,**fixup_raw}
         native.require(set(physical).isdisjoint(extra_raw) and set(boot_raw).isdisjoint(prefix_raw) and
             len(physical)+len(extra_raw) <= c.MAX_ENTRIES and
             sum(r['bytes'] for r in physical.values())+sum(map(len,extra_raw.values())) <= c.MAX_SOURCE,
@@ -441,7 +444,7 @@ def qualify_node(output,revision):
             b'Python 3.13.5','node-pinned-owner-python')
         run('locked-python-dependencies',owner_python,'-m','pip','install',
             '--requirement',ROOT/'tools/requirements.lock',seconds=180)
-        if os.environ.get('GITHUB_REF_NAME') in (native.NODE_IDENTITY_BRANCH,native.NODE_PREFIX_BRANCH,native.NODE_SETUP_BRANCH):
+        if os.environ.get('GITHUB_REF_NAME') in (native.NODE_IDENTITY_BRANCH,native.NODE_PREFIX_BRANCH,native.NODE_SETUP_BRANCH,native.NODE_FIXUP_BRANCH):
             run('node-q35-pci-identity-refusal-controls',owner_python,'-B','-m','unittest',
                 'tools.tests.test_kernel_native_constructor_vm.Q35NodeBootSourceControls',
                 '-v',seconds=30)
@@ -452,6 +455,10 @@ def qualify_node(output,revision):
         if setup:
             run('node-q35-setup-refusal-controls',owner_python,'-B','-m','unittest',
                 'tools.tests.test_kernel_native_constructor_vm.Q35NodePciSetupControls',
+                '-v',seconds=30)
+        if fixup:
+            run('node-q35-fixup-refusal-controls',owner_python,'-B','-m','unittest',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodePciFixupControls',
                 '-v',seconds=30)
         run('normal-prerequisite-update','sudo','apt-get','update',seconds=180)
         run('normal-prerequisite-install','sudo','apt-get','install','--yes','--no-install-recommends',
@@ -531,13 +538,17 @@ def qualify_node(output,revision):
         if setup:
             values,setup_stage = native.node_setup_compose(values,setup_raw)
             stages.append(setup_stage)
+        if fixup:
+            original_quirks = c.read(tree/'drivers/pci/quirks.c',c.MAX_FILE)
+            values,fixup_stage = native.node_fixup_compose(values,fixup_raw,original_quirks)
+            stages.append(fixup_stage)
         for name,value in values.items():
             target = tree/name; target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(value)
         derived_rows = {n:c.identity(r) for n,r in sorted(values.items())}
         write_json(output/'derived-inputs.json',derived_rows)
         write_json(output/'projection-proof.json',{'stages':stages,'prior485':rows485,
             'nativePrimary':{n:c.identity(r) for n,r in capacity_native.items()},
-            'researchUtf8':{n:r.decode('utf8') for n,r in {**capacity_raw,**boot_raw,**prefix_raw,**setup_raw}.items()},
+            'researchUtf8':{n:r.decode('utf8') for n,r in {**capacity_raw,**boot_raw,**prefix_raw,**setup_raw,**fixup_raw}.items()},
             'kbuildBeforeUtf8':{n:r.decode('utf8') for n,r in kbuild.items()}})
         # The only requested new config is the immutable built-in entry. Resolve
         # and record all actual values; never guess NR_CPUS equals topology.
@@ -546,18 +557,23 @@ def qualify_node(output,revision):
             requested += b'CONFIG_LSF_STREAM_NODE_PCI_PREFIX=y\n'
         if setup:
             requested += b'CONFIG_LSF_STREAM_NODE_PCI_SETUP=y\n'
+        if fixup:
+            requested += b'CONFIG_LSF_STREAM_NODE_PCI_FIXUP=y\n'
         (build/'.config').write_bytes(selected+requested)
         run('boot-selected-olddefconfig',*common,'olddefconfig',root=tree)
         config = c.read(build/'.config',c.MAX_DOCUMENT)
         native.require(b'CONFIG_LSF_STREAM_NODE_BOOTSTRAP=y\n' in config and
             (not prefix or b'CONFIG_LSF_STREAM_NODE_PCI_PREFIX=y\n' in config) and
-            (not setup or b'CONFIG_LSF_STREAM_NODE_PCI_SETUP=y\n' in config),'node-boot-config-selected')
+            (not setup or b'CONFIG_LSF_STREAM_NODE_PCI_SETUP=y\n' in config) and
+            (not fixup or b'CONFIG_LSF_STREAM_NODE_PCI_FIXUP=y\n' in config),'node-boot-config-selected')
         old_values,new_values = objects.configuration(selected),objects.configuration(config)
         reviewed = {'CONFIG_LSF_STREAM_NODE_BOOTSTRAP'}
         if prefix:
             reviewed.add('CONFIG_LSF_STREAM_NODE_PCI_PREFIX')
         if setup:
             reviewed.add('CONFIG_LSF_STREAM_NODE_PCI_SETUP')
+        if fixup:
+            reviewed.add('CONFIG_LSF_STREAM_NODE_PCI_FIXUP')
         native.require({k:v for k,v in new_values.items() if k not in reviewed} ==
             {k:v for k,v in old_values.items() if k not in reviewed},
             'node-only-reviewed-config-addition')
@@ -642,7 +658,8 @@ def qualify_node(output,revision):
         receipt['vmArgv'] = list(boot_args)
         serial = run('one-real-q35-kvm-node-prepare',*boot_args,seconds=image.VM_SECONDS)
         native.require(len(serial) <= image.MAX_SERIAL,'node-serial-channel-bound')
-        receipt['observations'] = (native.node_setup_serial(serial) if setup else
+        receipt['observations'] = (native.node_fixup_serial(serial) if fixup else
+            native.node_setup_serial(serial) if setup else
             native.node_prefix_serial(serial) if prefix else native.node_serial(serial))
         receipt['freshVmBoots'] = 1
         # Exact source/tool/image identities still hold AFTER the actual VM.
@@ -651,7 +668,8 @@ def qualify_node(output,revision):
         native.require(dict(sorted(after.items())) == receipt['sourceBefore'] and current_physical == physical and
             current_raw == capacity_raw and native.node_capture(ROOT) == boot_raw and
             (not prefix or native.node_prefix_capture(ROOT) == prefix_raw) and
-            (not setup or native.node_setup_capture(ROOT) == setup_raw),'node-all-source-unchanged')
+            (not setup or native.node_setup_capture(ROOT) == setup_raw) and
+            (not fixup or native.node_fixup_capture(ROOT) == fixup_raw),'node-all-source-unchanged')
         native.require(c.read(build/'.config',c.MAX_DOCUMENT) == config,'node-config-stable')
         native.require(read_file(kernel,image.MAX_KERNEL) == kernel_raw and
             native.identity(read_file(qemu,128*1024**2)) == qemu_pin and
