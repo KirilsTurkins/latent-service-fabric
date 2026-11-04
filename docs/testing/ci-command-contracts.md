@@ -16,7 +16,7 @@ fragment index or aggregate checksum. Workflow filenames retain their `.yml` or
 | Fragment | Review boundary |
 | --- | --- |
 | `workflows/ci.yml/workflow.json` | Workflow-wide policy and required job identities |
-| `workflows/ci.yml/jobs/rust.json` | Complete ordered job/step definitions and that job's historical replacement obligations |
+| `workflows/ci.yml/jobs/rust.json` | Complete ordered current job/step definitions |
 | `owners/tools/validate_contracts.sh.json` | Exact delegated script fingerprint, retained pending verified approval enforcement |
 | `python/test_ci_coverage.py.json` | Exact nonempty module/case identities and reviewed execution/skip guards |
 
@@ -47,10 +47,9 @@ frozen history/evidence stay byte-preserved. Initial migration and new records
 default to v1. A scoped Python proposal preserves an existing reviewed v2 format.
 
 Step lists are never sorted. Use an explicit step `id` for new commands. Existing
-name-based run identities are retained during this migration so their historical
-before/after relationships remain lossless. An existing explicit ID takes
-precedence over a display name. A renamed legacy command needs explicit review
-of its replacement; a pin update is not permission to rename it.
+name-based run identities remain supported. An existing explicit ID takes
+precedence over a display name. A renamed command needs review of its current
+replacement; a pin update is not permission to rename it.
 
 ## Action revisions are not command fingerprints
 
@@ -104,13 +103,11 @@ remove previous proposal output before preparing another version. A workflow-wid
 change uses `propose workflow .github/workflows/ci.yml`; a new job gets its own
 job fragment plus an explicit workflow-local required-job addition.
 
-The proposal command does **not** change an `unchanged` historical obligation
-into an `extended` one, invent a replacement reason, accept a removed job/command,
-or bless removed/renamed cases or newly skipped existing tests. Those changes
-require explicit manual review of the affected local records and regression
-coverage. Historical `before` records remain intact; every `coverage.after`
-reference must name an actual required command in its owning job. Adding a case
-cannot silently change the Rust catalogue or a custom-harness contract.
+A proposal does not accept a removed job or command, removed/renamed Python
+case, or newly skipped existing test. Intentional changes require review of the
+current local record and regression coverage. Historical before/after rows do
+not constrain current job proposals. Adding a case cannot silently change the
+Rust catalogue or a custom-harness contract.
 
 ## Generated evidence and diagnostics
 
@@ -177,28 +174,47 @@ and baseline-revision record for exact equality before writing output. The
 initial workflow/owner byte hashes must also match, so running migration on a
 stale or combined snapshot fails instead of blessing it.
 
-All historical before/coverage relationships are now active in their destination
-job fragments. The archived monolith is read only by migration/regression tools,
-never by normal coverage validation. The rollout adds a receipt-validation run
-block and explicit parser/storage owners, extends the existing tooling-test
-invocation, and updates qualification artifact inputs to retain the contract
-directory. These are reviewed additions, not a reset to whatever source exists.
+The archive remains unchanged for historical inspection and the one-time
+migration tool validates a self-contained old input before converting it.
+Current job records no longer carry the old baseline revision, command copies,
+or replacement table. Ordinary validation compares current workflow structure
+and commands to their ownership-local records and independently checks action
+pins and the unconditional result topology. An archived success does not qualify
+later source.
 
-Rebase an existing PR onto the new `development`. For a pin-only update, retain
-the reviewed workflow SHA/comment changes and discard that PR's obsolete active
-monolith edit; run pin validation and coverage without regenerating contracts.
-For semantic changes, inspect the original PR diff and transfer only the affected
-workflow/job, script-owner or Python-module expectations. Do not regenerate the
-archive or accept either branch's stale aggregate hash. The one-time `migrate`
-command is not a rebase/refresh command.
+At development commit `e8e6b20ffd851ae1f032c8a66943214fe4c628de`, the
+transition review checked all 88 archived before rows against the old local
+coverage rows and verified that each mapped to a current command in its owner
+job. No historical row needed an unmapped retirement. This one-time audit is
+not a current source-identity or execution receipt. The obligations map to
+current owners as follows:
 
-Real conflicts remain real: two changes to the same command, job policy, module
-expectation or historical replacement need joint review. Never use union merges,
-blanket ours/theirs, weakened selection, or automatic expected-inventory refresh.
-The regression suite demonstrates real non-overlapping temporary Git branches
-that update different pins in one workflow, and independently modify different
-jobs and Python modules; their merged source validates without a central-index
-edit or inventory refresh.
+| Retained obligation | Current owner and evidence |
+| --- | --- |
+| Profile selection, unconditional aggregate and missing/failing job refusal | `ci.yml` profile/result jobs, `ci_profile.py`, `ci_result.py` and their tests |
+| Docs, repository contracts and SDK checks | Current `ci.yml` docs/contracts/sdks job contracts and their maintained validators |
+| Rust, doctests, signing compatibility and MSRV | Current `ci.yml` rust/msrv contracts, `ci_cargo.py` recipes and suite discovery |
+| OCI/provider and browser execution | Current `ci.yml` OCI and Rust lane contracts, provider/renderer owners and execution receipts |
+| Resource/catalog and phase measurements | Current catalog and phase measurement workflow contracts and their resource owners |
+| Native release, candidate, VM, attestation and publication | Current native-runtime and native-runtime-release workflow contracts and release gate tests |
+| Security scope, secrets, static analysis, dependency audits and fail-closed canaries | Current security-baseline/security-rustsec workflow contracts and security tests |
+
+Exact legacy step spelling, global totals, manual-mode string substitutions and
+dated feature-branch exceptions are retired as migration mechanics, not as
+runtime evidence. The C qualification tests retain current ordinary PR,
+development push and manual-mode coverage. The derived historical C workflow
+is frozen at `tools/ci/history/c-guest-closed-filesystem.yml` and checked against
+its recorded SHA-256 and historical job identities. The scratch qualification
+test checks the current workflow directly. Archived source checks do not execute
+or qualify today's workflow. Current job contracts still detect a removed
+step or changed prerequisite until its owner is reviewed.
+
+Rebase onto current `development` and transfer only affected current workflow,
+job, script-owner or Python-module records. Do not regenerate the archive or
+add a shared migration exception for independent owner changes. Real conflicts
+in the same current job or test still require joint review. The isolated Git
+fixture exercises independent job and test-module changes without a shared
+migration table.
 
 ## Dependency grouping evaluation
 

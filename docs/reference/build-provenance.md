@@ -209,21 +209,40 @@ binding. A builder signature cannot replace that local native-output authority.
 | Component / observed build duration | 64 MiB / 3600 seconds |
 | Keys / source requirements | 64 / 256 each |
 | Revoked keys / revoked builders | 256 / 256; 64 / 256 |
-| Committed echo snapshot files / explicit archive directories | 8448 / 4096 |
-| Per-file / total source / archive | 4 MiB / 72 MiB / 80 MiB |
+| Committed echo snapshot files / explicit archive directories | 16,384 / 8,192 |
+| Per-file / total source / archive | 4 MiB / 128 MiB / 160 MiB |
 
-The committed echo source capture and its Cargo attribution reader share the
-same fixed 8,448-file ceiling, including ownership-local CI contracts and their
-historical migration evidence. On 2026-10-23, development `d337dfa` selected
-8,295 files and 70,729,079 source bytes. Retained kernel evidence and its contracts
-added 104 files to the previous 8,191-file selection, exceeding the former
-8,192-file ceiling before archive creation or compilation. The new finite file
-allowance retains every selected input. The independent 4 MiB per-file,
-72 MiB source, 80 MiB archive and 4,096-directory ceilings, source allowlist and
-downstream attribution checks remain enforced. Explicit worktree guest profiles
-retain their separate 4,096-file limit. A repository regression checks the actual
-committed selection through capture and attribution before compiler work;
-exceeding a ceiling fails rather than dropping source inputs.
+The committed echo capture and its Cargo attribution reader share a fixed
+16,384-file ceiling. Git listing and canonical inventory transport are bounded
+separately to 10 MiB and 12 MiB. Their capacities cover the file count with
+512-byte portable paths and per-record framing. Java source-identity
+qualification permits two such listings in its bounded diagnostic retention,
+plus the existing 16 MiB allowance for other output; other standalone commands
+retain their existing default. The 160 MiB stored-ZIP limit
+also reserves framing for the maximum file and directory counts independently
+of the 128 MiB source-byte ceiling. Limits are fixed, not inferred from the
+input; the allowlist remains intact because compiler and build-script closure
+has not been shown to exclude the tools tree safely.
+
+A Git stored-ZIP measurement of commit `8b4f2b1974bc127defef83d0ac5536c1a5377f83`
+on Windows selected 9,016 files and 1,615 directories, 79,507,583 source bytes
+and 81,569,323 archive bytes, with a longest path of 105 bytes. The corresponding
+NUL-delimited Git listing occupied 947,239 bytes. This is an
+archive observation, not a full build. A separate local Windows capture of
+`8b4f2b1974bc127defef83d0ac5536c1a5377f83` with the revised limits, input
+verification and attribution took 186.53 seconds including cleanup. Its 9,016
+files encoded to a 1,525,244-byte inventory and the Python process peak working
+set was 201,629,696 bytes; this is one observation, not a maximum or a compiler
+memory measurement. The new limits reserve approximately 69% source-byte and 82% file-count growth
+from that measurement. Successful capture emits path-free aggregate usage and headroom warnings at
+80%. An exceeded hard boundary fails without publishing partial output.
+The archive subprocess and reader can simultaneously retain more than one
+archive-sized buffer; two maximum archive buffers alone can use 320 MiB, in
+addition to process, listing, inventory and filesystem memory. The capture is
+therefore a bounded preparation operation, not a 160 MiB process-memory limit.
+Explicit worktree guest profiles retain their separate limits. Run
+`python -m unittest tools.tests.test_build_source_capacity` for the committed
+selection and synthetic boundary checks.
 
 Configured Rust limits must be positive and within hard ceilings. JSON rejects
 unknown fields, duplicate keys, floats, negative integers and `null`, and bounds
@@ -239,8 +258,8 @@ token spelling, cross-field associations, signatures and current authority need
 the Rust API.
 
 `run_bounded` is a main-thread trusted-recipe helper with a combined stdout/stderr
-cap of at most 64 MiB, no reader threads or log files, a command deadline of at
-most 3600 seconds and five seconds for
+cap of at most 160 MiB, no reader threads or log files, a command deadline of at
+most 4500 seconds and five seconds for
 cleanup. Normal signal handlers record bounded pending cancellation; explicit
 checkpoints deliver it after safe acquisition or during protected capture, and
 cleanup defers delivery until release. Windows starts hidden and suspended, assigns a

@@ -354,27 +354,6 @@ mod tests {
         include_bytes!(concat!(env!("OUT_DIR"), "/legacy-normal-component.wasm"));
 
     #[test]
-    fn selected_catalogue_never_admits_the_other_authenticated_origin() {
-        let (foreign_original, foreign_component) =
-            if cfg!(feature = "rust-thread-diagnostic-legacy") {
-                (
-                    include_bytes!("rust_catalogue/catalogue-original-core.wasm").to_vec(),
-                    include_bytes!("rust_catalogue/catalogue-normal-component.wasm").to_vec(),
-                )
-            } else {
-                crate::legacy_delta_tests::original_pair_for_test()
-            };
-        assert!(verify_rust_component_routing(ORIGINAL, COMPONENT).is_ok());
-        for (original, component) in [
-            (foreign_original.as_slice(), foreign_component.as_slice()),
-            (foreign_original.as_slice(), COMPONENT),
-            (ORIGINAL, foreign_component.as_slice()),
-        ] {
-            assert!(verify_rust_component_routing(original, component).is_err());
-        }
-    }
-
-    #[test]
     fn rust_normal_component_recomputes_original_graph_and_rejects_envelope_or_main_changes() {
         let adapted = adapt_original_public_wit(ORIGINAL).unwrap();
         assert_eq!(adapted.len(), ORIGINAL.len());

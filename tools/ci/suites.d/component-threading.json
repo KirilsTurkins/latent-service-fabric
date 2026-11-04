@@ -83,7 +83,7 @@
         "legacy_delta_tests::tests::authentic_catalogues_reconstruct_exact_historical_origins",
         "legacy_delta_tests::tests::wrong_origin_tamper_truncation_and_trailing_data_are_refused",
         "legacy_delta_tests::tests::parser_refuses_resealed_copy_range_opcode_and_output_bound",
-        "rust_component::tests::selected_catalogue_never_admits_the_other_authenticated_origin"
+        "legacy_delta_tests::tests::selected_catalogue_never_admits_the_other_authenticated_origin"
       ],
       "expectedIgnored": [],
       "id": "latent-component-threading.lib.latent-component-threading",

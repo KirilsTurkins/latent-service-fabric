@@ -219,6 +219,35 @@ mod tests {
         std::fs::read(Path::new(env!("CARGO_MANIFEST_DIR")).join(name)).unwrap()
     }
     #[test]
+    fn selected_catalogue_never_admits_the_other_authenticated_origin() {
+        let (legacy_original, legacy_component) = original_pair_for_test();
+        let current_original: &[u8] =
+            include_bytes!("../src/rust_catalogue/catalogue-original-core.wasm");
+        let current_component: &[u8] =
+            include_bytes!("../src/rust_catalogue/catalogue-normal-component.wasm");
+        let ((original, component), (foreign_original, foreign_component)) =
+            if cfg!(feature = "rust-thread-diagnostic-legacy") {
+                (
+                    (legacy_original.as_slice(), legacy_component.as_slice()),
+                    (current_original, current_component),
+                )
+            } else {
+                (
+                    (current_original, current_component),
+                    (legacy_original.as_slice(), legacy_component.as_slice()),
+                )
+            };
+        let verify = crate::rust_component::verify_rust_component_routing;
+        assert!(verify(original, component).is_ok());
+        for (candidate_original, candidate_component) in [
+            (foreign_original, foreign_component),
+            (foreign_original, component),
+            (original, foreign_component),
+        ] {
+            assert!(verify(candidate_original, candidate_component).is_err());
+        }
+    }
+    #[test]
     fn authentic_catalogues_reconstruct_exact_historical_origins() {
         for spec in SPECS {
             let output = reconstruct(&bytes(spec.source), &bytes(spec.delta), spec).unwrap();

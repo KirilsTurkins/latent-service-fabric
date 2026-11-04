@@ -26,6 +26,7 @@ from tools.rust_capsule_project import checked_path, decode_json, digest, fresh,
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = '.github/workflows/rust-owned-thread-inputs.yml'
 CRATE = 'crates/latent-component-threading/'
+SOURCE_MECHANISM_CASES = 80
 NATIVE_TLS_TEST = 'sdk/rust-standard-runtime/tests/thread_tls_native.rs'
 NATIVE_WAIT_TEST = 'sdk/rust-standard-runtime/tests/thread_wait_driver_native.rs'
 NATIVE_SYNC_TEST = 'sdk/rust-standard-runtime/tests/thread_sync_native.rs'
@@ -44,7 +45,9 @@ CRATE_SOURCES = tuple(CRATE + 'src/' + name for name in (
 RECIPE = tuple(dict.fromkeys((
     'tools/compile_rust_owned_thread_inputs.py', WORKFLOW, '.cargo/config.toml',
     'tools/requirements.lock', 'tools/qualify_rust_standard_clocks.py',
-    'tools/qualify_rust_standard_clock.py', CRATE + 'Cargo.toml',
+    'tools/qualify_rust_standard_clock.py', CRATE + 'Cargo.toml', CRATE + 'build.rs',
+    CRATE + 'build-support/legacy_delta.rs',
+    *(CRATE + f'src/rust_catalogue/legacy/legacy-delta-{index}.bin' for index in range(5)),
     'tools/rust_capsule_project.py', 'tools/build_snapshot.py',
     'tools/dev_workflow/common.py', 'tools/application_dependency_store.py',
     'tools/rust_standard_logging_inputs.py', 'tools/rust_application_dependencies.py',
@@ -249,9 +252,9 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
             summary['stage'] = 'source-mechanism-controls'
             controls = commands.run('owned-core-source-mechanism-controls', tools['cargo'], 'test', '--locked',
                 '--package', 'latent-component-threading', '--lib', '--', '--test-threads=1')
-            require(b'test result: ok. 76 passed; 0 failed; 0 ignored;' in controls,
+            require(f'test result: ok. {SOURCE_MECHANISM_CASES} passed; 0 failed; 0 ignored;'.encode() in controls,
                     'rust-thread-inputs-exact-source-mechanism-controls')
-            summary['sourceMechanismControlsPassed'] = 76
+            summary['sourceMechanismControlsPassed'] = SOURCE_MECHANISM_CASES
         summary['stage'] = 'recheck'
         require(sources(expected_head, application_diagnostic) == original, 'rust-thread-inputs-source-mutated')
         require(distribution(rust_bin.parent) == compiler

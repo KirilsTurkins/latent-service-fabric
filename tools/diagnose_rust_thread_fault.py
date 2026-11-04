@@ -28,7 +28,7 @@ from tools.rust_thread_diagnostic_package import prepare
 from tools.rust_thread_diagnostic_node import run
 
 CASE = 'rust_thread_fault::tests::rust_thread_fault_visits_only_eight_numeric_original_frames_for_authenticated_rust'
-CATALOGUE_CASE = 'rust_component::tests::selected_catalogue_never_admits_the_other_authenticated_origin'
+CATALOGUE_CASE = 'legacy_delta_tests::tests::selected_catalogue_never_admits_the_other_authenticated_origin'
 WAIT_CASE = 'early_untimed_notification_never_resumes_a_running_thread'
 WAIT_SOURCE = 'sdk/rust-standard-runtime/tests/thread_wait_driver_native.rs'
 # Bind the complete source-port regression, not just its test harness. These
