@@ -283,10 +283,13 @@ impl PreparedAdmission {
     /// Publish a first attempt or observe an identical claim that won its CAS.
     /// Only an engine expectation conflict permits the fresh, authorized read;
     /// a failed authority fence or uncertain write is never retried or replaced.
+    /// Re-observe the original protected clock only for a present winner: a
+    /// competing admission may have captured a later floor than this caller.
+    /// The observation does not renew this caller's admission or deadline.
     pub fn publish_or_existing(
         self,
         store: &EmbeddedStore,
-        time: CommandTime,
+        current_time: impl FnOnce() -> Result<CommandTime, AtomicError>,
         final_accept: impl FnOnce() -> Result<(), AtomicError>,
         mut authorize: impl FnMut(CommandAccess, Option<&CommandRecord>) -> Result<(), AtomicError>,
     ) -> Result<PublishedAdmission, AtomicError> {
@@ -309,6 +312,7 @@ impl PreparedAdmission {
                 let bytes = view
                     .get(&command_row_key(self.record.id))?
                     .ok_or(AtomicError::Conflict)?;
+                let time = current_time()?;
                 if super::RetiredCommand::is_present(&bytes) {
                     let floor = super::RetiredCommand::decode(&bytes)?;
                     floor.verify_key(&self.record.key)?;

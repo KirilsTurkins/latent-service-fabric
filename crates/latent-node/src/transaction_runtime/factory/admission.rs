@@ -447,7 +447,16 @@ impl NativeTransactionAdmission {
                         };
                         if first_attempt {
                             prepared
-                                .publish_or_existing(store, time, final_accept, &authorize)
+                                .publish_or_existing(
+                                    store,
+                                    || {
+                                        retained_role.with_current(|now| {
+                                            Ok(super::super::command_role::command_time(now))
+                                        })
+                                    },
+                                    final_accept,
+                                    &authorize,
+                                )
                                 .map(|result| match result {
                                     PublishedAdmission::New(claim) => {
                                         PendingPublication::New(claim)

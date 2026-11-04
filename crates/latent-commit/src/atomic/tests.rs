@@ -387,11 +387,16 @@ fn losing_first_attempt_observes_only_an_authorized_identical_winner() {
         AdmissionDecision::New(plan) => plan,
         AdmissionDecision::Existing(_) => panic!("unexpected owner"),
     };
-    let winner = prepare(input("race"));
+    let AdmissionDecision::New(winner) =
+        PreparedAdmission::prepare(&view, input("race"), time(101), permission).unwrap()
+    else {
+        panic!("unexpected owner")
+    };
     let identical = prepare(input("race"));
     let revoked = prepare(input("race"));
     let clock_regressed = prepare(input("race"));
     let clock_unproven = prepare(input("race"));
+    let clock_unavailable = prepare(input("race"));
     let mut changed = input("race");
     changed.fingerprint.input.bytes.push(1);
     let changed = prepare(changed);
@@ -400,7 +405,7 @@ fn losing_first_attempt_observes_only_an_authorized_identical_winner() {
     let PublishedAdmission::Existing(existing) = identical
         .publish_or_existing(
             &store,
-            time(100),
+            || Ok(time(101)),
             || panic!("stale CAS cannot accept"),
             permission,
         )
@@ -411,16 +416,25 @@ fn losing_first_attempt_observes_only_an_authorized_identical_winner() {
     assert_eq!(existing.id(), owner.record().id());
     assert_eq!(existing.outcome(), Outcome::Pending);
     assert!(matches!(
-        clock_regressed.publish_or_existing(&store, time(99), || Ok(()), permission),
+        clock_unavailable.publish_or_existing(
+            &store,
+            || Err(AtomicError::PermissionDenied),
+            || Ok(()),
+            permission,
+        ),
+        Err(AtomicError::PermissionDenied)
+    ));
+    assert!(matches!(
+        clock_regressed.publish_or_existing(&store, || Ok(time(99)), || Ok(()), permission),
         Err(AtomicError::RecoveryRequired)
     ));
     assert!(matches!(
         clock_unproven.publish_or_existing(
             &store,
-            CommandTime {
+            || Ok(CommandTime {
                 unix_millis: 100,
                 continuity_proven: false
-            },
+            }),
             || Ok(()),
             permission,
         ),
@@ -429,18 +443,18 @@ fn losing_first_attempt_observes_only_an_authorized_identical_winner() {
     assert!(matches!(
         revoked.publish_or_existing(
             &store,
-            time(100),
+            || Ok(time(100)),
             || Ok(()),
             |_, _| Err(AtomicError::PermissionDenied)
         ),
         Err(AtomicError::PermissionDenied)
     ));
     assert!(matches!(
-        changed.publish_or_existing(&store, time(100), || Ok(()), permission),
+        changed.publish_or_existing(&store, || Ok(time(100)), || Ok(()), permission),
         Err(AtomicError::Conflict)
     ));
     assert!(matches!(
-        unrelated.publish_or_existing(&store, time(100), || Ok(()), permission),
+        unrelated.publish_or_existing(&store, || Ok(time(100)), || Ok(()), permission),
         Err(AtomicError::Conflict)
     ));
 }
@@ -457,7 +471,7 @@ fn first_attempt_authority_refusal_is_not_treated_as_a_cas_race() {
     assert!(matches!(
         plan.publish_or_existing(
             &store,
-            time(100),
+            || panic!("fence refusal must not observe time"),
             || Err(AtomicError::Conflict),
             |_, _| panic!("fence refusal must not replay")
         ),
