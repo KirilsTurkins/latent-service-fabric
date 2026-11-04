@@ -111,6 +111,22 @@ Rust catalogue or a custom-harness contract.
 
 ## Generated evidence and diagnostics
 
+The documentation path invokes the validator once, in the receipt-producing
+step before its Python tests. Its exit status is required and the receipt upload
+runs with `always()` when a receipt could be written.
+
+A bounded pre-change execution observation is development CI run `40861664839`
+on 2026-10-29 (`29b0cc3e4eff`): Ubuntu 24.04 and Python 3.13.5; the docs job
+ran its native-required tooling group (336 tests, no skips), native-required
+process group (94 tests, one skip) and deterministic group (16 tests, no skips).
+The full-profile Python contract job ran unittest discovery (8,551 tests, 50
+skips) without the native-required environment variable, after its own toolchain
+and fixture setup. Job elapsed times were 2m30s and 9m24s respectively; their
+sum was 11m54s, excluding other jobs. These are a single historical sample,
+not equivalent-context proof or a measured saving. The different prerequisite
+and skip behavior remains a reason to retain both Python executions until
+case-level observations demonstrate an equivalent owner.
+
 The validator writes `target/ci/observed-inventory.json`, including on validation
 failure when source/Git inspection is possible. The documentation lane runs it
 before the broader tooling tests and uploads that receipt with `always()` under
