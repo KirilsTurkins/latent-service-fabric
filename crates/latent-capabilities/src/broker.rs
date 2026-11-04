@@ -13,6 +13,7 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 
 mod audit;
 mod clock;
+pub mod scalar_configuration;
 pub use clock::HostClock;
 mod currentness;
 pub use currentness::is_authority_bookkeeping_busy;
