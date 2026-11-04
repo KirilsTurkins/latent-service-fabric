@@ -221,9 +221,9 @@ of the 128 MiB source-byte ceiling. Limits are fixed, not inferred from the
 input; the allowlist remains intact because compiler and build-script closure
 has not been shown to exclude the tools tree safely.
 
-A Git stored-ZIP measurement of commit `ee6054a69c57f443e571b81c475f45a3a1de5c4a`
-on Windows selected 9,016 files and 1,615 directories, 79,507,269 source bytes
-and 81,569,009 archive bytes, with a longest path of 105 bytes. This is an
+A Git stored-ZIP measurement of commit `8b4f2b1974bc127defef83d0ac5536c1a5377f83`
+on Windows selected 9,016 files and 1,615 directories, 79,507,583 source bytes
+and 81,569,323 archive bytes, with a longest path of 105 bytes. This is an
 archive observation, not a full build. A separate local Windows capture of
 `8b4f2b1974bc127defef83d0ac5536c1a5377f83` with the revised limits, input
 verification and attribution took 186.53 seconds including cleanup. Its 9,016
