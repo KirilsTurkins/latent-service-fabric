@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/diagnose_rust_thread_fault.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Finite off-default numeric fault diagnostic, with a source-bound native root-retirement wakeup control before the diagnostic node build. Retained guest and four historical helpers remain unchanged; original nonempty fault-frame gate and all runtime qualification refusals remain mandatory. Correct the selected e3/200 diagnostic labels without altering frozen receipts or gates.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5b03025aa6b61fe79d8e9995e68adf2b0592ba76bd4dd8e204a5867997bd6a54"
-}
+{"kind":"owner","path":"tools/diagnose_rust_thread_fault.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve both exact e3 diagnostic and cdd normal origins, the original command obligations and execution guards, and fail closed on changed reconstruction inputs.","schemaVersion":"latent.ci.contracts.v1","sha256":"a73156003b5bd5b18b3576a0710c0ba9aca5aedb819051b102dc6b9f216d0c27"}

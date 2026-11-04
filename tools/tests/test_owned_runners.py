@@ -98,6 +98,18 @@ class RunnerContractTests(unittest.TestCase):
                     addition.write_bytes(original)
             self.assertEqual(catalog.load(destination), expected)
 
+        # A loader-only copy imports successfully but silently loses additive
+        # cases. Require full equality to catch that distinct failure mode.
+        fragments = destination.with_suffix('.cases.d')
+        self.assertTrue(any(fragments.iterdir()))
+        hidden = fragments.with_name('retained-case-fragments')
+        fragments.rename(hidden)
+        try:
+            self.assertNotEqual(catalog.load(destination), catalog.load())
+        finally:
+            hidden.rename(fragments)
+        self.assertEqual(catalog.load(destination), catalog.load())
+
         # Validate the source before writing even the base catalogue. A duplicate
         # case in an additive fragment must not become a partially copied fixture.
         addition = additions[0]

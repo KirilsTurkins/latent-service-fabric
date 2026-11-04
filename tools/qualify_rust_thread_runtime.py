@@ -12,7 +12,7 @@ from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import inventory
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, fresh, write_json
-from tools import rust_thread_native_products as native_source
+from tools import rust_thread_runtime_native_products as native_source
 from tools.rust_thread_runtime_package import prepare
 from tools.rust_thread_runtime_node import run
 

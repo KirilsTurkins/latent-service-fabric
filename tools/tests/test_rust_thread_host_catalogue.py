@@ -30,24 +30,26 @@ class HostCatalogueTests(unittest.TestCase):
         base = (Path(__file__).resolve().parents[2] /
                 'crates/latent-component-threading/src/rust_catalogue')
         origin = json.loads((base / 'origin.json').read_text(encoding='utf-8'))
-        envelope = origin['normalComponentEnvelope']
+        previous = origin['beforeRootRetirementRepair']
+        envelope = previous['normalComponentEnvelope']
+        candidate = origin['normalComponentEnvelope']
         component = (base / 'catalogue-normal-component.wasm').read_bytes()
         shell = (base / 'normal-component-shell.bin').read_bytes()
         records = (base.parent / 'rust_catalogue.rs').read_text(encoding='utf-8')
         self.assertEqual(origin['nodeCount'], 1221)
-        self.assertEqual(origin['origin']['head'], 'f401e388a7542b8f9cd9bbd987dbcc65814262d6')
+        self.assertEqual(previous['origin']['head'], 'f401e388a7542b8f9cd9bbd987dbcc65814262d6')
         self.assertFalse(origin['origin']['normalComponentProduced'])
-        self.assertEqual(origin['normalComponentEnvelopeStatus'],
+        self.assertEqual(previous['normalComponentEnvelopeStatus'],
                          'actual current-source encoding retained; native normal proof and mandatory 76 controls pending')
-        historical_envelope = origin['historicalCatalogueOrigin']['normalComponentEnvelope']
-        self.assertEqual(origin['historicalNormalComponentFixture']['normalComponentEnvelope'],
+        historical_envelope = previous['historicalCatalogueOrigin']['normalComponentEnvelope']
+        self.assertEqual(previous['historicalNormalComponentFixture']['normalComponentEnvelope'],
                          historical_envelope)
-        self.assertEqual(origin['historicalNormalComponentFixture']['head'],
+        self.assertEqual(previous['historicalNormalComponentFixture']['head'],
                          '24737830b5ea01006b419c1196212f08db2d715a')
-        self.assertEqual(origin['historicalNormalComponentFixture']['componentDigest'],
+        self.assertEqual(previous['historicalNormalComponentFixture']['componentDigest'],
                          historical_envelope['componentDigest'])
-        self.assertTrue(origin['currentSourceObservation']['normalComponentProduced'])
-        self.assertFalse(origin['currentSourceObservation']['normalComponentObservation']['nativeNormalProofPassed'])
+        self.assertTrue(previous['currentSourceObservation']['normalComponentProduced'])
+        self.assertFalse(previous['currentSourceObservation']['normalComponentObservation']['nativeNormalProofPassed'])
         self.assertEqual(envelope['candidateSource'], {
             'compilerRun': 41187066997,
             'compilerJob': 124496037081,
@@ -97,14 +99,14 @@ class HostCatalogueTests(unittest.TestCase):
             'nativeControlsPassed': 29,
             'hostedConfirmation': True,
         })
-        self.assertEqual(len(component), 250260)
+        self.assertEqual(len(component), 250281)
         self.assertEqual(hashlib.sha256(component).hexdigest(),
-                         '0ded5f17359bbff107af47e422549765de2e17f4829853ed2011225d85a56107')
+                         '0d66c4828a608e9ec0048205ac6f38539e417f62dbdaeb6b7bdc245aa1c073c8')
         self.assertEqual(len(shell), 4422)
         self.assertEqual(hashlib.sha256(shell).hexdigest(),
                          '7640af9fd078983e33e464d5589e565a191686d0510ea5d5a4687bb886bf0e75')
-        self.assertEqual(envelope['componentBytes'], len(component))
-        self.assertEqual(envelope['componentDigest'],
+        self.assertEqual(candidate['componentBytes'], len(component))
+        self.assertEqual(candidate['componentDigest'],
                          'sha256:' + hashlib.sha256(component).hexdigest())
         retained_shell = next(row for row in envelope['files']
                               if row['name'] == 'normal-component-shell.bin')
@@ -113,6 +115,29 @@ class HostCatalogueTests(unittest.TestCase):
             'bytes': len(shell),
             'digest': 'sha256:' + hashlib.sha256(shell).hexdigest(),
         })
+
+
+        self.assertEqual(origin['origin']['head'], '72707ee61ce4784f7c866f2835f474554df8d922')
+        self.assertEqual(origin['origin']['event'], 'push')
+        self.assertEqual(origin['referenceCount'], 5246)
+        self.assertEqual(previous['referenceCount'], 5245)
+        self.assertEqual(envelope['componentBytes'], 250260)
+        self.assertEqual(envelope['componentDigest'],
+                         'sha256:0ded5f17359bbff107af47e422549765de2e17f4829853ed2011225d85a56107')
+        self.assertEqual(candidate['derivedCoreDigest'],
+                         'sha256:e976d80b529cdc91e5a6f2255d4aeb8db6412a690b039578c75a7dbd76363c22')
+        self.assertEqual(origin['normalComponentEnvelopeStatus'],
+                         'source-projected candidate; exact hosted encoding and mandatory 76 controls pending')
+        self.assertTrue(candidate['candidateSource']['sourceProjectionOnly'])
+        self.assertFalse(candidate['candidateSource']['hostedConfirmation'])
+        self.assertFalse(candidate['candidateSource']['nativeNormalProofPassed'])
+        self.assertFalse(candidate['candidateSource']['mandatory76Reached'])
+        self.assertFalse(origin['currentSourceObservation']['normalComponentProduced'])
+        self.assertFalse(origin['runtimeQualified'])
+        self.assertFalse(origin['generationGrantsAuthority'])
+        self.assertEqual(origin['originalBodyImageDigest'],
+                         'sha256:eca9883441a2e8ef0b4ea721c53932866d117503382c6e8805cb7d7661fd1b8b')
+        self.assertEqual(origin['currentSourceObservation']['retirementNotification']['offset'], 816)
 
     def test_reviewed_roots_require_public_lifecycle_and_private_pool_entrypoints(self):
         nodes = ([{'id': index, 'originalSymbol': name}

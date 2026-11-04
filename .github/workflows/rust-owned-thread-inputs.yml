@@ -7,11 +7,13 @@ on:
         type: boolean
         default: false
   push:
-    branches: ['feat/rust-standard-thread-runtime-20261022', 'diag/rust-thread-frames-20261023']
+    branches: ['feat/rust-standard-thread-runtime-20261022', 'diag/rust-thread-frames-20261023', 'feat/rust-thread-runtime-20261023']
     paths:
       - .github/workflows/rust-owned-thread-inputs.yml
       - tools/compile_rust_owned_thread_inputs.py
       - tools/compile_rust_owned_thread_application.py
+      - tools/build_snapshot.py
+      - crates/latent-component-threading/**
       - sdk/rust-standard-runtime/**
 permissions:
   contents: read
@@ -31,7 +33,7 @@ jobs:
         with:
           python-version: 3.13.5
       - uses: KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415 # v7.1.0 + upstream changes + LSF security fixes
-        if: ${{ inputs.application-diagnostic || (github.event_name == 'push' && github.ref == 'refs/heads/diag/rust-thread-frames-20261023') }}
+        if: ${{ inputs.application-diagnostic || (github.event_name == 'push' && (github.ref == 'refs/heads/diag/rust-thread-frames-20261023' || github.ref == 'refs/heads/feat/rust-thread-runtime-20261023')) }}
         with:
           node-version: 24.19.0
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -51,15 +53,15 @@ jobs:
       - name: Install existing pinned Python compiler recipe dependencies
         run: python3 -m pip install -r tools/requirements.lock
       - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
-        if: ${{ inputs.application-diagnostic || (github.event_name == 'push' && github.ref == 'refs/heads/diag/rust-thread-frames-20261023') }}
+        if: ${{ inputs.application-diagnostic || (github.event_name == 'push' && (github.ref == 'refs/heads/diag/rust-thread-frames-20261023' || github.ref == 'refs/heads/feat/rust-thread-runtime-20261023')) }}
         with:
           version: 1.254.0
       - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
-        if: ${{ inputs.application-diagnostic || (github.event_name == 'push' && github.ref == 'refs/heads/diag/rust-thread-frames-20261023') }}
+        if: ${{ inputs.application-diagnostic || (github.event_name == 'push' && (github.ref == 'refs/heads/diag/rust-thread-frames-20261023' || github.ref == 'refs/heads/feat/rust-thread-runtime-20261023')) }}
         with:
           version: '0.16.0'
       - name: Prepare the existing captured compiler isolation and binding tool
-        if: ${{ inputs.application-diagnostic || (github.event_name == 'push' && github.ref == 'refs/heads/diag/rust-thread-frames-20261023') }}
+        if: ${{ inputs.application-diagnostic || (github.event_name == 'push' && (github.ref == 'refs/heads/diag/rust-thread-frames-20261023' || github.ref == 'refs/heads/feat/rust-thread-runtime-20261023')) }}
         run: |
           sudo apt-get update
           sudo apt-get install --yes bubblewrap
@@ -69,7 +71,7 @@ jobs:
       - name: Build the two exact owned compiler inputs once
         env:
           EXPECTED_HEAD: ${{ github.sha }}
-          APPLICATION_DIAGNOSTIC: ${{ inputs.application-diagnostic || (github.event_name == 'push' && github.ref == 'refs/heads/diag/rust-thread-frames-20261023') }}
+          APPLICATION_DIAGNOSTIC: ${{ inputs.application-diagnostic || (github.event_name == 'push' && (github.ref == 'refs/heads/diag/rust-thread-frames-20261023' || github.ref == 'refs/heads/feat/rust-thread-runtime-20261023')) }}
         run: |
           arguments=()
           if [ "$APPLICATION_DIAGNOSTIC" = true ]; then
@@ -86,4 +88,4 @@ jobs:
           name: rust-owned-thread-inputs-${{ github.sha }}
           path: ${{ runner.temp }}/rust-owned-thread-inputs/**
           if-no-files-found: error
-          retention-days: 3
+          retention-days: 7

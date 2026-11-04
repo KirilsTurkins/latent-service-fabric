@@ -1,17 +1,28 @@
 //! Closed, host-owned original-object expectations for the selected Rust port.
 //!
 //! A guest cannot provide or select this catalogue. The current immutable corpus
-//! is the independently verified a9809 compiler observation retained by run
-//! 41109207452. Its original app and guarded core compiled; the ordinary guest
+//! is the independently verified root-retirement observation retained by run
+//! 41219448914. Its original app and guarded core compiled; the ordinary guest
 //! was not run because the stale catalogue refused the changed object graph.
 //! This source proof alone does not enable any runtime or component profile.
 use wasmparser::{BinaryReader, Encoding, Operator, Parser, Payload, Validator};
 
+// The diagnostic feature is selected at build time, never from guest input.
+// Both catalogues are fixed host-owned sources with exact original identities.
+#[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
 #[rustfmt::skip]
 #[path = "rust_catalogue.rs"]
 mod catalogue;
+#[cfg(feature = "rust-thread-diagnostic-legacy")]
+#[rustfmt::skip]
+mod catalogue {
+    include!(concat!(env!("OUT_DIR"), "/rust_catalogue.rs"));
+}
 
 const NODE_COUNT: usize = 1221;
+#[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
+const REFERENCE_COUNT: usize = 5246;
+#[cfg(feature = "rust-thread-diagnostic-legacy")]
 const REFERENCE_COUNT: usize = 5245;
 const MAX_BYTES: usize = 1024 * 1024;
 const MAX_FUNCTIONS: u32 = 1024;
@@ -1802,7 +1813,10 @@ pub fn derive_source_core(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
     const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/catalogue-original-core.wasm");
+    #[cfg(feature = "rust-thread-diagnostic-legacy")]
+    const ORIGINAL: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/legacy-original-core.wasm"));
     const PUBLIC: &str = "examples:greeting/api@1.0.0#greet";
     const POST: &str = "cabi_post_examples:greeting/api@1.0.0#greet";
 
@@ -1863,6 +1877,26 @@ mod tests {
             .find(|(node, index)| node.kind == 0 && *index == selected)
             .unwrap()
             .0;
+        // The original retirement path must notify the existing completion
+        // queue. This binds the reviewed extra edge without relaxing any
+        // full-body, referent, mutation or incoming-dispatch check below.
+        let notifications = node
+            .references
+            .iter()
+            .filter(|reference| {
+                reference.kind == 0
+                    && matches!(&reference.target, Target::Definition(index)
+                        if catalogue::NODES[*index as usize].name.ends_with("executor_root7changed"))
+            })
+            .count();
+        assert_eq!(
+            notifications,
+            if cfg!(feature = "rust-thread-diagnostic-legacy") {
+                0
+            } else {
+                1
+            }
+        );
         let body = module.body(selected).unwrap();
         let start = body_start(ORIGINAL, selected, module.imports.len());
         let parsed = wasmparser::FunctionBody::new(BinaryReader::new(body, 0));
@@ -1938,13 +1972,17 @@ mod tests {
         assert_eq!(sites.iter().filter(|site| site.fallback).count(), 1);
         let sealed = seal_original_callbacks(ORIGINAL).unwrap();
         // Exact independently retained Python production derivation from run
-        // 41184446196, artifact 13036816711. This compares emissions, not execution.
+        // 41219448914, artifact 13049262956. This compares emissions, not execution.
         assert_eq!(
             Sha256::digest(&sealed)
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "4b38efc1a41848dee2ec1d8bd1eb4861c5698181bc2ec1daae8058e2fdeb2486"
+            if cfg!(feature = "rust-thread-diagnostic-legacy") {
+                "4b38efc1a41848dee2ec1d8bd1eb4861c5698181bc2ec1daae8058e2fdeb2486"
+            } else {
+                "3266c7213c8dfbecfde51dcbd66934c92eac5bd9cfb373fa28f09a1739d97463"
+            }
         );
         let sealed_module = Original::parse(&sealed).unwrap();
         for (index, function) in module.table.iter().enumerate() {
@@ -1989,7 +2027,11 @@ mod tests {
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423"
+            if cfg!(feature = "rust-thread-diagnostic-legacy") {
+                "deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423"
+            } else {
+                "e976d80b529cdc91e5a6f2255d4aeb8db6412a690b039578c75a7dbd76363c22"
+            }
         );
         assert_eq!(receipt.original_panic_function, 525);
         assert_eq!(receipt.root.canonical_system_panic_trap, Some(526));

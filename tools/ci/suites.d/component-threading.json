@@ -79,14 +79,18 @@
         "rust_objects::tests::rust_original_catalogue_checks_complete_bodies_and_every_real_global_import_referent",
         "rust_objects::tests::rust_original_derivation_closes_private_owner_dispatch_result_area_and_system_failure",
         "rust_component::tests::rust_normal_component_recomputes_original_graph_and_rejects_envelope_or_main_changes",
-        "rust_component::tests::rust_normal_preimage_never_authorizes_forged_or_duplicate_original_material"
+        "rust_component::tests::rust_normal_preimage_never_authorizes_forged_or_duplicate_original_material",
+        "legacy_delta_tests::tests::authentic_catalogues_reconstruct_exact_historical_origins",
+        "legacy_delta_tests::tests::wrong_origin_tamper_truncation_and_trailing_data_are_refused",
+        "legacy_delta_tests::tests::parser_refuses_resealed_copy_range_opcode_and_output_bound",
+        "legacy_delta_tests::tests::selected_catalogue_never_admits_the_other_authenticated_origin"
       ],
       "expectedIgnored": [],
       "id": "latent-component-threading.lib.latent-component-threading",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-component-threading/Cargo.toml",
-      "minimumCases": 76,
+      "minimumCases": 80,
       "mode": "libtest",
       "package": "latent-component-threading",
       "platforms": [
