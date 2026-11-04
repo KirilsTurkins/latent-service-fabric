@@ -1,7 +1,7 @@
 name: Numeric original Rust ThreadPool fault diagnostic
 on:
   push:
-    branches: ['diag/rust-thread-frames-20261023']
+    branches: ['diag/rust-thread-frames-20261023', 'fix/rust-e3-recovery-20261104', 'fix/rust-e3-origin-20261104']
     paths:
       - '.github/workflows/rust-thread-fault-diagnostic.yml'
       - 'crates/latent-wasmtime/src/config/engine.rs'
@@ -12,6 +12,8 @@ on:
       - 'tools/rust_thread_compiler_materials.py'
       - 'tools/rust_thread_runtime_package.py'
       - 'tools/rust_thread_runtime_node.py'
+      - 'tools/rust_thread_diagnostic_*.py'
+      - 'crates/latent-component-threading/src/rust_catalogue/legacy/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -56,16 +58,17 @@ jobs:
       - name: Fetch the exact successful current native and compiler source event
         run: |
           git fetch --no-tags --depth=1 origin e3f0edf822c10e84bbeede276174ac3217542afc
+          git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd
       - name: Locked Python dependencies and finite numeric extraction control
         run: |
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_rust_thread_fault_frames tools.tests.test_rust_thread_runtime -v
+          python3 -B -m unittest tools.tests.test_rust_thread_fault_frames tools.tests.test_rust_thread_runtime tools.tests.test_rust_thread_diagnostic_catalogue tools.tests.test_rust_thread_diagnostic_recovery -v
       - name: Verify immutable native origin and retain the same compiler inputs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 -B tools/rust_thread_native_products.py --output "$RUNNER_TEMP/rust200-native"
-          python3 -B tools/rust_thread_compiler_materials.py --output "$RUNNER_TEMP/rust28059-materials"
+          python3 -B tools/rust_thread_diagnostic_native_products.py --output "$RUNNER_TEMP/rust200-native"
+          timeout --signal=TERM --kill-after=5s 180s python3 -B tools/rust_thread_diagnostic_compiler_materials.py --output "$RUNNER_TEMP/rust28059-materials"
       - name: Build only the explicit diagnostic node and execute the original guest
         run: >-
           python3 -B tools/diagnose_rust_thread_fault.py

@@ -307,3 +307,72 @@ class Q35NodeBootSourceControls(unittest.TestCase):
                 root_name+'/roms/edk2/../../escape', root_name+'/./alias', root_name+chr(92)+'alias'):
             with self.subTest(name=raw), self.assertRaises(ValueError):
                 owner.node_qemu_source_name(raw)
+
+
+class Q35NodePciPrefixControls(unittest.TestCase):
+    @staticmethod
+    def serial():
+        pci = b'[    1.234567] ' + owner.NODE_PCI_OBSERVATION
+        prefix = (b'[    2.345678] LSFQ35PCIPREFIX1 bdf=0000:00:03.0 vendor=1af4 '
+            b'device=1041 born=1 returned=1 registered=0 scopeRevoked=1 slot=40 '
+            b'generation=45 live=40,41,40 cursor=4096,5760,5760')
+        facts = (b'LSFNODEBOOT1 facts=[1, 2, 3, 4, 5, 6] cpu=[1, 1, 1, 2, 3, 4, 5, 6, 7] '
+            b'accounting=[524288, 4096, 4096, 4096, 45, 40, 1, 46] '
+            b'vectors=[32, 33, 34, 35, 36, 37, 38, 39]')
+        return b'\n'.join((owner.NODE_BOOT,pci,prefix,b'LSFNODEPREFIX1 childAck=1',
+            facts,owner.NODE_HELD,b'LSFNODEBOOT1 childExit=0',owner.NODE_END))+b'\n'
+
+    def test_prefix_requires_one_original_record_and_ordered_return(self):
+        raw = self.serial()
+        observed = owner.node_prefix_serial(raw)
+        self.assertEqual(observed['pciPrefix']['live'],[40,41,40])
+        self.assertEqual(observed['pciPrefix']['cursor'],[4096,5760,5760])
+        self.assertTrue(observed['pciPrefix']['scopeRevoked'])
+        self.assertFalse(observed['pciPrefix']['registered'])
+        for key in ('nodeFunding','nodeRetired','irqEnabled','tcpEnabled',
+                'pciConstructorQualified','napiQualified'):
+            self.assertIs(observed[key],False)
+        for bad in (raw.replace(b'born=1',b'born=0'),raw.replace(b'returned=1',b'returned=0'),
+                raw.replace(b'registered=0 scopeRevoked=1',b'registered=1 scopeRevoked=1'),
+                raw.replace(b'scopeRevoked=1',b'scopeRevoked=0'),
+                raw.replace(b'live=40,41,40',b'live=40,42,40'),
+                raw.replace(b'live=40,41,40',b'live=40,41,39'),
+                raw.replace(b'cursor=4096,5760,5760',b'cursor=4096,5760,4096'),
+                raw.replace(b'cursor=4096,5760,5760',b'cursor=4095,5760,5760'),
+                raw.replace(b'generation=45',b'generation=0'),
+                raw.replace(b'slot=40',b'slot=256'),
+                raw.replace(b'LSFNODEPREFIX1 childAck=1\n',b''),
+                raw+b'LSFNODEPREFIX1 childAck=1\n',
+                raw.replace(b'LSFNODEPREFIX1 childAck=1',b'LSFNODEPREFIX1 childAck=0'),
+                raw.replace(b'LSFNODEBOOT1 facts=',b'LSFNODEPREFIX1 childAck=1\nLSFNODEBOOT1 facts='),
+                raw.replace(b'[    2.345678] LSFQ35PCIPREFIX1',b'LSFQ35PCIPREFIX1'),
+                raw.replace(b'device=1041 born=1',b'device=1000 born=1')):
+            with self.subTest(raw=bad), self.assertRaises(ValueError):
+                owner.node_prefix_serial(bad)
+
+    def test_prefix_sources_are_captured_and_wrong_projection_refuses(self):
+        captured = owner.node_prefix_capture(owner.ROOT)
+        self.assertEqual(set(captured),{owner.PREFIX_BRIDGE,owner.PREFIX_PROJECTOR,owner.PREFIX_MATERIAL})
+        self.assertTrue(all(captured.values()))
+        with self.assertRaises(ValueError):
+            owner.node_prefix_compose({},captured)
+        with self.assertRaises(ValueError):
+            owner.node_prefix_compose({},{})
+
+    def test_prefix_uses_original_actor_one_scope_and_no_network_authority(self):
+        root = owner.ROOT / owner.PREFIX_ROOT
+        source = (root/'node-pci-prefix/factory-node-pci-prefix.c').read_text(encoding='utf8')
+        bridge = (root/'node-constructor-bridge/projector.py').read_text(encoding='utf8')
+        projector = (root/'node-pci-prefix/projector.py').read_text(encoding='utf8')
+        for predicate in ('lsf_node_actor(file, node)','lsf_node_device_actor_current()',
+                'node->prefix_attempted = 1u','node->prefix_task = current',
+                'after->prefix_active = 0u','after->prefix_task = NULL',
+                'factory.pool.poisoned = 1u','WRITE_ONCE(factory.uncertain, 1u)'):
+            self.assertIn(predicate,source)
+        self.assertIn('node->prefix_task == current',bridge)
+        self.assertIn('lsf_factory_device_pci_owned(dev, sizeof(*dev)) != 0',bridge)
+        self.assertIn('lsf_node_prefix_pci_birth(dev)',projector)
+        self.assertIn('lsf_node_prefix_pci_returned(lsf_factory_device_pci_return(dev))',projector)
+        self.assertLess(projector.index('lsf_node_prefix_pci_birth(dev)'),
+            projector.index('lsf_prepaid_pci_setup_device(dev)',projector.index('PROBE_NEW')))
+        self.assertIn('default n',projector)

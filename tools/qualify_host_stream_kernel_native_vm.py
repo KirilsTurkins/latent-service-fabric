@@ -347,6 +347,7 @@ def qualify_node(output,revision):
         os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric' and
         os.environ.get('GITHUB_REF_NAME') in native.NODE_BRANCHES and
         os.environ.get('GITHUB_EVENT_NAME') == 'push','node-one-hosted-push')
+    prefix = os.environ.get('GITHUB_REF_NAME') == native.NODE_PREFIX_BRANCH
     started = float(os.environ.get('LSF_Q35_STARTED_MONOTONIC','nan'))
     now = time.monotonic()
     native.require(math.isfinite(started) and 0 < started <= now and now-started < 1315,
@@ -405,12 +406,15 @@ def qualify_node(output,revision):
         before = node_source_inputs(ROOT,listed)
         physical,capacity_raw = c.capacity_capture(ROOT)
         boot_raw = native.node_capture(ROOT)
-        native.require(set(physical).isdisjoint(boot_raw) and len(physical)+len(boot_raw) <= c.MAX_ENTRIES and
-            sum(r['bytes'] for r in physical.values())+sum(map(len,boot_raw.values())) <= c.MAX_SOURCE,
+        prefix_raw = native.node_prefix_capture(ROOT) if prefix else {}
+        extra_raw = {**boot_raw,**prefix_raw}
+        native.require(set(physical).isdisjoint(extra_raw) and set(boot_raw).isdisjoint(prefix_raw) and
+            len(physical)+len(extra_raw) <= c.MAX_ENTRIES and
+            sum(r['bytes'] for r in physical.values())+sum(map(len,extra_raw.values())) <= c.MAX_SOURCE,
             'node-complete-research-envelope')
         receipt.update(sourceBefore=dict(sorted(before.items())),
-            cPhysicalBefore={**physical,**{n:native.identity(b) for n,b in boot_raw.items()}},
-            cPhysicalCount=len(physical)+len(boot_raw))
+            cPhysicalBefore={**physical,**{n:native.identity(b) for n,b in extra_raw.items()}},
+            cPhysicalCount=len(physical)+len(extra_raw))
         write_json(output/'native-source-inputs.json',receipt['sourceBefore'])
         node_kvm_access(run,receipt,tool_pins)
         run('source-clean','git','-c','core.fsmonitor=false','diff','--no-ext-diff','--exit-code','HEAD','--',seconds=30)
@@ -429,9 +433,13 @@ def qualify_node(output,revision):
             b'Python 3.13.5','node-pinned-owner-python')
         run('locked-python-dependencies',owner_python,'-m','pip','install',
             '--requirement',ROOT/'tools/requirements.lock',seconds=180)
-        if os.environ.get('GITHUB_REF_NAME') == native.NODE_IDENTITY_BRANCH:
+        if os.environ.get('GITHUB_REF_NAME') in (native.NODE_IDENTITY_BRANCH,native.NODE_PREFIX_BRANCH):
             run('node-q35-pci-identity-refusal-controls',owner_python,'-B','-m','unittest',
                 'tools.tests.test_kernel_native_constructor_vm.Q35NodeBootSourceControls',
+                '-v',seconds=30)
+        if prefix:
+            run('node-q35-prefix-refusal-controls',owner_python,'-B','-m','unittest',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodePciPrefixControls',
                 '-v',seconds=30)
         run('normal-prerequisite-update','sudo','apt-get','update',seconds=180)
         run('normal-prerequisite-install','sudo','apt-get','install','--yes','--no-install-recommends',
@@ -505,23 +513,33 @@ def qualify_node(output,revision):
         rows485 = {n:c.identity(r) for n,r in sorted(values.items())}
         kbuild = {n:c.read(tree/n,c.MAX_FILE) for n in ('net/Kconfig','net/Makefile')}
         values,row = native.node_compose(values,kbuild,boot_raw); stages.append(row)
+        if prefix:
+            values,prefix_stages = native.node_prefix_compose(values,prefix_raw)
+            stages.extend(prefix_stages)
         for name,value in values.items():
             target = tree/name; target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(value)
-        rows488 = {n:c.identity(r) for n,r in sorted(values.items())}
-        write_json(output/'derived-inputs.json',rows488)
+        derived_rows = {n:c.identity(r) for n,r in sorted(values.items())}
+        write_json(output/'derived-inputs.json',derived_rows)
         write_json(output/'projection-proof.json',{'stages':stages,'prior485':rows485,
             'nativePrimary':{n:c.identity(r) for n,r in capacity_native.items()},
-            'researchUtf8':{n:r.decode('utf8') for n,r in {**capacity_raw,**boot_raw}.items()},
+            'researchUtf8':{n:r.decode('utf8') for n,r in {**capacity_raw,**boot_raw,**prefix_raw}.items()},
             'kbuildBeforeUtf8':{n:r.decode('utf8') for n,r in kbuild.items()}})
         # The only requested new config is the immutable built-in entry. Resolve
         # and record all actual values; never guess NR_CPUS equals topology.
-        (build/'.config').write_bytes(selected+b'CONFIG_LSF_STREAM_NODE_BOOTSTRAP=y\n')
+        requested = b'CONFIG_LSF_STREAM_NODE_BOOTSTRAP=y\n'
+        if prefix:
+            requested += b'CONFIG_LSF_STREAM_NODE_PCI_PREFIX=y\n'
+        (build/'.config').write_bytes(selected+requested)
         run('boot-selected-olddefconfig',*common,'olddefconfig',root=tree)
         config = c.read(build/'.config',c.MAX_DOCUMENT)
-        native.require(b'CONFIG_LSF_STREAM_NODE_BOOTSTRAP=y\n' in config,'node-boot-config-selected')
+        native.require(b'CONFIG_LSF_STREAM_NODE_BOOTSTRAP=y\n' in config and
+            (not prefix or b'CONFIG_LSF_STREAM_NODE_PCI_PREFIX=y\n' in config),'node-boot-config-selected')
         old_values,new_values = objects.configuration(selected),objects.configuration(config)
-        native.require({k:v for k,v in new_values.items() if k != 'CONFIG_LSF_STREAM_NODE_BOOTSTRAP'} ==
-            {k:v for k,v in old_values.items() if k != 'CONFIG_LSF_STREAM_NODE_BOOTSTRAP'},
+        reviewed = {'CONFIG_LSF_STREAM_NODE_BOOTSTRAP'}
+        if prefix:
+            reviewed.add('CONFIG_LSF_STREAM_NODE_PCI_PREFIX')
+        native.require({k:v for k,v in new_values.items() if k not in reviewed} ==
+            {k:v for k,v in old_values.items() if k not in reviewed},
             'node-only-reviewed-config-addition')
         native.require(new_values.get('CONFIG_PRINTK') == 'y' and
             new_values.get('CONFIG_PRINTK_TIME') == 'y' and
@@ -569,7 +587,7 @@ def qualify_node(output,revision):
         firmware_pins = {n:native.identity(read_file(firmware/n,1024**2)) for n in ('bios-256k.bin','kvmvapic.bin')}
         receipt['qemuProduct'] = {'binary':qemu_pin,'firmware':firmware_pins,
             'version':'11.1.2','configurationSource':native.identity(read_file(qemu_source/'configure',1024**2))}
-        source_hash = c.identity(c.canonical(rows488))['sha256']
+        source_hash = c.identity(c.canonical(derived_rows))['sha256']
         config_hash = native.identity(config)['sha256']
         environment.update(CARGO_TARGET_DIR=str(private/'native-target'),
             CARGO_ENCODED_RUSTFLAGS='\x1f'.join(FLAGS),
@@ -578,6 +596,8 @@ def qualify_node(output,revision):
             CARGO_PROFILE_RELEASE_STRIP='symbols',RUSTC=str(tools['rustc']),
             LSF_Q35_QUALIFICATION_KERNEL_SHA256=receipt['kernel']['sha256'],
             LSF_Q35_QUALIFICATION_SOURCE_SHA256=source_hash,LSF_Q35_QUALIFICATION_CONFIG_SHA256=config_hash)
+        if prefix:
+            environment['LSF_Q35_PREFIX_PROFILE'] = native.PREFIX_PROFILE
         cargo_raw = run('build-node-native-example',tools['cargo'],'build','--locked','-j2','-p','latent-streams',
             '--example','kernel_constructor_vm','--features','development-outbound','--release',
             '--target',TARGET,'--message-format=json')
@@ -602,12 +622,14 @@ def qualify_node(output,revision):
         receipt['vmArgv'] = list(boot_args)
         serial = run('one-real-q35-kvm-node-prepare',*boot_args,seconds=image.VM_SECONDS)
         native.require(len(serial) <= image.MAX_SERIAL,'node-serial-channel-bound')
-        receipt['observations'] = native.node_serial(serial); receipt['freshVmBoots'] = 1
+        receipt['observations'] = (native.node_prefix_serial(serial) if prefix else native.node_serial(serial))
+        receipt['freshVmBoots'] = 1
         # Exact source/tool/image identities still hold AFTER the actual VM.
         after = node_source_inputs(ROOT,run('source-path-inventory-after','git','-c','core.fsmonitor=false','ls-files','-z',seconds=30))
         current_physical,current_raw = c.capacity_capture(ROOT)
         native.require(dict(sorted(after.items())) == receipt['sourceBefore'] and current_physical == physical and
-            current_raw == capacity_raw and native.node_capture(ROOT) == boot_raw,'node-all-source-unchanged')
+            current_raw == capacity_raw and native.node_capture(ROOT) == boot_raw and
+            (not prefix or native.node_prefix_capture(ROOT) == prefix_raw),'node-all-source-unchanged')
         native.require(c.read(build/'.config',c.MAX_DOCUMENT) == config,'node-config-stable')
         native.require(read_file(kernel,image.MAX_KERNEL) == kernel_raw and
             native.identity(read_file(qemu,128*1024**2)) == qemu_pin and

@@ -111,14 +111,98 @@ def argument(graph: dict, name: str, value) -> str:
 BINDGEN_OPTIONS = {'0.62.0': 'async: false', '0.63.0': 'sync: true'}
 
 
-def selected_bindgen(lock: bytes) -> str:
-    if len(lock) > 8 * 1024 * 1024:
+def captured_bindgen_rows(lock: bytes) -> list[dict]:
+    if type(lock) is not bytes or len(lock) > 8 * 1024 * 1024:
         raise ValueError('rust-http-root-lock-input')
-    versions = [row['version'] for row in tomllib.loads(lock.decode()).get('package', [])
-                if row.get('name') == 'wit-bindgen']
-    if len(versions) != 1 or versions[0] not in BINDGEN_OPTIONS:
+    packages = tomllib.loads(lock.decode()).get('package', [])
+    if (not isinstance(packages, list) or not 1 <= len(packages) <= 4096
+            or any(not isinstance(row, dict) for row in packages)):
+        raise ValueError('rust-http-root-lock-shape')
+    return [row for row in packages if row.get('name') == 'wit-bindgen']
+
+
+def needs_captured_bindgen_root(lock: bytes) -> bool:
+    return len(captured_bindgen_rows(lock)) > 1
+
+
+def selected_bindgen(lock: bytes, *, manifest: bytes | None = None,
+                     sdk_lock: bytes | None = None) -> str:
+    """Retain the historical single-version route; bind multiple versions to the root.
+
+    Only the multi-version case requires agreement between the captured
+    manifest, SDK pin, source-less root row and its resolved registry edge.
+    """
+    bindgen = captured_bindgen_rows(lock)
+    versions = [row.get('version') for row in bindgen]
+    if len(versions) == 1:
+        if type(versions[0]) is not str or versions[0] not in BINDGEN_OPTIONS:
+            raise ValueError('rust-http-root-exact-captured-bindgen-required')
+        return versions[0]
+    if len(versions) == 0 or manifest is None and sdk_lock is None:
         raise ValueError('rust-http-root-exact-captured-bindgen-required')
-    return versions[0]
+    packages = tomllib.loads(lock.decode())['package']
+    if (type(manifest) is not bytes or type(sdk_lock) is not bytes
+            or len(manifest) > 4 * 1024 * 1024 or len(sdk_lock) > 4 * 1024 * 1024):
+        raise ValueError('rust-http-root-captured-selection-input')
+    from tools.rust_capsule_project import decode_json
+    cargo = tomllib.loads(manifest.decode())
+    pins = decode_json(sdk_lock)
+    try:
+        version = pins['toolchain']['rust']['dependencies']['wit-bindgen']
+        package = cargo['package']
+        name, package_version = package['name'], package['version']
+        targets = cargo['target']
+        maintained = targets['cfg(target_arch = "wasm32")']['dependencies']
+    except (KeyError, TypeError) as error:
+        raise ValueError('rust-http-root-captured-selection-shape') from error
+    if (type(version) is not str or version not in BINDGEN_OPTIONS
+            or type(name) is not str or re.fullmatch(r'[A-Za-z0-9_-]{1,128}', name) is None
+            or type(package_version) is not str or not 1 <= len(package_version) <= 128
+            or not isinstance(targets, dict) or not isinstance(maintained, dict)
+            or maintained.get('wit-bindgen') != '=' + version):
+        raise ValueError('rust-http-root-captured-selection-mismatch')
+
+    # An alias or another direct declaration could give the apparent root edge
+    # a different identity. The maintained, exact wasm declaration is the only
+    # accepted direct dependency on this package.
+    groups = [cargo.get(group, {}) for group in ('dependencies', 'build-dependencies', 'dev-dependencies')]
+    for target in targets.values():
+        if not isinstance(target, dict):
+            raise ValueError('rust-http-root-captured-selection-shape')
+        groups.extend(target.get(group, {}) for group in ('dependencies', 'build-dependencies', 'dev-dependencies'))
+    for group in groups:
+        if not isinstance(group, dict):
+            raise ValueError('rust-http-root-captured-selection-shape')
+        for alias, specification in group.items():
+            if alias == 'wit-bindgen' or isinstance(specification, dict) and specification.get('package') == 'wit-bindgen':
+                if group is not maintained or alias != 'wit-bindgen' or specification != '=' + version:
+                    raise ValueError('rust-http-root-aliased-or-duplicate-bindgen')
+
+    roots = [row for row in packages if row.get('name') == name and row.get('version') == package_version]
+    selected = [row for row in bindgen if row.get('version') == version]
+    registry = 'registry+https://github.com/rust-lang/crates.io-index'
+    if (len(roots) != 1 or 'source' in roots[0] or len(selected) != 1
+            or selected[0].get('source') != registry
+            or type(selected[0].get('checksum')) is not str
+            or re.fullmatch(r'[0-9a-f]{64}', selected[0]['checksum']) is None):
+        raise ValueError('rust-http-root-captured-root-or-registry-identity')
+    dependencies = roots[0].get('dependencies', [])
+    if (not isinstance(dependencies, list) or len(dependencies) > 256
+            or any(type(dep) is not str or len(dep) > 4096 for dep in dependencies)
+            or len(set(dependencies)) != len(dependencies)):
+        raise ValueError('rust-http-root-captured-root-dependencies')
+    edges = []
+    for dependency in dependencies:
+        match = re.fullmatch(r'([A-Za-z0-9_-]+)(?: ([^ ()]+))?(?: \(([^\n]+)\))?', dependency)
+        if match is None:
+            raise ValueError('rust-http-root-captured-root-dependencies')
+        if match[1] == 'wit-bindgen':
+            edges.append(match)
+    if (len(edges) != 1 or edges[0][2] not in (None, version)
+            or edges[0][3] not in (None, registry)
+            or edges[0][2] is None and len(bindgen) != 1):
+        raise ValueError('rust-http-root-captured-root-bindgen-edge')
+    return version
 
 
 def forwarding_source(graph: dict, *, bindgen_version: str = '0.63.0') -> tuple[bytes, list[dict]]:
@@ -204,7 +288,8 @@ def forwarding_wit(canonical: str, graph: dict) -> bytes:
     return (canonical[:opening.start()] + body + canonical[closing+2:] + private).encode()
 
 
-def compiler_lock(original: bytes, name: str) -> bytes:
+def compiler_lock(original: bytes, name: str, *, manifest: bytes | None = None,
+                  sdk_lock: bytes | None = None) -> bytes:
     """Retain the captured wit-bindgen closure and its exact original lock rows.
 
     The new compiler crate has no application dependency or executable hook.
@@ -229,7 +314,8 @@ def compiler_lock(original: bytes, name: str) -> bytes:
         if key in rows or row['name'] == name:
             raise ValueError('rust-http-root-lock-duplicate-or-collision')
         rows[key] = (row, body)
-    starts = [key for key in rows if key[0] == 'wit-bindgen' and key[1] == selected_bindgen(original)]
+    version = selected_bindgen(original, manifest=manifest, sdk_lock=sdk_lock)
+    starts = [key for key in rows if key[0] == 'wit-bindgen' and key[1] == version]
     if len(starts) != 1:
         raise ValueError('rust-http-root-exact-captured-bindgen-required')
     retained, pending = set(), starts[:]
@@ -352,9 +438,10 @@ def normalized_lock(projected: bytes, normalized: bytes, name: str) -> dict:
         'networkResolution': False, 'buildScriptsExecuted': False, 'compilation': False}
 
 
-def prepare_project(output, canonical: str, graph: dict, lock: bytes):
+def prepare_project(output, canonical: str, graph: dict, lock: bytes, *,
+                    manifest: bytes | None = None, sdk_lock: bytes | None = None):
     from tools.rust_capsule_project import digest, fresh, inventory, write_json
-    version = selected_bindgen(lock)
+    version = selected_bindgen(lock, manifest=manifest, sdk_lock=sdk_lock)
     source, calls = forwarding_source(graph, bindgen_version=version)
     name = 'lsf-owned-http-root-' + digest(source)[7:23]
     files = {
@@ -363,7 +450,7 @@ def prepare_project(output, canonical: str, graph: dict, lock: bytes):
         'Cargo.toml': ('[package]\nname="'+name+'"\nversion="0.0.0"\nedition="2021"\nbuild=false\n'
             '[workspace]\n[lib]\ncrate-type=["cdylib"]\n[dependencies]\nwit-bindgen="=' + version + '"\n'
             '[profile.release]\npanic="abort"\nlto=true\ncodegen-units=1\n').encode(),
-        'Cargo.lock': compiler_lock(lock, name),
+        'Cargo.lock': compiler_lock(lock, name, manifest=manifest, sdk_lock=sdk_lock),
     }
     output = fresh(output)
     for path, body in files.items():

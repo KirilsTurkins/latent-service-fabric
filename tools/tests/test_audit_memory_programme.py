@@ -19,28 +19,30 @@ class AuditMemoryProgrammeTests(unittest.TestCase):
                          if row.get('package') == package and row['kind'] == 'lib')
             self.assertTrue(set(expected) <= set(suite['expectedCases']))
             self.assertFalse(set(expected) & set(suite['expectedIgnored']))
-        # The immutable193 programme had these six original cases. The live
-        # producer now includes the two audit controls as well; do not confuse
-        # its current inventory with the retained historical programme.
-        original = {
-            'budget::descendants::tests::host_memory_resize_confirms_parent_peak_and_retains_terminal_child_capacity',
-            'budget::host_memory::tests::actual_native_owner_keeps_capacity_after_terminal_report_and_settles_once',
-            'budget::host_memory::tests::failed_pending_replacement_refunds_only_unallocated_capacity',
-            'budget::host_memory::tests::growing_overlap_competes_before_allocation_and_shrink_keeps_peak',
-            'budget::host_memory::tests::native_and_linear_memory_compete_before_allocation_and_failed_preparations_roll_back',
-            'budget::host_memory::tests::partial_confirmation_keeps_pending_capacity_without_inventing_allocated_peak',
-        }
-        additions = {
-            'budget::host_memory::tests::native_envelope_refuses_unobserved_retirement_before_mutating_original_ledger',
-            'budget::host_memory::tests::original_native_envelope_reuses_only_retired_storage_without_refunding_capacity',
-        }
-        from tools.qualify_host_codec_native import CONTROLS as current
-        group = next(row for row in current if row[0] == 'original-host-memory')
+        # The immutable193 six survive the two reviewed envelope additions.
+        # The six historical cases remain unselected here; exactly the two
+        # envelope additions are now shared with this 25-case Audit programme.
+        from tools.qualify_host_codec_native import CONTROLS as original
+        historical = (
+  'budget::descendants::tests::host_memory_resize_confirms_parent_peak_and_retains_terminal_child_capacity',
+  'budget::host_memory::tests::actual_native_owner_keeps_capacity_after_terminal_report_and_settles_once',
+  'budget::host_memory::tests::failed_pending_replacement_refunds_only_unallocated_capacity',
+  'budget::host_memory::tests::growing_overlap_competes_before_allocation_and_shrink_keeps_peak',
+  'budget::host_memory::tests::native_and_linear_memory_compete_before_allocation_and_failed_preparations_roll_back',
+  'budget::host_memory::tests::partial_confirmation_keeps_pending_capacity_without_inventing_allocated_peak',
+        )
+        additions = (
+  'budget::host_memory::tests::native_envelope_refuses_unobserved_retirement_before_mutating_original_ledger',
+  'budget::host_memory::tests::original_native_envelope_reuses_only_retired_storage_without_refunding_capacity',
+        )
+        self.assertEqual(original[0][3], (*historical[:-1], *additions, historical[-1]))
+        self.assertEqual(tuple(case for case in original[0][3] if case not in additions), historical)
+        self.assertFalse(set(names) & set(historical))
+        self.assertEqual(set(names) & set(original[0][3]), set(additions))
+        group = next(row for row in original if row[0] == 'original-host-memory')
         self.assertEqual(group[1:3], ('latent-core', 'host_memory'))
         self.assertEqual(len(group[3]), 8)
-        self.assertEqual(set(group[3]), original | additions)
-        self.assertFalse(set(names) & original)
-        self.assertEqual(set(names) & set(group[3]), additions)
+        self.assertEqual(set(group[3]), set(historical) | set(additions))
 
     def test_selected_commands_bind_only_owned_packages_and_exact_new_wide_filter_cases(self):
         for group in owner.CONTROLS:

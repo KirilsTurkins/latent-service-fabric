@@ -170,6 +170,9 @@ class TaskShutdownNowOwnership(unittest.TestCase):
 class TaskShutdownNowSourceCapture(unittest.TestCase):
     def test_full_native_snapshot_and_fixed_supplement_keep_limits_and_detect_drift(self):
         from types import SimpleNamespace
+        actual_limits = owner.observed.SnapshotLimits()
+        self.assertEqual((actual_limits.max_entries, actual_limits.max_file_bytes, actual_limits.max_total_bytes),
+                         (16384, 4 * 1024**2, 128 * 1024**2))
         native = [f'tools/capture-{index:04d}.py' for index in range(100)]
         supplemental = set(owner.observed.EXTRA_SOURCES) | {owner.workers.WORKFLOW, owner.WORKFLOW,
             'sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java'}
@@ -231,6 +234,11 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
             exact = owner.shutdown_sources(commands, before['native'])
             self.assertEqual(sum(row['bytes'] for row in exact['native'].values()), limits.max_total_bytes)
             changed[native[count]] += b'x'
+            with self.assertRaisesRegex(ValueError, 'native-source-total'):
+                owner.shutdown_sources(commands, before['native'])
+            changed.clear()
+            overflow_count = limits.max_total_bytes // limits.max_file_bytes + 1
+            changed.update(dict.fromkeys(native[:overflow_count], full))
             with self.assertRaisesRegex(ValueError, 'native-source-total'):
                 owner.shutdown_sources(commands, before['native'])
             changed.clear(); changed.update(dict.fromkeys(sorted(supplemental)[:5], full))

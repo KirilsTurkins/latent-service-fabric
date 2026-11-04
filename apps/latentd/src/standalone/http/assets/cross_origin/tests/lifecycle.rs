@@ -7,7 +7,7 @@ use latent_artifacts::{ReleaseLifecycleAction, ReleaseLifecycleReason};
 use latent_core::TenantId;
 use latent_ingress::http::Scheme;
 use serde_json::json;
-use std::time::Duration;
+use std::{future::Future, time::Duration};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
@@ -179,22 +179,27 @@ async fn cross_origin_preflight_output_rechecks_revocation_on_every_write_poll()
     let reference = publish(&h, "cross-preflight-write", b"bounded");
     let selection = h.repository.select_web_publication(&reference).unwrap();
     let (mut writer, mut reader) = tokio::io::duplex(16);
-    let task = tokio::spawn(async move {
-        let policy = super::super::response::Policy {
-            origin: ORIGIN.into(),
-            credentials: false,
-            preflight: Some("if-none-match".into()),
-        };
-        super::super::response::empty(
-            &mut writer,
-            204,
-            Scheme::Https,
-            true,
-            Some(&policy),
-            Some(&selection),
-        )
-        .await
-    });
+    let policy = super::super::response::Policy {
+        origin: ORIGIN.into(),
+        credentials: false,
+        preflight: Some("if-none-match".into()),
+    };
+    let mut response = Box::pin(super::super::response::empty(
+        &mut writer,
+        204,
+        Scheme::Https,
+        true,
+        Some(&policy),
+        Some(&selection),
+    ));
+    // Poll once until the duplex buffer fills. No other task can poll the
+    // response while the lifecycle transition acquires its nonblocking fence.
+    let first_poll =
+        std::future::poll_fn(|cx| std::task::Poll::Ready(response.as_mut().poll(cx))).await;
+    assert!(
+        first_poll.is_pending(),
+        "response must wait after its first write"
+    );
     let mut first = [0; 16];
     tokio::time::timeout(Duration::from_secs(5), reader.read_exact(&mut first))
         .await
@@ -209,15 +214,17 @@ async fn cross_origin_preflight_output_rechecks_revocation_on_every_write_poll()
             &mut |_| Ok(()),
         )
         .unwrap();
+    let error = response.await.unwrap_err();
+    assert_eq!(error.kind(), std::io::ErrorKind::PermissionDenied);
+    drop(selection);
+    drop(writer);
     let mut remaining = Vec::new();
     tokio::time::timeout(Duration::from_secs(5), reader.read_to_end(&mut remaining))
         .await
         .unwrap()
         .unwrap();
-    let error = task.await.unwrap().unwrap_err();
-    assert_eq!(error.kind(), std::io::ErrorKind::PermissionDenied);
     assert!(
-        remaining.len() <= 16,
+        remaining.is_empty(),
         "no write can resume after authority is revoked"
     );
     assert!(!String::from_utf8_lossy(&remaining).contains("Access-Control-Allow-Origin"));

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/rust_thread_http_sibling_retention.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bound the public diagnostic artifact while excluding Cargo caches.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "af9ae176a61d0dacddf78345723d7b2672b58528d34ac0b2c47d77f53fbac664"
+}

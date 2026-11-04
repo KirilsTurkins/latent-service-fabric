@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_host_stream_kernel_native_vm.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Closed fresh q35/KVM one-CPU original-Node preparation image; old routes retained, no NodeFunding/IRQ/TCP/retirement qualification.",
+  "reviewReason": "One closed q35/KVM original-Node PCI birth/return qualification; original preimages, source bounds, ownership, IRQ/TCP and historical routes remain enforced.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a1848438277fd417fa4098198772274778450211c4b1dfa4be75753fa02ceb3a"
+  "sha256": "7b1d1e9f4f4871d5686eaad1dc8b4f7e2a18469ac106c3581ee1058071238b41"
 }

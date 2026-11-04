@@ -31,10 +31,13 @@ class RustThreadFaultFramesTests(unittest.TestCase):
         self.assertEqual(set(compiler['on']), {'push', 'workflow_dispatch'})
         self.assertEqual(compiler['on']['push'], {
             'branches': ['feat/rust-standard-thread-runtime-20261022',
-                         'diag/rust-thread-frames-20261023'],
+                         'diag/rust-thread-frames-20261023',
+                         'feat/rust-thread-runtime-20261023'],
             'paths': ['.github/workflows/rust-owned-thread-inputs.yml',
                       'tools/compile_rust_owned_thread_inputs.py',
                       'tools/compile_rust_owned_thread_application.py',
+                      'tools/build_snapshot.py',
+                      'crates/latent-component-threading/**',
                       'sdk/rust-standard-runtime/**']})
         option = compiler['on']['workflow_dispatch']['inputs']['application-diagnostic']
         self.assertEqual(option['type'], 'boolean')
@@ -48,7 +51,8 @@ class RustThreadFaultFramesTests(unittest.TestCase):
         self.assertEqual(job['runs-on'], 'ubuntu-24.04')
         self.assertEqual(job['timeout-minutes'], 20)
         selector = ("${{ inputs.application-diagnostic || (github.event_name == 'push' && "
-                    "github.ref == 'refs/heads/diag/rust-thread-frames-20261023') }}")
+                    "(github.ref == 'refs/heads/diag/rust-thread-frames-20261023' || "
+                    "github.ref == 'refs/heads/feat/rust-thread-runtime-20261023')) }}")
         conditional = [step for step in job['steps'] if step.get('if') not in (None, 'always()')]
         self.assertEqual([step.get('uses', step.get('name')).split('@', 1)[0]
                           for step in conditional], [
@@ -70,12 +74,12 @@ class RustThreadFaultFramesTests(unittest.TestCase):
         self.assertIs(cache['with']['save-if'], False)
         retained = job['steps'][-1]
         self.assertEqual(retained['if'], 'always()')
-        self.assertEqual(retained['with']['retention-days'], 3)
+        self.assertEqual(retained['with']['retention-days'], 7)
         self.assertEqual(retained['with']['if-no-files-found'], 'error')
 
     def test_diagnostic_consumer_accepts_only_the_bound_numeric_unreachable_fault(self):
         runtime = (Path(__file__).resolve().parents[2] / 'tools'
-                   / 'rust_thread_runtime_node.py').read_text(encoding='utf-8')
+                   / 'rust_thread_diagnostic_node.py').read_text(encoding='utf-8')
         programme = (Path(__file__).resolve().parents[2] / 'tools'
                      / 'diagnose_rust_thread_fault.py').read_text(encoding='utf-8')
         self.assertIn("row['exitCode'] == 4 and row['decoded'] is None", runtime)
