@@ -41,6 +41,12 @@ retirement. Its receipt retains the earlier compiler source identity and lists
 pending-effect, retention and clean-host boundaries; a later source requires its
 own qualification.
 
+A [later terminal run](evidence/java-terminal-recovery-50ca-2026-11-04.json)
+passed the same 50 measured cases and retired all 12 native recovery owners on
+native source `50caadce1f7` and conductor source `46597407903`. It used the
+original compiler capture at `fccc27dbc52`; it does not qualify newly compiled
+Java sources, the full retention horizon or a packaged distribution.
+
 The [pending-effect recovery evidence](evidence/java-pending-recovery-2026-11-04.json)
 records 16 passing measured cases on the same native and compiler sources. It
 covers the original recipient acceptance, restored pending identity, audited
