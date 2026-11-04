@@ -8,6 +8,8 @@ on:
     paths:
       - '.github/workflows/stream-native-factory-owner.yml'
       - 'crates/latent-streams/**'
+      - 'examples/renderer-profile/package.json'
+      - 'examples/renderer-profile/package-lock.json'
       - 'crates/latent-capabilities/src/broker/pools/control.rs'
       - 'crates/latent-capabilities/src/broker/pools.rs'
       - 'crates/latent-capabilities/src/broker/pools/tests.rs'
