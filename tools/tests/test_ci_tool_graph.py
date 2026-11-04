@@ -58,6 +58,20 @@ class ToolGraphTests(unittest.TestCase):
             self.assertIn('tools/shared.py', native_closure)
             self.assertTrue(graph.dependents({'tools/shared.py'}) & native_closure)
 
+    def test_dynamic_script_or_unscoped_test_discovery_cannot_be_excluded(self):
+        from tools.ci_tool_graph import qualification_roots
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); self.fixture(root)
+            (root / 'sdk').mkdir()
+            workflows = root / '.github/workflows'; workflows.mkdir(parents=True)
+            names = ('c-guest-authoring.yml', 'java-guest-feasibility.yml', 'rust-capsule-authoring.yml')
+            for name in names: (workflows / name).write_text('run: python3 tools/shared.py\n')
+            graph = observe(root)
+            for command in ('python3 -m unittest discover -s tools/tests', 'python3 "$SCRIPT"'):
+                (workflows / names[0]).write_text('run: ' + command + '\n')
+                with self.subTest(command=command), self.assertRaisesRegex(ValueError, 'unresolved'):
+                    qualification_roots(root, graph)
+
     def test_aliased_dynamic_imports_never_narrow(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); self.fixture(root)
@@ -117,6 +131,8 @@ class WorkflowTriggerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); directory = root / '.github/workflows'; directory.mkdir(parents=True)
             (directory / 'unexpected.yml').write_text('on:\n  pull_request:\n    paths:\n      - tools/**\n      - "!tools/tests/**"\njobs: {}\n')
+            self.assertFalse(workflow_triggers_are_scoped(root, 'tools/tests/test_validate_docs.py'))
+            (directory / 'unexpected.yml').write_text('on:\n  workflow_run:\n    workflows: [CI]\n    types: [completed]\njobs: {}\n')
             self.assertFalse(workflow_triggers_are_scoped(root, 'tools/tests/test_validate_docs.py'))
 
 class ToolingProfileIntegrationTests(unittest.TestCase):

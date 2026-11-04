@@ -464,7 +464,13 @@ def workflow_triggers_are_scoped(root: Path, candidate: str) -> bool:
         for path in sorted(directory.iterdir()):
             if path.suffix not in {'.yml', '.yaml'}: continue
             if path.is_symlink() or path.stat().st_size > MAX_SOURCE_BYTES: return False
-            filters = pull_request_paths(path.read_text(encoding='utf-8'))
+            source = path.read_text(encoding='utf-8')
+            # Indirect or privileged PR-triggered routes are outside this
+            # proof. Never infer their consumers from a PR path filter.
+            if (re.search(r'(?m)^\s*[\'"]?(?:pull_request_target|workflow_run)[\'"]?\s*:', source)
+                    or re.search(r'"(?:pull_request_target|workflow_run)"\s*:', source)):
+                return False
+            filters = pull_request_paths(source)
             if filters is False: continue
             triggered = filters is None or any(not pattern.startswith('!') and fnmatch.fnmatchcase(candidate, pattern)
                                                for pattern in filters)
@@ -491,6 +497,14 @@ def qualification_roots(root: Path, graph: ToolGraph) -> set[str]:
             name = name.rpartition('.')[0]
         raise ValueError('unknown-tool-module:' + original)
     def inspect_text(text):
+        # A suite-wide test runner can consume a new module without spelling
+        # its name; an unscoped invocation is therefore not a safe exclusion.
+        for line in text.splitlines():
+            if ('unittest discover' in line or 'pytest' in line) and (
+                    'tools/tests' in line or not re.search(r'(?:-s\s+|pytest\s+)sdk/', line)):
+                raise ValueError('unresolved-broad-test-discovery')
+            if re.search(r'\b(?:python3?|bash|sh)\s+[\'"]?\$', line):
+                raise ValueError('unresolved-dynamic-script')
         for name in re.findall(r'(?<![A-Za-z0-9_./-])tools/[A-Za-z0-9_./-]+\.py\b', text):
             if name not in graph.imports: raise ValueError('unknown-tool-script:' + name)
             roots.add(name)
