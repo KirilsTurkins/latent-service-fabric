@@ -913,7 +913,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
     // Only fixed public class buckets and modifier/annotation bits are
     // emitted; never print application classes, methods or descriptors.
     private IllegalStateException progressNativeRefusal(ClassReader owner, MethodReader method) {
-        int group = 0, flags = 0;
+        int group = 0, flags = 0, metadata = 0;
         try {
             String[] classes = {
                 "java.lang.Object", "java.lang.System", "java.lang.String", "java.lang.Class",
@@ -943,6 +943,19 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                     break;
                 }
             }
+            // Only the fixed public TeaVM ClassInfo declaration list is
+            // bucketed; no application method or descriptor is printed.
+            if (group == 16) {
+                String[] names = { "modifiers", "primitiveKind", "name", "simpleName", "itemType",
+                    "arrayType", "declaringClass", "enclosingClass", "isSuperTypeOf", "parent",
+                    "superinterfaceCount", "superinterface", "enumConstantCount", "enumConstant",
+                    "newArrayInstance", "putItem", "getItem", "arrayLength", "newInstance",
+                    "newProxyInstance", "initializeNewInstance", "initialize", "reflection",
+                    "rewind", "next", "hasNext", "classObject" };
+                for (int index = 0; index < names.length; ++index) {
+                    if (names[index].equals(method.getName())) { metadata = index + 1; break; }
+                }
+            }
             if (method.hasModifier(ElementModifier.NATIVE)) flags |= 1;
             if (method.getAnnotations().get("org.teavm.interop.DelegateTo") != null) flags |= 2;
             if (method.getAnnotations().get("org.teavm.interop.Import") != null) flags |= 4;
@@ -954,6 +967,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             flags = 0;
         }
         System.err.println("latent.java.progress-native.v1 " + group + ":" + flags);
+        if (group == 16) System.err.println("latent.java.progress-class-info.v1 " + metadata);
         return progressRefusal(2, owner);
     }
 
