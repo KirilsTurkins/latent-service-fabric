@@ -26,6 +26,9 @@ class PythonSuppressionPolicyTests(unittest.TestCase):
             require_no_new_controls(before, before.replace('SKIP = False', 'SKIP = True'))
         with self.assertRaisesRegex(ValueError, 'suppression'):
             require_no_new_controls(before, before.replace("'native'", "'other'"))
+        local = "import unittest\nclass Cases(unittest.TestCase):\n def test_one(self):\n  flag = False\n  if flag: self.skipTest('native')\n"
+        with self.assertRaisesRegex(ValueError, 'suppression'):
+            require_no_new_controls(local, local.replace('flag = False', 'flag = True'))
         aliased = before.replace('import unittest', 'import unittest\nfrom unittest import skip as suppress').replace('@unittest.skipIf(SKIP, \'native\')', '@suppress')
         with self.assertRaisesRegex(ValueError, 'suppression'):
             require_no_new_controls(before, aliased)

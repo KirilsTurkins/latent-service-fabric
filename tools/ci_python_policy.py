@@ -35,17 +35,18 @@ def controls(source: str) -> Counter[str]:
         if isinstance(node, ast.Attribute): return node.attr
         return ''
 
-    def predicate_context(node: ast.AST) -> list[str]:
+    def predicate_context(node: ast.AST) -> list[ast.AST]:
         predicates = []
         parent = parents.get(node)
         while parent is not None and not isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module)):
             if isinstance(parent, (ast.If, ast.IfExp, ast.While)):
-                predicates.append(ast.dump(parent.test, include_attributes=False))
+                predicates.append(parent.test)
             parent = parents.get(parent)
         return predicates
 
     found: Counter[str] = Counter()
     dependencies: set[str] = set()
+    local_dependencies: dict[ast.AST, set[str]] = {}
     for node in ast.walk(tree):
         # A nested class inside a test is a test fixture, not a discoverable
         # top-level unittest class. Its sample decorators are ordinary data.
@@ -76,15 +77,41 @@ def controls(source: str) -> Counter[str]:
                 and any(token(base) in {'TestCase', 'IsolatedAsyncioTestCase'} for base in parent.bases))
         if sensitive:
             signature = ast.dump(node, include_attributes=False)
-            found[repr((signature, predicate_context(node)))] += 1
-            dependencies.update(item.id for item in ast.walk(node) if isinstance(item, ast.Name) and isinstance(item.ctx, ast.Load))
-    # Bind only direct module constants referenced by a suppression predicate.
-    # This catches SKIP = False becoming True without hashing unrelated setup.
-    for node in tree.body:
-        if not isinstance(node, (ast.Assign, ast.AnnAssign)): continue
-        targets = node.targets if isinstance(node, ast.Assign) else [node.target]
-        if any(isinstance(item, ast.Name) and item.id in dependencies for target in targets for item in ast.walk(target)):
-            found['binding:' + ast.dump(node, include_attributes=False)] += 1
+            predicates = predicate_context(node)
+            found[repr((signature, [ast.dump(value, include_attributes=False) for value in predicates]))] += 1
+            names = {item.id for value in [node, *predicates] for item in ast.walk(value)
+                     if isinstance(item, ast.Name) and isinstance(item.ctx, ast.Load)}
+            dependencies.update(names)
+            scope = parents.get(node)
+            while scope is not None and not isinstance(scope, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Module)):
+                scope = parents.get(scope)
+            if isinstance(scope, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                local_dependencies.setdefault(scope, set()).update(names)
+    # Bind only assignments used in a suppression condition, including its
+    # transitive local/module names. Unrelated helper bodies remain free to vary.
+    def bind(scope, names, label):
+        candidates = []
+        for statement in ast.walk(scope):
+            if not isinstance(statement, (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.NamedExpr)): continue
+            ancestor = parents.get(statement)
+            while ancestor is not None and not isinstance(ancestor, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Module)):
+                ancestor = parents.get(ancestor)
+            if ancestor is scope: candidates.append(statement)
+        seen = set()
+        while True:
+            changed = False
+            for statement in candidates:
+                targets = statement.targets if isinstance(statement, ast.Assign) else [statement.target]
+                assigned = {item.id for target in targets for item in ast.walk(target) if isinstance(item, ast.Name)}
+                if not assigned & names or id(statement) in seen: continue
+                seen.add(id(statement)); changed = True
+                found[label + ':' + ast.dump(statement, include_attributes=False)] += 1
+                names.update(item.id for item in ast.walk(statement) if isinstance(item, ast.Name) and isinstance(item.ctx, ast.Load))
+            if not changed: break
+    for scope, names in local_dependencies.items():
+        bind(scope, names, 'local-binding')
+        dependencies.update(names)
+    bind(tree, dependencies, 'module-binding')
     return found
 
 
