@@ -208,7 +208,10 @@ def diagnostic_pair(native, diagnostic_node, diagnostic_client):
 
 
 def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None,diagnostic_node=None,
-        diagnostic_client=None):
+        diagnostic_client=None,compile_only_diagnostic=False):
+    require(type(compile_only_diagnostic) is bool and (not compile_only_diagnostic
+        or (diagnostic_node is None and diagnostic_client is None)),
+        'java-checkpoint-compile-only-isolated')
     require(sys.platform=='linux' and sys.version_info>=(3,13),'java-checkpoint-linux-python313')
     native_directory,wasi_sdk=(Path(p).resolve(strict=True) for p in (native_directory,wasi_sdk))
     output=Path(output).absolute()
@@ -254,6 +257,14 @@ def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None,diagnostic_n
             and record['controls']['selectedJar']['sha256']==record['build']['classpath']['artifacts'][0]['selectedDigest'],
             'java-checkpoint-same-selected-bytecode-for-model-and-component')
         require((artifact/'source-inputs.json').read_bytes()==source,'java-checkpoint-exact-compiled-source')
+        if compile_only_diagnostic:
+            require(build_evidence(artifact)==record['build'] and inventory(snapshot(app))==source
+                and verify_inputs(app,'java').identity==record['capture']['capturedInputIdentity']
+                and origin==products.verify_prepared(native_directory) and consumer==source_identity(ROOT)
+                and before=={name:file_identity(ROOT/name) for name in before}
+                and time.monotonic()<commands.deadline,'java-checkpoint-compile-only-source-bindings')
+            record.update(status='passed-historical-compile-only',commands=commands.records)
+            write_json(output/'compiled-only.json',record);return record
         stage='signed-two-tenant-dependency-checkpoint-programme'
         record['node']=execute(artifact,native,output/'node',commands.deadline,
             record['build']['component']['sha256'],diagnostic=diagnostic_node is not None)
@@ -275,6 +286,8 @@ if __name__=='__main__':
     parser.add_argument('--read-only-cache',type=Path)
     parser.add_argument('--diagnostic-node',type=Path)
     parser.add_argument('--diagnostic-client',type=Path)
+    parser.add_argument('--compile-only-diagnostic',action='store_true')
     args=parser.parse_args()
     print(qualify(args.native,args.wasi_sdk,args.output,read_only_cache=args.read_only_cache,
-        diagnostic_node=args.diagnostic_node,diagnostic_client=args.diagnostic_client)['status'])
+        diagnostic_node=args.diagnostic_node,diagnostic_client=args.diagnostic_client,
+        compile_only_diagnostic=args.compile_only_diagnostic)['status'])
