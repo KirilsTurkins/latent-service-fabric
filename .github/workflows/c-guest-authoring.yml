@@ -59,8 +59,56 @@ env:
   CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
 
 jobs:
+  tooling-selection:
+    name: Select tooling qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      reason: ${{ steps.select.outputs.reason }}
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /tools/
+            /.github/workflows/
+            /sdk/
+            /crates/vendor/wasmtime/
+            /crates/vendor/rustls-outbound/
+            /Cargo.lock
+            Cargo.toml
+            *.rs
+      - name: Materialize the offline comparison input when available
+        if: github.event_name == 'pull_request'
+        env:
+          EVENT_BASE: ${{ github.event.pull_request.base.sha }}
+          EVENT_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          base=$(git merge-base "$EVENT_BASE" "$EVENT_HEAD") || exit 0
+          candidate=test_validate_docs.py
+          git cat-file blob "$base:tools/tests/$candidate" >/dev/null || true
+      - name: Classify the complete change
+        id: select
+        run: python3 tools/ci_profile.py
+
+  selection-result:
+    name: Tooling qualification selection result
+    if: always()
+    needs: tooling-selection
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require a successful selector and its output
+        env:
+          SELECTOR_RESULT: ${{ needs.tooling-selection.result }}
+          SELECTOR_REASON: ${{ needs.tooling-selection.outputs.reason }}
+        run: test "$SELECTOR_RESULT" = success && test -n "$SELECTOR_REASON"
+
   runtime:
-    if: ${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}
+    needs: tooling-selection
+    if: ${{ needs.tooling-selection.outputs.reason != 'isolated-tooling:documentation-validator-tests' && (github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem )) }}
     name: Admitted C capability ownership
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -191,7 +239,8 @@ jobs:
           retention-days: 3
 
   standard-facilities:
-    if: ${{ (github.event_name != 'workflow_dispatch' || (!inputs.qualify-scratch-refusals && !inputs.replay-closed-filesystem)) && (github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' || (github.event_name == 'workflow_dispatch' && inputs.outside-capture)) }}
+    needs: tooling-selection
+    if: ${{ needs.tooling-selection.outputs.reason != 'isolated-tooling:documentation-validator-tests' && ((github.event_name != 'workflow_dispatch' || (!inputs.qualify-scratch-refusals && !inputs.replay-closed-filesystem)) && (github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' || (github.event_name == 'workflow_dispatch' && inputs.outside-capture))) }}
     name: Signed C standard clock and entropy profile
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -472,8 +521,9 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   closed-filesystem:
+    needs: tooling-selection
     name: Fresh signed concrete C filesystem Unsupported results
-    if: ${{ github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' && github.event_name == 'workflow_dispatch' && inputs.replay-closed-filesystem }}
+    if: ${{ needs.tooling-selection.outputs.reason != 'isolated-tooling:documentation-validator-tests' && (github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031' && github.event_name == 'workflow_dispatch' && inputs.replay-closed-filesystem) }}
     permissions:
       contents: read
       actions: read

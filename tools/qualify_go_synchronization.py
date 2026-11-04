@@ -7,11 +7,12 @@ import os
 from pathlib import Path
 import re
 import sys
+import time
 
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import ci_rust_artifacts as artifacts
-from tools import ci_suite_inventory as registry
+from tools import ci_suite_inventory as registry, ci_suite_discovery as discovery
 from tools.owned_test_process import ProcessFailure, run_owned
 from tools.rust_capsule_project import fresh
 from tools.test_run import redact
@@ -240,13 +241,35 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
     material = {profile: compile_identity(path, root, profile, plan['fixture']) for path, profile in plan['inputs']}
     suites = registry.load(root / 'tools/ci/suites.json')['suites']
     suite, = [row for row in suites if row['id'] == 'latent-wasmtime.test.local-service']
-    if plan['case'] not in suite['expectedCases'] or plan['case'] not in suite['expectedIgnored'] or suite['timeoutSeconds'] != 900:
+    if plan['case'] not in suite['expectedIgnored'] or suite['timeoutSeconds'] != 900:
         raise ValueError('Go-synchronization-suite-contract')
     output = fresh(output)
     command = ['cargo', '--config', '.cargo/managed-guest.toml', 'test', '--locked', '-p', 'latent-wasmtime',
                '--test', 'local_service', plan['case'], '--', '--ignored', '--exact', '--show-output']
+    deadline = time.monotonic() + 1800
+    list_base = ['cargo', '--config', '.cargo/managed-guest.toml', 'test', '--locked',
+                 '-p', 'latent-wasmtime', '--test', 'local_service', '--']
+    discovered = []
+    for label, arguments in (("all", ["--list"]), ("ignored", ["--ignored", "--list"])):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError('Go-synchronization-signed-command-deadline')
+        observed = run_owned([*list_base, *arguments], cwd=root, env=environment,
+                             timeout=remaining, maximum=2 * 1024 * 1024, separate_stderr=True)
+        (output / (label + '-list.stdout.log')).write_bytes(observed.output)
+        (output / (label + '-list.stderr.log')).write_bytes(redact(observed.stderr.decode('utf-8', 'replace')).encode())
+        if observed.returncode:
+            raise ValueError('Go-synchronization-list-command-failed')
+        discovered.append(discovery.listing(observed.output))
+    available, ignored = discovered
+    discovery.validate_cases(suite, available, ignored, {})
+    if plan['case'] not in ignored:
+        raise ValueError('Go-synchronization-required-case-missing')
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise ValueError('Go-synchronization-signed-command-deadline')
     try:
-        result = run_owned(command, cwd=root, env=environment, timeout=1800,
+        result = run_owned(command, cwd=root, env=environment, timeout=remaining,
                            maximum=2 * 1024 * 1024, separate_stderr=True)
     except ProcessFailure as error:
         if error.result is not None:
@@ -259,7 +282,7 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
         raise ValueError('Go-synchronization-signed-command-failed')
     parser = {'synchronization': observations, 'admission': admission_observations,
               'queued': queued_observations, 'managed-timers': managed_timer_observations}[programme]
-    rows = parser(result.output, len(suite['expectedCases']) - 1)
+    rows = parser(result.output, len(available) - 1)
     after = source_snapshot(root)
     after_material = {profile: compile_identity(path, root, profile, plan['fixture']) for path, profile in plan['inputs']}
     clean_source()

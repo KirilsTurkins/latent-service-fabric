@@ -7,6 +7,7 @@ not use workflow-wide path exclusions that could leave a check pending.
 | Profile | Selection | Validation |
 | --- | --- | --- |
 | Documentation | Every changed path is approved Markdown, a product documentation SVG, or a known GitHub issue form / optional chooser configuration. | Document links, anchors, fences, SVG accessibility, bounded offline issue-form YAML validation and validator regressions, plus the actual static website checks. |
+| Isolated tooling | A single additive, self-contained documentation-validator test whose current consumer graph excludes the standalone guest qualifications. | The documentation and website owners, including the automatically discovered validator tests. |
 | Website | Documentation mixed with known website TS/JS/CSS/config/lock/metadata, or published MDX. | The same docs checks plus website types, unit tests, both production base paths and browser journeys. Product builds remain skipped. |
 | Host correctness (`fast`) | Source changes whose complete reverse-dependent closure remains inside the catalogue's approved narrow packages. | Docs, website, selected host formatting/check/Clippy/build/discovery/execution and selected MSRV checks. |
 | Full | Runtime-sensitive product or SDK/example source, shared tools, workflows, schemas, frozen profiles, benchmark evidence or unknown/mixed paths; manual runs; unavailable history. | Docs and website, selected host correctness, and the Rust, MSRV, catalog, contracts, registry and SDK job families. |
@@ -63,6 +64,18 @@ the six full-suite families and unselected host job must be skipped; their
 skipped status alone is not the validation result. Use `CI result` as the
 branch-protection status context.
 Existing review requirements remain independent of profile selection.
+
+The initial tooling owner is deliberately narrow: additive tests in
+`tools/tests/test_validate_docs.py` qualify only when their syntax, the clean
+Git comparison, workflow triggers and tool/SDK consumers can all be resolved.
+The classifier emits `isolated-tooling:documentation-validator-tests` and the
+standalone C, Java and Rust authoring workflows use the same decision. A missing
+selector output fails their selection result. Mixed changes, modified existing
+tests, dynamic or unknown consumers, unavailable history, mode changes and
+selection-policy changes keep full qualification. Manual dispatch stays full.
+Preview a committed comparison offline with `python tools/test.py preview --base
+<base-ref> --head <head-ref> --output json`; a dirty `--worktree` preview
+conservatively reports full. Preview does not build or fetch inputs.
 
 The host-only profile additionally requires `fast` and `msrv` but skips the other
 full-suite families. The full profile requires its selected host job and every

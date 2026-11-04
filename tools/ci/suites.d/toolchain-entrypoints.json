@@ -3,13 +3,11 @@
   "suites": [
     {
       "boundary": "runtime",
-      "expectedCases": [],
       "expectedIgnored": [],
       "id": "latent-component-threading.bin.c-context",
       "ignoredLeaves": [],
       "kind": "bin",
       "manifest": "crates/latent-component-threading/Cargo.toml",
-      "minimumCases": 0,
       "mode": "compile-only",
       "package": "latent-component-threading",
       "platforms": [
@@ -27,13 +25,11 @@
     },
     {
       "boundary": "runtime",
-      "expectedCases": [],
       "expectedIgnored": [],
       "id": "latent-component-threading.bin.rust-context",
       "ignoredLeaves": [],
       "kind": "bin",
       "manifest": "crates/latent-component-threading/Cargo.toml",
-      "minimumCases": 0,
       "mode": "compile-only",
       "package": "latent-component-threading",
       "platforms": [

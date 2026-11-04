@@ -1,1 +1,0 @@
-{"kind":"owner","path":"tools/phase3_security.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind current 48.0.8 version and upstream security source; preserve historical receipts, feature, capability, limit and execution controls.","schemaVersion":"latent.ci.contracts.v1","sha256":"e6fe005a0152fc794c7e84e10de24bc8bc450771e3300b5144cdcbbcde4379db"}

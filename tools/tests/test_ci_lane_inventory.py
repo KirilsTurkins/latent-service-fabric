@@ -202,8 +202,7 @@ class InventoryTests(unittest.TestCase):
         original = ci_suite_inventory.load()
         case = original["selections"]["http-response-policy"]["names"][0]
         for field, value in (("recipe", "core-host"), ("kind", "bin"),
-                             ("source", "src/main.rs"), ("expectedIgnored", []),
-                             ("expectedCases", [])):
+                             ("source", "src/main.rs"), ("expectedIgnored", [])):
             with self.subTest(field=field):
                 data = copy.deepcopy(original)
                 row = next(row for row in data["suites"] if row["id"] == "latentd.lib.latentd")
@@ -225,7 +224,7 @@ class RepositoryInventoryTests(unittest.TestCase):
         from tools.ci_lane_inventory import workflow_model
         from tools import go_http_tenant_native_products, http_phase_native_products
         from tools import http_tenant_native_products, java_phase_native_products
-        from tools import wait_runtime_native_products, wasmtime_48_0_7_native_products
+        from tools import wait_runtime_native_products, wasmtime_48_0_7_native_products, rust_thread_runtime_native_products
         from tools import qualify_go_write_progress
 
         steps = workflow_model((ROOT / '.github/workflows/ci.yml').read_text())['jobs']['contracts']['steps']
@@ -241,7 +240,7 @@ class RepositoryInventoryTests(unittest.TestCase):
         self.assertEqual(words[:5], ['git', 'fetch', '--no-tags', '--depth=1', 'origin'])
         expected = {module.SOURCE for module in (go_http_tenant_native_products,
             http_phase_native_products, http_tenant_native_products, java_phase_native_products,
-            wait_runtime_native_products, wasmtime_48_0_7_native_products)}
+            wait_runtime_native_products, wasmtime_48_0_7_native_products, rust_thread_runtime_native_products)}
         expected.update((qualify_go_write_progress.BASELINE,
             qualify_go_write_progress.CLOSE_BASELINE, 'aa56bdebad8c12f20acce4ec4ecfeca73cf554be'))
         # These exact additional C/codec/Buffer origins are needed by the preservation

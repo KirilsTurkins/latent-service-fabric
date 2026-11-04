@@ -18,7 +18,7 @@ from tools import host_stream_kernel_return_source as source
 from tools import host_stream_kernel_native_vm as native
 from tools import host_stream_kernel_vm_image as image
 from tools import ci_rust_artifacts as artifacts
-from tools import ci_suite_inventory as registry
+from tools import ci_suite_inventory as registry, ci_suite_discovery as discovery
 from tools.build_observation import build_environment
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
@@ -48,8 +48,7 @@ def source_inputs():
 def leaf_control(commands, cargo, output):
     contract, = [row for row in registry.load()['suites']
         if row['package'] == 'latent-stream-factory-native' and row['kind'] == 'lib']
-    native.require(contract['expectedCases'] == [LEAF_CASE] and not contract['expectedIgnored']
-        and contract['minimumCases'] == 1,'registered-owned-descriptor-leaf')
+    native.require(not contract['expectedIgnored'], 'registered-owned-descriptor-leaf')
     commands.run('leaf-cargo',cargo,'test','--locked','--all-features',
         '-p','latent-stream-factory-native','--lib','--no-run','--message-format=json')
     inventory = commands.output/'logs'/f'{len(commands.records)-1:02d}-leaf-cargo.stdout.txt'
@@ -63,15 +62,14 @@ def leaf_control(commands, cargo, output):
         commands.command_seconds = min(seconds,30)
         listed = commands.run('leaf-list',executable.executable,'--list')
         ignored = commands.run('leaf-ignored',executable.executable,'--ignored','--list')
-        native.require(re.findall(rb'^([a-zA-Z0-9_:]+): test$',listed,re.M) == [LEAF_CASE.encode()]
-            and not re.search(rb': test$',ignored,re.M),'exact-unignored-owned-descriptor-leaf')
+        available, skipped = discovery.listing(listed), discovery.listing(ignored)
+        discovery.validate_cases(contract, available, skipped, {})
+        native.require(LEAF_CASE in available and not skipped, 'exact-unignored-owned-descriptor-leaf')
         commands.command_seconds = min(seconds,120)
         raw = commands.run('leaf-tests',executable.executable,'--show-output','--test-threads=1')
-        native.require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$',raw,re.M) == [LEAF_CASE.encode()]
-            and re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; '
-                rb'(\d+) measured; (\d+) filtered out;',raw,re.M) == [(b'1',b'0',b'0',b'0',b'0')],
-            'owned-descriptor-leaf-actually-executed')
-        return {'executed':[LEAF_CASE],'ignored':[],'stdout':native.identity(raw),
+        executed, skipped = discovery.execution_cases(raw, available, skipped)
+        native.require(LEAF_CASE in executed and not skipped, 'owned-descriptor-leaf-actually-executed')
+        return {'executed':executed,'ignored':skipped,'stdout':native.identity(raw),
             'executableBytes':executable.executable.stat().st_size,
             'executableSha256':original.native_controls.provider.digest_file(executable.executable,1024**3),
             'actualKernelMint':False}
