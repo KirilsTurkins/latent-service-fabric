@@ -10,7 +10,8 @@
       "push": {
         "branches": [
           "feat/rust-http-thread-20261104",
-          "fix/rust-http-bindgen-20261104"
+          "fix/rust-http-bindgen-20261104",
+          "fix/rust-http-wac11-20261104"
         ],
         "paths": [
           ".github/workflows/rust-http-thread-composition-diagnostic.yml",
@@ -34,7 +35,7 @@
   "requiredJobs": [
     "diagnostic"
   ],
-  "reviewReason": "Run the unadmitted combined diagnostic on its original and focused bindgen-repair branches.",
+  "reviewReason": "Preserve the original compiler diagnostic and add its fixed, diagnostic-only threading-aware composer branch.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-http-thread-composition-diagnostic.yml"
 }
