@@ -57,3 +57,91 @@ class ResultTests(unittest.TestCase):
     def test_unexpected_job_is_not_silently_dropped(self):
         changed = successful('full'); changed['missing-from-needs-contract'] = {'result': 'success'}
         with self.assertRaises(ValueError): ci_result.validate(changed)
+
+    def test_real_sparse_checkouts_preserve_the_complete_effective_inventory(self):
+        import hashlib
+        from pathlib import Path
+        import subprocess
+        import sys
+        import tempfile
+        from tools.ci_lane_inventory import workflow_model
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = workflow_model((root / '.github/workflows/ci.yml').read_text())
+        complete = registry.load(root / 'tools/ci/suites.json')
+        expected_digest = hashlib.sha256(json.dumps(complete, sort_keys=True).encode()).hexdigest()
+        outputs = ci_profile.Decision('full', 'sparse-checkout-control', 1).outputs()
+        required = json.loads(outputs['expected_jobs'])
+        results = {name: {'result': 'success' if name in required else 'skipped'}
+                   for name in registry.ALL_JOBS}
+        results['profile']['outputs'] = outputs
+        files = ['tools/ci_profile.py', 'tools/ci_result.py', 'tools/ci_suite_inventory.py',
+                 'tools/ci_suite_cases.py', 'tools/ci/suites.json']
+        for directory in ('suites.d', 'suites.cases.d'):
+            fragments = sorted((root / 'tools/ci' / directory).glob('*.json'))
+            self.assertTrue(fragments, f'production {directory} controls must not be vacuous')
+            files.extend(path.relative_to(root).as_posix() for path in fragments)
+        # A fresh interpreter cannot borrow already-imported modules or the
+        # outer checkout through PYTHONPATH. Both consumers load their real data.
+        probe = '''
+import hashlib, json, sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd()))
+from tools import ci_suite_inventory as registry
+assert registry.ROOT == Path.cwd()
+data = registry.load()
+observed = {'inventory': hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()}
+if sys.argv[1] == 'profile':
+    from tools import ci_profile
+    observed['outputs'] = ci_profile.Decision('full', 'sparse-checkout-control', 1).outputs()
+else:
+    from tools import ci_result
+    observed['required'] = sorted(ci_result.validate(json.load(sys.stdin)))
+print(json.dumps(observed))
+'''
+        for job in ('profile', 'result'):
+            checkout = workflow['jobs'][job]['steps'][0]['with']
+            self.assertIs(checkout['sparse-checkout-cone-mode'], False)
+            patterns = checkout['sparse-checkout']
+            with self.subTest(job=job), tempfile.TemporaryDirectory() as temporary:
+                sparse = Path(temporary)
+                for name in files:
+                    target = sparse / name
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes((root / name).read_bytes())
+                (sparse / 'tools/unselected-control.txt').write_text('not a classifier input\n')
+
+                def git(*args, input=None):
+                    return subprocess.run(['git', '-c', 'core.autocrlf=false', *args],
+                        cwd=sparse, input=input, capture_output=True, text=True,
+                        check=True, timeout=15)
+
+                git('init', '--quiet')
+                git('add', '.')
+                git('-c', 'user.name=Sparse CI control', '-c',
+                    'user.email=sparse-ci@example.invalid', 'commit', '--quiet', '-m', 'fixture')
+                for omitted in (None, '/tools/ci_suite_cases.py', '/tools/ci/suites.cases.d/'):
+                    selected = '\n'.join(line for line in patterns.splitlines() if line != omitted) + '\n'
+                    git('sparse-checkout', 'set', '--no-cone', '--stdin', input=selected)
+                    self.assertFalse((sparse / 'tools/unselected-control.txt').exists())
+                    run = subprocess.run([sys.executable, '-I', '-B', '-c', probe, job],
+                        cwd=sparse, input=json.dumps(results), capture_output=True,
+                        text=True, timeout=15)
+                    with self.subTest(job=job, omitted=omitted):
+                        if omitted == '/tools/ci_suite_cases.py':
+                            self.assertNotEqual(run.returncode, 0)
+                            self.assertIn('ModuleNotFoundError', run.stderr)
+                            self.assertIn('tools.ci_suite_cases', run.stderr)
+                            continue
+                        self.assertEqual(run.returncode, 0, run.stderr)
+                        observed = json.loads(run.stdout)
+                        if omitted is not None:
+                            # Imports still work without case fragments, but the
+                            # effective inventory silently loses required cases.
+                            self.assertNotEqual(observed['inventory'], expected_digest)
+                            continue
+                        self.assertEqual(observed['inventory'], expected_digest)
+                        if job == 'profile':
+                            self.assertEqual(observed['outputs'], outputs)
+                        else:
+                            self.assertEqual(observed['required'], required)

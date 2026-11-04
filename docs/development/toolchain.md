@@ -27,7 +27,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `tokio-rustls` |                               0.26.6 | Direct TLS adapter dependency |
 | Tracing / tracing-subscriber |                      0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
 | Wasmtime |                               48.0.7 | Maintained source package with selected value/native-allocation hooks; exact cohort participates in runtime identity |
-| `wasmparser` |                               0.261.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
+| `wasmparser` |                               0.262.0 | Direct component binary validation; the threading source profile retains 0.259.0 alongside its matching encoder, and WIT tooling retains separately locked parser dependencies |
 | `wasm-encoder` |                               0.261.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
 | `wit-parser` |                               0.262.0 | Direct WIT parsing and component decoding; guest tooling retains its separately locked parser dependencies |
 | `wit-bindgen` Rust macro |                    0.63.0 | Rust guest bindings generated from WIT |
@@ -40,7 +40,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `wasm-tools` |                              1.254.0 | WIT parsing, validation, componentization, and interface extraction |
 | Buf |                               1.72.0 | Protobuf linting and independent descriptor-set generation |
 | Python / `jsonschema` |                      3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
-| Go / Node / TypeScript / .NET |   1.27.3 / 24.19.0 / 7.0.2 / 8.0.426 | Cross-language interfaces and bounded native clients |
+| Go / Node / TypeScript / .NET |   1.27.3 / 24.19.0 / 7.0.2 / 8.0.427 | Cross-language interfaces and bounded native clients |
 | Eclipse Temurin JDK |                           25.0.4.1+1 | Java SDK build and runtime qualification; Java 25 minimum runtime |
 | Gradle (optional Java build) |                                9.1.0 | Java 25-compatible Gradle path; distribution SHA-256 pinned in `tools/toolchain.toml` |
 | Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Pinned C11 header smoke test |

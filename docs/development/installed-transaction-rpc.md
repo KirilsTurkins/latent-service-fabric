@@ -21,6 +21,10 @@ configuration digest and configured epoch. `ProtectedStoreConfig::inspection_pro
 computes that descriptive identity from the selected engine limits; the
 namespace inspection response reports the same identity. It grants no access.
 Every request still needs the actual current publication and policy decision.
+The selected redb 4.4.0 engine has a different configuration digest from 4.3.0.
+Existing signed provider bindings for the older digest must be reissued through
+the normal authorization process before they can authorize the new engine;
+they are not silently accepted as equivalent.
 
 Configured recovery storage must admit the signed metadata capture: 32 MiB per
 job and at least 32 MiB retained capacity cover its current bounded envelope.

@@ -132,6 +132,16 @@ fragment entry in the same reviewed change; leaving both is an error. Run:
 python3 -m unittest tools.tests.test_ci_suite_cases tools.tests.test_ci_suite_fragments tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery
 ```
 
+Synthetic runner fixtures must copy the primary catalogue and both sibling
+fragment directories (`suites.d/` and `suites.cases.d/`). Validate the source
+catalogue before copying, preserve the original bytes, and compare the complete
+loaded inventory at the destination. A catalogue without ordinary-case additions
+can still parse successfully, but it is not the same discovery contract, even
+when the process runner selects only ignored tests. The owned-runner regression
+checks both fragment families, detects omitted additions, and refuses malformed
+source fragments before writing a partial fixture. These fixture checks do not
+replace the native ownership or signed-runtime campaigns.
+
 ## Affected inputs and offline selection
 
 The existing classifier reads workspace manifests directly, including renamed,

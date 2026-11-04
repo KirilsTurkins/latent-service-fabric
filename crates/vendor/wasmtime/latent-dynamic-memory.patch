@@ -369,7 +369,15 @@
 -                            ready: Vec::new(),
 +                            ready: None,
                              low_priority: false,
-@@ -1412,3 +1501,7 @@
+@@ -1379,2 +1468,7 @@
+                                 // immediately.
++                                reset
++                                    .store
++                                    .0
++                                    .concurrent_state_mut_without_forcing_current_thread()
++                                    .observe_async_deadlock();
+                                 Poll::Ready(Err(Trap::AsyncDeadlock.into()))
+@@ -1412,3 +1506,7 @@
                  } => {
 -                    struct Dispose<'a, T: 'static, I: Iterator<Item = WorkItem>> {
 +                    struct Dispose<
@@ -378,7 +386,7 @@
 +                        I: Iterator<Item = (QueueSlot<WorkItem>, WorkItem)>,
 +                    > {
                          store: StoreContextMut<'a, T>,
-@@ -1417,8 +1510,8 @@
+@@ -1417,8 +1515,8 @@
  
 -                    impl<'a, T, I: Iterator<Item = WorkItem>> Drop for Dispose<'a, T, I> {
 +                    impl<'a, T, I: Iterator<Item = (QueueSlot<WorkItem>, WorkItem)>> Drop for Dispose<'a, T, I> {
@@ -390,27 +398,27 @@
 -                                    WorkItem::PushFuture(future) => {
 +                                    WorkItem::PushFuture(future, _task_slot) => {
                                          tls::set(self.store.0, move || drop(future))
-@@ -1461,3 +1554,3 @@
+@@ -1461,3 +1559,3 @@
  
 -                    while let Some(item) = dispose.ready.next() {
 +                    while let Some((slot, item)) = dispose.ready.next() {
                          dispose
-@@ -1465,3 +1558,3 @@
+@@ -1465,3 +1563,3 @@
                              .as_context_mut()
 -                            .handle_work_item(item)
 +                            .handle_work_item(slot, item)
                              .await?;
-@@ -1474,3 +1567,3 @@
+@@ -1474,3 +1572,3 @@
      /// Handle the specified work item, possibly resuming a fiber if applicable.
 -    async fn handle_work_item(self, item: WorkItem) -> Result<()>
 +    async fn handle_work_item(self, slot: QueueSlot<WorkItem>, item: WorkItem) -> Result<()>
      where
-@@ -1480,3 +1573,3 @@
+@@ -1480,3 +1578,3 @@
          match item {
 -            WorkItem::PushFuture(future) => {
 +            WorkItem::PushFuture(future, task_slot) => {
                  self.0
-@@ -1484,6 +1577,6 @@
+@@ -1484,6 +1582,6 @@
                      .futures_mut()?
 -                    .push(future.into_inner());
 +                    .push_prepared(task_slot, future.into_inner());
@@ -419,47 +427,47 @@
 -                self.0.resume_fiber(fiber).await?;
 +                self.0.resume_fiber(fiber, slot).await?;
              }
-@@ -1494,3 +1587,3 @@
+@@ -1494,3 +1592,3 @@
                  ) {
 -                    self.0.resume_fiber(fiber).await?;
 +                    self.0.resume_fiber(fiber, slot).await?;
                  } else {
-@@ -1501,3 +1594,4 @@
+@@ -1501,3 +1599,4 @@
                  if call.is_ready(self.0)? {
 -                    self.run_on_worker(WorkerItem::GuestCall(call)).await?;
 +                    self.run_on_worker(slot, WorkerItem::GuestCall(call))
 +                        .await?;
                  } else {
-@@ -1522,3 +1616,3 @@
+@@ -1522,3 +1621,3 @@
                          .pending
 -                        .insert(call.thread, call.kind);
 +                        .insert(call.thread, (call.kind, slot));
                  }
-@@ -1526,3 +1620,3 @@
+@@ -1526,3 +1625,3 @@
              WorkItem::WorkerFunction(fun) => {
 -                self.run_on_worker(WorkerItem::Function(fun)).await?;
 +                self.run_on_worker(slot, WorkerItem::Function(fun)).await?;
              }
-@@ -1534,3 +1628,3 @@
+@@ -1534,3 +1633,3 @@
      /// Execute the specified guest call on a worker fiber.
 -    async fn run_on_worker(self, item: WorkerItem) -> Result<()>
 +    async fn run_on_worker(self, wake_slot: QueueSlot<WorkItem>, item: WorkerItem) -> Result<()>
      where
-@@ -1548,3 +1642,3 @@
+@@ -1548,3 +1647,3 @@
                          WorkerItem::GuestCall(call) => handle_guest_call(store, call)?,
 -                        WorkerItem::Function(fun) => fun.into_inner()(store)?,
 +                        WorkerItem::Function(fun) => fun.into_inner().invoke(store)?,
                      }
-@@ -1560,3 +1654,3 @@
+@@ -1560,3 +1659,3 @@
  
 -        self.0.resume_fiber(worker).await
 +        self.0.resume_fiber(worker, wake_slot).await
      }
-@@ -1757,2 +1851,3 @@
+@@ -1757,2 +1856,3 @@
          let thread = self.current_thread()?;
 +        let native_memory = self.native_memory();
          let state = self.concurrent_state_mut()?;
-@@ -1768,5 +1863,11 @@
+@@ -1768,5 +1868,11 @@
              state,
 -            Box::new(move |_, _| bail_bug!("cannot lower params in sync call")),
 +            RawLower::new(
@@ -473,22 +481,22 @@
 +                    &native_memory,
 +                )?,
                  ty: TypeTupleIndex::reserved_value(),
-@@ -2058,3 +2159,3 @@
+@@ -2058,3 +2164,3 @@
      fn partition_pending(&mut self, instance: RuntimeInstance) -> Result<()> {
 -        for (thread, kind) in
 +        for (thread, (kind, slot)) in
              mem::take(&mut self.instance_state(instance).concurrent_state().pending).into_iter()
-@@ -2064,3 +2165,3 @@
+@@ -2064,3 +2170,3 @@
                  self.concurrent_state_mut()?
 -                    .push_high_priority(WorkItem::GuestCall(instance.index, call));
 +                    .push_high_priority(slot, WorkItem::GuestCall(instance.index, call));
              } else {
-@@ -2069,3 +2170,3 @@
+@@ -2069,3 +2175,3 @@
                      .pending
 -                    .insert(call.thread, call.kind);
 +                    .insert(call.thread, (call.kind, slot));
              }
-@@ -2106,3 +2207,7 @@
+@@ -2106,3 +2212,7 @@
      /// store.
 -    async fn resume_fiber(&mut self, fiber: StoreFiber<'static>) -> Result<()> {
 +    async fn resume_fiber(
@@ -497,19 +505,19 @@
 +        wake_slot: QueueSlot<WorkItem>,
 +    ) -> Result<()> {
          struct Dispose<'a> {
-@@ -2124,2 +2229,6 @@
+@@ -2124,2 +2234,6 @@
          };
 +
 +        // A yield/wait may follow arbitrary guest or host effects. Retain the
 +        // SAME node removed from the queue across execution; no new admission
 +        // or allocation is allowed after resuming this fiber.
  
-@@ -2165,3 +2274,3 @@
+@@ -2165,3 +2279,3 @@
                      let instance = state.get_mut(thread.task)?.instance.index;
 -                    state.push_low_priority(WorkItem::ResumeThread(instance, thread));
 +                    state.push_low_priority(wake_slot, WorkItem::ResumeThread(instance, thread));
                  }
-@@ -2172,6 +2281,6 @@
+@@ -2172,6 +2286,6 @@
                  SuspendReason::Waiting { set, thread, .. } => {
 -                    let old = state
 -                        .get_mut(set)?
@@ -520,7 +528,79 @@
 +                        WaitMode::Fiber(dispose.fiber.take().unwrap(), wake_slot),
 +                    );
                      assert!(old.is_none());
-@@ -2362,2 +2471,15 @@
+@@ -2235,2 +2349,5 @@
+ 
++        #[cfg(feature = "gc")]
++        self.observe_root_suspension(&reason);
++
+         let suspend_reason = &mut self.concurrent_state_mut()?.suspend_reason;
+@@ -2248,2 +2365,65 @@
+         Ok(())
++    }
++
++    #[cfg(feature = "gc")]
++    fn observe_root_suspension(&mut self, reason: &SuspendReason) {
++        let SuspendReason::ExplicitlySuspending { thread, .. } = reason else {
++            return;
++        };
++        // Checked direct handles, no table scan. Failure is diagnostic-only and
++        // cannot replace the original suspend or manufacture a wake.
++        let state = self.concurrent_state_mut_without_forcing_current_thread();
++        if !state
++            .get_mut(thread.thread)
++            .is_ok_and(|row| row.diagnostic_host_root && row.parent_task == thread.task)
++            || !state
++                .get_mut(thread.task)
++                .is_ok_and(|task| matches!(task.caller, Caller::Host { .. }))
++        {
++            return;
++        }
++        let memory = state.queue_memory.clone();
++        let Some(memory) = memory.filter(|memory| memory.root_suspension_enabled()) else {
++            return;
++        };
++        let mut snapshot = crate::RootSuspensionSnapshot::default();
++        let mut modules = [None; 8];
++        let (steps, visited, flags) =
++            crate::runtime::vm::Backtrace::trace_root_suspension(self, |frame| {
++                // All frames here are host-call return PCs, not a faulting Trap PC.
++                let numeric = frame
++                    .pc()
++                    .checked_sub(1)
++                    .and_then(|pc| self.modules().lookup_numeric_frame(pc));
++                let Some((module, function, instruction, offset)) = numeric else {
++                    snapshot.flags |= 8;
++                    return;
++                };
++                let index = usize::from(snapshot.count);
++                let ordinal = modules
++                    .iter()
++                    .position(|key| *key == Some(module))
++                    .unwrap_or_else(|| {
++                        let empty = modules
++                            .iter()
++                            .position(Option::is_none)
++                            .expect("at most eight raw frames");
++                        modules[empty] = Some(module);
++                        empty
++                    });
++                if instruction.is_none() || offset.is_none() {
++                    snapshot.flags |= 4;
++                }
++                snapshot.frames[index] = crate::RootSuspensionFrame {
++                    module: ordinal as u8,
++                    function,
++                    module_offset: instruction.unwrap_or(u32::MAX),
++                    function_offset: offset.unwrap_or(u32::MAX),
++                };
++                snapshot.count += 1;
++            });
++        snapshot.steps = steps;
++        snapshot.visited = visited;
++        snapshot.flags |= flags;
++        memory.save_root_suspension(&snapshot);
+     }
+@@ -2362,2 +2542,15 @@
      ) -> Result<()> {
 +        if !self.cancel_unstarted_guest_task(caller_instance, guest_task)? {
 +            bail!(Trap::SubtaskCancelAfterTerminal);
@@ -536,12 +616,12 @@
 +        guest_task: TableId<GuestTask>,
 +    ) -> Result<bool> {
          let concurrent_state = self.concurrent_state_mut()?;
-@@ -2400,3 +2522,3 @@
+@@ -2400,3 +2593,3 @@
  
 -            let remove = |queue: &mut VecDeque<WorkItem>| {
 +            let remove = |queue: &mut Queue<WorkItem>| {
                  let count = queue.len();
-@@ -2411,7 +2533,5 @@
+@@ -2411,7 +2604,5 @@
  
 -            if !found {
 -                bail!(Trap::SubtaskCancelAfterTerminal);
@@ -552,16 +632,16 @@
 +        }
 +        Ok(true)
      }
-@@ -2501,2 +2621,3 @@
+@@ -2501,2 +2692,3 @@
          code: u32,
 +        wake_slot: QueueSlot<WorkItem>,
      ) -> Result<Option<GuestCall>> {
-@@ -2551,3 +2672,3 @@
+@@ -2551,3 +2743,3 @@
                      // after any other threads have had a chance to run.
 -                    state.push_low_priority(WorkItem::GuestCall(runtime_instance, call));
 +                    state.push_low_priority(wake_slot, WorkItem::GuestCall(runtime_instance, call));
                      None
-@@ -2572,12 +2693,15 @@
+@@ -2572,12 +2764,15 @@
                      // An event is immediately available; deliver it ASAP.
 -                    state.push_high_priority(WorkItem::GuestCall(
 -                        runtime_instance,
@@ -586,21 +666,21 @@
 +                        ),
 +                    );
                  } else {
-@@ -2600,3 +2724,3 @@
+@@ -2600,3 +2795,3 @@
                          .waiting
 -                        .insert(guest_thread, WaitMode::Callback(self));
 +                        .insert(guest_thread, WaitMode::Callback(self, wake_slot));
                      if !old.is_none() {
-@@ -2628,2 +2752,3 @@
+@@ -2628,2 +2823,3 @@
      ) -> Result<()> {
 +        let queue_slot = store.0.concurrent_state_mut()?.prepare_queue_slot()?;
          /// Return a closure which will call the specified function in the scope
-@@ -2664,3 +2789,3 @@
+@@ -2664,3 +2860,3 @@
  
 -                lower(store, &mut storage[..param_count])?;
 +                lower.call(store, &mut storage[..param_count])?;
  
-@@ -2705,6 +2830,8 @@
+@@ -2705,6 +2901,8 @@
  
 +        let native_memory = store.0.native_memory();
          let fun = if callback.is_some() {
@@ -611,7 +691,7 @@
 +
 +            let start = move |store: &mut dyn VMStore| {
                  self.add_guest_thread_to_instance_table(
-@@ -2742,8 +2869,14 @@
+@@ -2742,8 +2940,14 @@
  
 -                self.handle_callback_code(store, guest_thread, callee_instance.index, code)
 -            })
@@ -630,12 +710,12 @@
 -            Box::new(move |store: &mut dyn VMStore| {
 +            let start = move |store: &mut dyn VMStore| {
                  self.add_guest_thread_to_instance_table(
-@@ -2796,3 +2929,3 @@
+@@ -2796,3 +3000,3 @@
                      // results returned, per `wasmparser`.
 -                    let result = (lift.lift)(store, unsafe {
 +                    let result = lift.lift.call(store, unsafe {
                          mem::transmute::<&[MaybeUninit<ValRaw>], &[ValRaw]>(
-@@ -2832,9 +2965,9 @@
+@@ -2832,9 +3036,9 @@
                  Ok(None)
 -            })
 +            };
@@ -650,17 +730,17 @@
 +            queue_slot,
 +            WorkItem::GuestCall(
                  callee_instance.index,
-@@ -2844,3 +2977,4 @@
+@@ -2844,3 +3048,4 @@
                  },
 -            ));
 +            ),
 +        );
  
-@@ -2922,2 +3056,3 @@
+@@ -2922,2 +3127,3 @@
          let old_thread = store.0.current_guest_thread()?;
 +        let native_memory = store.0.native_memory();
          let state = store.0.concurrent_state_mut()?;
-@@ -2931,77 +3066,34 @@
+@@ -2931,77 +3137,34 @@
              state,
 -            Box::new(move |store, dst| {
 -                let mut store = token.as_context_mut(store);
@@ -768,7 +848,7 @@
 +                    // for details) we know it takes count parameters and returns
 +                    // `dst.len()` results.
                      unsafe {
-@@ -3009,28 +3101,78 @@
+@@ -3009,28 +3172,78 @@
                              &mut store,
 -                            return_.as_non_null(),
 -                            my_src.as_mut_slice().into(),
@@ -870,11 +950,11 @@
 +                    &native_memory,
 +                )?,
                  ty: task_return_type,
-@@ -3110,2 +3252,3 @@
+@@ -3110,2 +3323,3 @@
          let guest_thread = store.0.current_guest_thread()?;
 +        let callback_memory = store.0.native_memory();
          let state = store.0.concurrent_state_mut()?;
-@@ -3124,6 +3267,9 @@
+@@ -3124,6 +3338,9 @@
              let callback = SendSyncPtr::new(callback);
 -            task.callback = Some(Box::new(move |store, event, handle| {
 -                let store = token.as_context_mut(store);
@@ -888,11 +968,11 @@
 +                &callback_memory,
 +            )?);
          }
-@@ -3275,2 +3421,3 @@
+@@ -3275,2 +3492,3 @@
          let task = store.0.current_host_thread()?;
 +        let memory = store.0.native_memory();
          let state = store.0.concurrent_state_mut()?;
-@@ -3279,3 +3426,78 @@
+@@ -3279,3 +3497,78 @@
          // context state for the future.
 -        let (join_handle, future) = JoinHandle::run(future);
 +        let (join_handle, future) = JoinHandle::run_with_memory(future, memory.clone())?;
@@ -972,19 +1052,19 @@
 +        // It must exist even if the first poll later completes immediately.
 +        let future_task_slot = state.prepare_future_task_slot()?;
          {
-@@ -3285,4 +3507,2 @@
+@@ -3285,4 +3578,2 @@
          }
 -
 -        let mut future = Box::pin(future);
  
-@@ -3293,5 +3513,3 @@
+@@ -3293,5 +3584,3 @@
          let poll = tls::set(store.0, || {
 -            future
 -                .as_mut()
 -                .poll(&mut Context::from_waker(&Waker::noop()))
 +            Pin::new(&mut prepared.args_mut().0).poll(&mut Context::from_waker(&Waker::noop()))
          });
-@@ -3301,2 +3519,9 @@
+@@ -3301,2 +3590,9 @@
              Poll::Ready(result) => {
 +                // Keep the inner Box alive through direct lowering as before,
 +                // but refund the unused continuation reservation first.
@@ -994,7 +1074,7 @@
 +                drop(future_task_slot);
 +                let (lower, _token, _task) = worker.into_context();
                  let result = result.transpose()?;
-@@ -3317,49 +3542,3 @@
+@@ -3317,49 +3613,3 @@
          // the task returned.
 -        let future = Box::pin(async move {
 -            let result = match future.await {
@@ -1045,7 +1125,7 @@
 -        });
 +        let future = prepared.finish();
  
-@@ -3372,3 +3551,9 @@
+@@ -3372,3 +3622,9 @@
          let state = store.0.concurrent_state_mut()?;
 -        state.push_future(future);
 +        state.push_host_future(
@@ -1056,12 +1136,12 @@
 +            future,
 +        );
          let instance = state.get_mut(caller.task)?.instance;
-@@ -3437,3 +3622,3 @@
+@@ -3437,3 +3693,3 @@
  
 -        let result = (lift.lift)(store, storage)?;
 +        let result = lift.lift.call(store, storage)?;
          self.task_complete(store, guest_thread.task, result, Status::Returned)
-@@ -3738,31 +3923,31 @@
+@@ -3738,31 +3994,31 @@
          let token = StoreToken::new(store.as_context_mut());
 -        let start_func = Box::new(
 -            move |store: &mut dyn VMStore, guest_thread: QualifiedThreadId| -> Result<()> {
@@ -1122,7 +1202,7 @@
 +        };
 +        let start_func = ThreadStart::new(start, &native_memory)?;
  
-@@ -3791,4 +3976,29 @@
+@@ -3791,4 +4047,29 @@
              GuestThread::from_instance(self.id().get_mut(store), runtime_instance, thread_idx)?;
 +        let native_memory = store.native_memory();
          let state = store.concurrent_state_mut()?;
@@ -1152,7 +1232,7 @@
 +            None
 +        };
          let thread = state.get_mut(guest_thread.thread)?;
-@@ -3802,10 +4012,14 @@
+@@ -3802,10 +4083,14 @@
                          thread: guest_thread,
 -                        kind: GuestCallKind::StartExplicit(Box::new(move |store| {
 -                            start_func(store, guest_thread)
@@ -1173,7 +1253,7 @@
 +                    high_priority,
 +                );
              }
-@@ -3813,5 +4027,7 @@
+@@ -3813,5 +4098,7 @@
                  log::trace!("resuming thread {thread_id:?} that was suspended");
 -                store
 -                    .concurrent_state_mut()?
@@ -1184,7 +1264,7 @@
 +                    high_priority,
 +                );
              }
-@@ -4106,17 +4322,23 @@
+@@ -4106,17 +4393,23 @@
                          // The thread is in a cancellable wait, so wake it up:
 -                        let item = match concurrent_state.get_mut(set)?.waiting.remove(&thread) {
 -                            Some(WaitMode::Fiber(fiber)) => WorkItem::ResumeFiber(fiber),
@@ -1223,7 +1303,7 @@
 +                            };
 +                        concurrent_state.push_high_priority(slot, item);
  
-@@ -4380,3 +4602,6 @@
+@@ -4380,3 +4673,6 @@
          // pointer containing at least `storage_len` items.
 -        let params = unsafe { core::slice::from_raw_parts(storage, storage_len) }.to_vec();
 +        let params = call_parameters(
@@ -1231,17 +1311,17 @@
 +            self.native_memory(),
 +        )?;
  
-@@ -4670,3 +4895,3 @@
+@@ -4670,3 +4966,3 @@
  
 -type HostTaskFuture = Pin<Box<dyn Future<Output = Result<()>> + Send + 'static>>;
 +type BoxedHostTaskFuture = Pin<Box<dyn Future<Output = Result<()>> + Send + 'static>>;
  
-@@ -4709,3 +4934,3 @@
+@@ -4709,3 +5005,3 @@
      /// `first_poll`.
 -    CalleeFinished(LiftedResult),
 +    CalleeFinished(sync_result::SyncResult),
  
-@@ -4733,3 +4958,9 @@
+@@ -4733,3 +5029,9 @@
  
 -type CallbackFn = Box<dyn Fn(&mut dyn VMStore, Event, u32) -> Result<u32> + Send + Sync + 'static>;
 +type CallbackFn = ErasedClosure<CallbackVtable>;
@@ -1252,7 +1332,7 @@
 +    assert!(core::mem::align_of::<Option<CallbackFn>>() == core::mem::align_of::<usize>());
 +};
  
-@@ -4765,2 +4996,151 @@
+@@ -4765,2 +5067,151 @@
  
 +// The Store factory retains its original activation payer independently of the
 +// current guest thread. Admit the complete final buffer before copying any value.
@@ -1404,21 +1484,43 @@
 +}
 +
  /// The table ID for a guest thread, qualified by the task to which it belongs.
-@@ -4798,5 +5178,3 @@
+@@ -4798,5 +5249,3 @@
      NotStartedImplicit,
 -    NotStartedExplicit(
 -        Box<dyn FnOnce(&mut dyn VMStore, QualifiedThreadId) -> Result<()> + Send + Sync>,
 -    ),
 +    NotStartedExplicit(ThreadStart),
      Running,
-@@ -4859,5 +5237,3 @@
+@@ -4810,2 +5259,5 @@
+ pub struct GuestThread {
++    // Only the initial implicit thread of an authenticated host task. Explicit
++    // children share the task but can never overwrite its root observation.
++    diagnostic_host_root: bool,
+     /// Context-local state used to implement the `context.{get,set}`
+@@ -4842,2 +5294,7 @@
+     fn new_implicit(state: &mut ConcurrentState, parent_task: TableId<GuestTask>) -> Result<Self> {
++        let diagnostic_host_root = state
++            .queue_memory
++            .as_ref()
++            .is_some_and(|memory| memory.root_suspension_enabled())
++            && matches!(state.get_mut(parent_task)?.caller, Caller::Host { .. });
+         let sync_call_set = state.push(WaitableSet {
+@@ -4851,2 +5308,3 @@
+             state: GuestThreadState::NotStartedImplicit,
++            diagnostic_host_root,
+             instance_rep: None,
+@@ -4859,5 +5317,3 @@
          parent_task: TableId<GuestTask>,
 -        start_func: Box<
 -            dyn FnOnce(&mut dyn VMStore, QualifiedThreadId) -> Result<()> + Send + Sync,
 -        >,
 +        start_func: ThreadStart,
      ) -> Result<Self> {
-@@ -5188,16 +5564,19 @@
+@@ -4872,2 +5328,3 @@
+             state: GuestThreadState::NotStartedExplicit(start_func),
++            diagnostic_host_root: false,
+             instance_rep: None,
+@@ -5188,16 +5645,19 @@
  
 -                let item = match mode {
 -                    WaitMode::Fiber(fiber) => WorkItem::ResumeFiber(fiber),
@@ -1449,7 +1551,7 @@
 -                state.push_high_priority(item);
 +                state.push_high_priority(slot, item);
              }
-@@ -5263,10 +5642,507 @@
+@@ -5263,10 +5723,507 @@
  
 +// Keep erased call carriers at the original two-pointer size. Accounted
 +// closure metadata is IN its one paid Box, not added to the GuestTask Box.
@@ -1962,21 +2064,21 @@
 +    }
 +}
  
-@@ -5290,3 +6166,3 @@
+@@ -5290,3 +6247,3 @@
      /// `true` and/or `Self::do_not_enter` to be false before they can proceed.
 -    pending: BTreeMap<QualifiedThreadId, GuestCallKind>,
 +    pending: BTreeMap<QualifiedThreadId, (GuestCallKind, QueueSlot<WorkItem>)>,
  }
-@@ -5356,2 +6232,3 @@
+@@ -5356,2 +6313,3 @@
  pub struct ConcurrentState {
 +    queue_memory: crate::runtime::native_memory::Memory,
      /// The currently running thread, if any.
-@@ -5367,3 +6244,3 @@
+@@ -5367,3 +6325,3 @@
      /// out, poll it, then put it back to avoid any mutable aliasing hazards.
 -    futures: AlwaysMut<Option<FuturesUnordered<HostTaskFuture>>>,
 +    futures: AlwaysMut<Option<HostFutureSet>>,
      /// The table of waitables, waitable sets, etc.
-@@ -5371,5 +6248,5 @@
+@@ -5371,5 +6329,5 @@
      /// The "high priority" work queue for this store's event loop.
 -    high_priority: VecDeque<WorkItem>,
 +    high_priority: Queue<WorkItem>,
@@ -1984,13 +2086,75 @@
 -    low_priority: VecDeque<WorkItem>,
 +    low_priority: Queue<WorkItem>,
      /// A place to stash the reason a fiber is suspending so that the code which
-@@ -5428,8 +6305,17 @@
+@@ -5428,8 +6386,79 @@
      fn default() -> Self {
 +        Self::new(None)
 +    }
 +}
 +
 +impl ConcurrentState {
++    // Called only at the sole original AsyncDeadlock emission, after the final
++    // root poll. No mutation, progress manufacture, heap allocation or ID escape.
++    fn observe_async_deadlock(&mut self) {
++        let Some(observe) = self
++            .queue_memory
++            .as_ref()
++            .and_then(|memory| memory.async_deadlock_observer())
++        else {
++            return;
++        };
++        let mut snapshot = crate::AsyncDeadlockSnapshot::default();
++        snapshot.flags = (u8::from(self.high_priority.is_empty()) << 1)
++            | (u8::from(self.low_priority.is_empty()) << 2)
++            // poll_until reached Ready(None) before its final root poll.
++            | (1 << 3);
++        let (entries, scanned, truncated) = self.table.get_mut().diagnostic_prefix();
++        snapshot.scanned_slots = scanned;
++        snapshot.flags |= u8::from(truncated);
++        for entry in entries {
++            if let Some(thread) = entry.downcast_ref::<GuestThread>() {
++                let index = match &thread.state {
++                    GuestThreadState::NotStartedImplicit => 0,
++                    GuestThreadState::NotStartedExplicit(_) => 1,
++                    GuestThreadState::Running => 2,
++                    GuestThreadState::Suspended(_) => 3,
++                    GuestThreadState::Ready { .. } => 4,
++                    GuestThreadState::Completed => 5,
++                };
++                snapshot.thread_states[index] += 1;
++            } else if let Some(task) = entry.downcast_ref::<GuestTask>() {
++                if let Caller::Host {
++                    tx,
++                    host_future_present,
++                    ..
++                } = &task.caller
++                {
++                    snapshot.host_roots += 1;
++                    snapshot.root_flags |= u8::from(task.lower_params.is_some())
++                        | (u8::from(task.lift_result.is_some()) << 1)
++                        | (u8::from(task.result.is_some()) << 2)
++                        | (u8::from(task.exited) << 3)
++                        | (u8::from(task.async_function) << 4)
++                        | (u8::from(tx.is_some()) << 5)
++                        | (u8::from(matches!(task.host_future_state, HostFutureState::Live)) << 6)
++                        | (u8::from(*host_future_present) << 7);
++                }
++            } else if let Some(set) = entry.downcast_ref::<WaitableSet>() {
++                let count = usize::from(snapshot.waiting_threads).checked_add(set.waiting.len());
++                match count.and_then(|n| u16::try_from(n).ok()) {
++                    Some(count) => snapshot.waiting_threads = count,
++                    None => {
++                        snapshot.waiting_threads = u16::MAX;
++                        snapshot.flags |= 1 << 4;
++                    }
++                }
++            }
++        }
++        // All table borrows end before the trusted host callback. Snapshot is
++        // <=16 stack bytes; the existing native stack remains its only owner.
++        observe(&snapshot);
++    }
++
 +    pub(super) fn new(queue_memory: crate::runtime::native_memory::Memory) -> Self {
 +        let paid = queue_memory.is_some();
 +        let table = ResourceTable::with_native_memory(queue_memory.clone());
@@ -2006,41 +2170,41 @@
 +            table: AlwaysMut::new(table),
 +            futures: AlwaysMut::new(Some(HostFutureSet::new(paid))),
              suspend_reason: None,
-@@ -5465,3 +6351,3 @@
+@@ -5465,3 +6494,3 @@
          fibers: &mut Vec<StoreFiber<'static>>,
 -        futures: &mut Vec<FuturesUnordered<HostTaskFuture>>,
 +        futures: &mut Vec<HostFutureSet>,
      ) {
-@@ -5470,3 +6356,3 @@
+@@ -5470,3 +6499,3 @@
                  for mode in mem::take(&mut set.waiting).into_values() {
 -                    if let WaitMode::Fiber(fiber) = mode {
 +                    if let WaitMode::Fiber(fiber, _slot) = mode {
                          fibers.push(fiber);
-@@ -5491,3 +6377,3 @@
+@@ -5491,3 +6520,3 @@
              }
 -            WorkItem::PushFuture(future) => {
 +            WorkItem::PushFuture(future, task_slot) => {
                  self.futures
-@@ -5496,3 +6382,3 @@
+@@ -5496,3 +6525,3 @@
                      .unwrap()
 -                    .push(future.into_inner());
 +                    .push_prepared(task_slot, future.into_inner());
              }
-@@ -5540,2 +6426,3 @@
+@@ -5540,2 +6569,3 @@
              ready_for_concurrent_call_waker: _,
 +            queue_memory: _,
          } = self;
-@@ -5545,3 +6432,3 @@
+@@ -5545,3 +6575,3 @@
                  for mode in set.waiting.values_mut() {
 -                    if let WaitMode::Fiber(fiber) = mode {
 +                    if let WaitMode::Fiber(fiber, _slot) = mode {
                          fiber.trace_gc_roots(modules, unwind, gc_roots_list);
-@@ -5566,3 +6453,3 @@
+@@ -5566,3 +6596,3 @@
              }
 -            WorkItem::PushFuture(_future) => {
 +            WorkItem::PushFuture(_future, _task_slot) => {
                  // TODO(cm-gc): once futures can contain GC roots, we will need
-@@ -5574,8 +6461,4 @@
+@@ -5574,8 +6604,4 @@
  
 -        for item in high_priority {
 -            handle_item(item);
@@ -2051,7 +2215,7 @@
 +        high_priority.for_each_mut(&mut handle_item);
 +        low_priority.for_each_mut(&mut handle_item);
      }
-@@ -5617,3 +6500,34 @@
+@@ -5617,3 +6643,34 @@
  
 -    fn push_future(&mut self, future: HostTaskFuture) {
 +    fn prepare_queue_slot(&self) -> Result<QueueSlot<WorkItem>> {
@@ -2087,7 +2251,7 @@
 +
 +    fn push_host_future(&mut self, slot: FutureWorkSlot, future: HostTaskFuture) {
          // Note that we can't directly push to `ConcurrentState::futures` here
-@@ -5624,20 +6538,23 @@
+@@ -5624,20 +6681,23 @@
          // `ConcurrentState::futures` later.
 -        self.push_high_priority(WorkItem::PushFuture(AlwaysMut::new(future)));
 -    }
@@ -2125,12 +2289,12 @@
 -            self.push_low_priority(item);
 +            self.push_low_priority(slot, item);
          }
-@@ -5674,3 +6591,3 @@
+@@ -5674,3 +6734,3 @@
          if self.high_priority.iter().any(&mut predicate) {
 -            true
 +            return true;
          }
-@@ -5678,5 +6595,8 @@
+@@ -5678,5 +6738,8 @@
          // instance and promote it to high-priority.
 -        else if let Some(idx) = self.low_priority.iter().position(&mut predicate) {
 -            let item = self.low_priority.remove(idx).unwrap();
@@ -2142,12 +2306,12 @@
 +            let (slot, item) = self.low_priority.remove(idx).unwrap();
 +            self.push_high_priority(slot, item);
              true
-@@ -5716,3 +6636,3 @@
+@@ -5716,3 +6779,3 @@
  
 -    fn futures_mut(&mut self) -> Result<&mut FuturesUnordered<HostTaskFuture>> {
 +    fn futures_mut(&mut self) -> Result<&mut HostFutureSet> {
          match self.futures.get_mut().as_mut() {
-@@ -5857,5 +6777,5 @@
+@@ -5857,5 +6920,5 @@
      /// do so, as the lowering closure would see a dangling pointer. In this
 -    /// case the closure is replaced with one that fails, so the call fails if
 -    /// it's ever started. This can't fail, since the task can't be deleted
@@ -2156,7 +2320,7 @@
 +    /// the task. The task cannot already be deleted while its host future is
 +    /// live; no replacement lowering closure or new allocation is needed.
      ///
-@@ -5866,11 +6786,27 @@
+@@ -5866,11 +6929,27 @@
          let task = store.concurrent_state_mut()?.get_mut(self.task)?;
 +        if !matches!(task.host_future_state, HostFutureState::Live)
 +            || !matches!(
@@ -2192,7 +2356,7 @@
 +            }
 +            Waitable::Guest(self.task).delete_from(state)?;
          } else {
-@@ -5924,5 +6860,6 @@
+@@ -5924,5 +7003,6 @@
      let caller = store.0.current_thread()?;
 +    let native_memory = store.0.native_memory();
      let state = store.0.concurrent_state_mut()?;
@@ -2200,7 +2364,7 @@
 -    let (tx, rx) = oneshot::channel();
 +    let (tx, rx) = oneshot::channel(&native_memory)?;
  
-@@ -5931,9 +6868,13 @@
+@@ -5931,9 +7011,13 @@
          state,
 -        Box::new(for_any_lower(move |store, params| {
 -            lower_params(handle, token.as_context_mut(store), params)
@@ -2220,7 +2384,7 @@
 +                &native_memory,
 +            )?,
              ty: task_return_type,
-@@ -5947,12 +6888,17 @@
+@@ -5947,12 +7031,17 @@
          },
 -        callback.map(|callback| {
 -            let callback = SendSyncPtr::new(callback);
@@ -2248,7 +2412,7 @@
 +            })
 +            .transpose()?,
          instance,
-@@ -6070 +7016,1369 @@
+@@ -6070 +7159,1369 @@
  }
 +
 +#[cfg(test)]
@@ -13101,7 +13265,7 @@
  use crate::prelude::*;
 +use alloc::sync::Arc;
  
-@@ -8,2 +9,87 @@
+@@ -8,2 +9,160 @@
  pub const DEFAULT_MEMORY_LIMIT: usize = 10000;
 +
 +/// Owned admission for one actual native backing allocation.
@@ -13118,6 +13282,65 @@
 +/// Backwards-compatible name for the native table allocation callback.
 +pub use NativeAllocation as TableAllocation;
 +
++/// Fixed, nonqualifying observation at the original AsyncDeadlock branch.
++///
++/// Thread counters cover at most 64 physical resource-table slots, including
++/// holes. `flags` bits are: 0 truncated prefix, 1 high queue empty after final
++/// root poll, 2 low queue empty after final root poll, 3 host-future stream
++/// exhausted before that poll, 4 waiting-count overflow. Root flags OR together
++/// lower parameters, lift result, stashed result, exited, async export, result
++/// sender, live host future and host-future-present, in bits 0 through 7.
++/// Multiple roots or an incomplete prefix cannot identify a unique root state.
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub struct AsyncDeadlockSnapshot {
++    /// Physical slots visited, at most 64, not occupied entries scanned.
++    pub scanned_slots: u8,
++    /// Boundedness and scheduler predicate facts described above.
++    pub flags: u8,
++    /// Not-started implicit/explicit, running, suspended, ready and completed.
++    pub thread_states: [u8; 6],
++    /// Number of host-root tasks encountered in the bounded prefix.
++    pub host_roots: u8,
++    /// Aggregate host-root flags; only a unique root can be interpreted alone.
++    pub root_flags: u8,
++    /// Sum of original waitable-set waiting-thread counts, saturated on overflow.
++    pub waiting_threads: u16,
++}
++
++const _: () = assert!(core::mem::size_of::<AsyncDeadlockSnapshot>() <= 16);
++
++/// One source-only coordinate. Missing offsets use `u32::MAX`, never a PC.
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub struct RootSuspensionFrame {
++    /// First-seen ordinal within this one bounded capture, not a registry ID.
++    pub module: u8,
++    /// Original Wasm function index.
++    pub function: u32,
++    /// Original source instruction offset, or `u32::MAX` when unavailable.
++    pub module_offset: u32,
++    /// Offset within that original function, or `u32::MAX` when unavailable.
++    pub function_offset: u32,
++}
++
++/// Nonqualifying last original implicit-host-root explicit suspension only.
++/// Stored inline by an authenticated factory; no owning module or native PC.
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub struct RootSuspensionSnapshot {
++    /// Bits: 0 traversal truncated, 1 frames may truncate, 2 missing coordinates,
++    /// 3 unmapped frame, 4 no active trace, 5 failed transfer, 6 no saved capture.
++    pub flags: u8,
++    /// Raw TLS/continuation traversal attempts, at most 64, before filtering.
++    pub steps: u8,
++    /// Raw Wasm-frame visits including unmapped frames, at most eight.
++    pub visited: u8,
++    /// Mapped coordinates retained, no more than `visited` and at most eight.
++    pub count: u8,
++    /// Fixed inline numeric coordinates; unused rows are never emitted.
++    pub frames: [RootSuspensionFrame; 8],
++}
++
++const _: () = assert!(core::mem::size_of::<RootSuspensionSnapshot>() <= 144);
++
 +/// Original memory admission selected before a Store or its instances allocate.
 +///
 +/// A successful nonzero reservation must return an affine owner. The owner must
@@ -13126,6 +13349,20 @@
 +pub trait NativeMemory: Send + Sync {
 +    /// Reserve the complete checked allocation size before allocating it.
 +    fn reserve(&self, bytes: usize) -> Result<Box<dyn NativeAllocation>>;
++
++    /// Default factories neither identify diagnostic roots nor walk stacks.
++    fn root_suspension_enabled(&self) -> bool {
++        false
++    }
++
++    /// Copy into the existing paid factory only; a failed try must not block.
++    fn save_root_suspension(&self, _snapshot: &RootSuspensionSnapshot) {}
++
++    /// Optional fixed-scalar diagnostic on the existing admitted factory.
++    /// No observer means no snapshot scan. It cannot alter the original Trap.
++    fn async_deadlock_observer(&self) -> Option<fn(&AsyncDeadlockSnapshot)> {
++        None
++    }
 +}
 +
 +/// An admitted, solely transferred native-memory factory allocation.
@@ -13189,7 +13426,7 @@
 +    }
 +}
  
-@@ -75,2 +161,13 @@
+@@ -75,2 +234,13 @@
  
 +    /// Confirms that a permitted initial linear-memory allocation or growth
 +    /// succeeded. Called after the actual accessible bytes exist, before later
@@ -13203,7 +13440,7 @@
 +    fn memory_allocation_failed(&mut self) {}
 +
      /// Notifies the resource limiter that growing a linear memory, permitted by
-@@ -125,2 +222,12 @@
+@@ -125,2 +295,12 @@
          Ok(())
 +    }
 +
@@ -13216,7 +13453,7 @@
 +    fn table_allocating(&mut self, _bytes: usize) -> Result<Option<Box<dyn TableAllocation>>> {
 +        Ok(None)
      }
-@@ -181,2 +288,8 @@
+@@ -181,2 +361,8 @@
  
 +    /// Identical to [`ResourceLimiter::memory_allocated`].
 +    fn memory_allocated(&mut self) {}
@@ -13225,7 +13462,7 @@
 +    fn memory_allocation_failed(&mut self) {}
 +
      /// Identical to [`ResourceLimiter::memory_grow_failed`]
-@@ -199,2 +312,12 @@
+@@ -199,2 +385,12 @@
          Ok(())
 +    }
 +
@@ -13633,9 +13870,8 @@
 -                .insert(module.env_module().module_index, Some(id))?;
 +                .insert_prepared(module.env_module().module_index, Some(id))?;
              breakpoint_state.update(&mut loaded_code.code, module)?;
-@@ -334,2 +353,101 @@
- 
-+        Ok(id)
+@@ -335,2 +354,129 @@
+         Ok(id)
 +    }
 +
 +    /// Accounted registration stages every replacement before publishing any
@@ -13734,7 +13970,36 @@
 +            // after every complete registry edge has been installed.
 +            breakpoint_state.update(&mut loaded.code, module)?;
 +        }
-         Ok(id)
++        Ok(id)
++    }
++
++    // Borrowed numeric lookup: no FrameInfo, name, symbol, Module clone or Vec.
++    // The Copy module key is private scratch for at-most-eight local ordinals.
++    #[cfg(feature = "gc")]
++    pub(crate) fn lookup_numeric_frame(
++        &self,
++        pc: usize,
++    ) -> Option<(RegisteredModuleId, u32, Option<u32>, Option<u32>)> {
++        let (code, text_offset) = self.loaded_code_by_pc(pc)?;
++        let key = code
++            .index
++            .func_by_text_offset(u32::try_from(text_offset).ok()?)?;
++        let FuncKey::DefinedWasmFunction(module_index, defined) = key else {
++            return None;
++        };
++        let id = (*code.modules.get(module_index)?)?;
++        let module = self.modules.get(id)?;
++        let compiled = module.compiled_module();
++        let function = compiled.module().func_index(defined).as_u32();
++        let start = compiled.func_start_srcloc(key).file_offset();
++        let instruction =
++            wasmtime_environ::lookup_file_pos(module.engine_code().address_map_data(), text_offset)
++                .and_then(|position| position.file_offset());
++        let function_offset = instruction
++            .zip(start)
++            .and_then(|(instruction, start)| instruction.checked_sub(start));
++        Some((id, function, instruction, function_offset))
+     }
 --- a/src/runtime/native_memory.rs
 +++ b/src/runtime/native_memory.rs
 @@ -0,0 +1,386 @@
@@ -15738,7 +16003,29 @@
 -                .map(|e| Box::as_mut(&mut e.entry))
 +                .map(|e| e.entry.as_mut())
                  // Safety: extending the lifetime of the mutable reference.
-@@ -502 +732,249 @@
+@@ -405,2 +635,21 @@
+         }))
++    }
++
++    // The diagnostic bound applies BEFORE filtering holes. Taking a bounded
++    // number of occupied entries from iter_mut() would scan unbounded free slots.
++    pub(crate) fn diagnostic_prefix(
++        &mut self,
++    ) -> (impl Iterator<Item = &mut (dyn Any + Send)>, u8, bool) {
++        const LIMIT: usize = 64;
++        let scanned = self.entries.len().min(LIMIT) as u8;
++        let truncated = self.entries.len() > LIMIT;
++        let entries = self
++            .entries
++            .iter_mut()
++            .take(LIMIT)
++            .filter_map(|entry| match entry {
++                Entry::Occupied { entry } => Some(&mut *entry.entry),
++                Entry::Free { .. } => None,
++            });
++        (entries, scanned, truncated)
+     }
+@@ -502 +751,249 @@
  }
 +
 +#[cfg(all(test, feature = "std", feature = "cranelift"))]
@@ -16447,3 +16734,178 @@
 +        assert_eq!(state.active.load(Ordering::SeqCst), 1);
 +    }
 +}
+--- a/src/runtime/vm/traphandlers/backtrace.rs
++++ b/src/runtime/vm/traphandlers/backtrace.rs
+@@ -62,2 +62,33 @@
+         unsafe { FrameCursor::new(self.exit_pc, self.exit_fp, self.entry_trampoline_fp) }
++    }
++}
++
++// A shared finite budget counts raw TLS and continuation metadata steps,
++// including empty/unrelated attempts. Raw frames count before source lookup.
++#[cfg(feature = "gc")]
++#[derive(Default)]
++struct SuspensionBudget {
++    steps: u8,
++    frames: u8,
++    flags: u8,
++}
++
++#[cfg(feature = "gc")]
++impl SuspensionBudget {
++    fn step(&mut self) -> bool {
++        if self.steps == 64 {
++            self.flags |= 1;
++            return false;
++        }
++        self.steps += 1;
++        true
++    }
++
++    fn frame(&mut self) -> bool {
++        if self.frames == 8 {
++            self.flags |= 2;
++            return false;
++        }
++        self.frames += 1;
++        true
+     }
+@@ -133,2 +164,138 @@
+         });
++    }
++
++    // Additive diagnostic walker. All existing trace/capture APIs stay intact.
++    // Called only while the original host-call stack/fiber remains live.
++    #[cfg(feature = "gc")]
++    pub(crate) fn trace_root_suspension(
++        store: &StoreOpaque,
++        mut visit: impl FnMut(Frame),
++    ) -> (u8, u8, u8) {
++        let mut budget = SuspensionBudget::default();
++        let vm = store.vm_store_context();
++        tls::with(|state| {
++            let Some(state) = state else {
++                budget.flags |= 16;
++                return;
++            };
++            // SAFETY: identical live TLS/Store stack source as trace(), before
++            // the caller releases its current fiber. No PC survives this call.
++            unsafe {
++                let pc = *(*vm).last_wasm_exit_pc.get();
++                if !Self::trace_suspension_chain(
++                    store.unwinder(),
++                    (*(*vm).stack_chain.get()).clone(),
++                    pc,
++                    (*vm).last_wasm_exit_fp(),
++                    *(*vm).last_wasm_entry_fp.get(),
++                    &mut budget,
++                    &mut visit,
++                ) {
++                    return;
++                }
++                // Count each raw TLS link BEFORE checking Store identity.
++                // Do not flat_map suffix iterators or scan until eight matches.
++                let mut previous = state.iter();
++                loop {
++                    if !budget.step() {
++                        return;
++                    }
++                    let Some(previous) = previous.next() else {
++                        return;
++                    };
++                    if !core::ptr::eq(vm, previous.vm_store_context.get().as_ptr()) {
++                        continue;
++                    }
++                    if !Self::trace_suspension_chain(
++                        store.unwinder(),
++                        previous.old_stack_chain(),
++                        previous.old_last_wasm_exit_pc(),
++                        previous.old_last_wasm_exit_fp(),
++                        previous.old_last_wasm_entry_fp(),
++                        &mut budget,
++                        &mut visit,
++                    ) {
++                        return;
++                    }
++                }
++            }
++        });
++        (budget.steps, budget.frames, budget.flags)
++    }
++
++    #[cfg(feature = "gc")]
++    unsafe fn trace_suspension_chain(
++        unwind: &dyn Unwind,
++        chain: VMStackChain,
++        pc: usize,
++        fp: usize,
++        entry: usize,
++        budget: &mut SuspensionBudget,
++        visit: &mut impl FnMut(Frame),
++    ) -> bool {
++        if !budget.step() {
++            return false;
++        }
++        if pc == 0 || chain == VMStackChain::Absent {
++            if budget.frames == 0 {
++                budget.flags |= 16;
++            }
++            return false;
++        }
++        // Stop the unwinder at the eighth RAW frame, including unknown modules.
++        let mut walk = |pc, fp, entry, budget: &mut SuspensionBudget| {
++            let result = unsafe {
++                wasmtime_unwinder::visit_frames(unwind, pc, fp, entry, &mut |frame| {
++                    if !budget.frame() {
++                        return ControlFlow::Break(());
++                    }
++                    visit(frame);
++                    if budget.frames == 8 {
++                        budget.flags |= 2;
++                        ControlFlow::Break(())
++                    } else {
++                        ControlFlow::Continue(())
++                    }
++                })
++            };
++            matches!(result, ControlFlow::Continue(()))
++        };
++        if !walk(pc, fp, entry, budget) {
++            return false;
++        }
++        let mut limits = unsafe { chain.clone().into_stack_limits_iter() };
++        let mut continuations = unsafe { chain.into_continuation_iter() };
++        if !budget.step() {
++            return false;
++        }
++        // Count even this initial stack-limit iterator attempt.
++        let _current = limits.next();
++        loop {
++            if !budget.step() {
++                return false;
++            }
++            let Some(continuation) = continuations.next() else {
++                return true;
++            };
++            if !budget.step() {
++                return false;
++            }
++            let Some(parent) = limits.next() else {
++                budget.flags |= 16;
++                return false;
++            };
++            // Each budgeted continuation pair performs at most two pointer
++            // reads. No lookahead, collection, recursive walk or guest memory.
++            let continuation = unsafe { &*continuation };
++            let parent = unsafe { &*parent };
++            let stack = continuation.fiber_stack();
++            if !walk(
++                stack.control_context_instruction_pointer(),
++                stack.control_context_frame_pointer(),
++                parent.last_wasm_entry_fp,
++                budget,
++            ) {
++                return false;
++            }
++        }
+     }
