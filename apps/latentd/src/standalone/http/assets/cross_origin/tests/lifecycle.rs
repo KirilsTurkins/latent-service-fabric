@@ -216,6 +216,7 @@ async fn cross_origin_preflight_output_rechecks_revocation_on_every_write_poll()
         .unwrap();
     let error = response.await.unwrap_err();
     assert_eq!(error.kind(), std::io::ErrorKind::PermissionDenied);
+    drop(selection);
     drop(writer);
     let mut remaining = Vec::new();
     tokio::time::timeout(Duration::from_secs(5), reader.read_to_end(&mut remaining))
