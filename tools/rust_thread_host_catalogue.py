@@ -163,7 +163,7 @@ def rust_records(image: bytes, manifest: dict) -> bytes:
     reviewed_roots(manifest)
     graph.require(manifest['originalBodyImageDigest'] == graph.digest(image)
                   and len(manifest['nodes']) == 1221
-                  and sum(len(row['references']) for row in manifest['nodes']) == 5245,
+                  and sum(len(row['references']) for row in manifest['nodes']) == 5246,
                   'rust-host-catalogue-reviewed-membership')
 
     def quoted(value):

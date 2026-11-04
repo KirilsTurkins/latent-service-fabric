@@ -35,7 +35,7 @@ def sha(value):
     return type(value) is str and re.fullmatch(r'sha256:[0-9a-f]{64}',value) is not None
 
 
-def read(raw):
+def read(raw, filtered=0):
     require(type(raw) is bytes and len(raw) <= 1024*1024,'output-bound')
     def pairs(rows):
         result = {}
@@ -52,7 +52,8 @@ def read(raw):
     expected = ['VARIANT','VARIANT','FACTORY','POLICIES'] + ['CASE','OWNER']*3 + ['FACTORY','POLICIES'] + ['CASE','OWNER']*2 + ['FACTORY','POLICIES','CASE','OWNER','REPOINT','CASE','OWNER','COMPLETE']
     require([kind for kind,_ in rows] == expected,'ordered-complete-protocol')
     require(raw.count(('test '+CASE+' ... ok').encode()) == 1,'actual-case-required')
-    require(len(re.findall(rb'^test result: ok\. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;',raw,re.M)) == 1,'exact-libtest-totals')
+    totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    require(totals == [(b'1', b'0', b'0', b'0', str(filtered).encode())], 'exact-libtest-totals')
     variants = [value for kind,value in rows if kind == 'VARIANT']
     mappings = {}
     for value,name,initial in zip(variants,('go-stack-ordinary','go-stack-initializer-cap'),(False,True)):

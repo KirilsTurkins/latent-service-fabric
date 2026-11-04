@@ -1,0 +1,271 @@
+{
+  "schemaVersion": "latent.rust.default-threadpool.signed-evidence.v1",
+  "status": "passed-five-call-campaign",
+  "sourceCommit": "eb5bfd4786f46131394f814e77eef4412d26e5dc",
+  "workflow": ".github/workflows/rust-thread-runtime.yml",
+  "run": 41231421695,
+  "job": 124626251648,
+  "event": "push",
+  "attempt": 1,
+  "artifact": {
+    "id": 13053847936,
+    "bytes": 674622,
+    "members": 154,
+    "sha256": "sha256:a09fe2fba877f149c156bce8abf30f54e0e2774baaab98fe3731f04101eaeaff"
+  },
+  "producerSource": "cddfb5d016a6311ed0db4673e490dc9caad917dd",
+  "compilerRun": 41229829427,
+  "nativeRun": 41229829377,
+  "component": {
+    "bytes": 511729,
+    "sha256": "sha256:c3135d063fae81a2dc651d4f102b2bcdd53eacf197406104aad4e3b405dfe97c"
+  },
+  "limits": {
+    "memoryBytes": 33554432,
+    "wallTimeLimitMillis": 5000,
+    "activationRuntime": {
+      "tasks": 8,
+      "executors": 2,
+      "queuedWork": 8,
+      "waits": 16,
+      "timers": 8,
+      "results": 8,
+      "nativeOwners": 8
+    }
+  },
+  "resolvedRevision": {
+    "publicationId": "publication:sha256:1ecd5602b7f7846c40ebb17a5146c16bcb04ddd67913d139d8dfa887614d3568",
+    "releaseDigest": "sha256:c3135d063fae81a2dc651d4f102b2bcdd53eacf197406104aad4e3b405dfe97c",
+    "revisionId": "revision-v1:sha256:4d0992c1b4fc2bccdd95dcaef7907ac6afb375569c729fa3c6d3cea457b57b99",
+    "routeGeneration": "3"
+  },
+  "calls": [
+    {
+      "activation": "pools-cold",
+      "argument": "pools",
+      "exitCode": 0,
+      "typedResult": [{"ok": "ordinary-default-pools:42"}],
+      "cpuFuel": 361953,
+      "peakMemoryBytes": 7795220,
+      "wallTimeMicros": 1383289,
+      "processReaped": true,
+      "invocationReceipt": {
+        "path": "rust-thread-runtime/node/invocation-pools-cold.json",
+        "bytes": 1642,
+        "sha256": "sha256:1073b918d66e11a167d89764360aeb600a46946bad4b9cad0ebe30928244619f"
+      },
+      "retirementReceipt": {
+        "path": "rust-thread-runtime/node/retirement-pools-cold.json",
+        "bytes": 17421,
+        "sha256": "sha256:556d2b9d2974e440b015e52f2caff1e20522b4d0a97b171727b1afcfb9b3d5f1"
+      },
+      "retirementMatchesSharedEvidence": true,
+      "providerActiveCountersMatchesSharedEvidence": true,
+      "zeroEffectsMatchesSharedEvidence": true
+    },
+    {
+      "activation": "pools-hot",
+      "argument": "pools",
+      "exitCode": 0,
+      "typedResult": [{"ok": "ordinary-default-pools:42"}],
+      "cpuFuel": 361953,
+      "peakMemoryBytes": 7795206,
+      "wallTimeMicros": 41811,
+      "processReaped": true,
+      "invocationReceipt": {
+        "path": "rust-thread-runtime/node/invocation-pools-hot.json",
+        "bytes": 1636,
+        "sha256": "sha256:0e440278c8115140a9307d04169af539612d30dd4e8be5f1b0ccf2d20f02a0c1"
+      },
+      "retirementReceipt": {
+        "path": "rust-thread-runtime/node/retirement-pools-hot.json",
+        "bytes": 17420,
+        "sha256": "sha256:cddf019f777633f23ab7b323f40c75ef6195399b753fd119baf07b34a50c74f6"
+      },
+      "retirementMatchesSharedEvidence": true,
+      "providerActiveCountersMatchesSharedEvidence": true,
+      "zeroEffectsMatchesSharedEvidence": true
+    },
+    {
+      "activation": "declared-error",
+      "argument": "  ",
+      "exitCode": 3,
+      "typedResult": [{"err": "Please enter a name."}],
+      "cpuFuel": 2861,
+      "peakMemoryBytes": 3444587,
+      "wallTimeMicros": 2437,
+      "processReaped": true,
+      "invocationReceipt": {
+        "path": "rust-thread-runtime/node/invocation-declared-error.json",
+        "bytes": 1605,
+        "sha256": "sha256:e62c1a63a2a2db700ed85b32e1ec03c997b42fe73c02680c50bbfdffb8cfbfec"
+      },
+      "retirementReceipt": {
+        "path": "rust-thread-runtime/node/retirement-declared-error.json",
+        "bytes": 17425,
+        "sha256": "sha256:a1f204554b5cd9e8c96148813b96d34b08553477e953c6a77d9e29ee0c39316c"
+      },
+      "retirementMatchesSharedEvidence": true,
+      "providerActiveCountersMatchesSharedEvidence": true,
+      "zeroEffectsMatchesSharedEvidence": true
+    },
+    {
+      "activation": "after-error",
+      "argument": "  Ada  ",
+      "exitCode": 0,
+      "typedResult": [{"ok": "Hello, Ada!"}],
+      "cpuFuel": 3754,
+      "peakMemoryBytes": 3444579,
+      "wallTimeMicros": 2490,
+      "processReaped": true,
+      "invocationReceipt": {
+        "path": "rust-thread-runtime/node/invocation-after-error.json",
+        "bytes": 1607,
+        "sha256": "sha256:5ebd775f031e6111048e2dba9e7fd517448dea289e5e30a40b7c0388d2fba487"
+      },
+      "retirementReceipt": {
+        "path": "rust-thread-runtime/node/retirement-after-error.json",
+        "bytes": 17422,
+        "sha256": "sha256:7f7c0311efe7db3c6ac597f8dd570dc13c010dc995736ccdf2e72e51d864e8a1"
+      },
+      "retirementMatchesSharedEvidence": true,
+      "providerActiveCountersMatchesSharedEvidence": true,
+      "zeroEffectsMatchesSharedEvidence": true
+    },
+    {
+      "activation": "pools-after-error",
+      "argument": "pools",
+      "exitCode": 0,
+      "typedResult": [{"ok": "ordinary-default-pools:42"}],
+      "cpuFuel": 361953,
+      "peakMemoryBytes": 7795334,
+      "wallTimeMicros": 43815,
+      "processReaped": true,
+      "invocationReceipt": {
+        "path": "rust-thread-runtime/node/invocation-pools-after-error.json",
+        "bytes": 1652,
+        "sha256": "sha256:cab65164214483e5b37f9133ba3b12980d47b47591af93ca4ac2ae9503ff029d"
+      },
+      "retirementReceipt": {
+        "path": "rust-thread-runtime/node/retirement-pools-after-error.json",
+        "bytes": 17431,
+        "sha256": "sha256:a31f8ea7dda69f9e3d649e1e32ffea11070bca2d3ffe66e4a9a04eca4409c52e"
+      },
+      "retirementMatchesSharedEvidence": true,
+      "providerActiveCountersMatchesSharedEvidence": true,
+      "zeroEffectsMatchesSharedEvidence": true
+    }
+  ],
+  "afterDeletes": {
+    "activationScoped": {
+      "execution-cell-leases": 0,
+      "prepared-instance-reservations": 0,
+      "guest-invocations": 0,
+      "guest-stores": 0,
+      "guest-host-states": 0,
+      "guest-component-instances": 0,
+      "guest-value-buffers": 0,
+      "guest-cancellation-probes": 0
+    },
+    "serviceResident": {
+      "resident-service-processes": {"active": 0, "configured": 0},
+      "resident-service-threads": {"active": 0, "configured": 0},
+      "resident-service-listeners": {"active": 0, "configured": 0}
+    },
+    "quotaUsage": {
+      "activeActivations": 0,
+      "queuedActivations": 0,
+      "reservedCpuFuel": "0",
+      "reservedMemoryBytes": "0"
+    },
+    "queueDepth": 0,
+    "activeCells": 0,
+    "quarantinedCells": 0,
+    "osProcesses": 1,
+    "osThreads": 8,
+    "nativeNodeIdentity": "sha256:136e1f5286b7f2acccebcadb2b7a46f1de3ad15790cc819ace5db90e66259310",
+    "settlingObservations": 1
+  },
+  "cleanNodeShutdown": true,
+  "nodeProcessReaped": true,
+  "cleanPeerShutdown": true,
+  "peerProcessReaped": true,
+  "peerRequests": 0,
+  "cliCalls": 27,
+  "programmeReceipt": {
+    "path": "rust-thread-runtime/qualified.json",
+    "bytes": 48839,
+    "sha256": "sha256:13bd233214914ae8cb82cfe733d6e89d5eaa809a208250927570803bd68c167f"
+  },
+  "nodeReceipt": {
+    "path": "rust-thread-runtime/node/qualified.json",
+    "bytes": 37607,
+    "sha256": "sha256:08657fa7685ab756049970e86d3f65037537a64d971f6ebbc6812afe2062de6f"
+  },
+  "full743Qualified": false,
+  "checkpointQualified": false,
+  "privateGraphRuntimeQualified": false,
+  "ordinaryDefaultThreadPoolCampaignPassed": true,
+  "integrationWithCurrentDevelopmentQualified": false,
+  "evidenceScope": "one explicit Rust40 profile, unchanged ordinary application, cold/hot/error/recovery five calls; not universal Rust executor, networking, checkpoint, exhaustion or cross-tenant qualification",
+  "eachCallRetirement": {
+    "activationScoped": {
+      "execution-cell-leases": 0,
+      "prepared-instance-reservations": 0,
+      "guest-invocations": 0,
+      "guest-stores": 0,
+      "guest-host-states": 0,
+      "guest-component-instances": 0,
+      "guest-value-buffers": 0,
+      "guest-cancellation-probes": 0
+    },
+    "serviceResident": {
+      "resident-service-processes": {"active": 0, "configured": 0},
+      "resident-service-threads": {"active": 0, "configured": 0},
+      "resident-service-listeners": {"active": 0, "configured": 0}
+    },
+    "quotaUsage": {
+      "activeActivations": 0,
+      "queuedActivations": 0,
+      "reservedCpuFuel": "0",
+      "reservedMemoryBytes": "0"
+    },
+    "queueDepth": 0,
+    "activeCells": 0,
+    "quarantinedCells": 0,
+    "osProcesses": 1,
+    "osThreads": 8,
+    "nativeNodeIdentity": "sha256:136e1f5286b7f2acccebcadb2b7a46f1de3ad15790cc819ace5db90e66259310",
+    "settlingObservations": 1
+  },
+  "eachCallProviderActiveCounters": {
+    "broker_sessions": 0,
+    "broker_handles": 0,
+    "broker_calls": 0,
+    "broker_results": 0,
+    "broker_buffer_bytes": 0,
+    "pool_active_connections": 0,
+    "pool_connecting_connections": 0,
+    "pool_pending_requests": 0,
+    "pool_running_requests": 0,
+    "pool_workers": 0,
+    "pool_cleanup_jobs": 0,
+    "io_calls": 0,
+    "io_occupied_running_slots": 0,
+    "io_queued_calls": 0,
+    "io_staged_bytes": 0,
+    "io_result_bytes": 0,
+    "io_buffers": 0,
+    "io_streams": 0
+  },
+  "eachCallZeroEffects": {
+    "outboundRequests": 0,
+    "stateReadBytes": 0,
+    "stateWriteBytes": 0,
+    "blobReadBytes": 0,
+    "blobWriteBytes": 0,
+    "logBytes": 0,
+    "effectCount": 0,
+    "childCalls": 0
+  }
+}

@@ -111,12 +111,12 @@ class SdkGraphTests(unittest.TestCase):
         covered, record = wasmtime_inventory(root, entry, paths)
         self.assertEqual(covered, {bounded.PROVIDER + "/Cargo.toml", bounded.PROVIDER + "/Cargo.lock"})
         self.assertEqual(record["name"], "wasmtime")
-        self.assertEqual(record["version"], "48.0.7")
-        self.assertEqual(record["upstreamArchiveSha256"], "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6")
+        self.assertEqual(record["version"], "48.0.8")
+        self.assertEqual(record["upstreamArchiveSha256"], "a2afcadb2e7d0417cb8f3f322c66eff49338b288f22290c0ca0bd3e9570732aa")
         self.assertEqual(record["buildLock"], "Cargo.lock")
         self.assertEqual(record["upstreamSourceLockSha256"], digest(read_file(root, entry["lock"])))
         packages, records = inventory(root)
-        self.assertIn(Package("crates.io", "wasmtime", "48.0.7", entry["path"]), packages)
+        self.assertIn(Package("crates.io", "wasmtime", "48.0.8", entry["path"]), packages)
         self.assertIn(record, records)
         for altered in ({**entry, "lock": "Cargo.lock"}, {**entry, "kind": "cargo"}):
             with self.subTest(entry=altered), self.assertRaisesRegex(SecurityError, "unreviewed-bounded-wasmtime-inventory"):
@@ -137,7 +137,7 @@ class SdkGraphTests(unittest.TestCase):
         legacy = [path for path in paths if not path.startswith(bounded.PROVIDER + "/")]
         with patch("tools.security_inventory.tracked_paths", return_value=legacy):
             packages, records = inventory(root)
-        self.assertNotIn(Package("crates.io", "wasmtime", "48.0.7", entry["path"]), packages)
+        self.assertNotIn(Package("crates.io", "wasmtime", "48.0.8", entry["path"]), packages)
         self.assertEqual(next(row for row in records if row["path"] == entry["path"])["coverage"], "not-shipped-at-source-revision")
         for orphan in ("Cargo.toml", "README.latent.md", "extra/Cargo.toml"):
             with self.subTest(orphan=orphan), patch("tools.security_inventory.tracked_paths", return_value=[*legacy, bounded.PROVIDER + "/" + orphan]), \

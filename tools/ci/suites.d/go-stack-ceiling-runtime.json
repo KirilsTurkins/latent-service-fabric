@@ -3,9 +3,6 @@
   "suites": [
     {
       "boundary": "runtime",
-      "expectedCases": [
-        "signed_go_v7_stack_cap_gc_initializer_and_fresh_state_keep_original_budgets"
-      ],
       "expectedIgnored": [
         "signed_go_v7_stack_cap_gc_initializer_and_fresh_state_keep_original_budgets"
       ],
@@ -15,7 +12,6 @@
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 1,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

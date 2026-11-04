@@ -43,7 +43,7 @@ rustls parser source
   original and modified file identities, and LSF's changes.
 
 Wasmtime runtime source
-  crates/vendor/wasmtime contains the crates.io Wasmtime 48.0.7 source package
+  crates/vendor/wasmtime contains the crates.io Wasmtime 48.0.8 source package
   and separately identified LSF value/native-memory admission changes.
   Attribution: The Wasmtime Project Developers.
   Terms: Apache-2.0 WITH LLVM-exception. The unmodified LICENSE and original

@@ -150,7 +150,7 @@ class TestRun:
         self.reproduction = reproduction or {"suite": suite}
         # Records are selections, not command scripts or captured environments.
         allowed = {"suite", "cases", "recipe", "recipeIdentity", "mode", "web", "observed",
-                   "fixtureOnly", "preflight", "fault", "caseSelection", "caseSetDigest", "requiredCaseCount"}
+                   "fixtureOnly", "preflight", "fault", "caseSelection", "caseSetDigest", "requiredCaseCount", "requestMode"}
         require(set(self.reproduction) <= allowed, "invalid-fixture", "unsafe-reproduction-fields")
         for key, value in self.reproduction.items():
             values = value if isinstance(value, list) else [value]

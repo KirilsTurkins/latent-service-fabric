@@ -222,3 +222,12 @@ Rewritten commit IDs do not change what historical evidence tested. Keep its
 original source IDs and artifact digests, rerun the affected checks, and require
 fresh CI on the rewritten head. Review is incomplete until the PR description,
 commit history, final diff and validation claims agree.
+
+### Python test discovery
+
+Add ordinary Python tests in the existing discoverable `tools/tests/test_*.py`
+modules and run `python3 tools/test.py python --base HEAD --module tools.tests.test_ci_result`
+with the relevant module name. No separate case-name
+catalogue or source fingerprint is required. Skip, expected-failure and discovery
+changes require explicit review and the relevant protected controller checks;
+generated results are evidence of execution, not approval.

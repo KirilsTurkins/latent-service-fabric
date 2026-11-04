@@ -20,7 +20,8 @@
 "feat/capability-lowering-current-20261022",
 "feat/streaming-table-memory-20261022",
 "feat/runtime-shared-memory-20261022",
-"feat/session-core-memory-20261022"
+"feat/session-core-memory-20261022",
+"feat/rust-thread-runtime-20261023"
 ]
 },
 "workflow_dispatch":{}
@@ -32,7 +33,7 @@
 "requiredJobs":[
 "native"
 ],
-"reviewReason":"Keep the same branch and native recipe for exactly177 original-budget ownership controls",
+"reviewReason":"Run the unchanged 200-control ordinary native producer on the Rust runtime branch as well as the existing memory branches; retain exact source/event provenance before signed selection",
 "schemaVersion":"latent.ci.contracts.v1",
 "workflow":".github/workflows/host-codec-memory.yml"
 }

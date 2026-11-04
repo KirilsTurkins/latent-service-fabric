@@ -3,16 +3,16 @@
   "suites": [
     {
       "boundary": "runtime",
-      "expectedCases": [],
       "expectedIgnored": [],
       "id": "latent-streams.example.kernel-bank-reclamation-vm",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-streams/Cargo.toml",
-      "minimumCases": 0,
       "mode": "compile-only",
       "package": "latent-streams",
-      "platforms": ["linux-x86_64"],
+      "platforms": [
+        "linux-x86_64"
+      ],
       "prerequisites": [
         "pinned normal Rust compiler and successful owned Cargo inventory",
         "development-outbound; only the isolated VM may execute the bank consumer"

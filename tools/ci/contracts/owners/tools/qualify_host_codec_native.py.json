@@ -1,8 +1,0 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_host_codec_native.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the complete current native control inventory without weakening exact discovery or execution",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "81cc1afcab3fdadf078bb2204be046cedc5940280b099c2bb3ffe6ce7162cf2c"
-}

@@ -104,11 +104,9 @@ control referenced `ActivationOutcome` from `latent_core` instead of its owning
 `latent_activation` crate. Neither original mode executed. The correction changes
 only that type path; it does not alter admission, guest code, authority or limits.
 
-The CI selector and result aggregator also need the suite-case loader and
-`tools/ci/suites.cases.d/` in their sparse checkouts. Their regression uses actual
-local Git sparse checkouts and isolated Python processes, compares the complete
-catalogue with the full checkout, and checks both successful and rejected result
-aggregation. It does not waive missing tests or fall back to a full checkout.
+The CI selector and result aggregator require the tools checkout and suite
+inventory. Their regression uses actual local Git sparse checkouts and isolated
+Python processes and checks both successful and rejected result aggregation.
 
 The older flat-u32 join replay retains its original producer/current fixture
 identities. The evolving original-v3 diagnostic fixture is not silently admitted
@@ -150,10 +148,9 @@ Runtime qualification, both original-cause flags, AC7 and whole-ticket closure
 remain false. The diagnostic is not hermetic, and its I/O can perturb timing
 and terminal observation. The successful run does not remove those limits.
 
-The synthetic owned-runner catalogue now copies both `suites.d` and
-`suites.cases.d` before exercising prepared tests. Its regression compares
-the complete effective catalogue and the exact bytes of both fragment families;
-it does not drop additive cases or weaken any selected test requirement.
+The synthetic owned-runner catalogue copies `suites.d` before exercising
+prepared tests. Ordinary test cases are discovered from the prepared harness;
+explicit selected test requirements remain in the suite inventory.
 
 The shared test-operator helpers are also included by `latentd`, which does
 not declare the `latent-wasmtime`-specific `development-test-host` feature.

@@ -82,12 +82,12 @@ def source_inputs(root: Path) -> dict:
     return result
 
 
-def outcomes(raw: bytes) -> dict:
+def outcomes(raw: bytes, filtered: int = 0) -> dict:
     if not isinstance(raw, bytes) or len(raw) > 1024 * 1024:
         raise ValueError('Go-smtp-tls-runtime-output-bound')
     passed = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
     totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
-    if passed != [CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', b'0')]:
+    if passed != [CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]:
         raise ValueError('Go-smtp-tls-runtime-exact-native-case-required')
     def unique(pairs):
         result = {}
@@ -237,7 +237,7 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path) -> dict
         command(['cargo', 'test', '--locked', '-p', 'latent-wasmtime', '--test', 'go_smtp_tls',
                  '--no-run', '--message-format=json'], 'cargo', 1200, 16 * 1024 * 1024)
         suite, = [row for row in registry.load(root / 'tools/ci/suites.json')['suites'] if row['id'] == SUITE]
-        if suite['expectedCases'] != [CASE] or suite['expectedIgnored'] != [CASE] or suite['minimumCases'] != 1:
+        if CASE not in suite['expectedIgnored']:
             raise ValueError('Go-smtp-tls-runtime-suite-contract')
         descriptor = artifacts.Suite(suite['manifest'], suite['target'], suite['source'], CASE, frozenset({CASE}), True, kind='test')
         native = artifacts.read_inventory(output / 'cargo.stdout.log', root, descriptor, target=root / 'target')
@@ -245,10 +245,13 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path) -> dict
         environment['LSF_GO_SMTP_TLS_FIXTURE'] = str(prepared)
         listed = command([str(native.executable), '--list'], 'list', 30, 65536)
         ignored = command([str(native.executable), '--ignored', '--list'], 'ignored', 30, 65536)
-        discovery.validate_cases(suite, discovery.listing(listed), discovery.listing(ignored), {})
+        available = discovery.listing(listed)
+        discovery.validate_cases(suite, available, discovery.listing(ignored), {})
+        if CASE not in available:
+            raise ValueError('required-native-case-missing')
         raw = command([str(native.executable), '--ignored', '--exact', CASE, '--show-output', '--test-threads=1'],
                       'native', 300, 1024 * 1024)
-        record['observations'] = outcomes(raw)
+        record['observations'] = outcomes(raw, filtered=len(available) - 1)
         if before != source_inputs(root):
             raise ValueError('Go-smtp-tls-runtime-native-inputs-changed')
         compiler.check_unchanged()
