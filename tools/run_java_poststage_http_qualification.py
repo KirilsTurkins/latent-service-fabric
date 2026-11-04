@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Run one pinned signed Java post-staging HTTP denial with native witnesses.
 
 This isolated fixture grants only state, staging and deferred-dispatch authority;

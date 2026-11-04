@@ -1,4 +1,4 @@
-﻿"""Single captured post-stage policy cannot gain direct HTTP authority."""
+"""Single captured post-stage policy cannot gain direct HTTP authority."""
 import unittest
 
 from tools.java_transaction_qualification import current_recipient, policies
