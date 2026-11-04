@@ -1,13 +1,15 @@
 name: Rust combined HTTP and ThreadPool source diagnostic
 on:
   push:
-    branches: ['feat/rust-http-thread-20261104']
+    branches: ['feat/rust-http-thread-20261104', 'fix/rust-http-bindgen-20261104']
     paths:
       - '.github/workflows/rust-http-thread-composition-diagnostic.yml'
       - 'tools/compile_rust_thread_http_sibling.py'
       - 'tools/rust_thread_http_sibling_*.py'
       - 'tools/tests/test_rust_thread_http_sibling*.py'
       - 'tools/rust_wasi_http_compose.py'
+      - 'tools/rust_wasi_http_root.py'
+      - 'tools/tests/test_rust_wasi_http_bindgen.py'
       - 'tools/rust_wasi_http_inputs.py'
       - 'tools/rust_owned_thread_component.py'
       - 'tools/toolchain.toml'
@@ -68,7 +70,8 @@ jobs:
         run: >-
           python3 -B -m unittest tools.tests.test_rust_thread_http_sibling
           tools.tests.test_rust_thread_http_sibling_compiler
-          tools.tests.test_rust_thread_http_sibling_retention -v
+          tools.tests.test_rust_thread_http_sibling_retention
+          tools.tests.test_rust_wasi_http_bindgen -v
       - name: Acquire only the locked current SDK compiler inputs
         run: cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu
       - name: Build current owned thread sysroot and context utility
