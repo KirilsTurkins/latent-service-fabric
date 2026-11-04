@@ -48,6 +48,14 @@ contains a typed synchronous service call inside a command. Their custody checks
 preserve exact materials and imports. Neither capture has yet been signed or run
 through the node, so neither establishes those runtime behaviors.
 
+The [child-call package attempt](evidence/java-child-admission-refusal-4a5d-2026-11-05.json)
+used native tools and conductor from `4a5d465b44d` with the separately captured
+`5f99649cd3b` Java component. Package validation returned
+`unsupported-package-capsule-manifest` before signing or node execution. The
+Phase 4 manifest profile's existing tests explicitly reject the synchronous
+service-invocation import. This observation does not establish the guest's
+typed runtime denial or signed execution.
+
 The separate [terminal recovery evidence](evidence/java-terminal-recovery-2026-11-04.json)
 records 50 passing measured cases on native/conductor source `81d72bceaf4`,
 including crash replay, schema migration, reviewed restore and physical
