@@ -35,6 +35,19 @@ materials and profile before creating temporary test trust. The capture and
 preview do not themselves qualify signed execution, restart recovery or a
 packaged distribution.
 
+The separate [terminal recovery evidence](evidence/java-terminal-recovery-2026-11-04.json)
+records 50 passing measured cases on native/conductor source `81d72bceaf4`,
+including crash replay, schema migration, reviewed restore and physical
+retirement. Its receipt retains the earlier compiler source identity and lists
+pending-effect, retention and clean-host boundaries; a later source requires its
+own qualification.
+
+The [pending-effect recovery evidence](evidence/java-pending-recovery-2026-11-04.json)
+records 16 passing measured cases on the same native and compiler sources. It
+covers the original recipient acceptance, restored pending identity, audited
+close/replay and physical retirement; it does not qualify packaged delivery or
+the full retention horizon.
+
 Use `python tools/run_java_transaction_http_qualification.py --help` from the
 repository root to inspect the complete required input set. Execution requires
 Linux and Python 3.13 or newer, explicit private inputs and the original finite
