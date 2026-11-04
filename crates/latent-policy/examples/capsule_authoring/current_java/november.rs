@@ -10,6 +10,11 @@ const PINS: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../docs/testing/evidence/java-current-http-capture-2026-11-04.json"
 ));
+const POSTSTAGE_SOURCE: &str = "a1b0b7c7190610dca57171db2c31abb636935925";
+const POSTSTAGE_PINS: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../docs/testing/evidence/java-poststage-http-capture-2026-11-04.json"
+));
 
 pub(crate) fn sign_november_current_java(
     output: &Path,
@@ -24,6 +29,22 @@ pub(crate) fn sign_november_current_java(
         PINS,
         PROFILE,
         SOURCE,
+    )
+}
+
+pub(crate) fn sign_poststage_http_java(
+    output: &Path,
+    compiler_source: &str,
+    paths: &[OsString],
+) -> Result<()> {
+    sign_selected(
+        output,
+        compiler_source,
+        paths,
+        &["put-once-poststage-http-denial"],
+        POSTSTAGE_PINS,
+        PROFILE,
+        POSTSTAGE_SOURCE,
     )
 }
 
@@ -42,6 +63,10 @@ mod tests {
         assert_eq!(packet["executionQualified"], false);
         assert_eq!(packet["packagedDistributionQualified"], false);
         assert!(!NAMES.contains(&"forbidden-http"));
+        let poststage: serde_json::Value = serde_json::from_slice(POSTSTAGE_PINS).unwrap();
+        assert_eq!(poststage["captures"]["sourceCommit"], POSTSTAGE_SOURCE);
+        assert_eq!(poststage["captures"]["nativeIdempotencyProfile"], PROFILE);
+        assert_eq!(poststage["postStageRollbackQualified"], false);
     }
 
     #[test]
@@ -57,5 +82,9 @@ mod tests {
         .unwrap();
         assert!(sign_november_current_java(&output, SOURCE, &inputs).is_err());
         assert!(!output.exists());
+        assert!(sign_poststage_http_java(&output, SOURCE, &[root.path().into()]).is_err());
+        assert!(
+            sign_poststage_http_java(&output, POSTSTAGE_SOURCE, &[root.path().into()]).is_err()
+        );
     }
 }

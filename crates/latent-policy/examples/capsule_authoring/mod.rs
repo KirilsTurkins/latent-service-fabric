@@ -6,6 +6,7 @@ mod policy;
 mod resource_neutral;
 
 pub(super) use current_java::sign_november_current_java;
+pub(super) use current_java::sign_poststage_http_java;
 pub(super) use current_java::sign_reconstructed_current_java;
 pub(super) use current_java::sign_refreshed_current_java;
 pub(super) use current_java::{
