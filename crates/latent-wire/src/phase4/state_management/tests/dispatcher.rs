@@ -187,12 +187,11 @@ async fn assert_node_audit(
     action: latent_audit::AuditControlAction,
     result: latent_audit::AuditOperationResult,
 ) {
-    let page = fixture
-        .audit
-        .as_ref()
-        .unwrap()
-        .0
-        .query(
+    // The audit worker may briefly hold its state lock after acknowledging a
+    // prior record. Retry only this read-only admission before its one deadline.
+    let query_deadline = deadline();
+    let ticket = loop {
+        let query = fixture.audit.as_ref().unwrap().0.query(
             latent_audit::AuditQueryRequest {
                 scope: latent_audit::AuditScope::Node,
                 filter: latent_audit::AuditFilter::default(),
@@ -200,11 +199,23 @@ async fn assert_node_audit(
                 maximum_bytes: 65536,
                 cursor: None,
             },
-            deadline(),
-        )
-        .unwrap()
-        .wait()
+            query_deadline,
+        );
+        match query {
+            Ok(ticket) => break ticket,
+            Err(error)
+                if error.code == PlatformErrorCode::ResourceExhausted
+                    && error.message == "audit-busy"
+                    && Instant::now() < query_deadline =>
+            {
+                tokio::task::yield_now().await;
+            }
+            Err(error) => panic!("audit query failed: {error:?}"),
+        }
+    };
+    let page = tokio::time::timeout_at(query_deadline.into(), ticket.wait())
         .await
+        .expect("audit query exceeded its original deadline")
         .unwrap();
     assert!(page.records().iter().any(|row|matches!(&row.data,latent_audit::AuditRecordData::Attempt(value) if value.action==action && value.identities.dispatcher.as_ref().unwrap().actor_tenant=="a")));
     assert!(page.records().iter().any(|row|matches!(&row.data,latent_audit::AuditRecordData::Outcome {conclusion,..} if conclusion.result==result && conclusion.receipt_digest.is_some()==(result==latent_audit::AuditOperationResult::Committed))));

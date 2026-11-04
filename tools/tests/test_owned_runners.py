@@ -28,6 +28,7 @@ def copy_catalog(destination):
     catalog.load(source)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_bytes(source.read_bytes())
+    # Both whole-suite owners and additive cases are part of the catalogue.
     for suffix in ('.d', '.cases.d'):
         fragments = source.with_suffix(suffix)
         if fragments.exists():
@@ -58,10 +59,13 @@ class RunnerContractTests(unittest.TestCase):
         self.assertEqual(catalog.load(destination), catalog.load())
         for suffix in ('.d', '.cases.d'):
             source = (ROOT / 'tools/ci/suites.json').with_suffix(suffix)
+            copied = destination.with_suffix(suffix)
+            self.assertEqual(copied.exists(), source.exists())
             if source.exists():
                 self.assertEqual(
                     {path.name: path.read_bytes() for path in source.iterdir()},
-                    {path.name: path.read_bytes() for path in destination.with_suffix(suffix).iterdir()})
+                    {path.name: path.read_bytes() for path in copied.iterdir()})
+
         # A loader-only copy imports successfully but silently loses additive
         # cases. Require full equality to catch that distinct failure mode.
         fragments = destination.with_suffix('.cases.d')

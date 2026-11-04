@@ -212,10 +212,22 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
             after = owner.shutdown_sources(commands, before['native'])
             self.assertEqual(after['native'], before['native'])
             self.assertNotEqual(after['supplementary'], before['supplementary'])
-            changed.clear(); native.append('tools/overflow.py')
+            changed.clear()
+            # The shared source budget can grow independently of this 8,992-file
+            # fixture. Exercise its actual boundary without changing any limit.
+            from tools.build_snapshot import SnapshotLimits
+            maximum = SnapshotLimits().max_entries
+            self.assertGreaterEqual(maximum, len(native))
+            original_native = native[:]
+            native.extend(f'tools/capture-{index:04d}.py' for index in range(len(native), maximum))
+            allowed.update(native)
+            at_limit = owner.shutdown_sources(commands)
+            self.assertEqual(len(at_limit['native']), maximum)
+            self.assertEqual(at_limit['supplementary'], before['supplementary'])
+            native.append('tools/overflow.py')
             with self.assertRaisesRegex(ValueError, 'native-source-count'):
                 owner.shutdown_sources(commands)
-            native.pop()
+            native[:] = original_native
             changed[native[0]] = b'x' * (4 * 1024**2 + 1)
             with self.assertRaisesRegex(ValueError, 'file-bound'):
                 owner.shutdown_sources(commands, before['native'])

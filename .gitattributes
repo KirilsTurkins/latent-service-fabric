@@ -43,3 +43,6 @@
 /tools/host_stream_kernel_cleanup_observer.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 /tools/tests/fixtures/host_stream_kernel_cleanup_provider_executor.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 /tools/tests/fixtures/host_stream_kernel_cleanup_provider_operation.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve authentic byte-pinned libtest output, including its final blank line.
+/docs/testing/evidence/dotnet-original-v3-2026-10-31.2a79e99.stdout.txt -text whitespace=-blank-at-eof

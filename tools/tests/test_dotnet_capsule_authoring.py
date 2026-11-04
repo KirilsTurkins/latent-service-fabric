@@ -600,6 +600,65 @@ class SynchronousHttpSendQualificationTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
 
+    def test_cleanup_waits_for_bounded_audit_idle_before_one_delete(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from tools import dotnet_standard_http_node as node
+
+        def observation(busy=False):
+            counters = {name: '0' for name in (*audit_idle.COUNTERS, *audit_idle.STATES)}
+            if busy:
+                counters.update(audit_queued_operations='1', audit_queued_bytes='32768',
+                                audit_reserved_records='2', audit_reserved_bytes='32768')
+            return {'schemaVersion': 'latent.cli.result.v1', 'command': 'capability list',
+                    'category': 'success', 'error': None, 'outcomeKnown': True,
+                    'requestDispatched': True, 'data': {'nextPageToken': None,
+                    'nodeUsage': {'scope': 'node', 'unavailable': [], 'counters': counters}}}
+
+        target = {'name': 'dotnet-standard-http'}
+        client = SimpleNamespace(deadline=200.0, call=Mock(side_effect=[observation(True), observation()]))
+        with patch.object(node.time, 'monotonic', return_value=100.0), \
+                patch.object(node.time, 'sleep') as sleep, patch.object(node, 'delete_all') as delete:
+            node.delete_when_audit_idle(client, target)
+            self.assertEqual(client.call.call_count, 2)
+            self.assertTrue(all(call.args == ('capability', 'list', '--deployment', target['name'],
+                                             '--include-node-usage') and call.kwargs == {'timeout': 1}
+                                for call in client.call.call_args_list))
+            sleep.assert_called_once_with(0.05)
+            delete.assert_called_once_with(client, [target['name']])
+
+        client = SimpleNamespace(deadline=200.0, call=Mock(return_value=observation(True)))
+        with patch.object(node.time, 'monotonic', return_value=100.0), \
+                patch.object(node.time, 'sleep') as sleep, patch.object(node, 'delete_all') as delete:
+            with self.assertRaisesRegex(ValueError, 'audit-drain-observation-limit'):
+                node.delete_when_audit_idle(client, target)
+            self.assertEqual(client.call.call_count, audit_idle.MAX_OBSERVATIONS)
+            self.assertEqual(sleep.call_count, audit_idle.MAX_OBSERVATIONS - 1)
+            delete.assert_not_called()
+
+        client = SimpleNamespace(deadline=100.25, call=Mock(return_value=observation()))
+        with patch.object(node.time, 'monotonic', return_value=100.0), \
+                patch.object(node, 'delete_all') as delete:
+            node.delete_when_audit_idle(client, target)
+            self.assertEqual(client.call.call_args.kwargs['timeout'], 0.25)
+            delete.assert_called_once_with(client, [target['name']])
+
+        client = SimpleNamespace(deadline=100.05, call=Mock())
+        with patch.object(node.time, 'monotonic', side_effect=[100.0, 100.1]), \
+                patch.object(node, 'delete_all') as delete:
+            with self.assertRaisesRegex(RuntimeError, 'audit-drain-deadline'):
+                node.delete_when_audit_idle(client, target)
+            client.call.assert_not_called()
+            delete.assert_not_called()
+
+        client = SimpleNamespace(deadline=200.0, call=Mock(return_value=observation()))
+        with patch.object(node.time, 'monotonic', return_value=100.0), \
+                patch.object(node, 'delete_all', side_effect=RuntimeError('original-delete-failure')) as delete:
+            with self.assertRaisesRegex(RuntimeError, 'original-delete-failure'):
+                node.delete_when_audit_idle(client, target)
+            delete.assert_called_once_with(client, [target['name']])
+            self.assertEqual(client.call.call_count, 1)
+
     def artifact(self, synchronous_send=True):
         from tools.dotnet_standard_http_project import managed_source
         from tools.rust_capsule_project import digest, inventory
