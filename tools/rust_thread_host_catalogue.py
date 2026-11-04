@@ -13,6 +13,26 @@ import json
 
 from tools import rust_thread_object_graph as graph
 
+ROOT_EXPORTS = (
+    '__lsf_rust_pool_request', '__lsf_rust_pool_prepare', '__lsf_rust_pool_commit',
+    '__lsf_rust_pool_abort_setup', '__lsf_rust_owned_thread_entry',
+    '__lsf_rust_root_bootstrap', '__lsf_rust_root_finish', '__lsf_rust_root_reap')
+ADDITIONAL_ROOT_SYMBOLS = (
+    '_RNvMs1_NtCsffIcXob95CF_16futures_executor15lsf_thread_poolNtB5_4Pool12admit_future',
+    '_RNvMs1_NtCsffIcXob95CF_16futures_executor11thread_poolNtB5_10ThreadPool14spawn_admitted',
+    '_RNvMs1_NtCsffIcXob95CF_16futures_executor11thread_poolNtB5_10ThreadPool3new')
+
+
+def reviewed_roots(manifest: dict) -> None:
+    """Require all public lifecycle roots and the three private ThreadPool roots."""
+    nodes = {row['id']: row for row in manifest['nodes']}
+    actual = {(row['export'], nodes.get(row['node'], {}).get('originalSymbol'))
+              for row in manifest['roots']}
+    expected = ({(name, name) for name in ROOT_EXPORTS}
+                | {(None, name) for name in ADDITIONAL_ROOT_SYMBOLS})
+    graph.require(len(manifest['roots']) == len(actual) == len(expected) == 11
+                  and actual == expected, 'rust-host-catalogue-reviewed-roots')
+
 
 def catalogue(core: bytes, libraries: tuple[graph.Library, ...], observation: dict,
               root_exports: tuple[str, ...], additional_roots: tuple[tuple[str, str], ...],
@@ -140,9 +160,10 @@ def catalogue(core: bytes, libraries: tuple[graph.Library, ...], observation: di
 
 def rust_records(image: bytes, manifest: dict) -> bytes:
     """Emit borrowed immutable typed records; no runtime JSON/global cache."""
+    reviewed_roots(manifest)
     graph.require(manifest['originalBodyImageDigest'] == graph.digest(image)
-                  and len(manifest['nodes']) == 1225
-                  and sum(len(row['references']) for row in manifest['nodes']) == 5325,
+                  and len(manifest['nodes']) == 1221
+                  and sum(len(row['references']) for row in manifest['nodes']) == 5245,
                   'rust-host-catalogue-reviewed-membership')
 
     def quoted(value):

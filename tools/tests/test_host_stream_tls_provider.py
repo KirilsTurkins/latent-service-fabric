@@ -110,14 +110,14 @@ class BoundedTlsProviderSource(unittest.TestCase):
 
     def test_selected_root_trust_dependencies_use_patched_versions(self):
         lock = tomllib.loads((provider.ROOT / "Cargo.lock").read_text(encoding="utf-8"))
-        for name, version in (("rustls-webpki", "0.103.16"), ("webpki-roots", "1.0.10"),
+        for name, version in (("rustls-webpki", "0.103.16"), ("webpki-roots", "1.0.11"),
                               ("webpki-root-certs", "1.0.10")):
             selected = [row["version"] for row in lock["package"] if row["name"] == name]
             self.assertEqual(selected, [version])
         for crate in ("latent-http", "latent-nats", "latent-oci"):
             manifest = provider.ROOT / "crates" / crate / "Cargo.toml"
             self.assertEqual(tomllib.loads(manifest.read_text(encoding="utf-8"))["dependencies"]["webpki-roots"],
-                             "=1.0.10")
+                             "=1.0.11")
 
     def test_global_shadowing_changed_lock_and_accounting_enablement_are_refused(self):
         for kind in ("global-patch", "global-replace", "workspace", "lock", "accounting"):
