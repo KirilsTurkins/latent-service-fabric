@@ -132,6 +132,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     if args.len() == 8 && args[0] == "fixture-sign-refreshed-current-java-inputs" {
         return sign_refreshed_current(&args);
     }
+    if args.len() == 8 && args[0] == "fixture-sign-current-465-java-inputs" {
+        return authoring::sign_current_465_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("current fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
     if args.len() == 8 && args[0] == "fixture-sign-november-current-java-inputs" {
         return authoring::sign_november_current_java(
             std::path::Path::new(&args[1]),

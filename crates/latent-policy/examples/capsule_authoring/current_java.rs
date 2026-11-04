@@ -2,6 +2,7 @@
 mod native_memory;
 pub(crate) use native_memory::sign_native_memory_current_java;
 mod november;
+pub(crate) use november::sign_current_465_java;
 pub(crate) use november::sign_november_current_java;
 pub(crate) use november::sign_poststage_http_java;
 mod reconstructed;

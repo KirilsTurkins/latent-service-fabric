@@ -238,6 +238,26 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
 def current_signing_mode(items):
     actual = {item.name: digest(read_file(item.directory / 'report.json', 262144)) for item in items}
     require(len(items) == 5 and len(actual) == len(items), 'five-distinct-current-capture-reports')
+    current_465 = {
+        'aggregate': 'sha256:9353965f0dc2189a0ae36b589b0a4ae52dccc0d826f26098fd13ccd78032533f',
+        'put-once-legacy-v1': 'sha256:f1c442c80ca34647397a8c4b35bcfca374e120d9804ca5bb3aa5b745dbf66565',
+        'put-once-compatible-v2': 'sha256:8187424efa780ea16023a074defb2547e536d2e787c9dc987eee298509b9352b',
+        'put-once-writer-v2': 'sha256:57496c00a492f21b59c05f488934f7346f043a3d962d2cc89150e63f9fa6a0c3',
+        'put-once-diagnostics': 'sha256:d0982b1063da03148a51985ba7e4c52028f93fb57c7e90e41ad74bee425a651b',
+    }
+    if actual == current_465:
+        packet = decode(read_file(Path(__file__).resolve().parents[2] /
+            'docs/testing/evidence/java-current-http-capture-465-2026-11-04.json'))['captures']
+        require(packet['sourceCommit'] == '46597407903231d2914f54358cff94dfc598878b'
+                and packet['nativeIdempotencyProfile'] ==
+                    'qualified-http-v1:5337619eb24838242cf05797a246bba5e50547f3f12252ed9b81e138ca8a259b',
+                'current-465-custody-source-and-profile')
+        expected = {name: row['materials']['report']['sha256'] for name, row in packet['variants'].items()
+                    if name != 'forbidden-http'}
+        require(actual == expected and all(item.compiler_source == packet['sourceCommit']
+                and item.component_digest == packet['variants'][item.name]['materials']['component']['sha256']
+                for item in items), 'current-465-captured-report-component-and-source')
+        return 'fixture-sign-current-465-java-inputs'
     november = {
         'aggregate': 'sha256:9a80526be0697feb6d42311805466579f93405b63cdd6505c34e13e326a3f58e',
         'put-once-legacy-v1': 'sha256:c63a7797f9bfa9f3d9f22bf614d5deb24f692fb082e8f052195cc2f59233509c',

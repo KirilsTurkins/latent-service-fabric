@@ -91,6 +91,30 @@ class RefreshedCurrentRouting(unittest.TestCase):
             with self.assertRaises(ValueError):
                 packaging.current_signing_mode(items)
 
+    def test_current_465_capture_routes_only_exact_source_and_components(self):
+        path = ROOT / 'docs/testing/evidence/java-current-http-capture-465-2026-11-04.json'
+        packet = json.loads(path.read_bytes())
+        rows = packet['captures']['variants']
+        source = '46597407903231d2914f54358cff94dfc598878b'
+        reports = {name: ('current-465:' + name).encode() for name in NAMES}
+        identities = {reports[name]: rows[name]['materials']['report']['sha256'] for name in NAMES}
+        items = [SimpleNamespace(name=name, directory=Path('/capture') / name,
+                 compiler_source=source, component_digest=rows[name]['materials']['component']['sha256'])
+                 for name in NAMES]
+        original = packaging.read_file
+
+        def read(selected, *args):
+            return reports[selected.parent.name] if selected.name == 'report.json' else original(selected, *args)
+
+        def identify(raw):
+            return identities[raw] if raw in identities else digest(raw)
+
+        with patch.object(packaging, 'read_file', side_effect=read), patch.object(packaging, 'digest', side_effect=identify):
+            self.assertEqual(packaging.current_signing_mode(items), 'fixture-sign-current-465-java-inputs')
+            items[0].component_digest = 'sha256:' + 'f' * 64
+            with self.assertRaises(ValueError):
+                packaging.current_signing_mode(items)
+
     def test_public_packet_preserves_six_components_and_separate_new_capture_identity(self):
         raw = (ROOT / PACKET).read_bytes()
         self.assertEqual(digest(raw), 'sha256:2027a62c2706e337b571dd0d3433d9d8546501e3ca33f5025703f6e1da677616')

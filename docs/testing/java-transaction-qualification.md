@@ -34,6 +34,13 @@ materials and profile before creating temporary test trust. The capture and
 preview do not themselves qualify signed execution, restart recovery or a
 packaged distribution.
 
+The [later clean-source capture](evidence/java-current-http-capture-465-2026-11-04.json)
+contains all six guests compiled from `46597407903` against the constructor
+profile observed on native source `50caadce1f7`. All six component digests match
+the earlier capture, while their compiler reports and source custody are distinct.
+A separate fixed signer selects only these exact materials. This capture alone
+does not qualify signed execution or packaged delivery.
+
 The separate [terminal recovery evidence](evidence/java-terminal-recovery-2026-11-04.json)
 records 50 passing measured cases on native/conductor source `81d72bceaf4`,
 including crash replay, schema migration, reviewed restore and physical
