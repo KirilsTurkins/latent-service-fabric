@@ -13,7 +13,8 @@
           "feat/kernel-native-constructor-vm-20261024",
           "feat/kernel-native-close-20261024",
           "feat/sdk-738-q35-node-boot-20261029",
-          "feat/sdk-738-q35-pci-identity-20261104"
+          "feat/sdk-738-q35-pci-identity-20261104",
+          "feat/sdk-738-q35-node-pci-prefix-20261104"
         ],
         "paths": [
           ".github/workflows/stream-native-factory-owner.yml",
@@ -32,7 +33,9 @@
           "tools/ci/suites.json",
           "tools/ci/suites.d/outbound-streams.json",
           "research/standard-outbound/linux-6.12-lineage/native-constructor-vm-init.c",
-          "research/standard-outbound/linux-6.12-lineage/node-boot/**"
+          "research/standard-outbound/linux-6.12-lineage/node-boot/**",
+          "research/standard-outbound/linux-6.12-lineage/node-constructor-bridge/**",
+          "research/standard-outbound/linux-6.12-lineage/node-pci-prefix/**"
         ]
       },
       "workflow_dispatch": null
@@ -45,7 +48,7 @@
     "native-kernel-vm",
     "native-owner"
   ],
-  "reviewReason": "Closed fresh q35/KVM one-CPU original-Node preparation image; old routes retained, no NodeFunding/IRQ/TCP/retirement qualification.",
+  "reviewReason": "One closed q35/KVM original-Node PCI birth/return qualification; original preimages, source bounds, ownership, IRQ/TCP and historical routes remain enforced.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-native-factory-owner.yml"
 }

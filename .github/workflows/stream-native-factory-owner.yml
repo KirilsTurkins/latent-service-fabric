@@ -4,7 +4,7 @@ name: Stream native factory descriptor ownership
 on:
   workflow_dispatch:
   push:
-    branches: ['feat/stream-kernel-native-factory-owner-20261023', 'feat/kernel-native-constructor-vm-20261024', 'feat/kernel-native-close-20261024', 'feat/sdk-738-q35-node-boot-20261029', 'feat/sdk-738-q35-pci-identity-20261104']
+    branches: ['feat/stream-kernel-native-factory-owner-20261023', 'feat/kernel-native-constructor-vm-20261024', 'feat/kernel-native-close-20261024', 'feat/sdk-738-q35-node-boot-20261029', 'feat/sdk-738-q35-pci-identity-20261104', 'feat/sdk-738-q35-node-pci-prefix-20261104']
     paths:
       - '.github/workflows/stream-native-factory-owner.yml'
       - 'crates/latent-streams/**'
@@ -23,6 +23,8 @@ on:
       - 'tools/ci/suites.d/outbound-streams.json'
       - 'research/standard-outbound/linux-6.12-lineage/native-constructor-vm-init.c'
       - 'research/standard-outbound/linux-6.12-lineage/node-boot/**'
+      - 'research/standard-outbound/linux-6.12-lineage/node-constructor-bridge/**'
+      - 'research/standard-outbound/linux-6.12-lineage/node-pci-prefix/**'
 permissions:
   contents: read
 concurrency:
@@ -30,7 +32,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   native-owner:
-    if: github.ref_name != 'feat/kernel-native-constructor-vm-20261024' && github.ref_name != 'feat/kernel-native-close-20261024' && github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104'
+    if: github.ref_name != 'feat/kernel-native-constructor-vm-20261024' && github.ref_name != 'feat/kernel-native-close-20261024' && github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104' && github.ref_name != 'feat/sdk-738-q35-node-pci-prefix-20261104'
     name: Thirteen actual descriptor and original node quota controls
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -68,7 +70,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   native-kernel-vm:
-    if: github.ref_name == 'feat/kernel-native-constructor-vm-20261024' || github.ref_name == 'feat/kernel-native-close-20261024' || github.ref_name == 'feat/sdk-738-q35-node-boot-20261029' || github.ref_name == 'feat/sdk-738-q35-pci-identity-20261104'
+    if: github.ref_name == 'feat/kernel-native-constructor-vm-20261024' || github.ref_name == 'feat/kernel-native-close-20261024' || github.ref_name == 'feat/sdk-738-q35-node-boot-20261029' || github.ref_name == 'feat/sdk-738-q35-pci-identity-20261104' || github.ref_name == 'feat/sdk-738-q35-node-pci-prefix-20261104'
     name: Actual native close observation in the qualified isolated kernel
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -77,7 +79,7 @@ jobs:
       actions: read
     steps:
       - name: Start the original q35 setup and execution clock
-        if: github.ref_name == 'feat/sdk-738-q35-node-boot-20261029' || github.ref_name == 'feat/sdk-738-q35-pci-identity-20261104'
+        if: github.ref_name == 'feat/sdk-738-q35-node-boot-20261029' || github.ref_name == 'feat/sdk-738-q35-pci-identity-20261104' || github.ref_name == 'feat/sdk-738-q35-node-pci-prefix-20261104'
         run: python3 -c 'import os,time; open(os.environ["GITHUB_ENV"],"a").write("LSF_Q35_STARTED_MONOTONIC="+repr(time.monotonic())+"\n")'
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
@@ -86,9 +88,9 @@ jobs:
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
-        if: github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104'
+        if: github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104' && github.ref_name != 'feat/sdk-738-q35-node-pci-prefix-20261104'
       - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
-        if: github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104'
+        if: github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104' && github.ref_name != 'feat/sdk-738-q35-node-pci-prefix-20261104'
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -97,15 +99,15 @@ jobs:
           cache-workspace-crates: false
           cache-targets: false
       - name: Check closed image source bindings and real observation refusal controls
-        if: github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104'
+        if: github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104' && github.ref_name != 'feat/sdk-738-q35-node-pci-prefix-20261104'
         run: python3 -B -m unittest tools.tests.test_kernel_native_constructor_vm -v
       - name: Install only the normal host linker and isolated emulator
-        if: github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104'
+        if: github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104' && github.ref_name != 'feat/sdk-738-q35-node-pci-prefix-20261104'
         run: |
           sudo timeout --signal=TERM --kill-after=30s 180s apt-get update
           sudo timeout --signal=TERM --kill-after=30s 600s apt-get install --yes --no-install-recommends gcc binutils libc6-dev qemu-system-x86
       - name: Compile the real native caller and join it to the immutable qualified kernel
-        if: github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104'
+        if: github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104' && github.ref_name != 'feat/sdk-738-q35-node-pci-prefix-20261104'
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
@@ -113,7 +115,7 @@ jobs:
           --source-commit "${{ github.sha }}"
           --output "$RUNNER_TEMP/stream-native-kernel-vm"
       - name: Build and boot the original-Node q35 KVM preparation image
-        if: github.ref_name == 'feat/sdk-738-q35-node-boot-20261029' || github.ref_name == 'feat/sdk-738-q35-pci-identity-20261104'
+        if: github.ref_name == 'feat/sdk-738-q35-node-boot-20261029' || github.ref_name == 'feat/sdk-738-q35-pci-identity-20261104' || github.ref_name == 'feat/sdk-738-q35-node-pci-prefix-20261104'
         run: >-
           python3 -B tools/qualify_host_stream_kernel_native_vm.py --node-boot
           --source-commit "${{ github.sha }}"
