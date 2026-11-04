@@ -171,10 +171,12 @@ negative controls, cleanup or qualification.
 
 ## Updating tests and command contracts
 
-Rust targets/cases and explicit ignores live in [the catalogue](tools/ci/suites.json)
-and additive [suite fragments](tools/ci/suites.d/). Workflow structure, ordered
-commands, delegated owners and exact Python cases live in [command contracts](tools/ci/contracts/).
-A renamed, newly ignored, unregistered or zero-test selection must fail visibly.
+Rust target identities, explicit ignores and constrained qualification selections
+live in [the catalogue](tools/ci/suites.json) and additive
+[suite fragments](tools/ci/suites.d/); ordinary cases come from prepared executable
+discovery. Workflow structure and ordered commands live in [command contracts](tools/ci/contracts/).
+Ordinary Python cases are discovered and executed from current modules; newly
+ignored, missing exact, unregistered target or zero-test selections fail visibly.
 The [contract guide](docs/testing/ci-command-contracts.md) explains scoped proposals
 and review; validation never silently regenerates or approves expectations.
 

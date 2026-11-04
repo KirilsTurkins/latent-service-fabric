@@ -1,9 +1,6 @@
 {
-  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
-  "before": {},
-  "coverage": {},
   "definition": {
-    "if": "github.ref_name != 'feat/kernel-native-constructor-vm-20261024' && github.ref_name != 'feat/kernel-native-close-20261024' && github.ref_name != 'feat/sdk-738-q35-node-boot-20261029'",
+    "if": "github.ref_name != 'feat/kernel-native-constructor-vm-20261024' && github.ref_name != 'feat/kernel-native-close-20261024' && github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104' && github.ref_name != 'feat/sdk-738-q35-node-pci-prefix-20261104'",
     "name": "Thirteen actual descriptor and original node quota controls",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -57,7 +54,7 @@
   },
   "jobId": "native-owner",
   "kind": "job",
-  "reviewReason": "Closed fresh q35/KVM one-CPU original-Node preparation image; old routes retained, no NodeFunding/IRQ/TCP/retirement qualification.",
+  "reviewReason": "One closed q35/KVM original-Node PCI birth/return qualification; original preimages, source bounds, ownership, IRQ/TCP and historical routes remain enforced.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-native-factory-owner.yml"
 }

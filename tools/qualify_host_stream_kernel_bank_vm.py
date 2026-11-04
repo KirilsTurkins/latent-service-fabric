@@ -18,7 +18,7 @@ from tools import host_stream_kernel_bank_vm as observer
 from tools import host_stream_kernel_native_vm as native
 from tools import host_stream_kernel_vm_image as image
 from tools import ci_rust_artifacts as artifacts
-from tools import ci_suite_inventory as registry
+from tools import ci_suite_inventory as registry, ci_suite_discovery as discovery
 from tools.build_observation import build_environment
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT,fresh,read_file,write_json
@@ -45,7 +45,7 @@ def partition_control(commands,output):
     inventory = commands.output/'logs'/f'{index:02}-close-result-cargo.stdout.txt'
     contract, = [row for row in registry.load()['suites']
         if row['package'] == 'latent-capabilities' and row['kind'] == 'lib']
-    native.require(BANK_CASE in contract['expectedCases'] and BANK_CASE not in contract['expectedIgnored'],
+    native.require(BANK_CASE not in contract['expectedIgnored'],
         'bank-registered-original-protocol-control')
     suite = artifacts.Suite('crates/latent-capabilities/Cargo.toml','latent_capabilities',
         'src/lib.rs',BANK_CASE,frozenset({BANK_CASE}),False)
@@ -55,6 +55,10 @@ def partition_control(commands,output):
     commands.environment = artifacts.cargo_environment(ROOT,executable,env,target=target)
     try:
         commands.command_seconds = min(seconds,30)
+        available = discovery.listing(commands.run('bank-all-list',executable.executable,'--list'))
+        all_ignored = discovery.listing(commands.run('bank-all-ignored',executable.executable,'--ignored','--list'))
+        discovery.validate_cases(contract, available, all_ignored, {})
+        native.require(BANK_CASE in available - all_ignored, 'bank-registered-original-protocol-control')
         listed = commands.run('bank-partition-list',executable.executable,BANK_CASE,'--exact','--list')
         ignored = commands.run('bank-partition-ignored',executable.executable,BANK_CASE,'--exact','--ignored','--list')
         native.require(re.findall(rb'^([A-Za-z0-9_:]+): test$',listed,re.M) == [BANK_CASE.encode()]
@@ -62,7 +66,7 @@ def partition_control(commands,output):
         commands.command_seconds = min(seconds,120)
         raw = commands.run('bank-partition-test',executable.executable,BANK_CASE,
             '--exact','--show-output','--test-threads=1')
-        expected = tuple(str(n).encode() for n in (1,0,0,0,contract['minimumCases']-1))
+        expected = tuple(str(n).encode() for n in (1,0,0,0,len(available)-1))
         native.require(re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$',raw,re.M) == [BANK_CASE.encode()]
             and re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; '
                 rb'(\d+) measured; (\d+) filtered out;',raw,re.M) == [expected],

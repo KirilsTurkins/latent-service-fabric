@@ -1,8 +1,0 @@
-{
-  "schemaVersion": "latent.ci.suite-case-fragment.v1",
-  "suiteId": "latent-node.lib.latent-node",
-  "expectedCases": [
-    "transaction_runtime::tests::response::duplicate_admission_of_corrupt_command_quarantines_protected_store",
-    "transaction_runtime::tests::response::duplicate_replay_of_corrupt_result_quarantines_protected_store"
-  ]
-}

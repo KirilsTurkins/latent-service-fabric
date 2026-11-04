@@ -12,7 +12,7 @@ import tomllib
 
 if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from tools import ci_rust_artifacts as artifacts, ci_suite_inventory as registry
+from tools import ci_rust_artifacts as artifacts, ci_suite_inventory as registry, ci_suite_discovery as discovery
 from tools.build_observation import build_environment, file_identity, resolve_tools
 from tools.build_snapshot import SOURCE_ALLOWLIST, SnapshotLimits
 from tools.rust_capsule_build import Commands
@@ -105,8 +105,7 @@ def qualify(output,revision):
         commands.run('build-containment-host-test',tools['cargo'],'test','--locked','-p','latent-wasmtime',
             '--test','containment_backend','--no-run','--message-format=json')
         contract,=[row for row in registry.load()['suites'] if row['id']=='latent-wasmtime.test.containment-backend']
-        require(CASE in contract['expectedCases'] and CASE in contract['expectedIgnored']
-            and contract['minimumCases']==7,'unchanged-seven-case-contract')
+        require(CASE in contract['expectedIgnored'],'registered-ignored-case-contract')
         suite=artifacts.Suite('crates/latent-wasmtime/Cargo.toml','containment_backend',
             'tests/containment_backend.rs',CASE,frozenset({CASE}),True,kind='test')
         executable=artifacts.read_inventory(output/'commands/logs/03-build-containment-host-test.stdout.txt',
@@ -115,6 +114,10 @@ def qualify(output,revision):
         commands.environment=artifacts.cargo_environment(ROOT,executable,environment,target=target)
         commands.environment['LSF_CONTAINMENT_COMPONENT']=str(component)
         commands.command_seconds=30
+        all_cases=discovery.listing(commands.run('list-all-containment-cases',executable.executable,'--list'))
+        ignored_cases=discovery.listing(commands.run('list-ignored-containment-cases',executable.executable,'--ignored','--list'))
+        discovery.validate_cases(contract,all_cases,ignored_cases,{})
+        require(CASE in ignored_cases,'required-ignored-case-missing')
         listed=commands.run('list-one-deadline-case',executable.executable,CASE,'--exact','--ignored','--list')
         artifacts.validate_listing(listed,suite)
         commands.command_seconds=60
@@ -122,7 +125,7 @@ def qualify(output,revision):
             '--ignored','--show-output','--test-threads=1')
         require(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$',raw,re.M)==[CASE.encode()]
             and re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; '
-                rb'(\d+) measured; (\d+) filtered out;',raw,re.M)==[(b'1',b'0',b'0',b'0',b'6')],
+                rb'(\d+) measured; (\d+) filtered out;',raw,re.M)==[(b'1',b'0',b'0',b'0',str(len(all_cases)-1).encode())],
             'one-executed-no-ignored-skip')
         receipt['stdout']=identity(raw)
         require(time.monotonic()<commands.deadline and source_inputs()==before,'final-source-deadline')

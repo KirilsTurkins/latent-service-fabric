@@ -190,9 +190,7 @@ def qualify(output, revision):
             else:
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-wasmtime.lib.latent-wasmtime']
-                require(contract['minimumCases'] == 498
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'public-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'public-suite-contract')
             commands.environment = run_env
             for index, case in enumerate(cases):
                 receipt['stage'] = case
@@ -508,9 +506,7 @@ def qualify_consumer_cell(output, revision):
             if label == 'public':
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-wasmtime.lib.latent-wasmtime']
-                require(contract['minimumCases'] == 498
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'public-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'public-suite-contract')
             commands.environment = run_env
             for index, case in enumerate(cases):
                 receipt['stage'] = case
@@ -668,9 +664,7 @@ def qualify_producer_cell(output, revision):
             if label == 'public':
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-wasmtime.lib.latent-wasmtime']
-                require(contract['minimumCases'] == 501
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'public-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'public-suite-contract')
             commands.environment = run_env
             for index, case in enumerate(cases):
                 receipt['stage'] = case
@@ -831,9 +825,7 @@ def qualify_producer_factories(output, revision):
             if label == 'public':
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-wasmtime.lib.latent-wasmtime']
-                require(contract['minimumCases'] == 503
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'public-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'public-suite-contract')
             commands.environment = run_env
             for index, case in enumerate(cases):
                 receipt['stage'] = case
@@ -980,9 +972,7 @@ def qualify_io_operations(output, revision):
             if label == 'io':
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-capabilities.lib.latent-capabilities']
-                require(contract['minimumCases'] == 214
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
             commands.environment = run_env
             for index, case in enumerate(cases):
                 receipt['stage'] = case
@@ -1211,9 +1201,7 @@ def qualify_io_graph(output, revision):
             if label == 'io':
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-capabilities.lib.latent-capabilities']
-                require(contract['minimumCases'] == 221
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
             commands.environment = run_env
             for index, case in enumerate(cases):
                 receipt['stage'] = case
@@ -1456,15 +1444,11 @@ def qualify_io_copy(output, revision):
             if label == 'copy':
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-capabilities.lib.latent-capabilities']
-                require(contract['minimumCases'] == 222
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
             else:
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-wasmtime.test.streaming-http']
-                require(contract['minimumCases'] == 14
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'normal-managed-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-managed-suite-contract')
             require_io_copy_environment(run_env)
             commands.environment = run_env
             for index, case in enumerate(cases):
@@ -1706,15 +1690,11 @@ def qualify_blob_copy(output, revision):
             if label == 'copy':
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-capabilities.lib.latent-capabilities']
-                require(contract['minimumCases'] == 225
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
             else:
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-wasmtime.test.local-blobs']
-                require(contract['minimumCases'] == 10
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'normal-managed-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-managed-suite-contract')
             require_io_copy_environment(run_env)
             commands.environment = run_env
             for index, case in enumerate(cases):
@@ -1956,15 +1936,11 @@ def qualify_blob_input(output, revision):
             if label == 'copy':
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-capabilities.lib.latent-capabilities']
-                require(contract['minimumCases'] == 228
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
             else:
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-wasmtime.test.local-blobs']
-                require(contract['minimumCases'] == 10
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'normal-managed-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-managed-suite-contract')
             require_io_copy_environment(run_env)
             commands.environment = run_env
             for index, case in enumerate(cases):
@@ -2157,15 +2133,11 @@ def qualify_http_input(output, revision):
             if label == 'http':
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-http.lib.latent-http']
-                require(contract['minimumCases'] == 86
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
             else:
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-wasmtime.test.http']
-                require(contract['minimumCases'] == 7
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'normal-managed-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-managed-suite-contract')
             require_io_copy_environment(run_env)
             commands.environment = run_env
             for index, case in enumerate(cases):
@@ -2361,15 +2333,11 @@ def qualify_http_metadata(output, revision):
             if label == 'http':
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-http.lib.latent-http']
-                require(contract['minimumCases'] == 86
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-io-suite-contract')
             else:
                 contract, = [row for row in registry.load()['suites']
                     if row['id'] == 'latent-wasmtime.test.http']
-                require(contract['minimumCases'] == 7
-                    and set(cases) <= set(contract['expectedCases'])
-                    and not set(cases) & set(contract['expectedIgnored']), 'normal-managed-suite-contract')
+                require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-managed-suite-contract')
             require_io_copy_environment(run_env)
             commands.environment = run_env
             for index, case in enumerate(cases):
@@ -2551,9 +2519,7 @@ def qualify_http_ip_format(output, revision):
             executables.append((artifact.executable, executable, label + '-ip-format-controls'))
             run_env = io_copy_environment(runtime_environment(artifact, label))
             contract, = [row for row in registry.load()['suites'] if row['id'] == suite_id]
-            require(contract['minimumCases'] == minimum
-                and set(cases) <= set(contract['expectedCases'])
-                and not set(cases) & set(contract['expectedIgnored']), 'normal-IP-suite-contract')
+            require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'normal-IP-suite-contract')
             require_io_copy_environment(run_env)
             commands.environment = run_env
             for index, case in enumerate(cases):
@@ -2882,9 +2848,7 @@ def qualify_node_bootstrap(output, revision):
             suite = artifacts.Suite('crates/' + package + '/Cargo.toml', target,
                 'src/lib.rs', prefix, frozenset(cases), True)
             contract, = [r for r in registry.load()['suites'] if r['id'] == package + '.lib.' + package]
-            require(contract['minimumCases'] == (229 if label == 'capabilities' else 47)
-                and set(cases) <= set(contract['expectedCases'])
-                and not set(cases) & set(contract['expectedIgnored']), 'node-existing-target-catalogue')
+            require(bool(cases) and not set(cases) & set(contract['expectedIgnored']), 'node-existing-target-catalogue')
             ordinal = len(commands.records)
             owned('build-' + label, 895, tools['cargo'], 'test', '-p', package, '--locked',
                 '--lib', '--all-features', '--no-run', '--message-format=json')

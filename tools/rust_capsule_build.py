@@ -15,11 +15,15 @@ import tomllib
 
 from tools.build_observation import build_environment, file_identity, public_repository, resolve_tools
 from tools.build_process import BuildProcessError, run_bounded_result
+from tools.build_snapshot import MAX_SOURCE_LISTING_BYTES
 from tools.rust_capsule_project import (ROOT, canonical, checked_path, digest, fresh,
                                         inventory, decode_json, read_file, read_json, snapshot, write_json,
                                         PROJECTION_RECIPE, host_projection_inputs)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 from tools import guest_authoring_frontend, guest_compatibility_build, guest_resources
+
+DEFAULT_DIAGNOSTIC_BYTES = 16 * 1024 * 1024
+SOURCE_LISTING_DIAGNOSTIC_BYTES = DEFAULT_DIAGNOSTIC_BYTES + 2 * MAX_SOURCE_LISTING_BYTES
 
 BUILD_TYPE = "https://latent.dev/build/rust-capsule/v1"
 RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
@@ -263,7 +267,9 @@ class RustExecutableOutputs:
 
 class Commands:
     def __init__(self, root: Path, output: Path, environment: dict[str, str], *,
-                 deadline_seconds=900, command_seconds=600):
+                 deadline_seconds=900, command_seconds=600, max_retained_bytes=DEFAULT_DIAGNOSTIC_BYTES):
+        if (type(max_retained_bytes) is not int or not 0 < max_retained_bytes <= SOURCE_LISTING_DIAGNOSTIC_BYTES):
+            raise ValueError("finite diagnostic retention limit required")
         if (type(deadline_seconds) is not int or type(command_seconds) is not int
                 or not 1 <= command_seconds <= min(deadline_seconds, 1800)
                 or not 1 <= deadline_seconds <= 7200):
@@ -273,17 +279,20 @@ class Commands:
         self.command_seconds = command_seconds
         self.records = []
         self.retained = 0
+        self.max_retained_bytes = max_retained_bytes
         (output / "logs").mkdir()
 
-    def run(self, stage: str, *command: str) -> bytes:
+    def run(self, stage: str, *command: str, max_output_bytes=4 * 1024 * 1024) -> bytes:
+        if type(max_output_bytes) is not int or not 0 < max_output_bytes <= MAX_SOURCE_LISTING_BYTES:
+            raise ValueError("invalid standalone command output limit")
         timeout = min(self.command_seconds, self.deadline - time.monotonic())
         if timeout <= 0:
             raise ValueError("standalone build deadline exceeded")
         start = time.monotonic()
         result = run_bounded_result([str(part) for part in command], cwd=self.root, env=self.environment,
-                                    timeout_seconds=timeout, max_output_bytes=4 * 1024 * 1024)
+                                    timeout_seconds=timeout, max_output_bytes=max_output_bytes)
         self.retained += len(result.stdout) + len(result.stderr)
-        if self.retained > 16 * 1024 * 1024:
+        if self.retained > self.max_retained_bytes:
             raise ValueError("standalone diagnostic retention limit exceeded")
         ordinal = len(self.records)
         for stream in ("stdout", "stderr"):

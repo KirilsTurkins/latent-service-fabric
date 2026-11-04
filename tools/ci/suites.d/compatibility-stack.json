@@ -3,9 +3,6 @@
   "suites": [
     {
       "boundary": "runtime",
-      "expectedCases": [
-        "compatibility_stack::actual_stack_overflow_keeps_original_typed_fact_and_new_store_fresh_result"
-      ],
       "expectedIgnored": [
         "compatibility_stack::actual_stack_overflow_keeps_original_typed_fact_and_new_store_fresh_result"
       ],
@@ -15,7 +12,6 @@
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 1,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

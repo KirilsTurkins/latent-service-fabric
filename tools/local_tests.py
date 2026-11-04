@@ -39,7 +39,7 @@ REPORT_KEYS = {
 REPRODUCTION_KEYS = {
     "suite", "cases", "recipe", "mode", "web", "observed", "fixtureOnly",
     "preflight", "fault", "source", "fixtures", "recipeIdentity",
-    "caseSelection", "caseSetDigest", "requiredCaseCount",
+    "caseSelection", "caseSetDigest", "requiredCaseCount", "requestMode",
 }
 
 
@@ -117,13 +117,14 @@ def _selected_cases(row: dict, selection: dict | None, case: str | None) -> tupl
         if case is not None and case not in available:
             raise LocalTestError("exact case is not registered by this custom harness")
         return ([case] if case is not None else available), []
-    available = list(row.get("expectedCases", []))
     ignored_all = set(row.get("expectedIgnored", []))
     if case is not None:
-        if case not in available:
-            raise LocalTestError("exact case is not registered by this suite; substring filters are not accepted")
+        if re.fullmatch(r"[A-Za-z0-9_:.-]{1,256}", case) is None:
+            raise LocalTestError("exact case name is invalid")
         return [case], [case] if case in ignored_all else []
-    return [name for name in available if name not in ignored_all], []
+    # Offline plans cannot know ordinary executable cases. Discovery is owned
+    # by the prepared executable inside the supervised run.
+    return [], []
 
 
 
@@ -155,7 +156,8 @@ def _fixtures_for(repo: Path, plan: dict) -> dict[str, dict]:
     data = _data(repo)
     owner = (data["processContracts"]["angular-renderer"] if plan["suite"] == ANGULAR_PROCESS
              else _rows(data)[plan["ownerSuite"]])
-    return registry.fixture_recipes(data, owner, plan["cases"])
+    cases = (list(owner.get("caseFixtures", {})) if plan.get("discoveryDeferred") else plan["cases"])
+    return registry.fixture_recipes(data, owner, cases)
 
 
 def _fixture_environment(repo: Path, plan: dict) -> dict[str, str]:
@@ -305,7 +307,8 @@ def plan_suite(repo: Path, key: str, case: str | None = None,
     recipe = data["recipes"].get(row["recipe"])
     if not isinstance(recipe, dict):
         raise LocalTestError("registered suite recipe is unavailable")
-    fixtures = registry.fixture_recipes(data, row, cases)
+    deferred = selection is None and row["mode"] == "libtest" and case is None
+    fixtures = registry.fixture_recipes(data, row, list(row.get("caseFixtures", {})) if deferred else cases)
     runner = selection["runner"] if selection is not None else (
         "ci-suite-discovery" if row["mode"] != "custom" else "custom-owner")
     run_supported = row["mode"] == "libtest"
@@ -314,8 +317,8 @@ def plan_suite(repo: Path, key: str, case: str | None = None,
         run_supported, blocker = False, "compile-only suite has no executable correctness cases"
     elif row["mode"] == "custom":
         run_supported, blocker = False, "custom harness keeps its registered owner; no libtest fallback is permitted"
-    elif not cases:
-        run_supported, blocker = False, "all registered cases are opt-in; choose one exact --case or a registered selection"
+    elif not cases and not deferred:
+        run_supported, blocker = False, "selection has no executable cases"
     elif selection is not None and (runner != "ci_rust_artifacts" or selection.get("executionOnly") is not True):
         run_supported = False
         blocker = f"selection execution remains owned by {runner}; its fixture/service preparation is not an execution-only local contract"
@@ -366,7 +369,8 @@ def plan_suite(repo: Path, key: str, case: str | None = None,
             "command": prepare_command,
         },
         "runner": runner, "mode": row["mode"], "runSupported": run_supported, "blocker": blocker,
-        "cases": cases, "selectedIgnoredCases": selected_ignored, "requiredCaseCount": len(cases),
+        "cases": cases, "selectedIgnoredCases": selected_ignored,
+        "requiredCaseCount": None if deferred else len(cases), "discoveryDeferred": deferred,
         "case": case, "runCommand": run_command,
         "cleanup": "remove only the local inventory and generated fixture outputs you created; the maintained runner owns its test children",
         "timeoutSeconds": selection["timeoutSeconds"] if selection else row["timeoutSeconds"],
@@ -395,7 +399,7 @@ def _bridge(run: TestRun):
     return execute
 
 
-def _generic_prepared(repo: Path, plan: dict, inventory: Path, run: TestRun | None = None):
+def _generic_prepared(repo: Path, plan: dict, inventory: Path, run: TestRun | None = None, *, declare: bool = True):
     _, row, selection, _ = _resolve(repo, plan["suite"])
     group = discovery.Group(row["id"], row["manifest"], row["target"], row["kind"], row["source"])
     try:
@@ -436,9 +440,24 @@ def _generic_prepared(repo: Path, plan: dict, inventory: Path, run: TestRun | No
         discovery.validate_cases(row, available, ignored, _data(repo)["selections"])
     except (ValueError, artifacts.ArtifactError) as error:
         raise ProcessFailure("invalid-fixture", "prepared-suite-discovery-changed") from error
-    expected = set(plan["cases"])
-    if not expected <= available or expected & ignored != set(plan["selectedIgnoredCases"]):
-        raise ProcessFailure("invalid-fixture", "prepared-suite-selection-changed")
+    if plan.get("discoveryDeferred"):
+        active = sorted(available - ignored)
+        if not active:
+            raise ProcessFailure("invalid-fixture", "empty-active-suite")
+        expected_reproduction = plan.get("reproductionCases")
+        if expected_reproduction is not None and (
+                case_digest(active) != expected_reproduction["digest"]
+                or len(active) != expected_reproduction["count"]
+                or expected_reproduction["names"] is not None and active != expected_reproduction["names"]):
+            raise ProcessFailure("invalid-fixture", "prepared-suite-selection-changed")
+        plan["cases"] = active
+        plan["requiredCaseCount"] = len(active)
+        if declare:
+            run.declare_cases(active)
+    else:
+        expected = set(plan["cases"])
+        if not expected <= available or expected & ignored != set(plan["selectedIgnoredCases"]):
+            raise ProcessFailure("invalid-fixture", "prepared-suite-selection-changed")
     return row, selection, prepared, environment, available, ignored
 
 
@@ -499,6 +518,19 @@ def validate_prepared(repo: Path, plan: dict, inventory: Path) -> None:
         raise LocalTestError(f"{error}; prepare with: {hint}") from None
 
 
+def _check_discovery(repo: Path, plan: dict, inventory: Path) -> None:
+    """Resolve prepared libtest names under an owned, build-free process."""
+    if plan["suite"] == ANGULAR_PROCESS or plan["mode"] != "libtest":
+        return
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix="lsf-check-") as temporary:
+        run = TestRun(plan["suite"], {"timeoutSeconds": 90}, repo=repo,
+                      reproduction={"suite": plan["suite"], "preflight": True},
+                      diagnostic_root=Path(temporary))
+        with redirect_stdout(io.StringIO()), run:
+            _generic_prepared(repo, dict(plan), inventory, run, declare=False)
+
+
 def prerequisite_check(repo: Path, plan: dict, inventory: Path | None) -> dict:
     problems: list[str] = []
     if _platform() not in plan["platforms"]:
@@ -517,7 +549,9 @@ def prerequisite_check(repo: Path, plan: dict, inventory: Path | None) -> dict:
     else:
         try:
             validate_prepared(repo, plan, inventory)
-        except LocalTestError as error:
+            if not problems:
+                _check_discovery(repo, plan, inventory)
+        except (LocalTestError, ProcessFailure) as error:
             problems.append(str(error))
     preparation_tools = {plan["preparation"]["buildCommand"][0]} if plan["preparation"]["buildCommand"] else set()
     for recipe in _fixtures_for(repo, plan).values():
@@ -528,7 +562,7 @@ def prerequisite_check(repo: Path, plan: dict, inventory: Path | None) -> dict:
         "missingPreparationTools": sorted(tool for tool in preparation_tools if shutil.which(tool) is None),
         "prepareCommand": plan["preparation"]["command"], "runSupported": plan["runSupported"],
         "blocker": plan["blocker"],
-        "validation": "read-only artifact checks; exact harness discovery occurs inside the owned run",
+        "validation": "read-only artifact checks and owned prepared-harness discovery; no compilation",
     }
 
 
@@ -597,7 +631,12 @@ def prepare(repo: Path, plan: dict, inventory: Path) -> dict:
         raise LocalTestError(f"unsupported platform {_platform()}")
     if not plan["runSupported"]:
         raise LocalTestError(plan["blocker"] or "selection has no maintained execution-only owner")
-    return _prepare_registered(repo, plan, inventory)
+    result = _prepare_registered(repo, plan, inventory)
+    try:
+        _check_discovery(repo, plan, inventory)
+    except ProcessFailure as error:
+        raise LocalTestError(f"prepared harness discovery failed: {error.reason}", 1, "failed") from None
+    return result
 
 
 def _execute_selection(run: TestRun, repo: Path, plan: dict, inventory: Path, name: str) -> None:
@@ -816,7 +855,8 @@ def execute(repo: Path, plan: dict, inventory: Path, fault: str | None = None) -
         raise LocalTestError("--fault is supported only by process.angular-renderer")
     validate_prepared(repo, plan, inventory)
     reproduction = {"suite": plan["suite"], "recipe": plan["recipe"],
-                    "recipeIdentity": plan["recipeIdentity"], "mode": plan["mode"]}
+                    "recipeIdentity": plan["recipeIdentity"], "mode": plan["mode"],
+                    "requestMode": "exact" if plan.get("case") is not None else "suite"}
     if fault:
         reproduction["fault"] = fault
     run = TestRun(plan["suite"], {"timeoutSeconds": plan["timeoutSeconds"] + 30},
@@ -826,7 +866,8 @@ def execute(repo: Path, plan: dict, inventory: Path, fault: str | None = None) -
     try:
         with redirect_stdout(captured):
             with run:
-                run.declare_cases(plan["cases"])
+                if not plan.get("discoveryDeferred"):
+                    run.declare_cases(plan["cases"])
                 run.source_identity()
                 run.artifact("test-manifest", inventory, artifacts.MAX_INVENTORY_BYTES)
                 run.fixture_ids.update(_fixture_identities(repo, plan))
@@ -890,6 +931,8 @@ def read_failure(path: Path) -> dict:
     for field in ("recipe", "mode"):
         if not isinstance(reproduction.get(field), str):
             raise LocalTestError("failure record lacks an exact suite/case/recipe selection")
+    if "requestMode" in reproduction and reproduction["requestMode"] not in {"exact", "suite"}:
+        raise LocalTestError("failure record request mode is invalid")
     cases = reproduction.get("cases")
     if cases is not None:
         if (not isinstance(cases, list) or not 1 <= len(cases) <= 128
@@ -997,14 +1040,22 @@ def reproduce(repo: Path, report: Path, inventory: Path, allow_changed: bool) ->
     angular = reproduction["suite"] in {"angular-renderer", ANGULAR_PROCESS}
     key = ANGULAR_PROCESS if angular else reproduction["suite"]
     cases = reproduction.get("cases")
-    case = cases[0] if cases is not None and len(cases) == 1 and not angular else None
+    mode = reproduction.get("requestMode")
+    case = (cases[0] if cases is not None and len(cases) == 1 and not angular
+            and mode != "suite" else None)
+    if mode == "exact" and case is None:
+        raise LocalTestError("failure record exact request is missing")
     plan = plan_suite(repo, key, case, inventory=inventory)
     if (not plan["runSupported"] or reproduction["recipe"] != plan["recipe"]
             or reproduction["mode"] != plan["mode"]
-            or reproduction["recipeIdentity"] != plan["recipeIdentity"]
-            or reproduction["caseSetDigest"] != case_digest(plan["cases"])
-            or reproduction["requiredCaseCount"] != len(plan["cases"])
-            or cases is not None and cases != plan["cases"]):
+            or reproduction["recipeIdentity"] != plan["recipeIdentity"]):
+        raise LocalTestError("recorded suite/case/recipe no longer matches the registered contract")
+    if plan.get("discoveryDeferred"):
+        plan["reproductionCases"] = {"digest": reproduction["caseSetDigest"],
+                                     "count": reproduction["requiredCaseCount"], "names": cases}
+    elif (reproduction["caseSetDigest"] != case_digest(plan["cases"])
+          or reproduction["requiredCaseCount"] != len(plan["cases"])
+          or cases is not None and cases != plan["cases"]):
         raise LocalTestError("recorded suite/case/recipe no longer matches the registered contract")
     # Reject a changed checkout before running even --list from a prepared binary.
     exact = _source_match(repo, reproduction, allow_changed)
@@ -1083,6 +1134,12 @@ def parser() -> argparse.ArgumentParser:
     group.add_argument("--head", default="HEAD")
     group.add_argument("--worktree", action="store_true")
     preview.add_argument("--output", choices=("human", "json"), default="human")
+    python = commands.add_parser("python", allow_abbrev=False)
+    python.add_argument("--base", default="HEAD")
+    python.add_argument("--module")
+    python.add_argument("--case")
+    python.add_argument("--receipt", type=Path)
+    python.add_argument("--output", choices=("human", "json", "summary"), default="human")
     doctor = commands.add_parser("doctor", allow_abbrev=False)
     doctor.add_argument("--scope", choices=("all", "python", "go", "typescript", "java", "dotnet", "c"), required=True)
     doctor.add_argument("--output", choices=("human", "json"), default="human")
@@ -1099,6 +1156,22 @@ def emit(value: object, output: str) -> None:
 def main(argv: list[str] | None = None, *, repo: Path = REPO) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "python":
+            from tools.ci_python_policy import execute_python
+            from tools.ci_profile import ProfileError
+            try:
+                receipt = execute_python(repo, args.base, module=args.module, case=args.case)
+            except ProfileError as error:
+                raise LocalTestError("Python policy source history is unavailable", 3) from error
+            if args.receipt is not None:
+                from tools.ci_python_policy import write_execution_receipt
+                write_execution_receipt(repo, args.receipt, receipt)
+            if args.output == 'summary':
+                emit({key: len(receipt[key]) for key in ('discovered', 'executed', 'skipped', 'failed')} |
+                     {'errors': receipt['errors']}, 'json')
+            else:
+                emit(receipt, args.output)
+            return 1 if receipt['errors'] else 0
         if args.command in {"preview", "doctor"}:
             return delegate(repo, args.command, args)
         if args.command == "list":

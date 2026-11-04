@@ -1,7 +1,0 @@
-{
-  "schemaVersion": "latent.ci.suite-case-fragment.v1",
-  "suiteId": "latent-wire.lib.latent-wire",
-  "expectedCases": [
-    "phase4::state_management::tests::floor::audited_floor_release_allows_explicit_destroy_and_incarnation_recreation"
-  ]
-}

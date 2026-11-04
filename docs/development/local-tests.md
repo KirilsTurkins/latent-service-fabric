@@ -18,15 +18,17 @@ python3 tools/test.py plan --suite process.angular-renderer
 `list`, `explain` and `plan` read repository definitions and file presence only.
 They never compile, invoke test discovery, query a service or contact the network.
 The plan includes purpose, platforms, prerequisites, recipe and fixture commands,
-exact cases, resource class, preparation state and execution support. “Present”
+declared selections or requested names, resource class, preparation state and
+execution support. Ordinary whole-suite case names and counts remain unknown until
+the prepared executable is discovered. “Present”
 means files exist, not that they passed validation. Cost classes are qualitative,
 not timing guarantees. Local and CI contexts resolve to identical recipes, cases,
 fixtures and runner ownership.
 
 `check` validates successful Cargo stream completion, selected owner/source paths,
-features/profile, generated fixture identities and required tool presence without
-executing a test binary. Full registered discovery happens inside `run`, before
-the selected cases execute. Scoped version diagnostics remain the responsibility
+features/profile, generated fixture identities and required tool presence, then
+runs owned, build-free harness discovery to resolve exact requests. `prepare` and
+`run` likewise resolve the prepared executable before accepting a selection. Scoped version diagnostics remain the responsibility
 of `doctor`, not an implicit all-SDK probe.
 
 ## Small Rust logic
@@ -172,3 +174,22 @@ Changed-file preview remains owned by #339, and scoped toolchain diagnostics by
 `not-run` prerequisite. No competing classifier, silent software installation or
 all-SDK fallback is introduced. Offline planning and documentation/CI drift checks
 live in `tools/tests/test_local_tests.py`.
+
+## Python discovery
+
+Run all discoverable Python test modules, one module, or one exact test using the
+same local entry point:
+
+```sh
+python3 tools/test.py python --base HEAD --receipt target/ci/python-local.json
+python3 tools/test.py python --base HEAD --module tools.tests.test_ci_result
+python3 tools/test.py python --base HEAD --module tools.tests.test_ci_result --case ResultTests.test_missing_jobs_and_outputs_cannot_be_success
+```
+
+`--base` identifies the available comparison commit for suppression controls;
+use the development base commit to review committed branch changes. `HEAD`
+checks only changes in the working tree. CI uses the event base. The runner records actual discovery and outcomes with
+the checked-out commit and tracked-change identity. It fails on missing or
+duplicate tests, failures, unexpected skips or expected failures. Existing
+platform skips must have a matching baseline declaration. Generated receipts
+under `target/ci/` are observations and do not approve source changes.

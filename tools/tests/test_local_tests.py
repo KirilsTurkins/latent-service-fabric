@@ -43,8 +43,9 @@ class PlanningTests(unittest.TestCase):
         row = next(item for item in data["suites"] if item["id"] == CORE)
         self.assertEqual(plan["recipe"], row["recipe"])
         self.assertEqual(plan["recipeDefinition"], data["recipes"][row["recipe"]])
-        self.assertEqual(plan["cases"], row["expectedCases"])
-        self.assertEqual(plan["requiredCaseCount"], len(row["expectedCases"]))
+        self.assertEqual(plan["cases"], [])
+        self.assertIsNone(plan["requiredCaseCount"])
+        self.assertTrue(plan["discoveryDeferred"])
         self.assertEqual(plan["prerequisites"], row["prerequisites"])
 
     def test_exact_host_case_never_becomes_a_substring_filter(self) -> None:
@@ -53,13 +54,41 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(plan["cases"], [case])
         self.assertEqual(plan["case"], case)
         self.assertTrue(plan["runSupported"])
-        with self.assertRaisesRegex(local.LocalTestError, "exact case"):
-            local.plan_suite(ROOT, CORE, "digest::tests")
+        unresolved = local.plan_suite(ROOT, CORE, "digest::tests")
+        self.assertEqual(unresolved["cases"], ["digest::tests"])
+        self.assertEqual(unresolved["case"], "digest::tests")
+
+    def test_prepared_discovery_supplies_new_cases_and_rejects_missing_exact_request(self) -> None:
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            executable = root / "test-bin"
+            executable.write_text("fixture")
+            prepared = SimpleNamespace(executable=executable, package=root)
+            inventory = root / "inventory"
+            inventory.write_text("fixture")
+            run = Mock()
+            run.root = root
+            run.execution_environment.side_effect = lambda env: env
+            run.command.side_effect = lambda args, **kwargs: SimpleNamespace(
+                returncode=0, output=(b"0 tests, 0 benchmarks\n" if "--ignored" in args
+                                      else b"ordinary::old: test\nordinary::new: test\n2 tests, 0 benchmarks\n"))
+            with patch.object(local.security, "read_inventory", return_value={CORE: prepared}), \
+                    patch.object(local.artifacts, "validate_recipe"), \
+                    patch.object(local.artifacts, "cargo_environment", side_effect=lambda repo, item, env, **kw: env), \
+                    patch.object(local.os, "access", return_value=True):
+                plan = local.plan_suite(ROOT, CORE)
+                local._generic_prepared(ROOT, plan, inventory, run)
+                self.assertEqual(plan["cases"], ["ordinary::new", "ordinary::old"])
+                run.declare_cases.assert_called_once_with(plan["cases"])
+                missing = local.plan_suite(ROOT, CORE, "ordinary::missing")
+                with self.assertRaisesRegex(local.ProcessFailure, "prepared-suite-selection-changed"):
+                    local._generic_prepared(ROOT, missing, inventory, run)
 
     def test_ignored_runtime_suite_requires_an_exact_case(self) -> None:
         broad = local.plan_suite(ROOT, ECHO)
-        self.assertFalse(broad["runSupported"])
-        self.assertIn("opt-in", broad["blocker"])
+        self.assertTrue(broad["discoveryDeferred"])
+        self.assertEqual(broad["cases"], [])
         case = "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary"
         exact = local.plan_suite(ROOT, ECHO, case)
         self.assertTrue(exact["runSupported"])
@@ -129,9 +158,11 @@ class CommandTests(unittest.TestCase):
             plan = local.plan_suite(ROOT, CORE, inventory=inventory)
             with patch.object(local, "_validate_generic_inventory"), \
                     patch.object(local, "validate_prepared") as validate, \
+                    patch.object(local, "_check_discovery") as discovery, \
                     patch.object(local, "run_bounded", side_effect=AssertionError("unexpected build")):
                 result = local.prepare(ROOT, plan, inventory)
             validate.assert_called_once_with(ROOT, plan, inventory)
+            discovery.assert_called_once_with(ROOT, plan, inventory)
             self.assertTrue(result["reused"])
 
     def test_prepare_uses_only_the_registered_build_recipe(self) -> None:
@@ -143,8 +174,10 @@ class CommandTests(unittest.TestCase):
             with patch.object(local.shutil, "which", return_value="/usr/bin/cargo"), \
                     patch.object(local, "run_bounded", return_value=completed) as run, \
                     patch.object(local, "_validate_generic_inventory"), \
-                    patch.object(local, "validate_prepared"):
+                    patch.object(local, "validate_prepared"), \
+                    patch.object(local, "_check_discovery") as discovery:
                 result = local.prepare(ROOT, plan, inventory)
+            discovery.assert_called_once_with(ROOT, plan, inventory)
             self.assertFalse(result["reused"])
             self.assertEqual(run.call_args.args[0], plan["recipeDefinition"]["build"])
             self.assertEqual(inventory.read_bytes(), completed.stdout)
@@ -410,6 +443,7 @@ class CompletionRegressionTests(unittest.TestCase):
                     patch.object(local, "_validate_fixture_recipe") as fixture_validation, \
                     patch.object(local, "_prepare_inventory", return_value=True) as prepared_inventory, \
                     patch.object(local, "validate_prepared") as prepared_validation, \
+                    patch.object(local, "_check_discovery") as checked_discovery, \
                     patch.object(local, "run_bounded", side_effect=AssertionError("unexpected preparation")):
                 result = local.prepare(ROOT, plan, inventory)
             self.assertTrue(result["reused"])
@@ -417,6 +451,7 @@ class CompletionRegressionTests(unittest.TestCase):
             self.assertEqual(fixture_validation.call_count, len(result["fixtureRecipes"]))
             prepared_inventory.assert_called_once()
             prepared_validation.assert_called_once_with(ROOT, plan, inventory)
+            checked_discovery.assert_called_once_with(ROOT, plan, inventory)
 
     def test_large_case_intent_is_bounded_but_never_truncated(self):
         cases = ["case_" + str(i) for i in range(300)]
@@ -563,8 +598,9 @@ class NativeEntrypointTests(unittest.TestCase):
         (repo / row["manifest"]).write_text("[package]\nname='latent-core'\nversion='0.0.0'\n[features]\ntest-support=[]\n")
         binary = repo / "target/debug/deps/synthetic"
         binary.parent.mkdir(parents=True)
+        names = ["ordinary::original", "ordinary::added"]
         code = (f"#!{sys.executable} -S\nimport os,sys,subprocess\n"
-                f"names={row['expectedCases']!r}\n"
+                f"names={names!r}\n"
                 'if "--list" in sys.argv:\n'
                 ' selected=[] if "--ignored" in sys.argv else names\n'
                 ' for name in selected: print(name+": test")\n'
@@ -585,7 +621,7 @@ class NativeEntrypointTests(unittest.TestCase):
             "target": {"kind": [row["kind"]], "name": row["target"], "src_path": str(package / row["source"])},
             "profile": {"test": True, "opt_level": "0"}, "features": ["test-support"], "executable": str(binary)}) + "\n" +
             '{"reason":"build-finished","success":true}\n')
-        return repo, inventory, row["expectedCases"][0]
+        return repo, inventory, names[0]
 
     def run_synthetic(self, directory, variables):
         import os
@@ -604,6 +640,91 @@ class NativeEntrypointTests(unittest.TestCase):
         self.assertEqual(record["requiredCaseCount"], 1)
         self.assertEqual(record["completedCaseCount"], 1)
         self.assertTrue(record["child"]["cleanupAcknowledged"])
+
+    def test_whole_suite_discovers_and_executes_an_added_ordinary_case(self):
+        import os
+        with tempfile.TemporaryDirectory() as directory:
+            repo, inventory, _ = self.fixture(directory)
+            def source(run):
+                run.source = {"revision": "a" * 40, "dirty": False, "observed": True}
+            with patch.dict(os.environ, {"CARGO_TARGET_DIR": str(repo / "target")}), \
+                    patch.object(local.TestRun, "source_identity", source), \
+                    patch.object(local.artifacts, "cargo_environment", side_effect=lambda repo, art, env, **kw: dict(env)):
+                code, record = invoke(["run", "--suite", CORE, "--inventory", str(inventory)], repo)
+            self.assertEqual(code, 0)
+            self.assertEqual(record["requiredCaseCount"], 2)
+            self.assertEqual(record["completedCaseCount"], 2)
+            self.assertEqual(record["reproduction"]["cases"], ["ordinary::added", "ordinary::original"])
+
+    def test_real_rust_independent_additions_merge_and_run_through_local_owner(self):
+        import os
+        import subprocess
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            def command(*args):
+                return subprocess.check_output(args, cwd=repo, stderr=subprocess.STDOUT, text=True).strip()
+            command("git", "init", "-q")
+            command("git", "config", "user.name", "Fixture")
+            command("git", "config", "user.email", "fixture@example.invalid")
+            (repo / ".gitignore").write_text("/target/\n")
+            (repo / "Cargo.toml").write_text('[workspace]\nmembers=["crates/latent-core"]\nresolver="2"\n')
+            package = repo / "crates/latent-core"
+            source = package / "src"
+            source.mkdir(parents=True)
+            (package / "Cargo.toml").write_text('[package]\nname="latent-core"\nversion="0.0.0"\nedition="2021"\n[features]\ntest-support=[]\n')
+            (source / "lib.rs").write_text('#[cfg(test)] mod first;\n#[cfg(test)] mod second;\n')
+            (source / "first.rs").write_text('#[test] fn initial_first() { assert_eq!(1, 1); }\n')
+            (source / "second.rs").write_text('#[test] fn initial_second() { assert_eq!(2, 2); }\n')
+            catalog = repo / "tools/ci/suites.json"
+            catalog.parent.mkdir(parents=True)
+            catalog.write_text(json.dumps(registry.load()))
+            command("cargo", "generate-lockfile", "--offline")
+            command("git", "add", ".")
+            command("git", "commit", "-qm", "baseline")
+            base = command("git", "rev-parse", "HEAD")
+            command("git", "checkout", "-qb", "first")
+            with (source / "first.rs").open("a") as output:
+                output.write('#[test] fn added_first() { assert_eq!(3, 3); }\n')
+            command("git", "commit", "-qam", "first addition")
+            command("git", "checkout", "-qb", "second", base)
+            with (source / "second.rs").open("a") as output:
+                output.write('#[test] fn added_second() { assert_eq!(4, 4); }\n')
+            command("git", "commit", "-qam", "second addition")
+            command("git", "merge", "--no-edit", "first")
+            target = repo / "target"
+            target.mkdir()
+            inventory = target / "test.jsonl"
+            env = dict(os.environ, CARGO_TARGET_DIR=str(target), CARGO_NET_OFFLINE="true")
+            built = subprocess.run(["cargo", "test", "-p", "latent-core", "--lib", "--all-features", "--locked",
+                                    "--no-run", "--message-format=json,json-render-diagnostics"],
+                                   cwd=repo, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            inventory.write_bytes(built.stdout)
+            with patch.dict(os.environ, {"CARGO_TARGET_DIR": str(target), "CARGO_NET_OFFLINE": "true"}):
+                prepared, prep = invoke(["prepare", "--suite", CORE, "--inventory", str(inventory)], repo)
+                checked, status = invoke(["check", "--suite", CORE, "--inventory", str(inventory)], repo)
+                code, record = invoke(["run", "--suite", CORE, "--inventory", str(inventory)], repo)
+            self.assertEqual(prepared, 0, prep)
+            self.assertTrue(prep["reused"])
+            self.assertEqual(checked, 0, status)
+            self.assertEqual(code, 0, record)
+            self.assertEqual(record["requiredCaseCount"], 4)
+            self.assertEqual(record["completedCaseCount"], 4)
+            self.assertIn("first::added_first", record["reproduction"]["cases"])
+            self.assertIn("second::added_second", record["reproduction"]["cases"])
+            # Exercise the same Cargo-output reconciliation used by workspace CI.
+            from tools import ci_suite_discovery
+            catalog_data = registry.load()
+            catalog_data["suites"] = [row for row in catalog_data["suites"] if row["id"] == CORE]
+            catalog_data["selections"] = {}
+            with patch.dict(os.environ, {"GITHUB_SHA": command("git", "rev-parse", "HEAD"),
+                                         "CARGO_TARGET_DIR": str(target)}):
+                discovered = ci_suite_discovery.discover(repo, inventory, catalog_data)
+            ran = subprocess.run(["cargo", "test", "-p", "latent-core", "--lib", "--all-features", "--locked",
+                                  "--", "--test-threads=1"], cwd=repo, env=env, stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT, check=True, text=True)
+            report, errors = ci_suite_discovery.workspace_execution(discovered, ran.stdout)
+            self.assertEqual(errors, [])
+            self.assertEqual(len(report["suites"][0]["executed"]), 4)
 
     def test_actual_nonzero_and_empty_execution_are_not_success_or_retried(self):
         for variables, expected in (({"SYNTHETIC_EXIT": "101"}, 101), ({"SYNTHETIC_EMPTY": "1"}, 1)):
@@ -668,7 +789,8 @@ class ReviewRegressionTests(unittest.TestCase):
                         patch.object(local, "run_bounded", side_effect=build), \
                         patch.object(local, "_fixtures_for", return_value={}), \
                         patch.object(local, "_validate_generic_inventory"), \
-                        patch.object(local, "validate_prepared"):
+                        patch.object(local, "validate_prepared"), \
+                        patch.object(local, "_check_discovery") as discovery:
                     observed = []
                     for body in ("true", "false"):
                         source.write_text(f"#[test] fn unchanged_name() {{ assert!({body}); }}\n")
@@ -680,6 +802,7 @@ class ReviewRegressionTests(unittest.TestCase):
                 self.assertEqual(observed, [(False, 0, b"OLD_TEST_BODY_PASSED\n"),
                                             (False, 101, b"NEW_TEST_BODY_FAILED\n")])
                 self.assertEqual(len(builds), 2)
+                self.assertEqual(discovery.call_count, 2)
                 self.assertIn("assert!(false)", builds[1])
 
 

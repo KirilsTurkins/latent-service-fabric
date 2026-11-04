@@ -25,7 +25,7 @@ def document():
 
 def encoded(value):
     return (f'test {gate.CASE} ... ok\n\nTYPESCRIPT_RETIREMENT '+json.dumps(value)+
-            f'\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; {gate.registry_filtered()} filtered out; finished in 0.01s\n').encode()
+            f'\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; {3} filtered out; finished in 0.01s\n').encode()
 
 
 class RetirementQualification(unittest.TestCase):
@@ -35,7 +35,7 @@ class RetirementQualification(unittest.TestCase):
 
     def test_one_complete_ordered_packet_retains_pending_and_physical_idle_separately(self):
         value = document()
-        self.assertEqual(gate.observation(encoded(value)), value)
+        self.assertEqual(gate.observation(encoded(value), 3), value)
         self.assertEqual(sum('pending' in row for row in value['cases']), 3)
         self.assertEqual(len(value['cases']), 10)
 
@@ -43,7 +43,7 @@ class RetirementQualification(unittest.TestCase):
         value = document()
         for changed in (value['cases'][:-1], [value['cases'][0], *value['cases'][:-1]], list(reversed(value['cases']))):
             selected = copy.deepcopy(value); selected['cases'] = changed
-            with self.subTest(count=len(changed)), self.assertRaises(RuntimeError): gate.observation(encoded(selected))
+            with self.subTest(count=len(changed)), self.assertRaises(RuntimeError): gate.observation(encoded(selected), 3)
         for raw in (encoded(value).replace(b'1 passed', b'0 passed'),
                     encoded(value).replace(b'0 ignored', b'1 ignored'),
                     encoded(value)+b'TYPESCRIPT_RETIREMENT {}\n',
@@ -52,27 +52,27 @@ class RetirementQualification(unittest.TestCase):
                     encoded(value)+f'test {gate.CASE} ... ok\n'.encode(),
                     encoded(value)+b'test another ... ok\n',
                     encoded(value).replace(b'0 measured', b'1 measured'),
-                    encoded(value).replace(f'{gate.registry_filtered()} filtered'.encode(), b'999 filtered'),
+                    encoded(value).replace(f'{3} filtered'.encode(), b'999 filtered'),
                     encoded(value)+b'test result: ok. 0 passed; 0 failed; 0 ignored;\n'):
-            with self.subTest(output=raw[:50]), self.assertRaises(RuntimeError): gate.observation(raw)
+            with self.subTest(output=raw[:50]), self.assertRaises(RuntimeError): gate.observation(raw, 3)
 
     def test_unretired_boolean_or_unavailable_owner_and_unobserved_pending_are_refused(self):
         for key, amount in (('stores', 1), ('readWaits', False), ('calls', None)):
             value = document(); value['cases'][0]['idle'][key] = amount
             with self.subTest(owner=key), self.assertRaisesRegex(RuntimeError, 'original-owners-idle'):
-                gate.observation(encoded(value))
+                gate.observation(encoded(value), 3)
         for index in (2, 4, 6):
             value = document(); value['cases'][index]['pending']['readWaits'] = 0
             with self.subTest(index=index), self.assertRaisesRegex(RuntimeError, 'real-pending-owners'):
-                gate.observation(encoded(value))
+                gate.observation(encoded(value), 3)
 
     def test_result_or_callback_cause_claim_cannot_replace_exact_observed_semantics(self):
         for key, changed in (('decoded', [41]), ('cpuFuel', 0), ('peakMemoryBytes', True)):
             value = document(); value['cases'][0][key] = changed
             with self.subTest(field=key), self.assertRaisesRegex(RuntimeError, 'real-success'):
-                gate.observation(encoded(value))
+                gate.observation(encoded(value), 3)
         value = document(); value['cases'][8]['callbackOriginProven'] = True
-        with self.assertRaisesRegex(RuntimeError, 'no-callback-cause-inference'): gate.observation(encoded(value))
+        with self.assertRaisesRegex(RuntimeError, 'no-callback-cause-inference'): gate.observation(encoded(value), 3)
 
     def test_build_requires_actual_component_source_observation_and_assembled_package(self):
         with tempfile.TemporaryDirectory() as temporary:

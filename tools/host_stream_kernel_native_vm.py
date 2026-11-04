@@ -201,6 +201,14 @@ def serial_observation(raw):
 # Fresh, development-only q35 Node preparation image. No historical VM receipt
 # is accepted here, and no positive NodeFunding/retirement/IRQ issuer exists.
 NODE_BRANCH = 'feat/sdk-738-q35-node-boot-20261029'
+NODE_IDENTITY_BRANCH = 'feat/sdk-738-q35-pci-identity-20261104'
+NODE_PREFIX_BRANCH = 'feat/sdk-738-q35-node-pci-prefix-20261104'
+NODE_BRANCHES = (NODE_BRANCH, NODE_IDENTITY_BRANCH, NODE_PREFIX_BRANCH)
+PREFIX_ROOT = 'research/standard-outbound/linux-6.12-lineage/'
+PREFIX_BRIDGE = PREFIX_ROOT+'node-constructor-bridge/projector.py'
+PREFIX_PROJECTOR = PREFIX_ROOT+'node-pci-prefix/projector.py'
+PREFIX_MATERIAL = PREFIX_ROOT+'node-pci-prefix/factory-node-pci-prefix.c'
+PREFIX_PROFILE = 'lsf-q35-node-pci-prefix-v1'
 NODE_ROOT = 'research/standard-outbound/linux-6.12-lineage/node-boot/'
 NODE_PROJECTOR = NODE_ROOT+'projector.py'
 NODE_MATERIALS = ('factory-node-boot.c','Kconfig.fragment','Makefile.fragment')
@@ -216,6 +224,8 @@ NODE_BOOT = b'LSFNODEBOOT1 boot=original-node-preparation-only'
 NODE_END = b'LSFVM1 result=PASS stage=actual-node-preparation-and-retained-close'
 NODE_HELD = (b'LSFNODEBOOT1 prepared=1 descriptorClosed=1 originalEscrowRetained=1 '
     b'nodeFunding=0 nodeRetired=0 irqEnabled=0 tcpEnabled=0')
+NODE_PCI_OBSERVATION = (b'LSFQ35PCICONFIG1 bdf=0000:00:03.0 vendor=1af4 '
+    b'device=1041 unregistered=1')
 
 
 def node_capture(root):
@@ -260,6 +270,77 @@ def node_compose(values,build_files,captured):
     return result,receipt
 
 
+def node_prefix_capture(root):
+    import stat
+    result = {}
+    for name in (PREFIX_BRIDGE,PREFIX_PROJECTOR,PREFIX_MATERIAL):
+        path = root/name
+        require(stat.S_ISREG(path.lstat().st_mode) and not path.is_symlink(),'prefix-source-kind')
+        raw = read_file(path,4*1024**2)
+        raw.decode('utf8','strict')
+        require(b'\r' not in raw,'prefix-source-LF')
+        result[name] = raw
+    return result
+
+
+def node_prefix_compose(values,captured):
+    import importlib.abc
+    import importlib.util
+    from pathlib import Path
+    require(set(captured) == {PREFIX_BRIDGE,PREFIX_PROJECTOR,PREFIX_MATERIAL},'prefix-captured-set')
+    stages = []
+    for index,name in enumerate((PREFIX_BRIDGE,PREFIX_PROJECTOR)):
+        path = str((ROOT/name).resolve())
+        module_name = '_lsf_q35_prefix_'+str(index)
+        class Captured(importlib.abc.SourceLoader):
+            def get_filename(self,fullname):
+                require(fullname == module_name,'prefix-projector-name'); return path
+            def get_data(self,asked):
+                require(asked == path,'prefix-no-alternate-projector'); return captured[name]
+            def path_stats(self,asked):
+                raise OSError('prefix-no-bytecode')
+        spec = importlib.util.spec_from_file_location(module_name,path,loader=Captured())
+        require(spec is not None and spec.loader is not None,'prefix-projector-spec')
+        stage = importlib.util.module_from_spec(spec); spec.loader.exec_module(stage)
+        require(Path(stage.__file__).resolve() == Path(path),'prefix-projector-origin')
+        values,row = (stage.transform(values) if index == 0 else
+            stage.transform(values,captured[PREFIX_MATERIAL]))
+        require(row['originalBodiesInverseExact'] is True and
+            all(row[k] is False for k in ('nodeFundingQualified','nodeRetirementQualified',
+                'irqEnabled','tcpEnabled','consumerInstalled')),'prefix-projection-authority')
+        stages.append(row)
+    require(len(values) == 489,'prefix-derived-count')
+    return values,stages
+
+
+def node_prefix_serial(raw):
+    observed = node_serial(raw)
+    rows = [line for line in raw.splitlines() if b'LSFQ35PCIPREFIX1' in line]
+    acks = [line for line in raw.splitlines() if b'LSFNODEPREFIX1' in line]
+    expression = (rb'\[\s*[0-9]+\.[0-9]{6}\] LSFQ35PCIPREFIX1 '
+        rb'bdf=0000:00:03\.0 vendor=1af4 device=1041 born=1 returned=1 '
+        rb'registered=0 scopeRevoked=1 slot=([0-9]{1,3}) generation=([0-9]{1,20}) '
+        rb'live=([0-9]{1,3}),([0-9]{1,3}),([0-9]{1,3}) '
+        rb'cursor=([0-9]{1,6}),([0-9]{1,6}),([0-9]{1,6})')
+    require(len(rows) == 1 and len(acks) == 1 and
+        acks[0] == b'LSFNODEPREFIX1 childAck=1','prefix-one-kernel-marker-and-child-ack')
+    match = re.fullmatch(expression,rows[0])
+    require(match is not None,'prefix-kernel-marker-grammar')
+    slot,generation,before_live,peak_live,after_live,before_cursor,peak_cursor,after_cursor = map(int,match.groups())
+    require(1 <= slot < 256 and 0 < generation < 2**64-1 and
+        0 < before_live < peak_live <= 256 and peak_live == before_live+1 and after_live == before_live and
+        0 < before_cursor < peak_cursor <= 196608 and after_cursor == peak_cursor and
+        observed['accounting'][3] == before_cursor and observed['accounting'][5] == before_live,
+        'prefix-original-record-accounting')
+    require(raw.index(NODE_PCI_OBSERVATION) < raw.index(rows[0]) < raw.index(acks[0]) <
+        raw.index(b'LSFNODEBOOT1 facts=') < raw.index(NODE_HELD),'prefix-actual-observation-order')
+    observed['pciPrefix'] = {'bdf':'0000:00:03.0','vendor':'1af4','device':'1041',
+        'birthObserved':True,'returnObserved':True,'scopeRevoked':True,'registered':False,
+        'originalSlot':slot,'originalGeneration':generation,'live':[before_live,peak_live,after_live],
+        'cursor':[before_cursor,peak_cursor,after_cursor]}
+    return observed
+
+
 def node_supervisor(captured,original):
     raw = captured[NODE_INIT]
     anchor = b'#include "constructor-vm-init.c"\n'
@@ -275,6 +356,11 @@ def node_serial(raw):
     rows = [line for line in raw.splitlines() if line.startswith((b'LSFNODEBOOT1 ',b'LSFVM1 '))]
     require(len(rows) == 5 and rows[0] == NODE_BOOT and rows[-3:] ==
         [NODE_HELD,b'LSFNODEBOOT1 childExit=0',NODE_END], 'node-complete-actual-protocol')
+    pci_rows = [line for line in raw.splitlines() if b'LSFQ35PCICONFIG1' in line]
+    require(len(pci_rows) == 1 and re.fullmatch(
+        rb'\[\s*[0-9]+\.[0-9]{6}\] ' + re.escape(NODE_PCI_OBSERVATION), pci_rows[0]) and
+        raw.index(NODE_BOOT) < raw.index(pci_rows[0]) < raw.index(rows[1]),
+        'node-actual-selected-pci-config')
     pattern = rb'LSFNODEBOOT1 facts=\[([0-9, ]+)\] cpu=\[([0-9, ]+)\] accounting=\[([0-9, ]+)\] vectors=\[([0-9, ]+)\]'
     match = re.fullmatch(pattern,rows[1]); require(match is not None,'node-facts-grammar')
     groups = [[int(x) for x in re.fullmatch(rb'[0-9]{1,20}(?:, [0-9]{1,20})*',r)[0].split(b', ')]
@@ -286,6 +372,9 @@ def node_serial(raw):
         len(set(vectors)) == 8 and all(32 <= x < 256 for x in vectors),'node-actual-capacity')
     return {'raw':identity(raw),'nodeLayout':layout,'cpuGeometry':cpu,'accounting':accounting,
         'vectors':vectors,'descriptorClosed':True,'originalEscrowRetained':True,
+        'selectedPciConfig':{'bdf':'0000:00:03.0','vendor':'1af4','device':'1041',
+            'unregistered':True,'observedInGuest':True},
+        'pciConstructorQualified':False,'napiQualified':False,
         'nodeFunding':False,'nodeRetired':False,'irqEnabled':False,'tcpEnabled':False}
 
 
@@ -294,7 +383,7 @@ def node_boot_argv(qemu,kernel,initramfs,firmware):
     return (str(qemu),'-machine','pc-q35-11.1','-accel','kvm','-cpu','host',
         '-smp','1,maxcpus=1','-m',str(image.VM_MEMORY_MIB),'-nodefaults','-no-user-config',
         '-display','none','-serial','stdio','-monitor','none','-no-reboot','-nic','none',
-        '-device','virtio-net-pci,id=net0,mac=52:54:00:12:34:56,vectors=3,romfile=',
+        '-device','virtio-net-pci,id=net0,bus=pcie.0,addr=0x3,disable-legacy=on,mac=52:54:00:12:34:56,vectors=3,romfile=',
         '-L',str(firmware),'-bios',str(firmware/'bios-256k.bin'),'-kernel',str(kernel),
         '-initrd',str(initramfs),'-append','console=ttyS0 panic=1 rdinit=/init maxcpus=1 nr_cpus=1')
 

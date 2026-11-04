@@ -88,7 +88,7 @@ class RustProjectTests(unittest.TestCase):
             project.locked_dependencies("my-project")
 
         read_text = Path.read_text
-        checksum = "12300d040e8bea7e7ccde75b9919d27ebba47a217a64b09ba058ae8d3b4290b6"
+        checksum = "a2afcadb2e7d0417cb8f3f322c66eff49338b288f22290c0ca0bd3e9570732aa"
         self.assertEqual(original.count(checksum), 1)
         changed = original.replace(checksum, "0" * 64)
         with patch.object(Path, "read_text", lambda selected, *args, **kwargs:
@@ -97,7 +97,7 @@ class RustProjectTests(unittest.TestCase):
             project.locked_dependencies("my-project")
         authoritative = project.ROOT / "Cargo.lock"
         raw = authoritative.read_text()
-        local = 'name = "wasmtime"\nversion = "48.0.7"\n'
+        local = 'name = "wasmtime"\nversion = "48.0.8"\n'
         self.assertEqual(raw.count(local), 1)
         replaced = raw.replace(local, 'name = "wasmtime"\nversion = "48.0.6"\n')
         with patch.object(Path, "read_text", lambda selected, *args, **kwargs:
@@ -329,6 +329,15 @@ class RustProjectTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "deadline"):
                 commands.run("compile", "not-a-command")
             self.assertEqual(commands.records, [])
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            commands = build.Commands(root, root, dict(os.environ), max_retained_bytes=8)
+            for stage in ('first', 'second'):
+                self.assertEqual(commands.run(stage, sys.executable, '-c', "print('123',end='')", max_output_bytes=4), b'123')
+            with self.assertRaisesRegex(ValueError, 'diagnostic retention'):
+                commands.run('overflow', sys.executable, '-c', "print('123',end='')", max_output_bytes=4)
+        self.assertEqual(build.SOURCE_LISTING_DIAGNOSTIC_BYTES,
+                         build.DEFAULT_DIAGNOSTIC_BYTES + 2 * build.MAX_SOURCE_LISTING_BYTES)
 
 
 if __name__ == "__main__":

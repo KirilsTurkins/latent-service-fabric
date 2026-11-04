@@ -147,6 +147,53 @@ impl StreamProvider {
         })
     }
 
+    /// Qualification-only selected PCI birth/return on the same original
+    /// Node worker and descriptor. No funding or IRQ authority is returned.
+    #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
+    pub async fn prepare_kernel_node_pci_prefix_for_qualification(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        deadline: Instant,
+    ) -> Result<NodeCapacityQualification, StreamError> {
+        let profile = crate::kernel::native::node_bootstrap::qualification_pci_prefix_profile()?;
+        let provider = Self::install_with_modes(
+            Arc::clone(&pools),
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::Qualified,
+            crate::kernel::Mode::RetainUnproved,
+        )?;
+        let node = crate::kernel::native::node_bootstrap::start_pci_prefix(
+            pools,
+            &provider.inner.installed,
+            profile,
+            deadline,
+        )
+        .await?;
+        let prepared = node
+            .capacity_prepared()
+            .ok_or_else(|| error(StreamErrorCode::Unsupported))?;
+        let facts = NodeCapacityFacts {
+            node_layout: prepared.node_layout(),
+            cpu_geometry: prepared.cpu_geometry(),
+            accounting: prepared.accounting(),
+            vectors: prepared.vectors(),
+        };
+        if Instant::now() >= deadline {
+            return Err(error(StreamErrorCode::Timeout));
+        }
+        Ok(NodeCapacityQualification {
+            _node: node,
+            _provider: provider,
+            facts,
+        })
+    }
+
     /// Actual descriptor/constructor experiment for an isolated candidate image.
     /// It retains unproved kernel retirement and cannot enable normal install.
     #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]

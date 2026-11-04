@@ -24,9 +24,9 @@ class ClassificationTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         workflow = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
         source_paths = [Path("tools/ci_profile.py"), Path("tools/ci_result.py"),
-                        Path("tools/ci_suite_inventory.py"), Path("tools/ci_suite_cases.py"),
+                        Path("tools/ci_suite_inventory.py"),
                         Path("tools/ci/suites.json")]
-        for directory in ("tools/ci/suites.d", "tools/ci/suites.cases.d"):
+        for directory in ("tools/ci/suites.d",):
             fragments = sorted((root / directory).glob("*.json"))
             self.assertTrue(fragments, directory)
             source_paths.extend(path.relative_to(root) for path in fragments)
@@ -120,8 +120,7 @@ class ClassificationTests(unittest.TestCase):
                 checkout = next(step for step in model["jobs"][job]["steps"]
                                 if "sparse-checkout" in step.get("with", {}))
                 patterns = checkout["with"]["sparse-checkout"]
-                self.assertIn("/tools/ci_suite_cases.py", patterns.splitlines())
-                self.assertIn("/tools/ci/suites.cases.d/", patterns.splitlines())
+                self.assertIn("/tools/", patterns.splitlines())
                 sparse = Path(temporary) / "checkout"
                 sparse.mkdir()
                 def run(*arguments, input=None, status=0):
@@ -134,9 +133,9 @@ class ClassificationTests(unittest.TestCase):
                 # historical/promisor objects. This set is independent of the checkout
                 # patterns, so missing inputs cannot silently redefine the full catalogue.
                 sources = [root / "tools" / name for name in (
-                    "ci_profile.py", "ci_result.py", "ci_suite_inventory.py", "ci_suite_cases.py")]
+                    "ci_profile.py", "ci_result.py", "ci_suite_inventory.py")]
                 sources.append(root / "tools/ci/suites.json")
-                for suffix in (".d", ".cases.d"):
+                for suffix in (".d",):
                     sources.extend(sorted((root / "tools/ci/suites.json").with_suffix(suffix).glob("*.json")))
                 for source in sources:
                     destination = sparse / source.relative_to(root)
@@ -183,14 +182,15 @@ class ClassificationTests(unittest.TestCase):
                     self.assertIn("unexpected-job-result:docs:failure",
                                   run(sys.executable, "-I", "tools/ci_result.py", status=1))
 
-                # Both actual sparse-checkout jobs must reject missing loader/case
-                # inputs; a full-tree fallback would make these negative controls pass.
-                for omitted in ("/tools/ci_suite_cases.py", "/tools/ci/suites.cases.d/"):
-                    with self.subTest(omitted=omitted):
-                        incomplete = "\n".join(line for line in patterns.splitlines() if line != omitted) + "\n"
-                        run("git", "sparse-checkout", "set", "--no-cone", "--stdin", input=incomplete)
-                        self.assertFalse((sparse / omitted.strip("/")).exists())
+                # A missing loader or suite fragment must not match the full
+                # inventory, even though the checkout normally includes tools/.
+                fragment = next((sparse / "tools/ci/suites.d").glob("*.json"))
+                for missing in (sparse / "tools/ci_suite_inventory.py", fragment):
+                    with self.subTest(missing=missing.name):
+                        contents = missing.read_bytes()
+                        missing.unlink()
                         run(sys.executable, "-I", "-c", probe, status=1)
+                        missing.write_bytes(contents)
 
     def test_website_sources_use_only_the_site_and_documentation_jobs(self) -> None:
         for path in ("website/package-lock.json", "website/docusaurus.config.ts", "website/src/pages/index.tsx",

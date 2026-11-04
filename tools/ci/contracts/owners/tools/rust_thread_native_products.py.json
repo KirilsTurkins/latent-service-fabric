@@ -1,8 +1,0 @@
-{
-  "kind": "owner",
-  "path": "tools/rust_thread_native_products.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Select only the actual successful e3 200-control native producer and exact receipts; preserve previous original tuple and every cohort/control/command/source bound",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6751a38b44a6f5a24dbc2500b662054a7d382bbd76d9520b4a910a1f5fc5fcfd"
-}
