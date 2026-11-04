@@ -12,66 +12,52 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
-      - name: Inspect bounded authenticated retained evidence without executing it
+      - name: Inspect bounded authenticated failure records
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import hashlib, io, json, os, re, urllib.request, urllib.error, zipfile
-          api = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/'
+          import base64, hashlib, io, json, os, urllib.request, urllib.error, zipfile
+          api='https://api.github.com/repos/KirilsTurkins/latent-service-fabric/'
           class NoRedirect(urllib.request.HTTPRedirectHandler):
-              def redirect_request(self, req, fp, code, msg, headers, newurl):
-                  return None
-          opener = urllib.request.build_opener(NoRedirect)
-          def read(path, limit=2097152):
-              req = urllib.request.Request(api+path, headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'], 'Accept':'application/vnd.github+json'})
-              try:
-                  response = opener.open(req, timeout=30)
+              def redirect_request(self, req, fp, code, msg, headers, newurl): return None
+          opener=urllib.request.build_opener(NoRedirect)
+          def read(path,limit=2097152):
+              request=urllib.request.Request(api+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              try: response=opener.open(request,timeout=30)
               except urllib.error.HTTPError as error:
-                  if error.code != 302:
-                      raise
-                  location = error.headers['Location']
-                  assert location.startswith('https://')
-                  response = urllib.request.urlopen(location, timeout=90)
-              with response:
-                  raw = response.read(limit+1)
-              assert len(raw) <= limit, path
+                  if error.code != 302: raise
+                  assert error.headers['Location'].startswith('https://')
+                  response=urllib.request.urlopen(error.headers['Location'],timeout=90)
+              with response: raw=response.read(limit+1)
+              assert len(raw)<=limit,path
               return raw
-          specs = ((13132360193,5954062,'80662a5c726a949c037a3b7f57ffd35778786e1dcdc2b7db0b1b3e251193b5c2','dotnet'),(13128394251,47459,'3cc798622a8257f91a5f3cba0d33a2c102a5cbabed8c74a60435496eb26396e7','typescript'),(13130055422,106557782,'bea09db67efa2807cdfd858e0461ac6a5f598ca4d0f9f474c789782865ad8fb9','java'))
-          def brief(value, depth=0):
-              if depth > 5: return '<nested>'
-              if isinstance(value,dict):
-                  return {key:brief(val,depth+1) for key,val in value.items() if key not in ('materials','sources','sourceInputs','binaries','nativeInputs','inputs','inputsAfter','build','package','artifacts','identities','products')}
-              if isinstance(value,list): return [brief(v,depth+1) for v in value[-8:]]
-              if isinstance(value,str) and len(value)>1000: return value[:1000]+'<truncated>'
-              return value
-          for ident,size,digest,kind in specs:
-              raw = read(f'actions/artifacts/{ident}/zip',size)
-              assert len(raw)==size and hashlib.sha256(raw).hexdigest()==digest
-              with zipfile.ZipFile(io.BytesIO(raw)) as archive:
-                  names=archive.namelist()
-                  assert len(names)==len(set(names)) and len(names)<30000
-                  print('\nARCHIVE',kind,ident,len(names))
-                  for name in names:
-                      choose = (kind=='typescript' and ('log' in name or name.endswith('FAILED.json'))) or (kind=='dotnet' and 'dotnet-task-runtime/' in name and (name.endswith('FAILED.json') or name.endswith('/workflow.json') or name.endswith('/public-workflow.json'))) or (kind=='java' and 'composition' in name and (name.endswith('FAILED.json') or '244' in name or 'canary' in name))
-                      if not choose: continue
-                      member=archive.getinfo(name)
-                      if member.file_size>4194304: print('OVERSIZE',name,member.file_size);continue
-                      text=archive.read(name).decode('utf-8',errors='replace')
-                      print('MEMBER',name,member.file_size)
-                      if name.endswith('.json'):
-                          value=json.loads(text)
-                          print(json.dumps(brief(value),ensure_ascii=True)[:24000])
-                      else: print(text[-18000:])
-                  print('MATCHING_PATHS',json.dumps([n for n in names if (kind=='dotnet' and 'dotnet-task-runtime/' in n and 'component.wasm' not in n) or (kind=='java' and 'composition' in n) or kind=='typescript'])[:22000])
-          log=read('actions/jobs/125173684203/logs',8388608).decode('utf-8-sig')
-          print('\nAPT_ERRORS')
-          print('\n'.join(line[:1000] for line in log.splitlines() if any(t in line for t in ('E:', 'Err:', 'Unable', 'not found','404','snapshot','Snapshot'))) [-16000:])
-          for file in ('.github/workflows/go-guest-qualification.yml','.github/workflows/typescript-guest-qualification.yml'):
-              try:
-                  record=json.loads(read('contents/'+file+'?ref=460b2b969437b68b3f893afe36160afdb09cf85a'))
-                  import base64
-                  text=base64.b64decode(record['content']).decode()
-                  print('TIMEOUTS',file,[(i+1,line) for i,line in enumerate(text.splitlines()) if 'timeout' in line or 'concurrency' in line or 'cancel-in-progress' in line])
-              except Exception as e: print(type(e).__name__,str(e))
+          for job in (125202412424,125173685150):
+              lines=read(f'actions/jobs/{job}/logs',33554432).decode('utf-8-sig').splitlines()
+              matches=[i for i,s in enumerate(lines) if any(t in s for t in ('guest result mismatch:','control diagnostics:','control command failed:','java-canary-promote','"error"','promotion failed'))]
+              print('TARGET_LOG',job)
+              selected=set()
+              for i in matches[-7:]: selected.update(range(max(0,i-2),min(len(lines),i+5)))
+              print('\n'.join(lines[i] for i in sorted(selected))[-22000:])
+          raw=read('actions/artifacts/13128394251/zip',47459)
+          assert hashlib.sha256(raw).hexdigest()=='3cc798622a8257f91a5f3cba0d33a2c102a5cbabed8c74a60435496eb26396e7'
+          with zipfile.ZipFile(io.BytesIO(raw)) as z:
+              for name in z.namelist():
+                  if name.endswith(('host-world.wit','package.json','lock.json')):
+                      assert z.getinfo(name).file_size<131072
+                      print('TYPESCRIPT_INPUT',name,z.read(name).decode()[:14000])
+          raw=read('actions/artifacts/13132360193/zip',5954062)
+          assert hashlib.sha256(raw).hexdigest()=='80662a5c726a949c037a3b7f57ffd35778786e1dcdc2b7db0b1b3e251193b5c2'
+          with zipfile.ZipFile(io.BytesIO(raw)) as z:
+              for name in z.namelist():
+                  if name=='dotnet-task-runtime/guard-node.json':
+                      assert z.getinfo(name).file_size<131072
+                      print('DOTNET_GUARD',z.read(name).decode()[:20000])
+          for workflow in (365190352,365042590,365237284):
+              value=json.loads(read(f'actions/workflows/{workflow}'))
+              path=value['path']
+              print('WORKFLOW',workflow,path)
+              record=json.loads(read('contents/'+path+'?ref=460b2b969437b68b3f893afe36160afdb09cf85a'))
+              text=base64.b64decode(record['content']).decode()
+              print('LIMITS',[(i+1,s) for i,s in enumerate(text.splitlines()) if any(t in s for t in ('timeout','concurrency','cancel-in-progress'))])
           PY
