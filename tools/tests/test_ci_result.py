@@ -18,6 +18,30 @@ def successful(profile):
 
 
 class ResultTests(unittest.TestCase):
+    def test_failure_in_either_moved_group_reaches_each_profile_aggregate(self):
+        import subprocess
+        import sys
+        code = '''
+import importlib, sys, unittest
+module = importlib.import_module(sys.argv[1])
+class InjectedFailure(unittest.TestCase):
+    def test_failure(self): self.fail("injected moved-group failure")
+module.InjectedFailure = InjectedFailure
+result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromModule(module))
+sys.exit(0 if result.wasSuccessful() else 1)
+'''
+        for module in ('tools.tests.test_deterministic_tests', 'tools.tests.test_testkit_dependencies'):
+            result = subprocess.run([sys.executable, '-c', code, module], capture_output=True,
+                                    text=True, timeout=120)
+            self.assertEqual(result.returncode, 1, result.stderr)
+            self.assertIn('injected moved-group failure', result.stderr)
+            for profile in ('docs', 'website', 'fast', 'full'):
+                changed = successful(profile)
+                owner = 'contracts' if profile == 'full' else 'docs'
+                changed[owner]['result'] = 'failure'
+                with self.subTest(module=module, profile=profile), self.assertRaises(ValueError):
+                    ci_result.validate(changed)
+
     def test_all_profiles_require_their_exact_jobs(self):
         for profile in ('docs', 'website', 'fast', 'full'):
             self.assertEqual(ci_result.validate(successful(profile)),
