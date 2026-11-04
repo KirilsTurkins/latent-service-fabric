@@ -178,6 +178,26 @@ class EvidenceStreams(unittest.TestCase):
             self.assertEqual((record["exitStatus"], record["reaped"]), (5, True))
             self.assertEqual((evidence.directory / record["stderr"]["path"]).read_bytes(), b"original stderr\x00")
 
+    def test_failed_cli_observes_original_node_before_cleanup_without_changing_error(self):
+        raw = encoded({"schemaVersion": "latent.cli.result.v1", "category": "transport-failure",
+                       "outcomeKnown": False, "data": {}, "error": {"code": "rpc-failed"}})
+        for status in (None, 1):
+            with self.subTest(node_status=status), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                evidence = Evidence(root / "evidence")
+                cli = client(root, evidence)
+                cli.node = SimpleNamespace(drain=Mock(),
+                    owner=SimpleNamespace(process=SimpleNamespace(poll=Mock(return_value=status))))
+                process, _ = process_double(raw, b"", status=5)
+                with patch.object(observations, "Process", process), \
+                        patch.object(observations.time, "monotonic", return_value=100):
+                    with self.assertRaisesRegex(ValueError, "cli-exit-call-1-status-5"):
+                        cli.call("transaction", "effect")
+                record = json.loads((evidence.directory / "cli-001-node-owner.json").read_bytes())
+                self.assertEqual(record, {"exited": status is not None, "exitStatus": status,
+                                          "observedBeforeCleanup": True})
+                cli.node.owner.process.poll.assert_called_once_with()
+
     def test_native_keeps_binary_outputs_original_deadline_and_actual_retirement(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
