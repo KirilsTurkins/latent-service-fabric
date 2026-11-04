@@ -58,7 +58,13 @@ A [run of the later compiler capture](evidence/java-terminal-recovery-c6f-failur
 passed 46 cases through migration and restored-authority setup, then its original
 result request received an empty HTTP 503. The retained observation identifies a
 dependency-failed activation but supplies no producer reason. This failed run
-does not establish restored-result recovery for the newer capture.
+does not establish restored-result recovery for the newer capture. A [second
+isolated run](evidence/java-terminal-recovery-c6f-failure2-2026-11-04.json)
+received an empty HTTP 503 on the original-result read after 14 cases. The
+retained observation provides no producer reason. For a future HTTP 503 on an
+original-result read, the collector makes one separately recorded, read-only
+lookup of the same key and current publication; it does not retry a mutation or
+change the original HTTP outcome.
 
 The [pending-effect recovery evidence](evidence/java-pending-recovery-2026-11-04.json)
 records 16 passing measured cases on the same native and compiler sources. It
