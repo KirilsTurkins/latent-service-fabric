@@ -1082,6 +1082,9 @@ class RepositoryMigrationTests(unittest.TestCase):
         validation = next(index for index, step in enumerate(steps) if step.get("id") == "contract_coverage")
         tests = next(index for index, step in enumerate(steps) if step.get("name") == "Validate documentation and profile selection")
         self.assertLess(validation, tests)
+        invocations = [line.strip() for step in steps for line in step.get("run", "").splitlines()
+                       if line.strip().startswith("python3 tools/ci_coverage.py")]
+        self.assertEqual(invocations, ["python3 tools/ci_coverage.py --receipt target/ci/observed-inventory.json"])
         upload = next(step for step in steps if step.get("id") == "contract_evidence")
         self.assertEqual(upload["if"], "always()")
         self.assertEqual(upload["with"]["path"], "target/ci/observed-inventory.json")
