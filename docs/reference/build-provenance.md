@@ -223,13 +223,14 @@ has not been shown to exclude the tools tree safely.
 
 A Git stored-ZIP measurement of commit `8b4f2b1974bc127defef83d0ac5536c1a5377f83`
 on Windows selected 9,016 files and 1,615 directories, 79,507,583 source bytes
-and 81,569,323 archive bytes, with a longest path of 105 bytes. This is an
+and 81,569,323 archive bytes, with a longest path of 105 bytes. The corresponding
+NUL-delimited Git listing occupied 947,239 bytes. This is an
 archive observation, not a full build. A separate local Windows capture of
 `8b4f2b1974bc127defef83d0ac5536c1a5377f83` with the revised limits, input
 verification and attribution took 186.53 seconds including cleanup. Its 9,016
 files encoded to a 1,525,244-byte inventory and the Python process peak working
 set was 201,629,696 bytes; this is one observation, not a maximum or a compiler
-memory measurement. The new limits reserve approximately 63% source-byte and 82% file-count growth
+memory measurement. The new limits reserve approximately 69% source-byte and 82% file-count growth
 from that measurement. Successful capture emits path-free aggregate usage and headroom warnings at
 80%. An exceeded hard boundary fails without publishing partial output.
 The archive subprocess and reader can simultaneously retain more than one
