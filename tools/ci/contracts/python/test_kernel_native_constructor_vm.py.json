@@ -15,6 +15,8 @@
       "057a24724097bcdae4ce6361db08e60333f434d9845b514d8202938a2188f3f7",
     "Q35NodeBootSourceControls.test_actual_node_facts_are_required_without_funding_or_retirement_credit":
       "057a24724097bcdae4ce6361db08e60333f434d9845b514d8202938a2188f3f7",
+    "Q35NodeBootSourceControls.test_pci_observation_requires_the_actual_unregistered_selected_slot":
+      "057a24724097bcdae4ce6361db08e60333f434d9845b514d8202938a2188f3f7",
     "Q35NodeBootSourceControls.test_q35_argv_and_captured_loader_cannot_select_tcg_or_alternate_source":
       "057a24724097bcdae4ce6361db08e60333f434d9845b514d8202938a2188f3f7"
   },
