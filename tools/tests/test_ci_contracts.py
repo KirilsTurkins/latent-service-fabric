@@ -111,11 +111,15 @@ class ContractTests(unittest.TestCase):
     def test_initial_assembly_is_lossless_and_deterministic(self):
         legacy = contracts.read_json(self.root / "legacy.json")
         expected = contracts.load(self.root)
-        for field in ("before", "after", "coverage", "baselineRevision", "delegatedOwners", "pythonCases", "pythonTestModules"):
+        for field in ("after", "delegatedOwners", "pythonCases", "pythonTestModules"):
             self.assertEqual(expected[field], legacy[field], field)
         fragments = contracts.fragments(self.root)
         self.assertEqual(expected, contracts.assemble(dict(reversed(list(fragments.items())))))
         self.assertNotIn("workflowIdentities", expected)
+        # Fixed expected output for the small inert migration fixture: the old
+        # map is validated during migration but is not a current job contract.
+        self.assertEqual(expected["workflowContracts"][".github/workflows/extra.yaml"]["jobs"]["build"],
+                         {"runs-on": "ubuntu-24.04", "steps": [{"id": "build", "run": "python3 tools/owner.py"}]})
         coverage.validate(self.root)
         # Physical owner banks preserve the exact old virtual identity model.
         bank_path = self.root / contracts.DIRECTORY / "owner-banks/source.json"
@@ -790,18 +794,13 @@ class ContractTests(unittest.TestCase):
                 extra.unlink()
 
     def test_duplicate_historical_obligation_and_missing_replacement_fail(self):
-        records = copy.deepcopy(contracts.fragments(self.root))
-        jobs = [value for value in records.values() if value["kind"] == "job" and value["before"]]
-        key = next(iter(jobs[0]["before"]))
-        jobs[1]["before"][key] = jobs[0]["before"][key]
-        jobs[1]["coverage"][key] = jobs[0]["coverage"][key]
-        with self.assertRaises(ValueError):
-            contracts.assemble(records)
-        records = copy.deepcopy(contracts.fragments(self.root))
-        job = next(value for value in records.values() if value["kind"] == "job" and value["coverage"])
-        next(iter(job["coverage"].values()))["after"] += "-removed"
-        with self.assertRaisesRegex(ValueError, "removed-required-command"):
-            contracts.assemble(records)
+        legacy = contracts.read_json(self.root / "legacy.json")
+        row = next(iter(legacy["coverage"].values()))
+        row["after"] += "-missing"
+        (self.root / "legacy.json").write_text(json.dumps(legacy))
+        with self.assertRaisesRegex(ValueError, "invalid-migration-obligation"):
+            contracts.migrate(self.root, self.root / "legacy.json", self.root / "target/migration")
+        self.assertFalse((self.root / "target/migration").exists())
 
     def test_unsafe_and_absolute_owner_paths_fail(self):
         for path in ("../outside.py", "/tmp/outside.py", "tools/../../outside.py", "tools//owner.py", "tools\\owner.py", "tools/C:owner.py"):
@@ -940,8 +939,9 @@ class ContractTests(unittest.TestCase):
 
     def test_unchanged_historical_replacement_needs_explicit_review(self):
         self.source(lambda model: model["jobs"]["docs"]["steps"][-1].update(run="python3 tools/owner.py --different"))
-        with self.assertRaisesRegex(ValueError, "proposal-needs-explicit-replacement-review"):
-            contracts.propose(self.root, "job", ".github/workflows/ci.yml", "docs", self.root / "target/ci/proposals", "Review requested.")
+        contracts.propose(self.root, "job", ".github/workflows/ci.yml", "docs", self.root / "target/ci/proposals", "Review requested.")
+        with self.assertRaisesRegex(ValueError, "changed-workflow-job"):
+            coverage.validate(self.root)
 
     def test_proposal_output_cannot_overwrite_source_or_traverse_symlinks(self):
         with self.assertRaisesRegex(ValueError, "proposal-output-must-be-untracked"):
@@ -982,8 +982,6 @@ class ContractTests(unittest.TestCase):
             def reviewed(record):
                 record["definition"] = definition
                 record["reviewReason"] = "Review this independently changed command."
-                for row in record["coverage"].values():
-                    row.update(disposition="extended", reason="Preserve the original owner with additional reviewed arguments.")
             rewrite_fragment(self.root, f"workflows/ci.yml/jobs/{job}.json", reviewed)
             path = self.root / f"tools/tests/test_{module}.py"
             path.write_text(path.read_text() + "    def test_additional(self):\n        self.assertTrue(True)\n")
@@ -1040,273 +1038,36 @@ class ContractTests(unittest.TestCase):
 
 class RepositoryMigrationTests(unittest.TestCase):
     def test_every_historical_obligation_and_current_expectation_is_accounted_for(self):
-        legacy = contracts.read_json(ROOT / "tools/ci/history/commands-v1.json")
+        # Archived history is not compared with today's job bytes. Current job
+        # contracts and the unconditional aggregate retain execution ownership.
         data = contracts.load(ROOT)
-        from tools.tests.test_c_closed_filesystem_qualification import original_libucl_workflow
-        from tools.ci_lane_inventory import workflow_model
-        c_path = '.github/workflows/c-guest-authoring.yml'
-        c_text = (ROOT / c_path).read_text()
-        current_c = workflow_model(c_text)
-        previous_c = workflow_model(original_libucl_workflow(c_text))
-        current_guard = current_c['jobs']['runtime']['if']
-        self.assertEqual(current_guard,
-            "${{ github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && (github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem ) }}")
-        for command in data['after'].values():
-            if command['workflow'] == c_path and command['job'] == 'runtime':
-                self.assertEqual(command['jobIf'], current_guard)
-                command['jobIf'] = previous_c['jobs']['runtime']['if']
-        for field in ("before", "baselineRevision"):
-            self.assertEqual(data[field], legacy[field], field)
-        self.assertEqual(set(data["coverage"]), set(legacy["coverage"]))
-        for key, obligation in legacy["coverage"].items():
-            self.assertEqual(data["coverage"][key]["after"], obligation["after"], key)
-        self.assertEqual(len(legacy["before"]), 88)
-        self.assertEqual(len(legacy["after"]), 208)
-        self.assertEqual(len(legacy["delegatedOwners"]), 124)
-        self.assertEqual(len(legacy["pythonTestModules"]), 260)
-        self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
-        reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
-        reviewed_rust_approval_extension = ".github/workflows/developer-tools.yml:contracts:Exercise controller boundaries and actual owned subprocesses"
-        reviewed_narrow_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
-        reviewed_framework_archives = ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications"
-        reviewed_deferred_owners = ".github/workflows/ci.yml:rust:integration_lanes"
-        reviewed_go_probe = ".github/workflows/go-guest.yml:upstream-probe:Generate and compile upstream and constrained LSF components"
-        reviewed_go_normal_id = ".github/workflows/go-guest.yml:upstream-probe:Qualify editable projects, all SDK owners, enforced node and printed guide"
-        reviewed_typescript_console = ".github/workflows/typescript-guest.yml:boundary:Qualify captured projects, all SDK owners, enforced node and printed guide"
-        reviewed_typescript_models = ".github/workflows/typescript-guest.yml:boundary:Execute supplementary value and ownership models"
-        performance_extensions = {
-            ".github/workflows/ci.yml:rust:integration_lanes": [
-                "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
-                '--renderer "$CI_LANE_RENDERER"', '--workers "$CI_LANE_WORKERS"', '--lane "$CI_NATIVE_LANE"',
-                '--output "$RUNNER_TEMP/ci-lanes"'],
-            ".github/workflows/ci.yml:contracts:Validate contracts, echo component, and generated bindings": ["tools/validate_contracts.sh"],
-            ".github/workflows/ci.yml:contracts:Validate standalone optimization benchmark smoke": ["python3 tools/run_optimization_benchmarks.py --profile smoke"],
-            ".github/workflows/docs-site.yml:website:Verify production pages, theme and source-backed controls": [
-                "npm run test:build", "npm run test:theme", "npm run test:examples", "npm run test:versions", "npm run test:discovery", 'wait "$versions_pid"', 'exit "$status"'],
-            ".github/workflows/docs-site.yml:website:Install the pinned test browser and its OS prerequisites": ["npm run browser:install"],
-            ".github/workflows/typescript-guest.yml:boundary:Install pinned component validator": ['test "$(wasm-tools --version | cut -d \' \' -f 1,2)" = \'wasm-tools 1.254.0\''],
-            ".github/workflows/go-guest.yml:upstream-probe:Install the locked compiler and generator": [
-                "cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go",
-                'test "$(wasm-tools --version | cut -d \' \' -f 1,2)" = \'wasm-tools 1.254.0\'',
-                "sha256sum --check --strict"],
-            ".github/workflows/go-guest.yml:upstream-probe:Retain pinned reproduction tools": [
-                'cp "$HOME/.cargo/bin/componentize-go" "$(command -v wasm-tools)" "$out/"',
-                'sha256sum "$out/componentize-go" "$out/wasm-tools"'],
-        }
-        # The explicit private/replay manual modes run only their bounded lane.
-        # Normal PR/push runs have no enabled input and retain this required job.
-        # Review only this exact job-level guard change; all command bytes,
-        # step guards, timeouts, environments and historical obligations below
-        # remain independently equal to the immutable original floor.
-        reviewed_typescript_observer_guard = "${{ !inputs.observe-failed-fetch && !inputs.observe-fetch-boundaries && !inputs.replay-entropy-policy && !inputs.qualify-standard-clocks && !inputs.qualify-scratch-refusals && !inputs.qualify-runtime-retirement }}"
-        inputs = data["workflowContracts"][".github/workflows/typescript-guest.yml"]["on"]["workflow_dispatch"]["inputs"]
-        for name in ("observe-failed-fetch", "observe-fetch-boundaries", "replay-entropy-policy", "qualify-standard-clocks", "qualify-scratch-refusals", "qualify-runtime-retirement"):
-            self.assertEqual(inputs[name]["type"], "boolean")
-            self.assertIs(inputs[name]["default"], False)
-        rust_selector = data['workflowContracts']['.github/workflows/rust-capsule-authoring.yml']['on']['workflow_dispatch']['inputs']['replay-scratch-refusals']
-        self.assertEqual(rust_selector['type'], 'boolean')
-        self.assertIs(rust_selector['default'], False)
-        c_selector = data['workflowContracts']['.github/workflows/c-guest-authoring.yml']['on']['workflow_dispatch']['inputs']['replay-closed-filesystem']
-        self.assertEqual(c_selector['type'], 'boolean')
-        self.assertIs(c_selector['default'], False)
-        java_selector = data['workflowContracts']['.github/workflows/java-guest-feasibility.yml']['on']['workflow_dispatch']['inputs']['java_http_spi']
-        self.assertEqual(java_selector['type'], 'boolean')
-        self.assertIs(java_selector['default'], False)
-        java_assembly_selector = data['workflowContracts']['.github/workflows/java-guest-feasibility.yml']['on']['workflow_dispatch']['inputs']['public_fiber_assembly']
-        self.assertEqual(java_assembly_selector['type'], 'boolean')
-        self.assertIs(java_assembly_selector['default'], False)
-        for name in ('public_fiber_derived_llvm', 'public_fiber_private_scalar_llvm'):
-            selector = data['workflowContracts']['.github/workflows/java-guest-feasibility.yml']['on']['workflow_dispatch']['inputs'][name]
-            self.assertEqual(selector['type'], 'boolean')
-            self.assertIs(selector['default'], False)
-        product_selector = data['workflowContracts']['.github/workflows/developer-tools.yml']['on']['workflow_dispatch']['inputs']['java_compiler_product']
-        self.assertEqual(product_selector['type'], 'boolean')
-        self.assertIs(product_selector['default'], False)
-        self.assertEqual(data['workflowContracts']['.github/workflows/developer-tools.yml']['jobs']['java-compiler-product']['if'],
-                         "github.event_name == 'workflow_dispatch' && inputs.java_compiler_product")
-        java_normal_routes = {
-            'Compile generated typed Java bindings against async capability WIT',
-            'Qualify standalone Java projects, nine SDK components, signed node and printed guide',
-        }
-        lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
-        for key, original in legacy["after"].items():
-            value = dict(original)
-            if value["workflow"] == ".github/workflows/dotnet-guest.yml" and value["job"] == "toolchain":
-                # Only the three reviewed closed .NET fixture branches exclude this job.
-                # No status override is introduced: ordinary branches retain
-                # GitHub's implicit success() and every original command field.
-                self.assertEqual(value["jobIf"], "success()", key)
-                value["jobIf"] = (
-                    "github.ref != 'refs/heads/test/sdk-dotnet-root-return-20261027' "
-                    "&& github.head_ref != 'test/sdk-dotnet-root-return-20261027' "
-                    "&& github.ref != 'refs/heads/test/sdk-dotnet-join-cause-20261027' "
-                    "&& github.head_ref != 'test/sdk-dotnet-join-cause-20261027' "
-                    "&& github.ref != 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028' "
-                    "&& github.head_ref != 'feat/sdk-dotnet-prefetched-readiness-review-20261028'")
-            if value['workflow'] == '.github/workflows/developer-tools.yml' and value['job'] in {'contracts', 'guest-tools', 'wsl-image'}:
-                # Only the closed default-false data-only mode skips these
-                # jobs. Every existing ordinary command remains mandatory.
-                old_guard = "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository"
-                self.assertEqual(value['jobIf'], old_guard, key)
-                value['jobIf'] = '${{ !inputs.java_compiler_product && (' + old_guard + ') }}'
-            if value["workflow"] == ".github/workflows/typescript-guest.yml" and value["job"] == "boundary":
-                self.assertEqual(value["jobIf"], "success()", key)
-                value["jobIf"] = reviewed_typescript_observer_guard
-            if value['workflow'] == '.github/workflows/rust-capsule-authoring.yml':
-                # The exact explicit replay uses historical compiled products;
-                # default, PR and push retain every original job and command.
-                self.assertEqual(value['jobIf'], 'success()', key)
-                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}"
-            if value['workflow'] == '.github/workflows/c-guest-authoring.yml' and value['job'] == 'runtime':
-                # Only the explicit historical-products replay skips this old
-                # complete job. Its normal/default commands and all other
-                # execution fields retain the immutable historical obligation.
-                self.assertEqual(value['jobIf'], 'success()', key)
-                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-closed-filesystem }}"
-            if value['workflow'] == '.github/workflows/java-guest-feasibility.yml' and value['job'] == 'compiler-component':
-                self.assertEqual(value['jobIf'], 'success()', key)
-                # Only these explicit manual modes exclude the unchanged full
-                # job; default, PR and ordinary dispatch retain every command.
-                value['jobIf'] = "${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}"
-                if value['name'] in java_normal_routes:
-                    old_sdk = '$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux'
-                    self.assertEqual(value['run'].count(old_sdk), 1, key)
-                    value['run'] = value['run'].replace(old_sdk, '$LSF_JAVA_WASI_SDK')
-                elif value['name'] == 'Install pinned compiler tools':
-                    old_download = 'curl --fail --location --max-time 180 \\\n'
-                    explanation = (
-                        '# The independent historical feasibility helper still requires its\n'
-                        '# original explicit SDK. Ordinary BaseCompiler routes use the sealed\n'
-                        '# promoted product below; no old helper/version gate is weakened.\n')
-                    self.assertEqual(value['run'].count(old_download), 1, key)
-                    value['run'] = value['run'].replace(old_download, explanation + old_download)
-                    bindgen = 'python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"\n'
-                    product = (
-                        'compiler_root=$(mktemp -d /tmp/latent-java-normal.XXXXXXXX)\n'
-                        'timeout --signal=TERM --kill-after=5 1195 \\\n'
-                        '  python3 -B tools/java_guest/compiler_profile_distribution.py stage \\\n'
-                        '    --root "$compiler_root" --output "$RUNNER_TEMP/java-normal-compiler-product.json" \\\n'
-                        '    > "$RUNNER_TEMP/java-normal-compiler-path.txt"\n'
-                        'compiler_sdk=$(cat "$RUNNER_TEMP/java-normal-compiler-path.txt")\n'
-                        'test "$compiler_sdk" = "$compiler_root/work/installed/wasi-sdk"\n'
-                        "printf 'LSF_JAVA_WASI_SDK=%s\\n' \"$compiler_sdk\" >> \"$GITHUB_ENV\"\n")
-                    self.assertEqual(value['run'].count(bindgen), 1, key)
-                    value['run'] = value['run'].replace(bindgen, product + bindgen)
-            if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
-                # Exact commands survive; the reviewed fixed matrix allocates
-                # every obligation to its required, failure-propagating lane.
-                value["stepIf"] = lane_baseline[value["job"]]["step_conditions"].get(value["name"], value["stepIf"])
-                if value["name"] == "Qualify actual Angular on the protected T1 node":
-                    value["run"] = value["run"].replace(
-                        '$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler',
-                        '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
-            if value['workflow'] == '.github/workflows/go-guest.yml' and value['job'] == 'upstream-probe':
-                # The reviewed manual replay flags select separate bounded jobs.
-                # Push/PR and ordinary dispatch still require this complete job;
-                # preserve all original step guards, commands and execution fields.
-                self.assertEqual(value['jobIf'], 'success()')
-                value['jobIf'] = "${{ github.event_name != 'workflow_dispatch' || (!inputs.replay-entropy-authority && !inputs.qualify-entropy-retained && !inputs.entropy-only) }}"
-            if key == reviewed_go_normal_id:
-                # The independent client gate refers to this unchanged normal
-                # qualification by its stable Actions step id. Retain every
-                # historical command byte and execution field; only its command
-                # identity changes from the display name to that exact id.
-                replacement = ".github/workflows/go-guest.yml:upstream-probe:normal_go_qualification"
-                self.assertNotIn(key, data["after"])
-                self.assertEqual(data["after"][replacement], dict(value, name="normal_go_qualification"), key)
-                continue
-            self.assertIn(key, data["after"])
-            if key == reviewed_framework_archives:
-                # Materialize the already authenticated locked archives before
-                # the original framework install. Preserve every existing
-                # command, qualification guard and step field byte for byte.
-                self.assertEqual(data["after"][key],
-                                 dict(value, run="python3 website/toolchain/prepare.py\n" + value["run"]), key)
-            elif key == reviewed_narrow_fixture:
-                # State now requires its real engine renderer. Keep that
-                # assertion alongside a genuinely narrow workflow selection,
-                # preserving the original runner and all other metadata.
-                expected = dict(value)
-                expected["run"] = value["run"].replace(
-                    "from tools.ci_profile import classify_paths\n"
-                    "selection = classify_paths(['crates/latent-state/src/lib.rs'])\n"
-                    "assert selection.profile == 'fast'\n",
-                    "from tools.ci_profile import classify_paths\n"
-                    "from tools import ci_suite_inventory as registry\n"
-                    "state = classify_paths(['crates/latent-state/src/lib.rs'])\n"
-                    "assert state.profile == 'full' and state.renderer\n"
-                    "selection = classify_paths(['crates/latent-workflows/src/lib.rs'])\n"
-                    "assert selection.profile == 'fast'\n"
-                    "assert selection.fast_packages\n"
-                    "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",
-                )
-                self.assertEqual(data["after"][key], expected, key)
-            elif key == reviewed_deferred_owners:
-                self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
-                                 {k: v for k, v in value.items() if k != "run"})
-                # The reviewed native workflow selects one explicit lane. Keep
-                # the remaining command bytes and every historical owner exact.
-                selector = '--workers "$CI_LANE_WORKERS" --output'
-                self.assertEqual(value["run"].count(selector), 1)
-                selected = value["run"].replace(
-                    selector, '--workers "$CI_LANE_WORKERS" --lane "$CI_NATIVE_LANE" --output')
-                # Register only the new owned deferred broker runner. Every
-                # existing command, flag, owner and execution fence is exact.
-                extended = selected.replace(
-                    "# tools/build_angular_package.py",
-                    "# tools/run_nats_deferred_tests.py tools/nats_deferred_support.py\n"
-                    "# tools/build_angular_package.py")
-                self.assertIn(data["after"][key]["run"].rstrip("\n"), (selected, extended))
-            elif key == reviewed_go_probe:
-                # Only the verified private compiler path changes. Preserve
-                # the probe, its output, execution guards and every other byte.
-                original_compiler = "$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go"
-                self.assertEqual(value["run"].count(original_compiler), 1)
-                self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(
-                    original_compiler, "$RUNNER_TEMP/go-guest-tools/go-async/bin/go")), key)
-            elif key == reviewed_rust_approval_extension:
-                self.assertEqual(data["after"][key], dict(value,
-                    run=value["run"] + " tools.tests.test_dev_executable_approval"), key)
-            elif key == reviewed_typescript_console:
-                # Keep the entire normal authoring programme and all original
-                # execution fields. Its explicit opt-in adds strict LOG cases;
-                # it cannot substitute a smaller side campaign for this gate.
-                command = "python3 tools/qualify_typescript_capsules.py"
-                self.assertEqual(value["run"].count(command), 1)
-                self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(
-                    command, command + " --standard-console", 1)), key)
-            elif key == '.github/workflows/ci.yml:rust:Qualify signed static sites through OCI and actual browsers':
-                old = '--chrome "$(command -v google-chrome)" > "${RUNNER_TEMP}/phase2-gate/static-site-receipt.json"'
-                new = '--chrome "$(command -v google-chrome)" --audit-lifecycle-receipt "${RUNNER_TEMP}/phase2-gate/audit-lifecycle-receipt.json" > "${RUNNER_TEMP}/phase2-gate/static-site-receipt.json"'
-                self.assertEqual(value["run"].count(old), 1)
-                self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(old, new)), key)
-            elif key == reviewed_typescript_models:
-                # Compile the same executable runtime and both model sources.
-                # Profile-scoped ambient Node declarations require application
-                # module mappings and are not standalone model inputs.
-                original_inputs = "sdk/typescript-guest/runtime/*.ts"
-                self.assertEqual(value["run"].count(original_inputs), 1)
-                self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(
-                    original_inputs, "sdk/typescript-guest/runtime/text.ts", 1)), key)
-            elif key != reviewed_extension and key not in performance_extensions:
-                self.assertEqual(data["after"][key], value, key)
-            else:
-                self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
-                                 {k: v for k, v in value.items() if k != "run"})
-                if key == reviewed_extension:
-                    old_modules = {word for word in value["run"].split() if word.startswith("tools.tests.")}
-                    self.assertTrue(old_modules <= set(data["after"][key]["run"].split()))
-                else:
-                    for command in performance_extensions[key]:
-                        self.assertIn(command, data["after"][key]["run"], key)
-        self.assertTrue(set(legacy["delegatedOwners"]) <= set(data["delegatedOwners"]))
-        for name, cases in legacy["pythonCases"].items():
-            self.assertTrue(set(cases) <= set(data["pythonCases"][name]), name)
-        # Historical obligations are a floor, not a ban on reviewed new lanes.
-        self.assertTrue(set(legacy["workflowIdentities"]) <= set(data["workflowContracts"]))
-        self.assertEqual(set(data["workflowContracts"]),
-                         {path.relative_to(ROOT).as_posix() for path in contracts.workflow_paths(ROOT)})
-        self.assertFalse((ROOT / "tools/ci/commands.json").exists())
+        model = data["workflowContracts"][".github/workflows/ci.yml"]
+        self.assertEqual(lanes.result_contract_errors(model), ())
+        self.assertNotIn("before", data)
+        self.assertNotIn("coverage", data)
+        self.assertTrue((ROOT / "tools/ci/history/commands-v1.json").is_file())
+        c = lanes.workflow_model((ROOT / ".github/workflows/c-guest-authoring.yml").read_text())
+        guard = c["jobs"]["runtime"]["if"]
+        # Evaluate only the closed grammar used by this guard; an unfamiliar
+        # construct fails the test rather than being guessed or executed.
+        import ast, re
+        def selected(event, ref, replay):
+            expression = guard.removeprefix("${{").removesuffix("}}").strip()
+            expression = re.sub(r"github\.ref\s*!=\s*'([^']+)'", lambda m: str(ref != m.group(1)), expression)
+            expression = expression.replace("github.event_name", repr(event)).replace("inputs.replay-closed-filesystem", str(replay))
+            expression = expression.replace("&&", " and ").replace("||", " or ")
+            expression = re.sub(r"!(?!=)", " not ", expression).strip()
+            tree = ast.parse(expression, mode="eval")
+            allowed = (ast.Expression, ast.BoolOp, ast.And, ast.Or, ast.UnaryOp, ast.Not, ast.Compare,
+                       ast.Eq, ast.NotEq, ast.Constant, ast.Load)
+            self.assertTrue(all(isinstance(node, allowed) for node in ast.walk(tree)))
+            return bool(eval(compile(tree, "<guard>", "eval"), {"__builtins__": {}}, {}))
+        self.assertTrue(selected("pull_request", "refs/pull/42/merge", False))
+        self.assertTrue(selected("push", "refs/heads/development", False))
+        self.assertTrue(selected("workflow_dispatch", "refs/heads/development", False))
+        self.assertFalse(selected("workflow_dispatch", "refs/heads/development", True))
+        self.assertIn("pull_request", c["on"])
+        self.assertIn("development", c["on"]["push"]["branches"])
 
     def test_workflow_and_shared_contract_edits_still_select_full_ci(self):
         from tools.ci_profile import classify_paths

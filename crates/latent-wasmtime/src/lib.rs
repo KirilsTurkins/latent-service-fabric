@@ -25,6 +25,8 @@ mod native_tables;
 mod phase0;
 mod preparation_metadata;
 mod preparation_observer;
+#[cfg(feature = "rust-thread-trap-diagnostic")]
+mod rust_thread_fault;
 mod services;
 mod surface;
 mod telemetry;

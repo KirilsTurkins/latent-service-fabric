@@ -266,6 +266,24 @@ jobs:
       - name: "Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}"
         if: failure() && matrix.lane == 'checks' && steps.clippy.outcome == 'failure'
         run: tail -n 120 "$RUNNER_TEMP/lsf-clippy.log"
+      - name: Build pinned source-only S3 test fixture
+        if: matrix.lane == 'provider'
+        id: s3_fixture
+        timeout-minutes: 26
+        run: |
+          python3 -m unittest tools.tests.test_s3_fixture_builder tools.tests.test_s3_blob_runner
+          python3 tools/build_s3_fixture.py --output "$RUNNER_TEMP/s3-fixture"
+      # This is a fresh GitHub-hosted provider VM. The fixture compiler
+      # container has already retired; keep its checked imported fixture image.
+      - name: Release retired S3 compiler image before the Rust build
+        if: matrix.lane == 'provider'
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          from tools.build_s3_fixture import BUILDER
+          subprocess.run(["docker", "image", "rm", BUILDER], check=True)
+          PY
+          df -h "$GITHUB_WORKSPACE"
       - name: Build workspace binaries and test harnesses
         if: matrix.lane != 'checks'
         run: python3 tools/ci_cargo.py run prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
@@ -360,13 +378,6 @@ jobs:
           cargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release
           wasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o "$RUNNER_TEMP/browser-component/application.wasm"
           wasm-tools validate "$RUNNER_TEMP/browser-component/application.wasm"
-      - name: Build pinned source-only S3 test fixture
-        if: matrix.lane == 'provider'
-        id: s3_fixture
-        timeout-minutes: 26
-        run: |
-          python3 -m unittest tools.tests.test_s3_fixture_builder tools.tests.test_s3_blob_runner
-          python3 tools/build_s3_fixture.py --output "$RUNNER_TEMP/s3-fixture"
       - name: Retain source-built S3 fixture and failure evidence
         if: always() && steps.s3_fixture.outcome != '' && steps.s3_fixture.outcome != 'skipped'
         uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
@@ -839,7 +850,8 @@ jobs:
             b606b1402961593dd918722a66fe293bfab9b319 \
             c802283a5546620f071bd02ec01c410696893c5b \
             b422af24d86344ac7abb8b8fa56c3782aab63915 \
-            95b8d8b16c29d94755262345a305401ee99a801f
+            95b8d8b16c29d94755262345a305401ee99a801f \
+            e3f0edf822c10e84bbeede276174ac3217542afc
       - name: Install Python validator dependencies
         run: python -m pip install --requirement tools/requirements.lock
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -895,7 +907,7 @@ jobs:
       - name: Set up the .NET SDK provider participant
         uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
         with:
-          dotnet-version: 8.0.426
+          dotnet-version: 8.0.427
       - name: Validate contracts, echo component, and generated bindings
         if: matrix.lane != 'optimization'
         env:
@@ -1013,7 +1025,7 @@ jobs:
           java-version: "25.0.4+101.0.LTS"
       - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
         with:
-          dotnet-version: 8.0.426
+          dotnet-version: 8.0.427
       - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
         with:
           version: "0.16.0"

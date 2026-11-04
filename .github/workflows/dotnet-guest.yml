@@ -507,6 +507,8 @@ jobs:
             ${{ runner.temp }}/dotnet-task-runtime/node/workflow.json
             ${{ runner.temp }}/dotnet-task-runtime/node/public-workflow.json
             ${{ runner.temp }}/dotnet-task-runtime/node/FAILED.json
+            ${{ runner.temp }}/dotnet-task-runtime/node/controls/dotnet-ordinary-tasks-*.json
+            ${{ runner.temp }}/dotnet-task-runtime/node/controls/unexpected-invocation-diagnostics.json
             ${{ runner.temp }}/dotnet-standard-entropy/qualified.json
             ${{ runner.temp }}/dotnet-standard-entropy/FAILED.json
             ${{ runner.temp }}/dotnet-standard-entropy/logs/**

@@ -169,12 +169,45 @@ class NativeConstructorKernelJoin(unittest.TestCase):
 
 
 class Q35NodeBootSourceControls(unittest.TestCase):
+    def test_pci_observation_requires_the_actual_unregistered_selected_slot(self):
+        source = (owner.ROOT / owner.NODE_ROOT / 'factory-node-boot.c').read_text(encoding='utf8')
+        self.assertIn('pci_find_bus(LSF_DEVICE_PCI_DOMAIN, LSF_DEVICE_PCI_BUS)', source)
+        self.assertIn('pci_get_slot(bus, LSF_DEVICE_PCI_DEVFN)', source)
+        self.assertIn('pci_dev_put(existing);\n        goto out;', source)
+        self.assertIn('pci_bus_read_config_dword(bus, LSF_DEVICE_PCI_DEVFN, PCI_VENDOR_ID,', source)
+        self.assertIn('(identity & 0xffffu) != LSF_DEVICE_PCI_VENDOR', source)
+        self.assertIn('(identity >> 16) != LSF_DEVICE_PCI_DEVICE', source)
+        self.assertLess(source.index('pci_lock_rescan_remove();'), source.index('pci_find_bus('))
+        self.assertLess(source.index('pci_get_slot('), source.index('pci_bus_read_config_dword('))
+        self.assertLess(source.index('(identity >> 16) != LSF_DEVICE_PCI_DEVICE'),
+            source.index('LSFQ35PCICONFIG1'))
+        self.assertLess(source.index('LSFQ35PCICONFIG1'), source.index('pci_unlock_rescan_remove();'))
+        self.assertIn('cpu_online(0) &&\n        lsf_node_boot_selected_pci()', source)
+        for forbidden in ('pci_scan_single_device(', 'pci_bus_add_device(', 'pci_enable_device('):
+            self.assertNotIn(forbidden, source)
+        from importlib.util import spec_from_file_location, module_from_spec
+        spec = spec_from_file_location('lsf_node_pci_projector', owner.ROOT / owner.NODE_PROJECTOR)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        projector = module_from_spec(spec)
+        spec.loader.exec_module(projector)
+        entry = projector.NEW_ENTRY
+        refusal = b'if (!ns_capable(&init_user_ns, CAP_SYS_ADMIN))\n        return -EPERM;'
+        self.assertEqual(entry.count(refusal), 1)
+        self.assertLess(entry.index(refusal), entry.index(b'lsf_node_boot_entry_ready()'))
+        self.assertEqual(projector.inverse_bootstrap(entry), projector.OLD_ENTRY)
+
     def test_actual_node_facts_are_required_without_funding_or_retirement_credit(self):
         facts = (b'LSFNODEBOOT1 facts=[1, 2, 3, 4, 5, 6] cpu=[1, 1, 1, 2, 3, 4, 5, 6, 7] '
             b'accounting=[1, 2, 3, 4, 5, 6, 7, 8] vectors=[32, 33, 34, 35, 36, 37, 38, 39]')
-        raw = b'\n'.join((owner.NODE_BOOT,facts,owner.NODE_HELD,b'LSFNODEBOOT1 childExit=0',owner.NODE_END))+b'\n'
+        pci = b'[    1.234567] ' + owner.NODE_PCI_OBSERVATION
+        raw = b'\n'.join((owner.NODE_BOOT,pci,facts,owner.NODE_HELD,b'LSFNODEBOOT1 childExit=0',owner.NODE_END))+b'\n'
         observed = owner.node_serial(raw)
         self.assertTrue(observed['originalEscrowRetained'])
+        self.assertEqual(observed['selectedPciConfig'], {'bdf':'0000:00:03.0',
+            'vendor':'1af4','device':'1041','unregistered':True,'observedInGuest':True})
+        self.assertFalse(observed['pciConstructorQualified'])
+        self.assertFalse(observed['napiQualified'])
         for key in ('nodeFunding','nodeRetired','irqEnabled','tcpEnabled'):
             self.assertIs(observed[key],False)
         for bad in (raw.replace(b'cpu=[1, 1, 1,',b'cpu=[2, 1, 1,'),
@@ -182,6 +215,14 @@ class Q35NodeBootSourceControls(unittest.TestCase):
                 raw.replace(b'childExit=0',b'childExit=1'),raw.replace(b'nodeFunding=0',b'nodeFunding=1'),
                 raw.replace(b'originalEscrowRetained=1',b'originalEscrowRetained=0'),
                 raw.replace(b'accounting=[1, 2, 3,',b'accounting=[1, 4, 3,'),
+                raw.replace(pci+b'\n',b''), raw+pci+b'\n',
+                raw.replace(b'0000:00:03.0',b'0000:00:01.0'),
+                raw.replace(b'vendor=1af4',b'vendor=1af5'),
+                raw.replace(b'device=1041',b'device=1000'),
+                raw.replace(b'unregistered=1',b'unregistered=0'),
+                raw.replace(pci+b'\n'+facts, facts+b'\n'+pci),
+                raw.replace(b'[    1.234567] '+owner.NODE_PCI_OBSERVATION,
+                    owner.NODE_PCI_OBSERVATION),
                 raw+owner.NODE_HELD+b'\n',raw+owner.image.PHYSICAL_MARKER+b'\n',
                 raw.replace(b'facts=[1, 2, 3, 4, 5, 6]',b'facts=[1, 2]')):
             with self.subTest(raw=bad),self.assertRaises(ValueError):owner.node_serial(bad)
@@ -215,7 +256,10 @@ class Q35NodeBootSourceControls(unittest.TestCase):
         self.assertEqual(argv[argv.index('-accel')+1],'kvm')
         self.assertEqual(argv[argv.index('-smp')+1],'1,maxcpus=1')
         self.assertEqual(argv[argv.index('-nic')+1],'none')
-        self.assertIn('vectors=3',argv[argv.index('-device')+1])
+        self.assertEqual(argv.count('-device'),1)
+        self.assertEqual(argv[argv.index('-device')+1],
+            'virtio-net-pci,id=net0,bus=pcie.0,addr=0x3,disable-legacy=on,mac=52:54:00:12:34:56,vectors=3,romfile=')
+        self.assertNotIn('-netdev',argv)
         self.assertFalse(any('iommu' in x or 'tcg' in x for x in argv))
         captured = {owner.NODE_PROJECTOR:b'ROOT = None\n',
             **{owner.NODE_ROOT+n:b'' for n in owner.NODE_MATERIALS}}

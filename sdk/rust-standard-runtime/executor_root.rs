@@ -459,6 +459,13 @@ pub(crate) unsafe fn progress_all() -> Option<Stamp> {
                 // after the real Pool Arc/control block was physically freed.
                 drop(live.control);
                 drop(live.executor);
+                // Removing this entry invalidates the snapshot below. If it
+                // happens on drain's second check, its completed waiter is
+                // already queued and no worker may remain to wake it. Publish
+                // the retirement only after all original backing/owners have
+                // actually retired, then let that waiter recheck the registry.
+                // Never hold the registry borrow or a pool pointer at the wake.
+                changed();
             }
         }
     }

@@ -14,9 +14,9 @@
     "test:transport": "npm run build && node --test tests/network/*.test.mjs"
   },
   "engines": { "node": ">=24.19.0 <25" },
-  "dependencies": { "@bufbuild/protobuf": "2.15.0" },
+  "dependencies": { "@bufbuild/protobuf": "2.16.0" },
   "devDependencies": {
-    "@types/node": "26.6.3",
+    "@types/node": "26.6.5",
     "typescript": "7.0.2"
   }
 }

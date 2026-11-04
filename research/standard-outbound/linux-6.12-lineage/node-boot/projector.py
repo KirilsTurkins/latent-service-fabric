@@ -11,7 +11,7 @@ import stat
 
 ROOT = Path(__file__).resolve().parents[4]
 INPUT_SHA = "a5b280e3bddd7f947118bf9d581ace122d36d7473cacdced69b7c0795fe866f6"
-MATERIAL_PINS = {'factory-node-boot.c': {'bytes': 1759, 'sha256': '6fb0330516718829850cb6f247f2d3ae174338321d6fedae81b71dec185935cb'}, 'Kconfig.fragment': {'bytes': 613, 'sha256': '6ec89531b03e80f6dd1fdfe37bcfee5de99b68482260d6a8ceeab98cfddce873'}, 'Makefile.fragment': {'bytes': 107, 'sha256': 'f6da199a724e3439ee123027b59b07a23e5a5db6bc47fe7874424cb1c834cdbe'}}
+MATERIAL_PINS = {'factory-node-boot.c': {'bytes': 3402, 'sha256': '0341f26187c05c43ef6d0ecb8128e23fc21e74e2760bd07b72f756ed2622eed5'}, 'Kconfig.fragment': {'bytes': 613, 'sha256': '6ec89531b03e80f6dd1fdfe37bcfee5de99b68482260d6a8ceeab98cfddce873'}, 'Makefile.fragment': {'bytes': 107, 'sha256': 'f6da199a724e3439ee123027b59b07a23e5a5db6bc47fe7874424cb1c834cdbe'}}
 MATERIAL_ROOT = "research/standard-outbound/linux-6.12-lineage/node-boot"
 OLD_ENTRY = b"""    /* Same NULL consumer and closed installation gate. A flag/environment or
      * NODE_ATTACH cannot select these fops or authorize an unqualified image.
@@ -23,6 +23,10 @@ NEW_ENTRY = b"""    /* The immutable built-in preparation image uses only its re
      * fops. The original escrow must precede this syscall. This is not a
      * network consumer, NodeFunding approval or a native retirement issuer. */
 #ifdef CONFIG_LSF_STREAM_NODE_BOOTSTRAP
+    /* Do not read PCI configuration for a task that the unchanged common
+     * entry authorization below would refuse. That original check remains. */
+    if (!ns_capable(&init_user_ns, CAP_SYS_ADMIN))
+        return -EPERM;
     if (!lsf_node_boot_entry_ready())
         return error;
 #else
