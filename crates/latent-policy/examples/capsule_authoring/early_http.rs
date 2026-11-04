@@ -7,6 +7,7 @@ use super::current_java::{absent, digest_matches, model_material, pinned, read, 
 use super::{inputs, sign_checked, Result};
 
 const SOURCE: &str = "47e4e60778d7fdd033d5f1d6c05595752713c971";
+const NOVEMBER_SOURCE: &str = "fccc27dbc52f2dd0db137078f8e7e436a41ebe8a";
 const VARIANT: &str = "forbidden-http-before-stage";
 const WORLD: &str = "examples:transactional-aggregate/service@1.0.0";
 const SERVICE: &str = "examples/transaction-java-forbidden-http-before-stage";
@@ -19,6 +20,8 @@ const REBUILT_PINS: &[u8] = include_bytes!(
 const RECONSTRUCTED_PINS: &[u8] = include_bytes!(
     "../../../../docs/testing/evidence/java-early-http-reconstructed-capture-2026-10-15.json"
 );
+const NOVEMBER_PINS: &[u8] =
+    include_bytes!("../../../../docs/testing/evidence/java-early-http-capture-2026-11-04.json");
 
 #[cfg(test)]
 mod reconstructed_tests;
@@ -38,7 +41,7 @@ fn no_effect_authority(root: &Path) -> Result<()> {
     clippy::too_many_lines,
     reason = "One closed captured source validates every material and original ceiling before ephemeral signing"
 )]
-fn load(root: &Path, selected_pins: &[u8]) -> Result<inputs::Build> {
+fn load(root: &Path, selected_pins: &[u8], expected_source: &str) -> Result<inputs::Build> {
     require(
         root.is_absolute(),
         "early HTTP fixture needs absolute input",
@@ -46,14 +49,14 @@ fn load(root: &Path, selected_pins: &[u8]) -> Result<inputs::Build> {
     no_effect_authority(root)?;
     let capture: Value = serde_json::from_slice(selected_pins)?;
     require(
-        capture["sourceCommit"] == SOURCE && capture["variant"] == VARIANT,
+        capture["sourceCommit"] == expected_source && capture["variant"] == VARIANT,
         "early HTTP captured source owner mismatch",
     )?;
     let pins = &capture["materials"];
     let report_raw = pinned(root, "compiler-report.json", &pins["report"], 262_144)?;
     let report: Value = serde_json::from_slice(&report_raw)?;
     require(
-        report["sourceRevision"] == SOURCE
+        report["sourceRevision"] == expected_source
             && report["variant"] == VARIANT
             && report["language"] == "java"
             && report["world"] == WORLD
@@ -138,7 +141,7 @@ fn load(root: &Path, selected_pins: &[u8]) -> Result<inputs::Build> {
     require(
         fixture["schemaVersion"] == "latent.component.signing-fixture-input.v1"
             && fixture["evidenceKind"] == "synthetic-native-package-trust"
-            && fixture["compilerSource"] == SOURCE
+            && fixture["compilerSource"] == expected_source
             && fixture["requirementsDigest"].is_null()
             && fixture["compilerExecutedBySigner"] == false
             && fixture["packagedDistributionQualified"] == false
@@ -227,7 +230,7 @@ pub(crate) fn sign_early_http(
         compiler_source == SOURCE && paths.len() == 1,
         "early HTTP signing requires its one exact separate captured input",
     )?;
-    let build = load(Path::new(&paths[0]), PINS)?;
+    let build = load(Path::new(&paths[0]), PINS, SOURCE)?;
     sign_checked(output, vec![build], false, Some(SOURCE))
 }
 
@@ -240,7 +243,7 @@ pub(crate) fn sign_rebuilt_early_http(
         compiler_source == SOURCE && paths.len() == 1,
         "rebuilt early HTTP signing requires one exact captured input",
     )?;
-    let build = load(Path::new(&paths[0]), REBUILT_PINS)?;
+    let build = load(Path::new(&paths[0]), REBUILT_PINS, SOURCE)?;
     sign_checked(output, vec![build], false, Some(SOURCE))
 }
 
@@ -253,8 +256,21 @@ pub(crate) fn sign_reconstructed_early_http(
         compiler_source == SOURCE && paths.len() == 1,
         "reconstructed early HTTP signing requires one exact captured input",
     )?;
-    let build = load(Path::new(&paths[0]), RECONSTRUCTED_PINS)?;
+    let build = load(Path::new(&paths[0]), RECONSTRUCTED_PINS, SOURCE)?;
     sign_checked(output, vec![build], false, Some(SOURCE))
+}
+
+pub(crate) fn sign_november_early_http(
+    output: &Path,
+    compiler_source: &str,
+    paths: &[OsString],
+) -> Result<()> {
+    require(
+        compiler_source == NOVEMBER_SOURCE && paths.len() == 1,
+        "November early HTTP signing requires its exact captured input",
+    )?;
+    let build = load(Path::new(&paths[0]), NOVEMBER_PINS, NOVEMBER_SOURCE)?;
+    sign_checked(output, vec![build], false, Some(NOVEMBER_SOURCE))
 }
 
 #[cfg(test)]
@@ -289,6 +305,8 @@ mod tests {
         let output = root.path().join("must-not-exist");
         assert!(sign_rebuilt_early_http(&output, "wrong", &[root.path().into()]).is_err());
         assert!(sign_rebuilt_early_http(&output, SOURCE, &[]).is_err());
+        assert!(sign_november_early_http(&output, SOURCE, &[root.path().into()]).is_err());
+        assert!(sign_november_early_http(&output, NOVEMBER_SOURCE, &[root.path().into()]).is_err());
         assert!(!output.exists());
     }
 

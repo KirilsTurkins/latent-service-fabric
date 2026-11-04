@@ -58,6 +58,10 @@ pending command without a new activation. It uses native source `81d72bceaf4`
 and conductor source `ac55f717f2d`; it does not establish a terminal outcome,
 automatic retry, packaged delivery or the complete crash matrix.
 
+The [early immediate-HTTP capture](evidence/java-early-http-capture-2026-11-04.json)
+pins a separate guest that attempts the call before state or intent staging.
+Its compiler receipt does not establish signed execution or post-stage rollback.
+
 Use `python tools/run_java_transaction_http_qualification.py --help` from the
 repository root to inspect the complete required input set. Execution requires
 Linux and Python 3.13 or newer, explicit private inputs and the original finite

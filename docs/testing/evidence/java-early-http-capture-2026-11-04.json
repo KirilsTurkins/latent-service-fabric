@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "latent.java.early-http-compiler-capture.v1",
+  "sourceCommit": "fccc27dbc52f2dd0db137078f8e7e436a41ebe8a",
+  "sourceTree": "1ac97c5a984c4f5e2759ae7f5e0c1d9880b678b0",
+  "variant": "forbidden-http-before-stage",
+  "materials": {
+    "report": {
+      "sha256": "sha256:9b1129b3319712decb031a8446437b176c5b12bda19a4b1c9d4b4f493b1118ed",
+      "bytes": 86050
+    },
+    "component": {
+      "sha256": "sha256:bbbae747c7f66f293c0f9b00ae60c8596be78a194d7b6bb74788386c32b69d28",
+      "bytes": 933854
+    },
+    "sourceInputs": {
+      "sha256": "sha256:e04e6bae1382045860b5a1a887057669bfbc8836ec16ad29ca929ac940b31724",
+      "bytes": 40621
+    },
+    "recipeInputs": {
+      "sha256": "sha256:ed176ff9af7d62b5ed46d1d91f926b569aa37a119d581eed30ab9215b5956808",
+      "bytes": 10621
+    },
+    "compilerInputs": {
+      "sha256": "sha256:281a0b32d7b8a1821fad5fe1f59bae659df0af80e42b69b51c2d5c7004e7b098",
+      "bytes": 2912106
+    },
+    "sourceArchive": {
+      "sha256": "sha256:e65b1d228ae2a2bb302fae1526432d2a08e25ed3530e76c7d2c459832e92305f",
+      "bytes": 216176
+    },
+    "capsuleSource": {
+      "sha256": "sha256:4edfb96fcd6ce531877eecb9fdff474cfdeeb4e9403b5d76a5c5756f68aad579",
+      "bytes": 4360
+    },
+    "companion": {
+      "sha256": "sha256:1169abe0b6b6e621208798c06cd61b0e9ede51feb3858baec075685f16fbbf56",
+      "bytes": 1013
+    },
+    "declaration": {
+      "sha256": "sha256:81a0ace713ac452d8dc05ad04b4dac4be8cf9477bb5fcac6e6a63eaf849f9226",
+      "bytes": 807
+    },
+    "sdkLock": {
+      "sha256": "sha256:dadf14b5c1d1b4014356094e3b5fc94b125242773115f82712d08a3d16b3bcd3",
+      "bytes": 42869
+    }
+  },
+  "actualImports": [
+    "latent:clock/monotonic@0.1.0",
+    "latent:clock/wall@0.1.0",
+    "latent:http/client@0.2.0",
+    "latent:intents/staging@0.1.0",
+    "latent:state/key-value@0.2.0"
+  ],
+  "limits": {
+    "cpuFuel": 1000000000,
+    "memoryBytes": 67108864,
+    "wallTimeLimitMillis": 120000,
+    "childCalls": 0,
+    "outboundRequests": 0,
+    "stateReadBytes": 4194304,
+    "stateWriteBytes": 2097152,
+    "blobReadBytes": 0,
+    "blobWriteBytes": 0,
+    "logBytes": 0,
+    "effectCount": 32
+  },
+  "compilerExecuted": true,
+  "signedNodeExecutionQualified": false,
+  "immediateHttpDenialQualified": false,
+  "postStageRollbackQualified": false,
+  "productionApproval": false,
+  "issueClosure": false,
+  "captureKind": "fresh-source-bound-capture-2026-11-04"
+}
