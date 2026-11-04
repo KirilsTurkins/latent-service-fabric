@@ -71,6 +71,41 @@ class RustThreadDiagnosticCatalogueTests(unittest.TestCase):
         self.assertIn("exact_list(stages.run(stage + '-list'", programme)
         self.assertIn("exact_result(stages.run(stage + '-run'", programme)
 
+    def test_retained_package_material_binds_the_exact_e3_component_origin(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        from tools import rust_thread_diagnostic_package as package
+        from tools.rust_capsule_project import digest
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            (output / 'source-inputs.json').write_bytes(b'source')
+            (output / 'qualification-projection.json').write_bytes(b'projection')
+            files = {'rust-toolchain.toml': b'toolchain', 'Cargo.lock': b'lock'}
+            rows = package.retained_assembly_materials(output, b'recipe', files, b'package', b'compiler')
+            self.assertEqual(len(rows), 8)
+            origin = legacy.read_legacy('origin')
+            expected = {'name': 'normal-component-origin', 'digest': digest(origin), 'size': len(origin)}
+            self.assertEqual([row for row in rows if row['name'] == expected['name']], [expected])
+            evidence = json.loads(origin)
+            component = legacy.read_legacy('normal-component')
+            original = legacy.read_legacy('original-core')
+            self.assertEqual(evidence['normalComponentEnvelope']['componentDigest'], digest(component))
+            self.assertEqual(evidence['normalComponentEnvelope']['componentBytes'], len(component))
+            self.assertEqual(evidence['currentSourceObservation']['rawCore'],
+                             {'bytes': len(original), 'digest': digest(original)})
+            self.assertEqual(digest(component), package.COMPONENT_SHA)
+            self.assertEqual(digest(original), 'sha256:' + package.PINS['raw-core.wasm'][1])
+            actual_read = legacy.read_file
+            origin_delta = ROOT / legacy.SPECS['origin'][1]
+            def altered(path, maximum):
+                data = actual_read(path, maximum)
+                return data[:-1] + bytes([data[-1] ^ 1]) if path == origin_delta else data
+            with patch.object(legacy, 'read_file', side_effect=altered):
+                with self.assertRaises((ValueError, RuntimeError)):
+                    package.retained_assembly_materials(output, b'recipe', files, b'package', b'compiler')
+
     def test_e3_and_b422_native_readers_keep_distinct_original_control_cohorts(self):
         from tools import rust_thread_diagnostic_native_products as diagnostic, rust_thread_native_products as typescript
         self.assertEqual((diagnostic.SOURCE, diagnostic.RUN, diagnostic.JOB, diagnostic.ARTIFACT['id']),
