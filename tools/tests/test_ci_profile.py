@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -14,6 +15,47 @@ from tools import ci_profile as profile
 
 
 class ClassificationTests(unittest.TestCase):
+    def test_sparse_selector_keeps_ignore_rules_available_offline(self) -> None:
+        # A blob-filtered checkout may not have the root ignore blob locally.
+        # The selector imports Python before checking whether its checkout is clean.
+        import yaml
+        workflows = Path(__file__).resolve().parents[2] / ".github/workflows"
+        for name, job in (("ci.yml", "profile"), ("c-guest-authoring.yml", "tooling-selection"),
+                          ("java-guest-feasibility.yml", "tooling-selection"),
+                          ("rust-capsule-authoring.yml", "tooling-selection")):
+            workflow = yaml.safe_load((workflows / name).read_text(encoding="utf-8"))
+            patterns = workflow["jobs"][job]["steps"][0]["with"]["sparse-checkout"].splitlines()
+            self.assertIn("/.gitignore", patterns, name)
+        for include_ignore in (False, True):
+            with self.subTest(include_ignore=include_ignore), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                def git(*args, env=None):
+                    return subprocess.run(["git", *args], cwd=root, env=env, check=True,
+                                          text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.strip()
+                git("init", "-q")
+                git("config", "user.name", "CI fixture")
+                git("config", "user.email", "fixture@example.invalid")
+                (root / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
+                (root / "tools").mkdir()
+                (root / "tools/probe.py").write_text("value = 1\n", encoding="utf-8")
+                git("add", ".")
+                git("commit", "-qm", "fixture")
+                blob = git("rev-parse", "HEAD:.gitignore")
+                git("sparse-checkout", "init", "--no-cone")
+                (root / ".git/info/sparse-checkout").write_text(
+                    "/tools/\n" + ("/.gitignore\n" if include_ignore else ""), encoding="utf-8")
+                git("read-tree", "-mu", "HEAD")
+                blob_path = root / ".git/objects" / blob[:2] / blob[2:]
+                blob_path.chmod(0o600)
+                blob_path.unlink()
+                git("config", "remote.origin.promisor", "true")
+                git("config", "remote.origin.partialclonefilter", "blob:none")
+                env = {**os.environ, "GIT_NO_LAZY_FETCH": "1", "GIT_TERMINAL_PROMPT": "0"}
+                env.pop("PYTHONDONTWRITEBYTECODE", None)
+                subprocess.run([sys.executable, "-c", "import tools.probe"], cwd=root, env=env, check=True)
+                status = git("status", "--porcelain", "--untracked-files=normal", env=env)
+                self.assertEqual(status == "", include_ignore)
+
     def test_workflow_sparse_checkouts_load_the_complete_suite_case_inventory(self) -> None:
         # Use the actual Git patterns and isolated Python processes: the outer
         # checkout must not supply an omitted module or additive case fragment.
