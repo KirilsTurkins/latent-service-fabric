@@ -11,6 +11,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      actions: read
     steps:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
@@ -21,124 +22,81 @@ jobs:
           python-version: 3.13.5
       - name: Install reviewed validator dependencies
         run: python3 -m pip install --requirement tools/requirements.lock
-      - name: Read exact reviewed correction and preserved development reader
+      - name: Apply and test the pinned correction then store only its tested blobs
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git fetch --no-tags --depth=1 origin 204ca9f3096ea9b62bd4f4892adc10319834255f 816b806d61c3479b3e138fa55466c22250818f07
+          git fetch --no-tags --depth=1 origin 17b4d186e50009bee236d296fdd248c05905d2f2
           python3 - <<'PY'
-          import hashlib, subprocess, yaml
-          raw = subprocess.check_output(['git', 'show', '204ca9f3096ea9b62bd4f4892adc10319834255f:.github/workflows/rust-thread-contract-review.yml'])
-          assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == '58cc79e4531afcaff0f24bc45f060631867e359b'
-          workflow = yaml.safe_load(raw)
-          steps = [s for s in workflow['jobs']['review']['steps'] if s.get('name') == 'Apply exact reviewed integration repairs']
-          assert len(steps) == 1
-          subprocess.run(['bash', '-eu'], input=steps[0]['run'].encode(), check=True)
+          import hashlib, json, os, pathlib, subprocess, yaml, zipfile
+          raw = subprocess.check_output(['git', 'show', '17b4d186e50009bee236d296fdd248c05905d2f2:.github/workflows/rust-thread-contract-review.yml'])
+          assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == '07acc1704f9aa33b17692bc97273b63ad7f0b233'
+          steps = yaml.safe_load(raw)['jobs']['review']['steps']
+          names = (
+              'Read exact reviewed correction and preserved development reader',
+              'Isolate Rust runtime selection from historical Java TypeScript and Audit readers',
+              'Fetch exact historical inputs',
+              'Validate affected suites and complete command contracts',
+              'Store exact tested blobs without changing a branch',
+          )
+          try:
+              for name in names:
+                  selected = [s for s in steps if s.get('name') == name]
+                  assert len(selected) == 1
+                  script = selected[0]['run']
+                  if name.startswith('Isolate'):
+                      assert script.count('        run: git fetch') == 2
+                      script = script.replace('        run: git fetch', 'git fetch')
+                  print('Executing reviewed stage:', name, flush=True)
+                  subprocess.run(['bash', '-eu'], input=script.encode(), check=True)
+          finally:
+              out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'rust-contract-review'
+              out.mkdir(exist_ok=True)
+              names = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
+              names += subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()
+              with zipfile.ZipFile(out / 'candidate-files.zip', 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+                  for name in sorted(set(names)):
+                      path = pathlib.Path(name)
+                      assert path.is_file() and not path.is_symlink() and path.stat().st_size <= 4 * 1024 * 1024
+                      archive.write(path, name)
+              (out / 'integration.patch').write_bytes(subprocess.check_output(['git', 'diff', '--binary']))
           PY
-      - name: Isolate Rust runtime selection from historical Java TypeScript and Audit readers
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import hashlib, json, os, subprocess
-          def blob(raw):
-              return hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
-          def edit(name, before, after):
-              path = Path(name); text = path.read_text()
-              assert text.count(before) == 1, name
-              path.write_text(text.replace(before, after, 1))
-          old = Path('tools/rust_thread_native_products.py')
-          new = Path('tools/rust_thread_runtime_native_products.py')
-          assert not new.exists()
-          new.write_bytes(old.read_bytes())
-          preserved = subprocess.check_output(['git', 'show', '816b806d61c3479b3e138fa55466c22250818f07:tools/rust_thread_native_products.py'])
-          assert blob(preserved) == 'd402f90c175afcf42a22cd868589ec192aebd02c'
-          old.write_bytes(preserved)
-          edit('tools/qualify_rust_thread_runtime.py', 'from tools import rust_thread_native_products as native_source', 'from tools import rust_thread_runtime_native_products as native_source')
-          edit('tools/rust_thread_runtime_package.py', "'tools/rust_thread_native_products.py'", "'tools/rust_thread_runtime_native_products.py'")
-          edit('tools/tests/test_rust_thread_runtime.py', 'from tools import rust_thread_native_products as native', 'from tools import rust_thread_runtime_native_products as native')
-          edit('tools/tests/test_rust_thread_runtime.py',
-               '        # The shallow repository Python lane imports this frozen reader via\n        # Java and TypeScript controls too. Bind the exact producer before\n',
-               '        # The shallow repository Python lane imports the Rust runtime reader.\n        # Bind its own exact producer before\n')
-          marker = '        # Both readers bind one actual push event, not an either-event fallback.\n'
-          extra = '''        # Changing the Rust runtime tuple must not move another campaign's host.
-                  from tools import rust_thread_native_products as historical
-                  self.assertEqual(historical.SOURCE, 'b422af24d86344ac7abb8b8fa56c3782aab63915')
-                  self.assertEqual(historical.JOB, 124001233201)
-                  self.assertEqual(historical.READER.control_count, 193)
-                  self.assertNotEqual(historical.SOURCE, native.SOURCE)
-                  self.assertNotEqual(historical.ARTIFACT, native.ARTIFACT)
-                  self.assertEqual(package.SOURCE, native.SOURCE)
-          '''.replace('\n          ', '\n')
-          edit('tools/tests/test_rust_thread_runtime.py', marker, extra + '\n' + marker)
-          workflow = '.github/workflows/rust-thread-runtime.yml'
-          job = 'tools/ci/contracts/workflows/rust-thread-runtime.yml/jobs/signed-default-pools.json'
-          for name in (workflow, job):
-              edit(name, 'tools/rust_thread_native_products.py', 'tools/rust_thread_runtime_native_products.py')
-          edit(workflow,
-               '        run: git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd',
-               '        run: git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd b422af24d86344ac7abb8b8fa56c3782aab63915')
-          edit(job,
-               'git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd\\n',
-               'git fetch --no-tags --depth=1 origin cddfb5d016a6311ed0db4673e490dc9caad917dd b422af24d86344ac7abb8b8fa56c3782aab63915\\n')
-          owner = Path('tools/ci/contracts/owners/tools/rust_thread_native_products.py.json')
-          selected = json.loads(owner.read_text())
-          runtime = {**selected, 'path': str(new), 'sha256': hashlib.sha256(new.read_bytes()).hexdigest(),
-                     'reviewReason': 'Keep the exact Rust runtime 200-control producer in its own reader; historical Java, TypeScript and Audit campaigns retain the development 193-control reader byte-for-byte.'}
-          owner.with_name('rust_thread_runtime_native_products.py.json').write_text(json.dumps(runtime, indent=2) + '\n')
-          selected['sha256'] = hashlib.sha256(preserved).hexdigest()
-          selected['reviewReason'] = 'Restore the exact development d402f90c historical 193-control reader. The Rust runtime has a separate source-matched selection; no historical campaign is relabeled.'
-          owner.write_text(json.dumps(selected, indent=2) + '\n')
-          owner = Path('tools/ci/contracts/owners/tools/qualify_rust_thread_runtime.py.json')
-          selected = json.loads(owner.read_text())
-          selected['sha256'] = hashlib.sha256(Path(selected['path']).read_bytes()).hexdigest()
-          selected['reviewReason'] += ' Select only the isolated Rust runtime reader; signed results, budgets and retirement checks are unchanged.'
-          owner.write_text(json.dumps(selected, indent=2) + '\n')
-          out = Path(os.environ['RUNNER_TEMP']) / 'rust-contract-review'
-          (out / 'integration.patch').write_bytes(subprocess.check_output(['git', 'diff', '--binary']))
-          PY
-          git diff --check
-      - name: Fetch exact historical inputs
-        run: |
-          python3 - <<'PY' > "$RUNNER_TEMP/rust-contract-review/history.sh"
-          from pathlib import Path
-          from tools.ci_lane_inventory import workflow_model
-          steps = workflow_model(Path('.github/workflows/ci.yml').read_text())['jobs']['contracts']['steps']
-          selected = [s for s in steps if s.get('name') == 'Fetch exact historical source inputs for Python preservation controls']
-          assert len(selected) == 1 and selected[0]['if'] == "matrix.lane == 'python'"
-          print(selected[0]['run'])
-          PY
-          bash "$RUNNER_TEMP/rust-contract-review/history.sh"
-      - name: Validate affected suites and complete command contracts
-        run: |
-          status=0
-          python3 -m unittest tools.tests.test_ci_contracts tools.tests.test_ci_profile tools.tests.test_ci_result tools.tests.test_c_closed_filesystem_qualification tools.tests.test_owned_runners tools.tests.test_audit_memory_programme tools.tests.test_c_thread_minimal tools.tests.test_c_thread_ready_runtime tools.tests.test_java_scheduled_library tools.tests.test_rust_thread_runtime tools.tests.test_java_checkpoint_gc tools.tests.test_java_checkpoint_gc_retained tools.tests.test_java_dependency_checkpoints tools.tests.test_typescript_private_removed tools.tests.test_c_thread_runtime > "$RUNNER_TEMP/rust-contract-review/tests.log" 2>&1 || status=$?
-          tail -n 100 "$RUNNER_TEMP/rust-contract-review/tests.log"
-          test "$status" = 0
-          python3 tools/ci_coverage.py --receipt "$RUNNER_TEMP/rust-contract-review/coverage.json"
-      - name: Store exact tested blobs without changing a branch
+      - name: Retain only failing integration diagnostics from the previous head
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import base64, hashlib, json, os, pathlib, subprocess, urllib.request, zipfile
-          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'rust-contract-review'
-          changed = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
-          added = subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()
-          names = sorted(set(changed + added))
-          assert 10 <= len(names) <= 24
-          assert all(n.startswith(('tools/', '.github/workflows/')) for n in names)
-          records = []
-          with zipfile.ZipFile(out / 'tested-files.zip', 'w', compression=zipfile.ZIP_DEFLATED) as archive:
-              for name in names:
-                  raw = pathlib.Path(name).read_bytes()
-                  assert len(raw) <= 4 * 1024 * 1024
-                  identity = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
-                  request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs', data=json.dumps({'encoding':'base64','content':base64.b64encode(raw).decode()}).encode(), headers={'Authorization':'Bearer ' + os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'}, method='POST')
-                  with urllib.request.urlopen(request, timeout=60) as response:
-                      stored = json.load(response)
-                  assert stored['sha'] == identity
-                  records.append({'path':name,'sha':identity,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()})
-                  archive.writestr(name, raw)
-          (out / 'tested-blobs.json').write_text(json.dumps(records,indent=2)+'\n')
-          print(json.dumps(records))
+          import json, os, pathlib, urllib.error, urllib.request
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'rust-contract-review' / 'previous-failures'
+          root.mkdir(parents=True, exist_ok=True)
+          base = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/'
+          headers = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'}
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, request, fp, code, message, response_headers, url):
+                  return None
+          summary = []
+          for run in (41422894374, 41422894288, 41422894196):
+              with urllib.request.urlopen(urllib.request.Request(base + f'actions/runs/{run}/jobs?per_page=100', headers=headers), timeout=30) as response:
+                  jobs = json.load(response)['jobs']
+              for job in jobs:
+                  if job['conclusion'] != 'failure':
+                      continue
+                  request = urllib.request.Request(base + f'actions/jobs/{job["id"]}/logs', headers=headers)
+                  try:
+                      response = urllib.request.build_opener(NoRedirect).open(request, timeout=30)
+                  except urllib.error.HTTPError as error:
+                      if error.code != 302:
+                          raise
+                      location = error.headers['Location']
+                      assert location.startswith('https://')
+                      response = urllib.request.urlopen(location, timeout=60)
+                  with response:
+                      raw = response.read(8 * 1024 * 1024 + 1)
+                  assert len(raw) <= 8 * 1024 * 1024
+                  (root / f'{job["id"]}.log').write_bytes(raw)
+                  summary.append({'run':run, 'job':job['id'], 'name':job['name'], 'bytes':len(raw)})
+          (root / 'jobs.json').write_text(json.dumps(summary, indent=2) + '\n')
           PY
       - name: Retain exact review evidence
         if: always()
