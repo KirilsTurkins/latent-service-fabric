@@ -1,0 +1,60 @@
+name: PR 1587 blocker validation
+on:
+  push:
+    branches: [ci/pr1587-blocker-validation-20261104]
+    paths: [.github/workflows/pr1587-blocker-validation.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/pr1587-blocker-validation-20261104'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Read bounded failure diagnostics from the exact published-head runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, urllib.request, urllib.error
+          api = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/'
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+          opener = urllib.request.build_opener(NoRedirect)
+          def read(path, limit=2097152):
+              req = urllib.request.Request(api+path, headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'], 'Accept':'application/vnd.github+json'})
+              try:
+                  response = opener.open(req, timeout=30)
+              except urllib.error.HTTPError as error:
+                  if error.code != 302:
+                      raise
+                  location = error.headers['Location']
+                  assert location.startswith('https://')
+                  response = urllib.request.urlopen(location, timeout=30)
+              with response:
+                  raw = response.read(limit+1)
+              assert len(raw) <= limit, path
+              return raw
+          for run in (41414110754,41414110588,41414110614,41414110572,41414110579):
+              jobs = json.loads(read(f'actions/runs/{run}/jobs?per_page=100'))
+              assert jobs['total_count'] <= 100
+              for job in jobs['jobs']:
+                  if job['conclusion'] not in ('failure','cancelled','timed_out'):
+                      continue
+                  print('\nFAILURE', json.dumps({'run':run,'job':job['id'],'name':job['name'],'conclusion':job['conclusion'],'steps':[(s['number'],s['name'],s['conclusion']) for s in job['steps'] if s['conclusion'] not in ('success','skipped')]}))
+                  try:
+                      text = read(f"actions/jobs/{job['id']}/logs",33554432).decode('utf-8-sig')
+                  except Exception as error:
+                      print('LOG_UNAVAILABLE',type(error).__name__)
+                      continue
+                  lines = text.splitlines()
+                  errors = [i for i,line in enumerate(lines) if any(term in line for term in ('Traceback (most recent call last)', 'AssertionError:', 'Error: Process completed', '##[error]', 'FAILED (', 'panic', 'error: test failed'))]
+                  selected = set()
+                  for index in errors[-5:]:
+                      selected.update(range(max(0,index-12),min(len(lines),index+20)))
+                  if not selected:
+                      selected.update(range(max(0,len(lines)-70),len(lines)))
+                  print('\n'.join(lines[i] for i in sorted(selected))[-22000:])
+          PY
