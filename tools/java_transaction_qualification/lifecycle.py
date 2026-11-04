@@ -31,7 +31,7 @@ CURRENT_NODE_PROGRAM = (
 CURRENT_METADATA_SESSIONS = {'publish', 'authority', 'diagnostic-metadata', 'legacy-metadata',
                              'compatible-metadata', 'writer-metadata'}
 CURRENT_HTTP_TERMINAL_NODE_PROGRAM = (
-    *CURRENT_NODE_PROGRAM[:11],
+    *CURRENT_NODE_PROGRAM[:6], 'diagnostic-after-crash', *CURRENT_NODE_PROGRAM[6:11],
     'cancellation-legacy-metadata', 'cancellation-legacy-runtime',
     'cancellation-compatible-metadata', 'cancellation-compatible-runtime',
     *CURRENT_NODE_PROGRAM[11:],

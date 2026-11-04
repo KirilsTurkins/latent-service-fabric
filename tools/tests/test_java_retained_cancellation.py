@@ -288,7 +288,7 @@ class SessionFixture:
         self.subject.query = Mock(side_effect=self.query)
         self.actual_replay = http.replay
         self.old_prefix = ('publish', 'authority', 'namespace-create', 'legacy-runtime',
-            'diagnostic-metadata', 'diagnostic-runtime', 'legacy-metadata', 'legacy-after-diagnostic',
+            'diagnostic-metadata', 'diagnostic-runtime', 'diagnostic-after-crash', 'legacy-metadata', 'legacy-after-diagnostic',
             'compatible-metadata', 'compatible-runtime', 'compatible-after-crash')
         self.new_sessions = ('cancellation-legacy-metadata', 'cancellation-legacy-runtime',
                              'cancellation-compatible-metadata', 'cancellation-compatible-runtime')
@@ -440,7 +440,7 @@ class RetainedCancellationSessions(unittest.TestCase):
             self.assertEqual(fixture.started, [*fixture.old_prefix, *fixture.new_sessions])
             self.assertEqual(len(fixture.cancel_calls), 1)
             self.assertEqual(fixture.client.role, 'operator')
-            self.assertEqual(fixture.node.ordinal, 15)
+            self.assertEqual(fixture.node.ordinal, 16)
             self.assertEqual(fixture.lease_calls, 4)
             self.assertEqual(fixture.collector.cases, [
                 'deploy-put-once-legacy-v1-legacy-after-diagnostic',
@@ -460,7 +460,7 @@ class RetainedCancellationSessions(unittest.TestCase):
             fixture.node.stop()
             with self.assertRaisesRegex(ValueError, 'bounded-current-node-session-program'):
                 fixture.node.start(fixture.configuration.path, current_session='writer-metadata')
-            self.assertEqual(len(fixture.started), 18)
+            self.assertEqual(len(fixture.started), 19)
 
     def test_consumed_prefix_refuses_default_old_session_names_before_cancel(self):
         with SessionFixture() as fixture:
@@ -468,7 +468,7 @@ class RetainedCancellationSessions(unittest.TestCase):
                 fixture.activation.switch(fixture.subject, 'put-once-legacy-v1')
             self.assertEqual(fixture.started, list(fixture.old_prefix))
             self.assertEqual(fixture.cancel_calls, [])
-            self.assertEqual(fixture.node.ordinal, 11)
+            self.assertEqual(fixture.node.ordinal, 12)
             fixture.unchanged_original_evidence()
 
     def test_duplicate_cancellation_cannot_reuse_completed_phase_or_evidence(self):
@@ -499,7 +499,7 @@ class RetainedCancellationSessions(unittest.TestCase):
 
     def test_new_slots_keep_metadata_empty_and_runtime_one_publication(self):
         from tools.phase2_operator_process import read_json, write_json
-        for position, kind in ((11, 'runtime-in-metadata'), (12, 'empty-runtime'), (12, 'mixed-runtime')):
+        for position, kind in ((12, 'runtime-in-metadata'), (13, 'empty-runtime'), (13, 'mixed-runtime')):
             with self.subTest(position=position, kind=kind), SessionFixture() as fixture:
                 fixture.node.stop()
                 fixture.node.ordinal = position
