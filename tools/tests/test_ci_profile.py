@@ -120,8 +120,11 @@ class ClassificationTests(unittest.TestCase):
                 checkout = next(step for step in model["jobs"][job]["steps"]
                                 if "sparse-checkout" in step.get("with", {}))
                 patterns = checkout["with"]["sparse-checkout"]
-                self.assertIn("/tools/ci_suite_cases.py", patterns.splitlines())
-                self.assertIn("/tools/ci/suites.cases.d/", patterns.splitlines())
+                if job == "profile":
+                    self.assertIn("/tools/", patterns.splitlines())
+                else:
+                    self.assertIn("/tools/ci_suite_cases.py", patterns.splitlines())
+                    self.assertIn("/tools/ci/suites.cases.d/", patterns.splitlines())
                 sparse = Path(temporary) / "checkout"
                 sparse.mkdir()
                 def run(*arguments, input=None, status=0):
@@ -187,7 +190,8 @@ class ClassificationTests(unittest.TestCase):
                 # inputs; a full-tree fallback would make these negative controls pass.
                 for omitted in ("/tools/ci_suite_cases.py", "/tools/ci/suites.cases.d/"):
                     with self.subTest(omitted=omitted):
-                        incomplete = "\n".join(line for line in patterns.splitlines() if line != omitted) + "\n"
+                        incomplete = (patterns + "\n!" + omitted + "\n" if job == "profile" else
+                                      "\n".join(line for line in patterns.splitlines() if line != omitted) + "\n")
                         run("git", "sparse-checkout", "set", "--no-cone", "--stdin", input=incomplete)
                         self.assertFalse((sparse / omitted.strip("/")).exists())
                         run(sys.executable, "-I", "-c", probe, status=1)
