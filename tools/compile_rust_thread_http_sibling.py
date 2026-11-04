@@ -93,6 +93,18 @@ class DiagnosticThreadingValidation:
         return self.commands.run(stage, *args, **kwargs)
 
 
+def record_diagnostic_composition(output: Path, composition: dict, composer: dict):
+    """Retain the composer's original receipt and a separate diagnostic view."""
+    receipt = output / 'rust-http-composition.json'
+    require(type(composition) is dict and decode_json(read_file(receipt)) == composition
+            and not {'diagnosticComposer', 'diagnosticOnly', 'diagnosticValidationFeatures'} & composition.keys(),
+            'rust-http-thread-composition-receipt-mismatch')
+    diagnostic = {**composition, 'diagnosticComposer': composer, 'diagnosticOnly': True,
+                  'diagnosticValidationFeatures': THREAD_PREVIEW_FEATURES}
+    write_json(output / 'rust-http-composition-diagnostic.json', diagnostic)
+    return diagnostic
+
+
 class DiagnosticHttpComposition:
     """Bind one fixed diagnostic composer to an already-verified adapter.
 
@@ -612,10 +624,7 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path,
                 work, isolation=isolation, environment_guard=guard)
             require(preview_commands.validated, 'rust-http-thread-diagnostic-validation-missing')
             diagnostic.check()
-            composition['diagnosticComposer'] = record['diagnosticComposer']
-            composition['diagnosticOnly'] = True
-            composition['diagnosticValidationFeatures'] = THREAD_PREVIEW_FEATURES
-            write_json(output / 'rust-http-composition.json', composition)
+            composition = record_diagnostic_composition(output, composition, record['diagnosticComposer'])
             record['httpCompositionIncluded'] = True
             record['httpComposition'] = composition
             record['combinedComponent'] = file_identity(combined, 'unadmitted-http-thread-component',
