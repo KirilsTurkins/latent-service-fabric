@@ -249,7 +249,13 @@ def evaluate(repo: Path, output: Path, configuration: str, *,
                             if owner is None:
                                 discovery.validate_custom_execution(data, raw)
                             else:
-                                discovery.validate_recipe_execution(data, owner, raw)
+                                listing = ci_cargo.RECIPES[invocation.name + '-list'][0]
+                                item = observations.observe(listing, repo=repo,
+                                    output=sample_output / listing.name, environment=inv_env,
+                                    configuration=configuration, inventory=None, timeout=7200)
+                                observed.append(item)
+                                listing_raw = execution_text(sample_output / listing.name)
+                                discovery.validate_recipe_execution(data, owner, raw, listing_raw)
                 sample["completedSuiteSeconds"] = time.monotonic() - began
                 sample["observations"] = [str(Path(state) / item["invocation"]["name"] / "observation.json") for item in observed]
                 sample["builtArtifactRecords"] = sum(item["builtArtifactRecords"] for item in observed)

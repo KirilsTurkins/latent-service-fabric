@@ -95,6 +95,7 @@ class EvaluationTests(unittest.TestCase):
     def test_cold_and_two_warm_rows_run_every_recipe_and_revalidate_handoffs(self):
         record, observed, custom_count, recipe_count = self.replay()
         expected = [invocation.name for recipe in ci_cargo.RUST_RECIPES for invocation in ci_cargo.RECIPES[recipe]]
+        expected += ['doctests-list', 'signing-compatibility-list']
         self.assertEqual([name for name, _, _ in observed], expected * 3)
         self.assertEqual(custom_count, 3)
         self.assertEqual(recipe_count, 6)
@@ -105,7 +106,7 @@ class EvaluationTests(unittest.TestCase):
         for name, inventory, env in observed:
             self.assertEqual(inventory is not None, name == ci_cargo.RECIPES["prepare"][1].name)
             self.assertNotIn("LD_LIBRARY_PATH", env)
-            self.assertEqual(env.get("LSF_AOT_TEST_EXECUTION_ONLY"), "1" if name in [i.name for i in ci_cargo.RECIPES["test"]] else None)
+            self.assertEqual(env.get("LSF_AOT_TEST_EXECUTION_ONLY"), "1" if name in [i.name for i in ci_cargo.RECIPES["test"]] + ['doctests-list', 'signing-compatibility-list'] else None)
 
     def test_changed_warm_suite_identity_is_failure_not_faster_result(self):
         with self.assertRaisesRegex(ValueError, "identity-mismatch"):
