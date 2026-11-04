@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "RustThreadDiagnosticRecoveryTests.test_changed_extra_or_missing_member_refuses",
+    "RustThreadDiagnosticRecoveryTests.test_exact_members_preserve_both_compiler_and_storage_origins",
+    "RustThreadDiagnosticRecoveryTests.test_fixed_storage_pins_are_distinct_from_original_compiler",
+    "RustThreadDiagnosticRecoveryTests.test_original_exact_artifact_remains_preferred_and_missing_fallback_fails_closed",
+    "RustThreadDiagnosticRecoveryTests.test_wrong_recovery_origin_job_digest_or_duplicate_refuses"
+  ],
+  "guards": {
+    "RustThreadDiagnosticRecoveryTests.test_changed_extra_or_missing_member_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce2e24120272f68bd0ea6c4dec0965dffa061725dfbb421a0e8f3465403d79e2",
+        "class:setup-sha256:bfe425a52a034ffcef1defd5d5b58bfb1a0a61ae0164c9929bf4f7b02bbb66aa"
+      ],
+      "skipSites": []
+    },
+    "RustThreadDiagnosticRecoveryTests.test_exact_members_preserve_both_compiler_and_storage_origins": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce2e24120272f68bd0ea6c4dec0965dffa061725dfbb421a0e8f3465403d79e2",
+        "class:setup-sha256:bfe425a52a034ffcef1defd5d5b58bfb1a0a61ae0164c9929bf4f7b02bbb66aa"
+      ],
+      "skipSites": []
+    },
+    "RustThreadDiagnosticRecoveryTests.test_fixed_storage_pins_are_distinct_from_original_compiler": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce2e24120272f68bd0ea6c4dec0965dffa061725dfbb421a0e8f3465403d79e2",
+        "class:setup-sha256:bfe425a52a034ffcef1defd5d5b58bfb1a0a61ae0164c9929bf4f7b02bbb66aa"
+      ],
+      "skipSites": []
+    },
+    "RustThreadDiagnosticRecoveryTests.test_original_exact_artifact_remains_preferred_and_missing_fallback_fails_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce2e24120272f68bd0ea6c4dec0965dffa061725dfbb421a0e8f3465403d79e2",
+        "class:setup-sha256:bfe425a52a034ffcef1defd5d5b58bfb1a0a61ae0164c9929bf4f7b02bbb66aa"
+      ],
+      "skipSites": []
+    },
+    "RustThreadDiagnosticRecoveryTests.test_wrong_recovery_origin_job_digest_or_duplicate_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce2e24120272f68bd0ea6c4dec0965dffa061725dfbb421a0e8f3465403d79e2",
+        "class:setup-sha256:bfe425a52a034ffcef1defd5d5b58bfb1a0a61ae0164c9929bf4f7b02bbb66aa"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_thread_diagnostic_recovery.py",
+  "reviewReason": "Authenticate the fixed recovery storage, original compiler attribution, bounded member set and refusal controls.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
