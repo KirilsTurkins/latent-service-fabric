@@ -1,0 +1,402 @@
+{
+  "schemaVersion": "latent.dotnet.original-v3-numeric-observation.v1",
+  "status": "captured-nonqualifying",
+  "runtimeQualification": false,
+  "full746Qualified": false,
+  "fullAC7Qualified": false,
+  "originalFaultCauseQualified": false,
+  "opaqueCauseQualified": false,
+  "physicalRetirementQualified": false,
+  "nativeAccountingComplete": false,
+  "guestCompilerCorelibRebuilt": false,
+  "auxiliaryRewritePerformed": false,
+  "normal15OutcomeReceiptChanged": false,
+  "sourceRevision": "2a79e99443c534cdbbb5ef97ef608b591e416d2f",
+  "ownerCaps": {
+    "tasks": 8,
+    "executors": 2,
+    "queuedWork": 8,
+    "waits": 16,
+    "timers": 8,
+    "results": 8,
+    "nativeOwners": 8
+  },
+  "hermetic": false,
+  "implicitCompilerInputsAttested": false,
+  "diagnosticIoMayPerturbTimingAndTerminalObservation": true,
+  "limits": {
+    "absoluteSeconds": 1320,
+    "commandSeconds": 600,
+    "cleanupReserveSeconds": 5,
+    "jobs": 2,
+    "commandCount": 128,
+    "diagnosticBytes": 16777216,
+    "publicBytes": 134217728
+  },
+  "original": {
+    "origin": {
+      "run": 41191304300,
+      "job": 124508472972,
+      "artifact": 13038749267,
+      "source": "1a8aa9a00e8e7c52fb8cc913b0da8aaa003d9b98",
+      "bytes": 8155138,
+      "sha256": "23af068f95a0fc554c16cf4c7c058273146c6ec7f1e2d0e2c06120f56b2cb1bb",
+      "members": 395,
+      "admittedBytes": 29061478,
+      "admissionSha256": "7eeadc24363a2d970fe38db80d439b3d906c45e93be075d380c9ea8bd1131430"
+    },
+    "component": "sha256:9c20e7025c9a2672ee256d93fb51efd631b609064953a11dc2491a94639552af",
+    "packageInputs": {
+      "capsule.json": {
+        "retainedSource": "build/capsule.json",
+        "bytes": 1387,
+        "sha256": "sha256:91a482b9599db19105db186a0aa71a85f7b394e766d46636b415c77e8ada024d"
+      },
+      "compatibility-report.json": {
+        "retainedSource": "build/compatibility-report.json",
+        "bytes": 1254,
+        "sha256": "sha256:55932c6c18671dd35d4f357e388e187bd19b528a534d17b028055454b368accb"
+      },
+      "component.wasm": {
+        "retainedSource": "build/component.wasm",
+        "bytes": 2476558,
+        "sha256": "sha256:9c20e7025c9a2672ee256d93fb51efd631b609064953a11dc2491a94639552af"
+      },
+      "contracts.json": {
+        "retainedSource": "build/contracts.json",
+        "bytes": 902,
+        "sha256": "sha256:d87882a6ad7fb199776006e155b9ca7d7e36443c81f57abb9040dd29a717681e"
+      },
+      "package-source.json": {
+        "retainedSource": "build/package-source.json",
+        "bytes": 1650,
+        "sha256": "sha256:10e9d6ad331cda8213a26994878970328f3d595f20d412b789599f3c0a91dadd"
+      },
+      "wit-lock.json": {
+        "retainedSource": "build/wit-lock.json",
+        "bytes": 924,
+        "sha256": "sha256:e0bd8e53cf1b884a7348c6bea70d582218890b3c4a8bdee04b31d9cf2e91b96f"
+      },
+      "wit/deps/activation-runtime/package.wit": {
+        "retainedSource": "project/wit/deps/activation-runtime/package.wit",
+        "bytes": 2539,
+        "sha256": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946"
+      },
+      "wit/deps/clock/package.wit": {
+        "retainedSource": "project/wit/deps/clock/package.wit",
+        "bytes": 139,
+        "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+      },
+      "wit/deps/random/package.wit": {
+        "retainedSource": "project/wit/deps/random/package.wit",
+        "bytes": 272,
+        "sha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60"
+      },
+      "wit/world.wit": {
+        "retainedSource": "project/wit/world.wit",
+        "bytes": 345,
+        "sha256": "sha256:7bc0cb3dc5134250cc0dcae3c850f3bdb6d9f28114be6b6246472d7c6466e737"
+      },
+      "BUILD-COMPLETE.json": {
+        "retainedSource": "build/BUILD-COMPLETE.json",
+        "bytes": 44295,
+        "sha256": "sha256:e5a2234d5a8c1fafe4d4abb30c33d59e5dab0fa8383c2a4c203dd00d86521ebe"
+      },
+      "source-inputs.json": {
+        "retainedSource": "build/source-inputs.json",
+        "bytes": 24034,
+        "sha256": "sha256:352c36056922652bece5dd9804a50ef7675c6ac61c5a9810b781535ab4ff32f4"
+      },
+      "build-observation.json": {
+        "retainedSource": "build/build-observation.json",
+        "bytes": 8146,
+        "sha256": "sha256:a561a89b8b2ff6b0dccd810514be210e38ebd14ca25d996f2f153abc3d39d57e"
+      },
+      "package-inputs.json": {
+        "retainedSource": "build/package-inputs.json",
+        "bytes": 1201,
+        "sha256": "sha256:ff48598edcf53543be926d2287e945dcf9601935c9927631e740ada180b7158f"
+      },
+      "deployment.json": {
+        "retainedSource": "build/deployment.json",
+        "bytes": 886,
+        "sha256": "sha256:88ecb7f872b991d33929295b2a0f1fb35a42e3346d41b8ca47111ddd29ab4e1a"
+      }
+    },
+    "normalNeutralPackagingReference": {
+      "retainedSource": "neutral-build-observation.json",
+      "bytes": 8662,
+      "sha256": "sha256:966bce14097fd21979a8ae15b0f735c44e9f191b6720a7f211480f7a60996eca"
+    },
+    "originalEffectiveRequestBudget": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 134217728,
+      "wallTimeLimitMillis": 120000,
+      "childCalls": 0,
+      "outboundRequests": 0,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "logBytes": 0,
+      "effectCount": 0
+    },
+    "allOriginalMembersAndCrcsVerified": true,
+    "guestCompilerCorelibRebuilt": false
+  },
+  "buildToolIdentities": {
+    "rustc": {
+      "sha256": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "bytes": 645000
+    },
+    "cargo": {
+      "sha256": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "bytes": 42839824
+    }
+  },
+  "executables": [
+    {
+      "sha256": "sha256:315e1e4a6e5c394f9d00178bcbab843f26875ed86278d210593b0ac1518dfcfe",
+      "bytes": 129169584
+    },
+    {
+      "sha256": "sha256:d5dfa9c469d8ecee9a63474afab7bb688915c3c0a3bbebf94ad59da48f14d28e",
+      "bytes": 141250600
+    }
+  ],
+  "observations": [
+    {
+      "kind": "DOTNET_ORIGINAL_V3_TRAP",
+      "observation": {
+        "component": "sha256:9c20e7025c9a2672ee256d93fb51efd631b609064953a11dc2491a94639552af",
+        "full746Qualified": false,
+        "fullAC7Qualified": false,
+        "mode": 9,
+        "observation": {
+          "ambiguous": false,
+          "engineFrameCap": 16,
+          "frames": [
+            {
+              "function": 3273,
+              "functionOffset": 1,
+              "module": 0,
+              "moduleOffset": 1133740
+            },
+            {
+              "function": 706,
+              "functionOffset": 1,
+              "module": 0,
+              "moduleOffset": 467563
+            },
+            {
+              "function": 2810,
+              "functionOffset": 864,
+              "module": 0,
+              "moduleOffset": 1002996
+            },
+            {
+              "function": 1727,
+              "functionOffset": 55,
+              "module": 0,
+              "moduleOffset": 695415
+            },
+            {
+              "function": 1449,
+              "functionOffset": 290,
+              "module": 0,
+              "moduleOffset": 610918
+            },
+            {
+              "function": 1871,
+              "functionOffset": 5,
+              "module": 0,
+              "moduleOffset": 741893
+            },
+            {
+              "function": 2067,
+              "functionOffset": 177,
+              "module": 0,
+              "moduleOffset": 800834
+            },
+            {
+              "function": 3103,
+              "functionOffset": 669,
+              "module": 0,
+              "moduleOffset": 1080129
+            },
+            {
+              "function": 1446,
+              "functionOffset": 82,
+              "module": 0,
+              "moduleOffset": 609548
+            },
+            {
+              "function": 1314,
+              "functionOffset": 1109,
+              "module": 0,
+              "moduleOffset": 566031
+            },
+            {
+              "function": 2210,
+              "functionOffset": 114,
+              "module": 0,
+              "moduleOffset": 838151
+            },
+            {
+              "function": 1870,
+              "functionOffset": 59,
+              "module": 0,
+              "moduleOffset": 741822
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "mayBeTruncated": false,
+          "missingBacktrace": false,
+          "observedErrors": 1,
+          "observedFrames": 12,
+          "trapKind": "unreachable-code"
+        },
+        "opaqueCauseQualified": false,
+        "originalFaultCauseQualified": false,
+        "runtimeQualification": false
+      }
+    },
+    {
+      "kind": "DOTNET_ORIGINAL_V3_IDLE",
+      "observation": {
+        "activeActivations": 0,
+        "cpuFuel": 54183312,
+        "liveInstances": 0,
+        "liveStores": 0,
+        "mode": 9,
+        "nativeAccountingComplete": false,
+        "newStores": 1,
+        "peakMemoryBytes": 56871047,
+        "physicalRetirementQualified": false,
+        "reservedFuel": 0,
+        "reservedMemory": 0
+      }
+    },
+    {
+      "kind": "DOTNET_ORIGINAL_V3_TRAP",
+      "observation": {
+        "component": "sha256:9c20e7025c9a2672ee256d93fb51efd631b609064953a11dc2491a94639552af",
+        "full746Qualified": false,
+        "fullAC7Qualified": false,
+        "mode": 8,
+        "observation": {
+          "ambiguous": false,
+          "engineFrameCap": 16,
+          "frames": [
+            {
+              "function": 3273,
+              "functionOffset": 1,
+              "module": 0,
+              "moduleOffset": 1133740
+            },
+            {
+              "function": 706,
+              "functionOffset": 1,
+              "module": 0,
+              "moduleOffset": 467563
+            },
+            {
+              "function": 2810,
+              "functionOffset": 864,
+              "module": 0,
+              "moduleOffset": 1002996
+            },
+            {
+              "function": 1727,
+              "functionOffset": 55,
+              "module": 0,
+              "moduleOffset": 695415
+            },
+            {
+              "function": 1449,
+              "functionOffset": 290,
+              "module": 0,
+              "moduleOffset": 610918
+            },
+            {
+              "function": 1871,
+              "functionOffset": 5,
+              "module": 0,
+              "moduleOffset": 741893
+            },
+            {
+              "function": 2067,
+              "functionOffset": 177,
+              "module": 0,
+              "moduleOffset": 800834
+            },
+            {
+              "function": 3103,
+              "functionOffset": 669,
+              "module": 0,
+              "moduleOffset": 1080129
+            },
+            {
+              "function": 1446,
+              "functionOffset": 82,
+              "module": 0,
+              "moduleOffset": 609548
+            },
+            {
+              "function": 1314,
+              "functionOffset": 1413,
+              "module": 0,
+              "moduleOffset": 566335
+            },
+            {
+              "function": 2210,
+              "functionOffset": 114,
+              "module": 0,
+              "moduleOffset": 838151
+            },
+            {
+              "function": 1870,
+              "functionOffset": 59,
+              "module": 0,
+              "moduleOffset": 741822
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "mayBeTruncated": false,
+          "missingBacktrace": false,
+          "observedErrors": 1,
+          "observedFrames": 12,
+          "trapKind": "unreachable-code"
+        },
+        "opaqueCauseQualified": false,
+        "originalFaultCauseQualified": false,
+        "runtimeQualification": false
+      }
+    },
+    {
+      "kind": "DOTNET_ORIGINAL_V3_IDLE",
+      "observation": {
+        "activeActivations": 0,
+        "cpuFuel": 53851343,
+        "liveInstances": 0,
+        "liveStores": 0,
+        "mode": 8,
+        "nativeAccountingComplete": false,
+        "newStores": 1,
+        "peakMemoryBytes": 56870125,
+        "physicalRetirementQualified": false,
+        "reservedFuel": 0,
+        "reservedMemory": 0
+      }
+    }
+  ],
+  "sourceBeforeEqualsAfter": true,
+  "commandCount": 14,
+  "diagnosticBytes": 376625
+}
