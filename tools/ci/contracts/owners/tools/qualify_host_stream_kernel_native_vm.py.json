@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Closed fresh q35/KVM one-CPU original-Node preparation image; old routes retained, no NodeFunding/IRQ/TCP/retirement qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6ba6eb0db4fd0ef6b1de872db0d1fa6c2bfbe0f0c79e1f327599f78a978310af"
+  "sha256": "a1848438277fd417fa4098198772274778450211c4b1dfa4be75753fa02ceb3a"
 }
