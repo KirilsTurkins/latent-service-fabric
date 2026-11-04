@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "latent.ci.suite-case-fragment.v1",
+  "suiteId": "latent-wire.lib.latent-wire",
+  "expectedCases": [
+    "phase4::state_management::tests::floor::floor_release_corrupt_namespace_quarantines_the_protected_store"
+  ]
+}
