@@ -275,13 +275,15 @@ class Commands:
         self.retained = 0
         (output / "logs").mkdir()
 
-    def run(self, stage: str, *command: str) -> bytes:
+    def run(self, stage: str, *command: str, max_output_bytes=4 * 1024 * 1024) -> bytes:
+        if type(max_output_bytes) is not int or not 0 < max_output_bytes <= 10 * 1024 * 1024:
+            raise ValueError("invalid standalone command output limit")
         timeout = min(self.command_seconds, self.deadline - time.monotonic())
         if timeout <= 0:
             raise ValueError("standalone build deadline exceeded")
         start = time.monotonic()
         result = run_bounded_result([str(part) for part in command], cwd=self.root, env=self.environment,
-                                    timeout_seconds=timeout, max_output_bytes=4 * 1024 * 1024)
+                                    timeout_seconds=timeout, max_output_bytes=max_output_bytes)
         self.retained += len(result.stdout) + len(result.stderr)
         if self.retained > 16 * 1024 * 1024:
             raise ValueError("standalone diagnostic retention limit exceeded")

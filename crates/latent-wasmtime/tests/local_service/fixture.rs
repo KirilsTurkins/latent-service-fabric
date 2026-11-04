@@ -299,6 +299,158 @@ impl Fixture {
         )
         .await
     }
+    /// Disposable original-component observation only. Each caller creates a
+    /// fresh backend because the existing numeric observer can arm only once.
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub async fn with_named_numeric_activation_runtime(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+        identities: RuntimeIdentities,
+    ) -> Self {
+        Self::try_with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            Some(identities),
+            Some((limits, call_wall_millis, None)),
+            None,
+            None,
+            None,
+            true,
+            false,
+            false,
+        )
+        .await
+        .unwrap()
+    }
+
+    /// Exact original .NET-v3 authority only; old numeric/general fixtures remain unchanged.
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub async fn with_original_dotnet_v3_numeric_runtime(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+        identities: RuntimeIdentities,
+    ) -> Self {
+        assert_eq!(identities.tenant.0, "examples");
+        assert_eq!(identities.caller.0, "my-greeting");
+        assert_eq!(identities.caller, identities.callee);
+        assert_eq!(
+            packages::release(&provided.1).0,
+            "sha256:9c20e7025c9a2672ee256d93fb51efd631b609064953a11dc2491a94639552af"
+        );
+        assert_eq!(provided.1.layout().digest(), provided.2.layout().digest());
+        let mut value = Self::try_with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            Some(identities),
+            Some((limits, call_wall_millis, None)),
+            None,
+            None,
+            None,
+            true,
+            false,
+            true,
+        )
+        .await
+        .unwrap();
+        assert_eq!(value.backend.resource_snapshot().stores_created, 0);
+        value._guest_runtime.configure_original_dotnet_v3_authority(
+            &value.policies,
+            &value.identities.tenant.0,
+            value
+                .target
+                .publication
+                .as_ref()
+                .expect("signed original publication"),
+        );
+        // Plans own sealed policy snapshots. Recompile the same definitions
+        // against the updated original policies before any Store exists.
+        let definitions = value.store.binding_definitions().unwrap();
+        let mut providers = vec![ConfiguredBindingProvider {
+            tenant: value.identities.tenant.clone(),
+            service: value.identities.callee.clone(),
+            reference: value._provider.reference(),
+            local_deployment: Some(DeploymentId("callee".into())),
+        }];
+        providers.extend(value._guest_runtime.providers(&value.identities.tenant.0));
+        assert_eq!(providers.len(), 5);
+        let (generation, transaction) = value.store.binding_version().unwrap();
+        let update = value
+            .store
+            .prepare_binding_update(
+                generation,
+                transaction,
+                definitions.clone(),
+                value.broker.clone(),
+                providers,
+                latent_control_store::bindings::BindingLimits::default(),
+            )
+            .await
+            .unwrap();
+        value.store.commit_binding_update(update).unwrap();
+        let current_version = value.store.binding_version().unwrap();
+        assert_ne!(current_version, (generation, transaction));
+        assert_eq!(value.store.binding_inventory().0, current_version.0);
+        assert_eq!(value.target.service.0, "my-greeting");
+        let definition_fields = |values: Vec<BindingDefinition>| {
+            values
+                .into_iter()
+                .map(|definition| {
+                    (
+                        JsonManifestCodec::default()
+                            .encode_binding(&definition.manifest)
+                            .unwrap(),
+                        definition.provider_binding_id,
+                        definition.allowed_modes,
+                        definition.restriction_json,
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            definition_fields(value.store.binding_definitions().unwrap()),
+            definition_fields(definitions)
+        );
+        assert_eq!(value.backend.resource_snapshot().stores_created, 0);
+        value
+    }
+
+    #[cfg(all(
+        feature = "development-test-host",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    pub fn original_dotnet_v3_authority_snapshot(&self) -> serde_json::Value {
+        assert_eq!(self.backend.resource_snapshot().stores_created, 0);
+        self._guest_runtime
+            .original_dotnet_v3_authority_snapshot(&self.policies, &self.identities.tenant.0)
+    }
+
     /// Two authenticated tenants share the same node scheduler/backend/cell.
     /// Existing single-tenant fixtures keep the original construction path.
     pub async fn with_two_tenant_activation_runtime(
@@ -363,6 +515,7 @@ impl Fixture {
             None,
             false,
             false,
+            false,
         )
         .await
         .unwrap()
@@ -389,6 +542,7 @@ impl Fixture {
             None,
             None,
             None,
+            false,
             false,
             false,
         )
@@ -475,6 +629,7 @@ impl Fixture {
             Some(Box::new(configuration)),
             true,
             false,
+            false,
         )
         .await
         .unwrap()
@@ -525,6 +680,7 @@ impl Fixture {
             None,
             true,
             true,
+            false,
         )
         .await
         .unwrap()
@@ -569,6 +725,7 @@ impl Fixture {
             outbound_streams,
             false,
             false,
+            false,
         )
         .await
         .unwrap()
@@ -602,6 +759,7 @@ impl Fixture {
         >,
         numeric_capture: bool,
         go_stack_ceiling: bool,
+        original_provider_configuration: bool,
     ) -> Result<Self, PlatformError> {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         let stream_enabled = outbound_streams.is_some();
@@ -1025,7 +1183,35 @@ impl Fixture {
                 &configuration,
             ))
         });
-        let guest_runtime = if let Some((_, call_wall_millis, native)) = activation_runtime {
+        let guest_runtime = if original_provider_configuration {
+            #[cfg(all(
+                feature = "development-test-host",
+                target_os = "linux",
+                target_arch = "x86_64"
+            ))]
+            {
+                let (limits, call_wall_millis, native) =
+                    activation_runtime.expect("original v3 runtime");
+                assert!(numeric_capture && runtime_clocks && runtime_random && native.is_none());
+                assert!(
+                    !go_stack_ceiling && additional_runtime_tenant.is_none() && !stream_enabled
+                );
+                guest_runtime::Runtime::original_dotnet_v3_scoped(
+                    &broker,
+                    &policies,
+                    tenant,
+                    &scopes,
+                    call_wall_millis,
+                    limits,
+                )
+            }
+            #[cfg(not(all(
+                feature = "development-test-host",
+                target_os = "linux",
+                target_arch = "x86_64"
+            )))]
+            panic!("normal v3 configuration requires the exact test-host observation");
+        } else if let Some((_, call_wall_millis, native)) = activation_runtime {
             guest_runtime::Runtime::activation_scoped_with_native(
                 &broker,
                 &policies,
@@ -1166,7 +1352,16 @@ impl Fixture {
                 .get(&TenantId("tenant-a".into()))
                 .unwrap()
                 .clone();
-            tenant_policy.allowed_subjects.insert(caller_principal);
+            if original_provider_configuration {
+                // Match the original authenticated invocation, not the generic
+                // fixture's alice/service principals. This grants no authority
+                // to other administrators or to the same subject as a User.
+                assert_eq!(tenant, "examples");
+                tenant_policy.allowed_subjects = ["workflow-operator".into()].into();
+                tenant_policy.allowed_principal_kinds = vec![PrincipalKind::Administrator];
+            } else {
+                tenant_policy.allowed_subjects.insert(caller_principal);
+            }
             admission_policy
                 .tenants
                 .insert(identities.tenant.clone(), tenant_policy);

@@ -15,7 +15,7 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import ci_rust_artifacts as artifacts, ci_suite_inventory as registry
 from tools.build_observation import build_environment, file_identity, resolve_tools
-from tools.build_snapshot import SOURCE_ALLOWLIST, SnapshotLimits
+from tools.build_snapshot import MAX_SOURCE_LISTING_BYTES, SOURCE_ALLOWLIST, SnapshotLimits
 from tools.java_guest import retained_fiber_inputs as inputs
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
@@ -53,8 +53,9 @@ def source_domains(commands, selection, names=None):
     need(selection in domains, 'source-domain')
     if names is None:
         commands.command_seconds = 25
-        raw = commands.run('source-paths', 'git', 'ls-files', '-z', '--', *SOURCE_ALLOWLIST)
-        need(len(raw) <= 2 * 1024**2 and raw.endswith(b'\0'), 'source-path-bound')
+        raw = commands.run('source-paths', 'git', 'ls-files', '-z', '--', *SOURCE_ALLOWLIST,
+                           max_output_bytes=MAX_SOURCE_LISTING_BYTES)
+        need(len(raw) <= MAX_SOURCE_LISTING_BYTES and raw.endswith(b'\0'), 'source-path-bound')
         paths = raw[:-1].decode('utf-8').split('\0')
         need(len(paths) == len(set(paths)), 'source-path-duplicates')
         names = set(paths)
