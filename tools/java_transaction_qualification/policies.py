@@ -57,8 +57,7 @@ class ObservedHosts:
     effects: tuple[dict, ...]
 
     @classmethod
-    def read(cls, value: dict, operations: list[dict], *, diagnostic=False, intent_operation="put-once",
-             single_http=False):
+    def read(cls, value: dict, operations: list[dict], *, diagnostic=False, intent_operation="put-once"):
         require(intent_operation in {"put-once", "http"}, "explicit-native-effect-operation")
         require(isinstance(value, dict) and set(value) == INSPECTION_FIELDS
                 and value["schemaVersion"] == "latent.transaction-host-inspection.v1", "actual-native-host-inspection")
@@ -96,9 +95,7 @@ class ObservedHosts:
             require(row["capability"] == expected, "actual-installed-provider-contract")
             providers[row["id"]] = row
         effects = value["deferredHttp"]
-        require(type(diagnostic) is bool and type(single_http) is bool
-                and (not single_http or not diagnostic and intent_operation == "http")
-                and isinstance(effects, list) and len(effects) == (1 if single_http else 4 if diagnostic else 3),
+        require(type(diagnostic) is bool and isinstance(effects, list) and len(effects) == (4 if diagnostic else 3),
                 "exact-selected-signed-effect-installations")
         require(all(isinstance(row, dict) and set(row) == EFFECT_FIELDS for row in effects),
                 "closed-native-effect-observation")
@@ -155,15 +152,13 @@ def rule(name, kind, subject, publications, capability, operations, resources, *
 
 
 def documents(hosts: ObservedHosts, publications: dict[str, str], *, diagnostic=False,
-              current_http_endpoint=None, single_http=False) -> dict:
+              current_http_endpoint=None) -> dict:
     """Reviewed test policy proposals only; they become authority solely via apply."""
     pubs = sorted(publications.values())
     from .diagnostic_inputs import NAME
-    expected = 1 if single_http else 5 if diagnostic else 4
-    require(type(single_http) is bool and (not single_http or not diagnostic and current_http_endpoint is not None)
-            and type(diagnostic) is bool and (NAME in publications) is diagnostic
-            and len(pubs) == expected and len(set(pubs)) == expected
-            and len(hosts.effects) == (1 if single_http else expected - 1)
+    expected = 5 if diagnostic else 4
+    require(type(diagnostic) is bool and (NAME in publications) is diagnostic
+            and len(pubs) == expected and len(set(pubs)) == expected and len(hosts.effects) == expected - 1
             and all(re.fullmatch(r"publication:sha256:[0-9a-f]{64}", pub) for pub in pubs),
             "actual-distinct-selected-admitted-publications")
     result = {"bindings": {}, "policies": {}, "deploymentGrants": []}
