@@ -64,7 +64,7 @@
       },
       {
         "name": "Check causal gates and the explicit async WIT layout controls",
-        "run": "python3 -B -m unittest tools.tests.test_rust_thread_http_sibling tools.tests.test_rust_thread_http_sibling_compiler tools.tests.test_rust_thread_http_sibling_retention -v"
+        "run": "python3 -B -m unittest tools.tests.test_rust_thread_http_sibling tools.tests.test_rust_thread_http_sibling_compiler tools.tests.test_rust_thread_http_sibling_retention tools.tests.test_rust_wasi_http_bindgen -v"
       },
       {
         "name": "Acquire only the locked current SDK compiler inputs",
@@ -116,7 +116,7 @@
   },
   "jobId": "diagnostic",
   "kind": "job",
-  "reviewReason": "Bind same-head producers, actual composed graph and bounded public artifact.",
+  "reviewReason": "Preserve exact source, causal gates, bounded compiler and public failure retention while checking direct bindgen selection.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-http-thread-composition-diagnostic.yml"
 }
