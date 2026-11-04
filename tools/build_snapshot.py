@@ -43,7 +43,7 @@ class SnapshotError(RuntimeError):
 # directory, per-file, total-byte and archive-byte budgets remain independent.
 # The current selected tree includes the authenticated Wasmtime source and
 # exceeds 72 MiB: revision 976e86c has 75,529,037 archived file bytes.
-# Retain every selected compiler input within fixed 76 MiB source / 83 MiB
+# Retain every selected compiler input within fixed 77 MiB source / 83 MiB
 # archive caps; activation/runtime budgets are independent.
 # The 2026-10-25 selection at 36a2620 has 8,707 files and an 83,916,800-byte
 # Git archive. Its next finite 256-file allowance is shared by capture and Cargo
@@ -56,10 +56,14 @@ class SnapshotError(RuntimeError):
 # The v27 integration adds 67,917 bytes before this finite source adjustment.
 # Its 86,353,920-byte Git tar exceeds 82 MiB; retain fixed 83 MiB transport.
 # Source and archive framing caps remain independent; runtime budgets stay fixed.
-# CI measured 9,037 selected files at the #660 merge fa5395e, exceeding
-# the old 8,992-file allowance before compiler work. Add one fixed
-# 256-file allowance, shared with attribution, without dropping inputs
-# or changing byte, directory, archive or runtime limits.
+# The 2026-10-31 composed SDK tree at 1d2d417 selects 79,816,313
+# bytes before the lossless owner-bank/count repair, above the old 76 MiB
+# source cap by 124,537 bytes. One finite build-source MiB retains every input;
+# the 83 MiB archive, 4 MiB file and 4,096-directory caps stay independent.
+# This is build provenance capture, not activation/native/guest runtime capacity.
+# Development's cross-origin native/browser lane brings its selected tree to
+# 8,991 files. Retain its next fixed 256-file block when composing this branch;
+# the separately reviewed 77 MiB source cap above remains unchanged.
 MAX_SOURCE_FILES = 9248
 
 
@@ -68,7 +72,7 @@ class SnapshotLimits:
     max_entries: int = MAX_SOURCE_FILES
     max_directories: int = 4096
     max_file_bytes: int = 4 * 1024 * 1024
-    max_total_bytes: int = 76 * 1024 * 1024
+    max_total_bytes: int = 77 * 1024 * 1024
     max_archive_bytes: int = 83 * 1024 * 1024
 
     def validate(self) -> None:

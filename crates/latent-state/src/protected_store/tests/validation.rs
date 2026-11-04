@@ -16,7 +16,19 @@ fn validate_linked_command(view: &crate::embedded::ReadView) -> Result<(), Store
 fn coherent_cross_family_validation_holds_readiness_and_exclusive_physical_owner() {
     let (_root, mut config) = fixture();
     config.engine.maximum_read_views = 1;
+    let selected_profile = config.inspection_profile().unwrap();
+    // The same limits under redb 4.3.0 produced this digest. Existing signed
+    // bindings must not silently authorize the new engine identity.
+    assert_ne!(
+        selected_profile.1,
+        [
+            0x68, 0xa8, 0x14, 0xbd, 0x23, 0xbc, 0xea, 0x14, 0x14, 0x24, 0x5e, 0x04, 0x09, 0x32,
+            0x29, 0x6d, 0xf2, 0x42, 0xde, 0x8f, 0xd0, 0xbe, 0x7b, 0x63, 0x44, 0x86, 0x2a, 0x48,
+            0x45, 0xa0, 0xda, 0xdb,
+        ]
+    );
     let owner = start(config.clone());
+    assert_eq!(owner.inspection_profile(), selected_profile);
     wait(owner.apply(batch(b"linked-command")).unwrap())
         .unwrap()
         .unwrap();

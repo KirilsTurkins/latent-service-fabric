@@ -71,7 +71,7 @@ fn finite_engine_qualification_records_actual_commit_conflict_snapshot_and_recov
     println!(
         "LSF_STORE_QUALIFICATION {}",
         serde_json::json!({
-            "schemaVersion":"latent.storage.qualification.v1","engine":"redb","engineVersion":"4.3.0",
+            "schemaVersion":"latent.storage.qualification.v1","engine":"redb","engineVersion":"4.4.0",
             "durability":"immediate","cacheBytes":limits.cache_bytes,"sequentialCommits":32,
             "initializeMicros":initialize,"sequentialMicros":sequential,"writerWithReadViewMicros":snapshot_writer,
             "conflictMicros":conflict_cost,"compactionMicros":compact,"closedBackupMicros":backup_cost,

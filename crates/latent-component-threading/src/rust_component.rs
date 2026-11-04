@@ -13,7 +13,7 @@ pub const MAX_ORIGINAL_BYTES: usize = 1024 * 1024;
 pub const MAX_COMPONENT_BYTES: usize = 2 * 1024 * 1024;
 // Admitted BEFORE recomputation. Sixteen2MiB image units cover overlapping
 // input/output/reencoder/section/TLS buffers; eightMiB separately covers the
-// fixed1225-node/5325-edge graph and bounded scalar signatures; eightMiB covers
+// fixed1221-node/5245-edge graph and bounded scalar signatures; eightMiB covers
 // validator state. Original component storage is charged independently.
 pub const RUST_VERIFICATION_WORK_BYTES: usize = 48 * 1024 * 1024;
 const MAGIC: &[u8; 8] = b"LSFRPR01";
@@ -343,8 +343,8 @@ pub fn verify_embedded_rust_original_core(
 #[cfg(test)]
 mod tests {
     use super::*;
-    const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/reviewed-original-core.wasm");
-    const COMPONENT: &[u8] = include_bytes!("rust_catalogue/reviewed-normal-component.wasm");
+    const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/catalogue-original-core.wasm");
+    const COMPONENT: &[u8] = include_bytes!("rust_catalogue/catalogue-normal-component.wasm");
 
     #[test]
     fn rust_normal_component_recomputes_original_graph_and_rejects_envelope_or_main_changes() {
@@ -363,7 +363,7 @@ mod tests {
         let proof = verify_rust_component_routing(ORIGINAL, COMPONENT).unwrap();
         assert_eq!(
             proof.catalogue_origin_head,
-            "28059f343bbd954e3e6614c5a24593897cc0c294"
+            "f401e388a7542b8f9cd9bbd987dbcc65814262d6"
         );
         assert!(proof.actual_component_graph_authenticated);
         assert!(!proof.canonical_creation_enabled && !proof.standard_runtime_qualified);

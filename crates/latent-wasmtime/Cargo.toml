@@ -18,6 +18,7 @@ development-test-host = ["latent-artifacts/development-test-host", "latent-polic
 # Retains the standalone compiler diagnostic; node installation is separately explicit.
 java-guest-diagnostic = []
 # Explicit developer artifact only; ordinary products emit no numeric trace.
+rust-thread-trap-diagnostic = []
 java-checkpoint-gc-trap-diagnostic = []
 
 [lints.rust]

@@ -72,6 +72,15 @@ def extend_native_import_source(base_source: dict[str,bytes], native: dict[str,b
     engine='StarlingMonkey/runtime/engine.cpp'
     if engine not in result:
         raise ValueError('private-own-binding-original-engine-required')
+    # Upstream leaves state_ Uninitialized until after the private initializer.
+    # Enter its declared initialization phase before JS setup; otherwise even
+    # beginOwnPlans(2, 0, 0) is correctly refused by the native phase guard.
+    # Do not broaden that guard to Uninitialized or expose binding to the app.
+    result[engine]=replace_once(result[engine],
+        b'  config_ = std::move(config);\n',
+        b'  config_ = std::move(config);\n'
+        b'  state_ = EngineState::EngineInitializing;\n',
+        'private-own-ABI2-engine-initializing-before-private-script')
     result[engine]=replace_once(result[engine],
         b'  return JS_ExecuteScript(cx, script, &result);\n',
         b'  if (!JS_ExecuteScript(cx, script, &result)) return false;\n'

@@ -51,4 +51,61 @@ class AsyncImportSourceTests(unittest.TestCase):
         self.assertTrue(names <= set(NATIVE_SOURCES))
         self.assertTrue({'sdk/typescript-guest/activation/'+name for name in names} <= set(engine_input_paths()))
 
+        # The pinned Engine starts Uninitialized. Its private initializer runs
+        # before ScriptPreInitializing, so the selected import derivation must
+        # enter EngineInitializing rather than accepting an uninitialized
+        # engine in the native ownership guard. These are source controls, not
+        # a SpiderMonkey execution substitute.
+        from tools.typescript_guest.import_engine import (
+            extend_native_import_source, NATIVE_IMPORT_SOURCES)
+        root = Path(__file__).resolve().parents[2]
+        constructor = (b'  config_ = std::move(config);\n'
+                       b'  if (!init_js(*config_)) { abort("init"); }\n'
+                       b'  JS_SetContextPrivate(cx(), this);\n'
+                       b'  if (config_->initializer_script_path) {\n'
+                       b'    if (!run_initialization_script()) { abort("initializer"); }\n'
+                       b'  }\n'
+                       b'  state_ = EngineState::ScriptPreInitializing;\n')
+        execute = b'  return JS_ExecuteScript(cx, script, &result);\n'
+        base = {
+            'StarlingMonkey/runtime/engine.cpp': constructor + execute,
+            'StarlingMonkey/builtins/install_builtins.cpp':
+                b'#include "extension-api.h"\n'
+                b'  return lsf::typescript::activation::install_clock_globals(engine->cx(), engine->global());\n',
+            'embedding/embedding.cpp':
+                b'using componentize::embedding::ReportAndClearException;\n'
+                b'using componentize::embedding::Runtime;\n'
+                b'  void *ret = JS_realloc(Runtime.cx, ptr, orig_size, new_size);\n',
+        }
+        original = dict(base)
+        native = {name: (root/'sdk/typescript-guest/activation'/name).read_bytes()
+                  for name in NATIVE_IMPORT_SOURCES}
+        derived, receipt = extend_native_import_source(base, native)
+        engine = derived['StarlingMonkey/runtime/engine.cpp']
+        transition = b'  state_ = EngineState::EngineInitializing;\n'
+        self.assertEqual(engine.count(transition), 1)
+        self.assertLess(engine.index(b'config_ = std::move(config)'), engine.index(transition))
+        self.assertLess(engine.index(transition), engine.index(b'init_js(*config_)'))
+        self.assertLess(engine.index(b'run_initialization_script()'),
+                        engine.index(b'state_ = EngineState::ScriptPreInitializing'))
+        sealed = (b'  if (!JS_ExecuteScript(cx, script, &result)) return false;\n'
+                  b'  return lsf::typescript::activation::seal_import_own_plans(cx);\n')
+        self.assertEqual(engine.count(sealed), 1)
+        self.assertEqual(engine.replace(transition, b'').replace(sealed, execute), constructor + execute)
+        self.assertEqual(base, original)
+        self.assertFalse(receipt['activationInterfaceChanged'])
+        self.assertFalse(receipt['clockAuthorityGranted'])
+        self.assertFalse(receipt['signedLSFComponentQualified'])
+        for name, raw in native.items():
+            self.assertEqual(derived['lsf/'+name], raw)
+        # Missing, duplicate and already-derived constructor hooks fail closed.
+        anchor = b'  config_ = std::move(config);\n'
+        for malformed in (constructor.replace(anchor, b'') + execute,
+                          constructor + anchor + execute):
+            with self.subTest(source=malformed), self.assertRaises(ValueError):
+                extend_native_import_source(dict(base, **{
+                    'StarlingMonkey/runtime/engine.cpp': malformed}), native)
+        with self.assertRaises(ValueError):
+            extend_native_import_source(derived, native)
+
 if __name__ == '__main__': unittest.main()
