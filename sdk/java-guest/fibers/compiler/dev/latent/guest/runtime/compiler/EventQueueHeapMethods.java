@@ -42,6 +42,11 @@ final class EventQueueHeapMethods {
         if (!value) throw new IllegalStateException("unexpected-maintained-event-queue-heap");
     }
 
+    // Fixed site numbers and bit masks only; no application names or code are reported.
+    private static void requireAt(boolean value, int site) {
+        if (!value) throw new IllegalStateException("unexpected-maintained-event-queue-heap-site-" + site);
+    }
+
     private static void authenticate(ClassLoader loader, String name, int length, String digest) throws Exception {
         try (InputStream input = loader.getResourceAsStream(name)) {
             require(input != null);
@@ -157,6 +162,39 @@ final class EventQueueHeapMethods {
         return true;
     }
 
+    // Evaluated only after a preimage has already been refused. Bits identify
+    // the five fixed queue methods in their existing comparison order.
+    private static int queueMismatch(ClassHolder expected, ClassHolder actual) throws Exception {
+        if (expected == null) return 32;
+        int mask = 0, index = 0;
+        for (MethodDescriptor descriptor : new MethodDescriptor[] { OFFER, KILL, REMOVE, UPDATE, PUMP }) {
+            var baseline = expected.getMethod(descriptor);
+            var candidate = actual.getMethod(descriptor);
+            if (baseline == null || candidate == null || !same(baseline.getProgram(), candidate.getProgram()))
+                mask |= 1 << index;
+            index++;
+        }
+        return mask;
+    }
+
+    private static int nodeMismatch(ClassReader expected, ClassReader actual) throws Exception {
+        if (expected == null || actual == null) return 64;
+        int mask = 0;
+        if (!"java.lang.Object".equals(actual.getParent())) mask |= 1;
+        if (actual.getFields().size() != 3 || actual.getMethods().size() != 1) mask |= 2;
+        var id = actual.getField("id");
+        var event = actual.getField("event");
+        var time = actual.getField("time");
+        if (id == null || !id.hasModifier(ElementModifier.FINAL) || !id.getType().equals(ValueType.INTEGER)) mask |= 4;
+        if (event == null || !event.hasModifier(ElementModifier.FINAL)
+                || !event.getType().equals(ValueType.object(QUEUE + "$Event"))) mask |= 8;
+        if (time == null || !time.hasModifier(ElementModifier.FINAL) || !time.getType().equals(ValueType.LONG)) mask |= 16;
+        var a = expected.getMethod(NODE_INIT);
+        var b = actual.getMethod(NODE_INIT);
+        if (a == null || b == null || !same(a.getProgram(), b.getProgram())) mask |= 32;
+        return mask;
+    }
+
     private static boolean matchesNode(ClassReader expected, ClassReader actual) throws Exception {
         if (expected == null || actual == null || !actual.getParent().equals("java.lang.Object")
                 || actual.getFields().size() != 3 || actual.getMethods().size() != 1) return false;
@@ -174,34 +212,51 @@ final class EventQueueHeapMethods {
 
     static void transform(ClassHolder cls, ClassHolderTransformerContext context) {
         if (!cls.getName().equals(QUEUE)) return;
-        require(context != null && cls.getParent().equals("java.lang.Object") && cls.getFields().size() == 4);
+        requireAt(context != null && cls.getParent().equals("java.lang.Object") && cls.getFields().size() == 4, 1);
         var data = cls.getField("data");
         var size = cls.getField("size");
         var update = cls.getMethod(UPDATE);
-        require(data != null && data.hasModifier(ElementModifier.STATIC)
+        requireAt(data != null && data.hasModifier(ElementModifier.STATIC)
                 && data.getType().equals(ValueType.arrayOf(ValueType.object(QUEUE + "$Node")))
                 && size != null && size.hasModifier(ElementModifier.STATIC)
                 && size.getType().equals(ValueType.INTEGER)
                 && update != null && update.hasModifier(ElementModifier.STATIC)
-                && update.getProgram() != null);
+                && update.getProgram() != null, 2);
+        int site = 3, rawMask = -1, optimizedMask = -1;
         try {
             ClassLoader loader = EventQueueHeapMethods.class.getClassLoader();
             require(loader != null);
+            site = 4;
             authenticate(loader, "org/teavm/runtime/EventQueue.class", 3962,
                     "326bcaaef5f35c6615e815d3b3f55e215968c49b94d7d57fed84d9c013d6ac12");
+            site = 5;
             authenticate(loader, "org/teavm/runtime/EventQueue$Node.class", 674,
                     "5c07775c45fa2e281936b948057f6ab4265e409c1e6b4d1c43af966e749838d2");
+            site = 6;
             ClassHolder raw = source(loader).get(QUEUE);
             ClassHolder optimized = new PreOptimizingClassHolderSource(source(loader)).get(QUEUE);
             // Only the two deterministic representations of the locked body
             // are admitted. Unknown transforms and a repeated repair refuse.
-            require(matches(raw, cls) || matches(optimized, cls));
+            site = 7;
+            if (!(matches(raw, cls) || matches(optimized, cls))) {
+                rawMask = queueMismatch(raw, cls);
+                optimizedMask = queueMismatch(optimized, cls);
+                throw new IllegalStateException();
+            }
+            site = 8;
             ClassReader node = context.getHierarchy().getClassSource().get(QUEUE + "$Node");
             ClassHolder rawNode = source(loader).get(QUEUE + "$Node");
             ClassHolder optimizedNode = new PreOptimizingClassHolderSource(source(loader)).get(QUEUE + "$Node");
-            require(matchesNode(rawNode, node) || matchesNode(optimizedNode, node));
+            site = 9;
+            if (!(matchesNode(rawNode, node) || matchesNode(optimizedNode, node))) {
+                rawMask = nodeMismatch(rawNode, node);
+                optimizedMask = nodeMismatch(optimizedNode, node);
+                throw new IllegalStateException();
+            }
         } catch (Exception failure) {
-            throw new IllegalStateException("unexpected-maintained-event-queue-heap", failure);
+            // Do not include exception text, class names or application identifiers.
+            throw new IllegalStateException("unexpected-maintained-event-queue-heap-site-" + site
+                    + "-raw-" + rawMask + "-optimized-" + optimizedMask);
         }
 
         var donor = context.getHierarchy().getClassSource().get(DONOR);

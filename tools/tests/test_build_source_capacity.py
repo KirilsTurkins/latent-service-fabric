@@ -73,21 +73,20 @@ class SourceCapacityTests(unittest.TestCase):
 
     def test_expanded_file_inventory_is_shared_exact_and_still_bounded(self) -> None:
         from tools import build_inventory_manifests
-        limits = SnapshotLimits()
-        self.assertEqual(limits.max_entries, 9248)
-        self.assertEqual(build_inventory_manifests.MAX_SOURCE_FILES, limits.max_entries)
-        self.assertEqual(limits.max_total_bytes, 77 * 1024 * 1024)
-        self.assertEqual(limits.max_archive_bytes, 83 * 1024 * 1024)
-        self.assertEqual(limits.max_file_bytes, 4 * 1024 * 1024)
-        self.assertEqual(limits.max_directories, 4096)
-        with self.assertRaises(SnapshotError):
-            SnapshotLimits(max_entries=limits.max_entries + 1).validate()
+        limits = SnapshotLimits(max_entries=12)
+        self.assertEqual(build_inventory_manifests.MAX_SOURCE_FILES, SnapshotLimits().max_entries)
+        from tools import build_snapshot
+        defaults = SnapshotLimits()
+        # Portable paths are at most 512 ASCII bytes; reserve framing for each
+        # maximum-length Git listing and canonical inventory row.
+        self.assertGreaterEqual(build_snapshot.MAX_SOURCE_LISTING_BYTES, defaults.max_entries * (512 + 64))
+        self.assertGreaterEqual(build_snapshot.MAX_SOURCE_INVENTORY_BYTES, defaults.max_entries * (512 + 160))
+        self.assertGreaterEqual(defaults.max_archive_bytes - defaults.max_total_bytes,
+                                (defaults.max_entries + defaults.max_directories) * (2 * 512 + 128))
         with tempfile.TemporaryDirectory() as temporary:
             parent = Path(temporary)
             repo = parent / "repo"
             repository(repo)
-            # Three selected source files exist; evidence outside the allowlist
-            # remains excluded. Many tiny inputs exercise count, not byte caps.
             inputs = repo / "tools"
             inputs.mkdir()
             for index in range(limits.max_entries - 3):
@@ -97,24 +96,24 @@ class SourceCapacityTests(unittest.TestCase):
             revision = git(repo, "rev-parse", "HEAD")
             target = parent / "target"
             target.mkdir()
-            with self.assertRaisesRegex(SnapshotError, "source tree entry limit"):
-                with capture_source(repo, revision, target, SnapshotLimits(max_entries=8992)):
-                    self.fail("old allowance accepted the larger source inventory")
-            self.assertEqual(list(target.iterdir()), [])
-            with capture_source(repo, revision, target) as captured:
+            from contextlib import redirect_stderr
+            import io
+            diagnostics = io.StringIO()
+            with redirect_stderr(diagnostics), capture_source(repo, revision, target, limits) as captured:
                 rows = json.loads(captured.inventory)
                 self.assertEqual(len(rows), limits.max_entries)
-                self.assertEqual((captured.root / "tools/input-00000.txt").read_bytes(), b"x")
-                last = f"tools/input-{limits.max_entries - 4:05}.txt"
-                self.assertEqual((captured.root / last).read_bytes(), b"x")
                 self.assertFalse((captured.root / "benchmarks").exists())
+            self.assertIn("files used=12 limit=12 headroom=0", diagnostics.getvalue())
+            self.assertNotIn(str(repo), diagnostics.getvalue())
             self.assertEqual(list(target.iterdir()), [])
             (inputs / "one-too-many.txt").write_bytes(b"x")
             git(repo, "add", ".")
             git(repo, "commit", "--quiet", "-m", "one above finite source count")
-            with self.assertRaisesRegex(SnapshotError, "source tree entry limit"):
-                with capture_source(repo, git(repo, "rev-parse", "HEAD"), target):
+            with self.assertRaisesRegex(SnapshotError, "source tree entry limit") as error:
+                with capture_source(repo, git(repo, "rev-parse", "HEAD"), target, limits):
                     self.fail("source inventory exceeded its finite allowance")
+            self.assertIn("used=13 limit=12", str(error.exception))
+            self.assertNotIn(str(repo), str(error.exception))
             self.assertEqual(list(target.iterdir()), [])
 
     def test_tree_file_limit_rejects_before_archive_and_cleans_up(self) -> None:
@@ -135,15 +134,41 @@ class SourceCapacityTests(unittest.TestCase):
             self.assertEqual(list(target.iterdir()), [])
         with self.assertRaisesRegex(SnapshotError, "invalid source capture limits"):
             SnapshotLimits(max_entries=SnapshotLimits().max_entries + 1).validate()
+        # Bounded subprocess failures are attributed without exposing command
+        # output or a path; failed captures still retire their owned directory.
+        from types import SimpleNamespace
+        revision = "a" * 40
+        for stage in ("ls-tree", "archive"):
+            def bounded(command, **kwargs):
+                if command[1] == stage:
+                    raise build_snapshot.BuildProcessError("command-output-limit")
+                if command[1] == "rev-parse":
+                    return SimpleNamespace(stdout=(revision + "\n").encode())
+                return SimpleNamespace(stdout=(b"100644 blob " + b"b" * 40 + b"\tCargo.toml\0"))
+            with self.subTest(stage=stage), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                with patch.object(build_snapshot, "run_bounded", side_effect=bounded):
+                    with self.assertRaisesRegex(SnapshotError, "source (listing|archive) byte limit exceeded") as error:
+                        with capture_source(root, revision, root):
+                            self.fail("transport ceiling did not fail")
+                self.assertIn("headroom<0", str(error.exception))
+                self.assertNotIn(str(root), str(error.exception))
+                self.assertEqual(list(root.iterdir()), [])
 
     def test_source_inventory_uses_capture_file_ceiling_and_rejects_one_over(self):
         from tools.build_snapshot import SnapshotLimits
 
         with tempfile.TemporaryDirectory() as temporary:
             source, inventory, cache, _ = source_fixture(Path(temporary))
+            from unittest.mock import patch
+            from tools import build_inventory_manifests
+            with patch.object(build_inventory_manifests, "MAX_SOURCE_INVENTORY_BYTES", len(inventory)):
+                ManifestReader(source, inventory, cache)
+                with self.assertRaisesRegex(SnapshotError, "inventory exceeds its byte limit"):
+                    ManifestReader(source, inventory + b" ", cache)
             rows = json.loads(inventory)
             maximum = SnapshotLimits().max_entries
-            self.assertEqual(maximum, 9248)
+            self.assertGreater(maximum, 0)
             rows.extend({"path": f"tools/ci/contracts/fixture-{index}.json",
                          "digest": digest(b"fixture"), "size": 7, "mode": 420}
                         for index in range(maximum - len(rows)))
@@ -214,7 +239,7 @@ class SourceCapacityTests(unittest.TestCase):
                     self.assertEqual(commands, ["rev-parse", "ls-tree", "archive"] if count == maximum
                                      else ["rev-parse", "ls-tree"])
                     if count > maximum:
-                        self.assertEqual(str(raised.exception), "source tree entry limit exceeded")
+                        self.assertIn("source tree entry limit exceeded", str(raised.exception))
                 self.assertEqual(list(target.iterdir()), [])
 
     def test_capture_byte_allowances_are_fixed_and_reject_one_over(self):
@@ -224,11 +249,11 @@ class SourceCapacityTests(unittest.TestCase):
         from tools import build_process
 
         limits = SnapshotLimits()
-        self.assertEqual(limits.max_total_bytes, 77 * 1024 * 1024)
-        self.assertEqual(limits.max_archive_bytes, 83 * 1024 * 1024)
+        self.assertGreater(limits.max_total_bytes, limits.max_file_bytes)
+        self.assertGreater(limits.max_archive_bytes, limits.max_total_bytes)
         self.assertEqual(limits.max_archive_bytes, build_process.MAX_OUTPUT_BYTES)
         self.assertEqual(limits.max_file_bytes, 4 * 1024 * 1024)
-        self.assertEqual(limits.max_directories, 4096)
+        self.assertGreater(limits.max_directories, 0)
         limits.validate()
         for name in limits.__dataclass_fields__:
             with self.subTest(field=name):

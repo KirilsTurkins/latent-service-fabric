@@ -30,6 +30,7 @@ SDK = ROOT / 'sdk/java-guest'
 HEAP = ('QUEUE_HEAP_CONTROL PASS actual-original-regression;actual-corrected-order;'
         'up;down;ties;root;single-child;signed-min;last;singleton;empty;missing;repeat;model;'
         'preimage-negative;repeat-negative;donor-body-negative;donor-layout-negative;donor-node-negative')
+FRONTEND = 'QUEUE_FRONTEND_CONTROL PASS actual-locked-c-emission;event-queue-transform-once'
 CLOCK = ('QUEUE_DEADLINE_MODEL_CONTROL PASS actual-locked-queue;first-sample-delays;'
          'second-sample-comparison;owned-clock-hooks=2;negative-shapes=4')
 
@@ -58,7 +59,8 @@ def qualify(output: Path) -> dict:
     sources = sorted((SDK / 'fibers/compiler/dev/latent/guest/runtime/compiler').glob('*.java'))
     sources += [SDK / 'fibers/dev/latent/guest/runtime/EventQueueHeapDonor.java',
                 SDK / 'fibers/conformance/compiler/QueueHeapControl.java',
-                SDK / 'fibers/conformance/compiler/QueueDeadlineModelControl.java']
+                SDK / 'fibers/conformance/compiler/QueueDeadlineModelControl.java',
+                SDK / 'fibers/conformance/compiler/QueueFrontendControl.java']
     # source_module executes these two SDK helpers outside sys.modules. The
     # process platform helpers may also be imported only when a command starts.
     helper_paths = ('tools/qualify_java_fibers.py', 'tools/qualify_java_checkpoint_context.py',
@@ -101,6 +103,9 @@ def qualify(output: Path) -> dict:
         heap = commands.run('queue-heap-control', java, '-Xmx256m', '-cp', cp,
                             'dev.latent.guest.runtime.compiler.QueueHeapControl').decode().strip()
         require(heap == HEAP, 'java-queue-heap-control')
+        frontend = commands.run('queue-heap-frontend', java, '-Xmx256m', '-cp', cp,
+                                'dev.latent.guest.runtime.compiler.QueueFrontendControl').decode().strip()
+        require(frontend == FRONTEND, 'java-queue-heap-frontend')
         clock = commands.run('queue-clock-control', java, '-Xmx256m', '-cp', cp,
                              'dev.latent.guest.runtime.compiler.QueueDeadlineModelControl').decode().strip()
         require(clock == CLOCK, 'java-queue-clock-control')
@@ -108,7 +113,7 @@ def qualify(output: Path) -> dict:
         after = {p.relative_to(ROOT).as_posix(): file_identity(p) for p in observed}
         require(after == before, 'java-queue-heap-inputs-changed')
         report.update(status='passed-jvm-only', jarDigests=identities,
-                      heapControl=heap, clockControl=clock, checkedInputs=after)
+                      heapControl=heap, frontendControl=frontend, clockControl=clock, checkedInputs=after)
         return report
     except BaseException as error:
         report.update(status='failed', errorType=type(error).__name__)

@@ -80,7 +80,7 @@ impl RuntimeCompatibilityProfile {
     /// Trusted adapter fact only. The final-byte C proof and actual runtime
     /// grants are independently required by the selected Wasmtime backend.
     pub fn with_c_cooperative_context(mut self) -> Result<Self, PlatformError> {
-        if self.version.as_ref() != "48.0.7"
+        if self.version.as_ref() != "48.0.8"
             || self.renderer.is_some()
             || self.rust_cooperative_context
         {
@@ -94,7 +94,7 @@ impl RuntimeCompatibilityProfile {
     /// Distinct trusted Rust sync adapter fact. Original-object/component
     /// authentication and actual runtime grants remain independent checks.
     pub fn with_rust_cooperative_context(mut self) -> Result<Self, PlatformError> {
-        if self.version.as_ref() != "48.0.7"
+        if self.version.as_ref() != "48.0.8"
             || self.renderer.is_some()
             || self.c_cooperative_context
         {
@@ -114,7 +114,7 @@ impl RuntimeCompatibilityProfile {
         renderer: crate::RendererRequirement,
     ) -> Result<Self, PlatformError> {
         renderer.validate()?;
-        if renderer != crate::RendererRequirement::angular() || self.version.as_ref() != "48.0.7" {
+        if renderer != crate::RendererRequirement::angular() || self.version.as_ref() != "48.0.8" {
             return Err(incompatible("renderer-profile-incompatible"));
         }
         self.renderer = Some(renderer);

@@ -97,7 +97,7 @@ class RustProjectTests(unittest.TestCase):
             project.locked_dependencies("my-project")
         authoritative = project.ROOT / "Cargo.lock"
         raw = authoritative.read_text()
-        local = 'name = "wasmtime"\nversion = "48.0.7"\n'
+        local = 'name = "wasmtime"\nversion = "48.0.8"\n'
         self.assertEqual(raw.count(local), 1)
         replaced = raw.replace(local, 'name = "wasmtime"\nversion = "48.0.6"\n')
         with patch.object(Path, "read_text", lambda selected, *args, **kwargs:
@@ -329,6 +329,15 @@ class RustProjectTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "deadline"):
                 commands.run("compile", "not-a-command")
             self.assertEqual(commands.records, [])
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            commands = build.Commands(root, root, dict(os.environ), max_retained_bytes=8)
+            for stage in ('first', 'second'):
+                self.assertEqual(commands.run(stage, sys.executable, '-c', "print('123',end='')", max_output_bytes=4), b'123')
+            with self.assertRaisesRegex(ValueError, 'diagnostic retention'):
+                commands.run('overflow', sys.executable, '-c', "print('123',end='')", max_output_bytes=4)
+        self.assertEqual(build.SOURCE_LISTING_DIAGNOSTIC_BYTES,
+                         build.DEFAULT_DIAGNOSTIC_BYTES + 2 * build.MAX_SOURCE_LISTING_BYTES)
 
 
 if __name__ == "__main__":

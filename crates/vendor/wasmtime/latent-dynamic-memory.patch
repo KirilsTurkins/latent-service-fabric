@@ -10,9 +10,9 @@
 +checksum = "a13e32eacd0222f9658be2ccbd83b718bfd9bfb0d54b5921913c184cb86124a5"
  dependencies = [
 @@ -1867,4 +1867,2 @@
- version = "48.0.7"
+ version = "48.0.8"
 -source = "registry+https://github.com/rust-lang/crates.io-index"
--checksum = "b11ca8945aa341f944558622db59845dffa1435971f318d5fce2f2d9765a69b0"
+-checksum = "bc15ec65327e0dc659da1c15658e94a3d4ad3a2ed75a35a320c84af5984b13c2"
  dependencies = [
 @@ -2340,5 +2338,5 @@
  name = "zstd"
@@ -44,7 +44,7 @@
 --- a/Cargo.toml
 +++ b/Cargo.toml
 @@ -375,2 +375,3 @@
- version = "=48.0.7"
+ version = "=48.0.8"
 +path = "../wasmtime-cache"
  optional = true
 --- a/src/runtime.rs

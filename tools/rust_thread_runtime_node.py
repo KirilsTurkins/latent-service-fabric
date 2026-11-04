@@ -135,8 +135,7 @@ def cleanup_owner(record):
         stack.close()
 
 
-def run(artifact: Path, native: dict, output: Path, *, diagnostic=False):
-    require(type(diagnostic) is bool, 'rust-thread-explicit-diagnostic-mode')
+def run(artifact: Path, native: dict, output: Path):
     output = fresh(output)
     component = file_identity(artifact / 'component.wasm', 2 * 1024 * 1024)
     require(component == WRAPPED, 'rust-thread-exact-retained-component-not-caller-selected')
@@ -151,8 +150,7 @@ def run(artifact: Path, native: dict, output: Path, *, diagnostic=False):
                         deadline_seconds=300, command_seconds=60)
     record = {'schemaVersion': 'latent.rust.thread-runtime.node.v1', 'status': 'incomplete',
               'native': before, 'component': component, 'projection': projection,
-              'full743Qualified': False, 'checkpointQualified': False, 'privateGraphRuntimeQualified': False,
-              'diagnosticMode': diagnostic, 'diagnosticRuntimeQualification': False}
+              'full743Qualified': False, 'checkpointQualified': False, 'privateGraphRuntimeQualified': False}
     stage, primary = 'normal-single-component-signing', False
     try:
         signed = output / 'signed'
@@ -202,37 +200,6 @@ def run(artifact: Path, native: dict, output: Path, *, diagnostic=False):
                         'rust-thread-reaped-known-current-signed-invocation')
                 matched = row['exitCode'] == code and row['decoded'] == [{'err' if code else 'ok': result}]
                 if not matched:
-                    if diagnostic:
-                        # Only the owning diagnostic programme binds the new
-                        # host identity. A stderr prefix alone authenticates
-                        # nothing in the ordinary default consumer.
-                        from tools.rust_thread_fault_frames import capture as fault_capture
-                        try:
-                            fault_capture(node, before['latentd'], component, output)
-                        except BaseException:
-                            record['numericFaultDiagnosticRefused'] = True
-                        diagnostic_frames = output / 'numeric-fault-frames.json'
-                        details = row['response'].get('error', {}).get('details', [])
-                        require(row['exitCode'] == 4 and row['decoded'] is None
-                                and row['response']['data']['terminalState'] == 'guest_trap'
-                                and any(item.get('kind') == 'activation.guest-trap-kind'
-                                    and item.get('fields') == {'kind': 'guest-fault'}
-                                    for item in details)
-                                and diagnostic_frames.is_file(),
-                                'rust-thread-exact-numeric-original-fault-observation')
-                        consumption = row['response']['data']['consumption']
-                        require(0 < integer(consumption['cpuFuel']) <= 100000000
-                                and 0 < integer(consumption['peakMemoryBytes']) <= 32 * 1024 * 1024
-                                and all(integer(consumption[name]) == 0 for name in (
-                                    'outboundRequests', 'stateReadBytes', 'stateWriteBytes',
-                                    'blobReadBytes', 'blobWriteBytes', 'logBytes', 'effectCount',
-                                    'childCalls')), 'rust-thread-finite-numeric-fault-only')
-                        record.update(status='diagnostic-fault-observed', qualification=False,
-                            actualDefaultThreadPoolProgress=False, diagnosticFaultObserved=True,
-                            diagnosticFaultFrames=file_identity(diagnostic_frames, 64 * 1024),
-                            cliCalls=client.calls, commands=commands.records)
-                        write_json(output / 'diagnostic-fault.json', record)
-                        return record
                     from tools.capsule_invocation_diagnostics import capture
                     capture(client, row)
                 require(matched, 'rust-thread-exact-original-default-pool-or-error-result')
@@ -259,7 +226,7 @@ def run(artifact: Path, native: dict, output: Path, *, diagnostic=False):
                 'rust-thread-final-native-component-and-deadline')
         record.update(status='passed', cliCalls=client.calls, commands=commands.records,
                       actualDefaultThreadPoolProgress=True, independentQueuesProgress=True)
-        write_json(output / ('diagnostic-completed.json' if diagnostic else 'qualified.json'), record)
+        write_json(output / 'qualified.json', record)
         return record
     except BaseException:
         primary = True

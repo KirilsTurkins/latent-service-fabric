@@ -8,7 +8,7 @@ import tomllib
 
 from tools.build_inventory_units import InventoryLimits, _text
 from tools.build_observation import public_repository
-from tools.build_snapshot import MAX_SOURCE_FILES, SnapshotError, digest, is_reparse, owned_child, portable_path
+from tools.build_snapshot import MAX_SOURCE_FILES, MAX_SOURCE_INVENTORY_BYTES, SnapshotError, digest, is_reparse, owned_child, portable_path
 
 
 CRATES_IO = "registry+https://github.com/rust-lang/crates.io-index"
@@ -39,11 +39,13 @@ class ManifestReader:
         self.limits = limits
         self.source_root = source_root.resolve(strict=True)
         self.cargo_home = cargo_home.resolve(strict=True)
-        if len(source_inventory) > 4 * 1024 * 1024:
-            raise SnapshotError("captured source inventory exceeds its byte limit")
+        if len(source_inventory) > MAX_SOURCE_INVENTORY_BYTES:
+            raise SnapshotError(f"captured source inventory exceeds its byte limit: used={len(source_inventory)} limit={MAX_SOURCE_INVENTORY_BYTES} headroom={MAX_SOURCE_INVENTORY_BYTES-len(source_inventory)}")
         rows = json.loads(source_inventory)
-        if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_SOURCE_FILES:
+        if not isinstance(rows, list) or not rows:
             raise SnapshotError("invalid captured source inventory")
+        if len(rows) > MAX_SOURCE_FILES:
+            raise SnapshotError(f"invalid captured source inventory: files used={len(rows)} limit={MAX_SOURCE_FILES} headroom={MAX_SOURCE_FILES-len(rows)}")
         self.source_files = {}
         for row in rows:
             if not isinstance(row, dict):

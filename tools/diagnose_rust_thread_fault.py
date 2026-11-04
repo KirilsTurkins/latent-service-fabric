@@ -23,11 +23,12 @@ from tools.phase3_resource_identity import file_identity, inventory, source_iden
 from tools.qualify_host_codec_native import Stages, exact_list, exact_result, materials
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, fresh, write_json
-from tools import rust_thread_native_products as original
-from tools.rust_thread_runtime_package import prepare
-from tools.rust_thread_runtime_node import run
+from tools import rust_thread_diagnostic_native_products as original
+from tools.rust_thread_diagnostic_package import prepare
+from tools.rust_thread_diagnostic_node import run
 
 CASE = 'rust_thread_fault::tests::rust_thread_fault_visits_only_eight_numeric_original_frames_for_authenticated_rust'
+CATALOGUE_CASE = 'legacy_delta_tests::tests::selected_catalogue_never_admits_the_other_authenticated_origin'
 WAIT_CASE = 'early_untimed_notification_never_resumes_a_running_thread'
 WAIT_SOURCE = 'sdk/rust-standard-runtime/tests/thread_wait_driver_native.rs'
 # Bind the complete source-port regression, not just its test harness. These
@@ -37,8 +38,9 @@ WAIT_RECIPE = (WAIT_SOURCE, *(f'sdk/rust-standard-runtime/{name}.rs' for name in
     'thread_wait_registry')))
 RECIPE = ('.github/workflows/rust-thread-fault-diagnostic.yml',
           'tools/diagnose_rust_thread_fault.py', 'tools/rust_thread_fault_frames.py',
-          'tools/rust_thread_runtime_node.py', 'tools/rust_thread_runtime_package.py',
-          'tools/rust_thread_compiler_materials.py', 'tools/rust_thread_native_products.py',
+          'tools/rust_thread_diagnostic_node.py', 'tools/rust_thread_diagnostic_package.py',
+          'tools/rust_thread_diagnostic_compiler_materials.py', 'tools/rust_thread_diagnostic_native_products.py',
+          'tools/rust_thread_diagnostic_catalogue.py',
           *WAIT_RECIPE)
 
 
@@ -91,6 +93,18 @@ def diagnose(prepared: Path, compiler_materials: Path, output: Path, revision: s
                                 '--test-threads=1'), (WAIT_CASE,))
         record['nativeRootRetirementWakeupControl'] = WAIT_CASE
         cargo = ('cargo', '--config', ROOT / '.cargo/managed-guest.toml')
+        # Feature unification selects one catalogue for the whole crate. Prove
+        # the default cdd and explicitly legacy e3 configurations in separate
+        # compiler invocations; neither result is a signed runtime qualification.
+        for label, features in (('default-cdd', ()),
+                                ('diagnostic-e3', ('--features', 'rust-thread-diagnostic-legacy'))):
+            stage = 'catalogue-origin-refusal-' + label
+            control = (*cargo, 'test', '--locked', '-p', 'latent-component-threading',
+                       '--lib', *features, CATALOGUE_CASE, '--')
+            exact_list(stages.run(stage + '-list', *control, '--list'), (CATALOGUE_CASE,))
+            exact_result(stages.run(stage + '-run', *control, '--exact', '--test-threads=1'),
+                         (CATALOGUE_CASE,))
+        record['catalogueOriginRefusals'] = ['default-cdd', 'diagnostic-e3']
         stage = 'one-real-numeric-original-trap-control'
         test = (*cargo, 'test', '--locked', '-p', 'latent-wasmtime', '--lib',
                 '--features', 'rust-thread-trap-diagnostic', CASE, '--')

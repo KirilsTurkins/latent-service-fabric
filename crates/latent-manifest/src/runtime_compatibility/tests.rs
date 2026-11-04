@@ -25,7 +25,7 @@ fn host() -> RuntimeCompatibilityProfile {
 fn cooperative_c_is_a_distinct_trusted_profile_and_default_fingerprint_is_stable() {
     let ordinary = RuntimeCompatibilityProfile::new(
         "wasmtime",
-        "48.0.7",
+        "48.0.8",
         "x86_64-unknown-linux-gnu",
         &[],
         u64::MAX,
@@ -167,7 +167,7 @@ fn renderer_requirements_are_explicit_immutable_and_separate_from_host_capacity(
     );
     let installed = RuntimeCompatibilityProfile::new(
         "wasmtime",
-        "48.0.7",
+        "48.0.8",
         "x86_64-unknown-linux-gnu",
         &["x86_64.sse2"],
         u64::MAX,
