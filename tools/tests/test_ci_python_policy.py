@@ -40,6 +40,21 @@ class PythonSuppressionPolicyTests(unittest.TestCase):
             require_no_new_controls(before, before.replace('return False', 'return True'))
 
 class PythonExecutionReceiptTests(unittest.TestCase):
+    def test_failed_subtests_account_for_the_discovered_parent_once(self):
+        import io
+        from tools.ci_python_policy import flatten_suite, recording_result_class, execution_receipt
+        class Fixture(unittest.TestCase):
+            def test_subtests(self):
+                for value in (1, 2):
+                    with self.subTest(value=value): self.fail('injected subtest failure')
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(Fixture)
+        discovered = flatten_suite(suite)
+        result = unittest.TextTestRunner(stream=io.StringIO(), resultclass=recording_result_class(lambda *_: False)).run(suite)
+        receipt = execution_receipt(discovered, result, source_identity={'revision': 'a' * 40}, recipe_identity='test')
+        self.assertEqual(receipt['failed'], discovered)
+        self.assertIn('test-failure', receipt['errors'])
+        self.assertNotIn('discovery-execution-mismatch', receipt['errors'])
+
     def test_discovery_execution_skips_and_failures_are_observed(self):
         import io
         from tools.ci_python_policy import flatten_suite, recording_result_class, execution_receipt
@@ -97,6 +112,14 @@ class Other(unittest.TestCase):
         helper = "import unittest\ndef prerequisite(): raise unittest.SkipTest('missing native')\nclass Cases(unittest.TestCase):\n @classmethod\n def setUpClass(cls): prerequisite()\n def test_one(self): pass\n"
         self.assertTrue(permitted_skip(helper, 'Cases', None, 'missing native'))
         self.assertFalse(permitted_skip(helper.replace('def setUpClass(cls): prerequisite()', 'def setUpClass(cls): pass'), 'Cases', None, 'missing native'))
+        same_class = "import unittest\nclass Cases(unittest.TestCase):\n def prerequisite(self): self.skipTest('missing frontend')\n def test_one(self): self.prerequisite()\n def test_other(self): pass\n"
+        self.assertTrue(permitted_skip(same_class, 'Cases', 'test_one', 'missing frontend'))
+        self.assertFalse(permitted_skip(same_class, 'Cases', 'test_other', 'missing frontend'))
+        other_class = "import unittest\nclass Original(unittest.TestCase):\n @classmethod\n def setUpClass(cls): raise unittest.SkipTest('missing sandbox')\nclass Cases(unittest.TestCase):\n @classmethod\n def setUpClass(cls): Original.setUpClass()\n def test_one(self): pass\n"
+        self.assertTrue(permitted_skip(other_class, 'Cases', None, 'missing sandbox'))
+        external = "import unittest\nclass Cases(unittest.TestCase):\n @classmethod\n def setUpClass(cls):\n  from tools.tests.test_native_helper import prerequisite\n  prerequisite()\n def test_one(self): pass\n"
+        sources = {'test_native_helper': "import unittest\ndef prerequisite(): raise unittest.SkipTest('missing host')\n"}
+        self.assertTrue(permitted_skip(external, 'Cases', None, 'missing host', sources))
 
 class PythonFixtureReceiptTests(unittest.TestCase):
     def test_authorized_class_skip_accounts_for_every_discovered_case(self):
@@ -132,6 +155,30 @@ class PythonOwnedExecutionTests(unittest.TestCase):
         self.assertEqual(len(receipt['discovered']), 2)
 
 class PythonSourcePolicyTests(unittest.TestCase):
+    def test_imported_skip_predicate_cannot_be_enabled_through_a_helper_edit(self):
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        import subprocess
+        from tools.ci_python_policy import imported_skip_predicates, verify_source_tree
+        with TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            def git(*args):
+                return subprocess.check_output(['git', *args], cwd=repo, stderr=subprocess.STDOUT, text=True).strip()
+            git('init', '-q'); git('config', 'user.name', 'Fixture'); git('config', 'user.email', 'fixture@example.invalid')
+            tests = repo / 'tools/tests'; tests.mkdir(parents=True)
+            helper = repo / 'tools/checks.py'
+            helper.write_text('FLAG = False\ndef disabled(): return available()\ndef available(): return FLAG\ndef unrelated(): return 1\n')
+            (tests / 'test_demo.py').write_text("import unittest\nfrom tools.checks import disabled\nclass Cases(unittest.TestCase):\n def test_one(self):\n  if disabled(): self.skipTest('native')\n")
+            self.assertEqual(imported_skip_predicates("from tools import checks as c\nimport unittest\n@unittest.skipIf(c.disabled(), 'native')\nclass Cases(unittest.TestCase): pass\n"), {('tools/checks.py', 'disabled')})
+            self.assertEqual(imported_skip_predicates("from tools.checks import disabled\nclass Cases:\n def gate(self): return disabled()\n def test_one(self):\n  if self.gate(): self.skipTest('native')\n"), {('tools/checks.py', 'disabled')})
+            git('add', '.'); git('commit', '-qm', 'baseline'); baseline = git('rev-parse', 'HEAD')
+            original = helper.read_text()
+            helper.write_text(original.replace('return 1', 'return 1 + 0'))
+            verify_source_tree(repo, baseline)
+            helper.write_text(original.replace('FLAG = False', 'FLAG = True'))
+            with self.assertRaisesRegex(ValueError, 'suppression'):
+                verify_source_tree(repo, baseline)
+
     def test_baseline_is_commit_bound_and_missing_history_fails(self):
         from pathlib import Path
         from tempfile import TemporaryDirectory
