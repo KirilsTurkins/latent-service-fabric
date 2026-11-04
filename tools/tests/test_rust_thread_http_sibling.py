@@ -11,6 +11,27 @@ from tools import rust_thread_http_sibling_gate as witness
 
 
 class RustThreadHttpSiblingTests(unittest.TestCase):
+    def test_only_diagnostic_final_validation_selects_threading(self):
+        from unittest.mock import Mock
+        from tools.compile_rust_thread_http_sibling import (
+            DiagnosticThreadingValidation, HTTP_ASYNC_FEATURES, THREAD_PREVIEW_FEATURES,
+        )
+        commands = Mock()
+        wrapped = DiagnosticThreadingValidation(commands)
+        wrapped.run('unrelated', 'value')
+        commands.run.assert_called_with('unrelated', 'value')
+        wrapped.run('rust-http-final-validation', 'wasm-tools', 'validate', 'selected.wasm',
+                    '--features', HTTP_ASYNC_FEATURES)
+        commands.run.assert_called_with('rust-http-final-validation', 'wasm-tools', 'validate',
+                                        'selected.wasm', '--features', THREAD_PREVIEW_FEATURES)
+        self.assertTrue(wrapped.validated)
+        with self.assertRaises((ValueError, RuntimeError)):
+            wrapped.run('rust-http-final-validation', 'wasm-tools', 'validate', 'selected.wasm',
+                        '--features', HTTP_ASYNC_FEATURES)
+        with self.assertRaises((ValueError, RuntimeError)):
+            DiagnosticThreadingValidation(commands).run('rust-http-final-validation', 'wasm-tools',
+                                                        'validate', 'selected.wasm', '--features', 'all')
+
     def observation(self):
         events = [
             ('connection-accepted', 1, {}),
