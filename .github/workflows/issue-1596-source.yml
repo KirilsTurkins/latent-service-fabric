@@ -1,27 +1,27 @@
-name: Issue 1596 source capture
+name: Issue 1596 implementation support
 on:
   push:
-    branches: [ci/1596-discovery-owned-tests]
-    paths: [.github/workflows/issue-1596-source.yml]
+    branches: [ci/1596-implementation-support]
+    paths: [.github/issue-1596-*.py, .github/workflows/issue-1596-source.yml]
 permissions:
   contents: read
 jobs:
-  source:
+  inspect:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
         with:
           persist-credentials: false
-          ref: 816b806d61c3479b3e138fa55466c22250818f07
-      - name: Capture tracked source only
-        run: |
-          mkdir -p "$RUNNER_TEMP/issue-1596"
-          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/issue-1596/source.tar.gz"
-          git rev-parse HEAD > "$RUNNER_TEMP/issue-1596/capture-commit.txt"
-      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+          path: support
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
         with:
-          name: issue-1596-source-only
-          path: ${{ runner.temp }}/issue-1596/
-          if-no-files-found: error
-          retention-days: 1
+          persist-credentials: false
+          ref: ci/1596-discovery-owned-tests
+          path: work
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb
+        with:
+          python-version: '3.13.5'
+      - name: Inspect implementation boundaries
+        working-directory: work
+        run: PYTHONPATH="$PWD" python ../support/.github/issue-1596-edit.py
