@@ -33,6 +33,12 @@ class PythonSuppressionPolicyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'suppression'):
             require_no_new_controls(before, aliased)
 
+    def test_existing_skip_cannot_be_enabled_by_changing_a_predicate_helper(self):
+        before = "import unittest\ndef available(): return False\ndef disabled(): return available()\nclass Cases(unittest.TestCase):\n def test_one(self):\n  if disabled(): self.skipTest('native')\n"
+        require_no_new_controls(before, before)
+        with self.assertRaisesRegex(ValueError, 'suppression'):
+            require_no_new_controls(before, before.replace('return False', 'return True'))
+
 class PythonExecutionReceiptTests(unittest.TestCase):
     def test_discovery_execution_skips_and_failures_are_observed(self):
         import io

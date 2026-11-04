@@ -47,6 +47,7 @@ def controls(source: str) -> Counter[str]:
     found: Counter[str] = Counter()
     dependencies: set[str] = set()
     local_dependencies: dict[ast.AST, set[str]] = {}
+    predicate_helpers: set[str] = set()
     for node in ast.walk(tree):
         # A nested class inside a test is a test fixture, not a discoverable
         # top-level unittest class. Its sample decorators are ordinary data.
@@ -78,6 +79,13 @@ def controls(source: str) -> Counter[str]:
         if sensitive:
             signature = ast.dump(node, include_attributes=False)
             predicates = predicate_context(node)
+            for predicate in predicates:
+                predicate_helpers.update(token(call.func) for call in ast.walk(predicate)
+                                         if isinstance(call, ast.Call) and token(call.func))
+            if isinstance(node, ast.Call) and token(node.func) in {'skipIf', 'skipUnless'}:
+                for argument in node.args[:1]:
+                    predicate_helpers.update(token(call.func) for call in ast.walk(argument)
+                                             if isinstance(call, ast.Call) and token(call.func))
             found[repr((signature, [ast.dump(value, include_attributes=False) for value in predicates]))] += 1
             names = {item.id for value in [node, *predicates] for item in ast.walk(value)
                      if isinstance(item, ast.Name) and isinstance(item.ctx, ast.Load)}
@@ -112,6 +120,23 @@ def controls(source: str) -> Counter[str]:
         bind(scope, names, 'local-binding')
         dependencies.update(names)
     bind(tree, dependencies, 'module-binding')
+    # A pre-existing skip must not become active merely because a local
+    # predicate helper changed. Bind only helpers reachable from a suppression
+    # predicate, not ordinary setup or fixture helpers.
+    functions = {}
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            parent = parents.get(node)
+            if isinstance(parent, (ast.Module, ast.ClassDef)):
+                functions.setdefault(node.name, []).append(node)
+    seen_helpers = set()
+    while predicate_helpers - seen_helpers:
+        name = min(predicate_helpers - seen_helpers)
+        seen_helpers.add(name)
+        for helper in functions.get(name, []):
+            found['suppression-predicate-helper:' + ast.dump(helper, include_attributes=False)] += 1
+            predicate_helpers.update(token(call.func) for call in ast.walk(helper)
+                                     if isinstance(call, ast.Call) and token(call.func))
     return found
 
 
