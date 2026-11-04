@@ -42,11 +42,19 @@ class CThreadMinimal(unittest.TestCase):
                     '8af8989600438fdf5ebe265e3065404f0412270e8dc11b2fee8934de5ba3887f')
    exit_addendum = b'/* Process completion is unsupported: retain original owners through the\n * activation trap and Store cleanup. No atexit callbacks or stdio flushing.\n */\n_Noreturn void exit(int status) {\n    (void)status;\n    __builtin_trap();\n}\n\n'
    self.assertEqual(left[closed].count(exit_addendum), 1)
-   left[closed] = left[closed].replace(exit_addendum, b'', 1)
-   right[closed] = right[closed].replace(exit_addendum, b'', 1)
    for path, expected in current_addendum.items():
     self.assertEqual(left[path], right[path], path)
-    self.assertEqual(hashlib.sha256(left[path]).hexdigest(), expected, path)
+    original_bytes = left[path]
+    if path == 'vendor/lsf/sdk/c-guest/src/closed-file-abi.c':
+     # #1582 added the exact process-completion trap; keep the previous pin.
+     before = b'static int file_unsupported(void) {\n    errno = ENOTSUP;\n    return -1;\n}\n\n'
+     trap = (b'/* Process completion is unsupported: retain original owners through the\n'
+             b' * activation trap and Store cleanup. No atexit callbacks or stdio flushing.\n'
+             b' */\n_Noreturn void exit(int status) {\n    (void)status;\n    __builtin_trap();\n}\n\n')
+     following = b'int open(const char *path, int flags, ...) {\n'
+     self.assertEqual(original_bytes.count(before + trap + following), 1, path)
+     original_bytes = original_bytes.replace(before + trap + following, before + following, 1)
+    self.assertEqual(hashlib.sha256(original_bytes).hexdigest(), expected, path)
     if path in added_sdk:
      added_sdk[path] = expected
     else:
