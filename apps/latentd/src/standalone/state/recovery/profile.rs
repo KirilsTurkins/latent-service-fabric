@@ -41,6 +41,7 @@ pub(super) enum Profile {
     CurrentCompatible,
     CurrentWriter,
     CurrentDiagnostic,
+    CurrentValues,
 }
 
 #[derive(Deserialize)]
@@ -67,6 +68,7 @@ impl Profile {
             Self::CurrentCompatible => "compatible-v2-current-http",
             Self::CurrentWriter => "writer-v2-current-http",
             Self::CurrentDiagnostic => "diagnostic-v1-current-http",
+            Self::CurrentValues => "values-v1-current-http",
         }
     }
     pub fn installed(component: &str) -> Result<Self, PlatformError> {
@@ -96,6 +98,9 @@ impl Profile {
             | native_memory::COMPONENT
             | "sha256:25258bd576a7ee6e79f20a0b7a13e10293780fce310d03f529ac811c7ccdc5e0" => {
                 Ok(Self::CurrentDiagnostic)
+            }
+            "sha256:e5fb75766a283d8ac818c073288706cea89303746b9d347746a2f44429c5f424" => {
+                Ok(Self::CurrentValues)
             }
             _ => Err(super::denied()),
         }
@@ -309,6 +314,10 @@ impl Profile {
                 "legacy-v1",
                 "ac4a89a75bc9868350f21924eefcf2c20ceefd6dc200b0b9c3c4e6064c51b1d8",
             ),
+            Self::CurrentValues => (
+                "legacy-v1",
+                "64dad5b577bddc4d98ec86dc4e8b017c776ad7226bbd5d33be8bdbd6ba6caa52",
+            ),
         }
     }
     pub fn decode(self, media: &str, bytes: &[u8]) -> Option<u64> {
@@ -339,7 +348,7 @@ impl Profile {
     }
     pub(super) fn base(self) -> Self {
         match self {
-            Self::CurrentLegacy | Self::CurrentDiagnostic => Self::Legacy,
+            Self::CurrentLegacy | Self::CurrentDiagnostic | Self::CurrentValues => Self::Legacy,
             Self::CurrentCompatible => Self::Compatible,
             Self::CurrentWriter => Self::Writer,
             original => original,

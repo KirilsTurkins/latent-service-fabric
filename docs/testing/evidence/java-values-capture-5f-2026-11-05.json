@@ -1,0 +1,66 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": "latent.java.value-capture-custody.v1",
+  "captures": {
+    "sourceCommit": "5f99649cd3b583d4a855c7c3b07ed3167419b866",
+    "sourceTree": "92f01b3a734d920bfcf14041f05452a6dee6a121",
+    "nativeIdempotencyProfile": "qualified-http-v1:5337619eb24838242cf05797a246bba5e50547f3f12252ed9b81e138ca8a259b",
+    "variants": {
+      "put-once-values": {
+        "materials": {
+          "component": {
+            "sha256": "sha256:e5fb75766a283d8ac818c073288706cea89303746b9d347746a2f44429c5f424",
+            "bytes": 1014844
+          },
+          "report": {
+            "sha256": "sha256:ec32b25f3bf6742400182ae340b020ae7dfa80d27eaba3feef0797a4fdd79f04",
+            "bytes": 83241
+          },
+          "compilerInputs": {
+            "sha256": "sha256:281a0b32d7b8a1821fad5fe1f59bae659df0af80e42b69b51c2d5c7004e7b098",
+            "bytes": 2912106
+          },
+          "sourceInputs": {
+            "sha256": "sha256:3c66e28a7c984a766a8ddaf5d968df42224dc953aa37c3b62dbbf6f858081fbd",
+            "bytes": 41850
+          },
+          "sourceArchive": {
+            "sha256": "sha256:fc47c46a8ceec625d286ce6acfb36472fbd45209377662715af1c8472b089d84",
+            "bytes": 234738
+          },
+          "recipeInputs": {
+            "sha256": "sha256:16b7a2929731721fc2b99ac5127169dbabb18fd731fdda550f0d8f9c2a2bc1dd",
+            "bytes": 11203
+          },
+          "companion": {
+            "sha256": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+            "bytes": 959
+          },
+          "capsuleSource": {
+            "sha256": "sha256:64dad5b577bddc4d98ec86dc4e8b017c776ad7226bbd5d33be8bdbd6ba6caa52",
+            "bytes": 5498
+          },
+          "requirements": {
+            "sha256": "sha256:17166184306ac8a81d3d0e13256afc64550403b1a6fe18e02386035dd9a7ffb8",
+            "bytes": 787
+          },
+          "currentHttpMarker": {
+            "sha256": "sha256:fc1d027365f876578c95296cf57e2a3467c2a5a9358544251462e472a6a094e2",
+            "bytes": 176
+          },
+          "applicationSchemaInputs": {
+            "sha256": "sha256:e42937d4e02b0b67971a75b4c2f7d3774b781b56ed0a4e20839195918af03e9d",
+            "bytes": 512
+          },
+          "valueDeclaration": {
+            "sha256": "sha256:55a7f1e14868fc792fb1a78012135c5104a75483de8a47c874388fb9bab90031",
+            "bytes": 1043
+          }
+        }
+      }
+    }
+  },
+  "signingQualified": false,
+  "executionQualified": false,
+  "packagedDistributionQualified": false
+}

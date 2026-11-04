@@ -5,6 +5,7 @@ mod november;
 pub(crate) use november::sign_current_465_java;
 pub(crate) use november::sign_november_current_java;
 pub(crate) use november::sign_poststage_http_java;
+pub(crate) use november::sign_values_java;
 mod reconstructed;
 pub(crate) use reconstructed::sign_reconstructed_current_java;
 mod refreshed;
@@ -228,6 +229,32 @@ fn load(
                     && declaration["signedExecutionQualified"] == false
                     && declaration["postStageRollbackQualified"] == false,
                 "poststage fixture requires the exact captured source declaration",
+            )?;
+        }
+        if name == "put-once-values" {
+            let raw = pinned(
+                root,
+                "transaction-value-inputs.json",
+                &pin["valueDeclaration"],
+                8192,
+            )?;
+            let declaration: Value = serde_json::from_slice(&raw)?;
+            require(
+                declaration["schemaVersion"] == "latent.java.transaction-value-inputs.v1"
+                    && declaration["sourceDigest"] == pin["capsuleSource"]["sha256"]
+                    && declaration["companionDigest"] == pin["companion"]["sha256"]
+                    && declaration["absentOptionalRequired"] == true
+                    && declaration["freshInstanceRequired"] == true
+                    && [
+                        "componentCompiled",
+                        "signedStateExecutionQualified",
+                        "unsignedRoundtripQualified",
+                        "utf8RoundtripQualified",
+                        "absentOptionalQualified",
+                    ]
+                    .iter()
+                    .all(|field| declaration[*field] == false),
+                "value fixture requires its exact captured source declaration",
             )?;
         }
     }

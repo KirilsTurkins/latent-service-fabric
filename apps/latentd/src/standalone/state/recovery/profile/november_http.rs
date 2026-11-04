@@ -39,6 +39,10 @@ pub(super) fn select(
             "sha256:25258bd576a7ee6e79f20a0b7a13e10293780fce310d03f529ac811c7ccdc5e0",
             false,
         ),
+        Profile::CurrentValues => (
+            "sha256:e5fb75766a283d8ac818c073288706cea89303746b9d347746a2f44429c5f424",
+            false,
+        ),
         _ => return Err(super::super::denied()),
     };
     let companion = if writer {

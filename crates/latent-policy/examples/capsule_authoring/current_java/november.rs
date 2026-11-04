@@ -20,6 +20,27 @@ const POSTSTAGE_PINS: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../docs/testing/evidence/java-poststage-http-capture-2026-11-04.json"
 ));
+const VALUES_SOURCE: &str = "5f99649cd3b583d4a855c7c3b07ed3167419b866";
+const VALUES_PINS: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../docs/testing/evidence/java-values-capture-5f-2026-11-05.json"
+));
+
+pub(crate) fn sign_values_java(
+    output: &Path,
+    compiler_source: &str,
+    paths: &[OsString],
+) -> Result<()> {
+    sign_selected(
+        output,
+        compiler_source,
+        paths,
+        &["put-once-values"],
+        VALUES_PINS,
+        PROFILE,
+        VALUES_SOURCE,
+    )
+}
 
 pub(crate) fn sign_november_current_java(
     output: &Path,
@@ -109,6 +130,8 @@ mod tests {
         assert!(!output.exists());
         assert!(sign_current_465_java(&output, SOURCE, &inputs).is_err());
         assert!(sign_current_465_java(&output, CURRENT_SOURCE, &inputs).is_err());
+        assert!(sign_values_java(&output, SOURCE, &[root.path().into()]).is_err());
+        assert!(sign_values_java(&output, VALUES_SOURCE, &[root.path().into()]).is_err());
         assert!(sign_poststage_http_java(&output, SOURCE, &[root.path().into()]).is_err());
         assert!(
             sign_poststage_http_java(&output, POSTSTAGE_SOURCE, &[root.path().into()]).is_err()

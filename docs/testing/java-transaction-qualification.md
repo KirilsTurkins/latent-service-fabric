@@ -64,6 +64,12 @@ Phase 4 manifest profile's existing tests explicitly reject the synchronous
 service-invocation import. This observation does not establish the guest's
 typed runtime denial or signed execution.
 
+The separately pinned [value capture](evidence/java-values-capture-5f-2026-11-05.json)
+has a narrowly selected native codec association and fixture signer. Its
+single-publication conductor checks durable state, full-width unsigned values,
+UTF-8, absent options and fresh instances. The capture and controls alone do
+not establish that this conductor has completed a signed node run.
+
 The separate [terminal recovery evidence](evidence/java-terminal-recovery-2026-11-04.json)
 records 50 passing measured cases on native/conductor source `81d72bceaf4`,
 including crash replay, schema migration, reviewed restore and physical

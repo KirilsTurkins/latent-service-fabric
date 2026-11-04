@@ -9,6 +9,44 @@ const MARKER_BYTES: &[u8] = include_bytes!("../fixtures/http-marker-november.jso
 const REQUIREMENTS_BYTES: &[u8] = include_bytes!("../fixtures/http-requirements-november.json");
 const WRITER_BYTES: &[u8] = include_bytes!("../fixtures/http-writer-requirements-november.json");
 
+#[test]
+fn value_capture_accepts_only_its_exact_source_component_and_effect_custody() {
+    let packet: Value = serde_json::from_slice(include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../docs/testing/evidence/java-values-capture-5f-2026-11-05.json"
+    )))
+    .unwrap();
+    let pin = &packet["captures"]["variants"]["put-once-values"]["materials"];
+    let source = include_bytes!("../fixtures/current-values.java");
+    let schema = include_bytes!("../fixtures/current-values-schema.json");
+    let mut item = input(Profile::CurrentLegacy);
+    item.component = "sha256:e5fb75766a283d8ac818c073288706cea89303746b9d347746a2f44429c5f424";
+    assert_eq!(pin["component"]["sha256"], item.component);
+    assert_eq!(
+        pin["capsuleSource"]["sha256"],
+        format!("sha256:{}", digest(source))
+    );
+    assert_eq!(
+        pin["applicationSchemaInputs"]["sha256"],
+        format!("sha256:{}", digest(schema))
+    );
+    assert_eq!(
+        Profile::installed(item.component).unwrap(),
+        Profile::CurrentValues
+    );
+    Profile::CurrentValues
+        .review([1; 32], schema, source, None, Some(item))
+        .unwrap();
+    assert!(Profile::CurrentValues
+        .review([1; 32], schema, b"changed", None, Some(item))
+        .is_err());
+    let changed = CurrentHttpInput {
+        component: "sha256:wrong",
+        ..item
+    };
+    assert!(SelectedHttpCustody::select(Profile::CurrentValues, &changed).is_err());
+}
+
 fn input(profile: Profile) -> CurrentHttpInput<'static> {
     let (component, writer) = match profile {
         Profile::CurrentLegacy => (
