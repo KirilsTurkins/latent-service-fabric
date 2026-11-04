@@ -1,6 +1,74 @@
 use super::*;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn duplicate_replay_of_corrupt_result_quarantines_protected_store() {
+    use latent_state::embedded::{AtomicBatch, RowMutation, StoreError};
+    use latent_state::store_io::StoreIoKind;
+
+    let fixture = Fixture::new().await;
+    let (first, envelope, budget) = fixture.invocation(false, "corrupt-result");
+    let guest = first.admit(&envelope, &budget).await.unwrap();
+    guest.acquire(Mode::Command).unwrap();
+    guest.finish_guest_access();
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    first
+        .complete(
+            success(b"original"),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    let original = first.take_owned_completion().unwrap().unwrap();
+    let TransactionCompletionResult::Command(CommandCompletionDisposition::Durable {
+        command, ..
+    }) = &original.result
+    else {
+        panic!("original command did not commit");
+    };
+    let row = latent_commit::atomic::result_row_key(command.id(), command.attempt());
+    drop((guest, original, first));
+    let (replay, envelope, budget) = fixture.invocation(false, "corrupt-result");
+    assert_eq!(
+        replay.admit(&envelope, &budget).await.err().unwrap().code,
+        latent_core::PlatformErrorCode::AlreadyExists
+    );
+    fixture
+        .protected_store()
+        .with_store(StoreIoKind::RecoveryWrite, 8192, move |store| {
+            store.apply(AtomicBatch {
+                expectations: vec![],
+                mutations: vec![RowMutation {
+                    key: row,
+                    value: Some(b"LCR\0\x03broken".to_vec()),
+                }],
+            })
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    replay
+        .complete(
+            success(b"not executed"),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    assert_eq!(
+        fixture.protected_store().failure(),
+        Some(latent_state::protected_store::ProtectedStoreError::Store(
+            StoreError::Corrupt
+        ))
+    );
+    drop((
+        replay.take_owned_completion().unwrap(),
+        replay,
+        envelope,
+        budget,
+    ));
+    fixture.shutdown_uncertain_writer().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn duplicate_admission_of_corrupt_command_quarantines_protected_store() {
     use latent_state::embedded::{AtomicBatch, RowMutation, StoreError};
     use latent_state::store_io::StoreIoKind;
