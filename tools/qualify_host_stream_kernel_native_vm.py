@@ -345,7 +345,7 @@ def qualify_node(output,revision):
     from tools import qualify_host_stream_kernel_objects as objects
     native.require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true' and
         os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric' and
-        os.environ.get('GITHUB_REF_NAME') == native.NODE_BRANCH and
+        os.environ.get('GITHUB_REF_NAME') in native.NODE_BRANCHES and
         os.environ.get('GITHUB_EVENT_NAME') == 'push','node-one-hosted-push')
     started = float(os.environ.get('LSF_Q35_STARTED_MONOTONIC','nan'))
     now = time.monotonic()
@@ -376,10 +376,13 @@ def qualify_node(output,revision):
         'nodeFunding':False,'nodeRetired':False,'irqEnabled':False,'tcpEnabled':False,
         'whole738Complete':False,'wholeNodeFitQualified':False,'productionInstallation':False,
         'earlyPlatformObjectsRetroactivelyFunded':False,'freshVmBoots':0,
+        'pciConstructorQualified':False,'napiQualified':False,
         'hermetic':False,'compilerImplicitInputsAttested':False,'reproducibility':'not-checked',
         'profile':{'qemu':'11.1.2','machine':'pc-q35-11.1','accel':'kvm',
             'cpus':1,'maxcpus':1,'virtualIommu':False,'interruptRemapping':False,
-            'virtioNetPciVectors':3,'hostNetwork':False,'hostDrives':False}}
+            'virtioNetPciVectors':3,'hostNetwork':False,'hostDrives':False,
+            'expectedPciBdf':'0000:00:03.0','expectedPciVendor':'1af4',
+            'expectedPciDevice':'1041','modernOnly':True}}
     stage = 'source-capture'; products = {}; tool_pins = {}
     def run(label,*argv,root=None,seconds=1200):
         nonlocal stage
@@ -426,6 +429,10 @@ def qualify_node(output,revision):
             b'Python 3.13.5','node-pinned-owner-python')
         run('locked-python-dependencies',owner_python,'-m','pip','install',
             '--requirement',ROOT/'tools/requirements.lock',seconds=180)
+        if os.environ.get('GITHUB_REF_NAME') == native.NODE_IDENTITY_BRANCH:
+            run('node-q35-pci-identity-refusal-controls',owner_python,'-B','-m','unittest',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodeBootSourceControls',
+                '-v',seconds=30)
         run('normal-prerequisite-update','sudo','apt-get','update',seconds=180)
         run('normal-prerequisite-install','sudo','apt-get','install','--yes','--no-install-recommends',
             'gcc','make','flex','bison','bc','libelf-dev','libssl-dev','binutils','libc6-dev',
@@ -516,6 +523,10 @@ def qualify_node(output,revision):
         native.require({k:v for k,v in new_values.items() if k != 'CONFIG_LSF_STREAM_NODE_BOOTSTRAP'} ==
             {k:v for k,v in old_values.items() if k != 'CONFIG_LSF_STREAM_NODE_BOOTSTRAP'},
             'node-only-reviewed-config-addition')
+        native.require(new_values.get('CONFIG_PRINTK') == 'y' and
+            new_values.get('CONFIG_PRINTK_TIME') == 'y' and
+            new_values.get('CONFIG_CONSOLE_LOGLEVEL_DEFAULT') == '7',
+            'node-pci-observation-console-config')
         receipt['bootConfiguration'] = image.check_boot_configuration(config,objects.configuration)
         keep('selected-before.config',selected_file,c.MAX_DOCUMENT)
         keep('boot.config',build/'.config',c.MAX_DOCUMENT)

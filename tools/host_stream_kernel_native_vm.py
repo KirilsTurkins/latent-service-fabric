@@ -201,6 +201,8 @@ def serial_observation(raw):
 # Fresh, development-only q35 Node preparation image. No historical VM receipt
 # is accepted here, and no positive NodeFunding/retirement/IRQ issuer exists.
 NODE_BRANCH = 'feat/sdk-738-q35-node-boot-20261029'
+NODE_IDENTITY_BRANCH = 'feat/sdk-738-q35-pci-identity-20261104'
+NODE_BRANCHES = (NODE_BRANCH, NODE_IDENTITY_BRANCH)
 NODE_ROOT = 'research/standard-outbound/linux-6.12-lineage/node-boot/'
 NODE_PROJECTOR = NODE_ROOT+'projector.py'
 NODE_MATERIALS = ('factory-node-boot.c','Kconfig.fragment','Makefile.fragment')
@@ -216,6 +218,8 @@ NODE_BOOT = b'LSFNODEBOOT1 boot=original-node-preparation-only'
 NODE_END = b'LSFVM1 result=PASS stage=actual-node-preparation-and-retained-close'
 NODE_HELD = (b'LSFNODEBOOT1 prepared=1 descriptorClosed=1 originalEscrowRetained=1 '
     b'nodeFunding=0 nodeRetired=0 irqEnabled=0 tcpEnabled=0')
+NODE_PCI_OBSERVATION = (b'LSFQ35PCICONFIG1 bdf=0000:00:03.0 vendor=1af4 '
+    b'device=1041 unregistered=1')
 
 
 def node_capture(root):
@@ -275,6 +279,11 @@ def node_serial(raw):
     rows = [line for line in raw.splitlines() if line.startswith((b'LSFNODEBOOT1 ',b'LSFVM1 '))]
     require(len(rows) == 5 and rows[0] == NODE_BOOT and rows[-3:] ==
         [NODE_HELD,b'LSFNODEBOOT1 childExit=0',NODE_END], 'node-complete-actual-protocol')
+    pci_rows = [line for line in raw.splitlines() if b'LSFQ35PCICONFIG1' in line]
+    require(len(pci_rows) == 1 and re.fullmatch(
+        rb'\[\s*[0-9]+\.[0-9]{6}\] ' + re.escape(NODE_PCI_OBSERVATION), pci_rows[0]) and
+        raw.index(NODE_BOOT) < raw.index(pci_rows[0]) < raw.index(rows[1]),
+        'node-actual-selected-pci-config')
     pattern = rb'LSFNODEBOOT1 facts=\[([0-9, ]+)\] cpu=\[([0-9, ]+)\] accounting=\[([0-9, ]+)\] vectors=\[([0-9, ]+)\]'
     match = re.fullmatch(pattern,rows[1]); require(match is not None,'node-facts-grammar')
     groups = [[int(x) for x in re.fullmatch(rb'[0-9]{1,20}(?:, [0-9]{1,20})*',r)[0].split(b', ')]
@@ -286,6 +295,9 @@ def node_serial(raw):
         len(set(vectors)) == 8 and all(32 <= x < 256 for x in vectors),'node-actual-capacity')
     return {'raw':identity(raw),'nodeLayout':layout,'cpuGeometry':cpu,'accounting':accounting,
         'vectors':vectors,'descriptorClosed':True,'originalEscrowRetained':True,
+        'selectedPciConfig':{'bdf':'0000:00:03.0','vendor':'1af4','device':'1041',
+            'unregistered':True,'observedInGuest':True},
+        'pciConstructorQualified':False,'napiQualified':False,
         'nodeFunding':False,'nodeRetired':False,'irqEnabled':False,'tcpEnabled':False}
 
 
@@ -294,7 +306,7 @@ def node_boot_argv(qemu,kernel,initramfs,firmware):
     return (str(qemu),'-machine','pc-q35-11.1','-accel','kvm','-cpu','host',
         '-smp','1,maxcpus=1','-m',str(image.VM_MEMORY_MIB),'-nodefaults','-no-user-config',
         '-display','none','-serial','stdio','-monitor','none','-no-reboot','-nic','none',
-        '-device','virtio-net-pci,id=net0,mac=52:54:00:12:34:56,vectors=3,romfile=',
+        '-device','virtio-net-pci,id=net0,bus=pcie.0,addr=0x3,disable-legacy=on,mac=52:54:00:12:34:56,vectors=3,romfile=',
         '-L',str(firmware),'-bios',str(firmware/'bios-256k.bin'),'-kernel',str(kernel),
         '-initrd',str(initramfs),'-append','console=ttyS0 panic=1 rdinit=/init maxcpus=1 nr_cpus=1')
 
