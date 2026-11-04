@@ -149,7 +149,7 @@ impl ProtectedStoreConfig {
 pub(super) fn inspection_profile(limits: StoreLimits) -> (&'static str, [u8; 32]) {
     use sha2::{Digest, Sha256};
     let mut digest = Sha256::new();
-    digest.update(b"lsf-protected-redb-4.3.0-immediate-ext4-v1\0");
+    digest.update(b"lsf-protected-redb-4.4.0-immediate-ext4-v1\0");
     digest.update(b"latent.transaction-store.v1\0");
     for value in [
         limits.cache_bytes,

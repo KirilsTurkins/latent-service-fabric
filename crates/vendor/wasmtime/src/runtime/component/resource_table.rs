@@ -635,6 +635,25 @@ impl ResourceTable {
         }))
     }
 
+    // The diagnostic bound applies BEFORE filtering holes. Taking a bounded
+    // number of occupied entries from iter_mut() would scan unbounded free slots.
+    pub(crate) fn diagnostic_prefix(
+        &mut self,
+    ) -> (impl Iterator<Item = &mut (dyn Any + Send)>, u8, bool) {
+        const LIMIT: usize = 64;
+        let scanned = self.entries.len().min(LIMIT) as u8;
+        let truncated = self.entries.len() > LIMIT;
+        let entries = self
+            .entries
+            .iter_mut()
+            .take(LIMIT)
+            .filter_map(|entry| match entry {
+                Entry::Occupied { entry } => Some(&mut *entry.entry),
+                Entry::Free { .. } => None,
+            });
+        (entries, scanned, truncated)
+    }
+
     /// Iterate over all the entries in this table.
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut (dyn Any + Send)> {
         self.entries.iter_mut().filter_map(|entry| match entry {

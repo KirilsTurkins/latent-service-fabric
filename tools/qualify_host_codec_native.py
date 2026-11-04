@@ -28,6 +28,8 @@ CONTROLS = (('original-host-memory',
    'budget::host_memory::tests::failed_pending_replacement_refunds_only_unallocated_capacity',
    'budget::host_memory::tests::growing_overlap_competes_before_allocation_and_shrink_keeps_peak',
    'budget::host_memory::tests::native_and_linear_memory_compete_before_allocation_and_failed_preparations_roll_back',
+   'budget::host_memory::tests::native_envelope_refuses_unobserved_retirement_before_mutating_original_ledger',
+   'budget::host_memory::tests::original_native_envelope_reuses_only_retired_storage_without_refunding_capacity',
    'budget::host_memory::tests::partial_confirmation_keeps_pending_capacity_without_inventing_allocated_peak')),
  ('result-owner',
   'latent-core',
@@ -209,7 +211,9 @@ CONTROLS = (('original-host-memory',
   'host::native_host_future_tests::actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse',
   'host::native_host_future_tests::actual_host_future_cancellation_cannot_credit_another_live_store',
   'host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires',
-  'host::native_host_future_tests::actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_result')),
+  'host::native_host_future_tests::actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_result',
+  'host::native_host_future_tests::actual_accessor_spawn_outer_box_refuses_before_run_and_retires_after_pending',
+  'host::native_host_future_tests::actual_sync_lower_result_box_refuses_before_poll_and_fresh_budget_reuses')),
  ('c-canonical-wait-routes',
  'latent-component-threading',
  'c_wait_',
@@ -268,6 +272,8 @@ CONTROLS = (('original-host-memory',
   'activation_runtime::shared::tests::concurrent_last_strong_and_weak_drop_keep_both_headers_paid',
   'activation_runtime::shared::tests::payload_unwind_still_retires_both_headers_before_refund',
   'activation_runtime::shared::tests::preparation_prepays_both_padded_headers_and_rolls_back_without_observation',
+  'activation_runtime::tests::actual_native_reservation_refusal_keeps_original_budget_and_does_not_guess_other_dimensions',
+  'activation_runtime::tests::actual_owner_refusals_name_only_the_original_bucket_without_refunding_live_owners',
   'activation_runtime::tests::close_allows_bounded_live_continuations_and_rejects_independent_work',
   'activation_runtime::tests::continuations_require_live_original_generation_before_any_admission',
   'activation_runtime::tests::foreign_store_token_and_opaque_sleeping_work_cannot_establish_quiescence',
@@ -286,7 +292,8 @@ CONTROLS = (('original-host-memory',
    'broker::tests::session_native_memory::original_session_native_observer_and_reused_registry_never_credit_a_fresh_budget',
    'broker::tests::session_native_memory::original_session_native_real_provider_call_keeps_closed_session_backing_until_drop',
    'broker::tests::session_native_memory::original_session_native_real_provider_result_keeps_original_owner_after_scope_close',
-   'broker::tests::session_native_memory::original_session_native_concurrent_final_core_drops_retire_the_real_registry_weak_graph')),
+   'broker::tests::session_native_memory::original_session_native_concurrent_final_core_drops_retire_the_real_registry_weak_graph',
+   'broker::tests::session_native_memory::post_store_registry_retirement_releases_original_child_capacity_without_a_new_session')),
  ('original-session-optional-shared-owner',
   'latent-capabilities',
   'broker::session::shared::tests::',
@@ -433,7 +440,7 @@ def qualify(output: Path, revision: str) -> dict:
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
     require(len(CONTROLS) == 44 and len({row[0] for row in CONTROLS}) == 44
-            and len(names) == len(set(names)) == 193, 'host-codec-control-inventory')
+            and len(names) == len(set(names)) == 200, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     result_bytes.verify(ROOT)
@@ -472,7 +479,7 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':193,'nativeCohort':NATIVE_COHORT,
+            'products':products,'commands':stages.records,'controlCount':200,'nativeCohort':NATIVE_COHORT,
             'wasmtimeAllocationCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
