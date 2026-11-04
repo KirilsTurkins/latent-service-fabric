@@ -1,0 +1,102 @@
+name: PR1373 exact pulldown-cmark lock review
+on:
+  push:
+    branches: ['ci/pr1373-lock-review-20261104']
+    paths: ['.github/workflows/pr1373-lock-review.yml']
+permissions:
+  contents: read
+concurrency:
+  group: pr1373-exact-lock-review
+  cancel-in-progress: false
+jobs:
+  validate:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+        with:
+          ref: 4f7c7526606d22c39120d5fcfa9dee93516e8490
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Resolve only the published security patch and verify every byte
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          raw = Path('Cargo.lock').read_bytes()
+          assert hashlib.sha256(raw).hexdigest() == '7bc9a79bd6439260fcbe8c942d433da9450268a884808cdfd6cbddf963882a8c'
+          PY
+          cargo update --package pulldown-cmark@0.13.5 --precise 0.13.6
+          python3 - <<'PY'
+          import hashlib, subprocess, tomllib
+          from pathlib import Path
+          raw = Path('Cargo.lock').read_bytes()
+          assert len(raw) == 113089
+          assert hashlib.sha256(raw).hexdigest() == '4b30a832d065dc18f05b433efc9eecc5b0d57e18fb072b581fe16971b5870da4'
+          original = tomllib.loads(subprocess.check_output(['git', 'show', 'HEAD:Cargo.lock']).decode())
+          updated = tomllib.loads(raw.decode())
+          changes = [(a, b) for a, b in zip(original['package'], updated['package'], strict=True) if a != b]
+          assert len(changes) == 1
+          a, b = changes[0]
+          assert a['name'] == b['name'] == 'pulldown-cmark'
+          assert a['version'] == '0.13.5' and b['version'] == '0.13.6'
+          assert b['checksum'] == '3db2be46835f013dd3f4fa7f5f7402c537787b54ebb6fe2b94bbdd7e2669bb7b'
+          assert {k:v for k,v in a.items() if k not in ('version','checksum')} == {k:v for k,v in b.items() if k not in ('version','checksum')}
+          assert subprocess.check_output(['git','diff','--name-only']).decode().splitlines() == ['Cargo.lock']
+          PY
+      - name: Compile the exact selected parser and its binding-generator dependent
+        run: |
+          cargo check --locked -p pulldown-cmark
+          cargo check --locked -p wit-bindgen-rust
+          git diff --check
+      - name: Retain the independently predicted lockfile bytes
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        with:
+          name: pr1373-reviewed-cargo-lock
+          path: Cargo.lock
+          if-no-files-found: error
+          retention-days: 7
+  retain-object:
+    needs: validate
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/pr1373-lock-review-20261104'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f
+        with:
+          name: pr1373-reviewed-cargo-lock
+          path: reviewed
+      - name: Store only the verified immutable blob; do not create commits or update refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, urllib.request
+          from pathlib import Path
+          path = Path('reviewed/Cargo.lock')
+          assert path.is_file() and not path.is_symlink()
+          assert path.stat().st_size == 113089
+          raw = path.read_bytes()
+          assert hashlib.sha256(raw).hexdigest() == '4b30a832d065dc18f05b433efc9eecc5b0d57e18fb072b581fe16971b5870da4'
+          expected = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+          assert expected == '910cf98aa8c2d0d5dfceb95fbc94f70b0209c300'
+          request = urllib.request.Request(
+              'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs',
+              data=json.dumps({'content': raw.decode('utf-8'), 'encoding': 'utf-8'}).encode(),
+              method='POST', headers={'Authorization': 'Bearer '+os.environ['GH_TOKEN'],
+                                    'Accept': 'application/vnd.github+json',
+                                    'Content-Type': 'application/json'})
+          with urllib.request.urlopen(request, timeout=30) as response:
+              assert response.status == 201
+              receipt = json.loads(response.read(8192))
+          assert receipt['sha'] == expected
+          print(json.dumps({'path':'Cargo.lock', 'blob':expected,
+                            'sha256':hashlib.sha256(raw).hexdigest(),
+                            'bytes':len(raw), 'refsUpdated':False}))
+          PY
