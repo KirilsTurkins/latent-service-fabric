@@ -41,6 +41,14 @@ the earlier capture, while their compiler reports and source custody are distinc
 A separate fixed signer selects only these exact materials. This capture alone
 does not qualify signed execution or packaged delivery.
 
+The [fresh terminal recovery run](evidence/java-terminal-recovery-4a5d-2026-11-05.json)
+passed 50 measured cases using native and conductor source `4a5d465b44d` and
+the separately captured `46597407903` Java components. All 12 native recovery
+operations reported successful physical retirement. This success does not
+explain or invalidate the three earlier intermittent result-HTTP 503 failures;
+precommit crash, pending-effect reconciliation, full retention and packaged
+distribution have separate evidence boundaries.
+
 The separate [value and child-call compiler capture](evidence/java-acceptance-inputs-5f-2026-11-05.json)
 records two components compiled from clean source `5f99649cd3b`. The value guest
 contains unsigned, UTF-8, absent-value and fresh-instance checks; the child guest
