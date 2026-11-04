@@ -6,6 +6,10 @@
 # Required CI selection, execution, and result controllers.
 /tools/ci/ @KirilsTurkins
 /tools/ci_*.py @KirilsTurkins
+/tools/tests/test_ci_*.py @KirilsTurkins
+/tools/tests/test_local_tests.py @KirilsTurkins
+/tools/tests/test_owned*.py @KirilsTurkins
+/tools/tests/test_run*.py @KirilsTurkins
 /tools/local_tests.py @KirilsTurkins
 /tools/test.py @KirilsTurkins
 /tools/test_run.py @KirilsTurkins
