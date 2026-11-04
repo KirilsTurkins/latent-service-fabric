@@ -202,7 +202,13 @@ def serial_observation(raw):
 # is accepted here, and no positive NodeFunding/retirement/IRQ issuer exists.
 NODE_BRANCH = 'feat/sdk-738-q35-node-boot-20261029'
 NODE_IDENTITY_BRANCH = 'feat/sdk-738-q35-pci-identity-20261104'
-NODE_BRANCHES = (NODE_BRANCH, NODE_IDENTITY_BRANCH)
+NODE_PREFIX_BRANCH = 'feat/sdk-738-q35-node-pci-prefix-20261104'
+NODE_BRANCHES = (NODE_BRANCH, NODE_IDENTITY_BRANCH, NODE_PREFIX_BRANCH)
+PREFIX_ROOT = 'research/standard-outbound/linux-6.12-lineage/'
+PREFIX_BRIDGE = PREFIX_ROOT+'node-constructor-bridge/projector.py'
+PREFIX_PROJECTOR = PREFIX_ROOT+'node-pci-prefix/projector.py'
+PREFIX_MATERIAL = PREFIX_ROOT+'node-pci-prefix/factory-node-pci-prefix.c'
+PREFIX_PROFILE = 'lsf-q35-node-pci-prefix-v1'
 NODE_ROOT = 'research/standard-outbound/linux-6.12-lineage/node-boot/'
 NODE_PROJECTOR = NODE_ROOT+'projector.py'
 NODE_MATERIALS = ('factory-node-boot.c','Kconfig.fragment','Makefile.fragment')
@@ -262,6 +268,77 @@ def node_compose(values,build_files,captured):
         all(receipt[k] is False for k in ('nodeFundingQualified','nodeRetirementQualified',
             'irqEnabled','consumerInstalled','booted')),'node-projection-authority')
     return result,receipt
+
+
+def node_prefix_capture(root):
+    import stat
+    result = {}
+    for name in (PREFIX_BRIDGE,PREFIX_PROJECTOR,PREFIX_MATERIAL):
+        path = root/name
+        require(stat.S_ISREG(path.lstat().st_mode) and not path.is_symlink(),'prefix-source-kind')
+        raw = read_file(path,4*1024**2)
+        raw.decode('utf8','strict')
+        require(b'\r' not in raw,'prefix-source-LF')
+        result[name] = raw
+    return result
+
+
+def node_prefix_compose(values,captured):
+    import importlib.abc
+    import importlib.util
+    from pathlib import Path
+    require(set(captured) == {PREFIX_BRIDGE,PREFIX_PROJECTOR,PREFIX_MATERIAL},'prefix-captured-set')
+    stages = []
+    for index,name in enumerate((PREFIX_BRIDGE,PREFIX_PROJECTOR)):
+        path = str((ROOT/name).resolve())
+        module_name = '_lsf_q35_prefix_'+str(index)
+        class Captured(importlib.abc.SourceLoader):
+            def get_filename(self,fullname):
+                require(fullname == module_name,'prefix-projector-name'); return path
+            def get_data(self,asked):
+                require(asked == path,'prefix-no-alternate-projector'); return captured[name]
+            def path_stats(self,asked):
+                raise OSError('prefix-no-bytecode')
+        spec = importlib.util.spec_from_file_location(module_name,path,loader=Captured())
+        require(spec is not None and spec.loader is not None,'prefix-projector-spec')
+        stage = importlib.util.module_from_spec(spec); spec.loader.exec_module(stage)
+        require(Path(stage.__file__).resolve() == Path(path),'prefix-projector-origin')
+        values,row = (stage.transform(values) if index == 0 else
+            stage.transform(values,captured[PREFIX_MATERIAL]))
+        require(row['originalBodiesInverseExact'] is True and
+            all(row[k] is False for k in ('nodeFundingQualified','nodeRetirementQualified',
+                'irqEnabled','tcpEnabled','consumerInstalled')),'prefix-projection-authority')
+        stages.append(row)
+    require(len(values) == 489,'prefix-derived-count')
+    return values,stages
+
+
+def node_prefix_serial(raw):
+    observed = node_serial(raw)
+    rows = [line for line in raw.splitlines() if b'LSFQ35PCIPREFIX1' in line]
+    acks = [line for line in raw.splitlines() if b'LSFNODEPREFIX1' in line]
+    expression = (rb'\[\s*[0-9]+\.[0-9]{6}\] LSFQ35PCIPREFIX1 '
+        rb'bdf=0000:00:03\.0 vendor=1af4 device=1041 born=1 returned=1 '
+        rb'registered=0 scopeRevoked=1 slot=([0-9]{1,3}) generation=([0-9]{1,20}) '
+        rb'live=([0-9]{1,3}),([0-9]{1,3}),([0-9]{1,3}) '
+        rb'cursor=([0-9]{1,6}),([0-9]{1,6}),([0-9]{1,6})')
+    require(len(rows) == 1 and len(acks) == 1 and
+        acks[0] == b'LSFNODEPREFIX1 childAck=1','prefix-one-kernel-marker-and-child-ack')
+    match = re.fullmatch(expression,rows[0])
+    require(match is not None,'prefix-kernel-marker-grammar')
+    slot,generation,before_live,peak_live,after_live,before_cursor,peak_cursor,after_cursor = map(int,match.groups())
+    require(1 <= slot < 256 and 0 < generation < 2**64-1 and
+        0 < before_live < peak_live <= 256 and peak_live == before_live+1 and after_live == before_live and
+        0 < before_cursor < peak_cursor <= 196608 and after_cursor == peak_cursor and
+        observed['accounting'][3] == before_cursor and observed['accounting'][5] == before_live,
+        'prefix-original-record-accounting')
+    require(raw.index(NODE_PCI_OBSERVATION) < raw.index(rows[0]) < raw.index(acks[0]) <
+        raw.index(b'LSFNODEBOOT1 facts=') < raw.index(NODE_HELD),'prefix-actual-observation-order')
+    observed['pciPrefix'] = {'bdf':'0000:00:03.0','vendor':'1af4','device':'1041',
+        'birthObserved':True,'returnObserved':True,'scopeRevoked':True,'registered':False,
+        'originalSlot':slot,'originalGeneration':generation,'live':[before_live,peak_live,after_live],
+        'cursor':[before_cursor,peak_cursor,after_cursor]}
+    return observed
 
 
 def node_supervisor(captured,original):

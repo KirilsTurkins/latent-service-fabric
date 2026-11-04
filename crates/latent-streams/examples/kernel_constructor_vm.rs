@@ -233,15 +233,34 @@ mod selected {
         baseline: ProviderPoolSnapshot,
         deadline: Instant,
     ) -> Checked<()> {
-        let node = StreamProvider::prepare_kernel_node_for_qualification(
-            Arc::clone(&pools),
-            "streams",
-            1,
-            0,
-            configuration(),
-            deadline,
-        )
-        .await
+        let node = match option_env!("LSF_Q35_PREFIX_PROFILE") {
+            None => {
+                StreamProvider::prepare_kernel_node_for_qualification(
+                    Arc::clone(&pools),
+                    "streams",
+                    1,
+                    0,
+                    configuration(),
+                    deadline,
+                )
+                .await
+            }
+            Some("lsf-q35-node-pci-prefix-v1") => {
+                let node = StreamProvider::prepare_kernel_node_pci_prefix_for_qualification(
+                    Arc::clone(&pools),
+                    "streams",
+                    1,
+                    0,
+                    configuration(),
+                    deadline,
+                )
+                .await
+                .map_err(|_| ())?;
+                println!("LSFNODEPREFIX1 childAck=1");
+                Ok(node)
+            }
+            Some(_) => return Err(()),
+        }
         .map_err(|_| ())?;
         let facts = node.facts();
         let ready = snapshot(&pools, deadline).await?;
