@@ -420,6 +420,16 @@ def permitted_skip(before_source: str, class_name: str | None, method_name: str 
                     if key in baseline_sources:
                         if key not in trees: trees[key] = ast.parse(baseline_sources[key])
                         add_scope(key, None, helper)
+            elif (isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Call)
+                  and isinstance(node.func.value.func, ast.Name)):
+                # Follow a baseline test's directly instantiated imported fixture class.
+                imported = imports.get(node.func.value.func.id)
+                if imported:
+                    package, helper_class = imported
+                    key = package if package in baseline_sources else package.removeprefix('tools.tests.')
+                    if key in baseline_sources:
+                        if key not in trees: trees[key] = ast.parse(baseline_sources[key])
+                        add_scope(key, helper_class, node.func.attr)
             elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
                 receiver = node.func.value.id
                 if receiver in {'self', 'cls'} and owner:

@@ -120,6 +120,10 @@ class Other(unittest.TestCase):
         external = "import unittest\nclass Cases(unittest.TestCase):\n @classmethod\n def setUpClass(cls):\n  from tools.tests.test_native_helper import prerequisite\n  prerequisite()\n def test_one(self): pass\n"
         sources = {'test_native_helper': "import unittest\ndef prerequisite(): raise unittest.SkipTest('missing host')\n"}
         self.assertTrue(permitted_skip(external, 'Cases', None, 'missing host', sources))
+        instance = "class Cases:\n def test_one(self):\n  from tools.tests.test_native_helper import Native\n  Native().prerequisite()\n"
+        sources = {'test_native_helper': "class Native:\n def prerequisite(self): self.skipTest('missing frontend')\n"}
+        self.assertTrue(permitted_skip(instance, 'Cases', 'test_one', 'missing frontend', sources))
+        self.assertFalse(permitted_skip(instance.replace('Native().prerequisite()', 'pass'), 'Cases', 'test_one', 'missing frontend', sources))
 
 class PythonFixtureReceiptTests(unittest.TestCase):
     def test_authorized_class_skip_accounts_for_every_discovered_case(self):
