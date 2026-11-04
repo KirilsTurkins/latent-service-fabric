@@ -1,0 +1,62 @@
+{
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Compare exact old and new parsers on retained original preview",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Check fixed event, member and observation boundaries",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_rust_wac_threading_probe -v\n"
+      },
+      {
+        "name": "Acquire the fixed WAC 0.11.0 diagnostic tool",
+        "run": "mkdir -p \"$RUNNER_TEMP/rust-wac-threading\"\ncurl --fail --location --max-time 180 https://github.com/bytecodealliance/wac/releases/download/v0.11.0/wac-cli-x86_64-unknown-linux-musl --output \"$RUNNER_TEMP/rust-wac-threading/wac-0.11.0\"\nprintf '%s  %s\\n' 83259349b630f79a60490322b068e7ad2dba784720b0d467decccc0aecc743b5 \"$RUNNER_TEMP/rust-wac-threading/wac-0.11.0\" | sha256sum --check --strict\ntest \"$(stat --format=%s \"$RUNNER_TEMP/rust-wac-threading/wac-0.11.0\")\" -eq 22917648\nchmod 0700 \"$RUNNER_TEMP/rust-wac-threading/wac-0.11.0\"\n"
+      },
+      {
+        "env": {
+          "EXPECTED_HEAD": "${{ github.sha }}",
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Compare the exact retained preview without rebuilding or guest execution",
+        "run": "timeout --signal=TERM --kill-after=10s 600s python3 -B tools/diagnose_rust_wac_threading.py --new-wac \"$RUNNER_TEMP/rust-wac-threading/wac-0.11.0\" --output \"$RUNNER_TEMP/rust-wac-threading/result\" --expected-head \"$EXPECTED_HEAD\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded parser outcomes and public components",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-wac-threading-probe-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-wac-threading/result/*.json\n${{ runner.temp }}/rust-wac-threading/result/logs/*.stdout.txt\n${{ runner.temp }}/rust-wac-threading/result/logs/*.stderr.txt\n${{ runner.temp }}/rust-wac-threading/result/preview.wasm\n${{ runner.temp }}/rust-wac-threading/result/new.wasm\n${{ runner.temp }}/rust-wac-threading/result/identity.wac\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 15
+  },
+  "jobId": "compare",
+  "kind": "job",
+  "reviewReason": "Authenticate the failed original artifact and both pinned tools; retain exact outcomes without claiming full composition.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-wac-threading-probe.yml"
+}
