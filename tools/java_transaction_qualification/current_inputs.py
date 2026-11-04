@@ -103,10 +103,12 @@ def _validate_materials(files, selected, names):
     imports = report.get("actualImports")
     require(isinstance(imports, list) and 0 < len(imports) <= 16 and len(imports) == len(set(imports))
             and all(isinstance(item, str) for item in imports) and REQUIRED_IMPORTS <= set(imports)
-            and set(imports) <= REQUIRED_IMPORTS | {"latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:http/client@0.2.0"}
+            and set(imports) <= REQUIRED_IMPORTS | {"latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:http/client@0.2.0"} | ({"latent:service/invoke@0.1.0"} if selected.variant == "forbidden-child" else set())
             and (("latent:http/client@0.2.0" in imports) ==
                  (selected.variant in {'forbidden-http', 'forbidden-http-before-stage', 'put-once-poststage-http-denial'})),
             "current-java-actual-transaction-imports")
+    require(("latent:service/invoke@0.1.0" in imports) == (selected.variant == "forbidden-child"),
+            "current-java-exact-child-import")
     details = report.get("details")
     commands = details.get("commands") if isinstance(details, dict) else None
     require(isinstance(commands, list) and 0 < len(commands) <= 64

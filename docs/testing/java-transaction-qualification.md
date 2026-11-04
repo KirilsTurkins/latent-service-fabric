@@ -41,6 +41,13 @@ the earlier capture, while their compiler reports and source custody are distinc
 A separate fixed signer selects only these exact materials. This capture alone
 does not qualify signed execution or packaged delivery.
 
+The separate [value and child-call compiler capture](evidence/java-acceptance-inputs-5f-2026-11-05.json)
+records two components compiled from clean source `5f99649cd3b`. The value guest
+contains unsigned, UTF-8, absent-value and fresh-instance checks; the child guest
+contains a typed synchronous service call inside a command. Their custody checks
+preserve exact materials and imports. Neither capture has yet been signed or run
+through the node, so neither establishes those runtime behaviors.
+
 The separate [terminal recovery evidence](evidence/java-terminal-recovery-2026-11-04.json)
 records 50 passing measured cases on native/conductor source `81d72bceaf4`,
 including crash replay, schema migration, reviewed restore and physical
