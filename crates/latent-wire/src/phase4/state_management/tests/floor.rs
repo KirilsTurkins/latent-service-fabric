@@ -299,6 +299,98 @@ fn linked_row(
 }
 
 #[tokio::test]
+async fn audited_floor_release_allows_explicit_destroy_and_incarnation_recreation() {
+    let mut fixture = Fixture::new(true).await;
+    let floor = seed_floor(&mut fixture).await;
+    let mut malformed = fixture.mutation("malformed-create", c::NamespaceMutationKind::Create, 0);
+    malformed.configuration = None;
+    assert!(fixture
+        .backend
+        .execute_state(context("alice"), malformed.into())
+        .await
+        .is_err());
+    retire(&fixture).await;
+    let generation = inspect(&fixture).await.generation;
+    let refused = fixture
+        .backend
+        .execute_state(
+            context("alice"),
+            fixture
+                .mutation(
+                    "destroy-with-floor",
+                    c::NamespaceMutationKind::Destroy,
+                    generation,
+                )
+                .into(),
+        )
+        .await;
+    assert_eq!(
+        refused.err().unwrap().code,
+        PlatformErrorCode::StateConflict,
+        "a retained floor must block destruction"
+    );
+    let release = request(&fixture, floor, &inspect(&fixture).await);
+    drop(
+        fixture
+            .backend
+            .execute_state(context("alice"), release.into())
+            .await
+            .unwrap(),
+    );
+    let generation = inspect(&fixture).await.generation;
+    let destroyed = fixture
+        .backend
+        .execute_state(
+            context("alice"),
+            fixture
+                .mutation(
+                    "destroy-after-release",
+                    c::NamespaceMutationKind::Destroy,
+                    generation,
+                )
+                .into(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        receipt(&destroyed).status,
+        c::NamespaceStatus::Tombstone as i32
+    );
+    drop(destroyed);
+    // Re-creation requires separate current inspection authority for the new
+    // incarnation; the old-incarnation grant must not imply that permission.
+    let mut document = fixture.document.clone();
+    let scopes = document["rules"][0]["resources"]["scopes"]
+        .as_array_mut()
+        .unwrap();
+    let mut next_scope = scopes[0].clone();
+    next_scope["incarnation"] = 2.into();
+    scopes.push(next_scope);
+    fixture.update(Some(&document), "grant-new-incarnation-inspection");
+    let generation = inspect(&fixture).await.generation;
+    let recreated = fixture
+        .backend
+        .execute_state(
+            context("alice"),
+            fixture
+                .mutation(
+                    "recreate-after-release",
+                    c::NamespaceMutationKind::Recreate,
+                    generation,
+                )
+                .into(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        receipt(&recreated).namespace.as_ref().unwrap().incarnation,
+        "2"
+    );
+    drop(recreated);
+    fixture.finish().await;
+}
+
+#[tokio::test]
 async fn actual_audited_floor_release_preserves_original_receipt_and_reopens_linked_native_rows() {
     let mut fixture = Fixture::new(true).await;
     let floor = seed_floor(&mut fixture).await;
