@@ -11,6 +11,25 @@ from tools import rust_thread_http_sibling_gate as witness
 
 
 class RustThreadHttpSiblingTests(unittest.TestCase):
+    def test_composer_receipt_is_preserved_and_diagnostic_is_separate(self):
+        from tools.compile_rust_thread_http_sibling import (
+            THREAD_PREVIEW_FEATURES, record_diagnostic_composition,
+        )
+        from tools.rust_capsule_project import read_json, write_json
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            original = {'status': 'composed', 'originalCoreModulesRetained': 3}
+            write_json(output / 'rust-http-composition.json', original)
+            before = (output / 'rust-http-composition.json').read_bytes()
+            result = record_diagnostic_composition(output, original, {'digest': 'fixed'})
+            self.assertEqual((output / 'rust-http-composition.json').read_bytes(), before)
+            self.assertEqual(read_json(output / 'rust-http-composition-diagnostic.json'), result)
+            self.assertTrue(result['diagnosticOnly'])
+            self.assertEqual(result['diagnosticValidationFeatures'], THREAD_PREVIEW_FEATURES)
+            with self.assertRaises((ValueError, RuntimeError)):
+                record_diagnostic_composition(output, {'status': 'different'}, {'digest': 'fixed'})
+            self.assertEqual((output / 'rust-http-composition.json').read_bytes(), before)
+
     def test_only_diagnostic_final_validation_selects_threading(self):
         from unittest.mock import Mock
         from tools.compile_rust_thread_http_sibling import (
