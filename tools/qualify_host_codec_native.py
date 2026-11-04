@@ -349,7 +349,7 @@ CONTROLS = (('original-host-memory',
   'rust_sync_private_dispatch_executes_production_helper_and_preserves_source_fallback',
   ('component_threading::tests::rust_sync_private_dispatch_executes_production_helper_and_preserves_source_fallback',)))
 
-NATIVE_COHORT = 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-session-core-stats-c-canonical-system-stack-native-only-cumulative-retirement-physical-result-owner-box-handle-owned-text-call-buffers-rust-context40-authenticated-original-memory-v16'
+NATIVE_COHORT = 'wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-retained-capability-directories-blob-streaming-shared-tables-runtime-timer-strong-weak-session-core-stats-c-canonical-system-stack-native-only-cumulative-retirement-physical-result-owner-box-handle-owned-text-call-buffers-rust-context40-authenticated-original-memory-v16'
 
 PRODUCTS = ('latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring')
 RECIPE = ('.github/workflows/host-codec-memory.yml', '.cargo/managed-guest.toml',

@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_host_codec_native.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the complete current native control inventory without weakening exact discovery or execution",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "81cc1afcab3fdadf078bb2204be046cedc5940280b099c2bb3ffe6ce7162cf2c"
-}
+{"kind":"owner","path":"tools/qualify_host_codec_native.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind current 48.0.8 version and upstream security source; preserve historical receipts, feature, capability, limit and execution controls.","schemaVersion":"latent.ci.contracts.v1","sha256":"b50b5d25e30e28d668a0a657ebeb921c8deada9087befc24fc81437384543a3a"}

@@ -97,7 +97,7 @@ class RustProjectTests(unittest.TestCase):
             project.locked_dependencies("my-project")
         authoritative = project.ROOT / "Cargo.lock"
         raw = authoritative.read_text()
-        local = 'name = "wasmtime"\nversion = "48.0.7"\n'
+        local = 'name = "wasmtime"\nversion = "48.0.8"\n'
         self.assertEqual(raw.count(local), 1)
         replaced = raw.replace(local, 'name = "wasmtime"\nversion = "48.0.6"\n')
         with patch.object(Path, "read_text", lambda selected, *args, **kwargs:

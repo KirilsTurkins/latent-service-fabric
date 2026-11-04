@@ -1,3 +1,1 @@
-{"kind":"owner","path":"tools/phase3_security.py","reviewBoundary":"committed-fingerprint","reviewReason":"Authenticate selected Wasmtime48.0.7 security patch and coupled current identities; preserve all historical evidence, feature/capability/limit/skip obligations and exact native source guard.","schemaVersion":"latent.ci.contracts.v1","sha256":
-  "944653e5e1b91e44c3bb919a1d73aa2325ad54b3c3b8dd79a76ea359c350eb9a"
-}
+{"kind":"owner","path":"tools/phase3_security.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind current 48.0.8 version and upstream security source; preserve historical receipts, feature, capability, limit and execution controls.","schemaVersion":"latent.ci.contracts.v1","sha256":"e6fe005a0152fc794c7e84e10de24bc8bc450771e3300b5144cdcbbcde4379db"}
