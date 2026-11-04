@@ -1,0 +1,117 @@
+name: Restore exact retained Rust e3 compiler inputs
+on:
+  push:
+    branches: ['recovery/rust-e3-retained-20261104']
+    paths: ['.github/workflows/rust-e3-retained-recovery.yml']
+permissions:
+  contents: read
+jobs:
+  restore:
+    name: Restore exact retained Rust e3 compiler inputs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read only the fixed public chunks and verify all four original members
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          timeout --signal=TERM --kill-after=5s 180s python3 - <<'PY'
+          """Restore only four hash-pinned public e3 compiler members, without executing them."""
+          import base64
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import time
+          import urllib.request
+          
+          REPOSITORY = 'KirilsTurkins/latent-service-fabric'
+          MANIFEST = [{'name': 'application-source-and-capture.tar.gz', 'size': 20954735, 'sha256': '5370c88bdf2ac8c16f38f21d196b6462c77e2fc3d7e4f0cbc4a14df1d7dae5f9', 'chunks': [{'size': 4194304, 'gitSha1': '93349dd55e8ec8687452126a7a3dd61f38fab92b', 'sha256': '2eb80394b66e4a957c73e800df5560e9acd3c1741096e810e56661555f02ac57'}, {'size': 4194304, 'gitSha1': 'a651d17f7ee1c47b38e12f6baf93e5f61d230033', 'sha256': '7b6e7af40d01d548999c9eac48b3c9e86e6ef0ab634f358162d09c6def5a2796'}, {'size': 4194304, 'gitSha1': '319ff2173f6755e80907af87bcc54bc006a78145', 'sha256': '3cc9a1b7ff2b781ef55fdcff7eae04741feb0598341e1dc41940cc634d580e28'}, {'size': 4194304, 'gitSha1': '567dc0f7aab0c54cb707b0670beeda6a9fd4343a', 'sha256': '6e396db9072ffa78778c1dbfacdf3468eed673c702d6864fbee6dde24c12d9ab'}, {'size': 4177519, 'gitSha1': '7e5646f58e0a4e20cc539f0a5f9a1d06f5a611e4', 'sha256': '049c6222870c4aba533e61721d01bb6703c02e567ba6d6247e16bedca98a0d2a'}]}, {'name': 'source-inputs.json', 'size': 9348, 'sha256': '45c426fc2f3fd52c07b734e2504afc4ebde598166b1e9613c541887e92c75746', 'chunks': [{'size': 9348, 'gitSha1': '1664016f992f310765cd56cd4ea42ba636296996', 'sha256': '45c426fc2f3fd52c07b734e2504afc4ebde598166b1e9613c541887e92c75746'}]}, {'name': 'raw-core.wasm', 'size': 261378, 'sha256': '7b280a32bc87a8db318432f47f8190816b6722f1402d1e2e161142788bdb0c69', 'chunks': [{'size': 261378, 'gitSha1': 'a8b78ac89f21c31aa1c3befec5ec653fc69f7eac', 'sha256': '7b280a32bc87a8db318432f47f8190816b6722f1402d1e2e161142788bdb0c69'}]}, {'name': 'observation.json', 'size': 5428, 'sha256': '140a07c6a298b1b702a89ae4b6c8e137c19fce17429de9635a4fd975eadaa65a', 'chunks': [{'size': 5428, 'gitSha1': '0927d821e0b327c640dbde5c4eb99981ba25f545', 'sha256': '140a07c6a298b1b702a89ae4b6c8e137c19fce17429de9635a4fd975eadaa65a'}]}]
+          MAX_CHUNK_BYTES = 4 * 1024 * 1024
+          ACQUISITION_SECONDS = 180
+          
+          
+          def require(condition, code):
+              if not condition:
+                  raise ValueError(code)
+          
+          
+          def blob_sha(data):
+              return hashlib.sha1(f'blob {len(data)}\0'.encode('ascii') + data).hexdigest()
+          
+          
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, *args, **kwargs):
+                  return None
+          
+          
+          def fetch_blob(identity, token, deadline):
+              remaining = deadline - time.monotonic()
+              require(remaining > 0, 'recovery-deadline')
+              request = urllib.request.Request(
+                  f'https://api.github.com/repos/{REPOSITORY}/git/blobs/{identity["gitSha1"]}',
+                  headers={'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json',
+                           'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'lsf-e3-retained-recovery'})
+              # The workflow applies an outer hard process deadline as well; this timeout
+              # bounds each individual connection/read and never exceeds the remaining time.
+              with urllib.request.build_opener(NoRedirect).open(request, timeout=min(20, remaining)) as response:
+                  limit = (identity['size'] * 2) + 65536
+                  payload = response.read(limit + 1)
+              require(len(payload) <= limit and time.monotonic() < deadline, 'recovery-response-bound')
+              row = json.loads(payload)
+              require(row.get('sha') == identity['gitSha1'] and row.get('size') == identity['size']
+                      and row.get('encoding') == 'base64' and type(row.get('content')) is str,
+                      'recovery-blob-metadata')
+              encoded = row['content'].replace('\n', '').replace('\r', '')
+              require(bool(re.fullmatch('[A-Za-z0-9+/]*={0,2}', encoded)), 'recovery-base64')
+              return base64.b64decode(encoded, validate=True)
+          
+          
+          def reconstruct(output, fetch, deadline):
+              require(len(MANIFEST) == 4 and len({x['name'] for x in MANIFEST}) == 4, 'recovery-manifest')
+              output = Path(output)
+              output.mkdir(mode=0o700, parents=False, exist_ok=False)
+              for member in MANIFEST:
+                  require(member['name'] in ('application-source-and-capture.tar.gz', 'source-inputs.json',
+                                             'raw-core.wasm', 'observation.json'), 'recovery-member-name')
+                  total = 0
+                  complete = hashlib.sha256()
+                  with (output / member['name']).open('xb') as destination:
+                      for chunk in member['chunks']:
+                          require(0 < chunk['size'] <= MAX_CHUNK_BYTES and time.monotonic() < deadline,
+                                  'recovery-chunk-bound')
+                          data = fetch(chunk, deadline)
+                          require(len(data) == chunk['size'] and blob_sha(data) == chunk['gitSha1']
+                                  and hashlib.sha256(data).hexdigest() == chunk['sha256'], 'recovery-chunk-identity')
+                          total += len(data)
+                          require(total <= member['size'], 'recovery-member-bound')
+                          complete.update(data)
+                          destination.write(data)
+                  require(total == member['size'] and complete.hexdigest() == member['sha256'],
+                          'recovery-member-identity')
+              require({x.name for x in output.iterdir()} == {x['name'] for x in MANIFEST}
+                      and all(x.is_file() and not x.is_symlink() for x in output.iterdir()), 'recovery-output-shape')
+          
+          
+          def main():
+              token = os.environ.get('GH_TOKEN')
+              require(type(token) is str and bool(token), 'recovery-token-required')
+              output = Path(os.environ['RUNNER_TEMP']) / 'rust-e3-recovered'
+              deadline = time.monotonic() + ACQUISITION_SECONDS
+              reconstruct(output, lambda chunk, until: fetch_blob(chunk, token, until), deadline)
+              print('Four retained public compiler members rehydrated and hash-verified; no executable invoked.')
+          
+          
+          if __name__ == '__main__':
+              main()
+          
+          PY
+      - name: Upload separately attributed storage artifact
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        with:
+          name: rust-e3-retained-four-members-recovery
+          path: ${{ runner.temp }}/rust-e3-recovered/
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "latent.rust.ordinary-thread-core-observation.v1",
+  "status": "observed-authenticated-component-source-runtime-unqualified",
+  "stage": "complete",
+  "actualGuestExecuted": false,
+  "ordinaryThreadPoolQualified": false,
+  "privateExecutorGraphAuthenticated": false,
+  "canonicalAbiBodiesAuthenticated": false,
+  "canonicalCreationEnabled": false,
+  "standardRuntimeQualified": false,
+  "normalBuildComplete": false,
+  "normalComponentGateRefused": true,
+  "capture": {
+    "sourceDigest": "sha256:45c426fc2f3fd52c07b734e2504afc4ebde598166b1e9613c541887e92c75746",
+    "runtimeArtifact": "futures-executor/0.3.31/3282d16dc1969518",
+    "candidateDigest": "sha256:fa1f33dff911064bea26eb35af3385b7a534b29c000c4971f6feaf16149a3419",
+    "publicExport": "examples:greeting/api@1.0.0#greet",
+    "postReturnExport": "cabi_post_examples:greeting/api@1.0.0#greet",
+    "actualGuestExecuted": false,
+    "ordinaryThreadPoolQualified": false
+  },
+  "retainedOriginalSource": {
+    "name": "application-source-and-capture.tar.gz",
+    "digest": "sha256:5370c88bdf2ac8c16f38f21d196b6462c77e2fc3d7e4f0cbc4a14df1d7dae5f9",
+    "size": 20954735
+  },
+  "tools": [
+    {
+      "name": "cargo",
+      "digest": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "size": 42839824
+    },
+    {
+      "name": "rustc",
+      "digest": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "size": 645000
+    },
+    {
+      "name": "wasm-tools",
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "size": 20231696
+    },
+    {
+      "name": "wit-bindgen",
+      "digest": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+      "size": 19856344
+    },
+    {
+      "name": "zig",
+      "digest": "sha256:2317bbb91798556d9d0f38aabdac23db83f0979b25f767259ae474546724087c",
+      "size": 172641672
+    },
+    {
+      "name": "sh",
+      "digest": "sha256:86d31f6fb799e91fa21bad341484564510ca287703a16e9e46c53338776f4f42",
+      "size": 129784
+    }
+  ],
+  "bindingDigest": "sha256:2198a5c6afe4491d3fccb75648afaa7cbdc0ec6cd53f231c6d1167ccab973592",
+  "applicationSourcePathRemap": {
+    "sourceRoot": "/tmp/lsf-rust-thread-input-cc7hqcm8/compiler/source",
+    "mappedRoot": "/lsf/application",
+    "argument": "--remap-path-prefix=/tmp/lsf-rust-thread-input-cc7hqcm8/compiler/source=/lsf/application"
+  },
+  "targetCargoConfiguration": [
+    "--config",
+    "target.wasm32-unknown-unknown.rustflags=[\"--sysroot=/home/runner/work/_temp/rust-owned-thread-inputs/owned-sysroot/sysroot\",\"--remap-path-prefix=/tmp/lsf-rust-thread-input-cc7hqcm8/compiler/source=/lsf/application\",\"-Clink-arg=--no-stack-first\",\"-Clink-arg=-z\",\"-Clink-arg=stack-size=1114112\",\"-Clink-arg=--export=__stack_pointer\",\"-Clink-arg=--export=__stack_low\",\"-Clink-arg=--export=__indirect_function_table\",\"-Clink-arg=--export=__lsf_rust_owned_thread_entry\",\"-Clink-arg=--export=__lsf_rust_root_bootstrap\",\"-Clink-arg=--export=__lsf_rust_root_finish\",\"-Clink-arg=--export=__lsf_rust_root_reap\"]",
+    "--config",
+    "profile.release.lto=false"
+  ],
+  "executorObject": {
+    "name": "captured-futures-executor.rlib",
+    "digest": "sha256:89aec0abe990e4eaa27b9ac6852e8e2a71e7b1763b4c27739e4d2078c605faed",
+    "size": 301150
+  },
+  "originalCore": {
+    "name": "original-core",
+    "digest": "sha256:7b280a32bc87a8db318432f47f8190816b6722f1402d1e2e161142788bdb0c69",
+    "size": 261378
+  },
+  "nativeNormalSourceProof": {
+    "component": {
+      "name": "authenticated-normal-component",
+      "digest": "sha256:3948e0fc6d64dbf40914915ba0618f14cdd4a45e6e4762ecf6e0e801fac4f4c6",
+      "size": 511683
+    },
+    "catalogueOriginHead": "f401e388a7542b8f9cd9bbd987dbcc65814262d6",
+    "originalObjectGraphAuthenticated": true,
+    "actualComponentGraphAuthenticated": true,
+    "actualGuestExecuted": false,
+    "standardRuntimeQualified": false
+  },
+  "commands": [
+    {
+      "stage": "capture-original-application",
+      "exitCode": 0,
+      "seconds": 50.643682
+    },
+    {
+      "stage": "zig-version",
+      "exitCode": 0,
+      "seconds": 0.014179
+    },
+    {
+      "stage": "bindgen-version",
+      "exitCode": 0,
+      "seconds": 0.013674
+    },
+    {
+      "stage": "sdk-bindings",
+      "exitCode": 0,
+      "seconds": 0.014046
+    },
+    {
+      "stage": "compile",
+      "exitCode": 0,
+      "seconds": 18.549382
+    },
+    {
+      "stage": "validate-original-core",
+      "exitCode": 0,
+      "seconds": 0.014241
+    },
+    {
+      "stage": "original-source-wit-graph",
+      "exitCode": 0,
+      "seconds": 0.014185
+    },
+    {
+      "stage": "original-emitted-wit-graph",
+      "exitCode": 0,
+      "seconds": 0.013851
+    },
+    {
+      "stage": "ordinary-owned-core",
+      "exitCode": 0,
+      "seconds": 0.185905
+    },
+    {
+      "stage": "validate-derived-core",
+      "exitCode": 0,
+      "seconds": 0.013968
+    },
+    {
+      "stage": "native-original-catalogue",
+      "exitCode": 0,
+      "seconds": 0.367625
+    },
+    {
+      "stage": "normal-component-encode",
+      "exitCode": 0,
+      "seconds": 0.013877
+    },
+    {
+      "stage": "native-normal-component-proof",
+      "exitCode": 0,
+      "seconds": 0.770928
+    },
+    {
+      "stage": "validate-native-normal-component",
+      "exitCode": 0,
+      "seconds": 0.013763
+    }
+  ],
+  "actualApplicationCoreCompiled": true
+}
