@@ -19,6 +19,7 @@ from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.build_process_signals import owned_cancellation
 from tools.guest_runtime_profiles import RUNTIME
+from tools import wait_capsule_audit_idle as audit_idle
 from tools.dotnet_guest.entropy_grants import configure as configure_entropy
 from tools.dotnet_standard_http_project import managed_source
 from tools.phase2_operator_process import Process, read_json, require, write_json, stopped_record
@@ -170,6 +171,26 @@ def invoke(client, target, which, url, activation):
         row['managedFailure'] = failure
     write_json(client.evidence/(activation+'.json'), row)
     return row
+
+
+def delete_when_audit_idle(client, target):
+    """Wait read-only within the original deadline, then attempt deletion once."""
+    deadline = min(client.deadline, time.monotonic() + audit_idle.MAX_SECONDS)
+    for observation in range(audit_idle.MAX_OBSERVATIONS):
+        remaining = deadline - time.monotonic()
+        require(remaining > 0, 'standard-dotnet-audit-drain-deadline')
+        value = client.call('capability', 'list', '--deployment', target['name'], '--include-node-usage',
+                            timeout=min(1, remaining))
+        counters = audit_idle.counters(json.dumps(value).encode('utf-8'))
+        require(time.monotonic() < deadline, 'standard-dotnet-audit-drain-deadline')
+        if not any(counters.values()):
+            delete_all(client, [target['name']])
+            return
+        if observation + 1 < audit_idle.MAX_OBSERVATIONS:
+            remaining = deadline - time.monotonic()
+            require(remaining > 0, 'standard-dotnet-audit-drain-deadline')
+            time.sleep(min(0.05, remaining))
+    raise ValueError('standard-dotnet-audit-drain-observation-limit')
 
 
 def retire(client, target, probe, output, name):
@@ -378,6 +399,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
         result['artifact'].update({name: file_identity(artifact/name) for name in (
             'compiler-inputs.json', 'compiler-patches-preparation.json', 'compiler-patches.json')})
     source_paths = ('tools/dotnet_standard_http_project.py', 'tools/dotnet_standard_http_node.py',
+        'tools/wait_capsule_audit_idle.py',
         'tools/runtime_owner_refusal_diagnostic.py',
         'tools/qualify_dotnet_standard_http.py', 'examples/dotnet-standard-http/Main.cs',
         'examples/dotnet-standard-http/world.wit', 'tools/standard_http/process_peer.py',
@@ -489,7 +511,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                     'allOriginalFourteenCases': True, 'preCancelledRequest': True,
                     'physicalOwnerChecksPerInvocation': True, 'fullTicketQualification': False}
             result['finalOs'] = probe.sample()
-            delete_all(client, [target['name']])
+            delete_when_audit_idle(client, target)
             stop(client, node)
             result['shutdown'] = stopped_record(node)
             require(result['shutdown']['reaped'] and result['shutdown']['record']['clean'], 'standard-dotnet-node-clean-shutdown')
