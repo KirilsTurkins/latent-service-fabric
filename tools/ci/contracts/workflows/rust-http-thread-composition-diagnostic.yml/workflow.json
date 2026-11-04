@@ -11,7 +11,8 @@
         "branches": [
           "feat/rust-http-thread-20261104",
           "fix/rust-http-bindgen-20261104",
-          "fix/rust-http-wac11-20261104"
+          "fix/rust-http-wac11-20261104",
+          "fix/rust-http-thread-validation-20261104"
         ],
         "paths": [
           ".github/workflows/rust-http-thread-composition-diagnostic.yml",
@@ -35,7 +36,7 @@
   "requiredJobs": [
     "diagnostic"
   ],
-  "reviewReason": "Preserve the original compiler diagnostic and add its fixed, diagnostic-only threading-aware composer branch.",
+  "reviewReason": "Preserve the existing compiler diagnostic and add its threading-aware validation repair branch.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-http-thread-composition-diagnostic.yml"
 }
