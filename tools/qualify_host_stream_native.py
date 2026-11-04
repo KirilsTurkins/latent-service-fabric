@@ -9,7 +9,7 @@ import re
 import sys
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools import ci_rust_artifacts as artifacts
+from tools import ci_rust_artifacts as artifacts, ci_suite_discovery as discovery, ci_suite_inventory as registry
 from tools import qualify_host_stream_tls_provider as provider
 from tools.owned_test_process import run_owned
 from tools.rust_capsule_project import fresh
@@ -51,13 +51,13 @@ def snapshot(root):
     return {name:provider.digest_file(root/name, 4*1024*1024) for name in sorted(names)}
 
 
-def outcomes(raw):
+def outcomes(raw, filtered):
     if len(raw) > 65536:
         raise ValueError('native-factory-result-bound')
     actual = [name.decode() for name in re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$',raw,re.M)]
     totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; '
         rb'(\d+) measured; (\d+) filtered out;', raw, re.M)
-    if len(actual) != 13 or set(actual) != CASES or totals != [(b'13',b'0',b'0',b'0',b'31')]:
+    if len(actual) != 13 or set(actual) != CASES or totals != [(b'13',b'0',b'0',b'0',str(filtered).encode())]:
         raise ValueError('native-factory-missing-failed-or-extra-case')
     return sorted(actual)
 
@@ -87,6 +87,12 @@ def qualify(root, output, revision):
         PREFIX,CASES,False)
     executable = artifacts.read_inventory(output/'cargo.stdout.log',root,suite,target=root/'target')
     environment = artifacts.cargo_environment(root,executable,environment,target=root/'target')
+    row, = [s for s in registry.load(root/'tools/ci/suites.json')['suites'] if s['id'] == 'latent-streams.lib.latent-streams']
+    available = discovery.listing(command([str(executable.executable),'--list'],'all-list',30,65536))
+    all_ignored = discovery.listing(command([str(executable.executable),'--ignored','--list'],'all-ignored',30,65536))
+    discovery.validate_cases(row, available, all_ignored, {})
+    if not CASES <= available - all_ignored:
+        raise ValueError('native-factory-required-case-missing')
     listed = command([str(executable.executable),PREFIX,'--list'],'list',30,65536)
     registered = {name.decode() for name in re.findall(rb'^([a-zA-Z0-9_:]+): test$',listed,re.M)}
     ignored = command([str(executable.executable),PREFIX,'--ignored','--list'],'ignored',30,65536)
@@ -94,7 +100,7 @@ def qualify(root, output, revision):
         raise ValueError('native-factory-registration-or-ignore-drift')
     raw = command([str(executable.executable),PREFIX,'--show-output','--test-threads=1'],
         'tests',120,65536)
-    executed = outcomes(raw)
+    executed = outcomes(raw, len(available)-len(CASES))
     artifacts.require_source(root,revision,environment)
     if snapshot(root) != before:
         raise ValueError('native-factory-source-changed')

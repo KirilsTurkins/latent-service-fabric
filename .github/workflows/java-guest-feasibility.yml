@@ -97,8 +97,57 @@ jobs:
             ${{ runner.temp }}/java-queue-heap/commands.json
             ${{ runner.temp }}/java-queue-heap/commands/logs/**
 
+
+  tooling-selection:
+    name: Select tooling qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      reason: ${{ steps.select.outputs.reason }}
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /tools/
+            /.github/workflows/
+            /sdk/
+            /crates/vendor/wasmtime/
+            /crates/vendor/rustls-outbound/
+            /Cargo.lock
+            Cargo.toml
+            *.rs
+      - name: Materialize the offline comparison input when available
+        if: github.event_name == 'pull_request'
+        env:
+          EVENT_BASE: ${{ github.event.pull_request.base.sha }}
+          EVENT_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          base=$(git merge-base "$EVENT_BASE" "$EVENT_HEAD") || exit 0
+          candidate=test_validate_docs.py
+          git cat-file blob "$base:tools/tests/$candidate" >/dev/null || true
+      - name: Classify the complete change
+        id: select
+        run: python3 tools/ci_profile.py
+
+  selection-result:
+    name: Tooling qualification selection result
+    if: always()
+    needs: tooling-selection
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require a successful selector and its output
+        env:
+          SELECTOR_RESULT: ${{ needs.tooling-selection.result }}
+          SELECTOR_REASON: ${{ needs.tooling-selection.outputs.reason }}
+        run: test "$SELECTOR_RESULT" = success && test -n "$SELECTOR_REASON"
+
   compiler-component:
-    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}
+    needs: tooling-selection
+    if: ${{ needs.tooling-selection.outputs.reason != 'isolated-tooling:documentation-validator-tests' && ((github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)) }}
     name: Actual Java sources, SDK ownership and enforced node
     runs-on: ubuntu-24.04
     timeout-minutes: 55
@@ -649,7 +698,8 @@ jobs:
           retention-days: 14
 
   dependency-ingestion:
-    if: ${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}
+    needs: tooling-selection
+    if: ${{ needs.tooling-selection.outputs.reason != 'isolated-tooling:documentation-validator-tests' && ((github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)) }}
     name: Captured Java dependency native programme (${{ matrix.mode }})
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -902,7 +952,8 @@ jobs:
         retention-days: 3
 
   http-public-spi:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.java_http_spi && !inputs.public_fiber_assembly && !inputs.public_fiber_derived_llvm && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm) }}
+    needs: tooling-selection
+    if: ${{ needs.tooling-selection.outputs.reason != 'isolated-tooling:documentation-validator-tests' && (github.event_name == 'workflow_dispatch' && inputs.java_http_spi && !inputs.public_fiber_assembly && !inputs.public_fiber_derived_llvm && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)) }}
     name: Optional Java public ConnectionFactory with isolated default calls
     runs-on: ubuntu-24.04
     timeout-minutes: 55
@@ -1008,7 +1059,8 @@ jobs:
         retention-days: 3
 
   public-fiber-assembly:
-    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm || inputs.public_fiber_private_scalar_llvm) }}
+    needs: tooling-selection
+    if: ${{ needs.tooling-selection.outputs.reason != 'isolated-tooling:documentation-validator-tests' && (github.event_name == 'workflow_dispatch' && (inputs.public_fiber_assembly || inputs.public_fiber_derived_llvm || inputs.public_fiber_private_scalar_llvm)) }}
     name: Fixed public Java fiber assembly inputs only
     runs-on: ubuntu-24.04
     timeout-minutes: 35

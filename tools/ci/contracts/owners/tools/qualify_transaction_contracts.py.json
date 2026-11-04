@@ -1,1 +1,0 @@
-{"kind":"owner","path":"tools/qualify_transaction_contracts.py","reviewBoundary":"committed-fingerprint","reviewReason":"Keep the root contributor SDK comment consistent with SDK 8.0.427; executable behavior is unchanged","schemaVersion":"latent.ci.contracts.v1","sha256":"7e749846c3152e83dbff5d6e7540f3b1e06be1ed1235c9646ce0245276777253"}

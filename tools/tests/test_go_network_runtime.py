@@ -29,6 +29,10 @@ class GoNetworkRuntimeTests(unittest.TestCase):
 
     def test_complete_ordered_go_cases_and_zero_user_owners_do_not_claim_kernel_retirement(self):
         record = runtime.outcomes(self.output())
+        expanded = self.output().replace(b"0 filtered out", b"2 filtered out")
+        self.assertEqual(runtime.outcomes(expanded, filtered=2), record)
+        with self.assertRaises(ValueError):
+            runtime.outcomes(expanded, filtered=1)
         self.assertEqual(len(record['cases']), 12)
         self.assertEqual(sum(row['contacts'] for row in record['cases']), 4)
         self.assertEqual(len(record['userSpaceOwners']), 12)

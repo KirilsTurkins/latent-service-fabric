@@ -59,6 +59,37 @@ MAX_EXPANDED_SOURCE = 128 * 1024 * 1024
 MAX_SOURCE_ARCHIVE = 32 * 1024 * 1024
 MAX_EXECUTOR_OBJECT = 8 * 1024 * 1024
 
+# Used only by this unadmitted compiler diagnostic. The maintained HTTP and
+# .NET composer selection remains the separately authenticated 0.10.1 input.
+# The later tool can parse the canonical threading opcode emitted by the
+# captured application; successful parsing alone is not component admission.
+DIAGNOSTIC_COMPOSER_SIZE = 22917648
+DIAGNOSTIC_COMPOSER_DIGEST = 'sha256:83259349b630f79a60490322b068e7ad2dba784720b0d467decccc0aecc743b5'
+
+
+class DiagnosticHttpComposition:
+    """Bind one fixed diagnostic composer to an already-verified adapter.
+
+    No caller selects a production SDK tool or supplies component authority.
+    The original Prepared adapter and its receipt remain independently checked.
+    """
+    def __init__(self, prepared, composer):
+        self.prepared = prepared
+        self.composer = checked_path(composer)
+        self.adapter = prepared.adapter
+        self.check()
+
+    def check(self):
+        self.prepared.check()
+        require(self.adapter == self.prepared.adapter, 'rust-http-thread-diagnostic-adapter-drift')
+        require(file_identity(self.composer, 'diagnostic-composer', DIAGNOSTIC_COMPOSER_SIZE) == {
+            'name': 'diagnostic-composer', 'digest': DIAGNOSTIC_COMPOSER_DIGEST,
+            'size': DIAGNOSTIC_COMPOSER_SIZE}, 'rust-http-thread-diagnostic-composer-drift')
+
+    def material(self):
+        self.check()
+        return self.prepared.material()
+
 
 def cargo_records(raw: bytes):
     require(len(raw) <= 4 * 1024 * 1024, 'rust-thread-app-cargo-output-bound')
@@ -272,7 +303,7 @@ def select_http_result(graph, world, public):
 
 
 def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path,
-        http_runtime: Path, contracts_tool: Path, contracts_receipt: Path,
+        http_runtime: Path, diagnostic_composer: Path, contracts_tool: Path, contracts_receipt: Path,
         owned_report: Path, owned_source: Path, *, expected_head: str, deadline: float):
     require(sys.platform == 'linux', 'rust-thread-app-linux-captured-compiler-required')
     output = fresh(output)
@@ -364,6 +395,14 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path,
             # Verify the same explicitly selected HTTP adapter and composer
             # that the maintained builder would use, without granting it.
             prepared_http = http_inputs.Prepared(http_runtime, paths['rustc'], paths['wasm-tools'])
+            diagnostic = DiagnosticHttpComposition(prepared_http, diagnostic_composer)
+            require(commands.run('rust-http-thread-diagnostic-composer-version', diagnostic.composer,
+                                 '--version').strip() == b'wac-cli 0.11.0',
+                    'rust-http-thread-diagnostic-composer-version')
+            diagnostic.check()
+            record['diagnosticComposer'] = file_identity(diagnostic.composer, 'diagnostic-composer',
+                                                          DIAGNOSTIC_COMPOSER_SIZE)
+            record['sharedSdkComposerChanged'] = False
             paths['contracts-tool'] = contracts_tool
             http_material = prepared_http.material()
             record['httpPreparedReceiptDigest'] = digest(http_material)
@@ -541,8 +580,13 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path,
             surface = decode_json(read_file(contracts_output / 'surface.json'))
             combined = output / 'combined-component.wasm'
             shutil.copyfile(output / 'preview-component.wasm', combined)
-            composition = compose_http(commands, paths, combined, surface, prepared_http,
+            diagnostic.check()
+            composition = compose_http(commands, paths, combined, surface, diagnostic,
                 work, isolation=isolation, environment_guard=guard)
+            diagnostic.check()
+            composition['diagnosticComposer'] = record['diagnosticComposer']
+            composition['diagnosticOnly'] = True
+            write_json(output / 'rust-http-composition.json', composition)
             record['httpCompositionIncluded'] = True
             record['httpComposition'] = composition
             record['combinedComponent'] = file_identity(combined, 'unadmitted-http-thread-component',
@@ -560,7 +604,7 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path,
             prepared.check()
             require(verify_owned_inputs(owned_report, owned_source, prepared, context_tool, expected_head)
                     == owned_material, 'rust-http-thread-owned-material-mutated')
-            prepared_http.check()
+            diagnostic.check()
             require(file_identity(contracts_tool, 'contracts-tool', 64 * 1024 * 1024) == contracts_identity
                     and verify_contract_tool(contracts_receipt, contracts_tool, expected_head) == contracts_receipt_raw
                     and file_identity(context_tool, 'context-tool', 32 * 1024 * 1024) == context_identity
@@ -604,6 +648,7 @@ if __name__ == '__main__':
     parser.add_argument('--owned-sysroot', type=Path, required=True)
     parser.add_argument('--context-tool', type=Path, required=True)
     parser.add_argument('--http-runtime', type=Path, required=True)
+    parser.add_argument('--diagnostic-composer', type=Path, required=True)
     parser.add_argument('--contracts-tool', type=Path, required=True)
     parser.add_argument('--contracts-receipt', type=Path, required=True)
     parser.add_argument('--owned-report', type=Path, required=True)
@@ -611,6 +656,6 @@ if __name__ == '__main__':
     parser.add_argument('--expected-head', required=True)
     args = parser.parse_args()
     run(args.output, args.rust_bin, args.owned_sysroot, args.context_tool,
-        args.http_runtime, args.contracts_tool, args.contracts_receipt,
+        args.http_runtime, args.diagnostic_composer, args.contracts_tool, args.contracts_receipt,
         args.owned_report, args.owned_source, expected_head=args.expected_head,
         deadline=time.monotonic() + 600)

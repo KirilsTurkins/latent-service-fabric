@@ -1,1 +1,0 @@
-{"kind":"owner","path":"tools/qualify_java_queue_heap.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind the bounded JVM-only queue regression to locked Java and TeaVM inputs without claiming guest qualification.","schemaVersion":"latent.ci.contracts.v1","sha256":"5531d7ee685679523fc423f5cbe1e72a6baeae05131534d208365487e3245503"}

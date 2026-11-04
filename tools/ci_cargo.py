@@ -8,7 +8,7 @@ particular, this module never treats cache restoration as successful testing.
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 import json
 from pathlib import Path
 import re
@@ -141,6 +141,10 @@ RECIPES: dict[str, tuple[Invocation, ...]] = {
 # duplicating the Cargo vectors or combining distinct coverage contracts.
 for _invocation in RECIPES["test"]:
     RECIPES[_invocation.name] = (_invocation,)
+for _name in ("doctests", "signing-compatibility"):
+    _invocation = RECIPES[_name][0]
+    RECIPES[_name + "-list"] = (replace(_invocation, name=_name + "-list",
+                                        args=(*_invocation.args, "--", "--list")),)
 RUST_RECIPES = ("deterministic", "workspace-check", "bindings", "production", "clippy", "prepare", "test")
 
 

@@ -24,7 +24,7 @@ class InventoryTests(unittest.TestCase):
         changes = [lambda d: d.update(schemaVersion='next'),
                    lambda d: d['suites'].append(d['suites'][0]),
                    lambda d: d['suites'][0].update(timeoutSeconds=0),
-                   lambda d: d['suites'][0].update(mode='libtest', minimumCases=0),
+                   lambda d: d['suites'][0].update(mode='libtest', requiredCases=['']),
                    lambda d: d['suites'][0].update(manifest='../foreign'),
                    lambda d: d['suites'][0].update(mode='custom', listContract='libtest'),
                    lambda d: d['selections']['operator-fixture'].update(names=[])]
