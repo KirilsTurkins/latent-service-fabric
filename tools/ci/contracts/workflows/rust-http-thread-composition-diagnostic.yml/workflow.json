@@ -19,6 +19,7 @@
           "tools/rust_wasi_http_compose.py",
           "tools/rust_wasi_http_inputs.py",
           "tools/rust_owned_thread_component.py",
+          "tools/toolchain.toml",
           "sdk/rust-standard-runtime/**"
         ]
       }
