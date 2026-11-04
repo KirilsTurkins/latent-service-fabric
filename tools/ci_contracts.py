@@ -421,7 +421,6 @@ def assemble(records: dict[str, dict]) -> dict:
         lanes.validate_workflow_model(model)
         data["workflowContracts"][name] = model
         data["after"].update(lanes.run_commands(name, model))
-    require(data["delegatedOwners"] and data["pythonCases"], "missing-owner-or-python-contracts")
     data["pythonTestModules"] = sorted(data["pythonCases"])
     return data
 
@@ -597,7 +596,7 @@ def main() -> int:
     migration.add_argument("--legacy", type=Path, required=True)
     migration.add_argument("--output", type=Path, required=True)
     proposal = commands.add_parser("propose", help="prepare one untracked fragment for explicit review")
-    proposal.add_argument("kind", choices=sorted(KINDS))
+    proposal.add_argument("kind", choices=("workflow", "job"))
     proposal.add_argument("source")
     proposal.add_argument("--job")
     proposal.add_argument("--output", type=Path, default=registry.ROOT / "target/ci/proposals")

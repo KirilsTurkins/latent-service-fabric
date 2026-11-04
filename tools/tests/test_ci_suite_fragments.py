@@ -60,8 +60,7 @@ class SuiteFragmentTests(unittest.TestCase):
                 self.assertEqual(row["source"], example["path"])
                 self.assertTrue((manifest.parent / row["source"]).resolve(strict=True).is_relative_to(ROOT))
                 self.assertEqual(row["mode"], "compile-only")
-                self.assertEqual(row["minimumCases"], 0)
-                self.assertEqual(row["expectedCases"], [])
+                self.assertEqual(row["expectedIgnored"], [])
                 self.assertEqual(row["expectedIgnored"], [])
         self.save_fragment(self.fragment)
         self.assertEqual(registry.load(self.path)["suites"], rows)
@@ -93,8 +92,7 @@ class SuiteFragmentTests(unittest.TestCase):
                 self.assertEqual(row["kind"], "example")
                 self.assertEqual(row["id"], "latent-toolchain-smoke.example." + row["target"])
                 self.assertEqual(row["mode"], "compile-only")
-                self.assertEqual(row["minimumCases"], 0)
-                self.assertEqual(row["expectedCases"], [])
+                self.assertEqual(row["expectedIgnored"], [])
                 self.assertEqual(row["expectedIgnored"], [])
                 source = (manifest.parent / row["source"]).read_text()
                 self.assertIn('#![cfg(target_arch = "wasm32")]', source)
@@ -126,9 +124,9 @@ class SuiteFragmentTests(unittest.TestCase):
             registry.load(self.path)
 
     def test_fragment_rows_receive_the_same_suite_validation(self):
-        variants = [{"mode": "libtest"}, {"timeoutSeconds": 0}, {"kind": "unknown"},
+        variants = [{"requiredCases": [""]}, {"timeoutSeconds": 0}, {"kind": "unknown"},
                     {"manifest": "../foreign/Cargo.toml"}, {"source": "../../../foreign.rs"},
-                    {"expectedCases": ["new_unregistered_test"]}, {"expectedIgnored": ["unknown"]}]
+                    {"expectedIgnored": ["", ""]}]
         for change in variants:
             with self.subTest(change=change):
                 value = copy.deepcopy(self.fragment)

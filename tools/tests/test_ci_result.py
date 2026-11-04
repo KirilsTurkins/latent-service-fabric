@@ -76,8 +76,8 @@ class ResultTests(unittest.TestCase):
                    for name in registry.ALL_JOBS}
         results['profile']['outputs'] = outputs
         files = ['tools/ci_profile.py', 'tools/ci_result.py', 'tools/ci_suite_inventory.py',
-                 'tools/ci_suite_cases.py', 'tools/ci/suites.json']
-        for directory in ('suites.d', 'suites.cases.d'):
+                 'tools/ci/suites.json']
+        for directory in ('suites.d',):
             fragments = sorted((root / 'tools/ci' / directory).glob('*.json'))
             self.assertTrue(fragments, f'production {directory} controls must not be vacuous')
             files.extend(path.relative_to(root).as_posix() for path in fragments)
@@ -109,7 +109,7 @@ print(json.dumps(observed))
                     target = sparse / name
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_bytes((root / name).read_bytes())
-                (sparse / 'tools/unselected-control.txt').write_text('not a classifier input\n')
+                (sparse / 'unselected-control.txt').write_text('not a classifier input\n')
 
                 def git(*args, input=None):
                     return subprocess.run(['git', '-c', 'core.autocrlf=false', *args],
@@ -120,26 +120,27 @@ print(json.dumps(observed))
                 git('add', '.')
                 git('-c', 'user.name=Sparse CI control', '-c',
                     'user.email=sparse-ci@example.invalid', 'commit', '--quiet', '-m', 'fixture')
-                for omitted in (None, '/tools/ci_suite_cases.py', '/tools/ci/suites.cases.d/'):
-                    selected = '\n'.join(line for line in patterns.splitlines() if line != omitted) + '\n'
+                for omitted in (None, '/tools/ci_suite_inventory.py', '/tools/ci/suites.d/'):
+                    selected = patterns if omitted is None else patterns + '\n!' + omitted + '\n'
                     git('sparse-checkout', 'set', '--no-cone', '--stdin', input=selected)
-                    self.assertFalse((sparse / 'tools/unselected-control.txt').exists())
+                    self.assertFalse((sparse / 'unselected-control.txt').exists())
                     run = subprocess.run([sys.executable, '-I', '-B', '-c', probe, job],
                         cwd=sparse, input=json.dumps(results), capture_output=True,
                         text=True, timeout=15)
                     with self.subTest(job=job, omitted=omitted):
-                        if omitted == '/tools/ci_suite_cases.py':
+                        if omitted == '/tools/ci_suite_inventory.py':
                             self.assertNotEqual(run.returncode, 0)
-                            self.assertIn('ModuleNotFoundError', run.stderr)
-                            self.assertIn('tools.ci_suite_cases', run.stderr)
+                            self.assertIn('ImportError', run.stderr)
+                            self.assertIn('ci_suite_inventory', run.stderr)
+                            continue
+                        if omitted is not None:
+                            # A missing suite fragment may fail closed immediately
+                            # or yield a different inventory; it cannot appear complete.
+                            if run.returncode == 0:
+                                self.assertNotEqual(json.loads(run.stdout)['inventory'], expected_digest)
                             continue
                         self.assertEqual(run.returncode, 0, run.stderr)
                         observed = json.loads(run.stdout)
-                        if omitted is not None:
-                            # Imports still work without case fragments, but the
-                            # effective inventory silently loses required cases.
-                            self.assertNotEqual(observed['inventory'], expected_digest)
-                            continue
                         self.assertEqual(observed['inventory'], expected_digest)
                         if job == 'profile':
                             self.assertEqual(observed['outputs'], outputs)

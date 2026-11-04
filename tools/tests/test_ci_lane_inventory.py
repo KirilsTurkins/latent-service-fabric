@@ -202,8 +202,7 @@ class InventoryTests(unittest.TestCase):
         original = ci_suite_inventory.load()
         case = original["selections"]["http-response-policy"]["names"][0]
         for field, value in (("recipe", "core-host"), ("kind", "bin"),
-                             ("source", "src/main.rs"), ("expectedIgnored", []),
-                             ("expectedCases", [])):
+                             ("source", "src/main.rs"), ("expectedIgnored", [])):
             with self.subTest(field=field):
                 data = copy.deepcopy(original)
                 row = next(row for row in data["suites"] if row["id"] == "latentd.lib.latentd")

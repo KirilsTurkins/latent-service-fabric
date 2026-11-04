@@ -503,17 +503,12 @@ class ContractTests(unittest.TestCase):
                     root / "target/ci/proposals/default", "Preserve the unselected v1 default.")
                 self.assertEqual(contracts.read_json(default)["schemaVersion"], contracts.SCHEMA)
                 self.assertNotIn("storageCases", contracts.read_json(default))
-                for changed, reason in (
-                    (baseline_source.replace("def test_works", "def helper_works"),
-                     "missing-or-renamed-or-unregistered-python-case"),
-                    (baseline_source.replace("    def test_works", "    @unittest.skip('changed')\n    def test_works"),
-                     "changed-python-test-execution-guard"),
-                    ("CHANGED_SETUP = True\n" + baseline_source, "changed-python-test-execution-guard")):
-                    source.write_text(changed)
-                    with self.assertRaisesRegex(ValueError, reason):
-                        coverage.validate(root)
-                source.write_text(baseline_source)
-                coverage.validate(root)
+                from tools.ci_python_policy import require_no_new_controls
+                require_no_new_controls(baseline_source, baseline_source.replace("def test_works", "def test_renamed"))
+                require_no_new_controls(baseline_source, "CHANGED_SETUP = True\n" + baseline_source)
+                with self.assertRaisesRegex(ValueError, "suppression"):
+                    require_no_new_controls(baseline_source, baseline_source.replace(
+                        "    def test_works", "    @unittest.skip('changed')\n    def test_works"))
 
     def test_pin_only_comments_and_yaml_formatting_do_not_change_contracts(self):
         path = self.root / ".github/workflows/ci.yml"
@@ -707,39 +702,27 @@ class ContractTests(unittest.TestCase):
                     contracts.load(self.root)
 
     def test_setup_module_hooks_and_unittest_skip_flags_need_explicit_review(self):
-        path = self.root / "tools/tests/test_alpha.py"
-        original = path.read_text()
+        from tools.ci_python_policy import require_no_new_controls
+        original = (self.root / "tools/tests/test_alpha.py").read_text()
         variants = (original + "    def setUp(self):\n        self.skipTest('fixture')\n",
                     original + "    __unittest_skip__ = True\n",
                     original + "def setUpModule():\n    raise unittest.SkipTest('fixture')\n",
                     original + "def load_tests(loader, tests, pattern):\n    return unittest.TestSuite()\n",
                     original + "    def run(self, result=None):\n        return result\n")
         for text in variants:
-            with self.subTest(source=text):
-                path.write_text(text)
-                with self.assertRaisesRegex(ValueError, "changed-python-test-execution-guard"):
-                    coverage.validate(self.root)
-                with self.assertRaisesRegex(ValueError, "explicit-python-skip-review"):
-                    contracts.propose(self.root, "python", "tools/tests/test_alpha.py", None,
-                                      self.root / "target/ci/proposals", "Explicit fixture proposal")
+            with self.subTest(source=text), self.assertRaisesRegex(ValueError, "suppression"):
+                require_no_new_controls(original, text)
 
     def test_changed_skip_predicate_binding_and_unreachable_class_are_rejected(self):
-        path = self.root / "tools/tests/test_alpha.py"
-        original = path.read_text()
-        path.write_text(original.replace("class Cases", "SKIP = False\n@unittest.skipIf(SKIP, 'fixture')\nclass Cases"))
-        expected = contracts.python_expectations(self.root)["tools/tests/test_alpha.py"]
-        rewrite_fragment(self.root, "python/test_alpha.py.json", lambda value: value.update(expected))
-        coverage.validate(self.root)
-        path.write_text(path.read_text().replace("SKIP = False", "SKIP = True"))
-        with self.assertRaisesRegex(ValueError, "changed-python-test-execution-guard"):
-            coverage.validate(self.root)
-        path.write_text(original)
-        expected = contracts.python_expectations(self.root)["tools/tests/test_alpha.py"]
-        rewrite_fragment(self.root, "python/test_alpha.py.json", lambda value: value.update(expected))
+        from tools.ci_python_policy import require_no_new_controls
+        original = (self.root / "tools/tests/test_alpha.py").read_text()
+        baseline = original.replace("class Cases", "SKIP = False\n@unittest.skipIf(SKIP, 'fixture')\nclass Cases")
+        with self.assertRaisesRegex(ValueError, "suppression"):
+            require_no_new_controls(baseline, baseline.replace("SKIP = False", "SKIP = True"))
         lines = original.splitlines()
-        path.write_text(lines[0] + "\nif False:\n" + "\n".join("    " + line for line in lines[1:]) + "\n")
-        with self.assertRaisesRegex(ValueError, "changed-python-test-execution-guard"):
-            coverage.validate(self.root)
+        unreachable = lines[0] + "\nif False:\n" + "\n".join("    " + line for line in lines[1:]) + "\n"
+        with self.assertRaisesRegex(ValueError, "discovery-changed"):
+            require_no_new_controls(original, unreachable)
 
     def test_nested_proposal_symlink_cannot_escape_untracked_destination(self):
         output = self.root / "target/ci/proposals"
@@ -812,10 +795,24 @@ class ContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unenforced-owner-review-boundary"):
             contracts.load(self.root)
 
-    def test_changed_owner_body_requires_its_own_reviewed_fingerprint(self):
-        (self.root / "tools/owner.py").write_text("print('changed body')\n")
-        with self.assertRaisesRegex(ValueError, "changed-command-owner-needs-review"):
-            coverage.validate(self.root)
+    def test_changed_owner_body_remains_observable_without_fingerprint_refresh(self):
+        path = self.root / "tools/owner.py"
+        before = coverage.delegated_owners(self.root, coverage.commands(self.root))
+        contracts_before = contracts.fragments(self.root)
+        path.write_text("print('changed body')\n")
+        (self.root / "tools/ci_result.py").write_text("print('independently changed aggregate')\n")
+        after = coverage.delegated_owners(self.root, coverage.commands(self.root))
+        self.assertNotEqual(before["tools/owner.py"], after["tools/owner.py"])
+        self.assertNotEqual(before["tools/ci_result.py"], after["tools/ci_result.py"])
+        self.assertEqual(contracts_before, contracts.fragments(self.root))
+        coverage.validate(self.root)
+        from tools.ci_python_policy import require_no_new_controls
+        module = self.root / "tools/tests/test_alpha.py"
+        original = "def helper(): return 1\n" + module.read_text()
+        changed = original.replace("return 1", "return 1 + 0")
+        module.write_text(changed)
+        require_no_new_controls(original, changed)
+        coverage.validate(self.root)
 
     def test_owner_parent_and_source_workflow_symlinks_are_rejected(self):
         path = self.root / "tools/owner.py"
@@ -861,39 +858,32 @@ class ContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "symlink-contract-path"):
             coverage.validate(self.root)
 
-    def test_missing_renamed_added_empty_and_duplicate_python_cases_fail(self):
+    def test_ordinary_python_names_are_dynamic_but_empty_or_duplicate_modules_fail(self):
         path = self.root / "tools/tests/test_alpha.py"
         original = path.read_text()
-        variants = [original.replace("test_works", "test_renamed"), "import unittest\n",
-                    original + "    def test_new(self):\n        pass\n",
-                    original + "    def test_works(self):\n        pass\n"]
-        for source in variants:
-            with self.subTest(source=source):
-                path.write_text(source)
-                with self.assertRaises(ValueError):
-                    coverage.validate(self.root)
-        path.unlink()
-        with self.assertRaises(ValueError):
+        for source in (original.replace("test_works", "test_renamed"),
+                       original + "    def test_new(self):\n        pass\n"):
+            path.write_text(source)
             coverage.validate(self.root)
+        for source in ("import unittest\n", original + "    def test_works(self):\n        pass\n"):
+            path.write_text(source)
+            with self.assertRaises(ValueError): coverage.validate(self.root)
 
-    def test_unregistered_python_modules_fail_without_a_central_index(self):
-        shutil.copyfile(self.root / "tools/tests/test_alpha.py", self.root / "tools/tests/test_unregistered.py")
-        with self.assertRaisesRegex(ValueError, "unregistered-python-case"):
-            coverage.validate(self.root)
+    def test_new_python_modules_need_no_central_index(self):
+        shutil.copyfile(self.root / "tools/tests/test_alpha.py", self.root / "tools/tests/test_added.py")
+        coverage.validate(self.root)
 
     def test_new_skips_expected_failures_and_class_guards_fail(self):
-        path = self.root / "tools/tests/test_alpha.py"
-        original = path.read_text()
+        from tools.ci_python_policy import require_no_new_controls
+        original = (self.root / "tools/tests/test_alpha.py").read_text()
         variants = [original.replace("    def test_works", "    @unittest.skip('review needed')\n    def test_works"),
                     original.replace("class Cases", "@unittest.skipIf(True, 'review needed')\nclass Cases"),
                     original.replace("    def test_works", "    @unittest.expectedFailure\n    def test_works"),
                     original.replace("self.assertTrue(True)", "self.skipTest('review needed')"),
                     original.replace("unittest.TestCase", "object")]
         for source in variants:
-            with self.subTest(source=source):
-                path.write_text(source)
-                with self.assertRaisesRegex(ValueError, "changed-python-test-execution-guard"):
-                    coverage.validate(self.root)
+            with self.subTest(source=source), self.assertRaises(ValueError):
+                require_no_new_controls(original, source)
 
     def test_initial_migration_refuses_stale_workflow_owner_and_test_snapshots(self):
         source = self.root / ".github/workflows/ci.yml"
@@ -917,8 +907,7 @@ class ContractTests(unittest.TestCase):
         proposed = contracts.propose(self.root, "owner", "tools/owner.py", None, output, "Reviewed behavioral change with regression coverage.")
         self.assertEqual(contracts.read_json(proposed)["sha256"], contracts.digest(path))
         self.assertEqual(before, contracts.fragments(self.root))
-        with self.assertRaisesRegex(ValueError, "changed-command-owner-needs-review"):
-            coverage.validate(self.root)
+        coverage.validate(self.root)
         with self.assertRaisesRegex(ValueError, "refuse-overwrite"):
             contracts.propose(self.root, "owner", "tools/owner.py", None, output, "Still explicit.")
 
@@ -1071,7 +1060,7 @@ class RepositoryMigrationTests(unittest.TestCase):
 
     def test_workflow_and_shared_contract_edits_still_select_full_ci(self):
         from tools.ci_profile import classify_paths
-        for path in (".github/workflows/ci.yml", "tools/ci/contracts/python/test_ci_contracts.py.json", "tools/ci_contracts.py"):
+        for path in (".github/workflows/ci.yml", "tools/ci_python_policy.py", "tools/ci_contracts.py"):
             with self.subTest(path=path):
                 self.assertEqual(classify_paths([path]).profile, "full")
 

@@ -190,8 +190,8 @@ def validate_fixture_recipes(data: dict) -> None:
         mapping = owner.get("caseFixtures", {})
         require(isinstance(names, list) and len(names) == len(set(names))
                 and set(names) <= set(definitions), "unknown-or-duplicate-fixture-recipe")
-        require(isinstance(mapping, dict) and set(mapping) <= set(owner.get("expectedCases", [])),
-                "fixture-case-owner")
+        require(isinstance(mapping, dict) and all(isinstance(case, str) and 0 < len(case.encode("utf-8")) <= 4096
+                and not any(ord(char) < 32 for char in case) for case in mapping), "fixture-case-owner")
         for names in mapping.values():
             require(isinstance(names, list) and len(names) == len(set(names))
                     and set(names) <= set(definitions), "fixture-case-recipe")
@@ -206,8 +206,6 @@ def load(path: Path = INVENTORY) -> dict:
     require(data.get("schemaVersion") == SCHEMA, "inventory-version")
     require(isinstance(data["suites"], list), "inventory-suites")
     data["suites"].extend(suite_fragments(path))
-    from tools.ci_suite_cases import extend_suites
-    extend_suites(data["suites"], path)
     require(set(data["boundaries"]) == BOUNDARIES, "inventory-boundaries")
     require(set(data["narrowPackages"]) <= set(data["fastPackages"]), "narrow-package-not-fast")
     require(len(data["fastPackages"]) == len(set(data["fastPackages"])), "duplicate-fast-package")
@@ -232,14 +230,21 @@ def load(path: Path = INVENTORY) -> dict:
                 names = suite.get("expectedCustomCases")
                 require(isinstance(names, list) and 0 < len(names) == len(set(names)),
                         "custom-harness-case-contract")
-        if suite["mode"] == "libtest":
-            require(suite.get("minimumCases", 0) > 0, "empty-suite-contract")
         if suite["mode"] != "custom":
-            require(isinstance(suite.get("expectedCases"), list) and
-                    isinstance(suite.get("expectedIgnored"), list), "missing-exact-discovery-contract")
-            require(len(suite["expectedCases"]) == suite["minimumCases"] and
-                    len(suite["expectedCases"]) == len(set(suite["expectedCases"])), "case-count-contract")
-            require(set(suite["expectedIgnored"]) <= set(suite["expectedCases"]), "ignored-case-contract")
+            ignored = suite.get("expectedIgnored")
+            obligations = suite.get("requiredCases", [])
+            nested = suite.get("nestedCases", [])
+            require(isinstance(ignored, list) and len(ignored) == len(set(ignored))
+                    and all(isinstance(name, str) and 0 < len(name.encode("utf-8")) <= 4096
+                            and not any(ord(char) < 32 for char in name) for name in ignored), "ignored-case-contract")
+            require(isinstance(obligations, list) and len(obligations) == len(set(obligations))
+                    and all(isinstance(name, str) and 0 < len(name.encode("utf-8")) <= 4096
+                            and not any(ord(char) < 32 for char in name) for name in obligations), "required-case-contract")
+            require(isinstance(nested, list) and len(nested) == len(set(nested))
+                    and all(isinstance(name, str) and 0 < len(name.encode("utf-8")) <= 4096
+                            and not any(ord(char) < 32 for char in name) for name in nested), "nested-case-contract")
+            if suite["mode"] == "compile-only":
+                require(not ignored and not obligations and not nested, "compile-only-case-contract")
         require(len(suite.get("ignoredLeaves", [])) == len(set(suite.get("ignoredLeaves", []))),
                 "duplicate-ignored-case")
     for key, selected in data["selections"].items():

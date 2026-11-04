@@ -3,13 +3,11 @@
   "suites": [
     {
       "boundary": "runtime",
-      "expectedCases": [],
       "expectedIgnored": [],
       "id": "latent-streams.example.kernel-constructor-vm",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-streams/Cargo.toml",
-      "minimumCases": 0,
       "mode": "compile-only",
       "package": "latent-streams",
       "platforms": [

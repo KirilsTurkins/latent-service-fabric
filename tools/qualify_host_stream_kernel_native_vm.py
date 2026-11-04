@@ -12,7 +12,7 @@ import time
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import ci_rust_artifacts as artifacts
-from tools import ci_suite_inventory as registry
+from tools import ci_suite_inventory as registry, ci_suite_discovery as discovery
 from tools import host_stream_kernel_native_vm as native
 from tools import host_stream_kernel_native_vm_inputs as inputs
 from tools import host_stream_kernel_vm_image as image
@@ -52,8 +52,7 @@ def owner_controls(commands, cargo, output):
             ('native-owner','latent-streams','latent_streams',native_controls.PREFIX,native_controls.CASES),
             ('close-result','latent-capabilities','latent_capabilities',CORE_CLOSE_PREFIX,CORE_CLOSE_CASES)):
         contract, = [row for row in contracts if row['package'] == package and row['kind'] == 'lib']
-        native.require({name for name in contract['expectedCases'] if name.startswith(prefix)} == cases
-            and not set(contract['expectedIgnored']) & cases, 'registered-owner-controls')
+        native.require(not set(contract['expectedIgnored']) & cases, 'registered-owner-controls')
         stage = label+'-cargo'
         commands.run(stage,cargo,'test','--locked','--all-features','-p',package,'--lib',
             '--no-run','--message-format=json')
@@ -64,6 +63,11 @@ def owner_controls(commands, cargo, output):
         commands.environment = artifacts.cargo_environment(ROOT,executable,previous_environment,target=target)
         try:
             commands.command_seconds = min(previous_seconds,30)
+            available = discovery.listing(commands.run(label+'-all-list',executable.executable,'--list'))
+            all_ignored = discovery.listing(commands.run(label+'-all-ignored',executable.executable,'--ignored','--list'))
+            discovery.validate_cases(contract, available, all_ignored, {})
+            native.require({name for name in available if name.startswith(prefix)} == cases,
+                           'registered-owner-controls')
             listed = commands.run(label+'-list',executable.executable,prefix,'--list')
             registered = [name.decode() for name in re.findall(rb'^([a-zA-Z0-9_:]+): test$',listed,re.M)]
             ignored = commands.run(label+'-ignored',executable.executable,prefix,'--ignored','--list')
@@ -75,10 +79,10 @@ def owner_controls(commands, cargo, output):
             totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; '
                 rb'(\d+) measured; (\d+) filtered out;',raw,re.M)
             expected = tuple(str(number).encode() for number in
-                (len(cases),0,0,0,contract['minimumCases']-len(cases)))
+                (len(cases),0,0,0,len(available)-len(cases)))
             native.require(len(actual) == len(cases) and set(actual) == cases and totals == [expected],
                 'all-fixed-owner-controls-executed')
-            if label == 'native-owner':native_controls.outcomes(raw)
+            if label == 'native-owner':native_controls.outcomes(raw, len(available)-len(cases))
             result[label] = {'registered':sorted(registered),'executed':sorted(actual),'ignored':[],
                 'stdout':native.identity(raw),'executableSha256':native_controls.provider.digest_file(
                     executable.executable,1024*1024**2),

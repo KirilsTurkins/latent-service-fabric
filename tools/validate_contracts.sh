@@ -24,7 +24,8 @@ case "${VALIDATION_LANE}" in
     python3 tools/validate_foundation.py
     # Own the complete suite on a separate runner from native artifact preparation.
     # Foreground execution also preserves Python's normal SIGINT cleanup contract.
-    python3 -m unittest discover -s tools/tests
+    python3 tools/test.py python --base "${LSF_PYTHON_POLICY_BASE:-HEAD}" \
+        --receipt target/ci/python-discovery.json --output summary
     ;;
 esac
 

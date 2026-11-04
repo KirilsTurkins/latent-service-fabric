@@ -1,7 +1,7 @@
 # Ownership-local CI command contracts
 
-Issue #732 removes artificial aggregate-file conflicts without changing the
-suite selector, test runner, required job names or protected result checks.
+Current workflow contracts retain required job identities, while ordinary test
+cases are discovered from their prepared executable or Python module.
 `tools/ci_coverage.py` reads reviewed expectations from `tools/ci/contracts/` and
 compares them with the source under test. It never writes expected records.
 `tools/ci/suites.json` remains the single Rust suite/selection catalogue.
@@ -17,8 +17,8 @@ fragment index or aggregate checksum. Workflow filenames retain their `.yml` or
 | --- | --- |
 | `workflows/ci.yml/workflow.json` | Workflow-wide policy and required job identities |
 | `workflows/ci.yml/jobs/rust.json` | Complete ordered current job/step definitions |
-| `owners/tools/validate_contracts.sh.json` | Exact delegated script fingerprint, retained pending verified approval enforcement |
-| `python/test_ci_coverage.py.json` | Exact nonempty module/case identities and reviewed execution/skip guards |
+| Delegated scripts and test controllers | Protected code-owner review; source digests are generated diagnostics |
+| Python modules | Current discovery and recorded execution, with targeted suppression controls |
 
 The workflow model retains every parsed field, including unfamiliar fields. It
 protects triggers/filters, `needs`, conditions, runners, matrices, permissions,
@@ -28,23 +28,11 @@ inputs/secrets, and aggregation. Unknown fields cannot disappear during
 comparison. JSON unknown envelope fields, duplicate identities, duplicate/merge
 YAML keys, aliases/tags, unsafe paths, symlinks and unsupported schemas fail closed.
 
-Current Python fragments may use `latent.ci.contracts.v2` physical storage: each
-case's `guards` value names a SHA-256-keyed flat guard in `guardDefinitions`.
-The digest covers canonical UTF-8 guard JSON. The reader checks closed fields,
-exact case/reference coverage, matching definition digests and full definition
-use, then restores the same ordered v1 record before validation or hashing.
-Each resolved case owns independent guard lists. Both physical JSON and the
-decoded compact UTF-8 v1 record retain the original 2 MiB limit; decoded size is
-checked before expansion. Other kinds and historical records retain v1.
-Storage proposals put case names and their digest references on separate readable
-lines. This preserves every JSON value and avoids presenting a public guard hash
-as a credential assignment to the existing secret scanner.
-
-`shared_python_record` prepares explicit storage proposals without changing
-reviewed cases or guards. Storage conversion requires a complete tracked Git
-audit of raw SHA-256, SHA-1 and blob references; raw-pinned current fragments and
-frozen history/evidence stay byte-preserved. Initial migration and new records
-default to v1. A scoped Python proposal preserves an existing reviewed v2 format.
+Historical Python and owner records remain readable by the isolated migration
+fixture, but active validation does not compare ordinary case names, setup ASTs,
+or delegated script bytes to committed snapshots. Discovery fails on an empty
+suite, duplicate cases, missing execution, failures, unauthorized skips and
+expected failures. Named special qualifications remain explicit obligations.
 
 Step lists are never sorted. Use an explicit step `id` for new commands. Existing
 name-based run identities remain supported. An existing explicit ID takes
@@ -87,27 +75,11 @@ python3 tools/ci_contracts.py propose job .github/workflows/ci.yml --job rust \
   --reason 'Retain existing runtime coverage and add the reviewed prerequisite'
 ```
 
-For a script-body change or a Python test addition, select only its owner:
-
-```sh
-python3 tools/ci_contracts.py propose owner tools/validate_contracts.sh \
-  --reason 'Review the changed contract implementation and its regression tests'
-python3 tools/ci_contracts.py propose python tools/tests/test_ci_coverage.py \
-  --reason 'Add the explicit regression cases without removing existing cases'
-```
-
-Review the proposed file under `target/ci/proposals/` against the corresponding
-file in `tools/ci/contracts/`. Copy only the reviewed fragment into that location,
-then rerun validation. Proposals refuse to overwrite existing output; inspect or
-remove previous proposal output before preparing another version. A workflow-wide
-change uses `propose workflow .github/workflows/ci.yml`; a new job gets its own
-job fragment plus an explicit workflow-local required-job addition.
-
-A proposal does not accept a removed job or command, removed/renamed Python
-case, or newly skipped existing test. Intentional changes require review of the
-current local record and regression coverage. Historical before/after rows do
-not constrain current job proposals. Adding a case cannot silently change the
-Rust catalogue or a custom-harness contract.
+Review the proposed workflow or job fragment under `target/ci/proposals/`
+against its corresponding current record. Script edits and ordinary test
+additions do not require a fingerprint or case-list proposal. Run the tests
+that exercise the changed behavior and request the required owner review for
+protected controllers. Source-observation receipts do not approve changes.
 
 ## Generated evidence and diagnostics
 
@@ -120,8 +92,7 @@ GitHub's tested PR merge commit when applicable. A dirty-worktree flag and the
 actual relevant source paths/digests distinguish local modifications.
 
 Receipts contain schema version, observed workflow policy/job digests, command
-digests, exact Python case identities, guard digests, and script/source
-fingerprints. They do not copy the process environment, raw workflow `env` values,
+digests, observed Python case identities, and script/source fingerprints. They do not copy the process environment, raw workflow `env` values,
 run scripts, secret values or exception text. Malformed source retains the safe
 available path hashes and observation-error categories rather than erasing the
 failure. Receipt destinations must be untracked and under `target/ci/`; source
@@ -134,34 +105,28 @@ unexpected skips and incomplete job sets still fail `CI result` through the
 existing `ci_result.py` owner. An unconditional complete result topology and its
 untolerated invocation are additionally checked independently of the snapshot.
 
-A structural mismatch names its workflow/job; owner mismatches require reviewing
-the actual script and its local fingerprint; test mismatches require reviewing
-that module's names and guards. Receipts are diagnostics, not replacement
+A structural mismatch names its workflow/job. Review script and test changes
+in their actual source, and inspect discovery and execution results. Receipts are diagnostics, not replacement
 expectations. Never copy an observed aggregate back into reviewed inputs.
 
-## Delegated-owner approval: deliberately retained intermediate state
+## Protected controller review
 
-The implementation attempted to inspect the current `development` protection
-configuration through GitHub's branch-protection API on 2026-09-29. The integration
-returned HTTP 403, `Resource not accessible by integration`. The available branch
-metadata reports protected CI result contexts but does not establish required
-owner approvals and stale-approval invalidation. Existing `CODEOWNERS` entries
-alone are not proof of that enforcement.
+On 4 November 2026, the GitHub branch-protection API for `development` reported
+one required approval, required code-owner review, and dismissal of stale
+approvals. The current CODEOWNERS file covers workflows, CI contracts, test
+controllers and their policy tests. The API reported no CODEOWNERS syntax
+errors. The protected aggregate contexts remain `CI result` and `Security
+baseline result`. Administrators are not subject to protection enforcement and
+can bypass it; an admin merge is not evidence that a code-owner approved the
+change. Review source changes and verify the current protection configuration
+rather than treating a generated digest as an approval token.
 
-Therefore this change **does not complete the owner-fingerprint-to-receipt-only
-migration**. Every delegated script keeps its mandatory SHA-256 in its individual
-owner contract, in addition to generated execution evidence. The new structural
-reader/parser helpers are explicitly named as delegated owners in the reviewed
-validation run block. Script changes require reviewing the actual diff, behavioral
-regressions and their local fingerprint updates. No branch protection is changed.
-
-Before deleting an owner's committed fingerprint, a follow-up must verify
-required approval by the responsible owner, invalidation of stale approvals when
-the reviewed change changes, and coverage of the actual owner-script paths;
-alternatively it must implement and qualify an equivalent trusted approval gate
-bound to that change. Capture enforcement evidence and adversarial regression
-results. Until then, retaining fingerprints is the issue's specified safe
-intermediate state, not a claim that unenforced `CODEOWNERS` is sufficient.
+Python suppression checks compare the current test sources with the
+GitHub-provided event base without executing a second base-branch test build.
+The Python runner records discovered, executed, skipped and failed identities
+against the tested source and recipe. Existing platform exceptions are checked
+against their baseline source. Direct new skip or discovery controls fail closed;
+review must also examine indirect helper and environment changes. A missing comparison commit is a failure, not an approval.
 
 ## Lossless migration and rebasing existing PRs
 
@@ -209,8 +174,8 @@ test checks the current workflow directly. Archived source checks do not execute
 or qualify today's workflow. Current job contracts still detect a removed
 step or changed prerequisite until its owner is reviewed.
 
-Rebase onto current `development` and transfer only affected current workflow,
-job, script-owner or Python-module records. Do not regenerate the archive or
+Rebase onto current `development` and transfer only affected current workflow
+or job records. Do not regenerate the archive or
 add a shared migration exception for independent owner changes. Real conflicts
 in the same current job or test still require joint review. The isolated Git
 fixture exercises independent job and test-module changes without a shared

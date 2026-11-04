@@ -1,8 +1,0 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_host_stream_kernel_native_vm.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Closed fresh q35/KVM one-CPU original-Node preparation image; old routes retained, no NodeFunding/IRQ/TCP/retirement qualification.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a1848438277fd417fa4098198772274778450211c4b1dfa4be75753fa02ceb3a"
-}
