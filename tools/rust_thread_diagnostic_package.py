@@ -136,6 +136,19 @@ def wrap_original(original: bytes, component: bytes) -> bytes:
     return wrapped
 
 
+def retained_assembly_materials(output: Path, recipe: bytes, files: dict[str, bytes],
+                                package_inventory: bytes, prior_raw: bytes) -> list[dict]:
+    """Bind the selected e3 component's authenticated origin to this assembly."""
+    inputs = (
+        ('source-snapshot', read_file(output / 'source-inputs.json')), ('build-recipe', recipe),
+        ('toolchain-config', files['rust-toolchain.toml']), ('dependency-lock', files['Cargo.lock']),
+        ('package-inputs', package_inventory), ('retained-compiler-observation', prior_raw),
+        ('qualification-projection', read_file(output / 'qualification-projection.json')),
+        ('normal-component-origin', read_legacy('origin')),
+    )
+    return [{'name': name, 'digest': digest(data), 'size': len(data)} for name, data in inputs]
+
+
 def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> dict:
     output = fresh(output)
     assembly_started = int(time.time())
@@ -236,12 +249,7 @@ def prepare(artifact: Path, native: dict, output: Path, commands: Commands) -> d
             and package_inventory == inventory({name: read_file(output / name, 4 * 1024 * 1024)
                                                 for name in package_files}),
             'rust-thread-retained-assembly-inputs-still-exact')
-    materials = [{'name': name, 'digest': digest(data), 'size': len(data)} for name, data in (
-        ('source-snapshot', read_file(output / 'source-inputs.json')), ('build-recipe', recipe),
-        ('toolchain-config', files['rust-toolchain.toml']), ('dependency-lock', files['Cargo.lock']),
-        ('package-inputs', package_inventory), ('retained-compiler-observation', prior_raw),
-        ('qualification-projection', read_file(output / 'qualification-projection.json')),
-        ('normal-component-origin', read_file(base / 'origin.json', 65536)))]
+    materials = retained_assembly_materials(output, recipe, files, package_inventory, prior_raw)
     materials.append({'name': 'retained-source-and-cas-capture',
         'digest': identities['application-source-and-capture.tar.gz']['sha256'],
         'size': identities['application-source-and-capture.tar.gz']['bytes']})
