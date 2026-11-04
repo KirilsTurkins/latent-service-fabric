@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "latent.ci.suite-case-fragment.v1",
+  "suiteId": "latent-policy.example.capsule-authoring",
+  "expectedCases": [
+    "authoring::current_java::november::tests::november_capture_is_closed_and_does_not_claim_execution",
+    "authoring::current_java::november::tests::november_signer_refuses_wrong_source_and_unpinned_material_before_output"
+  ]
+}

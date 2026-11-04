@@ -28,6 +28,13 @@ reports, source archives, actual imports, signed companions and schema/codec
 assets must agree with the selected package. Cache presence or matching names
 cannot supply missing evidence.
 
+The [November current capture](evidence/java-current-http-capture-2026-11-04.json)
+binds six components from clean compiler source `fccc27dbc52` to a fresh native
+constructor preview. Its dedicated fixture-signing mode verifies those exact
+materials and profile before creating temporary test trust. The capture and
+preview do not themselves qualify signed execution, restart recovery or a
+packaged distribution.
+
 Use `python tools/run_java_transaction_http_qualification.py --help` from the
 repository root to inspect the complete required input set. Execution requires
 Linux and Python 3.13 or newer, explicit private inputs and the original finite

@@ -1,6 +1,8 @@
 //! Closed captured inputs and explicit synthetic trust, never compiler execution.
 mod native_memory;
 pub(crate) use native_memory::sign_native_memory_current_java;
+mod november;
+pub(crate) use november::sign_november_current_java;
 mod reconstructed;
 pub(crate) use reconstructed::sign_reconstructed_current_java;
 mod refreshed;
