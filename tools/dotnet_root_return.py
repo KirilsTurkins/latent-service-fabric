@@ -1031,8 +1031,13 @@ def join_replay_extract(archive, output, deadline):
     return admission
 
 
-def join_replay_packages(original, output, current, deadline):
-    producer = read_json(original/'current-git-inputs.json', 4*1024**2)
+def join_replay_source_identity(producer, current):
+    """Check the frozen replay translation, not the evolving working tree.
+
+    A later fixture change requires a new review; it must never refresh the
+    historical experiment's accepted identities merely to keep a unit green.
+    This source-only check grants no package or runtime qualification.
+    """
     old = {r['path']: r for r in producer}; now = {r['path']: r for r in current}
     require(len(old) == len(producer) and len(now) == len(current), 'join-replay-unique-git-inputs')
     def protected(path):
@@ -1053,6 +1058,13 @@ def join_replay_packages(original, output, current, deadline):
                     'gitBlob': translation['currentGitBlob']}, 'join-replay-reviewed-fixture-translation')
         else:
             require(old[path] == now[path], 'join-replay-original-component-and-observer-implementation')
+    return old, now, protected_paths
+
+
+def join_replay_packages(original, output, current, deadline):
+    producer = read_json(original/'current-git-inputs.json', 4*1024**2)
+    old, now, protected_paths = join_replay_source_identity(producer, current)
+    translation = JOIN_REPLAY_FIXTURE_TRANSLATION
     restored, components = [], []
     inputs = [read_json(original/name/'source-inputs.json', 1024**2)
         for name in ('dotnet-root-return-normal', 'dotnet-root-return-join-cause')]

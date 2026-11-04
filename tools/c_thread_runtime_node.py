@@ -680,10 +680,13 @@ def run_http(artifact: Path, native: dict, output: Path, *, deadline, runtime_pr
     require(type(runtime_profile) is str and runtime_profile in (FETCH_PROFILE, FETCH_STANDARD_PROFILE),
             'c-http-exact-runtime-profile')
     expanded = runtime_profile == FETCH_STANDARD_PROFILE
-    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl', 'outside-card')
+    require(type(client_kind) is str and client_kind in ('libfetch', 'libucl', 'outside-card', 'libfetch-post')
             and (expanded or client_kind == 'libfetch'), 'c-http-exact-client')
     is_libucl = client_kind == 'libucl'
     is_outside = client_kind == 'outside-card'
+    is_post = client_kind == 'libfetch-post'
+    if is_post:
+        from tools import c_http_post_companion as post
     if client_state is not None:
         require(expanded and type(client_state) is dict
                 and set(client_state) == {'calls', 'controlAttempts', 'retainedBytes'}
@@ -699,7 +702,8 @@ def run_http(artifact: Path, native: dict, output: Path, *, deadline, runtime_pr
     commands = Commands(ROOT, fresh(output / 'commands'), build_environment(output),
                         deadline_seconds=300, command_seconds=60)
     commands.deadline = min(commands.deadline, deadline)
-    record = {'schemaVersion': 'latent.c.outside-card.node.v1' if is_outside else
+    record = {'schemaVersion': 'latent.c.http-post.node.v1' if is_post else
+                              'latent.c.outside-card.node.v1' if is_outside else
                               'latent.c.libucl.node.v1' if is_libucl else 'latent.c.libfetch.node.v1',
               'status': 'incomplete',
               'component': component, 'native': before, 'full690Qualified': False,
@@ -753,18 +757,18 @@ def run_http(artifact: Path, native: dict, output: Path, *, deadline, runtime_pr
             publication = published['data']['operation']['publication']['id']
             target = deploy(client, source / 'deployment.json', publication)
             require(target['grants'] == [], 'c-libfetch-no-ambient-grants')
-            grants = (install_libucl if expanded else install_http)(client, node, target, peer.origin())
+            grants = (post.install if is_post else install_libucl if expanded else install_http)(client, node, target, peer.origin())
             target = deploy(client, source / 'deployment.json', publication,
                             generation=str(target['generation']), grants=grants)
-            stage = 'one-outside-captured-cell' if is_outside else 'five-ordinary-cells'
+            stage = 'four-ordinary-post-cells' if is_post else 'one-outside-captured-cell' if is_outside else 'five-ordinary-cells'
             record['cases'] = []
-            cases = fixture.CARD_CASES if is_outside else fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES
-            cell = libucl_cell if is_libucl or is_outside else http_cell
+            cases = post.CASES if is_post else fixture.CARD_CASES if is_outside else fixture.LIBUCL_CASES if is_libucl else fixture.HTTP_CASES
+            cell = post.cell if is_post else libucl_cell if is_libucl or is_outside else http_cell
             for case in cases:
                 record['cases'].append(cell(client, node, probe, target, peer, output, case,
                     **({'outside_library': True} if is_outside else {})))
             require([row['case'] for row in record['cases']] == list(cases)
-                    and peer.observation()['startedRequests'] == (1 if is_outside else 2 if is_libucl else 6),
+                    and peer.observation()['startedRequests'] == (4 if is_post else 1 if is_outside else 2 if is_libucl else 6),
                     'c-libucl-five-cells-two-contacts' if is_libucl else 'c-libfetch-five-cells-six-contacts')
             delete_all(client, [target['name']])
             record['afterDeletes'] = sample(client, probe, 'c-libfetch-after-deletes', 0)

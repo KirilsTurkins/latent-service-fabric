@@ -1,0 +1,18 @@
+
+running 1 test
+test dotnet_original_v3_fault_and_quiescence_use_bounded_numeric_observation ... ok
+
+successes:
+
+---- dotnet_original_v3_fault_and_quiescence_use_bounded_numeric_observation stdout ----
+DOTNET_ORIGINAL_V3_TRAP {"component":"sha256:9c20e7025c9a2672ee256d93fb51efd631b609064953a11dc2491a94639552af","full746Qualified":false,"fullAC7Qualified":false,"mode":9,"observation":{"ambiguous":false,"engineFrameCap":16,"frames":[{"function":3273,"functionOffset":1,"module":0,"moduleOffset":1133740},{"function":706,"functionOffset":1,"module":0,"moduleOffset":467563},{"function":2810,"functionOffset":864,"module":0,"moduleOffset":1002996},{"function":1727,"functionOffset":55,"module":0,"moduleOffset":695415},{"function":1449,"functionOffset":290,"module":0,"moduleOffset":610918},{"function":1871,"functionOffset":5,"module":0,"moduleOffset":741893},{"function":2067,"functionOffset":177,"module":0,"moduleOffset":800834},{"function":3103,"functionOffset":669,"module":0,"moduleOffset":1080129},{"function":1446,"functionOffset":82,"module":0,"moduleOffset":609548},{"function":1314,"functionOffset":1109,"module":0,"moduleOffset":566031},{"function":2210,"functionOffset":114,"module":0,"moduleOffset":838151},{"function":1870,"functionOffset":59,"module":0,"moduleOffset":741822},null,null,null,null],"mayBeTruncated":false,"missingBacktrace":false,"observedErrors":1,"observedFrames":12,"trapKind":"unreachable-code"},"opaqueCauseQualified":false,"originalFaultCauseQualified":false,"runtimeQualification":false}
+DOTNET_ORIGINAL_V3_IDLE {"activeActivations":0,"cpuFuel":54183312,"liveInstances":0,"liveStores":0,"mode":9,"nativeAccountingComplete":false,"newStores":1,"peakMemoryBytes":56871047,"physicalRetirementQualified":false,"reservedFuel":0,"reservedMemory":0}
+DOTNET_ORIGINAL_V3_TRAP {"component":"sha256:9c20e7025c9a2672ee256d93fb51efd631b609064953a11dc2491a94639552af","full746Qualified":false,"fullAC7Qualified":false,"mode":8,"observation":{"ambiguous":false,"engineFrameCap":16,"frames":[{"function":3273,"functionOffset":1,"module":0,"moduleOffset":1133740},{"function":706,"functionOffset":1,"module":0,"moduleOffset":467563},{"function":2810,"functionOffset":864,"module":0,"moduleOffset":1002996},{"function":1727,"functionOffset":55,"module":0,"moduleOffset":695415},{"function":1449,"functionOffset":290,"module":0,"moduleOffset":610918},{"function":1871,"functionOffset":5,"module":0,"moduleOffset":741893},{"function":2067,"functionOffset":177,"module":0,"moduleOffset":800834},{"function":3103,"functionOffset":669,"module":0,"moduleOffset":1080129},{"function":1446,"functionOffset":82,"module":0,"moduleOffset":609548},{"function":1314,"functionOffset":1413,"module":0,"moduleOffset":566335},{"function":2210,"functionOffset":114,"module":0,"moduleOffset":838151},{"function":1870,"functionOffset":59,"module":0,"moduleOffset":741822},null,null,null,null],"mayBeTruncated":false,"missingBacktrace":false,"observedErrors":1,"observedFrames":12,"trapKind":"unreachable-code"},"opaqueCauseQualified":false,"originalFaultCauseQualified":false,"runtimeQualification":false}
+DOTNET_ORIGINAL_V3_IDLE {"activeActivations":0,"cpuFuel":53851343,"liveInstances":0,"liveStores":0,"mode":8,"nativeAccountingComplete":false,"newStores":1,"peakMemoryBytes":56870125,"physicalRetirementQualified":false,"reservedFuel":0,"reservedMemory":0}
+
+
+successes:
+    dotnet_original_v3_fault_and_quiescence_use_bounded_numeric_observation
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 66 filtered out; finished in 22.72s
+
