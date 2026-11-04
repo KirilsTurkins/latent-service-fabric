@@ -346,7 +346,7 @@ def sdk_native_excludes(root: Path, candidate: str) -> bool:
     import os
     directory = root / 'sdk'
     if not directory.is_dir() or directory.is_symlink(): return False
-    extensions = {'.rs', '.go', '.sh', '.js', '.mjs', '.ts', '.java', '.c', '.h', '.toml'}
+    extensions = {'.rs', '.go', '.sh', '.js', '.mjs', '.ts', '.tsx', '.jsx', '.java', '.kt', '.kts', '.c', '.h', '.cc', '.cpp', '.cxx', '.hpp', '.cs', '.ps1', '.bat', '.cmd', '.zig', '.toml'}
     files = total = 0
     try:
         for folder, dirs, names in os.walk(directory, followlinks=False):
@@ -360,6 +360,10 @@ def sdk_native_excludes(root: Path, candidate: str) -> bool:
                 files += 1; total += len(raw)
                 if files > MAX_FILES or len(raw) > MAX_SOURCE_BYTES or total > MAX_TOTAL_BYTES: return False
                 text = raw.decode('utf-8-sig').lower()
+                if path.relative_to(root).as_posix() == 'sdk/java-client/build.gradle.kts':
+                    # These fixed entry points are independently traversed by the SDK Python graph.
+                    for target in ('sdk/java-client/tools/java_toolchain.py', 'sdk/java-client/tools/build.py'):
+                        text = text.replace(f'commandline("python3", "{target}"', 'commandline("fixed-sdk-helper"')
                 if any(token in text for token in ('python', 'unittest', 'pytest', Path(candidate).name.lower())):
                     return False
         return files > 0

@@ -123,6 +123,9 @@ class DynamicLoaderControlTests(unittest.TestCase):
             self.assertTrue(sdk_native_excludes(root, 'tools/tests/test_validate_docs.py'))
             source.write_text('fn main() { Command::new("python3"); }\n')
             self.assertFalse(sdk_native_excludes(root, 'tools/tests/test_validate_docs.py'))
+            source.unlink()
+            (root / 'sdk/client.cs').write_text('Process.Start("python3");\n')
+            self.assertFalse(sdk_native_excludes(root, 'tools/tests/test_validate_docs.py'))
 
     def test_unrecognized_dynamic_owner_is_not_treated_as_resolved(self):
         from tools.ci_tool_graph import resolved_dynamic_exclusions
