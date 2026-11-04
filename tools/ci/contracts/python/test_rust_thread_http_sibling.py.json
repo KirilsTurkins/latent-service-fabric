@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "RustThreadHttpSiblingTests.test_normal_builder_stays_closed_without_an_authenticated_thread_route",
+    "RustThreadHttpSiblingTests.test_only_release_body_when_both_real_http_gates_are_held",
+    "RustThreadHttpSiblingTests.test_original_is_released_only_after_sibling_parses_and_reissues",
+    "RustThreadHttpSiblingTests.test_real_fixture_source_keeps_ordinary_clients_and_original_limits",
+    "RustThreadHttpSiblingTests.test_supervisor_never_releases_original_before_the_observed_sibling"
+  ],
+  "guards": {
+    "RustThreadHttpSiblingTests.test_normal_builder_stays_closed_without_an_authenticated_thread_route": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:47cdf6c147220106e2dcb4925b47de2d9ad6b9f2e072cb2b9211f133e95b125e",
+        "class:setup-sha256:a375baf92875f61d873b6fb842babae637ac79b1bd0b8fae672ca2b72644f1ca"
+      ],
+      "skipSites": []
+    },
+    "RustThreadHttpSiblingTests.test_only_release_body_when_both_real_http_gates_are_held": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:47cdf6c147220106e2dcb4925b47de2d9ad6b9f2e072cb2b9211f133e95b125e",
+        "class:setup-sha256:a375baf92875f61d873b6fb842babae637ac79b1bd0b8fae672ca2b72644f1ca"
+      ],
+      "skipSites": []
+    },
+    "RustThreadHttpSiblingTests.test_original_is_released_only_after_sibling_parses_and_reissues": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:47cdf6c147220106e2dcb4925b47de2d9ad6b9f2e072cb2b9211f133e95b125e",
+        "class:setup-sha256:a375baf92875f61d873b6fb842babae637ac79b1bd0b8fae672ca2b72644f1ca"
+      ],
+      "skipSites": []
+    },
+    "RustThreadHttpSiblingTests.test_real_fixture_source_keeps_ordinary_clients_and_original_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:47cdf6c147220106e2dcb4925b47de2d9ad6b9f2e072cb2b9211f133e95b125e",
+        "class:setup-sha256:a375baf92875f61d873b6fb842babae637ac79b1bd0b8fae672ca2b72644f1ca"
+      ],
+      "skipSites": []
+    },
+    "RustThreadHttpSiblingTests.test_supervisor_never_releases_original_before_the_observed_sibling": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:47cdf6c147220106e2dcb4925b47de2d9ad6b9f2e072cb2b9211f133e95b125e",
+        "class:setup-sha256:a375baf92875f61d873b6fb842babae637ac79b1bd0b8fae672ca2b72644f1ca"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_thread_http_sibling.py",
+  "reviewReason": "Preserve causal gate, original budgets and closed selector controls.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

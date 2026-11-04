@@ -1,0 +1,1 @@
+{"kind":"owner","path":"tools/compile_rust_thread_http_sibling.py","reviewBoundary":"committed-fingerprint","reviewReason":"Bind the bounded, unadmitted combined compiler to current-source producer receipts.","schemaVersion":"latent.ci.contracts.v1","sha256":"75a2a08e07aca4aa6dd22702092a733eadf15aae5849702ca29d3c7c8bf4d0d3"}
