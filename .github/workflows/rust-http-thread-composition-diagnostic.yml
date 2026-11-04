@@ -1,7 +1,7 @@
 name: Rust combined HTTP and ThreadPool source diagnostic
 on:
   push:
-    branches: ['feat/rust-http-thread-20261104', 'fix/rust-http-bindgen-20261104']
+    branches: ['feat/rust-http-thread-20261104', 'fix/rust-http-bindgen-20261104', 'fix/rust-http-wac11-20261104']
     paths:
       - '.github/workflows/rust-http-thread-composition-diagnostic.yml'
       - 'tools/compile_rust_thread_http_sibling.py'
@@ -72,6 +72,13 @@ jobs:
           tools.tests.test_rust_thread_http_sibling_compiler
           tools.tests.test_rust_thread_http_sibling_retention
           tools.tests.test_rust_wasi_http_bindgen -v
+      - name: Acquire the fixed diagnostic-only component composer
+        run: |
+          mkdir -p "$RUNNER_TEMP/rust-http-thread-composer"
+          curl --fail --location --max-time 180 https://github.com/bytecodealliance/wac/releases/download/v0.11.0/wac-cli-x86_64-unknown-linux-musl --output "$RUNNER_TEMP/rust-http-thread-composer/wac"
+          printf '%s  %s\n' 83259349b630f79a60490322b068e7ad2dba784720b0d467decccc0aecc743b5 "$RUNNER_TEMP/rust-http-thread-composer/wac" | sha256sum --check --strict
+          test "$(stat --format=%s "$RUNNER_TEMP/rust-http-thread-composer/wac")" -eq 22917648
+          chmod 0700 "$RUNNER_TEMP/rust-http-thread-composer/wac"
       - name: Acquire only the locked current SDK compiler inputs
         run: cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu
       - name: Build current owned thread sysroot and context utility
@@ -101,6 +108,7 @@ jobs:
           --owned-report "$RUNNER_TEMP/rust-http-thread-owned/report.json"
           --owned-source "$RUNNER_TEMP/rust-http-thread-owned/source-inputs.json"
           --http-runtime "$RUNNER_TEMP/rust-http-thread-http"
+          --diagnostic-composer "$RUNNER_TEMP/rust-http-thread-composer/wac"
           --contracts-tool "$RUNNER_TEMP/rust-http-thread-contracts/capsule_contracts"
           --contracts-receipt "$RUNNER_TEMP/rust-http-thread-contracts/report.json"
           --output "$RUNNER_TEMP/rust-http-thread-combined"
