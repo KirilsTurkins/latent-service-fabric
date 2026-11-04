@@ -1,7 +1,84 @@
 """Typed Java surface and deterministic private codecs for a reviewed WIT graph."""
 from __future__ import annotations
 
+import hashlib
+import json
+
 from tools.java_guest.model import Graph, PRIMITIVES, camel, jident
+from tools.java_guest.surface import surface
+
+
+# Shutdown can affect either direction or both; keep its borrow exclusive.
+NETWORK_LANES = {'read': 'NETWORK_READ', 'write': 'NETWORK_WRITE',
+                 'ready': 'NETWORK_READY', 'inspect': 'NETWORK_INSPECT'}
+NETWORK_IDENTITY = 'latent:network/streams@0.1.0'
+# Full normalized interface from the retained wasm-tools 1.254.0 WIT graph.
+NETWORK_SURFACE_SHA256 = '50417c915e7177d962a6792d98dc655a1c040c779d2ab53dd4728f73f6013d70'
+
+
+def exact_network_surface(graph: Graph) -> bool:
+    """No same-name signature, nested-resource, or additional-operation drift."""
+    try:
+        package = graph.data['packages'][graph.world['package']]['name']
+        base, _, version = package.partition('@')
+        world = base + '/' + graph.world['name'] + ('@' + version if version else '')
+        contract = surface(graph.data, world)['imports'][NETWORK_IDENTITY]
+        encoded = json.dumps(contract, sort_keys=True, separators=(',', ':')).encode('utf-8')
+        return hashlib.sha256(encoded).hexdigest() == NETWORK_SURFACE_SHA256
+    except (KeyError, IndexError, TypeError, ValueError):
+        return False
+
+
+def borrowed_resource(graph: Graph, value):
+    """Resolve only a bounded borrow handle, including transparent aliases."""
+    seen = set()
+    for _ in range(33):
+        if type(value) is not int or not 0 <= value < len(graph.types) or value in seen:
+            return None
+        seen.add(value)
+        kind = graph.types[value]['kind']
+        if not isinstance(kind, dict) or len(kind) != 1:
+            return None
+        form, body = next(iter(kind.items()))
+        if form == 'type':
+            value = body
+        elif form == 'handle' and isinstance(body, dict) and set(body) == {'borrow'}:
+            return graph.resource_index(body['borrow'])
+        else:
+            return None
+    return None
+
+
+def network_connection(graph: Graph, index: int) -> bool:
+    """Select only the exact async stream connection, not other resources."""
+    item = graph.types[index]
+    owner = item.get('owner')
+    if item.get('kind') != 'resource' or item.get('name') != 'connection' or not isinstance(owner, dict):
+        return False
+    interface_id = owner.get('interface')
+    if type(interface_id) is not int or not 0 <= interface_id < len(graph.data['interfaces']):
+        return False
+    interface = graph.data['interfaces'][interface_id]
+    package = graph.data['packages'][interface['package']]['name']
+    if package != 'latent:network@0.1.0' or interface['name'] != 'streams' or not exact_network_surface(graph):
+        return False
+    operations = {f['name']: f for f in graph.imports if f['interface'] == interface_id}
+    return all(name in operations and operations[name].get('asyncLowered')
+               and operations[name]['params']
+               and borrowed_resource(graph, operations[name]['params'][0]['type']) == index
+               for name in ('read', 'write', 'ready'))
+
+
+def network_lane(graph: Graph, function: dict):
+    lane = NETWORK_LANES.get(function['name'])
+    if lane is None or not function['params']:
+        return None
+    index = borrowed_resource(graph, function['params'][0]['type'])
+    if index is None or not network_connection(graph, index):
+        return None
+    if graph.types[index]['owner']['interface'] != function['interface']:
+        return None
+    return lane
 
 
 def reader(graph: Graph, value, source="input") -> str:
@@ -19,7 +96,8 @@ def definitions(graph: Graph) -> list[str]:
         name, kind = graph.name(index), item["kind"]
         if kind == "resource":
             operation = -1 - graph.resources.index(index)
-            output.append(f"public static final class {name} extends Resource {{ private {name}(int handle) {{ super(handle, {operation}); }} }}")
+            directional = ', true' if network_connection(graph, index) else ''
+            output.append(f"public static final class {name} extends Resource {{ private {name}(int handle) {{ super(handle, {operation}{directional}); }} }}")
             continue
         form, body = next(iter(kind.items()))
         if form in ("record", "tuple"):
@@ -130,6 +208,12 @@ def generate(graph: Graph, *, activation_profile: bool = False, fiber_io_profile
               "package dev.latent.generated;", "import dev.latent.guest.*;", "import org.teavm.interop.Address;",
               "import org.teavm.interop.Export;", "import org.teavm.interop.Function;",
               "public final class Bindings {", "private Bindings() { }"]
+    output.extend(['public static final class BorrowPermit {',
+        'private final Wire.HostFunction function; private final int operation, direction;',
+        'private BorrowPermit(Wire.HostFunction function, int operation, int direction) { this.function = function; this.operation = operation; this.direction = direction; }',
+        'public int direction() { return direction; }',
+        'public boolean authorizes(Wire.HostFunction candidate, int operation) { return function == candidate && this.operation == operation; }',
+        '}'])
     output.extend(definitions(graph))
     output.append("public interface Exports {")
     for function in graph.exports:
@@ -142,14 +226,19 @@ def generate(graph: Graph, *, activation_profile: bool = False, fiber_io_profile
         for function in [f for f in graph.imports if f["interface"] == interface]:
             arguments = ", ".join(graph.jtype(p["type"]) + " arg" + str(i) for i, p in enumerate(function["params"]))
             output.append("public static " + graph.jtype(function.get("result")) + " " + jident(function["name"]) + "(" + arguments + ") {")
+            lane = network_lane(graph, function)
             if function.get('asyncLowered'):
                 # Admission may fail normally. It must precede marshalling an
                 # own<T>, which closes the Java resource before native entry.
-                output.append("try (dev.latent.guest.runtime.HostCalls.Call hostCall = dev.latent.guest.runtime.HostCalls.admit(); Wire.Writer arguments = new Wire.Writer()) {")
+                direction = 'Wire.' + lane if lane else '0'
+                writer_initializer = f"new Wire.Writer(new BorrowPermit(hostCall, {function['operation']}, {direction}))"
+                output.append("try (dev.latent.guest.runtime.HostCalls.Call hostCall = dev.latent.guest.runtime.HostCalls.admit(); Wire.Writer arguments = " + writer_initializer + ") {")
             else:
-                output.append("try (Wire.Writer arguments = new Wire.Writer()) {")
+                writer_initializer = (f"new Wire.Writer(new BorrowPermit(null, {function['operation']}, Wire.{lane}))"
+                                      if lane else "new Wire.Writer()")
+                output.append("try (Wire.Writer arguments = " + writer_initializer + ") {")
             output.extend(writer(graph, p["type"], "arg" + str(i), "arguments") for i, p in enumerate(function["params"]))
-            call = (f"arguments.call(hostCall::call, {function['operation']}, false)"
+            call = (f"arguments.call(hostCall, {function['operation']}, false)"
                     if function.get('asyncLowered') else f"arguments.call({function['operation']})")
             output.append(f"try (Wire.Reader input = {call}) {{")
             output.extend([graph.jtype(function.get("result")) + " result = " + reader(graph, function.get("result")) + ";",

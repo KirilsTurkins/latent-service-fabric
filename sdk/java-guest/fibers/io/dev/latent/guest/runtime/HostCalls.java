@@ -1,6 +1,7 @@
 package dev.latent.guest.runtime;
 
 import dev.latent.generated.Bindings;
+import dev.latent.guest.Wire;
 import java.util.ArrayList;
 import org.teavm.interop.Address;
 import org.teavm.interop.Async;
@@ -12,7 +13,7 @@ import org.teavm.runtime.Fiber;
 public final class HostCalls {
     private static final ArrayList<Call> pending = new ArrayList<>();
     private HostCalls() { }
-    public static final class Call implements AutoCloseable {
+    public static final class Call implements AutoCloseable, Wire.HostFunction {
         Address nativeCall;
         AsyncCallback<Integer> callback;
         Activation.Lease wait;
@@ -20,13 +21,21 @@ public final class HostCalls {
         boolean closed;
         boolean complete;
         private Call() { }
-        public Address call(int operation, Address bytes, int length) {
+        @Override public Address call(int operation, Address bytes, int length) {
             if (closed || invoked) throw new IllegalStateException("host-import-call-already-used");
             // Native acceptance becomes uncertain once suspension is entered.
             // A later exception must not refund this reservation prematurely.
             invoked = true;
             return Address.fromInt(suspend(operation, bytes, length, this));
         }
+        @Override public Address callOwned(int operation, byte[] bytes, int length) {
+            if (closed || invoked) throw new IllegalStateException("host-import-call-already-used");
+            // The fiber's callback setup may allocate and move the Java heap.
+            // Carry a managed reference until the callback reaches native entry.
+            invoked = true;
+            return Address.fromInt(suspendOwned(operation, bytes, length, this));
+        }
+        @Override public boolean retainsBorrowedResources() { return invoked && !complete; }
         @Override public void close() {
             if (closed) return;
             closed = true;
@@ -51,6 +60,15 @@ public final class HostCalls {
     private static void suspend(int operation, Address bytes, int length, Call owner, AsyncCallback<Integer> callback) {
         owner.callback = callback;
         owner.nativeCall = begin(operation, bytes, length);
+        if (state(owner.nativeCall) == 2) finish(owner);
+        else pending.add(owner);
+    }
+    @Async private static native int suspendOwned(int operation, byte[] bytes, int length, Call owner);
+    private static void suspendOwned(int operation, byte[] bytes, int length, Call owner, AsyncCallback<Integer> callback) {
+        owner.callback = callback;
+        // No Java suspension or allocation is allowed between obtaining this
+        // transient pointer and the native begin that copies the input values.
+        owner.nativeCall = begin(operation, Address.ofData(bytes), length);
         if (state(owner.nativeCall) == 2) finish(owner);
         else pending.add(owner);
     }
