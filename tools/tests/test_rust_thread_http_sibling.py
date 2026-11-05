@@ -1,6 +1,7 @@
 """Source/data controls for the unqualified combined Rust HTTP witness."""
 from pathlib import Path
 import copy
+import json
 import tempfile
 import unittest
 
@@ -90,6 +91,23 @@ class RustThreadHttpSiblingTests(unittest.TestCase):
                              fixture.http.LIBRARY.encode() + fixture.SIBLING.encode())
             self.assertEqual(len(specs), 2)
             self.assertEqual(source.count('applicationTransportInjected'), 0)
+
+    def test_peer_refusal_retains_bounded_observation_without_masking_refusal(self):
+        from tools import rust_thread_http_sibling_node as node
+        observation = {'generation': 'a' * 32, 'failure': None,
+                       'requests': [{'request': 1, 'role': 'secondary', 'state': 'accepted'}],
+                       'events': []}
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            with self.assertRaisesRegex(WorkflowError, 'rust-thread-http-peer-request-shape'):
+                node.decision_with_failure_evidence(observation, [], output, body_released=False)
+            path = output / 'rust-thread-http-peer-refusal.json'
+            self.assertEqual(json.loads(path.read_bytes()),
+                             {'observation': observation, 'bodyReleased': False})
+            before = path.read_bytes()
+            with self.assertRaisesRegex(WorkflowError, 'rust-thread-http-peer-request-shape'):
+                node.decision_with_failure_evidence(observation, [], output, body_released=False)
+            self.assertEqual(path.read_bytes(), before)
 
     def test_only_release_body_when_both_real_http_gates_are_held(self):
         accepted = {'generation': 'a' * 32, 'failure': None,
