@@ -5,7 +5,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: java-classinfo-enum-count-${{ github.ref }}
+  group: java-classinfo-enum-count-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: false
 jobs:
   compiler-context:
