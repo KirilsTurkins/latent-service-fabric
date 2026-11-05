@@ -34,7 +34,7 @@ The current security forks were reviewed on **2026-10-30**. They extend the pins
 | `KirilsTurkins/lsf-download-artifact` | `v8.0.2` + upstream changes and security fixes ([review](https://github.com/actions/download-artifact/pull/496)) | `f073ba9e3801be93f933866d4c9a748e42157e5f` |
 | `KirilsTurkins/lsf-setup-dotnet` | `v6.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-dotnet/pull/795)) | `f5bcdac7f26977ef44527f837688dd86faf648ec` |
 | `KirilsTurkins/lsf-setup-go` | `v7.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-go/pull/805)) | `3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e` |
-| `KirilsTurkins/lsf-setup-node` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-node/pull/1653)) | `fdae00b14e855eb751452bc70c64dde286270415` |
+| `KirilsTurkins/lsf-setup-node` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-node/pull/1653)) | `34275fdec80b5be172c3327cadef76aa2f3b31c6` |
 | `KirilsTurkins/lsf-setup-python` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-python/pull/1381)) | `164c4cbba5d1b03a046ac8bc25ae695bee0667a8` |
 | `KirilsTurkins/lsf-upload-artifact` | `v7.0.2` + upstream changes and security fixes ([review](https://github.com/actions/upload-artifact/pull/825)) | `5c42799caf30eda69cb2db5da0be2400c47cef16` |
 | `KirilsTurkins/lsf-upload-pages-artifact` | `v5.0.0` + upstream changes and security fixes ([review](https://github.com/actions/upload-pages-artifact/pull/166)) | `78e399e92cd7485cca2752423a3eb0ccf404df77` |

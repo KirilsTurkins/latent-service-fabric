@@ -10,7 +10,7 @@
       ".github/security/actions/cache/": "KirilsTurkins/lsf-cache/restore@ec176dce9471270c8a9be1289040c0a8fd6aa708",
       ".github/security/actions/setup-dotnet/": "KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8",
       ".github/security/actions/setup-java/": "KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c",
-      ".github/security/actions/setup-node/": "KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415",
+      ".github/security/actions/setup-node/": "KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6",
       ".github/security/actions/setup-python/": "KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8",
       ".github/security/actions/upload-artifact/": "KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16"
     },
