@@ -402,7 +402,7 @@ class NpmSourceRepairTests(unittest.TestCase):
         upstream = read_file(ROOT, ".github/security/actions/checkout-source/deepmerge-4.3.1.original.tgz")
         with patch.object(sources, "verify_minimatch_action_sources", return_value=[]):
             receipts = sources.verify_sources(ROOT, packages, {"manifests": entries}, lambda pin: upstream)
-        self.assertEqual(len(entries), len(receipts), 4)
+        self.assertEqual(len(entries), len(receipts), 5)
         self.assertEqual({receipt["action"] for receipt in receipts}, set(sources.ACTION_REFERENCES.values()))
         self.assertEqual({receipt["profile"] for receipt in receipts}, {sources.ACTION_PROFILE})
         advisory = receipts[0]["advisories"][0]
@@ -412,9 +412,79 @@ class NpmSourceRepairTests(unittest.TestCase):
                                                        "path": item.path}, **advisory}]}
                         for item in findings]
         self.assertEqual(sources.resolve_findings(findings, observations, receipts), ([], findings))
-        foreign = finding("osv", advisory["id"], ".github/security/actions/cache/package-lock.json",
+        foreign = finding("osv", advisory["id"], ".github/security/actions/attest/package-lock.json",
                           "npm:deepmerge@4.3.1")
         self.assertEqual(sources.resolve_findings([foreign], observations, receipts), ([foreign], []))
+
+    def cache_fixture(self, root):
+        controls, _, fetch = self.checkout_fixture(root)
+        for name in (sources.CACHE_PREFIX + "package.json", sources.CACHE_PREFIX + "package-lock.json",
+                     sources.CACHE_PREFIX + "restore/action.yml.snapshot",
+                     sources.CACHE_PREFIX + "save/action.yml.snapshot",
+                     ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot"):
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(read_file(ROOT, name))
+        entry = {"path": sources.CACHE_PREFIX + "package.json", "kind": "npm",
+                 "lock": sources.CACHE_PREFIX + "package-lock.json", "source_repair": sources.ACTION_PROFILE}
+        return controls, entry, fetch
+
+    def test_cache_receipt_binds_both_actions_and_only_the_exact_advisory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            controls, entry, fetch = self.cache_fixture(root)
+            with patch.object(sources, "POLICY", controls):
+                packages = npm_packages(root, entry)
+                receipts = sources.verify_sources(root, packages, {"manifests": [entry]}, fetch)
+            self.assertEqual(len(receipts), 1)
+            self.assertEqual(receipts[0]["action"], sources.CACHE_RESTORE_REFERENCE)
+            self.assertEqual(receipts[0]["related_actions"], [sources.CACHE_SAVE_REFERENCE])
+            advisory = receipts[0]["advisories"][0]
+            known = finding("osv", advisory["id"], entry["lock"], "npm:deepmerge@4.3.1")
+            foreign = finding("osv", advisory["id"], ".github/security/actions/attest/package-lock.json", known.package)
+            observations = [{"advisories": [{"package": {"name": "deepmerge", "version": "4.3.1",
+                                                           "path": known.path}, **advisory}]}]
+            self.assertEqual(sources.resolve_findings([known, foreign], observations, receipts), ([foreign], [known]))
+            observations[0]["advisories"][0]["modified"] = "future-revision"
+            self.assertEqual(sources.resolve_findings([known], observations, receipts), ([known], []))
+            with patch.object(sources, "POLICY", controls), self.assertRaises(SecurityError):
+                npm_packages(root, {key: value for key, value in entry.items() if key != "source_repair"})
+
+    def test_cache_receipt_refuses_entrypoint_revision_and_snapshot_drift(self):
+        changes = ("missing-save", "save-revision", "save-metadata", "restore-metadata", "verifier",
+                   "duplicate-file", "snapshot")
+        for change in changes:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                controls, entry, fetch = self.cache_fixture(root)
+                registry_path = root / ".github/security/actions.json"
+                registry = json.loads(registry_path.read_bytes())
+                restore = registry["actions"][sources.CACHE_RESTORE_REFERENCE]
+                save = registry["actions"][sources.CACHE_SAVE_REFERENCE]
+                if change == "missing-save":
+                    del registry["actions"][sources.CACHE_SAVE_REFERENCE]
+                elif change == "save-revision":
+                    save["revision"] = "0" * 40
+                elif change == "save-metadata":
+                    save["metadata"]["source"] = "restore/action.yml"
+                elif change == "restore-metadata":
+                    restore["metadata"]["snapshot"] = sources.CACHE_PREFIX + "save/action.yml.snapshot"
+                elif change == "verifier":
+                    next(row for row in save["files"] if row["source"] == sources.ACTION_VERIFIER_SOURCE)["sha256"] = "0" * 64
+                elif change == "duplicate-file":
+                    save["files"].append(copy.deepcopy(save["files"][0]))
+                else:
+                    target = root / (sources.CACHE_PREFIX + "package.json")
+                    payload = target.read_bytes() + b"\n"
+                    target.write_bytes(payload)
+                    replacement = hashlib.sha256(payload).hexdigest()
+                    for action in (restore, save):
+                        row = next(row for row in action["files"] if row["source"] == "package.json")
+                        row["sha256"] = row["source_sha256"] = replacement
+                registry_path.write_text(json.dumps(registry), encoding="utf-8")
+                with patch.object(sources, "POLICY", controls), self.assertRaises(SecurityError):
+                    packages = npm_packages(root, entry)
+                    sources.verify_sources(root, packages, {"manifests": [entry]}, fetch)
 
     def test_checkout_source_never_admits_unselected_or_registry_graphs_as_repaired(self):
         with tempfile.TemporaryDirectory() as directory:

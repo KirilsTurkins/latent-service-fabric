@@ -4,8 +4,12 @@ The original fork set was rebuilt and qualified on Linux with Node 24.19.0. The
 2026-10-30 source-repair revisions for setup-java, setup-node, setup-python and
 upload-artifact passed locked installation, the installed-source verifier and an
 unchanged distribution rebuild locally with Node 24.19.0; GitHub did not register
-hosted workflows on those forks. LSF independently reconstructs the exact repaired
-deepmerge archive before crediting GHSA-gcqx-w48m-w2h4 on only the four bound locks.
+hosted workflows on those forks. The later cache repair passed its [focused Linux
+owner](https://github.com/KirilsTurkins/lsf-cache/actions/runs/42013015089) on the
+same source tree with one diagnostic workflow added. The owner did not exercise
+cache save/restore integration or macOS. LSF independently reconstructs the exact
+repaired deepmerge archive before crediting GHSA-gcqx-w48m-w2h4 on only the five
+bound additional-action locks.
 Upstream licenses and history are retained. Tool-version inputs, workflow
 permissions and committed runtime distributions are preserved.
 
@@ -23,7 +27,7 @@ the retained artifact includes both rebuilt bundles and the source inputs.
 | `actions/setup-java` | [5d910981b146](https://github.com/KirilsTurkins/lsf-setup-java/commit/5d910981b146bc2d4fd97fa349210f3e3d454039) | [PR](https://github.com/actions/setup-java/pull/1296) |
 | `Swatinem/rust-cache` | [476b290465f7](https://github.com/KirilsTurkins/lsf-rust-cache/commit/476b290465f7c84db317df6e6a6e2d3c12ea3477) | [PR](https://github.com/Swatinem/rust-cache/pull/396) |
 | `actions/attest-build-provenance` | [16b356100dfe](https://github.com/KirilsTurkins/lsf-attest-build-provenance/commit/16b356100dfe77222eebe783b5e26a565b76055a) | [PR](https://github.com/KirilsTurkins/lsf-attest-build-provenance/pull/1); upstream creation blocked: pull request create failed: GraphQL: KirilsTurkins does not have the correct permissions to execute `CreatePullRequest` (createPullRequest) |
-| `actions/cache` | [2ff27e45011b](https://github.com/KirilsTurkins/lsf-cache/commit/2ff27e45011b8bcf31ef566ae84c1c923c8aea69) | [PR](https://github.com/actions/cache/pull/1804) |
+| `actions/cache` | [ec176dce9471](https://github.com/KirilsTurkins/lsf-cache/commit/ec176dce9471270c8a9be1289040c0a8fd6aa708) | [PR](https://github.com/actions/cache/pull/1804); [fork repair](https://github.com/KirilsTurkins/lsf-cache/pull/1) |
 | `actions/checkout` | [4d310727149d](https://github.com/KirilsTurkins/lsf-checkout/commit/4d310727149d3abacc52b5dcb0a1c4d18b345d13) | [PR](https://github.com/actions/checkout/pull/2607) |
 | `actions/deploy-pages` | [9290f9265d55](https://github.com/KirilsTurkins/lsf-deploy-pages/commit/9290f9265d55d382005aa5f300fc4e9d5bb65cb2) | [PR](https://github.com/actions/deploy-pages/pull/453) |
 | `actions/download-artifact` | [f073ba9e3801](https://github.com/KirilsTurkins/lsf-download-artifact/commit/f073ba9e3801be93f933866d4c9a748e42157e5f) | [PR](https://github.com/actions/download-artifact/pull/496) |

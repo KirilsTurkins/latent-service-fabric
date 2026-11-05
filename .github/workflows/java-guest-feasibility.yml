@@ -215,7 +215,7 @@ jobs:
         run: printf 'LSF_DEV_COMPILER_CACHE=%s\n' "$RUNNER_TEMP/compiler-archives" >> "$GITHUB_ENV"
       - name: Restore untrusted source-pinned Java prepared inputs
         id: java-compiler-cache
-        uses: KirilsTurkins/lsf-cache/restore@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-cache/restore@ec176dce9471270c8a9be1289040c0a8fd6aa708 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
@@ -251,7 +251,7 @@ jobs:
           echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
       - name: Save only reverified Java prepared input bytes
         if: steps.java-compiler-cache.outputs.cache-hit != 'true'
-        uses: KirilsTurkins/lsf-cache/save@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-cache/save@ec176dce9471270c8a9be1289040c0a8fd6aa708 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: ${{ steps.java-compiler-cache.outputs.cache-primary-key }}

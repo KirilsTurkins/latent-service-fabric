@@ -28,7 +28,7 @@ The current security forks were reviewed on **2026-10-30**. They extend the pins
 | `KirilsTurkins/lsf-setup-java` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-java/pull/1296)) | `5d910981b146bc2d4fd97fa349210f3e3d454039` |
 | `KirilsTurkins/lsf-rust-cache` | `v2.9.3` + upstream changes and security fixes ([review](https://github.com/Swatinem/rust-cache/pull/396)) | `476b290465f7c84db317df6e6a6e2d3c12ea3477` |
 | `KirilsTurkins/lsf-attest-build-provenance` | `v4.2.2` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-attest-build-provenance/pull/1)) | `16b356100dfe77222eebe783b5e26a565b76055a` |
-| `KirilsTurkins/lsf-cache` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/cache/pull/1804)) | `2ff27e45011b8bcf31ef566ae84c1c923c8aea69` |
+| `KirilsTurkins/lsf-cache` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/cache/pull/1804)) | `ec176dce9471270c8a9be1289040c0a8fd6aa708` |
 | `KirilsTurkins/lsf-checkout` | `v7.0.1` + upstream changes and security fixes ([review](https://github.com/actions/checkout/pull/2607)) | `4d310727149d3abacc52b5dcb0a1c4d18b345d13` |
 | `KirilsTurkins/lsf-deploy-pages` | `v5.0.1` + upstream changes and security fixes ([review](https://github.com/actions/deploy-pages/pull/453)) | `9290f9265d55d382005aa5f300fc4e9d5bb65cb2` |
 | `KirilsTurkins/lsf-download-artifact` | `v8.0.2` + upstream changes and security fixes ([review](https://github.com/actions/download-artifact/pull/496)) | `f073ba9e3801be93f933866d4c9a748e42157e5f` |
@@ -44,12 +44,14 @@ The current security forks were reviewed on **2026-10-30**. They extend the pins
 | `KirilsTurkins/lsf-attest` | `v4.2.1` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-attest/pull/1)) | `5c5af1d743b681abf5f53d906d2bcbbcb6da5ba2` |
 | `dtolnay/rust-toolchain` | `1.97.1` | `4716b85f2fac3e324e64fa2810f6b5c3905760a5` |
 
-The setup-java, setup-node, setup-python and upload-artifact revisions bind
+The cache, setup-java, setup-node, setup-python and upload-artifact revisions bind
 deepmerge 4.3.1 to the deterministic `deepmerge-4.3.1-lsf-prototype-v1` source
 repair because GHSA-gcqx-w48m-w2h4 has no upstream fixed release. The security
 inventory verifies the exact action revision, manifest, lock, installed-source
 verifier, repaired archive reconstruction and advisory revision before granting
-lock-local remediation credit. The upload-pages composite is separately pinned to
+lock-local remediation credit. Cache restore and save entrypoints share one lock;
+both exact action revisions and metadata are checked before credit is granted.
+The upload-pages composite is separately pinned to
 the repaired upload-artifact child revision.
 
 The Java fork includes `actions/setup-java` v6.1.0 and the current upstream

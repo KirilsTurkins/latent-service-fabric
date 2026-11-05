@@ -124,7 +124,7 @@
       "upstream_repository": "bytecodealliance/actions",
       "upstream_revision": "7ee36389ead2e51422087f820a7e17e39811b05f"
     },
-    "KirilsTurkins/lsf-cache/restore@2ff27e45011b8bcf31ef566ae84c1c923c8aea69": {
+    "KirilsTurkins/lsf-cache/restore@ec176dce9471270c8a9be1289040c0a8fd6aa708": {
       "files": [
         {
           "sha256": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057",
@@ -133,16 +133,22 @@
           "source_sha256": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057"
         },
         {
-          "sha256": "e6d4679e2bfac8677ace770b9d4db05b56f5849cf5a1cac712a0a7703ee7ae2c",
+          "sha256": "8e8b46d08a417276c9c979e66f78f1de5b4e0af637c9e60128c738a65b8b64f8",
           "snapshot": ".github/security/actions/cache/package.json",
           "source": "package.json",
-          "source_sha256": "e6d4679e2bfac8677ace770b9d4db05b56f5849cf5a1cac712a0a7703ee7ae2c"
+          "source_sha256": "8e8b46d08a417276c9c979e66f78f1de5b4e0af637c9e60128c738a65b8b64f8"
         },
         {
-          "sha256": "2d88f578956135cf98b5b04b81248dd4015583ffbbf70ac725c11fc2e1b417a8",
+          "sha256": "e979985c5b09e89732e1c75abdf62c6f166d8238e4aed768c2fefcf7c44d7131",
           "snapshot": ".github/security/actions/cache/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "2d88f578956135cf98b5b04b81248dd4015583ffbbf70ac725c11fc2e1b417a8"
+          "source_sha256": "e979985c5b09e89732e1c75abdf62c6f166d8238e4aed768c2fefcf7c44d7131"
+        },
+        {
+          "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+          "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-deepmerge.mjs",
+          "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
         }
       ],
       "kind": "npm",
@@ -153,12 +159,12 @@
         "source_sha256": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057"
       },
       "repository": "KirilsTurkins/lsf-cache",
-      "revision": "2ff27e45011b8bcf31ef566ae84c1c923c8aea69",
-      "security_pr": "https://github.com/actions/cache/pull/1804",
+      "revision": "ec176dce9471270c8a9be1289040c0a8fd6aa708",
+      "security_pr": "https://github.com/KirilsTurkins/lsf-cache/pull/1",
       "upstream_repository": "actions/cache",
       "upstream_revision": "3edfce9056124e459a23f683a21433670d47daca"
     },
-    "KirilsTurkins/lsf-cache/save@2ff27e45011b8bcf31ef566ae84c1c923c8aea69": {
+    "KirilsTurkins/lsf-cache/save@ec176dce9471270c8a9be1289040c0a8fd6aa708": {
       "files": [
         {
           "sha256": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec",
@@ -167,16 +173,22 @@
           "source_sha256": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec"
         },
         {
-          "sha256": "e6d4679e2bfac8677ace770b9d4db05b56f5849cf5a1cac712a0a7703ee7ae2c",
+          "sha256": "8e8b46d08a417276c9c979e66f78f1de5b4e0af637c9e60128c738a65b8b64f8",
           "snapshot": ".github/security/actions/cache/package.json",
           "source": "package.json",
-          "source_sha256": "e6d4679e2bfac8677ace770b9d4db05b56f5849cf5a1cac712a0a7703ee7ae2c"
+          "source_sha256": "8e8b46d08a417276c9c979e66f78f1de5b4e0af637c9e60128c738a65b8b64f8"
         },
         {
-          "sha256": "2d88f578956135cf98b5b04b81248dd4015583ffbbf70ac725c11fc2e1b417a8",
+          "sha256": "e979985c5b09e89732e1c75abdf62c6f166d8238e4aed768c2fefcf7c44d7131",
           "snapshot": ".github/security/actions/cache/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "2d88f578956135cf98b5b04b81248dd4015583ffbbf70ac725c11fc2e1b417a8"
+          "source_sha256": "e979985c5b09e89732e1c75abdf62c6f166d8238e4aed768c2fefcf7c44d7131"
+        },
+        {
+          "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+          "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-deepmerge.mjs",
+          "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
         }
       ],
       "kind": "npm",
@@ -187,8 +199,8 @@
         "source_sha256": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec"
       },
       "repository": "KirilsTurkins/lsf-cache",
-      "revision": "2ff27e45011b8bcf31ef566ae84c1c923c8aea69",
-      "security_pr": "https://github.com/actions/cache/pull/1804",
+      "revision": "ec176dce9471270c8a9be1289040c0a8fd6aa708",
+      "security_pr": "https://github.com/KirilsTurkins/lsf-cache/pull/1",
       "upstream_repository": "actions/cache",
       "upstream_revision": "3edfce9056124e459a23f683a21433670d47daca"
     },

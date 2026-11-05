@@ -16,6 +16,18 @@ def model():
     return workflow_model(historical_checkout((ROOT/'.github/workflows/java-guest-feasibility.yml').read_bytes()).decode('utf-8'))
 
 
+def historical_cache_selection(steps):
+    """Invert only the reviewed current restore/save revisions for the old guard."""
+    result = copy.deepcopy(steps)
+    for action in ('restore', 'save'):
+        prefix = 'KirilsTurkins/lsf-cache/' + action + '@'
+        matches = [step for step in result if step.get('uses', '').startswith(prefix)]
+        if len(matches) != 1 or matches[0]['uses'] != prefix + 'ec176dce9471270c8a9be1289040c0a8fd6aa708':
+            raise AssertionError('historical-cache-selection-exact-current-required')
+        matches[0]['uses'] = prefix + '2ff27e45011b8bcf31ef566ae84c1c923c8aea69'
+    return result
+
+
 def original_compiler_parent(test, parent):
     """Invert only the reviewed sealed-profile/cache setup before old comparisons."""
     parent = copy.deepcopy(parent)
@@ -29,7 +41,7 @@ def original_compiler_parent(test, parent):
         'Install pinned compiler tools',
         'Save only reverified Java prepared input bytes'])
     # Covers every command, action SHA, cache key/path, token scope and condition.
-    test.assertEqual(signature(selected),
+    test.assertEqual(signature(historical_cache_selection(selected)),
         'f145f3a3fbb98a7473f7c35bb07b1b3fd82b3f82a5e54003fc04f72755bad476')
     legacy = next(step['run'] for step in model()['jobs']['scratch-refusals']['steps']
         if step.get('name') == 'Install only the pinned ordinary Java component compiler')
@@ -72,6 +84,29 @@ def historical_checkout(value):
 
 
 class JavaScratchWiring(unittest.TestCase):
+    def test_cache_projection_requires_both_exact_current_refs_and_preserves_other_fields(self):
+        steps = model()['jobs']['compiler-component']['steps']
+        index = next(i for i, step in enumerate(steps) if step.get('name') == 'Install pinned compiler tools')
+        selected = steps[index - 2:index + 2]
+        expected = 'f145f3a3fbb98a7473f7c35bb07b1b3fd82b3f82a5e54003fc04f72755bad476'
+        self.assertEqual(signature(historical_cache_selection(selected)), expected)
+        for action in ('restore', 'save'):
+            for suffix in ('2ff27e45011b8bcf31ef566ae84c1c923c8aea69', '0' * 40):
+                altered = copy.deepcopy(selected)
+                row = next(step for step in altered if step.get('uses', '').startswith('KirilsTurkins/lsf-cache/' + action + '@'))
+                row['uses'] = 'KirilsTurkins/lsf-cache/' + action + '@' + suffix
+                with self.assertRaisesRegex(AssertionError, 'historical-cache-selection-exact-current-required'):
+                    historical_cache_selection(altered)
+        altered = copy.deepcopy(selected)
+        restore = next(step for step in altered if step.get('uses', '').startswith('KirilsTurkins/lsf-cache/restore@'))
+        duplicate = altered + [copy.deepcopy(restore)]
+        with self.assertRaisesRegex(AssertionError, 'historical-cache-selection-exact-current-required'):
+            historical_cache_selection(duplicate)
+        with self.assertRaisesRegex(AssertionError, 'historical-cache-selection-exact-current-required'):
+            historical_cache_selection([step for step in altered if step is not restore])
+        restore['with']['path'] += '-changed'
+        self.assertNotEqual(signature(historical_cache_selection(altered)), expected)
+
     def test_original_normal_parent_and_dependency_programmes_remain_exact(self):
         workflow = model()
         from tools.tests.qualification_selection import restore_java_pre_tooling_view
