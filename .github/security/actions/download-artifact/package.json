@@ -8,13 +8,14 @@
   },
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "release": "ncc build src/download-artifact.ts && git add -f dist/",
+    "build": "node .lsf-source/verify-installed-deepmerge.mjs && node .lsf-source/verify-download-sources.mjs && tsc",
+    "release": "node .lsf-source/verify-installed-deepmerge.mjs && node .lsf-source/verify-download-sources.mjs && ncc build src/download-artifact.ts && git add -f dist/",
     "check-all": "concurrently \"npm:format-check\" \"npm:lint\" \"npm:build\"",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
     "lint": "eslint **/*.ts",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:security-source": "node --test .lsf-source/download-source.test.mjs"
   },
   "repository": {
     "type": "git",
@@ -35,7 +36,7 @@
   "dependencies": {
     "@actions/artifact": "^6.3.1",
     "@actions/core": "^3.0.0",
-    "minimatch": "10.2.6"
+    "minimatch": "file:.lsf-source/minimatch-10.2.6-lsf-bound-v1.tar"
   },
   "devDependencies": {
     "@actions/github": "^9.0.0",
@@ -53,16 +54,17 @@
     "prettier": "^3.8.1",
     "ts-jest": "^29.2.6",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "deepmerge": "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
+    "glob": "file:.lsf-source/glob-10.5.0-lsf-abort-v1.tar"
   },
   "overrides": {
     "uri-js": "npm:uri-js-replace@^1.0.1",
     "@isaacs/brace-expansion@5": "5.0.1",
     "brace-expansion@2": "2.1.7",
     "fast-xml-parser@5": "5.11.2",
-    "minimatch@9": "9.0.9",
     "lodash@4": "4.18.1",
-    "minimatch@10": "10.2.6",
+    "minimatch@10": "$minimatch",
     "minimatch@5": "5.1.9",
     "undici@6": "6.29.1",
     "@babel/core@7": "7.29.7",
@@ -78,6 +80,13 @@
     "minimatch@3": "3.1.5",
     "picomatch@2": "2.3.2",
     "picomatch@4": "4.0.7",
-    "shell-quote@1": "1.12.0"
+    "shell-quote@1": "1.12.0",
+    "glob@10": {
+      ".": "$glob",
+      "minimatch": "file:../../.lsf-source/minimatch-9.0.9-lsf-bound-v1.tar"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "file:../../../.lsf-source/minimatch-9.0.9-lsf-bound-v1.tar"
+    }
   }
 }

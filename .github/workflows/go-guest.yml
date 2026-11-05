@@ -775,7 +775,7 @@ jobs:
           cache-on-failure: false
           save-if: false
       - name: Read exact failed-run compiler fixtures without recompilation
-        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: go-guest-upstream-72e693bc25fe269bb584feaaf4b7270fa81647df
           run-id: 39310234677
@@ -857,7 +857,7 @@ jobs:
       - name: Check historical binding and fresh-host receipt controls
         run: python3 -B -m unittest tools.tests.test_go_entropy_retained tools.tests.test_go_standard_entropy tools.tests.test_go_entropy_replay -v
       - name: Read original pinned compiler and generator from the failed owning run
-        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: go-guest-tools-72e693bc25fe269bb584feaaf4b7270fa81647df
           run-id: 39310234677

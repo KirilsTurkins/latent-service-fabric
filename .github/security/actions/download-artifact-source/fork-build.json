@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "repository": "KirilsTurkins/lsf-download-artifact",
+  "publishedRevision": "dd4ebbadbf12ed34441db2712be7a193490b7fc5",
+  "publishedTree": "ab1166196538fbdab37cd72ca51557320ae95d35",
+  "sourceHead": "39d52ac2a2c6731c2d836e923b5221ebd0d4d8e9",
+  "diagnosticHead": "b1b184f23784f8b32b6d454764a51b1b87e00e06",
+  "diagnosticTree": "4afa10c0827dde75934dd82621dc44bcf54a192a",
+  "diagnosticOnlyPath": ".github/workflows/lsf-download-security-owner.yml",
+  "run": 42113357120,
+  "job": 127546428787,
+  "jobConclusion": "success",
+  "node": "24.19.0",
+  "npm": "11.17.0",
+  "jestSuites": 1,
+  "jestTests": 21,
+  "sourceControls": 3,
+  "rebuiltBundleIdentical": true,
+  "artifactDownloadMatched": true,
+  "artifact": {
+    "id": 13455382700,
+    "bytes": 1704956,
+    "sha256": "9429625c4ca047ce699d6eebefd4d6b7145ca80e5e010a66c77c68872bb33b84",
+    "members": 25,
+    "checkedFiles": 24,
+    "crcVerified": true
+  },
+  "markerArtifact": {
+    "id": 13454928092,
+    "bytes": 168,
+    "sha256": "41bb45641ad6ea12b6a1f200744c1ce0f815497558f6fdd61cdcf1cfef002fc6",
+    "crcVerified": true
+  },
+  "bundles": {
+    "dist/index.js": {
+      "bytes": 4683804,
+      "sha256": "caac8449a3cfb152b39fc3d21c1089a134a235e9ed9fcfd0ed2b5530e9cfc2ab",
+      "gitBlob": "bab2149e86267e2bed9b887d9a9322150f61861c"
+    }
+  }
+}

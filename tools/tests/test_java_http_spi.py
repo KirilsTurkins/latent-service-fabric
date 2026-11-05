@@ -177,7 +177,7 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         action_migrations = {
             'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1': 'KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13',
             'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97': 'KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8',
-            'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333': 'KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f',
+            'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333': 'KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5',
             'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9': 'KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f',
             'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6': 'KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e',
             'bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613': 'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce',
