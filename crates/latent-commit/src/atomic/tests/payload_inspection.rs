@@ -140,7 +140,7 @@ fn rejection_reference_rejects_consistent_catalogue_with_wrong_content_digest() 
 #[test]
 fn response_expiry_releases_only_its_shared_reference_and_keeps_effect_linkage() {
     use latent_state::embedded::ExpectedRow;
-    let (_dir, store, effects) = setup();
+    let (_dir, store, effects) = accounted::setup(8);
     let admitted = claim(&store, input("shared-retention"));
     let view = store.snapshot().unwrap();
     let envelope = CompleteEnvelope::success(
@@ -214,8 +214,10 @@ fn response_expiry_releases_only_its_shared_reference_and_keeps_effect_linkage()
         key: namespace_key,
         value: Some(namespace.encode().unwrap()),
     });
+    super::super::accounting::apply(&view, &TenantId("tenant".into()), &mut batch).unwrap();
     drop(view);
     store.apply(batch).unwrap();
+    let before = accounted::usage(&store);
     let owner = ResultMaintenanceOwner::default();
     let clock = |now| MaintenanceClock {
         time: time(now),
@@ -258,4 +260,8 @@ fn response_expiry_releases_only_its_shared_reference_and_keeps_effect_linkage()
             .payload_bytes,
         usage.payload_bytes - 7
     );
+    drop(view);
+    let after = accounted::usage(&store);
+    assert_eq!(after.usage.payload_bytes, before.usage.payload_bytes - 7);
+    assert!(after.usage.metadata_rows < before.usage.metadata_rows);
 }
