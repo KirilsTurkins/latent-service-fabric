@@ -1,13 +1,15 @@
 name: .NET pending cancellation and monitor wait witnesses
 on:
   push:
-    branches: ['test/dotnet-monitor-cancel-20261104']
+    branches: ['test/dotnet-monitor-cancel-20261104', 'fix/dotnet-aggregate-evidence-20261105']
     paths:
       - '.github/workflows/dotnet-monitor-cancel.yml'
       - 'tools/dotnet_task_runtime_fixture.py'
       - 'tools/dotnet_monitor_cancel_node.py'
       - 'tools/dotnet_monitor_cancel_fixture.py'
       - 'tools/qualify_dotnet_monitor_cancel.py'
+      - 'tools/qualify_dotnet_finite_waits.py'
+      - 'tools/tests/test_dotnet_current_aggregate_chain.py'
       - 'tools/admit_dotnet_monitor_cancel_evidence.py'
       - 'tools/tests/test_dotnet_monitor_cancel.py'
       - 'tools/wasmtime_48_0_8_678b_native_products.py'
@@ -46,7 +48,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/dotnet-monitor-cancel"
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_dotnet_monitor_cancel -v
+          python3 -B -m unittest tools.tests.test_dotnet_monitor_cancel tools.tests.test_dotnet_current_aggregate_chain -v
       - name: Fetch only the verified native producer source identity
         run: |
           python3 -B -c 'import re; from tools.wasmtime_48_0_8_678b_native_products import SOURCE; assert re.fullmatch("[0-9a-f]{40}", SOURCE); print(SOURCE)' > "$RUNNER_TEMP/dotnet-monitor-cancel/native-source.txt"

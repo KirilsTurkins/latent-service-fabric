@@ -95,8 +95,10 @@ def build_evidence(artifact, *, aggregate: bool=False):
             'finiteWaitCleanup','zeroTimeout','waitCancellation','publicWaitValidationAndExceptions')),
         'finite-wait-compiler-patch-selection')
     if aggregate:
+        # The verified filesystem pass preserves 44,744 original bodies plus
+        # the exact helper count authenticated by the selected Task receipt.
         require(rows[0]['selection']['aggregateTaskWait']==port['aggregateTaskWait']
-            and fs['unchangedBaseMethods']==44839,
+            and fs['unchangedBaseMethods']==44744 + port['generatedHelperCount'],
             'aggregate-wait-compiler-selection-and-final-filesystem-chain')
     return {'component':component, 'documents':identities, 'taskWaitPort':port, 'package':package_identity(artifact,marker)}
 
