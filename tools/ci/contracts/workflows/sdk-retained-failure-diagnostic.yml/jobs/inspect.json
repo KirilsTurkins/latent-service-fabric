@@ -5,7 +5,7 @@
   "workflow": ".github/workflows/sdk-retained-failure-diagnostic.yml",
   "jobId": "inspect",
   "definition": {
-    "name": "Authenticate four retained failed owners",
+    "name": "Classify the evidence reader failure",
     "runs-on": "ubuntu-24.04",
     "timeout-minutes": 12,
     "env": {
