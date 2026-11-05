@@ -157,8 +157,6 @@ boundary. The existing checkpoint-call refusals run first and keep their reason
 codes. An excluded cycle without a supported finite argument refuses with
 `java-checkpoint-nonsuspendable-progress-741`; fuel exhaustion is not its proof.
 Managed loops outside these contexts keep the existing checkpoint transformation.
-The additional ClassInfo operand fence examines used and called methods before
-context classification; it does not admit an unchecked managed call.
 
 The generic rule uses a reducible CFG, including exceptional edges, and SSA
 induction. Every entry supplies a signed `int`; every backedge must supply
@@ -207,18 +205,21 @@ No other native operation gains a finite argument from its declaring class name.
 
 The current certificate authenticates **42 runtime/donor entries in total**:
 32 runtime entries and ten donors. Besides the two constructor and four numeric
-donors, exact `ClassInfo`/`ReflectionInfo` inputs bind the original metadata
-layout. The original `Object.getClassInfo` body also requires its exact method
-proof. Public ClassInfo operations that read metadata, arrays, or unchecked indices
-are refused when used or called until their receiver and operands are proven.
-This conservative boundary can refuse ordinary Class and reflection compilation.
-These rules do not approve class initialization,
+donors, exact `ClassInfo`/`ReflectionInfo` inputs bind the selected native metadata
+queries to the original layout. The original `Object.getClassInfo` body also
+requires its exact method proof. These rules do not approve class initialization,
 allocation, or arbitrary reflective callbacks. Exact `TString`/`TSystem` donors
 cover the apparent char-array-constructor/arraycopy recursion: the nested copy
 uses a non-null source and a freshly allocated equal-length destination at zero
 offsets, so it cannot recurse through error-string construction again. Changed
 bodies or declarations do not receive this input-specific argument, and other
 Java callees still require their ordinary transitive proof.
+
+ClassInfo.enumConstantCount is not admitted as a finite native operation:
+its receiver provenance is not proven. Reaching it is conservatively refused by
+the progress analysis, including legitimate enum-reflection users. Other
+previously admitted metadata helpers retain their existing valid-input assumptions;
+this rollback does not establish their receiver or index safety.
 
 The finite runtime families have these arguments under the existing owned
 C/OWN_GC ABI and valid heap/metadata invariants:

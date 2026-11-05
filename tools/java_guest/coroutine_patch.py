@@ -957,119 +957,12 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         return progressRefusal(2, owner);
     }
 
-    // These public TeaVM helpers consume a class metadata pointer, array or
-    // index whose provenance is not established by the finite-progress proof.
-    // Match by name as well as owner so altered overloads also fail closed.
-    private static boolean progressUnprovenClassInfoOperands(MethodReference reference) {
-        if (!reference.getClassName().equals("org.teavm.runtime.reflect.ClassInfo")) {
-            return false;
-        }
-        switch (reference.getName()) {
-            case "modifiers":
-            case "primitiveKind":
-            case "superinterfaceCount":
-            case "itemType":
-            case "declaringClass":
-            case "enclosingClass":
-            case "parent":
-            case "name":
-            case "simpleName":
-            case "superinterface":
-            case "arrayLength":
-            case "isSuperTypeOf":
-            case "reflection":
-            case "classObject":
-            case "enumConstantCount":
-            case "enumConstant":
-            case "arrayType":
-            case "newArrayInstance":
-            case "getItem":
-            case "putItem":
-            case "initialize":
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    // Diagnostic only: closed public TeaVM ordinals and caller categories.
-    // It does not authenticate a caller or change the existing refusal.
-    private static int progressClassInfoOperandOrdinal(MethodReference reference) {
-        if (!reference.getClassName().equals("org.teavm.runtime.reflect.ClassInfo")) {
-            return -1;
-        }
-        String[] methods = {
-            "modifiers", "primitiveKind", "superinterfaceCount", "itemType", "declaringClass",
-            "enclosingClass", "parent", "name", "simpleName", "superinterface", "arrayLength",
-            "isSuperTypeOf", "reflection", "classObject", "enumConstantCount", "enumConstant",
-            "arrayType", "newArrayInstance", "getItem", "putItem", "initialize"
-        };
-        for (int index = 0; index < methods.length; index++) {
-            if (reference.getName().equals(methods[index])) return index;
-        }
-        return -1;
-    }
-
-    private void reportProgressClassInfoOperands() {
-        try {
-            int mask = 0;
-            int work = 0;
-            int[] callers = new int[21];
-            org.teavm.callgraph.CallGraph graph = dependency.getCallGraph();
-            for (MethodReference reference : dependency.getReachableMethods()) {
-                if (++work > 65536) {
-                    System.err.println("latent.java.classinfo-operand-mask.v1 unavailable");
-                    return;
-                }
-                int index = progressClassInfoOperandOrdinal(reference);
-                if (index < 0) continue;
-                org.teavm.dependency.MethodDependencyInfo linked = dependency.getMethod(reference);
-                if (linked != null && !linked.isUsed() && !linked.isCalled()) continue;
-                mask |= 1 << index;
-                org.teavm.callgraph.CallGraphNode node = graph == null ? null : graph.getNode(reference);
-                if (node == null) { callers[index] |= 1; continue; }
-                boolean found = false;
-                for (org.teavm.callgraph.CallSite site : node.getCallerCallSites()) {
-                    if (++work > 65536) {
-                        System.err.println("latent.java.classinfo-operand-mask.v1 unavailable");
-                        return;
-                    }
-                    for (org.teavm.callgraph.CallGraphNode caller : site.getCallers()) {
-                        if (++work > 65536) {
-                            System.err.println("latent.java.classinfo-operand-mask.v1 unavailable");
-                            return;
-                        }
-                        found = true;
-                        String owner = caller.getMethod().getClassName();
-                        if (owner.equals("java.lang.Object")
-                                || owner.equals("org.teavm.classlib.java.lang.TObject")) callers[index] |= 2;
-                        else if (owner.equals("java.lang.Class")
-                                || owner.equals("org.teavm.classlib.java.lang.TClass")) callers[index] |= 4;
-                        else if (owner.equals("org.teavm.runtime.reflect.ClassInfo")) callers[index] |= 8;
-                        else if (owner.startsWith("org.teavm.runtime.")) callers[index] |= 16;
-                        else callers[index] |= 32;
-                    }
-                }
-                if (!found) callers[index] |= 64;
-            }
-            System.err.println("latent.java.classinfo-operand-mask.v1 " + mask);
-            for (int index = 0; index < callers.length; index++) {
-                if ((mask & (1 << index)) != 0) {
-                    System.err.println("latent.java.classinfo-operand-caller.v1 " + index + ":" + callers[index]);
-                }
-            }
-        } catch (RuntimeException unavailable) {
-            System.err.println("latent.java.classinfo-operand-mask.v1 unavailable");
-        }
-    }
-
     private void validateNonsuspendableProgress() {
         progressRuntimeProofs.clear(); // Never reuse a proof across completion rounds.
         progressOriginalClasses.clear();
         progressMetadataProofs.clear();
         progressPlatformProofs.clear();
         progressClasslibTypes.clear();
-        reportProgressClassInfoOperands();
         // Unlike checkpoint-call validation, this closure is required even if
         // Activation.checkpoint is entirely unreachable in the final programme.
         java.util.Map<MethodReference, Integer> contexts = new java.util.HashMap<>();
@@ -1084,11 +977,6 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             // been called or used. They are not executable progress roots.
             if (linked != null && !linked.isUsed() && !linked.isCalled()) {
                 continue;
-            }
-            if (progressUnprovenClassInfoOperands(reference)) {
-                // Only a fixed compiler diagnostic; never emit guest identities.
-                System.err.println("latent.java.classinfo-operands.v1 refused");
-                throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
             }
             ClassReader cls = classSource.get(reference.getClassName());
             MethodReader method = cls == null ? null : cls.getMethod(reference.getDescriptor());
@@ -1827,6 +1715,18 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
     }
 
     private MethodReference progressNativeDelegate(ClassReader cls, MethodReader method) {
+        MethodReference classObject = new MethodReference("org.teavm.runtime.reflect.ClassInfo", "classObject",
+                org.teavm.model.ValueType.object("java.lang.Class"));
+        if (method.getReference().equals(classObject) && method.hasModifier(ElementModifier.NATIVE)
+                && !method.hasModifier(ElementModifier.STATIC) && pinnedClassMetadataMethod(method)) {
+            // The owned C helper is a cache lookup and at most one call to
+            // Class.createClass. Prove that Java helper transitively, rather
+            // than granting every reflective/initialization native a pass.
+            MethodReference target = new MethodReference("java.lang.Class", "createClass",
+                    org.teavm.model.ValueType.object("org.teavm.runtime.reflect.ClassInfo"),
+                    org.teavm.model.ValueType.object("java.lang.Class"));
+            return dependency.getReachableMethods().contains(target) ? target : null;
+        }
         org.teavm.model.AnnotationReader declaration = method.getAnnotations().get("org.teavm.interop.DelegateTo");
         if (!method.hasModifier(ElementModifier.NATIVE) || declaration == null
                 || method.getAnnotations().get("org.teavm.interop.Import") != null) {
@@ -2014,6 +1914,54 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         }
         progressPlatformProofs.put(reference, result);
         return result;
+    }
+
+    private boolean progressClassMetadataPrimitive(MethodReader method) {
+        String owner = "org.teavm.runtime.reflect.ClassInfo";
+        if (!method.getReference().getClassName().equals(owner)
+                || !method.hasModifier(ElementModifier.NATIVE)
+                || method.hasModifier(ElementModifier.STATIC)
+                || method.getAnnotations().get("org.teavm.interop.Unmanaged") == null
+                || method.getAnnotations().get("org.teavm.interop.Intrinsified") == null) {
+            return false;
+        }
+        org.teavm.model.ValueType integer = org.teavm.model.ValueType.INTEGER;
+        org.teavm.model.ValueType info = org.teavm.model.ValueType.object(owner);
+        org.teavm.model.MethodDescriptor shape;
+        switch (method.getName()) {
+            case "modifiers": case "primitiveKind": case "superinterfaceCount":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(), integer);
+                break;
+            case "itemType": case "declaringClass": case "enclosingClass": case "parent":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(), info);
+                break;
+            case "name": case "simpleName":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(),
+                        org.teavm.model.ValueType.object("org.teavm.runtime.StringInfo"));
+                break;
+            case "superinterface":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(), integer, info);
+                break;
+            case "arrayLength":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(),
+                        org.teavm.model.ValueType.object("java.lang.Object"), integer);
+                break;
+            case "isSuperTypeOf":
+                // Calls the owned compiler-generated finite type predicate,
+                // not a Java callback or application class initializer.
+                shape = new org.teavm.model.MethodDescriptor(method.getName(), info,
+                        org.teavm.model.ValueType.BOOLEAN);
+                break;
+            case "reflection":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(),
+                        org.teavm.model.ValueType.object("org.teavm.runtime.reflect.ClassReflectionInfo"));
+                break;
+            default: return false; // No allocation, initialization or reflective callbacks.
+        }
+        if (!method.getDescriptor().equals(shape)) {
+            return false;
+        }
+        return pinnedClassMetadataMethod(method);
     }
 
     // Weak keys avoid retaining completed compiler instances. The closed cap
@@ -2240,7 +2188,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
     }
 
     private boolean progressNativePrimitive(MethodReader method) {
-        if (progressStringInfoPrimitive(method)) {
+        if (progressClassMetadataPrimitive(method) || progressStringInfoPrimitive(method)) {
             return true;
         }
         // These exact C operations are bounded word operations, not a general

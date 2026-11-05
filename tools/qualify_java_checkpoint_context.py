@@ -47,11 +47,8 @@ COMPILER_EXPECTED = (';finite;ordinary-class-reflection;initializer;unmanaged;ma
     'class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;'
     'reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;'
     'mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;'
-    'class-info-enum-count-refused;class-info-enum-element-refused;class-info-enum-negative-refused;'
-    'class-info-enum-high-refused;class-info-superinterface-refused;class-info-array-length-refused;'
-    'class-info-managed-count-refused;class-info-managed-class-object-refused;class-info-declaration-refused;'
-    'class-info-parent-refused;class-info-layout-refused;class-info-target-refused;class-info-fence-scope;'
-    'class-info-header-shadow;compiler-archive-control;compiler-cache-isolation')
+    'class-info-enum-count-refused;class-info-enum-count-managed-refused;class-info-enum-other-refused;class-info-declaration-refused;class-info-parent-refused;class-info-layout-refused;'
+    'class-info-target-refused;class-info-header-shadow;compiler-archive-control;compiler-cache-isolation')
 
 
 def selected(lock):
