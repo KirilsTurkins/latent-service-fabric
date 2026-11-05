@@ -115,6 +115,37 @@ async fn actual_captured_blob_pin_moves_into_atomic_result_and_effect_owners() {
     drop(authority);
     drop(state);
     let state = open(&root.path().join("state.redb"));
+    let view = state.snapshot().unwrap();
+    let quota = latent_state::tenant::inspect(&view, &TenantId("a".into()))
+        .unwrap()
+        .unwrap()
+        .quota;
+    let mut census = latent_state::tenant::TenantCensus::capture(
+        &view,
+        &[quota],
+        latent_state::tenant::INSTALLED_GLOBAL_ALLOWANCE,
+        std::time::Instant::now() + std::time::Duration::from_secs(20),
+    )
+    .unwrap();
+    validate_view_observed(&view, |view, key, bytes| {
+        if *key == latent_state::store_identity::StoreIdentity::row_key() {
+            latent_state::store_identity::StoreIdentity::validate_row(key, bytes)
+        } else {
+            accounted::installed_codec(view, key, bytes)
+        }
+    }, |view, key, bytes| {
+        use latent_state::embedded::StoreError;
+        let contribution = match tenant_census_contribution(view, key, bytes) {
+            Err(StoreError::UnsupportedFormat) => match latent_state::tenant::census_contribution(view, key, bytes) {
+                Err(StoreError::UnsupportedFormat) => latent_effects::dispatch_store::DispatchCatalog::tenant_census_contribution(view, key, bytes),
+                result => result,
+            },
+            result => result,
+        }?;
+        census.observe(key, bytes, contribution)
+    }).unwrap();
+    census.finish().unwrap();
+    drop(view);
     let store = latent_blobs::local::LocalBlobStore::open_durable(
         &root.path().join("blobs"),
         "private",

@@ -301,6 +301,7 @@ fn exercise_result_expiry(reviewed: bool) {
     let after = accounted::usage(&store);
     assert_eq!(after.usage.payload_bytes, before.usage.payload_bytes - 7);
     assert!(after.usage.metadata_rows < before.usage.metadata_rows);
+    super::census::census(&store).unwrap();
     if reviewed {
         owner
             .purge(&store, &request, clock(2300), |_, _, _| Ok(()))
@@ -311,5 +312,7 @@ fn exercise_result_expiry(reviewed: bool) {
             latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
             Some(0)
         );
+        drop(view);
+        super::census::census(&store).unwrap();
     }
 }

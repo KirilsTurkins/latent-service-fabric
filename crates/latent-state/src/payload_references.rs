@@ -11,7 +11,7 @@ mod codec;
 mod links;
 mod physical;
 pub use links::{PayloadLinks, LINKS_PREFIX, MAX_LINK_BYTES};
-pub use physical::{physical_owner_count, PhysicalInventory};
+pub use physical::{physical_owner_count, validate_physical_inventory_head, PhysicalInventory};
 #[cfg(test)]
 mod tests;
 

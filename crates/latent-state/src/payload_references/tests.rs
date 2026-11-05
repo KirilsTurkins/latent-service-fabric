@@ -83,6 +83,17 @@ fn physical_inventory_fences_changed_generation_and_detects_missing_index() {
         }
     }
     assert_eq!(count, 3);
+    let heads = view
+        .scan_after(
+            Family::PayloadReference,
+            b"immutable-payload-retention-head-v1\0",
+            None,
+            4,
+            4 * MAX_REFERENCE_BYTES,
+        )
+        .unwrap();
+    let (head_key, head_bytes) = &heads.rows[0];
+    assert!(validate_physical_inventory_head(&view, head_key, head_bytes).unwrap());
     assert!(matches!(
         inventory.next_page(&view, 1, MAX_REFERENCE_BYTES),
         Err(StoreError::Invalid)
@@ -103,6 +114,20 @@ fn physical_inventory_fences_changed_generation_and_detects_missing_index() {
         inventory.next_page(&view, 8, 8 * MAX_REFERENCE_BYTES),
         Err(StoreError::Corrupt)
     ));
+    let heads = view
+        .scan_after(
+            Family::PayloadReference,
+            b"immutable-payload-retention-head-v1\0",
+            None,
+            4,
+            4 * MAX_REFERENCE_BYTES,
+        )
+        .unwrap();
+    let (head_key, head_bytes) = &heads.rows[0];
+    assert_eq!(
+        validate_physical_inventory_head(&view, head_key, head_bytes),
+        Err(StoreError::Corrupt)
+    );
 }
 
 #[test]

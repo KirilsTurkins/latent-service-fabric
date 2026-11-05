@@ -457,6 +457,16 @@ pub fn validate_view_observed(
                 return Err(StoreError::Capacity);
             }
             for (key, bytes) in &page.rows {
+                if latent_state::payload_references::owns_row(key) {
+                    if !latent_state::payload_references::validate_physical_inventory_head(
+                        view, key, bytes,
+                    )? {
+                        super::payload_links::inspect_payload_reference(view, key, bytes)
+                            .map_err(storage_error)?;
+                    }
+                    observer(view, key, bytes)?;
+                    continue;
+                }
                 match validate_linked_row(view, key, bytes) {
                     Err(StoreError::UnsupportedFormat) => foreign(view, key, bytes)?,
                     other => other?,

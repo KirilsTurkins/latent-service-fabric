@@ -45,6 +45,35 @@ pub fn physical_owner_count(
         .transpose()
 }
 
+/// Validate one declared head and all its reciprocal indexes in bounded pages.
+/// `false` means this key belongs to another catalogue row type. The supplied
+/// view must be the same view used for the surrounding startup inventory.
+pub fn validate_physical_inventory_head(
+    view: &ReadView,
+    key: &RowKey,
+    bytes: &[u8],
+) -> Result<bool, StoreError> {
+    if !is_head(key) {
+        return Ok(false);
+    }
+    validate_head(key, bytes)?;
+    if view.get_bounded(key, MAX_REFERENCE_BYTES)?.as_deref() != Some(bytes) {
+        return Err(StoreError::Corrupt);
+    }
+    let head = decode(bytes)?;
+    let mut inventory = PhysicalInventory::begin(view, &head.payload)?;
+    loop {
+        let (_, complete) = inventory.next_page(
+            view,
+            super::MAX_REFERENCE_UPDATES,
+            super::MAX_REFERENCE_UPDATES * MAX_REFERENCE_BYTES,
+        )?;
+        if complete {
+            return Ok(true);
+        }
+    }
+}
+
 /// A bounded, generation-fenced inventory of one physical object's owners.
 /// Each page is checked against a coherent view and the original head bytes.
 /// Completion is an observation, not authority to delete or read an object.
