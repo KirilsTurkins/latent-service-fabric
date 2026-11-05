@@ -56,6 +56,12 @@ class PreparationTests(unittest.TestCase):
                      ('package/node_modules/postcss-selector-parser/obsolete.js', b'old removed selector bytes'),
                      ('package/node_modules/cssesc/package.json', {'name': 'cssesc', 'version': '3.0.0'}),
                      ('package/node_modules/util-deprecate/package.json', {'name': 'util-deprecate', 'version': '1.0.2'})]
+        self.base.extend([
+            ('package/node_modules/glob/package.json', {'name': 'glob', 'version': '13.0.6',
+                'dependencies': {'minimatch': '^10.2.2', 'minipass': '^7.1.3', 'path-scurry': '^2.0.2'}}),
+            ('package/node_modules/minimatch/package.json', {'name': 'minimatch', 'version': '10.2.5',
+                'dependencies': {'brace-expansion': '^5.0.5'}}),
+        ] + [('package/' + path, b'fixture original bytes') for path in prepare.BUNDLE_REPAIR_FILES])
         self.patches = []
         for name, old, new in [('ip-address', '10.5.0', '10.7.4'), ('undici', '6.28.0', '6.29.1'),
                                ('http-cache-semantics', '4.2.0', '4.3.0'),
@@ -219,6 +225,29 @@ class PreparationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'embedded npm lock'):
             prepare.compose(archive(self.base + [('package/npm-shrinkwrap.json', b'{}')]), self.patches)
 
+    def test_bundle_repair_requires_every_entry_and_exact_source(self):
+        files = prepare.unpack(archive(self.base))
+        pin = {'name': 'npm', 'version': '11.19.1', 'integrity': 'exact upstream'}
+        repair = {'schema': 1, 'profile': 'npm-11.19.1-lsf-glob-minimatch-source-v1',
+                  'name': 'npm', 'version': '11.19.1', 'upstreamIntegrity': pin['integrity'],
+                  'files': [{'path': path, 'beforeSha256': hashlib.sha256(b'fixture original bytes').hexdigest(),
+                             'afterSha256': hashlib.sha256(b'fixture repaired bytes').hexdigest(),
+                             'edits': [{'before': 'fixture original bytes', 'after': 'fixture repaired bytes', 'count': 1}]}
+                            for path in sorted(prepare.BUNDLE_REPAIR_FILES)]}
+        fixed = prepare.repair_bundle(files, repair, pin)
+        self.assertEqual(set(fixed), set(files))
+        for path in prepare.BUNDLE_REPAIR_FILES:
+            self.assertEqual(fixed['package/' + path][0], b'fixture repaired bytes')
+        for altered in ({**repair, 'files': repair['files'][:-1]},
+                        {**repair, 'upstreamIntegrity': 'other'},
+                        {**repair, 'files': [{**repair['files'][0], 'afterSha256': '0' * 64}, *repair['files'][1:]]}):
+            with self.subTest(altered=altered), self.assertRaises(ValueError):
+                prepare.repair_bundle(files, altered, pin)
+        changed = dict(files)
+        changed['package/node_modules/glob/package.json'] = (b'{"name":"glob","version":"14.0.2"}', 0o644)
+        with self.assertRaisesRegex(ValueError, 'package graph'):
+            prepare.repair_bundle(changed, repair, pin)
+
     def test_links_traversal_absolute_and_duplicate_paths_rejected(self):
         for files in [[('package/link', None)], [('package/../escape', b'x')],
                       [('/package/absolute', b'x')], [('package/a', b'x'), ('package/a', b'y')],
@@ -296,6 +325,16 @@ class PreparationTests(unittest.TestCase):
             config = {'schema': 1, 'profile': prepare.PROFILE,
                       'base': {'name': 'npm', 'version': '11.19.1', 'integrity': prepare.integrity(base)},
                       'patches': [pin for pin, _ in self.patches], 'libraries': libraries, 'repairs': repairs}
+            bundle_document = {'schema': 1, 'profile': 'npm-11.19.1-lsf-glob-minimatch-source-v1',
+                'name': 'npm', 'version': '11.19.1', 'upstreamIntegrity': prepare.integrity(base),
+                'files': [{'path': path, 'beforeSha256': hashlib.sha256(b'fixture original bytes').hexdigest(),
+                    'afterSha256': hashlib.sha256(b'fixture repaired bytes').hexdigest(),
+                    'edits': [{'before': 'fixture original bytes', 'after': 'fixture repaired bytes', 'count': 1}]}
+                    for path in prepare.BUNDLE_REPAIR_FILES]}
+            bundle_encoded = (json.dumps(bundle_document) + '\n').encode()
+            (root / 'repairs/npm-glob-minimatch.json').write_bytes(bundle_encoded)
+            config['bundleRepair'] = {'path': 'repairs/npm-glob-minimatch.json',
+                                      'sha256': hashlib.sha256(bundle_encoded).hexdigest()}
             (root / 'source.json').write_text(json.dumps(config))
             target = root / 'generated.tar'
             with patch.multiple(prepare, ROOT=root, HERE=root, CACHE=cache, OUTPUT=target):

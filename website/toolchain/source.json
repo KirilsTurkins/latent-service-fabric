@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "npm-11.19.1-lsf-bundle-v5",
+  "profile": "npm-11.19.1-lsf-bundle-v6",
   "base": {
     "name": "npm",
     "version": "11.19.1",
@@ -63,5 +63,9 @@
       "path": "repairs/deepmerge.json",
       "sha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7"
     }
-  ]
+  ],
+  "bundleRepair": {
+    "path": "repairs/npm-glob-minimatch.json",
+    "sha256": "757e5b038711df505a20508a6429845a4ef4c03cec51e541fd4ce55a408fd0a3"
+  }
 }

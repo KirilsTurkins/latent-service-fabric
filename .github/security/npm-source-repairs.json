@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "source_sha256": "42da38ca0597fc243b088e95259519a886a520b8f4fb84b70d901c6ebebabfc3",
-  "builder_sha256": "ddf866923b7202a85d73182a13bbd8046b99ab6a36add475cb8cde6bfeb0094f",
+  "source_sha256": "4fda54fe92644dc7c05726f8143c62bbb2ed2dd672a26d00992dd530d7e24d1f",
+  "builder_sha256": "532cc21dbc860be57cbd882be01b1c9b52570feaa978adc7625d45316f1e84ab",
   "repairs": {
     "braces": {
       "version": "3.0.3",
@@ -31,6 +31,24 @@
         {
           "id": "GHSA-gcqx-w48m-w2h4",
           "modified": "2026-10-27T21:45:04.256048Z"
+        }
+      ]
+    }
+  },
+  "bundle_repair": {
+    "profile": "npm-11.19.1-lsf-glob-minimatch-source-v1",
+    "repair_sha256": "757e5b038711df505a20508a6429845a4ef4c03cec51e541fd4ce55a408fd0a3",
+    "advisories": {
+      "glob": [
+        {
+          "id": "GHSA-3g3m-2fjr-6pw4",
+          "modified": "2026-10-30T23:15:04.503965Z"
+        }
+      ],
+      "minimatch": [
+        {
+          "id": "GHSA-g3hv-75wg-m249",
+          "modified": "2026-11-04T17:01:25.850114Z"
         }
       ]
     }
