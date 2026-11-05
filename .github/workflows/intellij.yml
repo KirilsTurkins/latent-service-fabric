@@ -49,7 +49,7 @@ jobs:
         run: python tools/intellij.py run help
       - name: Select the website Node runtime for native Windows execution
         if: runner.os == 'Windows'
-        uses: KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415 # v7.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version-file: website/package.json
           package-manager-cache: false

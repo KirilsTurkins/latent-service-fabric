@@ -74,7 +74,9 @@ def verify(repo: Path, paths: list[str]) -> list[dict]:
                             ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-installed-minimatch.mjs"},
                         "unreviewed-additional-action-source")
             if len(row["files"]) == 6:
-                require(value == "KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c"
+                require(value in {"KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c",
+                                  "KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8",
+                                  "KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6"}
                         and {item.get("source") for item in row["files"]} == {
                             "action.yml", "package.json", "package-lock.json", ".lsf-source/minimatch-bounds.test.mjs",
                             ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-installed-minimatch.mjs"},

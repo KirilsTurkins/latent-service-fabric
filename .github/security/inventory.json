@@ -361,7 +361,9 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/setup-dotnet/package-lock.json",
-      "path": ".github/security/actions/setup-dotnet/package.json"
+      "path": ".github/security/actions/setup-dotnet/package.json",
+      "source_repair": "deepmerge-action-source-v1",
+      "minimatch_source_repair": "setup-dotnet-minimatch-action-source-v1"
     },
     {
       "kind": "npm",
@@ -378,7 +380,8 @@
       "kind": "npm",
       "lock": ".github/security/actions/setup-node/package-lock.json",
       "path": ".github/security/actions/setup-node/package.json",
-      "source_repair": "deepmerge-action-source-v1"
+      "source_repair": "deepmerge-action-source-v1",
+      "minimatch_source_repair": "setup-node-minimatch-action-source-v1"
     },
     {
       "kind": "npm",

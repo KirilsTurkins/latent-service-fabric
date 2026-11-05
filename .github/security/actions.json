@@ -346,7 +346,7 @@
       "upstream_repository": "Swatinem/rust-cache",
       "upstream_revision": "c8037a86dde8214a8310e9f54a8fc61ab362aa31"
     },
-    "KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec": {
+    "KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8": {
       "files": [
         {
           "sha256": "c96dc8e11d5e6f64fb48a3221e7b1446821955cdcbecb1bf5697c93e24d4f9f2",
@@ -355,16 +355,34 @@
           "source_sha256": "c96dc8e11d5e6f64fb48a3221e7b1446821955cdcbecb1bf5697c93e24d4f9f2"
         },
         {
-          "sha256": "7b8f88514b4bb0f6a7f09dda062c88d3dbc9fc869c1efb40f36b015f6ed09229",
+          "sha256": "9be7cb32ee3db4f5b122552fa8522c6ec0802236667094205806f5eabe92d732",
           "snapshot": ".github/security/actions/setup-dotnet/package.json",
           "source": "package.json",
-          "source_sha256": "7b8f88514b4bb0f6a7f09dda062c88d3dbc9fc869c1efb40f36b015f6ed09229"
+          "source_sha256": "9be7cb32ee3db4f5b122552fa8522c6ec0802236667094205806f5eabe92d732"
         },
         {
-          "sha256": "815fb4e0bf66424bd665e176e81a297d566121fed5efccfe93749b822ff3f49c",
+          "sha256": "f30f154929ab439bd594caad80f151a3b06e480a795c90c9c2513cd2e6d19d6a",
           "snapshot": ".github/security/actions/setup-dotnet/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "815fb4e0bf66424bd665e176e81a297d566121fed5efccfe93749b822ff3f49c"
+          "source_sha256": "f30f154929ab439bd594caad80f151a3b06e480a795c90c9c2513cd2e6d19d6a"
+        },
+        {
+          "source": ".lsf-source/verify-installed-deepmerge.mjs",
+          "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
+          "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+          "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
+        },
+        {
+          "source": ".lsf-source/verify-installed-minimatch.mjs",
+          "snapshot": ".github/security/actions/setup-python-minimatch/installed-verifier.mjs.snapshot",
+          "sha256": "4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826",
+          "source_sha256": "4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826"
+        },
+        {
+          "source": ".lsf-source/minimatch-bounds.test.mjs",
+          "snapshot": ".github/security/actions/setup-dotnet-minimatch/bounds.test.mjs.snapshot",
+          "sha256": "f65c9af8d0d6b2abfd728d803e223396e746850f564003e93b223c4f084f987b",
+          "source_sha256": "f65c9af8d0d6b2abfd728d803e223396e746850f564003e93b223c4f084f987b"
         }
       ],
       "kind": "npm",
@@ -375,7 +393,7 @@
         "source_sha256": "c96dc8e11d5e6f64fb48a3221e7b1446821955cdcbecb1bf5697c93e24d4f9f2"
       },
       "repository": "KirilsTurkins/lsf-setup-dotnet",
-      "revision": "f5bcdac7f26977ef44527f837688dd86faf648ec",
+      "revision": "258c927924210be905f8908a4be714e5d0daffa8",
       "security_pr": "https://github.com/actions/setup-dotnet/pull/795",
       "upstream_repository": "actions/setup-dotnet",
       "upstream_revision": "349aa191ae05aee6d53db4bcba37bd6980e812fe"
@@ -466,7 +484,7 @@
       "upstream_repository": "actions/setup-java",
       "upstream_revision": "816722acf8fd27c9d1e9ae6ee6085da07e0d44c1"
     },
-    "KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415": {
+    "KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6": {
       "files": [
         {
           "sha256": "84cd55863dbadfb83ed786c0bb4336553c2f4ceb52e102fccec01848f1977387",
@@ -475,22 +493,34 @@
           "source_sha256": "84cd55863dbadfb83ed786c0bb4336553c2f4ceb52e102fccec01848f1977387"
         },
         {
-          "sha256": "9fcb7527cb63a36e0a0dd62c5a814486c9ec953147444f2bda858387ac019c4a",
+          "sha256": "a3cb820cc5caa0aad9b58007876688fff69149668a02538779de78bac6add083",
           "snapshot": ".github/security/actions/setup-node/package.json",
           "source": "package.json",
-          "source_sha256": "9fcb7527cb63a36e0a0dd62c5a814486c9ec953147444f2bda858387ac019c4a"
+          "source_sha256": "a3cb820cc5caa0aad9b58007876688fff69149668a02538779de78bac6add083"
         },
         {
-          "sha256": "a7189104dc4017ec7333e0a4eee73edc903bb224f07514fcbb9a6b0f9a453449",
+          "sha256": "90c9a190094f6078757b940c2f271699f845b5adece4f7ceb9e91d5495c5ff7d",
           "snapshot": ".github/security/actions/setup-node/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "a7189104dc4017ec7333e0a4eee73edc903bb224f07514fcbb9a6b0f9a453449"
+          "source_sha256": "90c9a190094f6078757b940c2f271699f845b5adece4f7ceb9e91d5495c5ff7d"
         },
         {
           "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
           "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
           "source": ".lsf-source/verify-installed-deepmerge.mjs",
           "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
+        },
+        {
+          "sha256": "4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d",
+          "snapshot": ".github/security/actions/setup-node-minimatch/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-minimatch.mjs",
+          "source_sha256": "4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d"
+        },
+        {
+          "sha256": "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492",
+          "snapshot": ".github/security/actions/setup-node-minimatch/bounds.test.mjs.snapshot",
+          "source": ".lsf-source/minimatch-bounds.test.mjs",
+          "source_sha256": "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492"
         }
       ],
       "kind": "npm",
@@ -501,7 +531,7 @@
         "source_sha256": "84cd55863dbadfb83ed786c0bb4336553c2f4ceb52e102fccec01848f1977387"
       },
       "repository": "KirilsTurkins/lsf-setup-node",
-      "revision": "fdae00b14e855eb751452bc70c64dde286270415",
+      "revision": "34275fdec80b5be172c3327cadef76aa2f3b31c6",
       "security_pr": "https://github.com/actions/setup-node/pull/1653",
       "upstream_repository": "actions/setup-node",
       "upstream_revision": "949feb2413d6458794dcd2491c4babbbce0c15c1"

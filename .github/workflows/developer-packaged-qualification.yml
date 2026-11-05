@@ -215,7 +215,7 @@ jobs:
         run: |
           cd "$RUNNER_TEMP/packaged-support"
           python3 -I -B dev_packaged_linux_host.py --inputs inputs.json --output "$RUNNER_TEMP/packaged-linux"
-      - uses: KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
       - name: Execute the generated terminal devcontainer against a separate explicit SSH peer
