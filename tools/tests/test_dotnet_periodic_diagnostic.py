@@ -24,7 +24,7 @@ class PeriodicDiagnosticTests(unittest.TestCase):
         pins={
             'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6':'KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477',
             'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1':'KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13',
-            'actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68':'KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec',
+            'actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68':'KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8',
             'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97':'KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8',
             'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9':'KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16',
             'bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613':'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce',
