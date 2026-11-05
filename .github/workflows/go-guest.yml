@@ -264,7 +264,7 @@ jobs:
           test "$(stat --format=%s "$RUNNER_TEMP/go-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/go-guest-source.sha"
       - name: Retain the exact reviewed command contract input
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: go-guest-command-contract-${{ github.sha }}
           path: |
@@ -314,7 +314,7 @@ jobs:
           out="$RUNNER_TEMP/go-guest-tools"
           cp "$HOME/.cargo/bin/componentize-go" "$(command -v wasm-tools)" "$out/"
           sha256sum "$out/componentize-go" "$out/wasm-tools" > "$out/tools.sha256"
-      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: go-guest-tools-${{ github.sha }}
           path: |
@@ -465,7 +465,7 @@ jobs:
         run: python3 tools/diagnose_go_entry_frames.py --diagnostic "$RUNNER_TEMP/go-entry-differential" --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-entry-private-frames"
       - name: Retain successful and failed upstream observations
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: go-guest-upstream-${{ github.sha }}
           path: |
@@ -733,7 +733,7 @@ jobs:
         run: python3 -B tools/replay_go_standard_entropy.py --acquired "$RUNNER_TEMP/go-entropy-original-inputs" --output "$RUNNER_TEMP/go-entropy-authority-replay"
       - name: Retain bounded same-component source and signed observations
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: go-entropy-authority-replay-${{ github.sha }}
           path: |
@@ -886,7 +886,7 @@ jobs:
         run: python3 -B tools/qualify_go_entropy_retained.py --acquired "$RUNNER_TEMP/go-entropy-retained-inputs" --output "$RUNNER_TEMP/go-entropy-retained"
       - name: Retain distinct historical inputs current host fresh component and signed observations
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: go-entropy-retained-${{ github.sha }}
           path: |

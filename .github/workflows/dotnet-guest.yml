@@ -118,7 +118,7 @@ jobs:
           test "$(stat --format=%s "$RUNNER_TEMP/dotnet-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/dotnet-guest-source.sha"
       - name: Retain the exact reviewed command contract input
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-guest-command-contract-${{ github.sha }}
           path: |
@@ -254,7 +254,7 @@ jobs:
           --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
           --output "$RUNNER_TEMP/dotnet-published-prepared"
       - name: Retain identity-checked normal task prerequisites
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-published-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/dotnet-published-prepared/
@@ -266,7 +266,7 @@ jobs:
           --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
           --output "$RUNNER_TEMP/dotnet-scratch-prepared"
       - name: Retain identity-checked normal task prerequisites
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-scratch-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/dotnet-scratch-prepared/
@@ -307,7 +307,7 @@ jobs:
         run: python3 -B -m unittest tools.tests.test_dotnet_closed_io -v
       - name: Retain output and failed attempts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-guest-qualification-${{ github.sha }}
           path: |
@@ -493,7 +493,7 @@ jobs:
           --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
       - name: Retain ordinary Console RNG and Task observations including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-ordinary-runtime-${{ github.sha }}
           path: |
@@ -633,7 +633,7 @@ jobs:
           --output "$RUNNER_TEMP/dotnet-closed-filesystem"
       - name: Retain bounded filesystem observations including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-scratch-refusals-${{ github.sha }}
           path: |
@@ -735,7 +735,7 @@ jobs:
           --output "$RUNNER_TEMP/dotnet-published-tasks"
       - name: Retain bounded published task observations including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-published-tasks-${{ github.sha }}
           path: |
@@ -883,7 +883,7 @@ jobs:
       - name: Retain admitted actual helper and results including failures
         timeout-minutes: 2
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-root-return-${{ github.sha }}
           path: ${{ runner.temp }}/dotnet-root-return/public/**

@@ -176,7 +176,7 @@ jobs:
           python3 tools/c_dependency_controls.py --project "$RUNNER_TEMP/c-application-library/projects/greeting" --output "$RUNNER_TEMP/c-dependency-controls"
       - name: Retain compiler and ownership results including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: c-guest-ownership-${{ github.run_id }}
           path: |
@@ -232,7 +232,7 @@ jobs:
           --native-qualification "$RUNNER_TEMP/c-capsule-authoring"
           --output "$RUNNER_TEMP/c-scratch-prepared"
       - name: Retain only this run's verified public C normal products
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: c-scratch-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/c-scratch-prepared/
@@ -324,7 +324,7 @@ jobs:
           --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-outside-capture"
       - name: Retain bounded C standard runtime proof including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: c-standard-facilities-${{ github.run_id }}
           path: |
@@ -503,7 +503,7 @@ jobs:
           --output "$RUNNER_TEMP/c-scratch-refusals"
       - name: Retain bounded diagnostic evidence including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: c-scratch-refusals-${{ github.sha }}
           path: |
@@ -568,7 +568,7 @@ jobs:
           --output "$RUNNER_TEMP/c-closed-filesystem"
       - name: Retain bounded public provenance and actual API results including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: c-closed-filesystem-${{ github.sha }}
           path: |

@@ -82,7 +82,7 @@ jobs:
           --output "$RUNNER_TEMP/java-compiler-diagnostics"
     - name: Retain bounded public identities, actual results and signable package for causal replay
       if: always()
-      uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+      uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: java-compiler-diagnostics-${{ github.sha }}
         retention-days: 3
@@ -227,7 +227,7 @@ jobs:
           --output "$RUNNER_TEMP/dotnet-compiler-diagnostics"
     - name: Retain bounded public identities, actual results and signable package for causal replay
       if: always()
-      uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+      uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: dotnet-compiler-diagnostics-${{ github.sha }}
         retention-days: 3
@@ -462,7 +462,7 @@ jobs:
         "$RUNNER_TEMP/compatibility-public"
 
         echo ''admitted=true'' >> "$GITHUB_OUTPUT"'
-    - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
       if: ${{ always() && steps.public.outputs.admitted == 'true' }}
       with:
         name: compatibility-closure-${{ github.sha }}-${{ matrix.cell }}
@@ -500,7 +500,7 @@ jobs:
       run: python3 -B tools/compatibility_closure_matrix.py assemble --inputs "$RUNNER_TEMP/compatibility-inputs"
         --source-commit "$SOURCE_COMMIT" --preserved "$RUNNER_TEMP/compatibility-preserved"
         --diagnostics "$RUNNER_TEMP/compatibility-current-diagnostics" --output "$RUNNER_TEMP/compatibility-completion.json"
-    - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: compatibility-closure-matrix-${{ github.sha }}
         path: ${{ runner.temp }}/compatibility-completion.json

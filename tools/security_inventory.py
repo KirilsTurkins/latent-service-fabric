@@ -178,10 +178,13 @@ def npm_packages(repo: Path, entry: dict) -> list[Package]:
         bundled_source = (bundled_prefix is not None and path.startswith(bundled_prefix)
                           and dependency.get("inBundle") is True and not dependency.get("resolved"))
         derived_owner = derived and path == f"node_modules/{bundled}"
-        derived_library = (name in libraries and path.rsplit("node_modules/", 1)[-1] == name
-                           and version == libraries[name]["version"]
-                           and dependency.get("resolved") == libraries[name]["resolved"]
-                           and dependency.get("integrity") == libraries[name]["integrity"])
+        library = libraries.get(name, [])
+        candidates = library if isinstance(library, list) else [library]
+        derived_library = (path.rsplit("node_modules/", 1)[-1] == name
+                           and any(version == candidate["version"]
+                                   and dependency.get("resolved") == candidate["resolved"]
+                                   and dependency.get("integrity") == candidate["integrity"]
+                                   for candidate in candidates))
         require(bundled_source or derived_owner or derived_library or (location.scheme == "https" and location.hostname == "registry.npmjs.org"),
                 "unreviewed-npm-registry-or-source")
         require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?", version) is not None,

@@ -48,7 +48,7 @@ jobs:
         run: python3 -B tools/run_dotnet_aggregate_wait_reference.py --admit-evidence --output "$RUNNER_TEMP/dotnet-aggregate-reference-public"
       - name: Retain admitted public reference evidence
         if: always() && steps.evidence.outcome == 'success'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-aggregate-wait-reference-${{ github.sha }}
           retention-days: 3
@@ -66,7 +66,7 @@ jobs:
             ${{ runner.temp }}/dotnet-aggregate-reference-admission.json
       - name: Retain only the closed admission failure projection
         if: always() && steps.evidence.outcome != 'success'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-aggregate-wait-reference-${{ github.sha }}
           retention-days: 3

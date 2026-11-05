@@ -119,7 +119,7 @@ jobs:
           --root "$RUNNER_TEMP" --output "$RUNNER_TEMP/rust-http-thread-public"
       - name: Retain the bounded public diagnostic artifact
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-http-thread-composition-diagnostic-${{ github.sha }}
           path: ${{ runner.temp }}/rust-http-thread-public/**

@@ -15,10 +15,10 @@ SECURITY_ACTION_PIN_INVERSES = (
     ('KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup', '1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce', '9244ec9f4725400c84054e3e6ec97514cadddf53'),
     ('KirilsTurkins/lsf-setup-dotnet', '258c927924210be905f8908a4be714e5d0daffa8', 'f5bcdac7f26977ef44527f837688dd86faf648ec'),
     ('KirilsTurkins/lsf-setup-python', '164c4cbba5d1b03a046ac8bc25ae695bee0667a8', '50257733267ef69f611231aad6b77a62adca7140'),
-    ('KirilsTurkins/lsf-upload-artifact', '5c42799caf30eda69cb2db5da0be2400c47cef16', '01d82cc6ae713563e8d04f36a17af500cf82a6a9'),
+    ('KirilsTurkins/lsf-upload-artifact', 'd74a697ce553b389f4219545e07c97fb8542c64f', '01d82cc6ae713563e8d04f36a17af500cf82a6a9'),
     ('KirilsTurkins/lsf-setup-node', '34275fdec80b5be172c3327cadef76aa2f3b31c6', 'c1136b2d97fe79ef645e9508b2048a222f50a170'),
     ('KirilsTurkins/lsf-setup-java', '63c7977881fc344a6ed464f7ed5e242aedc8d56c', 'f041d6677134ada73c077d0c012bd78164b251a7'),
-    ('KirilsTurkins/lsf-upload-pages-artifact', '78e399e92cd7485cca2752423a3eb0ccf404df77', 'f6fd45bb134f6855d391ed2198e9b3d57d305a05'),
+    ('KirilsTurkins/lsf-upload-pages-artifact', '28d7597d6f6497a5d34e5ecaa1d97c510ce3556b', 'f6fd45bb134f6855d391ed2198e9b3d57d305a05'),
 )
 
 

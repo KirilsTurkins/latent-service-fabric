@@ -60,7 +60,7 @@ jobs:
             --tools "$RUNNER_TEMP/resource-runtime-tools" --output "$RUNNER_TEMP/resource-runtime"
       - name: Retain public source identities raw outcomes positive waits and physical retirement
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-resource-runtime-${{ github.sha }}
           retention-days: 3

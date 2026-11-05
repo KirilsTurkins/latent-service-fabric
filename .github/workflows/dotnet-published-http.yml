@@ -101,7 +101,7 @@ jobs:
         run: python3 -B tools/qualify_dotnet_http_mixed.py --native "$RUNNER_TEMP/mixed-native" --tools "$RUNNER_TEMP/mixed-tools" --output "$RUNNER_TEMP/managed-http-mixed"
       - name: Retain bounded public source build and actual physical evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-http-mixed-${{ github.sha }}
           retention-days: 3
@@ -207,7 +207,7 @@ jobs:
         run: python3 -B tools/qualify_dotnet_published_http.py --native "$RUNNER_TEMP/published-native" --tools "$RUNNER_TEMP/published-tools" --output "$RUNNER_TEMP/published-http"
       - name: Retain bounded public original build and library evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-published-http-${{ github.sha }}
           retention-days: 3
@@ -259,7 +259,7 @@ jobs:
         run: python3 -B tools/replay_dotnet_published_http.py --native "$RUNNER_TEMP/published-native" --output "$RUNNER_TEMP/published-replay"
       - name: Retain public build ancestry and actual signed replay evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-published-http-replay-${{ github.sha }}
           retention-days: 3
@@ -349,7 +349,7 @@ jobs:
         run: python3 -B tools/qualify_dotnet_managed_capacity.py --native "$RUNNER_TEMP/capacity-native" --tools "$RUNNER_TEMP/capacity-tools" --output "$RUNNER_TEMP/managed-capacity"
       - name: Retain bounded public capacity source build and actual owner evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-managed-capacity-${{ github.sha }}
           retention-days: 3
@@ -464,7 +464,7 @@ jobs:
         run: test -z "$(git status --porcelain --untracked-files=normal)"
       - name: Retain only bounded public diagnostic records and original failure
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-periodic-diagnostic-${{ github.sha }}
           retention-days: 3

@@ -137,7 +137,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects"
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-objects-${{ github.sha }}
           path: |
@@ -192,7 +192,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --netlabel
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-netlabel-objects-${{ github.sha }}
           path: |
@@ -264,7 +264,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --netport
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-netport-objects-${{ github.sha }}
           path: |
@@ -340,7 +340,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --sidcache
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-sidcache-objects-${{ github.sha }}
           path: |
@@ -418,7 +418,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --avc
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-avc-objects-${{ github.sha }}
           path: |
@@ -498,7 +498,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --audit
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-audit-objects-${{ github.sha }}
           path: |
@@ -582,7 +582,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --bind
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-bind-objects-${{ github.sha }}
           path: |
@@ -669,7 +669,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --route
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-route-objects-${{ github.sha }}
           path: |
@@ -759,7 +759,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --route-cache
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-route-cache-objects-${{ github.sha }}
           path: |
@@ -850,7 +850,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --packet
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-packet-objects-${{ github.sha }}
           path: |
@@ -945,7 +945,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --device
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-device-objects-${{ github.sha }}
           path: |
@@ -1047,7 +1047,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --firmware
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-firmware-objects-${{ github.sha }}
           path: |
@@ -1154,7 +1154,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --registration
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-registration-objects-${{ github.sha }}
           path: |
@@ -1273,7 +1273,7 @@ jobs:
           --output "$RUNNER_TEMP/stream-kernel-objects" --recipient
       - name: Retain bounded configuration compiler objects and failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-kernel-recipient-objects-${{ github.sha }}
           path: |

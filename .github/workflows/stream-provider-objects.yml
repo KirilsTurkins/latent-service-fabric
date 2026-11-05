@@ -41,7 +41,7 @@ jobs:
           --admit --output "$RUNNER_TEMP/stream-provider-objects"
       - name: Retain only admitted object evidence
         if: ${{ always() && steps.admission.outputs.admitted == 'true' }}
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: protected-stream-objects-${{ github.sha }}
           retention-days: 7
@@ -61,7 +61,7 @@ jobs:
             ${{ runner.temp }}/stream-provider-objects/objects/**/*.o
       - name: Retain only the bounded admission-failure receipt
         if: ${{ always() && steps.admission.outputs.fallback == 'true' }}
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: protected-stream-objects-FAILED-${{ github.sha }}
           retention-days: 7
@@ -337,7 +337,7 @@ jobs:
           --admit --output "$RUNNER_TEMP/stream-provider-classdir-objects"
       - name: Retain only admitted object evidence
         if: ${{ always() && (steps.admission.outputs.admitted == 'true' || steps.kernfs_admission.outputs.admitted == 'true' || steps.directory_admission.outputs.admitted == 'true' || steps.layout_admission.outputs.admitted == 'true' || steps.post_init_admission.outputs.admitted == 'true' || steps.constructor_mmio_admission.outputs.admitted == 'true' || steps.vp_admission.outputs.admitted == 'true' || steps.msi_admission.outputs.admitted == 'true' || steps.q35_admission.outputs.admitted == 'true' || steps.msi_descriptor_admission.outputs.admitted == 'true' || steps.node_bootstrap_admission.outputs.admitted == 'true' || steps.node_geometry_admission.outputs.admitted == 'true' || steps.node_capacity_admission.outputs.admitted == 'true' || steps.node_capacity_facts_admission.outputs.admitted == 'true') }}
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: protected-stream-classdir-objects-${{ github.sha }}
           retention-days: 7
@@ -358,7 +358,7 @@ jobs:
             ${{ runner.temp }}/stream-provider-classdir-objects/objects/**/*.o
       - name: Retain only the bounded admission-failure receipt
         if: ${{ always() && (steps.admission.outputs.fallback == 'true' || steps.kernfs_admission.outputs.fallback == 'true' || steps.directory_admission.outputs.fallback == 'true' || steps.layout_admission.outputs.fallback == 'true' || steps.post_init_admission.outputs.fallback == 'true' || steps.constructor_mmio_admission.outputs.fallback == 'true' || steps.vp_admission.outputs.fallback == 'true' || steps.msi_admission.outputs.fallback == 'true' || steps.q35_admission.outputs.fallback == 'true' || steps.msi_descriptor_admission.outputs.fallback == 'true' || steps.node_bootstrap_admission.outputs.fallback == 'true' || steps.node_geometry_admission.outputs.fallback == 'true' || steps.node_capacity_admission.outputs.fallback == 'true' || steps.node_capacity_facts_admission.outputs.fallback == 'true') }}
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: protected-stream-classdir-objects-FAILED-${{ github.sha }}
           retention-days: 7

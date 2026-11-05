@@ -97,7 +97,7 @@
         {
           "name": "Retain original bounded proof including failures",
           "if": "always()",
-          "uses": "KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16", # v7.0.2 + upstream changes + LSF security fixes
+          "uses": "KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f", # v7.0.2 + upstream changes + LSF security fixes
           "with": {
             "name": "c-http-post-${{ github.run_id }}",
             "path": "${{ runner.temp }}/c-http-post/qualified.json\n${{ runner.temp }}/c-http-post/FAILED.json\n${{ runner.temp }}/c-http-post/logs/**\n${{ runner.temp }}/c-http-post/owner-inputs/**\n${{ runner.temp }}/c-http-post/project/**\n${{ runner.temp }}/c-http-post/build/**\n${{ runner.temp }}/c-http-post/native-build/logs/**\n${{ runner.temp }}/c-http-post/native-build/native/native-tuple.json\n${{ runner.temp }}/c-http-post/node/qualified.json\n${{ runner.temp }}/c-http-post/node/FAILED.json\n${{ runner.temp }}/c-http-post/node/signed/release-set.json\n${{ runner.temp }}/c-http-post/node/signed/c-thread-runtime/package/**\n${{ runner.temp }}/c-http-post/node/signed/c-thread-runtime/evidence/**\n${{ runner.temp }}/c-http-post/node/signed/c-thread-runtime/deployment.json\n${{ runner.temp }}/c-http-post/node/controls/**\n${{ runner.temp }}/c-http-post/node/commands/logs/**\n${{ runner.temp }}/c-http-post/node/invocation-*.json\n${{ runner.temp }}/c-http-post/node/barrier-*.json\n${{ runner.temp }}/c-http-post/node/peer-*.json\n${{ runner.temp }}/c-http-post/node/retirement-*.json\n${{ runner.temp }}/c-http-post/node/*.stdout\n${{ runner.temp }}/c-http-post/node/*.stderr",

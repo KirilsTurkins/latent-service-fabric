@@ -225,7 +225,7 @@ jobs:
       - name: Compile and transpile the actual derived source splicer
         run: python3 tools/build_typescript_source_splicer.py --tools "$RUNNER_TEMP/typescript-splicer-tools" --output "$RUNNER_TEMP/typescript-source-splicer"
       - name: Freeze reusable source compiler products
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-source-splicer-input-${{ github.sha }}
           path: |
@@ -236,7 +236,7 @@ jobs:
           retention-days: 7
       - name: Retain actual source compiler products and failed attempts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-source-splicer-${{ github.sha }}
           path: |
@@ -294,7 +294,7 @@ jobs:
       - name: Link the explicit source-owned asynchronous import engine
         run: python3 tools/build_typescript_native_engine.py --library "$RUNNER_TEMP/typescript-promise-library" --source-splicer-build "$RUNNER_TEMP/typescript-source-splicer-input" --output "$RUNNER_TEMP/typescript-native-import-engine" --wit-bindgen "$RUNNER_TEMP/typescript-promise-tools/wit-bindgen"
       - name: Freeze the exact engine for actual Fetch component construction
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-engine-input-${{ github.sha }}
           path: |
@@ -304,7 +304,7 @@ jobs:
           retention-days: 7
       - name: Retain source identities, normal products and failed attempts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-promise-library-${{ github.sha }}
           path: |
@@ -384,7 +384,7 @@ jobs:
         run: python3 tools/qualify_typescript_fetch_component.py --tools "$RUNNER_TEMP/typescript-fetch-tools" --engine "$RUNNER_TEMP/typescript-fetch-engine" --splicer "$RUNNER_TEMP/typescript-fetch-splicer" --output "$RUNNER_TEMP/typescript-fetch-component"
       - name: Retain actual component, input identities and failed attempts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-component-${{ github.sha }}
           path: |
@@ -416,7 +416,7 @@ jobs:
           test "$(stat --format=%s "$RUNNER_TEMP/typescript-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/typescript-guest-source.sha"
       - name: Retain the exact reviewed command contract input
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-guest-command-contract-${{ github.sha }}
           path: |
@@ -524,7 +524,7 @@ jobs:
       - name: Sign approved and undeclared Math.random components with the exact normal products
         run: python3 -B tools/qualify_typescript_standard_entropy.py --prepared-qualification "$RUNNER_TEMP/typescript-capsule-dependencies" --tools "$RUNNER_TEMP/typescript-guest-tools" --output "$RUNNER_TEMP/typescript-standard-entropy"
       - name: Freeze exact-source existing native products for signed Fetch
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-native-input-${{ github.sha }}
           path: |
@@ -540,7 +540,7 @@ jobs:
           retention-days: 7
       - name: Preserve attempted runtime test evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-guest-runtime-${{ github.sha }}
           path: |
@@ -672,7 +672,7 @@ jobs:
         run: python3 tools/qualify_typescript_fetch_runtime.py --tools "$RUNNER_TEMP/typescript-signed-fetch-tools" --engine "$RUNNER_TEMP/typescript-signed-fetch-engine" --splicer "$RUNNER_TEMP/typescript-signed-fetch-splicer" --prepared-qualification "$RUNNER_TEMP/typescript-signed-fetch-native" --output "$RUNNER_TEMP/typescript-signed-fetch"
       - name: Retain finite signed Fetch attempts and exact input identities
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-signed-fetch-${{ github.sha }}
           path: |
@@ -744,7 +744,7 @@ jobs:
           python3 -B "$RUNNER_TEMP/diagnose-typescript-fetch.py" --attempt "$RUNNER_TEMP/typescript-original-fetch" --native "$RUNNER_TEMP/typescript-original-native" --output "$RUNNER_TEMP/typescript-fetch-frames"
       - name: Retain only closed observations and original public CLI rows
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-private-frames-${{ github.sha }}
           path: |
@@ -820,7 +820,7 @@ jobs:
         run: python3 -B "$RUNNER_TEMP/diagnose-typescript-boundaries.py" --probes "$RUNNER_TEMP/typescript-boundary-probes" --native "$RUNNER_TEMP/typescript-boundary-native" --engine "$RUNNER_TEMP/typescript-boundary-engine" --splicer "$RUNNER_TEMP/typescript-boundary-splicer" --tools "$RUNNER_TEMP/typescript-boundary-tools" --output "$RUNNER_TEMP/typescript-fetch-boundaries"
       - name: Retain closed same-SDK observations and actual application build evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-boundaries-${{ github.sha }}
           path: |
@@ -861,7 +861,7 @@ jobs:
         run: python3 -B tools/replay_typescript_standard_entropy.py --inputs "$RUNNER_TEMP/typescript-entropy-original-inputs" --output "$RUNNER_TEMP/typescript-entropy-policy-replay"
       - name: Retain source-bound policy transitions outcomes and physical cleanup
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-entropy-policy-replay-${{ github.sha }}
           path: |
@@ -913,7 +913,7 @@ jobs:
         run: python3 -B tools/qualify_typescript_standard_clocks.py --acquired "$RUNNER_TEMP/typescript-clock-original-inputs" --engine "$RUNNER_TEMP/typescript-clock-original-engine" --tools "$RUNNER_TEMP/typescript-clock-tools" --output "$RUNNER_TEMP/typescript-standard-clocks"
       - name: Retain source-bound compiler refusals authority results and physical cleanup
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-standard-clocks-${{ github.sha }}
           path: |
@@ -973,7 +973,7 @@ jobs:
           --output "$RUNNER_TEMP/typescript-scratch-refusals"
       - name: Retain bounded public refusal and source identity receipts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-scratch-refusals-${{ github.sha }}
           path: |
@@ -1047,7 +1047,7 @@ jobs:
           --output "$RUNNER_TEMP/typescript-runtime-retirement"
       - name: Retain bounded component provenance actual pending owners and every idle boundary
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-runtime-retirement-${{ github.sha }}
           path: |

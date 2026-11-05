@@ -31,7 +31,7 @@ jobs:
           python3 -B tools/qualify_java_checkpoint_context.py --output "$RUNNER_TEMP/checkpoint-context"
       - name: Retain bounded original and corrected compiler observations
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-checkpoint-context-${{ github.sha }}
           retention-days: 3
@@ -93,7 +93,7 @@ jobs:
             --wasi-sdk "$LSF_JAVA_CLASSINFO_WASI_SDK"
       - name: Retain bounded source-bound compiler diagnostics
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-classinfo-fibers-${{ github.sha }}
           retention-days: 3

@@ -181,7 +181,7 @@ jobs:
           python3 tools/qualify_owned_native_threads.py --transformer "$RUNNER_TEMP/rust-stack-transform/debug/latent-rust-std-stack-source-transform" --wasm-tools "$(command -v wasm-tools)" --cargo-inventory "$RUNNER_TEMP/owned-native-child-native.json" --native-target "$GITHUB_WORKSPACE/target" --output "$RUNNER_TEMP/owned-native-children"
       - name: Retain bounded standard clock evidence including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-standard-clocks-${{ github.run_id }}
           path: |
@@ -245,7 +245,7 @@ jobs:
           --output "$RUNNER_TEMP/rust-git-components"
       - name: Retain bounded Git component qualification observations including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-git-components-${{ github.sha }}
           path: |
@@ -314,7 +314,7 @@ jobs:
           --output "$RUNNER_TEMP/rust-standard-stdio"
       - name: Retain bounded stdio observations including failed attempts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-standard-stdio-${{ github.sha }}
           path: |
@@ -378,7 +378,7 @@ jobs:
           --output "$RUNNER_TEMP/rust-standard-entropy"
       - name: Retain bounded entropy observations including failed attempts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-standard-entropy-${{ github.sha }}
           path: |
@@ -442,7 +442,7 @@ jobs:
           --output "$RUNNER_TEMP/rust-compatibility"
       - name: Retain bounded diagnostic evidence including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-compatibility-${{ github.sha }}
           path: |
@@ -504,7 +504,7 @@ jobs:
           --output "$RUNNER_TEMP/rust-scratch-refusals"
       - name: Retain bounded diagnostic evidence including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-scratch-refusals-${{ github.sha }}
           path: |
@@ -565,7 +565,7 @@ jobs:
           --output "$RUNNER_TEMP/rust-dependency-matrix"
       - name: Retain bounded varied-graph component and source observations including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-dependency-matrix-${{ github.sha }}
           path: |
@@ -604,7 +604,7 @@ jobs:
           python3 tools/qualify_rust_git_dependencies.py --cargo "$(rustup which --toolchain 1.97.1 cargo)" --output "$RUNNER_TEMP/rust-git-closure"
       - name: Retain source and offline Git observations including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-git-closure-${{ github.sha }}
           path: |
@@ -721,7 +721,7 @@ jobs:
           cargo test --locked -p latent-signing --test guest_provenance
       - name: Retain source-bound authoring evidence including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-capsule-authoring-${{ github.run_id }}
           path: |
@@ -796,7 +796,7 @@ jobs:
           --prepared-qualification "$RUNNER_TEMP/rust-capsule-dependencies"
           --output "$RUNNER_TEMP/rust-git-prepared"
       - name: Retain identity-checked public Git qualification prerequisites
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-git-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/rust-git-prepared/
@@ -808,7 +808,7 @@ jobs:
           --native-qualification "$RUNNER_TEMP/rust-capsule-authoring"
           --output "$RUNNER_TEMP/rust-scratch-prepared"
       - name: Retain identity-checked normal scratch prerequisites
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-scratch-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/rust-scratch-prepared/
@@ -864,7 +864,7 @@ jobs:
           --output "$RUNNER_TEMP/rust-scratch-replay"
       - name: Retain bounded public provenance and actual API results including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-scratch-replay-${{ github.sha }}
           path: |

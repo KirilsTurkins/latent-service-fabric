@@ -63,7 +63,7 @@ jobs:
         run: python3 tools/qualify_go_smtp_tls_runtime.py --reference-go "$RUNNER_TEMP/go-smtp-tls-tools/go/bin/go" --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/go-smtp-tls-runtime"
       - name: Retain bounded compiler and owner evidence including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: go-smtp-tls-runtime-${{ github.sha }}
           path: |
