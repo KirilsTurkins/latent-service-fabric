@@ -23,6 +23,7 @@
           ".github/workflows/stream-native-factory-owner.yml",
           "apps/**",
           "crates/latent-streams/**",
+          "crates/latent-component-threading/**",
           "examples/renderer-profile/package.json",
           "examples/renderer-profile/package-lock.json",
           "crates/latent-capabilities/src/broker/pools/control.rs",
@@ -34,6 +35,8 @@
           "tools/host_stream_kernel_native_vm.py",
           "tools/host_stream_kernel_native_vm_inputs.py",
           "tools/tests/test_kernel_native_constructor_vm.py",
+          "tools/ci_tool_graph.py",
+          "tools/tests/test_ci_contracts.py",
           "tools/ci/suites.json",
           "tools/ci/suites.d/outbound-streams.json",
           "research/standard-outbound/linux-6.12-lineage/native-constructor-vm-init.c",
@@ -57,7 +60,7 @@
     "native-kernel-vm",
     "native-owner"
   ],
-  "reviewReason": "Default-off selected q35 INTx diagnostic with exact original actor, saved-command restoration, bounded loss-detecting trace, and existing IRQ/TCP exclusions.",
+  "reviewReason": "Trigger the existing feature-branch owner for captured threading and CI source inputs.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-native-factory-owner.yml"
 }
