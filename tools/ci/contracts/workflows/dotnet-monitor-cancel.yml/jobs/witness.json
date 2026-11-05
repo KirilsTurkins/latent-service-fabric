@@ -40,7 +40,7 @@
       },
       {
         "name": "Check exact owner, refusal and bounded-retention controls",
-        "run": "mkdir -p \"$RUNNER_TEMP/dotnet-monitor-cancel\"\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_dotnet_monitor_cancel -v\n"
+        "run": "mkdir -p \"$RUNNER_TEMP/dotnet-monitor-cancel\"\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_dotnet_monitor_cancel tools.tests.test_dotnet_current_aggregate_chain -v\n"
       },
       {
         "name": "Fetch only the verified native producer source identity",

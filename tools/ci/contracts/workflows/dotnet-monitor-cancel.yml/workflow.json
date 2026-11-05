@@ -9,7 +9,8 @@
     "on": {
       "push": {
         "branches": [
-          "test/dotnet-monitor-cancel-20261104"
+          "test/dotnet-monitor-cancel-20261104",
+          "fix/dotnet-aggregate-evidence-20261105"
         ],
         "paths": [
           ".github/workflows/dotnet-monitor-cancel.yml",
@@ -17,6 +18,8 @@
           "tools/dotnet_monitor_cancel_node.py",
           "tools/dotnet_monitor_cancel_fixture.py",
           "tools/qualify_dotnet_monitor_cancel.py",
+          "tools/qualify_dotnet_finite_waits.py",
+          "tools/tests/test_dotnet_current_aggregate_chain.py",
           "tools/admit_dotnet_monitor_cancel_evidence.py",
           "tools/tests/test_dotnet_monitor_cancel.py",
           "tools/wasmtime_48_0_8_678b_native_products.py"
