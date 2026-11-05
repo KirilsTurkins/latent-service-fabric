@@ -12,6 +12,9 @@ approve release until the trusted durable opener binds a store. After restart,
 the host must select and validate the intended store before binding it.
 This library port is not yet installed in the transaction coordinator; S3
 references do not acquire this local retention guarantee.
+Standalone startup rejects required durable payload references until its
+physical blob inventory is installed; logical records alone cannot prove bytes
+are present.
 
 ## Responsibilities and architecture
 
