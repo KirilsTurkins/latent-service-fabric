@@ -357,3 +357,52 @@ fn bounded_recovery_pages_stay_with_original_view_and_refuse_corruption() {
         Err(LocalBlobError::Corrupt)
     );
 }
+
+#[test]
+fn equal_bytes_in_two_tenants_have_independent_physical_custody() {
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let state = database(state_root.path(), true, "payload-state-a");
+    let owner =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let alice = put(&owner, b"equal");
+    let bob_scope = TenantId("bob".into());
+    let mut writer = owner
+        .create(&bob_scope, "text/plain", Some(5), &|| Ok(()))
+        .unwrap();
+    writer.write(0, b"equal", &|| Ok(())).unwrap();
+    let bob = writer.seal(&|| Ok(())).unwrap();
+    assert_eq!(alice.digest, bob.digest);
+    assert!(matches!(
+        owner.open_read(&scope(), &bob, &|| Ok(())),
+        Err(LocalBlobError::PermissionDenied)
+    ));
+    let alice_pin = owner
+        .capture_durable_reference(&scope(), &alice, &|| Ok(()))
+        .unwrap();
+    let bob_pin = owner
+        .capture_durable_reference(&bob_scope, &bob, &|| Ok(()))
+        .unwrap();
+    let alice_ref = reference(&alice_pin, PayloadOwnerKind::Result, 1, "local", 1);
+    let mut bob_ref = reference(&bob_pin, PayloadOwnerKind::Effect, 2, "local", 1);
+    bob_ref.owner.tenant = bob_scope.0.clone();
+    update(
+        &state,
+        &[
+            (None, Some(alice_ref.clone())),
+            (None, Some(bob_ref.clone())),
+        ],
+    );
+    drop((alice_pin, bob_pin));
+    update(&state, &[(Some(alice_ref), None)]);
+    assert!(owner
+        .release_durable_reference(&scope(), &alice, &state, &|| Ok(()))
+        .unwrap());
+    assert_eq!(owner.reclaim(4, &|| Ok(())).unwrap().objects, 1);
+    assert_eq!(
+        owner.release_durable_reference(&bob_scope, &bob, &state, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    );
+    let reader = owner.open_read(&bob_scope, &bob, &|| Ok(())).unwrap();
+    assert_eq!(read(&reader, 0, 5).unwrap(), b"equal");
+}
