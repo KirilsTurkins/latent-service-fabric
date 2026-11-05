@@ -8,6 +8,7 @@ mod codec;
 pub mod entities;
 pub(crate) mod migration;
 pub(crate) mod offline;
+mod payload;
 mod validation;
 pub mod version;
 use crate::{
@@ -23,6 +24,7 @@ use latent_core::{
     transaction_contract::{self as contract, ExpectedVersion, Precondition, Value},
     StateNamespaceId, TenantId,
 };
+pub use payload::{describe_state_payload_owner, verify_state_payload_reference};
 use std::{
     collections::BTreeMap,
     sync::atomic::{AtomicU64, Ordering},
