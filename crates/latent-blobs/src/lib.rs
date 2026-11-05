@@ -2,22 +2,8 @@
 
 #![forbid(unsafe_code)]
 
-use latent_core::{ActivationId, BlobDigest, BoxFuture, Metadata, PlatformError, TenantId};
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BlobReference {
-    pub digest: BlobDigest,
-    pub size_bytes: u64,
-    pub media_type: String,
-    pub tenant: TenantId,
-    pub metadata: Metadata,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BlobRange {
-    pub offset: u64,
-    pub length: u64,
-}
+use latent_core::{ActivationId, BoxFuture, Metadata, PlatformError, TenantId};
+pub use latent_local_blobs::{BlobRange, BlobReference};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BlobWriteSession {
@@ -93,12 +79,55 @@ pub trait BlobTransfer: Send + Sync {
 
 /// The local durable filesystem profile requires Linux descriptor-relative I/O.
 #[cfg(target_os = "linux")]
-pub mod local;
+pub mod local {
+    pub use latent_local_blobs::local::*;
+
+    // S3 keeps the exact same protected filesystem implementation private.
+    mod model {
+        pub(super) use latent_local_blobs::local::LocalBlobError;
+        pub(super) type Result<T> = std::result::Result<T, LocalBlobError>;
+    }
+    #[path = "fs.rs"]
+    pub(crate) mod fs;
+}
 
 /// Capability-governed adapter on the configured shared blocking owner.
 #[cfg(target_os = "linux")]
-pub mod provider;
+pub use latent_local_blobs::provider;
 
 /// Authenticated, version-pinned S3 blobs with a finite private cleanup inventory.
 #[cfg(target_os = "linux")]
 pub mod s3;
+
+#[cfg(all(test, target_os = "linux"))]
+mod local_facade_type_tests {
+    use std::any::TypeId;
+
+    #[test]
+    fn local_facade_reexports_the_original_custody_types() {
+        assert_eq!(
+            TypeId::of::<crate::BlobReference>(),
+            TypeId::of::<latent_local_blobs::BlobReference>()
+        );
+        assert_eq!(
+            TypeId::of::<crate::BlobRange>(),
+            TypeId::of::<latent_local_blobs::BlobRange>()
+        );
+        assert_eq!(
+            TypeId::of::<crate::local::LocalBlobStore>(),
+            TypeId::of::<latent_local_blobs::local::LocalBlobStore>()
+        );
+        assert_eq!(
+            TypeId::of::<crate::local::LocalDurablePin>(),
+            TypeId::of::<latent_local_blobs::local::LocalDurablePin>()
+        );
+        assert_eq!(
+            TypeId::of::<crate::provider::CapturedLocalPayload>(),
+            TypeId::of::<latent_local_blobs::provider::CapturedLocalPayload>()
+        );
+        assert_eq!(
+            TypeId::of::<crate::provider::LocalBlobProvider>(),
+            TypeId::of::<latent_local_blobs::provider::LocalBlobProvider>()
+        );
+    }
+}

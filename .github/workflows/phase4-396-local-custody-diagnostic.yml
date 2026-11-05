@@ -1,0 +1,57 @@
+name: Phase 4 local custody diagnostic
+
+on:
+  push:
+    branches:
+      - diag/phase4-396-local-custody-20261105
+
+permissions:
+  contents: read
+
+jobs:
+  linux-custody:
+    name: Original custody inventory and focused Linux tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Verify original graph and unchanged custody sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p custody-diagnostic
+          python3 -B tools/phase4_396_local_custody_diagnostic.py graph | tee custody-diagnostic/graph.txt
+          cargo metadata --locked --format-version 1 --no-deps > custody-diagnostic/metadata.json
+      - name: Build and verify the original test inventories
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked -p latent-local-blobs --lib -- --list 2>&1 | tee custody-diagnostic/local-list.txt
+          cargo test --locked -p latent-blobs --lib -- --list 2>&1 | tee custody-diagnostic/blobs-list.txt
+          cargo test --locked -p latent-commit --lib -- --list 2>&1 | tee custody-diagnostic/commit-list.txt
+          python3 -B tools/phase4_396_local_custody_diagnostic.py inventory | tee custody-diagnostic/inventory.txt
+      - name: Run retained local, S3, identity and commit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked -p latent-local-blobs --lib -- --test-threads=1 2>&1 | tee custody-diagnostic/local-test.txt
+          cargo test --locked -p latent-blobs --lib -- --test-threads=1 2>&1 | tee custody-diagnostic/blobs-test.txt
+          cargo test --locked -p latent-commit --lib -- --test-threads=1 2>&1 | tee custody-diagnostic/commit-test.txt
+          git diff --exit-code HEAD -- Cargo.lock
+      - name: Retain focused diagnostic
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16
+        with:
+          name: phase4-396-local-custody-diagnostic
+          path: custody-diagnostic/
+          if-no-files-found: warn
+          retention-days: 7
