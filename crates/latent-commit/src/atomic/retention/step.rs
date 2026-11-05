@@ -214,13 +214,38 @@ fn retire_body(
         .map_err(|_| AtomicError::Corrupt)?,
     };
     let namespace = view.get(&namespace_key)?.ok_or(AtomicError::Corrupt)?;
-    if NamespaceRecord::decode(&namespace)
-        .map_err(|_| AtomicError::Corrupt)?
-        .version
-        .incarnation
-        != crate::atomic::incarnation(&record.key)?
-    {
+    let mut namespace_record =
+        NamespaceRecord::decode(&namespace).map_err(|_| AtomicError::Corrupt)?;
+    if namespace_record.version.incarnation != crate::atomic::incarnation(&record.key)? {
         return Err(AtomicError::Conflict);
+    }
+    let released = release_result_reference(view, record, batch)?;
+    if let Some(bytes) = released {
+        usage.payload_bytes = usage
+            .payload_bytes
+            .checked_sub(bytes)
+            .ok_or(AtomicError::Corrupt)?;
+        namespace_record.pins.payload_references = namespace_record
+            .pins
+            .payload_references
+            .checked_sub(1)
+            .ok_or(AtomicError::Corrupt)?;
+        let expected = batch
+            .expectations
+            .iter()
+            .find(|row| row.key == namespace_key)
+            .ok_or(AtomicError::Corrupt)?;
+        if expected.value.as_deref() != Some(namespace.as_slice()) {
+            return Err(AtomicError::Conflict);
+        }
+        batch.mutations.push(RowMutation {
+            key: namespace_key,
+            value: Some(
+                namespace_record
+                    .encode()
+                    .map_err(|_| AtomicError::Corrupt)?,
+            ),
+        });
     }
     let mut protected = record.clone();
     protected.clock_floor = clock.time.unix_millis;
@@ -240,6 +265,49 @@ fn retire_body(
     replace(batch, result_key, Some(old), marker);
     replace(batch, usage_key, usage_bytes, usage.encode()?);
     Ok(reclaimed)
+}
+
+fn release_result_reference(
+    view: &ReadView,
+    record: &CommandRecord,
+    batch: &mut AtomicBatch,
+) -> Result<Option<u64>, AtomicError> {
+    use latent_state::payload_references::{
+        PayloadOwnerKind, PreparedPayloadReferences, MAX_REFERENCE_BYTES,
+    };
+    let anchor = crate::atomic::payload_links::anchor(record)?;
+    let Some(links) = crate::atomic::payload_links::read(view, record)? else {
+        if view
+            .get_bounded(&anchor.row_key()?, MAX_REFERENCE_BYTES)?
+            .is_some()
+        {
+            return Err(AtomicError::Corrupt);
+        }
+        return Ok(None);
+    };
+    crate::atomic::payload_links::verify(view, record, &links)?;
+    let Some(reference) = links
+        .references
+        .iter()
+        .find(|reference| reference.owner.kind == PayloadOwnerKind::Result)
+        .cloned()
+    else {
+        return Ok(None);
+    };
+    let mut remaining = links.clone();
+    remaining
+        .references
+        .retain(|row| row.owner.kind != PayloadOwnerKind::Result);
+    let mut plan = PreparedPayloadReferences::prepare(view, &[(Some(reference.clone()), None)])?;
+    plan.replace_links(
+        view,
+        Some(&links),
+        (!remaining.references.is_empty()).then_some(&remaining),
+    )?;
+    // The step's single accounting rebuild incorporates these metadata rows and
+    // the modified upper usage ledger after all mutations have been assembled.
+    plan.append_to(batch)?;
+    Ok(Some(reference.payload.size))
 }
 
 fn replace(batch: &mut AtomicBatch, key: RowKey, expected: Option<Vec<u8>>, value: Vec<u8>) {

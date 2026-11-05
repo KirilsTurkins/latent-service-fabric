@@ -136,3 +136,126 @@ fn rejection_reference_rejects_consistent_catalogue_with_wrong_content_digest() 
         Err(AtomicError::Corrupt)
     );
 }
+
+#[test]
+fn response_expiry_releases_only_its_shared_reference_and_keeps_effect_linkage() {
+    use latent_state::embedded::ExpectedRow;
+    let (_dir, store, effects) = setup();
+    let admitted = claim(&store, input("shared-retention"));
+    let view = store.snapshot().unwrap();
+    let envelope = CompleteEnvelope::success(
+        &view,
+        admitted,
+        None,
+        vec![intent()],
+        value(b"updated"),
+        &effects,
+        time(101),
+    )
+    .unwrap();
+    let command = confirm(envelope, &store, &effects);
+    drop(view);
+    let anchor = super::super::payload_links::anchor(&command).unwrap();
+    let physical = LocalPayloadIdentity {
+        tenant: "tenant".into(),
+        provider: "local".into(),
+        provider_epoch: 1,
+        provider_configuration: [3; 32],
+        blob_namespace: "owned".into(),
+        digest: Sha256::digest(b"updated").into(),
+        size: 7,
+        media_type: "application/octet-stream".into(),
+    };
+    let result = PayloadReference {
+        owner: anchor.clone(),
+        payload: physical.clone(),
+    };
+    let effect = PayloadReference {
+        owner: PayloadOwner {
+            kind: PayloadOwnerKind::Effect,
+            identity: command.effect_ids()[0].0,
+            format: "lsf-value-v1".into(),
+            ..anchor.clone()
+        },
+        payload: physical.clone(),
+    };
+    let links = PayloadLinks {
+        anchor,
+        references: vec![result.clone(), effect.clone()],
+    };
+    let view = store.snapshot().unwrap();
+    let mut plan = PreparedPayloadReferences::prepare(
+        &view,
+        &[(None, Some(result.clone())), (None, Some(effect.clone()))],
+    )
+    .unwrap();
+    plan.replace_links(&view, None, Some(&links)).unwrap();
+    let mut batch = AtomicBatch::default();
+    plan.append_to(&mut batch).unwrap();
+    let (mut usage, usage_key, previous_usage) = writer::Usage::read(&view, &command.key).unwrap();
+    usage.payload_bytes += 14;
+    batch.expectations.push(ExpectedRow {
+        key: usage_key.clone(),
+        value: previous_usage,
+    });
+    batch.mutations.push(RowMutation {
+        key: usage_key,
+        value: Some(usage.encode().unwrap()),
+    });
+    let namespace_key = namespace_key();
+    let previous_namespace = view.get(&namespace_key).unwrap().unwrap();
+    let mut namespace = NamespaceRecord::decode(&previous_namespace).unwrap();
+    namespace.pins.payload_references += 2;
+    batch.expectations.push(ExpectedRow {
+        key: namespace_key.clone(),
+        value: Some(previous_namespace),
+    });
+    batch.mutations.push(RowMutation {
+        key: namespace_key,
+        value: Some(namespace.encode().unwrap()),
+    });
+    drop(view);
+    store.apply(batch).unwrap();
+    let owner = ResultMaintenanceOwner::default();
+    let clock = |now| MaintenanceClock {
+        time: time(now),
+        boot: [7; 32],
+        monotonic_millis: now,
+    };
+    owner.anchor(&store, None, clock(101), |_| Ok(())).unwrap();
+    let mut calls = 0;
+    assert!(matches!(
+        owner.step(&store, clock(1100), |_| {
+            calls += 1;
+            if calls == 3 {
+                Err(AtomicError::PermissionDenied)
+            } else {
+                Ok(())
+            }
+        }),
+        Err(AtomicError::PermissionDenied)
+    ));
+    let view = store.snapshot().unwrap();
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(2)
+    );
+    assert!(view.get(&result.owner_key().unwrap()).unwrap().is_some());
+    drop(view);
+    owner.step(&store, clock(1100), |_| Ok(())).unwrap();
+    let view = store.snapshot().unwrap();
+    assert!(view.get(&result.owner_key().unwrap()).unwrap().is_none());
+    let bytes = view.get(&effect.owner_key().unwrap()).unwrap().unwrap();
+    inspect_payload_reference(&view, &effect.owner_key().unwrap(), &bytes).unwrap();
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(1)
+    );
+    assert_eq!(
+        writer::Usage::read(&view, &command.key)
+            .unwrap()
+            .0
+            .payload_bytes,
+        usage.payload_bytes - 7
+    );
+}
