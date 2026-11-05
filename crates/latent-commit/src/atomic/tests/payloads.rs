@@ -1430,7 +1430,11 @@ async fn captured_blob_cannot_be_attached_through_a_different_activation_session
     let fixture = Fixture::new();
     let (request, control) = fixture.authority.request("foreign-activation");
     let foreign = fixture.authority.session(&request, &control);
-    let claim = fixture.claim("foreign-payload-session");
+    let mut claim = fixture.claim("foreign-payload-session");
+    assert_eq!(
+        claim.bind_payload_session(&foreign),
+        Err(AtomicError::Conflict)
+    );
     let view = fixture.state.snapshot().unwrap();
     let envelope = CompleteEnvelope::success(
         &view,
@@ -1455,6 +1459,51 @@ async fn captured_blob_cannot_be_attached_through_a_different_activation_session
         ),
         Err(AtomicError::PermissionDenied)
     ));
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        None
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn closed_bound_session_cannot_cross_final_payload_acceptance() {
+    let fixture = Fixture::new();
+    let claim = fixture.claim("closed-payload-session");
+    let view = fixture.state.snapshot().unwrap();
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        None,
+        vec![],
+        value(b"body"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let pin = fixture.capture().await;
+    let physical = pin.identity().clone();
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::Result,
+                payload: pin,
+            }],
+        )
+        .unwrap();
+    drop(view);
+    fixture.session.close();
+    assert!(matches!(
+        envelope.publish_with_payloads(&fixture.state, |_, _| panic!(
+            "closed session reached host acceptance"
+        )),
+        PreparedDisposition::KnownNotCommitted {
+            reason: AtomicError::PermissionDenied,
+            ..
+        }
+    ));
+    let view = fixture.state.snapshot().unwrap();
     assert_eq!(
         latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
         None

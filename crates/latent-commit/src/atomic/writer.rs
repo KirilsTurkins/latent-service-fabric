@@ -40,6 +40,9 @@ pub struct AdmittedCommand {
     pub(super) record: CommandRecord,
     pub(super) expected: Vec<u8>,
     pub(super) physical: std::sync::Arc<super::ownership::AttemptState>,
+    #[cfg(target_os = "linux")]
+    pub(super) payload_session:
+        Option<latent_capabilities::broker::SessionResourceTableReservation>,
 }
 pub struct CompleteEnvelope {
     claim: AdmittedCommand,
@@ -281,6 +284,8 @@ impl PreparedAdmission {
             record: self.record,
             expected,
             physical,
+            #[cfg(target_os = "linux")]
+            payload_session: None,
         })
     }
 }
@@ -743,6 +748,8 @@ impl CompleteEnvelope {
             record: retired.record,
             expected: retired.expected,
             physical,
+            #[cfg(target_os = "linux")]
+            payload_session: None,
         };
         let proof = Identity::derive(
             b"lsf-proven-abort-v1\0",

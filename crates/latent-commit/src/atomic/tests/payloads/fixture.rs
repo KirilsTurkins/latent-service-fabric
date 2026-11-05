@@ -276,7 +276,9 @@ impl Fixture {
             panic!("new physical claim");
         };
         drop(view);
-        prepared.publish(&self.state, || Ok(())).unwrap()
+        let mut claim = prepared.publish(&self.state, || Ok(())).unwrap();
+        claim.bind_payload_session(&self.session).unwrap();
+        claim
     }
     pub async fn capture(&self) -> CapturedLocalPayload {
         self.capture_blob(&self.blob).await

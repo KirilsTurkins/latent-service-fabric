@@ -1,8 +1,8 @@
 //! Verified physical attachments are part of the original complete envelope.
 //! Inline provider bytes stay unchanged; this does not dispatch reference DTOs.
 use super::{
-    incarnation, AtomicError, CompleteEnvelope, EmbeddedStore, Family, NamespaceRecord, Outcome,
-    PreparedDisposition, ReadView, TenantId, Usage,
+    incarnation, AdmittedCommand, AtomicError, CompleteEnvelope, EmbeddedStore, Family,
+    NamespaceRecord, Outcome, PreparedDisposition, ReadView, TenantId, Usage,
 };
 use latent_blobs::provider::CapturedLocalPayload;
 use latent_capabilities::broker::CapabilitySession;
@@ -27,12 +27,39 @@ pub struct PayloadAttachment {
     pub target: PayloadAttachmentTarget,
     pub payload: CapturedLocalPayload,
 }
+impl AdmittedCommand {
+    /// The trusted runtime binds its original activation once, before payload
+    /// capture. A later activation cannot replace this affine association.
+    pub fn bind_payload_session(&mut self, session: &CapabilitySession) -> Result<(), AtomicError> {
+        if self.payload_session.is_some() {
+            return Err(AtomicError::Conflict);
+        }
+        session
+            .check_liveness()
+            .map_err(|_| AtomicError::PermissionDenied)?;
+        if session.tenant().0 != self.record.key.tenant
+            || !session.uses_publication(&self.record.source.publication)
+        {
+            return Err(AtomicError::PermissionDenied);
+        }
+        let binding = session
+            .reserve_resource_table(4096)
+            .map_err(|error| match error.code {
+                latent_core::PlatformErrorCode::ResourceExhausted => AtomicError::Limit,
+                latent_core::PlatformErrorCode::Unavailable => AtomicError::Unavailable,
+                latent_core::PlatformErrorCode::DeadlineExceeded => AtomicError::Expired,
+                _ => AtomicError::PermissionDenied,
+            })?;
+        self.payload_session = Some(binding);
+        Ok(())
+    }
+}
 impl CompleteEnvelope {
     /// Derive ownership from the real terminal command/effect, never a guest
     /// reference count or claimed commit identifier. The same original session
     /// owner and verified bytes must match before any batch plan is changed.
-    /// The trusted caller must bind that session to the originating attempt;
-    /// session equality here does not independently establish that binding.
+    /// The trusted runtime must have bound the originating attempt to this
+    /// session before capture; that association cannot later be replaced.
     #[expect(
         clippy::too_many_lines,
         reason = "Validate and charge all physical attachments as one atomic envelope"
@@ -60,7 +87,13 @@ impl CompleteEnvelope {
         original_session
             .check_liveness()
             .map_err(|_| AtomicError::PermissionDenied)?;
-        if original_session.tenant().0 != self.terminal.key.tenant
+        let binding = self
+            .claim
+            .payload_session
+            .as_ref()
+            .ok_or(AtomicError::PermissionDenied)?;
+        if !binding.with_session(|session| session.is_same_session(original_session))
+            || original_session.tenant().0 != self.terminal.key.tenant
             || !original_session.uses_publication(&self.terminal.source.publication)
             || self
                 .state_binding
@@ -336,7 +369,19 @@ impl CompleteEnvelope {
         }
         self.publish_inner(
             store,
-            |envelope| final_accept(&envelope.authorities, &envelope.payloads),
+            |envelope| {
+                let binding = envelope
+                    .claim
+                    .payload_session
+                    .as_ref()
+                    .ok_or(AtomicError::PermissionDenied)?;
+                binding.with_session(|session| {
+                    session
+                        .check_liveness()
+                        .map_err(|_| AtomicError::PermissionDenied)
+                })?;
+                final_accept(&envelope.authorities, &envelope.payloads)
+            },
             || {},
         )
     }
@@ -358,7 +403,19 @@ impl CompleteEnvelope {
             .all(|payload| payload.uses_store(store)));
         self.publish_inner(
             store,
-            |envelope| final_accept(&envelope.authorities, &envelope.payloads),
+            |envelope| {
+                let binding = envelope
+                    .claim
+                    .payload_session
+                    .as_ref()
+                    .ok_or(AtomicError::PermissionDenied)?;
+                binding.with_session(|session| {
+                    session
+                        .check_liveness()
+                        .map_err(|_| AtomicError::PermissionDenied)
+                })?;
+                final_accept(&envelope.authorities, &envelope.payloads)
+            },
             after_commit,
         )
     }
