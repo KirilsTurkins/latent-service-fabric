@@ -8,7 +8,7 @@
     "on": {
       "push": {
         "branches": [
-          "diag/sdk-retained-failures-20261105"
+          "diag/sdk-ci-failures-20261105"
         ]
       }
     },
