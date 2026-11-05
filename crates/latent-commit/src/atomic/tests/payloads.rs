@@ -984,6 +984,11 @@ async fn rejected_result_retains_real_blob_until_response_expiry() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
+    use latent_effects::{
+        authority::EffectTime,
+        dispatch::{AttemptReceipt, Disposition},
+        dispatch_store::DispatchCatalog,
+    };
     let fixture = Fixture::new();
     let claim = fixture.claim("response-effect-blob");
     let key = fixture.input("response-effect-blob").key;
@@ -1030,6 +1035,36 @@ async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
         .unwrap();
     drop(view);
     publish_payload_envelope(&fixture, envelope);
+    let effect_clock = |now| EffectTime {
+        unix_millis: now,
+        continuity_proven: true,
+    };
+    let epoch =
+        DispatchCatalog::begin_exclusive_epoch(&fixture.state, effect_clock(202), None).unwrap();
+    let view = fixture.state.snapshot().unwrap();
+    let due = DispatchCatalog::due_page(&view, 202, None, 1, 4096).unwrap();
+    let uncertain_effect = due.rows[0].effect.clone();
+    drop(view);
+    let claim =
+        DispatchCatalog::claim(&fixture.state, epoch, &due.rows[0], effect_clock(202)).unwrap();
+    DispatchCatalog::begin_send(&fixture.state, epoch, &claim.attempt, effect_clock(203)).unwrap();
+    assert_eq!(
+        DispatchCatalog::complete(
+            &fixture.state,
+            epoch,
+            &claim.attempt,
+            AttemptReceipt {
+                disposition: Disposition::Uncertain,
+                reason: "lost-response-after-send".into(),
+                provider_receipt: None,
+                observed_at_millis: 204,
+            },
+            None,
+            effect_clock(204),
+        )
+        .unwrap(),
+        Disposition::Uncertain
+    );
     let owner = ResultMaintenanceOwner::default();
     let clock = |now| MaintenanceClock {
         time: time(now),
@@ -1046,6 +1081,14 @@ async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
     assert_eq!(
         latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
         Some(2)
+    );
+    assert_eq!(
+        DispatchCatalog::history_page(&view, &uncertain_effect, None, 128, 4096)
+            .unwrap()
+            .rows[0]
+            .receipt
+            .disposition,
+        Disposition::Uncertain
     );
     validate_payload_census(&view);
     drop(view);
@@ -1071,10 +1114,22 @@ async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
         .terminalize(&fixture.state, &request, clock(5200), |_, _, _| Ok(()))
         .unwrap();
     assert!(!first_review.complete);
-    assert!(owner
-        .terminalize(&fixture.state, &request, clock(5200), |_, _, _| Ok(()))
-        .unwrap()
-        .complete);
+    assert!(
+        owner
+            .terminalize(&fixture.state, &request, clock(5200), |_, _, _| Ok(()))
+            .unwrap()
+            .complete
+    );
+    let view = fixture.state.snapshot().unwrap();
+    assert_eq!(
+        DispatchCatalog::history_page(&view, &uncertain_effect, None, 128, 4096)
+            .unwrap()
+            .rows[0]
+            .receipt
+            .disposition,
+        Disposition::Uncertain
+    );
+    drop(view);
     owner
         .purge(&fixture.state, &request, clock(5300), |_, _, _| Ok(()))
         .unwrap();
