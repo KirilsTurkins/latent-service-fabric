@@ -21,10 +21,10 @@ are present.
 | Source | Responsibility |
 | --- | --- |
 | [src/lib.rs](src/lib.rs) | BlobReference/range/write/lease models and generic storage/transfer ports. |
-| [src/local.rs](src/local.rs) | Bounded synchronous immutable storage under one privately owned root. |
-| [src/local/durable.rs](src/local/durable.rs) | Opt-in local retention pins and state-backed release checks. |
+| [src/local.rs](../latent-local-blobs/src/local.rs) | Bounded synchronous immutable storage under one privately owned root. |
+| [src/local/durable.rs](../latent-local-blobs/src/local/durable.rs) | Opt-in local retention pins and state-backed release checks. |
 | [src/local/fs.rs](src/local/fs.rs) | Descriptor-relative no-follow operations and inode/type checks. |
-| [src/provider.rs](src/provider.rs) | Broker integration and owned chunks on bounded blocking/I/O resources. |
+| [src/provider.rs](../latent-local-blobs/src/provider.rs) | Broker integration and owned chunks on bounded blocking/I/O resources. |
 | [src/s3.rs](src/s3.rs) | HTTPS, explicit peers, SigV4, versioned bucket and finite multipart staging. |
 | [src/s3/inventory.rs](src/s3/inventory.rs) | Durable upload receipts that precede network mutations and survive uncertain replies. |
 | [src/s3/provider/recovery.rs](src/s3/provider/recovery.rs) | Explicit bounded operator reconciliation without automatic uncertain completion replay. |
@@ -68,10 +68,10 @@ Use `list --output json` to find the remaining package targets. Follow the suite
 
 Representative source tests (not a complete coverage inventory):
 
-- [`exact_empty_and_ranged_data_survive_reopen`](src/local/tests.rs)
-- [`exact_size_and_sequential_writes_reserve_before_staging`](src/local/tests.rs)
-- [`duplicate_publication_and_tenant_authority_are_independent`](src/local/tests.rs)
-- [`pinned_released_object_is_not_reclaimed_and_drop_does_no_deletion`](src/local/tests.rs)
+- [`exact_empty_and_ranged_data_survive_reopen`](../latent-local-blobs/src/local/tests.rs)
+- [`exact_size_and_sequential_writes_reserve_before_staging`](../latent-local-blobs/src/local/tests.rs)
+- [`duplicate_publication_and_tenant_authority_are_independent`](../latent-local-blobs/src/local/tests.rs)
+- [`pinned_released_object_is_not_reclaimed_and_drop_does_no_deletion`](../latent-local-blobs/src/local/tests.rs)
 
 ## Related documentation
 
