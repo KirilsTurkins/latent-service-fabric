@@ -51,27 +51,29 @@ def inspect_archive(path,codes):
         if z.testzip() is not None: raise ValueError('sdk-evidence-archive-crc')
         stages,failures,matches,progress,symbols=set(),set(),set(),set(),set()
         for info in files:
+            if info.file_size>4*1024*1024 or not info.filename.endswith(('FAILED.json','commands.json')): continue
+            try: value=json.loads(z.read(info))
+            except (ValueError,UnicodeError): continue
+            if isinstance(value,dict):
+                stage=identity(value.get('stage'))
+                if stage: stages.add(stage)
+                seq=value.get('commands',[])
+            else: seq=value
+            if isinstance(seq,list):
+                for item in seq:
+                    if not isinstance(item,dict): continue
+                    stage=identity(item.get('stage')); status=item.get('exitCode')
+                    if stage and isinstance(status,int) and status!=0: failures.add((stage,status))
+        failing={stage for stage,_ in failures}
+        for info in files:
             n=info.filename
-            if info.file_size>4*1024*1024: continue
-            if n.endswith(('FAILED.json','commands.json')):
-                try: value=json.loads(z.read(info))
-                except (ValueError,UnicodeError): continue
-                if isinstance(value,dict):
-                    stage=identity(value.get('stage'))
-                    if stage: stages.add(stage)
-                    seq=value.get('commands',[])
-                else: seq=value
-                if isinstance(seq,list):
-                    for item in seq:
-                        if not isinstance(item,dict): continue
-                        stage=identity(item.get('stage')); status=item.get('exitCode')
-                        if stage and isinstance(status,int) and status!=0: failures.add((stage,status))
-            if n.endswith(('.stderr.txt','.stdout.txt','.log')):
-                text=z.read(info).decode('utf-8',errors='replace')
-                for line in text.splitlines():
-                    if any(w in line.lower() for w in ('error','fail','panic','refus','exception')):
-                        matches.update(t for t in TOKEN.findall(line) if t in codes)
-                    progress.update(PROGRESS.findall(line));symbols.update(COMPILER.findall(line))
+            if info.file_size>4*1024*1024 or not n.endswith(('.stderr.txt','.stdout.txt','.log')): continue
+            text=z.read(info).decode('utf-8',errors='replace')
+            selected=any('-'+stage+'.' in n for stage in failing)
+            for line in text.splitlines():
+                if selected and any(w in line.lower() for w in ('error','fail','panic','refus','exception')):
+                    matches.update(t for t in TOKEN.findall(line) if t in codes)
+                progress.update(PROGRESS.findall(line));symbols.update(COMPILER.findall(line))
         return {'zipMembers':len(files),'crcVerified':True,'stages':sorted(stages)[:20],
                 'failedCommands':[{'stage':x,'exitCode':y} for x,y in sorted(failures)[:20]],
                 'committedDiagnosticCodes':sorted(matches)[:30],
