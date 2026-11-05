@@ -916,6 +916,12 @@ async fn rejected_result_retains_real_blob_until_response_expiry() {
     );
     validate_payload_census(&view);
     drop(view);
+    // Keep the real physical reader paused across the clock-driven expiry.
+    let reader = fixture
+        .provider
+        .store()
+        .open_read(&TenantId("a".into()), &fixture.blob, &|| Ok(()))
+        .unwrap();
     let owner = ResultMaintenanceOwner::default();
     let clock = |now| MaintenanceClock {
         time: time(now),
@@ -943,6 +949,28 @@ async fn rejected_result_retains_real_blob_until_response_expiry() {
             &|| Ok(())
         )
         .unwrap());
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(1, &|| Ok(()))
+            .unwrap()
+            .objects,
+        0
+    );
+    let mut bytes = [0; 4];
+    reader
+        .read(
+            &latent_blobs::BlobRange {
+                offset: 0,
+                length: 4,
+            },
+            &mut bytes,
+            &|| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(&bytes, b"body");
+    drop(reader);
     assert_eq!(
         fixture
             .provider
