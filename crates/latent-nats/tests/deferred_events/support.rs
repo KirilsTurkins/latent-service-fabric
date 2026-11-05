@@ -524,17 +524,25 @@ impl Fixture {
         effect: &DurableEffectAuthority,
         wanted: Disposition,
     ) -> EffectRecord {
-        tokio::time::timeout(WATCHDOG, async {
+        let mut last = None;
+        let result = tokio::time::timeout(WATCHDOG, async {
             loop {
                 let record = self.record(effect).await;
                 if record.disposition() == wanted {
                     return record;
                 }
+                last = Some((
+                    record.disposition(),
+                    record.attempts(),
+                    record.retry_at_millis(),
+                ));
                 tokio::task::yield_now().await;
             }
         })
-        .await
-        .expect("actual durable disposition did not arrive")
+        .await;
+        result.unwrap_or_else(|_| {
+            panic!("durable disposition timeout: wanted {wanted:?}, last {last:?}")
+        })
     }
     pub async fn stop_dispatcher(&mut self) {
         let mut owner = self.owner.take().unwrap();
