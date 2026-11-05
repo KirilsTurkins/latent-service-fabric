@@ -1,0 +1,64 @@
+{
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/feat/sdk-690-c-http-media-20261104' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')",
+    "name": "One signed original C POST with exact media observation",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Make the immutable native producer source available for verification",
+        "run": "git fetch --no-tags --depth=1 origin 678b19d42b26a12ac35f3d6de525029b82e169f7"
+      },
+      {
+        "name": "Check the exact private media observation",
+        "run": "python3 -B -m unittest tools.tests.test_c_http_media_peer -v"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the fixed native products",
+        "run": "python3 -B tools/wasmtime_48_0_8_678b_native_products.py --output \"$RUNNER_TEMP/c-media-native\""
+      },
+      {
+        "env": {
+          "EXPECTED_HEAD": "${{ github.sha }}",
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Re-sign and execute one retained original POST",
+        "run": "python3 -B tools/qualify_c_http_media.py --native \"$RUNNER_TEMP/c-media-native\" --output \"$RUNNER_TEMP/c-http-media\" --expected-head \"$EXPECTED_HEAD\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded public observations",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "c-http-media-${{ github.sha }}",
+          "path": "${{ runner.temp }}/c-media-native/*.json\n${{ runner.temp }}/c-http-media/qualified.json\n${{ runner.temp }}/c-http-media/FAILED.json\n${{ runner.temp }}/c-http-media/node/qualified.json\n${{ runner.temp }}/c-http-media/node/FAILED.json\n${{ runner.temp }}/c-http-media/node/media-observation.json\n${{ runner.temp }}/c-http-media/node/invocation-*.json\n${{ runner.temp }}/c-http-media/node/peer-*.json\n${{ runner.temp }}/c-http-media/node/retirement-*.json\n${{ runner.temp }}/c-http-media/node/controls/**\n${{ runner.temp }}/c-http-media/node/commands/logs/**\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 15
+  },
+  "jobId": "exact-media",
+  "kind": "job",
+  "reviewReason": "Qualify one re-signed retained ordinary C POST with exact fixed media observation, verified current native products and bounded public evidence; no broader runtime claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-http-media.yml"
+}

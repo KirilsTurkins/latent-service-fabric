@@ -353,8 +353,13 @@ def validate_recipe_execution(data: dict, recipe: str, raw: str, listing_raw: st
         if listed_sections is not None:
             listed = re.findall(r"^(.+): test$", listed_sections[index], re.M)
             totals = re.findall(r"^(\d+) tests?, (\d+) benchmarks?$", listed_sections[index], re.M)
+            # rustdoc appends execution-mode labels for compile-fail and
+            # no-run cases, while --list reports the underlying case identity.
+            compared = ([re.sub(r" - compile(?: fail)?$", "", name) for name in names]
+                        if recipe == "explicit-doctests" else names)
             registry.require(len(totals) == 1 and totals[0] == (str(len(listed)), "0")
-                             and len(listed) == len(set(listed)) and set(listed) == set(names),
+                             and len(listed) == len(set(listed)) and len(compared) == len(set(compared))
+                             and set(listed) == set(compared),
                              "explicit-recipe-discovery-execution-mismatch")
         all_names.update(names)
     if recipe == "signing-compatibility":
