@@ -561,14 +561,14 @@ def node_intx_serial(raw):
     fm, im = re.fullmatch(fixup_pattern, fixups[0]), re.fullmatch(intx_pattern, intxs[0])
     require(fm is not None and im is not None and 1 <= int(fm[1]) <= 512, 'intx-marker-grammar')
     command, pin, line = int(im[1], 16), int(im[2]), int(im[3])
-    require(command & 4 and not command & 0x400 and 1 <= pin <= 4 and 0 <= line <= 255,
+    require(command == 0x0103 and 1 <= pin <= 4 and 0 <= line <= 255,
         'intx-marker-values')
     require(raw.index(setup[0]) < raw.index(fixups[0]) < raw.index(intxs[0]) < raw.index(acks[0]),
         'intx-observation-order')
     observed['pciEarlyFixup'] = {'linkedEntries':int(fm[1]), 'matchingCallbacks':0,
         'originalDispatcherReached':True, 'intxMaskCheckReached':True, 'barProbeReached':False,
         'registered':False, 'callbacksQualified':False}
-    observed['pciIntx'] = {'originalCommand':command, 'pin':pin, 'line':line,
+    observed['pciIntx'] = {'originalCommand':command, 'busMasterEnabled':False, 'pin':pin, 'line':line,
         'savedCommandRestored':True, 'irqFundingQualified':False,
         'sharedInterruptCustodyQualified':False, 'physicalBankRetired':False}
     return observed

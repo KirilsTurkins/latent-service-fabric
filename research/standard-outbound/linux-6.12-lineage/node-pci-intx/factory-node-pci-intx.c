@@ -5,6 +5,9 @@
 #error "PCI INTx custody requires its distinct qualification image"
 #endif
 
+/* This q35 experiment keeps the selected endpoint bus-master disabled. */
+#define LSF_Q35_INTX_ORIGINAL_COMMAND 0x0103u
+
 /* These helpers are called from the selected PCI translation unit. */
 extern int lsf_node_intx_begin(struct pci_dev *pci);
 extern int lsf_node_intx_forward(struct pci_dev *pci);
@@ -112,10 +115,12 @@ int lsf_node_intx_forward(struct pci_dev *pci)
     spin_lock_irqsave(&pool_lock, flags);
     node = lsf_node_intx_bound_locked(pci);
     if (node && lsf_node_constructor_actor_current() &&
-        (node->prefix_intx_phase == LSF_NODE_INTX_ARMED ||
-         node->prefix_intx_phase == LSF_NODE_INTX_PREFLIGHTED ||
-         node->prefix_intx_phase == LSF_NODE_INTX_TOGGLE_MAY_HAVE_RUN ||
-         node->prefix_intx_phase == LSF_NODE_INTX_RESTORE_WRITTEN))
+        ((node->prefix_intx_phase == LSF_NODE_INTX_ARMED &&
+          !node->prefix_intx_saved) ||
+         (node->prefix_intx_saved == LSF_Q35_INTX_ORIGINAL_COMMAND &&
+          (node->prefix_intx_phase == LSF_NODE_INTX_PREFLIGHTED ||
+           node->prefix_intx_phase == LSF_NODE_INTX_TOGGLE_MAY_HAVE_RUN ||
+           node->prefix_intx_phase == LSF_NODE_INTX_RESTORE_WRITTEN))))
         result = 1;
     spin_unlock_irqrestore(&pool_lock, flags);
     return result;
@@ -133,7 +138,7 @@ int lsf_node_intx_preflight(struct pci_dev *pci, u16 original)
     node = lsf_node_intx_bound_locked(pci);
     if (node && lsf_node_constructor_actor_current() &&
         node->prefix_intx_phase == LSF_NODE_INTX_ARMED &&
-        !(original & PCI_COMMAND_INTX_DISABLE) && (original & PCI_COMMAND_MASTER)) {
+        original == LSF_Q35_INTX_ORIGINAL_COMMAND) {
         node->prefix_intx_saved = original;
         node->prefix_intx_phase = LSF_NODE_INTX_PREFLIGHTED;
         result = 1;
@@ -156,6 +161,7 @@ int lsf_node_intx_prepare_toggle(struct pci_dev *pci, u16 original)
     node = lsf_node_intx_bound_locked(pci);
     if (node && lsf_node_constructor_actor_current() &&
         node->prefix_intx_phase == LSF_NODE_INTX_PREFLIGHTED &&
+        original == LSF_Q35_INTX_ORIGINAL_COMMAND &&
         node->prefix_intx_saved == original) {
         node->prefix_intx_phase = LSF_NODE_INTX_TOGGLE_MAY_HAVE_RUN;
         result = 1;
@@ -178,6 +184,7 @@ int lsf_node_intx_claim_restore(struct pci_dev *pci, u16 original)
     spin_lock_irqsave(&pool_lock, flags);
     node = lsf_node_intx_bound_locked(pci);
     if (node && node->prefix_intx_phase == LSF_NODE_INTX_TOGGLE_MAY_HAVE_RUN &&
+        original == LSF_Q35_INTX_ORIGINAL_COMMAND &&
         node->prefix_intx_saved == original) {
         node->prefix_intx_phase = LSF_NODE_INTX_RESTORE_CLAIMED;
         result = 1;
@@ -197,6 +204,7 @@ int lsf_node_intx_restore_written(struct pci_dev *pci, u16 original)
     spin_lock_irqsave(&pool_lock, flags);
     node = lsf_node_intx_bound_locked(pci);
     if (node && node->prefix_intx_phase == LSF_NODE_INTX_RESTORE_CLAIMED &&
+        original == LSF_Q35_INTX_ORIGINAL_COMMAND &&
         node->prefix_intx_saved == original) {
         node->prefix_intx_phase = LSF_NODE_INTX_RESTORE_WRITTEN;
         result = 1;
@@ -217,6 +225,7 @@ int lsf_node_intx_observed(struct pci_dev *pci, u16 restored, u8 pin, u8 line)
     node = lsf_node_intx_bound_locked(pci);
     if (node && lsf_node_constructor_actor_current() &&
         node->prefix_intx_phase == LSF_NODE_INTX_RESTORE_WRITTEN &&
+        restored == LSF_Q35_INTX_ORIGINAL_COMMAND &&
         node->prefix_intx_saved == restored && pin > 0u && pin <= 4u &&
         pci->pin == pin && pci->irq == line) {
         node->prefix_intx_pin = pin;

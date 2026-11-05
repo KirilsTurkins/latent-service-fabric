@@ -1,6 +1,8 @@
 /* Qualification-only additions to the pinned PCI allocating translation unit.
  * The ordinary pci_intx_mask_broken body remains its exact original bytes. */
 #ifdef CONFIG_LSF_STREAM_NODE_PCI_INTX
+#define LSF_Q35_INTX_ORIGINAL_COMMAND 0x0103u
+
 extern int lsf_node_intx_begin(struct pci_dev *pci);
 extern int lsf_node_intx_forward(struct pci_dev *pci);
 extern int lsf_node_intx_preflight(struct pci_dev *pci, u16 original);
@@ -42,7 +44,7 @@ static int lsf_pci_intx_snapshot(struct pci_dev *dev, u16 *command, u8 *pin, u8 
     if (!command || !pin || !line || (admit && !lsf_pci_intx_challenge(dev, false)) ||
         !lsf_node_intx_forward(dev) ||
         pci_read_config_word(dev, PCI_COMMAND, command) ||
-        (*command & PCI_COMMAND_INTX_DISABLE) || !(*command & PCI_COMMAND_MASTER) ||
+        *command != LSF_Q35_INTX_ORIGINAL_COMMAND ||
         !lsf_node_intx_forward(dev) ||
         pci_read_config_word(dev, PCI_STATUS, &status) ||
         (status & PCI_STATUS_INTERRUPT) || !(status & PCI_STATUS_CAP_LIST) ||
@@ -113,9 +115,12 @@ static int lsf_pci_intx_mask_broken_checked(struct pci_dev *dev)
     u16 orig, toggle, value, restored;
     int write_error, good = 1;
 
-    if (!lsf_node_intx_forward(dev) || pci_read_config_word(dev, PCI_COMMAND, &orig))
+    if (!lsf_node_intx_forward(dev) || pci_read_config_word(dev, PCI_COMMAND, &orig) ||
+        orig != LSF_Q35_INTX_ORIGINAL_COMMAND)
         goto fault;
     toggle = orig ^ PCI_COMMAND_INTX_DISABLE;
+    if (toggle != (LSF_Q35_INTX_ORIGINAL_COMMAND ^ PCI_COMMAND_INTX_DISABLE))
+        goto fault;
     if (!lsf_node_intx_prepare_toggle(dev, orig) || !lsf_node_intx_forward(dev))
         goto fault; /* The forward write has not been issued. */
     write_error = pci_write_config_word(dev, PCI_COMMAND, toggle);

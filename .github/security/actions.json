@@ -476,7 +476,7 @@
       "upstream_repository": "actions/setup-node",
       "upstream_revision": "949feb2413d6458794dcd2491c4babbbce0c15c1"
     },
-    "KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb": {
+    "KirilsTurkins/lsf-setup-python@e0aa7f1b2061a76e0424bd22ac45be035ce42a6e": {
       "files": [
         {
           "sha256": "0829b3f54d769f8b25cefd4d856c735bc8e097d6597835b838ebb4da497c838d",
@@ -485,16 +485,16 @@
           "source_sha256": "0829b3f54d769f8b25cefd4d856c735bc8e097d6597835b838ebb4da497c838d"
         },
         {
-          "sha256": "8a6d4ade80bdb4f7089d17b5632adb2b6217d1307801cf31c4212481f8501871",
+          "sha256": "6a2b2f31ff91994e668f4bbda5aadc0b15f788a6b7c14e493cd87fd1373aec4b",
           "snapshot": ".github/security/actions/setup-python/package.json",
           "source": "package.json",
-          "source_sha256": "8a6d4ade80bdb4f7089d17b5632adb2b6217d1307801cf31c4212481f8501871"
+          "source_sha256": "6a2b2f31ff91994e668f4bbda5aadc0b15f788a6b7c14e493cd87fd1373aec4b"
         },
         {
-          "sha256": "13b5246c8acf5a440262b346fed117e7cbcc84031c6214340eea6182347ddca7",
+          "sha256": "3c612a4384d4e8f2499e8315ac213a788061b1c6fcc3ff5947b4c717397b0d0a",
           "snapshot": ".github/security/actions/setup-python/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "13b5246c8acf5a440262b346fed117e7cbcc84031c6214340eea6182347ddca7"
+          "source_sha256": "3c612a4384d4e8f2499e8315ac213a788061b1c6fcc3ff5947b4c717397b0d0a"
         },
         {
           "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
@@ -511,7 +511,7 @@
         "source_sha256": "0829b3f54d769f8b25cefd4d856c735bc8e097d6597835b838ebb4da497c838d"
       },
       "repository": "KirilsTurkins/lsf-setup-python",
-      "revision": "14de4ddb02861c1e098a1a260a2de7a6b45b68fb",
+      "revision": "e0aa7f1b2061a76e0424bd22ac45be035ce42a6e",
       "security_pr": "https://github.com/actions/setup-python/pull/1381",
       "upstream_repository": "actions/setup-python",
       "upstream_revision": "6d4fd22b20465ccc0f7354476588e8df7c9ca0e0"

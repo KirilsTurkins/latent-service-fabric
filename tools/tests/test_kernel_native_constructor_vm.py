@@ -546,7 +546,7 @@ class Q35NodePciIntxControls(unittest.TestCase):
         raw = Q35NodePciFixupControls.serial()
         old = b'intxCheck=0 barProbe=0 registered=0\n'
         replacement = (b'intxCheck=1 barProbe=0 registered=0\n'
-            b'[    2.345680] LSFQ35PCIINTX1 command=0007 pin=1 line=255 '
+            b'[    2.345680] LSFQ35PCIINTX1 command=0103 pin=1 line=255 '
             b'restored=1 barProbe=0 registered=0\n')
         assert raw.count(old) == 1
         return raw.replace(old, replacement)
@@ -554,18 +554,20 @@ class Q35NodePciIntxControls(unittest.TestCase):
     def test_marker_requires_saved_word_and_ordered_original_owner(self):
         raw = self.serial()
         observation = owner.node_intx_serial(raw)
-        self.assertEqual(observation['pciIntx']['originalCommand'], 7)
+        self.assertEqual(observation['pciIntx']['originalCommand'], 0x103)
+        self.assertFalse(observation['pciIntx']['busMasterEnabled'])
         self.assertTrue(observation['pciIntx']['savedCommandRestored'])
         for name in ('irqFundingQualified', 'sharedInterruptCustodyQualified', 'physicalBankRetired'):
             self.assertFalse(observation['pciIntx'][name])
-        for bad in (raw.replace(b'command=0007', b'command=0003'),
-                    raw.replace(b'command=0007', b'command=0407'),
+        for bad in (raw.replace(b'command=0103', b'command=0003'),
+                    raw.replace(b'command=0103', b'command=0107'),
+                    raw.replace(b'command=0103', b'command=0503'),
                     raw.replace(b'pin=1', b'pin=0'), raw.replace(b'line=255', b'line=256'),
                     raw.replace(b'restored=1', b'restored=0'),
                     raw.replace(b'intxCheck=1', b'intxCheck=0'),
                     raw.replace(b'LSFQ35PCIINTX1', b'OTHER'),
                     raw.replace(b'barProbe=0', b'barProbe=1', 1),
-                    raw + b'[    2.345680] LSFQ35PCIINTX1 command=0007 pin=1 line=255 restored=1 barProbe=0 registered=0\n'):
+                    raw + b'[    2.345680] LSFQ35PCIINTX1 command=0103 pin=1 line=255 restored=1 barProbe=0 registered=0\n'):
             with self.subTest(raw=bad), self.assertRaises(ValueError):
                 owner.node_intx_serial(bad)
 
@@ -573,9 +575,33 @@ class Q35NodePciIntxControls(unittest.TestCase):
         source = (owner.ROOT/owner.INTX_VIRTIO).read_text(encoding='utf8')
         before = source.split("b'    pci_default_write_config(pci_dev, address, val, len);\\n'", 1)
         self.assertEqual(len(before), 2)
+        self.assertIn('lsf_old == 0x0103 && val == 0x0503', before[0])
+        self.assertIn('lsf_old == 0x0503 && val == 0x0103', before[0])
+        for predicate in ('lsf_q35_phase == 1', 'lsf_q35_phase == 2',
+                'address != PCI_COMMAND || len != 2', 'pci_dev != lsf_q35_device',
+                'bool lsf_watch = lsf_q35_selected(pci_dev) && lsf_q35_phase'):
+            self.assertIn(predicate, before[0])
+        self.assertIn('++lsf_q35_phase', before[1])
+        self.assertIn('lsf_q35_challenge == ARRAY_SIZE(lsf_q35_offsets)', before[1])
+        self.assertIn('lsf_q35_intx_armed command=0x103', before[1])
+        self.assertIn('object_dynamic_cast(OBJECT(vdev), TYPE_VIRTIO_NET)', before[0])
         self.assertIn('pci_dev->irq_state ||', before[0])
         self.assertIn('pci_dev->irq_state ||', before[1])
-        self.assertIn('grabbed=0 irq=0 master=1', before[1])
+        self.assertIn('grabbed=0 irq=0 master=0', before[1])
+        for predicate in ('!vdev->use_disabled_flag', '!vdev->disabled',
+                'pci_dev->is_master', 'pci_dev->bus_master_enable_region.enabled',
+                'lsf_net->max_queue_pairs != 1', 'lsf_net->curr_queue_pairs != 1',
+                'lsf_net->multiqueue', 'lsf_net->vhost_started'):
+            self.assertIn(predicate, before[0])
+            self.assertIn(predicate, before[1])
+        self.assertIn('lsf_net->nic->ncs[0].peer', before[0])
+        self.assertIn('lsf_net->vqs[0].tx_waiting', before[0])
+        self.assertIn('lsf_ncs[0].peer', before[1])
+        self.assertIn('lsf_queues[0].tx_waiting', before[1])
+        self.assertIn('lsf_net->status != lsf_net_status', before[1])
+        for predicate in ('lsf_net->nic != lsf_nic', 'lsf_nic->ncs != lsf_ncs',
+                'lsf_net->vqs != lsf_queues'):
+            self.assertIn(predicate, before[1])
 
     def test_source_capture_and_unbound_projection_refuse(self):
         captured = owner.node_intx_capture(owner.ROOT)
@@ -604,8 +630,22 @@ class Q35NodePciIntxControls(unittest.TestCase):
         self.assertIn('lsf_node_constructor_actor_current()', forward)
         self.assertNotIn('lsf_node_constructor_actor_current()', restore)
         self.assertIn('node->prefix_intx_saved == original', restore)
+        self.assertIn('original == LSF_Q35_INTX_ORIGINAL_COMMAND', restore)
         self.assertIn('LSF_NODE_INTX_RESTORE_CLAIMED', restore)
         self.assertNotIn('pci_write_config', restore)
+        self.assertIn('node->prefix_intx_saved == LSF_Q35_INTX_ORIGINAL_COMMAND', forward)
+        self.assertIn('#define LSF_Q35_INTX_ORIGINAL_COMMAND 0x0103u', material)
+        for name in ('preflight', 'prepare_toggle', 'restore_written', 'observed'):
+            start = '\nint lsf_node_intx_' + name + '('
+            self.assertEqual(material.count(start), 1)
+            section = material.split(start, 1)[1].split('\n}', 1)[0]
+            self.assertIn('LSF_Q35_INTX_ORIGINAL_COMMAND', section)
+        probe = (owner.ROOT/owner.INTX_PROBE).read_text(encoding='utf8')
+        for predicate in ('*command != LSF_Q35_INTX_ORIGINAL_COMMAND',
+                'orig != LSF_Q35_INTX_ORIGINAL_COMMAND',
+                'toggle != (LSF_Q35_INTX_ORIGINAL_COMMAND ^ PCI_COMMAND_INTX_DISABLE)',
+                'value != toggle', 'restored != orig'):
+            self.assertIn(predicate, probe)
 
 
 class Q35NodeKvmLaunchControls(unittest.TestCase):
@@ -903,24 +943,26 @@ def route(index, parent, pic):
             b'x86_gsi_interrupt GSI interrupt #'+str(pic).encode()+b' level:0']
 
 def example():
-    rows = [cfg(b'read', off, value) for off, value in trace.PREFIX]
-    rows += [cfg(b'read', 4, 7), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff),
-             cfg(b'read', 4, 7), cfg(b'write', 4, 0x407)]
+    rows = [cfg(b'read', off, value) for off, value in trace.PREFIX[:-1]]
+    rows += [trace.ARMED, cfg(b'read', *trace.PREFIX[-1])]
+    rows += [cfg(b'read', 4, 0x103), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff),
+             cfg(b'read', 4, 0x103), cfg(b'write', 4, 0x503)]
     for i, parent in enumerate((7, 4, 5, 6)):
         rows += route(i, parent, i+8)
-    rows += [b'lsf_q35_virtio_guard old=0x7 new=0x407 status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=1 vga=0 mappings=stable bql=1',
-             cfg(b'read', 4, 0x407), cfg(b'write', 4, 7)]
+    rows += [b'lsf_q35_virtio_guard old=0x103 new=0x503 phase=2 status=0 isr=0 disabled=1 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=0 vga=0 peer=0 waiting=0 netVhost=0 queues=1 netStable=1 mappings=stable bql=1',
+             cfg(b'read', 4, 0x503), cfg(b'write', 4, 0x103)]
     for i, parent in enumerate((7, 4, 5, 6)):
         rows += route(i, parent, i+8)
-    rows += [b'lsf_q35_virtio_guard old=0x407 new=0x7 status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=1 vga=0 mappings=stable bql=1',
-             cfg(b'read', 4, 7), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff),
-             cfg(b'read', 4, 7), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff)]
+    rows += [b'lsf_q35_virtio_guard old=0x503 new=0x103 phase=3 status=0 isr=0 disabled=1 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=0 vga=0 peer=0 waiting=0 netVhost=0 queues=1 netStable=1 mappings=stable bql=1',
+             cfg(b'read', 4, 0x103), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff),
+             cfg(b'read', 4, 0x103), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff)]
     rows += [cfg(b'read', off, value) for off, value in reversed(trace.PREFIX)]
     return b'\n'.join(rows)+b'\n'
 
 class TraceRefusalControls(unittest.TestCase):
     def test_expected_complete_pattern_is_only_a_source_model(self):
-        result = trace.inspect(example(), 7, 1, 0xff)
+        result = trace.inspect(example(), 0x103, 1, 0xff)
+        self.assertFalse(result['busMasterEnabled'])
         self.assertEqual(result['selectedCommandWrites'], 2)
         self.assertEqual(result['selectedRouteCallbacks'], 8)
         self.assertEqual(result['virtioGuardPasses'], 2)
@@ -940,25 +982,45 @@ class TraceRefusalControls(unittest.TestCase):
                  raw.replace(b'@/machine/peripheral/net0', b'@/machine/peripheral/foreign', 1),
                  raw.replace(b'x86_gsi_interrupt GSI interrupt #8 level:0',
                              b'x86_gsi_interrupt GSI interrupt #9 level:0', 1),
-                 raw.replace(b'status=0 isr=0 disabled=0 broken=0',
-                             b'status=0 isr=0 disabled=1 broken=0', 1),
-                 raw.replace(b'grabbed=0 irq=0 master=1', b'grabbed=0 irq=1 master=1', 1),
-                 raw.replace(b'lsf_q35_virtio_guard old=0x7 new=0x407 status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=1 vga=0 mappings=stable bql=1\n', b'', 1))
+                 raw.replace(b'status=0 isr=0 disabled=1 broken=0',
+                             b'status=0 isr=0 disabled=0 broken=0', 1),
+                 raw.replace(b'grabbed=0 irq=0 master=0', b'grabbed=0 irq=1 master=0', 1),
+                 raw.replace(b'irq=0 master=0', b'irq=0 master=1', 1),
+                 raw.replace(b'peer=0 waiting=0', b'peer=1 waiting=0', 1),
+                 raw.replace(b'peer=0 waiting=0', b'peer=0 waiting=1', 1),
+                 raw.replace(b'netVhost=0', b'netVhost=1', 1),
+                 raw.replace(b'queues=1', b'queues=2', 1),
+                 raw.replace(b'netStable=1', b'netStable=0', 1),
+                 raw.replace(b'phase=2', b'phase=3', 1),
+                 raw.replace(b'phase=3', b'phase=2', 1),
+                 raw.replace(trace.ARMED+b'\n', b'', 1),
+                 raw.replace(trace.ARMED+b'\n', trace.ARMED+b'\n'+trace.ARMED+b'\n', 1),
+                 raw.replace(trace.ARMED, b'lsf_q35_intx_armed command=0x107', 1),
+                 raw.replace(b'lsf_q35_virtio_guard old=0x103 new=0x503 phase=2 status=0 isr=0 disabled=1 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=0 vga=0 peer=0 waiting=0 netVhost=0 queues=1 netStable=1 mappings=stable bql=1\n', b'', 1))
         for case in cases:
             with self.subTest(case=case[:80]), self.assertRaises(ValueError):
-                trace.inspect(case, 7, 1, 0xff)
+                trace.inspect(case, 0x103, 1, 0xff)
 
     def test_config_mutation_and_unbounded_or_ambiguous_trace_refuse(self):
         raw = example()
         first = b'\n'.join(cfg(b'read', *row) for row in trace.PREFIX)+b'\n'
-        cases = (raw.replace(cfg(b'write', 4, 0x407), cfg(b'write', 4, 0x405), 1),
-                 raw.replace(cfg(b'write', 4, 7), cfg(b'write', 0x10, 7), 1),
+        cases = (raw.replace(cfg(b'write', 4, 0x503), cfg(b'write', 4, 0x501), 1),
+                 raw.replace(cfg(b'write', 4, 0x503), cfg(b'write', 4, 0x507), 1),
+                 raw.replace(cfg(b'write', 4, 0x103), cfg(b'write', 4, 0x107), 1),
+                 raw.replace(cfg(b'write', 4, 0x503),
+                             cfg(b'write', 0x10, 1)+b'\n'+cfg(b'write', 4, 0x503), 1),
+                 raw.replace(cfg(b'write', 4, 0x103), cfg(b'write', 0x10, 0x103), 1),
                  first+raw, raw[:-1], raw+b'trace event missing\n',
                  raw+b'x'*(trace.MAX_TRACE+1),
                  raw.replace(cfg(b'read', 0x3d, 1), cfg(b'read', 0x3d, 2), 1))
         for case in cases:
             with self.subTest(length=len(case)), self.assertRaises(ValueError):
-                trace.inspect(case, 7, 1, 0xff)
+                trace.inspect(case, 0x103, 1, 0xff)
+
+    def test_bus_master_and_different_original_commands_refuse(self):
+        for command in (0x003, 0x007, 0x107, 0x503, True):
+            with self.subTest(command=command), self.assertRaises(ValueError):
+                trace.inspect(example(), command, 1, 0xff)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
