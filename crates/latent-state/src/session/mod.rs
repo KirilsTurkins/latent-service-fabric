@@ -24,7 +24,10 @@ use latent_core::{
     transaction_contract::{self as contract, ExpectedVersion, Precondition, Value},
     StateNamespaceId, TenantId,
 };
-pub use payload::{describe_state_payload_owner, verify_state_payload_reference};
+pub use payload::{
+    describe_state_payload_owner, require_no_state_payload_reference,
+    verify_state_payload_reference,
+};
 use std::{
     collections::BTreeMap,
     sync::atomic::{AtomicU64, Ordering},

@@ -394,6 +394,71 @@ fn coherent_inventory_resolves_state_owner_to_exact_current_cell() {
     store.apply(batch).unwrap();
     super::census::census(&store).unwrap();
 
+    let next = claim(&store, input("state-payload-replacement"));
+    let view = store.snapshot().unwrap();
+    let scope = StateScope {
+        tenant: TenantId("tenant".into()),
+        namespace: StateNamespaceId("aggregate".into()),
+        incarnation: 1,
+        state_schema: schema(),
+        entity: None,
+        mode: StateMode::Command,
+    };
+    let mut session =
+        StateSession::open(&view, scope, SessionLimits::default(), state_permission).unwrap();
+    session
+        .put(
+            &view,
+            b"aggregate/count".to_vec(),
+            value(b"replacement"),
+            state_permission,
+        )
+        .unwrap();
+    let staged = session.seal(&view, state_permission).unwrap();
+    assert!(matches!(
+        CompleteEnvelope::success(
+            &view,
+            next,
+            Some(staged),
+            vec![],
+            value(b"ok"),
+            &effects,
+            time(102)
+        ),
+        Err(AtomicError::UnsupportedFormat)
+    ));
+    drop(view);
+
+    let next = claim(&store, input("state-payload-delete"));
+    let view = store.snapshot().unwrap();
+    let scope = StateScope {
+        tenant: TenantId("tenant".into()),
+        namespace: StateNamespaceId("aggregate".into()),
+        incarnation: 1,
+        state_schema: schema(),
+        entity: None,
+        mode: StateMode::Command,
+    };
+    let mut session =
+        StateSession::open(&view, scope, SessionLimits::default(), state_permission).unwrap();
+    session
+        .delete(&view, b"aggregate/count".to_vec(), state_permission)
+        .unwrap();
+    let staged = session.seal(&view, state_permission).unwrap();
+    assert!(matches!(
+        CompleteEnvelope::success(
+            &view,
+            next,
+            Some(staged),
+            vec![],
+            value(b"ok"),
+            &effects,
+            time(102)
+        ),
+        Err(AtomicError::UnsupportedFormat)
+    ));
+    drop(view);
+
     let view = store.snapshot().unwrap();
     let scope = StateScope {
         tenant: TenantId("tenant".into()),

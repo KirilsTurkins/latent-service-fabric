@@ -1080,6 +1080,13 @@ impl CompleteEnvelope {
                 value: Some(namespace.encode().map_err(|_| AtomicError::Invalid)?),
             });
         }
+        for row in batch
+            .mutations
+            .iter()
+            .filter(|row| row.key.family == Family::State)
+        {
+            latent_state::session::require_no_state_payload_reference(view, &row.key)?;
+        }
         super::accounting::apply(view, &TenantId(terminal.key.tenant.clone()), &mut batch)?;
         let staged = batch.mutations.iter().try_fold(0usize, |bytes, row| {
             bytes

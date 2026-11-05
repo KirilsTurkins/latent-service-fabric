@@ -58,3 +58,32 @@ pub fn verify_state_payload_reference(
     }
     Ok(())
 }
+
+/// A writer without reference replacement support must refuse to overwrite a
+/// cell that still owns a durable payload. Missing reciprocal rows are corrupt.
+pub fn require_no_state_payload_reference(
+    view: &ReadView,
+    cell_key: &RowKey,
+) -> Result<(), StoreError> {
+    let Some(bytes) = view.get_bounded(cell_key, codec::CELL_BYTES)? else {
+        return Ok(());
+    };
+    if inspect_cell(view, cell_key, &bytes)?.value.is_none() {
+        return Ok(());
+    }
+    let (owner, _) = describe_state_payload_owner(view, cell_key)?;
+    let primary = owner.row_key()?;
+    let link = payload_references::StatePayloadLink::key_for(&owner)?;
+    let reference_bytes = view.get_bounded(&primary, payload_references::MAX_REFERENCE_BYTES)?;
+    let link_bytes = view.get_bounded(&link, payload_references::MAX_STATE_LINK_BYTES)?;
+    match (reference_bytes, link_bytes) {
+        (None, None) => Ok(()),
+        (Some(reference), Some(_)) => {
+            if !payload_references::validate_state_linked_row(view, &primary, &reference)? {
+                return Err(StoreError::Corrupt);
+            }
+            Err(StoreError::UnsupportedFormat)
+        }
+        _ => Err(StoreError::Corrupt),
+    }
+}
