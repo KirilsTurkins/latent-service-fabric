@@ -14,6 +14,7 @@ import re
 import tarfile
 import urllib.request
 from pathlib import Path, PurePosixPath
+from time import monotonic
 
 from tools.security_common import POLICY, decode_json, digest, read_file, require
 
@@ -85,7 +86,8 @@ def manifest(files: dict, name: str, version: str, dependencies: dict, prefix="p
 def source_repair(files: dict, repair: dict, pin: dict) -> dict:
     expected = {"braces": {"lib/utils.js", "lib/compile.js", "lib/expand.js", "lib/stringify.js", "lib/parse.js"},
                 "http-cache-semantics": {"index.js"},
-                "deepmerge": {"index.js", "dist/cjs.js", "dist/umd.js"}}
+                "deepmerge": {"index.js", "dist/cjs.js", "dist/umd.js"},
+                "minimatch": {"dist/commonjs/index.js", "dist/esm/index.js"}}
     require(set(repair) == {"schema", "profile", "name", "version", "upstreamIntegrity", "files"}
             and repair["schema"] == 1 and repair["name"] == pin["name"]
             and repair["version"] == pin["version"] and repair["upstreamIntegrity"] == pin["integrity"]
@@ -190,10 +192,53 @@ ACTION_REFERENCES = {
     ".github/security/actions/setup-node/":
         "KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415",
     ".github/security/actions/setup-python/":
-        "KirilsTurkins/lsf-setup-python@e0aa7f1b2061a76e0424bd22ac45be035ce42a6e",
+        "KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8",
     ".github/security/actions/upload-artifact/":
         "KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16",
 }
+
+
+MINIMATCH_PROFILE = "minimatch-action-source-v1"
+MINIMATCH_PREFIX = ".github/security/actions/setup-python/"
+MINIMATCH_ARCHIVE = "file:.lsf-source/minimatch-10.2.5-lsf-bound-v1.tar"
+MINIMATCH_VERIFIER = ".lsf-source/verify-installed-minimatch.mjs"
+MINIMATCH_UPSTREAM = "sha512-MULkVLfKGYDFYejP07QOurDLLQpcjk7Fw+7jXS2R2czRQzR56yHRveU5NDJEOviH+hETZKSkIk5c+T23GjFUMg=="
+MINIMATCH_DERIVED = "sha512-HQ5eg+B4Pi8hEcfMgmmFULbhwIq3JWt7ixaNqDV+p8+4fxDUUqlA9VLilGLMmx1qXmeg0HzEabCGgfLIaNOkfw=="
+MINIMATCH_ADVISORIES = [{"id": "GHSA-g3hv-75wg-m249", "modified": "2026-11-04T17:01:25.850114Z"}]
+MINIMATCH_ASSETS = {'upstream': {'snapshot': '.github/security/actions/setup-python-minimatch/minimatch-10.2.5.original.tgz',
+              'source': '.lsf-source/minimatch-10.2.5.original.tgz',
+              'bytes': 117062,
+              'sha256': 'a6cea46915bfc6c3fae60f9bd003ea4f9d6a4233aa59a9ca729474d3824ca9e5',
+              'gitBlob': 'dd98b4079e660933500de9f03d0bbbab1f44f295'},
+ 'archive': {'snapshot': '.github/security/actions/setup-python-minimatch/minimatch-10.2.5.repaired.tar',
+             'source': '.lsf-source/minimatch-10.2.5-lsf-bound-v1.tar',
+             'bytes': 583680,
+             'sha256': '8ed155c4f29d451728efaaf60bc0ed7249ceb93d21eb81171068342621287a68',
+             'gitBlob': '93a1d4e2d4c2935624af7aa91fe9a113c56e5932'},
+ 'repair': {'snapshot': '.github/security/actions/setup-python-minimatch/repair.json',
+            'source': '.lsf-source/minimatch-10.2.5-lsf-bound-v1.repair.json',
+            'bytes': 2129,
+            'sha256': 'b340bb0502087bb0df18c8ec276ee61f58aedc6c54fcc6b022d174817d7d27a9',
+            'gitBlob': '679352aace8de2eb661a5a9665d6152033833cbb'},
+ 'verifier': {'snapshot': '.github/security/actions/setup-python-minimatch/installed-verifier.mjs.snapshot',
+              'source': '.lsf-source/verify-installed-minimatch.mjs',
+              'bytes': 3386,
+              'sha256': '4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826',
+              'gitBlob': 'ab204a63dd0ddf065b00ae7c3ab0531b35d5d300'},
+ 'build': {'snapshot': '.github/security/actions/setup-python-minimatch/fork-build.json',
+           'source': 'https://github.com/KirilsTurkins/lsf-setup-python/actions/runs/42010605694',
+           'bytes': 3036,
+           'sha256': '0031441630253140eed878e0be984ab6cfa5dfb6aecea60af6d04f82f35daefb',
+           'gitBlob': 'bd169fe4cfba82a9181e7719c6f539cff86fd63f'}}
+MINIMATCH_RUNTIME = {'runtime_setup': {'source': 'dist/setup/index.js',
+                   'bytes': 3675836,
+                   'sha256': 'e3bbbcbb7ab676335857f03b50e89f8e7bf5423f594a4b2212b966dde55fe8b7',
+                   'gitBlob': 'aef6783f257e77b06e518b7c6e5a9b2384c62cd2'},
+ 'runtime_cache': {'source': 'dist/cache-save/index.js',
+                   'bytes': 3581654,
+                   'sha256': '06f010acee2ff7034243f3dbdac1907923d004f370597501e762b452af26c0f0',
+                   'gitBlob': '2c6014773ffb3c51eb8307d36641ce6691c2c4e8'}}
+MINIMATCH_RUNTIME_LIMIT = 8 * 1024 * 1024
 
 
 def source_identity(raw: bytes) -> dict:
@@ -277,6 +322,10 @@ def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> di
     action = actions.get(reference, {})
     files = {row.get("source"): row for row in action.get("files", [])}
     expected_sources = {"action.yml", "package.json", "package-lock.json", ACTION_VERIFIER_SOURCE}
+    if entry.get("minimatch_source_repair") is not None:
+        require(entry["minimatch_source_repair"] == MINIMATCH_PROFILE and prefix == MINIMATCH_PREFIX,
+                "unreviewed-minimatch-action-profile")
+        expected_sources.add(MINIMATCH_VERIFIER)
     require(action.get("repository") == reference.split("@")[0]
             and action.get("revision") == reference.split("@")[1]
             and action.get("kind") == "npm" and set(files) == expected_sources
@@ -294,11 +343,72 @@ def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> di
     return {"policy": policy, "material": material, "reference": reference, "checkout": False}
 
 
+def minimatch_action_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> dict | None:
+    if entry.get("minimatch_source_repair") is None:
+        return None
+    require(entry["minimatch_source_repair"] == MINIMATCH_PROFILE
+            and entry.get("source_repair") == ACTION_PROFILE
+            and entry["path"] == MINIMATCH_PREFIX + "package.json"
+            and entry["lock"] == MINIMATCH_PREFIX + "package-lock.json",
+            "unreviewed-minimatch-action-profile")
+    policy = decode_json(read_file(POLICY, "minimatch-action-source-repairs.json"))
+    reference = ACTION_REFERENCES[MINIMATCH_PREFIX]
+    require(set(policy) == {"schema", "profile", "action", "advisories", "assets", "runtime"}
+            and policy["schema"] == 1 and policy["profile"] == MINIMATCH_PROFILE
+            and policy["action"] == reference and policy["advisories"] == MINIMATCH_ADVISORIES
+            and policy["assets"] == MINIMATCH_ASSETS and policy["runtime"] == MINIMATCH_RUNTIME,
+            "invalid-minimatch-action-policy")
+    material = {}
+    for name, row in MINIMATCH_ASSETS.items():
+        raw = read_file(repo, row["snapshot"])
+        require(source_identity(raw) == {key: row[key] for key in ("bytes", "sha256", "gitBlob")},
+                "minimatch-action-asset-drift")
+        material[name] = raw
+    require(integrity(material["upstream"]) == MINIMATCH_UPSTREAM
+            and integrity(material["archive"]) == MINIMATCH_DERIVED,
+            "minimatch-action-integrity-drift")
+    action = decode_json(read_file(repo, ".github/security/actions.json"))["actions"].get(reference, {})
+    files = {row.get("source"): row for row in action.get("files", [])}
+    binding = MINIMATCH_ASSETS["verifier"]
+    require(files.get(binding["source"]) == {
+                "snapshot": binding["snapshot"], "source": binding["source"],
+                "sha256": binding["sha256"], "source_sha256": binding["sha256"]},
+            "minimatch-action-verifier-binding-drift")
+    require(action.get("metadata", {}).get("sha256") == "0829b3f54d769f8b25cefd4d856c735bc8e097d6597835b838ebb4da497c838d",
+            "minimatch-action-entrypoint-drift")
+    commands = owner.get("scripts", {})
+    expected_build = ("node .lsf-source/verify-installed-deepmerge.mjs && "
+                      "node .lsf-source/verify-installed-minimatch.mjs && "
+                      "ncc build -o dist/setup src/setup-python.ts && "
+                      "ncc build -o dist/cache-save src/cache-save.ts")
+    require(commands.get("build") == expected_build and commands.get("release") == expected_build + " && git add -f dist/"
+            and commands.get("test:security-source") == "node --test .lsf-source/minimatch-bounds.test.mjs",
+            "minimatch-action-build-contract-drift")
+    rows = [(path, row) for path, row in lock["packages"].items()
+            if (row.get("name") or path.rsplit("node_modules/", 1)[-1]) == "minimatch"
+            and str(row.get("version", "")).startswith("10.")]
+    require(owner.get("devDependencies", {}).get("minimatch") == MINIMATCH_ARCHIVE
+            and owner.get("overrides", {}).get("minimatch@10") == "$minimatch"
+            and lock["packages"][""].get("devDependencies", {}).get("minimatch") == MINIMATCH_ARCHIVE
+            and len(rows) == 1 and rows[0][0] == "node_modules/minimatch"
+            and rows[0][1].get("version") == "10.2.5"
+            and rows[0][1].get("resolved") == MINIMATCH_ARCHIVE
+            and rows[0][1].get("integrity") == MINIMATCH_DERIVED,
+            "unlocked-minimatch-action-source-graph")
+    return {"policy": policy, "material": material, "reference": reference}
+
+
 def action_library_sources(repo: Path, entry: dict, owner: dict, lock: dict) -> dict:
     selected = action_source_inputs(repo, entry, owner, lock)
-    return {} if selected is None else {"deepmerge": {
+    libraries = {} if selected is None else {"deepmerge": {
         "version": "4.3.1", "resolved": CHECKOUT_ARCHIVE,
         "integrity": integrity(selected["material"]["archive"])}}
+    minimatch = minimatch_action_inputs(repo, entry, owner, lock)
+    if minimatch is not None:
+        require(selected is not None, "minimatch-action-base-source-missing")
+        libraries["minimatch"] = {"version": "10.2.5", "resolved": MINIMATCH_ARCHIVE,
+                                  "integrity": MINIMATCH_DERIVED}
+    return libraries
 
 
 def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch=registry_archive) -> list[dict]:
@@ -380,9 +490,107 @@ def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch
 
 
 
-def verify_sources(repo: Path, packages: list, configuration: dict, fetch=registry_archive) -> list[dict]:
+def action_runtime(reference: str, source: str) -> bytes:
+    """Read a bounded committed action bundle without accepting redirects."""
+    repository, revision = reference.rsplit("@", 1)
+    require(repository == "KirilsTurkins/lsf-setup-python"
+            and re.fullmatch(r"[0-9a-f]{40}", revision) is not None
+            and source in {"dist/setup/index.js", "dist/cache-save/index.js"},
+            "invalid-minimatch-action-runtime-source")
+    url = f"https://raw.githubusercontent.com/{repository}/{revision}/{source}"
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+    started = monotonic()
+    content = bytearray()
+    with opener.open(url, timeout=30) as response:
+        require(response.status == 200 and response.url == url, "minimatch-action-runtime-unavailable")
+        while True:
+            require(monotonic() - started <= 30, "minimatch-action-runtime-deadline")
+            chunk = response.read1(65536)
+            require(monotonic() - started <= 30, "minimatch-action-runtime-deadline")
+            if not chunk:
+                break
+            content.extend(chunk)
+            require(len(content) <= MINIMATCH_RUNTIME_LIMIT, "minimatch-action-runtime-size-limit")
+    return bytes(content)
+
+
+def verify_minimatch_action_sources(repo: Path, packages: list, configuration: dict,
+                                    fetch=registry_archive, fetch_runtime=None) -> list[dict]:
+    receipts = []
+    for entry in configuration["manifests"]:
+        if entry.get("minimatch_source_repair") is None or not any(item.path == entry["lock"] for item in packages):
+            continue
+        owner = decode_json(read_file(repo, entry["path"]))
+        lock = decode_json(read_file(repo, entry["lock"]))
+        selected = minimatch_action_inputs(repo, entry, owner, lock)
+        material = selected["material"]
+        for runtime in MINIMATCH_RUNTIME.values():
+            raw = (fetch_runtime or action_runtime)(selected["reference"], runtime["source"])
+            require(source_identity(raw) == {key: runtime[key] for key in ("bytes", "sha256", "gitBlob")},
+                    "minimatch-action-runtime-drift")
+        pin = {"name": "minimatch", "version": "10.2.5", "integrity": MINIMATCH_UPSTREAM}
+        upstream = fetch(pin)
+        require(upstream == material["upstream"] and integrity(upstream) == MINIMATCH_UPSTREAM,
+                "minimatch-action-upstream-drift")
+        original = members(upstream)
+        value = manifest(original, "minimatch", "10.2.5", {"brace-expansion": "^5.0.5"})
+        require(value.get("license") == "BlueOak-1.0.0"
+                and digest(original["package/package.json"][0]) == "4b3a08a7ad20dead8bbe4b4fe97a2746bded7c51d218ef3034eb4e330ad31f08"
+                and digest(original["package/LICENSE.md"][0]) == "2c7c5d22ed5a8ee968c64757710979afcd77438c48b4a265b94e615babd8a901",
+                "minimatch-action-package-identity-drift")
+        repair = decode_json(material["repair"])
+        require(repair.get("profile") == "minimatch-10.2.5-lsf-bounds-v1",
+                "minimatch-action-repair-profile")
+        repaired = source_repair(original, repair, pin)
+        require(distribution(repaired) == material["archive"]
+                and integrity(material["archive"]) == MINIMATCH_DERIVED,
+                "minimatch-action-reconstruction-drift")
+        build = decode_json(material["build"])
+        artifact = build["artifact"]
+        installed = build["installed"]
+        require(build["schema"] == 1 and build["repository"] == "KirilsTurkins/lsf-setup-python"
+                and build["publishedRevision"] == selected["reference"].split("@")[1]
+                and build["publishedTree"] == build["sourceTree"] == "bb7f6e0323dbc034b8d11ba691e3c4f3ac76355e"
+                and build["sourceHead"] == "cc883652b3ad6f47c0fe0139ef4b0981f50ad59d"
+                and build["diagnosticHead"] == installed["sourceCommit"] == "04f6cab165742580f50af5336587b8ddf6ccc063"
+                and build["diagnosticTree"] == "5d6209aaa9b89357d4cc7233e46a94d5a1308e51"
+                and build["diagnosticOnlyPath"] == ".github/workflows/lsf-setup-python-runtime-owner.yml"
+                and build["run"] == 42010605694 and build["job"] == 127188354270
+                and build["jobConclusion"] == "success" and build["node"] == installed["node"] == "24.19.0"
+                and build["npm"] == "11.17.0" and build["jestSuites"] == 11 and build["jestTests"] == 249
+                and build["focusedTests"] == 2
+                and artifact["id"] == 13406518961 and artifact["bytes"] == 1817044
+                and artifact["sha256"] == "62e0ab9584d507a4217d9d10ce03d3054babd1171c6b6abc0b1ef4fa7e7ee85d"
+                and artifact["members"] == 11 and artifact["crcVerified"] is True
+                and installed["version"] == "10.2.5" and installed["repairSha256"] == digest(material["repair"])
+                and installed["installedPostimages"] == {row["path"]: row["afterSha256"] for row in repair["files"]},
+                "minimatch-action-build-evidence-drift")
+        expected_payloads = {
+            "package.json": source_identity(read_file(repo, entry["path"])),
+            "package-lock.json": source_identity(read_file(repo, entry["lock"])),
+            **{MINIMATCH_ASSETS[name]["source"]: MINIMATCH_ASSETS[name]
+               for name in ("upstream", "archive", "repair", "verifier")},
+            **{row["source"]: row for row in MINIMATCH_RUNTIME.values()},
+            ".lsf-source/minimatch-bounds.test.mjs": {"bytes": 2854, "sha256": "f65c9af8d0d6b2abfd728d803e223396e746850f564003e93b223c4f084f987b"},
+            "installed-minimatch.json": {"bytes": 427, "sha256": "8ac9a2cf9039bfbc29c2f74d85271721259e062e208df9bdc52f9715d3c70337"},
+        }
+        require(set(artifact["payloads"]) == set(expected_payloads)
+                and all(artifact["payloads"][path] == {key: identity[key] for key in ("bytes", "sha256")}
+                        for path, identity in expected_payloads.items()),
+                "minimatch-action-built-input-drift")
+        receipts.append({"name": pin["name"], "version": pin["version"], "profile": MINIMATCH_PROFILE,
+                         "upstream_integrity": MINIMATCH_UPSTREAM, "derived_integrity": MINIMATCH_DERIVED,
+                         "repair_sha256": digest(material["repair"]), "files": len(repair["files"]),
+                         "locks": [entry["lock"]], "advisories": MINIMATCH_ADVISORIES,
+                         "action": selected["reference"], "source_role": "action-runtime-and-build",
+                         "built_tree": build["publishedTree"], "build_run": build["run"]})
+    return receipts
+
+
+def verify_sources(repo: Path, packages: list, configuration: dict, fetch=registry_archive, fetch_runtime=None) -> list[dict]:
     """Produce receipts only after every selected source/lock byte is verified."""
     action_receipts = verify_action_sources(repo, packages, configuration, fetch)
+    action_receipts += verify_minimatch_action_sources(repo, packages, configuration, fetch, fetch_runtime)
     selected = [entry for entry in configuration["manifests"]
                 if (entry.get("derived_bundle") or entry.get("derived_libraries"))
                 and any(package.path == entry["lock"] for package in packages)]

@@ -120,6 +120,21 @@ all six default and raw CommonJS and ESM files and the complete bundle against
 the exact toolchain lock. It records only the specifically reviewed advisory
 revisions as source-remediated; other versions and findings remain visible.
 
+The setup-python action retains minimatch 10.2.5 with a maintained source repair.
+The [action policy](../../.github/security/minimatch-action-source-repairs.json)
+and independent verifier reconstruct the authenticated upstream archive and both
+patched entry points, require every v10 lock occurrence to select the exact fixed
+archive, and bind the installed-source verifier and both executable action bundles
+to the action revision. It retrieves each bundle from the exact immutable fork
+commit with redirects disabled, a 30-second socket inactivity timeout and an
+8 MiB per-file limit, then checks its SHA-256 and Git blob identity. Elapsed
+time is checked between completed reads; a blocking operation may extend that
+30-second target. Missing or changed content fails the scan. This adds a GitHub
+raw-content availability dependency. OSV still
+receives the original version; only the reviewed advisory revision for that exact
+lock can be classified as source-remediated.
+Other versions, locks, advisories and unpatched duplicate copies remain blocking.
+
 The selector-parser repair introduced by v4 remains at upstream 7.1.6 with its
 exact dependency graph. The selected v6 bundle also carries ip-address 10.7.4
 and undici 6.29.1. Current frontend locks pin tinypool 2.1.2, source-map-js 1.2.2,

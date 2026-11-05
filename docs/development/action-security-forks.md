@@ -9,12 +9,14 @@ deepmerge archive before crediting GHSA-gcqx-w48m-w2h4 on only the four bound lo
 Upstream licenses and history are retained. Tool-version inputs, workflow
 permissions and committed runtime distributions are preserved.
 
-The later setup-python build-graph update replaces affected build-only glob 10
-with 14.0.2 while retaining the original runtime minimatch 10.2.5. The
-[focused Linux owner](https://github.com/KirilsTurkins/lsf-setup-python/actions/runs/42005553397)
-passed the locked install, existing source verifier, distribution rebuild and
-249 tests on published source with only the diagnostic workflow added. Its
-runtime minimatch advisory remains visible in the security baseline.
+The setup-python build-graph update replaces affected build-only glob 10 with
+14.0.2. Its runtime matcher retains the minimatch 10.2.5 API with an explicit
+source backport for bounded pattern expansion. The security scanner verifies the
+original source, exact repair, installed-source verifier, all matching lock entries
+and both action bundles before crediting the reviewed advisory revision. Upstream
+minimatch 10.2.5 remains an affected release. The [focused Linux owner](https://github.com/KirilsTurkins/lsf-setup-python/actions/runs/42010605694)
+checked the exact published source tree with only its diagnostic workflow added;
+the retained artifact includes both rebuilt bundles and the source inputs.
 
 | Upstream | Fork commit | Contribution |
 | --- | --- | --- |
@@ -28,7 +30,7 @@ runtime minimatch advisory remains visible in the security baseline.
 | `actions/setup-dotnet` | [f5bcdac7f269](https://github.com/KirilsTurkins/lsf-setup-dotnet/commit/f5bcdac7f26977ef44527f837688dd86faf648ec) | [PR](https://github.com/actions/setup-dotnet/pull/795) |
 | `actions/setup-go` | [3f9b437aa6b8](https://github.com/KirilsTurkins/lsf-setup-go/commit/3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e) | [PR](https://github.com/actions/setup-go/pull/805) |
 | `actions/setup-node` | [fdae00b14e85](https://github.com/KirilsTurkins/lsf-setup-node/commit/fdae00b14e855eb751452bc70c64dde286270415) | [PR](https://github.com/actions/setup-node/pull/1653) |
-| `actions/setup-python` | [e0aa7f1b2061](https://github.com/KirilsTurkins/lsf-setup-python/commit/e0aa7f1b2061a76e0424bd22ac45be035ce42a6e) | [PR](https://github.com/actions/setup-python/pull/1381) |
+| `actions/setup-python` | [164c4cbba5d1](https://github.com/KirilsTurkins/lsf-setup-python/commit/164c4cbba5d1b03a046ac8bc25ae695bee0667a8) | [PR](https://github.com/actions/setup-python/pull/1381) |
 | `actions/upload-artifact` | [5c42799caf30](https://github.com/KirilsTurkins/lsf-upload-artifact/commit/5c42799caf30eda69cb2db5da0be2400c47cef16) | [PR](https://github.com/actions/upload-artifact/pull/825) |
 | `actions/upload-pages-artifact` | [78e399e92cd7](https://github.com/KirilsTurkins/lsf-upload-pages-artifact/commit/78e399e92cd7485cca2752423a3eb0ccf404df77) | [PR](https://github.com/actions/upload-pages-artifact/pull/166) |
 | `bufbuild/buf-setup-action` | [7e1d5f1d4a4a](https://github.com/KirilsTurkins/lsf-buf-setup-action/commit/7e1d5f1d4a4a7d82b1ff79968166c4f50a66ce57) | [PR](https://github.com/KirilsTurkins/lsf-buf-setup-action/pull/1); upstream creation blocked: Upstream repository is archived and read-only. |
