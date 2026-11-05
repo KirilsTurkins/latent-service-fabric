@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "repository": "KirilsTurkins/lsf-setup-dotnet",
+  "publishedRevision": "258c927924210be905f8908a4be714e5d0daffa8",
+  "publishedTree": "95a225c1d0707ebd764371b3d2a470bd5ac1271a",
+  "sourceHead": "b5df2c787220be374497e1fbbee09ac583849c80",
+  "sourceTree": "95a225c1d0707ebd764371b3d2a470bd5ac1271a",
+  "diagnosticHead": "02dfed81f2103cf05fd7fecac38141f3813dff97",
+  "diagnosticTree": "1d6dff64b8b80a025524c957c7ee9e667eaf634d",
+  "diagnosticOnlyPath": ".github/workflows/setup-dotnet-security-linux-owner.yml",
+  "diagnosticWorkflowBlob": "2a37150f4cb8f605b3e9548a53f2406b8d41ebc0",
+  "run": 42023417095,
+  "job": 127231597179,
+  "jobConclusion": "success",
+  "node": "24.19.0",
+  "npm": "11.17.0",
+  "jestSuites": 9,
+  "jestTests": 242,
+  "focusedTests": 2,
+  "tamperChecks": 15,
+  "jobLogSha256": "00dfe776f105229ae41f63b7bbed2ed84b0eb1f781233dc0f1c785c4bbb568a7",
+  "artifact": {
+    "id": 13411749303,
+    "bytes": 33194,
+    "sha256": "5eb17cdd8964f58e84f8793c575b9c8d623bac66a32deeda14b5798de3a7ee56",
+    "members": 7,
+    "crcVerified": true,
+    "payloads": {
+      "bundle-sha256.txt": {
+        "bytes": 177,
+        "sha256": "d55afeb366c4fea6314b47a19365fe7158e5a1e0494cb621668a9f347449c6ca"
+      },
+      "dist-actual.txt": {
+        "bytes": 98,
+        "sha256": "0630ff46bfeccc9ed40b1dd2e67cf7514e9a16feb8d3f2448b6baa91149b27f1"
+      },
+      "dist-expected.txt": {
+        "bytes": 98,
+        "sha256": "0630ff46bfeccc9ed40b1dd2e67cf7514e9a16feb8d3f2448b6baa91149b27f1"
+      },
+      "jest.json": {
+        "bytes": 237204,
+        "sha256": "08b8d36f0c39cd491b93c6c017c1e1ff859c7ec34046d73c106c15a598626d51"
+      },
+      "npm-ls.txt": {
+        "bytes": 47198,
+        "sha256": "3abd8c3ab27b2f0163cee14821f5dd81cd799dc9da3402736f9d06b885ed7b46"
+      },
+      "reconstruction.json": {
+        "bytes": 632,
+        "sha256": "ec5d869d9e91334c3f969ab3cb8e6f418f41ab9d76ec3f79939896b098dd9191"
+      },
+      "tamper.json": {
+        "bytes": 1993,
+        "sha256": "d21d916f015786a516a7b504c2829cbf511b0ed134b5976cb549d1467eb9b4d7"
+      }
+    }
+  },
+  "installedMinimatch": {
+    "kind": "installed-minimatch-source-assertion",
+    "sourceCommit": "02dfed81f2103cf05fd7fecac38141f3813dff97",
+    "node": "24.19.0",
+    "version": "10.2.5",
+    "repairSha256": "b340bb0502087bb0df18c8ec276ee61f58aedc6c54fcc6b022d174817d7d27a9",
+    "installedPostimages": {
+      "dist/commonjs/index.js": "7e835c0a30f7b4f29f4ad8cf8c3e92b97ab23ed854a7a777f240d6bdf3d19231",
+      "dist/esm/index.js": "37ba4ff4010cda499e890975983b78ebd5f2be2dd8506d938472de4af8e9ed25"
+    }
+  },
+  "installedDeepmerge": {
+    "kind": "installed-source-assertion",
+    "sourceCommit": "02dfed81f2103cf05fd7fecac38141f3813dff97",
+    "node": "24.19.0",
+    "packageVersion": "4.3.1",
+    "repairSha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+    "installedPostimages": {
+      "index.js": "ba2a6c79e67e10f45a32cfe8f5ea5c5607dc4718be2b37956e9202ea4cdbe1bc",
+      "dist/cjs.js": "c5e9c1f08e7a3b589010133108a3c625806358fa9e1bdaa11f07e9e756f19da0",
+      "dist/umd.js": "b12652d3654f47b08ae43e8b390b66c55987ace6d9a6167c3240744ffa0f28f9"
+    },
+    "actionBuildOrSignedSDKQualified": false
+  }
+}

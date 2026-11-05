@@ -12,16 +12,22 @@ from tools.rust_capsule_project import digest, inventory, write_json
 
 
 SECURITY_ACTION_PIN_INVERSES = (
-    ('KirilsTurkins/lsf-setup-python', '14de4ddb02861c1e098a1a260a2de7a6b45b68fb', '50257733267ef69f611231aad6b77a62adca7140'),
-    ('KirilsTurkins/lsf-upload-artifact', '5c42799caf30eda69cb2db5da0be2400c47cef16', '01d82cc6ae713563e8d04f36a17af500cf82a6a9'),
-    ('KirilsTurkins/lsf-setup-node', 'fdae00b14e855eb751452bc70c64dde286270415', 'c1136b2d97fe79ef645e9508b2048a222f50a170'),
-    ('KirilsTurkins/lsf-setup-java', '5d910981b146bc2d4fd97fa349210f3e3d454039', 'f041d6677134ada73c077d0c012bd78164b251a7'),
-    ('KirilsTurkins/lsf-upload-pages-artifact', '78e399e92cd7485cca2752423a3eb0ccf404df77', 'f6fd45bb134f6855d391ed2198e9b3d57d305a05'),
+    ('KirilsTurkins/lsf-attest-build-provenance', 'd67c304058531c46441ba89c83b3bbe075fd9d00', '16b356100dfe77222eebe783b5e26a565b76055a'),
+    ('KirilsTurkins/lsf-deploy-pages', 'e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6', '9290f9265d55d382005aa5f300fc4e9d5bb65cb2'),
+    ('KirilsTurkins/lsf-rust-cache', '38534d49940bc6c6aef1e8dfd45349a99d37f14e', '476b290465f7c84db317df6e6a6e2d3c12ea3477'),
+    ('KirilsTurkins/lsf-download-artifact', 'dd4ebbadbf12ed34441db2712be7a193490b7fc5', 'f073ba9e3801be93f933866d4c9a748e42157e5f'),
+    ('KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup', '1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce', '9244ec9f4725400c84054e3e6ec97514cadddf53'),
+    ('KirilsTurkins/lsf-setup-dotnet', '258c927924210be905f8908a4be714e5d0daffa8', 'f5bcdac7f26977ef44527f837688dd86faf648ec'),
+    ('KirilsTurkins/lsf-setup-python', '164c4cbba5d1b03a046ac8bc25ae695bee0667a8', '50257733267ef69f611231aad6b77a62adca7140'),
+    ('KirilsTurkins/lsf-upload-artifact', 'd74a697ce553b389f4219545e07c97fb8542c64f', '01d82cc6ae713563e8d04f36a17af500cf82a6a9'),
+    ('KirilsTurkins/lsf-setup-node', '34275fdec80b5be172c3327cadef76aa2f3b31c6', 'c1136b2d97fe79ef645e9508b2048a222f50a170'),
+    ('KirilsTurkins/lsf-setup-java', '63c7977881fc344a6ed464f7ed5e242aedc8d56c', 'f041d6677134ada73c077d0c012bd78164b251a7'),
+    ('KirilsTurkins/lsf-upload-pages-artifact', '28d7597d6f6497a5d34e5ecaa1d97c510ce3556b', 'f6fd45bb134f6855d391ed2198e9b3d57d305a05'),
 )
 
 
 def historical_security_actions(value):
-    """Invert only the five reviewed security pins before immutable old guards."""
+    """Invert only the eleven reviewed security pins before immutable old guards."""
     if type(value) not in (str, bytes):
         raise AssertionError('historical-workflow-exact-current-security-actions-required')
     for action, current_sha, previous_sha in SECURITY_ACTION_PIN_INVERSES:

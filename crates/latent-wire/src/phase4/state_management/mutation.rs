@@ -5,7 +5,9 @@ use super::{
     PlatformError, StateManagementBinding, StateManagementReservation,
 };
 use latent_audit::{AuditOperationResult, AuditReason};
-use latent_capabilities::namespace::{NamespaceControl, RetainedNamespaceControlRequest};
+use latent_capabilities::namespace::{
+    NamespaceControl, RetainedNamespaceControlRequest, RetainedPreparationError,
+};
 use latent_state::{
     embedded::{EmbeddedStore, FencedStoreError, StoreError},
     namespace::{
@@ -134,7 +136,7 @@ fn write(
         return Ok(Err(error));
     }
     let decision = access.mutation.as_ref().ok_or(StoreError::Invalid)?;
-    let prepared = NamespaceControl::prepare_retained(
+    let prepared = NamespaceControl::prepare_retained_checked(
         &inner.services.policy,
         decision,
         &inner.services.namespaces,
@@ -148,7 +150,8 @@ fn write(
     );
     let prepared = match prepared {
         Ok(value) => value,
-        Err(error) => return Ok(Err(error)),
+        Err(RetainedPreparationError::Refused(error)) => return Ok(Err(error)),
+        Err(RetainedPreparationError::Store(error)) => return Err(error),
     };
     let (batch, receipt, replayed, fence) = prepared.into_parts();
     if let Err(error) = pending.started() {

@@ -1573,6 +1573,7 @@ dependencies = [
  "latent-capabilities",
  "latent-core",
  "latent-http",
+ "latent-local-blobs",
  "latent-policy",
  "latent-state",
  "quick-xml",
@@ -1619,11 +1620,11 @@ dependencies = [
  "latent-activation",
  "latent-artifacts",
  "latent-audit",
- "latent-blobs",
  "latent-capabilities",
  "latent-core",
  "latent-effects",
  "latent-executor",
+ "latent-local-blobs",
  "latent-manifest",
  "latent-policy",
  "latent-routing",
@@ -1793,6 +1794,21 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "latent-local-blobs"
+version = "0.1.0-alpha.5"
+dependencies = [
+ "latent-capabilities",
+ "latent-core",
+ "latent-policy",
+ "latent-state",
+ "rustix",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "tempfile",
 ]
 
 [[package]]

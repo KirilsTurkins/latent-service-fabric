@@ -1,0 +1,130 @@
+{
+  "schema": 1,
+  "repository": "KirilsTurkins/lsf-rust-cache",
+  "publishedRevision": "38534d49940bc6c6aef1e8dfd45349a99d37f14e",
+  "publishedTree": "9f98acbfd89e15eac6e8614c2a7f394575d3590e",
+  "sourceHead": "2a5441298775042332ac1da9e478ffcce3e075f2",
+  "sourceTree": "9f98acbfd89e15eac6e8614c2a7f394575d3590e",
+  "diagnosticHead": "9f57c751fbc99dc4acc824398d68588cf565d59d",
+  "diagnosticOnlyPath": ".github/workflows/lsf-rust-cache-security-owner.yml",
+  "diagnosticWorkflowBlob": "0adb276eddaee72bbe863d5265ffe607ec069131",
+  "run": 42111587240,
+  "sourceJob": 127540248819,
+  "saveJob": 127540495921,
+  "restoreJob": 127541234496,
+  "conclusion": "success",
+  "node": "24.19.0",
+  "npm": "11.17.0",
+  "sourceTests": 5,
+  "cacheMissSaveHitRestore": true,
+  "artifact": {
+    "id": 13455276891,
+    "bytes": 1920974,
+    "sha256": "d519344459ab521d725a229bdd7b43ef30350e5c070790fbcb645d9109d7fed2",
+    "members": 31,
+    "checksums": 30,
+    "crcVerified": true,
+    "payloads": {
+      "action.yml": {
+        "bytes": 3246,
+        "sha256": "0bf18e525796c2e43b4cccbc5c914e745de700a4e56735f53a8f1b0e6504aa2a",
+        "gitBlob": "1481945d779f128e201b6aa5498c53fe4ae9632c"
+      },
+      "package.json": {
+        "bytes": 2190,
+        "sha256": "2aba49452ea432f269e679216b426c9e2e9459d1211745b06bbc9692dcab89ff",
+        "gitBlob": "84d8f31b759b456e71a67781dc362c12569e675f"
+      },
+      "package-lock.json": {
+        "bytes": 112753,
+        "sha256": "73ab20e6b215286eaf3c3060dfe66c4e9e426b0533ab907299bf9386aa91022a",
+        "gitBlob": "703d3fbc2e0decadb810f6decda4bfa8cd42e5a7"
+      },
+      ".lsf-source/verify-installed-deepmerge.mjs": {
+        "bytes": 2381,
+        "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+        "gitBlob": "99d75a2ea3895eb8acc8018984ca9826e4edff51"
+      },
+      ".lsf-source/verify-installed-minimatch.mjs": {
+        "bytes": 3386,
+        "sha256": "4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d",
+        "gitBlob": "de5fadac0ee90bd532c5683fd4bcb919634a4314"
+      },
+      ".lsf-source/minimatch-bounds.test.mjs": {
+        "bytes": 2854,
+        "sha256": "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492",
+        "gitBlob": "11a4cf916b01dfa3af9af699aa7ec641b39505d3"
+      },
+      ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar": {
+        "bytes": 51200,
+        "sha256": "c4ca0f4eb3a2464c026bc3dec5d9eaf04544aed24c3fd1d77da95f85e36c369f",
+        "gitBlob": "30e23fad3a82fd30bc3f08e26704a0c0bc84c704"
+      },
+      ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.repair.json": {
+        "bytes": 3064,
+        "sha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+        "gitBlob": "52602f18647aa2f2bd30f046e05bcce2705a761f"
+      },
+      ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.source.json": {
+        "bytes": 6925,
+        "sha256": "b4b0b79fa2bc84c6f1e1c61ddcc1ab228df629f9fce4b1067d3ac8b3d1c42892",
+        "gitBlob": "0685ff353f65174eb5a97cfcb385720dd4a5874c"
+      },
+      ".lsf-source/minimatch-10.2.6.original.tgz": {
+        "bytes": 117068,
+        "sha256": "5a3d2c8074a28229665727e47b8a1090941856a7962905efe05d20d3760355f8",
+        "gitBlob": "cc4d199bec4264ab80b9b228da85f074b045edf5"
+      },
+      ".lsf-source/minimatch-10.2.6-lsf-bound-v1.tar": {
+        "bytes": 583680,
+        "sha256": "bb2b80a4759baaee01d49528b2d7d0c05fc29c1cf0d3fea41ec243de04bceedb",
+        "gitBlob": "2a1f40a7420f3cfb13e5284e433b19ec6db1e145"
+      },
+      ".lsf-source/minimatch-10.2.6-lsf-bound-v1.repair.json": {
+        "bytes": 2129,
+        "sha256": "d6ede52113aa8cb2d4b6ee008885fd2de0d37e06d822e444846f6f905f088bf3",
+        "gitBlob": "42886b2bc898bf44b955fc31ff963bb91a94bcc9"
+      },
+      ".lsf-source/verify-rust-cache-lock.mjs": {
+        "bytes": 2211,
+        "sha256": "93437849b770f19a97251121d354f55705cff9f3771e9faad36db85cd0472841",
+        "gitBlob": "d9cdca37d2c5b4c417cde7496a85e7c8f177dc8a"
+      },
+      ".lsf-source/rust-cache-lock.test.mjs": {
+        "bytes": 2387,
+        "sha256": "4610bfc55e9451600b3acf8ad67639ad6800b86802f3634b5e06afe3d20e6684",
+        "gitBlob": "32b758f19fd9ad50cafa0f96929f1190185209ac"
+      },
+      "dist/cache-DqPewXTO.js": {
+        "bytes": 1728166,
+        "sha256": "07db20548a8d1d06f2a7b9de443858d49a8a313d81078e22c5a170a4974c1878",
+        "gitBlob": "b1af9eab8c5970cbe70dbaab9b53c86ef63f78eb"
+      },
+      "dist/cache-Dt0HXnmv.js": {
+        "bytes": 5097394,
+        "sha256": "a56045b2899b9e84b07a4a474c58e4cfba4834e83103fc7d71c326ca5f5e9ed5",
+        "gitBlob": "bb21bf2d76378a180d6a509edcfba2a36c098c2c"
+      },
+      "dist/cleanup-BaklJKZS.js": {
+        "bytes": 1266081,
+        "sha256": "c258ac9bdbb42caedc86dee803f24fd1f11687848a903b6ab010d20b44a75317",
+        "gitBlob": "05daf2e05bc5099227e37557cf57df549fd3b3a4"
+      },
+      "dist/restore.js": {
+        "bytes": 3218,
+        "sha256": "79132962e0c05a3cf89cd4f4afa9b397e1cb4b3f464596fcb3532e48bc6deed7",
+        "gitBlob": "ff6a978b49030c31d9981beff6aa3e60c5605499"
+      },
+      "dist/save.js": {
+        "bytes": 3886,
+        "sha256": "692deadfb87ebc4522b6b478d1f95d10b9861052c53325a5d7dac7fa53254662",
+        "gitBlob": "999256ab23222b71758198d7ddfa96e490c64295"
+      },
+      "dist/state-cjs-DX0ePKGg.js": {
+        "bytes": 53327,
+        "sha256": "adf7c2c7259a366203dd55940761d50529982bb61c344f4d389f7c587d6ea04d",
+        "gitBlob": "3d2c29249aa189db9a92c1d087e4df2bc88e27c3"
+      }
+    }
+  }
+}

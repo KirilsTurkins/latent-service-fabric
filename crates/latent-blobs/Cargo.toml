@@ -11,6 +11,7 @@ description = "Immutable blob contracts and bounded tenant-scoped local storage.
 workspace = true
 
 [dependencies]
+latent-local-blobs = { path = "../latent-local-blobs" }
 latent-core = { path = "../latent-core" }
 latent-capabilities = { path = "../latent-capabilities" }
 latent-policy = { path = "../latent-policy" }
