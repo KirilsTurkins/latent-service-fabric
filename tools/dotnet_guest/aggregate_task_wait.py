@@ -122,21 +122,6 @@ def exact(value, expected):
     return value == expected
 
 
-# Keep the historical v2 receipt exact. The selected v3 helper adds only the
-# original ThreadPool dispatcher's read-only prefetched-slot predicate.
-PREFETCH_POLL_EXPECTED = {
-    **EXPECTED,
-    'patch': 'latent.dotnet.wait-all.v3',
-    'profile': 'dotnet-aggregate-task-wait-candidate-v3',
-    'prefetchedPollReadiness': 'original-dispatch-slot-before-blocking-poll',
-    'rewrittenBodies': {**EXPECTED['rewrittenBodies'],
-        'System.Boolean System.Threading.WasiEventLoop::LsfAggregateReady()':
-            '4eabc2f11e2f7eac8a6d4a67812a51d356b7654101845c01458b5f85754cb5a7'},
-}
-
-
 def validate(value):
-    expected = (PREFETCH_POLL_EXPECTED if type(value) is dict
-                and value.get('patch') == PREFETCH_POLL_EXPECTED['patch'] else EXPECTED)
-    if not exact(value, expected):
+    if not exact(value, EXPECTED):
         raise ValueError('task-wait-aggregate-rewrite-receipt')

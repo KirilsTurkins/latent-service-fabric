@@ -80,7 +80,6 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
             arguments[-2].write_bytes(b'aggregate-control')
             from tools.dotnet_guest.managed_work import PREFETCH_REWRITE_RECEIPT
             current = {**self.receipt(), 'managedAcceptedWork': copy.deepcopy(PREFETCH_REWRITE_RECEIPT),
-                       'aggregateTaskWait': copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED),
                        'generatedHelperCount': 96, 'outputDigest': digest(b'aggregate-control')}
             write_json(arguments[-1], current)
         control.run_tool = rewrite
@@ -107,7 +106,7 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
         result = intermediate.finish(control.project, control.evidence, corelib_port=final)
         self.assertEqual(result['selection']['requiredDeclarations'], sorted(DECLARATIONS))
         self.assertEqual(result['nativeAotReferenceBinding']['finalCoreLibDerivation']['selectedDigest'], final.identity['digest'])
-        self.assertEqual(result['aggregateTaskWait'], aggregate_task_wait.PREFETCH_POLL_EXPECTED)
+        self.assertEqual(result['aggregateTaskWait'], aggregate_task_wait.EXPECTED)
         self.assertEqual(intermediate.assembly.read_bytes(), b'aggregate-control')
         response.write_text('-r:'+str(intermediate.assembly)+'\n')
         with self.assertRaisesRegex(ValueError, 'native-aot-reference-drift'):

@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "latent.rust.combined-fixed-graph-origin.v1",
+  "scope": "fixed composed diagnostic; no host admission or signed runtime qualification",
+  "sourceCommit": "7f1a95ef7f2552bb6b0339e3331cf6b25d765127",
+  "run": 41926247914,
+  "job": 126911296919,
+  "artifact": 13371474344,
+  "archiveSha256": "sha256:2c9e799d6ccbd44cfa4a08c9597b5f3440cf2f0c9954b89171ffa39bdb4b66e9",
+  "producerOutcome": "graph composed and validated; owner failed later while writing a duplicate receipt",
+  "catalogueBodySha256": "sha256:eca9883441a2e8ef0b4ea721c53932866d117503382c6e8805cb7d7661fd1b8b",
+  "observedOriginalImports": 90,
+  "observedOriginalDefinedFunctions": 1867,
+  "observedOriginalOperators": 233645,
+  "observedOriginalLocals": 5132,
+  "finalMainOffset": 318214,
+  "finalMainBytes": 920667,
+  "files": {
+    "combined-encoded-producers.bin": {
+      "bytes": 107,
+      "sha256": "sha256:bb8d9b857137a2350f9537225dee84487cf35a2782b8a88917eebf503fdd86ea"
+    },
+    "combined-final-component.wasm": {
+      "bytes": 1281820,
+      "sha256": "sha256:8916f44f9044242b05fe4a438f47082ff7073cfcbf08585b01312c347e338c90"
+    },
+    "combined-final-prefix.bin": {
+      "bytes": 318214,
+      "sha256": "sha256:81965ed8c087daef1b52e667f7c7b90f2330949a4f602f086b83fc379a9bf4ea"
+    },
+    "combined-final-suffix.bin": {
+      "bytes": 42939,
+      "sha256": "sha256:d8d78b10105616db6a522ab94b4781280c40088597e3cb218b478107d154b472"
+    },
+    "combined-original-core.wasm": {
+      "bytes": 1001580,
+      "sha256": "sha256:1fbef671a60b24c5a66b55ecb899d3c3d8e9b45d296a61db22cc69babd1aa96e"
+    },
+    "combined-original-producers.bin": {
+      "bytes": 61,
+      "sha256": "sha256:481d56af9d9f23b7f94c4150f8085f48f9b05f177a0318cad370736cdbc5792f"
+    },
+    "combined-preview-component.wasm": {
+      "bytes": 941142,
+      "sha256": "sha256:00b00663135aa217039905458271726b8e262bcd41e1b3a5f3495681ea54b8ff"
+    },
+    "combined-preview-shell.bin": {
+      "bytes": 20473,
+      "sha256": "sha256:f00e6359d312815d616f4133ccca2f83d9fe6e738d3eddd2faf4cf94a33040a9"
+    },
+    "combined-wit-0.bin": {
+      "bytes": 2310,
+      "sha256": "sha256:5efa0e739a220e7baa43be00ed445ead6644bd337c50a79940d6eb7965e60ac2"
+    },
+    "combined-wit-1.bin": {
+      "bytes": 7020,
+      "sha256": "sha256:3a5f6af9065352746e968f0387cbe1b115218a1fee0490559897d55340b312b8"
+    },
+    "combined-wit-2.bin": {
+      "bytes": 7093,
+      "sha256": "sha256:2d7466f2a1c376b925f0a227dcd945f229fbec3f55af54e9981903ce2beaf3bb"
+    },
+    "combined-wit-3.bin": {
+      "bytes": 11022,
+      "sha256": "sha256:65922a7a5358ce4cd12ff0e63faf6dc70ac9b7e647fd851f38658f4167e5eb28"
+    },
+    "combined-wit-4.bin": {
+      "bytes": 10911,
+      "sha256": "sha256:924d7637988ebff2892065cdb4c9c780e88681b862fa24d734676629e3077c53"
+    }
+  }
+}
