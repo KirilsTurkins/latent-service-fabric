@@ -208,7 +208,7 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Select the runner-owned compiler archive cache
@@ -733,7 +733,7 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Prepare pinned native Java tools and compiler namespaces
@@ -813,7 +813,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '25.0.4+101.0.LTS'
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Install only the pinned ordinary Java component compiler
@@ -890,7 +890,7 @@ jobs:
       with:
         distribution: temurin
         java-version: 25.0.4+101.0.LTS
-    - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
       with:
         version: 1.254.0
     - name: Install only the pinned ordinary Java component compiler
@@ -1002,7 +1002,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/java-http-spi-prepared"
-    - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
       with:
         version: 1.254.0
     - name: Install the same pinned Java compiler tools without any native Cargo build
@@ -1107,7 +1107,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '25.0.4+101.0.LTS'
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Install only the same pinned normal public component compiler

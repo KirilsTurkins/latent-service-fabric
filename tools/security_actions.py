@@ -59,6 +59,14 @@ def verify(repo: Path, paths: list[str]) -> list[dict]:
                     and 1 <= len(row["files"]) <= 6 and isinstance(row.get("metadata"), dict),
                     "invalid-action-graph-binding")
             source, revision = value.rsplit("@", 1)
+            if source == "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup":
+                require(value == ("KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@"
+                                  "1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce")
+                        and len(row["files"]) == 4
+                        and {item.get("source") for item in row["files"]} == {
+                            "wasm-tools/setup/action.yml", "package.json", "package-lock.json",
+                            ".lsf-source/verify-installed-deepmerge.mjs"},
+                        "unreviewed-additional-action-source")
             if len(row["files"]) == 5:
                 require(source == "KirilsTurkins/lsf-setup-python"
                         and {item.get("source") for item in row["files"]} == {

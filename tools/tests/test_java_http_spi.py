@@ -180,7 +180,7 @@ class JavaSpiManualWorkflow(unittest.TestCase):
             'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333': 'KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f',
             'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9': 'KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16',
             'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6': 'KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477',
-            'bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613': 'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53',
+            'bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613': 'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce',
         }
         migrated = set()
         for job in old['jobs'].values():

@@ -434,7 +434,8 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/bytecodealliance-actions/package-lock.json",
-      "path": ".github/security/actions/bytecodealliance-actions/package.json"
+      "path": ".github/security/actions/bytecodealliance-actions/package.json",
+      "source_repair": "bytecodealliance-deepmerge-source-v1"
     },
     {
       "kind": "npm",

@@ -50,7 +50,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/go-http-tenant-native"
       - if: github.event_name == 'workflow_dispatch' && inputs.recompile == true
-        uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Authenticate the maintained Go compiler and official generator

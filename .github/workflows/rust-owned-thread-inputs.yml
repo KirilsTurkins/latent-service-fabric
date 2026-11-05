@@ -52,7 +52,7 @@ jobs:
           save-if: false
       - name: Install existing pinned Python compiler recipe dependencies
         run: python3 -m pip install -r tools/requirements.lock
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         if: ${{ inputs.application-diagnostic || (github.event_name == 'push' && (github.ref == 'refs/heads/diag/rust-thread-frames-20261023' || github.ref == 'refs/heads/feat/rust-thread-runtime-20261023')) }}
         with:
           version: 1.254.0

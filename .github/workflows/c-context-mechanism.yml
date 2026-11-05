@@ -48,7 +48,7 @@ jobs:
           cargo build --locked -p latent-component-threading --bin c-context --target-dir "$RUNNER_TEMP/c-context-tools"
       - name: Execute fixed C compiler and actual core-Wasm callback controls
         run: python3 tools/qualify_c_context_lowering.py --zig "$(command -v zig)" --node "$(command -v node)" --transformer "$RUNNER_TEMP/c-context-tools/debug/c-context" --output "$RUNNER_TEMP/c-context-mechanism"
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Install only the pinned normal C bindings generator
