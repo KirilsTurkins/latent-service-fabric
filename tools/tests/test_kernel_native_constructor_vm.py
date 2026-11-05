@@ -968,8 +968,57 @@ class TraceRefusalControls(unittest.TestCase):
         self.assertEqual(result['virtioGuardPasses'], 2)
         self.assertEqual(result['apicGsi'], [23, 20, 21, 22])
         self.assertEqual(result['picGsi'], [8, 9, 10, 11])
+        self.assertEqual(result['postGuardNonselectedGsi0Deassertions'], 0)
         self.assertFalse(result['traceDeliveryQualified'])
         self.assertFalse(result['irqFundingQualified'])
+
+    def test_only_one_unselected_gsi0_deassertion_after_each_guard_is_accepted(self):
+        raw = example()
+        event = b'x86_gsi_interrupt GSI interrupt #0 level:0'
+        guards = [line for line in raw.splitlines()
+                  if line.startswith(b'lsf_q35_virtio_guard ')]
+        self.assertEqual(len(guards), 2)
+        for guard in guards:
+            with self.subTest(guard=guard[:60]):
+                candidate = raw.replace(guard + b'\n', guard + b'\n' + event + b'\n', 1)
+                observation = trace.inspect(candidate, 0x103, 1, 0xff)
+                self.assertEqual(observation['postGuardNonselectedGsi0Deassertions'], 1)
+                self.assertEqual(observation['selectedRouteCallbacks'], 8)
+                self.assertEqual(observation['picGsi'], [8, 9, 10, 11])
+                self.assertEqual(observation['observedGsiAssertionsDuringWrites'], 0)
+        both = raw
+        for guard in guards:
+            both = both.replace(guard + b'\n', guard + b'\n' + event + b'\n', 1)
+        self.assertEqual(trace.inspect(both, 0x103, 1, 0xff)
+                         ['postGuardNonselectedGsi0Deassertions'], 2)
+
+    def test_post_guard_events_cannot_hide_selected_routes_or_assertions(self):
+        raw = example()
+        guard = next(line for line in raw.splitlines()
+                     if line.startswith(b'lsf_q35_virtio_guard ') and b'phase=2' in line)
+        def after(events):
+            return raw.replace(guard + b'\n', guard + b'\n' + events + b'\n', 1)
+        zero = b'x86_gsi_interrupt GSI interrupt #0 level:0'
+        cases = (
+            after(b'x86_gsi_interrupt GSI interrupt #0 level:1'),
+            after(zero + b'\n' + zero),
+            after(b'x86_gsi_interrupt GSI interrupt #8 level:0'),
+            after(b'x86_gsi_interrupt GSI interrupt #8 level:1'),
+            after(b'x86_gsi_interrupt GSI interrupt #23 level:0'),
+            after(b'x86_gsi_interrupt GSI interrupt #23 level:1'),
+            after(route(0, 7, 8)[0]),
+            raw.replace(guard + b'\n', zero + b'\n' + guard + b'\n', 1),
+        )
+        for candidate in cases:
+            with self.subTest(candidate=candidate[-180:]), self.assertRaises(ValueError):
+                trace.inspect(candidate, 0x103, 1, 0xff)
+        # If GSI 0 is a selected PIC route, even a post-guard deassertion cannot
+        # be classified as non-selected and must refuse.
+        alias = raw.replace(b'x86_gsi_interrupt GSI interrupt #8 level:0',
+                            b'x86_gsi_interrupt GSI interrupt #0 level:0')
+        alias = alias.replace(guard + b'\n', guard + b'\n' + zero + b'\n', 1)
+        with self.assertRaises(ValueError):
+            trace.inspect(alias, 0x103, 1, 0xff)
 
     def test_missing_extra_or_asserted_callbacks_refuse(self):
         raw = example()

@@ -476,7 +476,7 @@
       "upstream_repository": "actions/setup-node",
       "upstream_revision": "949feb2413d6458794dcd2491c4babbbce0c15c1"
     },
-    "KirilsTurkins/lsf-setup-python@e0aa7f1b2061a76e0424bd22ac45be035ce42a6e": {
+    "KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8": {
       "files": [
         {
           "sha256": "0829b3f54d769f8b25cefd4d856c735bc8e097d6597835b838ebb4da497c838d",
@@ -485,22 +485,28 @@
           "source_sha256": "0829b3f54d769f8b25cefd4d856c735bc8e097d6597835b838ebb4da497c838d"
         },
         {
-          "sha256": "6a2b2f31ff91994e668f4bbda5aadc0b15f788a6b7c14e493cd87fd1373aec4b",
+          "sha256": "4d22b6c0283bec4e47b42b798fd1746f86824787b030e60e8a9acce3af2f9755",
           "snapshot": ".github/security/actions/setup-python/package.json",
           "source": "package.json",
-          "source_sha256": "6a2b2f31ff91994e668f4bbda5aadc0b15f788a6b7c14e493cd87fd1373aec4b"
+          "source_sha256": "4d22b6c0283bec4e47b42b798fd1746f86824787b030e60e8a9acce3af2f9755"
         },
         {
-          "sha256": "3c612a4384d4e8f2499e8315ac213a788061b1c6fcc3ff5947b4c717397b0d0a",
+          "sha256": "e694ec7b8006a19f7d2141c4533ba79a64b2b4608a871992e7e5a58e006bb780",
           "snapshot": ".github/security/actions/setup-python/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "3c612a4384d4e8f2499e8315ac213a788061b1c6fcc3ff5947b4c717397b0d0a"
+          "source_sha256": "e694ec7b8006a19f7d2141c4533ba79a64b2b4608a871992e7e5a58e006bb780"
         },
         {
           "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
           "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
           "source": ".lsf-source/verify-installed-deepmerge.mjs",
           "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
+        },
+        {
+          "snapshot": ".github/security/actions/setup-python-minimatch/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-minimatch.mjs",
+          "sha256": "4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826",
+          "source_sha256": "4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826"
         }
       ],
       "kind": "npm",
@@ -511,7 +517,7 @@
         "source_sha256": "0829b3f54d769f8b25cefd4d856c735bc8e097d6597835b838ebb4da497c838d"
       },
       "repository": "KirilsTurkins/lsf-setup-python",
-      "revision": "e0aa7f1b2061a76e0424bd22ac45be035ce42a6e",
+      "revision": "164c4cbba5d1b03a046ac8bc25ae695bee0667a8",
       "security_pr": "https://github.com/actions/setup-python/pull/1381",
       "upstream_repository": "actions/setup-python",
       "upstream_revision": "6d4fd22b20465ccc0f7354476588e8df7c9ca0e0"

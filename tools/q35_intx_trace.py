@@ -89,12 +89,16 @@ def inspect(raw, command, pin, line):
         reads = [e[7] for e in selected if e[1] == b'read' and e[6] == offset]
         require(len(reads) >= 3 and all(value == expected_value for value in reads), 'original-pin-line')
     pic_pairs = []
+    post_guard_gsi0 = 0
     for n in (2, 4):
         start, end = command_rows[n][0], command_rows[n+1][0]
-        observed = [e for e in window[start+1:end] if e[0] in ('route', 'gsi')]
-        guards = [e for e in window[start+1:end] if e[0] == 'virtio']
-        require(guards == [('virtio', expected[n-1][1], expected[n][1], n//2+1)],
+        guards = [(i, e) for i, e in enumerate(window[start+1:end], start+1)
+                  if e[0] == 'virtio']
+        require(len(guards) == 1 and
+                guards[0][1] == ('virtio', expected[n-1][1], expected[n][1], n//2+1),
                 'exact-virtio-guard')
+        guard = guards[0][0]
+        observed = [e for e in window[start+1:guard] if e[0] in ('route', 'gsi')]
         require(len(observed) == 12, 'complete-four-routes-and-eight-gsi')
         pic = []
         for i, parent in enumerate((7, 4, 5, 6)):
@@ -104,6 +108,13 @@ def inspect(raw, command, pin, line):
             require(pic_event[0] == 'gsi' and 0 <= pic_event[1] < 16 and pic_event[2] == 0,
                     'pic-level')
             pic.append(pic_event[1])
+        # The marker follows the synchronous, BQL-guarded callback work.
+        # Permit one GSI 0 deassertion before the next command read only when
+        # 0 is outside the selected PIC routes; its actual source is unknown.
+        after = [e for e in window[guard+1:end] if e[0] in ('route', 'gsi', 'virtio')]
+        require(not after or (after == [('gsi', 0, 0)] and 0 not in pic),
+                'post-guard-nonselected-deassertion')
+        post_guard_gsi0 += len(after)
         pic_pairs.append(pic)
     require(pic_pairs[0] == pic_pairs[1], 'stable-shared-pic-routes')
     return {'selectedBdf': '0000:00:03.0', 'command': command, 'pin': pin, 'line': line,
@@ -111,5 +122,6 @@ def inspect(raw, command, pin, line):
             'selectedCommandWrites': 2, 'selectedRouteCallbacks': 8,
             'virtioGuardPasses': 2,
             'apicGsi': [23, 20, 21, 22], 'picGsi': pic_pairs[0],
+            'postGuardNonselectedGsi0Deassertions': post_guard_gsi0,
             'observedGsiAssertionsDuringWrites': 0, 'traceDeliveryQualified': False,
             'irqFundingQualified': False, 'physicalBankRetired': False}

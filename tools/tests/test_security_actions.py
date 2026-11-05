@@ -92,6 +92,21 @@ class ActionGraphTests(unittest.TestCase):
         with self.assertRaisesRegex(SecurityError, "unused-or-stale"):
             self.check()
 
+    def test_additional_runtime_bindings_are_restricted_to_reviewed_action(self):
+        extra = [self.snapshot(name, "fixture\n") for name in (
+            ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-installed-minimatch.mjs")]
+        self.row["files"].extend(extra)
+        with self.assertRaisesRegex(SecurityError, "unreviewed-additional-action-source"):
+            self.check()
+        reference = "KirilsTurkins/lsf-setup-python@" + "a" * 40
+        self.write(".github/workflows/ci.yml", "jobs:\n  test:\n    steps:\n      - uses: " + reference + "\n")
+        self.row["repository"] = "KirilsTurkins/lsf-setup-python"
+        self.actions = {reference: self.row}
+        self.assertEqual(len(self.check()), 1)
+        self.row["files"][-1]["source"] = ".lsf-source/unreviewed.mjs"
+        with self.assertRaisesRegex(SecurityError, "unreviewed-additional-action-source"):
+            self.check()
+
     def test_missing_policy_does_not_report_success(self):
         with self.assertRaises(OSError):
             verify(self.root, self.paths)
