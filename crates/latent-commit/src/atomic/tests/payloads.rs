@@ -1065,6 +1065,30 @@ async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
         .unwrap(),
         Disposition::Uncertain
     );
+    let view = fixture.state.snapshot().unwrap();
+    let due = DispatchCatalog::due_page(&view, 205, None, 1, 4096).unwrap();
+    let failed_effect = due.rows[0].effect.clone();
+    assert_ne!(failed_effect, uncertain_effect);
+    drop(view);
+    let claim =
+        DispatchCatalog::claim(&fixture.state, epoch, &due.rows[0], effect_clock(205)).unwrap();
+    assert_eq!(
+        DispatchCatalog::complete(
+            &fixture.state,
+            epoch,
+            &claim.attempt,
+            AttemptReceipt {
+                disposition: Disposition::KnownFailed,
+                reason: "known-failure-before-send".into(),
+                provider_receipt: None,
+                observed_at_millis: 206,
+            },
+            None,
+            effect_clock(206),
+        )
+        .unwrap(),
+        Disposition::KnownFailed
+    );
     let owner = ResultMaintenanceOwner::default();
     let clock = |now| MaintenanceClock {
         time: time(now),
@@ -1089,6 +1113,14 @@ async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
             .receipt
             .disposition,
         Disposition::Uncertain
+    );
+    assert_eq!(
+        DispatchCatalog::history_page(&view, &failed_effect, None, 128, 4096)
+            .unwrap()
+            .rows[0]
+            .receipt
+            .disposition,
+        Disposition::KnownFailed
     );
     validate_payload_census(&view);
     drop(view);
@@ -1128,6 +1160,14 @@ async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
             .receipt
             .disposition,
         Disposition::Uncertain
+    );
+    assert_eq!(
+        DispatchCatalog::history_page(&view, &failed_effect, None, 128, 4096)
+            .unwrap()
+            .rows[0]
+            .receipt
+            .disposition,
+        Disposition::KnownFailed
     );
     drop(view);
     owner
