@@ -267,7 +267,7 @@ fn retire_body(
     Ok(reclaimed)
 }
 
-fn release_result_reference(
+pub(super) fn release_result_reference(
     view: &ReadView,
     record: &CommandRecord,
     batch: &mut AtomicBatch,

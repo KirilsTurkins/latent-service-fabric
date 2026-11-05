@@ -139,6 +139,15 @@ fn rejection_reference_rejects_consistent_catalogue_with_wrong_content_digest() 
 
 #[test]
 fn response_expiry_releases_only_its_shared_reference_and_keeps_effect_linkage() {
+    exercise_result_expiry(false);
+}
+
+#[test]
+fn reviewed_terminalization_also_releases_only_the_response_reference() {
+    exercise_result_expiry(true);
+}
+
+fn exercise_result_expiry(reviewed: bool) {
     use latent_state::embedded::ExpectedRow;
     let (_dir, store, effects) = accounted::setup(8);
     let admitted = claim(&store, input("shared-retention"));
@@ -225,18 +234,40 @@ fn response_expiry_releases_only_its_shared_reference_and_keeps_effect_linkage()
         monotonic_millis: now,
     };
     owner.anchor(&store, None, clock(101), |_| Ok(())).unwrap();
+    let request = RetentionRequest {
+        key: command.key.clone(),
+        expected_command_digest: RetentionRequest::command_digest(&command).unwrap(),
+        actor: "operator".into(),
+        operation_id: "review-1".into(),
+        policy: "retention".into(),
+        retain_until_millis: 2300,
+        inbox_expires_at_millis: None,
+    };
     let mut calls = 0;
-    assert!(matches!(
-        owner.step(&store, clock(1100), |_| {
-            calls += 1;
-            if calls == 3 {
-                Err(AtomicError::PermissionDenied)
-            } else {
-                Ok(())
-            }
-        }),
-        Err(AtomicError::PermissionDenied)
-    ));
+    let rejected = if reviewed {
+        owner
+            .terminalize(&store, &request, clock(2200), |_, _, _| {
+                calls += 1;
+                if calls == 3 {
+                    Err(AtomicError::PermissionDenied)
+                } else {
+                    Ok(())
+                }
+            })
+            .map(|_| ())
+    } else {
+        owner
+            .step(&store, clock(1100), |_| {
+                calls += 1;
+                if calls == 3 {
+                    Err(AtomicError::PermissionDenied)
+                } else {
+                    Ok(())
+                }
+            })
+            .map(|_| ())
+    };
+    assert!(matches!(rejected, Err(AtomicError::PermissionDenied)));
     let view = store.snapshot().unwrap();
     assert_eq!(
         latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
@@ -244,7 +275,13 @@ fn response_expiry_releases_only_its_shared_reference_and_keeps_effect_linkage()
     );
     assert!(view.get(&result.owner_key().unwrap()).unwrap().is_some());
     drop(view);
-    owner.step(&store, clock(1100), |_| Ok(())).unwrap();
+    if reviewed {
+        owner
+            .terminalize(&store, &request, clock(2200), |_, _, _| Ok(()))
+            .unwrap();
+    } else {
+        owner.step(&store, clock(1100), |_| Ok(())).unwrap();
+    }
     let view = store.snapshot().unwrap();
     assert!(view.get(&result.owner_key().unwrap()).unwrap().is_none());
     let bytes = view.get(&effect.owner_key().unwrap()).unwrap().unwrap();
@@ -264,4 +301,15 @@ fn response_expiry_releases_only_its_shared_reference_and_keeps_effect_linkage()
     let after = accounted::usage(&store);
     assert_eq!(after.usage.payload_bytes, before.usage.payload_bytes - 7);
     assert!(after.usage.metadata_rows < before.usage.metadata_rows);
+    if reviewed {
+        owner
+            .purge(&store, &request, clock(2300), |_, _, _| Ok(()))
+            .unwrap();
+        let view = store.snapshot().unwrap();
+        assert!(view.get(&effect.owner_key().unwrap()).unwrap().is_none());
+        assert_eq!(
+            latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+            Some(0)
+        );
+    }
 }
