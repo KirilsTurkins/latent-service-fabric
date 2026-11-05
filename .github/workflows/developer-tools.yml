@@ -538,7 +538,7 @@ jobs:
       - name: Attest guest tool candidate without release authority
         if: github.event_name != 'pull_request'
         id: attest
-        uses: KirilsTurkins/lsf-attest-build-provenance@16b356100dfe77222eebe783b5e26a565b76055a # v4.2.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-attest-build-provenance@d67c304058531c46441ba89c83b3bbe075fd9d00 # v4.2.2 + upstream changes + LSF security fixes
         with:
           subject-path: target/dev-tools/candidate/SHA256SUMS
       - name: Retain offline guest tool attestation
@@ -723,7 +723,7 @@ jobs:
       - name: Attest Linux developer candidate without release authority
         if: github.event_name != 'pull_request'
         id: attest
-        uses: KirilsTurkins/lsf-attest-build-provenance@16b356100dfe77222eebe783b5e26a565b76055a # v4.2.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-attest-build-provenance@d67c304058531c46441ba89c83b3bbe075fd9d00 # v4.2.2 + upstream changes + LSF security fixes
         with:
           subject-path: target/dev-linux/candidate/SHA256SUMS
       - name: Retain offline Linux developer attestation
@@ -799,7 +799,7 @@ jobs:
       - name: Attest image candidate without release authority
         if: github.event_name != 'pull_request'
         id: attest
-        uses: KirilsTurkins/lsf-attest-build-provenance@16b356100dfe77222eebe783b5e26a565b76055a # v4.2.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-attest-build-provenance@d67c304058531c46441ba89c83b3bbe075fd9d00 # v4.2.2 + upstream changes + LSF security fixes
         with:
           subject-path: target/dev-wsl/candidate/SHA256SUMS
       - name: Retain offline image attestation
@@ -840,7 +840,7 @@ jobs:
       - name: Attest Windows candidate without release authority
         if: github.event_name != 'pull_request'
         id: attest
-        uses: KirilsTurkins/lsf-attest-build-provenance@16b356100dfe77222eebe783b5e26a565b76055a # v4.2.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-attest-build-provenance@d67c304058531c46441ba89c83b3bbe075fd9d00 # v4.2.2 + upstream changes + LSF security fixes
         with:
           subject-path: target/dev-windows/candidate/SHA256SUMS
       - name: Retain offline Windows attestation

@@ -165,6 +165,17 @@ OSV continues to observe both original versions; only the two specifically
 reviewed advisory revisions for the Rust-cache lock can receive source-repair
 credit. Other findings and changed advisory revisions remain blocking.
 
+The attest action retains deepmerge 4.3.1, glob 10.5.0 and 13.0.6, and
+minimatch 9.0.9, 10.2.5 and 10.2.6 with exact local source repairs. Its
+independent verifier binds all 15 affected lock paths, both fork commits, the
+installed-source guard and tests, all archive members and both hosted owner
+receipts. Both minified glob 13 exports are reconstructed as well as their
+ordinary walkers. The verifier fetches the five committed dist files from the
+immutable attest fork using the same bounded raw-content checks described above,
+adding five requests to the existing GitHub raw-content dependency. OSV retains
+all six upstream version identities; only the specifically reviewed advisory
+revisions for this exact lock can receive source-repair credit.
+
 The selector-parser repair introduced by v4 remains at upstream 7.1.6 with its
 exact dependency graph. The selected v6 bundle also carries ip-address 10.7.4
 and undici 6.29.1. Current frontend locks pin tinypool 2.1.2, source-map-js 1.2.2,

@@ -1,0 +1,54 @@
+{
+  "run": 42119738981,
+  "job": 127568652788,
+  "diagnosticHead": "06a4fa4fccee622ae683d6307f0c035a13fcd962",
+  "diagnosticTree": "a582960579075d21c384edb07919318feb712eac",
+  "sourceHead": "b01d99f97fc67eb9a250c06f57087cb1c967e777",
+  "sourceTree": "9dff91ae9cff4548b3d6a5c5f614c0eb2a4786ba",
+  "base": "16b356100dfe77222eebe783b5e26a565b76055a",
+  "workflowSha256": "0155d28e0fee9e0744fcf3a904a51b86a4b887e8c2ed899079ae20431afa0203",
+  "childHead": "ac3d77bef0ab118e8a29decb53e9f03622ee7299",
+  "childTree": "02f94d909cefa3fa466bbfa696f25c0e5626a3eb",
+  "artifact": {
+    "id": 13458225631,
+    "bytes": 1355788,
+    "sha256": "dbc8e0d0ffee235da9d65c67fa8ce8d140668c90bfcf41c19cbbee4e35c5b752",
+    "members": 11,
+    "checksums": 10,
+    "crcVerified": true
+  },
+  "wrapperBeforeSha256": "7162930617686fed2e72fb90c8ac795abd4a13d8481e59b01524ab0a8c033261",
+  "wrapperAfterSha256": "ae5bd5400857c281acf70d75e5870e7ada9a6e70b9e5b423ce5170dde84fa880",
+  "childDist": {
+    "index.js": {
+      "bytes": 4931583,
+      "sha256": "0c611191565244227631683833b64bf878751c59b8527c254daceeed43096052",
+      "gitBlob": "1b37a7933fdc645b4f6e51b174a6a257835415a3"
+    },
+    "50.index.js": {
+      "bytes": 169,
+      "sha256": "45195f12661aeef8aa7ffabfd780d02fffd45c2c37102ff2ecf217a56d6d4f92",
+      "gitBlob": "3fc5a453f0fd544bca59773fe59de2eb00b97a0a"
+    },
+    "606.index.js": {
+      "bytes": 7520,
+      "sha256": "629225cc3e937e22ce6b90c21f1d938d1be0716257446593555696bf1d01523e",
+      "gitBlob": "eaa2ef7f5d8183abab36f475e21def33632d71c7"
+    },
+    "licenses.txt": {
+      "bytes": 2194,
+      "sha256": "ecaaf3e9799bcf31db16d25584213e1ef190a364d561a82164a5abc5b1327835",
+      "gitBlob": "6cfe240fb47b09b57c3fa74ae6c89befb2c357e3"
+    },
+    "package.json": {
+      "bytes": 23,
+      "sha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a",
+      "gitBlob": "3dbc1ca591c0557e35b6004aeba250e6a70b56e3"
+    }
+  },
+  "exactSingleReplacement": true,
+  "repository": "KirilsTurkins/lsf-attest-build-provenance",
+  "publishedRevision": "d67c304058531c46441ba89c83b3bbe075fd9d00",
+  "publishedTree": "9dff91ae9cff4548b3d6a5c5f614c0eb2a4786ba",
+  "jobConclusion": "success"
+}
