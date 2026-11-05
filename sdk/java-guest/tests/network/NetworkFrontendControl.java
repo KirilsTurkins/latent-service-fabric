@@ -71,6 +71,9 @@ public final class NetworkFrontendControl {
         String symbol = names.forMethod(callback);
         Pattern definition = Pattern.compile("(?s)\\b" + Pattern.quote(symbol) + "\\s*\\([^;{}]*\\)\\s*\\{");
         String selected = null;
+        StringBuilder snippets = new StringBuilder();
+        int windows = 0;
+        int diagnostics = 0;
         long total = 0;
         require(output.getNames().size() <= 2048, "network-frontend-file-bound");
         for (String name : output.getNames()) {
@@ -79,6 +82,19 @@ public final class NetworkFrontendControl {
             require(total <= 32L * 1024 * 1024, "network-frontend-byte-bound");
             if (!name.endsWith(".c")) continue;
             String text = new String(bytes, StandardCharsets.UTF_8);
+            if (text.contains(symbol)) diagnostics |= 1;
+            if (text.contains("lsf_java_async_begin")) diagnostics |= 2;
+            // The fixture contains only fixed SDK/test sources. Keep bounded
+            // snippets around its symbol or import to diagnose optimization.
+            for (String token : new String[] { symbol, "lsf_java_async_begin" }) {
+                int at = text.indexOf(token);
+                if (at >= 0 && windows < 8) {
+                    snippets.append("--- fixed SDK C candidate ---\n");
+                    snippets.append(text, Math.max(0, at - 384), Math.min(text.length(), at + 1664));
+                    snippets.append("\n");
+                    ++windows;
+                }
+            }
             var match = definition.matcher(text);
             if (!match.find()) continue;
             require(selected == null && !match.find(), "network-frontend-one-callback-definition");
@@ -93,10 +109,24 @@ public final class NetworkFrontendControl {
             require(depth == 0 && cursor - begin <= 65536, "network-frontend-callback-bound");
             selected = text.substring(begin, cursor);
         }
+        if (selected != null) diagnostics |= 4;
+        if (selected != null && selected.contains("lsf_java_async_begin")) diagnostics |= 8;
+        if (selected != null && selected.contains("TEAVM_ARRAY_DATA")) diagnostics |= 16;
+        var dependency = vm.getDependencyInfo().getMethod(callback);
+        if (dependency == null) diagnostics |= 32;
+        else {
+            if (dependency.isMissing()) diagnostics |= 64;
+            if (dependency.isUsed()) diagnostics |= 128;
+            if (dependency.isCalled()) diagnostics |= 256;
+        }
+        Path target = Path.of(args[1]);
+        if (selected != null) Files.writeString(target, selected, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+        Files.writeString(target.resolveSibling(args[0] + "-network-diagnostic.txt"),
+                snippets.length() == 0 ? "no fixed SDK C candidates\n" : snippets.toString(),
+                StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+        System.err.println("NETWORK_FRONTEND_DIAGNOSTIC " + diagnostics);
         require(selected != null && selected.contains("lsf_java_async_begin")
                 && selected.contains("TEAVM_ARRAY_DATA"), "network-frontend-callback-emitted");
-        Path target = Path.of(args[1]);
-        Files.writeString(target, selected, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
         System.out.println("NETWORK_FRONTEND_CAPTURE " + args[0]
                 + ";actual-sdk-callback;locked-ctarget;COMPONENT_QUALIFICATION=pending");
     }

@@ -25,6 +25,15 @@ jobs:
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.254.0
+        with:
+          version: 1.254.0
+      - name: Install the verified WIT binding generator
+        run: |
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-network-bindgen"
+          echo "$RUNNER_TEMP/java-network-bindgen" >> "$GITHUB_PATH"
+      - name: Verify the reviewed default SDK binding lock
+        run: python3 -B tools/java_guest/lock.py
       - name: Emit the original and corrected compiler callback text
         run: |
           python3 -m pip install --requirement tools/requirements.lock
@@ -41,3 +50,4 @@ jobs:
             ${{ runner.temp }}/java-network-frontend/commands.json
             ${{ runner.temp }}/java-network-frontend/commands/logs/**
             ${{ runner.temp }}/java-network-frontend/*-owned-callback.c
+            ${{ runner.temp }}/java-network-frontend/*-network-diagnostic.txt
