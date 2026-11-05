@@ -398,7 +398,7 @@
       "upstream_repository": "actions/setup-dotnet",
       "upstream_revision": "349aa191ae05aee6d53db4bcba37bd6980e812fe"
     },
-    "KirilsTurkins/lsf-setup-go@3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e": {
+    "KirilsTurkins/lsf-setup-go@1020042799f722e9ef016bf63106367879587a49": {
       "files": [
         {
           "sha256": "216efbacabe9911f4de0714f00f57e45470469c52c2d3e70e8d6165f32939585",
@@ -407,16 +407,34 @@
           "source_sha256": "216efbacabe9911f4de0714f00f57e45470469c52c2d3e70e8d6165f32939585"
         },
         {
-          "sha256": "f91803f0b5ea634b8ee05e9bd39704a64b0d354c14bbcff18cbc469ff0f1f51a",
+          "sha256": "435344c44656f7642f8a467c786c623e24ad22032df2a14f0835bd6673f44b93",
           "snapshot": ".github/security/actions/setup-go/package.json",
           "source": "package.json",
-          "source_sha256": "f91803f0b5ea634b8ee05e9bd39704a64b0d354c14bbcff18cbc469ff0f1f51a"
+          "source_sha256": "435344c44656f7642f8a467c786c623e24ad22032df2a14f0835bd6673f44b93"
         },
         {
-          "sha256": "84c15fc2907dd4cb3fff2c2c175adaa48ea218baf3bd48fb04f643cf70dfda6f",
+          "sha256": "058e6d5773b07dfa02e9fb15a46f6d101ee1d18d123b7d22aabecb3e991c5a4d",
           "snapshot": ".github/security/actions/setup-go/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "84c15fc2907dd4cb3fff2c2c175adaa48ea218baf3bd48fb04f643cf70dfda6f"
+          "source_sha256": "058e6d5773b07dfa02e9fb15a46f6d101ee1d18d123b7d22aabecb3e991c5a4d"
+        },
+        {
+          "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+          "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-deepmerge.mjs",
+          "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
+        },
+        {
+          "sha256": "4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826",
+          "snapshot": ".github/security/actions/setup-python-minimatch/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-minimatch.mjs",
+          "source_sha256": "4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826"
+        },
+        {
+          "sha256": "f65c9af8d0d6b2abfd728d803e223396e746850f564003e93b223c4f084f987b",
+          "snapshot": ".github/security/actions/setup-go-minimatch/bounds.test.mjs.snapshot",
+          "source": ".lsf-source/minimatch-bounds.test.mjs",
+          "source_sha256": "f65c9af8d0d6b2abfd728d803e223396e746850f564003e93b223c4f084f987b"
         }
       ],
       "kind": "npm",
@@ -427,7 +445,7 @@
         "source_sha256": "216efbacabe9911f4de0714f00f57e45470469c52c2d3e70e8d6165f32939585"
       },
       "repository": "KirilsTurkins/lsf-setup-go",
-      "revision": "3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e",
+      "revision": "1020042799f722e9ef016bf63106367879587a49",
       "security_pr": "https://github.com/actions/setup-go/pull/805",
       "upstream_repository": "actions/setup-go",
       "upstream_revision": "90ad2b35f69faf97585ad74d28fa006d2739b7af"

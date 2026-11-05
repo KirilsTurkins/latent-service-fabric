@@ -17,6 +17,7 @@ from pathlib import Path, PurePosixPath
 from time import monotonic
 
 from tools import security_dotnet_minimatch as dotnet_sources
+from tools import security_setup_go
 from tools.security_common import POLICY, decode_json, digest, read_file, require
 
 
@@ -445,6 +446,8 @@ def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> di
     profile = entry["source_repair"]
     if profile == BCA_PROFILE:
         return bytecodealliance_source_inputs(repo, entry, owner, lock)
+    if profile == security_setup_go.DEEP_PROFILE:
+        return security_setup_go.source_inputs(repo, entry, owner, lock)
     prefixes = [prefix for prefix in ACTION_REFERENCES if entry["path"] == prefix + "package.json"
                 and entry["lock"] == prefix + "package-lock.json"]
     require((profile == CHECKOUT_PROFILE
@@ -568,6 +571,8 @@ def minimatch_action_inputs(repo: Path, entry: dict, owner: dict, lock: dict) ->
         return dotnet_sources.action_inputs(repo, entry, owner, lock)
     if entry["minimatch_source_repair"] == NODE_MINIMATCH_PROFILE:
         return node_minimatch_action_inputs(repo, entry, owner, lock)
+    if entry["minimatch_source_repair"] == security_setup_go.MINI_PROFILE:
+        return security_setup_go.minimatch_inputs(repo, entry, owner, lock)
     require(entry["minimatch_source_repair"] == MINIMATCH_PROFILE
             and entry.get("source_repair") == ACTION_PROFILE
             and entry["path"] == MINIMATCH_PREFIX + "package.json"
@@ -807,7 +812,8 @@ def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch
                     and row["mode"] == oct(original[key][1]) == oct(repaired[key][1]),
                     "action-source-file-drift")
         receipt = {"name": pin["name"], "version": pin["version"],
-                   "profile": (BCA_PROFILE if selected.get("bytecodealliance") else
+                   "profile": (security_setup_go.DEEP_PROFILE if selected.get("setup_go") else
+                               BCA_PROFILE if selected.get("bytecodealliance") else
                                policy["profile"] if selected["checkout"] else ACTION_PROFILE),
                    "upstream_integrity": pin["integrity"],
                    "derived_integrity": integrity(material["archive"]),
@@ -844,6 +850,9 @@ def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch
                         == {field: binding[field] for field in ("bytes", "sha256")},
                         "action-source-built-input-drift")
             receipt.update({"built_tree": build["builtTree"], "build_run": build["run"]})
+        elif selected.get("setup_go"):
+            receipt.update({"verifier_sha256": security_setup_go.ACTION_INPUTS[security_setup_go.DEEP_VERIFIER][2],
+                            "built_tree": "586d487e144d8cf393893459b6678118d0b5dc92", "build_run": 42024368583})
         elif selected.get("bytecodealliance"):
             receipt.update({"verifier_sha256": BCA_INPUTS[ACTION_VERIFIER_SOURCE][2],
                             "built_tree": "578e888fbea3faf619b37e947f749242001b2aa0",
@@ -868,7 +877,8 @@ def action_runtime(reference: str, source: str) -> bytes:
                  or (reference == dotnet_sources.REFERENCE
                      and source in {row["source"] for row in dotnet_sources.RUNTIME.values()})
                  or (reference == ACTION_REFERENCES[NODE_MINIMATCH_PREFIX]
-                     and source in {row["source"] for row in NODE_MINIMATCH_RUNTIME.values()})),
+                     and source in {row["source"] for row in NODE_MINIMATCH_RUNTIME.values()})
+                 or (reference == security_setup_go.REFERENCE and source in security_setup_go.RUNTIME)),
             "invalid-minimatch-action-runtime-source")
     url = f"https://raw.githubusercontent.com/{repository}/{revision}/{source}"
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
@@ -893,7 +903,7 @@ def verify_minimatch_action_sources(repo: Path, packages: list, configuration: d
     for entry in configuration["manifests"]:
         if entry.get("minimatch_source_repair") is None or not any(item.path == entry["lock"] for item in packages):
             continue
-        if entry["minimatch_source_repair"] in {JAVA_MINIMATCH_PROFILE, dotnet_sources.PROFILE, NODE_MINIMATCH_PROFILE}:
+        if entry["minimatch_source_repair"] in {JAVA_MINIMATCH_PROFILE, dotnet_sources.PROFILE, NODE_MINIMATCH_PROFILE, security_setup_go.MINI_PROFILE}:
             continue
         owner = decode_json(read_file(repo, entry["path"]))
         lock = decode_json(read_file(repo, entry["lock"]))
@@ -1137,6 +1147,8 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
     action_receipts += verify_java_minimatch_action_sources(repo, packages, configuration, fetch, fetch_runtime)
     action_receipts += dotnet_sources.verify_sources(repo, packages, configuration, fetch, fetch_runtime)
     action_receipts += verify_node_minimatch_action_sources(repo, packages, configuration, fetch, fetch_runtime)
+    action_receipts += security_setup_go.verify_minimatch_sources(repo, packages, configuration, fetch,
+                                                                  fetch_runtime or action_runtime)
     selected = [entry for entry in configuration["manifests"]
                 if (entry.get("derived_bundle") or entry.get("derived_libraries"))
                 and any(package.path == entry["lock"] for package in packages)]

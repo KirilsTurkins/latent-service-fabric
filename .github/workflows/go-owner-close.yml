@@ -20,7 +20,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-go@3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e # v7.0.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-go@1020042799f722e9ef016bf63106367879587a49 # v7.0.0 + upstream changes + LSF security fixes
         with:
           go-version: 1.27.3
           cache: false
