@@ -74,15 +74,24 @@
   (alias export $inner-instance "read-value" (func $read-value))
   (alias export $inner-instance "answer" (func $answer))
   (alias export $inner-instance "write-sync" (func $write-sync))
-  (core func $call-write (canon lower (func $write-sync)))
-  (core module $forwarder
-    (import "" "call-write" (func $call-write (result i32)))
-    (func (export "forward") (result i32) (call $call-write)))
-  (core instance $forwarder (instantiate $forwarder
-    (with "" (instance (export "call-write" (func $call-write))))))
-  (type $forward-type (func async (result u32)))
-  (func (export "write") (type $forward-type)
-    (canon lift (core func $forwarder "forward")))
+  ;; The caller and stream owner are siblings: an ancestor-to-child adapter
+  ;; unconditionally traps CannotEnterComponent before the stream operation.
+  (component $caller
+    (type $write-sync-type (func (result u32)))
+    (import "call-write" (func $import-write (type $write-sync-type)))
+    (core func $call-write (canon lower (func $import-write)))
+    (core module $forwarder
+      (import "" "call-write" (func $call-write (result i32)))
+      (func (export "forward") (result i32) (call $call-write)))
+    (core instance $forwarder (instantiate $forwarder
+      (with "" (instance (export "call-write" (func $call-write))))))
+    (type $forward-type (func async (result u32)))
+    (func (export "write") (type $forward-type)
+      (canon lift (core func $forwarder "forward"))))
+  (instance $caller-instance
+    (instantiate $caller (with "call-write" (func $write-sync))))
+  (alias export $caller-instance "write" (func $write))
+  (export "write" (func $write))
   (export "make" (func $make))
   (export "read" (func $read))
   (export "read-value" (func $read-value))
