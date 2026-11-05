@@ -144,7 +144,7 @@ fn publication_operator_recovery_keeps_both_fences_without_automatic_replay() {
             selection: Some(selection()),
             reclamation_catalog_fence: vec![2; 32],
             maximum_files: 100,
-            maximum_bytes_hashed: 67108864,
+            maximum_bytes_hashed: 67_108_864,
         }),
         maximum_wait_millis: 1000,
     });
