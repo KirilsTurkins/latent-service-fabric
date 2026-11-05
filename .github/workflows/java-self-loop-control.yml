@@ -1,0 +1,42 @@
+name: Java self-loop checkpoint control
+on:
+  push:
+    branches: ['fix/java-checkpoint-self-loop-20261105', 'feat/java-network-borrows-20261104']
+permissions:
+  contents: read
+concurrency:
+  group: java-self-loop-control-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  checkpoint-model:
+    name: Pinned TeaVM self-edge and real Java loop controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - name: Exercise the actual selected plugin and loop controls
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B tools/qualify_java_self_loop.py --output "$RUNNER_TEMP/java-self-loop"
+      - name: Retain bounded plugin model observations
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: java-self-loop-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/java-self-loop/result.json
+            ${{ runner.temp }}/java-self-loop/commands.json
+            ${{ runner.temp }}/java-self-loop/commands/logs/**
