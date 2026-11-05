@@ -3,6 +3,171 @@ use super::*;
 mod fixture;
 use fixture::Fixture;
 
+const CHILD_BOUNDARY: &[u8] = b"PAYLOAD_PROCESS_BOUNDARY";
+const CHILD_TEST: &str = "atomic::tests::payloads::owned_payload_process_child";
+
+fn stop_at_boundary() -> ! {
+    use std::io::Write;
+    println!("{}", std::str::from_utf8(CHILD_BOUNDARY).unwrap());
+    std::io::stdout().flush().unwrap();
+    loop {
+        std::thread::park();
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn owned_payload_process_child() {
+    let Ok(report) = std::env::var("LSF_PAYLOAD_CHILD_REPORT") else {
+        return;
+    };
+    let before = std::env::var("LSF_PAYLOAD_CHILD_BEFORE").unwrap() == "true";
+    let fixture = Fixture::new();
+    std::fs::write(report, fixture._root.path().to_str().unwrap()).unwrap();
+    let claim = fixture.claim("process-payload");
+    let view = fixture.state.snapshot().unwrap();
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        None,
+        vec![],
+        value(b"body"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let pin = fixture.capture().await;
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::Result,
+                payload: pin,
+            }],
+        )
+        .unwrap();
+    drop(view);
+    if before {
+        let _ = envelope.publish_with_payloads(&fixture.state, |_, _| stop_at_boundary());
+    } else {
+        let _ = envelope.publish_payload_checkpoint(
+            &fixture.state,
+            |_, _| Ok(()),
+            || stop_at_boundary(),
+        );
+    }
+    panic!("the parent must terminate the original process at its observed boundary");
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn process_loss_before_and_after_commit_preserves_blob_custody() {
+    use latent_test_process::process::{OwnedProcess, ProcessLimits};
+    use sha2::{Digest, Sha256};
+    for before in [true, false] {
+        let root = tempfile::tempdir().unwrap();
+        let report = root.path().join("child-root.txt");
+        let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+        command
+            .args(["--exact", CHILD_TEST, "--nocapture"])
+            .env("TMPDIR", root.path())
+            .env("LSF_PAYLOAD_CHILD_REPORT", &report)
+            .env("LSF_PAYLOAD_CHILD_BEFORE", before.to_string());
+        let child = OwnedProcess::spawn(command, ProcessLimits::default()).unwrap();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
+        let mut observed = false;
+        while std::time::Instant::now() < deadline {
+            if child
+                .stdout_snapshot()
+                .unwrap()
+                .windows(CHILD_BOUNDARY.len())
+                .any(|window| window == CHILD_BOUNDARY)
+            {
+                observed = true;
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+        }
+        let retired = child.terminate().await.unwrap();
+        assert!(
+            observed && !retired.status.success(),
+            "original process did not reach its payload boundary"
+        );
+        let child_root = std::path::PathBuf::from(std::fs::read_to_string(report).unwrap());
+        assert!(child_root.starts_with(root.path()));
+        let state = open(&child_root.join("state.redb"));
+        let view = state.snapshot().unwrap();
+        let page = view
+            .scan_after(Family::Command, b"command-v1\0", None, 2, 128 * 1024)
+            .unwrap();
+        assert_eq!(page.rows.len(), 1);
+        let command = CommandRecord::decode(&page.rows[0].1).unwrap();
+        assert_eq!(
+            command.outcome(),
+            if before {
+                Outcome::Pending
+            } else {
+                Outcome::Committed
+            }
+        );
+        let owners =
+            latent_state::payload_references::required_owner_page(&view, None, 2, 2048).unwrap();
+        assert_eq!(owners.references.len(), usize::from(!before));
+        validate_payload_census(&view);
+        drop(view);
+        let owner = latent_blobs::local::LocalBlobStore::open_durable(
+            &child_root.join("blobs"),
+            "private",
+            latent_blobs::local::LocalBlobLimits {
+                maximum_objects: 4,
+                maximum_object_bytes: 64,
+                maximum_disk_bytes: 65536,
+                maximum_stages: 4,
+                maximum_stage_bytes: 128,
+                maximum_handles: 8,
+                maximum_chunk_bytes: 8,
+                ..latent_blobs::local::LocalBlobLimits::default()
+            },
+            &state,
+        )
+        .unwrap();
+        let blob = latent_blobs::BlobReference {
+            digest: latent_core::BlobDigest(format!(
+                "sha256:{:x}",
+                latent_core::digest::HexDigest(Sha256::digest(b"body"))
+            )),
+            size_bytes: 4,
+            media_type: "application/octet-stream".into(),
+            tenant: TenantId("a".into()),
+            metadata: latent_core::Metadata::new(),
+        };
+        let reader = owner
+            .open_read(&TenantId("a".into()), &blob, &|| Ok(()))
+            .unwrap();
+        let mut bytes = [0; 4];
+        reader
+            .read(
+                &latent_blobs::BlobRange {
+                    offset: 0,
+                    length: 4,
+                },
+                &mut bytes,
+                &|| Ok(()),
+            )
+            .unwrap();
+        assert_eq!(&bytes, b"body");
+        let release =
+            owner.release_durable_reference(&TenantId("a".into()), &blob, &state, &|| Ok(()));
+        assert_eq!(
+            release,
+            Err(if before {
+                latent_blobs::local::LocalBlobError::Corrupt
+            } else {
+                latent_blobs::local::LocalBlobError::Busy
+            })
+        );
+    }
+}
+
 fn validate_payload_census(
     view: &latent_state::embedded::ReadView,
 ) -> latent_state::tenant::TenantUsage {

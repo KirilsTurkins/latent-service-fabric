@@ -795,12 +795,13 @@ impl CompleteEnvelope {
                 reason: AtomicError::Invalid,
             };
         }
-        self.publish_inner(store, |envelope| final_accept(&envelope.authorities))
+        self.publish_inner(store, |envelope| final_accept(&envelope.authorities), || {})
     }
     fn publish_inner(
         mut self,
         store: &EmbeddedStore,
         final_accept: impl FnOnce(&Self) -> Result<(), AtomicError>,
+        after_commit: impl FnOnce(),
     ) -> PreparedDisposition {
         use super::ownership::{ACCEPTED, TERMINAL, UNKNOWN};
         use std::sync::atomic::Ordering;
@@ -811,6 +812,7 @@ impl CompleteEnvelope {
             Ok(())
         }) {
             Ok(()) => {
+                after_commit();
                 self.claim.physical.phase.store(TERMINAL, Ordering::Release);
                 PreparedDisposition::Confirmed {
                     command: Box::new(self.terminal),

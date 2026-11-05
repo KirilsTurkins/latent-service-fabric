@@ -334,8 +334,32 @@ impl CompleteEnvelope {
                 reason: AtomicError::PermissionDenied,
             };
         }
-        self.publish_inner(store, |envelope| {
-            final_accept(&envelope.authorities, &envelope.payloads)
-        })
+        self.publish_inner(
+            store,
+            |envelope| final_accept(&envelope.authorities, &envelope.payloads),
+            || {},
+        )
+    }
+
+    #[cfg(test)]
+    pub(in crate::atomic) fn publish_payload_checkpoint(
+        self,
+        store: &EmbeddedStore,
+        final_accept: impl FnOnce(
+            &[DurableEffectAuthority],
+            &[CapturedLocalPayload],
+        ) -> Result<(), AtomicError>,
+        after_commit: impl FnOnce(),
+    ) -> PreparedDisposition {
+        assert!(self.old_state_payloads.is_empty());
+        assert!(self
+            .payloads
+            .iter()
+            .all(|payload| payload.uses_store(store)));
+        self.publish_inner(
+            store,
+            |envelope| final_accept(&envelope.authorities, &envelope.payloads),
+            after_commit,
+        )
     }
 }
