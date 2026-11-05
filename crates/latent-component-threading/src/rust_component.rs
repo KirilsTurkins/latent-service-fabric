@@ -411,24 +411,9 @@ pub(super) fn verify_combined_composition(
     preview: &[u8],
     component: &[u8],
 ) -> Result<CombinedPreviewProof, &'static str> {
-    let expected_length = COMBINED_FINAL_PREFIX
-        .len()
-        .checked_add(COMBINED_MAIN_BYTES)
-        .and_then(|size| size.checked_add(COMBINED_FINAL_SUFFIX.len()))
-        .ok_or("rust-combined-final-byte-bound")?;
-    if component.len() != expected_length || component.len() > MAX_COMPONENT_BYTES {
-        return Err("rust-combined-final-byte-bound");
-    }
-    header(component, true)?;
-    let main_start = COMBINED_FINAL_PREFIX.len();
-    let main_end = main_start + COMBINED_MAIN_BYTES;
-    if component.get(..main_start) != Some(COMBINED_FINAL_PREFIX)
-        || component.get(main_end..) != Some(COMBINED_FINAL_SUFFIX)
-    {
-        return Err("rust-combined-final-envelope-mismatch");
-    }
+    let main = combined_final_main(component)?;
     let preview_main = main_from_fixed_envelope(preview, COMBINED_PREVIEW_SHELL)?;
-    if component.get(main_start..main_end) != Some(preview_main) {
+    if main != preview_main {
         return Err("rust-combined-final-main-mismatch");
     }
     let mut proof = verify_combined_preview(original, preview)?;
@@ -438,6 +423,85 @@ pub(super) fn verify_combined_composition(
     proof.final_digest = Some(Sha256::digest(component).into());
     proof.final_composition_authenticated = true;
     Ok(proof)
+}
+
+// Bound and authenticate the complete fixed final envelope before any
+// component reader processes its allocating structures.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+fn combined_final_main(component: &[u8]) -> Result<&[u8], &'static str> {
+    let main_start = COMBINED_FINAL_PREFIX.len();
+    let main_end = main_start
+        .checked_add(COMBINED_MAIN_BYTES)
+        .ok_or("rust-combined-final-byte-bound")?;
+    let expected_length = main_end
+        .checked_add(COMBINED_FINAL_SUFFIX.len())
+        .ok_or("rust-combined-final-byte-bound")?;
+    if component.len() != expected_length || component.len() > MAX_COMPONENT_BYTES {
+        return Err("rust-combined-final-byte-bound");
+    }
+    header(component, true)?;
+    if component.get(..main_start) != Some(COMBINED_FINAL_PREFIX)
+        || component.get(main_end..) != Some(COMBINED_FINAL_SUFFIX)
+    {
+        return Err("rust-combined-final-envelope-mismatch");
+    }
+    component
+        .get(main_start..main_end)
+        .ok_or("rust-combined-final-byte-bound")
+}
+
+/// Authenticated final graph and reconstructed original; not an admission.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+#[allow(dead_code)]
+#[derive(Debug)]
+pub(super) struct CombinedEmbeddedProof {
+    pub wrapped_digest: [u8; 32],
+    pub final_graph_digest: [u8; 32],
+    pub original_digest: [u8; 32],
+    pub main_digest: [u8; 32],
+    pub final_graph_authenticated: bool,
+    pub runtime_qualified: bool,
+}
+
+/// Diagnostic proof of the embedded source and complete fixed final graph.
+/// Callers must separately reserve reconstruction/verification work before
+/// allocation. This path does not select an engine or authorize execution.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+#[allow(dead_code)]
+pub(super) fn verify_embedded_combined_diagnostic(
+    wrapped: &[u8],
+) -> Result<CombinedEmbeddedProof, &'static str> {
+    let (component, delta) = crate::rust_original_delta::split_unverified(wrapped)?;
+    // Check the fixed final envelope before reconstructing attacker-supplied
+    // proof material; the decoder still enforces its own byte/work bounds.
+    let main = combined_final_main(component)?;
+    let original = crate::rust_original_delta::reconstruct(component, delta)?;
+    require_combined_wit(&original)?;
+    let (derived, source) = rust_objects::derive_combined_preview_core(&original, PUBLIC, POST)?;
+    if derived.len() > MAX_ORIGINAL_BYTES {
+        return Err("rust-combined-derived-byte-bound");
+    }
+    compare_combined_encoded_main(&derived, main)?;
+    Validator::new_with_features(WasmFeatures::all())
+        .validate_all(component)
+        .map_err(|_| "rust-combined-invalid-final-component")?;
+    Ok(CombinedEmbeddedProof {
+        wrapped_digest: Sha256::digest(wrapped).into(),
+        final_graph_digest: Sha256::digest(component).into(),
+        original_digest: source.original_digest,
+        main_digest: Sha256::digest(main).into(),
+        final_graph_authenticated: true,
+        runtime_qualified: false,
+    })
 }
 
 /// Source proof only. The host must admit the full work allowance first and
