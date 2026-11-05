@@ -30,7 +30,7 @@ The current security forks were reviewed on **2026-10-30**. They extend the pins
 | `KirilsTurkins/lsf-attest-build-provenance` | `v4.2.2` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-attest-build-provenance/pull/1)) | `16b356100dfe77222eebe783b5e26a565b76055a` |
 | `KirilsTurkins/lsf-cache` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/cache/pull/1804)) | `ec176dce9471270c8a9be1289040c0a8fd6aa708` |
 | `KirilsTurkins/lsf-checkout` | `v7.0.1` + upstream changes and security fixes ([review](https://github.com/actions/checkout/pull/2607)) | `4d310727149d3abacc52b5dcb0a1c4d18b345d13` |
-| `KirilsTurkins/lsf-deploy-pages` | `v5.0.1` + upstream changes and security fixes ([review](https://github.com/actions/deploy-pages/pull/453)) | `9290f9265d55d382005aa5f300fc4e9d5bb65cb2` |
+| `KirilsTurkins/lsf-deploy-pages` | `v5.0.1` + upstream changes and security fixes ([review](https://github.com/actions/deploy-pages/pull/453); [fork repair](https://github.com/KirilsTurkins/lsf-deploy-pages/pull/1)) | `e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6` |
 | `KirilsTurkins/lsf-download-artifact` | `v8.0.2` + upstream changes and security fixes ([review](https://github.com/actions/download-artifact/pull/496)) | `dd4ebbadbf12ed34441db2712be7a193490b7fc5` |
 | `KirilsTurkins/lsf-setup-dotnet` | `v6.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-dotnet/pull/795)) | `258c927924210be905f8908a4be714e5d0daffa8` |
 | `KirilsTurkins/lsf-setup-go` | `v7.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-go/pull/805)) | `1020042799f722e9ef016bf63106367879587a49` |

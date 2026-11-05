@@ -109,7 +109,7 @@ jobs:
           name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: candidate/site
           retention-days: 14
-      - uses: KirilsTurkins/lsf-deploy-pages@9290f9265d55d382005aa5f300fc4e9d5bb65cb2 # v5.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-deploy-pages@e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6 # v5.0.1 + upstream changes + LSF security fixes
         id: deployment
         with:
           artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}

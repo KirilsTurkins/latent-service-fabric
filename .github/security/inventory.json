@@ -431,7 +431,9 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/deploy-pages/package-lock.json",
-      "path": ".github/security/actions/deploy-pages/package.json"
+      "path": ".github/security/actions/deploy-pages/package.json",
+      "source_repair": "deploy-pages-deepmerge-source-v1",
+      "minimatch_source_repair": "deploy-pages-glob-minimatch-source-v1"
     },
     {
       "kind": "npm",
