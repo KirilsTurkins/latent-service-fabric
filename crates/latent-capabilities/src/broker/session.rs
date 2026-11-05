@@ -569,6 +569,12 @@ impl SessionCore {
     }
 }
 impl CapabilitySession {
+    /// Compare aliases of the original host session; this grants no authority.
+    #[must_use]
+    pub fn is_same_session(&self, other: &Self) -> bool {
+        Shared::ptr_eq(&self.core, &other.core)
+    }
+
     /// Retain an original runtime operation's closed resource refusal in the
     /// existing activation journal before its frozen WIT error is returned.
     /// A caught refusal remains an observation, never a later terminal cause.

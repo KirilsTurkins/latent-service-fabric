@@ -4,12 +4,18 @@ Immutable large-value storage with staged writers, ranged readers and explicit t
 
 Staging, publication, leases and reclamation are separate operations. An abandoned handle remains owned/charged until its physical cleanup boundary; dropping an object is not a background deletion command.
 
+An explicitly selected durable local root retains verified provisional pins and
+requires a fresh, matching state-store view before physical reference release.
+This library port is not yet installed in the transaction coordinator; S3
+references do not acquire this local retention guarantee.
+
 ## Responsibilities and architecture
 
 | Source | Responsibility |
 | --- | --- |
 | [src/lib.rs](src/lib.rs) | BlobReference/range/write/lease models and generic storage/transfer ports. |
 | [src/local.rs](src/local.rs) | Bounded synchronous immutable storage under one privately owned root. |
+| [src/local/durable.rs](src/local/durable.rs) | Opt-in local retention pins and state-backed release checks. |
 | [src/local/fs.rs](src/local/fs.rs) | Descriptor-relative no-follow operations and inode/type checks. |
 | [src/provider.rs](src/provider.rs) | Broker integration and owned chunks on bounded blocking/I/O resources. |
 | [src/s3.rs](src/s3.rs) | HTTPS, explicit peers, SigV4, versioned bucket and finite multipart staging. |
@@ -29,7 +35,7 @@ Local primitives are synchronous and belong on an existing bounded blocking owne
 
 ## Dependencies and build
 
-Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-policy](../latent-policy/README.md).
+Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-policy](../latent-policy/README.md), [latent-state](../latent-state/README.md).
 
 Consumers with normal workspace dependency edges include [latentd](../../apps/latentd/README.md). Optional features still gate the selected graph; target-specific and test edges are also declared in the manifests.
 

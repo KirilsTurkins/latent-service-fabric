@@ -243,6 +243,7 @@ impl LocalBlobWriter {
             bytes: reference.size,
             record: Some(reference),
             pins: AtomicUsize::new(0),
+            durable_pins: AtomicUsize::new(0),
             referenced: AtomicBool::new(true),
             identity: Some(identity),
         });

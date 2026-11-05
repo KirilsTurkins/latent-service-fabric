@@ -624,6 +624,20 @@ fn runtime_passes_the_tighter_store_deadline_without_minting_another_ledger() {
 }
 
 #[test]
+fn captured_table_session_identity_rejects_another_activation() {
+    let f = Fixture::new(CapabilityBrokerLimits::default());
+    let (first_request, first_control) = f.request("first-captured-owner");
+    let (second_request, second_control) = f.request("second-captured-owner");
+    let first = f.session(&first_request, &first_control);
+    let second = f.session(&second_request, &second_control);
+    let table = first.reserve_resource_table(4096).unwrap();
+    table.with_session(|captured| {
+        assert!(captured.is_same_session(&first));
+        assert!(!captured.is_same_session(&second));
+    });
+}
+
+#[test]
 fn resource_table_metadata_outlives_slots_without_pinning_a_provider_call() {
     let f = Fixture::new(CapabilityBrokerLimits {
         maximum_handles_per_session: 2,

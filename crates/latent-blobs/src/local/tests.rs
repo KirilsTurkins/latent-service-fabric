@@ -1,5 +1,6 @@
 use super::*;
 use crate::{BlobRange, BlobReference};
+mod durable;
 
 fn limits() -> LocalBlobLimits {
     LocalBlobLimits {

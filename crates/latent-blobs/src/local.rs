@@ -1,6 +1,7 @@
 //! Durable immutable data under one explicitly configured, privately owned root.
 //! These synchronous primitives belong on a bounded shared blocking owner.
 //! Public references are data; capability adapters supply current tenant authority.
+mod durable;
 pub(crate) mod fs;
 mod model;
 mod read;
@@ -8,6 +9,7 @@ mod reclaim;
 mod recovery;
 mod write;
 
+pub use durable::LocalDurablePin;
 use latent_core::TenantId;
 pub use model::{LocalBlobError, LocalBlobLimits, LocalBlobSnapshot};
 use model::{ReferenceRecord, Result};
@@ -49,6 +51,7 @@ struct Inner {
     poisoned: AtomicBool,
     closed: AtomicBool,
     _lock: File,
+    durable: Option<durable::ModeRecord>,
 }
 #[derive(Default)]
 struct State {
@@ -58,11 +61,13 @@ struct State {
     resident: u64,
     reserved: u64,
     referenced: usize,
+    durable_mode: bool,
 }
 struct Object {
     record: Option<ReferenceRecord>,
     bytes: u64,
     pins: AtomicUsize,
+    durable_pins: AtomicUsize,
     referenced: AtomicBool,
     identity: Option<fs::Identity>,
 }
@@ -207,6 +212,13 @@ impl Inner {
             .and_then(|n| u64::try_from(n).ok())
             .and_then(|n| n.checked_mul(DISK_ENTRY_BYTES))
             .and_then(|n| n.checked_add(DISK_ROOT_BYTES))
+            .and_then(|n| {
+                n.checked_add(if state.durable_mode {
+                    RECORD_BYTES as u64
+                } else {
+                    0
+                })
+            })
             .and_then(|n| n.checked_add(state.resident))
             .and_then(|n| n.checked_add(state.reserved))
             .and_then(|n| n.checked_add(payload))

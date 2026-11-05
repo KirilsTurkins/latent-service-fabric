@@ -15,11 +15,10 @@ pub(super) fn open(
     let root = Directory::root(path)?;
     let lock = root.open_file("LOCK", true, !root.present("LOCK")?, 0)?;
     lock.try_lock().map_err(|_| LocalBlobError::Busy)?;
-    let names = root.names(4)?;
-    if names
-        .iter()
-        .any(|n| !["LOCK", "OWNER.json", "objects", "staging"].contains(&n.as_str()))
-    {
+    let names = root.names(5)?;
+    if names.iter().any(|n| {
+        !["LOCK", "OWNER.json", "objects", "staging", "DURABLE.json"].contains(&n.as_str())
+    }) {
         return Err(LocalBlobError::Corrupt);
     }
     if !names.iter().any(|n| n == "OWNER.json") {
@@ -41,6 +40,13 @@ pub(super) fn open(
     }
     let objects = root.child("objects", !root.present("objects")?)?;
     let staging = root.child("staging", !root.present("staging")?)?;
+    let durable: Option<super::durable::ModeRecord> = if root.present("DURABLE.json")? {
+        let mode: super::durable::ModeRecord = parse(&root, "DURABLE.json")?;
+        mode.validate()?;
+        Some(mode)
+    } else {
+        None
+    };
     let inner = Arc::new(Inner {
         root,
         objects,
@@ -55,6 +61,7 @@ pub(super) fn open(
         poisoned: AtomicBool::new(false),
         closed: AtomicBool::new(false),
         _lock: lock,
+        durable,
     });
     let state = recover_inventory(&inner)?;
     // Re-establish the directory durability boundary before admitting recovered
@@ -66,7 +73,10 @@ pub(super) fn open(
 }
 fn recover_inventory(inner: &Inner) -> Result<State> {
     let limits = inner.limits;
-    let mut state = State::default();
+    let mut state = State {
+        durable_mode: inner.durable.is_some(),
+        ..State::default()
+    };
     let object_capacity = limits
         .maximum_objects
         .min((limits.maximum_metadata_bytes - OWNER_BYTES) / OBJECT_BYTES);
@@ -83,6 +93,7 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
                 record: None,
                 bytes: payload_size(&directory)?,
                 pins: AtomicUsize::new(0),
+                durable_pins: AtomicUsize::new(0),
                 referenced: AtomicBool::new(false),
                 identity: None,
             }
@@ -101,6 +112,7 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
                 bytes: reference.size,
                 record: Some(reference),
                 pins: AtomicUsize::new(0),
+                durable_pins: AtomicUsize::new(0),
                 referenced: AtomicBool::new(true),
                 identity: Some(identity),
             }
