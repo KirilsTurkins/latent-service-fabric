@@ -1,0 +1,94 @@
+{
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Compare one frozen Polly component without executing it",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "env": {
+          "EXPECTED_HEAD": "${{ github.sha }}"
+        },
+        "name": "Record source and run refusal controls",
+        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/dotnet-neutral/observed\" \"$RUNNER_TEMP/dotnet-neutral/work\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED_HEAD\"\ntest -z \"$(git status --porcelain)\"\ngit rev-parse HEAD > \"$RUNNER_TEMP/dotnet-neutral/observed/checkout.txt\"\nrustc --version > \"$RUNNER_TEMP/dotnet-neutral/observed/rustc-version.txt\"\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nwasm-tools --version > \"$RUNNER_TEMP/dotnet-neutral/observed/wasm-tools-version.txt\"\nsha256sum Cargo.lock rust-toolchain.toml crates/latent-component-threading/Cargo.toml tools/dotnet_frozen_polly_inputs.py tools/dotnet_neutral_stack.py tools/dotnet_neutral_verify.rs tools/compile_dotnet_neutral_verify.py tools/admit_dotnet_neutral_evidence.py tools/tests/test_dotnet_neutral_stack.py tools/guest_emitted_code.py tools/dotnet_guest/internal_io.py > \"$RUNNER_TEMP/dotnet-neutral/observed/source-sha256.txt\"\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_dotnet_neutral_stack -v 2>&1 | tee \"$RUNNER_TEMP/dotnet-neutral/observed/python-tests.log\"\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate exact original producer and artifact",
+        "run": "set -euo pipefail\ntimeout --signal=TERM --kill-after=5s 190s python3 -B tools/dotnet_frozen_polly_inputs.py --output \"$RUNNER_TEMP/dotnet-neutral/work/input\" 2>&1 | tee \"$RUNNER_TEMP/dotnet-neutral/observed/acquisition.log\"\ncp \"$RUNNER_TEMP/dotnet-neutral/work/input/acquisition.json\" \"$RUNNER_TEMP/dotnet-neutral/observed/\"\ncp \"$RUNNER_TEMP/dotnet-neutral/work/input/original-qualified.json\" \"$RUNNER_TEMP/dotnet-neutral/observed/\"\n"
+      },
+      {
+        "name": "Produce and reverse the pinned neutral rewrite",
+        "run": "set -euo pipefail\ntimeout --signal=TERM --kill-after=5s 180s python3 -B tools/dotnet_neutral_stack.py --original \"$RUNNER_TEMP/dotnet-neutral/work/input/original.wasm\" --derived \"$RUNNER_TEMP/dotnet-neutral/work/derived.wasm\" --receipt \"$RUNNER_TEMP/dotnet-neutral/observed/derivation.json\" 2>&1 | tee \"$RUNNER_TEMP/dotnet-neutral/observed/derivation.log\"\ncp \"$RUNNER_TEMP/dotnet-neutral/work/input/original.wasm\" \"$RUNNER_TEMP/dotnet-neutral/observed/\"\ncp \"$RUNNER_TEMP/dotnet-neutral/work/derived.wasm\" \"$RUNNER_TEMP/dotnet-neutral/observed/\"\n"
+      },
+      {
+        "name": "Compile the independent source-bound checker",
+        "run": "set -euo pipefail\ntimeout --signal=TERM --kill-after=10s 1200s cargo build --locked -p latent-component-threading --lib --message-format=json > \"$RUNNER_TEMP/dotnet-neutral/work/cargo.jsonl\" 2> \"$RUNNER_TEMP/dotnet-neutral/observed/cargo.log\"\ntimeout --signal=TERM --kill-after=5s 300s python3 -B tools/compile_dotnet_neutral_verify.py --cargo-messages \"$RUNNER_TEMP/dotnet-neutral/work/cargo.jsonl\" --output \"$RUNNER_TEMP/dotnet-neutral/work/checker\" 2>&1 | tee \"$RUNNER_TEMP/dotnet-neutral/observed/checker-compile.log\"\ncp \"$RUNNER_TEMP/dotnet-neutral/work/checker/compiler.json\" \"$RUNNER_TEMP/dotnet-neutral/observed/\"\ncp \"$RUNNER_TEMP/dotnet-neutral/work/checker/tests.log\" \"$RUNNER_TEMP/dotnet-neutral/observed/checker-tests.log\"\n"
+      },
+      {
+        "name": "Independently compare and validate both components",
+        "run": "set -euo pipefail\n(ulimit -v 524288 && timeout --signal=TERM --kill-after=5s 180s \"$RUNNER_TEMP/dotnet-neutral/work/checker/checker\" \"$RUNNER_TEMP/dotnet-neutral/work/input/original.wasm\" \"$RUNNER_TEMP/dotnet-neutral/work/derived.wasm\" \"$RUNNER_TEMP/dotnet-neutral/observed/independent.json\") 2>&1 | tee \"$RUNNER_TEMP/dotnet-neutral/observed/independent.log\"\ntimeout --signal=TERM --kill-after=5s 90s wasm-tools validate --features all \"$RUNNER_TEMP/dotnet-neutral/work/input/original.wasm\"\ntimeout --signal=TERM --kill-after=5s 90s wasm-tools validate --features all \"$RUNNER_TEMP/dotnet-neutral/work/derived.wasm\"\ntimeout --signal=TERM --kill-after=5s 90s wasm-tools component wit \"$RUNNER_TEMP/dotnet-neutral/work/input/original.wasm\" > \"$RUNNER_TEMP/dotnet-neutral/observed/original.wit\"\ntimeout --signal=TERM --kill-after=5s 90s wasm-tools component wit \"$RUNNER_TEMP/dotnet-neutral/work/derived.wasm\" > \"$RUNNER_TEMP/dotnet-neutral/observed/derived.wit\"\ncmp \"$RUNNER_TEMP/dotnet-neutral/observed/original.wit\" \"$RUNNER_TEMP/dotnet-neutral/observed/derived.wit\"\nsha256sum \"$RUNNER_TEMP/dotnet-neutral/work/input/original.wasm\" \"$RUNNER_TEMP/dotnet-neutral/work/derived.wasm\" > \"$RUNNER_TEMP/dotnet-neutral/observed/component-sha256.txt\"\n"
+      },
+      {
+        "id": "evidence",
+        "if": "always()",
+        "name": "Admit only bounded public observations",
+        "run": "python3 -B tools/admit_dotnet_neutral_evidence.py --output \"$RUNNER_TEMP/dotnet-neutral\""
+      },
+      {
+        "if": "always() && steps.evidence.outcome == 'success'",
+        "name": "Retain diagnostic observations only",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-neutral-stack-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-neutral/public/**\n${{ runner.temp }}/dotnet-neutral/evidence-admission.json\n",
+          "retention-days": 3
+        }
+      },
+      {
+        "if": "always() && steps.evidence.outcome != 'success'",
+        "name": "Retain only the failed admission marker",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-neutral-stack-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-neutral/evidence-admission.json",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 30
+  },
+  "jobId": "diagnostic",
+  "kind": "job",
+  "reviewReason": "Bound one frozen Polly component comparison without enabling a runtime profile.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-neutral-stack-diagnostic.yml"
+}

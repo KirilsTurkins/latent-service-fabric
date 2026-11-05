@@ -1,0 +1,38 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "dotnet-neutral-stack-${{ github.ref }}"
+    },
+    "name": ".NET frozen neutral stack diagnostic",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/dotnet-neutral-stack-20261105"
+        ],
+        "paths": [
+          ".github/workflows/dotnet-neutral-stack-diagnostic.yml",
+          "tools/dotnet_frozen_polly_inputs.py",
+          "tools/dotnet_neutral_stack.py",
+          "tools/dotnet_neutral_verify.rs",
+          "tools/compile_dotnet_neutral_verify.py",
+          "tools/admit_dotnet_neutral_evidence.py",
+          "tools/tests/test_dotnet_neutral_stack.py",
+          "Cargo.lock",
+          "rust-toolchain.toml"
+        ]
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "diagnostic"
+  ],
+  "reviewReason": "Bound one frozen Polly component comparison without enabling a runtime profile.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-neutral-stack-diagnostic.yml"
+}
