@@ -460,6 +460,8 @@ pub fn validate_view_observed(
                 if latent_state::payload_references::owns_row(key) {
                     if !latent_state::payload_references::validate_physical_inventory_head(
                         view, key, bytes,
+                    )? && !latent_state::payload_references::validate_state_linked_row(
+                        view, key, bytes,
                     )? {
                         super::payload_links::inspect_payload_reference(view, key, bytes)
                             .map_err(storage_error)?;

@@ -316,3 +316,108 @@ fn exercise_result_expiry(reviewed: bool) {
         super::census::census(&store).unwrap();
     }
 }
+
+#[test]
+fn coherent_inventory_resolves_state_owner_to_exact_current_cell() {
+    use latent_state::{embedded::ExpectedRow, payload_references::StatePayloadLink};
+    let (_dir, store, effects) = accounted::setup(8);
+    let admitted = claim(&store, input("state-payload-inventory"));
+    let view = store.snapshot().unwrap();
+    let staged = stage(&view);
+    let command = confirm(
+        CompleteEnvelope::success(
+            &view,
+            admitted,
+            Some(staged),
+            vec![],
+            value(b"ok"),
+            &effects,
+            time(101),
+        )
+        .unwrap(),
+        &store,
+        &effects,
+    );
+    drop(view);
+    let view = store.snapshot().unwrap();
+    let page = view
+        .scan_after(Family::State, b"state-v1\0", None, 1, 4096)
+        .unwrap();
+    let cell_key = page.rows[0].0.clone();
+    let (owner, cell_value) =
+        latent_state::session::describe_state_payload_owner(&view, &cell_key).unwrap();
+    let reference = PayloadReference {
+        owner,
+        payload: LocalPayloadIdentity {
+            tenant: "tenant".into(),
+            provider: "local".into(),
+            provider_epoch: 1,
+            provider_configuration: [3; 32],
+            blob_namespace: "owned".into(),
+            digest: Sha256::digest(&cell_value.bytes).into(),
+            size: cell_value.bytes.len() as u64,
+            media_type: cell_value.media_type,
+        },
+    };
+    let link = StatePayloadLink {
+        reference: reference.clone(),
+        cell_key: cell_key.clone(),
+    };
+    let mut plan = PreparedPayloadReferences::prepare(&view, &[(None, Some(reference))]).unwrap();
+    plan.replace_state_link(&view, None, Some(&link)).unwrap();
+    let mut batch = AtomicBatch::default();
+    plan.append_to(&mut batch).unwrap();
+    let (mut usage, usage_key, original_usage) = writer::Usage::read(&view, &command.key).unwrap();
+    usage.payload_bytes += 8;
+    batch.expectations.push(ExpectedRow {
+        key: usage_key.clone(),
+        value: original_usage,
+    });
+    batch.mutations.push(RowMutation {
+        key: usage_key,
+        value: Some(usage.encode().unwrap()),
+    });
+    let ns_key = namespace_key();
+    let original_namespace = view.get(&ns_key).unwrap().unwrap();
+    let mut namespace = NamespaceRecord::decode(&original_namespace).unwrap();
+    namespace.pins.payload_references += 1;
+    batch.expectations.push(ExpectedRow {
+        key: ns_key.clone(),
+        value: Some(original_namespace),
+    });
+    batch.mutations.push(RowMutation {
+        key: ns_key,
+        value: Some(namespace.encode().unwrap()),
+    });
+    super::super::accounting::apply(&view, &TenantId("tenant".into()), &mut batch).unwrap();
+    drop(view);
+    store.apply(batch).unwrap();
+    super::census::census(&store).unwrap();
+
+    let view = store.snapshot().unwrap();
+    let scope = StateScope {
+        tenant: TenantId("tenant".into()),
+        namespace: StateNamespaceId("aggregate".into()),
+        incarnation: 1,
+        state_schema: schema(),
+        entity: None,
+        mode: StateMode::Command,
+    };
+    let mut session =
+        StateSession::open(&view, scope, SessionLimits::default(), state_permission).unwrap();
+    session
+        .put(
+            &view,
+            b"aggregate/count".to_vec(),
+            value(b"replacement"),
+            state_permission,
+        )
+        .unwrap();
+    let plan = session.seal(&view, state_permission).unwrap();
+    let mut batch = AtomicBatch::default();
+    let pins = plan.pins();
+    plan.append_to(&mut batch, pins).unwrap();
+    drop(view);
+    store.apply(batch).unwrap();
+    assert!(super::census::census(&store).is_err());
+}

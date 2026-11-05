@@ -122,7 +122,8 @@ fn commit(store: &EmbeddedStore, view: &ReadView, session: StateSession) -> Resu
 #[test]
 fn state_payload_descriptor_binds_exact_cell_version_schema_and_bytes() {
     use crate::payload_references::{
-        LocalPayloadIdentity, PayloadReference, PreparedPayloadReferences,
+        validate_state_linked_row, LocalPayloadIdentity, PayloadReference,
+        PreparedPayloadReferences, StatePayloadLink,
     };
     use sha2::{Digest, Sha256};
     let fixture = Fixture::new();
@@ -148,14 +149,29 @@ fn state_payload_descriptor_binds_exact_cell_version_schema_and_bytes() {
         owner: first_owner,
         payload: physical,
     };
-    let plan =
+    let link = StatePayloadLink {
+        reference: reference.clone(),
+        cell_key: first.clone(),
+    };
+    let mut plan =
         PreparedPayloadReferences::prepare(&view, &[(None, Some(reference.clone()))]).unwrap();
+    plan.replace_state_link(&view, None, Some(&link)).unwrap();
     let mut batch = AtomicBatch::default();
     plan.append_to(&mut batch).unwrap();
     drop(view);
     fixture.store.apply(batch).unwrap();
     let view = fixture.store.snapshot().unwrap();
     verify_state_payload_reference(&view, &first, &reference).unwrap();
+    assert!(
+        validate_state_linked_row(&view, &link.row_key().unwrap(), &link.encode().unwrap())
+            .unwrap()
+    );
+    assert!(validate_state_linked_row(
+        &view,
+        &reference.owner_key().unwrap(),
+        &reference.encode().unwrap()
+    )
+    .unwrap());
     assert_eq!(
         verify_state_payload_reference(&view, &second, &reference),
         Err(StoreError::Corrupt)
@@ -167,6 +183,10 @@ fn state_payload_descriptor_binds_exact_cell_version_schema_and_bytes() {
     let view = fixture.store.snapshot().unwrap();
     assert_eq!(
         verify_state_payload_reference(&view, &first, &reference),
+        Err(StoreError::Corrupt)
+    );
+    assert_eq!(
+        validate_state_linked_row(&view, &link.row_key().unwrap(), &link.encode().unwrap()),
         Err(StoreError::Corrupt)
     );
 }
