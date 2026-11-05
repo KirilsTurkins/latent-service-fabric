@@ -17,7 +17,7 @@ from pathlib import Path, PurePosixPath
 from time import monotonic
 
 from tools import security_dotnet_minimatch as dotnet_sources
-from tools import security_setup_go
+from tools import security_setup_go, security_upload_artifact
 from tools.security_common import POLICY, decode_json, digest, read_file, require
 
 
@@ -89,7 +89,8 @@ def source_repair(files: dict, repair: dict, pin: dict) -> dict:
     expected = {"braces": {"lib/utils.js", "lib/compile.js", "lib/expand.js", "lib/stringify.js", "lib/parse.js"},
                 "http-cache-semantics": {"index.js"},
                 "deepmerge": {"index.js", "dist/cjs.js", "dist/umd.js"},
-                "minimatch": {"dist/commonjs/index.js", "dist/esm/index.js"}}
+                "minimatch": {"dist/commonjs/index.js", "dist/esm/index.js"},
+                "glob": {"dist/commonjs/walker.js", "dist/esm/walker.js"}}
     require(set(repair) == {"schema", "profile", "name", "version", "upstreamIntegrity", "files"}
             and repair["schema"] == 1 and repair["name"] == pin["name"]
             and repair["version"] == pin["version"] and repair["upstreamIntegrity"] == pin["integrity"]
@@ -237,7 +238,7 @@ ACTION_REFERENCES = {
     ".github/security/actions/setup-python/":
         "KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8",
     ".github/security/actions/upload-artifact/":
-        "KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16",
+        "KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f",
 }
 
 
@@ -448,6 +449,8 @@ def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> di
         return bytecodealliance_source_inputs(repo, entry, owner, lock)
     if profile == security_setup_go.DEEP_PROFILE:
         return security_setup_go.source_inputs(repo, entry, owner, lock)
+    if profile == security_upload_artifact.DEEP_PROFILE:
+        return security_upload_artifact.source_inputs(repo, entry, owner, lock)
     prefixes = [prefix for prefix in ACTION_REFERENCES if entry["path"] == prefix + "package.json"
                 and entry["lock"] == prefix + "package-lock.json"]
     require((profile == CHECKOUT_PROFILE
@@ -573,6 +576,8 @@ def minimatch_action_inputs(repo: Path, entry: dict, owner: dict, lock: dict) ->
         return node_minimatch_action_inputs(repo, entry, owner, lock)
     if entry["minimatch_source_repair"] == security_setup_go.MINI_PROFILE:
         return security_setup_go.minimatch_inputs(repo, entry, owner, lock)
+    if entry["minimatch_source_repair"] == security_upload_artifact.PROFILE:
+        return security_upload_artifact.minimatch_inputs(repo, entry, owner, lock)
     require(entry["minimatch_source_repair"] == MINIMATCH_PROFILE
             and entry.get("source_repair") == ACTION_PROFILE
             and entry["path"] == MINIMATCH_PREFIX + "package.json"
@@ -764,7 +769,9 @@ def action_library_sources(repo: Path, entry: dict, owner: dict, lock: dict) -> 
     minimatch = minimatch_action_inputs(repo, entry, owner, lock)
     if minimatch is not None:
         require(selected is not None, "minimatch-action-base-source-missing")
-        if entry["minimatch_source_repair"] == JAVA_MINIMATCH_PROFILE:
+        if entry["minimatch_source_repair"] == security_upload_artifact.PROFILE:
+            libraries.update(security_upload_artifact.libraries())
+        elif entry["minimatch_source_repair"] == JAVA_MINIMATCH_PROFILE:
             libraries["minimatch"] = {"version": "10.2.6", "resolved": JAVA_MINIMATCH_ARCHIVE,
                                       "integrity": JAVA_MINIMATCH_DERIVED}
         elif entry["minimatch_source_repair"] == NODE_MINIMATCH_PROFILE:
@@ -853,6 +860,9 @@ def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch
         elif selected.get("setup_go"):
             receipt.update({"verifier_sha256": security_setup_go.ACTION_INPUTS[security_setup_go.DEEP_VERIFIER][2],
                             "built_tree": "586d487e144d8cf393893459b6678118d0b5dc92", "build_run": 42024368583})
+        elif selected.get("upload_artifact"):
+            receipt.update({"verifier_sha256": security_upload_artifact.ACTION_INPUTS[security_upload_artifact.DEEP_VERIFIER][2],
+                            "built_tree": security_upload_artifact.TREE, "build_run": security_upload_artifact.RUN})
         elif selected.get("bytecodealliance"):
             receipt.update({"verifier_sha256": BCA_INPUTS[ACTION_VERIFIER_SOURCE][2],
                             "built_tree": "578e888fbea3faf619b37e947f749242001b2aa0",
@@ -878,7 +888,8 @@ def action_runtime(reference: str, source: str) -> bytes:
                      and source in {row["source"] for row in dotnet_sources.RUNTIME.values()})
                  or (reference == ACTION_REFERENCES[NODE_MINIMATCH_PREFIX]
                      and source in {row["source"] for row in NODE_MINIMATCH_RUNTIME.values()})
-                 or (reference == security_setup_go.REFERENCE and source in security_setup_go.RUNTIME)),
+                 or (reference == security_setup_go.REFERENCE and source in security_setup_go.RUNTIME)
+                 or (reference == security_upload_artifact.REFERENCE and source in security_upload_artifact.RUNTIME)),
             "invalid-minimatch-action-runtime-source")
     url = f"https://raw.githubusercontent.com/{repository}/{revision}/{source}"
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
@@ -903,7 +914,8 @@ def verify_minimatch_action_sources(repo: Path, packages: list, configuration: d
     for entry in configuration["manifests"]:
         if entry.get("minimatch_source_repair") is None or not any(item.path == entry["lock"] for item in packages):
             continue
-        if entry["minimatch_source_repair"] in {JAVA_MINIMATCH_PROFILE, dotnet_sources.PROFILE, NODE_MINIMATCH_PROFILE, security_setup_go.MINI_PROFILE}:
+        if entry["minimatch_source_repair"] in {JAVA_MINIMATCH_PROFILE, dotnet_sources.PROFILE, NODE_MINIMATCH_PROFILE,
+                                                  security_setup_go.MINI_PROFILE, security_upload_artifact.PROFILE}:
             continue
         owner = decode_json(read_file(repo, entry["path"]))
         lock = decode_json(read_file(repo, entry["lock"]))
@@ -1149,6 +1161,8 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
     action_receipts += verify_node_minimatch_action_sources(repo, packages, configuration, fetch, fetch_runtime)
     action_receipts += security_setup_go.verify_minimatch_sources(repo, packages, configuration, fetch,
                                                                   fetch_runtime or action_runtime)
+    action_receipts += security_upload_artifact.verify_sources(repo, packages, configuration, fetch,
+                                                               fetch_runtime or action_runtime)
     selected = [entry for entry in configuration["manifests"]
                 if (entry.get("derived_bundle") or entry.get("derived_libraries"))
                 and any(package.path == entry["lock"] for package in packages)]

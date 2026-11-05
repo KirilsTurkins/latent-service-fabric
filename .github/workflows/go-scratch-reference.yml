@@ -74,7 +74,7 @@ jobs:
         run: python3 tools/qualify_go_closed_filesystem.py --native-qualification "$RUNNER_TEMP/go-scratch-prepared" --output "$RUNNER_TEMP/go-scratch-refusals"
       - name: Retain bounded actual diagnostics and source identities including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: go-scratch-reference-${{ github.sha }}
           path: |
@@ -98,7 +98,7 @@ jobs:
           retention-days: 7
       - name: Retain the public normal-products tuple for source-bound reuse
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: go-scratch-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/go-scratch-prepared/**

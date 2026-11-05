@@ -66,7 +66,7 @@ jobs:
             --attempt "$CI_ATTEMPT" --mode "$PUBLICATION_MODE" \
             --previous-publication-run "$PREVIOUS_PUBLICATION_RUN" \
             --expected-live-source "$EXPECTED_LIVE_SOURCE" --output target/docs-pages-staged
-      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         id: staged
         with:
           name: docs-pages-staged-${{ github.run_id }}-${{ github.run_attempt }}
@@ -104,7 +104,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 tools/docs_pages.py guard --receipt candidate/publication.json
-      - uses: KirilsTurkins/lsf-upload-pages-artifact@78e399e92cd7485cca2752423a3eb0ccf404df77 # v5.0.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-upload-pages-artifact@28d7597d6f6497a5d34e5ecaa1d97c510ce3556b # v5.0.0 + upstream changes + LSF security fixes
         with:
           name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: candidate/site
@@ -116,7 +116,7 @@ jobs:
           timeout: 300000
       - name: Verify live publication identity and direct static routes
         run: python3 tools/docs_pages.py verify --receipt candidate/publication.json
-      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: docs-pages-receipt-${{ github.run_id }}-${{ github.run_attempt }}
           path: candidate/publication.json
@@ -149,7 +149,7 @@ jobs:
         env:
           EXPECTED_SITE_SOURCE: ${{ inputs.source_sha }}
         run: node website/scripts/test-live.mjs
-      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: docs-pages-browser-${{ github.run_id }}-${{ github.run_attempt }}
           path: website/.generated/live-review/evidence.json

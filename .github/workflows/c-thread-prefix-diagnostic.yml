@@ -49,7 +49,7 @@ jobs:
         run: python3 -B tools/diagnose_c_thread_prefix.py --prepared "$RUNNER_TEMP/c-prefix-native" --output "$RUNNER_TEMP/c-prefix"
       - name: Retain bounded original bytes and diagnostic observations
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: c-thread-prefix-${{ github.sha }}
           path: |

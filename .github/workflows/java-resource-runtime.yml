@@ -91,7 +91,7 @@ jobs:
             --output "$RUNNER_TEMP/java-resource-runtime"
       - name: Retain public compiler identities and bounded node outcomes
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-resource-runtime-${{ github.sha }}
           retention-days: 3
@@ -166,7 +166,7 @@ jobs:
             --output "$RUNNER_TEMP/java-resource-replay" --diagnostic
       - name: Retain bounded public original identities and fresh node results
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-resource-runtime-replay-${{ github.sha }}
           retention-days: 3
@@ -240,7 +240,7 @@ jobs:
             --output "$RUNNER_TEMP/java-resource-late"
       - name: Retain public compiler identities and bounded node outcomes
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-resource-late-${{ github.sha }}
           retention-days: 3

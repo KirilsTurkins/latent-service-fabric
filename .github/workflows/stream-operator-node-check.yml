@@ -43,7 +43,7 @@ jobs:
         run: python -S -B tools/qualify_stream_operator_node.py --output target/stream-operator-node-check
       - name: Retain only redacted public configuration outcomes
         if: always() && github.ref_name != 'feat/stream-operator-unavailable-inspect-20261028'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-operator-node-check-${{ github.sha }}
           path: target/stream-operator-node-check/result.json
@@ -77,7 +77,7 @@ jobs:
           --output target/stream-operator-unavailable-inspect
       - name: Retain finite public observations and fresh signed test fixture evidence
         if: always() && github.ref_name == 'feat/stream-operator-unavailable-inspect-20261028'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-operator-unavailable-inspect-${{ github.sha }}
           path: |

@@ -48,7 +48,7 @@ jobs:
           --output "$RUNNER_TEMP/audit-memory-owner"
       - name: Retain exact source inputs and bounded actual compiler/control failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: audit-memory-owner-${{ github.sha }}
           path: ${{ runner.temp }}/audit-memory-owner/

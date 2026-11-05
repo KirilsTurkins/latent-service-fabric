@@ -62,7 +62,7 @@ jobs:
         run: rustfmt --edition 2021 --check research/invocation-concurrency/guest.rs research/invocation-concurrency/host.rs research/invocation-concurrency/scope.rs research/invocation-concurrency/memory.rs
       - name: Retain source-bound successes and failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: invocation-concurrency-${{ github.sha }}
           path: |

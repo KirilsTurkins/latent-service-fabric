@@ -80,7 +80,7 @@ jobs:
           LSF_RUNTIME_RUN: ${{ inputs.runtime_run }}
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/prepare_dev_packaged_probe.py
-      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: packaged-qualification-support
           path: ${{ runner.temp }}/packaged-support/
@@ -156,7 +156,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Packaged recovery failed; retain the original operation intent.' }
       - name: Retain bounded public success or failure receipts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: packaged-windows-observation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -225,7 +225,7 @@ jobs:
             --linux-output "$RUNNER_TEMP/packaged-linux" --output "$RUNNER_TEMP/packaged-devcontainer"
       - name: Retain bounded public Linux success or failure receipts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: packaged-linux-observation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -309,7 +309,7 @@ jobs:
             --output "$RUNNER_TEMP/packaged-java-composition" "${diagnostic_args[@]}"
       - name: Preserve bounded original success or failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: packaged-java-composition-${{ github.run_id }}-${{ github.run_attempt }}
           path: |

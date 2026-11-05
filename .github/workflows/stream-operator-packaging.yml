@@ -41,7 +41,7 @@ jobs:
         run: python tools/build_dev_frontend.py --output target/stream-operator-frontend
       - name: Retain actual frontend products and existing source/license inventories
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: stream-operator-frontend-${{ matrix.os }}-${{ github.sha }}
           path: |

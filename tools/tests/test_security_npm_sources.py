@@ -405,8 +405,10 @@ class NpmSourceRepairTests(unittest.TestCase):
                 patch.object(sources.dotnet_sources, "verify_sources", return_value=[]), \
                 patch.object(sources, "verify_node_minimatch_action_sources", return_value=[]):
             receipts = sources.verify_sources(ROOT, packages, {"manifests": entries}, lambda pin: upstream)
-        self.assertEqual(len(entries), len(receipts), 6)
-        self.assertEqual({receipt["action"] for receipt in receipts}, set(sources.ACTION_REFERENCES.values()))
+        expected = set(sources.ACTION_REFERENCES.values()) - {sources.security_upload_artifact.REFERENCE}
+        self.assertEqual(len(entries), len(expected))
+        self.assertEqual(len(receipts), len(expected))
+        self.assertEqual({receipt["action"] for receipt in receipts}, expected)
         self.assertEqual({receipt["profile"] for receipt in receipts}, {sources.ACTION_PROFILE})
         advisory = receipts[0]["advisories"][0]
         findings = [finding("osv", advisory["id"], entry["lock"], "npm:deepmerge@4.3.1")

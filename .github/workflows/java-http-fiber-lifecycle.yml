@@ -158,7 +158,7 @@ jobs:
           --output "$RUNNER_TEMP/java-http-fiber-lifecycle"
       - name: Retain bounded source-specific replay evidence without credentials or keys
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-http-fiber-lifecycle-${{ github.sha }}
           path: |-
@@ -268,7 +268,7 @@ jobs:
           --output "$RUNNER_TEMP/java-http-phases"
       - name: Retain bounded source-specific replay evidence without credentials or keys
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-http-phases-${{ github.sha }}
           path: |-
@@ -385,7 +385,7 @@ jobs:
           --output "$RUNNER_TEMP/java-http-spi"
       - name: Retain bounded source-specific replay evidence without credentials or keys
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-http-spi-${{ github.sha }}
           path: |-
@@ -465,7 +465,7 @@ jobs:
           --output "$RUNNER_TEMP/java-prepared-tenants"
       - name: Retain bounded public evidence without keys, private credentials or repeated native binaries
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-http-prepared-tenants-${{ github.sha }}
           path: |-
@@ -558,7 +558,7 @@ jobs:
           --output "$RUNNER_TEMP/java-http-mixed"
       - name: Retain bounded public build and node evidence without private fixture credentials
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-http-mixed-bodies-${{ github.sha }}
           path: |-
@@ -658,7 +658,7 @@ jobs:
           --output "$RUNNER_TEMP/java-http-late"
       - name: Retain bounded public build and node evidence without private fixture credentials
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-http-late-completion-${{ github.sha }}
           path: |-

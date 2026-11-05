@@ -422,7 +422,8 @@
       "kind": "npm",
       "lock": ".github/security/actions/upload-artifact/package-lock.json",
       "path": ".github/security/actions/upload-artifact/package.json",
-      "source_repair": "deepmerge-action-source-v1"
+      "source_repair": "upload-artifact-deepmerge-source-v1",
+      "minimatch_source_repair": "upload-artifact-glob-minimatch-source-v1"
     },
     {
       "kind": "npm",

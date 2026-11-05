@@ -137,7 +137,7 @@ jobs:
           --output "$RUNNER_TEMP/canonical-stream-outers"
       - name: Retain four source-bound canonical IP outcomes
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: ${{ github.ref_name == 'feat/sdk-736-unstarted-host-drop-20261029' && 'unstarted-host-drop' || github.ref_name == 'feat/sdk-736-guest-start-memory-20261029' && 'guest-start-memory' || github.ref_name == 'test/sdk-736-host-memory-baseline-20261029' && 'host-memory-baseline' || github.ref_name == 'feat/sdk-736-callback-memory-20261028' && 'callback-memory' || github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028' && 'call-result-channel-memory' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' && 'resource-table-memory' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' && 'call-parameter-closure-memory' || (github.ref_name == 'test/sdk-738-node-bootstrap-custody-20261028' || github.ref_name == 'test/sdk-738-node-capacity-facts-20261029') && 'node-bootstrap-custody' || github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 'canonical-lift-result' || 'canonical-ip-format' }}-${{ github.sha }}
           path: |

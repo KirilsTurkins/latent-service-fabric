@@ -87,7 +87,7 @@ jobs:
           python3 -B tools/qualify_java_queue_heap.py --output "$RUNNER_TEMP/java-queue-heap"
       - name: Retain bounded queue control evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-queue-heap-${{ github.sha }}
           retention-days: 3
@@ -173,7 +173,7 @@ jobs:
           git archive --format=tar.gz -o "$RUNNER_TEMP/java-transaction-diagnostic-schemas.tar.gz" HEAD \
             contracts/state/application-aggregate-v1.schema.json \
             contracts/state/application-aggregate-v2.schema.json
-      - uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-feasibility-source-${{ github.sha }}
           path: ${{ runner.temp }}/java-feasibility-source.tar.gz
@@ -358,7 +358,7 @@ jobs:
           --native-directory "$GITHUB_WORKSPACE/target/debug"
           --output "$RUNNER_TEMP/java-scratch-prepared"
       - name: Retain verified normal Java products without keys or compiler caches
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-scratch-prepared-${{ github.sha }}
           path: ${{ runner.temp }}/java-scratch-prepared/
@@ -442,7 +442,7 @@ jobs:
           --wasi-sdk "$LSF_JAVA_WASI_SDK"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
@@ -765,7 +765,7 @@ jobs:
             --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
       - name: Retain bounded public source, compiler and execution observations
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-dependency-${{ matrix.mode }}-${{ github.sha }}
           path: |
@@ -856,7 +856,7 @@ jobs:
           --output "$RUNNER_TEMP/java-scratch-refusals"
       - name: Retain actual API categories and physical retirement including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-scratch-refusals-${{ github.sha }}
           path: |
@@ -921,7 +921,7 @@ jobs:
         --output "$RUNNER_TEMP/java-resource-conformance"
     - name: Retain public source resource provenance actual results and cleanup
       if: always()
-      uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+      uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: java-resource-conformance-${{ github.sha }}
         path: '${{ runner.temp }}/java-resource-conformance/qualified.json
@@ -1016,7 +1016,7 @@ jobs:
       run: python3 -B tools/qualify_java_http_spi.py --prepared "$RUNNER_TEMP/java-http-spi-prepared" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/java-http-spi"
     - name: Retain bounded source-specific replay evidence without credentials or keys
       if: always()
-      uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+      uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: java-http-spi-${{ github.sha }}
         path: '${{ runner.temp }}/java-http-spi-prepared/retrieval.json
@@ -1175,7 +1175,7 @@ jobs:
         run: python3 -B tools/qualify_java_fibers.py --output "$RUNNER_TEMP/java-activation-fibers" --wasi-sdk "$RUNNER_TEMP/java-llvm-public-inputs/products/toolchain" --derived-llvm-public --observe-public-wineh
       - name: Retain only fixed public assembly evidence and original failure
         if: ${{ always() && steps.public-fiber-mode.outcome == 'success' }}
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-public-fiber-assembly-${{ github.sha }}
           retention-days: 3
