@@ -593,8 +593,14 @@ class Q35NodePciIntxControls(unittest.TestCase):
                 'node->net != current->nsproxy->net_ns', 'lsf_node_setup_records_locked',
                 'pci_record->phase != LSF_PREPAID_LIVE', 'fw_record->phase != LSF_PREPAID_LIVE'):
             self.assertIn(predicate, material)
-        forward = material.split('int lsf_node_intx_forward', 1)[1].split('int lsf_node_intx_preflight', 1)[0]
-        restore = material.split('int lsf_node_intx_claim_restore', 1)[1].split('int lsf_node_intx_restore_written', 1)[0]
+        forward_start = 'int lsf_node_intx_forward(struct pci_dev *pci)\n{'
+        forward_end = 'int lsf_node_intx_preflight(struct pci_dev *pci, u16 original)\n{'
+        restore_start = 'int lsf_node_intx_claim_restore(struct pci_dev *pci, u16 original)\n{'
+        restore_end = 'int lsf_node_intx_restore_written(struct pci_dev *pci, u16 original)\n{'
+        for marker in (forward_start, forward_end, restore_start, restore_end):
+            self.assertEqual(material.count(marker), 1, marker)
+        forward = material.split(forward_start, 1)[1].split(forward_end, 1)[0]
+        restore = material.split(restore_start, 1)[1].split(restore_end, 1)[0]
         self.assertIn('lsf_node_constructor_actor_current()', forward)
         self.assertNotIn('lsf_node_constructor_actor_current()', restore)
         self.assertIn('node->prefix_intx_saved == original', restore)
