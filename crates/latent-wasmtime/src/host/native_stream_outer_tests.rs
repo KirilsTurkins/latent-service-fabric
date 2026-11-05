@@ -183,6 +183,344 @@ impl<D: 'static> StreamConsumer<D> for ObservedConsumer {
     }
 }
 
+// Record the exact last native request before the first producer poll.
+struct ObservedProducer {
+    inner: Producer,
+    observations: Arc<Observations>,
+    first_poll_requests: Arc<AtomicUsize>,
+}
+impl<D: 'static> StreamProducer<D> for ObservedProducer {
+    type Item = u8;
+    type Buffer = Option<u8>;
+    fn poll_produce<'a>(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        store: StoreContextMut<'a, D>,
+        dst: Destination<'a, u8, Option<u8>>,
+        finish: bool,
+    ) -> Poll<wasmtime::Result<StreamResult>> {
+        let this = self.as_mut().get_mut();
+        let count = requests(&this.observations).len();
+        let _ = this
+            .first_poll_requests
+            .compare_exchange(0, count, SeqCst, SeqCst);
+        Pin::new(&mut this.inner).poll_produce(cx, store, dst, finish)
+    }
+}
+
+#[tokio::test]
+async fn actual_producer_future_original_budget_guest_read_refusal() {
+    let engine = engine();
+    let core = Module::new(&engine, CORE).unwrap();
+    let path = std::env::var_os("LSF_TEST_STREAM_OUTERS_COMPONENT")
+        .expect("owner-only fixed canonical fixture path required");
+    let meta = std::fs::symlink_metadata(&path).unwrap();
+    assert!(meta.file_type().is_file() && !meta.file_type().is_symlink());
+    assert!(meta.len() > 8 && meta.len() <= 64 * 1024);
+    let bytes = std::fs::read(path).unwrap();
+    assert!(bytes.starts_with(b"\0asm"));
+    let component = Component::new(&engine, bytes).unwrap();
+
+    let baseline_budget = budget(MIB);
+    let baseline_observed = Arc::new(Observations::default());
+    let mut baseline = store(&engine, &baseline_budget, &baseline_observed).unwrap();
+    warm(&mut baseline).await;
+    let instance = Linker::new(&engine)
+        .instantiate_async(&mut baseline, &component)
+        .await
+        .unwrap();
+    let (producer, _) = gates();
+    producer.ready.store(true, SeqCst);
+    let first_poll = Arc::new(AtomicUsize::new(0));
+    let reader = StreamReader::new(
+        &mut baseline,
+        ObservedProducer {
+            inner: Producer(producer.clone()),
+            observations: baseline_observed.clone(),
+            first_poll_requests: first_poll.clone(),
+        },
+    )
+    .unwrap();
+    let read = instance
+        .get_typed_func::<(StreamReader<u8>,), (u32,)>(&mut baseline, "read")
+        .unwrap();
+    let before = requests(&baseline_observed).len();
+    let value = tokio::time::timeout(
+        Duration::from_secs(5),
+        read.call_async(&mut baseline, (reader,)),
+    )
+    .await
+    .expect("original public 5s wall")
+    .unwrap();
+    assert_eq!(value, (17,));
+    let read_value = instance
+        .get_typed_func::<(), (u32,)>(&mut baseline, "read-value")
+        .unwrap();
+    assert_eq!(
+        read_value.call_async(&mut baseline, ()).await.unwrap(),
+        (42,)
+    );
+    let cut = first_poll.load(SeqCst);
+    let entries = requests(&baseline_observed);
+    assert!(cut > before && cut <= entries.len());
+    let prefix = entries[before..cut].to_vec();
+    assert!(*prefix.last().unwrap() > 0);
+    drop(baseline);
+    producer.release();
+    assert_eq!(baseline_budget.host_memory_bytes(), 0);
+    assert_eq!(baseline_budget.outstanding_reservations(), 0);
+    assert!(allocation_rows(&baseline_observed)
+        .iter()
+        .all(|row| !row.admitted || row.released));
+
+    let original = budget(MIB);
+    let observed = Arc::new(Observations::default());
+    let mut first = store(&engine, &original, &observed).unwrap();
+    warm(&mut first).await;
+    let instance = Linker::new(&engine)
+        .instantiate_async(&mut first, &component)
+        .await
+        .unwrap();
+    let (producer, _) = gates();
+    producer.ready.store(true, SeqCst);
+    let denied_poll = Arc::new(AtomicUsize::new(0));
+    let reader = StreamReader::new(
+        &mut first,
+        ObservedProducer {
+            inner: Producer(producer.clone()),
+            observations: observed.clone(),
+            first_poll_requests: denied_poll.clone(),
+        },
+    )
+    .unwrap();
+    let read = instance
+        .get_typed_func::<(StreamReader<u8>,), (u32,)>(&mut first, "read")
+        .unwrap();
+    let before = requests(&observed).len();
+    let padding = Arc::new(Mutex::new(None::<Padding>));
+    let consumed = Arc::new(AtomicU64::new(0));
+    let requested = Arc::new(AtomicU64::new(0));
+    let kept = padding.clone();
+    let kept_consumed = consumed.clone();
+    let kept_requested = requested.clone();
+    let invocation = original.clone();
+    observed.before_request(before + prefix.len(), move |bytes| {
+        let request = bytes as u64 + OWNER;
+        let payload = MIB - invocation.host_memory_bytes() - request + 1 - OWNER;
+        let mut owner = crate::native_tables::reserve(&invocation, payload as usize)
+            .unwrap()
+            .unwrap();
+        let bytes = vec![0u8; payload as usize];
+        assert_eq!(bytes.capacity(), payload as usize);
+        owner.allocated();
+        *kept.lock().unwrap() = Some(Padding {
+            _bytes: bytes,
+            _owner: owner,
+        });
+        kept_consumed.store(invocation.host_memory_bytes(), SeqCst);
+        kept_requested.store(request, SeqCst);
+    });
+    let error = tokio::time::timeout(
+        Duration::from_secs(5),
+        read.call_async(&mut first, (reader,)),
+    )
+    .await
+    .expect("original public 5s wall")
+    .unwrap_err();
+    denial(&error, MIB, consumed.load(SeqCst), requested.load(SeqCst));
+    assert_eq!(consumed.load(SeqCst) + requested.load(SeqCst), MIB + 1);
+    let actual = requests(&observed);
+    assert_eq!(actual.len(), before + prefix.len());
+    assert_eq!(&actual[before..], prefix.as_slice());
+    assert_eq!(producer.polls.load(SeqCst), 0);
+    assert_eq!(denied_poll.load(SeqCst), 0);
+    drop(error);
+    drop(padding.lock().unwrap().take());
+    drop(first);
+    producer.release();
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+    assert!(allocation_rows(&observed)
+        .iter()
+        .all(|row| !row.admitted || row.released));
+    let mut fresh = store(&engine, &original, &observed).unwrap();
+    fresh.set_fuel(FUEL).unwrap();
+    let instance = wasmtime::Instance::new(&mut fresh, &core, &[]).unwrap();
+    assert_eq!(core_answer(instance, &mut fresh), 42);
+    drop(fresh);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+}
+
+struct TwoItemProducer {
+    observations: Arc<Observations>,
+    first_poll_requests: Arc<AtomicUsize>,
+    polls: Arc<AtomicUsize>,
+    drops: Arc<AtomicUsize>,
+}
+impl Drop for TwoItemProducer {
+    fn drop(&mut self) {
+        self.drops.fetch_add(1, SeqCst);
+    }
+}
+impl<D: 'static> StreamProducer<D> for TwoItemProducer {
+    type Item = u8;
+    type Buffer = Option<u8>;
+    fn poll_produce<'a>(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+        _store: StoreContextMut<'a, D>,
+        mut dst: Destination<'a, u8, Option<u8>>,
+        _finish: bool,
+    ) -> Poll<wasmtime::Result<StreamResult>> {
+        let this = self.get_mut();
+        let n = this.polls.fetch_add(1, SeqCst);
+        if n == 0 {
+            this.first_poll_requests
+                .store(requests(&this.observations).len(), SeqCst);
+            dst.set_buffer(Some(42));
+            Poll::Ready(Ok(StreamResult::Completed))
+        } else {
+            dst.set_buffer(Some(43));
+            Poll::Ready(Ok(StreamResult::Dropped))
+        }
+    }
+}
+
+struct RefuseAfterFirstConsumer {
+    observations: Arc<Observations>,
+    original: latent_core::ActivationBudget,
+    first_poll_requests: Arc<AtomicUsize>,
+    items: Arc<AtomicUsize>,
+    drops: Arc<AtomicUsize>,
+    padding: Arc<Mutex<Option<Padding>>>,
+    consumed: Arc<AtomicU64>,
+    requested: Arc<AtomicU64>,
+}
+impl Drop for RefuseAfterFirstConsumer {
+    fn drop(&mut self) {
+        self.drops.fetch_add(1, SeqCst);
+    }
+}
+impl<D: 'static> StreamConsumer<D> for RefuseAfterFirstConsumer {
+    type Item = u8;
+    fn poll_consume(
+        self: Pin<&mut Self>,
+        _cx: &mut Context<'_>,
+        store: StoreContextMut<D>,
+        source: Source<'_, u8>,
+        _finish: bool,
+    ) -> Poll<wasmtime::Result<StreamResult>> {
+        let this = self.get_mut();
+        assert_eq!(this.items.fetch_add(1, SeqCst), 0);
+        let mut source = source.as_direct(store);
+        assert_eq!(source.remaining(), &[42]);
+        source.mark_read(1);
+        drop(source);
+        let entries = requests(&this.observations);
+        let first = this.first_poll_requests.load(SeqCst);
+        assert!(first > 0 && first <= entries.len());
+        let expected_future = entries[first - 1];
+        assert!(expected_future > 0);
+        let next = entries.len() + 1;
+        let invocation = this.original.clone();
+        let padding = this.padding.clone();
+        let consumed = this.consumed.clone();
+        let requested = this.requested.clone();
+        this.observations.before_request(next, move |bytes| {
+            // The next loop admission must match the first actual future Box.
+            assert_eq!(bytes, expected_future);
+            let request = bytes as u64 + OWNER;
+            let payload = MIB - invocation.host_memory_bytes() - request + 1 - OWNER;
+            let mut owner = crate::native_tables::reserve(&invocation, payload as usize)
+                .unwrap()
+                .unwrap();
+            let bytes = vec![0u8; payload as usize];
+            assert_eq!(bytes.capacity(), payload as usize);
+            owner.allocated();
+            *padding.lock().unwrap() = Some(Padding {
+                _bytes: bytes,
+                _owner: owner,
+            });
+            consumed.store(invocation.host_memory_bytes(), SeqCst);
+            requested.store(request, SeqCst);
+        });
+        Poll::Ready(Ok(StreamResult::Completed))
+    }
+}
+
+#[tokio::test]
+async fn actual_producer_future_second_iteration_refusal_preserves_first_item_and_cleanup() {
+    let engine = engine();
+    let core = Module::new(&engine, CORE).unwrap();
+    let original = budget(MIB);
+    let observed = Arc::new(Observations::default());
+    let mut first = store(&engine, &original, &observed).unwrap();
+    warm(&mut first).await;
+    let first_poll = Arc::new(AtomicUsize::new(0));
+    let polls = Arc::new(AtomicUsize::new(0));
+    let producer_drops = Arc::new(AtomicUsize::new(0));
+    let consumer_drops = Arc::new(AtomicUsize::new(0));
+    let items = Arc::new(AtomicUsize::new(0));
+    let padding = Arc::new(Mutex::new(None::<Padding>));
+    let consumed = Arc::new(AtomicU64::new(0));
+    let requested = Arc::new(AtomicU64::new(0));
+    let reader = StreamReader::new(
+        &mut first,
+        TwoItemProducer {
+            observations: observed.clone(),
+            first_poll_requests: first_poll.clone(),
+            polls: polls.clone(),
+            drops: producer_drops.clone(),
+        },
+    )
+    .unwrap();
+    reader
+        .pipe(
+            &mut first,
+            RefuseAfterFirstConsumer {
+                observations: observed.clone(),
+                original: original.clone(),
+                first_poll_requests: first_poll.clone(),
+                items: items.clone(),
+                drops: consumer_drops.clone(),
+                padding: padding.clone(),
+                consumed: consumed.clone(),
+                requested: requested.clone(),
+            },
+        )
+        .unwrap();
+    let result = tokio::time::timeout(
+        Duration::from_secs(5),
+        first.run_concurrent(async |_| core::future::pending::<()>().await),
+    )
+    .await
+    .expect("original public 5s wall");
+    let error = result.unwrap_err();
+    denial(&error, MIB, consumed.load(SeqCst), requested.load(SeqCst));
+    assert_eq!(consumed.load(SeqCst) + requested.load(SeqCst), MIB + 1);
+    assert_eq!(items.load(SeqCst), 1);
+    assert_eq!(polls.load(SeqCst), 1);
+    // Original completion map deletes the transmit even on the second refusal.
+    assert_eq!(producer_drops.load(SeqCst), 1);
+    assert_eq!(consumer_drops.load(SeqCst), 1);
+    drop(error);
+    drop(padding.lock().unwrap().take());
+    drop(first);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+    assert!(allocation_rows(&observed)
+        .iter()
+        .all(|row| !row.admitted || row.released));
+    let mut fresh = store(&engine, &original, &observed).unwrap();
+    fresh.set_fuel(FUEL).unwrap();
+    let instance = wasmtime::Instance::new(&mut fresh, &core, &[]).unwrap();
+    assert_eq!(core_answer(instance, &mut fresh), 42);
+    drop(fresh);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+}
+
 #[tokio::test]
 async fn actual_consumer_future_original_budget_refusal_and_retirement() {
     let engine = engine();
