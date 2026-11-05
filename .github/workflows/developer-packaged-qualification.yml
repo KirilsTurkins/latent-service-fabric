@@ -57,7 +57,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0aa7f1b2061a76e0424bd22ac45be035ce42a6e # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Check archive rejection and bounded conductor processes
@@ -98,7 +98,7 @@ jobs:
         with:
           name: packaged-qualification-support
           path: ${{ runner.temp }}/packaged-support
-      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0aa7f1b2061a76e0424bd22ac45be035ce42a6e # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Download only selected exact-source candidate inputs
@@ -247,7 +247,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0aa7f1b2061a76e0424bd22ac45be035ce42a6e # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes

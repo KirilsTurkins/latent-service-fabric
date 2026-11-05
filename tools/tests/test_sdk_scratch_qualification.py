@@ -12,7 +12,7 @@ from tools.rust_capsule_project import digest, inventory, write_json
 
 
 SECURITY_ACTION_PIN_INVERSES = (
-    ('KirilsTurkins/lsf-setup-python', '14de4ddb02861c1e098a1a260a2de7a6b45b68fb', '50257733267ef69f611231aad6b77a62adca7140'),
+    ('KirilsTurkins/lsf-setup-python', 'e0aa7f1b2061a76e0424bd22ac45be035ce42a6e', '50257733267ef69f611231aad6b77a62adca7140'),
     ('KirilsTurkins/lsf-upload-artifact', '5c42799caf30eda69cb2db5da0be2400c47cef16', '01d82cc6ae713563e8d04f36a17af500cf82a6a9'),
     ('KirilsTurkins/lsf-setup-node', 'fdae00b14e855eb751452bc70c64dde286270415', 'c1136b2d97fe79ef645e9508b2048a222f50a170'),
     ('KirilsTurkins/lsf-setup-java', '5d910981b146bc2d4fd97fa349210f3e3d454039', 'f041d6677134ada73c077d0c012bd78164b251a7'),
