@@ -962,7 +962,7 @@ jobs:
           cache: npm
           cache-dependency-path: sdk/typescript-client/package-lock.json
       - name: Set up the Go SDK provider participant
-        uses: KirilsTurkins/lsf-setup-go@3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e # v7.0.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-setup-go@1020042799f722e9ef016bf63106367879587a49 # v7.0.0 + upstream changes + LSF security fixes
         with:
           go-version: 1.27.3
           cache-dependency-path: sdk/go/go.sum
@@ -1081,7 +1081,7 @@ jobs:
         with:
           toolchain: 1.97.1
           components: rustfmt
-      - uses: KirilsTurkins/lsf-setup-go@3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e # v7.0.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-go@1020042799f722e9ef016bf63106367879587a49 # v7.0.0 + upstream changes + LSF security fixes
         with:
           go-version: 1.27.3
           cache-dependency-path: sdk/go/go.sum

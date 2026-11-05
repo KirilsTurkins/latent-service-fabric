@@ -443,7 +443,9 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/setup-go/package-lock.json",
-      "path": ".github/security/actions/setup-go/package.json"
+      "path": ".github/security/actions/setup-go/package.json",
+      "source_repair": "setup-go-deepmerge-source-v1",
+      "minimatch_source_repair": "setup-go-minimatch-source-v1"
     }
   ],
   "non_manifest_modules": [
