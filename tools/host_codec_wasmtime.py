@@ -18,16 +18,16 @@ RECORD_SHA256 = "5847317216ef4b5295aacd0635f738b5a914db0871902b65bf15bd73cb3fe2c
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
     "Cargo.lock": {
-        "sha256": "f811bc8b1e33f12aef9480bb0473e6739315a5a9d17310a0740d95f772e0815f",
-        "bytes": 60344
+        "sha256": "0d671e7a76239c58f372317fefbc224fc325c912ebf55528af3cf942d882a146",
+        "bytes": 60137
     },
     "Cargo.toml": {
         "sha256": "0dcb5c72f573de3cda491e285e0262c7b3771bda0881afae93b3132c7e62001f",
         "bytes": 11138
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "b557f8c46c167c9635007be95080332327db4a6bf1f76d1750c3ebaa516dd333",
-        "bytes": 699473
+        "sha256": "896976cad8d16aa6af9ec42e4b5910820a4ebdaee11b7925ff436e48c98aaa80",
+        "bytes": 702125
     },
     "README.latent.md": {
         "sha256": "d6df8f449066a68407aa272a51cec102157449c3c14b6a2b48cbaaaaa4595dda",
