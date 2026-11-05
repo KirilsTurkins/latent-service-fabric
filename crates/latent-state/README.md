@@ -4,6 +4,11 @@ Concrete protected transactional storage foundation. A redb-backed `EmbeddedStor
 
 The generic `StateBackend`/entity lease ports remain available, but they do not describe the full implementation. This crate does not expose an arbitrary persistent language heap, userfault pager or durable workflow runtime.
 
+Payload-reference plans are a data-only foundation: they do not pin blob files,
+authorize reads, install startup validation or make the commit coordinator use
+the rows. Production retention requires the physical pin and atomic-envelope
+integration before these records can protect referenced bytes.
+
 ## Responsibilities and architecture
 
 | Source | Responsibility |
@@ -13,6 +18,7 @@ The generic `StateBackend`/entity lease ports remain available, but they do not 
 | [src/store_io.rs](src/store_io.rs) | Fixed workers, finite queues and response/retirement ownership for blocking native work. |
 | [src/session/mod.rs](src/session/mod.rs) | Affine optimistic command/query sessions over the original snapshot and bounded staged values. |
 | [src/namespace.rs](src/namespace.rs) | Durable namespace metadata, incarnations, schema/history fences and destruction floors. |
+| [src/payload_references.rs](src/payload_references.rs) | Bounded, independent payload-owner records, reciprocal indexes and attempt closures. |
 | [src/reservation.rs](src/reservation.rs) | Logical disposition capacity reserved in the same engine transaction. |
 | [src/tenant.rs](src/tenant.rs) | Explicit tenant accounting and checked same-envelope counter updates. |
 | [src/entity_lanes.rs](src/entity_lanes.rs) | Invocation-local entity eligibility; distinct from durable deduplication. |
