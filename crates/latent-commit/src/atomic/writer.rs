@@ -319,6 +319,8 @@ impl PreparedAdmission {
                     record: self.record,
                     expected,
                     physical,
+                    #[cfg(target_os = "linux")]
+                    payload_session: None,
                 }))
             }
             Err(FencedStoreError::Store(latent_state::embedded::StoreError::Conflict)) => {
