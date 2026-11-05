@@ -161,7 +161,10 @@ class NetworkBorrowProfile(unittest.TestCase):
         self.assertLess(call.index('permit.authorizes(function, operation)'), call.index('if (rooted) rootInput();'))
         self.assertLess(call.index('if (rooted) rootInput();'), call.index('function.callOwned(operation, data, length)'))
         self.assertIn(': function.call(operation, Address.ofData(data), length);', call)
-        self.assertIn('if (rooted && function.retainsBorrowedResources()) retainedUncertain = true;', call)
+        self.assertIn('catch (Throwable failure)', call)
+        self.assertLess(call.index('retainedUncertain = true;'), call.index('function.retainsBorrowedResources()'))
+        self.assertIn('if (!function.retainsBorrowedResources()) retainedUncertain = false;', call)
+        self.assertIn('catch (Throwable unavailable)', call)
         self.assertIn('if (rooted && !retainedUncertain) unrootInput();', call)
         close = wire.split('@Override public void close()', 2)[2]
         self.assertIn('if (!retainedUncertain) {', close)
@@ -365,7 +368,7 @@ class NetworkBorrowProfile(unittest.TestCase):
             result = subprocess.run(['java', '-Xmx128m', '-cp', str(root), 'dev.latent.guest.NetworkBorrowControl'],
                                     capture_output=True, text=True, timeout=15)
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertIn('NETWORK_BORROW_CONTROL PASS directions;duplicate;exclusive;shutdown;consume;uncertain;pre-entry;permit;delegation;rooted-inputs;COMPONENT_QUALIFICATION=pending', result.stdout)
+            self.assertIn('NETWORK_BORROW_CONTROL PASS directions;duplicate;exclusive;shutdown;consume;uncertain;checked-throwable;unknown-custody;pre-entry;permit;delegation;rooted-inputs;COMPONENT_QUALIFICATION=pending', result.stdout)
             untrusted = root/'Untrusted.java'
             untrusted.write_text('import dev.latent.generated.Bindings; class Untrusted {'
                                  ' Object forge() { return new Bindings.BorrowPermit(null, 1, 1); } }\n', encoding='utf-8')

@@ -226,5 +226,9 @@ Café
         self.assertEqual(call.call_args.args[0], ["git", "-c", "gc.auto=0", "ls-files", "-z"])
 
 
+    def test_empty_optional_document_set_reports_zero_documents(self):
+        self.assertEqual(self.report()["documents"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()

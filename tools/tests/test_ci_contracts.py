@@ -1040,21 +1040,56 @@ class RepositoryMigrationTests(unittest.TestCase):
         # Evaluate only the closed grammar used by this guard; an unfamiliar
         # construct fails the test rather than being guessed or executed.
         import ast, re
-        def selected(event, ref, replay):
+        def selected(event, ref, replay, reason="full"):
             expression = guard.removeprefix("${{").removesuffix("}}").strip()
             expression = re.sub(r"github\.ref\s*!=\s*'([^']+)'", lambda m: str(ref != m.group(1)), expression)
             expression = expression.replace("github.event_name", repr(event)).replace("inputs.replay-closed-filesystem", str(replay))
+            expression = expression.replace("needs.tooling-selection.outputs.reason", repr(reason))
             expression = expression.replace("&&", " and ").replace("||", " or ")
             expression = re.sub(r"!(?!=)", " not ", expression).strip()
             tree = ast.parse(expression, mode="eval")
             allowed = (ast.Expression, ast.BoolOp, ast.And, ast.Or, ast.UnaryOp, ast.Not, ast.Compare,
                        ast.Eq, ast.NotEq, ast.Constant, ast.Load)
             self.assertTrue(all(isinstance(node, allowed) for node in ast.walk(tree)))
-            return bool(eval(compile(tree, "<guard>", "eval"), {"__builtins__": {}}, {}))
+            def value(node):
+                if isinstance(node, ast.Expression):
+                    return value(node.body)
+                if isinstance(node, ast.Constant):
+                    return node.value
+                if isinstance(node, ast.BoolOp):
+                    values = iter(node.values)
+                    result = value(next(values))
+                    for operand in values:
+                        if isinstance(node.op, ast.And) and not result:
+                            return result
+                        if isinstance(node.op, ast.Or) and result:
+                            return result
+                        result = value(operand)
+                    return result
+                if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+                    return not value(node.operand)
+                if isinstance(node, ast.Compare):
+                    left = value(node.left)
+                    for operator, operand in zip(node.ops, node.comparators):
+                        right = value(operand)
+                        if isinstance(operator, ast.Eq):
+                            matches = left == right
+                        elif isinstance(operator, ast.NotEq):
+                            matches = left != right
+                        else:
+                            raise AssertionError("unsupported guard comparison")
+                        if not matches:
+                            return False
+                        left = right
+                    return True
+                raise AssertionError("unsupported guard expression")
+            return bool(value(tree))
         self.assertTrue(selected("pull_request", "refs/pull/42/merge", False))
         self.assertTrue(selected("push", "refs/heads/development", False))
         self.assertTrue(selected("workflow_dispatch", "refs/heads/development", False))
         self.assertFalse(selected("workflow_dispatch", "refs/heads/development", True))
+        self.assertFalse(selected("pull_request", "refs/pull/42/merge", False,
+                                  "isolated-tooling:documentation-validator-tests"))
         self.assertIn("pull_request", c["on"])
         self.assertIn("development", c["on"]["push"]["branches"])
 
