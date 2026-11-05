@@ -116,6 +116,9 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     classpath, identities = locked_model_classpath(compiler, include_platform=True)
     output.mkdir()
     sources = ("fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/EventQueueHeapMethods.java",
+               "fibers/dev/latent/guest/runtime/EventQueueHeapDonor.java",
+               "fibers/conformance/compiler/QueueHeapControl.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/StandardTimerMethods.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java",
@@ -144,6 +147,12 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     if queue != ("QUEUE_DEADLINE_MODEL_CONTROL PASS actual-locked-queue;first-sample-delays;"
                  "second-sample-comparison;owned-clock-hooks=2;negative-shapes=4"):
         raise ValueError("Java queue deadline model control did not complete")
+    heap = compiler.run("queue-heap-control", "java", "-Xmx256m", "-cp",
+                        str(output) + os.pathsep + classpath,
+                        "dev.latent.guest.runtime.compiler.QueueHeapControl").strip()
+    if heap != ("QUEUE_HEAP_CONTROL PASS actual-original-regression;actual-corrected-order;"
+                "up;down;ties;root;single-child;signed-min;last;singleton;empty;missing;repeat;model;preimage-negative;repeat-negative;donor-body-negative;donor-layout-negative;donor-node-negative"):
+        raise ValueError("Java queue heap control did not complete")
     timer_output = output / "timer-source-control"
     timer_output.mkdir()
     timer_fixture = "fibers/conformance/compiler/timer-source-control/"
@@ -162,6 +171,7 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
             "pluginOrder": ["runtime", "platform"], "asyncLoweredOwnedPairs": 2,
             "coroutineWrappers": 6, "coroutineMonitors": 2, "coroutineNativePairs": 2,
             "queueClockSamples": 2, "queueShapeNegatives": 4,
+            "queueHeapControl": "actual-pinned-jvm-queue-and-model-not-guest-qualification",
             "timerReadinessSourceControl": "passed-private-source-ledger-not-guest-qualification", "jarDigests": identities}
 
 

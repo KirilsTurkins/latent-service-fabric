@@ -1,0 +1,141 @@
+name: Java current-host checkpoint compiler and signed progress
+on:
+  push:
+    branches: ['feat/java-current-checkpoint-20261104']
+permissions:
+  contents: read
+concurrency:
+  group: java-current-checkpoint-context-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  compiler-context:
+    name: Original and corrected pinned JVM compiler control
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - name: One JVM-only compiler probe without guest or native compilation
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B tools/qualify_java_checkpoint_context.py --output "$RUNNER_TEMP/checkpoint-context"
+      - name: Retain bounded original and corrected compiler observations
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: java-checkpoint-context-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/checkpoint-context/result.json
+            ${{ runner.temp }}/checkpoint-context/commands.json
+            ${{ runner.temp }}/checkpoint-context/commands/logs/**
+  signed-current:
+    name: Fresh Java progress and parked GC regression on current authenticated native products
+    needs: compiler-context
+    if: github.ref == 'refs/heads/feat/java-current-checkpoint-20261104'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - name: Fetch the immutable native producer source without rebuilding
+        run: git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915
+      - name: Fetch the current immutable native producer source without rebuilding
+        run: git fetch --no-tags --depth=1 origin 678b19d42b26a12ac35f3d6de525029b82e169f7
+      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        with:
+          version: 1.254.0
+      - name: Check the branch route and existing compiler and GC boundaries
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_progress_workflow \
+            tools.tests.test_java_progress_current_workflow \
+            tools.tests.test_java_checkpoint_gc \
+            tools.tests.test_java_checkpoint_gc_current \
+            tools.tests.test_java_checkpoint_gc_fault_frames \
+            sdk.java-guest.tests.test_platform \
+            sdk.java-guest.tests.test_exception_spills \
+            sdk.java-guest.tests.test_exception_array_spills -v
+      - name: Refuse stale current native source before compiler downloads
+        run: python3 -B tools/qualify_java_checkpoint_gc_current.py --check-source-only
+      - name: Install the maintained exact guest compiler tools without native compilation
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 \
+            https://services.gradle.org/distributions/gradle-9.1.0-bin.zip -o "$RUNNER_TEMP/gradle.zip"
+          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+          timeout --signal=KILL 180s curl --fail --location \
+            --retry 3 --retry-all-errors --retry-delay 1 --max-time 60 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            -o "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          echo "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
+          echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Authenticate the five current-source native products
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/wasmtime_48_0_8_678b_native_products.py --output "$RUNNER_TEMP/java-progress-native"
+      - name: Build a fresh component and execute the unchanged signed two-tenant GC programme
+        run: |
+          python3 -B tools/qualify_java_checkpoint_gc_current.py \
+            --native "$RUNNER_TEMP/java-progress-native" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" \
+            --output "$RUNNER_TEMP/java-progress-gc"
+      - name: Retain fresh source-bound compiler and runtime evidence without keys
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: java-nonsuspendable-progress-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/java-progress-native/*.json
+            ${{ runner.temp }}/java-progress-gc/*.json
+            ${{ runner.temp }}/java-progress-gc/commands/logs/**
+            ${{ runner.temp }}/java-progress-gc/controls/controls.json
+            ${{ runner.temp }}/java-progress-gc/controls/reference-commands.json
+            ${{ runner.temp }}/java-progress-gc/controls/reference-commands/logs/**
+            ${{ runner.temp }}/java-progress-gc/project/candidate.json
+            ${{ runner.temp }}/java-progress-gc/project/receipts/*.json
+            ${{ runner.temp }}/java-progress-gc/project/application/java-dependencies.json
+            ${{ runner.temp }}/java-progress-gc/project/application/latent.dependencies*.json
+            ${{ runner.temp }}/java-progress-gc/compiler/compiler-cache-selection.json
+            ${{ runner.temp }}/java-progress-gc/compiler/compiler-acquisition/*.json
+            ${{ runner.temp }}/java-progress-gc/build/*.json
+            ${{ runner.temp }}/java-progress-gc/build/component.wasm
+            ${{ runner.temp }}/java-progress-gc/build/gc-root-generated/**
+            ${{ runner.temp }}/java-progress-gc/build/compiler-logs/*-java-to-c.log
+            ${{ runner.temp }}/java-progress-gc/build/compiler-logs/*-java-coroutine-*.log
+            ${{ runner.temp }}/java-progress-gc/build/compiler-logs/*-c-to-wasm.log
+            ${{ runner.temp }}/java-progress-gc/node/*.json
+            ${{ runner.temp }}/java-progress-gc/node/commands/logs/**
+            ${{ runner.temp }}/java-progress-gc/node/examples-controls/**
+            ${{ runner.temp }}/java-progress-gc/node/foreign-controls/**

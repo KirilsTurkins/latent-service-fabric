@@ -245,7 +245,7 @@ mod selected {
                 )
                 .await
             }
-            Some("lsf-q35-node-pci-prefix-v1") => {
+            Some(profile @ ("lsf-q35-node-pci-prefix-v1" | "lsf-q35-node-pci-setup-v1")) => {
                 let node = StreamProvider::prepare_kernel_node_pci_prefix_for_qualification(
                     Arc::clone(&pools),
                     "streams",
@@ -256,7 +256,11 @@ mod selected {
                 )
                 .await
                 .map_err(|_| ())?;
-                println!("LSFNODEPREFIX1 childAck=1");
+                if profile == "lsf-q35-node-pci-setup-v1" {
+                    println!("LSFNODESETUP1 childAck=1");
+                } else {
+                    println!("LSFNODEPREFIX1 childAck=1");
+                }
                 Ok(node)
             }
             Some(_) => return Err(()),

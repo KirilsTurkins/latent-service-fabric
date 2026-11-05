@@ -603,6 +603,8 @@ pub(crate) mod node_bootstrap {
     #[cfg(any(test, feature = "development-outbound"))]
     const PCI_PREFIX_ABI: &str = "lsf-q35-node-pci-prefix-v1";
     #[cfg(any(test, feature = "development-outbound"))]
+    const PCI_SETUP_ABI: &str = "lsf-q35-node-pci-setup-v1";
+    #[cfg(any(test, feature = "development-outbound"))]
     const PCI_PREFIX_OPERATION: u32 = 4;
 
     /// Qualification-only image bound by the owner at compile time; this is
@@ -615,7 +617,8 @@ pub(crate) mod node_bootstrap {
     #[cfg(any(test, feature = "development-outbound"))]
     pub(crate) fn qualification_pci_prefix_profile(
     ) -> Result<InstalledPciPrefixProfile, StreamError> {
-        if option_env!("LSF_Q35_PREFIX_PROFILE") != Some(PCI_PREFIX_ABI) {
+        let profile = option_env!("LSF_Q35_PREFIX_PROFILE");
+        if profile != Some(PCI_PREFIX_ABI) && profile != Some(PCI_SETUP_ABI) {
             return Err(error(StreamErrorCode::Unsupported));
         }
         Ok(InstalledPciPrefixProfile {

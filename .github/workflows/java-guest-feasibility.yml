@@ -63,6 +63,41 @@ env:
   CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
 
 jobs:
+  queue-heap-control:
+    if: ${{ (github.event_name == 'pull_request' && github.head_ref == 'feat/java-event-queue-order-20261104') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feat/java-event-queue-order-20261104') }}
+    name: Pinned Java event queue ordering and model control
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - name: Exercise pinned original and corrected EventQueue on a JVM
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B tools/qualify_java_queue_heap.py --output "$RUNNER_TEMP/java-queue-heap"
+      - name: Retain bounded queue control evidence
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: java-queue-heap-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/java-queue-heap/result.json
+            ${{ runner.temp }}/java-queue-heap/commands.json
+            ${{ runner.temp }}/java-queue-heap/commands/logs/**
+
+
   tooling-selection:
     name: Select tooling qualification
     runs-on: ubuntu-24.04
@@ -78,6 +113,7 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /tools/
+            /.gitignore
             /.github/workflows/
             /sdk/
             /crates/vendor/wasmtime/

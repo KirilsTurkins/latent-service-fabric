@@ -67,6 +67,10 @@
         "run": "python3 -B -m unittest tools.tests.test_rust_thread_http_sibling tools.tests.test_rust_thread_http_sibling_compiler tools.tests.test_rust_thread_http_sibling_retention tools.tests.test_rust_wasi_http_bindgen -v"
       },
       {
+        "name": "Acquire the fixed diagnostic-only component composer",
+        "run": "mkdir -p \"$RUNNER_TEMP/rust-http-thread-composer\"\ncurl --fail --location --max-time 180 https://github.com/bytecodealliance/wac/releases/download/v0.11.0/wac-cli-x86_64-unknown-linux-musl --output \"$RUNNER_TEMP/rust-http-thread-composer/wac\"\nprintf '%s  %s\\n' 83259349b630f79a60490322b068e7ad2dba784720b0d467decccc0aecc743b5 \"$RUNNER_TEMP/rust-http-thread-composer/wac\" | sha256sum --check --strict\ntest \"$(stat --format=%s \"$RUNNER_TEMP/rust-http-thread-composer/wac\")\" -eq 22917648\nchmod 0700 \"$RUNNER_TEMP/rust-http-thread-composer/wac\"\n"
+      },
+      {
         "name": "Acquire only the locked current SDK compiler inputs",
         "run": "cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu"
       },
@@ -93,7 +97,7 @@
           "EXPECTED_HEAD": "${{ github.sha }}"
         },
         "name": "Capture the actual unadmitted composed graph",
-        "run": "python3 -B tools/compile_rust_thread_http_sibling.py --expected-head \"$EXPECTED_HEAD\" --rust-bin \"$(dirname \"$(rustup which rustc)\")\" --owned-sysroot \"$RUNNER_TEMP/rust-http-thread-owned/owned-sysroot\" --context-tool \"$RUNNER_TEMP/rust-http-thread-owned/tool/rust-context\" --owned-report \"$RUNNER_TEMP/rust-http-thread-owned/report.json\" --owned-source \"$RUNNER_TEMP/rust-http-thread-owned/source-inputs.json\" --http-runtime \"$RUNNER_TEMP/rust-http-thread-http\" --contracts-tool \"$RUNNER_TEMP/rust-http-thread-contracts/capsule_contracts\" --contracts-receipt \"$RUNNER_TEMP/rust-http-thread-contracts/report.json\" --output \"$RUNNER_TEMP/rust-http-thread-combined\""
+        "run": "python3 -B tools/compile_rust_thread_http_sibling.py --expected-head \"$EXPECTED_HEAD\" --rust-bin \"$(dirname \"$(rustup which rustc)\")\" --owned-sysroot \"$RUNNER_TEMP/rust-http-thread-owned/owned-sysroot\" --context-tool \"$RUNNER_TEMP/rust-http-thread-owned/tool/rust-context\" --owned-report \"$RUNNER_TEMP/rust-http-thread-owned/report.json\" --owned-source \"$RUNNER_TEMP/rust-http-thread-owned/source-inputs.json\" --http-runtime \"$RUNNER_TEMP/rust-http-thread-http\" --diagnostic-composer \"$RUNNER_TEMP/rust-http-thread-composer/wac\" --contracts-tool \"$RUNNER_TEMP/rust-http-thread-contracts/capsule_contracts\" --contracts-receipt \"$RUNNER_TEMP/rust-http-thread-contracts/report.json\" --output \"$RUNNER_TEMP/rust-http-thread-combined\""
       },
       {
         "if": "always()",
@@ -116,7 +120,7 @@
   },
   "jobId": "diagnostic",
   "kind": "job",
-  "reviewReason": "Preserve exact source, causal gates, bounded compiler and public failure retention while checking direct bindgen selection.",
+  "reviewReason": "Preserve all compiler, causal and source gates while using a separately pinned composer for this unadmitted threading diagnostic.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-http-thread-composition-diagnostic.yml"
 }

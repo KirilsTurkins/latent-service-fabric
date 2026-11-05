@@ -699,7 +699,8 @@ class NativeEntrypointTests(unittest.TestCase):
                                     "--no-run", "--message-format=json,json-render-diagnostics"],
                                    cwd=repo, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
             inventory.write_bytes(built.stdout)
-            with patch.dict(os.environ, {"CARGO_TARGET_DIR": str(target), "CARGO_NET_OFFLINE": "true"}):
+            with patch.dict(os.environ, {"CARGO_TARGET_DIR": str(target), "CARGO_NET_OFFLINE": "true",
+                                         "GITHUB_SHA": command("git", "rev-parse", "HEAD")}):
                 prepared, prep = invoke(["prepare", "--suite", CORE, "--inventory", str(inventory)], repo)
                 checked, status = invoke(["check", "--suite", CORE, "--inventory", str(inventory)], repo)
                 code, record = invoke(["run", "--suite", CORE, "--inventory", str(inventory)], repo)
