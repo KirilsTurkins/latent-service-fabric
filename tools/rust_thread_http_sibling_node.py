@@ -6,7 +6,7 @@ granted the actual combined component. This code supplies none of those steps.
 from pathlib import Path
 import time
 
-from tools.phase2_operator_process import require, write_json
+from tools.phase2_operator_process import WorkflowError, require, write_json
 from tools.phase3_resource_profile import ACTIVE_COUNTERS
 from tools.rust_capsule_node import finish_call, sample, selected_revision, start_call
 from tools.rust_thread_http_sibling_gate import decision
@@ -41,6 +41,20 @@ def active_owner(client, probe, target):
     return {'physical': physical, 'providerUsage': counters}
 
 
+def decision_with_failure_evidence(observation, gates, output: Path, *, body_released):
+    """Retain only the bounded controlled-peer observation if the gate refuses."""
+    try:
+        return decision(observation, gates, body_released=body_released)
+    except WorkflowError:
+        try:
+            write_json(output / 'rust-thread-http-peer-refusal.json',
+                       {'observation': observation, 'bodyReleased': body_released})
+        except (OSError, TypeError, ValueError, WorkflowError):
+            # A recording failure must not replace the original refusal.
+            pass
+        raise
+
+
 def invoke(client, node, target, peer, probe, output: Path, component_digest: str):
     budget = target['budget']
     require(budget['outboundRequests'] == 8 and budget['memoryBytes'] == 16_777_216
@@ -68,7 +82,7 @@ def invoke(client, node, target, peer, probe, output: Path, component_digest: st
             observed = current(peer.observation(), offset)
             gates = [gate for gate in peer.gates() if gate.request > offset]
             if not original_released:
-                step = decision(observed, gates, body_released=body_released)
+                step = decision_with_failure_evidence(observed, gates, output, body_released=body_released)
                 if step is not None and step['action'] == 'release-sibling-body':
                     require(not body_released, 'rust-thread-http-duplicate-body-release')
                     pending = {'peer': observed, 'owner': active_owner(client, probe, target)}
