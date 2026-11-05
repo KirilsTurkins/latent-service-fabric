@@ -136,10 +136,12 @@ pub(super) async fn select(
         .map_err(protected_error)?;
     let (view, result) = job.await.map_err(io_error)?;
     let (result, finish) = result.map_err(protected_error)?;
-    let (read, response) = result?;
     // Reads have no independent public audit-ack field. Fail closed on an
     // unknown current audit conclusion before returning the metadata.
-    inspection::read_ack(finish).await?;
+    // A rejected read must still retire the slot before the next request.
+    let acknowledgement = inspection::read_ack(finish).await;
+    let (read, response) = result?;
+    acknowledgement?;
     let response: contract::Response = response.into();
     let needed = response
         .encoded_len()
