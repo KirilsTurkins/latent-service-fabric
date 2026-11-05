@@ -1,0 +1,33 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-combined-preview-proof-${{ github.ref }}"
+    },
+    "name": "Rust combined HTTP and thread source proof",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/rust-combined-host-preview-20261105"
+        ],
+        "paths": [
+          ".github/workflows/rust-combined-preview-proof.yml",
+          "crates/latent-component-threading/Cargo.toml",
+          "crates/latent-component-threading/src/rust_objects.rs",
+          "crates/latent-component-threading/src/rust_component.rs",
+          "crates/latent-component-threading/src/rust_catalogue/combined-*"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "preview-proof"
+  ],
+  "reviewReason": "Run the existing normal source proofs and an explicitly selected fixed combined-graph diagnostic; no runtime admission or signed qualification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-combined-preview-proof.yml"
+}
