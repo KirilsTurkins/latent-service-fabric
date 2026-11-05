@@ -190,7 +190,7 @@ ACTION_REFERENCES = {
     ".github/security/actions/setup-node/":
         "KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415",
     ".github/security/actions/setup-python/":
-        "KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb",
+        "KirilsTurkins/lsf-setup-python@e0aa7f1b2061a76e0424bd22ac45be035ce42a6e",
     ".github/security/actions/upload-artifact/":
         "KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16",
 }
