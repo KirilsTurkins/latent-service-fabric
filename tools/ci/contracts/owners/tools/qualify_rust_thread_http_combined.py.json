@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_thread_http_combined.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Run an exact-source diagnostic owner and retain original failure attribution.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "4162d49e5fe2e330757c7decc186fa216feab950aff1c6f43128dd0b37e4731c"
+}

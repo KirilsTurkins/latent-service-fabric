@@ -1,0 +1,78 @@
+name: Rust combined HTTP signed sibling diagnostic
+on:
+  push:
+    branches: ['diag/rust-http-combined-signed-20261105']
+    paths:
+      - '.github/workflows/rust-combined-signed-witness.yml'
+      - 'tools/rust_thread_http_combined_*.py'
+      - 'tools/rust_combined_http_materials.py'
+      - 'tools/qualify_rust_thread_http_combined.py'
+      - 'tools/tests/test_rust_thread_http_combined_node.py'
+      - 'crates/latent-component-threading/**'
+      - 'crates/latent-wasmtime/**'
+      - 'apps/latentd/**'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: rust-combined-signed-witness-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  signed-witness:
+    name: Current diagnostic host and signed held-HTTP sibling witness
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Install locked controller dependencies and check separate grants
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_rust_thread_http_combined_node -v
+      - name: Retrieve only the pinned original compiler members
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/rust_combined_http_materials.py --output "$RUNNER_TEMP/rust-combined-original"
+      - name: Build the exact host and run the signed sibling programme
+        env:
+          EXPECTED_HEAD: ${{ github.sha }}
+        run: >-
+          python3 -B tools/qualify_rust_thread_http_combined.py
+          --compiler-materials "$RUNNER_TEMP/rust-combined-original"
+          --output "$RUNNER_TEMP/rust-combined-signed"
+          --source-commit "$EXPECTED_HEAD"
+      - name: Retain bounded source, signing, actual invocation, and cleanup evidence
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: rust-combined-signed-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-combined-signed/**
+            ${{ runner.temp }}/rust-combined-original/retrieval.json
+          if-no-files-found: warn
+          retention-days: 7

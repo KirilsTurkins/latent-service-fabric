@@ -1,0 +1,39 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-combined-signed-witness-${{ github.ref }}"
+    },
+    "name": "Rust combined HTTP signed sibling diagnostic",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/rust-http-combined-signed-20261105"
+        ],
+        "paths": [
+          ".github/workflows/rust-combined-signed-witness.yml",
+          "tools/rust_thread_http_combined_*.py",
+          "tools/rust_combined_http_materials.py",
+          "tools/qualify_rust_thread_http_combined.py",
+          "tools/tests/test_rust_thread_http_combined_node.py",
+          "crates/latent-component-threading/**",
+          "crates/latent-wasmtime/**",
+          "apps/latentd/**",
+          "Cargo.lock",
+          "rust-toolchain.toml"
+        ]
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "signed-witness"
+  ],
+  "reviewReason": "Run the exact opt-in signed witness and preserve the retained original compiler failure.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-combined-signed-witness.yml"
+}
