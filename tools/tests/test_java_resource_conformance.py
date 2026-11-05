@@ -219,6 +219,8 @@ class JavaResourceConformance(unittest.TestCase):
     def test_resource_child_preserves_all_original_jobs_commands_and_deadlines(self):
         path = '.github/workflows/java-guest-feasibility.yml'
         current = yaml.safe_load(historical_checkout(read_file(ROOT/path)))
+        from tools.tests.qualification_selection import restore_java_pre_tooling_view
+        restore_java_pre_tooling_view(self, current)
         private = current[True]['workflow_dispatch']['inputs'].pop('public_fiber_private_scalar_llvm')
         self.assertEqual(private['type'], 'boolean');self.assertIs(private['default'], False)
         clause = " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)"

@@ -15,7 +15,8 @@
           "feat/sdk-738-q35-node-boot-20261029",
           "feat/sdk-738-q35-pci-identity-20261104",
           "feat/sdk-738-q35-node-pci-prefix-20261104",
-          "feat/sdk-738-q35-pci-setup-20261104"
+          "feat/sdk-738-q35-pci-setup-20261104",
+          "feat/sdk-738-q35-pci-fixup-20261104"
         ],
         "paths": [
           ".github/workflows/stream-native-factory-owner.yml",
@@ -38,7 +39,8 @@
           "research/standard-outbound/linux-6.12-lineage/node-boot/**",
           "research/standard-outbound/linux-6.12-lineage/node-constructor-bridge/**",
           "research/standard-outbound/linux-6.12-lineage/node-pci-prefix/**",
-          "research/standard-outbound/linux-6.12-lineage/node-pci-setup/**"
+          "research/standard-outbound/linux-6.12-lineage/node-pci-setup/**",
+          "research/standard-outbound/linux-6.12-lineage/node-pci-fixup/**"
         ]
       },
       "workflow_dispatch": null
@@ -51,7 +53,7 @@
     "native-kernel-vm",
     "native-owner"
   ],
-  "reviewReason": "Default-off q35 original-Node PCI setup and asynchronous record-return qualification; existing authority, limits, historical paths and IRQ/TCP exclusions remain enforced.",
+  "reviewReason": "Default-off original-Node q35 early-fixup no-match qualification; preserve existing setup, record-retirement, source bounds, and IRQ/TCP exclusions.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-native-factory-owner.yml"
 }

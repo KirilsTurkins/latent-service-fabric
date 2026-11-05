@@ -235,13 +235,19 @@ def declare(project: Path):
     entropy_grants.declare(project)
 
 
-def prepare(output: Path, outside: Path, tools: Path):
+def prepare(output: Path, outside: Path, tools: Path, *, monitor_cancel: bool = False):
+    require(type(monitor_cancel) is bool, 'dotnet-task-closed-fixture-selection')
+    if monitor_cancel:
+        from tools import dotnet_monitor_cancel_fixture as witness
+        library_source, cases = witness.library_source(LIBRARY_SOURCE), witness.CASES
+    else:
+        library_source, cases = LIBRARY_SOURCE, CASES
     project = create(output, 'greeting')
     declare(project)
     outside.mkdir(mode=0o700)
     library, evidence, feed = (outside / name for name in ('library', 'evidence', 'feed'))
     for directory in (library, evidence, feed): directory.mkdir()
-    (library / 'Library.cs').write_text(LIBRARY_SOURCE, encoding='utf-8', newline='\n')
+    (library / 'Library.cs').write_text(library_source, encoding='utf-8', newline='\n')
     (library / 'Library.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>'
         '<TargetFramework>net10.0</TargetFramework><OutputType>Library</OutputType>'
         '<AssemblyName>' + PACKAGE + '</AssemblyName><Nullable>enable</Nullable>'
@@ -300,4 +306,4 @@ def prepare(output: Path, outside: Path, tools: Path):
         'dependencyLock': digest((project / LOCK).read_bytes()),
         'originalLibraryAndFeedRemoved': not library.exists() and not feed.exists(),
         'applicationSchedulerReplacement': False, 'httpDeclaration': False,
-        'entropyDeclaration': 'explicit-threadpool-selector-seed', 'cases': list(CASES)}
+        'entropyDeclaration': 'explicit-threadpool-selector-seed', 'cases': list(cases)}

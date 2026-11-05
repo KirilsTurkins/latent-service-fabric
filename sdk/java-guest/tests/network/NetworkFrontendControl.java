@@ -64,10 +64,10 @@ public final class NetworkFrontendControl {
         vm.build(output, "network-frontend");
         require(seen[0] == 1, "network-frontend-transform-count");
         require(vm.getProblemProvider().getSevereProblems().isEmpty(), "network-frontend-problems");
-        var callback = new MethodReference(HOST, "suspendOwned", ValueType.INTEGER,
-                ValueType.arrayOf(ValueType.BYTE), ValueType.INTEGER,
-                ValueType.object(HOST + "$Call"), ValueType.object("org.teavm.interop.AsyncCallback"),
-                ValueType.VOID);
+        // TeaVM's pinned async lowering inlines the callback into this exact
+        // synthetic Fiber.AsyncCall.run method; select the body actually emitted.
+        var callback = new MethodReference(HOST + "$suspendOwned$1", "run",
+                ValueType.object("org.teavm.interop.AsyncCallback"), ValueType.VOID);
         String symbol = names.forMethod(callback);
         Pattern definition = Pattern.compile("(?s)\\b" + Pattern.quote(symbol) + "\\s*\\([^;{}]*\\)\\s*\\{");
         String selected = null;

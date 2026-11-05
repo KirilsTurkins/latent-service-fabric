@@ -175,10 +175,17 @@ public final class Wire {
                 Address result = rooted ? function.callOwned(operation, data, length)
                         : function.call(operation, Address.ofData(data), length);
                 return result(result, allowPendingCancellation);
-            } catch (RuntimeException | Error failure) {
+            } catch (Throwable failure) {
                 // Do not clear the array or its resource roots while native
                 // acceptance remains uncertain. Retain the existing Wait too.
-                if (rooted && function.retainsBorrowedResources()) retainedUncertain = true;
+                if (rooted) {
+                    // If custody cannot be inspected, keep it and preserve
+                    // the original failure rather than clearing live input.
+                    retainedUncertain = true;
+                    try {
+                        if (!function.retainsBorrowedResources()) retainedUncertain = false;
+                    } catch (Throwable unavailable) { /* retain until Store teardown */ }
+                }
                 throw failure;
             } finally {
                 if (rooted && !retainedUncertain) unrootInput();

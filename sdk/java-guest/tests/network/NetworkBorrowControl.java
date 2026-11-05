@@ -25,6 +25,10 @@ public final class NetworkBorrowControl {
         try { action.run(); throw new AssertionError("permit-refusal-required"); }
         catch (IllegalArgumentException expected) { }
     }
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void throwUnannounced(Throwable failure) throws T {
+        throw (T) failure;
+    }
     private static Wire.HostFunction failing(boolean retained) {
         return new Wire.HostFunction() {
             @Override public Address call(int operation, Address bytes, int length) {
@@ -174,7 +178,50 @@ public final class NetworkBorrowControl {
             refused(() -> writer.call(callback, 1, false));
         }
         require(reentrant.consume() == 17);
+        // TeaVM's async continuation may rethrow an arbitrary Throwable even
+        // where the source-level call declares no checked exception. Preserve
+        // custody on that path just as for unchecked exceptional completion.
+        Network checkedResource = new Network(21);
+        Exception checkedFailure = new Exception("controlled-checked-failure");
+        Wire.HostFunction checkedCall = new Wire.HostFunction() {
+            @Override public Address call(int operation, Address bytes, int length) {
+                NetworkBorrowControl.<RuntimeException>throwUnannounced(checkedFailure);
+                throw new AssertionError("checked-failure-required");
+            }
+            @Override public boolean retainsBorrowedResources() { return true; }
+        };
+        Wire.Writer checkedWriter = writer(checkedCall, 6, Wire.NETWORK_READ);
+        try (checkedWriter) {
+            checkedWriter.resource(checkedResource, false);
+            checkedWriter.bytes(new byte[] { 27, 39 });
+            try { checkedWriter.call(checkedCall, 6, false); throw new AssertionError("checked-failure-required"); }
+            catch (Exception actual) { require(actual == checkedFailure); }
+        }
+        require(field(null, "rootedInputs") == checkedWriter);
+        require(((List<?>)field(checkedWriter, "borrows")).contains(checkedResource));
+        byte[] checkedBytes = (byte[])field(checkedWriter, "data");
+        require(checkedBytes[8] == 27 && checkedBytes[9] == 39);
+        refused(checkedResource::consume);
+
+        Network unknownResource = new Network(23);
+        IllegalStateException originalFailure = new IllegalStateException("controlled-original-failure");
+        Wire.HostFunction unknownCustody = new Wire.HostFunction() {
+            @Override public Address call(int operation, Address bytes, int length) { throw originalFailure; }
+            @Override public boolean retainsBorrowedResources() { throw new IllegalStateException("controlled-probe-failure"); }
+        };
+        Wire.Writer unknownWriter = writer(unknownCustody, 7, Wire.NETWORK_WRITE);
+        try (unknownWriter) {
+            unknownWriter.resource(unknownResource, false);
+            unknownWriter.bytes(new byte[] { 51, 63 });
+            try { unknownWriter.call(unknownCustody, 7, false); throw new AssertionError("original-failure-required"); }
+            catch (IllegalStateException actual) { require(actual == originalFailure); }
+        }
+        require(field(null, "rootedInputs") == unknownWriter);
+        require(((List<?>)field(unknownWriter, "borrows")).contains(unknownResource));
+        byte[] unknownBytes = (byte[])field(unknownWriter, "data");
+        require(unknownBytes[8] == 51 && unknownBytes[9] == 63);
+        refused(unknownResource::consume);
         threads();
-        System.out.println("NETWORK_BORROW_CONTROL PASS directions;duplicate;exclusive;shutdown;consume;uncertain;pre-entry;permit;delegation;rooted-inputs;COMPONENT_QUALIFICATION=pending");
+        System.out.println("NETWORK_BORROW_CONTROL PASS directions;duplicate;exclusive;shutdown;consume;uncertain;checked-throwable;unknown-custody;pre-entry;permit;delegation;rooted-inputs;COMPONENT_QUALIFICATION=pending");
     }
 }
