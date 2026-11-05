@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "workflow",
+  "reviewReason": "Authenticate exact retained failed owners and emit bounded source-bound diagnostic codes; no qualification claim.",
+  "workflow": ".github/workflows/sdk-retained-failure-diagnostic.yml",
+  "policy": {
+    "name": "SDK retained failure evidence review",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/sdk-retained-failures-20261105"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read",
+      "actions": "read"
+    },
+    "concurrency": {
+      "group": "sdk-retained-failures-${{ github.ref }}",
+      "cancel-in-progress": false
+    }
+  },
+  "requiredJobs": [
+    "inspect"
+  ]
+}
