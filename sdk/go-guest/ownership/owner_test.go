@@ -1,6 +1,10 @@
 package ownership
 
-import "testing"
+import (
+	"sync"
+	"sync/atomic"
+	"testing"
+)
 
 func mustPanic(t *testing.T, f func()) {
 	t.Helper()
@@ -29,6 +33,39 @@ func TestAliasesShareExactlyOneDestructor(t *testing.T) {
 	}
 	mustPanic(t, func() { alias.Take() })
 	mustPanic(t, func() { alias.Borrow() })
+}
+
+func TestConcurrentAliasCloseIsIdempotent(t *testing.T) {
+	const rounds, closers = 1000, 16
+	for round := 0; round < rounds; round++ {
+		o := New(round)
+		start := make(chan struct{})
+		var calls, bad, panics atomic.Int32
+		var pending sync.WaitGroup
+		pending.Add(closers)
+		for i := 0; i < closers; i++ {
+			go func() {
+				defer pending.Done()
+				defer func() {
+					if recover() != nil {
+						panics.Add(1)
+					}
+				}()
+				<-start
+				o.Close(func(value int) {
+					if value != round {
+						bad.Add(1)
+					}
+					calls.Add(1)
+				})
+			}()
+		}
+		close(start)
+		pending.Wait()
+		if calls.Load() != 1 || bad.Load() != 0 || panics.Load() != 0 {
+			t.Fatalf("round %d: drops=%d wrong-values=%d panics=%d", round, calls.Load(), bad.Load(), panics.Load())
+		}
+	}
 }
 
 func TestPendingBorrowPreventsCloseMoveAndConcurrentBorrow(t *testing.T) {

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "workflow",
+  "reviewReason": "Compile the diagnostic-only bounded original-core delta decoder and verify the fixed real graph; no runtime admission or signed qualification.",
+  "workflow": ".github/workflows/rust-original-delta-diagnostic.yml",
+  "policy": {
+    "name": "Rust original-core bounded delta diagnostic",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/rust-original-delta-20261105"
+        ],
+        "paths": [
+          ".github/workflows/rust-original-delta-diagnostic.yml",
+          "crates/latent-component-threading/src/rust_original_delta.rs",
+          "crates/latent-component-threading/src/rust_component.rs",
+          "crates/latent-component-threading/src/rust_catalogue/combined-original-delta.bin",
+          "tools/rust_original_delta.py"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    },
+    "concurrency": {
+      "group": "rust-original-delta-diagnostic-${{ github.ref }}",
+      "cancel-in-progress": false
+    }
+  },
+  "requiredJobs": [
+    "delta-proof"
+  ]
+}

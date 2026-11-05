@@ -106,7 +106,7 @@ normalized file digest to one of two reviewed historical trees; adding transport
 code cannot silently preserve that allowance. NuGet source configuration files
 and custom `dependencies.lock.json` files participate in manifest discovery.
 
-The documentation package manager's `npm-11.19.1-lsf-bundle-v5` distribution and
+The documentation package manager's `npm-11.19.1-lsf-bundle-v6` distribution and
 the two application locks select explicit maintained source repairs for
 `http-cache-semantics` 4.3.0 and `braces` 3.0.3. The
 [repair policy](../../.github/security/npm-source-repairs.json) pins the upstream
@@ -115,9 +115,58 @@ deterministic archives. The [independent verifier](../../tools/security_npm_sour
 reads fresh authenticated registry archives as bounded data; it imports neither
 the source builder nor downloaded package code. It checks both complete library
 archives and the complete npm bundle against all three reviewed locks.
+For the two npm-bundle glob and minimatch source backports, the verifier checks
+all six default and raw CommonJS and ESM files and the complete bundle against
+the exact toolchain lock. It records only the specifically reviewed advisory
+revisions as source-remediated; other versions and findings remain visible.
+
+The cache restore and save actions share one reviewed build-dependency lock. The
+source verifier binds both exact action entrypoints, their metadata, manifest and
+lock to the same repaired deepmerge source before resolving its specific advisory
+revision for that lock. Future revisions or altered source remain findings.
+
+The setup-python action retains minimatch 10.2.5 with a maintained source repair.
+The [action policy](../../.github/security/minimatch-action-source-repairs.json)
+and independent verifier reconstruct the authenticated upstream archive and both
+patched entry points, require every v10 lock occurrence to select the exact fixed
+archive, and bind the installed-source verifier and both executable action bundles
+to the action revision. It retrieves each bundle from the exact immutable fork
+commit with redirects disabled, a 30-second socket inactivity timeout and an
+8 MiB per-file limit, then checks its SHA-256 and Git blob identity. Elapsed
+time is checked between completed reads; a blocking operation may extend that
+30-second target. Missing or changed content fails the scan. This adds a GitHub
+raw-content availability dependency. OSV still
+receives the original version; only the reviewed advisory revision for that exact
+lock can be classified as source-remediated.
+Other versions, locks, advisories and unpatched duplicate copies remain blocking.
+
+The setup-java action similarly retains minimatch 10.2.6 with a separate
+[exact source policy](../../.github/security/minimatch-java-action-source-repairs.json).
+It preserves the existing deepmerge verification and binds both action entrypoints
+and their two matcher-bearing chunks to the reviewed fork revision and hosted build.
+Those four runtime files use the same bounded, fail-closed raw-content retrieval
+described above. Only the exact reviewed minimatch advisory revision and setup-java
+lock are eligible for the source-repair receipt.
+
+Setup-node also retains minimatch 10.2.6 under its own
+[exact source policy](../../.github/security/minimatch-node-action-source-repairs.json).
+It keeps the deepmerge verifier, scopes its build-only glob update, and binds both
+runtime entrypoints to its reviewed fork revision and hosted build using the same
+bounded raw-content retrieval. The receipt covers only the exact reviewed advisory
+revision and setup-node lock.
+
+Rust-cache retains deepmerge 4.3.1 and minimatch 10.2.6 with separate source
+repairs. Its exact fork, manifest, lock, build guards, repaired archives and
+hosted cache-owner evidence are bound by the independent Rust-cache source
+verifier. The verifier retrieves all six executable Rollup files from the exact
+fork commit using the same bounded, fail-closed raw-content retrieval described
+above. This adds six requests to the existing GitHub raw-content dependency.
+OSV continues to observe both original versions; only the two specifically
+reviewed advisory revisions for the Rust-cache lock can receive source-repair
+credit. Other findings and changed advisory revisions remain blocking.
 
 The selector-parser repair introduced by v4 remains at upstream 7.1.6 with its
-exact dependency graph. The selected v5 bundle also carries ip-address 10.7.4
+exact dependency graph. The selected v6 bundle also carries ip-address 10.7.4
 and undici 6.29.1. Current frontend locks pin tinypool 2.1.2, source-map-js 1.2.2,
 KaTeX 0.18.2, serialize-javascript 7.1.3, launch-editor 2.14.2 and
 follow-redirects 1.16.1. The [website toolchain guide](website.md) owns the

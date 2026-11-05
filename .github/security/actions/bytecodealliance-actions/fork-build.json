@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "repository": "KirilsTurkins/lsf-bytecodealliance-actions",
+  "publishedRevision": "1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce",
+  "publishedTree": "578e888fbea3faf619b37e947f749242001b2aa0",
+  "builtHead": "60bd0613e09bef8a77464828b6d476147aeb3385",
+  "builtTree": "578e888fbea3faf619b37e947f749242001b2aa0",
+  "buildRun": 42020735461,
+  "buildJob": 127222560199,
+  "buildConclusion": "success",
+  "diagnosticHead": "86892eb98aa1cb9ef3e2eacace772ce507c5e6a9",
+  "diagnosticRun": 42021497437,
+  "diagnosticJob": 127225111043,
+  "diagnosticConclusion": "success",
+  "artifact": {
+    "id": 13411193511,
+    "bytes": 707,
+    "sha256": "0aa9cc0d447423cf836287a9d378583daf29fab05f8a580b7ff9ed6c68632d0e",
+    "crcVerified": true
+  },
+  "result": {
+    "bundleSha256": {
+      "dist/wasm-tools/setup/index.js": "dc2c9c7f21e3a7e4158257e6b00cc18cf66758f97aee2b323f2cd5b4c52f284b",
+      "dist/wasmtime/setup/index.js": "cd4680b4dcb503403a8c7948967f34a7a94b8e8e38637d200a6ae0a998bfc7d6",
+      "dist/wit-bindgen/setup/index.js": "3728dde40d2b6eecbce245e27de6386e467d90872b1d801b3767969a7c9fe521"
+    },
+    "diagnosticCommit": "86892eb98aa1cb9ef3e2eacace772ce507c5e6a9",
+    "hostedBuildOrSignedSdkQualified": false,
+    "lockRecords": 619,
+    "nodeVersion": "v24.19.0",
+    "npmVersion": "11.17.0",
+    "prototypeControls": [
+      "cjs",
+      "umd"
+    ],
+    "runtimeDependencyRecordsUnchanged": true,
+    "sourceCommit": "60bd0613e09bef8a77464828b6d476147aeb3385",
+    "sourceTree": "578e888fbea3faf619b37e947f749242001b2aa0",
+    "status": "passed",
+    "tamperRefusals": [
+      ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
+      ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.repair.json",
+      "node_modules/deepmerge/index.js",
+      "node_modules/deepmerge/dist/cjs.js",
+      "node_modules/deepmerge/dist/umd.js",
+      "package.json",
+      "package-lock.json"
+    ]
+  }
+}

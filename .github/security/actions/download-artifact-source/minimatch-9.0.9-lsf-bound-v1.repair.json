@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "profile": "minimatch-9.0.9-lsf-bound-v1",
+  "name": "minimatch",
+  "version": "9.0.9",
+  "upstreamIntegrity": "sha512-OBwBN9AL4dqmETlpS2zasx+vTeWclWzkblfZk7KTA5j3jeOONz/tRCnZomUyvNg83wL5Zv9Ss6HMJXAgL8R2Yg==",
+  "files": [
+    {
+      "path": "dist/commonjs/index.js",
+      "beforeSha256": "a958a41536f57484cc427a03a10a6a094eb062a004c58261add4dbb6dd77bbda",
+      "afterSha256": "c53702b9885d3c61d20236ab92351ac6fe76b808b8837c65118346f46fd5dd04",
+      "edits": [
+        {
+          "before": "firstPhasePreProcess(globParts) {\n        let didSomething",
+          "after": "firstPhasePreProcess(globParts) {\n        const { braceExpandMax = 100_000 } = this.options;\n        let didSomething",
+          "count": 1
+        },
+        {
+          "before": "p2 === '..') {",
+          "after": "p2 === '..' ||\n                        globParts.length >= braceExpandMax) {",
+          "count": 1
+        },
+        {
+          "before": "secondPhasePreProcess(globParts) {\n        for",
+          "after": "secondPhasePreProcess(globParts) {\n        if (globParts.length > 1000) return globParts;\n        for",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "path": "dist/esm/index.js",
+      "beforeSha256": "8772b7fc5d3c741723b3839a43f929d9d9262121c5a74535638fa40c92cc1e6d",
+      "afterSha256": "f3e5a9ea5d84248b4c46c769fb477902d6910bbbefa169cb97de2417e7b95fee",
+      "edits": [
+        {
+          "before": "firstPhasePreProcess(globParts) {\n        let didSomething",
+          "after": "firstPhasePreProcess(globParts) {\n        const { braceExpandMax = 100_000 } = this.options;\n        let didSomething",
+          "count": 1
+        },
+        {
+          "before": "p2 === '..') {",
+          "after": "p2 === '..' ||\n                        globParts.length >= braceExpandMax) {",
+          "count": 1
+        },
+        {
+          "before": "secondPhasePreProcess(globParts) {\n        for",
+          "after": "secondPhasePreProcess(globParts) {\n        if (globParts.length > 1000) return globParts;\n        for",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

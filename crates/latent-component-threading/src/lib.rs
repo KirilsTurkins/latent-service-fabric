@@ -43,6 +43,11 @@ pub mod c_template;
 mod component;
 pub mod rust_component;
 pub mod rust_objects;
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+mod rust_original_delta;
 pub use component::{CComponentRoutingReceipt, verify_c_component_routing};
 pub use component::{ComponentRoutingReceipt, verify_component_routing};
 

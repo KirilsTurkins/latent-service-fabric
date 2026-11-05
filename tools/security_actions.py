@@ -6,6 +6,7 @@ import re
 import yaml
 
 from tools import workflow_action_yaml
+from tools import security_deploy_pages
 from tools.security_common import SecurityError, decode_json, digest, read_file, require
 
 RECORD = ".github/security/actions.json"
@@ -56,9 +57,57 @@ def verify(repo: Path, paths: list[str]) -> list[dict]:
             seen_actions.add(value)
             row = actions[value]
             require(isinstance(row, dict) and isinstance(row.get("files"), list)
-                    and 1 <= len(row["files"]) <= 4 and isinstance(row.get("metadata"), dict),
+                    and (1 <= len(row["files"]) <= 6 or len(row["files"]) in {8, 16})
+                    and isinstance(row.get("metadata"), dict),
                     "invalid-action-graph-binding")
             source, revision = value.rsplit("@", 1)
+            if source == "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup":
+                require(value == ("KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@"
+                                  "1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce")
+                        and len(row["files"]) == 4
+                        and {item.get("source") for item in row["files"]} == {
+                            "wasm-tools/setup/action.yml", "package.json", "package-lock.json",
+                            ".lsf-source/verify-installed-deepmerge.mjs"},
+                        "unreviewed-additional-action-source")
+            if len(row["files"]) == 5:
+                require(source == "KirilsTurkins/lsf-setup-python"
+                        and {item.get("source") for item in row["files"]} == {
+                            "action.yml", "package.json", "package-lock.json",
+                            ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-installed-minimatch.mjs"},
+                        "unreviewed-additional-action-source")
+            if len(row["files"]) == 6 and source == "KirilsTurkins/lsf-upload-artifact":
+                require(value == "KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f"
+                        and {item.get("source") for item in row["files"]} == {
+                            "action.yml", "package.json", "package-lock.json",
+                            ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-upload-sources.mjs",
+                            ".lsf-source/upload-source.test.mjs"}, "unreviewed-additional-action-source")
+            elif len(row["files"]) == 6 and source == "KirilsTurkins/lsf-download-artifact":
+                require(value == "KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5"
+                        and {item.get("source") for item in row["files"]} == {
+                            "action.yml", "package.json", "package-lock.json",
+                            ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-download-sources.mjs",
+                            ".lsf-source/download-source.test.mjs"}, "unreviewed-additional-action-source")
+            elif len(row["files"]) == 6:
+                require(value in {"KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c",
+                                  "KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8",
+                                  "KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6",
+                                  "KirilsTurkins/lsf-setup-go@1020042799f722e9ef016bf63106367879587a49"}
+                        and {item.get("source") for item in row["files"]} == {
+                            "action.yml", "package.json", "package-lock.json", ".lsf-source/minimatch-bounds.test.mjs",
+                            ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-installed-minimatch.mjs"},
+                        "unreviewed-additional-action-source")
+            if len(row["files"]) == 8:
+                require(value == "KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e"
+                        and {item.get("source") for item in row["files"]} == {
+                            "action.yml", "package.json", "package-lock.json",
+                            ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-installed-minimatch.mjs",
+                            ".lsf-source/minimatch-bounds.test.mjs", ".lsf-source/verify-rust-cache-lock.mjs",
+                            ".lsf-source/rust-cache-lock.test.mjs"}, "unreviewed-additional-action-source")
+            if len(row["files"]) == 16:
+                require(value == security_deploy_pages.REFERENCE
+                        and all(isinstance(item, dict) for item in row["files"])
+                        and {item.get("source") for item in row["files"]} == set(security_deploy_pages.ACTION_INPUTS),
+                        "unreviewed-additional-action-source")
             require(re.fullmatch(r"[0-9a-f]{40}", revision) is not None
                     and row["revision"] == revision and row["repository"] == "/".join(source.split("/")[:2]),
                     "action-graph-revision-drift")

@@ -13,6 +13,8 @@ workspace = true
 [features]
 # Explicit historical diagnostic host only; the default remains the normal catalogue.
 rust-thread-diagnostic-legacy = []
+# Source proof only; does not admit or enable a runtime profile.
+rust-http-combined-preview-diagnostic = []
 
 [dependencies]
 # Preserve the source profile's parser/encoder and digest versions. Workspace
