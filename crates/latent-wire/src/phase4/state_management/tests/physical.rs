@@ -276,3 +276,237 @@ async fn namespace_usage_is_observed_from_native_accounting_and_tombstones_remai
     drop(inspected);
     fixture.finish().await;
 }
+
+#[tokio::test]
+async fn receipt_lookup_corrupt_namespace_quarantines_original_store() {
+    let fixture = Fixture::new(false).await;
+    drop(fixture.create().await);
+    fixture
+        .store
+        .with_store(StoreIoKind::RecoveryWrite, 65_536, |engine| {
+            let key = latent_state::namespace::namespace_record_key(
+                &latent_core::TenantId("a".into()),
+                &latent_core::StateNamespaceId("orders".into()),
+            )
+            .unwrap();
+            engine.apply(AtomicBatch {
+                expectations: vec![],
+                mutations: vec![latent_state::embedded::RowMutation {
+                    key: latent_state::embedded::RowKey {
+                        family: latent_state::embedded::Family::Namespace,
+                        key,
+                    },
+                    value: Some(b"corrupt-namespace".to_vec()),
+                }],
+            })
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    let error = fixture
+        .backend
+        .execute_state(
+            context("alice"),
+            c::GetStateOperationReceiptRequest {
+                namespace: Some(fixture.target()),
+                operation_id: "create-original".into(),
+                original_effect_plan: None,
+            }
+            .into(),
+        )
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(error.code, PlatformErrorCode::Unavailable);
+    assert_eq!(
+        fixture.store.failure(),
+        Some(latent_state::protected_store::ProtectedStoreError::Store(
+            latent_state::embedded::StoreError::Corrupt,
+        ))
+    );
+    fixture.store.close();
+    let report = fixture
+        .store
+        .drain_async(deadline(), std::future::pending())
+        .unwrap()
+        .await;
+    assert!(!report.clean);
+    assert!(report.snapshot.physically_retired());
+}
+
+#[tokio::test]
+async fn receipt_lookup_corrupt_retained_receipt_quarantines_original_store() {
+    let fixture = Fixture::new(false).await;
+    let created = fixture.create().await;
+    let actor = receipt(&created).authenticated_operator.clone();
+    drop(created);
+    let original = latent_state::namespace::catalog::NamespaceOperationContext {
+        tenant: latent_core::TenantId("a".into()),
+        actor,
+        operation_id: "create-original".into(),
+    };
+    let key = super::super::state_receipt::key(&original);
+    fixture
+        .store
+        .with_store(StoreIoKind::RecoveryWrite, 65_536, move |engine| {
+            engine.apply(AtomicBatch {
+                expectations: vec![],
+                mutations: vec![latent_state::embedded::RowMutation {
+                    key,
+                    value: Some(b"corrupt-state-receipt".to_vec()),
+                }],
+            })
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    let error = fixture
+        .backend
+        .execute_state(
+            context("alice"),
+            c::GetStateOperationReceiptRequest {
+                namespace: Some(fixture.target()),
+                operation_id: "create-original".into(),
+                original_effect_plan: None,
+            }
+            .into(),
+        )
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(error.code, PlatformErrorCode::Unavailable);
+    assert_eq!(
+        fixture.store.failure(),
+        Some(latent_state::protected_store::ProtectedStoreError::Store(
+            latent_state::embedded::StoreError::Corrupt,
+        ))
+    );
+    fixture.store.close();
+    let report = fixture
+        .store
+        .drain_async(deadline(), std::future::pending())
+        .unwrap()
+        .await;
+    assert!(!report.clean);
+    assert!(report.snapshot.physically_retired());
+}
+
+#[tokio::test]
+async fn mutation_preparation_corrupt_namespace_quarantines_original_store() {
+    let fixture = Fixture::new(false).await;
+    drop(fixture.create().await);
+    fixture
+        .store
+        .with_store(StoreIoKind::RecoveryWrite, 65_536, |engine| {
+            let key = latent_state::namespace::namespace_record_key(
+                &latent_core::TenantId("a".into()),
+                &latent_core::StateNamespaceId("orders".into()),
+            )
+            .unwrap();
+            engine.apply(AtomicBatch {
+                expectations: vec![],
+                mutations: vec![latent_state::embedded::RowMutation {
+                    key: latent_state::embedded::RowKey {
+                        family: latent_state::embedded::Family::Namespace,
+                        key,
+                    },
+                    value: Some(b"corrupt-namespace".to_vec()),
+                }],
+            })
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    let error = fixture
+        .backend
+        .execute_state(
+            context("alice"),
+            fixture
+                .mutation("quiesce-corrupt", c::NamespaceMutationKind::Quiesce, 1)
+                .into(),
+        )
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(error.code, PlatformErrorCode::Unavailable);
+    assert_eq!(
+        fixture.store.failure(),
+        Some(latent_state::protected_store::ProtectedStoreError::Store(
+            latent_state::embedded::StoreError::Corrupt,
+        ))
+    );
+    fixture.store.close();
+    let report = fixture
+        .store
+        .drain_async(deadline(), std::future::pending())
+        .unwrap()
+        .await;
+    assert!(!report.clean);
+    assert!(report.snapshot.physically_retired());
+}
+
+#[tokio::test]
+async fn mutation_replay_corrupt_receipt_quarantines_original_store() {
+    let fixture = Fixture::new(false).await;
+    let created = fixture.create().await;
+    let actor = receipt(&created).authenticated_operator.clone();
+    drop(created);
+    let original = latent_state::namespace::catalog::NamespaceOperationContext {
+        tenant: latent_core::TenantId("a".into()),
+        actor,
+        operation_id: "create-original".into(),
+    };
+    let key = latent_state::embedded::RowKey {
+        family: latent_state::embedded::Family::Namespace,
+        key: latent_state::namespace::namespace_operation_key(
+            &original.tenant,
+            &original.actor,
+            &original.operation_id,
+        )
+        .unwrap(),
+    };
+    fixture
+        .store
+        .with_store(StoreIoKind::RecoveryWrite, 65_536, move |engine| {
+            engine.apply(AtomicBatch {
+                expectations: vec![],
+                mutations: vec![latent_state::embedded::RowMutation {
+                    key,
+                    value: Some(b"corrupt-state-receipt".to_vec()),
+                }],
+            })
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    let error = fixture
+        .backend
+        .execute_state(
+            context("alice"),
+            fixture
+                .mutation("create-original", c::NamespaceMutationKind::Create, 0)
+                .into(),
+        )
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(error.code, PlatformErrorCode::Unavailable);
+    assert_eq!(
+        fixture.store.failure(),
+        Some(latent_state::protected_store::ProtectedStoreError::Store(
+            latent_state::embedded::StoreError::Corrupt,
+        ))
+    );
+    fixture.store.close();
+    let report = fixture
+        .store
+        .drain_async(deadline(), std::future::pending())
+        .unwrap()
+        .await;
+    assert!(!report.clean);
+    assert!(report.snapshot.physically_retired());
+}

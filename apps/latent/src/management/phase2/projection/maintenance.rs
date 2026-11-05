@@ -3,10 +3,10 @@ use super::{invalid_response, json, proto, Failure, Project, Tree, Value};
 use proto::PublicationMaintenanceKind as K;
 fn fence(v: &Vec<u8>, b: &mut Tree) -> Result<(), Failure> {
     b.sequence(v, 32)?;
-    if v.len() != 32 {
-        Err(invalid_response())
-    } else {
+    if v.len() == 32 {
         Ok(())
+    } else {
+        Err(invalid_response())
     }
 }
 fn id(v: &String, b: &mut Tree) -> Result<(), Failure> {
@@ -82,7 +82,7 @@ impl Project for proto::PublicationMaintenanceCommand {
         if kind == K::Reclaim {
             fence(&self.reclamation_catalog_fence, b)?;
             if !(1..=1024).contains(&self.maximum_files)
-                || !(1..=1073741824).contains(&self.maximum_bytes_hashed)
+                || !(1..=1_073_741_824).contains(&self.maximum_bytes_hashed)
             {
                 return Err(invalid_response());
             }
@@ -115,7 +115,7 @@ impl Project for proto::PublicationReclamationAccounting {
                 .last_reference_blob_bytes
                 .checked_add(self.shared_blob_bytes_retained)
                 .is_none_or(|v| v > self.publication_file_bytes)
-            || self.bytes_hashed > 1073741824
+            || self.bytes_hashed > 1_073_741_824
         {
             return Err(invalid_response());
         }
@@ -203,7 +203,7 @@ impl Project for proto::GetPublicationMaintenanceOperationResponse {
                     return Err(invalid_response());
                 }
             }
-            _ => return Err(invalid_response()),
+            D::Unspecified => return Err(invalid_response()),
         }
         Ok(())
     }

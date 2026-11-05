@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "profile": "glob-10.5.0-lsf-abort-v1",
+  "name": "glob",
+  "version": "10.5.0",
+  "upstreamIntegrity": "sha512-DfXN8DfhJ7NH3Oe7cFmu3NCu1wKbkReJ8TorzSAFbSKrlNaQSKfIzqYqVY8zlbs2NLBbWpRiU52GX2PbaBVNkg==",
+  "files": [
+    {
+      "path": "dist/commonjs/walker.js",
+      "beforeSha256": "1138ced9d5429681a1740af32d13391a38184a3376d1d9d56eea64b7a43274a1",
+      "afterSha256": "4eca6e1f2fd9c9ef7469977a12c7e9bd6503bc7a9257ccdc8e79b346ec34fccd",
+      "edits": [
+        {
+          "before": "onResume(fn) {\n        if (this.signal?.aborted)\n            return;\n",
+          "after": "onResume(fn) {\n",
+          "count": 1
+        },
+        {
+          "before": "if (this.signal?.aborted)\n            cb();",
+          "after": "if (this.signal?.aborted)\n            return cb();",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "path": "dist/esm/walker.js",
+      "beforeSha256": "3e15af549ecc74d8691982d571168fd4b0e38b494c2cbb3edcfb8f97d4036ac6",
+      "afterSha256": "8afedbdf3bb2bddaf37ee3ef4b393b76a5a99c80ef12aaedd2160a77c2effadb",
+      "edits": [
+        {
+          "before": "onResume(fn) {\n        if (this.signal?.aborted)\n            return;\n",
+          "after": "onResume(fn) {\n",
+          "count": 1
+        },
+        {
+          "before": "if (this.signal?.aborted)\n            cb();",
+          "after": "if (this.signal?.aborted)\n            return cb();",
+          "count": 4
+        }
+      ]
+    }
+  ]
+}

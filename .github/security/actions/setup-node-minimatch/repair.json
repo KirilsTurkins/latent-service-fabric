@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "profile": "minimatch-10.2.6-lsf-bounds-v1",
+  "name": "minimatch",
+  "version": "10.2.6",
+  "upstreamIntegrity": "sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==",
+  "files": [
+    {
+      "path": "dist/commonjs/index.js",
+      "beforeSha256": "d224f71f20d7c206fcc5b7e9f747324c7698345a0b2c28d717dd9cf698306783",
+      "afterSha256": "7e835c0a30f7b4f29f4ad8cf8c3e92b97ab23ed854a7a777f240d6bdf3d19231",
+      "edits": [
+        {
+          "before": "firstPhasePreProcess(globParts) {\n        let didSomething",
+          "after": "firstPhasePreProcess(globParts) {\n        const { braceExpandMax = 100_000 } = this.options;\n        let didSomething",
+          "count": 1
+        },
+        {
+          "before": "p2 === '..') {",
+          "after": "p2 === '..' ||\n                        globParts.length >= braceExpandMax) {",
+          "count": 1
+        },
+        {
+          "before": "secondPhasePreProcess(globParts) {\n        for",
+          "after": "secondPhasePreProcess(globParts) {\n        if (globParts.length > 1000) return globParts;\n        for",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "path": "dist/esm/index.js",
+      "beforeSha256": "59821ec2ce0d3df968292036e5c831ad322b33e9c33a949ecbc9dfe125d165be",
+      "afterSha256": "37ba4ff4010cda499e890975983b78ebd5f2be2dd8506d938472de4af8e9ed25",
+      "edits": [
+        {
+          "before": "firstPhasePreProcess(globParts) {\n        let didSomething",
+          "after": "firstPhasePreProcess(globParts) {\n        const { braceExpandMax = 100_000 } = this.options;\n        let didSomething",
+          "count": 1
+        },
+        {
+          "before": "p2 === '..') {",
+          "after": "p2 === '..' ||\n                        globParts.length >= braceExpandMax) {",
+          "count": 1
+        },
+        {
+          "before": "secondPhasePreProcess(globParts) {\n        for",
+          "after": "secondPhasePreProcess(globParts) {\n        if (globParts.length > 1000) return globParts;\n        for",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

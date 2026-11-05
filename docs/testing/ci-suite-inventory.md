@@ -1,19 +1,15 @@
 # Exact CI suites and host correctness
 
-The current catalogue is `tools/ci/suites.json` plus bounded additive fragments
-under `tools/ci/suites.d/`, with ordinary case additions under
-`tools/ci/suites.cases.d/`. The [loader](../../tools/ci_suite_inventory.py) checks
-the combined contract; fragments can add target suites but cannot replace shared
-recipes, selections or existing identities. Case fragments add required ordinary
-cases to an exact existing libtest suite; they cannot remove or replace names,
-change ignore state, or override any execution field. Use `tools/test.py list` and `plan`
-for the selected checkout rather than treating a historical target/case count
-as today's inventory. Listing metadata is not executable discovery or a pass.
+The catalogue is `tools/ci/suites.json` plus bounded suite fragments under
+`tools/ci/suites.d/`. It declares target identities, recipes, prerequisites,
+explicit ignores and narrowly required qualification cases. Ordinary case names
+come from the prepared executable. `tools/test.py list` and `plan` are offline
+metadata views; they do not guess undiscovered cases or imply execution.
 
 Website validation is required in every profile, including host correctness.
 The result aggregator independently checks the complete expected job set.
-Workflow command contracts preserve historical replacement obligations alongside
-current run blocks and delegated owners. Their current counts come from
+Workflow command contracts preserve current run blocks and delegated owners;
+completed migration evidence remains archived. Their current counts come from
 `tools/ci_coverage.py`, not a copied count in a guide. See the
 [ownership-local contract guide](ci-command-contracts.md) for scoped review.
 
@@ -25,9 +21,10 @@ keep their original source; the maintained CI produces fresh discovery and
 execution receipts for subsequent changes.
 
 The versioned contracts live in the suite catalogue and its fragments, and in
-`tools/ci/contracts/`. The catalogue identifies Cargo artifacts and exact test
-names; the latter shards workflow policy, per-job commands and historical
-replacements, per-script owner fingerprints, and per-Python-module exact cases.
+`tools/ci/contracts/`. The catalogue identifies Cargo artifacts and explicit qualification selections;
+the latter shards workflow policy and per-job commands. Delegated scripts and
+test controllers use owner review and generated source evidence; Python cases
+are discovered from current modules.
 See the [contract update and rebase guide](ci-command-contracts.md). They extend `tools/ci_profile.py` and
 `tools/ci_rust_artifacts.py`; they do not introduce another change classifier.
 
@@ -60,13 +57,13 @@ changes are not implicitly host-only.
 ## Exact selection and discovery
 
 Every workspace/all-targets/all-features test artifact has a stable ID, manifest,
-target kind/name/source, platform, feature/target recipe, prerequisites, timeout
-and resource class. The exact expected test list and ignored list are committed.
-Renamed, missing, newly ignored, unregistered and ambiguous test selections fail.
-A new test needs a reviewed inventory update; a stale expected name cannot
-silently turn into a successful zero-test invocation. Explicit selected ignored
-cases are recorded once in the inventory and consumed by the existing artifact
-runner. Provider fixture creation and cleanup stay with their existing runners.
+target kind/name/source, platform, recipe, prerequisites, timeout and resource
+class. Ordinary libtest cases are discovered from that prepared executable.
+Empty required suites, unexpected ignore changes, missing explicit obligations,
+missing targets and ambiguous artifacts fail. Compile-only targets remain
+explicit. Named selected ignored cases and fixture-backed obligations retain
+their existing owners. Adding or renaming an ordinary test needs no catalogue
+case-name or count edit.
 
 The [artifact reader](../../tools/ci_rust_artifacts.py) and shared discovery owner
 validate exact Cargo package/target/source, executable and runtime-library
@@ -84,53 +81,31 @@ AOT runner retain their exact listing/completion checks; see
 
 The admission and scheduler compile-fail doctests remain a separate required
 invocation. The signing suite still runs separately with
-`ed25519-dalek/legacy_compatibility`. Their result contracts require two one-case
-doctest summaries and the five compatibility cases respectively. They are not
-assumed to run under `--all-targets`.
+`ed25519-dalek/legacy_compatibility`. Each package or harness is listed and
+its current discovered cases are compared with execution. Five named signing
+security controls remain explicit obligations; additional ordinary cases need
+no count update. Neither invocation is assumed to run under `--all-targets`.
 
-### Additive case fragments and merge review
+### Ordinary test additions and merge review
 
-A feature adding ordinary tests to an existing libtest owner may register them
-in `tools/ci/suites.cases.d/<feature>.json` rather than rewriting the shared
-catalogue. The exact format is:
-
-```json
-{
-  "schemaVersion": "latent.ci.suite-case-fragment.v1",
-  "suiteId": "latentd.lib.latentd",
-  "expectedCases": ["module::tests::new_ordinary_case"]
-}
-```
-
-The example name is illustrative, not a registered test. The maintained
-[CORS fragment](../../tools/ci/suites.cases.d/cross-origin-assets.json) provides a
-real registration. Use the effective inventory from `ci_suite_inventory.load()`
-or `tools/test.py list`, not a direct JSON read of the primary catalogue, when
-reviewing complete case coverage.
-
-The [case loader](../../tools/ci_suite_cases.py) accepts additions only to a
-known libtest owner. It raises that owner's minimum by exactly the number of
-new cases without changing prerequisites, recipes, limits or existing ignored
-cases. Duplicate names within/across fragments or already in the primary
-catalogue, unknown owners, custom/compile-only targets, additional fields and
-invalid primary counts fail closed. Renaming/removing a test or changing its
-ignore state still requires an explicit review of its original registration;
-there is no replacement, subtraction or implicit deduplication operation.
-
-Case fragments have an independent ceiling of 64 regular JSON files and 2 MiB
-of aggregate bytes. Symlinked directories/files and unexpected entries are
-refused. Input order is deterministic. The existing suite-fragment and primary
-catalogue bounds remain unchanged. Both types of fragment retain normal exact
-Cargo discovery: a missing original/new case, unexpected case or new ignore
-state fails; a catalogue-only test is not runtime execution evidence.
-
-When merging, preserve every existing registration from both branches. If a case
-is deliberately moved from a fragment into the primary catalogue, remove its old
-fragment entry in the same reviewed change; leaving both is an error. Run:
+Add ordinary tests in their owning source. Discovery records the current cases;
+full workspace execution is compared with that discovery, including allowed
+nested harness output, and a mismatch or failed case fails the job. Review test
+source changes normally. Explicit ignored cases, special fixture requirements,
+custom harnesses and selected security/resource obligations still require their
+small owner declarations and their actual execution. Independent ordinary test
+additions do not need a shared case fragment or numeric total.
 
 ```sh
-python3 -m unittest tools.tests.test_ci_suite_cases tools.tests.test_ci_suite_fragments tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery
+python3 -m unittest tools.tests.test_ci_suite_fragments tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery
 ```
+
+Synthetic runner fixtures copy the primary catalogue and the `suites.d/`
+fragment directory. Validate the source catalogue before copying, preserve its
+bytes, and compare the loaded inventory at the destination. The owned-runner
+regression detects omitted suite owners and refuses duplicate fragments before
+writing a partial fixture. These fixture checks do not
+replace the native ownership or signed-runtime campaigns.
 
 ## Affected inputs and offline selection
 

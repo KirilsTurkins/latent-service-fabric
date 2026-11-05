@@ -12,11 +12,20 @@
           "feat/stream-kernel-native-factory-owner-20261023",
           "feat/kernel-native-constructor-vm-20261024",
           "feat/kernel-native-close-20261024",
-          "feat/sdk-738-q35-node-boot-20261029"
+          "feat/sdk-738-q35-node-boot-20261029",
+          "feat/sdk-738-q35-pci-identity-20261104",
+          "feat/sdk-738-q35-node-pci-prefix-20261104",
+          "feat/sdk-738-q35-pci-setup-20261104",
+          "feat/sdk-738-q35-pci-fixup-20261104",
+          "feat/sdk-738-q35-pci-intx-20261105"
         ],
         "paths": [
           ".github/workflows/stream-native-factory-owner.yml",
+          "apps/**",
           "crates/latent-streams/**",
+          "crates/latent-component-threading/**",
+          "examples/renderer-profile/package.json",
+          "examples/renderer-profile/package-lock.json",
           "crates/latent-capabilities/src/broker/pools/control.rs",
           "crates/latent-capabilities/src/broker/pools.rs",
           "crates/latent-capabilities/src/broker/pools/tests.rs",
@@ -26,10 +35,19 @@
           "tools/host_stream_kernel_native_vm.py",
           "tools/host_stream_kernel_native_vm_inputs.py",
           "tools/tests/test_kernel_native_constructor_vm.py",
+          "tools/ci_tool_graph.py",
+          "tools/tests/test_ci_contracts.py",
           "tools/ci/suites.json",
           "tools/ci/suites.d/outbound-streams.json",
           "research/standard-outbound/linux-6.12-lineage/native-constructor-vm-init.c",
-          "research/standard-outbound/linux-6.12-lineage/node-boot/**"
+          "research/standard-outbound/linux-6.12-lineage/node-boot/**",
+          "research/standard-outbound/linux-6.12-lineage/node-constructor-bridge/**",
+          "research/standard-outbound/linux-6.12-lineage/node-pci-prefix/**",
+          "research/standard-outbound/linux-6.12-lineage/node-pci-setup/**",
+          "research/standard-outbound/linux-6.12-lineage/node-pci-fixup/**",
+          "research/standard-outbound/linux-6.12-lineage/node-pci-intx/**",
+          "tools/q35_intx_owner.py",
+          "tools/q35_intx_trace.py"
         ]
       },
       "workflow_dispatch": null
@@ -42,7 +60,7 @@
     "native-kernel-vm",
     "native-owner"
   ],
-  "reviewReason": "Closed fresh q35/KVM one-CPU original-Node preparation image; old routes retained, no NodeFunding/IRQ/TCP/retirement qualification.",
+  "reviewReason": "Trigger the existing feature-branch owner for captured threading and CI source inputs.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-native-factory-owner.yml"
 }

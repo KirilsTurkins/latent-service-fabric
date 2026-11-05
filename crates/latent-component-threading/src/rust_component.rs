@@ -13,7 +13,7 @@ pub const MAX_ORIGINAL_BYTES: usize = 1024 * 1024;
 pub const MAX_COMPONENT_BYTES: usize = 2 * 1024 * 1024;
 // Admitted BEFORE recomputation. Sixteen2MiB image units cover overlapping
 // input/output/reencoder/section/TLS buffers; eightMiB separately covers the
-// fixed1225-node/5325-edge graph and bounded scalar signatures; eightMiB covers
+// fixed1221-node/5246-edge graph and bounded scalar signatures; eightMiB covers
 // validator state. Original component storage is charged independently.
 pub const RUST_VERIFICATION_WORK_BYTES: usize = 48 * 1024 * 1024;
 const MAGIC: &[u8; 8] = b"LSFRPR01";
@@ -24,6 +24,52 @@ const ORIGINAL_WIT: &[u8] = include_bytes!("rust_catalogue/original-wit-metadata
 const ADAPTED_WIT: &[u8] = include_bytes!("rust_catalogue/adapted-wit-metadata.bin");
 const ORIGINAL_PRODUCERS: &[u8] = include_bytes!("rust_catalogue/original-producers.bin");
 const ENCODED_PRODUCERS: &[u8] = include_bytes!("rust_catalogue/encoded-producers.bin");
+
+// Fixed host-owned observations for the separately checked uncomposed HTTP
+// preview. These inputs do not authenticate or enable the final WAC graph.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+const COMBINED_PREVIEW_SHELL: &[u8] = include_bytes!("rust_catalogue/combined-preview-shell.bin");
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+const COMBINED_WIT: [&[u8]; 5] = [
+    include_bytes!("rust_catalogue/combined-wit-0.bin"),
+    include_bytes!("rust_catalogue/combined-wit-1.bin"),
+    include_bytes!("rust_catalogue/combined-wit-2.bin"),
+    include_bytes!("rust_catalogue/combined-wit-3.bin"),
+    include_bytes!("rust_catalogue/combined-wit-4.bin"),
+];
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+const COMBINED_ORIGINAL_PRODUCERS: &[u8] =
+    include_bytes!("rust_catalogue/combined-original-producers.bin");
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+const COMBINED_ENCODED_PRODUCERS: &[u8] =
+    include_bytes!("rust_catalogue/combined-encoded-producers.bin");
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+const COMBINED_FINAL_PREFIX: &[u8] = include_bytes!("rust_catalogue/combined-final-prefix.bin");
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+const COMBINED_FINAL_SUFFIX: &[u8] = include_bytes!("rust_catalogue/combined-final-suffix.bin");
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+const COMBINED_MAIN_BYTES: usize = 920_667;
 
 #[derive(Debug)]
 pub struct RustComponentRoutingReceipt {
@@ -136,13 +182,17 @@ pub fn adapt_original_public_wit(input: &[u8]) -> Result<Vec<u8>, &'static str> 
 // Raw framing and immutable comparisons happen before any component reader
 // could collect an attacker-declared type/start/instance argument vector.
 fn main_from_envelope(input: &[u8]) -> Result<&[u8], &'static str> {
+    main_from_fixed_envelope(input, SHELL)
+}
+
+fn main_from_fixed_envelope<'a>(input: &'a [u8], shell: &[u8]) -> Result<&'a [u8], &'static str> {
     if input.len() > MAX_COMPONENT_BYTES {
         return Err("rust-component-byte-bound");
     }
     header(input, true)?;
-    header(SHELL, true)?;
+    header(shell, true)?;
     let mut actual = BinaryReader::new(&input[8..], 0);
-    let mut expected = BinaryReader::new(&SHELL[8..], 0);
+    let mut expected = BinaryReader::new(&shell[8..], 0);
     let mut main = None;
     let mut count = 0;
     while !expected.eof() {
@@ -215,6 +265,243 @@ fn compare_encoded_main(source: &[u8], encoded: &[u8]) -> Result<(), &'static st
         return Err("rust-component-incomplete-normal-main");
     }
     Ok(())
+}
+
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+fn require_combined_wit(input: &[u8]) -> Result<(), &'static str> {
+    if input.len() > MAX_ORIGINAL_BYTES {
+        return Err("rust-combined-original-byte-bound");
+    }
+    header(input, false)?;
+    let mut reader = BinaryReader::new(&input[8..], 0);
+    let mut sections = 0;
+    let mut metadata = 0;
+    while !reader.eof() {
+        sections += 1;
+        if sections > 512 {
+            return Err("rust-combined-original-section-bound");
+        }
+        let current = section(&mut reader)?;
+        if current.kind == 0 && custom_name(current.payload)?.starts_with("component-type") {
+            if COMBINED_WIT.get(metadata).copied() != Some(current.payload) {
+                return Err("rust-combined-original-wit-mismatch");
+            }
+            metadata += 1;
+        }
+    }
+    if metadata != COMBINED_WIT.len() {
+        return Err("rust-combined-original-wit-incomplete");
+    }
+    Ok(())
+}
+
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+fn compare_combined_encoded_main(source: &[u8], encoded: &[u8]) -> Result<(), &'static str> {
+    require_combined_wit(source)?;
+    header(encoded, false)?;
+    let mut original = BinaryReader::new(&source[8..], 0);
+    let mut actual = BinaryReader::new(&encoded[8..], 0);
+    let mut metadata = 0;
+    let mut producers = false;
+    let mut count = 0;
+    while !original.eof() {
+        count += 1;
+        if count > 512 {
+            return Err("rust-combined-main-section-bound");
+        }
+        let expected = section(&mut original)?;
+        let name = if expected.kind == 0 {
+            Some(custom_name(expected.payload)?)
+        } else {
+            None
+        };
+        if name.is_some_and(|name| name.starts_with("component-type")) {
+            if COMBINED_WIT.get(metadata).copied() != Some(expected.payload) {
+                return Err("rust-combined-original-wit-mismatch");
+            }
+            metadata += 1;
+            continue;
+        }
+        let current = section(&mut actual)?;
+        if name == Some("producers") {
+            if producers
+                || expected.payload != COMBINED_ORIGINAL_PRODUCERS
+                || current.kind != 0
+                || current.payload != COMBINED_ENCODED_PRODUCERS
+            {
+                return Err("rust-combined-producer-merge-mismatch");
+            }
+            producers = true;
+        } else if current.whole != expected.whole {
+            return Err("rust-combined-recomputed-main-mismatch");
+        }
+    }
+    if !actual.eof() || metadata != COMBINED_WIT.len() || !producers {
+        return Err("rust-combined-incomplete-main");
+    }
+    Ok(())
+}
+
+/// A source-bound observation of the fixed uncomposed preview only. The final
+/// HTTP graph, host routing, runtime admission and signed execution need their
+/// own proofs; this result is not an enablement or a work reservation.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+#[allow(dead_code)]
+#[derive(Debug)]
+pub(super) struct CombinedPreviewProof {
+    pub original_digest: [u8; 32],
+    pub preview_digest: [u8; 32],
+    pub final_digest: Option<[u8; 32]>,
+    pub main_digest: [u8; 32],
+    pub uncomposed_preview_authenticated: bool,
+    pub final_composition_authenticated: bool,
+    pub runtime_qualified: bool,
+}
+
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+#[allow(dead_code)]
+pub(super) fn verify_combined_preview(
+    original: &[u8],
+    preview: &[u8],
+) -> Result<CombinedPreviewProof, &'static str> {
+    require_combined_wit(original)?;
+    // Exact host-owned envelope checks precede the larger profile's parser.
+    let main = main_from_fixed_envelope(preview, COMBINED_PREVIEW_SHELL)?;
+    let (derived, proof) = rust_objects::derive_combined_preview_core(original, PUBLIC, POST)?;
+    if derived.len() > MAX_ORIGINAL_BYTES {
+        return Err("rust-combined-derived-byte-bound");
+    }
+    compare_combined_encoded_main(&derived, main)?;
+    Validator::new_with_features(WasmFeatures::all())
+        .validate_all(preview)
+        .map_err(|_| "rust-combined-invalid-preview")?;
+    Ok(CombinedPreviewProof {
+        original_digest: proof.original_digest,
+        preview_digest: Sha256::digest(preview).into(),
+        final_digest: None,
+        main_digest: Sha256::digest(main).into(),
+        uncomposed_preview_authenticated: true,
+        final_composition_authenticated: false,
+        runtime_qualified: false,
+    })
+}
+
+/// Verify the fixed WAC output around the independently recomputed main core.
+/// This is still source proof only: no preimage is attached, no engine route is
+/// selected, and runtime admission, costs and signed execution remain separate.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+#[allow(dead_code)]
+pub(super) fn verify_combined_composition(
+    original: &[u8],
+    preview: &[u8],
+    component: &[u8],
+) -> Result<CombinedPreviewProof, &'static str> {
+    let main = combined_final_main(component)?;
+    let preview_main = main_from_fixed_envelope(preview, COMBINED_PREVIEW_SHELL)?;
+    if main != preview_main {
+        return Err("rust-combined-final-main-mismatch");
+    }
+    let mut proof = verify_combined_preview(original, preview)?;
+    Validator::new_with_features(WasmFeatures::all())
+        .validate_all(component)
+        .map_err(|_| "rust-combined-invalid-final-component")?;
+    proof.final_digest = Some(Sha256::digest(component).into());
+    proof.final_composition_authenticated = true;
+    Ok(proof)
+}
+
+// Bound and authenticate the complete fixed final envelope before any
+// component reader processes its allocating structures.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+fn combined_final_main(component: &[u8]) -> Result<&[u8], &'static str> {
+    let main_start = COMBINED_FINAL_PREFIX.len();
+    let main_end = main_start
+        .checked_add(COMBINED_MAIN_BYTES)
+        .ok_or("rust-combined-final-byte-bound")?;
+    let expected_length = main_end
+        .checked_add(COMBINED_FINAL_SUFFIX.len())
+        .ok_or("rust-combined-final-byte-bound")?;
+    if component.len() != expected_length || component.len() > MAX_COMPONENT_BYTES {
+        return Err("rust-combined-final-byte-bound");
+    }
+    header(component, true)?;
+    if component.get(..main_start) != Some(COMBINED_FINAL_PREFIX)
+        || component.get(main_end..) != Some(COMBINED_FINAL_SUFFIX)
+    {
+        return Err("rust-combined-final-envelope-mismatch");
+    }
+    component
+        .get(main_start..main_end)
+        .ok_or("rust-combined-final-byte-bound")
+}
+
+/// Authenticated final graph and reconstructed original; not an admission.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+#[allow(dead_code)]
+#[derive(Debug)]
+pub(super) struct CombinedEmbeddedProof {
+    pub wrapped_digest: [u8; 32],
+    pub final_graph_digest: [u8; 32],
+    pub original_digest: [u8; 32],
+    pub main_digest: [u8; 32],
+    pub final_graph_authenticated: bool,
+    pub runtime_qualified: bool,
+}
+
+/// Diagnostic proof of the embedded source and complete fixed final graph.
+/// Callers must separately reserve reconstruction/verification work before
+/// allocation. This path does not select an engine or authorize execution.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+#[allow(dead_code)]
+pub(super) fn verify_embedded_combined_diagnostic(
+    wrapped: &[u8],
+) -> Result<CombinedEmbeddedProof, &'static str> {
+    let (component, delta) = crate::rust_original_delta::split_unverified(wrapped)?;
+    // Check the fixed final envelope before reconstructing attacker-supplied
+    // proof material; the decoder still enforces its own byte/work bounds.
+    let main = combined_final_main(component)?;
+    let original = crate::rust_original_delta::reconstruct(component, delta)?;
+    require_combined_wit(&original)?;
+    let (derived, source) = rust_objects::derive_combined_preview_core(&original, PUBLIC, POST)?;
+    if derived.len() > MAX_ORIGINAL_BYTES {
+        return Err("rust-combined-derived-byte-bound");
+    }
+    compare_combined_encoded_main(&derived, main)?;
+    Validator::new_with_features(WasmFeatures::all())
+        .validate_all(component)
+        .map_err(|_| "rust-combined-invalid-final-component")?;
+    Ok(CombinedEmbeddedProof {
+        wrapped_digest: Sha256::digest(wrapped).into(),
+        final_graph_digest: Sha256::digest(component).into(),
+        original_digest: source.original_digest,
+        main_digest: Sha256::digest(main).into(),
+        final_graph_authenticated: true,
+        runtime_qualified: false,
+    })
 }
 
 /// Source proof only. The host must admit the full work allowance first and
@@ -343,8 +630,70 @@ pub fn verify_embedded_rust_original_core(
 #[cfg(test)]
 mod tests {
     use super::*;
-    const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/reviewed-original-core.wasm");
-    const COMPONENT: &[u8] = include_bytes!("rust_catalogue/reviewed-normal-component.wasm");
+    #[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
+    const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/catalogue-original-core.wasm");
+    #[cfg(feature = "rust-thread-diagnostic-legacy")]
+    const ORIGINAL: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/legacy-original-core.wasm"));
+    #[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
+    const COMPONENT: &[u8] = include_bytes!("rust_catalogue/catalogue-normal-component.wasm");
+    #[cfg(feature = "rust-thread-diagnostic-legacy")]
+    const COMPONENT: &[u8] =
+        include_bytes!(concat!(env!("OUT_DIR"), "/legacy-normal-component.wasm"));
+
+    #[cfg(all(
+        feature = "rust-http-combined-preview-diagnostic",
+        not(feature = "rust-thread-diagnostic-legacy")
+    ))]
+    #[test]
+    fn rust_combined_graph_recomputes_original_without_enabling_a_runtime() {
+        const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/combined-original-core.wasm");
+        const PREVIEW: &[u8] = include_bytes!("rust_catalogue/combined-preview-component.wasm");
+        const FINAL: &[u8] = include_bytes!("rust_catalogue/combined-final-component.wasm");
+        // The separately bounded preview must not widen the original profile.
+        assert!(rust_objects::verify(ORIGINAL).is_err());
+        let proof = verify_combined_composition(ORIGINAL, PREVIEW, FINAL).unwrap();
+        assert_eq!(
+            proof.original_digest,
+            <[u8; 32]>::from(Sha256::digest(ORIGINAL))
+        );
+        assert_eq!(
+            proof.preview_digest,
+            <[u8; 32]>::from(Sha256::digest(PREVIEW))
+        );
+        assert_eq!(proof.final_digest, Some(Sha256::digest(FINAL).into()));
+        assert!(proof.uncomposed_preview_authenticated);
+        assert!(proof.final_composition_authenticated);
+        assert!(!proof.runtime_qualified);
+
+        // The exact host envelope, recomputed main and all five original WIT
+        // payloads are independent prerequisites, not guest-supplied claims.
+        let mut changed = PREVIEW.to_vec();
+        let tail = changed.len() - 1;
+        changed[tail] ^= 1;
+        assert!(verify_combined_composition(ORIGINAL, &changed, FINAL).is_err());
+        let main = main_from_fixed_envelope(PREVIEW, COMBINED_PREVIEW_SHELL).unwrap();
+        assert_eq!(proof.main_digest, <[u8; 32]>::from(Sha256::digest(main)));
+        let start = main.as_ptr() as usize - PREVIEW.as_ptr() as usize;
+        let mut changed = PREVIEW.to_vec();
+        changed[start + 8] ^= 1;
+        assert!(verify_combined_composition(ORIGINAL, &changed, FINAL).is_err());
+        let offset = ORIGINAL
+            .windows(COMBINED_WIT[0].len())
+            .position(|bytes| bytes == COMBINED_WIT[0])
+            .unwrap();
+        let mut changed = ORIGINAL.to_vec();
+        changed[offset + COMBINED_WIT[0].len() - 1] ^= 1;
+        assert!(verify_combined_composition(&changed, PREVIEW, FINAL).is_err());
+        let mut changed_final = FINAL.to_vec();
+        let tail = changed_final.len() - 1;
+        changed_final[tail] ^= 1;
+        assert!(verify_combined_composition(ORIGINAL, PREVIEW, &changed_final).is_err());
+        let mut changed_preview = PREVIEW.to_vec();
+        let mut changed_final = FINAL.to_vec();
+        changed_preview[start + 12] ^= 1;
+        changed_final[COMBINED_FINAL_PREFIX.len() + 12] ^= 1;
+        assert!(verify_combined_composition(ORIGINAL, &changed_preview, &changed_final).is_err());
+    }
 
     #[test]
     fn rust_normal_component_recomputes_original_graph_and_rejects_envelope_or_main_changes() {
@@ -363,7 +712,11 @@ mod tests {
         let proof = verify_rust_component_routing(ORIGINAL, COMPONENT).unwrap();
         assert_eq!(
             proof.catalogue_origin_head,
-            "28059f343bbd954e3e6614c5a24593897cc0c294"
+            if cfg!(feature = "rust-thread-diagnostic-legacy") {
+                "f401e388a7542b8f9cd9bbd987dbcc65814262d6"
+            } else {
+                "72707ee61ce4784f7c866f2835f474554df8d922"
+            }
         );
         assert!(proof.actual_component_graph_authenticated);
         assert!(!proof.canonical_creation_enabled && !proof.standard_runtime_qualified);

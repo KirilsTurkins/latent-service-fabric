@@ -14,11 +14,12 @@ import re
 import shutil
 import stat
 import struct
+import sys
 import tarfile
 import tempfile
 import tomllib
 
-from tools.build_process import run_bounded
+from tools.build_process import BuildProcessError, run_bounded
 from tools.build_process_signals import owned_cancellation
 
 
@@ -38,38 +39,21 @@ class SnapshotError(RuntimeError):
     """Static public error without source paths or command output."""
 
 
-# The committed tools tree includes ownership-local CI contracts. Keep a
-# fixed, reviewed file budget shared with the downstream attribution reader;
-# directory, per-file, total-byte and archive-byte budgets remain independent.
-# The current selected tree includes the authenticated Wasmtime source and
-# exceeds 72 MiB: revision 976e86c has 75,529,037 archived file bytes.
-# Retain every selected compiler input within fixed 76 MiB source / 83 MiB
-# archive caps; activation/runtime budgets are independent.
-# The 2026-10-25 selection at 36a2620 has 8,707 files and an 83,916,800-byte
-# Git archive. Its next finite 256-file allowance is shared by capture and Cargo
-# attribution; archive transport gets two MiB and no selected input is dropped.
-# The 2026-10-25 local-service diagnostic adds more than the 21,034 source bytes
-# left at 4168d40; one finite source MiB retains every input. Other caps stay fixed.
-# Before this adjustment, R8 totals 77,779,641 archived file bytes, exceeding
-# 74 MiB by 185,017 bytes; one finite source MiB retains all selected inputs.
-# The 2026-10-29 tree at 877af selects 78,641,503 checkout source bytes.
-# The v27 integration adds 67,917 bytes before this finite source adjustment.
-# Its 86,353,920-byte Git tar exceeds 82 MiB; retain fixed 83 MiB transport.
-# Source and archive framing caps remain independent; runtime budgets stay fixed.
-# CI measured 9,037 selected files at the #660 merge fa5395e, exceeding
-# the old 8,992-file allowance before compiler work. Add one fixed
-# 256-file allowance, shared with attribution, without dropping inputs
-# or changing byte, directory, archive or runtime limits.
-MAX_SOURCE_FILES = 9248
+# Fixed capture envelope with room for growth; transport budgets include the
+# maximum portable path length, per-entry ZIP framing and inventory encoding.
+# Runtime and activation limits are independent of source preparation.
+MAX_SOURCE_FILES = 16384
+MAX_SOURCE_LISTING_BYTES = 10 * 1024 * 1024
+MAX_SOURCE_INVENTORY_BYTES = 12 * 1024 * 1024
 
 
 @dataclass(frozen=True)
 class SnapshotLimits:
     max_entries: int = MAX_SOURCE_FILES
-    max_directories: int = 4096
+    max_directories: int = 8192
     max_file_bytes: int = 4 * 1024 * 1024
-    max_total_bytes: int = 76 * 1024 * 1024
-    max_archive_bytes: int = 83 * 1024 * 1024
+    max_total_bytes: int = 128 * 1024 * 1024
+    max_archive_bytes: int = 160 * 1024 * 1024
 
     def validate(self) -> None:
         hard = SnapshotLimits()
@@ -162,7 +146,7 @@ def extract_archive(archive: bytes, destination: Path, limits: SnapshotLimits,
         raise SnapshotError("source archive format is unsupported")
     limits.validate()
     if len(archive) > limits.max_archive_bytes:
-        raise SnapshotError("source archive byte limit exceeded")
+        raise SnapshotError(f"source archive byte limit exceeded: used={len(archive)} limit={limits.max_archive_bytes} headroom={limits.max_archive_bytes-len(archive)}")
     destination.mkdir()
     inventory = []
     seen: dict[str, tuple[str, bool]] = {}
@@ -182,8 +166,10 @@ def extract_archive(archive: bytes, destination: Path, limits: SnapshotLimits,
                 directories += 1
             else:
                 files += 1
-            if files > limits.max_entries or directories > limits.max_directories:
-                raise SnapshotError("source archive entry limit exceeded")
+            if files > limits.max_entries:
+                raise SnapshotError(f"source archive file limit exceeded: used={files} limit={limits.max_entries} headroom={limits.max_entries-files}")
+            if directories > limits.max_directories:
+                raise SnapshotError(f"source archive directory limit exceeded: used={directories} limit={limits.max_directories} headroom={limits.max_directories-directories}")
             path = portable_path(entry.name.rstrip("/") if entry.isdir() else entry.name)
             if not _selected(path) and not any(root.startswith(path + "/") for root in SOURCE_ALLOWLIST):
                 raise SnapshotError("source archive contains an unselected path")
@@ -215,11 +201,13 @@ def extract_archive(archive: bytes, destination: Path, limits: SnapshotLimits,
                     raise SnapshotError("invalid captured directory")
                 target.mkdir(parents=True, exist_ok=True)
                 continue
-            if entry.size < 0 or entry.size > limits.max_file_bytes:
-                raise SnapshotError("captured source file limit exceeded")
+            if entry.size < 0:
+                raise SnapshotError("invalid captured source file size")
+            if entry.size > limits.max_file_bytes:
+                raise SnapshotError(f"captured source file limit exceeded: used={entry.size} limit={limits.max_file_bytes} headroom={limits.max_file_bytes-entry.size}")
             total += entry.size
             if total > limits.max_total_bytes:
-                raise SnapshotError("captured source total limit exceeded")
+                raise SnapshotError(f"captured source total limit exceeded: used={total} limit={limits.max_total_bytes} headroom={limits.max_total_bytes-total}")
             extracted = stream.extractfile(entry)
             if extracted is None:
                 raise SnapshotError("captured source file is unavailable")
@@ -266,7 +254,8 @@ def _stored_zip_expectations(expected_files, limits):
                          "expected path prefixes collide")
             if length < len(parts):
                 expected_dirs.add(prefix)
-                _zip_require(len(expected_dirs) <= limits.max_directories, "directory limit exceeded")
+                if len(expected_dirs) > limits.max_directories:
+                    raise SnapshotError(f"source directory limit exceeded: used={len(expected_dirs)} limit={limits.max_directories} headroom={limits.max_directories-len(expected_dirs)}")
     _zip_require(not any(name.lower() in folded_files for name in expected_dirs),
                  "expected file and directory prefixes collide")
     return expected_dirs
@@ -341,16 +330,19 @@ def _stored_zip_preflight(archive, limits, expected_files, revision, cancellatio
             _zip_require(name in expected_dirs and flags == 0 and size == stored == crc == 0,
                          "unexpected directory or directory payload")
             actual_dirs.add(name)
-            _zip_require(len(actual_dirs) <= limits.max_directories, "directory limit exceeded")
+            if len(actual_dirs) > limits.max_directories:
+                raise SnapshotError(f"source directory limit exceeded: used={len(actual_dirs)} limit={limits.max_directories} headroom={limits.max_directories-len(actual_dirs)}")
             mode = None
         else:
             _zip_require(name in expected_files, "unexpected source file")
             actual_files.add(name)
-            _zip_require(len(actual_files) <= limits.max_entries and size <= limits.max_file_bytes,
-                         "file count or byte limit exceeded")
+            if len(actual_files) > limits.max_entries:
+                raise SnapshotError(f"source file count limit exceeded: used={len(actual_files)} limit={limits.max_entries} headroom={limits.max_entries-len(actual_files)}")
+            if size > limits.max_file_bytes:
+                raise SnapshotError(f"source file byte limit exceeded: used={size} limit={limits.max_file_bytes} headroom={limits.max_file_bytes-size}")
             total += size
             if total > limits.max_total_bytes:
-                raise SnapshotError("captured source total limit exceeded")
+                raise SnapshotError(f"captured source total limit exceeded: used={total} limit={limits.max_total_bytes} headroom={limits.max_total_bytes-total}")
             mode = 0o755 if expected_files[name] == "100755" else 0o644
 
         creator_system = creator >> 8
@@ -468,13 +460,18 @@ def _capture_source(repository: Path, revision: str, target_root: Path,
             raise SnapshotError("source revision is not an exact commit")
         # ls-tree also rejects gitlinks/symlinks before archive, including
         # submodules that git archive would otherwise turn into empty folders.
-        listing = run_bounded(["git", "ls-tree", "-r", "-z", "--full-tree", revision,
-                               "--", *SOURCE_ALLOWLIST], max_output_bytes=2 * 1024 * 1024, **common)
+        try:
+            listing = run_bounded(["git", "ls-tree", "-r", "-z", "--full-tree", revision,
+                                   "--", *SOURCE_ALLOWLIST], max_output_bytes=MAX_SOURCE_LISTING_BYTES, **common)
+        except BuildProcessError as error:
+            if error.reason == "command-output-limit":
+                raise SnapshotError(f"source listing byte limit exceeded: used>{MAX_SOURCE_LISTING_BYTES} limit={MAX_SOURCE_LISTING_BYTES} headroom<0") from None
+            raise
         selected_roots: set[str] = set()
         expected_files: dict[str, str] = {}
         entries = listing.stdout.split(b"\0")
         if len(entries) - 1 > limits.max_entries:
-            raise SnapshotError("source tree entry limit exceeded")
+            raise SnapshotError(f"source tree entry limit exceeded: used={len(entries)-1} limit={limits.max_entries} headroom={limits.max_entries-len(entries)+1}")
         for entry in entries:
             if not entry:
                 continue
@@ -490,13 +487,34 @@ def _capture_source(repository: Path, revision: str, target_root: Path,
         if not selected_roots:
             raise SnapshotError("captured source selection is empty")
         _stored_zip_expectations(expected_files, limits)
-        result = run_bounded(["git", "archive", "--format=zip", "-0", revision, "--", *sorted(selected_roots)],
-                             max_output_bytes=limits.max_archive_bytes, **common)
+        try:
+            result = run_bounded(["git", "archive", "--format=zip", "-0", revision, "--", *sorted(selected_roots)],
+                                 max_output_bytes=limits.max_archive_bytes, **common)
+        except BuildProcessError as error:
+            if error.reason == "command-output-limit":
+                raise SnapshotError(f"source archive byte limit exceeded: used>{limits.max_archive_bytes} limit={limits.max_archive_bytes} headroom<0") from None
+            raise
         root = temporary / "source"
         inventory = extract_archive(result.stdout, root, limits, cancellation,
             archive_format="stored-zip", expected_files=expected_files, revision=revision)
         cancellation.check()
+        if len(inventory) > MAX_SOURCE_INVENTORY_BYTES:
+            raise SnapshotError(f"captured source inventory byte limit exceeded: used={len(inventory)} limit={MAX_SOURCE_INVENTORY_BYTES} headroom={MAX_SOURCE_INVENTORY_BYTES-len(inventory)}")
         validate_workspace(root)
+        rows = json.loads(inventory)
+        measurements = {
+            "files": (len(rows), limits.max_entries),
+            "directories": (len(_stored_zip_expectations(expected_files, limits)), limits.max_directories),
+            "source_bytes": (sum(row["size"] for row in rows), limits.max_total_bytes),
+            "largest_file_bytes": (max(row["size"] for row in rows), limits.max_file_bytes),
+            "archive_bytes": (len(result.stdout), limits.max_archive_bytes),
+            "listing_bytes": (len(listing.stdout), MAX_SOURCE_LISTING_BYTES),
+            "inventory_bytes": (len(inventory), MAX_SOURCE_INVENTORY_BYTES),
+        }
+        for resource, (used, maximum) in measurements.items():
+            if used * 5 >= maximum * 4:
+                print(f"source capture capacity warning: {resource} used={used} limit={maximum} headroom={maximum-used}",
+                      file=sys.stderr, flush=True)
         yield SourceSnapshot(root, revision, inventory)
     finally:
         if temporary is not None:

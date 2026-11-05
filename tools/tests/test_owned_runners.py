@@ -28,9 +28,8 @@ def copy_catalog(destination):
     catalog.load(source)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_bytes(source.read_bytes())
-    # Suite owners and additive exact-case owners are both catalogue inputs.
-    # Omitting case fragments would silently reduce the synthetic inventory.
-    for suffix in ('.d', '.cases.d'):
+    # Copy current suite-definition fragments byte-for-byte.
+    for suffix in ('.d',):
         fragments = source.with_suffix(suffix)
         if fragments.exists():
             copied = destination.with_suffix(suffix)
@@ -57,15 +56,47 @@ class RunnerContractTests(unittest.TestCase):
     def test_synthetic_catalog_retains_every_additive_suite_and_exact_selection(self):
         destination = self.root / 'tools/ci/suites.json'
         copy_catalog(destination)
-        self.assertEqual(catalog.load(destination), catalog.load())
-        for suffix in ('.d', '.cases.d'):
-            source = (ROOT / 'tools/ci/suites.json').with_suffix(suffix)
-            if source.exists():
-                with self.subTest(fragment_family=suffix):
-                    self.assertEqual(
-                        {path.name: path.read_bytes() for path in source.iterdir()},
-                        {path.name: path.read_bytes()
-                         for path in destination.with_suffix(suffix).iterdir()})
+        expected = catalog.load()
+        self.assertEqual(catalog.load(destination), expected)
+        source = ROOT / 'tools/ci/suites.json'
+        self.assertEqual(destination.read_bytes(), source.read_bytes())
+        fragments, copied = source.with_suffix('.d'), destination.with_suffix('.d')
+        self.assertTrue(fragments.is_dir())
+        self.assertEqual({path.name: path.read_bytes() for path in fragments.iterdir()},
+                         {path.name: path.read_bytes() for path in copied.iterdir()})
+        addition = next(copied.glob('*.json'))
+        original = addition.read_bytes()
+        addition.unlink()
+        try:
+            try:
+                incomplete = catalog.load(destination)
+            except ValueError:
+                pass  # References to the missing owner fail closed.
+            else:
+                self.assertNotEqual(incomplete, expected)
+        finally:
+            addition.write_bytes(original)
+        self.assertEqual(catalog.load(destination), expected)
+        # The loader alone is insufficient: omitting the whole suite fragment
+        # directory must not appear equivalent to the complete inventory.
+        hidden = copied.with_name('retained-suite-fragments')
+        copied.rename(hidden)
+        try:
+            try:
+                incomplete = catalog.load(destination)
+            except ValueError:
+                pass
+            else:
+                self.assertNotEqual(incomplete, expected)
+        finally:
+            hidden.rename(copied)
+        self.assertEqual(catalog.load(destination), expected)
+        # Duplicate suite owners must fail before the destination is created.
+        (copied / 'duplicate-owner.json').write_bytes(original)
+        rejected = self.root / 'rejected/tools/ci/suites.json'
+        with patch(__name__ + '.ROOT', self.root), self.assertRaises(ValueError):
+            copy_catalog(rejected)
+        self.assertFalse(rejected.parent.exists())
 
     def test_preflight_reports_no_test_execution(self):
         for module, args in ((oci, ['--preflight']), (angular, ['--preflight'])):

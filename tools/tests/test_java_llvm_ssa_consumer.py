@@ -35,7 +35,7 @@ def historical_checkout(value):
     """Authenticate the current action before the exact historical pin inverse."""
     value = historical_security_actions(value)
     prefix = 'KirilsTurkins/lsf-checkout@'
-    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    current = prefix + '4d310727149d3abacc52b5dcb0a1c4d18b345d13'
     previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
     if type(value) is bytes:
         prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
@@ -78,6 +78,8 @@ class LlvmSsaConsumer(unittest.TestCase):
     def test_original_public_job_defaults_and_complete_command_recipe_remain_exact(self):
         model = workflow_model(historical_checkout((patch.ROOT / '.github/workflows/java-guest-feasibility.yml').read_text()))
         job = copy.deepcopy(model['jobs']['public-fiber-assembly'])
+        from tools.tests.qualification_selection import unwrap_tooling_gate
+        unwrap_tooling_gate(self, job)
         # Invert ONLY the explicit R8 additions before the original R7/default
         # preservation oracle below. Every removed route/pin is asserted first.
         self.assertEqual(model['on']['workflow_dispatch']['inputs']['public_fiber_private_scalar_llvm'], {

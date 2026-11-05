@@ -1,0 +1,60 @@
+{
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "Original and separately bounded fixed combined graph proofs",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Verify the unchanged normal profile and fixed combined graph",
+        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/rust-combined-preview-proof\"\ncargo test --locked -p latent-component-threading --lib rust_component::tests:: -- --nocapture 2>&1 | tee \"$RUNNER_TEMP/rust-combined-preview-proof/normal.log\"\ngrep -F 'test rust_component::tests::rust_normal_component_recomputes_original_graph_and_rejects_envelope_or_main_changes ... ok' \"$RUNNER_TEMP/rust-combined-preview-proof/normal.log\"\ngrep -F 'test rust_component::tests::rust_normal_preimage_never_authorizes_forged_or_duplicate_original_material ... ok' \"$RUNNER_TEMP/rust-combined-preview-proof/normal.log\"\ncargo test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic rust_component::tests:: -- --nocapture 2>&1 | tee \"$RUNNER_TEMP/rust-combined-preview-proof/combined.log\"\ngrep -F 'test rust_component::tests::rust_combined_graph_recomputes_original_without_enabling_a_runtime ... ok' \"$RUNNER_TEMP/rust-combined-preview-proof/combined.log\"\n",
+        "shell": "bash"
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded proof output including failures",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-combined-preview-proof-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-combined-preview-proof/*.log",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "preview-proof",
+  "kind": "job",
+  "reviewReason": "Run the existing normal source proofs and an explicitly selected fixed combined-graph diagnostic; no runtime admission or signed qualification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-combined-preview-proof.yml"
+}

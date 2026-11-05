@@ -190,7 +190,9 @@ class WaitFrameModelIntegrity(unittest.TestCase):
                 "shape-and-repeat-negatives;application-identity;"
                 "coroutine-wrappers=6;coroutine-monitors=2;coroutine-native-pairs=2;entry-layout-negative\n"),
                 ("QUEUE_DEADLINE_MODEL_CONTROL PASS actual-locked-queue;first-sample-delays;"
-                 "second-sample-comparison;owned-clock-hooks=2;negative-shapes=4\n"), "",
+                 "second-sample-comparison;owned-clock-hooks=2;negative-shapes=4\n"),
+                ("QUEUE_HEAP_CONTROL PASS actual-original-regression;actual-corrected-order;"
+                 "up;down;ties;root;single-child;signed-min;last;singleton;empty;missing;repeat;model;preimage-negative;repeat-negative;donor-body-negative;donor-layout-negative;donor-node-negative\n"), "",
                 ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
                  "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback\n")]
             report = fibers.wait_frame_model_control(compiler, root / "model")
@@ -202,10 +204,11 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             self.assertEqual(report["coroutineNativePairs"], 2)
             self.assertEqual(report["queueClockSamples"], 2)
             self.assertEqual(report["queueShapeNegatives"], 4)
+            self.assertEqual(report["queueHeapControl"], "actual-pinned-jvm-queue-and-model-not-guest-qualification")
             self.assertEqual(report["timerReadinessSourceControl"],
                              "passed-private-source-ledger-not-guest-qualification")
             self.assertEqual(len(report["jarDigests"]), 10)
-            compile_call, model_call, queue_call, timer_compile, timer_call = compiler.run.call_args_list
+            compile_call, model_call, queue_call, heap_call, timer_compile, timer_call = compiler.run.call_args_list
             self.assertEqual(compile_call.args[:3], ("wait-frame-model-compile", "javac", "-proc:none"))
             self.assertEqual(compile_call.args[-5:], tuple(compiler.sdk / source for source in (
                 "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
@@ -219,8 +222,25 @@ class WaitFrameModelIntegrity(unittest.TestCase):
                           compile_call.args)
             self.assertEqual(model_call.args[-1], "dev.latent.guest.runtime.compiler.WaitFrameModelControl")
             self.assertEqual(queue_call.args[-1], "dev.latent.guest.runtime.compiler.QueueDeadlineModelControl")
+            self.assertEqual(heap_call.args[-1], "dev.latent.guest.runtime.compiler.QueueHeapControl")
             self.assertEqual(timer_compile.args[:3], ("timer-readiness-source-compile", "javac", "-proc:none"))
             self.assertEqual(timer_call.args[-1], "TimerReadinessSourceControl")
+
+    def test_incomplete_queue_heap_receipt_is_not_accepted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            compiler.run.side_effect = ["", ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;"
+                "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
+                "actual-platform-order;async-lowered-owned-pairs;platform-first-negative;"
+                "shape-and-repeat-negatives;application-identity;"
+                "coroutine-wrappers=6;coroutine-monitors=2;coroutine-native-pairs=2;entry-layout-negative"),
+                ("QUEUE_DEADLINE_MODEL_CONTROL PASS actual-locked-queue;first-sample-delays;"
+                 "second-sample-comparison;owned-clock-hooks=2;negative-shapes=4"),
+                "QUEUE_HEAP_CONTROL PASS actual-original-regression"]
+            with self.assertRaisesRegex(ValueError, "Java queue heap control did not complete"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 4)
 
     def test_changed_platform_processor_is_rejected_before_model_loading(self):
         with tempfile.TemporaryDirectory() as directory:

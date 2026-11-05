@@ -1,8 +1,0 @@
-{
-  "schemaVersion": "latent.ci.suite-case-fragment.v1",
-  "suiteId": "latent-audit.lib.latent-audit",
-  "expectedCases": [
-    "durable::tests::publication::publication_audit_rejects_mismatched_receipt_replay_and_canary_without_admission",
-    "durable::tests::publication::publication_audit_requires_preview_bound_batch_identity_without_fake_single_target"
-  ]
-}

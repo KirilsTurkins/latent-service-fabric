@@ -2,29 +2,45 @@
 //! Real original-ledger/canonical waiter bridge for the selected std PAL.
 //! The enclosing PAL supplies current_task from selected TLS, not a prefix's
 //! lazy-root zero token. No mutable registry borrow crosses a broker operation,
-//! canonical suspension, timer host await, allocator, or user callback.
+//! canonical suspension, timer host await, fixed-node initialization or user
+//! callback.
 use super::owner::{self, Error, Kind, Owner};
-use super::wait_registry::{Domain, Registry, Reservation, Start, Wake};
+use super::wait_registry::{Domain, Registry, Reservation, Start, Wake, MAX_WAITS};
 use super::{current_index, current_task, Token};
 use crate::cell::UnsafeCell;
+use crate::mem::MaybeUninit;
+use crate::ptr;
 use crate::sys::thread::lsf::wait::{self, Node};
 use crate::time::Duration;
 
 // Fixed linear-memory state. This module is only valid in the explicitly
 // selected unshared, cooperative, nonreentrant Store. Access closures below
 // perform Copy-only bounded state changes; they may not invoke the engine.
-struct Storage(UnsafeCell<Registry>);
+struct Storage {
+    registry: UnsafeCell<Registry>,
+    nodes: UnsafeCell<[MaybeUninit<Node>; MAX_WAITS]>,
+}
 unsafe impl Sync for Storage {}
-static WAITS: Storage = Storage(UnsafeCell::new(Registry::new()));
+static WAITS: Storage = Storage {
+    registry: UnsafeCell::new(Registry::new()),
+    nodes: UnsafeCell::new([const { MaybeUninit::uninit() }; MAX_WAITS]),
+};
 fn state<R>(f: impl FnOnce(&mut Registry) -> R) -> R {
-    unsafe { f(&mut *WAITS.0.get()) }
+    unsafe { f(&mut *WAITS.registry.get()) }
 }
 pub(crate) fn quiescent() -> bool { state(|r| r.is_empty()) }
+
+fn node_pointer(slot: usize) -> *mut Node {
+    assert!(slot < MAX_WAITS, "std Wait node slot out of range");
+    unsafe { (*WAITS.nodes.get()).as_mut_ptr().add(slot).cast::<Node>() }
+}
 
 pub(crate) struct WaitLease {
     wait: Owner,
     timer: Option<Token>,
     index: u32,
+    slot: usize,
+    node_live: bool,
     registered: bool,
     reservation: Slot,
 }
@@ -39,10 +55,10 @@ impl Drop for Slot {
 impl WaitLease {
     pub(crate) fn admit(timeout: Option<Duration>) -> Self {
         let index = current_index();
-        let reservation = Slot(Some(
-            state(|r| r.reserve(index))
-                .expect("bounded std Wait registry exhausted before admission"),
-        ));
+        let reserved = state(|r| r.reserve(index))
+            .expect("bounded std Wait registry exhausted before admission");
+        let slot = reserved.slot();
+        let reservation = Slot(Some(reserved));
         let task = current_task();
         assert!(task.valid(), "wait requires a real current Task");
         let wait = Owner::admit(Kind::Wait, Some(task))
@@ -65,6 +81,8 @@ impl WaitLease {
             wait,
             timer,
             index,
+            slot,
+            node_live: false,
             registered: false,
             reservation,
         }
@@ -75,7 +93,10 @@ impl WaitLease {
 }
 impl Drop for WaitLease {
     fn drop(&mut self) {
-        assert!(!self.registered, "freeing a still-registered std Wait");
+        assert!(
+            !self.registered && !self.node_live,
+            "freeing a std Wait with a live fixed node"
+        );
         if let Some(timer) = self.timer.take() {
             timer_stop(timer)
                 .unwrap_or_else(|error| panic!("std Timer close rejected: {:?}", error));
@@ -85,8 +106,42 @@ impl Drop for WaitLease {
     }
 }
 
+pub(crate) fn allocate_wait_node(lease: &mut WaitLease, value: Node) -> *mut Node {
+    let reservation = lease
+        .reservation
+        .0
+        .as_ref()
+        .expect("std Wait node requires its reserved registry slot");
+    assert!(
+        !lease.registered && !lease.node_live && reservation.slot() == lease.slot,
+        "std Wait fixed node allocation state"
+    );
+    let pointer = node_pointer(lease.slot);
+    unsafe {
+        pointer.write(value);
+    }
+    lease.node_live = true;
+    pointer
+}
+
+pub(crate) unsafe fn deallocate_wait_node(lease: &mut WaitLease, pointer: *mut Node) {
+    assert!(
+        !lease.registered && lease.node_live && pointer == node_pointer(lease.slot),
+        "std Wait fixed node retirement state"
+    );
+    unsafe {
+        ptr::drop_in_place(pointer);
+    }
+    lease.node_live = false;
+}
+
 pub(crate) fn register_wait(lease: &mut WaitLease, pointer: *mut Node) {
-    assert!(!lease.registered && current_index() == lease.index);
+    assert!(
+        !lease.registered
+            && lease.node_live
+            && pointer == node_pointer(lease.slot)
+            && current_index() == lease.index
+    );
     let domain = lease
         .timer
         .map_or(Domain::CanonicalSuspend, |timer| Domain::EngineTimerAwait {
@@ -102,7 +157,12 @@ pub(crate) fn register_wait(lease: &mut WaitLease, pointer: *mut Node) {
     lease.registered = true;
 }
 pub(crate) fn unregister_wait(lease: &mut WaitLease, pointer: *mut Node) {
-    assert!(lease.registered && current_index() == lease.index);
+    assert!(
+        lease.registered
+            && lease.node_live
+            && pointer == node_pointer(lease.slot)
+            && current_index() == lease.index
+    );
     lease.timer = state(|r| r.remove(lease.token(), lease.index, pointer.addr()))
         .expect("std Wait removal before actual return or with stale identity");
     lease.registered = false;
@@ -159,7 +219,7 @@ pub(crate) fn drive_wait(token: Token) {
                     {
                         let address = state(|r| r.pointer(token, index))
                             .expect("elapsed std Wait node vanished");
-                        // install exposed this still-live System node's
+                        // install exposed this still-live fixed node's
                         // provenance. This registry address is never accepted
                         // from a guest message or used after node removal.
                         let pointer = crate::ptr::with_exposed_provenance_mut::<Node>(address);

@@ -1,0 +1,36 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "c-http-media-${{ github.ref }}"
+    },
+    "name": "C ordinary HTTP exact media type",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/sdk-690-c-http-media-20261104"
+        ],
+        "paths": [
+          ".github/workflows/c-http-media.yml",
+          "tools/c_http_media_node.py",
+          "tools/c_http_media_peer.py",
+          "tools/qualify_c_http_media.py",
+          "tools/tests/test_c_http_media_peer.py",
+          "tools/wasmtime_48_0_8_678b_native_products.py"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "exact-media"
+  ],
+  "reviewReason": "Qualify one re-signed retained ordinary C POST with exact fixed media observation, verified current native products and bounded public evidence; no broader runtime claim.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-http-media.yml"
+}

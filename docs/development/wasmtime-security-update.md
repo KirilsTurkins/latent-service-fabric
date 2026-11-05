@@ -65,11 +65,12 @@ reported five findings across the workspace and authenticated provider locks:
 [RUSTSEC-2026-0381](https://rustsec.org/advisories/RUSTSEC-2026-0381.html),
 [RUSTSEC-2026-0382](https://rustsec.org/advisories/RUSTSEC-2026-0382.html), and
 [RUSTSEC-2026-0383](https://rustsec.org/advisories/RUSTSEC-2026-0383.html).
-The patched same-line selections are webpki-roots and webpki-root-certs
-**1.0.10**, and rustls-webpki **0.103.16**. They remove the affected emSign root
+The original patched same-line selections were webpki-roots and webpki-root-certs
+**1.0.10**, and rustls-webpki **0.103.16**. The workspace now selects
+webpki-roots **1.0.11**; webpki-root-certs remains at **1.0.10**. These remove the affected emSign root
 and reject the distrusted intermediate keys. Their minimum Rust version is
-1.71, below the existing workspace minimum. The root lock changes only these
-three version/checksum records; all dependency edges remain unchanged.
+1.71, below the existing workspace minimum. The original root-lock repair changed
+only those three version/checksum records; all dependency edges remained unchanged.
 
 The private bounded rustls package remains 0.23.46, the latest published stable
 rustls at this repair. Its original archive, complete source preimages and

@@ -30,7 +30,7 @@ def historical_checkout(value):
     """Authenticate the current action before the exact historical pin inverse."""
     value = historical_security_actions(value)
     prefix = 'KirilsTurkins/lsf-checkout@'
-    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    current = prefix + '4d310727149d3abacc52b5dcb0a1c4d18b345d13'
     previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
     if type(value) is bytes:
         prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
@@ -219,6 +219,8 @@ class JavaResourceConformance(unittest.TestCase):
     def test_resource_child_preserves_all_original_jobs_commands_and_deadlines(self):
         path = '.github/workflows/java-guest-feasibility.yml'
         current = yaml.safe_load(historical_checkout(read_file(ROOT/path)))
+        from tools.tests.qualification_selection import restore_java_pre_tooling_view
+        restore_java_pre_tooling_view(self, current)
         private = current[True]['workflow_dispatch']['inputs'].pop('public_fiber_private_scalar_llvm')
         self.assertEqual(private['type'], 'boolean');self.assertIs(private['default'], False)
         clause = " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)"

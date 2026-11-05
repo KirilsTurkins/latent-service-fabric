@@ -1,5 +1,10 @@
 //! Worker-borrowed admission and complete-envelope writer.
 
+#[cfg(target_os = "linux")]
+mod payloads;
+#[cfg(target_os = "linux")]
+pub use payloads::{PayloadAttachment, PayloadAttachmentTarget};
+
 use super::{
     codec::{Decoder, Encoder, METADATA_BYTES},
     command_identity, fingerprint, id, incarnation,
@@ -25,6 +30,11 @@ pub enum AdmissionDecision {
     New(PreparedAdmission),
     Existing(CommandRecord),
 }
+/// Result of publishing a first-attempt claim, including a concurrent winner.
+pub enum PublishedAdmission {
+    New(AdmittedCommand),
+    Existing(CommandRecord),
+}
 pub struct PreparedAdmission {
     record: CommandRecord,
     batch: AtomicBatch,
@@ -35,6 +45,9 @@ pub struct AdmittedCommand {
     pub(super) record: CommandRecord,
     pub(super) expected: Vec<u8>,
     pub(super) physical: std::sync::Arc<super::ownership::AttemptState>,
+    #[cfg(target_os = "linux")]
+    pub(super) payload_session:
+        Option<latent_capabilities::broker::SessionResourceTableReservation>,
 }
 pub struct CompleteEnvelope {
     claim: AdmittedCommand,
@@ -42,6 +55,10 @@ pub struct CompleteEnvelope {
     result: DurableResult,
     batch: AtomicBatch,
     authorities: Vec<DurableEffectAuthority>,
+    old_state_payloads: Vec<latent_state::payload_references::StatePayloadLink>,
+    state_binding: Option<latent_state::embedded::StoreBinding>,
+    #[cfg(target_os = "linux")]
+    payloads: Vec<latent_blobs::provider::CapturedLocalPayload>,
 }
 
 /// A bounded closed observation of the namespace expectation in an actually
@@ -272,7 +289,64 @@ impl PreparedAdmission {
             record: self.record,
             expected,
             physical,
+            #[cfg(target_os = "linux")]
+            payload_session: None,
         })
+    }
+
+    /// Publish a first attempt or observe an identical claim that won its CAS.
+    /// Only an engine expectation conflict permits the fresh, authorized read;
+    /// a failed authority fence or uncertain write is never retried or replaced.
+    /// Re-observe the original protected clock only for a present winner: a
+    /// competing admission may have captured a later floor than this caller.
+    /// The observation does not renew this caller's admission or deadline.
+    pub fn publish_or_existing(
+        self,
+        store: &EmbeddedStore,
+        current_time: impl FnOnce() -> Result<CommandTime, AtomicError>,
+        final_accept: impl FnOnce() -> Result<(), AtomicError>,
+        mut authorize: impl FnMut(CommandAccess, Option<&CommandRecord>) -> Result<(), AtomicError>,
+    ) -> Result<PublishedAdmission, AtomicError> {
+        if self.record.attempt != 1 {
+            return Err(AtomicError::Invalid);
+        }
+        let expected = self.record.encode()?;
+        match store.apply_fenced(self.batch, final_accept) {
+            Ok(()) => {
+                let physical =
+                    super::ownership::AttemptState::new(self.record.clone(), expected.clone());
+                Ok(PublishedAdmission::New(AdmittedCommand {
+                    record: self.record,
+                    expected,
+                    physical,
+                    #[cfg(target_os = "linux")]
+                    payload_session: None,
+                }))
+            }
+            Err(FencedStoreError::Store(latent_state::embedded::StoreError::Conflict)) => {
+                let view = store.snapshot()?;
+                let bytes = view
+                    .get(&command_row_key(self.record.id))?
+                    .ok_or(AtomicError::Conflict)?;
+                let time = current_time()?;
+                if super::RetiredCommand::is_present(&bytes) {
+                    let floor = super::RetiredCommand::decode(&bytes)?;
+                    floor.verify_key(&self.record.key)?;
+                    time.check(floor.retired_at())?;
+                    return Err(AtomicError::Expired);
+                }
+                let existing = CommandRecord::decode(&bytes)?;
+                authorize(CommandAccess::Replay, Some(&existing))?;
+                if existing.key != self.record.key
+                    || existing.fingerprint != self.record.fingerprint
+                {
+                    return Err(AtomicError::Conflict);
+                }
+                time.check(existing.clock_floor)?;
+                Ok(PublishedAdmission::Existing(existing))
+            }
+            Err(error) => Err(fenced_error(error)),
+        }
     }
 }
 impl AdmittedCommand {
@@ -734,6 +808,8 @@ impl CompleteEnvelope {
             record: retired.record,
             expected: retired.expected,
             physical,
+            #[cfg(target_os = "linux")]
+            payload_session: None,
         };
         let proof = Identity::derive(
             b"lsf-proven-abort-v1\0",
@@ -773,14 +849,37 @@ impl CompleteEnvelope {
         store: &EmbeddedStore,
         final_accept: impl FnOnce(&[DurableEffectAuthority]) -> Result<(), AtomicError>,
     ) -> PreparedDisposition {
+        if !self.old_state_payloads.is_empty() || self.state_binding.is_some() {
+            return PreparedDisposition::KnownNotCommitted {
+                command: Box::new(self.claim),
+                reason: AtomicError::UnsupportedFormat,
+            };
+        }
+        #[cfg(target_os = "linux")]
+        if !self.payloads.is_empty() {
+            return PreparedDisposition::KnownNotCommitted {
+                command: Box::new(self.claim),
+                reason: AtomicError::Invalid,
+            };
+        }
+        self.publish_inner(store, |envelope| final_accept(&envelope.authorities), || {})
+    }
+    fn publish_inner(
+        mut self,
+        store: &EmbeddedStore,
+        final_accept: impl FnOnce(&Self) -> Result<(), AtomicError>,
+        after_commit: impl FnOnce(),
+    ) -> PreparedDisposition {
         use super::ownership::{ACCEPTED, TERMINAL, UNKNOWN};
         use std::sync::atomic::Ordering;
-        match store.apply_fenced(self.batch, || {
-            final_accept(&self.authorities)?;
+        let batch = std::mem::take(&mut self.batch);
+        match store.apply_fenced(batch, || {
+            final_accept(&self)?;
             self.claim.physical.phase.store(ACCEPTED, Ordering::Release);
             Ok(())
         }) {
             Ok(()) => {
+                after_commit();
                 self.claim.physical.phase.store(TERMINAL, Ordering::Release);
                 PreparedDisposition::Confirmed {
                     command: Box::new(self.terminal),
@@ -1058,6 +1157,28 @@ impl CompleteEnvelope {
                 value: Some(namespace.encode().map_err(|_| AtomicError::Invalid)?),
             });
         }
+        let mut old_state_payloads = Vec::new();
+        let mut state_link_bytes = 0usize;
+        for row in batch
+            .mutations
+            .iter()
+            .filter(|row| row.key.family == Family::State)
+        {
+            if let Some(link) =
+                latent_state::session::retained_state_payload_reference(view, &row.key)?
+            {
+                state_link_bytes = state_link_bytes
+                    .checked_add(link.encode()?.len())
+                    .ok_or(AtomicError::Limit)?;
+                if old_state_payloads.len()
+                    >= latent_state::payload_references::MAX_REFERENCE_UPDATES
+                    || state_link_bytes > latent_core::transaction_contract::STAGED_BYTES
+                {
+                    return Err(AtomicError::Limit);
+                }
+                old_state_payloads.push(link);
+            }
+        }
         super::accounting::apply(view, &TenantId(terminal.key.tenant.clone()), &mut batch)?;
         let staged = batch.mutations.iter().try_fold(0usize, |bytes, row| {
             bytes
@@ -1070,12 +1191,17 @@ impl CompleteEnvelope {
         {
             return Err(AtomicError::Limit);
         }
+        let state_binding = (!old_state_payloads.is_empty()).then(|| view.binding());
         Ok(Self {
             claim,
             terminal,
             result,
             batch,
             authorities,
+            old_state_payloads,
+            state_binding,
+            #[cfg(target_os = "linux")]
+            payloads: Vec::new(),
         })
     }
 }

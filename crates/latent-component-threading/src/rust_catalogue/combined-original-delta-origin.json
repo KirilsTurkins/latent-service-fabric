@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "latent.rust.original-delta-diagnostic.v1",
+  "scope": "fixed-input reconstruction only; no authentication, admission or runtime qualification",
+  "sourceRun": 41926247914,
+  "sourceArtifact": 13371474344,
+  "original": {
+    "bytes": 1001580,
+    "sha256": "sha256:1fbef671a60b24c5a66b55ecb899d3c3d8e9b45d296a61db22cc69babd1aa96e"
+  },
+  "unwrappedComponent": {
+    "bytes": 1281820,
+    "sha256": "sha256:8916f44f9044242b05fe4a438f47082ff7073cfcbf08585b01312c347e338c90"
+  },
+  "delta": {
+    "bytes": 347664,
+    "sha256": "sha256:2962e14f546bfdfc636a49e550b321c281a80451b90e1f6922ed9db768186e0c"
+  },
+  "encoder": {
+    "bytes": 3379,
+    "sha256": "sha256:7d174e36d9f3dac0de9aa9ee80f6a872d016a9486acaa2ad3688d8f5b11cc972"
+  },
+  "commands": 19044,
+  "estimatedWrappedBytesIncluding128ByteAllowance": 1629612,
+  "maxWrappedBytes": 2097152,
+  "runtimeQualified": false
+}

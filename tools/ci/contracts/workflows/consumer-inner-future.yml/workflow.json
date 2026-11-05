@@ -1,0 +1,40 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "consumer-inner-future-${{ github.ref }}"
+    },
+    "name": "Consumer inner-future native ownership",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/sdk-745-consumer-inner-future-20261105"
+        ],
+        "paths": [
+          ".github/workflows/consumer-inner-future.yml",
+          "crates/vendor/wasmtime/**",
+          "crates/latent-wasmtime/**",
+          "tools/qualify_consumer_inner_future.py",
+          "tools/tests/test_consumer_inner_future_owner.py",
+          "tools/qualify_stream_outers.py",
+          "tools/host_codec_wasmtime.py",
+          "tools/ci_rust_artifacts.py",
+          "tools/toolchain.toml",
+          "Cargo.toml",
+          "Cargo.lock",
+          "rust-toolchain.toml"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "ownership"
+  ],
+  "reviewReason": "Limit native consumer-factory checks to the dedicated push branch.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/consumer-inner-future.yml"
+}

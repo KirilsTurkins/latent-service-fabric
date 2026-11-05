@@ -242,7 +242,7 @@ manual accepted_provider_runs_without_authority_locks_and_may_finish_after_polic
 manual actual_provider_budget_charges_are_atomic_required_and_committed_before_dispatch
 manual provider_errors_unwind_and_foreign_responses_cannot_leak_work_or_identity
 """),
-    library("blob-storage", "crates/latent-blobs", "latent_blobs", "real-filesystem-provider",
+    library("blob-storage", "crates/latent-local-blobs", "latent_local_blobs", "real-filesystem-provider",
             (213, 238, 271), "local::tests::", """
 manual duplicate_publication_and_tenant_authority_are_independent
 manual pinned_released_object_is_not_reclaimed_and_drop_does_no_deletion

@@ -54,8 +54,11 @@ pub(super) async fn inspect(
         .map_err(protected_error)?;
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
+    // A failed read must retire the original critical audit slot too, before
+    // returning the error and allowing a subsequent recovery request.
+    let acknowledgement = read_ack(finish).await;
     let (read, namespace) = result?;
-    read_ack(finish).await?;
+    acknowledgement?;
     response::owned(
         inner,
         worker_permit,
@@ -220,18 +223,16 @@ pub(super) async fn receipt(
                     None,
                     true,
                 );
-                Ok((result, access.inspect, finish, retained))
+                // Let the protected worker observe corrupt or unsupported
+                // persisted data instead of wrapping it as a healthy completion.
+                result.map(|value| (value, access.inspect, finish, retained))
             },
         )
         .map_err(protected_error)?;
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
     let acknowledgement = audit::ack(finish).await;
-    let (read, receipt, public) = result.map_err(|error| {
-        protected_error(latent_state::protected_store::ProtectedStoreError::Store(
-            error,
-        ))
-    })??;
+    let (read, receipt, public) = result?;
     if acknowledgement.status == c::AuditAckStatus::OutcomeUnknown as i32 {
         return Err(error(
             PlatformErrorCode::Unavailable,

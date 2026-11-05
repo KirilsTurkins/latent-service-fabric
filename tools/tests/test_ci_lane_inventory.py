@@ -202,8 +202,7 @@ class InventoryTests(unittest.TestCase):
         original = ci_suite_inventory.load()
         case = original["selections"]["http-response-policy"]["names"][0]
         for field, value in (("recipe", "core-host"), ("kind", "bin"),
-                             ("source", "src/main.rs"), ("expectedIgnored", []),
-                             ("expectedCases", [])):
+                             ("source", "src/main.rs"), ("expectedIgnored", [])):
             with self.subTest(field=field):
                 data = copy.deepcopy(original)
                 row = next(row for row in data["suites"] if row["id"] == "latentd.lib.latentd")
@@ -227,6 +226,16 @@ class RepositoryInventoryTests(unittest.TestCase):
         from tools import http_tenant_native_products, java_phase_native_products
         from tools import wait_runtime_native_products, wasmtime_48_0_7_native_products
         from tools import qualify_go_write_progress
+        import ast
+        # The frozen Rust reader authenticates historical producer source on import.
+        # This inventory check runs before the Python lane fetches that source, so
+        # read its one literal identity without constructing the reader.
+        source_tree = ast.parse((ROOT / 'tools/rust_thread_runtime_native_products.py').read_text(encoding='utf-8'))
+        assignments = [node.value for node in source_tree.body if isinstance(node, ast.Assign)
+                       and any(isinstance(target, ast.Name) and target.id == 'SOURCE' for target in node.targets)]
+        self.assertEqual(len(assignments), 1)
+        rust_thread_source = ast.literal_eval(assignments[0])
+        self.assertRegex(rust_thread_source, r'^[0-9a-f]{40}$')
 
         steps = workflow_model((ROOT / '.github/workflows/ci.yml').read_text())['jobs']['contracts']['steps']
         matches = [step for step in steps if step.get('name') ==
@@ -242,6 +251,7 @@ class RepositoryInventoryTests(unittest.TestCase):
         expected = {module.SOURCE for module in (go_http_tenant_native_products,
             http_phase_native_products, http_tenant_native_products, java_phase_native_products,
             wait_runtime_native_products, wasmtime_48_0_7_native_products)}
+        expected.add(rust_thread_source)
         expected.update((qualify_go_write_progress.BASELINE,
             qualify_go_write_progress.CLOSE_BASELINE, 'aa56bdebad8c12f20acce4ec4ecfeca73cf554be'))
         # These exact additional C/codec/Buffer origins are needed by the preservation
@@ -266,6 +276,7 @@ class RepositoryInventoryTests(unittest.TestCase):
             'c802283a5546620f071bd02ec01c410696893c5b',
             'b422af24d86344ac7abb8b8fa56c3782aab63915',
             '95b8d8b16c29d94755262345a305401ee99a801f',
+            'e3f0edf822c10e84bbeede276174ac3217542afc',
         ))
         self.assertEqual(len(words[5:]), len(expected))
         self.assertEqual(set(words[5:]), expected)

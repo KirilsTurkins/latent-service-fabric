@@ -10,11 +10,21 @@ description = "Bounded source transforms and routing authentication for owned co
 [lints]
 workspace = true
 
+[features]
+# Explicit historical diagnostic host only; the default remains the normal catalogue.
+rust-thread-diagnostic-legacy = []
+# Source proof only; does not admit or enable a runtime profile.
+rust-http-combined-preview-diagnostic = []
+
 [dependencies]
 # Preserve the source profile's parser/encoder and digest versions. Workspace
 # runtime parser and SHA-2 pins remain independent.
 wasm-encoder = { version = "=0.259.0", features = ["wasmparser"] }
 wasmparser = "=0.259.0"
+sha2 = "=0.11.0"
+
+[build-dependencies]
+# Same already-locked SHA-2 implementation used by the verifier.
 sha2 = "=0.11.0"
 
 [[bin]]

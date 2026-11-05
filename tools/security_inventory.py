@@ -99,7 +99,7 @@ def wasmtime_inventory(repo: Path, entry: dict, paths: list[str]) -> tuple[set[s
         "upstreamSourceLockSha256": checked["files"]["Cargo.lock"]["sha256"],
         "boundary": "The exact maintained source keeps its upstream advisory coordinate. "
                     "The root Cargo.lock selects actual build dependencies; the vendored lock is "
-                    "unchanged upstream provenance. RustSec still audits every tracked lock intact."
+                    "maintained provenance with reviewed source patches. RustSec still audits every tracked lock intact."
     }
 
 
@@ -125,10 +125,10 @@ def reviewed_npm_derivation(repo: Path, entry: dict, manifest: dict, owner: dict
         require(digest(read_file(repo, path).replace(b"\r\n", b"\n")) == profile[field],
                 "npm-derivation-input-drift")
     source = decode_json(read_file(repo, "website/toolchain/source.json"))
-    require(source.get("schema") == 1 and source.get("profile") == "npm-11.19.1-lsf-bundle-v5"
+    require(source.get("schema") == 1 and source.get("profile") == "npm-11.19.1-lsf-bundle-v6"
             and source["base"]["name"] == "npm" and source["base"]["version"] == owner.get("version"),
             "npm-derivation-identity-drift")
-    archive = "file:../../target/website-package-manager/npm-11.19.1-lsf-bundle-v5.tar"
+    archive = "file:../../target/website-package-manager/npm-11.19.1-lsf-bundle-v6.tar"
     require(manifest.get("dependencies", {}).get("npm") == archive
             and owner.get("resolved") == archive and owner.get("integrity") == profile["integrity"]
             and re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", profile["integrity"]),
@@ -178,10 +178,13 @@ def npm_packages(repo: Path, entry: dict) -> list[Package]:
         bundled_source = (bundled_prefix is not None and path.startswith(bundled_prefix)
                           and dependency.get("inBundle") is True and not dependency.get("resolved"))
         derived_owner = derived and path == f"node_modules/{bundled}"
-        derived_library = (name in libraries and path.rsplit("node_modules/", 1)[-1] == name
-                           and version == libraries[name]["version"]
-                           and dependency.get("resolved") == libraries[name]["resolved"]
-                           and dependency.get("integrity") == libraries[name]["integrity"])
+        library = libraries.get(name, [])
+        candidates = library if isinstance(library, list) else [library]
+        derived_library = (path.rsplit("node_modules/", 1)[-1] == name
+                           and any(version == candidate["version"]
+                                   and dependency.get("resolved") == candidate["resolved"]
+                                   and dependency.get("integrity") == candidate["integrity"]
+                                   for candidate in candidates))
         require(bundled_source or derived_owner or derived_library or (location.scheme == "https" and location.hostname == "registry.npmjs.org"),
                 "unreviewed-npm-registry-or-source")
         require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?", version) is not None,

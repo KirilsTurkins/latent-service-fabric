@@ -6,7 +6,7 @@ import subprocess
 import sys
 if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from tools import rust_thread_native_products as native
+from tools import typescript_private_removed_native_products as native
 from tools import typescript_private_removed_inputs as guests
 from tools.build_observation import build_environment
 from tools.phase2_operator_process import require
@@ -16,7 +16,7 @@ from tools.rust_capsule_project import ROOT, TEMPLATES, fresh, write_json
 from tools.run_rust_capsule_workflow import run, write_workflow_receipt
 
 MATERIALS = ('tools/qualify_typescript_private_removed.py','tools/typescript_private_removed_inputs.py',
-    'tools/tests/fixtures/typescript_private_removed_inputs.json','tools/rust_thread_native_products.py',
+    'tools/tests/fixtures/typescript_private_removed_inputs.json','tools/typescript_private_removed_native_products.py',
     'tools/sdk_native_products_reader.py','tools/host_codec_native_products_reader.py',
     'tools/host_codec_owned_reply_native_products_reader.py','tools/run_rust_capsule_workflow.py',
     'tools/npm_private_registry_fixture.py','tools/qualify_npm_private_dependencies.py',

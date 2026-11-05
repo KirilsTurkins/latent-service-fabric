@@ -16,6 +16,7 @@ test-support = []
 
 [dependencies]
 serde.workspace = true
+serde_json.workspace = true
 latent-core = { path = "../latent-core" }
 latent-effects = { path = "../latent-effects" }
 latent-activation = { path = "../latent-activation" }
@@ -38,7 +39,6 @@ getrandom = "=0.4.3"
 
 [dev-dependencies]
 tempfile.workspace = true
-serde_json.workspace = true
 latent-manifest = { path = "../latent-manifest" }
 latent-audit = { path = "../latent-audit", features = ["test-support"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }

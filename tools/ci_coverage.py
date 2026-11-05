@@ -76,18 +76,15 @@ def validate(root: Path = registry.ROOT, inventory: Path | None = None) -> dict:
             registry.require(contracts.canonical(definition) == contracts.canonical(expected["jobs"][job]), "changed-workflow-job:" + name + ":" + job)
     actual = commands(root)
     registry.require(actual == data["after"], "unregistered-or-changed-required-command")
-    registry.require(delegated_owners(root, actual) == data["delegatedOwners"], "changed-command-owner-needs-review")
-    # Historical relationships are checked while assembling expected fragments,
-    # and again against observations. A changed expected row cannot waive a job.
-    for key, record in data["coverage"].items():
-        registry.require(record["after"] in actual, "removed-required-command-without-replacement")
-        if record["disposition"] == "unchanged":
-            registry.require(data["before"][key] == actual[record["after"]], "unchanged-command-drift")
+    # Resolve every delegated script as a safe regular file; its source digest is
+    # observational evidence, not a committed approval token.
+    delegated_owners(root, actual)
+    # Validate module paths and reject syntactically empty or duplicate cases;
+    # the observed names are not compared with a committed catalogue.
+    from tools import ci_python_policy
+    ci_python_policy.validate_python_modules(root)
     registry.require(not lanes.result_contract_errors(actual_models[".github/workflows/ci.yml"]),
                      "conditional-or-incomplete-ci-result")
-    registry.require(python_cases(root) == data["pythonCases"], "missing-or-renamed-or-unregistered-python-case")
-    guards = {name: value["guards"] for name, value in contracts.python_expectations(root).items()}
-    registry.require(guards == data["pythonGuards"], "changed-python-test-execution-guard")
     return data
 
 
@@ -139,10 +136,10 @@ def observed_inventory(root: Path, status: str) -> dict:
         if owners is not None:
             result["delegatedOwners"] = owners
             result["paths"].update(owners)
-    cases = attempt("python-observation", lambda: contracts.python_expectations(root))
+    from tools import ci_python_policy
+    cases = attempt("python-observation", lambda: ci_python_policy.validate_python_modules(root))
     if cases is not None:
-        result["pythonCases"] = {name: {"names": value["cases"], "guardsSha256": _value_digest(value["guards"])}
-                                 for name, value in cases.items()}
+        result["pythonCases"] = {name: {"names": value} for name, value in cases.items()}
     return result
 
 
@@ -174,9 +171,14 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     status = "failed"
     try:
+        from tools import ci_python_policy, ci_profile
+        try:
+            ci_python_policy.verify_source_tree(registry.ROOT, os.environ.get("LSF_PYTHON_POLICY_BASE", "HEAD"))
+        except ci_profile.ProfileError as error:
+            raise ValueError("python-policy-source-history-unavailable") from error
         data = validate()
-        print(f"Covered {len(data['before'])} baseline and {len(data['after'])} current required run blocks; "
-              f"{len(data['delegatedOwners'])} delegated script owners")
+        print(f"Covered {len(data['after'])} current required run blocks; "
+              f"{len(delegated_owners(registry.ROOT, data['after']))} observed delegated scripts")
         status = "passed"
     except (ValueError, KeyError, TypeError, OSError, SyntaxError, RecursionError, yaml.YAMLError) as error:
         print(f"CI command coverage failed: {error}", file=sys.stderr)

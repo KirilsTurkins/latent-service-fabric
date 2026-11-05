@@ -32,6 +32,7 @@ members = [
     "crates/latent-stream-factory-native",
     "crates/latent-nats",
     "crates/latent-blobs",
+    "crates/latent-local-blobs",
     "crates/latent-commit",
     "crates/latent-identity",
     "crates/latent-ingress",
@@ -76,7 +77,7 @@ blake3 = "=1.8.7"
 clap = { version = "=4.6.7", features = ["derive"] }
 clap_complete = { version = "=4.6.11", default-features = false }
 prost = "=0.14.4"
-redb = "=4.3.0"
+redb = "=4.4.0"
 protoc-bin-vendored = "=3.2.0"
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = { version = "=1.0.154", features = ["raw_value"] }
@@ -93,8 +94,8 @@ tonic-prost-build = "=0.14.6"
 tracing = "=0.1.44"
 tracing-subscriber = "=0.3.23"
 wasm-encoder = "=0.261.0"
-wasmparser = "=0.261.0"
-wasmtime = { path = "crates/vendor/wasmtime", version = "=48.0.7", default-features = false, features = ["component-model", "component-model-async", "cranelift", "pooling-allocator", "runtime", "std", "wit-parser"] }
+wasmparser = "=0.262.0"
+wasmtime = { path = "crates/vendor/wasmtime", version = "=48.0.8", default-features = false, features = ["component-model", "component-model-async", "cranelift", "pooling-allocator", "runtime", "std", "wit-parser"] }
 wit-bindgen = "=0.63.0"
 
 [patch.crates-io]

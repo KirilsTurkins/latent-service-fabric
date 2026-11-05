@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 NEW_PACKET = 'docs/testing/evidence/java-early-http-reconstructed-capture-2026-10-15.json'
 REBUILT_PACKET = 'docs/testing/evidence/java-early-http-rebuilt-capture-2026-10-13.json'
 HISTORICAL_PACKET = 'docs/development/phase4-handoffs/2026-10-12/pr970-early-http-compiler-evidence.json'
+NOVEMBER_PACKET = 'docs/testing/evidence/java-early-http-capture-2026-11-04.json'
 NEW_MODE = 'fixture-sign-reconstructed-early-http-input'
 NEW_REPORT = 'sha256:bd40833f7f527f42d5f4a088cbcc093bdcd023060e91fb948f2505f8aaf5d2b7'
 
@@ -70,6 +71,15 @@ class ReconstructedEarlyControls(unittest.TestCase):
     def test_exact_new_report_uses_only_the_fixed_reconstructed_signer(self):
         with self.report_identity(NEW_REPORT):
             self.assertEqual(runner.signing_mode(self.item), NEW_MODE)
+        november = read_json(ROOT / NOVEMBER_PACKET)
+        item = SimpleNamespace(directory=Path('/closed-capture'),
+            compiler_source=november['sourceCommit'],
+            component_digest=november['materials']['component']['sha256'])
+        with self.report_identity(november['materials']['report']['sha256']):
+            self.assertEqual(runner.signing_mode(item), 'fixture-sign-november-early-http-input')
+            item.component_digest = 'sha256:' + 'f' * 64
+            with self.assertRaisesRegex(ValueError, 'november-early-captured-component-and-source'):
+                runner.signing_mode(item)
 
     def test_original_d7_report_keeps_its_rebuilt_signer(self):
         with self.report_identity(self.rebuilt['materials']['report']['sha256']):
@@ -129,12 +139,14 @@ class ReconstructedEarlyControls(unittest.TestCase):
         self.assertEqual(runner.EXTRA_COLLECTORS[:-1], (
             'tools/run_java_early_http_qualification.py',
             'tools/java_transaction_qualification/early_http_inputs.py',
-            'tools/java_transaction_qualification/early_http_campaign.py', REBUILT_PACKET))
-        self.assertEqual(runner.EXTRA_COLLECTORS[-1], NEW_PACKET)
+            'tools/java_transaction_qualification/early_http_campaign.py', REBUILT_PACKET, NEW_PACKET))
+        self.assertEqual(runner.EXTRA_COLLECTORS[-1], NOVEMBER_PACKET)
         identity = runner.collector_identity()
         self.assertEqual(identity[NEW_PACKET], 'sha256:' +
                          hashlib.sha256((ROOT / NEW_PACKET).read_bytes()).hexdigest())
         self.assertIn(REBUILT_PACKET, identity)
+        self.assertEqual(identity[NOVEMBER_PACKET], 'sha256:' +
+                         hashlib.sha256((ROOT / NOVEMBER_PACKET).read_bytes()).hexdigest())
 
     def test_real_package_path_forwards_new_mode_once_and_never_signs_refused_identity(self):
         args = SimpleNamespace(contracts_tool=Path('/not-executed/contracts'),

@@ -4,9 +4,8 @@ The maintained conductor connects captured Java components to the installed
 version-2 protected store, signed operation admission and current HTTP provider.
 Use the [installed recovery contract](installed-transaction-recovery.md) for native
 action inputs, response frames, custody and the latest source-bound progress
-packets. Complete terminal and pending recovery programmes and packaged
-qualification remain outstanding; earlier compiler or host controls do not
-establish those results.
+packets. Current-source and packaged qualification remain outstanding; earlier
+compiler or host controls do not establish those results.
 
 ## Select actual inputs
 
@@ -27,6 +26,128 @@ it cannot relabel a managed-heap trap as native exhaustion. Retained compiler
 reports, source archives, actual imports, signed companions and schema/codec
 assets must agree with the selected package. Cache presence or matching names
 cannot supply missing evidence.
+
+The [November current capture](evidence/java-current-http-capture-2026-11-04.json)
+binds six components from clean compiler source `fccc27dbc52` to a fresh native
+constructor preview. Its dedicated fixture-signing mode verifies those exact
+materials and profile before creating temporary test trust. The capture and
+preview do not themselves qualify signed execution, restart recovery or a
+packaged distribution.
+
+The [later clean-source capture](evidence/java-current-http-capture-465-2026-11-04.json)
+contains all six guests compiled from `46597407903` against the constructor
+profile observed on native source `50caadce1f7`. All six component digests match
+the earlier capture, while their compiler reports and source custody are distinct.
+A separate fixed signer selects only these exact materials. This capture alone
+does not qualify signed execution or packaged delivery.
+
+The [fresh terminal recovery run](evidence/java-terminal-recovery-4a5d-2026-11-05.json)
+passed 50 measured cases using native and conductor source `4a5d465b44d` and
+the separately captured `46597407903` Java components. All 12 native recovery
+operations reported successful physical retirement. This success does not
+explain or invalidate the three earlier intermittent result-HTTP 503 failures;
+precommit crash, pending-effect reconciliation, full retention and packaged
+distribution have separate evidence boundaries.
+
+The separate [value and child-call compiler capture](evidence/java-acceptance-inputs-5f-2026-11-05.json)
+records two components compiled from clean source `5f99649cd3b`. The value guest
+contains unsigned, UTF-8, absent-value and fresh-instance checks; the child guest
+contains a typed synchronous service call inside a command. Their custody checks
+preserve exact materials and imports. Neither capture has yet been signed or run
+through the node, so neither establishes those runtime behaviors.
+
+The [child-call package attempt](evidence/java-child-admission-refusal-4a5d-2026-11-05.json)
+used native tools and conductor from `4a5d465b44d` with the separately captured
+`5f99649cd3b` Java component. Package validation returned
+`unsupported-package-capsule-manifest` before signing or node execution. The
+Phase 4 manifest profile's existing tests explicitly reject the synchronous
+service-invocation import. This observation does not establish the guest's
+typed runtime denial or signed execution.
+
+The separately pinned [value capture](evidence/java-values-capture-5f-2026-11-05.json)
+has a narrowly selected native codec association and fixture signer. Its
+single-publication conductor checks durable state, full-width unsigned values,
+UTF-8, absent options and fresh instances. The [signed node run](evidence/java-signed-values-abf-2026-11-05.json)
+passed both unsigned boundary values, original command replay, acknowledged
+intents and physical retirement on native/conductor source `abf058af216`. The
+guest checked exact UTF-8 bytes, absent options and a fresh static instance on
+each query. Provider acknowledgement is not recipient delivery.
+
+The separate [terminal recovery evidence](evidence/java-terminal-recovery-2026-11-04.json)
+records 50 passing measured cases on native/conductor source `81d72bceaf4`,
+including crash replay, schema migration, reviewed restore and physical
+retirement. Its receipt retains the earlier compiler source identity and lists
+pending-effect, retention and clean-host boundaries; a later source requires its
+own qualification.
+
+A [later terminal run](evidence/java-terminal-recovery-50ca-2026-11-04.json)
+passed the same 50 measured cases and retired all 12 native recovery owners on
+native source `50caadce1f7` and conductor source `46597407903`. It used the
+original compiler capture at `fccc27dbc52`; it does not qualify newly compiled
+Java sources, the full retention horizon or a packaged distribution.
+
+A [run of the later compiler capture](evidence/java-terminal-recovery-c6f-failure-2026-11-04.json)
+passed 46 cases through migration and restored-authority setup, then its original
+result request received an empty HTTP 503. The retained observation identifies a
+dependency-failed activation but supplies no producer reason. This failed run
+does not establish restored-result recovery for the newer capture. A [second
+isolated run](evidence/java-terminal-recovery-c6f-failure2-2026-11-04.json)
+received an empty HTTP 503 on the original-result read after 14 cases. The
+retained observation provides no producer reason. For a future HTTP 503 on an
+original-result read, the collector makes one separately recorded, read-only
+lookup of the same key and current publication; it does not retry a mutation or
+change the original HTTP outcome.
+
+A [third isolated terminal run](evidence/java-terminal-recovery-5f-failure-2026-11-04.json)
+failed on an empty original-result HTTP 503 after 40 cases. The separately
+recorded read-only RPC lookup of the same original key and selected publication
+succeeded immediately afterward. That observation does not identify whether the
+HTTP failure was transient or which HTTP delivery stage rejected it.
+
+The [pending-effect recovery evidence](evidence/java-pending-recovery-2026-11-04.json)
+records 16 passing measured cases on the same native and compiler sources. It
+covers the original recipient acceptance, restored pending identity, audited
+close/replay and physical retirement; it does not qualify packaged delivery or
+the full retention horizon.
+
+The [second pending-effect run](evidence/java-pending-recovery-30s-2026-11-04.json)
+also passed 16 cases on the same native and compiler sources, with conductor
+source `7e5c0759046` and the explicitly declared 30-second startup reservation.
+Its separate receipt preserves the later configuration and evidence hashes.
+
+The [new-capture pending run](evidence/java-pending-recovery-c6f-2026-11-04.json)
+passed 16 measured cases on native/conductor source `c6f5902a318` with compiler
+source `46597407903`. It includes pending-effect backup, restore, audited close
+and physical retirement. It does not qualify the failed terminal restore run or
+the full retention horizon.
+
+The separately isolated [precommit-crash evidence](evidence/java-precommit-crash-2026-11-04.json)
+records the staged signed guest, an actual node kill and recovery of the same
+pending command without a new activation. It uses native source `81d72bceaf4`
+and conductor source `ac55f717f2d`; it does not establish a terminal outcome,
+automatic retry, packaged delivery or the complete crash matrix.
+
+The [new-capture precommit crash](evidence/java-precommit-crash-c6f-2026-11-04.json)
+also passed 10 cases on native/conductor source `c6f5902a318` and compiler source
+`46597407903`. It witnessed the original staged work before a controlled node
+kill and recovered the same pending identity; it makes no abort or retry claim.
+
+The [early immediate-HTTP capture](evidence/java-early-http-capture-2026-11-04.json)
+pins a separate guest that attempts the call before state or intent staging.
+The [signed early-denial run](evidence/java-early-http-execution-2026-11-04.json)
+observed typed denial, no TCP contact, no application state commit and physical
+retirement on native/conductor source `7d22ee26ac2`. It does not qualify
+post-stage rollback or packaged delivery.
+
+The [post-staging capture](evidence/java-poststage-http-capture-2026-11-04.json)
+pins a clean-source guest that would stage state and a deferred HTTP intent before
+attempting an immediate call. A [separate signed attempt](evidence/java-poststage-http-startup-refusal-2026-11-04.json)
+published and deployed the component but the selected node refused its operation
+at startup, before namespace creation. The native service-integration installation
+fence rejects an HTTP-importing effect component even without an immediate HTTP
+deployment grant. This source-based explanation does not establish guest execution,
+a staging witness, or post-stage rollback; the retained failure stays distinct from
+the passing early-denial and staged-fault cases.
 
 Use `python tools/run_java_transaction_http_qualification.py --help` from the
 repository root to inspect the complete required input set. Execution requires
@@ -82,7 +203,8 @@ version-2 contract above for the current checkout. The
 retain separate compiler, synthetic-recipient and signing observations.
 Their exact approvals do not transfer to changed sources or runtime profiles.
 
-Full current signed Java execution, terminal and pending restore/close behavior,
-retention/exhaustion/cancellation and authenticated clean-host packaged acceptance
-keep their separate criteria. No ticket is closed by source integration, model
+Current-source signed Java execution, retention/exhaustion/cancellation and
+authenticated clean-host package acceptance keep their separate criteria. Package
+and clean-host distribution qualification belongs to #405, not the Java guest
+ticket. No ticket is closed by source integration, model
 receipts or the finite native controls linked from these guides.

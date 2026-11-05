@@ -114,7 +114,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     [name for name in excluded if name != source.PROVIDER])).encode(), 1),
                 original.replace(b'path = "crates/vendor/wasmtime"', b'path = "foreign/wasmtime"', 1),
                 original.replace(b'[patch.crates-io]\n', b'[patch.crates-io]\nwasmtime = {path="foreign"}\n', 1),
-                original + b'\n[replace]\n"wasmtime:48.0.7" = {path="foreign"}\n')
+                original + b'\n[replace]\n"wasmtime:48.0.8" = {path="foreign"}\n')
             for raw in mutations:
                 self.assertNotEqual(original, raw)
                 target.write_bytes(raw)
@@ -123,7 +123,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
             target.write_bytes(original)
             lock = root / 'Cargo.lock'
             original = lock.read_bytes()
-            needle = b'name = "wasmtime"\nversion = "48.0.7"\n'
+            needle = b'name = "wasmtime"\nversion = "48.0.8"\n'
             self.assertEqual(original.count(needle), 1)
             lock.write_bytes(original.replace(needle, needle + b'source = "registry+https://github.com/rust-lang/crates.io-index"\n', 1))
             with self.assertRaisesRegex(ValueError, 'lock-selection'):
@@ -136,14 +136,14 @@ class PinnedWasmtimeSource(unittest.TestCase):
         metadata = {'packages': [package], 'resolve': {'nodes': [{'id': package['id'], 'deps': []}]}}
         lock = tomllib.loads((source.ROOT / 'Cargo.lock').read_text())
         sbom, licenses = dependency_inventory(metadata, lock, 'a' * 40, 0, {}, root_names=frozenset({source.NAME}))
-        self.assertEqual(licenses, {f'licenses/wasmtime-48.0.7/{Path(name).name}':
+        self.assertEqual(licenses, {f'licenses/wasmtime-48.0.8/{Path(name).name}':
             source.ROOT / source.PROVIDER / name for name in (
                 *source.verify()['licenseFiles'], *source.verify()['additionalLicenseFiles'])})
         self.assertEqual(len(licenses), 3)
         self.assertIn(source.RECORD_SHA256, sbom['packages'][0]['comment'])
         self.assertIn(source.COHORT, sbom['packages'][0]['comment'])
         self.assertNotIn('checksums', sbom['packages'][0])
-        for change in ({'version': '48.0.8'}, {'license': 'MIT'}, {'manifest_path': str(source.ROOT / 'Cargo.toml')}):
+        for change in ({'version': '48.0.9'}, {'license': 'MIT'}, {'manifest_path': str(source.ROOT / 'Cargo.toml')}):
             with self.subTest(change=change), self.assertRaises(InstallError):
                 dependency_inventory({**metadata, 'packages': [{**package, **change}]}, lock,
                     'a' * 40, 0, {}, root_names=frozenset({source.NAME}))
@@ -157,12 +157,12 @@ class PinnedWasmtimeSource(unittest.TestCase):
         lock = tomllib.loads((source.ROOT / source.CACHE_PROVIDER / 'Cargo.lock').read_text())
         sbom, licenses = dependency_inventory(metadata, lock, 'a' * 40, 0, {},
             root_names=frozenset({checked['package']}))
-        self.assertEqual(licenses, {'licenses/wasmtime-internal-cache-48.0.7/LICENSE':
+        self.assertEqual(licenses, {'licenses/wasmtime-internal-cache-48.0.8/LICENSE':
             source.ROOT / source.CACHE_PROVIDER / 'LICENSE'})
         self.assertIn(checked['upstreamSha256'], sbom['packages'][0]['comment'])
         self.assertIn(source.RECORD_SHA256, sbom['packages'][0]['comment'])
         self.assertNotIn('checksums', sbom['packages'][0])
-        for change in ({'version': '48.0.8'}, {'license': 'MIT'},
+        for change in ({'version': '48.0.9'}, {'license': 'MIT'},
                        {'manifest_path': str(source.ROOT / 'Cargo.toml')}):
             with self.subTest(change=change), self.assertRaises(InstallError):
                 dependency_inventory({**metadata, 'packages': [{**package, **change}]}, lock,
@@ -179,11 +179,15 @@ class PinnedWasmtimeSource(unittest.TestCase):
                 registry.workspace(root)
 
     def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
-        self.assertEqual(source.COHORT, 'wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v28-unstarted-host-drop-cache-repair')
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
             for name in ('src/runtime/limits.rs', 'src/runtime/store.rs',
+                         'src/runtime/component/concurrent.rs',
+                         'src/runtime/component/resource_table.rs',
+                         'src/runtime/module/registry.rs',
+                         'src/runtime/vm/traphandlers/backtrace.rs',
                          'src/runtime/vm/table.rs',
                          'src/runtime/vm/instance/allocator/pooling/table_pool.rs'):
                 with self.subTest(name=name):

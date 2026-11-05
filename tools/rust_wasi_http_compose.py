@@ -43,6 +43,17 @@ def unchanged_interfaces(original, final, before, after):
                 raise ValueError('rust-http-composition-public-type-changed')
 
 
+def prepare_root_project(output: Path, canonical: str, original: dict, work: Path):
+    lock = read_file(work/'Cargo.lock', 8*1024*1024)
+    # Historical single-version captures keep their original route and receipt.
+    # Only an ambiguous lock needs the captured manifest and SDK root proof.
+    if root.needs_captured_bindgen_root(lock):
+        return root.prepare_project(output, canonical, original, lock,
+            manifest=read_file(work/'Cargo.toml', 4*1024*1024),
+            sdk_lock=read_file(work/'sdk-lock.json', 4*1024*1024))
+    return root.prepare_project(output, canonical, original, lock)
+
+
 def compose(commands, tools: dict, component: Path, public_surface: dict, prepared,
             work: Path, *, isolation, environment_guard):
     if isolation is None or environment_guard is None:
@@ -67,8 +78,7 @@ def compose(commands, tools: dict, component: Path, public_surface: dict, prepar
         prepared.adapter, directory/'application-io', original)
     if io_record is None:
         raise ValueError('rust-http-original-blocking-io-missing')
-    forward, root_record, root_files = root.prepare_project(directory/'root-source', canonical,
-        original, read_file(work/'Cargo.lock', 8*1024*1024))
+    forward, root_record, root_files = prepare_root_project(directory/'root-source', canonical, original, work)
     # The captured application's feature union can retain dependency edges that
     # this smaller compiler-owned crate does not enable. Let Cargo normalize
     # only metadata in the same offline captured namespace, then reject any

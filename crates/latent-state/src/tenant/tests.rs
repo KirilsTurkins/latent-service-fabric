@@ -109,6 +109,90 @@ fn assert_stale_counter_merge(view: &ReadView, tenant: &TenantId, old: &Prepared
 }
 
 #[test]
+fn payload_reference_metadata_uses_one_tenant_and_does_not_recharge_payload_bytes() {
+    use crate::payload_references::{
+        LocalPayloadIdentity, PayloadOwner, PayloadOwnerKind, PayloadReference,
+        PreparedPayloadReferences,
+    };
+    let mut fixture = Fixture::new();
+    let quotas = [quota("alpha")];
+    fixture.install(&quotas);
+    let reference = PayloadReference {
+        owner: PayloadOwner {
+            tenant: "alpha".into(),
+            namespace: "business".into(),
+            incarnation: 1,
+            kind: PayloadOwnerKind::Result,
+            identity: [1; 32],
+            generation: 1,
+            format: "application-v1".into(),
+        },
+        payload: LocalPayloadIdentity {
+            tenant: "alpha".into(),
+            provider: "local".into(),
+            provider_epoch: 1,
+            provider_configuration: [2; 32],
+            blob_namespace: "owned".into(),
+            digest: [3; 32],
+            size: 64,
+            media_type: "application/octet-stream".into(),
+        },
+    };
+    let view = fixture.store().snapshot().unwrap();
+    let plan = PreparedPayloadReferences::prepare(&view, &[(None, Some(reference))]).unwrap();
+    let mut batch = AtomicBatch::default();
+    plan.append_to(&mut batch).unwrap();
+    let alpha = TenantId("alpha".into());
+    let delta = rows::batch_delta(&alpha, &batch).unwrap();
+    assert_eq!(delta.added.metadata_rows, batch.mutations.len() as u64);
+    assert_eq!(delta.added.payload_bytes, 0);
+    assert_eq!(
+        rows::batch_delta(&TenantId("beta".into()), &batch),
+        Err(StoreError::Corrupt)
+    );
+    let reference_rows = batch.mutations.clone();
+    let update = prepare_update(&view, &alpha, TenantDelta::default()).unwrap();
+    update.rebuild_batch(&mut batch).unwrap();
+    update.rebuild_batch(&mut batch).unwrap();
+    drop(view);
+    fixture.store().apply(batch).unwrap();
+    let view = fixture.store().snapshot().unwrap();
+    let mut observed = TenantUsage::default();
+    for row in &reference_rows {
+        let bytes = row.value.as_ref().unwrap();
+        let TenantCensusContribution::Usage { tenant, usage } =
+            census_contribution(&view, &row.key, bytes).unwrap()
+        else {
+            panic!("expected tenant metadata")
+        };
+        assert_eq!(tenant, alpha);
+        observed.metadata_rows += usage.metadata_rows;
+        observed.metadata_bytes += usage.metadata_bytes;
+        assert_eq!(usage.payload_bytes, 0);
+    }
+    assert_eq!(observed, delta.added);
+    let report = census::verify(&view, &quotas).unwrap();
+    drop(view);
+    fixture.reopen();
+    assert_eq!(
+        census::verify(&fixture.store().snapshot().unwrap(), &quotas).unwrap(),
+        report
+    );
+    let orphan = &reference_rows[0];
+    fixture
+        .store()
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: orphan.key.clone(),
+                value: None,
+            }],
+        })
+        .unwrap();
+    assert!(census::verify(&fixture.store().snapshot().unwrap(), &quotas).is_err());
+}
+
+#[test]
 fn exact_tenant_installation_is_bounded_immutable_and_never_infers_namespace_limits() {
     let mut fixture = Fixture::new();
     let quotas = [quota("alpha"), quota("beta")];

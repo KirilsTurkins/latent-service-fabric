@@ -5,8 +5,8 @@
   "type": "module",
   "main": "dist/upload/index.js",
   "scripts": {
-    "build": "node .lsf-source/verify-installed-deepmerge.mjs && tsc",
-    "release": "node .lsf-source/verify-installed-deepmerge.mjs && ncc build src/upload/index.ts -o dist/upload && ncc build src/merge/index.ts -o dist/merge",
+    "build": "node .lsf-source/verify-installed-deepmerge.mjs && node .lsf-source/verify-upload-sources.mjs && tsc",
+    "release": "node .lsf-source/verify-installed-deepmerge.mjs && node .lsf-source/verify-upload-sources.mjs && ncc build src/upload/index.ts -o dist/upload && ncc build src/merge/index.ts -o dist/merge",
     "check-all": "concurrently \"npm:format-check\" \"npm:lint\" \"npm:test\" \"npm:build\"",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
@@ -38,7 +38,7 @@
     "@actions/github": "^9.0.0",
     "@actions/glob": "^0.6.1",
     "@actions/io": "^3.0.2",
-    "minimatch": "^10.1.1"
+    "minimatch": "file:.lsf-source/minimatch-10.2.4-lsf-bound-v1.tar"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
@@ -56,7 +56,8 @@
     "prettier": "^3.8.1",
     "ts-jest": "^29.2.6",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "glob": "file:.lsf-source/glob-10.5.0-lsf-abort-v1.tar"
   },
   "overrides": {
     "uri-js": "npm:uri-js-replace@^1.0.1",
@@ -77,6 +78,11 @@
     "js-yaml@4": "4.3.2",
     "picomatch@2": "2.3.2",
     "picomatch@4": "4.0.7",
-    "shell-quote@1": "1.12.0"
+    "shell-quote@1": "1.12.0",
+    "minimatch@10": "$minimatch",
+    "glob@10": {
+      ".": "$glob",
+      "minimatch": "file:../../.lsf-source/minimatch-9.0.8-lsf-bound-v1.tar"
+    }
   }
 }

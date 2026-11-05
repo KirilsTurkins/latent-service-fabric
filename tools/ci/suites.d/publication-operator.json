@@ -20,13 +20,12 @@
       ],
       "recipe": "workspace-all-features",
       "mode": "libtest",
-      "minimumCases": 2,
-      "expectedCases": [
+      "expectedIgnored": [],
+      "ignoredLeaves": [],
+      "requiredCases": [
         "native_cli_audit_capacity_refuses_mutation_and_preserves_pinned_catalog",
         "native_cli_pins_deletes_reclaims_and_queries_original_receipts_after_reopen"
-      ],
-      "expectedIgnored": [],
-      "ignoredLeaves": []
+      ]
     }
   ]
 }

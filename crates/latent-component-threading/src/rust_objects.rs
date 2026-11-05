@@ -1,18 +1,29 @@
 //! Closed, host-owned original-object expectations for the selected Rust port.
 //!
 //! A guest cannot provide or select this catalogue. The current immutable corpus
-//! is the independently verified passed28059 remapped compiler observation.
-//! Its original app and guarded core compiled; the ordinary guest was not run.
-//! The earlier byte-identical ec11 failure remains an immutable distinct event.
+//! is the independently verified root-retirement observation retained by run
+//! 41219448914. Its original app and guarded core compiled; the ordinary guest
+//! was not run because the stale catalogue refused the changed object graph.
 //! This source proof alone does not enable any runtime or component profile.
 use wasmparser::{BinaryReader, Encoding, Operator, Parser, Payload, Validator};
 
+// The diagnostic feature is selected at build time, never from guest input.
+// Both catalogues are fixed host-owned sources with exact original identities.
+#[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
 #[rustfmt::skip]
 #[path = "rust_catalogue.rs"]
 mod catalogue;
+#[cfg(feature = "rust-thread-diagnostic-legacy")]
+#[rustfmt::skip]
+mod catalogue {
+    include!(concat!(env!("OUT_DIR"), "/rust_catalogue.rs"));
+}
 
-const NODE_COUNT: usize = 1225;
-const REFERENCE_COUNT: usize = 5325;
+const NODE_COUNT: usize = 1221;
+#[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
+const REFERENCE_COUNT: usize = 5246;
+#[cfg(feature = "rust-thread-diagnostic-legacy")]
+const REFERENCE_COUNT: usize = 5245;
 const MAX_BYTES: usize = 1024 * 1024;
 const MAX_FUNCTIONS: u32 = 1024;
 const MAX_OPERATORS: u64 = 262_144;
@@ -23,6 +34,25 @@ const MAX_TYPES: usize = 128;
 const MAX_GLOBALS: usize = 32;
 const MAX_EXPORTS: usize = 128;
 const MAX_IMPORTS: usize = 64;
+// The combined HTTP preview is separately selected by the host-only proof.
+// Keep the existing normal profile's original bounds and work reservation.
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct SourceLimits {
+    functions: u32,
+    imports: usize,
+}
+const NORMAL_LIMITS: SourceLimits = SourceLimits {
+    functions: MAX_FUNCTIONS,
+    imports: MAX_IMPORTS,
+};
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+const COMBINED_PREVIEW_LIMITS: SourceLimits = SourceLimits {
+    functions: 2048,
+    imports: 128,
+};
 const MAX_GROUPS: u32 = 256;
 const MAX_LOCALS: u64 = 8192;
 const MAX_COMPARISON_BYTES: usize = 64 * 1024 * 1024;
@@ -186,6 +216,10 @@ impl<'a> Original<'a> {
         Ok(found)
     }
     fn parse(input: &'a [u8]) -> Result<Self, &'static str> {
+        Self::parse_with_limits(input, NORMAL_LIMITS)
+    }
+
+    fn parse_with_limits(input: &'a [u8], limits: SourceLimits) -> Result<Self, &'static str> {
         if input.len() > MAX_BYTES || input.get(..8) != Some(b"\0asm\x01\0\0\0") {
             return Err("rust-original-core-byte-bound-or-version");
         }
@@ -230,7 +264,7 @@ impl<'a> Original<'a> {
                     }
                 }
                 2 => {
-                    for _ in 0..count(&mut raw, MAX_IMPORTS)? {
+                    for _ in 0..count(&mut raw, limits.imports)? {
                         let module = string(&mut raw)?;
                         let name = string(&mut raw)?;
                         if byte(&mut raw)? != 0 {
@@ -241,8 +275,8 @@ impl<'a> Original<'a> {
                     }
                 }
                 3 => {
-                    let count = count(&mut raw, MAX_FUNCTIONS as usize)?;
-                    if result.functions.len() + count > MAX_FUNCTIONS as usize {
+                    let count = count(&mut raw, limits.functions as usize)?;
+                    if result.functions.len() + count > limits.functions as usize {
                         return Err("rust-original-function-bound");
                     }
                     for _ in 0..count {
@@ -314,7 +348,7 @@ impl<'a> Original<'a> {
                     }
                 }
                 10 => {
-                    for _ in 0..count(&mut raw, MAX_FUNCTIONS as usize)? {
+                    for _ in 0..count(&mut raw, limits.functions as usize)? {
                         let size = count(&mut raw, MAX_BYTES)?;
                         result.bodies.push(
                             raw.read_bytes(size)
@@ -550,7 +584,18 @@ impl VerifiedOriginal {
 }
 
 pub fn verify(input: &[u8]) -> Result<VerifiedOriginal, &'static str> {
-    let module = Original::parse(input)?;
+    verify_with_limits(input, NORMAL_LIMITS)
+}
+
+fn verify_with_limits(
+    input: &[u8],
+    limits: SourceLimits,
+) -> Result<VerifiedOriginal, &'static str> {
+    let module = if limits == NORMAL_LIMITS {
+        Original::parse(input)?
+    } else {
+        Original::parse_with_limits(input, limits)?
+    };
     if catalogue::NODES.len() != NODE_COUNT
         || catalogue::ROOTS.len() != 11
         || catalogue::NODES
@@ -925,7 +970,7 @@ fn callback_plan(
     let root_sites = indirect_sites(module, root, &[progress, progress, release])?;
     let worker_sites = indirect_sites(module, functions[2], &[release])?;
     let reaper_sites = indirect_sites(module, reaper, &[notified, release])?;
-    let entered_sites = indirect_sites(module, entered, &[release, notified])?;
+    let entered_sites = indirect_sites(module, entered, &[notified])?;
     // The authenticated original Captured1/Source branch and genuine Arc
     // allocation/header/increments/worker/destructor paths remain byte-exact.
     // Only these six owner dispatches change. Source progress and ordinary TLS
@@ -966,7 +1011,7 @@ fn callback_plan(
             },
             CallbackSite {
                 function: entered,
-                offset: entered_sites[1],
+                offset: entered_sites[0],
                 target: 4,
                 fallback: false,
             },
@@ -1232,12 +1277,19 @@ fn sealed_body(
 }
 
 pub(crate) fn seal_original_callbacks(input: &[u8]) -> Result<Vec<u8>, &'static str> {
-    let proof = verify(input)?;
-    let module = Original::parse(input)?;
+    seal_original_callbacks_with_limits(input, NORMAL_LIMITS)
+}
+
+fn seal_original_callbacks_with_limits(
+    input: &[u8],
+    limits: SourceLimits,
+) -> Result<Vec<u8>, &'static str> {
+    let proof = verify_with_limits(input, limits)?;
+    let module = Original::parse_with_limits(input, limits)?;
     let (targets, sites) = callback_plan(&module, &proof)?;
     let first_trap = module.functions.len() as u32;
     let first_helper = first_trap + targets.len() as u32;
-    if first_helper + sites.len() as u32 > MAX_FUNCTIONS {
+    if first_helper + sites.len() as u32 > limits.functions {
         return Err("rust-callback-function-bound");
     }
     let mut types = Vec::new();
@@ -1322,7 +1374,7 @@ pub(crate) fn seal_original_callbacks(input: &[u8]) -> Result<Vec<u8>, &'static 
             return Err("rust-callback-derived-byte-bound");
         }
     }
-    audit_sealed_callbacks(&output, &targets, &sites, first_helper)?;
+    audit_sealed_callbacks(&output, &targets, &sites, first_helper, limits)?;
     Ok(output)
 }
 
@@ -1331,8 +1383,9 @@ fn audit_sealed_callbacks(
     targets: &[CallbackTarget; 5],
     sites: &[CallbackSite; 6],
     first_helper: u32,
+    limits: SourceLimits,
 ) -> Result<(), &'static str> {
-    let module = Original::parse(input)?;
+    let module = Original::parse_with_limits(input, limits)?;
     if module
         .table
         .iter()
@@ -1648,10 +1701,19 @@ pub(crate) fn original_result_guard(
     public: &str,
     post: &str,
 ) -> Result<super::CanonicalResultGuard, &'static str> {
+    original_result_guard_with_limits(input, public, post, NORMAL_LIMITS)
+}
+
+fn original_result_guard_with_limits(
+    input: &[u8],
+    public: &str,
+    post: &str,
+    limits: SourceLimits,
+) -> Result<super::CanonicalResultGuard, &'static str> {
     // Final host routing must ALSO bind the actual public WIT result type and
     // canonical lift/options. Supplying these names alone grants no routing.
-    let proof = verify(input)?;
-    let module = Original::parse(input)?;
+    let proof = verify_with_limits(input, limits)?;
+    let module = Original::parse_with_limits(input, limits)?;
     let public = module.export(public, 0)?;
     let post = module.export(post, 0)?;
     if public == post
@@ -1728,15 +1790,40 @@ pub fn derive_source_core(
     public: &str,
     post: &str,
 ) -> Result<(Vec<u8>, RustSourceDerivationReceipt), &'static str> {
+    derive_source_core_with_limits(input, public, post, NORMAL_LIMITS, true)
+}
+
+// Source proof for the separately authenticated uncomposed HTTP preview only.
+// The caller must verify its complete fixed WIT and component envelope. This
+// helper does not authorize a guest, create a runtime, or change normal limits.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+pub(super) fn derive_combined_preview_core(
+    input: &[u8],
+    public: &str,
+    post: &str,
+) -> Result<(Vec<u8>, RustSourceDerivationReceipt), &'static str> {
+    derive_source_core_with_limits(input, public, post, COMBINED_PREVIEW_LIMITS, false)
+}
+
+fn derive_source_core_with_limits(
+    input: &[u8],
+    public: &str,
+    post: &str,
+    limits: SourceLimits,
+    adapt_wit: bool,
+) -> Result<(Vec<u8>, RustSourceDerivationReceipt), &'static str> {
     use sha2::{Digest, Sha256};
-    let proof = verify(input)?;
+    let proof = verify_with_limits(input, limits)?;
     if proof.stack_high.checked_sub(proof.stack_low) != Some(1024 * 1024 + 65536)
         || proof.memory_bytes as usize > MAX_MEMORY
     {
         return Err("rust-source-original-root-and-system-reservation");
     }
     let raw_panic = source_role(&proof, "_4core9panicking9panic_fmt")?;
-    let original = Original::parse(input)?;
+    let original = Original::parse_with_limits(input, limits)?;
     if original.signature(raw_panic)?
         != (Signature {
             params: &[0x7f, 0x7f, 0x7f],
@@ -1745,8 +1832,16 @@ pub fn derive_source_core(
     {
         return Err("rust-source-authentic-panic-signature");
     }
-    let result_guard = original_result_guard(input, public, post)?;
-    let sealed = seal_original_callbacks(input)?;
+    let result_guard = if limits == NORMAL_LIMITS {
+        original_result_guard(input, public, post)?
+    } else {
+        original_result_guard_with_limits(input, public, post, limits)?
+    };
+    let sealed = if limits == NORMAL_LIMITS {
+        seal_original_callbacks(input)?
+    } else {
+        seal_original_callbacks_with_limits(input, limits)?
+    };
     let (prepared, public_receipt) =
         super::prepare_owned_public_root(&sealed, Sha256::digest(&sealed).into(), public)?;
     let (threaded, thread) =
@@ -1757,7 +1852,7 @@ pub fn derive_source_core(
                 && raw_panic >= public_receipt.native_admission_import,
         ))
         .ok_or("rust-source-panic-function-remap")?;
-    let threaded_module = Original::parse(&threaded)?;
+    let threaded_module = Original::parse_with_limits(&threaded, limits)?;
     let panic_body_digest = Sha256::digest(threaded_module.body(panic_function)?).into();
     let (rooted, root) = super::transform_owned_guarded_canonical_root_with_system_panic_trap(
         &threaded,
@@ -1779,7 +1874,11 @@ pub fn derive_source_core(
         return Err("rust-source-derived-reservation-drift");
     }
     let (derived, _) = super::transform_owned_thread_admission(&rooted, root.derived_digest)?;
-    let derived = super::rust_component::adapt_original_public_wit(&derived)?;
+    let derived = if adapt_wit {
+        super::rust_component::adapt_original_public_wit(&derived)?
+    } else {
+        derived
+    };
     let derived_digest = Sha256::digest(&derived).into();
     Ok((
         derived,
@@ -1802,7 +1901,10 @@ pub fn derive_source_core(
 #[cfg(test)]
 mod tests {
     use super::*;
-    const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/reviewed-original-core.wasm");
+    #[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
+    const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/catalogue-original-core.wasm");
+    #[cfg(feature = "rust-thread-diagnostic-legacy")]
+    const ORIGINAL: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/legacy-original-core.wasm"));
     const PUBLIC: &str = "examples:greeting/api@1.0.0#greet";
     const POST: &str = "cabi_post_examples:greeting/api@1.0.0#greet";
 
@@ -1853,7 +1955,7 @@ mod tests {
         assert!(!proof.bindings.contains(&UNBOUND));
         assert_eq!(
             (proof.stack_low, proof.stack_high, proof.memory_bytes),
-            (26256, 1140368, 1179648)
+            (27968, 1142080, 1179648)
         );
         let module = Original::parse(ORIGINAL).unwrap();
         let selected = source_role(&proof, "runtime13executor_root12progress_all").unwrap();
@@ -1863,6 +1965,26 @@ mod tests {
             .find(|(node, index)| node.kind == 0 && *index == selected)
             .unwrap()
             .0;
+        // The original retirement path must notify the existing completion
+        // queue. This binds the reviewed extra edge without relaxing any
+        // full-body, referent, mutation or incoming-dispatch check below.
+        let notifications = node
+            .references
+            .iter()
+            .filter(|reference| {
+                reference.kind == 0
+                    && matches!(&reference.target, Target::Definition(index)
+                        if catalogue::NODES[*index as usize].name.ends_with("executor_root7changed"))
+            })
+            .count();
+        assert_eq!(
+            notifications,
+            if cfg!(feature = "rust-thread-diagnostic-legacy") {
+                0
+            } else {
+                1
+            }
+        );
         let body = module.body(selected).unwrap();
         let start = body_start(ORIGINAL, selected, module.imports.len());
         let parsed = wasmparser::FunctionBody::new(BinaryReader::new(body, 0));
@@ -1937,14 +2059,18 @@ mod tests {
         let (targets, sites) = callback_plan(&module, &proof).unwrap();
         assert_eq!(sites.iter().filter(|site| site.fallback).count(), 1);
         let sealed = seal_original_callbacks(ORIGINAL).unwrap();
-        // Exact independently retained Python production derivation from the
-        // authentic ec11 event. This is an emission comparison, not execution.
+        // Exact independently retained Python production derivation from run
+        // 41219448914, artifact 13049262956. This compares emissions, not execution.
         assert_eq!(
             Sha256::digest(&sealed)
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "8a23f238e78076122b458e174b9a4fb03b0f5d6be9f2807f57ba96d52c412dd0"
+            if cfg!(feature = "rust-thread-diagnostic-legacy") {
+                "4b38efc1a41848dee2ec1d8bd1eb4861c5698181bc2ec1daae8058e2fdeb2486"
+            } else {
+                "3266c7213c8dfbecfde51dcbd66934c92eac5bd9cfb373fa28f09a1739d97463"
+            }
         );
         let sealed_module = Original::parse(&sealed).unwrap();
         for (index, function) in module.table.iter().enumerate() {
@@ -1989,11 +2115,15 @@ mod tests {
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "e3ee64a72d7a75e229a4f07edf58b3e4907ae4e1e974609fc51c2fae4e5f91fd"
+            if cfg!(feature = "rust-thread-diagnostic-legacy") {
+                "deae45d5e79418aaf552948f38afc5d8e98f2ccf494aa8ebe55842a4d3ecc423"
+            } else {
+                "e976d80b529cdc91e5a6f2255d4aeb8db6412a690b039578c75a7dbd76363c22"
+            }
         );
-        assert_eq!(receipt.original_panic_function, 531);
-        assert_eq!(receipt.root.canonical_system_panic_trap, Some(532));
-        assert_eq!(receipt.root.canonical_system_stack_high, Some(1140368));
+        assert_eq!(receipt.original_panic_function, 525);
+        assert_eq!(receipt.root.canonical_system_panic_trap, Some(526));
+        assert_eq!(receipt.root.canonical_system_stack_high, Some(1142080));
         assert_eq!(
             receipt.root.root_stack_high - receipt.root.root_stack_low,
             1024 * 1024

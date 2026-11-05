@@ -62,7 +62,7 @@ class StandardTlsSource(unittest.TestCase):
     def test_current_selected_compiler_engine_and_bindgen_pins_are_required(self):
         inputs = self.recipe(); profile.tool_pins(inputs)
         for name, before, after in (('rust-toolchain.toml', b'1.97.1', b'1.97.2'),
-                                   ('Cargo.toml', b'=48.0.7', b'=48.0.8'),
+                                   ('Cargo.toml', b'=48.0.8', b'=48.0.9'),
                                    ('Cargo.toml', b'=0.63.0', b'=0.64.0')):
             altered = dict(inputs); self.assertIn(before, altered[name]); altered[name] = altered[name].replace(before, after)
             with self.subTest(name=name), self.assertRaises(DevError): profile.tool_pins(altered)
@@ -72,7 +72,7 @@ class StandardTlsSource(unittest.TestCase):
         needle = b'path = "crates/vendor/wasmtime", '
         self.assertEqual(legacy['Cargo.toml'].count(needle), 1)
         legacy['Cargo.toml'] = legacy['Cargo.toml'].replace(needle, b'', 1)
-        needle = b'name = "wasmtime"\nversion = "48.0.7"\n'
+        needle = b'name = "wasmtime"\nversion = "48.0.8"\n'
         self.assertEqual(legacy['Cargo.lock'].count(needle), 1)
         legacy['Cargo.lock'] = legacy['Cargo.lock'].replace(needle, needle +
             b'source = "registry+https://github.com/rust-lang/crates.io-index"\nchecksum = "' +

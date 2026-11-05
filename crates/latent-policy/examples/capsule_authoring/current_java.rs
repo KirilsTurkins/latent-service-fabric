@@ -1,6 +1,11 @@
 //! Closed captured inputs and explicit synthetic trust, never compiler execution.
 mod native_memory;
 pub(crate) use native_memory::sign_native_memory_current_java;
+mod november;
+pub(crate) use november::sign_current_465_java;
+pub(crate) use november::sign_november_current_java;
+pub(crate) use november::sign_poststage_http_java;
+pub(crate) use november::sign_values_java;
 mod reconstructed;
 pub(crate) use reconstructed::sign_reconstructed_current_java;
 mod refreshed;
@@ -204,6 +209,54 @@ fn load(
             &pin["applicationSchemaInputs"],
             8192,
         )?;
+        if name == "put-once-poststage-http-denial" {
+            let raw = pinned(
+                root,
+                "java-poststage-http-denial-input.json",
+                &pin["poststageDeclaration"],
+                8192,
+            )?;
+            let declaration: Value = serde_json::from_slice(&raw)?;
+            require(
+                declaration["schemaVersion"] == "latent.java.poststage-http-denial-input.v1"
+                    && declaration["variant"] == name
+                    && declaration["sourceDigest"] == pin["capsuleSource"]["sha256"]
+                    && declaration["companionDigest"] == pin["companion"]["sha256"]
+                    && declaration["callAfter"] == serde_json::json!(["state-put", "intent-stage"])
+                    && declaration["expectedTypedError"] == "permission-denied"
+                    && declaration["expectedBusinessResult"] == "rejected"
+                    && declaration["componentCompiled"] == false
+                    && declaration["signedExecutionQualified"] == false
+                    && declaration["postStageRollbackQualified"] == false,
+                "poststage fixture requires the exact captured source declaration",
+            )?;
+        }
+        if name == "put-once-values" {
+            let raw = pinned(
+                root,
+                "transaction-value-inputs.json",
+                &pin["valueDeclaration"],
+                8192,
+            )?;
+            let declaration: Value = serde_json::from_slice(&raw)?;
+            require(
+                declaration["schemaVersion"] == "latent.java.transaction-value-inputs.v1"
+                    && declaration["sourceDigest"] == pin["capsuleSource"]["sha256"]
+                    && declaration["companionDigest"] == pin["companion"]["sha256"]
+                    && declaration["absentOptionalRequired"] == true
+                    && declaration["freshInstanceRequired"] == true
+                    && [
+                        "componentCompiled",
+                        "signedStateExecutionQualified",
+                        "unsignedRoundtripQualified",
+                        "utf8RoundtripQualified",
+                        "absentOptionalQualified",
+                    ]
+                    .iter()
+                    .all(|field| declaration[*field] == false),
+                "value fixture requires its exact captured source declaration",
+            )?;
+        }
     }
     let fixture_raw = read(root, "fixture-provenance-input.json", 65536)?;
     let fixture: Value = serde_json::from_slice(&fixture_raw)?;
@@ -249,7 +302,7 @@ fn load(
             && manifest["execution"]["fusionEligible"] == false,
         "current Java fixture must retain original invocation bounds",
     )?;
-    if name == "forbidden-http" {
+    if name == "forbidden-http" || name == "put-once-poststage-http-denial" {
         let imports = manifest["imports"]
             .as_array()
             .ok_or("negative Java fixture imports missing")?;

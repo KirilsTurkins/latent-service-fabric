@@ -60,11 +60,8 @@ pub async fn execute(
                 proto::AuditAckStatus::AuditUnavailable => "audit-unavailable",
                 _ => return Err(invalid_response()),
             };
-            if metadata
-                != Some(
-                    serde_json::json!({"status":status,"attemptSequence":ack.attempt_sequence.map(|v|v.to_string())}),
-                )
-            {
+            let sequence = ack.attempt_sequence.map(|v| v.to_string());
+            if metadata != Some(serde_json::json!({"status":status,"attemptSequence":sequence})) {
                 return Err(invalid_response());
             }
             value.project()

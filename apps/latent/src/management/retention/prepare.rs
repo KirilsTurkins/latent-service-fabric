@@ -1,5 +1,10 @@
 use super::{invalid, proto, MaintenanceOperation};
-use crate::{args::retention::*, config::ResolvedConfig, error::Failure, operation::Operation};
+use crate::{
+    args::retention::{Kind, RetentionCommand, Selection, Wait, Work},
+    config::ResolvedConfig,
+    error::Failure,
+    operation::Operation,
+};
 use proto::PublicationMaintenanceKind as K;
 fn id(value: &str) -> Result<(), Failure> {
     if value.is_empty() || value.len() > 128 || value.chars().any(char::is_control) {
@@ -87,7 +92,9 @@ fn wait(v: &Wait) -> Result<u64, Failure> {
     }
 }
 fn work(v: &Work) -> Result<(), Failure> {
-    if (1..=1024).contains(&v.maximum_files) && (1..=1073741824).contains(&v.maximum_bytes_hashed) {
+    if (1..=1024).contains(&v.maximum_files)
+        && (1..=1_073_741_824).contains(&v.maximum_bytes_hashed)
+    {
         Ok(())
     } else {
         Err(invalid())

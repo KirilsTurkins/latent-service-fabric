@@ -6,7 +6,10 @@ def declaration(checkpoint_root: Path) -> dict:
     return {
         "formatVersion": 2, "createIfMissing": True, "configurationEpoch": 1,
         "storeIdentity": "java-transaction-qualification", "checkpointRoot": str(checkpoint_root),
-        "startupTimeoutMillis": 5000,
+        # The startup reservation also covers opening the retained signed
+        # publication and policy catalogs before the protected store starts.
+        # Keep this finite and within the installed node's supported range.
+        "startupTimeoutMillis": 30000,
         "store": {
             "maximumFileBytes": 268435456, "cacheBytes": 8388608, "maximumRows": 16384,
             "maximumLogicalBytes": 33554432, "maximumReadViews": 8, "maximumViewAgeMillis": 30000,

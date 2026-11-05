@@ -1,5 +1,6 @@
 """First actual Rust native constructor / qualified kernel join; no quota refund."""
 import argparse
+import errno
 import json
 import os
 from pathlib import Path
@@ -12,7 +13,7 @@ import time
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import ci_rust_artifacts as artifacts
-from tools import ci_suite_inventory as registry
+from tools import ci_suite_inventory as registry, ci_suite_discovery as discovery
 from tools import host_stream_kernel_native_vm as native
 from tools import host_stream_kernel_native_vm_inputs as inputs
 from tools import host_stream_kernel_vm_image as image
@@ -52,8 +53,7 @@ def owner_controls(commands, cargo, output):
             ('native-owner','latent-streams','latent_streams',native_controls.PREFIX,native_controls.CASES),
             ('close-result','latent-capabilities','latent_capabilities',CORE_CLOSE_PREFIX,CORE_CLOSE_CASES)):
         contract, = [row for row in contracts if row['package'] == package and row['kind'] == 'lib']
-        native.require({name for name in contract['expectedCases'] if name.startswith(prefix)} == cases
-            and not set(contract['expectedIgnored']) & cases, 'registered-owner-controls')
+        native.require(not set(contract['expectedIgnored']) & cases, 'registered-owner-controls')
         stage = label+'-cargo'
         commands.run(stage,cargo,'test','--locked','--all-features','-p',package,'--lib',
             '--no-run','--message-format=json')
@@ -64,6 +64,11 @@ def owner_controls(commands, cargo, output):
         commands.environment = artifacts.cargo_environment(ROOT,executable,previous_environment,target=target)
         try:
             commands.command_seconds = min(previous_seconds,30)
+            available = discovery.listing(commands.run(label+'-all-list',executable.executable,'--list'))
+            all_ignored = discovery.listing(commands.run(label+'-all-ignored',executable.executable,'--ignored','--list'))
+            discovery.validate_cases(contract, available, all_ignored, {})
+            native.require({name for name in available if name.startswith(prefix)} == cases,
+                           'registered-owner-controls')
             listed = commands.run(label+'-list',executable.executable,prefix,'--list')
             registered = [name.decode() for name in re.findall(rb'^([a-zA-Z0-9_:]+): test$',listed,re.M)]
             ignored = commands.run(label+'-ignored',executable.executable,prefix,'--ignored','--list')
@@ -75,10 +80,10 @@ def owner_controls(commands, cargo, output):
             totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; '
                 rb'(\d+) measured; (\d+) filtered out;',raw,re.M)
             expected = tuple(str(number).encode() for number in
-                (len(cases),0,0,0,contract['minimumCases']-len(cases)))
+                (len(cases),0,0,0,len(available)-len(cases)))
             native.require(len(actual) == len(cases) and set(actual) == cases and totals == [expected],
                 'all-fixed-owner-controls-executed')
-            if label == 'native-owner':native_controls.outcomes(raw)
+            if label == 'native-owner':native_controls.outcomes(raw, len(available)-len(cases))
             result[label] = {'registered':sorted(registered),'executed':sorted(actual),'ignored':[],
                 'stdout':native.identity(raw),'executableSha256':native_controls.provider.digest_file(
                     executable.executable,1024*1024**2),
@@ -338,6 +343,181 @@ def node_kvm_access(run, receipt, tool_pins):
         after['readWrite'],'node-real-KVM-required-no-fallback')
 
 
+# This is executed by the SAME owned child launcher as the positive QEMU,
+# without starting a VM, opening a network device, or changing permissions.
+_NODE_KVM_OPEN_PROBE = r"""
+import json, os, stat
+path = '/dev/kvm'
+out = {'uid':os.getuid(), 'euid':os.geteuid(), 'gid':os.getgid(),
+       'egid':os.getegid(), 'groups':sorted(os.getgroups()), 'label':None,
+       'entry':None, 'statErrno':None, 'opened':False, 'openErrno':None, 'sameEntry':None}
+try:
+    with open('/proc/self/attr/current', 'rb') as source:
+        label = source.read(257).strip()
+    if len(label) <= 256:
+        out['label'] = label.decode('ascii')
+except (OSError, UnicodeError):
+    pass
+try:
+    entry = os.lstat(path)
+    out['entry'] = {'symlink':stat.S_ISLNK(entry.st_mode),
+        'characterDevice':stat.S_ISCHR(entry.st_mode), 'mode':entry.st_mode,
+        'device':entry.st_dev, 'inode':entry.st_ino, 'rdev':entry.st_rdev, 'major':os.major(entry.st_rdev),
+        'minor':os.minor(entry.st_rdev), 'ownerUid':entry.st_uid, 'ownerGid':entry.st_gid,
+        'readWrite':os.access(path, os.R_OK | os.W_OK, effective_ids=True)}
+except OSError as error:
+    out['statErrno'] = error.errno
+else:
+    try:
+        fd = os.open(path, os.O_RDWR | os.O_CLOEXEC | os.O_NOFOLLOW)
+    except OSError as error:
+        out['openErrno'] = error.errno
+    else:
+        try:
+            opened = os.fstat(fd)
+            out['opened'] = True
+            out['sameEntry'] = ((opened.st_dev, opened.st_ino, opened.st_rdev) ==
+                                (entry.st_dev, entry.st_ino, entry.st_rdev))
+        finally:
+            os.close(fd)
+print(json.dumps(out, sort_keys=True, separators=(',', ':')))
+"""
+
+
+def node_kvm_observe(run, receipt, label, *, require_open):
+    """Bound the actual child-context open without replacing the KVM boot."""
+    native.require(label in ('initial', 'before-trace', 'before-boot', 'after-restore', 'after-boot-failure')
+        and type(require_open) is bool, 'node-KVM-probe-fixed-stage')
+    raw = run('node-KVM-'+label+'-open',sys.executable,'-I','-B','-c',
+        _NODE_KVM_OPEN_PROBE,seconds=10)
+    native.require(type(raw) is bytes and len(raw) <= 4096, 'node-KVM-probe-output-bound')
+    observed = json.loads(raw)
+    native.require(type(observed) is dict and set(observed) == {
+        'uid','euid','gid','egid','groups','label','entry','statErrno',
+        'opened','openErrno','sameEntry'}, 'node-KVM-probe-closed-record')
+    native.require(all(type(observed[k]) is int and 0 <= observed[k] < 2**32
+        for k in ('uid','euid','gid','egid')) and
+        type(observed['groups']) is list and len(observed['groups']) <= 128 and
+        all(type(x) is int and 0 <= x < 2**32 for x in observed['groups']) and
+        observed['groups'] == sorted(set(observed['groups'])) and
+        (observed['label'] is None or type(observed['label']) is str and
+         len(observed['label']) <= 256 and all(32 <= ord(c) <= 126 for c in observed['label'])) and
+        type(observed['opened']) is bool and
+        (observed['openErrno'] is None or type(observed['openErrno']) is int and 0 < observed['openErrno'] < 4096) and
+        (observed['statErrno'] is None or type(observed['statErrno']) is int and 0 < observed['statErrno'] < 4096) and
+        (observed['sameEntry'] is None or type(observed['sameEntry']) is bool),
+        'node-KVM-probe-record-types')
+    entry = observed['entry']
+    keys = ('mode','device','inode','rdev','major','minor','ownerUid','ownerGid')
+    native.require(entry is None or type(entry) is dict and set(entry) == {
+        *keys,'symlink','characterDevice','readWrite'} and
+        all(type(entry[k]) is int and 0 <= entry[k] < 2**64 for k in keys) and
+        all(type(entry[k]) is bool for k in ('symlink','characterDevice','readWrite')),
+        'node-KVM-probe-device-types')
+    native.require((observed['opened'] and observed['openErrno'] is None
+                    and type(observed['sameEntry']) is bool and entry is not None
+                    and observed['statErrno'] is None) or
+        (not observed['opened'] and observed['sameEntry'] is None and
+         ((entry is None and observed['statErrno'] is not None and observed['openErrno'] is None) or
+          (entry is not None and observed['statErrno'] is None and observed['openErrno'] is not None))),
+        'node-KVM-probe-record-consistency')
+    row = {'stage':label, 'child':observed, 'acl':None}
+    receipt.setdefault('kvmLaunchChecks',[]).append(row)
+    baseline = receipt['kvmAccess']['after']
+    same_identity = (entry is not None and not entry['symlink'] and entry['characterDevice'] and
+        all(entry[k] == baseline[k] for k in keys) and
+        all(observed[k] == baseline[k] for k in ('uid','euid','gid','egid','groups')))
+    if same_identity:
+        acl = run('node-KVM-'+label+'-ACL','/usr/bin/getfacl','--omit-header','--numeric',
+            '--no-effective','--','/dev/kvm',seconds=10)
+        native.require(type(acl) is bytes and len(acl) <= 4096, 'node-KVM-probe-ACL-bound')
+        lines = [line for line in acl.decode('ascii').splitlines() if line]
+        native.require(len(lines) <= 32 and all(re.fullmatch(r'[A-Za-z0-9:_-]{1,128}',line)
+            for line in lines), 'node-KVM-probe-ACL-text')
+        row['acl'] = lines
+    if require_open:
+        native.require(same_identity, 'node-KVM-probe-identity-changed')
+        native.require(row['acl'] == receipt['kvmAccess']['aclAfter'], 'node-KVM-probe-ACL-changed')
+        native.require(observed['opened'] and observed['sameEntry'], 'node-KVM-probe-real-open-required')
+    return row
+
+
+def node_kvm_before_boot(run, receipt):
+    """Restore only the previously admitted UID grant, once, on the same device."""
+    row = node_kvm_observe(run,receipt,'before-boot',require_open=False)
+    observed,access = row['child'],receipt['kvmAccess']
+    native.require(row['acl'] is not None, 'node-KVM-probe-identity-changed')
+    if row['acl'] == access['aclAfter']:
+        native.require(observed['opened'] and observed['sameEntry'], 'node-KVM-probe-real-open-required')
+        return
+
+    baseline = access['after']
+    uid = baseline['uid']
+    original,admitted = access['aclBefore'],access['aclAfter']
+    grant = 'user:'+str(uid)+':rw-'
+    checks = receipt['kvmLaunchChecks']
+    trace = receipt.get('traceLossControl')
+    # A completely different ACL, credential, error, or stage stays refused.
+    simple = {}
+    for line in original:
+        match = re.fullmatch(r'(user|group|other)::([r-][w-][x-])',line)
+        native.require(match is not None and match[1] not in simple,
+            'node-KVM-recovery-original-simple-ACL-required')
+        simple[match[1]] = match[2]
+    native.require(access['grantAttempted'] is True and type(uid) is int and uid > 0 and
+        set(simple) == {'user','group','other'} and simple['group'][2] == '-' and
+        len(admitted) == 5 and len(set(admitted)) == 5 and
+        set(admitted) == set(original)|{grant,'mask::rw-'} and
+        row['acl'] == [line for line in admitted if line != grant] and
+        not observed['opened'] and observed['openErrno'] == errno.EACCES and
+        observed['entry']['readWrite'] is False and
+        len(checks) >= 2 and checks[-2]['stage'] == 'before-trace' and
+        checks[-2]['acl'] == admitted and checks[-2]['child']['opened'] is True and
+        checks[-2]['child']['sameEntry'] is True and
+        checks[-2]['child']['label'] == observed['label'] and
+        trace == {'sink':'/dev/full', 'deviceMajor':1, 'deviceMinor':7, 'expectedExit':74,
+            'actualExit':74, 'allDescendantsCleaned':True, 'partialGuestMayHaveBooted':True,
+            'guestResultQualified':False} and receipt.get('emulatorAttempts') == 1 and
+        'kvmAclRecovery' not in receipt, 'node-KVM-probe-ACL-changed')
+
+    recovery = receipt['kvmAclRecovery'] = {'uid':uid,'attempted':False,
+        'before':list(row['acl']),'restored':False,'target':'opened-device'}
+    # O_PATH can pin the already-verified character device even after its
+    # read/write grant vanished. setfacl follows this stable proc-fd reference.
+    fd = os.open('/dev/kvm',os.O_PATH|os.O_NOFOLLOW|os.O_CLOEXEC)
+    try:
+        st = os.fstat(fd)
+        current = {'uid':os.getuid(),'euid':os.geteuid(),'gid':os.getgid(),
+            'egid':os.getegid(),'groups':sorted(os.getgroups()),'mode':st.st_mode,
+            'device':st.st_dev,'inode':st.st_ino,'rdev':st.st_rdev,
+            'major':os.major(st.st_rdev),'minor':os.minor(st.st_rdev),
+            'ownerUid':st.st_uid,'ownerGid':st.st_gid}
+        native.require(stat.S_ISCHR(st.st_mode) and
+            all(current[key] == baseline[key] for key in current),
+            'node-KVM-recovery-anchor-identity')
+        anchor = '/proc/'+str(os.getpid())+'/fd/'+str(fd)
+        def anchored_acl(label):
+            raw = run(label,'/usr/bin/getfacl','--omit-header','--numeric',
+                '--no-effective','--',anchor,seconds=10)
+            native.require(type(raw) is bytes and len(raw) <= 4096, 'node-KVM-probe-ACL-bound')
+            lines = [line for line in raw.decode('ascii').splitlines() if line]
+            native.require(len(lines) <= 32 and all(re.fullmatch(r'[A-Za-z0-9:_-]{1,128}',line)
+                for line in lines), 'node-KVM-probe-ACL-text')
+            return lines
+        native.require(anchored_acl('node-KVM-recovery-before-ACL') == row['acl'],
+            'node-KVM-recovery-anchor-ACL-changed')
+        recovery['attempted'] = True
+        run('node-KVM-recovery-runner-UID-ACL','sudo','-n','/usr/bin/setfacl','--no-mask',
+            '--modify',grant,'--',anchor,seconds=15)
+        recovery['after'] = anchored_acl('node-KVM-recovery-after-ACL')
+        native.require(recovery['after'] == admitted, 'node-KVM-recovery-ACL-changed')
+    finally:
+        os.close(fd)
+    # This is a fresh real open of the launch pathname, not a positive VM.
+    node_kvm_observe(run,receipt,'after-restore',require_open=True)
+    recovery['restored'] = True
+
+
 def qualify_node(output,revision):
     """One fresh development image; no ordinary constructor/TCG receipt reuse."""
     import math
@@ -345,8 +525,12 @@ def qualify_node(output,revision):
     from tools import qualify_host_stream_kernel_objects as objects
     native.require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true' and
         os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric' and
-        os.environ.get('GITHUB_REF_NAME') == native.NODE_BRANCH and
+        os.environ.get('GITHUB_REF_NAME') in native.NODE_BRANCHES and
         os.environ.get('GITHUB_EVENT_NAME') == 'push','node-one-hosted-push')
+    intx = os.environ.get('GITHUB_REF_NAME') == native.NODE_INTX_BRANCH
+    fixup = os.environ.get('GITHUB_REF_NAME') in (native.NODE_FIXUP_BRANCH,native.NODE_INTX_BRANCH)
+    setup = os.environ.get('GITHUB_REF_NAME') in (native.NODE_SETUP_BRANCH,native.NODE_FIXUP_BRANCH,native.NODE_INTX_BRANCH)
+    prefix = os.environ.get('GITHUB_REF_NAME') in (native.NODE_PREFIX_BRANCH,native.NODE_SETUP_BRANCH,native.NODE_FIXUP_BRANCH,native.NODE_INTX_BRANCH)
     started = float(os.environ.get('LSF_Q35_STARTED_MONOTONIC','nan'))
     now = time.monotonic()
     native.require(math.isfinite(started) and 0 < started <= now and now-started < 1315,
@@ -376,10 +560,13 @@ def qualify_node(output,revision):
         'nodeFunding':False,'nodeRetired':False,'irqEnabled':False,'tcpEnabled':False,
         'whole738Complete':False,'wholeNodeFitQualified':False,'productionInstallation':False,
         'earlyPlatformObjectsRetroactivelyFunded':False,'freshVmBoots':0,
+        'pciConstructorQualified':False,'napiQualified':False,
         'hermetic':False,'compilerImplicitInputsAttested':False,'reproducibility':'not-checked',
         'profile':{'qemu':'11.1.2','machine':'pc-q35-11.1','accel':'kvm',
             'cpus':1,'maxcpus':1,'virtualIommu':False,'interruptRemapping':False,
-            'virtioNetPciVectors':3,'hostNetwork':False,'hostDrives':False}}
+            'virtioNetPciVectors':3,'hostNetwork':False,'hostDrives':False,
+            'expectedPciBdf':'0000:00:03.0','expectedPciVendor':'1af4',
+            'expectedPciDevice':'1041','modernOnly':True}}
     stage = 'source-capture'; products = {}; tool_pins = {}
     def run(label,*argv,root=None,seconds=1200):
         nonlocal stage
@@ -402,14 +589,25 @@ def qualify_node(output,revision):
         before = node_source_inputs(ROOT,listed)
         physical,capacity_raw = c.capacity_capture(ROOT)
         boot_raw = native.node_capture(ROOT)
-        native.require(set(physical).isdisjoint(boot_raw) and len(physical)+len(boot_raw) <= c.MAX_ENTRIES and
-            sum(r['bytes'] for r in physical.values())+sum(map(len,boot_raw.values())) <= c.MAX_SOURCE,
+        prefix_raw = native.node_prefix_capture(ROOT) if prefix else {}
+        setup_raw = native.node_setup_capture(ROOT) if setup else {}
+        fixup_raw = native.node_fixup_capture(ROOT) if fixup else {}
+        intx_raw = native.node_intx_capture(ROOT) if intx else {}
+        groups = (boot_raw,prefix_raw,setup_raw,fixup_raw,intx_raw)
+        native.require(all(set(a).isdisjoint(b) for i,a in enumerate(groups) for b in groups[i+1:]),
+            'node-research-captures-disjoint')
+        extra_raw = {**boot_raw,**prefix_raw,**setup_raw,**fixup_raw,**intx_raw}
+        native.require(set(physical).isdisjoint(extra_raw) and set(boot_raw).isdisjoint(prefix_raw) and
+            len(physical)+len(extra_raw) <= c.MAX_ENTRIES and
+            sum(r['bytes'] for r in physical.values())+sum(map(len,extra_raw.values())) <= c.MAX_SOURCE,
             'node-complete-research-envelope')
         receipt.update(sourceBefore=dict(sorted(before.items())),
-            cPhysicalBefore={**physical,**{n:native.identity(b) for n,b in boot_raw.items()}},
-            cPhysicalCount=len(physical)+len(boot_raw))
+            cPhysicalBefore={**physical,**{n:native.identity(b) for n,b in extra_raw.items()}},
+            cPhysicalCount=len(physical)+len(extra_raw))
         write_json(output/'native-source-inputs.json',receipt['sourceBefore'])
         node_kvm_access(run,receipt,tool_pins)
+        if intx:
+            node_kvm_observe(run,receipt,'initial',require_open=True)
         run('source-clean','git','-c','core.fsmonitor=false','diff','--no-ext-diff','--exit-code','HEAD','--',seconds=30)
         run('baseline-fetch','git','-c','core.fsmonitor=false','-c','gc.auto=0','fetch',
             '--no-tags','--no-recurse-submodules','--depth=1',
@@ -426,6 +624,29 @@ def qualify_node(output,revision):
             b'Python 3.13.5','node-pinned-owner-python')
         run('locked-python-dependencies',owner_python,'-m','pip','install',
             '--requirement',ROOT/'tools/requirements.lock',seconds=180)
+        if os.environ.get('GITHUB_REF_NAME') in (native.NODE_IDENTITY_BRANCH,native.NODE_PREFIX_BRANCH,native.NODE_SETUP_BRANCH,native.NODE_FIXUP_BRANCH,native.NODE_INTX_BRANCH):
+            run('node-q35-pci-identity-refusal-controls',owner_python,'-B','-m','unittest',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodeBootSourceControls',
+                '-v',seconds=30)
+        if prefix:
+            run('node-q35-prefix-refusal-controls',owner_python,'-B','-m','unittest',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodePciPrefixControls',
+                '-v',seconds=30)
+        if setup:
+            run('node-q35-setup-refusal-controls',owner_python,'-B','-m','unittest',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodePciSetupControls',
+                '-v',seconds=30)
+        if fixup:
+            run('node-q35-fixup-refusal-controls',owner_python,'-B','-m','unittest',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodePciFixupControls',
+                '-v',seconds=30)
+        if intx:
+            run('node-q35-intx-refusal-controls',owner_python,'-B','-m','unittest',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodePciIntxControls',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodePciIntxOwnerControls',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodeKvmLaunchControls',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodeKvmRecoveryControls',
+                'tools.tests.test_kernel_native_constructor_vm.TraceRefusalControls','-v',seconds=30)
         run('normal-prerequisite-update','sudo','apt-get','update',seconds=180)
         run('normal-prerequisite-install','sudo','apt-get','install','--yes','--no-install-recommends',
             'gcc','make','flex','bison','bc','libelf-dev','libssl-dev','binutils','libc6-dev',
@@ -498,24 +719,63 @@ def qualify_node(output,revision):
         rows485 = {n:c.identity(r) for n,r in sorted(values.items())}
         kbuild = {n:c.read(tree/n,c.MAX_FILE) for n in ('net/Kconfig','net/Makefile')}
         values,row = native.node_compose(values,kbuild,boot_raw); stages.append(row)
+        if prefix:
+            values,prefix_stages = native.node_prefix_compose(values,prefix_raw)
+            stages.extend(prefix_stages)
+        if setup:
+            values,setup_stage = native.node_setup_compose(values,setup_raw)
+            stages.append(setup_stage)
+        if fixup:
+            original_quirks = c.read(tree/'drivers/pci/quirks.c',c.MAX_FILE)
+            values,fixup_stage = native.node_fixup_compose(values,fixup_raw,original_quirks)
+            stages.append(fixup_stage)
+        if intx:
+            values,intx_stage = native.node_intx_compose(values,intx_raw)
+            stages.append(intx_stage)
         for name,value in values.items():
             target = tree/name; target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(value)
-        rows488 = {n:c.identity(r) for n,r in sorted(values.items())}
-        write_json(output/'derived-inputs.json',rows488)
+        derived_rows = {n:c.identity(r) for n,r in sorted(values.items())}
+        write_json(output/'derived-inputs.json',derived_rows)
         write_json(output/'projection-proof.json',{'stages':stages,'prior485':rows485,
             'nativePrimary':{n:c.identity(r) for n,r in capacity_native.items()},
-            'researchUtf8':{n:r.decode('utf8') for n,r in {**capacity_raw,**boot_raw}.items()},
+            'researchUtf8':{n:r.decode('utf8') for n,r in {**capacity_raw,**boot_raw,**prefix_raw,**setup_raw,**fixup_raw,**intx_raw}.items()},
             'kbuildBeforeUtf8':{n:r.decode('utf8') for n,r in kbuild.items()}})
         # The only requested new config is the immutable built-in entry. Resolve
         # and record all actual values; never guess NR_CPUS equals topology.
-        (build/'.config').write_bytes(selected+b'CONFIG_LSF_STREAM_NODE_BOOTSTRAP=y\n')
+        requested = b'CONFIG_LSF_STREAM_NODE_BOOTSTRAP=y\n'
+        if prefix:
+            requested += b'CONFIG_LSF_STREAM_NODE_PCI_PREFIX=y\n'
+        if setup:
+            requested += b'CONFIG_LSF_STREAM_NODE_PCI_SETUP=y\n'
+        if fixup:
+            requested += b'CONFIG_LSF_STREAM_NODE_PCI_FIXUP=y\n'
+        if intx:
+            requested += b'CONFIG_LSF_STREAM_NODE_PCI_INTX=y\n'
+        (build/'.config').write_bytes(selected+requested)
         run('boot-selected-olddefconfig',*common,'olddefconfig',root=tree)
         config = c.read(build/'.config',c.MAX_DOCUMENT)
-        native.require(b'CONFIG_LSF_STREAM_NODE_BOOTSTRAP=y\n' in config,'node-boot-config-selected')
+        native.require(b'CONFIG_LSF_STREAM_NODE_BOOTSTRAP=y\n' in config and
+            (not prefix or b'CONFIG_LSF_STREAM_NODE_PCI_PREFIX=y\n' in config) and
+            (not setup or b'CONFIG_LSF_STREAM_NODE_PCI_SETUP=y\n' in config) and
+            (not fixup or b'CONFIG_LSF_STREAM_NODE_PCI_FIXUP=y\n' in config) and
+            (not intx or b'CONFIG_LSF_STREAM_NODE_PCI_INTX=y\n' in config),'node-boot-config-selected')
         old_values,new_values = objects.configuration(selected),objects.configuration(config)
-        native.require({k:v for k,v in new_values.items() if k != 'CONFIG_LSF_STREAM_NODE_BOOTSTRAP'} ==
-            {k:v for k,v in old_values.items() if k != 'CONFIG_LSF_STREAM_NODE_BOOTSTRAP'},
+        reviewed = {'CONFIG_LSF_STREAM_NODE_BOOTSTRAP'}
+        if prefix:
+            reviewed.add('CONFIG_LSF_STREAM_NODE_PCI_PREFIX')
+        if setup:
+            reviewed.add('CONFIG_LSF_STREAM_NODE_PCI_SETUP')
+        if fixup:
+            reviewed.add('CONFIG_LSF_STREAM_NODE_PCI_FIXUP')
+        if intx:
+            reviewed.add('CONFIG_LSF_STREAM_NODE_PCI_INTX')
+        native.require({k:v for k,v in new_values.items() if k not in reviewed} ==
+            {k:v for k,v in old_values.items() if k not in reviewed},
             'node-only-reviewed-config-addition')
+        native.require(new_values.get('CONFIG_PRINTK') == 'y' and
+            new_values.get('CONFIG_PRINTK_TIME') == 'y' and
+            new_values.get('CONFIG_CONSOLE_LOGLEVEL_DEFAULT') == '7',
+            'node-pci-observation-console-config')
         receipt['bootConfiguration'] = image.check_boot_configuration(config,objects.configuration)
         keep('selected-before.config',selected_file,c.MAX_DOCUMENT)
         keep('boot.config',build/'.config',c.MAX_DOCUMENT)
@@ -541,12 +801,26 @@ def qualify_node(output,revision):
         qemu_source,tar_inventory = native.node_qemu_extract(qemu_archive,private/'qemu-source',commands.deadline)
         write_json(output/'qemu-source.json',{'archive':native.QEMU_PIN,'signature':native.QEMU_SIGNATURE,
             'key':native.QEMU_KEY,'validSignature':native.QEMU_FINGERPRINT,**tar_inventory})
+        qemu_derivatives = {}
+        if intx:
+            for name,script in (('util/log.c',native.INTX_SINK),
+                                ('hw/virtio/virtio-pci.c',native.INTX_VIRTIO)):
+                target = qemu_source/name
+                original = read_file(target,4*1024**2)
+                derived,proof = native.node_intx_module(intx_raw,script).transform(original)
+                native.require(proof['originalSourceInverseExact'] is True and
+                    proof['qemuExecuted'] is False,'node-qemu-derivation-inverse')
+                target.write_bytes(derived)
+                native.require(read_file(target,4*1024**2) == derived,'node-qemu-derivation-written')
+                qemu_derivatives[name] = {'before':native.identity(original),
+                    'after':native.identity(derived),'proof':proof}
         qemu_build = private/'qemu-build'; qemu_build.mkdir()
         run('qemu-fixed-configure',tools['sh'],qemu_source/'configure','--python='+str(tools['python']),'--target-list=x86_64-softmmu',
             '--enable-kvm','--disable-tcg','--disable-rust','--disable-download',
             '--disable-debug-info','--disable-docs','--disable-guest-agent','--disable-tools',
             '--disable-slirp','--disable-sdl','--disable-gtk','--disable-vnc','--disable-opengl',
-            '--disable-virglrenderer','--disable-plugins','--disable-capstone',root=qemu_build)
+            '--disable-virglrenderer','--disable-plugins','--disable-capstone',
+            *(['--enable-trace-backends=log'] if intx else []),root=qemu_build)
         run('qemu-fixed-build',tools['ninja'],'-j2','qemu-system-x86_64',root=qemu_build)
         qemu = qemu_build/'qemu-system-x86_64'
         qemu_pin = native.identity(read_file(qemu,128*1024**2))
@@ -558,7 +832,10 @@ def qualify_node(output,revision):
         firmware_pins = {n:native.identity(read_file(firmware/n,1024**2)) for n in ('bios-256k.bin','kvmvapic.bin')}
         receipt['qemuProduct'] = {'binary':qemu_pin,'firmware':firmware_pins,
             'version':'11.1.2','configurationSource':native.identity(read_file(qemu_source/'configure',1024**2))}
-        source_hash = c.identity(c.canonical(rows488))['sha256']
+        if intx:
+            receipt['qemuDiagnosticDerivatives'] = qemu_derivatives
+            receipt['qemuDiagnosticOnly'] = True
+        source_hash = c.identity(c.canonical(derived_rows))['sha256']
         config_hash = native.identity(config)['sha256']
         environment.update(CARGO_TARGET_DIR=str(private/'native-target'),
             CARGO_ENCODED_RUSTFLAGS='\x1f'.join(FLAGS),
@@ -567,6 +844,8 @@ def qualify_node(output,revision):
             CARGO_PROFILE_RELEASE_STRIP='symbols',RUSTC=str(tools['rustc']),
             LSF_Q35_QUALIFICATION_KERNEL_SHA256=receipt['kernel']['sha256'],
             LSF_Q35_QUALIFICATION_SOURCE_SHA256=source_hash,LSF_Q35_QUALIFICATION_CONFIG_SHA256=config_hash)
+        if prefix:
+            environment['LSF_Q35_PREFIX_PROFILE'] = native.SETUP_PROFILE if setup else native.PREFIX_PROFILE
         cargo_raw = run('build-node-native-example',tools['cargo'],'build','--locked','-j2','-p','latent-streams',
             '--example','kernel_constructor_vm','--features','development-outbound','--release',
             '--target',TARGET,'--message-format=json')
@@ -588,15 +867,58 @@ def qualify_node(output,revision):
             'node-actual-initramfs-bound')
         cpio = output/'node-initramfs.cpio'; cpio.write_bytes(cpio_raw); products[cpio.name] = native.identity(cpio_raw)
         boot_args = native.node_boot_argv(qemu,output/'node-bzImage',cpio,firmware)
+        if intx:
+            from tools import q35_intx_owner, q35_intx_trace
+            boot_args = q35_intx_owner.trace_argv(boot_args)
+            node_kvm_observe(run,receipt,'before-trace',require_open=True)
+            stage = 'qemu-trace-loss-refusal'
+            commands.root = ROOT
+            receipt['traceLossControl'] = q35_intx_owner.probe_loss(commands,boot_args)
+            receipt['emulatorAttempts'] = 1  # The loss probe may boot partway.
+            node_kvm_before_boot(run,receipt)
+            receipt['emulatorAttempts'] = 2  # The next command is the single positive VM.
         receipt['vmArgv'] = list(boot_args)
-        serial = run('one-real-q35-kvm-node-prepare',*boot_args,seconds=image.VM_SECONDS)
+        vm_log_index = len(commands.records)
+        try:
+            serial = run('one-real-q35-kvm-node-prepare',*boot_args,seconds=image.VM_SECONDS)
+        except Exception:
+            if intx:
+                failed_stage = stage
+                try:
+                    node_kvm_observe(run,receipt,'after-boot-failure',require_open=False)
+                except Exception as inspection_error:
+                    receipt['kvmFailureInspection'] = {'errorType':type(inspection_error).__name__}
+                finally:
+                    stage = failed_stage
+            raise
         native.require(len(serial) <= image.MAX_SERIAL,'node-serial-channel-bound')
-        receipt['observations'] = native.node_serial(serial); receipt['freshVmBoots'] = 1
+        receipt['observations'] = (native.node_intx_serial(serial) if intx else
+            native.node_fixup_serial(serial) if fixup else
+            native.node_setup_serial(serial) if setup else
+            native.node_prefix_serial(serial) if prefix else native.node_serial(serial))
+        receipt['freshVmBoots'] = 1
+        if intx:
+            trace_path = commands.output/'logs'/f'{vm_log_index:02d}-one-real-q35-kvm-node-prepare.stderr.txt'
+            trace = read_file(trace_path,4*1024**2)
+            fact = receipt['observations']['pciIntx']
+            trace_observed = q35_intx_trace.inspect(trace,fact['originalCommand'],fact['pin'],fact['line'])
+            native.require(receipt['traceLossControl']['actualExit'] == 74 and
+                commands.records[vm_log_index]['descendantsCleaned'] is True,
+                'node-trace-loss-control-and-retirement')
+            receipt['pciTrace'] = {'raw':native.identity(trace),'events':list(q35_intx_owner.EVENTS),
+                'sinkFailureControl':receipt['traceLossControl'], 'observation':trace_observed}
         # Exact source/tool/image identities still hold AFTER the actual VM.
         after = node_source_inputs(ROOT,run('source-path-inventory-after','git','-c','core.fsmonitor=false','ls-files','-z',seconds=30))
         current_physical,current_raw = c.capacity_capture(ROOT)
         native.require(dict(sorted(after.items())) == receipt['sourceBefore'] and current_physical == physical and
-            current_raw == capacity_raw and native.node_capture(ROOT) == boot_raw,'node-all-source-unchanged')
+            current_raw == capacity_raw and native.node_capture(ROOT) == boot_raw and
+            (not prefix or native.node_prefix_capture(ROOT) == prefix_raw) and
+            (not setup or native.node_setup_capture(ROOT) == setup_raw) and
+            (not fixup or native.node_fixup_capture(ROOT) == fixup_raw) and
+            (not intx or native.node_intx_capture(ROOT) == intx_raw),'node-all-source-unchanged')
+        if intx:
+            native.require(all(native.identity(read_file(qemu_source/name,4*1024**2)) == row['after']
+                for name,row in qemu_derivatives.items()),'node-qemu-derived-source-stable')
         native.require(c.read(build/'.config',c.MAX_DOCUMENT) == config,'node-config-stable')
         native.require(read_file(kernel,image.MAX_KERNEL) == kernel_raw and
             native.identity(read_file(qemu,128*1024**2)) == qemu_pin and

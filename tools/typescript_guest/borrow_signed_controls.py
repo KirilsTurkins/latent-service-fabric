@@ -376,7 +376,7 @@ def node_net_records(raw):
     require(type(preparation) is dict and set(preparation)=={'backend','release','publication','componentDigest',
         'engineConfigurationDigest','engineVersion','targetTriple','cpuFeatureSet'}
         and preparation.get('backend')=='wasmtime-component-phase-1'
-        and preparation.get('engineVersion')=='48.0.7'
+        and preparation.get('engineVersion')=='48.0.8'
         and preparation.get('targetTriple')=='x86_64-unknown-linux-gnu'
         and preparation.get('cpuFeatureSet')=='host-baseline'
         and all(type(preparation.get(k)) is str and re.fullmatch(pattern,preparation[k]) is not None

@@ -14,7 +14,7 @@ import tomllib
 
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools import ci_rust_artifacts as artifacts, ci_suite_inventory as registry
+from tools import ci_rust_artifacts as artifacts, ci_suite_inventory as registry, ci_suite_discovery as discovery
 from tools import java_capsule_project, java_fiber_library_inputs, qualify_java_fibers
 from tools import qualify_java_retained_fibers as observed
 from tools.build_observation import build_environment, file_identity, resolve_tools
@@ -125,7 +125,8 @@ def qualify(output, revision):
         CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
     logs = output / 'commands'
     logs.mkdir()
-    commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895)
+    commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895,
+                        max_retained_bytes=observed.SOURCE_LISTING_DIAGNOSTIC_BYTES)
     receipt = {'schemaVersion': 'lsf.java-published-workers.v1', 'status': 'in-progress',
         'sourceRevision': revision, 'case': CASE, 'javaComponentRecompiled': False,
         'llvmBuilt': False, 'nativeHarnessBuilt': False, 'fullJavaProfileQualified': False,
@@ -206,8 +207,7 @@ def qualify(output, revision):
             '--no-run', '--message-format=json')
         contract, = [row for row in registry.load()['suites']
             if row['id'] == 'latent-wasmtime.test.local-service']
-        need(contract['minimumCases'] == len(contract['expectedCases']) and CASE in contract['expectedCases']
-            and CASE in contract['expectedIgnored'], 'existing-case-contract')
+        need(CASE in contract['expectedIgnored'], 'existing-case-contract')
         suite = artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'local_service',
             'tests/local_service.rs', CASE, frozenset({CASE}), True, kind='test')
         artifact = artifacts.read_inventory(logs / f'logs/{build_index:02d}-build-harness.stdout.txt',
@@ -227,6 +227,10 @@ def qualify(output, revision):
         commands.environment.update(LSF_GUEST_SDK_LANGUAGE='java',
             LSF_JAVA_WORKER_LIBRARIES_FIXTURE=str(prepared))
         commands.command_seconds = 25
+        available = discovery.listing(commands.run('list-all-cases', artifact.executable, '--list'))
+        ignored_cases = discovery.listing(commands.run('list-ignored-cases', artifact.executable, '--ignored', '--list'))
+        discovery.validate_cases(contract, available, ignored_cases, {})
+        need(CASE in ignored_cases, 'required-ignored-case-missing')
         listed = commands.run('list-exact-case', artifact.executable, CASE, '--exact', '--ignored', '--list')
         need(len(listed) <= artifacts.MAX_LIST_BYTES, 'list-bound')
         artifacts.validate_listing(listed, suite)
@@ -234,7 +238,7 @@ def qualify(output, revision):
         commands.command_seconds = 1795
         raw = commands.run('execute-exact-case', artifact.executable, CASE, '--exact', '--ignored',
             '--show-output', '--test-threads=1')
-        receipt['observation'] = observed.observations(raw, worker=True, filtered=len(contract['expectedCases']) - 1)
+        receipt['observation'] = observed.observations(raw, worker=True, filtered=len(available) - 1)
         java_fiber_library_inputs.check(prepared / 'library-inputs', report['libraries'])
         need(sources(commands, before['native']) == before and java_sources() == java_before, 'final-source')
         need(file_identity(artifact.executable, 'local-service-java-published-workers', 512 * 1024**2)
