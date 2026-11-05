@@ -408,7 +408,7 @@
       "upstream_repository": "actions/setup-go",
       "upstream_revision": "90ad2b35f69faf97585ad74d28fa006d2739b7af"
     },
-    "KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039": {
+    "KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c": {
       "files": [
         {
           "sha256": "503fe82e787d5ff15e17934e2efab346fa2facfad7261a8ea6ed9b05cb14f9e8",
@@ -417,22 +417,34 @@
           "source_sha256": "503fe82e787d5ff15e17934e2efab346fa2facfad7261a8ea6ed9b05cb14f9e8"
         },
         {
-          "sha256": "92a94a5ac5c3add9bf5bff68aff190f4662c37d721256efac1aa38fdfa166698",
+          "sha256": "f7723547bb87097415558bdc8088f047c3b64221dabdfb7785269343d4e9d6f6",
           "snapshot": ".github/security/actions/setup-java/package.json",
           "source": "package.json",
-          "source_sha256": "92a94a5ac5c3add9bf5bff68aff190f4662c37d721256efac1aa38fdfa166698"
+          "source_sha256": "f7723547bb87097415558bdc8088f047c3b64221dabdfb7785269343d4e9d6f6"
         },
         {
-          "sha256": "38abb308bd23184adfb32177b41cf96d613f735a92f3b1f176132c6ec1619862",
+          "sha256": "9419ff87d9fce7ae84f37bd082cef91646e722f95aec1896aa695b3e2b31e2df",
           "snapshot": ".github/security/actions/setup-java/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "38abb308bd23184adfb32177b41cf96d613f735a92f3b1f176132c6ec1619862"
+          "source_sha256": "9419ff87d9fce7ae84f37bd082cef91646e722f95aec1896aa695b3e2b31e2df"
         },
         {
           "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
           "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
           "source": ".lsf-source/verify-installed-deepmerge.mjs",
           "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
+        },
+        {
+          "sha256": "4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d",
+          "snapshot": ".github/security/actions/setup-java-minimatch/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-minimatch.mjs",
+          "source_sha256": "4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d"
+        },
+        {
+          "sha256": "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492",
+          "snapshot": ".github/security/actions/setup-java-minimatch/bounds.test.mjs.snapshot",
+          "source": ".lsf-source/minimatch-bounds.test.mjs",
+          "source_sha256": "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492"
         }
       ],
       "kind": "npm",
@@ -443,7 +455,7 @@
         "source_sha256": "503fe82e787d5ff15e17934e2efab346fa2facfad7261a8ea6ed9b05cb14f9e8"
       },
       "repository": "KirilsTurkins/lsf-setup-java",
-      "revision": "5d910981b146bc2d4fd97fa349210f3e3d454039",
+      "revision": "63c7977881fc344a6ed464f7ed5e242aedc8d56c",
       "security_pr": "https://github.com/actions/setup-java/pull/1296",
       "upstream_repository": "actions/setup-java",
       "upstream_revision": "816722acf8fd27c9d1e9ae6ee6085da07e0d44c1"

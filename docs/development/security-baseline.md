@@ -140,6 +140,14 @@ receives the original version; only the reviewed advisory revision for that exac
 lock can be classified as source-remediated.
 Other versions, locks, advisories and unpatched duplicate copies remain blocking.
 
+The setup-java action similarly retains minimatch 10.2.6 with a separate
+[exact source policy](../../.github/security/minimatch-java-action-source-repairs.json).
+It preserves the existing deepmerge verification and binds both action entrypoints
+and their two matcher-bearing chunks to the reviewed fork revision and hosted build.
+Those four runtime files use the same bounded, fail-closed raw-content retrieval
+described above. Only the exact reviewed minimatch advisory revision and setup-java
+lock are eligible for the source-repair receipt.
+
 The selector-parser repair introduced by v4 remains at upstream 7.1.6 with its
 exact dependency graph. The selected v6 bundle also carries ip-address 10.7.4
 and undici 6.29.1. Current frontend locks pin tinypool 2.1.2, source-map-js 1.2.2,

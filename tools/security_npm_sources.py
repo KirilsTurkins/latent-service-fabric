@@ -199,7 +199,7 @@ CACHE_SOURCE_SHA256 = {
 ACTION_REFERENCES = {
     CACHE_PREFIX: CACHE_RESTORE_REFERENCE,
     ".github/security/actions/setup-java/":
-        "KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039",
+        "KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c",
     ".github/security/actions/setup-node/":
         "KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415",
     ".github/security/actions/setup-python/":
@@ -251,6 +251,58 @@ MINIMATCH_RUNTIME = {'runtime_setup': {'source': 'dist/setup/index.js',
                    'gitBlob': '2c6014773ffb3c51eb8307d36641ce6691c2c4e8'}}
 MINIMATCH_RUNTIME_LIMIT = 8 * 1024 * 1024
 
+
+JAVA_MINIMATCH_PROFILE = 'setup-java-minimatch-action-source-v1'
+JAVA_MINIMATCH_PREFIX = '.github/security/actions/setup-java/'
+JAVA_MINIMATCH_ARCHIVE = 'file:.lsf-source/minimatch-10.2.6-lsf-bound-v1.tar'
+JAVA_MINIMATCH_UPSTREAM = 'sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A=='
+JAVA_MINIMATCH_DERIVED = 'sha512-d4q29f9UKl/jVXZqsE8JNas2oBfjjDeYRQEzYfbPFlEOx3cNnrJzyS48JO1wCCqcRAjOnDnkQfCKcCXFAyuLow=='
+JAVA_MINIMATCH_ASSETS = {'upstream': {'snapshot': '.github/security/actions/setup-java-minimatch/minimatch-10.2.6.original.tgz',
+              'source': '.lsf-source/minimatch-10.2.6.original.tgz',
+              'bytes': 117068,
+              'sha256': '5a3d2c8074a28229665727e47b8a1090941856a7962905efe05d20d3760355f8',
+              'gitBlob': 'cc4d199bec4264ab80b9b228da85f074b045edf5'},
+ 'archive': {'snapshot': '.github/security/actions/setup-java-minimatch/minimatch-10.2.6.repaired.tar',
+             'source': '.lsf-source/minimatch-10.2.6-lsf-bound-v1.tar',
+             'bytes': 583680,
+             'sha256': 'bb2b80a4759baaee01d49528b2d7d0c05fc29c1cf0d3fea41ec243de04bceedb',
+             'gitBlob': '2a1f40a7420f3cfb13e5284e433b19ec6db1e145'},
+ 'repair': {'snapshot': '.github/security/actions/setup-java-minimatch/repair.json',
+            'source': '.lsf-source/minimatch-10.2.6-lsf-bound-v1.repair.json',
+            'bytes': 2129,
+            'sha256': 'd6ede52113aa8cb2d4b6ee008885fd2de0d37e06d822e444846f6f905f088bf3',
+            'gitBlob': '42886b2bc898bf44b955fc31ff963bb91a94bcc9'},
+ 'verifier': {'snapshot': '.github/security/actions/setup-java-minimatch/installed-verifier.mjs.snapshot',
+              'source': '.lsf-source/verify-installed-minimatch.mjs',
+              'bytes': 3386,
+              'sha256': '4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d',
+              'gitBlob': 'de5fadac0ee90bd532c5683fd4bcb919634a4314'},
+ 'tests': {'snapshot': '.github/security/actions/setup-java-minimatch/bounds.test.mjs.snapshot',
+           'source': '.lsf-source/minimatch-bounds.test.mjs',
+           'bytes': 2854,
+           'sha256': '4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492',
+           'gitBlob': '11a4cf916b01dfa3af9af699aa7ec641b39505d3'},
+ 'build': {'snapshot': '.github/security/actions/setup-java-minimatch/fork-build.json',
+           'source': 'https://github.com/KirilsTurkins/lsf-setup-java/actions/runs/42018824336',
+           'bytes': 4502,
+           'sha256': '5ef60e180638361b91cccb232626b72cd464ba7b8273853a549337c4ceada659',
+           'gitBlob': '3664d7808bde355ab0d81def683c16827bb3bab1'}}
+JAVA_MINIMATCH_RUNTIME = {'runtime_setup': {'source': 'dist/setup/index.js',
+                   'bytes': 1251705,
+                   'sha256': 'ff49684899199004e6e3380d810250c997a7cb048e3745da83fda98f453e9676',
+                   'gitBlob': '30825bde03691bc19d0bedf4940502dd88b9eb3c'},
+ 'runtime_cleanup': {'source': 'dist/cleanup/index.js',
+                     'bytes': 1218262,
+                     'sha256': 'a80e9a57c660b86e26f33ff4eb9d82dd21fc1b1e9e86f56356a7c81940d74199',
+                     'gitBlob': 'ca82b3e3ea8bbb19bffdf17d561d21ebea122737'},
+ 'runtime_setup_chunk': {'source': 'dist/setup/971.index.js',
+                         'bytes': 2110720,
+                         'sha256': '9e2349fe3b6710fe498e054cee0fe370c0f890b6797075eb418c78a2ec35ce66',
+                         'gitBlob': '6a9586ecbde45df1f4eedae5fab7cec16a644bb4'},
+ 'runtime_cleanup_chunk': {'source': 'dist/cleanup/767.index.js',
+                           'bytes': 2337528,
+                           'sha256': '491ce8398cfdd5123602e3765a3f70e7ce559c3f66d831cad7eba78e3ab42f8f',
+                           'gitBlob': 'e934099b2849c0ece1ad64514da7b2d3a4f4ce2e'}}
 
 def source_identity(raw: bytes) -> dict:
     return {"bytes": len(raw), "sha256": digest(raw),
@@ -341,9 +393,13 @@ def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> di
         files = {row.get("source"): row for row in rows}
         expected_sources = {metadata_source, "package.json", "package-lock.json", ACTION_VERIFIER_SOURCE}
         if entry.get("minimatch_source_repair") is not None:
-            require(entry["minimatch_source_repair"] == MINIMATCH_PROFILE and prefix == MINIMATCH_PREFIX,
+            require((entry["minimatch_source_repair"] == MINIMATCH_PROFILE and prefix == MINIMATCH_PREFIX)
+                    or (entry["minimatch_source_repair"] == JAVA_MINIMATCH_PROFILE
+                        and prefix == JAVA_MINIMATCH_PREFIX),
                     "unreviewed-minimatch-action-profile")
             expected_sources.add(MINIMATCH_VERIFIER)
+            if prefix == JAVA_MINIMATCH_PREFIX:
+                expected_sources.add(".lsf-source/minimatch-bounds.test.mjs")
         repository = "/".join(action_reference.split("@", 1)[0].split("/")[:2])
         require(action.get("repository") == repository
                 and action.get("revision") == action_reference.split("@")[1]
@@ -370,6 +426,8 @@ def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> di
 def minimatch_action_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> dict | None:
     if entry.get("minimatch_source_repair") is None:
         return None
+    if entry["minimatch_source_repair"] == JAVA_MINIMATCH_PROFILE:
+        return java_minimatch_action_inputs(repo, entry, owner, lock)
     require(entry["minimatch_source_repair"] == MINIMATCH_PROFILE
             and entry.get("source_repair") == ACTION_PROFILE
             and entry["path"] == MINIMATCH_PREFIX + "package.json"
@@ -422,6 +480,71 @@ def minimatch_action_inputs(repo: Path, entry: dict, owner: dict, lock: dict) ->
     return {"policy": policy, "material": material, "reference": reference}
 
 
+def java_minimatch_action_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> dict:
+    """Recognize only the reviewed setup-java graph and its immutable source assets."""
+    require(entry.get("minimatch_source_repair") == JAVA_MINIMATCH_PROFILE
+            and entry.get("source_repair") == ACTION_PROFILE
+            and entry["path"] == JAVA_MINIMATCH_PREFIX + "package.json"
+            and entry["lock"] == JAVA_MINIMATCH_PREFIX + "package-lock.json",
+            "unreviewed-minimatch-action-profile")
+    policy = decode_json(read_file(POLICY, "minimatch-java-action-source-repairs.json"))
+    reference = ACTION_REFERENCES[JAVA_MINIMATCH_PREFIX]
+    require(set(policy) == {"schema", "profile", "action", "advisories", "assets", "runtime"}
+            and policy["schema"] == 1 and policy["profile"] == JAVA_MINIMATCH_PROFILE
+            and policy["action"] == reference and policy["advisories"] == MINIMATCH_ADVISORIES
+            and policy["assets"] == JAVA_MINIMATCH_ASSETS and policy["runtime"] == JAVA_MINIMATCH_RUNTIME,
+            "invalid-java-minimatch-action-policy")
+    material = {}
+    for name, row in JAVA_MINIMATCH_ASSETS.items():
+        raw = read_file(repo, row["snapshot"])
+        require(source_identity(raw) == {key: row[key] for key in ("bytes", "sha256", "gitBlob")},
+                "java-minimatch-action-asset-drift")
+        material[name] = raw
+    require(integrity(material["upstream"]) == JAVA_MINIMATCH_UPSTREAM
+            and integrity(material["archive"]) == JAVA_MINIMATCH_DERIVED,
+            "java-minimatch-action-integrity-drift")
+    action = decode_json(read_file(repo, ".github/security/actions.json"))["actions"].get(reference, {})
+    files = {row.get("source"): row for row in action.get("files", [])}
+    for name in ("verifier", "tests"):
+        binding = JAVA_MINIMATCH_ASSETS[name]
+        require(files.get(binding["source"]) == {
+                    "snapshot": binding["snapshot"], "source": binding["source"],
+                    "sha256": binding["sha256"], "source_sha256": binding["sha256"]},
+                "java-minimatch-action-verifier-binding-drift")
+    require(action.get("metadata", {}).get("sha256") == "503fe82e787d5ff15e17934e2efab346fa2facfad7261a8ea6ed9b05cb14f9e8",
+            "java-minimatch-action-entrypoint-drift")
+    commands = owner.get("scripts", {})
+    expected_build = ("node .lsf-source/verify-installed-deepmerge.mjs && "
+                      "node .lsf-source/verify-installed-minimatch.mjs && "
+                      "node scripts/patch-is-unsafe.mjs && "
+                      "ncc build -o dist/setup src/setup-java.ts && "
+                      "ncc build -o dist/cleanup src/cleanup-java.ts")
+    require(commands.get("build") == expected_build
+            and commands.get("release") == "git add -f dist/setup/*.js dist/setup/package.json dist/cleanup/*.js"
+            and commands.get("test:security-source") == "node --test .lsf-source/minimatch-bounds.test.mjs",
+            "java-minimatch-action-build-contract-drift")
+    rows = [(path, row) for path, row in lock["packages"].items()
+            if (row.get("name") or path.rsplit("node_modules/", 1)[-1]) == "minimatch"
+            and str(row.get("version", "")).startswith("10.")]
+    glob = lock["packages"].get("node_modules/@actions/glob", {})
+    require(owner.get("devDependencies", {}).get("minimatch") == JAVA_MINIMATCH_ARCHIVE
+            and owner.get("overrides", {}).get("minimatch@10") == "$minimatch"
+            and owner.get("overrides", {}).get("glob") == "14.0.2"
+            and lock["packages"][""].get("devDependencies", {}).get("minimatch") == JAVA_MINIMATCH_ARCHIVE
+            and len(rows) == 1 and rows[0][0] == "node_modules/minimatch"
+            and rows[0][1].get("version") == "10.2.6"
+            and rows[0][1].get("resolved") == JAVA_MINIMATCH_ARCHIVE
+            and rows[0][1].get("integrity") == JAVA_MINIMATCH_DERIVED
+            and not rows[0][1].get("dev", False)
+            and glob.get("version") == "0.7.0"
+            and glob.get("dependencies", {}).get("minimatch") == "^10.2.5"
+            and not glob.get("dev", False)
+            and lock["packages"].get("node_modules/glob", {}).get("version") == "14.0.2"
+            and lock["packages"]["node_modules/glob"].get("dev") is True,
+            "unlocked-java-minimatch-action-source-graph")
+    return {"policy": policy, "material": material, "reference": reference}
+
+
 def action_library_sources(repo: Path, entry: dict, owner: dict, lock: dict) -> dict:
     selected = action_source_inputs(repo, entry, owner, lock)
     libraries = {} if selected is None else {"deepmerge": {
@@ -430,8 +553,12 @@ def action_library_sources(repo: Path, entry: dict, owner: dict, lock: dict) -> 
     minimatch = minimatch_action_inputs(repo, entry, owner, lock)
     if minimatch is not None:
         require(selected is not None, "minimatch-action-base-source-missing")
-        libraries["minimatch"] = {"version": "10.2.5", "resolved": MINIMATCH_ARCHIVE,
-                                  "integrity": MINIMATCH_DERIVED}
+        if entry["minimatch_source_repair"] == JAVA_MINIMATCH_PROFILE:
+            libraries["minimatch"] = {"version": "10.2.6", "resolved": JAVA_MINIMATCH_ARCHIVE,
+                                      "integrity": JAVA_MINIMATCH_DERIVED}
+        else:
+            libraries["minimatch"] = {"version": "10.2.5", "resolved": MINIMATCH_ARCHIVE,
+                                      "integrity": MINIMATCH_DERIVED}
     return libraries
 
 
@@ -519,9 +646,11 @@ def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch
 def action_runtime(reference: str, source: str) -> bytes:
     """Read a bounded committed action bundle without accepting redirects."""
     repository, revision = reference.rsplit("@", 1)
-    require(repository == "KirilsTurkins/lsf-setup-python"
-            and re.fullmatch(r"[0-9a-f]{40}", revision) is not None
-            and source in {"dist/setup/index.js", "dist/cache-save/index.js"},
+    require(re.fullmatch(r"[0-9a-f]{40}", revision) is not None
+            and ((reference == ACTION_REFERENCES[MINIMATCH_PREFIX]
+                  and source in {row["source"] for row in MINIMATCH_RUNTIME.values()})
+                 or (reference == ACTION_REFERENCES[JAVA_MINIMATCH_PREFIX]
+                     and source in {row["source"] for row in JAVA_MINIMATCH_RUNTIME.values()})),
             "invalid-minimatch-action-runtime-source")
     url = f"https://raw.githubusercontent.com/{repository}/{revision}/{source}"
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
@@ -545,6 +674,8 @@ def verify_minimatch_action_sources(repo: Path, packages: list, configuration: d
     receipts = []
     for entry in configuration["manifests"]:
         if entry.get("minimatch_source_repair") is None or not any(item.path == entry["lock"] for item in packages):
+            continue
+        if entry["minimatch_source_repair"] == JAVA_MINIMATCH_PROFILE:
             continue
         owner = decode_json(read_file(repo, entry["path"]))
         lock = decode_json(read_file(repo, entry["lock"]))
@@ -613,10 +744,95 @@ def verify_minimatch_action_sources(repo: Path, packages: list, configuration: d
     return receipts
 
 
+def verify_java_minimatch_action_sources(repo: Path, packages: list, configuration: dict,
+                                         fetch=registry_archive, fetch_runtime=None) -> list[dict]:
+    receipts = []
+    for entry in configuration["manifests"]:
+        if entry.get("minimatch_source_repair") != JAVA_MINIMATCH_PROFILE:
+            continue
+        if not any(item.path == entry["lock"] for item in packages):
+            continue
+        owner = decode_json(read_file(repo, entry["path"]))
+        lock = decode_json(read_file(repo, entry["lock"]))
+        selected = java_minimatch_action_inputs(repo, entry, owner, lock)
+        material = selected["material"]
+        deepmerge = action_source_inputs(repo, entry, owner, lock)
+        require(deepmerge is not None and deepmerge["reference"] == selected["reference"],
+                "java-minimatch-action-base-source-missing")
+        for runtime in JAVA_MINIMATCH_RUNTIME.values():
+            raw = (fetch_runtime or action_runtime)(selected["reference"], runtime["source"])
+            require(source_identity(raw) == {key: runtime[key] for key in ("bytes", "sha256", "gitBlob")},
+                    "java-minimatch-action-runtime-drift")
+        pin = {"name": "minimatch", "version": "10.2.6", "integrity": JAVA_MINIMATCH_UPSTREAM}
+        upstream = fetch(pin)
+        require(upstream == material["upstream"] and integrity(upstream) == JAVA_MINIMATCH_UPSTREAM,
+                "java-minimatch-action-upstream-drift")
+        original = members(upstream)
+        value = manifest(original, "minimatch", "10.2.6", {"brace-expansion": "^5.0.8"})
+        require(value.get("license") == "BlueOak-1.0.0"
+                and digest(original["package/package.json"][0]) == "bb847ba240909c9a36d4eaeb4e0efdc3e31182aeef208c1611259a48f282ea75"
+                and digest(original["package/LICENSE.md"][0]) == "2c7c5d22ed5a8ee968c64757710979afcd77438c48b4a265b94e615babd8a901",
+                "java-minimatch-action-package-identity-drift")
+        repair = decode_json(material["repair"])
+        require(repair.get("profile") == "minimatch-10.2.6-lsf-bounds-v1",
+                "java-minimatch-action-repair-profile")
+        repaired = source_repair(original, repair, pin)
+        require(distribution(repaired) == material["archive"]
+                and integrity(material["archive"]) == JAVA_MINIMATCH_DERIVED,
+                "java-minimatch-action-reconstruction-drift")
+        build = decode_json(material["build"])
+        artifact, installed = build["artifact"], build["installed"]
+        require(build["schema"] == 1 and build["repository"] == "KirilsTurkins/lsf-setup-java"
+                and build["publishedRevision"] == selected["reference"].split("@")[1]
+                and build["publishedTree"] == build["sourceTree"] == "da1077784074c8a0e949947c4607452c36574dc1"
+                and build["sourceHead"] == "10dfad9fb7484f2f1b39c5b50ffa86f9e56d8f63"
+                and build["diagnosticHead"] == installed["sourceCommit"] == "eaa32fe679a4d1ab0dbee73cf502e7890ca8a3df"
+                and build["diagnosticTree"] == "993c8fb074c123fb8eac870ba992bf2783ba70c2"
+                and build["diagnosticOnlyPath"] == ".github/workflows/lsf-setup-java-security-owner.yml"
+                and build["run"] == 42018824336 and build["job"] == 127216070011
+                and build["jobConclusion"] == "success" and build["node"] == installed["node"] == "24.19.0"
+                and build["npm"] == "11.17.0" and build["jestSuites"] == 45 and build["jestTests"] == 1596
+                and build["focusedTests"] == 2
+                and artifact["id"] == 13411055962 and artifact["bytes"] == 1784025
+                and artifact["sha256"] == "b9fc7c65de7bac2b146e09f00f3ef8f9b5e42b4eee9e3f2d4d588a76d3cdce42"
+                and artifact["members"] == 25 and artifact["crcVerified"] is True
+                and installed["kind"] == "installed-minimatch-source-assertion"
+                and installed["version"] == "10.2.6" and installed["repairSha256"] == digest(material["repair"])
+                and installed["installedPostimages"] == {row["path"]: row["afterSha256"] for row in repair["files"]},
+                "java-minimatch-action-build-evidence-drift")
+        deep_policy = deepmerge["policy"]
+        deep_assets = [deep_policy["assets"][name] for name in ("archive", "repair", "declaration")]
+        deep_assets.append(deep_policy["additional_actions"]["verifier"])
+        expected_payloads = {
+            "action.yml": source_identity(read_file(repo, JAVA_MINIMATCH_PREFIX + "action.yml.snapshot")),
+            "package.json": source_identity(read_file(repo, entry["path"])),
+            "package-lock.json": source_identity(read_file(repo, entry["lock"])),
+            **{JAVA_MINIMATCH_ASSETS[name]["source"]: JAVA_MINIMATCH_ASSETS[name]
+               for name in ("upstream", "archive", "repair", "verifier", "tests")},
+            **{row["source"]: row for row in JAVA_MINIMATCH_RUNTIME.values()},
+            **{row["source"]: row for row in deep_assets},
+            "installed-minimatch.json": {"bytes": 427, "sha256": "54ac8017be7e2e70e951d5da094afa1125e6fafa4be2fa3404c48784d5281266"},
+            "installed-deepmerge.json": {"bytes": 524, "sha256": "b4728f29efd94c5698267321d3d838744ea3e47a7f433a1a7b92770ffb1aa362"},
+            "source-identities.txt": {"bytes": 123, "sha256": "11fce0fce872b0f3e3e7fd3b4f03c403133d48c4c669e62fc54cf87badd23035"},
+        }
+        require(set(artifact["payloads"]) == set(expected_payloads)
+                and all(artifact["payloads"][path] == {key: identity[key] for key in ("bytes", "sha256")}
+                        for path, identity in expected_payloads.items()),
+                "java-minimatch-action-built-input-drift")
+        receipts.append({"name": pin["name"], "version": pin["version"], "profile": JAVA_MINIMATCH_PROFILE,
+                         "upstream_integrity": JAVA_MINIMATCH_UPSTREAM, "derived_integrity": JAVA_MINIMATCH_DERIVED,
+                         "repair_sha256": digest(material["repair"]), "files": len(repair["files"]),
+                         "locks": [entry["lock"]], "advisories": MINIMATCH_ADVISORIES,
+                         "action": selected["reference"], "source_role": "action-runtime-and-build",
+                         "built_tree": build["publishedTree"], "build_run": build["run"]})
+    return receipts
+
+
 def verify_sources(repo: Path, packages: list, configuration: dict, fetch=registry_archive, fetch_runtime=None) -> list[dict]:
     """Produce receipts only after every selected source/lock byte is verified."""
     action_receipts = verify_action_sources(repo, packages, configuration, fetch)
     action_receipts += verify_minimatch_action_sources(repo, packages, configuration, fetch, fetch_runtime)
+    action_receipts += verify_java_minimatch_action_sources(repo, packages, configuration, fetch, fetch_runtime)
     selected = [entry for entry in configuration["manifests"]
                 if (entry.get("derived_bundle") or entry.get("derived_libraries"))
                 and any(package.path == entry["lock"] for package in packages)]

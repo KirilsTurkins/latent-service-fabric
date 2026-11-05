@@ -173,7 +173,7 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         self.assertTrue(java_steps)
         for step in java_steps:
             self.assertEqual(step['uses'], 'actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6')
-            step['uses'] = 'KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039'
+            step['uses'] = 'KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c'
         action_migrations = {
             'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1': 'KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13',
             'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97': 'KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8',
