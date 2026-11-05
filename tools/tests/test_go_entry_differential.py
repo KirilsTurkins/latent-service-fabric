@@ -216,7 +216,7 @@ class EntryDifferential(unittest.TestCase):
     def test_diagnostic_is_failure_only_and_neither_original_signed_gate_is_optional(self):
         workflow = yaml.safe_load(read_file(ROOT/'.github/workflows/go-guest.yml'))
         job = workflow['jobs']['upstream-probe']
-        self.assertEqual(job['timeout-minutes'], 45)
+        self.assertEqual(job['timeout-minutes'], 60)
         steps = job['steps']
         originals = [next(s for s in steps if s.get('name') == name) for name in (
             'Qualify ordinary net/http contexts and disposal on the signed node',
