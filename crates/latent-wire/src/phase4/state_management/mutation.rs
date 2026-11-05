@@ -25,7 +25,19 @@ pub(super) async fn mutate(
     deadline: Instant,
     pending: audit::Pending,
 ) -> Result<OwnedPhase4Response, PlatformError> {
-    let mutation = mutation(&request, &access.binding)?;
+    let mutation = match mutation(&request, &access.binding) {
+        Ok(mutation) => mutation,
+        Err(error) => {
+            let finish = pending.finish(
+                AuditOperationResult::NotStarted,
+                AuditReason::NotStarted,
+                None,
+                false,
+            );
+            let _ = audit::ack(finish).await;
+            return Err(error);
+        }
+    };
     let worker = Arc::clone(&inner);
     let retained = Arc::clone(&permit);
     let job = inner
@@ -82,9 +94,11 @@ pub(super) async fn mutate(
         .map_err(protected_error)?;
     let (result, inspect, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
+    // A rejected mutation still owns its critical audit slot.
+    // Wait for the original conclusion before returning that error to the caller.
+    let ack = audit::ack(finish).await;
     let (read, receipt, replayed) = result?;
     let public = receipt_to_proto(&receipt).map_err(namespace_error)?;
-    let ack = audit::ack(finish).await;
     response::owned(
         inner,
         worker_permit,

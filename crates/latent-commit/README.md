@@ -25,6 +25,11 @@ Host-owned atomic command completion across state, durable result, outbox and in
 4. Prepare and accept one complete batch for state/result/outbox/inbox and accounting. Preserve conflict, known-not-committed and recovery-required dispositions.
 5. Retire executor/native owners before a durable abort can justify explicit retry; retain floors/results until the configured recovery/retention contract permits reclamation.
 
+If a first-attempt claim loses its storage expectation to a concurrent writer,
+the host may inspect the winning command once under current result-read authority.
+Only an identical key and fingerprint returns that original owner. A fence refusal,
+uncertain write, unrelated conflict or explicit retry does not take this path.
+
 ## Integration boundaries
 
 The host commits after validated guest completion; guests cannot call a durable commit directly. Immediate HTTP or synchronous child calls do not become staged effects merely by occurring inside a command. A missing reply, dropped future, elapsed deadline or lease expiry is not abort proof. Production writes borrow the same protected engine worker rather than opening another database or dispatching providers under a writer fence.

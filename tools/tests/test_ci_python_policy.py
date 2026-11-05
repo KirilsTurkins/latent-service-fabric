@@ -58,11 +58,11 @@ class PythonExecutionReceiptTests(unittest.TestCase):
     def test_discovery_execution_skips_and_failures_are_observed(self):
         import io
         from tools.ci_python_policy import flatten_suite, recording_result_class, execution_receipt
-        class Fixture(unittest.TestCase):
+        class DiscoveryReceiptFixture(unittest.TestCase):
             def test_pass(self): pass
             @unittest.skip('optional')
             def test_skip(self): pass
-        suite = unittest.defaultTestLoader.loadTestsFromTestCase(Fixture)
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(DiscoveryReceiptFixture)
         discovered = flatten_suite(suite)
         runner = unittest.TextTestRunner(stream=io.StringIO(), resultclass=recording_result_class(lambda name, reason: False))
         result = runner.run(suite)

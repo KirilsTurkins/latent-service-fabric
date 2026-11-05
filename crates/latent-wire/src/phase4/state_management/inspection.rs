@@ -54,8 +54,11 @@ pub(super) async fn inspect(
         .map_err(protected_error)?;
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
+    // A failed read must retire the original critical audit slot too, before
+    // returning the error and allowing a subsequent recovery request.
+    let acknowledgement = read_ack(finish).await;
     let (read, namespace) = result?;
-    read_ack(finish).await?;
+    acknowledgement?;
     response::owned(
         inner,
         worker_permit,

@@ -162,7 +162,7 @@ async fn actual_stream_host_ready_refusals_precede_consumer_factory_and_polls() 
     let engine = engine();
     // Existing fixed native-store fixture; no WAT/compiler-tool invocation.
     let core = Module::new(&engine, CORE).unwrap();
-    for local in 1..=5 {
+    for local in 1..=6 {
         let original = budget(MIB);
         let observed = Arc::new(Observations::default());
         let mut first = store(&engine, &original, &observed).unwrap();
@@ -177,7 +177,7 @@ async fn actual_stream_host_ready_refusals_precede_consumer_factory_and_polls() 
         let kept_consumed = consumed.clone();
         let kept_requested = requested.clone();
         let invocation = original.clone();
-        // Source-owned LOCAL queue -> Task -> outer -> pinned C -> shared C cell.
+        // Source-owned LOCAL queue -> Task -> outer -> pinned C -> shared C cell -> accept factory.
         // Warmed shared headers and the original real-budget padding stay unchanged.
         observed.before_request(before + local, move |bytes| {
             let request = bytes as u64 + OWNER;
@@ -254,12 +254,15 @@ async fn actual_stream_host_ready_pending_ready_and_error_preserve_cleanup() {
         let before = requests(&observed).len();
         reader.pipe(&mut first, Consumer(consumer.clone())).unwrap();
         let entries = requests(&observed);
-        assert_eq!(entries.len(), before + 5);
+        assert_eq!(entries.len(), before + 6);
         assert_eq!(
             entries[before + 3],
             std::alloc::Layout::new::<Consumer>().size()
         );
-        let task_outer_and_consumer = entries[before + 1..before + 5]
+        // The HostToHost branch retains its paid accept factory until the
+        // original transmit owner is physically destroyed.
+        assert!(entries[before + 5] > 0);
+        let task_outer_and_consumer = entries[before + 1..before + 6]
             .iter()
             .map(|bytes| *bytes as u64 + OWNER)
             .sum::<u64>();
@@ -455,7 +458,10 @@ async fn actual_producer_creation_refusals_precede_poll_and_preserve_foreign_sto
         drop(foreign);
         assert_eq!(original.host_memory_bytes(), 0);
         assert_eq!(original.outstanding_reservations(), 0);
-        println!("PRODUCER-PUBLIC-REFUSAL future={future} local={local} global={} polls=0 fresh=42 foreign-unchanged=true final=0 wall=5", before + local);
+        println!(
+            "PRODUCER-PUBLIC-REFUSAL future={future} local={local} global={} polls=0 fresh=42 foreign-unchanged=true final=0 wall=5",
+            before + local
+        );
     }
 }
 
@@ -582,7 +588,9 @@ async fn actual_producer_stream_conversion_reuses_budget_and_preserves_owning_es
     drop(foreign);
     assert_eq!(original.host_memory_bytes(), 0);
     assert_eq!(original.outstanding_reservations(), 0);
-    println!("PRODUCER-PUBLIC-CONVERSION ordinary-Err-reusable=true owning-Ok-preserved=true PBox=unpaid final=0 wall=5");
+    println!(
+        "PRODUCER-PUBLIC-CONVERSION ordinary-Err-reusable=true owning-Ok-preserved=true PBox=unpaid final=0 wall=5"
+    );
 }
 
 #[tokio::test]
@@ -660,7 +668,9 @@ async fn actual_producer_future_any_roundtrip_and_pending_completion_preserve_cu
         consumer.release();
         assert_eq!(original.host_memory_bytes(), 0);
         assert_eq!(original.outstanding_reservations(), 0);
-        println!("PRODUCER-PUBLIC-FUTURE adapter-custody=true Any-handle-only=true pending-payload=42 final=0 wall=5");
+        println!(
+            "PRODUCER-PUBLIC-FUTURE adapter-custody=true Any-handle-only=true pending-payload=42 final=0 wall=5"
+        );
     }
 }
 
@@ -732,7 +742,10 @@ async fn actual_producer_factory_refusals_precede_transmit_factory_and_polls() {
         drop(foreign);
         assert_eq!(original.host_memory_bytes(), 0);
         assert_eq!(original.outstanding_reservations(), 0);
-        println!("PRODUCER-FACTORY-REFUSAL future={future} local={local} global={} polls=0 fresh=42 foreign-unchanged=true final=0 wall=5", before + local);
+        println!(
+            "PRODUCER-FACTORY-REFUSAL future={future} local={local} global={} polls=0 fresh=42 foreign-unchanged=true final=0 wall=5",
+            before + local
+        );
     }
 }
 
@@ -849,5 +862,7 @@ async fn actual_producer_factory_conversion_and_pending_lifetime_preserve_budget
     assert_eq!(*producer.trace.lock().unwrap(), ["produce", "consume"]);
     assert_eq!(consumer.payload.load(SeqCst), 42);
     drop(none);
-    println!("PRODUCER-FACTORY-LIFETIME Err-reusable=true Ok-escape-P-unpaid=true pending=42 error=original None-order=true foreign-unchanged=true final=0 wall=5");
+    println!(
+        "PRODUCER-FACTORY-LIFETIME Err-reusable=true Ok-escape-P-unpaid=true pending=42 error=original None-order=true foreign-unchanged=true final=0 wall=5"
+    );
 }
