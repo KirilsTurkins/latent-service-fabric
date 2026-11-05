@@ -1,0 +1,107 @@
+{
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Observe original monitor control and causal probe",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-dotnet",
+        "with": {
+          "dotnet-version": "10.0.100"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Check exact owner, refusal and bounded-retention controls",
+        "run": "mkdir -p \"$RUNNER_TEMP/dotnet-monitor-cause\"\npython3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_dotnet_monitor_cause tools.tests.test_dotnet_current_aggregate_chain -v\n"
+      },
+      {
+        "name": "Fetch only the verified native producer source identity",
+        "run": "python3 -B -c 'import re; from tools.wasmtime_48_0_8_678b_native_products import SOURCE; assert re.fullmatch(\"[0-9a-f]{40}\", SOURCE); print(SOURCE)' > \"$RUNNER_TEMP/dotnet-monitor-cause/native-source.txt\"\ntimeout --signal=TERM --kill-after=5s 90s git fetch --no-tags --depth=1 origin \"$(cat \"$RUNNER_TEMP/dotnet-monitor-cause/native-source.txt\")\"\n"
+      },
+      {
+        "name": "Install the existing compiler isolation boundary",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "name": "Prepare the pinned compiler and unchanged runtime adapters",
+        "run": "curl --fail --location --max-time 180 https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-monitor-cause-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-monitor-cause-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-monitor-cause-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-monitor-cause/tools\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the exact historical 678b five native products",
+        "run": "timeout --signal=TERM --kill-after=5s 180s python3 -B tools/wasmtime_48_0_8_678b_native_products.py --output \"$RUNNER_TEMP/dotnet-monitor-cause/native\""
+      },
+      {
+        "env": {
+          "EXPECTED_HEAD": "${{ github.sha }}"
+        },
+        "name": "Build and sign the original monitor control and causal probe",
+        "run": "timeout --signal=TERM --kill-after=10s 1800s python3 -B tools/qualify_dotnet_monitor_cause.py --native \"$RUNNER_TEMP/dotnet-monitor-cause/native\" --tools \"$RUNNER_TEMP/dotnet-monitor-cause/tools\" --output \"$RUNNER_TEMP/dotnet-monitor-cause/witness\" --expected-head \"$EXPECTED_HEAD\""
+      },
+      {
+        "id": "evidence",
+        "if": "always()",
+        "name": "Admit only bounded public evidence",
+        "run": "python3 -B tools/admit_dotnet_monitor_cancel_evidence.py --output \"$RUNNER_TEMP/dotnet-monitor-cause\""
+      },
+      {
+        "if": "always() && steps.evidence.outcome == 'success'",
+        "name": "Retain admitted success or failure observations",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "dotnet-monitor-cause-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-monitor-cause/public/**\n${{ runner.temp }}/dotnet-monitor-cause/evidence-admission.json\n",
+          "retention-days": 3
+        }
+      },
+      {
+        "if": "always() && steps.evidence.outcome != 'success'",
+        "name": "Retain only the failed-admission marker",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-monitor-cause-${{ github.sha }}",
+          "path": "${{ runner.temp }}/dotnet-monitor-cause/evidence-admission.json",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "witness",
+  "kind": "job",
+  "reviewReason": "Retain the original monitor control and a separate bounded causal observation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-monitor-cause.yml"
+}

@@ -235,9 +235,13 @@ def declare(project: Path):
     entropy_grants.declare(project)
 
 
-def prepare(output: Path, outside: Path, tools: Path, *, monitor_cancel: bool = False):
-    require(type(monitor_cancel) is bool, 'dotnet-task-closed-fixture-selection')
-    if monitor_cancel:
+def prepare(output: Path, outside: Path, tools: Path, *, monitor_cancel: bool = False, monitor_cause: bool = False):
+    require(type(monitor_cancel) is bool and type(monitor_cause) is bool
+        and not (monitor_cancel and monitor_cause), 'dotnet-task-closed-fixture-selection')
+    if monitor_cause:
+        from tools import dotnet_monitor_cause_fixture as witness
+        library_source, cases = witness.library_source(LIBRARY_SOURCE), witness.CASES
+    elif monitor_cancel:
         from tools import dotnet_monitor_cancel_fixture as witness
         library_source, cases = witness.library_source(LIBRARY_SOURCE), witness.CASES
     else:
