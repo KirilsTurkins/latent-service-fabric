@@ -703,6 +703,139 @@ class Q35NodeKvmLaunchControls(unittest.TestCase):
                     programme.node_kvm_observe(run,receipt,'before-boot',require_open=True)
 
 
+class Q35NodeKvmRecoveryControls(unittest.TestCase):
+    record = staticmethod(Q35NodeKvmLaunchControls.record)
+
+    @staticmethod
+    def recovery_receipt():
+        value = Q35NodeKvmLaunchControls.receipt()
+        value['kvmAccess'].update(grantAttempted=True,aclBefore=['user::rw-','group::rw-','other::---'])
+        value['kvmLaunchChecks'] = [{'stage':'before-trace',
+            'child':Q35NodeKvmLaunchControls.record(), 'acl':list(value['kvmAccess']['aclAfter'])}]
+        value['traceLossControl'] = {'sink':'/dev/full','deviceMajor':1,'deviceMinor':7,
+            'expectedExit':74,'actualExit':74,'allDescendantsCleaned':True,
+            'partialGuestMayHaveBooted':True,'guestResultQualified':False}
+        value['emulatorAttempts'] = 1
+        return value
+
+    def fake_run(self, record, receipt, *, anchor_before=None, anchor_after=None, restored=None):
+        admitted=receipt['kvmAccess']['aclAfter']
+        lost=[line for line in admitted if line != 'user:1001:rw-']
+        calls=[]
+        def text(lines): return ('\n'.join(lines)+'\n').encode()
+        def run(label,*args,seconds):
+            calls.append((label,args,seconds))
+            if label == 'node-KVM-before-boot-open': return json.dumps(record).encode()
+            if label == 'node-KVM-before-boot-ACL': return text(lost)
+            if label == 'node-KVM-recovery-before-ACL': return text(lost if anchor_before is None else anchor_before)
+            if label == 'node-KVM-recovery-runner-UID-ACL': return b''
+            if label == 'node-KVM-recovery-after-ACL': return text(admitted if anchor_after is None else anchor_after)
+            if label == 'node-KVM-after-restore-open': return json.dumps(self.record() if restored is None else restored).encode()
+            if label == 'node-KVM-after-restore-ACL': return text(admitted)
+            raise AssertionError(label)
+        return run,calls
+
+    def no_access(self):
+        value=self.record()
+        value.update(opened=False,openErrno=13,sameEntry=None)
+        value['entry']['readWrite']=False
+        return value
+
+    def anchor_patches(self, *, inode=460):
+        import contextlib, os, stat
+        from types import SimpleNamespace
+        stack=contextlib.ExitStack()
+        for name,value in (('getuid',1001),('geteuid',1001),('getgid',1001),
+                           ('getegid',1001),('getgroups',[4,100,118,999,1001]),('getpid',2345)):
+            stack.enter_context(patch.object(os,name,return_value=value,create=True))
+        stack.enter_context(patch.object(os,'O_PATH',0x200000,create=True))
+        stack.enter_context(patch.object(os,'O_NOFOLLOW',0x20000,create=True))
+        stack.enter_context(patch.object(os,'O_CLOEXEC',0x80000,create=True))
+        stack.enter_context(patch.object(os,'major',return_value=10,create=True))
+        stack.enter_context(patch.object(os,'minor',return_value=232,create=True))
+        opened=stack.enter_context(patch.object(os,'open',return_value=77))
+        closed=stack.enter_context(patch.object(os,'close'))
+        st=SimpleNamespace(st_mode=stat.S_IFCHR|0o660,st_dev=7,st_ino=inode,
+            st_rdev=2792,st_uid=0,st_gid=993)
+        stack.enter_context(patch.object(os,'fstat',return_value=st))
+        return stack,opened,closed
+
+    def test_missing_exact_runner_grant_is_restored_once_on_pinned_device(self):
+        receipt=self.recovery_receipt(); run,calls=self.fake_run(self.no_access(),receipt)
+        stack,opened,closed=self.anchor_patches()
+        with stack: programme.node_kvm_before_boot(run,receipt)
+        self.assertEqual(opened.call_args.args[0],'/dev/kvm')
+        closed.assert_called_once_with(77)
+        changed=[args for label,args,seconds in calls if label == 'node-KVM-recovery-runner-UID-ACL']
+        self.assertEqual(changed,[('sudo','-n','/usr/bin/setfacl','--no-mask','--modify',
+            'user:1001:rw-','--','/proc/2345/fd/77')])
+        self.assertEqual(receipt['kvmAclRecovery'],{'uid':1001,'attempted':True,
+            'before':['user::rw-','group::rw-','mask::rw-','other::---'],
+            'after':receipt['kvmAccess']['aclAfter'],'restored':True,'target':'opened-device'})
+        self.assertEqual([x['stage'] for x in receipt['kvmLaunchChecks']],
+            ['before-trace','before-boot','after-restore'])
+        self.assertEqual(receipt['kvmLaunchChecks'][1]['child']['openErrno'],13)
+        self.assertTrue(receipt['kvmLaunchChecks'][2]['child']['opened'])
+
+    def test_unchanged_acl_and_open_use_no_restoration(self):
+        receipt=self.recovery_receipt();calls=[]
+        def run(label,*args,seconds):
+            calls.append(label)
+            if label.endswith('-open'):return json.dumps(self.record()).encode()
+            return ('\n'.join(receipt['kvmAccess']['aclAfter'])+'\n').encode()
+        programme.node_kvm_before_boot(run,receipt)
+        self.assertEqual(calls,['node-KVM-before-boot-open','node-KVM-before-boot-ACL'])
+        self.assertNotIn('kvmAclRecovery',receipt)
+
+    def test_any_other_change_is_refused_before_privileged_grant(self):
+        for changed in ('uid','gid','groups','inode','mode','owner','extra-acl','mask','missing-mask',
+                        'no-prior-grant','prior-acl','duplicate-base','trace','attempts','label','wrong-errno','still-open'):
+            with self.subTest(changed=changed):
+                receipt=self.recovery_receipt(); record=self.no_access()
+                if changed=='uid':record['uid']+=1
+                if changed=='gid':record['egid']+=1
+                if changed=='groups':record['groups']=[1001]
+                if changed=='inode':record['entry']['inode']+=1
+                if changed=='mode':record['entry']['mode']+=1
+                if changed=='owner':record['entry']['ownerUid']+=1
+                if changed=='no-prior-grant':receipt['kvmAccess']['grantAttempted']=False
+                if changed=='prior-acl':receipt['kvmAccess']['aclBefore'][0]='user::r--'
+                if changed=='duplicate-base':receipt['kvmAccess']['aclBefore'][1]='user::r--'
+                if changed=='trace':receipt['traceLossControl']['actualExit']=1
+                if changed=='attempts':receipt['emulatorAttempts']=2
+                if changed=='label':record['label']='other'
+                if changed=='wrong-errno':record['openErrno']=1
+                if changed=='still-open':record.update(opened=True,openErrno=None,sameEntry=True)
+                base,calls=self.fake_run(record,receipt)
+                def run(label,*args,seconds):
+                    if label == 'node-KVM-before-boot-ACL' and changed in ('extra-acl','mask','missing-mask'):
+                        lines=['user::rw-','group::rw-','mask::rw-','other::---']
+                        if changed=='extra-acl':lines.append('user:1002:rw-')
+                        if changed=='mask':lines[2]='mask::r--'
+                        if changed=='missing-mask':lines.pop(2)
+                        calls.append((label,args,seconds))
+                        return ('\n'.join(lines)+'\n').encode()
+                    return base(label,*args,seconds=seconds)
+                with self.assertRaises(ValueError):programme.node_kvm_before_boot(run,receipt)
+                self.assertFalse(any(x[0]=='node-KVM-recovery-runner-UID-ACL' for x in calls))
+                self.assertNotIn('kvmAclRecovery',receipt)
+
+    def test_anchor_changes_or_failed_recheck_refuse_without_retry(self):
+        for changed in ('inode','before-acl','after-acl','open'):
+            with self.subTest(changed=changed):
+                receipt=self.recovery_receipt(); bad=['user::rw-','group::rw-','mask::r--','other::---']
+                run,calls=self.fake_run(self.no_access(),receipt,
+                    anchor_before=bad if changed=='before-acl' else None,
+                    anchor_after=bad if changed=='after-acl' else None,
+                    restored=self.no_access() if changed=='open' else None)
+                stack,opened,closed=self.anchor_patches(inode=461 if changed=='inode' else 460)
+                with stack,self.assertRaises(ValueError):programme.node_kvm_before_boot(run,receipt)
+                closed.assert_called_once_with(77)
+                attempts=sum(x[0]=='node-KVM-recovery-runner-UID-ACL' for x in calls)
+                self.assertEqual(attempts,0 if changed in ('inode','before-acl') else 1)
+                self.assertFalse(receipt['kvmAclRecovery']['restored'])
+
+
 class Q35NodePciIntxOwnerControls(unittest.TestCase):
     def test_trace_configuration_is_explicit_and_refuses_replacement(self):
         from tools import q35_intx_owner as host

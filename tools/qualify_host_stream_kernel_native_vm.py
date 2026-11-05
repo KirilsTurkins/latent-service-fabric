@@ -1,5 +1,6 @@
 """First actual Rust native constructor / qualified kernel join; no quota refund."""
 import argparse
+import errno
 import json
 import os
 from pathlib import Path
@@ -385,7 +386,7 @@ print(json.dumps(out, sort_keys=True, separators=(',', ':')))
 
 def node_kvm_observe(run, receipt, label, *, require_open):
     """Bound the actual child-context open without replacing the KVM boot."""
-    native.require(label in ('initial', 'before-trace', 'before-boot', 'after-boot-failure')
+    native.require(label in ('initial', 'before-trace', 'before-boot', 'after-restore', 'after-boot-failure')
         and type(require_open) is bool, 'node-KVM-probe-fixed-stage')
     raw = run('node-KVM-'+label+'-open',sys.executable,'-I','-B','-c',
         _NODE_KVM_OPEN_PROBE,seconds=10)
@@ -439,6 +440,82 @@ def node_kvm_observe(run, receipt, label, *, require_open):
         native.require(row['acl'] == receipt['kvmAccess']['aclAfter'], 'node-KVM-probe-ACL-changed')
         native.require(observed['opened'] and observed['sameEntry'], 'node-KVM-probe-real-open-required')
     return row
+
+
+def node_kvm_before_boot(run, receipt):
+    """Restore only the previously admitted UID grant, once, on the same device."""
+    row = node_kvm_observe(run,receipt,'before-boot',require_open=False)
+    observed,access = row['child'],receipt['kvmAccess']
+    native.require(row['acl'] is not None, 'node-KVM-probe-identity-changed')
+    if row['acl'] == access['aclAfter']:
+        native.require(observed['opened'] and observed['sameEntry'], 'node-KVM-probe-real-open-required')
+        return
+
+    baseline = access['after']
+    uid = baseline['uid']
+    original,admitted = access['aclBefore'],access['aclAfter']
+    grant = 'user:'+str(uid)+':rw-'
+    checks = receipt['kvmLaunchChecks']
+    trace = receipt.get('traceLossControl')
+    # A completely different ACL, credential, error, or stage stays refused.
+    simple = {}
+    for line in original:
+        match = re.fullmatch(r'(user|group|other)::([r-][w-][x-])',line)
+        native.require(match is not None and match[1] not in simple,
+            'node-KVM-recovery-original-simple-ACL-required')
+        simple[match[1]] = match[2]
+    native.require(access['grantAttempted'] is True and type(uid) is int and uid > 0 and
+        set(simple) == {'user','group','other'} and simple['group'][2] == '-' and
+        len(admitted) == 5 and len(set(admitted)) == 5 and
+        set(admitted) == set(original)|{grant,'mask::rw-'} and
+        row['acl'] == [line for line in admitted if line != grant] and
+        not observed['opened'] and observed['openErrno'] == errno.EACCES and
+        observed['entry']['readWrite'] is False and
+        len(checks) >= 2 and checks[-2]['stage'] == 'before-trace' and
+        checks[-2]['acl'] == admitted and checks[-2]['child']['opened'] is True and
+        checks[-2]['child']['sameEntry'] is True and
+        checks[-2]['child']['label'] == observed['label'] and
+        trace == {'sink':'/dev/full', 'deviceMajor':1, 'deviceMinor':7, 'expectedExit':74,
+            'actualExit':74, 'allDescendantsCleaned':True, 'partialGuestMayHaveBooted':True,
+            'guestResultQualified':False} and receipt.get('emulatorAttempts') == 1 and
+        'kvmAclRecovery' not in receipt, 'node-KVM-probe-ACL-changed')
+
+    recovery = receipt['kvmAclRecovery'] = {'uid':uid,'attempted':False,
+        'before':list(row['acl']),'restored':False,'target':'opened-device'}
+    # O_PATH can pin the already-verified character device even after its
+    # read/write grant vanished. setfacl follows this stable proc-fd reference.
+    fd = os.open('/dev/kvm',os.O_PATH|os.O_NOFOLLOW|os.O_CLOEXEC)
+    try:
+        st = os.fstat(fd)
+        current = {'uid':os.getuid(),'euid':os.geteuid(),'gid':os.getgid(),
+            'egid':os.getegid(),'groups':sorted(os.getgroups()),'mode':st.st_mode,
+            'device':st.st_dev,'inode':st.st_ino,'rdev':st.st_rdev,
+            'major':os.major(st.st_rdev),'minor':os.minor(st.st_rdev),
+            'ownerUid':st.st_uid,'ownerGid':st.st_gid}
+        native.require(stat.S_ISCHR(st.st_mode) and
+            all(current[key] == baseline[key] for key in current),
+            'node-KVM-recovery-anchor-identity')
+        anchor = '/proc/'+str(os.getpid())+'/fd/'+str(fd)
+        def anchored_acl(label):
+            raw = run(label,'/usr/bin/getfacl','--omit-header','--numeric',
+                '--no-effective','--',anchor,seconds=10)
+            native.require(type(raw) is bytes and len(raw) <= 4096, 'node-KVM-probe-ACL-bound')
+            lines = [line for line in raw.decode('ascii').splitlines() if line]
+            native.require(len(lines) <= 32 and all(re.fullmatch(r'[A-Za-z0-9:_-]{1,128}',line)
+                for line in lines), 'node-KVM-probe-ACL-text')
+            return lines
+        native.require(anchored_acl('node-KVM-recovery-before-ACL') == row['acl'],
+            'node-KVM-recovery-anchor-ACL-changed')
+        recovery['attempted'] = True
+        run('node-KVM-recovery-runner-UID-ACL','sudo','-n','/usr/bin/setfacl','--no-mask',
+            '--modify',grant,'--',anchor,seconds=15)
+        recovery['after'] = anchored_acl('node-KVM-recovery-after-ACL')
+        native.require(recovery['after'] == admitted, 'node-KVM-recovery-ACL-changed')
+    finally:
+        os.close(fd)
+    # This is a fresh real open of the launch pathname, not a positive VM.
+    node_kvm_observe(run,receipt,'after-restore',require_open=True)
+    recovery['restored'] = True
 
 
 def qualify_node(output,revision):
@@ -568,6 +645,7 @@ def qualify_node(output,revision):
                 'tools.tests.test_kernel_native_constructor_vm.Q35NodePciIntxControls',
                 'tools.tests.test_kernel_native_constructor_vm.Q35NodePciIntxOwnerControls',
                 'tools.tests.test_kernel_native_constructor_vm.Q35NodeKvmLaunchControls',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodeKvmRecoveryControls',
                 'tools.tests.test_kernel_native_constructor_vm.TraceRefusalControls','-v',seconds=30)
         run('normal-prerequisite-update','sudo','apt-get','update',seconds=180)
         run('normal-prerequisite-install','sudo','apt-get','install','--yes','--no-install-recommends',
@@ -797,7 +875,7 @@ def qualify_node(output,revision):
             commands.root = ROOT
             receipt['traceLossControl'] = q35_intx_owner.probe_loss(commands,boot_args)
             receipt['emulatorAttempts'] = 1  # The loss probe may boot partway.
-            node_kvm_observe(run,receipt,'before-boot',require_open=True)
+            node_kvm_before_boot(run,receipt)
             receipt['emulatorAttempts'] = 2  # The next command is the single positive VM.
         receipt['vmArgv'] = list(boot_args)
         vm_log_index = len(commands.records)

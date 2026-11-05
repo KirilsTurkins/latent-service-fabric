@@ -33,7 +33,7 @@ jobs:
       matrix:
         kind: ${{ fromJSON(inputs.kind == 'all' && '["scale","soak","benchmark"]' || format('["{0}"]', inputs.kind)) }}
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           fetch-depth: 0
           persist-credentials: false

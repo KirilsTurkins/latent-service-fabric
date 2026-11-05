@@ -297,7 +297,7 @@ class NpmSourceRepairTests(unittest.TestCase):
             with patch.object(sources, "POLICY", controls):
                 packages = npm_packages(root, entry)
                 receipts = sources.verify_sources(root, packages, {"manifests": [entry]}, fetch)
-            self.assertEqual(len(packages), 580)
+            self.assertEqual(len(packages), 581)
             self.assertEqual(len(receipts), 1)
             self.assertEqual(receipts[0]["action"], sources.CHECKOUT_REFERENCE)
             known = finding("osv", "GHSA-gcqx-w48m-w2h4", entry["lock"], "npm:deepmerge@4.3.1")
@@ -310,7 +310,7 @@ class NpmSourceRepairTests(unittest.TestCase):
 
     def test_checkout_source_rejects_graph_revision_source_and_build_drift(self):
         changes = (
-            (".github/security/actions.json", lambda value: value.replace(b"842365d0", b"042365d0")),
+            (".github/security/actions.json", lambda value: value.replace(b"4d310727", b"0d310727")),
             (sources.CHECKOUT_PREFIX + "package-lock.json", lambda value: value.replace(b'"license": "MIT"', b'"license": "ISC"', 1)),
             (".github/security/actions/checkout-source/deepmerge-4.3.1.repaired.tar", lambda value: value + b"drift"),
             (".github/security/actions/checkout-source/repair.json", lambda value: value.replace(b"__proto__", b"__other__", 1)),
