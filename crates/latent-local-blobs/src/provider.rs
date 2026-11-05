@@ -1,6 +1,8 @@
 //! Linux immutable blobs on shared policy/audit/I/O owners. Installation is an
 //! explicit trusted composition step; no dormant deployment creates a root/pool.
+mod durable;
 mod execute;
+pub use durable::CapturedLocalPayload;
 mod handles;
 use crate::local::{LocalBlobError, LocalBlobStore};
 use latent_capabilities::broker::{
@@ -23,6 +25,7 @@ pub struct LocalBlobProvider {
     inner: Arc<Inner>,
 }
 struct Inner {
+    logical_id: String,
     store: Arc<LocalBlobStore>,
     pools: Arc<ProviderPools>,
     installed: InstalledProvider,
@@ -62,6 +65,7 @@ impl LocalBlobProvider {
         let client = pools.client(&installed, 0)?;
         Ok(Self {
             inner: Arc::new(Inner {
+                logical_id: logical_id.into(),
                 store,
                 pools,
                 installed,

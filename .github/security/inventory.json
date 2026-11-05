@@ -395,7 +395,8 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/attest/package-lock.json",
-      "path": ".github/security/actions/attest/package.json"
+      "path": ".github/security/actions/attest/package.json",
+      "source_repair": "attest-six-source-v1"
     },
     {
       "kind": "npm",

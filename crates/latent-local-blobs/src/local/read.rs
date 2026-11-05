@@ -16,9 +16,13 @@ pub struct LocalBlobReader {
 struct Pin {
     object: Arc<Object>,
     handle: Handle,
+    durable: bool,
 }
 impl Drop for Pin {
     fn drop(&mut self) {
+        if self.durable {
+            self.object.durable_pins.fetch_sub(1, Ordering::AcqRel);
+        }
         self.object.pins.fetch_sub(1, Ordering::AcqRel);
     }
 }
@@ -54,6 +58,7 @@ impl LocalBlobStore {
             Pin {
                 object: object.clone(),
                 handle,
+                durable: false,
             }
         };
         let directory = self.inner.objects.child(&key, false)?;
@@ -71,6 +76,19 @@ impl LocalBlobStore {
     }
 }
 impl LocalBlobReader {
+    pub(super) fn make_durable(&mut self) -> Result<()> {
+        let _publication = self.pin.handle.inner.publication()?;
+        let _state = self.pin.handle.inner.state()?;
+        if self.pin.durable || !self.pin.object.referenced.load(Ordering::Acquire) {
+            return Err(LocalBlobError::NotFound);
+        }
+        increment(
+            &self.pin.object.durable_pins,
+            self.pin.handle.inner.limits.maximum_handles,
+        )?;
+        self.pin.durable = true;
+        Ok(())
+    }
     #[must_use]
     pub fn reference(&self) -> &BlobReference {
         &self.reference

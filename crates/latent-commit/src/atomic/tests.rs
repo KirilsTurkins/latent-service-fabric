@@ -23,6 +23,9 @@ mod historical_reservations;
 #[cfg(target_os = "linux")]
 mod io_faults;
 mod managed_accounting;
+mod payload_inspection;
+#[cfg(target_os = "linux")]
+mod payloads;
 mod process;
 mod retention_cases;
 mod supported_formats;

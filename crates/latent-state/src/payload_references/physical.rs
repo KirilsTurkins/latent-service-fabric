@@ -44,6 +44,108 @@ pub fn physical_owner_count(
         })
         .transpose()
 }
+
+/// Validate one declared head and all its reciprocal indexes in bounded pages.
+/// `false` means this key belongs to another catalogue row type. The supplied
+/// view must be the same view used for the surrounding startup inventory.
+pub fn validate_physical_inventory_head(
+    view: &ReadView,
+    key: &RowKey,
+    bytes: &[u8],
+) -> Result<bool, StoreError> {
+    if !is_head(key) {
+        return Ok(false);
+    }
+    validate_head(key, bytes)?;
+    if view.get_bounded(key, MAX_REFERENCE_BYTES)?.as_deref() != Some(bytes) {
+        return Err(StoreError::Corrupt);
+    }
+    let head = decode(bytes)?;
+    let mut inventory = PhysicalInventory::begin(view, &head.payload)?;
+    loop {
+        let (_, complete) = inventory.next_page(
+            view,
+            super::MAX_REFERENCE_UPDATES,
+            super::MAX_REFERENCE_UPDATES * MAX_REFERENCE_BYTES,
+        )?;
+        if complete {
+            return Ok(true);
+        }
+    }
+}
+
+/// A bounded, generation-fenced inventory of one physical object's owners.
+/// Each page is checked against the original live engine and head bytes.
+/// Completion is an observation, not authority to delete or read an object.
+pub struct PhysicalInventory {
+    payload: LocalPayloadIdentity,
+    binding: crate::embedded::StoreBinding,
+    head: Option<Vec<u8>>,
+    expected: u64,
+    observed: u64,
+    after: Option<Vec<u8>>,
+    finished: bool,
+}
+
+impl PhysicalInventory {
+    pub fn begin(view: &ReadView, payload: &LocalPayloadIdentity) -> Result<Self, StoreError> {
+        let key = head_key(payload)?;
+        let head = view.get_bounded(&key, MAX_REFERENCE_BYTES)?;
+        let expected = match &head {
+            Some(bytes) => {
+                validate_head(&key, bytes)?;
+                decode(bytes)?.owners
+            }
+            None => 0,
+        };
+        Ok(Self {
+            payload: payload.clone(),
+            binding: view.binding(),
+            head,
+            expected,
+            observed: 0,
+            after: None,
+            finished: false,
+        })
+    }
+
+    /// Returns a bounded page and whether the complete inventory matched its
+    /// head. Callers must restart on conflict and independently obtain any
+    /// publication or reclamation authority they need.
+    pub fn next_page(
+        &mut self,
+        view: &ReadView,
+        maximum_rows: usize,
+        maximum_bytes: usize,
+    ) -> Result<(Vec<PayloadReference>, bool), StoreError> {
+        if self.finished {
+            return Err(StoreError::Invalid);
+        }
+        if !view.is_bound_to(&self.binding)
+            || view.get_bounded(&head_key(&self.payload)?, MAX_REFERENCE_BYTES)? != self.head
+        {
+            return Err(StoreError::Conflict);
+        }
+        let page = super::required_physical_page(
+            view,
+            &self.payload,
+            self.after.as_deref(),
+            maximum_rows,
+            maximum_bytes,
+        )?;
+        let observed = self
+            .observed
+            .checked_add(page.references.len() as u64)
+            .ok_or(StoreError::Capacity)?;
+        if observed > self.expected || (page.resume.is_none() && observed != self.expected) {
+            return Err(StoreError::Corrupt);
+        }
+        self.observed = observed;
+        self.after = page.resume;
+        self.finished = self.after.is_none();
+        Ok((page.references, self.finished))
+    }
+}
 pub(super) fn append_heads(
     view: &ReadView,
     updates: &[(Option<PayloadReference>, Option<PayloadReference>)],
