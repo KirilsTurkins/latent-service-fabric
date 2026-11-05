@@ -86,6 +86,7 @@ pub(super) fn validate(
     )?;
     latent_commit::atomic::validate_view_observed(view, foreign_row, |view, key, bytes| {
         live(original)?;
+        reject_unverified_payload(key, bytes)?;
         census.observe(key, bytes, contribution(view, key, bytes)?)
     })?;
     census.finish()?;
@@ -110,6 +111,7 @@ fn validate_global_bootstrap(
     let mut bytes = 0_u64;
     latent_commit::atomic::validate_view_observed(view, foreign_row, |view, key, value| {
         live(original)?;
+        reject_unverified_payload(key, value)?;
         if !matches!(
             contribution(view, key, value)?,
             TenantCensusContribution::Global
@@ -130,6 +132,17 @@ fn validate_global_bootstrap(
     live(original)?;
     DispatchCatalog::validate_view(view)?;
     live(original)
+}
+
+// Standalone has not yet installed the same-root physical blob inventory at
+// startup. Logical closure alone cannot prove that required bytes exist.
+fn reject_unverified_payload(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+    if latent_state::payload_references::owns_row(key)
+        && latent_state::payload_references::owner_reference(key, bytes)?.is_some()
+    {
+        return Err(StoreError::UnsupportedFormat);
+    }
+    Ok(())
 }
 
 fn only_initial_identity(

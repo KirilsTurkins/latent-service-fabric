@@ -10,8 +10,10 @@ use sha2::{Digest, Sha256};
 mod codec;
 mod links;
 mod physical;
+mod state_links;
 pub use links::{PayloadLinks, LINKS_PREFIX, MAX_LINK_BYTES};
-pub use physical::physical_owner_count;
+pub use physical::{physical_owner_count, validate_physical_inventory_head, PhysicalInventory};
+pub use state_links::{validate_state_linked_row, StatePayloadLink, MAX_STATE_LINK_BYTES};
 #[cfg(test)]
 mod tests;
 
@@ -383,6 +385,36 @@ impl PreparedPayloadReferences {
         append(&mut self.batch, key, old, new)?;
         Ok(())
     }
+
+    /// Join one state-cell reverse link to the same reference plan.
+    pub fn replace_state_link(
+        &mut self,
+        view: &ReadView,
+        before: Option<&StatePayloadLink>,
+        after: Option<&StatePayloadLink>,
+    ) -> Result<(), StoreError> {
+        let link = after.or(before).ok_or(StoreError::Invalid)?;
+        if before
+            .zip(after)
+            .is_some_and(|(old, new)| old.reference.owner != new.reference.owner)
+        {
+            return Err(StoreError::Conflict);
+        }
+        let key = link.row_key()?;
+        let old = before.map(StatePayloadLink::encode).transpose()?;
+        let new = after.map(StatePayloadLink::encode).transpose()?;
+        if view.get_bounded(&key, MAX_STATE_LINK_BYTES)? != old {
+            return Err(StoreError::Conflict);
+        }
+        for bytes in [&old, &new].into_iter().flatten() {
+            self.encoded_bytes = self
+                .encoded_bytes
+                .checked_add(key.key.len())
+                .and_then(|size| size.checked_add(bytes.len()))
+                .ok_or(StoreError::Capacity)?;
+        }
+        append(&mut self.batch, key, old, new)
+    }
 }
 
 /// Bounded reference/format closure for GC, migration and snapshot owners.
@@ -436,6 +468,42 @@ pub struct PayloadReferencePage {
     pub references: Vec<PayloadReference>,
     pub resume: Option<Vec<u8>>,
 }
+/// Enumerate only primary owners in bounded pages on one coherent view.
+/// The caller owns the cursor and must bind it to its original view.
+pub fn required_owner_page(
+    view: &ReadView,
+    after: Option<&[u8]>,
+    maximum_rows: usize,
+    maximum_bytes: usize,
+) -> Result<PayloadReferencePage, StoreError> {
+    if maximum_rows == 0
+        || maximum_rows > MAX_REFERENCE_UPDATES
+        || maximum_bytes == 0
+        || maximum_bytes > MAX_REFERENCE_UPDATES * MAX_REFERENCE_BYTES
+    {
+        return Err(StoreError::Capacity);
+    }
+    let page = view.scan_after(
+        Family::PayloadReference,
+        OWNER_PREFIX,
+        after,
+        maximum_rows,
+        maximum_bytes,
+    )?;
+    let mut references = Vec::with_capacity(page.rows.len());
+    for (key, bytes) in page.rows {
+        let reference = PayloadReference::decode(&bytes)?;
+        if reference.owner_key()? != key {
+            return Err(StoreError::Corrupt);
+        }
+        validate_row(view, &key, &bytes)?;
+        references.push(reference);
+    }
+    Ok(PayloadReferencePage {
+        references,
+        resume: page.resume,
+    })
+}
 /// Physical retention spans installed provider aliases and epochs naming the
 /// same protected local object. This inventory grants no provider read access.
 pub fn required_physical_page(
@@ -475,6 +543,9 @@ pub fn required_physical_page(
     })
 }
 pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+    if state_links::is_link(key) {
+        return state_links::validate_link(view, key, bytes);
+    }
     if key.family == Family::PayloadReference && key.key.starts_with(LINKS_PREFIX) {
         let links = PayloadLinks::decode(bytes)?;
         if links.row_key()? != *key {
@@ -507,6 +578,13 @@ pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), S
 /// Closed ownership descriptor for tenant startup census. Reciprocal indexes
 /// are validated separately against that same coherent engine view.
 pub fn row_tenant(key: &RowKey, bytes: &[u8]) -> Result<String, StoreError> {
+    if state_links::is_link(key) {
+        let link = StatePayloadLink::decode(bytes)?;
+        if link.row_key()? != *key {
+            return Err(StoreError::Corrupt);
+        }
+        return Ok(link.reference.owner.tenant);
+    }
     if key.family == Family::PayloadReference && key.key.starts_with(LINKS_PREFIX) {
         let links = PayloadLinks::decode(bytes)?;
         if links.row_key()? != *key {
@@ -531,7 +609,7 @@ pub fn row_tenant(key: &RowKey, bytes: &[u8]) -> Result<String, StoreError> {
 }
 pub fn owner_reference(key: &RowKey, bytes: &[u8]) -> Result<Option<PayloadReference>, StoreError> {
     row_tenant(key, bytes)?;
-    if physical::is_head(key) || key.key.starts_with(LINKS_PREFIX) {
+    if physical::is_head(key) || key.key.starts_with(LINKS_PREFIX) || state_links::is_link(key) {
         return Ok(None);
     }
     PayloadReference::decode(bytes).map(Some)
@@ -553,9 +631,15 @@ pub fn census_usage(key: &RowKey, bytes: &[u8]) -> Result<crate::tenant::TenantU
 #[must_use]
 pub fn owns_row(key: &RowKey) -> bool {
     key.family == Family::PayloadReference
-        && [OWNER_PREFIX, OBJECT_PREFIX, PHYSICAL_PREFIX, LINKS_PREFIX]
-            .iter()
-            .any(|prefix| key.key.starts_with(prefix))
+        && [
+            OWNER_PREFIX,
+            OBJECT_PREFIX,
+            PHYSICAL_PREFIX,
+            LINKS_PREFIX,
+            state_links::PREFIX,
+        ]
+        .iter()
+        .any(|prefix| key.key.starts_with(prefix))
         || physical::is_head(key)
 }
 fn checked_text(value: &str) -> Result<(), StoreError> {

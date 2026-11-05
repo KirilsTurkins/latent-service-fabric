@@ -159,6 +159,63 @@ fn quota() -> TenantQuota {
 }
 
 #[test]
+fn standalone_refuses_unverified_required_payload_rows() {
+    use latent_state::payload_references::{
+        LocalPayloadIdentity, PayloadOwner, PayloadOwnerKind, PayloadReference,
+        PreparedPayloadReferences,
+    };
+    let fixture = Fixture::new();
+    let reference = PayloadReference {
+        owner: PayloadOwner {
+            tenant: "tenant".into(),
+            namespace: "business".into(),
+            incarnation: 1,
+            kind: PayloadOwnerKind::Result,
+            identity: [1; 32],
+            generation: 1,
+            format: "v1".into(),
+        },
+        payload: LocalPayloadIdentity {
+            tenant: "tenant".into(),
+            provider: "local".into(),
+            provider_epoch: 1,
+            provider_configuration: [2; 32],
+            blob_namespace: "private".into(),
+            digest: [3; 32],
+            size: 4,
+            media_type: "application/octet-stream".into(),
+        },
+    };
+    let view = fixture.store.snapshot().unwrap();
+    let plan =
+        PreparedPayloadReferences::prepare(&view, &[(None, Some(reference.clone()))]).unwrap();
+    let mut batch = AtomicBatch::default();
+    plan.append_to(&mut batch).unwrap();
+    drop(view);
+    fixture.store.apply(batch).unwrap();
+    let view = fixture.store.snapshot().unwrap();
+    let key = reference.owner_key().unwrap();
+    let bytes = view.get(&key).unwrap().unwrap();
+    assert_eq!(
+        reject_unverified_payload(&key, &bytes),
+        Err(StoreError::UnsupportedFormat)
+    );
+    let plan = PreparedPayloadReferences::prepare(&view, &[(Some(reference), None)]).unwrap();
+    let mut batch = AtomicBatch::default();
+    plan.append_to(&mut batch).unwrap();
+    drop(view);
+    fixture.store.apply(batch).unwrap();
+    let view = fixture.store.snapshot().unwrap();
+    let page = view
+        .scan_after(Family::PayloadReference, b"", None, 16, 65536)
+        .unwrap();
+    assert!(!page.rows.is_empty());
+    for (key, bytes) in page.rows {
+        assert_eq!(reject_unverified_payload(&key, &bytes), Ok(()));
+    }
+}
+
+#[test]
 fn empty_and_matching_identity_only_validation_never_installs_accounting_or_changes_identity() {
     let fixture = Fixture::new();
     let quotas = [quota()];

@@ -569,6 +569,18 @@ impl SessionCore {
     }
 }
 impl CapabilitySession {
+    /// Compare aliases of the original host session; this grants no authority.
+    #[must_use]
+    pub fn is_same_session(&self, other: &Self) -> bool {
+        Shared::ptr_eq(&self.core, &other.core)
+    }
+
+    /// Describes the original plan target; this is not a currentness grant.
+    #[must_use]
+    pub fn uses_publication(&self, publication: &str) -> bool {
+        self.core.plan.target.publication.as_str() == publication
+    }
+
     /// Retain an original runtime operation's closed resource refusal in the
     /// existing activation journal before its frozen WIT error is returned.
     /// A caught refusal remains an observation, never a later terminal cause.

@@ -11,6 +11,7 @@ description = "Immutable blob contracts and bounded tenant-scoped local storage.
 workspace = true
 
 [dependencies]
+latent-local-blobs = { path = "../latent-local-blobs" }
 latent-core = { path = "../latent-core" }
 latent-capabilities = { path = "../latent-capabilities" }
 latent-policy = { path = "../latent-policy" }
@@ -19,6 +20,7 @@ serde_json.workspace = true
 sha2.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
+latent-state = { path = "../latent-state" }
 rustix = { version = "=1.1.5", features = ["fs", "process"] }
 latent-http = { path = "../latent-http" }
 getrandom = "=0.4.3"

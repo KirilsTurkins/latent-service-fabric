@@ -32,6 +32,7 @@ members = [
     "crates/latent-stream-factory-native",
     "crates/latent-nats",
     "crates/latent-blobs",
+    "crates/latent-local-blobs",
     "crates/latent-commit",
     "crates/latent-identity",
     "crates/latent-ingress",
