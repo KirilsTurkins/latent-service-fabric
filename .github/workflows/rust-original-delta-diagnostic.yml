@@ -50,6 +50,7 @@ jobs:
           cargo test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic rust_original_delta::tests:: -- --nocapture 2>&1 | tee "$RUNNER_TEMP/rust-original-delta/tests.log"
           grep -F 'test rust_original_delta::tests::fixed_real_delta_reconstructs_and_still_requires_full_source_proof ... ok' "$RUNNER_TEMP/rust-original-delta/tests.log"
           grep -F 'test rust_original_delta::tests::malformed_ranges_lengths_commands_and_trailing_data_fail_closed ... ok' "$RUNNER_TEMP/rust-original-delta/tests.log"
+          grep -F 'test rust_original_delta::tests::fixed_graph_roundtrips_final_section_and_rejects_nonfinal_or_forged_material ... ok' "$RUNNER_TEMP/rust-original-delta/tests.log"
       - name: Retain bounded diagnostic outputs including failures
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes

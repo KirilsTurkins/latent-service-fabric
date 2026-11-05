@@ -72,6 +72,102 @@ pub(crate) fn reconstruct(base: &[u8], delta: &[u8]) -> Result<Vec<u8>, &'static
     Ok(output)
 }
 
+// The custom section is proof material only. Framing and reconstruction never
+// enable a runtime; a caller must still authenticate the complete base graph.
+const DELTA_SECTION: &str = "latent-rust-original-delta-v1";
+
+fn parts(input: &[u8]) -> Result<Option<(&[u8], &[u8])>, &'static str> {
+    use wasmparser::BinaryReader;
+    if input.len() > MAX_BASE || input.get(..8) != Some(b"\0asm\x0d\0\x01\0".as_slice()) {
+        return Err("rust-delta-component-envelope");
+    }
+    let mut reader = BinaryReader::new(&input[8..], 0);
+    let mut sections = 0usize;
+    while !reader.eof() {
+        sections += 1;
+        if sections > 256 {
+            return Err("rust-delta-component-section-bound");
+        }
+        let start = input.len() - reader.bytes_remaining();
+        let kind = reader
+            .read_u8()
+            .map_err(|_| "rust-delta-component-section")?;
+        let len = reader
+            .read_var_u32()
+            .map_err(|_| "rust-delta-component-section")?;
+        let payload = reader
+            .read_bytes(len as usize)
+            .map_err(|_| "rust-delta-component-section")?;
+        if kind == 0 {
+            let mut custom = BinaryReader::new(payload, 0);
+            let name_len = custom
+                .read_var_u32()
+                .map_err(|_| "rust-delta-component-name")?;
+            if name_len > 512 {
+                return Err("rust-delta-component-name");
+            }
+            let name = custom
+                .read_bytes(name_len as usize)
+                .map_err(|_| "rust-delta-component-name")?;
+            if name == DELTA_SECTION.as_bytes() {
+                if !reader.eof() {
+                    return Err("rust-delta-single-final-section-required");
+                }
+                let remaining = custom.bytes_remaining();
+                let delta = custom
+                    .read_bytes(remaining)
+                    .map_err(|_| "rust-delta-truncated")?;
+                if delta.len() > MAX_DELTA || delta.get(..8) != Some(MAGIC.as_slice()) {
+                    return Err("rust-delta-envelope");
+                }
+                return Ok(Some((&input[..start], delta)));
+            }
+        }
+    }
+    Ok(None)
+}
+
+/// Package bounded reconstruction material on an already authenticated graph.
+/// Callers must independently perform the source and graph proof first.
+#[allow(dead_code)]
+pub(crate) fn attach_unverified(base: &[u8], delta: &[u8]) -> Result<Vec<u8>, &'static str> {
+    use std::borrow::Cow;
+    use wasm_encoder::{CustomSection, Encode, Section};
+    if parts(base)?.is_some() {
+        return Err("rust-delta-duplicate-section");
+    }
+    if delta.len() > MAX_DELTA || delta.get(..8) != Some(MAGIC.as_slice()) {
+        return Err("rust-delta-envelope");
+    }
+    let upper = base
+        .len()
+        .checked_add(delta.len())
+        .and_then(|n| n.checked_add(128))
+        .ok_or("rust-delta-component-byte-bound")?;
+    if upper > MAX_BASE {
+        return Err("rust-delta-component-byte-bound");
+    }
+    let mut result = Vec::new();
+    result
+        .try_reserve_exact(upper)
+        .map_err(|_| "rust-delta-allocation")?;
+    result.extend_from_slice(base);
+    let section = CustomSection {
+        name: Cow::Borrowed(DELTA_SECTION),
+        data: Cow::Borrowed(delta),
+    };
+    result.push(section.id());
+    section.encode(&mut result);
+    Ok(result)
+}
+
+/// Split the sole final delta section from the exact remaining component.
+/// The result and reconstructed original remain untrusted until verified.
+#[allow(dead_code)]
+pub(crate) fn split_unverified(input: &[u8]) -> Result<(&[u8], &[u8]), &'static str> {
+    parts(input)?.ok_or("rust-delta-final-section-required")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -100,6 +196,33 @@ mod tests {
         let mut wrong = original;
         wrong[0] ^= 1;
         assert!(crate::rust_component::verify_combined_composition(&wrong, PREVIEW, BASE).is_err());
+    }
+
+    #[test]
+    fn fixed_graph_roundtrips_final_section_and_rejects_nonfinal_or_forged_material() {
+        let wrapped = attach_unverified(BASE, DELTA).unwrap();
+        assert!(wrapped.len() <= MAX_BASE);
+        let (base, delta) = split_unverified(&wrapped).unwrap();
+        assert_eq!(base, BASE);
+        assert_eq!(delta, DELTA);
+        let original = reconstruct(base, delta).unwrap();
+        assert_eq!(original.as_slice(), ORIGINAL);
+        assert!(
+            crate::rust_component::verify_combined_composition(&original, PREVIEW, base).is_ok()
+        );
+        assert!(attach_unverified(&wrapped, DELTA).is_err());
+        assert!(split_unverified(BASE).is_err());
+        assert!(split_unverified(&wrapped[..wrapped.len() - 1]).is_err());
+        let mut nonfinal = wrapped;
+        nonfinal.extend_from_slice(&[0, 1, 0]);
+        assert!(split_unverified(&nonfinal).is_err());
+        let mut forged = DELTA.to_vec();
+        forged[21] ^= 1; // fixed first literal byte, not a command or size
+        let forged_original = reconstruct(BASE, &forged).unwrap();
+        assert!(
+            crate::rust_component::verify_combined_composition(&forged_original, PREVIEW, BASE)
+                .is_err()
+        );
     }
 
     #[test]
@@ -133,7 +256,9 @@ mod tests {
         literal.extend_from_slice(&8u32.to_le_bytes());
         literal.extend_from_slice(b"original");
         assert_eq!(
-            reconstruct(base, &delta(8, 1, &literal)).unwrap(),
+            reconstruct(base, &delta(8, 1, &literal))
+                .unwrap()
+                .as_slice(),
             b"original"
         );
         literal.pop();
