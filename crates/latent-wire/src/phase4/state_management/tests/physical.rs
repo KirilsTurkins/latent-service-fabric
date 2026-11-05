@@ -459,7 +459,15 @@ async fn mutation_replay_corrupt_receipt_quarantines_original_store() {
         actor,
         operation_id: "create-original".into(),
     };
-    let key = super::super::state_receipt::key(&original);
+    let key = latent_state::embedded::RowKey {
+        family: latent_state::embedded::Family::Namespace,
+        key: latent_state::namespace::namespace_operation_key(
+            &original.tenant,
+            &original.actor,
+            &original.operation_id,
+        )
+        .unwrap(),
+    };
     fixture
         .store
         .with_store(StoreIoKind::RecoveryWrite, 65_536, move |engine| {
