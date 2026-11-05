@@ -92,9 +92,16 @@ class RustThreadHttpSiblingTests(unittest.TestCase):
             self.assertEqual(source.count('applicationTransportInjected'), 0)
 
     def test_only_release_body_when_both_real_http_gates_are_held(self):
+        accepted = {'generation': 'a' * 32, 'failure': None,
+                    'requests': [{'request': 1, 'role': 'primary', 'state': 'accepted'}],
+                    'events': []}
+        self.assertIsNone(witness.decision(accepted, [], body_released=False))
         value = self.observation()
         original, sibling = Gate('a' * 32, 1, 'headers'), Gate('a' * 32, 2, 'body')
         self.assertIsNone(witness.decision(value, [original], body_released=False))
+        self.assertEqual(witness.decision(value, [original, sibling], body_released=False),
+                         {'action': 'release-sibling-body', 'gate': sibling})
+        value['requests'].append({'request': 3, 'role': 'primary', 'state': 'accepted'})
         self.assertEqual(witness.decision(value, [original, sibling], body_released=False),
                          {'action': 'release-sibling-body', 'gate': sibling})
         for changed in ('generation', 'bytes', 'phase'):
