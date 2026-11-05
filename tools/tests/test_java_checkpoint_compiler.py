@@ -28,31 +28,36 @@ class CheckpointCompiler(unittest.TestCase):
         self.assertNotIn('printStackTrace', source)
         self.assertIn('"' + probe.COMPILER_EXPECTED + '"', source)
         self.assertEqual(probe.COMPILER_EXPECTED.split(';')[1:], [
-            'finite', 'initializer', 'unmanaged', 'managed', 'recursion',
+            'finite', 'ordinary-class-reflection', 'initializer', 'unmanaged', 'managed', 'recursion',
             'runtime-initializer', 'class-object-helper', 'string-copy-body',
             'finite-unmanaged', 'nested-counted', 'changing-bound', 'wrapping-counted',
             'reset-counted', 'exceptional-retry', 'unmanaged-class', 'transitive-initializer',
             'near-max-counted', 'nested-polling', 'mutual-recursion', 'virtual-initializer',
             'string-info-getter', 'string-info-declaration', 'string-info-parent', 'string-info-target',
-            'class-info-enum-count', 'class-info-enum-element', 'class-info-enum-other-refused',
-            'class-info-element-declaration', 'class-info-element-parent', 'class-info-element-layout',
-            'class-info-element-target', 'class-info-declaration',
-            'class-info-parent', 'class-info-layout', 'class-info-target', 'class-info-header-shadow',
+            'class-info-enum-count-refused', 'class-info-enum-element-refused',
+            'class-info-enum-negative-refused', 'class-info-enum-high-refused',
+            'class-info-superinterface-refused', 'class-info-array-length-refused',
+            'class-info-managed-count-refused', 'class-info-managed-class-object-refused',
+            'class-info-declaration-refused', 'class-info-parent-refused', 'class-info-layout-refused',
+            'class-info-target-refused', 'class-info-fence-scope', 'class-info-header-shadow',
             'compiler-archive-control', 'compiler-cache-isolation'])
 
     def test_real_frontend_executes_every_declared_progress_case(self):
         source = probe.COMPILER_CONTROL.read_text()
         cases = re.findall(r'check\((\w+)\.class\.getName\(\), corrected, (false|true), ""\);', source)
         self.assertEqual(cases, [
-            ('Finite', 'false'), ('InitializerPolling', 'true'), ('UnmanagedPolling', 'true'),
+            ('ClassInfoEnumCountAccess', 'true'), ('ClassInfoEnumElementAccess', 'true'),
+            ('ClassInfoEnumNegativeAccess', 'true'), ('ClassInfoEnumHighAccess', 'true'),
+            ('ClassInfoSuperinterfaceAccess', 'true'), ('ClassInfoArrayLengthAccess', 'true'),
+            ('ClassInfoManagedCountAccess', 'true'), ('ClassInfoManagedClassObjectAccess', 'true'),
+            ('InitializerPolling', 'true'), ('UnmanagedPolling', 'true'),
             ('ManagedPolling', 'false'), ('RecursiveInitializer', 'true'),
             ('FiniteUnmanaged', 'false'), ('NestedCounted', 'false'), ('ChangingBound', 'false'),
             ('WrappingCounted', 'true'), ('ResetCounted', 'true'), ('ExceptionalRetry', 'true'),
             ('UnmanagedClassPolling', 'true'), ('TransitiveInitializer', 'true'),
             ('NearMaxCounted', 'false'), ('NestedPolling', 'true'), ('MutualRecursion', 'true'),
             ('VirtualInitializer', 'true'), ('StringInfoAccess', 'false'),
-            ('ClassInfoEnumCountAccess', 'false'), ('ClassInfoEnumElementAccess', 'false'),
-            ('ClassInfoOtherAccess', 'true')])
+            ('Finite', 'false'), ('OrdinaryClassAccess', 'false')])
         self.assertIn('new String[] { "runtime-initializer", "class-object-helper", "string-copy-body" }', source)
         self.assertIn('check(Finite.class.getName(), corrected, true, mutation);', source)
         self.assertIn('new String[] { "string-info-declaration", "string-info-parent" }', source)
@@ -61,30 +66,43 @@ class CheckpointCompiler(unittest.TestCase):
         self.assertIn('new String[] { "class-info-declaration", "string-info-parent", "class-info-layout" }', source)
         self.assertIn('check(ClassInfoEnumCountAccess.class.getName(), corrected, true, mutation);', source)
         self.assertIn('check(ClassInfoEnumCountAccess.class.getName(), corrected, true, "", true);', source)
+        self.assertIn('checkCompatibility(corrected);', source)
+        self.assertIn('CHECKPOINT_COMPATIBILITY finite FAIL', source)
+        self.assertIn('CHECKPOINT_COMPATIBILITY class-reflection FAIL', source)
         self.assertIn('checkClassInfoHeader(corrected);', source)
         self.assertIn('checkpoint-control-class-info-shadow-header-refused', source)
         self.assertIn('checkCompilerArchive(corrected);', source)
         self.assertIn('checkCompilerCacheIsolation(corrected);', source)
-        self.assertIn('check(ClassInfoEnumElementAccess.class.getName(), corrected, true, mutation);', source)
-        self.assertIn('check(ClassInfoEnumElementAccess.class.getName(), corrected, true, "", true);', source)
-        self.assertIn('class-info-element-original-declaration', source)
-        self.assertEqual(len(cases) + 17, len(probe.COMPILER_EXPECTED.split(';')) - 1)
+        self.assertEqual(len(cases) + 14, len(probe.COMPILER_EXPECTED.split(';')) - 1)
 
-    def test_enum_count_proof_binds_exact_emitter_and_loader_header(self):
+    def test_class_info_operands_are_refused_before_any_native_or_delegate_admission(self):
         from tools.java_guest import coroutine_patch
         emitted = coroutine_patch.corrected_async_source(
             (probe.SDK/'fibers/compiler-patch/AsyncMethodFinder.java').read_bytes()).decode()
-        self.assertIn('case "enumConstantCount":', emitted)
-        self.assertIn('case "enumConstant":', emitted)
-        self.assertIn('method.getName().equals("enumConstantCount") || method.getName().equals("enumConstant")', emitted)
-        self.assertIn('pinnedClassMetadataMethod(method) && pinnedClassInfoCompiler()', emitted)
+        fence = emitted.split('private static boolean progressUnprovenClassInfoOperands(', 1)[1].split(
+            'private void validateNonsuspendableProgress()', 1)[0]
+        self.assertEqual(re.findall(r'case "([A-Za-z]+)":', fence), [
+            'modifiers', 'primitiveKind', 'superinterfaceCount', 'itemType', 'declaringClass',
+            'enclosingClass', 'parent', 'name', 'simpleName', 'superinterface', 'arrayLength',
+            'isSuperTypeOf', 'reflection', 'classObject', 'enumConstantCount', 'enumConstant',
+            'arrayType', 'newArrayInstance', 'getItem', 'putItem', 'initialize'])
+        self.assertIn('reference.getClassName().equals("org.teavm.runtime.reflect.ClassInfo")', fence)
+        scan = emitted.split('private void validateNonsuspendableProgress()', 1)[1].split(
+            'MethodReference managedEntry', 1)[0]
+        self.assertLess(scan.index('!linked.isUsed() && !linked.isCalled()'),
+            scan.index('progressUnprovenClassInfoOperands(reference)'))
+        self.assertLess(scan.index('progressUnprovenClassInfoOperands(reference)'),
+            scan.index('ClassReader cls = classSource.get(reference.getClassName())'))
+        self.assertIn('throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741")', scan)
+        self.assertNotIn('private boolean progressClassMetadataPrimitive(', emitted)
+        self.assertNotIn('pinnedClassMetadataMethod(method) && pinnedClassInfoCompiler()', emitted)
+        self.assertNotIn('MethodReference classObject = new MethodReference', emitted)
         self.assertIn('Class.forName(emitterName, false, targetClass.getClassLoader()) != emitter', emitted)
         self.assertIn('loader.getResourceAsStream("org/teavm/backend/c/core.h")', emitted)
-        self.assertIn('3e0b5c2bdbc3fdcd61241fe02b8fa3710adb39e54e8cad0c9710a6a69e265ce6', emitted)
-        self.assertIn('!((org.teavm.model.lowlevel.Characteristics) traits).isFunction(owner)', emitted)
         source = probe.COMPILER_CONTROL.read_text()
-        self.assertIn('"org/teavm/backend/c/intrinsic/reflection/ClassInfoIntrinsic.class"', source)
-        self.assertIn('"org/teavm/backend/c/core.h"', source)
+        self.assertIn('checkClassInfoOperandFence(corrected);', source)
+        self.assertIn('checkpoint-control-class-info-fence-owner', source)
+        self.assertIn('checkpoint-control-class-info-fence-name', source)
         self.assertIn('checkpoint-control-class-info-shadow-header-refused', source)
 
     def test_archive_receipt_is_per_compiler_even_when_target_is_reused(self):
