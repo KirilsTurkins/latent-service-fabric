@@ -1,5 +1,10 @@
 //! Worker-borrowed admission and complete-envelope writer.
 
+#[cfg(target_os = "linux")]
+mod payloads;
+#[cfg(target_os = "linux")]
+pub use payloads::{PayloadAttachment, PayloadAttachmentTarget};
+
 use super::{
     codec::{Decoder, Encoder, METADATA_BYTES},
     command_identity, fingerprint, id, incarnation,
@@ -42,6 +47,8 @@ pub struct CompleteEnvelope {
     result: DurableResult,
     batch: AtomicBatch,
     authorities: Vec<DurableEffectAuthority>,
+    #[cfg(target_os = "linux")]
+    payloads: Vec<latent_blobs::provider::CapturedLocalPayload>,
 }
 
 /// A bounded closed observation of the namespace expectation in an actually
@@ -773,10 +780,25 @@ impl CompleteEnvelope {
         store: &EmbeddedStore,
         final_accept: impl FnOnce(&[DurableEffectAuthority]) -> Result<(), AtomicError>,
     ) -> PreparedDisposition {
+        #[cfg(target_os = "linux")]
+        if !self.payloads.is_empty() {
+            return PreparedDisposition::KnownNotCommitted {
+                command: Box::new(self.claim),
+                reason: AtomicError::Invalid,
+            };
+        }
+        self.publish_inner(store, |envelope| final_accept(&envelope.authorities))
+    }
+    fn publish_inner(
+        mut self,
+        store: &EmbeddedStore,
+        final_accept: impl FnOnce(&Self) -> Result<(), AtomicError>,
+    ) -> PreparedDisposition {
         use super::ownership::{ACCEPTED, TERMINAL, UNKNOWN};
         use std::sync::atomic::Ordering;
-        match store.apply_fenced(self.batch, || {
-            final_accept(&self.authorities)?;
+        let batch = std::mem::take(&mut self.batch);
+        match store.apply_fenced(batch, || {
+            final_accept(&self)?;
             self.claim.physical.phase.store(ACCEPTED, Ordering::Release);
             Ok(())
         }) {
@@ -1076,6 +1098,8 @@ impl CompleteEnvelope {
             result,
             batch,
             authorities,
+            #[cfg(target_os = "linux")]
+            payloads: Vec::new(),
         })
     }
 }

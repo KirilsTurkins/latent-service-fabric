@@ -33,6 +33,8 @@ pub use writer::{
     inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, EnvelopeNamespaceExpectation,
     PreparedAdmission, PreparedDisposition, RetryRequest, StagedIntent,
 };
+#[cfg(target_os = "linux")]
+pub use writer::{PayloadAttachment, PayloadAttachmentTarget};
 
 use latent_core::transaction_contract::{self as contract, CommandFingerprint, CommandKey};
 use latent_effects::authority::AuthorityError;

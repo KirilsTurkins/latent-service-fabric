@@ -634,6 +634,8 @@ fn captured_table_session_identity_rejects_another_activation() {
     table.with_session(|captured| {
         assert!(captured.is_same_session(&first));
         assert!(!captured.is_same_session(&second));
+        assert!(captured.uses_publication(f.publication.publication().as_str()));
+        assert!(!captured.uses_publication("another-publication"));
     });
 }
 
