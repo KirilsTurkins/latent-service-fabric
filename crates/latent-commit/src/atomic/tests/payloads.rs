@@ -983,12 +983,12 @@ async fn rejected_result_retains_real_blob_until_response_expiry() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn response_expiry_keeps_real_shared_effect_blob_until_reviewed_purge() {
+async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
     let fixture = Fixture::new();
     let claim = fixture.claim("response-effect-blob");
     let key = fixture.input("response-effect-blob").key;
     let view = fixture.state.snapshot().unwrap();
-    let intent = StagedIntent {
+    let intent = || StagedIntent {
         binding: "approved-event".into(),
         operation: "event".into(),
         payload: value(b"body"),
@@ -998,7 +998,7 @@ async fn response_expiry_keeps_real_shared_effect_blob_until_reviewed_purge() {
         &view,
         claim,
         None,
-        vec![intent],
+        vec![intent(), intent()],
         value(b"body"),
         &fixture.effects,
         time(200),
@@ -1007,6 +1007,7 @@ async fn response_expiry_keeps_real_shared_effect_blob_until_reviewed_purge() {
     let result_pin = fixture.capture().await;
     let physical = result_pin.identity().clone();
     let effect_pin = fixture.capture().await;
+    let second_effect_pin = fixture.capture().await;
     let envelope = envelope
         .attach_verified_payloads(
             &view,
@@ -1019,6 +1020,10 @@ async fn response_expiry_keeps_real_shared_effect_blob_until_reviewed_purge() {
                 PayloadAttachment {
                     target: PayloadAttachmentTarget::Effect(0),
                     payload: effect_pin,
+                },
+                PayloadAttachment {
+                    target: PayloadAttachmentTarget::Effect(1),
+                    payload: second_effect_pin,
                 },
             ],
         )
@@ -1040,7 +1045,7 @@ async fn response_expiry_keeps_real_shared_effect_blob_until_reviewed_purge() {
     assert!(result.is_none());
     assert_eq!(
         latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
-        Some(1)
+        Some(2)
     );
     validate_payload_census(&view);
     drop(view);
@@ -1062,9 +1067,33 @@ async fn response_expiry_keeps_real_shared_effect_blob_until_reviewed_purge() {
         retain_until_millis: 5300,
         inbox_expires_at_millis: None,
     };
-    owner
+    let first_review = owner
         .terminalize(&fixture.state, &request, clock(5200), |_, _, _| Ok(()))
         .unwrap();
+    assert!(!first_review.complete);
+    assert!(owner
+        .terminalize(&fixture.state, &request, clock(5200), |_, _, _| Ok(()))
+        .unwrap()
+        .complete);
+    owner
+        .purge(&fixture.state, &request, clock(5300), |_, _, _| Ok(()))
+        .unwrap();
+    let view = fixture.state.snapshot().unwrap();
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(1)
+    );
+    validate_payload_census(&view);
+    drop(view);
+    assert_eq!(
+        fixture.provider.store().release_durable_reference(
+            &TenantId("a".into()),
+            &fixture.blob,
+            &fixture.state,
+            &|| Ok(())
+        ),
+        Err(latent_blobs::local::LocalBlobError::Busy)
+    );
     owner
         .purge(&fixture.state, &request, clock(5300), |_, _, _| Ok(()))
         .unwrap();
