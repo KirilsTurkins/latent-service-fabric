@@ -292,3 +292,74 @@ async fn captured_blob_cannot_be_attached_through_a_different_activation_session
         None
     );
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn same_store_label_does_not_bind_a_different_engine_view() {
+    let fixture = Fixture::new();
+    let claim = fixture.claim("foreign-store-view");
+    let view = fixture.state.snapshot().unwrap();
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        None,
+        vec![],
+        value(b"body"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    drop(view);
+    let foreign = open(&fixture._root.path().join("foreign.redb"));
+    let view = foreign.snapshot().unwrap();
+    let identity =
+        latent_state::store_identity::StoreIdentity::new("payload-envelope-a".into()).unwrap();
+    let initialization = identity.prepare_initialization(&view).unwrap().unwrap();
+    drop(view);
+    foreign.apply(initialization).unwrap();
+    let pin = fixture.capture().await;
+    let view = foreign.snapshot().unwrap();
+    assert!(matches!(
+        envelope.attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::Result,
+                payload: pin
+            },]
+        ),
+        Err(AtomicError::PermissionDenied)
+    ));
+    drop(view);
+    let claim = fixture.claim("foreign-store-publication");
+    let view = fixture.state.snapshot().unwrap();
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        None,
+        vec![],
+        value(b"body"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let pin = fixture.capture().await;
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::Result,
+                payload: pin,
+            }],
+        )
+        .unwrap();
+    drop(view);
+    assert!(matches!(
+        envelope
+            .publish_with_payloads(&foreign, |_, _| panic!("foreign engine reached acceptance")),
+        PreparedDisposition::KnownNotCommitted {
+            reason: AtomicError::PermissionDenied,
+            ..
+        }
+    ));
+}

@@ -62,6 +62,7 @@ pub(super) fn open(
         closed: AtomicBool::new(false),
         _lock: lock,
         durable,
+        durable_binding: None,
     });
     let state = recover_inventory(&inner)?;
     // Re-establish the directory durability boundary before admitting recovered

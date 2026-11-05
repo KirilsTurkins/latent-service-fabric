@@ -6,6 +6,10 @@ Staging, publication, leases and reclamation are separate operations. An abandon
 
 An explicitly selected durable local root retains verified provisional pins and
 requires a fresh, matching state-store view before physical reference release.
+The durable opener binds the actual live engine, not just its persisted label;
+an ordinary opener preserves the release fence but cannot mint durable pins or
+approve release until the trusted durable opener binds a store. After restart,
+the host must select and validate the intended store before binding it.
 This library port is not yet installed in the transaction coordinator; S3
 references do not acquire this local retention guarantee.
 

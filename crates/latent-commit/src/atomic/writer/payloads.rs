@@ -61,6 +61,7 @@ impl CompleteEnvelope {
         for attachment in attachments {
             let payload = attachment.payload;
             if !payload.uses_session(original_session)
+                || !payload.uses_store_view(view)
                 || payload.identity().tenant != self.terminal.key.tenant
                 || payload.store_identity() != store_identity.as_str()
             {
@@ -245,6 +246,16 @@ impl CompleteEnvelope {
             &[CapturedLocalPayload],
         ) -> Result<(), AtomicError>,
     ) -> PreparedDisposition {
+        if self
+            .payloads
+            .iter()
+            .any(|payload| !payload.uses_store(store))
+        {
+            return PreparedDisposition::KnownNotCommitted {
+                command: Box::new(self.claim),
+                reason: AtomicError::PermissionDenied,
+            };
+        }
         self.publish_inner(store, |envelope| {
             final_accept(&envelope.authorities, &envelope.payloads)
         })

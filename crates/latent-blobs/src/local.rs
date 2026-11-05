@@ -52,6 +52,7 @@ struct Inner {
     closed: AtomicBool,
     _lock: File,
     durable: Option<durable::ModeRecord>,
+    durable_binding: Option<latent_state::embedded::StoreBinding>,
 }
 #[derive(Default)]
 struct State {

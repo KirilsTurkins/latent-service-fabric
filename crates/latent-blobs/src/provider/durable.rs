@@ -46,6 +46,14 @@ impl CapturedLocalPayload {
         self.pin.store_identity()
     }
     #[must_use]
+    pub fn uses_store_view(&self, view: &latent_state::embedded::ReadView) -> bool {
+        self.pin.uses_store_view(view)
+    }
+    #[must_use]
+    pub fn uses_store(&self, store: &latent_state::embedded::EmbeddedStore) -> bool {
+        self.pin.uses_store(store)
+    }
+    #[must_use]
     pub fn native_reader(&self) -> &crate::local::LocalBlobReader {
         self.pin.reader()
     }

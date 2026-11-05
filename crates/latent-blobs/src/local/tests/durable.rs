@@ -104,6 +104,19 @@ fn response_release_reopen_and_independent_effect_snapshot_owners_keep_actual_by
     );
     let reader = owner.open_read(&scope(), &blob, &|| Ok(())).unwrap();
     assert_eq!(read(&reader, 0, 6).unwrap(), b"shared");
+    assert_eq!(
+        owner.release_durable_reference(&scope(), &blob, &state, &|| Ok(())),
+        Err(LocalBlobError::PermissionDenied)
+    );
+    assert!(matches!(
+        owner.capture_durable_reference(&scope(), &blob, &|| Ok(())),
+        Err(LocalBlobError::PermissionDenied)
+    ));
+    drop(reader);
+    drop(owner);
+    let owner =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let reader = owner.open_read(&scope(), &blob, &|| Ok(())).unwrap();
     update(&state, &[(Some(effect), None), (Some(snapshot), None)]);
     assert!(owner
         .release_durable_reference(&scope(), &blob, &state, &|| Ok(()))
@@ -216,4 +229,34 @@ fn different_store_identity_and_unreviewed_orphan_never_authorize_reclamation() 
     assert_eq!(owner.reclaim(4, &|| Ok(())).unwrap().objects, 0);
     let reader = owner.open_read(&scope(), &blob, &|| Ok(())).unwrap();
     assert_eq!(read(&reader, 0, 6).unwrap(), b"orphan");
+}
+
+#[test]
+fn same_label_different_live_engine_cannot_authorize_release() {
+    let state_root = temporary_root();
+    let other_root = temporary_root();
+    let blob_root = temporary_root();
+    let state = database(state_root.path(), true, "same-label");
+    let other = database(other_root.path(), true, "same-label");
+    let owner =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let blob = put(&owner, b"proof");
+    let pin = owner
+        .capture_durable_reference(&scope(), &blob, &|| Ok(()))
+        .unwrap();
+    let reference = reference(&pin, PayloadOwnerKind::Result, 5, "local", 1);
+    update(&state, &[(None, Some(reference.clone()))]);
+    update(&other, &[(None, Some(reference.clone()))]);
+    update(&other, &[(Some(reference), None)]);
+    drop(pin);
+    assert_eq!(
+        owner.release_durable_reference(&scope(), &blob, &other, &|| Ok(())),
+        Err(LocalBlobError::PermissionDenied)
+    );
+    assert_eq!(
+        owner.release_durable_reference(&scope(), &blob, &state, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    );
+    let reader = owner.open_read(&scope(), &blob, &|| Ok(())).unwrap();
+    assert_eq!(read(&reader, 0, 5).unwrap(), b"proof");
 }

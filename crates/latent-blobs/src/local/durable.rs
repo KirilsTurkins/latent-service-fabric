@@ -7,7 +7,7 @@ use super::{
 };
 use crate::BlobReference;
 use latent_state::{
-    embedded::{EmbeddedStore, StoreError},
+    embedded::{EmbeddedStore, ReadView, StoreBinding, StoreError},
     payload_references::{physical_owner_count, required_physical_page, LocalPayloadIdentity},
     store_identity::StoreIdentity,
 };
@@ -40,6 +40,7 @@ pub struct LocalDurablePin {
     configuration: [u8; 32],
     namespace: String,
     store_identity: String,
+    store_binding: StoreBinding,
 }
 impl LocalDurablePin {
     #[must_use]
@@ -53,6 +54,14 @@ impl LocalDurablePin {
     #[must_use]
     pub fn store_identity(&self) -> &str {
         &self.store_identity
+    }
+    #[must_use]
+    pub fn uses_store_view(&self, view: &ReadView) -> bool {
+        view.is_bound_to(&self.store_binding)
+    }
+    #[must_use]
+    pub fn uses_store(&self, store: &EmbeddedStore) -> bool {
+        store.is_bound_to(&self.store_binding)
     }
     pub(crate) fn identity(&self, provider: &str, epoch: u64) -> Result<LocalPayloadIdentity> {
         model::text(provider)?;
@@ -96,25 +105,26 @@ impl LocalBlobStore {
             if existing != &mode {
                 return Err(LocalBlobError::PermissionDenied);
             }
-            return Ok(owner);
+        } else {
+            {
+                let mut state = owner.inner.state()?;
+                state.durable_mode = true;
+                owner.inner.disk_room(&state, 0, 0)?;
+            }
+            owner
+                .inner
+                .root
+                .write_new("DURABLE.json", &record(&mode)?)?;
+            owner
+                .inner
+                .root
+                .sync()
+                .map_err(|_| owner.inner.uncertain())?;
         }
-        {
-            let mut state = owner.inner.state()?;
-            state.durable_mode = true;
-            owner.inner.disk_room(&state, 0, 0)?;
-        }
-        owner
-            .inner
-            .root
-            .write_new("DURABLE.json", &record(&mode)?)?;
-        owner
-            .inner
-            .root
-            .sync()
-            .map_err(|_| owner.inner.uncertain())?;
         let inner = Arc::get_mut(&mut Arc::get_mut(&mut owner).ok_or(LocalBlobError::Busy)?.inner)
             .ok_or(LocalBlobError::Busy)?;
         inner.durable = Some(mode);
+        inner.durable_binding = Some(store.binding());
         Ok(owner)
     }
     /// Native provider work verifies length/media/digest and acquires its real
@@ -126,6 +136,11 @@ impl LocalBlobStore {
         checkpoint: &dyn Fn() -> Result<()>,
     ) -> Result<LocalDurablePin> {
         let mode = self.inner.durable.as_ref().ok_or(LocalBlobError::Invalid)?;
+        let store_binding = self
+            .inner
+            .durable_binding
+            .as_ref()
+            .ok_or(LocalBlobError::PermissionDenied)?;
         if mode.configuration_digest != self.configuration_digest()? {
             return Err(LocalBlobError::PermissionDenied);
         }
@@ -136,6 +151,7 @@ impl LocalBlobStore {
             configuration: decode_digest(&self.configuration_digest()?)?,
             namespace: self.namespace().into(),
             store_identity: mode.store_identity.clone(),
+            store_binding: store_binding.clone(),
         })
     }
     /// Release the physical base reference only after every independent durable
@@ -149,6 +165,14 @@ impl LocalBlobStore {
         checkpoint: &dyn Fn() -> Result<()>,
     ) -> Result<bool> {
         let mode = self.inner.durable.as_ref().ok_or(LocalBlobError::Invalid)?;
+        let binding = self
+            .inner
+            .durable_binding
+            .as_ref()
+            .ok_or(LocalBlobError::PermissionDenied)?;
+        if !store.is_bound_to(binding) {
+            return Err(LocalBlobError::PermissionDenied);
+        }
         model::text(&scope.0)?;
         let _work = self.inner.work()?;
         let _publication = self.inner.publication()?;
