@@ -1,0 +1,60 @@
+name: Rust original-core bounded delta diagnostic
+on:
+  push:
+    branches: ['diag/rust-original-delta-20261105']
+    paths:
+      - '.github/workflows/rust-original-delta-diagnostic.yml'
+      - 'crates/latent-component-threading/src/rust_original_delta.rs'
+      - 'crates/latent-component-threading/src/rust_catalogue/combined-original-delta.bin'
+      - 'tools/rust_original_delta.py'
+permissions:
+  contents: read
+concurrency:
+  group: rust-original-delta-diagnostic-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  delta-proof:
+    name: Bounded reconstruction and fixed graph source proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Recreate the original-core delta and execute bounded Rust controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rust-original-delta"
+          catalog=crates/latent-component-threading/src/rust_catalogue
+          python3 -B tools/rust_original_delta.py --original "$catalog/combined-original-core.wasm" --base "$catalog/combined-final-component.wasm" --output "$RUNNER_TEMP/rust-original-delta/reconstructed.bin" | tee "$RUNNER_TEMP/rust-original-delta/generator.log"
+          cmp "$RUNNER_TEMP/rust-original-delta/reconstructed.bin" "$catalog/combined-original-delta.bin"
+          cargo test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic rust_original_delta::tests:: -- --nocapture 2>&1 | tee "$RUNNER_TEMP/rust-original-delta/tests.log"
+          grep -F 'test rust_original_delta::tests::fixed_real_delta_reconstructs_and_still_requires_full_source_proof ... ok' "$RUNNER_TEMP/rust-original-delta/tests.log"
+          grep -F 'test rust_original_delta::tests::malformed_ranges_lengths_commands_and_trailing_data_fail_closed ... ok' "$RUNNER_TEMP/rust-original-delta/tests.log"
+      - name: Retain bounded diagnostic outputs including failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: rust-original-delta-diagnostic-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: ${{ runner.temp }}/rust-original-delta/*.log
