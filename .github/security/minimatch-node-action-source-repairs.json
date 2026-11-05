@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "profile": "setup-node-minimatch-action-source-v1",
+  "action": "KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6",
+  "advisories": [
+    {
+      "id": "GHSA-g3hv-75wg-m249",
+      "modified": "2026-11-04T17:01:25.850114Z"
+    }
+  ],
+  "assets": {
+    "upstream": {
+      "snapshot": ".github/security/actions/setup-node-minimatch/minimatch-10.2.6.original.tgz",
+      "source": ".lsf-source/minimatch-10.2.6.original.tgz",
+      "bytes": 117068,
+      "sha256": "5a3d2c8074a28229665727e47b8a1090941856a7962905efe05d20d3760355f8",
+      "gitBlob": "cc4d199bec4264ab80b9b228da85f074b045edf5"
+    },
+    "archive": {
+      "snapshot": ".github/security/actions/setup-node-minimatch/minimatch-10.2.6.repaired.tar",
+      "source": ".lsf-source/minimatch-10.2.6-lsf-bound-v1.tar",
+      "bytes": 583680,
+      "sha256": "bb2b80a4759baaee01d49528b2d7d0c05fc29c1cf0d3fea41ec243de04bceedb",
+      "gitBlob": "2a1f40a7420f3cfb13e5284e433b19ec6db1e145"
+    },
+    "repair": {
+      "snapshot": ".github/security/actions/setup-node-minimatch/repair.json",
+      "source": ".lsf-source/minimatch-10.2.6-lsf-bound-v1.repair.json",
+      "bytes": 2129,
+      "sha256": "d6ede52113aa8cb2d4b6ee008885fd2de0d37e06d822e444846f6f905f088bf3",
+      "gitBlob": "42886b2bc898bf44b955fc31ff963bb91a94bcc9"
+    },
+    "verifier": {
+      "snapshot": ".github/security/actions/setup-node-minimatch/installed-verifier.mjs.snapshot",
+      "source": ".lsf-source/verify-installed-minimatch.mjs",
+      "bytes": 3386,
+      "sha256": "4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d",
+      "gitBlob": "de5fadac0ee90bd532c5683fd4bcb919634a4314"
+    },
+    "tests": {
+      "snapshot": ".github/security/actions/setup-node-minimatch/bounds.test.mjs.snapshot",
+      "source": ".lsf-source/minimatch-bounds.test.mjs",
+      "bytes": 2854,
+      "sha256": "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492",
+      "gitBlob": "11a4cf916b01dfa3af9af699aa7ec641b39505d3"
+    },
+    "build": {
+      "snapshot": ".github/security/actions/setup-node-minimatch/fork-build.json",
+      "source": "https://github.com/KirilsTurkins/lsf-setup-node/actions/runs/42024002011",
+      "bytes": 4192,
+      "sha256": "d7ee2d1bbac34657eaff166f41f73241d2f8949ad9d4b66f81dbec9ca2b141a6",
+      "gitBlob": "4671842ffc93cb16243f9524b9c42e928d5f5ac6"
+    }
+  },
+  "runtime": {
+    "runtime_setup": {
+      "source": "dist/setup/index.js",
+      "bytes": 3555939,
+      "sha256": "18ead6d4a193f3fc6fce80fdd43e2c9bf520f3d55e3ec42079fe95f1933a69c5",
+      "gitBlob": "6735142fc160300df2fb85d4bc933fa0a4365804"
+    },
+    "runtime_cache": {
+      "source": "dist/cache-save/index.js",
+      "bytes": 3287509,
+      "sha256": "33f37c286e9765085b6780714206fb1591676cf388b0db9ea9d36670df47aab5",
+      "gitBlob": "68100fddb4b9fc91fe6ba7f1f46e6f29a1dd4bf8"
+    }
+  }
+}

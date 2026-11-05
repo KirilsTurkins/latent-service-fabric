@@ -148,6 +148,13 @@ Those four runtime files use the same bounded, fail-closed raw-content retrieval
 described above. Only the exact reviewed minimatch advisory revision and setup-java
 lock are eligible for the source-repair receipt.
 
+Setup-node also retains minimatch 10.2.6 under its own
+[exact source policy](../../.github/security/minimatch-node-action-source-repairs.json).
+It keeps the deepmerge verifier, scopes its build-only glob update, and binds both
+runtime entrypoints to its reviewed fork revision and hosted build using the same
+bounded raw-content retrieval. The receipt covers only the exact reviewed advisory
+revision and setup-node lock.
+
 The selector-parser repair introduced by v4 remains at upstream 7.1.6 with its
 exact dependency graph. The selected v6 bundle also carries ip-address 10.7.4
 and undici 6.29.1. Current frontend locks pin tinypool 2.1.2, source-map-js 1.2.2,
