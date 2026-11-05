@@ -1,0 +1,206 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": "latent.java.current-terminal-evidence.v1",
+  "scope": "Source-bound signed Java terminal recovery; not full milestone or packaged qualification",
+  "nativeSourceCommit": "4a5d465b44d31a1ad54d12b300c7fd4cf9179dfd",
+  "nativeSourceTree": "ff738ff87e2dd7139658a5ad846e009b274ecb99",
+  "conductorSourceCommit": "4a5d465b44d31a1ad54d12b300c7fd4cf9179dfd",
+  "compilerSourceCommit": "46597407903231d2914f54358cff94dfc598878b",
+  "trust": "ephemeral-native-package-test-only",
+  "passed": true,
+  "signedGuestExecutionQualified": true,
+  "packagedDistributionQualified": false,
+  "receiptSha256": "sha256:f96e02d0e275fa5ef449b084619f8086c341462489af9a1954441f2ede548caf",
+  "evidenceInventorySha256": "sha256:2ea42f2ab0e67efd9520fe6cbc9188d149da242bc2933e06a31b35738654977c",
+  "nativeTools": {
+    "cli": {
+      "name": "cli",
+      "digest": "sha256:0b6859b4600d37809a32db3889b5101c57ebeb3d7ff5ef009f6fd01e5f01f12a",
+      "size": 521413640
+    },
+    "node": {
+      "name": "node",
+      "digest": "sha256:dcd1f9c1c55a6e28c8034af43e419fa764870ff5e245a4783be0932d9e9b0dab",
+      "size": 1061174024
+    },
+    "aot_compiler": {
+      "name": "aot_compiler",
+      "digest": "sha256:fb33e1dc35b77e5f38f57cd0538863125cdc13fc3728d2d96ee773eda6697e42",
+      "size": 33812944
+    },
+    "contracts_tool": {
+      "name": "contracts_tool",
+      "digest": "sha256:5481f47067e12c4d140b402334ff0bc3f9b8152e7394f44c15111c7b3459b320",
+      "size": 145218272
+    },
+    "signer": {
+      "name": "signer",
+      "digest": "sha256:22c341555a148a3a40a36a185079009805464522d279409b4de2328f88ccb545",
+      "size": 187332376
+    },
+    "recovery_helper": {
+      "name": "recovery_helper",
+      "digest": "sha256:afc489bfc5c0f9a409dadcae56776462730599b786a863dd5a0f6dc79811584a",
+      "size": 125664312
+    }
+  },
+  "toolPreparation": "The same-source AOT compiler and recovery helper were copied with debug symbols stripped to meet existing input byte limits; original unstripped binaries are retained.",
+  "measuredCases": [
+    "publish-aggregate",
+    "publish-put-once-legacy-v1",
+    "publish-put-once-compatible-v2",
+    "publish-put-once-writer-v2",
+    "publish-put-once-diagnostics",
+    "namespace-create",
+    "deploy-put-once-legacy-v1-legacy-runtime",
+    "fresh-query-no-command",
+    "deploy-put-once-diagnostics-diagnostic-runtime",
+    "deploy-put-once-legacy-v1-legacy-after-diagnostic",
+    "actual-post-stage-trap",
+    "actual-post-stage-fuel",
+    "actual-post-stage-cancel",
+    "actual-post-stage-memory",
+    "lost-response-after-commit",
+    "canonical-duplicate-original",
+    "changed-input-same-id",
+    "declared-rejection-after-change",
+    "stale-original-key-version",
+    "result-isolation-caller",
+    "command-isolation-caller",
+    "result-isolation-tenant",
+    "command-isolation-tenant",
+    "isolation-preserves-durable-rows",
+    "current-result-read-revocation",
+    "explicit-current-read-restoration",
+    "bounded-native-scan",
+    "deploy-put-once-compatible-v2-compatible-runtime",
+    "compatible-original-commit",
+    "compatible-original-rejection",
+    "ambiguous-provider-acceptance",
+    "crash-restart-original-recovery",
+    "deploy-put-once-legacy-v1-cancellation-legacy-runtime",
+    "deploy-put-once-compatible-v2-cancellation-compatible-runtime",
+    "cancellation-after-commit",
+    "fresh-java-invocations",
+    "actual-wide-java-value-before-schema",
+    "java-schema-quiesce",
+    "deploy-put-once-writer-v2-writer-runtime",
+    "schema-refuses-stale-query-minimum",
+    "schema-original-commit",
+    "schema-original-rejection",
+    "actual-java-schema-migration",
+    "java-restore-quiesce",
+    "restored-current-authority-mutations",
+    "restore-refuses-stale-query-minimum",
+    "restore-original-commit",
+    "restore-original-rejection",
+    "actual-java-terminal-history-restore",
+    "actual-physical-retirement"
+  ],
+  "nativeRecoveryReports": [
+    {
+      "name": "native-recovery-01-report.json",
+      "sha256": "sha256:c4bb0726423f46b690f31a488fb0b38fddaa326ff27c04457e8a4b6456a88e1e",
+      "action": "inspect-namespace",
+      "operationSucceeded": true,
+      "catalogsRetired": true,
+      "physicallyRetired": true
+    },
+    {
+      "name": "native-recovery-02-report.json",
+      "sha256": "sha256:becdffd156312a52b6e895fa8a19d24826937a0909dfab5cd46a8c069b38a708",
+      "action": "snapshot",
+      "operationSucceeded": true,
+      "catalogsRetired": true,
+      "physicallyRetired": true
+    },
+    {
+      "name": "native-recovery-03-report.json",
+      "sha256": "sha256:b4a7fcd8ed29a760b6c29110614eace2aa11556ec135ee0eb8e4c4bfdc4c2735",
+      "action": "stage-migration",
+      "operationSucceeded": true,
+      "catalogsRetired": true,
+      "physicallyRetired": true
+    },
+    {
+      "name": "native-recovery-04-report.json",
+      "sha256": "sha256:1113ba7122295a9fdb7da117d6e3727ca7226caf58fa85aa55e624c8e2f05c85",
+      "action": "complete-migration",
+      "operationSucceeded": true,
+      "catalogsRetired": true,
+      "physicallyRetired": true
+    },
+    {
+      "name": "native-recovery-05-report.json",
+      "sha256": "sha256:e266b46906af4884f83985fdd94ce9f6d62430e79064a0e7ea16b869f6baf597",
+      "action": "inspect-namespace",
+      "operationSucceeded": true,
+      "catalogsRetired": true,
+      "physicallyRetired": true
+    },
+    {
+      "name": "native-recovery-06-report.json",
+      "sha256": "sha256:b16886254d3f8321fbc7042f61f85c7c84c0953ff3b5d4ec0c4ec06de89bc58c",
+      "action": "snapshot",
+      "operationSucceeded": true,
+      "catalogsRetired": true,
+      "physicallyRetired": true
+    },
+    {
+      "name": "native-recovery-07-report.json",
+      "sha256": "sha256:1d6fedcd88948915862ff43700ba449397e8a623af2734a5d980bc4d68a9b64e",
+      "action": "resume-migration",
+      "operationSucceeded": true,
+      "catalogsRetired": true,
+      "physicallyRetired": true
+    },
+    {
+      "name": "native-recovery-08-report.json",
+      "sha256": "sha256:2219bb895dadd614f6f06dafbe88cef8719d323055971b9878f847ded717c2cf",
+      "action": "inspect-restore",
+      "operationSucceeded": true,
+      "catalogsRetired": true,
+      "physicallyRetired": true
+    },
+    {
+      "name": "native-recovery-09-report.json",
+      "sha256": "sha256:a5cfa1b97e8f25d1dce3c1235cc68a2f3d8cd869c186ef687a8cde3f4797a2a1",
+      "action": "restore",
+      "operationSucceeded": true,
+      "catalogsRetired": true,
+      "physicallyRetired": true
+    },
+    {
+      "name": "native-recovery-10-report.json",
+      "sha256": "sha256:2d07665a6db50aaa4871a508c0ed932cbb481b1ef66dbae0d9eb3e8987ca8d9f",
+      "action": "review",
+      "operationSucceeded": true,
+      "catalogsRetired": true,
+      "physicallyRetired": true
+    },
+    {
+      "name": "native-recovery-11-report.json",
+      "sha256": "sha256:da199c3f67d8fac68996b9f9d7d66a7866d1e6c3a7b773d7704f70707c3a42a6",
+      "action": "inspect-namespace",
+      "operationSucceeded": true,
+      "catalogsRetired": true,
+      "physicallyRetired": true
+    },
+    {
+      "name": "native-recovery-12-report.json",
+      "sha256": "sha256:d942c881f55b21968b2a70b27d5079a6bfa204a23ce767ca1c026ab26569c12d",
+      "action": "resume-restored-migration",
+      "operationSucceeded": true,
+      "catalogsRetired": true,
+      "physicallyRetired": true
+    }
+  ],
+  "remainingScenarios": [
+    "crash-before-commit",
+    "pending-effect-restore-reconciliation",
+    "full-retention-horizon-expiry",
+    "authenticated-clean-host-packaged-distribution"
+  ],
+  "retainedEvidence": "session-owned Docker volume lsf-phase4-387-linux, java-terminal-4a5d-attempt3",
+  "priorIntermittentResultHttp503": "The previous three failed runs remain unresolved and are not invalidated by this success."
+}

@@ -1,0 +1,130 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": "latent.java.current-pending-evidence.v1",
+  "scope": "Source-bound signed pending-effect backup, restore and reconciliation; not full milestone or packaged qualification",
+  "nativeSourceCommit": "81d72bceaf4d3f6a03bdde930d1c6857bbef4aab",
+  "nativeSourceTree": "7193c3ea110e4dd1d35e8d154175b5f41862f268",
+  "conductorSourceCommit": "81d72bceaf4d3f6a03bdde930d1c6857bbef4aab",
+  "compilerSourceCommit": "fccc27dbc52f2dd0db137078f8e7e436a41ebe8a",
+  "trust": "ephemeral-native-package-test-only",
+  "passed": true,
+  "signedPendingRestoreCloseQualified": true,
+  "packagedDistributionQualified": false,
+  "immediateHttpDenialQualified": false,
+  "postStageImmediateHttpRollbackQualified": false,
+  "receiptSha256": "sha256:7288a6e4e681c1c8a7c12f0cbde87db8c41e5c66214bc62114db05ec09fef8cb",
+  "evidenceInventorySha256": "sha256:107888960180eb8fbb6f5f2b9827c7f657d1cf1b164b8036224623dcb074671d",
+  "nativeTools": {
+    "cli": {
+      "name": "cli",
+      "digest": "sha256:55dacedf51d9fde3362e0797efec39ac3cbd0d06309d914a2ead2e76791b98b2",
+      "size": 79287216
+    },
+    "node": {
+      "name": "node",
+      "digest": "sha256:3e7f33104cd38635ac19897881466b5dfcf2f48f48b4e984fd4de1adb0198f4c",
+      "size": 202105624
+    },
+    "aot_compiler": {
+      "name": "aot_compiler",
+      "digest": "sha256:6184a770b905c3d3a82faa9ee2dbbe2eface59c320ff8f0d059a4b892904cef1",
+      "size": 51948544
+    },
+    "contracts_tool": {
+      "name": "contracts_tool",
+      "digest": "sha256:95b38a968b1d764f994d47f949bd2a6112299ef70c61bd29abaec8b0b59b7692",
+      "size": 14944312
+    },
+    "signer": {
+      "name": "signer",
+      "digest": "sha256:d8347f4ed193be4ae0537bdf414bc7699d1416bdf2c326759bfefa37f19a4c57",
+      "size": 30000264
+    },
+    "recovery_helper": {
+      "name": "recovery_helper",
+      "digest": "sha256:1c706c27427084677529f19763fa080c8688d91e7322eaf6d305404530173a6d",
+      "size": 206866904
+    }
+  },
+  "measuredCases": [
+    "publish-aggregate",
+    "publish-put-once-legacy-v1",
+    "publish-put-once-compatible-v2",
+    "publish-put-once-writer-v2",
+    "publish-put-once-diagnostics",
+    "namespace-create",
+    "deploy-put-once-legacy-v1-legacy-runtime",
+    "java-pending-before-command-pause",
+    "java-pending-backup-quiesce",
+    "java-pending-original-dispatch-resume",
+    "java-pending-after-remote-pause",
+    "signed-pending-original-remote-acceptance",
+    "java-pending-restore-quiesce",
+    "restored-current-authority-mutations",
+    "actual-signed-pending-backup-restore-close",
+    "actual-pending-physical-retirement"
+  ],
+  "nativeRecoveryReports": [
+    {
+      "name": "native-recovery-01-report.json",
+      "sha256": "sha256:6beb9539802e8689e21391ec7526a0227d9f0a60b4de8be0a33ca5dd1fa358a1",
+      "action": "inspect-namespace"
+    },
+    {
+      "name": "native-recovery-02-report.json",
+      "sha256": "sha256:19feb0d52a9e6933f39c195c0820973c94b7998c4d693ddce7342218f8591d05",
+      "action": "snapshot"
+    },
+    {
+      "name": "native-recovery-03-report.json",
+      "sha256": "sha256:0647958b260f75b5f870ea367932e43e66b57e2f49217fbad5fde340f938a64a",
+      "action": "resume"
+    },
+    {
+      "name": "native-recovery-04-report.json",
+      "sha256": "sha256:20873c2be719be2983e1b661588219e8f8663df153b62f1b2436470aa5939f3f",
+      "action": "inspect-restore"
+    },
+    {
+      "name": "native-recovery-05-report.json",
+      "sha256": "sha256:16df1ae6fa140def99303bc64f2627ddbe2fe60806972f1ad5e01ea6ffc3977b",
+      "action": "restore"
+    },
+    {
+      "name": "native-recovery-06-report.json",
+      "sha256": "sha256:67aeb627408f7327076de2793f0ea0b1f622f890982bf083f827c3a83b564ec6",
+      "action": "inspect-namespace"
+    },
+    {
+      "name": "native-recovery-07-report.json",
+      "sha256": "sha256:526aa35d7a9bc59d07e800bf0d97f4accaa08c35fd23c7fd56d097579db79c75",
+      "action": "inspect-close-effects"
+    },
+    {
+      "name": "native-recovery-08-report.json",
+      "sha256": "sha256:3e426d7408a44427a258ee1a271ae1d986a2b9378651664eb0c67014f60f4840",
+      "action": "close-effects"
+    },
+    {
+      "name": "native-recovery-09-report.json",
+      "sha256": "sha256:07ed03c399789944d686976b1171140e5fe6201bdf51deed52d92cd2cf88e420",
+      "action": "close-effects"
+    },
+    {
+      "name": "native-recovery-10-report.json",
+      "sha256": "sha256:8108f987486a8a442a8e05807cc74d8674cf11a15983a7f55ddf680a5836c49f",
+      "action": "review"
+    },
+    {
+      "name": "native-recovery-11-report.json",
+      "sha256": "sha256:d1f6f288e742da3cc8253adfe6012f4dfb2c374c834034a968174191003915ae",
+      "action": "inspect-namespace"
+    },
+    {
+      "name": "native-recovery-12-report.json",
+      "sha256": "sha256:1276ec88b062db1cd431266b2d954adac7fc2a390adabcdbc23fcd25b60caed4",
+      "action": "resume"
+    }
+  ],
+  "retainedEvidence": "session-owned Docker volume lsf-phase4-387-linux, java-pending-attempt1"
+}

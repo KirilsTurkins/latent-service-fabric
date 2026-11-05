@@ -74,7 +74,10 @@ class CurrentHttpTerminalProgram(unittest.TestCase):
                      ('publish', 'authority', 'namespace-create', 'early-http-runtime')),
                     ({'current_publication_program': True, 'current_program': 'pending-close'},
                      ('publish', 'authority', 'namespace-create', 'legacy-runtime',
-                      'pending-original-runtime', 'pending-restored-runtime'))]:
+                      'pending-original-runtime', 'pending-restored-runtime')),
+                    ({'current_publication_program': True, 'current_program': 'precommit-crash'},
+                     ('publish', 'authority', 'namespace-create', 'legacy-runtime',
+                      'diagnostic-metadata', 'diagnostic-runtime', 'diagnostic-after-crash'))]:
                 with self.subTest(options=options):
                     node = self.node(root, **options)
                     self.assertEqual(node.program, names)
@@ -102,7 +105,8 @@ class CurrentHttpTerminalProgram(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary, patch.object(lifecycle, 'Process') as process:
             root = Path(temporary).resolve()
             for selected in ({}, {'current_publication_program': True, 'current_program': 'early-http'},
-                             {'current_publication_program': True, 'current_program': 'pending-close'}):
+                             {'current_publication_program': True, 'current_program': 'pending-close'},
+                             {'current_publication_program': True, 'current_program': 'precommit-crash'}):
                 with self.subTest(selected=selected):
                     node = self.node(root, **selected)
                     before = node.program, node.metadata_sessions
@@ -185,7 +189,7 @@ class CurrentHttpTerminalProgram(unittest.TestCase):
                 self.assertEqual(process.call_count, 2)
 
     def test_real_environment_selects_extension_only_for_current_http_terminal(self):
-        for program, length in [('terminal', 18), ('early-http', 4), ('pending-close', 6)]:
+        for program, length in [('terminal', 18), ('early-http', 4), ('pending-close', 6), ('precommit-crash', 7)]:
             with self.subTest(program=program), tempfile.TemporaryDirectory() as temporary:
                 fixture = EnvironmentFixture(Path(temporary).resolve())
                 peer, configuration, node = fixture.prepare(program)

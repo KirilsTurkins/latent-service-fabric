@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "latent.java.poststage-http-startup-refusal.v1",
+  "passed": false,
+  "signedGuestExecutionQualified": false,
+  "postStageRollbackQualified": false,
+  "packagedDistributionQualified": false,
+  "observation": {
+    "nativeSourceCommit": "3599ce32df16ed4ddd1aa82a4127a57ee94a8669",
+    "conductorSourceCommit": "8d0c13c7537f4db00b7db6fee27ef0011235a3a8",
+    "compilerSourceCommit": "a1b0b7c7190610dca57171db2c31abb636935925",
+    "selectionDigest": "sha256:6121e0afefa8b9ea1e0630e7b4c05dcc8652d41208bfeab1eb087ca78796968c",
+    "failedStage": "namespace-create",
+    "failureType": "WorkflowError",
+    "fixedFailureReason": "node-startup-exit-unavailable",
+    "seconds": 39.677926,
+    "measuredCases": [
+      "publish-early-http",
+      "deploy-put-once-poststage-http-denial"
+    ],
+    "evidenceInventory": {
+      "path": "inventory.json",
+      "bytes": 9853,
+      "digest": "sha256:5a834710f7d1bf38bfe8a29c4312ba6e38224dbb7c1926a895ba1e0daf84cd27"
+    }
+  },
+  "startupOwner": {
+    "exitStatus": 1,
+    "reaped": true,
+    "started": null,
+    "startupElapsedMillis": 2724
+  },
+  "startupObservation": {
+    "schemaVersion": "latent.startup-failure-observation.v1",
+    "startupSucceeded": false,
+    "terminalFailure": {
+      "owner": "platform",
+      "reason": "permission-denied"
+    },
+    "observations": [
+      {
+        "stage": "stateOperations",
+        "failure": {
+          "owner": "platform",
+          "reason": "permission-denied"
+        }
+      },
+      {
+        "stage": "nodeServices",
+        "failure": {
+          "owner": "platform",
+          "reason": "permission-denied"
+        }
+      }
+    ],
+    "truncated": false,
+    "shutdown": null
+  },
+  "receiptSha256": "sha256:6443095d16a49982d439a8f51161bd18f567bef32909690377d16500f9d3492b",
+  "analysis": "The selected native service-integration fence rejects a guest importing immediate HTTP even without an immediate HTTP deployment grant. This source-backed explanation is an inference from the captured refusal and the native installation guard; no guest execution was observed."
+}

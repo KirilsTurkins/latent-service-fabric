@@ -1,0 +1,64 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": "latent.java.current-precommit-crash-evidence.v1",
+  "scope": "Source-bound signed Java guest precommit interruption and original pending identity recovery; not full milestone or packaged qualification",
+  "nativeSourceCommit": "81d72bceaf4d3f6a03bdde930d1c6857bbef4aab",
+  "nativeSourceTree": "7193c3ea110e4dd1d35e8d154175b5f41862f268",
+  "conductorSourceCommit": "ac55f717f2d258b78db18bbe338b3670ebd0ec72",
+  "compilerSourceCommit": "fccc27dbc52f2dd0db137078f8e7e436a41ebe8a",
+  "trust": "ephemeral-native-package-test-only",
+  "passed": true,
+  "signedPrecommitCrashQualified": true,
+  "packagedDistributionQualified": false,
+  "receiptSha256": "sha256:62c48a9e82154915d8d7dfda61029a4000837cce918c308fc385712b2ecd4c8d",
+  "evidenceInventorySha256": "sha256:d6ad6a84c3a8a6b283eb2ee1d919a27fef2be38eb3f038b52fe7585522036cc0",
+  "nativeTools": {
+    "cli": {
+      "name": "cli",
+      "digest": "sha256:55dacedf51d9fde3362e0797efec39ac3cbd0d06309d914a2ead2e76791b98b2",
+      "size": 79287216
+    },
+    "node": {
+      "name": "node",
+      "digest": "sha256:3e7f33104cd38635ac19897881466b5dfcf2f48f48b4e984fd4de1adb0198f4c",
+      "size": 202105624
+    },
+    "aot_compiler": {
+      "name": "aot_compiler",
+      "digest": "sha256:6184a770b905c3d3a82faa9ee2dbbe2eface59c320ff8f0d059a4b892904cef1",
+      "size": 51948544
+    },
+    "contracts_tool": {
+      "name": "contracts_tool",
+      "digest": "sha256:95b38a968b1d764f994d47f949bd2a6112299ef70c61bd29abaec8b0b59b7692",
+      "size": 14944312
+    },
+    "signer": {
+      "name": "signer",
+      "digest": "sha256:d8347f4ed193be4ae0537bdf414bc7699d1416bdf2c326759bfefa37f19a4c57",
+      "size": 30000264
+    },
+    "recovery_helper": {
+      "name": "recovery_helper",
+      "digest": "sha256:1c706c27427084677529f19763fa080c8688d91e7322eaf6d305404530173a6d",
+      "size": 206866904
+    }
+  },
+  "measuredCases": [
+    "publish-aggregate",
+    "publish-put-once-legacy-v1",
+    "publish-put-once-compatible-v2",
+    "publish-put-once-writer-v2",
+    "publish-put-once-diagnostics",
+    "namespace-create",
+    "deploy-put-once-legacy-v1-legacy-runtime",
+    "deploy-put-once-diagnostics-diagnostic-runtime",
+    "actual-precommit-crash-recovery",
+    "actual-precommit-physical-retirement"
+  ],
+  "caseEvidenceSha256": {
+    "actual-precommit-crash-recovery": "sha256:0d343f21234405f2907dde0a4cffb7bfa73f7e3d5b83a711d7c0a93f605a61c1",
+    "actual-precommit-physical-retirement": "sha256:18224a14237470cc8a4d5083c4be558f595fcd2d121f606e0b4cb32f89e3e1b1"
+  },
+  "retainedEvidence": "session-owned Docker volume lsf-phase4-387-linux, java-precommit-attempt1"
+}
