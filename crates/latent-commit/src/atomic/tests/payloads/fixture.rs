@@ -185,23 +185,12 @@ impl Fixture {
                 Instant::now() + Duration::from_secs(15),
             )
             .unwrap();
-        let (mut request, mut control) = authority.request("payload-command");
+        let (mut request, control) = authority.request("payload-command");
         request.imports = vec![latent_executor::BoundImport {
             capability: latent_core::CapabilityId("latent:blob/blob@0.2.0".into()),
             contract: "latent:blob/blob@0.2.0".into(),
             opaque_handle: "not-authority".into(),
         }];
-        request.activation.budget = request.budget.clone();
-        control.budget = latent_core::ActivationBudget::new(
-            latent_core::EffectiveActivationBudget::admit_at(
-                &request.budget,
-                &request.budget,
-                &request.budget,
-                None,
-                latent_core::ClockSample::system_now(),
-            )
-            .unwrap(),
-        );
         let session = authority
             .broker
             .open_session(plan, &request, &control, &authority.publication)

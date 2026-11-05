@@ -574,6 +574,13 @@ pub struct ReadPage {
 }
 
 impl ReadView {
+    /// Preserve this view's process-local engine identity without retaining a
+    /// database read transaction. The token itself confers no access.
+    #[must_use]
+    pub fn binding(&self) -> StoreBinding {
+        StoreBinding(Arc::clone(&self.views))
+    }
+
     #[must_use]
     pub fn is_bound_to(&self, binding: &StoreBinding) -> bool {
         Arc::ptr_eq(&self.views, &binding.0)

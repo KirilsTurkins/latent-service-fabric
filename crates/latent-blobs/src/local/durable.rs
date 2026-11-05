@@ -228,7 +228,18 @@ impl LocalBlobStore {
         limits: LocalBlobLimits,
         store: &EmbeddedStore,
     ) -> Result<Arc<Self>> {
-        let identity = StoreIdentity::inspect(&store.snapshot().map_err(storage)?)
+        let view = store.snapshot().map_err(storage)?;
+        Self::open_durable_for_view(root, namespace, limits, &view)
+    }
+    /// Trusted startup can bind the actual initializing engine from its
+    /// worker-owned view before publishing readiness.
+    pub fn open_durable_for_view(
+        root: &Path,
+        namespace: &str,
+        limits: LocalBlobLimits,
+        view: &ReadView,
+    ) -> Result<Arc<Self>> {
+        let identity = StoreIdentity::inspect(view)
             .map_err(storage)?
             .ok_or(LocalBlobError::Invalid)?;
         let mut owner = Self::open(root, namespace, limits)?;
@@ -261,7 +272,7 @@ impl LocalBlobStore {
         let inner = Arc::get_mut(&mut Arc::get_mut(&mut owner).ok_or(LocalBlobError::Busy)?.inner)
             .ok_or(LocalBlobError::Busy)?;
         inner.durable = Some(mode);
-        inner.durable_binding = Some(store.binding());
+        inner.durable_binding = Some(view.binding());
         Ok(owner)
     }
     /// Native provider work verifies length/media/digest and acquires its real

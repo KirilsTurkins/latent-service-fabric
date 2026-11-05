@@ -3,6 +3,55 @@ use super::*;
 mod fixture;
 use fixture::Fixture;
 
+fn protected_recovery(
+    root: &std::path::Path,
+) -> latent_state::protected_store::ProtectedStoreStartup {
+    use latent_state::{
+        embedded::StoreError,
+        protected_store::{ProtectedStoreConfig, ProtectedStoreOwner},
+    };
+    let mut config = ProtectedStoreConfig::bounded_linux(root.to_path_buf());
+    config.file_name = "state.redb".into();
+    let blobs = root.join("blobs");
+    ProtectedStoreOwner::start_validated_view(config, 4096, move |view| {
+        validate_view(view, |view, key, bytes| {
+            if *key == latent_state::store_identity::StoreIdentity::row_key() {
+                latent_state::store_identity::StoreIdentity::validate_row(key, bytes)
+            } else {
+                accounted::installed_codec(view, key, bytes)
+            }
+        })?;
+        latent_effects::dispatch_store::DispatchCatalog::validate_view(view)?;
+        let owner = latent_blobs::local::LocalBlobStore::open_durable_for_view(
+            &blobs,
+            "private",
+            latent_blobs::local::LocalBlobLimits {
+                maximum_objects: 4,
+                maximum_object_bytes: 64,
+                maximum_disk_bytes: 65536,
+                maximum_stages: 4,
+                maximum_stage_bytes: 128,
+                maximum_handles: 8,
+                maximum_chunk_bytes: 8,
+                ..latent_blobs::local::LocalBlobLimits::default()
+            },
+            view,
+        )
+        .map_err(|_| StoreError::Corrupt)?;
+        let mut inventory = latent_blobs::local::RequiredBlobInventory::begin(&owner, view)
+            .map_err(|_| StoreError::Corrupt)?;
+        loop {
+            let (_, done) = inventory
+                .next_page(&owner, view, 1, 1024, &|| Ok(()))
+                .map_err(|_| StoreError::Corrupt)?;
+            if done {
+                return Ok(());
+            }
+        }
+    })
+    .unwrap()
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn actual_captured_blob_pin_moves_into_atomic_result_and_effect_owners() {
     let fixture = Fixture::new();
@@ -202,6 +251,40 @@ async fn actual_captured_blob_pin_moves_into_atomic_result_and_effect_owners() {
         store.release_durable_reference(&TenantId("a".into()), &blob, &state, &|| Ok(())),
         Err(latent_blobs::local::LocalBlobError::Busy)
     );
+    drop(inventory);
+    drop(store);
+    drop(state);
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(root.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    std::fs::set_permissions(
+        root.path().join("state.redb"),
+        std::fs::Permissions::from_mode(0o600),
+    )
+    .unwrap();
+    let protected = protected_recovery(root.path()).await.unwrap();
+    protected.close();
+    let drained = protected
+        .drain_async(
+            std::time::Instant::now() + std::time::Duration::from_secs(10),
+            std::future::pending(),
+        )
+        .unwrap()
+        .await;
+    assert!(drained.snapshot.physically_retired());
+    drop(protected);
+    let object = std::fs::read_dir(root.path().join("blobs/objects"))
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+    std::fs::write(object.join("data"), b"evil").unwrap();
+    assert!(matches!(
+        protected_recovery(root.path()).await,
+        Err(latent_state::protected_store::ProtectedStoreError::Store(
+            latent_state::embedded::StoreError::Corrupt
+        ))
+    ));
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
