@@ -7,7 +7,7 @@ import hashlib
 import json
 
 INPUT_SHA256 = '734180d07b254cf0be8c60c3242654060d6cec2629bf53e05aaa6cf1082d9e14'
-FACTORY_SHA256 = 'fb1804f303b869f63cf5c047428b989b0fee4e36a93863cb6681f6a5852afcc6'
+FACTORY_SHA256 = 'af509308eb387973ba183d6eccdc24f3f98384f454836e4f1df9a607ff7a6159'
 PROBE_SHA256 = '5998c05dd4dcf5b2c457cd11163d3dfc47afefdd4c688efacd0d550877516d11'
 ADDED = 'net/factory-node-pci-intx.c'
 
@@ -39,7 +39,7 @@ def transform(values, factory, probe):
     before = identities(values)
     digest = hashlib.sha256(json.dumps(before, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     require(digest == INPUT_SHA256, 'complete-input-identity')
-    require(type(factory) is bytes and len(factory) == 8421 and
+    require(type(factory) is bytes and len(factory) == 9026 and
         hashlib.sha256(factory).hexdigest() == FACTORY_SHA256, 'factory-material-identity')
     require(type(probe) is bytes and len(probe) == 5766 and
         hashlib.sha256(probe).hexdigest() == PROBE_SHA256, 'probe-material-identity')
