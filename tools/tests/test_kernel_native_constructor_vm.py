@@ -538,3 +538,182 @@ class Q35NodePciFixupControls(unittest.TestCase):
                 'lsf_node_setup_records_locked', 'pci_record->phase != LSF_PREPAID_LIVE',
                 'fw_record->phase != LSF_PREPAID_LIVE', 'factory.pool.poisoned = 1u'):
             self.assertIn(predicate, material)
+
+
+class Q35NodePciIntxControls(unittest.TestCase):
+    @staticmethod
+    def serial():
+        raw = Q35NodePciFixupControls.serial()
+        old = b'intxCheck=0 barProbe=0 registered=0\n'
+        replacement = (b'intxCheck=1 barProbe=0 registered=0\n'
+            b'[    2.345680] LSFQ35PCIINTX1 command=0007 pin=1 line=255 '
+            b'restored=1 barProbe=0 registered=0\n')
+        assert raw.count(old) == 1
+        return raw.replace(old, replacement)
+
+    def test_marker_requires_saved_word_and_ordered_original_owner(self):
+        raw = self.serial()
+        observation = owner.node_intx_serial(raw)
+        self.assertEqual(observation['pciIntx']['originalCommand'], 7)
+        self.assertTrue(observation['pciIntx']['savedCommandRestored'])
+        for name in ('irqFundingQualified', 'sharedInterruptCustodyQualified', 'physicalBankRetired'):
+            self.assertFalse(observation['pciIntx'][name])
+        for bad in (raw.replace(b'command=0007', b'command=0003'),
+                    raw.replace(b'command=0007', b'command=0407'),
+                    raw.replace(b'pin=1', b'pin=0'), raw.replace(b'line=255', b'line=256'),
+                    raw.replace(b'restored=1', b'restored=0'),
+                    raw.replace(b'intxCheck=1', b'intxCheck=0'),
+                    raw.replace(b'LSFQ35PCIINTX1', b'OTHER'),
+                    raw.replace(b'barProbe=0', b'barProbe=1', 1),
+                    raw + b'[    2.345680] LSFQ35PCIINTX1 command=0007 pin=1 line=255 restored=1 barProbe=0 registered=0\n'):
+            with self.subTest(raw=bad), self.assertRaises(ValueError):
+                owner.node_intx_serial(bad)
+
+    def test_source_capture_and_unbound_projection_refuse(self):
+        captured = owner.node_intx_capture(owner.ROOT)
+        self.assertEqual(set(captured), {owner.INTX_PROJECTOR, owner.INTX_FACTORY,
+            owner.INTX_PROBE, owner.INTX_SINK, owner.INTX_VIRTIO})
+        with self.assertRaises(ValueError):
+            owner.node_intx_compose({}, captured)
+        with self.assertRaises(ValueError):
+            owner.node_intx_compose({}, {})
+
+    def test_exact_actor_forward_and_restore_only_are_distinct(self):
+        material = (owner.ROOT/owner.INTX_FACTORY).read_text(encoding='utf8')
+        for predicate in ('node->prefix_task != current', 'node->mm != current->mm',
+                'node->tgid != task_tgid(current)', 'node->cred != current_cred()',
+                'node->net != current->nsproxy->net_ns', 'lsf_node_setup_records_locked',
+                'pci_record->phase != LSF_PREPAID_LIVE', 'fw_record->phase != LSF_PREPAID_LIVE'):
+            self.assertIn(predicate, material)
+        forward = material.split('int lsf_node_intx_forward', 1)[1].split('int lsf_node_intx_preflight', 1)[0]
+        restore = material.split('int lsf_node_intx_claim_restore', 1)[1].split('int lsf_node_intx_restore_written', 1)[0]
+        self.assertIn('lsf_node_constructor_actor_current()', forward)
+        self.assertNotIn('lsf_node_constructor_actor_current()', restore)
+        self.assertIn('node->prefix_intx_saved == original', restore)
+        self.assertIn('LSF_NODE_INTX_RESTORE_CLAIMED', restore)
+        self.assertNotIn('pci_write_config', restore)
+
+
+class Q35NodePciIntxOwnerControls(unittest.TestCase):
+    def test_trace_configuration_is_explicit_and_refuses_replacement(self):
+        from tools import q35_intx_owner as host
+        command = ('/absolute/qemu', '-machine', 'pc-q35-11.1')
+        traced = host.trace_argv(command)
+        self.assertEqual(traced[:len(command)], command)
+        self.assertEqual(traced[len(command):], tuple(part for event in host.EVENTS
+            for part in ('-trace', 'enable='+event)))
+        for bad in (command+('-trace', 'old'), command+('-D', 'old'), list(command)):
+            with self.subTest(argv=bad), self.assertRaises(ValueError):
+                host.trace_argv(bad)
+
+    def test_loss_probe_requires_exact_sink_and_only_accepts_exit_74(self):
+        import stat
+        import time
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import q35_intx_owner as host
+        class Commands:
+            root = '/owned'
+            environment = {}
+            deadline = time.monotonic()+10
+            def __init__(self): self.records, self.retained = [], []
+            def retain(self,label,result): self.retained.append((label,result.output,result.stderr))
+        class Result:
+            stdout, stderr = b'', b''
+            def __init__(self, code): self.returncode = code
+        device = SimpleNamespace(st_mode=stat.S_IFCHR, st_rdev=123)
+        argv = ('/absolute/qemu','-trace','enable=pci_cfg_read')
+        with patch.object(host.Path, 'lstat', return_value=device), \
+             patch.object(host.os, 'major', return_value=1, create=True), \
+             patch.object(host.os, 'minor', return_value=7, create=True), \
+             patch.object(host.build_process, 'run_bounded_result', return_value=Result(74)) as invoke:
+            commands=Commands(); result=host.probe_loss(commands,argv)
+            self.assertEqual(result['actualExit'],74)
+            self.assertTrue(commands.records[0]['descendantsCleaned'])
+            self.assertEqual(invoke.call_args.args[0][-2:], ['-D',str(host.Path('/dev/full'))])
+        for code in (0, 1, 75):
+            with self.subTest(code=code), patch.object(host.Path, 'lstat', return_value=device), \
+                 patch.object(host.os, 'major', return_value=1, create=True), \
+                 patch.object(host.os, 'minor', return_value=7, create=True), \
+                 patch.object(host.build_process, 'run_bounded_result', return_value=Result(code)), \
+                 self.assertRaises(ValueError):
+                host.probe_loss(Commands(),argv)
+        device.st_mode = stat.S_IFREG
+        with patch.object(host.Path, 'lstat', return_value=device), \
+             patch.object(host.build_process, 'run_bounded_result') as invoke, self.assertRaises(ValueError):
+            host.probe_loss(Commands(),argv)
+        invoke.assert_not_called()
+
+
+"""Bounded grammar/refusal controls; synthetic data is not a VM observation."""
+import unittest
+from tools import q35_intx_trace as trace
+
+def cfg(kind, offset, value, device=b'virtio-net-pci'):
+    arrow = b'->' if kind == b'read' else b'<-'
+    return b'pci_cfg_'+kind+b' '+device+b' 00:03.0 @0x'+format(offset, 'x').encode()+b' '+arrow+b' 0x'+format(value, 'x').encode()
+
+def route(index, parent, pic):
+    return [b'pci_route_irq IRQ '+str(index).encode()+b' @/machine/peripheral/net0 -> IRQ '+str(parent).encode()+b' @root-complex',
+            b'x86_gsi_interrupt GSI interrupt #'+str(16+parent).encode()+b' level:0',
+            b'x86_gsi_interrupt GSI interrupt #'+str(pic).encode()+b' level:0']
+
+def example():
+    rows = [cfg(b'read', off, value) for off, value in trace.PREFIX]
+    rows += [cfg(b'read', 4, 7), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff),
+             cfg(b'read', 4, 7), cfg(b'write', 4, 0x407)]
+    for i, parent in enumerate((7, 4, 5, 6)):
+        rows += route(i, parent, i+8)
+    rows += [b'lsf_q35_virtio_guard old=0x7 new=0x407 status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 master=1 vga=0 mappings=stable bql=1',
+             cfg(b'read', 4, 0x407), cfg(b'write', 4, 7)]
+    for i, parent in enumerate((7, 4, 5, 6)):
+        rows += route(i, parent, i+8)
+    rows += [b'lsf_q35_virtio_guard old=0x407 new=0x7 status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 master=1 vga=0 mappings=stable bql=1',
+             cfg(b'read', 4, 7), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff),
+             cfg(b'read', 4, 7), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff)]
+    rows += [cfg(b'read', off, value) for off, value in reversed(trace.PREFIX)]
+    return b'\n'.join(rows)+b'\n'
+
+class TraceRefusalControls(unittest.TestCase):
+    def test_expected_complete_pattern_is_only_a_source_model(self):
+        result = trace.inspect(example(), 7, 1, 0xff)
+        self.assertEqual(result['selectedCommandWrites'], 2)
+        self.assertEqual(result['selectedRouteCallbacks'], 8)
+        self.assertEqual(result['virtioGuardPasses'], 2)
+        self.assertEqual(result['apicGsi'], [23, 20, 21, 22])
+        self.assertEqual(result['picGsi'], [8, 9, 10, 11])
+        self.assertFalse(result['traceDeliveryQualified'])
+        self.assertFalse(result['irqFundingQualified'])
+
+    def test_missing_extra_or_asserted_callbacks_refuse(self):
+        raw = example()
+        cases = (raw.replace(b'x86_gsi_interrupt GSI interrupt #23 level:0\n', b'', 1),
+                 raw.replace(b'x86_gsi_interrupt GSI interrupt #23 level:0',
+                             b'x86_gsi_interrupt GSI interrupt #23 level:1', 1),
+                 raw.replace(b'x86_gsi_interrupt GSI interrupt #8 level:0\n',
+                             b'x86_gsi_interrupt GSI interrupt #8 level:0\n'
+                             b'x86_gsi_interrupt GSI interrupt #8 level:0\n', 1),
+                 raw.replace(b'@/machine/peripheral/net0', b'@/machine/peripheral/foreign', 1),
+                 raw.replace(b'x86_gsi_interrupt GSI interrupt #8 level:0',
+                             b'x86_gsi_interrupt GSI interrupt #9 level:0', 1),
+                 raw.replace(b'status=0 isr=0 disabled=0 broken=0',
+                             b'status=0 isr=0 disabled=1 broken=0', 1),
+                 raw.replace(b'lsf_q35_virtio_guard old=0x7 new=0x407 status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 master=1 vga=0 mappings=stable bql=1\n', b'', 1))
+        for case in cases:
+            with self.subTest(case=case[:80]), self.assertRaises(ValueError):
+                trace.inspect(case, 7, 1, 0xff)
+
+    def test_config_mutation_and_unbounded_or_ambiguous_trace_refuse(self):
+        raw = example()
+        first = b'\n'.join(cfg(b'read', *row) for row in trace.PREFIX)+b'\n'
+        cases = (raw.replace(cfg(b'write', 4, 0x407), cfg(b'write', 4, 0x405), 1),
+                 raw.replace(cfg(b'write', 4, 7), cfg(b'write', 0x10, 7), 1),
+                 first+raw, raw[:-1], raw+b'trace event missing\n',
+                 raw+b'x'*(trace.MAX_TRACE+1),
+                 raw.replace(cfg(b'read', 0x3d, 1), cfg(b'read', 0x3d, 2), 1))
+        for case in cases:
+            with self.subTest(length=len(case)), self.assertRaises(ValueError):
+                trace.inspect(case, 7, 1, 0xff)
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

@@ -205,7 +205,8 @@ NODE_IDENTITY_BRANCH = 'feat/sdk-738-q35-pci-identity-20261104'
 NODE_PREFIX_BRANCH = 'feat/sdk-738-q35-node-pci-prefix-20261104'
 NODE_SETUP_BRANCH = 'feat/sdk-738-q35-pci-setup-20261104'
 NODE_FIXUP_BRANCH = 'feat/sdk-738-q35-pci-fixup-20261104'
-NODE_BRANCHES = (NODE_BRANCH, NODE_IDENTITY_BRANCH, NODE_PREFIX_BRANCH, NODE_SETUP_BRANCH, NODE_FIXUP_BRANCH)
+NODE_INTX_BRANCH = 'feat/sdk-738-q35-pci-intx-20261105'
+NODE_BRANCHES = (NODE_BRANCH, NODE_IDENTITY_BRANCH, NODE_PREFIX_BRANCH, NODE_SETUP_BRANCH, NODE_FIXUP_BRANCH, NODE_INTX_BRANCH)
 PREFIX_ROOT = 'research/standard-outbound/linux-6.12-lineage/'
 PREFIX_BRIDGE = PREFIX_ROOT+'node-constructor-bridge/projector.py'
 PREFIX_PROJECTOR = PREFIX_ROOT+'node-pci-prefix/projector.py'
@@ -218,6 +219,12 @@ SETUP_PROFILE = 'lsf-q35-node-pci-setup-v1'
 FIXUP_ROOT = PREFIX_ROOT+'node-pci-fixup/'
 FIXUP_PROJECTOR = FIXUP_ROOT+'projector.py'
 FIXUP_MATERIAL = FIXUP_ROOT+'factory-node-pci-fixup.c'
+INTX_ROOT = PREFIX_ROOT+'node-pci-intx/'
+INTX_PROJECTOR = INTX_ROOT+'projector.py'
+INTX_FACTORY = INTX_ROOT+'factory-node-pci-intx.c'
+INTX_PROBE = INTX_ROOT+'probe-intx-helpers.c'
+INTX_SINK = INTX_ROOT+'qemu_trace_sink.py'
+INTX_VIRTIO = INTX_ROOT+'qemu_virtio_guard.py'
 NODE_ROOT = 'research/standard-outbound/linux-6.12-lineage/node-boot/'
 NODE_PROJECTOR = NODE_ROOT+'projector.py'
 NODE_MATERIALS = ('factory-node-boot.c','Kconfig.fragment','Makefile.fragment')
@@ -484,6 +491,86 @@ def node_fixup_serial(raw):
     observed['pciEarlyFixup'] = {'linkedEntries':int(match.group(1)), 'matchingCallbacks':0,
         'originalDispatcherReached':True, 'intxMaskCheckReached':False, 'barProbeReached':False,
         'registered':False, 'callbacksQualified':False}
+    return observed
+
+
+def node_intx_capture(root):
+    import stat
+    result = {}
+    for name in (INTX_PROJECTOR, INTX_FACTORY, INTX_PROBE, INTX_SINK, INTX_VIRTIO):
+        path = root/name
+        require(stat.S_ISREG(path.lstat().st_mode) and not path.is_symlink(), 'intx-source-kind')
+        raw = read_file(path, 4*1024**2)
+        raw.decode('utf8', 'strict')
+        require(b'\r' not in raw, 'intx-source-LF')
+        result[name] = raw
+    return result
+
+
+def node_intx_module(captured, name):
+    import importlib.abc
+    import importlib.util
+    from pathlib import Path
+    require(name in captured and name in (INTX_PROJECTOR, INTX_SINK, INTX_VIRTIO),
+        'intx-captured-module')
+    path = str((ROOT/name).resolve())
+    module_name = '_lsf_q35_intx_' + name.rsplit('/', 1)[-1].removesuffix('.py')
+    class Captured(importlib.abc.SourceLoader):
+        def get_filename(self, fullname):
+            require(fullname == module_name, 'intx-projector-name')
+            return path
+        def get_data(self, asked):
+            require(asked == path, 'intx-no-alternate-projector')
+            return captured[name]
+        def path_stats(self, asked):
+            raise OSError('intx-no-bytecode')
+    spec = importlib.util.spec_from_file_location(module_name, path, loader=Captured())
+    require(spec is not None and spec.loader is not None, 'intx-projector-spec')
+    stage = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(stage)
+    require(Path(stage.__file__).resolve() == Path(path), 'intx-projector-origin')
+    return stage
+
+
+def node_intx_compose(values, captured):
+    require(set(captured) == {INTX_PROJECTOR, INTX_FACTORY, INTX_PROBE, INTX_SINK, INTX_VIRTIO},
+        'intx-captured-set')
+    stage = node_intx_module(captured, INTX_PROJECTOR)
+    result, row = stage.transform(values, captured[INTX_FACTORY], captured[INTX_PROBE])
+    require(len(result) == 493 and len(result) <= 512 and
+        sum(map(len, result.values())) <= 16*1024**2 and row['originalBodiesInverseExact'] is True and
+        row['defaultOff'] is True and all(row[k] is False for k in
+            ('nodeFundingQualified', 'nodeRetirementQualified', 'irqEnabled', 'tcpEnabled',
+             'consumerInstalled', 'actualExecutionObserved', 'sharedInterruptCustodyQualified')),
+        'intx-projection-authority')
+    return result, row
+
+
+def node_intx_serial(raw):
+    observed = node_setup_serial(raw)
+    fixups = [line for line in raw.splitlines() if b'LSFQ35PCIFIXUP1' in line]
+    intxs = [line for line in raw.splitlines() if b'LSFQ35PCIINTX1' in line]
+    setup = [line for line in raw.splitlines() if b'LSFQ35PCISETUP1' in line]
+    acks = [line for line in raw.splitlines() if b'LSFNODESETUP1' in line]
+    fixup_pattern = (rb'\[\s*[0-9]+\.[0-9]{6}\] LSFQ35PCIFIXUP1 '
+        rb'entries=([0-9]{1,3}) matches=0 dispatcher=1 intxCheck=1 barProbe=0 registered=0')
+    intx_pattern = (rb'\[\s*[0-9]+\.[0-9]{6}\] LSFQ35PCIINTX1 '
+        rb'command=([0-9a-f]{4}) pin=([0-9]{1,3}) line=([0-9]{1,3}) '
+        rb'restored=1 barProbe=0 registered=0')
+    require(len(fixups) == len(intxs) == len(setup) == len(acks) == 1, 'intx-one-observation')
+    fm, im = re.fullmatch(fixup_pattern, fixups[0]), re.fullmatch(intx_pattern, intxs[0])
+    require(fm is not None and im is not None and 1 <= int(fm[1]) <= 512, 'intx-marker-grammar')
+    command, pin, line = int(im[1], 16), int(im[2]), int(im[3])
+    require(command & 4 and not command & 0x400 and 1 <= pin <= 4 and 0 <= line <= 255,
+        'intx-marker-values')
+    require(raw.index(setup[0]) < raw.index(fixups[0]) < raw.index(intxs[0]) < raw.index(acks[0]),
+        'intx-observation-order')
+    observed['pciEarlyFixup'] = {'linkedEntries':int(fm[1]), 'matchingCallbacks':0,
+        'originalDispatcherReached':True, 'intxMaskCheckReached':True, 'barProbeReached':False,
+        'registered':False, 'callbacksQualified':False}
+    observed['pciIntx'] = {'originalCommand':command, 'pin':pin, 'line':line,
+        'savedCommandRestored':True, 'irqFundingQualified':False,
+        'sharedInterruptCustodyQualified':False, 'physicalBankRetired':False}
     return observed
 
 
