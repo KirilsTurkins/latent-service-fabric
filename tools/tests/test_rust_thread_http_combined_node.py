@@ -36,5 +36,30 @@ class CombinedGrantControls(unittest.TestCase):
         mutation.assert_not_called()
 
 
+    def test_failed_sibling_order_retains_the_actual_terminal_result(self):
+        import json
+        from pathlib import Path
+        import tempfile
+        import time
+        from tools import rust_thread_http_sibling_node as sibling
+        digest = 'sha256:' + '2' * 64
+        target = {'budget': {'outboundRequests': 8, 'memoryBytes': 16_777_216,
+                             'cpuFuel': 1_000_000_000, 'wallTimeLimitMillis': 5000}}
+        peer = SimpleNamespace(gates=lambda: [], observation=lambda: {'acceptedConnections': 0},
+                               origin=lambda: {'scheme': 'http', 'host': '127.0.0.1', 'port': 1234})
+        process = SimpleNamespace(owner=SimpleNamespace(exited=lambda: True), close=lambda: None)
+        terminal = {'exitCode': 4, 'decoded': None, 'processReaped': True,
+                    'response': {'category': 'platform-failure'}}
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(sibling, 'selected_revision', return_value={'releaseDigest': digest}), \
+                patch.object(sibling, 'start_call', return_value=process), \
+                patch.object(sibling, 'finish_call', return_value=terminal):
+            with self.assertRaises(WorkflowError):
+                sibling.invoke(SimpleNamespace(deadline=time.monotonic() + 10), object(), target,
+                               peer, object(), Path(directory), digest)
+            retained = json.loads((Path(directory) / 'rust-thread-http-terminal.json').read_bytes())
+            self.assertEqual(retained, terminal)
+
+
 if __name__ == '__main__':
     unittest.main()

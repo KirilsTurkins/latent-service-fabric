@@ -13,15 +13,18 @@
         ],
         "paths": [
           ".github/workflows/rust-combined-signed-witness.yml",
-          "tools/rust_thread_http_combined_*.py",
-          "tools/rust_combined_http_materials.py",
-          "tools/qualify_rust_thread_http_combined.py",
-          "tools/tests/test_rust_thread_http_combined_node.py",
-          "crates/latent-component-threading/**",
-          "crates/latent-wasmtime/**",
-          "apps/latentd/**",
+          ".cargo/**",
+          "Cargo.toml",
           "Cargo.lock",
-          "rust-toolchain.toml"
+          "rust-toolchain.toml",
+          "crates/**",
+          "apps/**",
+          "sdk/rust/**",
+          "tools/**",
+          "wit/**",
+          "schemas/**",
+          "api/proto/**",
+          "examples/echo-contract/**"
         ]
       }
     },
@@ -33,7 +36,7 @@
   "requiredJobs": [
     "signed-witness"
   ],
-  "reviewReason": "Run the exact opt-in signed witness and preserve the retained original compiler failure.",
+  "reviewReason": "Include the native source and retained-witness controller inputs in the branch-only owner trigger.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-combined-signed-witness.yml"
 }

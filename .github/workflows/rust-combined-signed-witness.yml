@@ -4,15 +4,18 @@ on:
     branches: ['diag/rust-http-combined-signed-20261105']
     paths:
       - '.github/workflows/rust-combined-signed-witness.yml'
-      - 'tools/rust_thread_http_combined_*.py'
-      - 'tools/rust_combined_http_materials.py'
-      - 'tools/qualify_rust_thread_http_combined.py'
-      - 'tools/tests/test_rust_thread_http_combined_node.py'
-      - 'crates/latent-component-threading/**'
-      - 'crates/latent-wasmtime/**'
-      - 'apps/latentd/**'
+      - '.cargo/**'
+      - 'Cargo.toml'
       - 'Cargo.lock'
       - 'rust-toolchain.toml'
+      - 'crates/**'
+      - 'apps/**'
+      - 'sdk/rust/**'
+      - 'tools/**'
+      - 'wit/**'
+      - 'schemas/**'
+      - 'api/proto/**'
+      - 'examples/echo-contract/**'
 permissions:
   contents: read
   actions: read

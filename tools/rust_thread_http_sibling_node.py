@@ -85,6 +85,9 @@ def invoke(client, node, target, peer, probe, output: Path, component_digest: st
                     peer.release(step['gate'])
                     original_released = True
         row = finish_call(client, process)
+        # Preserve the actual terminal result even when the causal ordering or
+        # later cleanup assertion fails; this remains diagnostic evidence only.
+        write_json(output / 'rust-thread-http-terminal.json', row)
     finally:
         process.close()
     require(body_released and original_released and pending is not None and causal is not None,
