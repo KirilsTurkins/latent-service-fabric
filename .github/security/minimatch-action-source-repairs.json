@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "profile": "minimatch-action-source-v1",
+  "action": "KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8",
+  "advisories": [
+    {
+      "id": "GHSA-g3hv-75wg-m249",
+      "modified": "2026-11-04T17:01:25.850114Z"
+    }
+  ],
+  "assets": {
+    "upstream": {
+      "snapshot": ".github/security/actions/setup-python-minimatch/minimatch-10.2.5.original.tgz",
+      "source": ".lsf-source/minimatch-10.2.5.original.tgz",
+      "bytes": 117062,
+      "sha256": "a6cea46915bfc6c3fae60f9bd003ea4f9d6a4233aa59a9ca729474d3824ca9e5",
+      "gitBlob": "dd98b4079e660933500de9f03d0bbbab1f44f295"
+    },
+    "archive": {
+      "snapshot": ".github/security/actions/setup-python-minimatch/minimatch-10.2.5.repaired.tar",
+      "source": ".lsf-source/minimatch-10.2.5-lsf-bound-v1.tar",
+      "bytes": 583680,
+      "sha256": "8ed155c4f29d451728efaaf60bc0ed7249ceb93d21eb81171068342621287a68",
+      "gitBlob": "93a1d4e2d4c2935624af7aa91fe9a113c56e5932"
+    },
+    "repair": {
+      "snapshot": ".github/security/actions/setup-python-minimatch/repair.json",
+      "source": ".lsf-source/minimatch-10.2.5-lsf-bound-v1.repair.json",
+      "bytes": 2129,
+      "sha256": "b340bb0502087bb0df18c8ec276ee61f58aedc6c54fcc6b022d174817d7d27a9",
+      "gitBlob": "679352aace8de2eb661a5a9665d6152033833cbb"
+    },
+    "verifier": {
+      "snapshot": ".github/security/actions/setup-python-minimatch/installed-verifier.mjs.snapshot",
+      "source": ".lsf-source/verify-installed-minimatch.mjs",
+      "bytes": 3386,
+      "sha256": "4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826",
+      "gitBlob": "ab204a63dd0ddf065b00ae7c3ab0531b35d5d300"
+    },
+    "build": {
+      "snapshot": ".github/security/actions/setup-python-minimatch/fork-build.json",
+      "source": "https://github.com/KirilsTurkins/lsf-setup-python/actions/runs/42010605694",
+      "bytes": 3036,
+      "sha256": "0031441630253140eed878e0be984ab6cfa5dfb6aecea60af6d04f82f35daefb",
+      "gitBlob": "bd169fe4cfba82a9181e7719c6f539cff86fd63f"
+    }
+  },
+  "runtime": {
+    "runtime_setup": {
+      "source": "dist/setup/index.js",
+      "bytes": 3675836,
+      "sha256": "e3bbbcbb7ab676335857f03b50e89f8e7bf5423f594a4b2212b966dde55fe8b7",
+      "gitBlob": "aef6783f257e77b06e518b7c6e5a9b2384c62cd2"
+    },
+    "runtime_cache": {
+      "source": "dist/cache-save/index.js",
+      "bytes": 3581654,
+      "sha256": "06f010acee2ff7034243f3dbdac1907923d004f370597501e762b452af26c0f0",
+      "gitBlob": "2c6014773ffb3c51eb8307d36641ce6691c2c4e8"
+    }
+  }
+}

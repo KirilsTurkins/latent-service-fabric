@@ -8,6 +8,19 @@ use super::{
     RecoverySelection, ResourceTarget, TenantId, STATE_CONTRACT,
 };
 use latent_policy::capability::OwnedPolicyDecision;
+use latent_state::embedded::StoreError;
+
+/// Keep native failures distinct until the protected worker observes them.
+#[derive(Debug)]
+pub enum RetainedPreparationError {
+    Refused(PlatformError),
+    Store(StoreError),
+}
+impl From<PlatformError> for RetainedPreparationError {
+    fn from(error: PlatformError) -> Self {
+        Self::Refused(error)
+    }
+}
 
 #[derive(Clone, Copy)]
 pub struct RetainedNamespaceControlRequest<'a> {
@@ -158,6 +171,28 @@ impl NamespaceControl {
         request: RetainedNamespaceControlRequest<'a>,
         active_commits: u64,
     ) -> Result<PreparedRetainedNamespaceControl<'a>, PlatformError> {
+        Self::prepare_retained_checked(store, decision, catalog, engine, request, active_commits)
+            .map_err(|error| match error {
+                RetainedPreparationError::Refused(error) => error,
+                RetainedPreparationError::Store(error) => platform(match error {
+                    StoreError::Unavailable => NamespaceError::Unavailable,
+                    StoreError::CommitUncertain => NamespaceError::RecoveryRequired,
+                    StoreError::UnsupportedFormat => NamespaceError::UnsupportedFormat,
+                    _ => NamespaceError::Corrupt,
+                }),
+            })
+    }
+
+    /// Preserve storage failures for a protected worker while keeping logical
+    /// conflicts and authorization refusals as ordinary public errors.
+    pub fn prepare_retained_checked<'a>(
+        store: &'a PolicyStore,
+        decision: &'a OwnedPolicyDecision,
+        catalog: &'a NamespaceCatalog,
+        engine: &EmbeddedStore,
+        request: RetainedNamespaceControlRequest<'a>,
+        active_commits: u64,
+    ) -> Result<PreparedRetainedNamespaceControl<'a>, RetainedPreparationError> {
         super::super::identity(request.operation_id)?;
         let (namespace, incarnation, operation, requires_drain) = mutation_scope(request.mutation);
         let mut facts = None;
@@ -199,14 +234,26 @@ impl NamespaceControl {
         let (context, caller, publication, result_policy) = facts.ok_or_else(denied)?;
         let mut prepared = catalog
             .prepare(engine, context.clone(), request.mutation, active_commits)
-            .map_err(platform)?;
+            .map_err(|error| match error {
+                NamespaceError::Corrupt => RetainedPreparationError::Store(StoreError::Corrupt),
+                NamespaceError::UnsupportedFormat => {
+                    RetainedPreparationError::Store(StoreError::UnsupportedFormat)
+                }
+                NamespaceError::Unavailable => {
+                    RetainedPreparationError::Store(StoreError::Unavailable)
+                }
+                NamespaceError::RecoveryRequired => {
+                    RetainedPreparationError::Store(StoreError::CommitUncertain)
+                }
+                other => RetainedPreparationError::Refused(platform(other)),
+            })?;
         if prepared
             .observed
             .as_ref()
             .is_some_and(|read| read.record().version.incarnation != incarnation)
             || prepared.replay && prepared.observed.is_none()
         {
-            return Err(denied());
+            return Err(denied().into());
         }
         if prepared.replay {
             let inspection = request.inspection.ok_or_else(denied)?;

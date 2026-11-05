@@ -9,13 +9,14 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "build": "tsc && ncc build -o dist/setup src/setup-go.ts && ncc build -o dist/cache-save src/cache-save.ts",
+    "build": "node .lsf-source/verify-installed-deepmerge.mjs && node .lsf-source/verify-installed-minimatch.mjs && tsc && ncc build -o dist/setup src/setup-go.ts && ncc build -o dist/cache-save src/cache-save.ts",
     "format": "prettier --no-error-on-unmatched-pattern --write \"**/*.{ts,yml,yaml}\"",
     "format-check": "prettier --no-error-on-unmatched-pattern --check \"**/*.{ts,yml,yaml}\"",
     "lint": "eslint \"**/*.ts\"",
     "lint:fix": "eslint \"**/*.ts\" --fix",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand --coverage",
-    "pre-checkin": "npm run format && npm run lint:fix && npm run build && npm test"
+    "pre-checkin": "npm run format && npm run lint:fix && npm run build && npm test",
+    "test:security-source": "node --test .lsf-source/minimatch-bounds.test.mjs"
   },
   "repository": {
     "type": "git",
@@ -55,7 +56,9 @@
     "nock": "^14.0.0",
     "prettier": "^3.8.4",
     "ts-jest": "^29.4.11",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "deepmerge": "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
+    "minimatch": "file:.lsf-source/minimatch-10.2.5-lsf-bound-v1.tar"
   },
   "overrides": {
     "brace-expansion@1": "1.1.21",
@@ -66,6 +69,8 @@
     "brace-expansion@2": "2.1.7",
     "browserslist@4": "4.29.5",
     "handlebars@4": "4.7.10",
-    "js-yaml@3": "3.15.2"
+    "js-yaml@3": "3.15.2",
+    "glob@10": "14.0.2",
+    "minimatch@10": "$minimatch"
   }
 }

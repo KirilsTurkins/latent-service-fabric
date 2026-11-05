@@ -9,14 +9,15 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "build": "ncc build -o dist/setup src/setup-dotnet.ts && ncc build -o dist/cache-save src/cache-save.ts",
+    "build": "node .lsf-source/verify-installed-deepmerge.mjs && node .lsf-source/verify-installed-minimatch.mjs && ncc build -o dist/setup src/setup-dotnet.ts && ncc build -o dist/cache-save src/cache-save.ts",
     "format": "prettier --no-error-on-unmatched-pattern --write \"**/*.{ts,yml,yaml}\"",
     "format-check": "prettier --no-error-on-unmatched-pattern --check \"**/*.{ts,yml,yaml}\"",
     "lint": "eslint \"**/*.ts\"",
     "lint:fix": "eslint \"**/*.ts\" --fix",
     "prepare": "husky install",
-    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage",
-    "update-installers": "nwget https://dot.net/v1/dotnet-install.ps1 -O externals/install-dotnet.ps1 && nwget https://dot.net/v1/dotnet-install.sh -O externals/install-dotnet.sh"
+    "test": "node .lsf-source/verify-installed-deepmerge.mjs && node .lsf-source/verify-installed-minimatch.mjs && node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage",
+    "update-installers": "nwget https://dot.net/v1/dotnet-install.ps1 -O externals/install-dotnet.ps1 && nwget https://dot.net/v1/dotnet-install.sh -O externals/install-dotnet.sh",
+    "test:security-source": "node --test .lsf-source/minimatch-bounds.test.mjs"
   },
   "repository": {
     "type": "git",
@@ -61,7 +62,9 @@
     "prettier": "^3.8.4",
     "ts-jest": "^29.4.11",
     "typescript": "^6.0.3",
-    "wget-improved": "^3.2.1"
+    "wget-improved": "^3.2.1",
+    "deepmerge": "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
+    "minimatch": "file:.lsf-source/minimatch-10.2.5-lsf-bound-v1.tar"
   },
   "overrides": {
     "brace-expansion@5": "5.0.12",
@@ -72,6 +75,8 @@
     "brace-expansion@2": "2.1.7",
     "browserslist@4": "4.29.5",
     "handlebars@4": "4.7.10",
-    "js-yaml@3": "3.15.2"
+    "js-yaml@3": "3.15.2",
+    "glob@10": "14.0.2",
+    "minimatch@10": "$minimatch"
   }
 }

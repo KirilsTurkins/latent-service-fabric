@@ -71,7 +71,7 @@
     {
       "absent_when_directory_missing": "examples/framework-compatibility",
       "derived_libraries": {
-        "builder_sha256": "ddf866923b7202a85d73182a13bbd8046b99ab6a36add475cb8cde6bfeb0094f",
+        "builder_sha256": "532cc21dbc860be57cbd882be01b1c9b52570feaa978adc7625d45316f1e84ab",
         "libraries": {
           "braces": {
             "integrity": "sha512-CIkqEUBCvkYNTPw2CazoGD9KYwYMmR4nrCdhfFx+ChUFj2o8r2X0U46IGbHVu0/YpdYC/dd69dibeJ64RZgwdw==",
@@ -90,7 +90,7 @@
           }
         },
         "lock_sha256": "6b47f4a248b29fa7623b92cefdf166259d29148e0591852e11bd08a0e780239c",
-        "source_sha256": "42da38ca0597fc243b088e95259519a886a520b8f4fb84b70d901c6ebebabfc3"
+        "source_sha256": "4fda54fe92644dc7c05726f8143c62bbb2ed2dd672a26d00992dd530d7e24d1f"
       },
       "kind": "npm",
       "lock": "examples/framework-compatibility/package-lock.json",
@@ -99,7 +99,7 @@
     {
       "absent_when_directory_missing": "website",
       "derived_libraries": {
-        "builder_sha256": "ddf866923b7202a85d73182a13bbd8046b99ab6a36add475cb8cde6bfeb0094f",
+        "builder_sha256": "532cc21dbc860be57cbd882be01b1c9b52570feaa978adc7625d45316f1e84ab",
         "libraries": {
           "braces": {
             "integrity": "sha512-CIkqEUBCvkYNTPw2CazoGD9KYwYMmR4nrCdhfFx+ChUFj2o8r2X0U46IGbHVu0/YpdYC/dd69dibeJ64RZgwdw==",
@@ -118,7 +118,7 @@
           }
         },
         "lock_sha256": "51fe53a080c8a2721218c960b403762f03e17f6bdebaaf86cbf253378b82ac73",
-        "source_sha256": "42da38ca0597fc243b088e95259519a886a520b8f4fb84b70d901c6ebebabfc3"
+        "source_sha256": "4fda54fe92644dc7c05726f8143c62bbb2ed2dd672a26d00992dd530d7e24d1f"
       },
       "kind": "npm",
       "lock": "website/package-lock.json",
@@ -128,10 +128,10 @@
       "absent_when_directory_missing": "website/toolchain",
       "bundled_package": "npm",
       "derived_bundle": {
-        "builder_sha256": "ddf866923b7202a85d73182a13bbd8046b99ab6a36add475cb8cde6bfeb0094f",
-        "integrity": "sha512-Au+9Z9eKirQFXxNZfh6rUFHGISDFxIzRIcUwtFu+d0AfBrbVzN6WaGKbsL4nhq6O5ZWqGvPmKdZX/01AFSygsA==",
-        "lock_sha256": "0480d8eba3d10b20edbd55df15fa694424da5583db547b58478ee3c60bcb56b3",
-        "source_sha256": "42da38ca0597fc243b088e95259519a886a520b8f4fb84b70d901c6ebebabfc3"
+        "builder_sha256": "532cc21dbc860be57cbd882be01b1c9b52570feaa978adc7625d45316f1e84ab",
+        "integrity": "sha512-XgOJgU7oO/M5YMdw/vrHPfmXpabgt1OzVU13xDLLpqBsUu3viT/f3w1LETqLKTQQpyi10ZCJshRCYVHBpYvwNw==",
+        "lock_sha256": "1b4dd1699f27e5095c96f6534a470551f2955d3f9d040f7eb517bc4fb826ce82",
+        "source_sha256": "4fda54fe92644dc7c05726f8143c62bbb2ed2dd672a26d00992dd530d7e24d1f"
       },
       "kind": "npm",
       "lock": "website/toolchain/package-lock.json",
@@ -361,29 +361,36 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/setup-dotnet/package-lock.json",
-      "path": ".github/security/actions/setup-dotnet/package.json"
+      "path": ".github/security/actions/setup-dotnet/package.json",
+      "source_repair": "deepmerge-action-source-v1",
+      "minimatch_source_repair": "setup-dotnet-minimatch-action-source-v1"
     },
     {
       "kind": "npm",
       "lock": ".github/security/actions/download-artifact/package-lock.json",
-      "path": ".github/security/actions/download-artifact/package.json"
+      "path": ".github/security/actions/download-artifact/package.json",
+      "source_repair": "download-artifact-deepmerge-source-v1",
+      "minimatch_source_repair": "download-artifact-glob-minimatch-source-v1"
     },
     {
       "kind": "npm",
       "lock": ".github/security/actions/cache/package-lock.json",
-      "path": ".github/security/actions/cache/package.json"
+      "path": ".github/security/actions/cache/package.json",
+      "source_repair": "deepmerge-action-source-v1"
     },
     {
       "kind": "npm",
       "lock": ".github/security/actions/setup-node/package-lock.json",
       "path": ".github/security/actions/setup-node/package.json",
-      "source_repair": "deepmerge-action-source-v1"
+      "source_repair": "deepmerge-action-source-v1",
+      "minimatch_source_repair": "setup-node-minimatch-action-source-v1"
     },
     {
       "kind": "npm",
       "lock": ".github/security/actions/setup-python/package-lock.json",
       "path": ".github/security/actions/setup-python/package.json",
-      "source_repair": "deepmerge-action-source-v1"
+      "source_repair": "deepmerge-action-source-v1",
+      "minimatch_source_repair": "minimatch-action-source-v1"
     },
     {
       "kind": "npm",
@@ -393,13 +400,15 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/rust-cache/package-lock.json",
-      "path": ".github/security/actions/rust-cache/package.json"
+      "path": ".github/security/actions/rust-cache/package.json",
+      "source_repair": "rust-cache-dual-source-v1"
     },
     {
       "kind": "npm",
       "lock": ".github/security/actions/setup-java/package-lock.json",
       "path": ".github/security/actions/setup-java/package.json",
-      "source_repair": "deepmerge-action-source-v1"
+      "source_repair": "deepmerge-action-source-v1",
+      "minimatch_source_repair": "setup-java-minimatch-action-source-v1"
     },
     {
       "kind": "npm",
@@ -416,12 +425,15 @@
       "kind": "npm",
       "lock": ".github/security/actions/upload-artifact/package-lock.json",
       "path": ".github/security/actions/upload-artifact/package.json",
-      "source_repair": "deepmerge-action-source-v1"
+      "source_repair": "upload-artifact-deepmerge-source-v1",
+      "minimatch_source_repair": "upload-artifact-glob-minimatch-source-v1"
     },
     {
       "kind": "npm",
       "lock": ".github/security/actions/deploy-pages/package-lock.json",
-      "path": ".github/security/actions/deploy-pages/package.json"
+      "path": ".github/security/actions/deploy-pages/package.json",
+      "source_repair": "deploy-pages-deepmerge-source-v1",
+      "minimatch_source_repair": "deploy-pages-glob-minimatch-source-v1"
     },
     {
       "kind": "npm",
@@ -431,12 +443,15 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/bytecodealliance-actions/package-lock.json",
-      "path": ".github/security/actions/bytecodealliance-actions/package.json"
+      "path": ".github/security/actions/bytecodealliance-actions/package.json",
+      "source_repair": "bytecodealliance-deepmerge-source-v1"
     },
     {
       "kind": "npm",
       "lock": ".github/security/actions/setup-go/package-lock.json",
-      "path": ".github/security/actions/setup-go/package.json"
+      "path": ".github/security/actions/setup-go/package.json",
+      "source_repair": "setup-go-deepmerge-source-v1",
+      "minimatch_source_repair": "setup-go-minimatch-source-v1"
     }
   ],
   "non_manifest_modules": [

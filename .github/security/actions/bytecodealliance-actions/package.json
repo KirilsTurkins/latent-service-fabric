@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "description": "This provide actions for wasmtime setup",
   "scripts": {
-    "build": "tsc",
+    "build": "node .lsf-source/verify-installed-deepmerge.mjs && tsc",
     "format": "prettier --write '**/*.ts'",
     "format-check": "prettier --check '**/*.ts'",
     "lint": "eslint src/**/*.ts",
-    "package": "ncc build -o dist/wasmtime/setup src/wasmtime.ts && ncc build -o dist/wasm-tools/setup src/wasm-tools.ts && ncc build -o dist/wit-bindgen/setup src/wit-bindgen.ts",
-    "test": "jest",
+    "package": "node .lsf-source/verify-installed-deepmerge.mjs && ncc build -o dist/wasmtime/setup src/wasmtime.ts && ncc build -o dist/wasm-tools/setup src/wasm-tools.ts && ncc build -o dist/wit-bindgen/setup src/wit-bindgen.ts",
+    "test": "node .lsf-source/verify-installed-deepmerge.mjs && jest",
     "all": "npm run build && npm run format && npm run package"
   },
   "repository": {
@@ -47,7 +47,8 @@
     "prettier": "2.8.4",
     "ts-jest": "^27.1.2",
     "typescript": "4.9.5",
-    "@types/jest": "27.5.2"
+    "@types/jest": "27.5.2",
+    "deepmerge": "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar"
   },
   "overrides": {
     "uuid@8": "11.1.1",

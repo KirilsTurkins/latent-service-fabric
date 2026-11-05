@@ -25,31 +25,33 @@ The current security forks were reviewed on **2026-10-30**. They extend the pins
 
 | Action | Reviewed upstream ref | Commit |
 | --- | --- | --- |
-| `KirilsTurkins/lsf-setup-java` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-java/pull/1296)) | `5d910981b146bc2d4fd97fa349210f3e3d454039` |
-| `KirilsTurkins/lsf-rust-cache` | `v2.9.3` + upstream changes and security fixes ([review](https://github.com/Swatinem/rust-cache/pull/396)) | `476b290465f7c84db317df6e6a6e2d3c12ea3477` |
+| `KirilsTurkins/lsf-setup-java` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-java/pull/1296)) | `63c7977881fc344a6ed464f7ed5e242aedc8d56c` |
+| `KirilsTurkins/lsf-rust-cache` | `v2.9.3` + upstream changes and security fixes ([review](https://github.com/Swatinem/rust-cache/pull/396)) | `38534d49940bc6c6aef1e8dfd45349a99d37f14e` |
 | `KirilsTurkins/lsf-attest-build-provenance` | `v4.2.2` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-attest-build-provenance/pull/1)) | `16b356100dfe77222eebe783b5e26a565b76055a` |
-| `KirilsTurkins/lsf-cache` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/cache/pull/1804)) | `2ff27e45011b8bcf31ef566ae84c1c923c8aea69` |
-| `KirilsTurkins/lsf-checkout` | `v7.0.1` + upstream changes and security fixes ([review](https://github.com/actions/checkout/pull/2607)) | `842365d0a25bf5a868311e4cb89c908bdcab4bb8` |
-| `KirilsTurkins/lsf-deploy-pages` | `v5.0.1` + upstream changes and security fixes ([review](https://github.com/actions/deploy-pages/pull/453)) | `9290f9265d55d382005aa5f300fc4e9d5bb65cb2` |
-| `KirilsTurkins/lsf-download-artifact` | `v8.0.2` + upstream changes and security fixes ([review](https://github.com/actions/download-artifact/pull/496)) | `f073ba9e3801be93f933866d4c9a748e42157e5f` |
-| `KirilsTurkins/lsf-setup-dotnet` | `v6.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-dotnet/pull/795)) | `f5bcdac7f26977ef44527f837688dd86faf648ec` |
-| `KirilsTurkins/lsf-setup-go` | `v7.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-go/pull/805)) | `3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e` |
-| `KirilsTurkins/lsf-setup-node` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-node/pull/1653)) | `fdae00b14e855eb751452bc70c64dde286270415` |
-| `KirilsTurkins/lsf-setup-python` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-python/pull/1381)) | `14de4ddb02861c1e098a1a260a2de7a6b45b68fb` |
-| `KirilsTurkins/lsf-upload-artifact` | `v7.0.2` + upstream changes and security fixes ([review](https://github.com/actions/upload-artifact/pull/825)) | `5c42799caf30eda69cb2db5da0be2400c47cef16` |
-| `KirilsTurkins/lsf-upload-pages-artifact` | `v5.0.0` + upstream changes and security fixes ([review](https://github.com/actions/upload-pages-artifact/pull/166)) | `78e399e92cd7485cca2752423a3eb0ccf404df77` |
-| `KirilsTurkins/lsf-buf-setup-action` | `v1.50.0` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-buf-setup-action/pull/1)) | `7e1d5f1d4a4a7d82b1ff79968166c4f50a66ce57` |
-| `KirilsTurkins/lsf-bytecodealliance-actions` | `v1.1.3` + upstream changes and security fixes ([review](https://github.com/bytecodealliance/actions/pull/24)) | `9244ec9f4725400c84054e3e6ec97514cadddf53` |
+| `KirilsTurkins/lsf-cache` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/cache/pull/1804)) | `ec176dce9471270c8a9be1289040c0a8fd6aa708` |
+| `KirilsTurkins/lsf-checkout` | `v7.0.1` + upstream changes and security fixes ([review](https://github.com/actions/checkout/pull/2607)) | `4d310727149d3abacc52b5dcb0a1c4d18b345d13` |
+| `KirilsTurkins/lsf-deploy-pages` | `v5.0.1` + upstream changes and security fixes ([review](https://github.com/actions/deploy-pages/pull/453); [fork repair](https://github.com/KirilsTurkins/lsf-deploy-pages/pull/1)) | `e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6` |
+| `KirilsTurkins/lsf-download-artifact` | `v8.0.2` + upstream changes and security fixes ([review](https://github.com/actions/download-artifact/pull/496)) | `dd4ebbadbf12ed34441db2712be7a193490b7fc5` |
+| `KirilsTurkins/lsf-setup-dotnet` | `v6.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-dotnet/pull/795)) | `258c927924210be905f8908a4be714e5d0daffa8` |
+| `KirilsTurkins/lsf-setup-go` | `v7.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-go/pull/805)) | `1020042799f722e9ef016bf63106367879587a49` |
+| `KirilsTurkins/lsf-setup-node` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-node/pull/1653)) | `34275fdec80b5be172c3327cadef76aa2f3b31c6` |
+| `KirilsTurkins/lsf-setup-python` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-python/pull/1381)) | `164c4cbba5d1b03a046ac8bc25ae695bee0667a8` |
+| `KirilsTurkins/lsf-upload-artifact` | `v7.0.2` + upstream changes and security fixes ([review](https://github.com/actions/upload-artifact/pull/825)) | `d74a697ce553b389f4219545e07c97fb8542c64f` |
+| `KirilsTurkins/lsf-upload-pages-artifact` | `v5.0.0` + upstream changes and security fixes ([review](https://github.com/actions/upload-pages-artifact/pull/166)) | `28d7597d6f6497a5d34e5ecaa1d97c510ce3556b` |
+| `KirilsTurkins/lsf-buf-setup-action` | `v1.50.0` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-buf-setup-action/pull/1)) | `483cc1af1999992e503ff1da69b431f7b9f3bae9` |
+| `KirilsTurkins/lsf-bytecodealliance-actions` | `v1.1.3` + upstream changes and security fixes ([review](https://github.com/bytecodealliance/actions/pull/24)) | `1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce` |
 | `KirilsTurkins/lsf-setup-zig` | `v2.2.1` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-setup-zig/pull/1)) | `e064b42fa88ad0859d8b54838b44f672ffd5ea7a` |
 | `KirilsTurkins/lsf-attest` | `v4.2.1` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-attest/pull/1)) | `5c5af1d743b681abf5f53d906d2bcbbcb6da5ba2` |
 | `dtolnay/rust-toolchain` | `1.97.1` | `4716b85f2fac3e324e64fa2810f6b5c3905760a5` |
 
-The setup-java, setup-node, setup-python and upload-artifact revisions bind
+The cache, setup-java, setup-node, setup-python and upload-artifact revisions bind
 deepmerge 4.3.1 to the deterministic `deepmerge-4.3.1-lsf-prototype-v1` source
 repair because GHSA-gcqx-w48m-w2h4 has no upstream fixed release. The security
 inventory verifies the exact action revision, manifest, lock, installed-source
 verifier, repaired archive reconstruction and advisory revision before granting
-lock-local remediation credit. The upload-pages composite is separately pinned to
+lock-local remediation credit. Cache restore and save entrypoints share one lock;
+both exact action revisions and metadata are checked before credit is granted.
+The upload-pages composite is separately pinned to
 the repaired upload-artifact child revision.
 
 The Java fork includes `actions/setup-java` v6.1.0 and the current upstream
