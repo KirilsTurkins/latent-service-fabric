@@ -116,22 +116,58 @@ public final class CheckpointCompilerControl {
         }
     }
 
-    // Exact finite helper identified by the public-fiber compiler refusal.
+    // Direct public calls with unproven receiver or operands must refuse.
     public static final class ClassInfoEnumCountAccess {
         private static int result = new org.teavm.runtime.reflect.ClassInfo().enumConstantCount();
         public static void main(String[] arguments) { result += arguments.length; }
     }
 
-    // This helper is finite under the same pinned emitter and header proof.
+    // The zero index still has an unproven receiver.
     public static final class ClassInfoEnumElementAccess {
         private static Object result = new org.teavm.runtime.reflect.ClassInfo().enumConstant(0);
         public static void main(String[] arguments) { if (arguments.length != 0) result = arguments[0]; }
     }
 
-    // A different unmanaged native intrinsic remains outside both proofs.
-    public static final class ClassInfoOtherAccess {
-        static { new org.teavm.runtime.reflect.ClassInfo().putItem(null, 0, null); }
-        public static void main(String[] arguments) { }
+    public static final class ClassInfoEnumNegativeAccess {
+        private static Object result = new org.teavm.runtime.reflect.ClassInfo().enumConstant(-1);
+        public static void main(String[] arguments) { if (arguments.length != 0) result = arguments[0]; }
+    }
+
+    public static final class ClassInfoEnumHighAccess {
+        private static Object result = new org.teavm.runtime.reflect.ClassInfo().enumConstant(Integer.MAX_VALUE);
+        public static void main(String[] arguments) { if (arguments.length != 0) result = arguments[0]; }
+    }
+
+    public static final class ClassInfoSuperinterfaceAccess {
+        private static Object result = new org.teavm.runtime.reflect.ClassInfo().superinterface(-1);
+        public static void main(String[] arguments) { if (arguments.length != 0) result = arguments[0]; }
+    }
+
+    public static final class ClassInfoArrayLengthAccess {
+        private static int result = new org.teavm.runtime.reflect.ClassInfo().arrayLength(new Object());
+        public static void main(String[] arguments) { result += arguments.length; }
+    }
+
+    public static final class ClassInfoManagedCountAccess {
+        private static volatile int result;
+        public static void main(String[] arguments) {
+            result = new org.teavm.runtime.reflect.ClassInfo().enumConstantCount();
+        }
+    }
+
+    public static final class ClassInfoManagedClassObjectAccess {
+        private static volatile Object result;
+        public static void main(String[] arguments) {
+            result = new org.teavm.runtime.reflect.ClassInfo().classObject();
+        }
+    }
+
+    public static final class OrdinaryClassAccess {
+        private static volatile Object result;
+        public static void main(String[] arguments) {
+            Object value = arguments.length == 0 ? new Object() : arguments;
+            result = value.getClass().getName();
+        }
     }
 
     public static final class InitializerPolling {
@@ -386,15 +422,6 @@ public final class CheckpointCompilerControl {
             method.getModifiers().add(ElementModifier.FINAL);
             return true;
         }
-        if (mutation.equals("class-info-element-declaration")
-                && cls.getName().equals("org.teavm.runtime.reflect.ClassInfo")) {
-            var method = cls.getMethod(new MethodDescriptor("enumConstant", ValueType.INTEGER,
-                    ValueType.object("java.lang.Object")));
-            require(method != null && !method.hasModifier(ElementModifier.FINAL),
-                    "checkpoint-control-class-info-element-original-declaration");
-            method.getModifiers().add(ElementModifier.FINAL);
-            return true;
-        }
         if (mutation.equals("class-info-layout") && cls.getName().equals("org.teavm.runtime.RuntimeClass")) {
             var field = new org.teavm.model.FieldHolder("changedEnumCountLayout");
             field.setType(ValueType.INTEGER);
@@ -472,6 +499,50 @@ public final class CheckpointCompilerControl {
                 Files.deleteIfExists(altered);
             }
         }
+    }
+
+    private static void checkClassInfoOperandFence(boolean corrected) throws Exception {
+        var finder = org.teavm.model.util.AsyncMethodFinder.class;
+        java.lang.reflect.Method fence;
+        try {
+            fence = finder.getDeclaredMethod("progressUnprovenClassInfoOperands",
+                    org.teavm.model.MethodReference.class);
+        } catch (NoSuchMethodException missing) {
+            require(!corrected, "checkpoint-control-class-info-fence-missing");
+            return;
+        }
+        require(corrected && fence.trySetAccessible(), "checkpoint-control-class-info-fence-access");
+        for (String name : new String[] {
+                "modifiers",
+                "primitiveKind",
+                "superinterfaceCount",
+                "itemType",
+                "declaringClass",
+                "enclosingClass",
+                "parent",
+                "name",
+                "simpleName",
+                "superinterface",
+                "arrayLength",
+                "isSuperTypeOf",
+                "reflection",
+                "classObject",
+                "enumConstantCount",
+                "enumConstant",
+                "arrayType",
+                "newArrayInstance",
+                "getItem",
+                "putItem",
+                "initialize" }) {
+            var method = new org.teavm.model.MethodReference(
+                    "org.teavm.runtime.reflect.ClassInfo", name, ValueType.VOID);
+            require(Boolean.TRUE.equals(fence.invoke(null, method)), "checkpoint-control-class-info-fence-scope");
+        }
+        var otherOwner = new org.teavm.model.MethodReference("example.Unrelated", "enumConstant", ValueType.VOID);
+        var otherName = new org.teavm.model.MethodReference(
+                "org.teavm.runtime.reflect.ClassInfo", "unrelated", ValueType.VOID);
+        require(Boolean.FALSE.equals(fence.invoke(null, otherOwner)), "checkpoint-control-class-info-fence-owner");
+        require(Boolean.FALSE.equals(fence.invoke(null, otherName)), "checkpoint-control-class-info-fence-name");
     }
 
     private static void checkClassInfoHeader(boolean corrected) throws Exception {
@@ -611,7 +682,21 @@ public final class CheckpointCompilerControl {
         require(arguments.length == 1 && (arguments[0].equals("original")
                 || arguments[0].equals("corrected")), "checkpoint-compiler-control-mode");
         boolean corrected = arguments[0].equals("corrected");
-        check(Finite.class.getName(), corrected, false, "");
+        try {
+            checkClassInfoOperandFence(corrected);
+        } catch (Exception failure) {
+            throw new AssertionError("checkpoint-control-class-info-fence", failure);
+        }
+        check(ClassInfoEnumCountAccess.class.getName(), corrected, true, "");
+        check(ClassInfoEnumElementAccess.class.getName(), corrected, true, "");
+        check(ClassInfoEnumNegativeAccess.class.getName(), corrected, true, "");
+        check(ClassInfoEnumHighAccess.class.getName(), corrected, true, "");
+        check(ClassInfoSuperinterfaceAccess.class.getName(), corrected, true, "");
+        check(ClassInfoArrayLengthAccess.class.getName(), corrected, true, "");
+        check(ClassInfoManagedCountAccess.class.getName(), corrected, true, "");
+        check(ClassInfoManagedClassObjectAccess.class.getName(), corrected, true, "");
+        System.err.println("CHECKPOINT_CLASSINFO_DIRECT_CONTROL PASS " + arguments[0]);
+        checkCompatibility(corrected);
         check(InitializerPolling.class.getName(), corrected, true, "");
         check(UnmanagedPolling.class.getName(), corrected, true, "");
         check(ManagedPolling.class.getName(), corrected, false, "");
@@ -636,14 +721,6 @@ public final class CheckpointCompilerControl {
             check(StringInfoAccess.class.getName(), corrected, true, mutation);
         }
         check(StringInfoAccess.class.getName(), corrected, true, "", true);
-        check(ClassInfoEnumCountAccess.class.getName(), corrected, false, "");
-        check(ClassInfoEnumElementAccess.class.getName(), corrected, false, "");
-        check(ClassInfoOtherAccess.class.getName(), corrected, true, "");
-        for (String mutation : new String[] {
-                "class-info-element-declaration", "string-info-parent", "class-info-layout" }) {
-            check(ClassInfoEnumElementAccess.class.getName(), corrected, true, mutation);
-        }
-        check(ClassInfoEnumElementAccess.class.getName(), corrected, true, "", true);
         for (String mutation : new String[] { "class-info-declaration", "string-info-parent", "class-info-layout" }) {
             check(ClassInfoEnumCountAccess.class.getName(), corrected, true, mutation);
         }
@@ -656,6 +733,30 @@ public final class CheckpointCompilerControl {
             throw new AssertionError("checkpoint-control-compiler-archive", failure);
         }
         System.out.println("CHECKPOINT_COMPILER_CONTROL PASS " + arguments[0]
-                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;class-info-enum-count;class-info-enum-element;class-info-enum-other-refused;class-info-element-declaration;class-info-element-parent;class-info-element-layout;class-info-element-target;class-info-declaration;class-info-parent;class-info-layout;class-info-target;class-info-header-shadow;compiler-archive-control;compiler-cache-isolation");
+                + ";finite;ordinary-class-reflection;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;class-info-enum-count-refused;class-info-enum-element-refused;class-info-enum-negative-refused;class-info-enum-high-refused;class-info-superinterface-refused;class-info-array-length-refused;class-info-managed-count-refused;class-info-managed-class-object-refused;class-info-declaration-refused;class-info-parent-refused;class-info-layout-refused;class-info-target-refused;class-info-fence-scope;class-info-header-shadow;compiler-archive-control;compiler-cache-isolation");
+    }
+    private static void checkCompatibility(boolean corrected) {
+        AssertionError first = null;
+        try {
+            check(Finite.class.getName(), corrected, false, "");
+            System.err.println("CHECKPOINT_COMPATIBILITY finite PASS");
+        } catch (AssertionError failure) {
+            System.err.println("CHECKPOINT_COMPATIBILITY finite FAIL");
+            first = failure;
+        }
+        try {
+            check(OrdinaryClassAccess.class.getName(), corrected, false, "");
+            System.err.println("CHECKPOINT_COMPATIBILITY class-reflection PASS");
+        } catch (AssertionError failure) {
+            System.err.println("CHECKPOINT_COMPATIBILITY class-reflection FAIL");
+            if (first == null) {
+                first = failure;
+            } else {
+                first.addSuppressed(failure);
+            }
+        }
+        if (first != null) {
+            throw first;
+        }
     }
 }

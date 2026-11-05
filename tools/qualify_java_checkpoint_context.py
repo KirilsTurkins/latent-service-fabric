@@ -43,12 +43,15 @@ NAMES = frozenset(('teavm-classlib', 'teavm-core', 'teavm-extension-apis',
     'teavm-relocated-libs-hppc', 'teavm-relocated-libs-rhino'))
 EXPECTED = (';direct;multihop;shared;virtual;class-unmanaged;managed-cycle;pinned-managed-entry;altered-entry-negatives;'
     'unresolved;bound;real-late-completion')
-COMPILER_EXPECTED = (';finite;initializer;unmanaged;managed;recursion;runtime-initializer;'
+COMPILER_EXPECTED = (';finite;ordinary-class-reflection;initializer;unmanaged;managed;recursion;runtime-initializer;'
     'class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;'
     'reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;'
     'mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;'
-    'class-info-enum-count;class-info-enum-element;class-info-enum-other-refused;class-info-element-declaration;class-info-element-parent;class-info-element-layout;class-info-element-target;class-info-declaration;class-info-parent;class-info-layout;'
-    'class-info-target;class-info-header-shadow;compiler-archive-control;compiler-cache-isolation')
+    'class-info-enum-count-refused;class-info-enum-element-refused;class-info-enum-negative-refused;'
+    'class-info-enum-high-refused;class-info-superinterface-refused;class-info-array-length-refused;'
+    'class-info-managed-count-refused;class-info-managed-class-object-refused;class-info-declaration-refused;'
+    'class-info-parent-refused;class-info-layout-refused;class-info-target-refused;class-info-fence-scope;'
+    'class-info-header-shadow;compiler-archive-control;compiler-cache-isolation')
 
 
 def selected(lock):

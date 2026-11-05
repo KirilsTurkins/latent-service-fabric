@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "workflow",
+  "reviewReason": "Exercise concurrent Go resource aliases and retained ownership controls in the pinned native Go runtime; no signed guest claim.",
+  "workflow": ".github/workflows/go-owner-close.yml",
+  "policy": {
+    "name": "Go shared owner concurrent close control",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/go-owner-close-20261105"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    },
+    "concurrency": {
+      "group": "go-owner-close-${{ github.ref }}",
+      "cancel-in-progress": false
+    }
+  },
+  "requiredJobs": [
+    "alias-close"
+  ]
+}
