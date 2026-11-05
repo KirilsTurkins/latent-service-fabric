@@ -539,3 +539,103 @@ async fn another_namespace_current_permission_cannot_disclose_original_floor_ope
     drop(original);
     fixture.finish().await;
 }
+
+#[tokio::test]
+async fn floor_release_corrupt_namespace_quarantines_the_protected_store() {
+    let mut fixture = Fixture::new(true).await;
+    let floor = seed_floor(&mut fixture).await;
+    retire(&fixture).await;
+    let request = request(&fixture, floor, &inspect(&fixture).await);
+    fixture
+        .store
+        .with_store(StoreIoKind::RecoveryWrite, WORK_BYTES as u64, |engine| {
+            let key = latent_state::namespace::namespace_record_key(
+                &latent_core::TenantId("a".into()),
+                &StateNamespaceId("orders".into()),
+            )
+            .unwrap();
+            engine.apply(latent_state::embedded::AtomicBatch {
+                expectations: vec![],
+                mutations: vec![latent_state::embedded::RowMutation {
+                    key: latent_state::embedded::RowKey {
+                        family: latent_state::embedded::Family::Namespace,
+                        key,
+                    },
+                    value: Some(b"corrupt-namespace".to_vec()),
+                }],
+            })
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    let error = fixture
+        .backend
+        .execute_state(context("alice"), request.into())
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(error.code, PlatformErrorCode::Unavailable);
+    assert_eq!(
+        fixture.store.failure(),
+        Some(latent_state::protected_store::ProtectedStoreError::Store(
+            StoreError::Corrupt
+        ))
+    );
+    fixture.store.close();
+    let report = fixture
+        .store
+        .drain_async(deadline(), std::future::pending())
+        .unwrap()
+        .await;
+    assert!(!report.clean);
+    assert!(report.snapshot.physically_retired());
+}
+
+#[tokio::test]
+async fn floor_release_corrupt_retained_floor_quarantines_the_protected_store() {
+    let mut fixture = Fixture::new(true).await;
+    let floor = seed_floor(&mut fixture).await;
+    retire(&fixture).await;
+    let request = request(&fixture, floor, &inspect(&fixture).await);
+    fixture
+        .store
+        .with_store(
+            StoreIoKind::RecoveryWrite,
+            WORK_BYTES as u64,
+            move |engine| {
+                engine.apply(latent_state::embedded::AtomicBatch {
+                    expectations: vec![],
+                    mutations: vec![latent_state::embedded::RowMutation {
+                        key: command_row_key(floor),
+                        value: Some(b"LCX\0\x01broken".to_vec()),
+                    }],
+                })
+            },
+        )
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    let error = fixture
+        .backend
+        .execute_state(context("alice"), request.into())
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(error.code, PlatformErrorCode::Unavailable);
+    assert_eq!(
+        fixture.store.failure(),
+        Some(latent_state::protected_store::ProtectedStoreError::Store(
+            StoreError::Corrupt
+        ))
+    );
+    fixture.store.close();
+    let report = fixture
+        .store
+        .drain_async(deadline(), std::future::pending())
+        .unwrap()
+        .await;
+    assert!(!report.clean);
+    assert!(report.snapshot.physically_retired());
+}
