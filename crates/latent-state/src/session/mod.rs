@@ -25,7 +25,8 @@ use latent_core::{
     StateNamespaceId, TenantId,
 };
 pub use payload::{
-    describe_state_payload_owner, require_no_state_payload_reference,
+    describe_staged_state_payload_owner, describe_state_payload_owner,
+    require_no_state_payload_reference, retained_state_payload_reference, state_payload_cell_key,
     verify_state_payload_reference,
 };
 use std::{

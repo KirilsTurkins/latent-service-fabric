@@ -47,6 +47,8 @@ pub struct CompleteEnvelope {
     result: DurableResult,
     batch: AtomicBatch,
     authorities: Vec<DurableEffectAuthority>,
+    old_state_payloads: Vec<latent_state::payload_references::StatePayloadLink>,
+    state_binding: Option<latent_state::embedded::StoreBinding>,
     #[cfg(target_os = "linux")]
     payloads: Vec<latent_blobs::provider::CapturedLocalPayload>,
 }
@@ -780,6 +782,12 @@ impl CompleteEnvelope {
         store: &EmbeddedStore,
         final_accept: impl FnOnce(&[DurableEffectAuthority]) -> Result<(), AtomicError>,
     ) -> PreparedDisposition {
+        if !self.old_state_payloads.is_empty() || self.state_binding.is_some() {
+            return PreparedDisposition::KnownNotCommitted {
+                command: Box::new(self.claim),
+                reason: AtomicError::UnsupportedFormat,
+            };
+        }
         #[cfg(target_os = "linux")]
         if !self.payloads.is_empty() {
             return PreparedDisposition::KnownNotCommitted {
@@ -1080,12 +1088,27 @@ impl CompleteEnvelope {
                 value: Some(namespace.encode().map_err(|_| AtomicError::Invalid)?),
             });
         }
+        let mut old_state_payloads = Vec::new();
+        let mut state_link_bytes = 0usize;
         for row in batch
             .mutations
             .iter()
             .filter(|row| row.key.family == Family::State)
         {
-            latent_state::session::require_no_state_payload_reference(view, &row.key)?;
+            if let Some(link) =
+                latent_state::session::retained_state_payload_reference(view, &row.key)?
+            {
+                state_link_bytes = state_link_bytes
+                    .checked_add(link.encode()?.len())
+                    .ok_or(AtomicError::Limit)?;
+                if old_state_payloads.len()
+                    >= latent_state::payload_references::MAX_REFERENCE_UPDATES
+                    || state_link_bytes > latent_core::transaction_contract::STAGED_BYTES
+                {
+                    return Err(AtomicError::Limit);
+                }
+                old_state_payloads.push(link);
+            }
         }
         super::accounting::apply(view, &TenantId(terminal.key.tenant.clone()), &mut batch)?;
         let staged = batch.mutations.iter().try_fold(0usize, |bytes, row| {
@@ -1099,12 +1122,15 @@ impl CompleteEnvelope {
         {
             return Err(AtomicError::Limit);
         }
+        let state_binding = (!old_state_payloads.is_empty()).then(|| view.binding());
         Ok(Self {
             claim,
             terminal,
             result,
             batch,
             authorities,
+            old_state_payloads,
+            state_binding,
             #[cfg(target_os = "linux")]
             payloads: Vec::new(),
         })

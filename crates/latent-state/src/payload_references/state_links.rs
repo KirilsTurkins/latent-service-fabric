@@ -58,16 +58,6 @@ impl StatePayloadLink {
             return Err(StoreError::UnsupportedFormat);
         }
         let mut input = &bytes[MAGIC.len()..];
-        fn field<'a>(input: &mut &'a [u8], maximum: usize) -> Result<&'a [u8], StoreError> {
-            let (length, rest) = input.split_at_checked(2).ok_or(StoreError::Corrupt)?;
-            let length = usize::from(u16::from_le_bytes([length[0], length[1]]));
-            if length == 0 || length > maximum {
-                return Err(StoreError::Corrupt);
-            }
-            let (value, rest) = rest.split_at_checked(length).ok_or(StoreError::Corrupt)?;
-            *input = rest;
-            Ok(value)
-        }
         let cell_key = RowKey {
             family: Family::State,
             key: field(&mut input, 4096)?.to_vec(),
@@ -83,6 +73,16 @@ impl StatePayloadLink {
         link.row_key().map_err(|_| StoreError::Corrupt)?;
         Ok(link)
     }
+}
+fn field<'a>(input: &mut &'a [u8], maximum: usize) -> Result<&'a [u8], StoreError> {
+    let (length, rest) = input.split_at_checked(2).ok_or(StoreError::Corrupt)?;
+    let length = usize::from(u16::from_le_bytes([length[0], length[1]]));
+    if length == 0 || length > maximum {
+        return Err(StoreError::Corrupt);
+    }
+    let (value, rest) = rest.split_at_checked(length).ok_or(StoreError::Corrupt)?;
+    *input = rest;
+    Ok(value)
 }
 pub(super) fn is_link(key: &RowKey) -> bool {
     key.family == Family::PayloadReference && key.key.starts_with(PREFIX)

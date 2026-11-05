@@ -12,15 +12,16 @@ use latent_effects::{
 use latent_state::{
     payload_references::{
         PayloadOwner, PayloadOwnerKind, PayloadReference, PreparedPayloadReferences,
-        MAX_REFERENCE_UPDATES,
+        StatePayloadLink, MAX_REFERENCE_UPDATES,
     },
     store_identity::StoreIdentity,
 };
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PayloadAttachmentTarget {
     Result,
     Effect(u32),
+    State(Vec<u8>),
 }
 pub struct PayloadAttachment {
     pub target: PayloadAttachmentTarget,
@@ -30,6 +31,8 @@ impl CompleteEnvelope {
     /// Derive ownership from the real terminal command/effect, never a guest
     /// reference count or claimed commit identifier. The same original session
     /// owner and verified bytes must match before any batch plan is changed.
+    /// The trusted caller must bind that session to the originating attempt;
+    /// session equality here does not independently establish that binding.
     #[expect(
         clippy::too_many_lines,
         reason = "Validate and charge all physical attachments as one atomic envelope"
@@ -40,8 +43,11 @@ impl CompleteEnvelope {
         original_session: &CapabilitySession,
         attachments: Vec<PayloadAttachment>,
     ) -> Result<Self, AtomicError> {
-        if attachments.is_empty()
-            || attachments.len() > MAX_REFERENCE_UPDATES
+        if (attachments.is_empty() && self.old_state_payloads.is_empty())
+            || attachments
+                .len()
+                .saturating_add(self.old_state_payloads.len())
+                > MAX_REFERENCE_UPDATES
             || !self.payloads.is_empty()
             || !matches!(
                 self.terminal.outcome,
@@ -56,12 +62,39 @@ impl CompleteEnvelope {
             .map_err(|_| AtomicError::PermissionDenied)?;
         if original_session.tenant().0 != self.terminal.key.tenant
             || !original_session.uses_publication(&self.terminal.source.publication)
+            || self
+                .state_binding
+                .as_ref()
+                .is_some_and(|binding| !view.is_bound_to(binding))
         {
             return Err(AtomicError::PermissionDenied);
         }
-        let mut updates = Vec::with_capacity(attachments.len());
+        let mut updates = Vec::with_capacity(attachments.len() + self.old_state_payloads.len());
+        let mut state_links = Vec::new();
+        let mut removed_bytes = 0u64;
+        for link in &self.old_state_payloads {
+            removed_bytes = removed_bytes
+                .checked_add(link.reference.payload.size)
+                .ok_or(AtomicError::Limit)?;
+            updates.push((Some(link.reference.clone()), None));
+        }
         let mut payloads = Vec::with_capacity(attachments.len());
         let mut full_bytes = 0u64;
+        let namespace_position = self
+            .batch
+            .mutations
+            .iter()
+            .position(|row| {
+                row.key.family == Family::Namespace && row.key.key.starts_with(b"ns-v1\0")
+            })
+            .ok_or(AtomicError::Corrupt)?;
+        let mut namespace = NamespaceRecord::decode(
+            self.batch.mutations[namespace_position]
+                .value
+                .as_deref()
+                .ok_or(AtomicError::Corrupt)?,
+        )
+        .map_err(|_| AtomicError::Corrupt)?;
         for attachment in attachments {
             let payload = attachment.payload;
             if !payload.uses_session(original_session)
@@ -71,17 +104,21 @@ impl CompleteEnvelope {
             {
                 return Err(AtomicError::PermissionDenied);
             }
-            let (identity, kind, format) = match attachment.target {
+            let owner = match attachment.target {
                 PayloadAttachmentTarget::Result => {
                     let value = self.result.value().ok_or(AtomicError::Invalid)?;
                     payload
                         .verify_inline_value(value)
                         .map_err(|_| AtomicError::Corrupt)?;
-                    (
-                        self.terminal.id.0,
-                        PayloadOwnerKind::Result,
-                        self.terminal.source.result_format.clone(),
-                    )
+                    PayloadOwner {
+                        tenant: self.terminal.key.tenant.clone(),
+                        namespace: self.terminal.key.namespace.clone(),
+                        incarnation: incarnation(&self.terminal.key)?,
+                        kind: PayloadOwnerKind::Result,
+                        identity: self.terminal.id.0,
+                        generation: self.terminal.attempt,
+                        format: self.terminal.source.result_format.clone(),
+                    }
                 }
                 PayloadAttachmentTarget::Effect(sequence) => {
                     if self.terminal.outcome != Outcome::Committed {
@@ -114,11 +151,38 @@ impl CompleteEnvelope {
                     payload
                         .verify_inline_value(stored.value())
                         .map_err(|_| AtomicError::Corrupt)?;
-                    (
-                        effect.0,
-                        PayloadOwnerKind::Effect,
-                        authority.profile().payload_format.clone(),
-                    )
+                    PayloadOwner {
+                        tenant: self.terminal.key.tenant.clone(),
+                        namespace: self.terminal.key.namespace.clone(),
+                        incarnation: incarnation(&self.terminal.key)?,
+                        kind: PayloadOwnerKind::Effect,
+                        identity: effect.0,
+                        generation: self.terminal.attempt,
+                        format: authority.profile().payload_format.clone(),
+                    }
+                }
+                PayloadAttachmentTarget::State(key) => {
+                    if self.terminal.outcome != Outcome::Committed {
+                        return Err(AtomicError::Invalid);
+                    }
+                    let scope = super::super::record::record_scope(&self.terminal)?;
+                    let cell_key = latent_state::session::state_payload_cell_key(&scope, &key)?;
+                    let bytes = self
+                        .batch
+                        .mutations
+                        .iter()
+                        .find(|row| row.key == cell_key)
+                        .and_then(|row| row.value.as_deref())
+                        .ok_or(AtomicError::Invalid)?;
+                    let (owner, value) =
+                        latent_state::session::describe_staged_state_payload_owner(
+                            &cell_key, bytes, &namespace,
+                        )?;
+                    payload
+                        .verify_inline_value(&value)
+                        .map_err(|_| AtomicError::Corrupt)?;
+                    state_links.push((cell_key, owner.clone(), payload.identity().clone()));
+                    owner
                 }
             };
             full_bytes = full_bytes
@@ -127,29 +191,42 @@ impl CompleteEnvelope {
             updates.push((
                 None,
                 Some(PayloadReference {
-                    owner: PayloadOwner {
-                        tenant: self.terminal.key.tenant.clone(),
-                        namespace: self.terminal.key.namespace.clone(),
-                        incarnation: incarnation(&self.terminal.key)?,
-                        kind,
-                        identity,
-                        generation: self.terminal.attempt,
-                        format,
-                    },
+                    owner,
                     payload: payload.identity().clone(),
                 }),
             ));
             payloads.push(payload);
         }
         let mut plan = PreparedPayloadReferences::prepare(view, &updates)?;
-        let links = latent_state::payload_references::PayloadLinks {
-            anchor: crate::atomic::payload_links::anchor(&self.terminal)?,
-            references: updates
-                .iter()
-                .map(|(_, after)| after.clone().ok_or(AtomicError::Corrupt))
-                .collect::<Result<Vec<_>, _>>()?,
-        };
-        plan.replace_links(view, None, Some(&links))?;
+        for link in &self.old_state_payloads {
+            plan.replace_state_link(view, Some(link), None)?;
+        }
+        for (cell_key, owner, identity) in state_links {
+            plan.replace_state_link(
+                view,
+                None,
+                Some(&StatePayloadLink {
+                    reference: PayloadReference {
+                        owner,
+                        payload: identity,
+                    },
+                    cell_key,
+                }),
+            )?;
+        }
+        let references = updates
+            .iter()
+            .filter_map(|(_, after)| after.as_ref())
+            .filter(|reference| reference.owner.kind != PayloadOwnerKind::State)
+            .cloned()
+            .collect::<Vec<_>>();
+        if !references.is_empty() {
+            let links = latent_state::payload_references::PayloadLinks {
+                anchor: crate::atomic::payload_links::anchor(&self.terminal)?,
+                references,
+            };
+            plan.replace_links(view, None, Some(&links))?;
+        }
         let tenant = TenantId(self.terminal.key.tenant.clone());
         let (_, usage_key, usage_original) = Usage::read(view, &self.terminal.key)?;
         if self
@@ -174,21 +251,6 @@ impl CompleteEnvelope {
                 .as_deref()
                 .ok_or(AtomicError::Corrupt)?,
         )?;
-        let namespace_position = self
-            .batch
-            .mutations
-            .iter()
-            .position(|row| {
-                row.key.family == Family::Namespace && row.key.key.starts_with(b"ns-v1\0")
-            })
-            .ok_or(AtomicError::Corrupt)?;
-        let mut namespace = NamespaceRecord::decode(
-            self.batch.mutations[namespace_position]
-                .value
-                .as_deref()
-                .ok_or(AtomicError::Corrupt)?,
-        )
-        .map_err(|_| AtomicError::Corrupt)?;
         if namespace.tenant != tenant
             || namespace.id.0 != self.terminal.key.namespace
             || namespace.version.incarnation != incarnation(&self.terminal.key)?
@@ -200,13 +262,19 @@ impl CompleteEnvelope {
         // quota; each actual row consumes engine and tenant metadata capacity.
         usage.payload_bytes = usage
             .payload_bytes
+            .checked_sub(removed_bytes)
+            .ok_or(AtomicError::Corrupt)?
             .checked_add(full_bytes)
             .ok_or(AtomicError::Limit)?;
         usage.check(&namespace)?;
         namespace.pins.payload_references = namespace
             .pins
             .payload_references
-            .checked_add(u64::try_from(updates.len()).map_err(|_| AtomicError::Limit)?)
+            .checked_sub(
+                u64::try_from(self.old_state_payloads.len()).map_err(|_| AtomicError::Limit)?,
+            )
+            .ok_or(AtomicError::Corrupt)?
+            .checked_add(u64::try_from(payloads.len()).map_err(|_| AtomicError::Limit)?)
             .ok_or(AtomicError::Limit)?;
         self.batch.mutations[usage_position].value = Some(usage.encode()?);
         self.batch.mutations[namespace_position].value =
@@ -236,6 +304,7 @@ impl CompleteEnvelope {
             return Err(AtomicError::Limit);
         }
         self.payloads = payloads;
+        self.old_state_payloads.clear();
         Ok(self)
     }
     /// The trusted host must check current captured sessions and provider
@@ -250,10 +319,15 @@ impl CompleteEnvelope {
             &[CapturedLocalPayload],
         ) -> Result<(), AtomicError>,
     ) -> PreparedDisposition {
-        if self
-            .payloads
-            .iter()
-            .any(|payload| !payload.uses_store(store))
+        if !self.old_state_payloads.is_empty()
+            || self
+                .state_binding
+                .as_ref()
+                .is_some_and(|binding| !store.is_bound_to(binding))
+            || self
+                .payloads
+                .iter()
+                .any(|payload| !payload.uses_store(store))
         {
             return PreparedDisposition::KnownNotCommitted {
                 command: Box::new(self.claim),

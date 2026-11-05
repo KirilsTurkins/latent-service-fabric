@@ -3,6 +3,592 @@ use super::*;
 mod fixture;
 use fixture::Fixture;
 
+fn validate_payload_census(
+    view: &latent_state::embedded::ReadView,
+) -> latent_state::tenant::TenantUsage {
+    use latent_state::{
+        embedded::StoreError,
+        tenant::{self, TenantCensus, INSTALLED_GLOBAL_ALLOWANCE},
+    };
+    let record = tenant::inspect(view, &TenantId("a".into()))
+        .unwrap()
+        .unwrap();
+    let mut census = TenantCensus::capture(
+        view,
+        &[record.quota],
+        INSTALLED_GLOBAL_ALLOWANCE,
+        std::time::Instant::now() + std::time::Duration::from_secs(20),
+    )
+    .unwrap();
+    validate_view_observed(
+        view,
+        |view, key, bytes| {
+            if *key == latent_state::store_identity::StoreIdentity::row_key() {
+                latent_state::store_identity::StoreIdentity::validate_row(key, bytes)
+            } else {
+                accounted::installed_codec(view, key, bytes)
+            }
+        },
+        |view, key, bytes| {
+            let contribution = match tenant_census_contribution(view, key, bytes) {
+                Err(StoreError::UnsupportedFormat) => match tenant::census_contribution(
+                    view, key, bytes,
+                ) {
+                    Err(StoreError::UnsupportedFormat) => {
+                        latent_effects::dispatch_store::DispatchCatalog::tenant_census_contribution(
+                            view, key, bytes,
+                        )
+                    }
+                    result => result,
+                },
+                result => result,
+            }?;
+            census.observe(key, bytes, contribution)
+        },
+    )
+    .unwrap();
+    census.finish().unwrap();
+    record.usage
+}
+
+fn publish_payload_envelope(fixture: &Fixture, envelope: CompleteEnvelope) -> CommandRecord {
+    match envelope.publish_with_payloads(&fixture.state, |authorities, payloads| {
+        fixture
+            .session
+            .check_liveness()
+            .map_err(|_| AtomicError::PermissionDenied)?;
+        for payload in payloads {
+            if !payload.uses_session(&fixture.session)
+                || !payload
+                    .matches_provider(&fixture.session)
+                    .map_err(|_| AtomicError::PermissionDenied)?
+            {
+                return Err(AtomicError::PermissionDenied);
+            }
+        }
+        let _fence = fixture.effects.commit_fence(
+            authorities,
+            EffectTime {
+                unix_millis: 200,
+                continuity_proven: true,
+            },
+        )?;
+        Ok(())
+    }) {
+        PreparedDisposition::Confirmed { command, .. } => *command,
+        _ => panic!("expected atomic payload disposition"),
+    }
+}
+
+fn state_scope_a() -> StateScope {
+    StateScope {
+        tenant: TenantId("a".into()),
+        namespace: StateNamespaceId("aggregate".into()),
+        incarnation: 1,
+        state_schema: schema(),
+        entity: None,
+        mode: StateMode::Command,
+    }
+}
+fn state_mutation(
+    view: &latent_state::embedded::ReadView,
+    bytes: Option<&[u8]>,
+) -> latent_state::session::StatePlan {
+    let mut session =
+        StateSession::open(view, state_scope_a(), SessionLimits::default(), |_, _| {
+            Ok(())
+        })
+        .unwrap();
+    if let Some(bytes) = bytes {
+        session
+            .put(view, b"attached".to_vec(), value(bytes), |_, _| Ok(()))
+            .unwrap();
+    } else {
+        session
+            .delete(view, b"attached".to_vec(), |_, _| Ok(()))
+            .unwrap();
+    }
+    session.seal(view, |_, _| Ok(())).unwrap()
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn state_attachment_replacement_and_delete_share_one_physical_owner_fence() {
+    let fixture = Fixture::new();
+    let cell_key =
+        latent_state::session::state_payload_cell_key(&state_scope_a(), b"attached").unwrap();
+    let claim = fixture.claim("state-attach");
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"body"));
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let pin = fixture.capture().await;
+    let physical = pin.identity().clone();
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::State(b"attached".to_vec()),
+                payload: pin,
+            }],
+        )
+        .unwrap();
+    drop(view);
+    publish_payload_envelope(&fixture, envelope);
+    let view = fixture.state.snapshot().unwrap();
+    let first = latent_state::session::retained_state_payload_reference(&view, &cell_key)
+        .unwrap()
+        .unwrap();
+    assert_eq!(validate_payload_census(&view).payload_bytes, 4);
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(1)
+    );
+    drop(view);
+    let reader = fixture
+        .provider
+        .store()
+        .open_read(&TenantId("a".into()), &fixture.blob, &|| Ok(()))
+        .unwrap();
+
+    let claim = fixture.claim("state-replace");
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"body"));
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let pin = fixture.capture().await;
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::State(b"attached".to_vec()),
+                payload: pin,
+            }],
+        )
+        .unwrap();
+    drop(view);
+    let claim = match envelope
+        .publish_with_payloads(&fixture.state, |_, _| Err(AtomicError::PermissionDenied))
+    {
+        PreparedDisposition::KnownNotCommitted {
+            command,
+            reason: AtomicError::PermissionDenied,
+        } => *command,
+        _ => panic!("expected final-fence refusal"),
+    };
+    let view = fixture.state.snapshot().unwrap();
+    assert_eq!(
+        latent_state::session::retained_state_payload_reference(&view, &cell_key)
+            .unwrap()
+            .unwrap(),
+        first
+    );
+    assert_eq!(validate_payload_census(&view).payload_bytes, 4);
+    let state = state_mutation(&view, Some(b"body"));
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let pin = fixture.capture().await;
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::State(b"attached".to_vec()),
+                payload: pin,
+            }],
+        )
+        .unwrap();
+    drop(view);
+    publish_payload_envelope(&fixture, envelope);
+    let view = fixture.state.snapshot().unwrap();
+    let second = latent_state::session::retained_state_payload_reference(&view, &cell_key)
+        .unwrap()
+        .unwrap();
+    assert_eq!(validate_payload_census(&view).payload_bytes, 4);
+    assert_ne!(
+        first.reference.owner.generation,
+        second.reference.owner.generation
+    );
+    assert!(view
+        .get(&first.reference.owner_key().unwrap())
+        .unwrap()
+        .is_none());
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(1)
+    );
+    drop(view);
+
+    let claim = fixture.claim("state-delete");
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, None);
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let envelope = envelope
+        .attach_verified_payloads(&view, &fixture.session, vec![])
+        .unwrap();
+    drop(view);
+    let foreign = open(&fixture._root.path().join("foreign-state-delete.redb"));
+    let view = foreign.snapshot().unwrap();
+    let identity =
+        latent_state::store_identity::StoreIdentity::new("payload-envelope-a".into()).unwrap();
+    let initialization = identity.prepare_initialization(&view).unwrap().unwrap();
+    drop(view);
+    foreign.apply(initialization).unwrap();
+    let claim = match envelope
+        .publish_with_payloads(&foreign, |_, _| panic!("foreign delete reached acceptance"))
+    {
+        PreparedDisposition::KnownNotCommitted {
+            command,
+            reason: AtomicError::PermissionDenied,
+        } => *command,
+        _ => panic!("expected foreign engine refusal"),
+    };
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, None);
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let envelope = envelope
+        .attach_verified_payloads(&view, &fixture.session, vec![])
+        .unwrap();
+    drop(view);
+    publish_payload_envelope(&fixture, envelope);
+    let view = fixture.state.snapshot().unwrap();
+    assert!(
+        latent_state::session::retained_state_payload_reference(&view, &cell_key)
+            .unwrap()
+            .is_none()
+    );
+    assert_eq!(validate_payload_census(&view).payload_bytes, 0);
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(0)
+    );
+    drop(view);
+    assert!(fixture
+        .provider
+        .store()
+        .release_durable_reference(
+            &TenantId("a".into()),
+            &fixture.blob,
+            &fixture.state,
+            &|| Ok(())
+        )
+        .unwrap());
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(1, &|| Ok(()))
+            .unwrap()
+            .objects,
+        0
+    );
+    let mut bytes = [0; 4];
+    reader
+        .read(
+            &latent_blobs::BlobRange {
+                offset: 0,
+                length: 4,
+            },
+            &mut bytes,
+            &|| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(&bytes, b"body");
+    drop(reader);
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(1, &|| Ok(()))
+            .unwrap()
+            .objects,
+        1
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn state_replacement_with_new_blob_preserves_an_already_open_old_reader() {
+    let fixture = Fixture::new();
+    let mut writer = fixture
+        .provider
+        .store()
+        .create(
+            &TenantId("a".into()),
+            "application/octet-stream",
+            Some(4),
+            &|| Ok(()),
+        )
+        .unwrap();
+    writer.write(0, b"new!", &|| Ok(())).unwrap();
+    let replacement = writer.seal(&|| Ok(())).unwrap();
+    let claim = fixture.claim("state-old-blob");
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"body"));
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let old = fixture.capture().await;
+    let old_identity = old.identity().clone();
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::State(b"attached".to_vec()),
+                payload: old,
+            }],
+        )
+        .unwrap();
+    drop(view);
+    publish_payload_envelope(&fixture, envelope);
+    let reader = fixture
+        .provider
+        .store()
+        .open_read(&TenantId("a".into()), &fixture.blob, &|| Ok(()))
+        .unwrap();
+
+    let claim = fixture.claim("state-new-blob");
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"new!"));
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let pin = fixture.capture_blob(&replacement).await;
+    let new_identity = pin.identity().clone();
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::State(b"attached".to_vec()),
+                payload: pin,
+            }],
+        )
+        .unwrap();
+    drop(view);
+    publish_payload_envelope(&fixture, envelope);
+    let view = fixture.state.snapshot().unwrap();
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &old_identity).unwrap(),
+        Some(0)
+    );
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &new_identity).unwrap(),
+        Some(1)
+    );
+    assert_eq!(validate_payload_census(&view).payload_bytes, 4);
+    drop(view);
+    assert!(fixture
+        .provider
+        .store()
+        .release_durable_reference(
+            &TenantId("a".into()),
+            &fixture.blob,
+            &fixture.state,
+            &|| Ok(())
+        )
+        .unwrap());
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(1, &|| Ok(()))
+            .unwrap()
+            .objects,
+        0
+    );
+    let mut old_bytes = [0; 4];
+    reader
+        .read(
+            &latent_blobs::BlobRange {
+                offset: 0,
+                length: 4,
+            },
+            &mut old_bytes,
+            &|| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(&old_bytes, b"body");
+    drop(reader);
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(1, &|| Ok(()))
+            .unwrap()
+            .objects,
+        1
+    );
+    let new_reader = fixture
+        .provider
+        .store()
+        .open_read(&TenantId("a".into()), &replacement, &|| Ok(()))
+        .unwrap();
+    let mut new_bytes = [0; 4];
+    new_reader
+        .read(
+            &latent_blobs::BlobRange {
+                offset: 0,
+                length: 4,
+            },
+            &mut new_bytes,
+            &|| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(&new_bytes, b"new!");
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn deleting_state_keeps_the_shared_unresolved_effect_payload() {
+    let fixture = Fixture::new();
+    let claim = fixture.claim("state-and-effect");
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"body"));
+    let intent = StagedIntent {
+        binding: "approved-event".into(),
+        operation: "event".into(),
+        payload: value(b"body"),
+        expires_at_millis: None,
+    };
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        Some(state),
+        vec![intent],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let state_pin = fixture.capture().await;
+    let physical = state_pin.identity().clone();
+    let effect_pin = fixture.capture().await;
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![
+                PayloadAttachment {
+                    target: PayloadAttachmentTarget::State(b"attached".to_vec()),
+                    payload: state_pin,
+                },
+                PayloadAttachment {
+                    target: PayloadAttachmentTarget::Effect(0),
+                    payload: effect_pin,
+                },
+            ],
+        )
+        .unwrap();
+    drop(view);
+    publish_payload_envelope(&fixture, envelope);
+    let view = fixture.state.snapshot().unwrap();
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(2)
+    );
+    validate_payload_census(&view);
+    drop(view);
+    let claim = fixture.claim("delete-shared-state");
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, None);
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let envelope = envelope
+        .attach_verified_payloads(&view, &fixture.session, vec![])
+        .unwrap();
+    drop(view);
+    publish_payload_envelope(&fixture, envelope);
+    let view = fixture.state.snapshot().unwrap();
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(1)
+    );
+    let page =
+        latent_state::payload_references::required_physical_page(&view, &physical, None, 2, 2048)
+            .unwrap();
+    assert_eq!(page.references.len(), 1);
+    assert_eq!(
+        page.references[0].owner.kind,
+        latent_state::payload_references::PayloadOwnerKind::Effect
+    );
+    validate_payload_census(&view);
+    drop(view);
+    assert_eq!(
+        fixture.provider.store().release_durable_reference(
+            &TenantId("a".into()),
+            &fixture.blob,
+            &fixture.state,
+            &|| Ok(())
+        ),
+        Err(latent_blobs::local::LocalBlobError::Busy)
+    );
+}
+
 fn protected_recovery(
     root: &std::path::Path,
 ) -> latent_state::protected_store::ProtectedStoreStartup {

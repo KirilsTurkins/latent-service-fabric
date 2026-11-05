@@ -424,8 +424,13 @@ fn coherent_inventory_resolves_state_owner_to_exact_current_cell() {
             value(b"ok"),
             &effects,
             time(102)
-        ),
-        Err(AtomicError::UnsupportedFormat)
+        )
+        .unwrap()
+        .publish(&store, |_| panic!("uncoordinated state replacement")),
+        PreparedDisposition::KnownNotCommitted {
+            reason: AtomicError::UnsupportedFormat,
+            ..
+        }
     ));
     drop(view);
 
@@ -454,8 +459,13 @@ fn coherent_inventory_resolves_state_owner_to_exact_current_cell() {
             value(b"ok"),
             &effects,
             time(102)
-        ),
-        Err(AtomicError::UnsupportedFormat)
+        )
+        .unwrap()
+        .publish(&store, |_| panic!("uncoordinated state deletion")),
+        PreparedDisposition::KnownNotCommitted {
+            reason: AtomicError::UnsupportedFormat,
+            ..
+        }
     ));
     drop(view);
 

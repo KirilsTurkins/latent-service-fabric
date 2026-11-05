@@ -254,15 +254,18 @@ impl Fixture {
         prepared.publish(&self.state, || Ok(())).unwrap()
     }
     pub async fn capture(&self) -> CapturedLocalPayload {
+        self.capture_blob(&self.blob).await
+    }
+    pub async fn capture_blob(&self, blob: &latent_blobs::BlobReference) -> CapturedLocalPayload {
         tokio::time::timeout(
             Duration::from_secs(15),
             self.provider
                 .capture_reference(
                     &self.session,
                     BlobReference {
-                        digest: self.blob.digest.0.clone(),
-                        size: self.blob.size_bytes,
-                        media_type: self.blob.media_type.clone(),
+                        digest: blob.digest.0.clone(),
+                        size: blob.size_bytes,
+                        media_type: blob.media_type.clone(),
                     },
                 )
                 .unwrap(),
