@@ -120,6 +120,11 @@ all six default and raw CommonJS and ESM files and the complete bundle against
 the exact toolchain lock. It records only the specifically reviewed advisory
 revisions as source-remediated; other versions and findings remain visible.
 
+The cache restore and save actions share one reviewed build-dependency lock. The
+source verifier binds both exact action entrypoints, their metadata, manifest and
+lock to the same repaired deepmerge source before resolving its specific advisory
+revision for that lock. Future revisions or altered source remain findings.
+
 The setup-python action retains minimatch 10.2.5 with a maintained source repair.
 The [action policy](../../.github/security/minimatch-action-source-repairs.json)
 and independent verifier reconstruct the authenticated upstream archive and both

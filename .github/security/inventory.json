@@ -371,7 +371,8 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/cache/package-lock.json",
-      "path": ".github/security/actions/cache/package.json"
+      "path": ".github/security/actions/cache/package.json",
+      "source_repair": "deepmerge-action-source-v1"
     },
     {
       "kind": "npm",

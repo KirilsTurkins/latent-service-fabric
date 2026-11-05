@@ -231,7 +231,7 @@ jobs:
         run: printf 'LSF_DEV_COMPILER_CACHE=%s\n' "$RUNNER_TEMP/compiler-archives" >> "$GITHUB_ENV"
       - name: Restore untrusted pinned compiler archives
         id: compiler-cache
-        uses: KirilsTurkins/lsf-cache/restore@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-cache/restore@ec176dce9471270c8a9be1289040c0a8fd6aa708 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives
           key: compiler-archives-v1-${{ runner.os }}-${{ matrix.language }}-${{ hashFiles('tools/build_dev_guest_tools.py', 'tools/dev_guest_tools.py', 'tools/dev_tool_distribution.py', 'tools/install_guest_bindgen.py', 'tools/dev_managed_distribution.py', 'tools/dev_go_distribution.py', 'tools/dev_typescript_distribution.py') }}
@@ -247,7 +247,7 @@ jobs:
       - name: Restore untrusted source-pinned Java prepared inputs
         id: java-compiler-cache
         if: matrix.language == 'java'
-        uses: KirilsTurkins/lsf-cache/restore@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-cache/restore@ec176dce9471270c8a9be1289040c0a8fd6aa708 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
@@ -263,7 +263,7 @@ jobs:
           printf 'LSF_DEV_JAVA_COMPILER_INPUT=%s\n' "$input" >> "$GITHUB_ENV"
       - name: Save only reverified Java prepared input bytes
         if: matrix.language == 'java' && steps.java-compiler-cache.outputs.cache-hit != 'true'
-        uses: KirilsTurkins/lsf-cache/save@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-cache/save@ec176dce9471270c8a9be1289040c0a8fd6aa708 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: ${{ steps.java-compiler-cache.outputs.cache-primary-key }}
@@ -273,7 +273,7 @@ jobs:
         run: python tools/build_dev_guest_tools.py --language "$LSF_DEV_LANGUAGE" --output target/dev-tools --python-prefix "$LSF_DEV_PYTHON_PREFIX" --node-tests
       - name: Save independently verified compiler archive bytes
         if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/development' && steps.compiler-cache.outputs.cache-hit != 'true'
-        uses: KirilsTurkins/lsf-cache/save@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-cache/save@ec176dce9471270c8a9be1289040c0a8fd6aa708 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives
           key: ${{ steps.compiler-cache.outputs.cache-primary-key }}
@@ -880,7 +880,7 @@ jobs:
       - name: Restore untrusted source-pinned Java prepared inputs
         id: java-compiler-cache
         if: ${{ !inputs.java_compiler_custody }}
-        uses: KirilsTurkins/lsf-cache/restore@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-cache/restore@ec176dce9471270c8a9be1289040c0a8fd6aa708 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
@@ -899,7 +899,7 @@ jobs:
               --output target/java-compiler-product/result.json
       - name: Save only reverified Java prepared input bytes
         if: ${{ !inputs.java_compiler_custody && steps.java-compiler-cache.outputs.cache-hit != 'true' }}
-        uses: KirilsTurkins/lsf-cache/save@2ff27e45011b8bcf31ef566ae84c1c923c8aea69 # v6.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-cache/save@ec176dce9471270c8a9be1289040c0a8fd6aa708 # v6.1.0 + upstream changes + LSF security fixes
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: ${{ steps.java-compiler-cache.outputs.cache-primary-key }}

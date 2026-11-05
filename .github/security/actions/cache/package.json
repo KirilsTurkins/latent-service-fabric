@@ -6,8 +6,8 @@
   "type": "module",
   "main": "dist/restore/index.js",
   "scripts": {
-    "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && ncc build -o dist/restore-only src/restoreOnly.ts && ncc build -o dist/save-only src/saveOnly.ts",
-    "test": "tsc --noEmit && node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "build": "node .lsf-source/verify-installed-deepmerge.mjs && tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && ncc build -o dist/restore-only src/restoreOnly.ts && ncc build -o dist/save-only src/saveOnly.ts",
+    "test": "node .lsf-source/verify-installed-deepmerge.mjs && tsc --noEmit && node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "lint": "eslint **/*.ts --cache",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts"
@@ -47,7 +47,8 @@
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "deepmerge": "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar"
   },
   "engines": {
     "node": ">=24"
@@ -62,6 +63,8 @@
     "handlebars@4": "4.7.10",
     "js-yaml@3": "3.15.2",
     "js-yaml@4": "4.3.2",
-    "picomatch@2": "2.3.2"
+    "picomatch@2": "2.3.2",
+    "glob@10": "14.0.2",
+    "minimatch@9": "11.0.4"
   }
 }

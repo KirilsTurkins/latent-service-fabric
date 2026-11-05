@@ -186,7 +186,18 @@ CHECKOUT_PREFIX = ".github/security/actions/checkout/"
 CHECKOUT_ARCHIVE = "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar"
 ACTION_PROFILE = "deepmerge-action-source-v1"
 ACTION_VERIFIER_SOURCE = ".lsf-source/verify-installed-deepmerge.mjs"
+CACHE_PREFIX = ".github/security/actions/cache/"
+CACHE_RESTORE_REFERENCE = "KirilsTurkins/lsf-cache/restore@ec176dce9471270c8a9be1289040c0a8fd6aa708"
+CACHE_SAVE_REFERENCE = "KirilsTurkins/lsf-cache/save@ec176dce9471270c8a9be1289040c0a8fd6aa708"
+CACHE_SOURCE_SHA256 = {
+    "package.json": "8e8b46d08a417276c9c979e66f78f1de5b4e0af637c9e60128c738a65b8b64f8",
+    "package-lock.json": "e979985c5b09e89732e1c75abdf62c6f166d8238e4aed768c2fefcf7c44d7131",
+    ACTION_VERIFIER_SOURCE: "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+    "restore/action.yml": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057",
+    "save/action.yml": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec",
+}
 ACTION_REFERENCES = {
+    CACHE_PREFIX: CACHE_RESTORE_REFERENCE,
     ".github/security/actions/setup-java/":
         "KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039",
     ".github/security/actions/setup-node/":
@@ -319,28 +330,41 @@ def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> di
             "additional-action-source-verifier-drift")
     prefix = prefixes[0]
     reference = ACTION_REFERENCES[prefix]
-    action = actions.get(reference, {})
-    files = {row.get("source"): row for row in action.get("files", [])}
-    expected_sources = {"action.yml", "package.json", "package-lock.json", ACTION_VERIFIER_SOURCE}
-    if entry.get("minimatch_source_repair") is not None:
-        require(entry["minimatch_source_repair"] == MINIMATCH_PROFILE and prefix == MINIMATCH_PREFIX,
-                "unreviewed-minimatch-action-profile")
-        expected_sources.add(MINIMATCH_VERIFIER)
-    require(action.get("repository") == reference.split("@")[0]
-            and action.get("revision") == reference.split("@")[1]
-            and action.get("kind") == "npm" and set(files) == expected_sources
-            and files["package.json"]["snapshot"] == entry["path"]
-            and files["package-lock.json"]["snapshot"] == entry["lock"]
-            and files["action.yml"]["snapshot"] == prefix + "action.yml.snapshot"
-            and files[ACTION_VERIFIER_SOURCE] == {
-                "snapshot": verifier["snapshot"], "source": verifier["source"],
-                "sha256": verifier["sha256"], "source_sha256": verifier["sha256"]}
-            and action.get("metadata") == files["action.yml"], "action-source-revision-drift")
-    for row in files.values():
-        require(row["sha256"] == row["source_sha256"]
-                and digest(read_file(repo, row["snapshot"])) == row["sha256"],
-                "action-source-binding-drift")
-    return {"policy": policy, "material": material, "reference": reference, "checkout": False}
+    bindings = [(reference, "action.yml", prefix + "action.yml.snapshot")]
+    if prefix == CACHE_PREFIX:
+        bindings = [(reference, "restore/action.yml", prefix + "restore/action.yml.snapshot"),
+                    (CACHE_SAVE_REFERENCE, "save/action.yml", prefix + "save/action.yml.snapshot")]
+    for action_reference, metadata_source, metadata_snapshot in bindings:
+        action = actions.get(action_reference, {})
+        rows = action.get("files", [])
+        require(isinstance(rows, list), "action-source-revision-drift")
+        files = {row.get("source"): row for row in rows}
+        expected_sources = {metadata_source, "package.json", "package-lock.json", ACTION_VERIFIER_SOURCE}
+        if entry.get("minimatch_source_repair") is not None:
+            require(entry["minimatch_source_repair"] == MINIMATCH_PROFILE and prefix == MINIMATCH_PREFIX,
+                    "unreviewed-minimatch-action-profile")
+            expected_sources.add(MINIMATCH_VERIFIER)
+        repository = "/".join(action_reference.split("@", 1)[0].split("/")[:2])
+        require(action.get("repository") == repository
+                and action.get("revision") == action_reference.split("@")[1]
+                and action.get("kind") == "npm" and len(rows) == len(files)
+                and set(files) == expected_sources
+                and files["package.json"]["snapshot"] == entry["path"]
+                and files["package-lock.json"]["snapshot"] == entry["lock"]
+                and files[metadata_source]["snapshot"] == metadata_snapshot
+                and files[ACTION_VERIFIER_SOURCE] == {
+                    "snapshot": verifier["snapshot"], "source": verifier["source"],
+                    "sha256": verifier["sha256"], "source_sha256": verifier["sha256"]}
+                and action.get("metadata") == files[metadata_source], "action-source-revision-drift")
+        for source, row in files.items():
+            require(row["sha256"] == row["source_sha256"]
+                    and digest(read_file(repo, row["snapshot"])) == row["sha256"]
+                    and (prefix != CACHE_PREFIX or row["sha256"] == CACHE_SOURCE_SHA256[source]),
+                    "action-source-binding-drift")
+    selected = {"policy": policy, "material": material, "reference": reference, "checkout": False}
+    if prefix == CACHE_PREFIX:
+        selected["related_actions"] = [CACHE_SAVE_REFERENCE]
+    return selected
 
 
 def minimatch_action_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> dict | None:
@@ -485,6 +509,8 @@ def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch
             receipt.update({"built_tree": build["builtTree"], "build_run": build["run"]})
         else:
             receipt["verifier_sha256"] = policy["additional_actions"]["verifier"]["sha256"]
+            if "related_actions" in selected:
+                receipt["related_actions"] = selected["related_actions"]
         receipts.append(receipt)
     return receipts
 
