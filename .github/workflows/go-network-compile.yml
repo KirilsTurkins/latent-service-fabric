@@ -28,7 +28,7 @@ jobs:
         run: python3 -m pip install -r tools/requirements.lock
       - name: Check exact input ownership cancellation and fail-closed selection
         run: python3 -m unittest tools.tests.test_go_network tools.tests.test_go_network_compile tools.tests.test_go_http_context tools.tests.test_go_standard_http -v
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Authenticate the maintained compiler and official generator

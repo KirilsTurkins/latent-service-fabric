@@ -186,6 +186,35 @@ CHECKOUT_PREFIX = ".github/security/actions/checkout/"
 CHECKOUT_ARCHIVE = "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar"
 ACTION_PROFILE = "deepmerge-action-source-v1"
 ACTION_VERIFIER_SOURCE = ".lsf-source/verify-installed-deepmerge.mjs"
+BCA_PROFILE = "bytecodealliance-deepmerge-source-v1"
+BCA_PREFIX = ".github/security/actions/bytecodealliance-actions/"
+BCA_REFERENCE = ("KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@"
+                 "1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce")
+BCA_ADVISORIES = [{"id": "GHSA-gcqx-w48m-w2h4", "modified": "2026-10-27T21:45:04.256048Z"}]
+# The nested entrypoint has its own exact profile. It must not extend the
+# root-action selector or make another action eligible for this receipt.
+BCA_INPUTS = {
+    "package.json": (BCA_PREFIX + "package.json", 2852,
+        "830926dc4fc6b8357b85ee84855aa6c8dbd42569884bbadf932fb54401a22e7e", "b24f80bbef887b238195755763773aeeef42d5f0"),
+    "package-lock.json": (BCA_PREFIX + "package-lock.json", 308458,
+        "a4d4e4834d16cc2655b73066144923018ec59f38497b7d37d549fa22ecd1d424", "0a0ee9b804ca36240ae28185ab2b4b010345a0e5"),
+    "wasm-tools/setup/action.yml": (BCA_PREFIX + "wasm-tools/setup/action.yml.snapshot", 585,
+        "69066705f008bae4cc14ad69328d6e7d87562e6651b8ae713ff45be2ff1eb5b1", "12a645b94d14643b2e4d80b49c1768cd71e686b9"),
+    ACTION_VERIFIER_SOURCE: (".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot", 2381,
+        "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7", "99d75a2ea3895eb8acc8018984ca9826e4edff51"),
+}
+BCA_MATERIAL = {
+    "archive": (".github/security/actions/checkout-source/deepmerge-4.3.1.repaired.tar", 51200,
+        "c4ca0f4eb3a2464c026bc3dec5d9eaf04544aed24c3fd1d77da95f85e36c369f", "30e23fad3a82fd30bc3f08e26704a0c0bc84c704"),
+    "repair": (".github/security/actions/checkout-source/repair.json", 3064,
+        "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7", "52602f18647aa2f2bd30f046e05bcce2705a761f"),
+    "declaration": (".github/security/actions/checkout-source/declaration.json", 6925,
+        "b4b0b79fa2bc84c6f1e1c61ddcc1ab228df629f9fce4b1067d3ac8b3d1c42892", "0685ff353f65174eb5a97cfcb385720dd4a5874c"),
+    "upstream": (".github/security/actions/checkout-source/deepmerge-4.3.1.original.tgz", 8452,
+        "4003a0a348276a95543fa969f561f6b5968629acbbb59d66018dd23e7b8f1d5c", "1d1560e971dfc484bbe0cb9e8c86bde9140e45b5"),
+    "build": (BCA_PREFIX + "fork-build.json", 1904,
+        "c1a5e4e6e8802d173f2e2badee53d489bc4569e1d6766c36828ed49e8dfa374f", "180edbd64e2609ac8d30c69b58987097398d77b1"),
+}
 CACHE_PREFIX = ".github/security/actions/cache/"
 CACHE_RESTORE_REFERENCE = "KirilsTurkins/lsf-cache/restore@ec176dce9471270c8a9be1289040c0a8fd6aa708"
 CACHE_SAVE_REFERENCE = "KirilsTurkins/lsf-cache/save@ec176dce9471270c8a9be1289040c0a8fd6aa708"
@@ -309,11 +338,67 @@ def source_identity(raw: bytes) -> dict:
             "gitBlob": hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()}
 
 
+def bytecodealliance_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> dict:
+    require(set(entry) == {"kind", "path", "lock", "source_repair"}
+            and entry["kind"] == "npm" and entry["source_repair"] == BCA_PROFILE
+            and entry["path"] == BCA_PREFIX + "package.json"
+            and entry["lock"] == BCA_PREFIX + "package-lock.json", "unreviewed-bytecodealliance-profile")
+    material, bound = {}, {}
+    for source, (snapshot, size, sha256, blob) in (BCA_INPUTS | BCA_MATERIAL).items():
+        raw = read_file(repo, snapshot)
+        require(source_identity(raw) == {"bytes": size, "sha256": sha256, "gitBlob": blob},
+                "bytecodealliance-source-input-drift")
+        if source in BCA_MATERIAL:
+            material[source] = raw
+        else:
+            bound[source] = raw
+    require(decode_json(bound["package.json"]) == owner
+            and decode_json(bound["package-lock.json"]) == lock,
+            "bytecodealliance-parsed-input-drift")
+    node = lock["packages"].get("node_modules/deepmerge", {})
+    require(owner.get("devDependencies", {}).get("deepmerge") == CHECKOUT_ARCHIVE
+            and "deepmerge" not in owner.get("dependencies", {})
+            and "deepmerge" not in owner.get("overrides", {})
+            and node.get("version") == "4.3.1" and node.get("dev") is True
+            and node.get("resolved") == CHECKOUT_ARCHIVE
+            and node.get("integrity") == integrity(material["archive"])
+            and [path for path in lock["packages"] if path.rsplit("node_modules/", 1)[-1] == "deepmerge"]
+                == ["node_modules/deepmerge"], "unlocked-bytecodealliance-source-graph")
+    actions = decode_json(read_file(repo, ".github/security/actions.json"))["actions"]
+    action = actions.get(BCA_REFERENCE, {})
+    expected = [{"snapshot": snapshot, "source": source, "sha256": sha256, "source_sha256": sha256}
+                for source, (snapshot, _, sha256, _) in BCA_INPUTS.items()]
+    metadata = next(row for row in expected if row["source"] == "wasm-tools/setup/action.yml")
+    require(action.get("repository") == "KirilsTurkins/lsf-bytecodealliance-actions"
+            and action.get("revision") == BCA_REFERENCE.split("@")[1] and action.get("kind") == "npm"
+            and isinstance(action.get("files"), list)
+            and sorted(action["files"], key=lambda row: row["source"]) == sorted(expected, key=lambda row: row["source"])
+            and action.get("metadata") == metadata, "bytecodealliance-action-binding-drift")
+    build = decode_json(material["build"])
+    result = build["result"]
+    require(build["schema"] == 1 and build["repository"] == "KirilsTurkins/lsf-bytecodealliance-actions"
+            and build["publishedRevision"] == BCA_REFERENCE.split("@")[1]
+            and build["publishedTree"] == build["builtTree"] == result["sourceTree"] == "578e888fbea3faf619b37e947f749242001b2aa0"
+            and build["builtHead"] == result["sourceCommit"] == "60bd0613e09bef8a77464828b6d476147aeb3385"
+            and build["buildRun"] == 42020735461 and build["buildJob"] == 127222560199
+            and build["buildConclusion"] == "success" and build["diagnosticRun"] == 42021497437
+            and build["diagnosticJob"] == 127225111043 and build["diagnosticConclusion"] == "success"
+            and result["status"] == "passed"
+            and build["diagnosticHead"] == result["diagnosticCommit"] == "86892eb98aa1cb9ef3e2eacace772ce507c5e6a9"
+            and build["artifact"] == {"id": 13411193511, "bytes": 707,
+                "sha256": "0aa9cc0d447423cf836287a9d378583daf29fab05f8a580b7ff9ed6c68632d0e", "crcVerified": True},
+            "bytecodealliance-build-evidence-drift")
+    return {"policy": {"advisories": BCA_ADVISORIES}, "material": material,
+            "reference": BCA_REFERENCE, "checkout": False, "bytecodealliance": True}
+
+
 def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> dict | None:
     """Recognize one published action graph; registry-only historical graphs stay ordinary."""
     if entry.get("source_repair") is None:
         return None
     profile = entry["source_repair"]
+    if profile == BCA_PROFILE:
+        return bytecodealliance_source_inputs(repo, entry, owner, lock)
     prefixes = [prefix for prefix in ACTION_REFERENCES if entry["path"] == prefix + "package.json"
                 and entry["lock"] == prefix + "package-lock.json"]
     require((profile == CHECKOUT_PROFILE
@@ -598,7 +683,8 @@ def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch
                     and row["mode"] == oct(original[key][1]) == oct(repaired[key][1]),
                     "action-source-file-drift")
         receipt = {"name": pin["name"], "version": pin["version"],
-                   "profile": policy["profile"] if selected["checkout"] else ACTION_PROFILE,
+                   "profile": (BCA_PROFILE if selected.get("bytecodealliance") else
+                               policy["profile"] if selected["checkout"] else ACTION_PROFILE),
                    "upstream_integrity": pin["integrity"],
                    "derived_integrity": integrity(material["archive"]),
                    "repair_sha256": digest(material["repair"]), "files": len(repair["files"]),
@@ -634,6 +720,10 @@ def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch
                         == {field: binding[field] for field in ("bytes", "sha256")},
                         "action-source-built-input-drift")
             receipt.update({"built_tree": build["builtTree"], "build_run": build["run"]})
+        elif selected.get("bytecodealliance"):
+            receipt.update({"verifier_sha256": BCA_INPUTS[ACTION_VERIFIER_SOURCE][2],
+                            "built_tree": "578e888fbea3faf619b37e947f749242001b2aa0",
+                            "build_run": 42020735461, "diagnostic_run": 42021497437})
         else:
             receipt["verifier_sha256"] = policy["additional_actions"]["verifier"]["sha256"]
             if "related_actions" in selected:

@@ -90,7 +90,7 @@
       "upstream_repository": "bufbuild/buf-setup-action",
       "upstream_revision": "fbb91772b52752bd36ca8552d2ff4b94e111f24f"
     },
-    "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53": {
+    "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce": {
       "files": [
         {
           "sha256": "69066705f008bae4cc14ad69328d6e7d87562e6651b8ae713ff45be2ff1eb5b1",
@@ -99,16 +99,22 @@
           "source_sha256": "69066705f008bae4cc14ad69328d6e7d87562e6651b8ae713ff45be2ff1eb5b1"
         },
         {
-          "sha256": "911dcbaeab1ffcf6ea364e5a6556f31d12fd38e8ece0d72d2175a7abdf977f3c",
+          "sha256": "830926dc4fc6b8357b85ee84855aa6c8dbd42569884bbadf932fb54401a22e7e",
           "snapshot": ".github/security/actions/bytecodealliance-actions/package.json",
           "source": "package.json",
-          "source_sha256": "911dcbaeab1ffcf6ea364e5a6556f31d12fd38e8ece0d72d2175a7abdf977f3c"
+          "source_sha256": "830926dc4fc6b8357b85ee84855aa6c8dbd42569884bbadf932fb54401a22e7e"
         },
         {
-          "sha256": "b03d91542b335e0c9e054ec2a205b790c8adf6bed6f27ef1fc19cde907391ae0",
+          "sha256": "a4d4e4834d16cc2655b73066144923018ec59f38497b7d37d549fa22ecd1d424",
           "snapshot": ".github/security/actions/bytecodealliance-actions/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "b03d91542b335e0c9e054ec2a205b790c8adf6bed6f27ef1fc19cde907391ae0"
+          "source_sha256": "a4d4e4834d16cc2655b73066144923018ec59f38497b7d37d549fa22ecd1d424"
+        },
+        {
+          "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+          "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-deepmerge.mjs",
+          "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
         }
       ],
       "kind": "npm",
@@ -119,7 +125,7 @@
         "source_sha256": "69066705f008bae4cc14ad69328d6e7d87562e6651b8ae713ff45be2ff1eb5b1"
       },
       "repository": "KirilsTurkins/lsf-bytecodealliance-actions",
-      "revision": "9244ec9f4725400c84054e3e6ec97514cadddf53",
+      "revision": "1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce",
       "security_pr": "https://github.com/bytecodealliance/actions/pull/24",
       "upstream_repository": "bytecodealliance/actions",
       "upstream_revision": "7ee36389ead2e51422087f820a7e17e39811b05f"
