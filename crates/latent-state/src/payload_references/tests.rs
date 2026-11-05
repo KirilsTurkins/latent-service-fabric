@@ -53,6 +53,59 @@ fn update(
 }
 
 #[test]
+fn physical_inventory_fences_changed_generation_and_detects_missing_index() {
+    let root = tempfile::tempdir().unwrap();
+    let database = store(root.path(), true);
+    let first = reference(PayloadOwnerKind::Result, 1);
+    let second = reference(PayloadOwnerKind::Effect, 2);
+    update(&database, None, Some(first.clone()));
+    update(&database, None, Some(second.clone()));
+    let view = database.snapshot().unwrap();
+    let mut inventory = PhysicalInventory::begin(&view, &first.payload).unwrap();
+    let (page, finished) = inventory.next_page(&view, 1, MAX_REFERENCE_BYTES).unwrap();
+    assert_eq!(page.len(), 1);
+    assert!(!finished);
+    drop(view);
+    let third = reference(PayloadOwnerKind::Snapshot, 3);
+    update(&database, None, Some(third));
+    let view = database.snapshot().unwrap();
+    assert!(matches!(
+        inventory.next_page(&view, 1, MAX_REFERENCE_BYTES),
+        Err(StoreError::Conflict)
+    ));
+    let mut inventory = PhysicalInventory::begin(&view, &first.payload).unwrap();
+    let mut count = 0;
+    loop {
+        let (page, done) = inventory.next_page(&view, 1, MAX_REFERENCE_BYTES).unwrap();
+        count += page.len();
+        if done {
+            break;
+        }
+    }
+    assert_eq!(count, 3);
+    assert!(matches!(
+        inventory.next_page(&view, 1, MAX_REFERENCE_BYTES),
+        Err(StoreError::Invalid)
+    ));
+    drop(view);
+    database
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: second.physical_key().unwrap(),
+                value: None,
+            }],
+        })
+        .unwrap();
+    let view = database.snapshot().unwrap();
+    let mut inventory = PhysicalInventory::begin(&view, &first.payload).unwrap();
+    assert!(matches!(
+        inventory.next_page(&view, 8, 8 * MAX_REFERENCE_BYTES),
+        Err(StoreError::Corrupt)
+    ));
+}
+
+#[test]
 fn physical_count_and_attempt_closure_keep_effect_after_result_expiry() {
     let root = tempfile::tempdir().unwrap();
     let database = store(root.path(), true);

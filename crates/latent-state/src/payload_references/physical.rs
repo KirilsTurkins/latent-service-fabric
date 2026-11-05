@@ -44,6 +44,75 @@ pub fn physical_owner_count(
         })
         .transpose()
 }
+
+/// A bounded, generation-fenced inventory of one physical object's owners.
+/// Each page is checked against a coherent view and the original head bytes.
+/// Completion is an observation, not authority to delete or read an object.
+pub struct PhysicalInventory {
+    payload: LocalPayloadIdentity,
+    head: Option<Vec<u8>>,
+    expected: u64,
+    observed: u64,
+    after: Option<Vec<u8>>,
+    finished: bool,
+}
+
+impl PhysicalInventory {
+    pub fn begin(view: &ReadView, payload: &LocalPayloadIdentity) -> Result<Self, StoreError> {
+        let key = head_key(payload)?;
+        let head = view.get_bounded(&key, MAX_REFERENCE_BYTES)?;
+        let expected = match &head {
+            Some(bytes) => {
+                validate_head(&key, bytes)?;
+                decode(bytes)?.owners
+            }
+            None => 0,
+        };
+        Ok(Self {
+            payload: payload.clone(),
+            head,
+            expected,
+            observed: 0,
+            after: None,
+            finished: false,
+        })
+    }
+
+    /// Returns a bounded page and whether the complete inventory matched its
+    /// head. Callers must restart on conflict and independently obtain any
+    /// publication or reclamation authority they need.
+    pub fn next_page(
+        &mut self,
+        view: &ReadView,
+        maximum_rows: usize,
+        maximum_bytes: usize,
+    ) -> Result<(Vec<PayloadReference>, bool), StoreError> {
+        if self.finished {
+            return Err(StoreError::Invalid);
+        }
+        if view.get_bounded(&head_key(&self.payload)?, MAX_REFERENCE_BYTES)? != self.head {
+            return Err(StoreError::Conflict);
+        }
+        let page = super::required_physical_page(
+            view,
+            &self.payload,
+            self.after.as_deref(),
+            maximum_rows,
+            maximum_bytes,
+        )?;
+        let observed = self
+            .observed
+            .checked_add(page.references.len() as u64)
+            .ok_or(StoreError::Capacity)?;
+        if observed > self.expected || (page.resume.is_none() && observed != self.expected) {
+            return Err(StoreError::Corrupt);
+        }
+        self.observed = observed;
+        self.after = page.resume;
+        self.finished = self.after.is_none();
+        Ok((page.references, self.finished))
+    }
+}
 pub(super) fn append_heads(
     view: &ReadView,
     updates: &[(Option<PayloadReference>, Option<PayloadReference>)],
