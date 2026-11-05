@@ -4,8 +4,8 @@
   "generator": "lsf-java-wit-v1+wit-bindgen-0.62.0",
   "outputs": {
     "Bindings.java": {
-      "digest": "sha256:c0e6afbf3675e6f2673edf9aef6a481a644887efb0f643678a5502fb5408e77c",
-      "size": 65826
+      "digest": "sha256:c27dfee6691115291d0b01e41e808a3c57240002d8adf5f06cdfbc23e74ca3c9",
+      "size": 65356
     },
     "bridge.c": {
       "digest": "sha256:10a709a2f675623867256932655c640ad4363b5cc65c999a0ea6025e1674aec6",
@@ -24,7 +24,7 @@
       "size": 4306
     }
   },
-  "digest": "sha256:69cfb271c1aaaf680624ef6e3518782990eeb2faf8937ffd85ebf324dc5ff6fc",
+  "digest": "sha256:12d3b88496c490feea8959d1abae2d6de4c8064967bb1eeef73f2c9a72f8b234",
   "imports": 24,
   "exports": 1,
   "resources": 4

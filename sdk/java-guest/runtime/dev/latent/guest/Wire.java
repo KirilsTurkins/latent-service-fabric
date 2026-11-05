@@ -1,6 +1,5 @@
 package dev.latent.guest;
 
-import dev.latent.generated.Bindings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import org.teavm.interop.Address;
@@ -8,14 +7,7 @@ import org.teavm.interop.Import;
 
 /** Private bounded bridge to maintained wit-bindgen C, not a host wire protocol. */
 public final class Wire {
-    public interface HostFunction {
-        Address call(int operation, Address bytes, int length);
-        default Address callOwned(int operation, byte[] bytes, int length) {
-            return call(operation, Address.ofData(bytes), length);
-        }
-        default boolean retainsBorrowedResources() { return false; }
-    }
-    public static final int NETWORK_READ = 1, NETWORK_WRITE = 2, NETWORK_READY = 3, NETWORK_INSPECT = 4;
+    public interface HostFunction { Address call(int operation, Address bytes, int length); }
     public static final int MAX_BYTES = 8 * 1024 * 1024;
     public static final int MAX_ITEMS = 65536;
     private Wire() { }
@@ -99,30 +91,12 @@ public final class Wire {
         @Override public void close() { Arrays.fill(data, (byte) 0); closed = true; }
     }
     public static final class Writer implements AutoCloseable {
-        // Each rooted writer belongs to an already admitted async Call. The
-        // intrusive list needs no allocation after native acceptance becomes
-        // uncertain. A retained writer and its inputs die with the Store.
-        private static final Object INPUT_LOCK = new Object();
-        private static Writer rootedInputs;
-        private Writer rootPrevious, rootNext;
         private byte[] data = new byte[128];
         private int length;
         private boolean closed;
-        private boolean started;
-        private boolean retainedUncertain;
-        private final int direction;
-        private final Bindings.BorrowPermit permit;
         private final ArrayList<Resource> borrows = new ArrayList<>();
-        public Writer() { this.permit = null; this.direction = 0; }
-        public Writer(Bindings.BorrowPermit permit) {
-            require(permit != null);
-            int direction = permit.direction();
-            require(direction >= 0 && direction <= NETWORK_INSPECT);
-            this.permit = permit;
-            this.direction = direction;
-        }
         private void reserve(int bytes) {
-            require(!closed && !started && bytes >= 0 && bytes <= MAX_BYTES - length);
+            require(!closed && bytes >= 0 && bytes <= MAX_BYTES - length);
             if (bytes > data.length - length) {
                 byte[] previous = data;
                 data = Arrays.copyOf(previous, Math.max(length + bytes, Math.min(MAX_BYTES, data.length * 2)));
@@ -148,64 +122,23 @@ public final class Wire {
             try { bytes(encoded); } finally { Arrays.fill(encoded, (byte) 0); }
         }
         public void resource(Resource value, boolean own) {
-            require(!closed && !started && !retainedUncertain);
             if (own) integer(value.consume(), 4);
             else {
-                int handle = value.borrow(direction);
-                try { borrows.add(value); } catch (Throwable failure) { value.releaseBorrow(direction); throw failure; }
+                int handle = value.borrow();
+                try { borrows.add(value); } catch (Throwable failure) { value.releaseBorrow(); throw failure; }
                 integer(handle, 4);
             }
         }
         public Reader call(int operation) {
-            require(!closed && !started);
-            if (permit != null) require(permit.authorizes(null, operation));
-            started = true;
+            require(!closed);
             return result(host(operation, Address.ofData(data), length), false);
         }
         public Reader call(HostFunction function, int operation, boolean allowPendingCancellation) {
-            require(!closed && !started);
-            if (permit == null) require(borrows.isEmpty());
-            else require(permit.authorizes(function, operation));
-            started = true;
-            // Root before entering the exact admitted native call. A suspended
-            // frame alone is insufficient if a catchable exception unwinds it.
-            boolean rooted = permit != null;
-            if (rooted) rootInput();
-            try {
-                Address result = rooted ? function.callOwned(operation, data, length)
-                        : function.call(operation, Address.ofData(data), length);
-                return result(result, allowPendingCancellation);
-            } catch (Throwable failure) {
-                // Do not clear the array or its resource roots while native
-                // acceptance remains uncertain. Retain the existing Wait too.
-                if (rooted) {
-                    // If custody cannot be inspected, keep it and preserve
-                    // the original failure rather than clearing live input.
-                    retainedUncertain = true;
-                    try {
-                        if (!function.retainsBorrowedResources()) retainedUncertain = false;
-                    } catch (Throwable unavailable) { /* retain until Store teardown */ }
-                }
-                throw failure;
-            } finally {
-                if (rooted && !retainedUncertain) unrootInput();
-            }
-        }
-        private void rootInput() {
-            synchronized (INPUT_LOCK) {
-                rootNext = rootedInputs;
-                if (rootNext != null) rootNext.rootPrevious = this;
-                rootedInputs = this;
-            }
-        }
-        private void unrootInput() {
-            synchronized (INPUT_LOCK) {
-                if (rootPrevious == null) rootedInputs = rootNext;
-                else rootPrevious.rootNext = rootNext;
-                if (rootNext != null) rootNext.rootPrevious = rootPrevious;
-                rootPrevious = null;
-                rootNext = null;
-            }
+            require(!closed);
+            // The writer, its array and its resource borrows remain strongly
+            // live in the caller's suspended frame until terminal completion.
+            Address result = function.call(operation, Address.ofData(data), length);
+            return result(result, allowPendingCancellation);
         }
         private Reader result(Address result, boolean allowPendingCancellation) {
             if (allowPendingCancellation && result.toInt() == 0) return null;
@@ -221,11 +154,8 @@ public final class Wire {
         }
         @Override public void close() {
             if (closed) return;
-            if (!retainedUncertain) {
-                for (Resource value : borrows) value.releaseBorrow(direction);
-                borrows.clear(); Arrays.fill(data, (byte) 0);
-            }
-            closed = true;
+            for (Resource value : borrows) value.releaseBorrow();
+            borrows.clear(); Arrays.fill(data, (byte) 0); closed = true;
         }
     }
 }

@@ -26,8 +26,6 @@ class AsyncAdmission(unittest.TestCase):
                                'params': [{'name': 'item', 'type': 1}], 'result': None},
                     'read': {'name': 'read', 'kind': 'async-freestanding',
                              'params': [{'name': 'item', 'type': 2}], 'result': None},
-                    'write': {'name': 'write', 'kind': 'async-freestanding',
-                              'params': [{'name': 'item', 'type': 2}, {'name': 'text', 'type': 'string'}], 'result': None},
                     'validate': {'name': 'validate', 'kind': 'async-freestanding',
                                  'params': [{'name': 'text', 'type': 'string'}], 'result': None}}}],
             'types': [{'name': 'item', 'kind': 'resource', 'owner': {'interface': 1}},
@@ -37,7 +35,6 @@ class AsyncAdmission(unittest.TestCase):
         header = '''void exports_examples_sample_api_run(void);
 extern probe_subtask_status_t examples_sample_pending_finish(sample_own_item_t item);
 extern probe_subtask_status_t examples_sample_pending_read(sample_borrow_item_t item);
-extern probe_subtask_status_t examples_sample_pending_write(sample_borrow_item_t item, probe_string_t *text);
 extern probe_subtask_status_t examples_sample_pending_validate(probe_string_t *text);
 '''
         return java.generate(Graph(data, 'service', header, async_imports=True))
@@ -72,8 +69,7 @@ public final class Fiber { private static final Fiber current = new Fiber();
                 'org/teavm/interop/Address.java': '''package org.teavm.interop;
 public final class Address {
     public static int dataAddresses;
-    public static java.lang.ref.WeakReference<byte[]> lastBytes;
-    public static Address ofData(byte[] bytes) { dataAddresses++; lastBytes = new java.lang.ref.WeakReference<>(bytes); return new Address(); }
+    public static Address ofData(byte[] bytes) { dataAddresses++; return new Address(); }
     public static Address fromInt(int value) { return new Address(); }
     public native int toInt(); public native Address add(int offset);
     public native byte getByte(); public native int getInt(); public native void putByte(byte value);
@@ -94,9 +90,6 @@ public final class AdmissionControl {
     private static Bindings.ExamplesSamplePendingItem item(int value) throws Exception {
         var constructor = Bindings.ExamplesSamplePendingItem.class.getDeclaredConstructor(int.class);
         constructor.setAccessible(true); return constructor.newInstance(value);
-    }
-    private static Object writerField(Object writer, String name) throws Exception {
-        var field = Wire.Writer.class.getDeclaredField(name); field.setAccessible(true); return field.get(writer);
     }
     private static void denied(Runnable action) {
         try { action.run(); throw new AssertionError("denial-required"); }
@@ -130,29 +123,8 @@ public final class AdmissionControl {
         require(Activation.live == 1 && Activation.admitted == 2 && Activation.settled == 1);
         try { ((Resource)uncertain).consume(); throw new AssertionError("uncertain-transfer-must-stay-closed"); }
         catch (IllegalStateException expected) { }
-        require(Address.dataAddresses == 0);
-        var uncertainBorrow = item(13);
-        try { Bindings.ExamplesSamplePending.read(uncertainBorrow); throw new AssertionError("native-boundary-required"); }
-        catch (UnsatisfiedLinkError expected) { }
-        require(Activation.live == 2 && Activation.admitted == 3 && Activation.settled == 1);
-        try { ((Resource)uncertainBorrow).consume(); throw new AssertionError("uncertain-borrow-must-remain-held"); }
-        catch (IllegalStateException expected) { }
-        try { ((Resource)uncertainBorrow).borrow(); throw new AssertionError("uncertain-borrow-must-remain-held"); }
-        catch (IllegalStateException expected) { }
-        require(Address.dataAddresses == 0);
-        var uncertainInput = item(15);
-        try { Bindings.ExamplesSamplePending.write(uncertainInput, "retained-data");
-            throw new AssertionError("native-boundary-required"); }
-        catch (UnsatisfiedLinkError expected) { }
-        require(Activation.live == 3 && Activation.admitted == 4 && Activation.settled == 1);
-        var rootedWriter = writerField(null, "rootedInputs");
-        require(rootedWriter != null && Address.dataAddresses == 0);
-        var bytes = (byte[])writerField(rootedWriter, "data");
-        byte[] expected = "retained-data".getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        for (int index = 0; index < expected.length; index++) require(bytes[8 + index] == expected[index]);
-        require(((java.util.List<?>)writerField(rootedWriter, "borrows")).contains(uncertainInput));
+        require(Address.dataAddresses == 1);
         System.out.println("JAVA_ASYNC_ADMISSION PASS own-denial;borrow-denial;wait-pre-entry-refund;uncertain-retained;COMPONENT_QUALIFICATION=pending");
-        System.out.println("JAVA_ASYNC_BORROW PASS uncertain-wait-and-borrow-retained;rooted-input-bytes-and-resource;COMPONENT_QUALIFICATION=pending");
     }
 }''',
             }
@@ -174,7 +146,6 @@ public final class AdmissionControl {
                                     capture_output=True, text=True, timeout=15)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn('JAVA_ASYNC_ADMISSION PASS own-denial;borrow-denial;wait-pre-entry-refund;uncertain-retained;', result.stdout)
-            self.assertIn('JAVA_ASYNC_BORROW PASS uncertain-wait-and-borrow-retained;rooted-input-bytes-and-resource;COMPONENT_QUALIFICATION=pending', result.stdout)
             print(result.stdout.rstrip())
 
 

@@ -91,11 +91,19 @@ public final class RuntimePlugin implements TeaVMPlugin {
             if (!applicationClasses.contains(cls.getName()) || method.getName().equals("<clinit>")
                     || cls.getAnnotations().get("org.teavm.interop.Unmanaged") != null
                     || method.getAnnotations().get("org.teavm.interop.Unmanaged") != null) continue;
-            var loops = new LoopGraph(ProgramUtils.buildControlFlowGraph(program));
+            var graph = ProgramUtils.buildControlFlowGraph(program);
+            var loops = new LoopGraph(graph);
             var headers = new HashSet<Integer>();
             for (int index = 0; index < loops.size(); index++) {
                 var loop = loops.loopAt(index);
                 if (loop != null) headers.add(loop.getHead());
+                // The pinned LoopGraph omits an edge from a block to itself.
+                // Preserve its reachability boundary and deduplicate headers.
+                if (loops.indexAt(index) >= 0) {
+                    for (int successor : graph.outgoingEdges(index)) {
+                        if (successor == index) headers.add(index);
+                    }
+                }
             }
             for (int index : headers) {
                 var first = program.basicBlockAt(index).getFirstInstruction();
