@@ -65,6 +65,44 @@ MAX_EXECUTOR_OBJECT = 8 * 1024 * 1024
 # captured application; successful parsing alone is not component admission.
 DIAGNOSTIC_COMPOSER_SIZE = 22917648
 DIAGNOSTIC_COMPOSER_DIGEST = 'sha256:83259349b630f79a60490322b068e7ad2dba784720b0d467decccc0aecc743b5'
+HTTP_ASYNC_FEATURES = 'cm-async,cm-async-stackful,cm-more-async-builtins'
+THREAD_PREVIEW_FEATURES = 'cm-threading,' + HTTP_ASYNC_FEATURES
+
+
+class DiagnosticThreadingValidation:
+    """Enable threading only for this unadmitted combined-graph validation.
+
+    The maintained HTTP builder keeps its original validation profile. Refuse
+    a changed command shape rather than silently adjusting an unrelated call.
+    """
+    def __init__(self, commands):
+        self.commands = commands
+        self.validated = False
+
+    def __getattr__(self, name):
+        return getattr(self.commands, name)
+
+    def run(self, stage, *args, **kwargs):
+        if stage == 'rust-http-final-validation':
+            require(not self.validated and len(args) == 5 and args[1] == 'validate'
+                    and args[-2:] == ('--features', HTTP_ASYNC_FEATURES),
+                    'rust-http-thread-diagnostic-validation-shape')
+            result = self.commands.run(stage, *args[:-1], THREAD_PREVIEW_FEATURES, **kwargs)
+            self.validated = True
+            return result
+        return self.commands.run(stage, *args, **kwargs)
+
+
+def record_diagnostic_composition(output: Path, composition: dict, composer: dict):
+    """Retain the composer's original receipt and a separate diagnostic view."""
+    receipt = output / 'rust-http-composition.json'
+    require(type(composition) is dict and decode_json(read_file(receipt)) == composition
+            and not {'diagnosticComposer', 'diagnosticOnly', 'diagnosticValidationFeatures'} & composition.keys(),
+            'rust-http-thread-composition-receipt-mismatch')
+    diagnostic = {**composition, 'diagnosticComposer': composer, 'diagnosticOnly': True,
+                  'diagnosticValidationFeatures': THREAD_PREVIEW_FEATURES}
+    write_json(output / 'rust-http-composition-diagnostic.json', diagnostic)
+    return diagnostic
 
 
 class DiagnosticHttpComposition:
@@ -581,12 +619,12 @@ def run(output: Path, rust_bin: Path, owned_sysroot: Path, context_tool: Path,
             combined = output / 'combined-component.wasm'
             shutil.copyfile(output / 'preview-component.wasm', combined)
             diagnostic.check()
-            composition = compose_http(commands, paths, combined, surface, diagnostic,
+            preview_commands = DiagnosticThreadingValidation(commands)
+            composition = compose_http(preview_commands, paths, combined, surface, diagnostic,
                 work, isolation=isolation, environment_guard=guard)
+            require(preview_commands.validated, 'rust-http-thread-diagnostic-validation-missing')
             diagnostic.check()
-            composition['diagnosticComposer'] = record['diagnosticComposer']
-            composition['diagnosticOnly'] = True
-            write_json(output / 'rust-http-composition.json', composition)
+            composition = record_diagnostic_composition(output, composition, record['diagnosticComposer'])
             record['httpCompositionIncluded'] = True
             record['httpComposition'] = composition
             record['combinedComponent'] = file_identity(combined, 'unadmitted-http-thread-component',

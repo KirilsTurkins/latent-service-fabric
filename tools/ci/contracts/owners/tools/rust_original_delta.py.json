@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "owner",
+  "reviewReason": "Bounded diagnostic delta generation; does not authorize or select a runtime.",
+  "path": "tools/rust_original_delta.py",
+  "sha256": "7d174e36d9f3dac0de9aa9ee80f6a872d016a9486acaa2ad3688d8f5b11cc972",
+  "reviewBoundary": "committed-fingerprint"
+}

@@ -1,7 +1,7 @@
 name: Rust combined HTTP and ThreadPool source diagnostic
 on:
   push:
-    branches: ['feat/rust-http-thread-20261104', 'fix/rust-http-bindgen-20261104', 'fix/rust-http-wac11-20261104']
+    branches: ['feat/rust-http-thread-20261104', 'fix/rust-http-bindgen-20261104', 'fix/rust-http-wac11-20261104', 'fix/rust-http-thread-validation-20261104']
     paths:
       - '.github/workflows/rust-http-thread-composition-diagnostic.yml'
       - 'tools/compile_rust_thread_http_sibling.py'

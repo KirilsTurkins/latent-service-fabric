@@ -204,7 +204,8 @@ NODE_BRANCH = 'feat/sdk-738-q35-node-boot-20261029'
 NODE_IDENTITY_BRANCH = 'feat/sdk-738-q35-pci-identity-20261104'
 NODE_PREFIX_BRANCH = 'feat/sdk-738-q35-node-pci-prefix-20261104'
 NODE_SETUP_BRANCH = 'feat/sdk-738-q35-pci-setup-20261104'
-NODE_BRANCHES = (NODE_BRANCH, NODE_IDENTITY_BRANCH, NODE_PREFIX_BRANCH, NODE_SETUP_BRANCH)
+NODE_FIXUP_BRANCH = 'feat/sdk-738-q35-pci-fixup-20261104'
+NODE_BRANCHES = (NODE_BRANCH, NODE_IDENTITY_BRANCH, NODE_PREFIX_BRANCH, NODE_SETUP_BRANCH, NODE_FIXUP_BRANCH)
 PREFIX_ROOT = 'research/standard-outbound/linux-6.12-lineage/'
 PREFIX_BRIDGE = PREFIX_ROOT+'node-constructor-bridge/projector.py'
 PREFIX_PROJECTOR = PREFIX_ROOT+'node-pci-prefix/projector.py'
@@ -214,6 +215,9 @@ SETUP_ROOT = PREFIX_ROOT+'node-pci-setup/'
 SETUP_PROJECTOR = SETUP_ROOT+'projector.py'
 SETUP_MATERIAL = SETUP_ROOT+'factory-node-pci-setup.c'
 SETUP_PROFILE = 'lsf-q35-node-pci-setup-v1'
+FIXUP_ROOT = PREFIX_ROOT+'node-pci-fixup/'
+FIXUP_PROJECTOR = FIXUP_ROOT+'projector.py'
+FIXUP_MATERIAL = FIXUP_ROOT+'factory-node-pci-fixup.c'
 NODE_ROOT = 'research/standard-outbound/linux-6.12-lineage/node-boot/'
 NODE_PROJECTOR = NODE_ROOT+'projector.py'
 NODE_MATERIALS = ('factory-node-boot.c','Kconfig.fragment','Makefile.fragment')
@@ -421,6 +425,65 @@ def node_setup_serial(raw):
         'scopeRevoked':True, 'pciSlot':pci_slot, 'pciGeneration':pci_generation,
         'firmwareSlot':fw_slot, 'firmwareGeneration':fw_generation,
         'live':[before_live, peak_live, after_live], 'cursor':[before_cursor, peak_cursor, after_cursor]}
+    return observed
+
+
+def node_fixup_capture(root):
+    import stat
+    result = {}
+    for name in (FIXUP_PROJECTOR, FIXUP_MATERIAL):
+        path = root/name
+        require(stat.S_ISREG(path.lstat().st_mode) and not path.is_symlink(), 'fixup-source-kind')
+        raw = read_file(path, 4*1024**2)
+        raw.decode('utf8', 'strict')
+        require(b'\r' not in raw, 'fixup-source-LF')
+        result[name] = raw
+    return result
+
+
+def node_fixup_compose(values, captured, quirks):
+    import importlib.abc
+    import importlib.util
+    from pathlib import Path
+    require(set(captured) == {FIXUP_PROJECTOR, FIXUP_MATERIAL}, 'fixup-captured-set')
+    path = str((ROOT/FIXUP_PROJECTOR).resolve())
+    class Captured(importlib.abc.SourceLoader):
+        def get_filename(self, fullname):
+            require(fullname == '_lsf_q35_fixup_projector', 'fixup-projector-name')
+            return path
+        def get_data(self, asked):
+            require(asked == path, 'fixup-no-alternate-projector')
+            return captured[FIXUP_PROJECTOR]
+        def path_stats(self, asked):
+            raise OSError('fixup-no-bytecode')
+    spec = importlib.util.spec_from_file_location('_lsf_q35_fixup_projector', path, loader=Captured())
+    require(spec is not None and spec.loader is not None, 'fixup-projector-spec')
+    stage = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(stage)
+    require(Path(stage.__file__).resolve() == Path(path), 'fixup-projector-origin')
+    result, row = stage.transform(values, quirks, captured[FIXUP_MATERIAL])
+    require(len(result) == 492 and len(result) <= 512 and
+        sum(map(len, result.values())) <= 16*1024**2 and row['originalBodiesInverseExact'] is True and
+        all(row[k] is False for k in ('nodeFundingQualified', 'nodeRetirementQualified',
+            'irqEnabled', 'tcpEnabled', 'consumerInstalled', 'actualExecutionObserved')),
+        'fixup-projection-authority')
+    return result, row
+
+
+def node_fixup_serial(raw):
+    observed = node_setup_serial(raw)
+    rows = [line for line in raw.splitlines() if b'LSFQ35PCIFIXUP1' in line]
+    setup = [line for line in raw.splitlines() if b'LSFQ35PCISETUP1' in line]
+    acks = [line for line in raw.splitlines() if b'LSFNODESETUP1' in line]
+    expression = (rb'\[\s*[0-9]+\.[0-9]{6}\] LSFQ35PCIFIXUP1 '
+        rb'entries=([0-9]{1,3}) matches=0 dispatcher=1 intxCheck=0 barProbe=0 registered=0')
+    require(len(rows) == len(setup) == len(acks) == 1, 'fixup-one-observation')
+    match = re.fullmatch(expression, rows[0])
+    require(match is not None and 1 <= int(match.group(1)) <= 512, 'fixup-observation-grammar')
+    require(raw.index(setup[0]) < raw.index(rows[0]) < raw.index(acks[0]), 'fixup-observation-order')
+    observed['pciEarlyFixup'] = {'linkedEntries':int(match.group(1)), 'matchingCallbacks':0,
+        'originalDispatcherReached':True, 'intxMaskCheckReached':False, 'barProbeReached':False,
+        'registered':False, 'callbacksQualified':False}
     return observed
 
 

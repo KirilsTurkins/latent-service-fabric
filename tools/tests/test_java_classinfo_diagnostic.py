@@ -27,14 +27,19 @@ class ClassInfoDiagnostic(unittest.TestCase):
         updated = 'int group = 0, flags = 0, metadata = 0;'
         self.assertEqual(source.count(updated), 1)
         original = source.replace(updated, 'int group = 0, flags = 0;', 1)
-        begin = original.index('            // Only the fixed public TeaVM ClassInfo declaration list is')
+        begin = original.index('            // Only fixed public TeaVM ClassInfo declaration names are bucketed.')
         finish = original.index('            if (method.hasModifier(ElementModifier.NATIVE)) flags |= 1;', begin)
         original = original[:begin] + original[finish:]
-        marker = '        if (group == 16) System.err.println("latent.java.progress-class-info.v1 " + metadata);\n'
-        self.assertEqual(original.count(marker), 1)
-        original = original.replace(marker, '', 1)
+        begin = original.index('        if (group == 16) {\n            System.err.println("latent.java.progress-class-info.v1 "')
+        finish = original.index('        return progressRefusal(2, owner);', begin)
+        diagnostic = original[begin:finish]
+        self.assertIn('if (metadata == 13)', diagnostic)
+        self.assertIn('latent.java.progress-class-info-check.v1 " + stage', diagnostic)
+        for stage in range(1, 8):
+            self.assertIn('stage = %s;' % stage, diagnostic)
+        original = original[:begin] + original[finish:]
         self.assertEqual(hashlib.sha256(original.encode()).hexdigest(),
-                         '508433b2f18646225da09441398d5eabec1d4b7aa2695b26f71ede101422b7bf')
+                         '48a709f95feda2175cece9f54c0f0b50ce5ad53964142286a121dbdb329f2f91')
 
     def test_workflow_uses_only_fixed_branch_public_fixture_and_retained_compiler_logs(self):
         workflow = yaml.safe_load((ROOT/'.github/workflows/java-classinfo-fiber-diagnostic.yml').read_text())

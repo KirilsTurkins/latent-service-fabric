@@ -6,6 +6,7 @@ execute a guest or change the normal SDK composer selection.
 from __future__ import annotations
 import argparse
 from collections import Counter
+import copy
 import hashlib
 import io
 import json
@@ -21,7 +22,7 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.build_observation import build_environment, file_identity
 from tools.build_process import run_bounded_result
-from tools.dotnet_guest.internal_io import core_modules
+from tools.dotnet_guest.internal_io import core_modules, interface_name
 from tools.phase2_operator_process import require
 from tools.rust_capsule_project import ROOT, decode_json, fresh, inventory, read_file, write_json
 from tools.rust_wasi_http_compose import unchanged_interfaces
@@ -49,6 +50,83 @@ SCRIPT = b'package lsf:wac-threading-probe;\nlet application = new lsf:applicati
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def recipe_identities():
+    # The build-observation helper requires both the file path and its name.
+    return {name: file_identity(ROOT / name, name) for name in RECIPE}
+
+
+def resource_identities(graph):
+    # A duplicate owner/name would make the shared graph comparator unable to
+    # distinguish two nominal resources. Refuse instead of normalizing it.
+    rows = graph.get('types')
+    if type(rows) is not list or len(rows) > 65536:
+        raise ValueError('wac-probe-resource-type-bound')
+    result = set()
+    for row in rows:
+        if type(row) is not dict:
+            raise ValueError('wac-probe-resource-type-shape')
+        if row.get('kind') != 'resource':
+            continue
+        owner = row.get('owner'); name = row.get('name')
+        if type(name) is not str or not name or type(owner) is not dict or set(owner) != {'interface'}:
+            raise ValueError('wac-probe-resource-nominal-identity')
+        index = owner['interface']
+        if type(index) is not int or not 0 <= index < len(graph['interfaces']):
+            raise ValueError('wac-probe-resource-owner-bound')
+        identity = (interface_name(graph, index), name)
+        if identity in result:
+            raise ValueError('wac-probe-duplicate-resource-identity')
+        result.add(identity)
+    return result
+
+
+def compare_public_graphs(original, produced):
+    # This diagnostic admits only the observed transparent primitive alias
+    # flattening. It does not change the shared production comparator.
+    if resource_identities(original) != resource_identities(produced):
+        raise ValueError('wac-probe-resource-identities-changed')
+    def unchanged(candidate):
+        for direction in ('imports', 'exports'):
+            unchanged_interfaces(original, candidate, names(original, direction), names(candidate, direction))
+    try:
+        unchanged(produced)
+        return False
+    except ValueError:
+        pass
+    selected = copy.deepcopy(produced)
+    old_interface = names(original, 'imports').get('wasi:http/types@0.2.12')
+    new_interface = names(selected, 'imports').get('wasi:http/types@0.2.12')
+    if old_interface is None or new_interface is None:
+        raise ValueError('wac-probe-field-alias-interface')
+    def selected_type(graph, interface, name):
+        index = interface['types'].get(name)
+        if type(index) is not int or not 0 <= index < len(graph['types']):
+            raise ValueError('wac-probe-field-alias-type')
+        row = graph['types'][index]
+        if type(row) is not dict or set(row) != {'name', 'owner', 'kind'} or row['name'] != name:
+            raise ValueError('wac-probe-field-alias-shape')
+        owner = row['owner']
+        if (type(owner) is not dict or set(owner) != {'interface'} or type(owner['interface']) is not int
+                or not 0 <= owner['interface'] < len(graph['interfaces'])
+                or graph['interfaces'][owner['interface']] is not interface):
+            raise ValueError('wac-probe-field-alias-owner')
+        return index, row
+    old_key_id, old_key = selected_type(original, old_interface, 'field-key')
+    old_name_id, old_name = selected_type(original, old_interface, 'field-name')
+    new_key_id, new_key = selected_type(selected, new_interface, 'field-key')
+    new_name_id, new_name = selected_type(selected, new_interface, 'field-name')
+    if (old_key_id == old_name_id or new_key_id == new_name_id
+            or old_key['kind'] != {'type': 'string'} or new_key['kind'] != {'type': 'string'}
+            or old_name['kind'] != {'type': old_key_id} or new_name['kind'] != {'type': 'string'}):
+        raise ValueError('wac-probe-unreviewed-field-alias')
+    # Reconstruct only the selected comparison view, leaving emitted bytes and
+    # the recorded unmodified graph untouched. All other types, public names,
+    # resource identities, handle ownership and function kinds must still match.
+    new_name['kind'] = {'type': new_key_id}
+    unchanged(selected)
+    return True
 
 
 def official_metadata(api):
@@ -117,7 +195,7 @@ def compare(output: Path, new_wac: Path, expected_head: str):
     try:
         require(git('rev-parse', 'HEAD') == expected_head and not git('status', '--porcelain'),
             'wac-probe-clean-exact-source')
-        recipe = {name: file_identity(ROOT / name) for name in RECIPE}
+        recipe = recipe_identities()
         record['recipe'] = recipe
         require(os.environ.get('GH_TOKEN'), 'wac-probe-official-artifact-token-required')
         gh_env = build_environment(output)
@@ -190,16 +268,18 @@ def compare(output: Path, new_wac: Path, expected_head: str):
         graph = log('new-graph', (wasm_tools, 'component', 'wit', output / 'new.wasm', '--json'), env, maximum=4*1024*1024)
         require(graph.returncode == 0, 'wac-probe-new-component-graph')
         final_graph = decode_json(graph.stdout)
-        for direction in ('imports', 'exports'):
-            unchanged_interfaces(original_graph, final_graph, names(original_graph, direction), names(final_graph, direction))
-        original_cores, new_cores = Counter(core_modules(preview.read_bytes())), Counter(core_modules(composed))
-        require(original_cores and not original_cores - new_cores, 'wac-probe-original-core-bytes-changed')
+        original = preview.read_bytes()
+        original_cores, new_cores = Counter(core_modules(original)), Counter(core_modules(composed))
+        require(original in composed and original_cores and not original_cores - new_cores,
+            'wac-probe-original-component-or-core-bytes-changed')
+        stage = 'compare-public-interface-shapes'
+        alias_normalized = compare_public_graphs(original_graph, final_graph)
         record.update(oldWacRejectedOpcode=True, newWacIdentityCompositionSucceeded=True,
             unchangedPublicImportsAndExports=True, originalCoreModulesRetained=len(list(original_cores.elements())),
-            originalWholeComponentEmbedded=preview.read_bytes() in composed,
+            originalWholeComponentEmbedded=True, transparentFieldNameAliasFlattened=alias_normalized,
             preview={'bytes': preview.stat().st_size, 'sha256': 'sha256:' + sha(preview.read_bytes())},
             composed={'bytes': len(composed), 'sha256': 'sha256:' + sha(composed)})
-        require(recipe == {name: file_identity(ROOT / name) for name in RECIPE}
+        require(recipe == recipe_identities()
             and git('rev-parse', 'HEAD') == expected_head and not git('status', '--porcelain')
             and sha(read_file(new_wac, NEW_WAC_SIZE)) == NEW_WAC_SHA,
             'wac-probe-source-or-composer-changed')

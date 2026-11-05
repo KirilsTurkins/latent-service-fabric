@@ -9,7 +9,9 @@
     "on": {
       "push": {
         "branches": [
-          "diag/rust-wac-threading-20261104"
+          "diag/rust-wac-threading-20261104",
+          "diag/rust-wac-threading-fix-20261104",
+          "diag/rust-wac-alias-20261104"
         ],
         "paths": [
           ".github/workflows/rust-wac-threading-probe.yml",
