@@ -1,0 +1,107 @@
+name: Paired .NET poll-prefetch diagnostic
+on:
+  push:
+    branches: ['diag/dotnet-poll-prefetch-20261104']
+    paths:
+      - '.github/workflows/dotnet-poll-prefetch-diagnostic.yml'
+      - 'tools/run_dotnet_poll_prefetch_pair.py'
+      - 'tools/qualify_dotnet_poll_prefetch.py'
+      - 'tools/dotnet_task_runtime_fixture.py'
+      - 'tools/qualify_dotnet_finite_waits.py'
+      - 'tools/dotnet_guest/compiler.py'
+      - 'tools/dotnet_guest/runtime.py'
+      - 'tools/dotnet_poll_prefetch_node.py'
+      - 'tools/admit_dotnet_poll_prefetch_evidence.py'
+      - 'tools/fixtures/dotnet-poll-prefetch/**'
+      - 'sdk/dotnet-guest/tools/http-errors/AggregateTaskWait.cs'
+      - 'tools/wasmtime_48_0_8_678b_native_products.py'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: dotnet-poll-prefetch-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  diagnostic:
+    name: Compare observed prefetched sibling before and after the poll guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+          fetch-depth: 3
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
+        with:
+          dotnet-version: '10.0.100'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        with:
+          version: 1.254.0
+      - name: Check only the affected diagnostic and source controls
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_dotnet_poll_prefetch tools.tests.test_dotnet_current_aggregate_chain tools.tests.test_dotnet_aggregate_task_wait tools.tests.test_dotnet_managed_work.ManagedWorkContractTests.test_actual_metadata_receipt_requires_every_producer_and_unqualified_scope tools.tests.test_dotnet_managed_work.ManagedWorkContractTests.test_selected_port_binds_exact_new_corelib_and_all_required_facets -v
+      - name: Prepare paired checkouts and the exact native source origin
+        run: |
+          mkdir -p "$RUNNER_TEMP/dotnet-prefetch"
+          python3 -B -c 'import re; from tools.wasmtime_48_0_8_678b_native_products import SOURCE; assert re.fullmatch("[0-9a-f]{40}", SOURCE); print(SOURCE)' > "$RUNNER_TEMP/dotnet-prefetch/native-source.txt"
+          timeout --signal=TERM --kill-after=5s 90s git fetch --no-tags --depth=1 origin "$(cat "$RUNNER_TEMP/dotnet-prefetch/native-source.txt")"
+          git worktree add --detach "$RUNNER_TEMP/dotnet-prefetch-baseline" "$(git rev-parse HEAD^)"
+      - name: Install the existing compiler isolation boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Prepare the pinned compiler and unchanged runtime adapters
+        run: |
+          curl --fail --location --max-time 180 https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-prefetch-bindgen"
+          export PATH="$RUNNER_TEMP/dotnet-prefetch-bindgen:$PATH"
+          printf '%s\n' "$RUNNER_TEMP/dotnet-prefetch-bindgen" >> "$GITHUB_PATH"
+          python3 "$RUNNER_TEMP/dotnet-prefetch-baseline/tools/dotnet_capsule.py" install-tools "$RUNNER_TEMP/dotnet-prefetch/tools-baseline" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+          python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-prefetch/tools-fixed" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Authenticate the separately qualified current five native products
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: timeout --signal=TERM --kill-after=5s 180s python3 -B tools/wasmtime_48_0_8_678b_native_products.py --output "$RUNNER_TEMP/dotnet-prefetch/native"
+      - name: Observe the same fixture on baseline and corrected managed CoreLib
+        run: |
+          timeout --signal=TERM --kill-after=10s 3000s python3 -B tools/run_dotnet_poll_prefetch_pair.py \
+            --baseline "$RUNNER_TEMP/dotnet-prefetch-baseline" --fixed "$GITHUB_WORKSPACE" \
+            --native "$RUNNER_TEMP/dotnet-prefetch/native" --baseline-tools "$RUNNER_TEMP/dotnet-prefetch/tools-baseline" \
+            --fixed-tools "$RUNNER_TEMP/dotnet-prefetch/tools-fixed" \
+            --output "$RUNNER_TEMP/dotnet-prefetch/pair" --expected-base "$(git rev-parse HEAD^^)" --expected-head "$GITHUB_SHA"
+      - name: Admit only the bounded public diagnostic evidence
+        id: evidence
+        if: always()
+        run: python3 -B tools/admit_dotnet_poll_prefetch_evidence.py --output "$RUNNER_TEMP/dotnet-prefetch"
+      - name: Retain the admitted public pair
+        if: always() && steps.evidence.outcome == 'success'
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: dotnet-poll-prefetch-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/dotnet-prefetch/public/**
+            ${{ runner.temp }}/dotnet-prefetch/evidence-admission.json
+          if-no-files-found: error
+          retention-days: 3
+      - name: Retain only a failed admission marker
+        if: always() && steps.evidence.outcome != 'success'
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: dotnet-poll-prefetch-${{ github.sha }}
+          path: ${{ runner.temp }}/dotnet-prefetch/evidence-admission.json
+          if-no-files-found: warn
+          retention-days: 3
