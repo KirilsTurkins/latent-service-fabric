@@ -16,6 +16,7 @@ import urllib.request
 from pathlib import Path, PurePosixPath
 from time import monotonic
 
+from tools import security_dotnet_minimatch as dotnet_sources
 from tools.security_common import POLICY, decode_json, digest, read_file, require
 
 
@@ -227,6 +228,7 @@ CACHE_SOURCE_SHA256 = {
 }
 ACTION_REFERENCES = {
     CACHE_PREFIX: CACHE_RESTORE_REFERENCE,
+    dotnet_sources.PREFIX: dotnet_sources.REFERENCE,
     ".github/security/actions/setup-java/":
         "KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c",
     ".github/security/actions/setup-node/":
@@ -480,10 +482,12 @@ def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> di
         if entry.get("minimatch_source_repair") is not None:
             require((entry["minimatch_source_repair"] == MINIMATCH_PROFILE and prefix == MINIMATCH_PREFIX)
                     or (entry["minimatch_source_repair"] == JAVA_MINIMATCH_PROFILE
-                        and prefix == JAVA_MINIMATCH_PREFIX),
+                        and prefix == JAVA_MINIMATCH_PREFIX)
+                    or (entry["minimatch_source_repair"] == dotnet_sources.PROFILE
+                        and prefix == dotnet_sources.PREFIX),
                     "unreviewed-minimatch-action-profile")
             expected_sources.add(MINIMATCH_VERIFIER)
-            if prefix == JAVA_MINIMATCH_PREFIX:
+            if prefix in {JAVA_MINIMATCH_PREFIX, dotnet_sources.PREFIX}:
                 expected_sources.add(".lsf-source/minimatch-bounds.test.mjs")
         repository = "/".join(action_reference.split("@", 1)[0].split("/")[:2])
         require(action.get("repository") == repository
@@ -500,7 +504,8 @@ def action_source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> di
         for source, row in files.items():
             require(row["sha256"] == row["source_sha256"]
                     and digest(read_file(repo, row["snapshot"])) == row["sha256"]
-                    and (prefix != CACHE_PREFIX or row["sha256"] == CACHE_SOURCE_SHA256[source]),
+                    and (prefix != CACHE_PREFIX or row["sha256"] == CACHE_SOURCE_SHA256[source])
+                    and (prefix != dotnet_sources.PREFIX or row["sha256"] == dotnet_sources.SOURCE_SHA256[source]),
                     "action-source-binding-drift")
     selected = {"policy": policy, "material": material, "reference": reference, "checkout": False}
     if prefix == CACHE_PREFIX:
@@ -513,6 +518,8 @@ def minimatch_action_inputs(repo: Path, entry: dict, owner: dict, lock: dict) ->
         return None
     if entry["minimatch_source_repair"] == JAVA_MINIMATCH_PROFILE:
         return java_minimatch_action_inputs(repo, entry, owner, lock)
+    if entry["minimatch_source_repair"] == dotnet_sources.PROFILE:
+        return dotnet_sources.action_inputs(repo, entry, owner, lock)
     require(entry["minimatch_source_repair"] == MINIMATCH_PROFILE
             and entry.get("source_repair") == ACTION_PROFILE
             and entry["path"] == MINIMATCH_PREFIX + "package.json"
@@ -740,7 +747,9 @@ def action_runtime(reference: str, source: str) -> bytes:
             and ((reference == ACTION_REFERENCES[MINIMATCH_PREFIX]
                   and source in {row["source"] for row in MINIMATCH_RUNTIME.values()})
                  or (reference == ACTION_REFERENCES[JAVA_MINIMATCH_PREFIX]
-                     and source in {row["source"] for row in JAVA_MINIMATCH_RUNTIME.values()})),
+                     and source in {row["source"] for row in JAVA_MINIMATCH_RUNTIME.values()})
+                 or (reference == dotnet_sources.REFERENCE
+                     and source in {row["source"] for row in dotnet_sources.RUNTIME.values()})),
             "invalid-minimatch-action-runtime-source")
     url = f"https://raw.githubusercontent.com/{repository}/{revision}/{source}"
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
@@ -765,7 +774,7 @@ def verify_minimatch_action_sources(repo: Path, packages: list, configuration: d
     for entry in configuration["manifests"]:
         if entry.get("minimatch_source_repair") is None or not any(item.path == entry["lock"] for item in packages):
             continue
-        if entry["minimatch_source_repair"] == JAVA_MINIMATCH_PROFILE:
+        if entry["minimatch_source_repair"] in {JAVA_MINIMATCH_PROFILE, dotnet_sources.PROFILE}:
             continue
         owner = decode_json(read_file(repo, entry["path"]))
         lock = decode_json(read_file(repo, entry["lock"]))
@@ -923,6 +932,7 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
     action_receipts = verify_action_sources(repo, packages, configuration, fetch)
     action_receipts += verify_minimatch_action_sources(repo, packages, configuration, fetch, fetch_runtime)
     action_receipts += verify_java_minimatch_action_sources(repo, packages, configuration, fetch, fetch_runtime)
+    action_receipts += dotnet_sources.verify_sources(repo, packages, configuration, fetch, fetch_runtime)
     selected = [entry for entry in configuration["manifests"]
                 if (entry.get("derived_bundle") or entry.get("derived_libraries"))
                 and any(package.path == entry["lock"] for package in packages)]
