@@ -68,7 +68,7 @@ qualifies the still-required original HTTP programmes.
 Their public rows are retained even if an entry traps; they never count among the
 original 33 standard or 30 library cases. This failure-only observation is bounded
 to 600 seconds, with 180-second compiles and 90-second node scenarios, under the
-unchanged 45-minute job. A difference can narrow the reachable initialization
+60-minute job. A difference can narrow the reachable initialization
 graph; it does not identify a specific initializer or prove an ABI defect by
 itself. No raw private runtime error or named native backtrace is made public.
 
@@ -215,7 +215,7 @@ are distinct from allocator/native/kernel upper-bound qualification.
 Compilation retains its normal 900-second enclosing build and 600-second
 command limits. The new gate bounds the node/peer to 300 seconds under a
 1200-second total deadline. It runs after the existing ordinary authoring gate
-and retains every previous command and the original 45-minute workflow limit.
+and retains every previous command. The workflow job limit is 60 minutes.
 Source controls reject changed vendored SDK/native products before execution,
 and authenticate the default backend initializer without admitting custom dialers.
 The retained signed observation below passes the original 33 cases on the new
