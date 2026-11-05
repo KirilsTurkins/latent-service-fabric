@@ -116,6 +116,18 @@ public final class CheckpointCompilerControl {
         }
     }
 
+    // Exact finite helper identified by the public-fiber compiler refusal.
+    public static final class ClassInfoEnumCountAccess {
+        private static int result = new org.teavm.runtime.reflect.ClassInfo().enumConstantCount();
+        public static void main(String[] arguments) { result += arguments.length; }
+    }
+
+    // A neighboring intrinsic is deliberately outside the one-method proof.
+    public static final class ClassInfoEnumElementAccess {
+        private static Object result = new org.teavm.runtime.reflect.ClassInfo().enumConstant(0);
+        public static void main(String[] arguments) { if (arguments.length != 0) result = arguments[0]; }
+    }
+
     public static final class InitializerPolling {
         private static volatile boolean ready;
         static {
@@ -361,6 +373,19 @@ public final class CheckpointCompilerControl {
             method.getProgram().basicBlockAt(0).getFirstInstruction().insertPrevious(new EmptyInstruction());
             return true;
         }
+        if (mutation.equals("class-info-declaration") && cls.getName().equals("org.teavm.runtime.reflect.ClassInfo")) {
+            var method = cls.getMethod(new MethodDescriptor("enumConstantCount", ValueType.INTEGER));
+            require(method != null && !method.hasModifier(ElementModifier.FINAL),
+                    "checkpoint-control-class-info-original-declaration");
+            method.getModifiers().add(ElementModifier.FINAL);
+            return true;
+        }
+        if (mutation.equals("class-info-layout") && cls.getName().equals("org.teavm.runtime.RuntimeClass")) {
+            var field = new org.teavm.model.FieldHolder("changedEnumCountLayout");
+            field.setType(ValueType.INTEGER);
+            cls.addField(field);
+            return true;
+        }
         if (mutation.equals("string-info-declaration") && cls.getName().equals("org.teavm.runtime.StringInfo")) {
             var method = cls.getMethod(new MethodDescriptor("getStringObject", ValueType.object("java.lang.String")));
             require(method != null && !method.hasModifier(ElementModifier.FINAL),
@@ -394,6 +419,8 @@ public final class CheckpointCompilerControl {
                 "checkpoint-control-original-compiler-archive");
         for (String selected : new String[] {
                 "org/teavm/backend/c/intrinsic/reflection/StringInfoIntrinsic.class",
+                "org/teavm/backend/c/intrinsic/reflection/ClassInfoIntrinsic.class",
+                "org/teavm/backend/c/core.h",
                 "org/teavm/model/util/TypeInferer.class" }) {
             java.nio.file.Path altered = Files.createTempFile("checkpoint-compiler-archive-", ".jar");
             try {
@@ -430,6 +457,42 @@ public final class CheckpointCompilerControl {
                 Files.deleteIfExists(altered);
             }
         }
+    }
+
+    private static void checkClassInfoHeader(boolean corrected) throws Exception {
+        java.lang.reflect.Method verifier;
+        try {
+            verifier = org.teavm.model.util.AsyncMethodFinder.class.getDeclaredMethod(
+                    "pinnedClassInfoResource", ClassLoader.class);
+        } catch (NoSuchMethodException missing) {
+            require(!corrected, "checkpoint-control-class-info-resource-verifier-missing");
+            return;
+        }
+        require(corrected && verifier.trySetAccessible(), "checkpoint-control-class-info-resource-verifier");
+        final String resource = "org/teavm/backend/c/core.h";
+        ClassLoader original = CTarget.class.getClassLoader();
+        require(Boolean.TRUE.equals(verifier.invoke(null, original)), "checkpoint-control-class-info-header-original");
+        byte[] altered;
+        try (var input = original.getResourceAsStream(resource)) {
+            require(input != null, "checkpoint-control-class-info-header-present");
+            altered = input.readNBytes(9451);
+        }
+        require(altered.length == 9450, "checkpoint-control-class-info-header-size");
+        altered[17] ^= 1;
+        ClassLoader shadow = new ClassLoader(original) {
+            @Override public java.io.InputStream getResourceAsStream(String name) {
+                return name.equals(resource) ? new java.io.ByteArrayInputStream(altered)
+                        : super.getResourceAsStream(name);
+            }
+        };
+        ClassLoader missing = new ClassLoader(original) {
+            @Override public java.io.InputStream getResourceAsStream(String name) {
+                return name.equals(resource) ? null : super.getResourceAsStream(name);
+            }
+        };
+        require(Boolean.FALSE.equals(verifier.invoke(null, shadow))
+                        && Boolean.FALSE.equals(verifier.invoke(null, missing)),
+                "checkpoint-control-class-info-shadow-header-refused");
     }
 
     private static void check(String entry, boolean corrected, boolean unsafe, String mutation) {
@@ -558,13 +621,20 @@ public final class CheckpointCompilerControl {
             check(StringInfoAccess.class.getName(), corrected, true, mutation);
         }
         check(StringInfoAccess.class.getName(), corrected, true, "", true);
+        check(ClassInfoEnumCountAccess.class.getName(), corrected, false, "");
+        check(ClassInfoEnumElementAccess.class.getName(), corrected, true, "");
+        for (String mutation : new String[] { "class-info-declaration", "string-info-parent", "class-info-layout" }) {
+            check(ClassInfoEnumCountAccess.class.getName(), corrected, true, mutation);
+        }
+        check(ClassInfoEnumCountAccess.class.getName(), corrected, true, "", true);
         try {
+            checkClassInfoHeader(corrected);
             checkCompilerArchive(corrected);
             checkCompilerCacheIsolation(corrected);
         } catch (Exception failure) {
             throw new AssertionError("checkpoint-control-compiler-archive", failure);
         }
         System.out.println("CHECKPOINT_COMPILER_CONTROL PASS " + arguments[0]
-                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;compiler-archive-control;compiler-cache-isolation");
+                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;class-info-enum-count;class-info-enum-other-refused;class-info-declaration;class-info-parent;class-info-layout;class-info-target;class-info-header-shadow;compiler-archive-control;compiler-cache-isolation");
     }
 }

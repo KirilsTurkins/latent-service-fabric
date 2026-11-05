@@ -1929,7 +1929,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         org.teavm.model.ValueType info = org.teavm.model.ValueType.object(owner);
         org.teavm.model.MethodDescriptor shape;
         switch (method.getName()) {
-            case "modifiers": case "primitiveKind": case "superinterfaceCount":
+            case "modifiers": case "primitiveKind": case "superinterfaceCount": case "enumConstantCount":
                 shape = new org.teavm.model.MethodDescriptor(method.getName(), integer);
                 break;
             case "itemType": case "declaringClass": case "enclosingClass": case "parent":
@@ -1961,6 +1961,16 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         if (!method.getDescriptor().equals(shape)) {
             return false;
         }
+        if (method.getName().equals("enumConstantCount")) {
+            try {
+                // This one helper is a fixed null check and pointer-sized load.
+                // The active C target, selected emitter, layout and exact
+                // runtime header are all required; no other method is widened.
+                return pinnedClassMetadataMethod(method) && pinnedClassInfoCompiler();
+            } catch (Exception unavailable) {
+                return false;
+            }
+        }
         return pinnedClassMetadataMethod(method);
     }
 
@@ -1970,12 +1980,48 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             new java.util.WeakHashMap<>();
 
     private boolean pinnedStringInfoCompiler() throws Exception {
+        return pinnedFiniteIntrinsicCompiler("org.teavm.runtime.StringInfo",
+                "org.teavm.backend.c.intrinsic.reflection.StringInfoIntrinsic");
+    }
+
+    private boolean pinnedClassInfoCompiler() throws Exception {
+        Class<?> target = progressHostClass("org.teavm.backend.c.CTarget");
+        return target != null && pinnedFiniteIntrinsicCompiler("org.teavm.runtime.reflect.ClassInfo",
+                "org.teavm.backend.c.intrinsic.reflection.ClassInfoIntrinsic")
+                && pinnedClassInfoResource(target.getClassLoader());
+    }
+
+    private static boolean pinnedClassInfoResource(ClassLoader loader) throws Exception {
+        if (loader == null) return false;
+        byte[] bytes;
+        // CTarget.emitResource uses this exact class loader and resource name.
+        try (java.io.InputStream input = loader.getResourceAsStream("org/teavm/backend/c/core.h")) {
+            if (input == null) return false;
+            bytes = input.readNBytes(9451);
+        }
+        if (bytes.length != 9450) return false;
+        byte[] digest = java.security.MessageDigest.getInstance("SHA-256").digest(bytes);
+        StringBuilder hex = new StringBuilder(64);
+        for (byte value : digest) {
+            hex.append(Character.forDigit((value >>> 4) & 15, 16));
+            hex.append(Character.forDigit(value & 15, 16));
+        }
+        return hex.toString().equals("3e0b5c2bdbc3fdcd61241fe02b8fa3710adb39e54e8cad0c9710a6a69e265ce6");
+    }
+
+    private boolean pinnedFiniteIntrinsicCompiler(String owner, String emitterName) throws Exception {
+        if (!(owner.equals("org.teavm.runtime.StringInfo")
+                    && emitterName.equals("org.teavm.backend.c.intrinsic.reflection.StringInfoIntrinsic")
+                || owner.equals("org.teavm.runtime.reflect.ClassInfo")
+                    && emitterName.equals("org.teavm.backend.c.intrinsic.reflection.ClassInfoIntrinsic"))) {
+            return false;
+        }
         Class<?> analyzer = progressHostClass("org.teavm.dependency.DependencyAnalyzer");
         Class<?> precise = progressHostClass("org.teavm.dependency.PreciseDependencyAnalyzer");
         Class<?> fast = progressHostClass("org.teavm.dependency.FastDependencyAnalyzer");
         Class<?> vmClass = progressHostClass("org.teavm.vm.TeaVM");
         Class<?> targetClass = progressHostClass("org.teavm.backend.c.CTarget");
-        Class<?> emitter = progressHostClass("org.teavm.backend.c.intrinsic.reflection.StringInfoIntrinsic");
+        Class<?> emitter = progressHostClass(emitterName);
         Class<?> selector = progressHostClass("org.teavm.backend.c.generate.GenerationContext");
         Class<?> traitsClass = progressHostClass("org.teavm.model.lowlevel.Characteristics");
         if (analyzer == null || precise == null || fast == null || vmClass == null
@@ -1983,6 +2029,10 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 || traitsClass == null
                 || dependency.getClass() != precise && dependency.getClass() != fast) {
             return false;
+        }
+        if (owner.equals("org.teavm.runtime.reflect.ClassInfo")
+                && Class.forName(emitterName, false, targetClass.getClassLoader()) != emitter) {
+            return false; // Resolve the exact emitter as CTarget itself does.
         }
         java.lang.reflect.Field services = analyzer.getDeclaredField("services");
         java.lang.reflect.Field vmDependency = vmClass.getDeclaredField("dependencyAnalyzer");
@@ -2044,11 +2094,11 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 if (!result) return false;
             }
         }
-        // FunctionIntrinsic is the only earlier built-in that classifies the
-        // owner by hierarchy rather than exact name. It must not preempt this
-        // getter's pinned StringInfoIntrinsic lowering.
+        // FunctionIntrinsic can preempt either exact metadata getter by
+        // hierarchy. StructureIntrinsic also checks hierarchy, but its closed
+        // method-name list contains neither of these selected getters.
         return active.getDependencyInfo() == dependency && active.getServices() == vm
-                && !((org.teavm.model.lowlevel.Characteristics) traits).isFunction("org.teavm.runtime.StringInfo");
+                && !((org.teavm.model.lowlevel.Characteristics) traits).isFunction(owner);
     }
 
     private boolean pinnedStringInfoArchive(java.nio.file.Path jar) throws Exception {
