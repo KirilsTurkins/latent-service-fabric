@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "workflow",
+  "reviewReason": "Qualify only the opt-in original-owner host proof, fixed engine compilation, and node profile; no signed execution or physical work bound claim.",
+  "workflow": ".github/workflows/rust-combined-host-diagnostic.yml",
+  "policy": {
+    "name": "Rust combined HTTP diagnostic host",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/rust-http-combined-host-20261105"
+        ],
+        "paths": [
+          ".github/workflows/rust-combined-host-diagnostic.yml",
+          "crates/latent-component-threading/**",
+          "crates/latent-wasmtime/**",
+          "apps/latentd/**",
+          "tools/rust_combined_diagnostic_envelope.py",
+          "tools/tests/test_rust_combined_diagnostic_envelope.py",
+          "tools/rust_original_delta.py",
+          "Cargo.lock",
+          "rust-toolchain.toml"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    },
+    "concurrency": {
+      "group": "rust-combined-host-diagnostic-${{ github.ref }}",
+      "cancel-in-progress": false
+    }
+  },
+  "requiredJobs": [
+    "diagnostic"
+  ]
+}

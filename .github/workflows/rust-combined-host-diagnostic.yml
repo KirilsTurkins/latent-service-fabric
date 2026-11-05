@@ -1,0 +1,86 @@
+name: Rust combined HTTP diagnostic host
+on:
+  push:
+    branches: ['diag/rust-http-combined-host-20261105']
+    paths:
+      - '.github/workflows/rust-combined-host-diagnostic.yml'
+      - 'crates/latent-component-threading/**'
+      - 'crates/latent-wasmtime/**'
+      - 'apps/latentd/**'
+      - 'tools/rust_combined_diagnostic_envelope.py'
+      - 'tools/tests/test_rust_combined_diagnostic_envelope.py'
+      - 'tools/rust_original_delta.py'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+permissions:
+  contents: read
+concurrency:
+  group: rust-combined-host-diagnostic-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  diagnostic:
+    name: Original-owner admission and fixed combined graph compiler check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Produce the fixed untrusted framed sample
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rust-combined-host"
+          python3 -B -m unittest tools.tests.test_rust_combined_diagnostic_envelope -v 2>&1 | tee "$RUNNER_TEMP/rust-combined-host/framing-tests.log"
+          c=crates/latent-component-threading/src/rust_catalogue
+          python3 -B tools/rust_combined_diagnostic_envelope.py --original "$c/combined-original-core.wasm" --component "$c/combined-final-component.wasm" --output "$RUNNER_TEMP/rust-combined-host/framed.wasm" | tee "$RUNNER_TEMP/rust-combined-host/framing.log"
+          echo '5634429a97b4a3f0cf8afca2877dbbddbc98f5e4fd7bf59ae6f7f50e780c2e17  '"$RUNNER_TEMP/rust-combined-host/framed.wasm" | sha256sum --check --strict
+      - name: Refuse the incompatible historic catalogue
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic,rust-thread-diagnostic-legacy rust_component::tests::combined_graph_refuses_the_incompatible_legacy_catalogue -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/rust-combined-host/legacy.log"
+          grep -F 'test rust_component::tests::combined_graph_refuses_the_incompatible_legacy_catalogue ... ok' "$RUNNER_TEMP/rust-combined-host/legacy.log"
+      - name: Check the selected host proof and actual engine compilation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked -p latent-wasmtime --lib --features development-rust-http-combined component_threading::tests::combined_http_diagnostic -- --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/rust-combined-host/host.log"
+          grep -F 'COMBINED_HTTP_CATALOGUE=current' "$RUNNER_TEMP/rust-combined-host/host.log"
+          grep -F 'test component_threading::tests::combined_http_diagnostic_requires_its_distinct_prepaid_profile ... ok' "$RUNNER_TEMP/rust-combined-host/host.log"
+          grep -F 'test component_threading::tests::combined_http_diagnostic_requires_explicit_original_cache_capacity ... ok' "$RUNNER_TEMP/rust-combined-host/host.log"
+          grep -F 'test component_threading::tests::combined_http_diagnostic_authenticates_wrapped_final_graph_before_reuse' "$RUNNER_TEMP/rust-combined-host/host.log"
+          grep -F 'test result: ok. 3 passed; 0 failed;' "$RUNNER_TEMP/rust-combined-host/host.log"
+      - name: Check diagnostic node selection without raising its budgets
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked -p latentd --lib --features development-rust-http-combined protected_c_profile_reaches_normal_node_settings_without_raising_any_limits -- --nocapture 2>&1 | tee "$RUNNER_TEMP/rust-combined-host/node.log"
+          grep -F 'protected_c_profile_reaches_normal_node_settings_without_raising_any_limits ... ok' "$RUNNER_TEMP/rust-combined-host/node.log"
+      - name: Retain bounded diagnostic logs including failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: rust-combined-host-diagnostic-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: ${{ runner.temp }}/rust-combined-host/*.log

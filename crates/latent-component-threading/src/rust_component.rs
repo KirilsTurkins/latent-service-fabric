@@ -454,13 +454,15 @@ fn combined_final_main(component: &[u8]) -> Result<&[u8], &'static str> {
 }
 
 /// Authenticated final graph and reconstructed original; not an admission.
-#[cfg(all(
-    feature = "rust-http-combined-preview-diagnostic",
-    not(feature = "rust-thread-diagnostic-legacy")
-))]
+/// Build-time catalogue compatibility only; this grants no runtime authority.
+#[cfg(feature = "rust-http-combined-preview-diagnostic")]
+pub const COMBINED_DIAGNOSTIC_CATALOGUE_AVAILABLE: bool =
+    !cfg!(feature = "rust-thread-diagnostic-legacy");
+
+#[cfg(feature = "rust-http-combined-preview-diagnostic")]
 #[allow(dead_code)]
 #[derive(Debug)]
-pub(super) struct CombinedEmbeddedProof {
+pub struct CombinedEmbeddedProof {
     pub wrapped_digest: [u8; 32],
     pub final_graph_digest: [u8; 32],
     pub original_digest: [u8; 32],
@@ -477,7 +479,7 @@ pub(super) struct CombinedEmbeddedProof {
     not(feature = "rust-thread-diagnostic-legacy")
 ))]
 #[allow(dead_code)]
-pub(super) fn verify_embedded_combined_diagnostic(
+pub fn verify_embedded_combined_diagnostic(
     wrapped: &[u8],
 ) -> Result<CombinedEmbeddedProof, &'static str> {
     let (component, delta) = crate::rust_original_delta::split_unverified(wrapped)?;
@@ -502,6 +504,18 @@ pub(super) fn verify_embedded_combined_diagnostic(
         final_graph_authenticated: true,
         runtime_qualified: false,
     })
+}
+
+// Cargo may unify the historic catalogue feature through another dependent.
+// It cannot authenticate this graph, so never silently use the wrong catalogue.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    feature = "rust-thread-diagnostic-legacy"
+))]
+pub fn verify_embedded_combined_diagnostic(
+    _wrapped: &[u8],
+) -> Result<CombinedEmbeddedProof, &'static str> {
+    Err("rust-combined-legacy-catalogue-incompatible")
 }
 
 /// Source proof only. The host must admit the full work allowance first and
@@ -630,6 +644,18 @@ pub fn verify_embedded_rust_original_core(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(all(
+        feature = "rust-http-combined-preview-diagnostic",
+        feature = "rust-thread-diagnostic-legacy"
+    ))]
+    #[test]
+    fn combined_graph_refuses_the_incompatible_legacy_catalogue() {
+        assert_eq!(
+            verify_embedded_combined_diagnostic(b"untrusted").unwrap_err(),
+            "rust-combined-legacy-catalogue-incompatible"
+        );
+    }
+
     #[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
     const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/catalogue-original-core.wasm");
     #[cfg(feature = "rust-thread-diagnostic-legacy")]

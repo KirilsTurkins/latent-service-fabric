@@ -158,6 +158,33 @@ fn protected_c_profile_reaches_normal_node_settings_without_raising_any_limits()
         .cell_classes
         .values()
         .all(|cell| cell.threading_models == selected_models));
+    #[cfg(feature = "development-rust-http-combined")]
+    {
+        selected["engine"]["threadingProfile"] =
+            "rust-context40-combined-http-diagnostic-v1".into();
+        let diagnostic = derive(&selected).unwrap();
+        assert_eq!(
+            diagnostic.wasmtime.native_thread_profile,
+            latent_wasmtime::NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1
+        );
+        assert_eq!(
+            diagnostic.wasmtime.activation_runtime,
+            settings.wasmtime.activation_runtime
+        );
+        assert_eq!(
+            diagnostic.wasmtime.maximum_memory_bytes,
+            settings.wasmtime.maximum_memory_bytes
+        );
+        assert_eq!(
+            diagnostic.wasmtime.maximum_fuel,
+            settings.wasmtime.maximum_fuel
+        );
+        assert!(diagnostic
+            .admission
+            .cell_classes
+            .values()
+            .all(|cell| cell.threading_models == selected_models));
+    }
     selected.as_object_mut().unwrap().remove("engine");
     assert!(derive(&selected).is_err());
     assert!(!uncreated.exists());
@@ -517,4 +544,12 @@ fn protected_runtime_installation_preserves_finite_backend_limits_without_side_e
     external.security_profile = latent_wasmtime::ExecutionIsolationProfile::ExternalCapsule;
     assert!(crate::config::providers::derive(&external).is_err());
     assert!(!uncreated.exists());
+}
+
+#[cfg(not(feature = "development-rust-http-combined"))]
+#[test]
+fn ordinary_node_rejects_the_diagnostic_combined_http_profile() {
+    let mut value = document();
+    value["engine"] = json!({"threadingProfile":"rust-context40-combined-http-diagnostic-v1"});
+    assert!(super::super::input::decode(&serde_json::to_vec(&value).unwrap()).is_err());
 }
