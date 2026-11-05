@@ -83,9 +83,18 @@ public final class QueueDeadlineModelControl {
         verify(pump(wrongComparison), true);
 
         var transformed = ModelUtils.copyClass(original);
+        ClassHolderTransformerContext context = new ClassHolderTransformerContext() {
+            public org.teavm.model.ClassHierarchy getHierarchy() { return new org.teavm.model.ClassHierarchy(source); }
+            public org.teavm.diagnostics.Diagnostics getDiagnostics() { throw new AssertionError("diagnostics"); }
+            public org.teavm.cache.IncrementalDependencyRegistration getIncrementalCache() { throw new AssertionError("cache"); }
+            public boolean isObfuscated() { return false; }
+            public boolean isStrict() { return true; }
+            public String getEntryPoint() { return "unused"; }
+            public void submit(ClassHolder model) { throw new AssertionError("submit"); }
+        };
         var transform = RuntimePlugin.class.getDeclaredMethod("transform", ClassHolder.class, ClassHolderTransformerContext.class);
         transform.setAccessible(true);
-        transform.invoke(new RuntimePlugin(), transformed, null);
+        transform.invoke(new RuntimePlugin(), transformed, context);
         int hooks = 0;
         for (var block : pump(transformed).getBasicBlocks()) for (var instruction : block) {
             if (instruction instanceof InvokeInstruction call

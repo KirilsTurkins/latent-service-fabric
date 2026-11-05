@@ -1040,10 +1040,11 @@ class RepositoryMigrationTests(unittest.TestCase):
         # Evaluate only the closed grammar used by this guard; an unfamiliar
         # construct fails the test rather than being guessed or executed.
         import ast, re
-        def selected(event, ref, replay):
+        def selected(event, ref, replay, reason="full"):
             expression = guard.removeprefix("${{").removesuffix("}}").strip()
             expression = re.sub(r"github\.ref\s*!=\s*'([^']+)'", lambda m: str(ref != m.group(1)), expression)
             expression = expression.replace("github.event_name", repr(event)).replace("inputs.replay-closed-filesystem", str(replay))
+            expression = expression.replace("needs.tooling-selection.outputs.reason", repr(reason))
             expression = expression.replace("&&", " and ").replace("||", " or ")
             expression = re.sub(r"!(?!=)", " not ", expression).strip()
             tree = ast.parse(expression, mode="eval")
@@ -1055,6 +1056,8 @@ class RepositoryMigrationTests(unittest.TestCase):
         self.assertTrue(selected("push", "refs/heads/development", False))
         self.assertTrue(selected("workflow_dispatch", "refs/heads/development", False))
         self.assertFalse(selected("workflow_dispatch", "refs/heads/development", True))
+        self.assertFalse(selected("pull_request", "refs/pull/42/merge", False,
+                                  "isolated-tooling:documentation-validator-tests"))
         self.assertIn("pull_request", c["on"])
         self.assertIn("development", c["on"]["push"]["branches"])
 

@@ -50,6 +50,31 @@ class CombinedCompilerWit(unittest.TestCase):
 
 
 class CombinedCompilerSourceReceipt(unittest.TestCase):
+    def test_diagnostic_composer_rechecks_both_original_adapter_and_exact_tool(self):
+        import tempfile
+        from pathlib import Path
+        from types import SimpleNamespace
+        from unittest.mock import Mock, patch
+
+        with tempfile.TemporaryDirectory() as directory:
+            tool = Path(directory) / 'wac'; tool.write_bytes(b'identity-is-mocked')
+            prepared = SimpleNamespace(adapter=Path(directory) / 'adapter',
+                check=Mock(), material=Mock(return_value=b'original-adapter-receipt'))
+            identity = {'name': 'diagnostic-composer', 'digest': candidate.DIAGNOSTIC_COMPOSER_DIGEST,
+                        'size': candidate.DIAGNOSTIC_COMPOSER_SIZE}
+            with patch.object(candidate, 'file_identity', return_value=identity) as observed:
+                selected = candidate.DiagnosticHttpComposition(prepared, tool)
+                self.assertEqual(selected.material(), b'original-adapter-receipt')
+                self.assertGreaterEqual(prepared.check.call_count, 2)
+                self.assertGreaterEqual(observed.call_count, 2)
+                observed.return_value = {**identity, 'digest': 'sha256:' + '0' * 64}
+                with self.assertRaisesRegex(ValueError, 'diagnostic-composer-drift'):
+                    selected.check()
+                observed.return_value = identity
+                prepared.adapter = Path(directory) / 'substituted-adapter'
+                with self.assertRaisesRegex(ValueError, 'diagnostic-adapter-drift'):
+                    selected.check()
+
     def test_git_recipe_binds_the_clean_expected_head_and_exact_bytes(self):
         from unittest.mock import patch
         head = 'a' * 40

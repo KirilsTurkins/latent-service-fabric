@@ -116,6 +116,9 @@ class RustScratchReplay(unittest.TestCase):
             'authoring': '0dad646ab277e9f9b39cfa21c9d09b3a12495793fe3070ebe5e897412552bc57'}
         for name, identity in expected.items():
             job = copy.deepcopy(model['jobs'][name])
+            if name in ('standard-clocks', 'git-closure', 'authoring'):
+                from tools.tests.qualification_selection import unwrap_tooling_gate
+                unwrap_tooling_gate(self, job)
             self.assertEqual(job.pop('if'), "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}")
             if name == 'standard-entropy':
                 # #1377 selects the already installed exact toolchain for this
@@ -126,7 +129,9 @@ class RustScratchReplay(unittest.TestCase):
                 self.assertEqual(len(steps), 1)
                 self.assertEqual(steps[0].pop('env'), {'RUSTUP_TOOLCHAIN': '1.97.1'})
             self.assertEqual(hashlib.sha256(json.dumps(job, sort_keys=True, separators=(',', ':')).encode()).hexdigest(), identity)
-        child = model['jobs']['scratch-replay']
+        child = copy.deepcopy(model['jobs']['scratch-replay'])
+        from tools.tests.qualification_selection import unwrap_tooling_gate
+        unwrap_tooling_gate(self, child)
         self.assertEqual(child['timeout-minutes'], 20)
         self.assertNotIn('needs', child)
         self.assertEqual(child['if'], "${{ github.event_name == 'workflow_dispatch' && inputs.replay-scratch-refusals }}")
