@@ -122,10 +122,16 @@ public final class CheckpointCompilerControl {
         public static void main(String[] arguments) { result += arguments.length; }
     }
 
-    // A neighboring intrinsic is deliberately outside the one-method proof.
+    // This helper is finite under the same pinned emitter and header proof.
     public static final class ClassInfoEnumElementAccess {
         private static Object result = new org.teavm.runtime.reflect.ClassInfo().enumConstant(0);
         public static void main(String[] arguments) { if (arguments.length != 0) result = arguments[0]; }
+    }
+
+    // A different unmanaged native intrinsic remains outside both proofs.
+    public static final class ClassInfoOtherAccess {
+        static { new org.teavm.runtime.reflect.ClassInfo().putItem(null, 0, null); }
+        public static void main(String[] arguments) { }
     }
 
     public static final class InitializerPolling {
@@ -380,6 +386,15 @@ public final class CheckpointCompilerControl {
             method.getModifiers().add(ElementModifier.FINAL);
             return true;
         }
+        if (mutation.equals("class-info-element-declaration")
+                && cls.getName().equals("org.teavm.runtime.reflect.ClassInfo")) {
+            var method = cls.getMethod(new MethodDescriptor("enumConstant", ValueType.INTEGER,
+                    ValueType.object("java.lang.Object")));
+            require(method != null && !method.hasModifier(ElementModifier.FINAL),
+                    "checkpoint-control-class-info-element-original-declaration");
+            method.getModifiers().add(ElementModifier.FINAL);
+            return true;
+        }
         if (mutation.equals("class-info-layout") && cls.getName().equals("org.teavm.runtime.RuntimeClass")) {
             var field = new org.teavm.model.FieldHolder("changedEnumCountLayout");
             field.setType(ValueType.INTEGER);
@@ -622,7 +637,13 @@ public final class CheckpointCompilerControl {
         }
         check(StringInfoAccess.class.getName(), corrected, true, "", true);
         check(ClassInfoEnumCountAccess.class.getName(), corrected, false, "");
-        check(ClassInfoEnumElementAccess.class.getName(), corrected, true, "");
+        check(ClassInfoEnumElementAccess.class.getName(), corrected, false, "");
+        check(ClassInfoOtherAccess.class.getName(), corrected, true, "");
+        for (String mutation : new String[] {
+                "class-info-element-declaration", "string-info-parent", "class-info-layout" }) {
+            check(ClassInfoEnumElementAccess.class.getName(), corrected, true, mutation);
+        }
+        check(ClassInfoEnumElementAccess.class.getName(), corrected, true, "", true);
         for (String mutation : new String[] { "class-info-declaration", "string-info-parent", "class-info-layout" }) {
             check(ClassInfoEnumCountAccess.class.getName(), corrected, true, mutation);
         }
@@ -635,6 +656,6 @@ public final class CheckpointCompilerControl {
             throw new AssertionError("checkpoint-control-compiler-archive", failure);
         }
         System.out.println("CHECKPOINT_COMPILER_CONTROL PASS " + arguments[0]
-                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;class-info-enum-count;class-info-enum-other-refused;class-info-declaration;class-info-parent;class-info-layout;class-info-target;class-info-header-shadow;compiler-archive-control;compiler-cache-isolation");
+                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;class-info-enum-count;class-info-enum-element;class-info-enum-other-refused;class-info-element-declaration;class-info-element-parent;class-info-element-layout;class-info-element-target;class-info-declaration;class-info-parent;class-info-layout;class-info-target;class-info-header-shadow;compiler-archive-control;compiler-cache-isolation");
     }
 }

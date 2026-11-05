@@ -206,8 +206,11 @@ No other native operation gains a finite argument from its declaring class name.
 The current certificate authenticates **42 runtime/donor entries in total**:
 32 runtime entries and ten donors. Besides the two constructor and four numeric
 donors, exact `ClassInfo`/`ReflectionInfo` inputs bind the selected native metadata
-queries to the original layout. The original `Object.getClassInfo` body also
-requires its exact method proof. These rules do not approve class initialization,
+queries to the original layout. The exact enum count and element helpers also
+require the pinned active C target, selected intrinsic emitter and runtime header.
+The element lookup keeps TeaVM's original valid receiver and index preconditions;
+this finite-progress proof does not add a bounds check or certify memory safety.
+The original `Object.getClassInfo` body also requires its exact method proof. These rules do not approve class initialization,
 allocation, or arbitrary reflective callbacks. Exact `TString`/`TSystem` donors
 cover the apparent char-array-constructor/arraycopy recursion: the nested copy
 uses a non-null source and a freshly allocated equal-length destination at zero

@@ -1942,6 +1942,10 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             case "superinterface":
                 shape = new org.teavm.model.MethodDescriptor(method.getName(), integer, info);
                 break;
+            case "enumConstant":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(), integer,
+                        org.teavm.model.ValueType.object("java.lang.Object"));
+                break;
             case "arrayLength":
                 shape = new org.teavm.model.MethodDescriptor(method.getName(),
                         org.teavm.model.ValueType.object("java.lang.Object"), integer);
@@ -1961,11 +1965,12 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         if (!method.getDescriptor().equals(shape)) {
             return false;
         }
-        if (method.getName().equals("enumConstantCount")) {
+        if (method.getName().equals("enumConstantCount") || method.getName().equals("enumConstant")) {
             try {
-                // This one helper is a fixed null check and pointer-sized load.
-                // The active C target, selected emitter, layout and exact
-                // runtime header are all required; no other method is widened.
+                // The exact helpers are fixed pointer loads, with the original
+                // caller's valid receiver/index preconditions. The active C
+                // target, selected emitter, layout and exact runtime header are
+                // required; no other method is widened.
                 return pinnedClassMetadataMethod(method) && pinnedClassInfoCompiler();
             } catch (Exception unavailable) {
                 return false;
