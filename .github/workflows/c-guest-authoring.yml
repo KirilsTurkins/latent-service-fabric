@@ -74,6 +74,7 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /tools/
+            /.gitignore
             /.github/workflows/
             /sdk/
             /crates/vendor/wasmtime/

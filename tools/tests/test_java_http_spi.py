@@ -191,6 +191,8 @@ class JavaSpiManualWorkflow(unittest.TestCase):
                     migrated.add(reference)
         self.assertEqual(migrated, set(action_migrations))
         selected = yaml.safe_load((ROOT/name).read_text())
+        from tools.tests.qualification_selection import restore_java_pre_tooling_view
+        restore_java_pre_tooling_view(self, selected)
         private = selected[True]['workflow_dispatch']['inputs'].pop('public_fiber_private_scalar_llvm')
         self.assertEqual(private['type'], 'boolean');self.assertIs(private['default'], False)
         clause = " && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)"

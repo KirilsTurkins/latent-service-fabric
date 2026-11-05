@@ -78,6 +78,8 @@ class LlvmSsaConsumer(unittest.TestCase):
     def test_original_public_job_defaults_and_complete_command_recipe_remain_exact(self):
         model = workflow_model(historical_checkout((patch.ROOT / '.github/workflows/java-guest-feasibility.yml').read_text()))
         job = copy.deepcopy(model['jobs']['public-fiber-assembly'])
+        from tools.tests.qualification_selection import unwrap_tooling_gate
+        unwrap_tooling_gate(self, job)
         # Invert ONLY the explicit R8 additions before the original R7/default
         # preservation oracle below. Every removed route/pin is asserted first.
         self.assertEqual(model['on']['workflow_dispatch']['inputs']['public_fiber_private_scalar_llvm'], {
