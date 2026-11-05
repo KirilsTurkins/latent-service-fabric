@@ -177,7 +177,7 @@ async fn actual_stream_host_ready_refusals_precede_consumer_factory_and_polls() 
         let kept_consumed = consumed.clone();
         let kept_requested = requested.clone();
         let invocation = original.clone();
-        // Source-owned LOCAL queue -> Task -> outer -> pinned C -> shared C cell -> consume factory.
+        // Source-owned LOCAL queue -> Task -> outer -> pinned C -> shared C cell -> accept factory.
         // Warmed shared headers and the original real-budget padding stay unchanged.
         observed.before_request(before + local, move |bytes| {
             let request = bytes as u64 + OWNER;
@@ -259,8 +259,10 @@ async fn actual_stream_host_ready_pending_ready_and_error_preserve_cleanup() {
             entries[before + 3],
             std::alloc::Layout::new::<Consumer>().size()
         );
-        // The HostToHost branch does not retain the temporary consume factory.
-        let task_outer_and_consumer = entries[before + 1..before + 5]
+        // The HostToHost branch retains its paid accept factory until the
+        // original transmit owner is physically destroyed.
+        assert!(entries[before + 5] > 0);
+        let task_outer_and_consumer = entries[before + 1..before + 6]
             .iter()
             .map(|bytes| *bytes as u64 + OWNER)
             .sum::<u64>();

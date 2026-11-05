@@ -1257,6 +1257,168 @@ fn consumer_poll_factory_legacy_and_uncertain_destructor_keep_existing_boundarie
     assert_eq!(probe.live.load(SeqCst), reserved);
 }
 
+#[tokio::test]
+async fn host_accept_refusal_preserves_the_original_transmit_and_can_resume() {
+    let engine = Engine::new(
+        Config::new()
+            .wasm_component_model(true)
+            .wasm_component_model_async(true)
+            .concurrency_support(true),
+    )
+    .unwrap();
+    let probe = Arc::new(Probe::default());
+    let mut store =
+        Store::try_new_with_memory(&engine, (), Arc::new(Memory(probe.clone()))).unwrap();
+    store.run_concurrent(async |_| ()).await.unwrap();
+    let producer = Arc::new(Gate::default());
+    let consumer = Arc::new(Gate::default());
+    producer.ready.store(true, SeqCst);
+    consumer.ready.store(true, SeqCst);
+    let reader = StreamReader::new(&mut store, Producer(producer.clone())).unwrap();
+    let handle = reader.id;
+    let transmit = store
+        .as_context_mut()
+        .0
+        .concurrent_state_mut_already_forced_current_thread()
+        .get_mut(handle)
+        .unwrap()
+        .state;
+    let before = probe.requests.lock().unwrap().len();
+    // queue / task / outer / consumer value / consumer cell / accept factory
+    probe.refuse.store(before + 6, SeqCst);
+    let error = reader
+        .pipe(&mut store, Consumer(consumer.clone()))
+        .unwrap_err();
+    assert!(format!("{error:#}").contains(REFUSAL));
+    assert_eq!(probe.requests.lock().unwrap().len(), before + 6);
+    assert_eq!(producer.polls.load(SeqCst), 0);
+    assert_eq!(consumer.polls.load(SeqCst), 0);
+    let state = store
+        .as_context_mut()
+        .0
+        .concurrent_state_mut_already_forced_current_thread();
+    let retained = state.get_mut(transmit).unwrap();
+    assert!(!retained.done);
+    assert!(matches!(&retained.read, ReadState::Open));
+    assert!(matches!(&retained.write, WriteState::HostReady { .. }));
+    probe.refuse.store(0, SeqCst);
+    // The test recreates the original handle, not a new transmit or producer.
+    StreamReader::<u8>::new_(handle)
+        .pipe(&mut store, Consumer(consumer.clone()))
+        .unwrap();
+    drive(&mut store, &consumer).await.unwrap();
+    assert_eq!(consumer.payload.load(SeqCst), 42);
+    drop(store);
+    producer.release();
+    consumer.release();
+    assert_eq!(probe.live.load(SeqCst), 0);
+}
+
+// The real host-to-host path uses the same higher-ranked input contract.
+fn host_accept_capture(
+    capture: ProducerFactoryCapture,
+) -> impl for<'a> Fn(
+    &'a mut UntypedWriteBuffer<'a>,
+) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>>
++ Send
++ Sync
++ 'static {
+    move |_| capture.produce()
+}
+
+#[test]
+fn host_accept_factory_admits_before_invocation_and_releases_after_drop() {
+    for refuse in [true, false] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        let trace = Arc::new(Mutex::new(Vec::new()));
+        probe.refuse.store(if refuse { 1 } else { 0 }, SeqCst);
+        probe.check_value_drop.store(true, SeqCst);
+        let function = host_accept_capture(producer_factory_capture(
+            &probe,
+            &trace,
+            "host-accept",
+            false,
+            false,
+        ));
+        let expected = core::mem::size_of_val(&function);
+        assert!(expected > 0);
+        let result = own_host_accept_factory(&consumer_cell_memory(&probe), function);
+        assert_eq!(*probe.requests.lock().unwrap(), [expected]);
+        if refuse {
+            assert!(result.is_err());
+            assert_eq!(probe.confirmations.load(SeqCst), 0);
+            assert_eq!(probe.value_drops.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), 0);
+            assert_eq!(*trace.lock().unwrap(), ["host-accept"]);
+        } else {
+            let factory = result.unwrap();
+            assert_eq!(probe.confirmations.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), expected);
+            let mut buffer = SliceBuffer::new(vec![42], 0, 1);
+            let mut untyped = UntypedWriteBuffer::new(&mut buffer);
+            let future = factory.invoke_accept(&mut untyped);
+            assert_eq!(probe.live.load(SeqCst), expected);
+            drop(future); // The returned future has a separate, unqualified cost.
+            assert_eq!(probe.live.load(SeqCst), expected);
+            drop(factory);
+            assert_eq!(probe.value_drops.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), 0);
+            assert_eq!(*trace.lock().unwrap(), ["call", "host-accept"]);
+        }
+    }
+}
+
+#[test]
+fn host_accept_factory_confirmation_unwind_and_uncertain_drop_preserve_ownership() {
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let trace = Arc::new(Mutex::new(Vec::new()));
+    probe.panic_confirmation.store(1, SeqCst);
+    probe.check_value_drop.store(true, SeqCst);
+    let function = host_accept_capture(producer_factory_capture(
+        &probe, &trace, "confirm", false, false,
+    ));
+    assert!(
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            own_host_accept_factory(&consumer_cell_memory(&probe), function)
+        }))
+        .is_err()
+    );
+    assert_eq!(probe.value_drops.load(SeqCst), 1);
+    assert_eq!(probe.live.load(SeqCst), 0);
+    assert_eq!(*trace.lock().unwrap(), ["confirm"]);
+
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let trace = Arc::new(Mutex::new(Vec::new()));
+    let function = host_accept_capture(producer_factory_capture(
+        &probe,
+        &trace,
+        "uncertain",
+        false,
+        true,
+    ));
+    let factory = own_host_accept_factory(&consumer_cell_memory(&probe), function).unwrap();
+    let reserved = probe.live.load(SeqCst);
+    assert!(reserved > 0);
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(factory))).is_err());
+    assert_eq!(probe.live.load(SeqCst), reserved);
+}
+
+#[test]
+fn host_accept_factory_none_keeps_literal_box_and_no_reservation() {
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let trace = Arc::new(Mutex::new(Vec::new()));
+    let function = host_accept_capture(producer_factory_capture(
+        &probe, &trace, "legacy", false, false,
+    ));
+    let factory = own_host_accept_factory(&None, function).unwrap();
+    let mut buffer = SliceBuffer::new(vec![42], 0, 1);
+    let mut untyped = UntypedWriteBuffer::new(&mut buffer);
+    drop(factory.invoke_accept(&mut untyped));
+    drop(factory);
+    assert!(probe.requests.lock().unwrap().is_empty());
+    assert_eq!(*trace.lock().unwrap(), ["call", "legacy"]);
+}
+
 #[test]
 fn producer_factory_pair_admission_precedes_builders_and_unused_refunds() {
     for refuse in [1, 2, 0] {
