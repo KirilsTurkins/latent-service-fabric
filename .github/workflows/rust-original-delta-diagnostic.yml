@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/rust-original-delta-diagnostic.yml'
       - 'crates/latent-component-threading/src/rust_original_delta.rs'
+      - 'crates/latent-component-threading/src/rust_component.rs'
       - 'crates/latent-component-threading/src/rust_catalogue/combined-original-delta.bin'
       - 'tools/rust_original_delta.py'
 permissions:

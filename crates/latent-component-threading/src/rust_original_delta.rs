@@ -171,6 +171,7 @@ pub(crate) fn split_unverified(input: &[u8]) -> Result<(&[u8], &[u8]), &'static 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sha2::Digest;
     const BASE: &[u8] = include_bytes!("rust_catalogue/combined-final-component.wasm");
     const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/combined-original-core.wasm");
     const PREVIEW: &[u8] = include_bytes!("rust_catalogue/combined-preview-component.wasm");
@@ -210,6 +211,13 @@ mod tests {
         assert!(
             crate::rust_component::verify_combined_composition(&original, PREVIEW, base).is_ok()
         );
+        let proof = crate::rust_component::verify_embedded_combined_diagnostic(&wrapped).unwrap();
+        assert!(proof.final_graph_authenticated && !proof.runtime_qualified);
+        assert_eq!(
+            proof.original_digest,
+            <[u8; 32]>::from(sha2::Sha256::digest(ORIGINAL))
+        );
+
         assert!(attach_unverified(&wrapped, DELTA).is_err());
         assert!(split_unverified(BASE).is_err());
         assert!(split_unverified(&wrapped[..wrapped.len() - 1]).is_err());
@@ -218,6 +226,10 @@ mod tests {
         assert!(split_unverified(&nonfinal).is_err());
         let mut forged = DELTA.to_vec();
         forged[21] ^= 1; // fixed first literal byte, not a command or size
+        let forged_wrapped = attach_unverified(BASE, &forged).unwrap();
+        assert!(
+            crate::rust_component::verify_embedded_combined_diagnostic(&forged_wrapped).is_err()
+        );
         let forged_original = reconstruct(BASE, &forged).unwrap();
         assert!(
             crate::rust_component::verify_combined_composition(&forged_original, PREVIEW, BASE)
