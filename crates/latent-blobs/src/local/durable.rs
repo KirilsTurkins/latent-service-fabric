@@ -44,6 +44,78 @@ pub struct LocalDurablePin {
     store_identity: String,
     store_binding: StoreBinding,
 }
+
+/// A single-view physical recovery walk. The held original local-store owner
+/// and opaque cursor cannot be rebound to another root or engine snapshot.
+pub struct RequiredBlobInventory {
+    owner: Arc<super::Inner>,
+    view: usize,
+    after: Option<Vec<u8>>,
+    complete: bool,
+}
+impl RequiredBlobInventory {
+    pub fn begin(store: &LocalBlobStore, view: &ReadView) -> Result<Self> {
+        let mode = store
+            .inner
+            .durable
+            .as_ref()
+            .ok_or(LocalBlobError::Invalid)?;
+        let binding = store
+            .inner
+            .durable_binding
+            .as_ref()
+            .ok_or(LocalBlobError::PermissionDenied)?;
+        if !view.is_bound_to(binding) {
+            return Err(LocalBlobError::PermissionDenied);
+        }
+        let identity = StoreIdentity::inspect(view)
+            .map_err(storage)?
+            .ok_or(LocalBlobError::Corrupt)?;
+        if identity.as_str() != mode.store_identity
+            || store.configuration_digest()? != mode.configuration_digest
+        {
+            return Err(LocalBlobError::PermissionDenied);
+        }
+        Ok(Self {
+            owner: Arc::clone(&store.inner),
+            view: view.identity(),
+            after: None,
+            complete: false,
+        })
+    }
+    /// Inspect at most `maximum_rows` owners on the original bounded worker.
+    /// The host must hold its startup fence and validate semantic closure.
+    pub fn next_page(
+        &mut self,
+        store: &LocalBlobStore,
+        view: &ReadView,
+        maximum_rows: usize,
+        maximum_bytes: usize,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<(usize, bool)> {
+        if self.complete || self.view != view.identity() || !Arc::ptr_eq(&self.owner, &store.inner)
+        {
+            return Err(LocalBlobError::PermissionDenied);
+        }
+        let page = payload_references::required_owner_page(
+            view,
+            self.after.as_deref(),
+            maximum_rows,
+            maximum_bytes,
+        )
+        .map_err(storage)?;
+        for reference in &page.references {
+            checkpoint()?;
+            let key = reference.owner_key().map_err(storage)?;
+            let bytes = reference.encode().map_err(storage)?;
+            store.verify_required_reference(view, &key, &bytes, checkpoint)?;
+        }
+        let count = page.references.len();
+        self.after = page.resume;
+        self.complete = self.after.is_none();
+        Ok((count, self.complete))
+    }
+}
 impl LocalDurablePin {
     #[must_use]
     pub fn reference(&self) -> &BlobReference {

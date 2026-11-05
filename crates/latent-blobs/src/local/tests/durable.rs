@@ -309,3 +309,51 @@ fn recovery_checks_actual_required_bytes_and_rejects_foreign_view_or_corruption(
         .verify_required_reference(&view, &key, &bytes, &|| Ok(()))
         .is_err());
 }
+
+#[test]
+fn bounded_recovery_pages_stay_with_original_view_and_refuse_corruption() {
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let state = database(state_root.path(), true, "payload-state-a");
+    let owner =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let blob = put(&owner, b"proof");
+    let pin = owner
+        .capture_durable_reference(&scope(), &blob, &|| Ok(()))
+        .unwrap();
+    let result = reference(&pin, PayloadOwnerKind::Result, 1, "local", 1);
+    let effect = reference(&pin, PayloadOwnerKind::Effect, 2, "local", 1);
+    update(&state, &[(None, Some(result)), (None, Some(effect))]);
+    let view = state.snapshot().unwrap();
+    let mut inventory = RequiredBlobInventory::begin(&owner, &view).unwrap();
+    assert_eq!(
+        inventory
+            .next_page(&owner, &view, 1, 1024, &|| Ok(()))
+            .unwrap(),
+        (1, false)
+    );
+    let another_view = state.snapshot().unwrap();
+    assert_eq!(
+        inventory.next_page(&owner, &another_view, 1, 1024, &|| Ok(())),
+        Err(LocalBlobError::PermissionDenied)
+    );
+    drop(another_view);
+    let object = owner
+        .inner
+        .state()
+        .unwrap()
+        .objects
+        .keys()
+        .next()
+        .unwrap()
+        .clone();
+    std::fs::write(
+        blob_root.path().join("objects").join(object).join("data"),
+        b"wrong",
+    )
+    .unwrap();
+    assert_eq!(
+        inventory.next_page(&owner, &view, 1, 1024, &|| Ok(())),
+        Err(LocalBlobError::Corrupt)
+    );
+}

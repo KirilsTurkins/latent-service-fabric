@@ -436,6 +436,42 @@ pub struct PayloadReferencePage {
     pub references: Vec<PayloadReference>,
     pub resume: Option<Vec<u8>>,
 }
+/// Enumerate only primary owners in bounded pages on one coherent view.
+/// The caller owns the cursor and must bind it to its original view.
+pub fn required_owner_page(
+    view: &ReadView,
+    after: Option<&[u8]>,
+    maximum_rows: usize,
+    maximum_bytes: usize,
+) -> Result<PayloadReferencePage, StoreError> {
+    if maximum_rows == 0
+        || maximum_rows > MAX_REFERENCE_UPDATES
+        || maximum_bytes == 0
+        || maximum_bytes > MAX_REFERENCE_UPDATES * MAX_REFERENCE_BYTES
+    {
+        return Err(StoreError::Capacity);
+    }
+    let page = view.scan_after(
+        Family::PayloadReference,
+        OWNER_PREFIX,
+        after,
+        maximum_rows,
+        maximum_bytes,
+    )?;
+    let mut references = Vec::with_capacity(page.rows.len());
+    for (key, bytes) in page.rows {
+        let reference = PayloadReference::decode(&bytes)?;
+        if reference.owner_key()? != key {
+            return Err(StoreError::Corrupt);
+        }
+        validate_row(view, &key, &bytes)?;
+        references.push(reference);
+    }
+    Ok(PayloadReferencePage {
+        references,
+        resume: page.resume,
+    })
+}
 /// Physical retention spans installed provider aliases and epochs naming the
 /// same protected local object. This inventory grants no provider read access.
 pub fn required_physical_page(

@@ -30,6 +30,10 @@ impl CompleteEnvelope {
     /// Derive ownership from the real terminal command/effect, never a guest
     /// reference count or claimed commit identifier. The same original session
     /// owner and verified bytes must match before any batch plan is changed.
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Validate and charge all physical attachments as one atomic envelope"
+    )]
     pub fn attach_verified_payloads(
         mut self,
         view: &ReadView,

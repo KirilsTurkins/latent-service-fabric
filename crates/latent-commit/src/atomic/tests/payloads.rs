@@ -168,6 +168,19 @@ async fn actual_captured_blob_pin_moves_into_atomic_result_and_effect_owners() {
     store
         .verify_required_reference(&view, &required_key, &bytes, &|| Ok(()))
         .unwrap();
+    let mut inventory = latent_blobs::local::RequiredBlobInventory::begin(&store, &view).unwrap();
+    assert_eq!(
+        inventory
+            .next_page(&store, &view, 1, 1024, &|| Ok(()))
+            .unwrap(),
+        (1, false)
+    );
+    assert_eq!(
+        inventory
+            .next_page(&store, &view, 1, 1024, &|| Ok(()))
+            .unwrap(),
+        (1, true)
+    );
     drop(view);
     let reader = store
         .open_read(&TenantId("a".into()), &blob, &|| Ok(()))
