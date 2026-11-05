@@ -60,6 +60,15 @@ jobs:
           set -euo pipefail
           cargo test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic,rust-thread-diagnostic-legacy rust_component::tests::combined_graph_refuses_the_incompatible_legacy_catalogue -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/rust-combined-host/legacy.log"
           grep -F 'test rust_component::tests::combined_graph_refuses_the_incompatible_legacy_catalogue ... ok' "$RUNNER_TEMP/rust-combined-host/legacy.log"
+      - name: Refuse non-catalogue material before source reconstruction
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic --no-run 2>&1 | tee "$RUNNER_TEMP/rust-combined-host/prefilter-build.log"
+          /usr/bin/time --format 'isolated-process-max-rss-kib=%M' --output "$RUNNER_TEMP/rust-combined-host/prefilter-rss.log" cargo test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic rust_component::tests::combined_embedded_proof_rejects_changed_material_before_reconstruction -- --exact --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/rust-combined-host/prefilter.log"
+          if grep -F 'Compiling ' "$RUNNER_TEMP/rust-combined-host/prefilter.log"; then exit 1; fi
+          grep -F 'test rust_component::tests::combined_embedded_proof_rejects_changed_material_before_reconstruction ... ok' "$RUNNER_TEMP/rust-combined-host/prefilter.log"
+          grep -F 'test result: ok. 1 passed; 0 failed;' "$RUNNER_TEMP/rust-combined-host/prefilter.log"
       - name: Check the selected host proof and actual engine compilation
         shell: bash
         run: |

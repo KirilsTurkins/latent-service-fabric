@@ -56,14 +56,14 @@ def qualify(compiler: Path, output: Path, revision: str) -> dict:
         commands.run(stage, 'cargo', '--config', ROOT / '.cargo/managed-guest.toml', 'build', '--locked',
             '-p', 'latent', '-p', 'latentd', '--bins', '-p', 'latent-packaging', '--example', 'package',
             '--example', 'capsule_contracts', '-p', 'latent-policy', '--example', 'capsule_authoring',
-            '--features', 'latentd/development-rust-http-combined')
+            '--features', 'latentd/development-rust-http-combined,latent-packaging/development-rust-http-combined')
         native = {name: target / 'debug' / relative for name, relative in PRODUCTS.items()}
         identities = {name: file_identity(path, 512 * 1024 * 1024) for name, path in native.items()}
         require(source == source_identity(ROOT) and common == host_materials(ROOT)
                 and extras == {name: file_identity(ROOT / name, 4 * 1024 * 1024) for name in EXTRA_MATERIALS},
                 'rust-combined-host-build-source-unchanged')
         record.update(compiler=version, nativeProducts=identities,
-            nativeBuildFeature='latentd/development-rust-http-combined')
+            nativeBuildFeature='latentd/development-rust-http-combined,latent-packaging/development-rust-http-combined')
         write_json(output / 'native-origin.json', record)
         stage = 'assemble-explicit-retained-compiler-projection'
         projected = prepare(compiler, native, output / 'package', commands)

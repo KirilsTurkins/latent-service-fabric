@@ -34,6 +34,9 @@ jobs:
       CARGO_PROFILE_DEV_DEBUG: '0'
       CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
       CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
     steps:
       - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
         with:
@@ -57,6 +60,15 @@ jobs:
         run: |
           python3 -m pip install --requirement tools/requirements.lock
           python3 -B -m unittest tools.tests.test_rust_thread_http_combined_node -v
+      - name: Check default refusal and fixed diagnostic inspection
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rust-combined-inspector"
+          cargo test --locked -p latent-packaging --lib semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/rust-combined-inspector/default.log"
+          cargo test --locked -p latent-packaging --lib --features development-rust-http-combined semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/rust-combined-inspector/diagnostic.log"
+          grep -F 'test semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed ... ok' "$RUNNER_TEMP/rust-combined-inspector/default.log"
+          grep -F 'test semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed ... ok' "$RUNNER_TEMP/rust-combined-inspector/diagnostic.log"
       - name: Retrieve only the pinned original compiler members
         env:
           GH_TOKEN: ${{ github.token }}
@@ -77,5 +89,6 @@ jobs:
           path: |
             ${{ runner.temp }}/rust-combined-signed/**
             ${{ runner.temp }}/rust-combined-original/retrieval.json
+            ${{ runner.temp }}/rust-combined-inspector/*.log
           if-no-files-found: warn
           retention-days: 7

@@ -96,6 +96,7 @@ class ManagedWorkContractTests(unittest.TestCase):
                 work.without_private(changed)
 
     def test_actual_metadata_receipt_requires_every_producer_and_unqualified_scope(self):
+        from tools.dotnet_guest import aggregate_task_wait
         value = json.loads(FIXTURE.read_text())
         task_wait.validate_receipt(value, finite=True, managed=True)
         self.assertFalse(value['managedAcceptedWork']['qualified'])
@@ -113,7 +114,22 @@ class ManagedWorkContractTests(unittest.TestCase):
         current = copy.deepcopy(old)
         current['managedAcceptedWork'] = copy.deepcopy(work.PREFETCH_REWRITE_RECEIPT)
         current['generatedHelperCount'] = 96
+        current['aggregateTaskWait'] = copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED)
         task_wait.validate_current_receipt(current, finite=True, managed=True, aggregate=True)
+        # Historical v2 is valid evidence, but cannot impersonate the new poll guard.
+        historical = copy.deepcopy(current)
+        historical['aggregateTaskWait'] = copy.deepcopy(aggregate_task_wait.EXPECTED)
+        task_wait.validate_receipt(historical, finite=True, managed=True, aggregate=True)
+        with self.assertRaisesRegex(ValueError, 'current-prefetched-poll-required'):
+            task_wait.validate_current_receipt(historical, finite=True, managed=True, aggregate=True)
+        for key in ('prefetchedPollReadiness', 'rewrittenBodies'):
+            changed = copy.deepcopy(current)
+            if key == 'prefetchedPollReadiness':
+                changed['aggregateTaskWait'][key] = 'unproved'
+            else:
+                changed['aggregateTaskWait'][key]['System.Boolean System.Threading.WasiEventLoop::LsfAggregateReady()'] = '0'*64
+            with self.subTest(aggregate=key), self.assertRaises(ValueError):
+                task_wait.validate_current_receipt(changed, finite=True, managed=True, aggregate=True)
         with self.assertRaisesRegex(ValueError, 'current-managed-readiness-required'):
             task_wait.validate_current_receipt(old, finite=True, managed=True, aggregate=True)
         for field, replacement in (('generatedHelperCount', 95), ('generatedHelperCount', 97)):
@@ -138,6 +154,7 @@ class ManagedWorkContractTests(unittest.TestCase):
         with self.assertRaises(ValueError): task_wait.validate_receipt(value, finite=True, managed=True)
 
     def test_selected_port_binds_exact_new_corelib_and_all_required_facets(self):
+        from tools.dotnet_guest import aggregate_task_wait
         control = controls.TaskWaitPortTests(); control.setUp(); self.addCleanup(control.doCleanups)
         control.declared = DECLARED
         def run(stage, *arguments):
@@ -146,6 +163,7 @@ class ManagedWorkContractTests(unittest.TestCase):
             value = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-v2-controlled.json').read_text())
             value['managedAcceptedWork'] = copy.deepcopy(work.PREFETCH_REWRITE_RECEIPT)
             value['generatedHelperCount'] = 96
+            value['aggregateTaskWait'] = copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED)
             value['outputDigest'] = digest(b'explicit-managed-tool-control')
             write_json(arguments[-1], value)
         control.run_tool = run
