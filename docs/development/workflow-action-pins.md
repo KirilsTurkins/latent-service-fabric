@@ -31,7 +31,7 @@ The current security forks were reviewed on **2026-10-30**. They extend the pins
 | `KirilsTurkins/lsf-cache` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/cache/pull/1804)) | `ec176dce9471270c8a9be1289040c0a8fd6aa708` |
 | `KirilsTurkins/lsf-checkout` | `v7.0.1` + upstream changes and security fixes ([review](https://github.com/actions/checkout/pull/2607)) | `4d310727149d3abacc52b5dcb0a1c4d18b345d13` |
 | `KirilsTurkins/lsf-deploy-pages` | `v5.0.1` + upstream changes and security fixes ([review](https://github.com/actions/deploy-pages/pull/453)) | `9290f9265d55d382005aa5f300fc4e9d5bb65cb2` |
-| `KirilsTurkins/lsf-download-artifact` | `v8.0.2` + upstream changes and security fixes ([review](https://github.com/actions/download-artifact/pull/496)) | `f073ba9e3801be93f933866d4c9a748e42157e5f` |
+| `KirilsTurkins/lsf-download-artifact` | `v8.0.2` + upstream changes and security fixes ([review](https://github.com/actions/download-artifact/pull/496)) | `dd4ebbadbf12ed34441db2712be7a193490b7fc5` |
 | `KirilsTurkins/lsf-setup-dotnet` | `v6.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-dotnet/pull/795)) | `258c927924210be905f8908a4be714e5d0daffa8` |
 | `KirilsTurkins/lsf-setup-go` | `v7.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-go/pull/805)) | `1020042799f722e9ef016bf63106367879587a49` |
 | `KirilsTurkins/lsf-setup-node` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-node/pull/1653)) | `34275fdec80b5be172c3327cadef76aa2f3b31c6` |

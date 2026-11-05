@@ -368,7 +368,9 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/download-artifact/package-lock.json",
-      "path": ".github/security/actions/download-artifact/package.json"
+      "path": ".github/security/actions/download-artifact/package.json",
+      "source_repair": "download-artifact-deepmerge-source-v1",
+      "minimatch_source_repair": "download-artifact-glob-minimatch-source-v1"
     },
     {
       "kind": "npm",

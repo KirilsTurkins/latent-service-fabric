@@ -278,7 +278,7 @@
       "upstream_repository": "actions/deploy-pages",
       "upstream_revision": "368f82528645a54fb793d4d04e342629a3f51346"
     },
-    "KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f": {
+    "KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5": {
       "files": [
         {
           "sha256": "e98559b7a31ba31be4709f20d22102dc2737fa630f69a339eb89981151e505fe",
@@ -287,16 +287,34 @@
           "source_sha256": "e98559b7a31ba31be4709f20d22102dc2737fa630f69a339eb89981151e505fe"
         },
         {
-          "sha256": "02f3c860909d40dda8bd14ae785bfc79f6a33cb304c325df15deee090929b325",
+          "sha256": "e78c659838e884b95965d6f4c611741cdbda89cdc14ba69820a06ca4eab12a9f",
           "snapshot": ".github/security/actions/download-artifact/package.json",
           "source": "package.json",
-          "source_sha256": "02f3c860909d40dda8bd14ae785bfc79f6a33cb304c325df15deee090929b325"
+          "source_sha256": "e78c659838e884b95965d6f4c611741cdbda89cdc14ba69820a06ca4eab12a9f"
         },
         {
-          "sha256": "0a553b6783064da79eeba59221224fbf9ebb23c029d08e75999794f407380746",
+          "sha256": "8253ed2e30ad4f60d1cad063f5971b0c4c8a2ff5ff8dbd9a5dd4cf31d004a377",
           "snapshot": ".github/security/actions/download-artifact/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "0a553b6783064da79eeba59221224fbf9ebb23c029d08e75999794f407380746"
+          "source_sha256": "8253ed2e30ad4f60d1cad063f5971b0c4c8a2ff5ff8dbd9a5dd4cf31d004a377"
+        },
+        {
+          "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+          "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-deepmerge.mjs",
+          "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
+        },
+        {
+          "sha256": "07f2ee09c6c2fd1f9ec66c86002f97a2fd1cabe4584b54a9d9e7e4c294b78442",
+          "snapshot": ".github/security/actions/download-artifact/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-download-sources.mjs",
+          "source_sha256": "07f2ee09c6c2fd1f9ec66c86002f97a2fd1cabe4584b54a9d9e7e4c294b78442"
+        },
+        {
+          "sha256": "082f28d2c9dbb70dfe638c7ef1383a961e6a32ce6c11e0116141ed20006803a0",
+          "snapshot": ".github/security/actions/download-artifact/source.test.mjs.snapshot",
+          "source": ".lsf-source/download-source.test.mjs",
+          "source_sha256": "082f28d2c9dbb70dfe638c7ef1383a961e6a32ce6c11e0116141ed20006803a0"
         }
       ],
       "kind": "npm",
@@ -307,8 +325,8 @@
         "source_sha256": "e98559b7a31ba31be4709f20d22102dc2737fa630f69a339eb89981151e505fe"
       },
       "repository": "KirilsTurkins/lsf-download-artifact",
-      "revision": "f073ba9e3801be93f933866d4c9a748e42157e5f",
-      "security_pr": "https://github.com/actions/download-artifact/pull/496",
+      "revision": "dd4ebbadbf12ed34441db2712be7a193490b7fc5",
+      "security_pr": "https://github.com/KirilsTurkins/lsf-download-artifact/pull/1",
       "upstream_repository": "actions/download-artifact",
       "upstream_revision": "9000827ccba6bdab643e8b6fd33ac0654aef8333"
     },

@@ -80,6 +80,12 @@ def verify(repo: Path, paths: list[str]) -> list[dict]:
                             "action.yml", "package.json", "package-lock.json",
                             ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-upload-sources.mjs",
                             ".lsf-source/upload-source.test.mjs"}, "unreviewed-additional-action-source")
+            elif len(row["files"]) == 6 and source == "KirilsTurkins/lsf-download-artifact":
+                require(value == "KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5"
+                        and {item.get("source") for item in row["files"]} == {
+                            "action.yml", "package.json", "package-lock.json",
+                            ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-download-sources.mjs",
+                            ".lsf-source/download-source.test.mjs"}, "unreviewed-additional-action-source")
             elif len(row["files"]) == 6:
                 require(value in {"KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c",
                                   "KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8",
