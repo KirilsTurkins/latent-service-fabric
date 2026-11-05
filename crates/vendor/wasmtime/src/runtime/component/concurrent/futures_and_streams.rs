@@ -2410,7 +2410,7 @@ enum ReadState {
     },
     /// The read end is owned by a host task, and it is ready to consume items.
     HostReady {
-        consume: PollStream,
+        consume: ConsumerPollFactory,
         guest_offset: ItemCount,
         cancel: bool,
         cancel_waker: Option<Waker>,
@@ -3252,6 +3252,7 @@ impl<T> StoreContextMut<'_, T> {
         // The original v17 queue/task/outer admissions precede these two.
         // Stage BOTH exact consumer backing owners before allocating either.
         let consumer_backing = Storage::prepare(&state.queue_memory)?;
+        let factory_memory = state.queue_memory.clone();
         let transmit = state.get_mut(id)?;
         let consumer = Storage::create(consumer_backing, consumer);
         let consume_with_buffer = {
@@ -3356,10 +3357,10 @@ impl<T> StoreContextMut<'_, T> {
         };
         let consume = {
             let consume = consume_with_buffer.clone();
-            Box::new(move || {
+            own_consumer_poll_factory(&factory_memory, move || {
                 let consume = consume.clone();
                 async move { consume(None).await }.boxed()
-            })
+            })?
         };
 
         match &transmit.write {
@@ -3372,7 +3373,7 @@ impl<T> StoreContextMut<'_, T> {
                 };
             }
             &WriteState::GuestReady { .. } => {
-                let future = consume();
+                let future = consume.invoke_consumer();
                 transmit.read = ReadState::HostReady {
                     consume,
                     guest_offset: ItemCount::ZERO,
@@ -3652,12 +3653,12 @@ impl Instance {
         store: &mut dyn VMStore,
         kind: TransmitKind,
         transmit_id: TableId<TransmitState>,
-        consume: PollStream,
+        consume: ConsumerPollFactory,
         guest_offset: ItemCount,
         cancel: bool,
     ) -> Result<ReturnCode> {
         let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
-        let mut future = consume();
+        let mut future = consume.invoke_consumer();
         store.concurrent_state_mut()?.get_mut(transmit_id)?.read = ReadState::HostReady {
             consume,
             guest_offset,
@@ -3732,7 +3733,7 @@ impl Instance {
         store: &mut dyn VMStore,
         kind: TransmitKind,
         transmit_id: TableId<TransmitState>,
-        consume: PollStream,
+        consume: ConsumerPollFactory,
         guest_offset: ItemCount,
         cancel: bool,
         queue_slot: super::FutureWorkSlot,
@@ -3742,7 +3743,7 @@ impl Instance {
         Factory: FnOnce(PipeCompletionArgs) -> Output,
         Output: Future<Output = Result<()>> + Send + 'static,
     {
-        prepared.args_mut().2 = Some(consume());
+        prepared.args_mut().2 = Some(consume.invoke_consumer());
         store.concurrent_state_mut()?.get_mut(transmit_id)?.read = ReadState::HostReady {
             consume,
             guest_offset,
@@ -5717,6 +5718,7 @@ fn allow_intra_component_read_write(ty: Option<&InterfaceType>) -> bool {
 type ProducerPollFactory = ProducerFactory<
     dyn Fn() -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>> + Send + Sync,
 >;
+type ConsumerPollFactory = ProducerPollFactory;
 type ProducerConversionFactory =
     ProducerFactory<dyn Fn(TypeId) -> Option<Box<dyn Any>> + Send + Sync>;
 
@@ -5815,6 +5817,30 @@ impl ProducerPollFactory {
     ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>> {
         (self.function)()
     }
+
+    fn invoke_consumer(
+        &self,
+    ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>> {
+        (self.function)()
+    }
+}
+
+fn own_consumer_poll_factory<F>(
+    memory: &crate::runtime::native_memory::Memory,
+    function: F,
+) -> Result<ConsumerPollFactory>
+where
+    F: Fn() -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>
+        + Send
+        + Sync
+        + 'static,
+{
+    // The closure is still stack-owned: admit its exact layout before Box::new
+    // and before any consumer factory call or transmit-state publication.
+    let allocation =
+        crate::runtime::native_memory::reserve(memory, core::alloc::Layout::new::<F>().size())?;
+    let function: PollStream = Box::new(function);
+    Ok(ProducerFactory::from_parts(function, allocation))
 }
 
 impl ProducerConversionFactory {
